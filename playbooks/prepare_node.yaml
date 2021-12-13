@@ -22,7 +22,7 @@
       regex: "^{{ ansible_user }}"
       line: "{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL"
       state: present
-      mode: "u=rw,g=rw,o="
+      mode: "0660"
       create: yes
       validate: "visudo -cf %s"
   - name: "Adding public keys to authorized_keys"
@@ -46,18 +46,18 @@
     template:
       dest: /etc/docker/daemon.json
       src: templates/etc/docker/daemon.json.j2
-      mode: "u=rw,g=r,o=r"
+      mode: "0644"
       force: yes
   - name: Creating /etc/systemd/system/docker.service.d
     file:
       path: /etc/systemd/system/docker.service.d
       state: directory
-      mode: "u=rwx,g=rx,o=rx"
+      mode: "0755"
   - name: Configuring docker/http-proxy.conf
     template:
       dest: /etc/systemd/system/docker.service.d/http-proxy.conf
       src: templates/etc/systemd/system/docker.service.d/http-proxy.conf.j2
-      mode: "u=rw,g=r,o=r"
+      mode: "0644"
       force: yes
   - name: Restarting Docker
     systemd:

@@ -29,45 +29,45 @@
     template:
       dest: /etc/crictl.yaml
       src: templates/etc/crictl.yaml.j2
-      mode: "u=rw,g=r,o=r"
+      mode: "0644"
       force: yes
   - name: Creating /etc/containerd
     file:
       path: /etc/containerd
       state: directory
-      mode: "u=rwx,g=rx,o=rx"
+      mode: "0755"
   - name: Configuring containerd
     template:
       dest: /etc/containerd/config.toml
       src: templates/etc/containerd/config.toml.j2
-      mode: "u=rw,g=r,o=r"
+      mode: "0644"
   - name: Creating /etc/systemd/system/kubelet.service.d
     file:
       path: /etc/systemd/system/kubelet.service.d
       state: directory
-      mode: "u=rwx,g=rx,o=rx"
+      mode: "0755"
   - name: Configuring containerd-cri
     template:
       dest: /etc/systemd/system/kubelet.service.d/containerd-cri.conf
       src: templates/etc/systemd/system/kubelet.service.d/containerd-cri.conf.j2
-      mode: "u=rw,g=r,o=r"
+      mode: "0644"
       force: yes
   - name: Creating /etc/systemd/system/containerd.service.d
     file:
       path: /etc/systemd/system/containerd.service.d
       state: directory
-      mode: "u=rwx,g=rx,o=rx"
+      mode: "0755"
   - name: Configuring containerd/http-proxy.conf
     template:
       dest: /etc/systemd/system/containerd.service.d/http-proxy.conf
       src: templates/etc/systemd/system/containerd.service.d/http-proxy.conf.j2
-      mode: "u=rw,g=r,o=r"
+      mode: "0644"
       force: yes
   - name: Configuring containerd/ip_forward.conf
     template:
       dest: /etc/systemd/system/containerd.service.d/ip-forward.conf
       src: templates/etc/systemd/system/containerd.service.d/ip-forward.conf.j2
-      mode: "u=rw,g=r,o=r"
+      mode: "0644"
       force: yes
   - name: Restarting Containerd
     systemd:
