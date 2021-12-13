@@ -411,7 +411,13 @@ def scan_and_add_ssh_keys():
 	]
 
 	for host in hosts:
-		transport = paramiko.Transport(host)
+		try:
+			transport = paramiko.Transport(host)
+		except socket.gaierror as e:
+			if str(e) == "[Errno -3] Temporary failure in name resolution":
+				continue
+			else:
+				raise e
 		transport.connect()
 		key = transport.get_remote_server_key()
 		transport.close()
