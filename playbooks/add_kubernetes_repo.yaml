@@ -1,0 +1,37 @@
+- hosts: selection:!nas
+  vars:
+    metadata:
+      description: Add Kubernetes repository
+      playbook-types:
+      - internal
+  gather_facts: no
+  become: True
+  become_user: root
+  tasks:
+  - name: Creating /usr/local/keyrings
+    ansible.builtin.file:
+      path: /usr/local/keyrings
+      state: directory
+      mode: "0755"
+  - name: Fetching Kubernetes repository key
+    ansible.builtin.get_url:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      dest: /usr/local/keyrings/packages.cloud.google.com-keyring.gpg
+      mode: "0644"
+      force: yes
+      use_proxy: "{{ use_proxy }}"
+    environment:
+      https_proxy: "{{ https_proxy }}"
+  - name: Configuring APT repository for Kubernetes
+    shell: |
+      if [ -n "{{ https_proxy }}" ]; then
+        cat <<EOF | tee /etc/apt/apt.conf.d/01proxy-kubernetes > /dev/null
+      Acquire::https::Proxy::apt.kubernetes.io "{{ https_proxy }}";
+      Acquire::https::Proxy::packages.cloud.google.com "{{ https_proxy }}";
+      EOF
+      fi
+      echo "deb [signed-by=/usr/local/keyrings/packages.cloud.google.com-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
+    args:
+      creates: /etc/apt/sources.list.d/kubernetes.list
+  - name: Updating APT cache
+    ansible.builtin.apt: update_cache=yes force_apt_get=yes

@@ -1,0 +1,18 @@
+- hosts: selection
+  vars:
+    unit: kubelet
+    logpath: /home/tao/.ikt/ansible/logs
+    metadata:
+      description: Fetch a journald log for the specified unit
+      query:
+        string: Unit to fetch log for
+        function: string
+        variable: unit
+      quiet: True
+      category: Administration
+  gather_facts: no
+  become: True
+  become_user: root
+  tasks:
+  - name: Fetch a journald log
+    shell: journalctl -u "{{ unit }}" --no-pager -n 1000

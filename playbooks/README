@@ -1,0 +1,55 @@
+This directory holds pre-defined ansible playbooks.
+
+Playbooks as used by iKT are a bit stricter than generic Ansible playbooks:
+
+• All playbooks MUST have:
+  vars:
+    metadata:
+      # A description of the action;
+      # this is used in the menu of playbook actions
+      description: <string>
+
+• Additionally they MAY set:
+  vars:
+    metadata:
+      # Limit the playbook to these menus; possible values:
+      # - internal (never show in any menus; used by internal tasks)
+      # - nodes
+      # - inventory
+      playbook-types: <list>
+
+      # A question to ask before running the playbook
+      # string: The question to ask
+      # function: The callback to use when inputting the data
+      #           valid functions are:
+      #           string -- input a string
+      #           yesno -- input a boolean; yes/no
+      # variable: the variable to set wit the results
+      query:
+        string: <string>
+        function: {string,yesno}
+        variable: <string/boolean>
+
+      # Whether or not to allow the playbook to be run on control-plane(s)
+      # never -- never allow the playbook to be run on control-plane
+      # single -- only allow if control-plane is the only selected node
+      # always -- always allow the playbook to be run on control-plane [default]
+      allow-on-control-plane: {never,single,always}
+
+      # Ask for confirmation before running the playbook
+      confirm: <boolean>
+
+      # Update the inventory with cluster information before running the playbook
+      requires-cluster-info: <boolean>
+
+      # A list of playbooks to run before this playbook
+      run-before: <list>
+
+      # A list of playbooks to run after this playbook
+      run-after: <list>
+
+      # A list of groups to add the host to after the playbook completes
+      add-to-groups: <list>
+
+      # A list of groups to remove the host from after the playbook completes
+      remove-from-groups: <list>

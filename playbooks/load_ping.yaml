@@ -1,0 +1,21 @@
+- hosts: selection
+  vars:
+    metadata:
+      description: Ping nodes by fetching /proc/{loadavg,meminfo,stat}
+#      playbook-types:
+#      - internal
+      category: Information
+      quiet: True
+  gather_facts: no
+  become: True
+  become_user: root
+  tasks:
+  - name: Fetch /proc/loadavg
+    command: cat /proc/loadavg
+    changed_when: False
+  - name: Fetch /proc/meminfo
+    command: cat /proc/meminfo
+    changed_when: False
+  - name: Fetch /proc/stat
+    command: cat /proc/stat
+    changed_when: False

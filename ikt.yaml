@@ -1,0 +1,267 @@
+# Note: while you can do all configuration here, the recommended
+# way to change the configuration options is to put your changes
+# in ikt.yaml.d, split into separate files for each category.
+# This way you can keep the default configuration as a reference.
+# This also simplifies a workflow where site-local configurations
+# can be imported without having to touch the distributed version
+# of ikt.yaml.
+#
+# Using ikt.yaml.d also makes it easier to debug configuration
+# issues.
+#
+# Using this configuration file you can change the defaults
+# for various options; note that a bit of sanity checking
+# will occur. Too insane values will be silently overriden.
+# Incorrect syntax and non-existing keys will cause exceptions.
+#
+# You can specify the default field to sort list by using:
+# VIEW:
+#   sortcolumn: COLUMN
+#
+# You can also specify what fields to show in list using:
+# VIEW:
+#   custom_fields: [FIELD1, FIELD2, ...]
+#   *or*
+#   custom_fields:
+#   - FIELD1
+#   - FIELD2
+#   ...
+#
+# With a few exceptions, all fields are valid sortcolumns.
+# The list of valid fields for each view is available using
+# iku --list-views; it will list all VIEWs, their default
+# sort field, and all fields in the order they will be shown.
+#
+# Note that the defaults are shown; the list does NOT take
+# into account customisations that have been made in this file.
+#
+# Also note that unless you set "hide_unavailable_api: False",
+# the list is likely to contain a lot more VIEWs than you'll
+# see when using the program.
+#
+# Finally, "name" and "namespace" will *always* be included
+# in the list, even if excluded (if not includede they'll be
+# prepended to the list, meaning that if a custom order is
+# preferred you should make sure to include them).
+#
+# Other configuration options are described below
+
+# Global configuration options
+Global:
+  # The theme to use; if no suffix is used, the program will
+  # try to load THEME.yaml if loading THEME fails
+  # theme: default
+
+  # Default indentation level when dumping YAML
+  # indent: 4
+
+  # The default view to use when calling iku without
+  # arguments; to get the selector either use "Selector"
+  # or comment this out
+  # defaultview: ""
+
+  # Hide unavailable APIs in the selector menu
+  # the list of available APIs can be updated by accessing the selection
+  # menu using F3 instead of F2
+  # If this option is set to False, unavailable APIs will be listed
+  # but dimmed out and unselectable instead
+  # hide_unavailable_apis: True
+
+# Networking:
+# These settings are for the system, not internal to K8s.
+# They are used for communicating with other computers outside the context
+# of Kubernetes network, for instance when fetching updates.
+Network:
+  http_proxy:
+  https_proxy:
+  no_proxy:
+
+  # This option might be necessary if you're running iku from another
+  # system than the control plane is running on.
+  # allow_insecure_requests: False
+
+Ansible:
+  # This determines the parallelism of the commands being executed;
+  # the default used by ansible is 5, which makes things slow in any
+  # reasonably sized Kubernetes cluster
+  # forks: 50
+
+  # User for ansible connections
+  # Unless the user you're running iku as is the same as the user to login as on nodes
+  # you probably want to specify this either here or in the inventory
+  #
+  # This user will also be used when ssh:ing to nodes
+  # ansible_user:
+
+  # Password for users
+  # If you use a password here you should use an ansible vault;
+  # but the best way to handle this is to copy your hostkey to the nodes instead
+  # ansible_password:
+
+  # If this is set to true all logs are saved whenever you execute ansible actions;
+  # these logs can later be accessed on a per host (via the node/host view)
+  # or per action (in the logs view)
+  # save_logs: True
+
+  # Path to directories with locally installed playbooks; this can also be used to override
+  # the default playbooks--any playbook with the same name as one of the system playbooks
+  # will be overridden by locally installed playbooks
+  #
+  # Use {HOME} as part of the path to specify that the playbooks are in the user's home directory
+  # local_playbooks:
+  # - dir1
+  # - dir2
+  # - ...
+
+# Settings to use when configuring docker
+Docker:
+  # insecure_registries:
+
+Containerd:
+  # Registry mirrors for containerd; format:
+  # [ mirror, endpoint ]
+  # registry_mirrors:
+
+Mouse:
+  # If your mouse has a scrollwheel or physical up and down buttons
+  # you can add their bitpatterns for up and down below and enable this;
+  # there seem to be no established standards for this
+  # (at least not in python curses),
+  # so the defaults here is what worked with the setup this is tested on.
+  # enablescroll: True
+
+  # This seems to work with at least some Logitech mice:
+  # - 0b10000000000000000000
+  # - 0b10000000000000000
+  # scrollup: 0b10000000000000000000
+
+  # At least two different possible values have been identified for down so far:
+  # - 0b1000000000000000000000000000
+  # - 0b1000000000000000000000
+  # scrolldown: 0b1000000000000000000000000000
+
+Nodes:
+  # If you *really* like to play Russian roulette
+  # with five bullets in the chamber, you can disable
+  # strict host key checking. This makes ssh accept
+  # unknown and modified host keys.
+  #
+  # This opens you up to Man in the Middle (MITM) attacks,
+  # and is, again, NOT for use on production systems.
+  # For test setups it can, however, be convenient.
+  # disablestricthostkeychecking: False
+
+Pods:
+  # Filter out successfully completed pods in Pod List
+  # filter_succeeded: False
+
+  # Merge repeated messages; this will display the first occurence
+  # and then a count of how many times the message is repeated
+  # merge_repeated_messages: False
+
+  # Resources to filter out on the Pod Info page;
+  # filtering out resources will impair the navigation
+  # between pages and makes it harder to see logical
+  # connections between resources
+  #
+  # This needs to be specified as a list;
+  # containers and init_containers cannot be filtered
+  # out since there's no way to get to these resources
+  # without going through the Pod Info page
+  #
+  # filter_resources:
+  # - node
+  # - controller
+  # - persistent_volume_claims
+  # - service_account
+  # - secrets
+  # - config_maps
+  # - events
+  # - scheduler
+  # - pod_disruption_budgets
+  # - priority_class
+
+  # The number of container log lines shown by default
+  # logsize: 4000
+
+  # Default loglevel:
+  # - Emergency
+  # - Alert
+  # - Critical
+  # - Error
+  # - Warning
+  # - Notice
+  # - Info
+  # - Debug
+  # loglevel: Info
+
+  # Fold log messages by default;
+  # choosing False here will (try)
+  # to expand lines that are valid JSON or python dicts,
+  # as well as lines that contain multiple key=value pairs
+  # fold_msg: True
+
+  # How to show the log facility:
+  # Full -- For files, show the full path (default)
+  # Short -- For files, only show the filename and the line#
+  # None -- Do not show the facility at all
+  # show_facility: "Full"
+
+  # Show timestamps
+  # show_timestamps: True
+
+  # Show borders and scrollbars
+  # show_borders: True
+
+Inventory:
+  # Mountpoints to skip in the list of mounts for a host;
+  # virtual file systems such as /proc, /sys, etc are always skipped.
+  # You can use * as a prefix or suffix (but not infix) to do partial matches
+  # mountpoint_skiplist:
+  # - /boot/efi
+  # - /var/lib/origin/*
+  # - /run/*
+  # - *@docker*
+
+  # Devices to skip in the list of mounts for a host; devices that have no
+  # corresponding ansible_device are skipped unless they are NFS mounts
+  # (support other network filesystems will be added later)
+  # You can use * as a prefix or suffix or both to do partial matches,
+  # but infix ("a*b") is not supported
+  # device_skiplist:
+  # - loop*
+
+  # Pinging the hosts to get their status is done using ansible
+  # and can thus be a slow operation (roughly 3 seconds!);
+  # configure the ping behaviour using this option:
+  # Never -- Do not ping nodes
+  # Lazy -- Only ping nodes on refresh
+  # Always -- Ping nodes on start and on refresh
+  # ping_hosts: "Lazy"
+
+  # Deprecated way to disable ping:
+  # disable_ping: False
+
+Endpoints:
+  # By default all addresses and ports are joined
+  # into two categories; ready and not ready.
+  # When there are a lot of services running on one node,
+  # or multiple nodes supporting one service,
+  # or even multiple nodes all running multiple services,
+  # this can result in extremely long lines.
+  #
+  # Using this option you can split the subsets into multiple entries.
+  # Valid options:
+  # None -- No expansion occurs (default)
+  # Address -- Each address gets its own entry
+  # Port -- Each service gets its own entry
+  # Both -- Each adress/service combination gets its own entry
+  # expand_subsets: None
+
+# Use this section to specify preferred versions of packages to install
+# using playbooks; having the information here is preferred over hardcoding
+# the versions in the playbooks.
+# Packages:
+#  - <package name>:
+#      suffix: -<suffix>
+#      version: <debian package version>

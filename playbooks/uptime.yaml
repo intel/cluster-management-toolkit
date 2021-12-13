@@ -1,0 +1,10 @@
+- hosts: selection
+  vars:
+    metadata:
+      description: Uptime
+      category: Information
+  gather_facts: no
+  tasks:
+  - name: Check uptime
+    command: /usr/bin/uptime
+    changed_when: False

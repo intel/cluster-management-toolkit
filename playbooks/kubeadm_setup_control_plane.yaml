@@ -1,0 +1,39 @@
+- hosts: selection
+  vars:
+    metadata:
+      description: Setup a Kubernetes control plane using kubeadm
+      time_consumption: Slow
+      playbook-types:
+      - internal
+      category: Setup
+  gather_facts: no
+  become: True
+  become_user: root
+  tasks:
+  - name: Checking if cluster is already running
+    shell: |
+      sudo lsof -i -P -n | grep 6443.*LISTEN > /dev/null
+    register: port_check
+    ignore_errors: yes
+  - name: Updating APT cache
+    apt: update_cache=yes force_apt_get=yes
+    when: port_check.rc == 1
+  - name: Gathering package facts
+    package_facts:
+      manager: apt
+    when: port_check.rc == 1
+  - name: Pulling Kubernetes images
+    shell: |
+      if [ -n "{{ https_proxy }}" ]; then
+        export https_proxy={{ https_proxy }}
+      else
+        export https_proxy=
+      fi
+      kubeadm config images pull
+    when: port_check.rc == 1
+  - name: Initialising Kubernetes cluster
+    command: kubeadm init --skip-token-print --pod-network-cidr={{ pod_network_cidr }}
+    when: port_check.rc == 1
+  - name: Create permanent join token
+    command: kubeadm token create --ttl 0 --print-join-command
+    when: port_check.rc == 1

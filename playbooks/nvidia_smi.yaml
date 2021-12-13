@@ -1,0 +1,15 @@
+- hosts: selection
+  vars:
+    metadata:
+      description: Show NVidia information
+      category: Information
+  gather_facts: no
+  tasks:
+  - name: Show NVidia information
+    shell: |
+      if [ -x /usr/bin/nvidia-smi ]; then
+        nvidia-smi | sed -e '/^\s*$/q'
+      else
+        printf -- "[SKIP] nvidia-smi not installed\n"
+      fi
+    changed_when: False

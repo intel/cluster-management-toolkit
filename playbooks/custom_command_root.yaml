@@ -1,0 +1,16 @@
+- hosts: selection
+  vars:
+    metadata:
+      description: Execute command (as root)
+      confirm: True
+      query:
+        string: Command to execute
+        function: string
+        variable: command
+      category: Administration
+  gather_facts: no
+  become: True
+  become_user: root
+  tasks:
+  - name: Execute command as root
+    shell: "{{ command }}"

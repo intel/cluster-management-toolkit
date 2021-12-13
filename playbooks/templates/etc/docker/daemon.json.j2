@@ -1,0 +1,13 @@
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+{% if (insecure_registries is defined) and insecure_registries %}
+  "storage-driver": "overlay2",
+  "insecure-registries": {{ insecure_registries | to_json(ensure_ascii = False) }}
+{% else %}
+  "storage-driver": "overlay2"
+{% endif %}
+}

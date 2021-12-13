@@ -1,0 +1,22 @@
+- hosts: controlplane
+  vars:
+    metadata:
+      description: Copy /etc/kubernetes/admin.conf from control plane to .kube on localhost
+      playbook-types:
+      - internal
+      category: Setup
+  gather_facts: no
+  become: True
+  become_user: root
+  tasks:
+  - name: Creating .kube if it doesn't exist
+    file:
+      path: ~/.kube
+      state: directory
+    delegate_to: localhost
+  - name: Copying /etc/kubernetes/admin.conf from control plane to localhost
+    fetch:
+      src: /etc/kubernetes/admin.conf
+      dest: ~/.kube/config.{{ cluster_name }}
+      flat: yes
+      mode: "0600"

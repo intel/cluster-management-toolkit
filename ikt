@@ -1,0 +1,273 @@
+#! /usr/bin/env python3
+# Requires: ansible
+# Requires: python3 (>= 3.6)
+# Requires: python3-natsort
+# Requires: python3-openssl
+# Recommends: python3-ujson
+
+from functools import reduce
+import os
+from pathlib import Path
+import re
+import subprocess
+from subprocess import PIPE, STDOUT
+import sys
+import yaml
+
+try:
+	from natsort import natsorted
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+
+try:
+	import OpenSSL
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
+
+from commandparser import parse_commandline
+
+HOMEDIR = str(Path.home())
+IKTDIR = f"{HOMEDIR}/.ikt"
+IKT_CONFIG_FILENAME = "ikt.yaml"
+IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
+IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
+
+THEME_DIRNAME = "themes"
+THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
+THEME_PATH = f"{THEMEDIR}/default.yaml"
+
+from iktprint import iktprint, init_iktprint
+
+import about
+PROGRAMNAME = "ikt"
+PROGRAMVERSION = "0.1"
+PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
+PROGRAMAUTHORS = "Written by David Weinehall."
+
+def deep_get(dictionary, path, default = None):
+	if dictionary is None:
+		return default
+	if path is None or len(path) == 0:
+		return default
+	return reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
+
+# This executes a command without capturing the output
+def execute_command(args, env = None):
+	if env is None:
+		retval = subprocess.run(args)
+	else:
+		retval = subprocess.run(args, env = env)
+	return retval.returncode == 0
+
+# This executes a command with the output captured
+def execute_command_with_response(args):
+	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+	return result.stdout.decode("utf-8")
+
+def cordon_nodes(options = None, args = None):
+	_args = ["kubectl", "cordon"]
+	_args += args
+	execute_command(_args)
+
+def drain_nodes(options = None, args = None):
+	# Check kubectl version
+	_args = ["kubectl", "version"]
+	response = execute_command_with_response(_args).splitlines()
+	tmp = re.match(r"^Client Version: version.Info{Major:\"(.)\", Minor:\"(.+?)\"", response[0])
+	_args = ["kubectl", "drain"]
+
+	for opt, optarg in options:
+		if opt in ["--delete-emptydir-data", "--delete-local-data"]:
+			if int(tmp[1]) >= 1 and int(tmp[2]) >= 20:
+				_args.append("--delete-emptydir-data")
+			else:
+				_args.append("--delete-local-data")
+		elif opt == "--disable-eviction":
+			if int(tmp[1]) >= 1 and int(tmp[2]) >= 18:
+				_args.append(opt)
+		elif opt == "--ignore-daemonsets":
+			_args.append(opt)
+
+	_args += args
+	execute_command(_args)
+
+def uncordon_nodes(options = None, args = None):
+	_args = ["kubectl", "uncordon"]
+	_args += args
+	execute_command(_args)
+
+def setup_nodes(options = None, args = None):
+	return 0
+
+def upgrade_nodes(options = None, args = None):
+	selection = []
+	nodes = []
+	controlplanes = []
+
+	from kubernetes_helper import KubernetesHelper
+	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+
+	vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
+	if vlist is not None:
+		for node in vlist:
+			node_name = deep_get(node, "metadata#name")
+			node_roles = kh.get_node_roles(node)
+			if "control-plane" in node_roles:
+				controlplanes = node_name
+				continue
+			nodes.append(node_name)
+
+	if len(args) == 1 and args[0] == "ALL":
+		selection = nodes
+	else:
+		for arg in args:
+			if arg in controlplanes:
+				iktprint([(f"Error: ", "error"), ("“", "default"), (arg, "hostname"), ("“ is a control-plane and should be upgraded using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
+				sys.exit(2)
+			if arg not in nodes:
+				iktprint([(f"Error: ", "error"), ("“", "default"), (arg, "hostname"), ("“ is not a part of the cluster; aborting.", "default")], stderr = True)
+				sys.exit(2)
+		selection = args
+
+	sys.exit("This is not implemented yet")
+
+def get_resource(options = None, args = None):
+	namespaces = ["default"]
+
+	if options is not None:
+		for opt, optarg in options:
+			# This is a tuple option, so the easiest way is to check this way
+			if "--all-namespaces" in opt:
+				namespaces = None
+			elif "--namespace" in opt:
+				namespaces = optarg.split(",")
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	# We might have to get the resources across multiple namespaces, so we need to do multiple requests
+	return
+
+ikt_commandline = {
+	"Cordon Node": {
+		"command": ["cordon"],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Cordon ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"min_args": 1,
+		"max_args": 1,
+		"callback": cordon_nodes,
+	},
+	"Drain Node": {
+		"command": ["drain"],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Drain ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"min_args": 1,
+		"max_args": 1,
+		"options": {
+			"--delete-emptydir-data": {
+				"description": [("Drain nodes even if this would cause ", "description"), ("emptyDir", "emphasis"), (" data to be deleted", "description")],
+			},
+			"--delete-local-data": {
+				"description": [("This is an alias for “", "description"), ("--delete-emptydir-data", "option"), ("“", "description")],
+			},
+			"--disable-eviction": {
+				"description": [("Delete pods instead of using evict; this bypasses ", "description"), ("PodDisruptionBudget", "emphasis")],
+			},
+			"--ignore-daemonsets": {
+				"description": [("Ignore pods managed by daemonsets; by default ", "description"), ("drain ", "command"), ("will abort if there are such pods running on the node", "description")],
+			},
+		},
+		"callback": drain_nodes,
+	},
+	"Drain Node (Force)": {
+		"command": ["force-drain"],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Force-drain ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"extended_description": [
+			[("When a node is force-drained, pods belonging to daemonsets are ignored, and ", "description"), ("emptyDir", "emphasis"), (" data is deleted", "description")],
+		],
+		"min_args": 1,
+		"max_args": 1,
+		"options": {
+			"--disable-eviction": {
+				"description": [("Delete pods instead of using evict; this bypasses ", "description"), ("PodDisruptionBudget", "emphasis")],
+			},
+		},
+		"implicit_options": [
+			("--delete-emptydir-data", None),
+			("--ignore-daemonsets", None),
+		],
+		"callback": drain_nodes,
+	},
+	"Uncordon Node": {
+		"command": ["uncordon"],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Uncordon ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"min_args": 1,
+		"max_args": 1,
+		"callback": uncordon_nodes,
+	},
+	"Upgrade Node": {
+		"command": ["upgrade-node"],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Upgrade Kubernetes on ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"extended_description": [
+			[("Upgrade Kubernetes on ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument"), (" to the version in use on the control-plane(s);", "description")],
+			[("run this on all nodes after running “", "description"), (f"{about.admin_program_name}", "programname"), (" upgrade-control-plane", "command"), ("“", "description")],
+		],
+		"min_args": 1,
+		"max_args": 1,
+		"callback": upgrade_nodes,
+	},
+	"Get": {
+		"command": ["get", "l", "list"],
+		"values": [("RESOURCE", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("List information about ", "description"), ("RESOURCE", "argument"), (",", "separator"), ("...", "argument")],
+		"min_args": 1,
+		"max_args": 1,
+		"options": {
+			("-N", "--namespace"): {
+				"values": [("NAMESPACE", "argument"), (",", "separator"), ("...", "argument")],
+				"description": [("Only show resources belonging to ", "description"), ("NAMESPACE", "argument"), (",", "separator"), ("...", "argument")],
+				"requires_arg": True,
+			},
+			("-A", "--all-namespaces"): {
+				"description": [("Show resources across all namespaces", "description")],
+			},
+		},
+		"callback": get_resource,
+	},
+	"extended_description": [
+		[("You can use “", "description"), ("ALL", "emphasis"), ("“ as a substitute for all resources in most cases;", "description")],
+		[("for instance “", "description"), (f"{about.tool_program_name}", "programname"), (" upgrade-node ", "command"), ("ALL", "emphasis"), ("“ will upgrade Kubernetes on all nodes", "description")],
+	]
+}
+
+def get_programname(callname):
+	callnames = {
+		"ikt": ikt_commandline,		# main name
+		#"iktdep": dep_commandline,	# deployment shortcut
+		#"iktds": ds_commandline,	# daemon set shortcut
+		#"iktrs": rs_commandline,	# replica set shortcut
+		#"iktjob": job_commandline,	# job shortcut
+		#"iktnode": node_commandline,	# node shortcut
+		#"iktpod": pod_commandline,	# pod shortcut
+	}
+
+	if callname not in callnames:
+		sys.exit(f"{PROGRAMNAME} called with unknown name {callname}; aborting.")
+
+	return callname, callnames[callname]
+
+def main():
+	global programname
+	argv = sys.argv
+
+	init_iktprint(THEME_PATH)
+	programname, commandline = get_programname(os.path.basename(argv[0]))
+
+	command, options, args = parse_commandline(programname, PROGRAMVERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, argv, commandline)
+
+	return command(options, args)
+
+if __name__ == "__main__":
+	main()

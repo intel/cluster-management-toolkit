@@ -1,0 +1,13 @@
+- hosts: selection:!controlplane
+  vars:
+    metadata:
+      description: Reboot
+      confirm: True
+      allow-on-control-plane: never
+      category: Administration
+  gather_facts: no
+  become: True
+  become_user: root
+  tasks:
+  - name: Reboot system
+    reboot:

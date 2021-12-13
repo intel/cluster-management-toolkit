@@ -1,0 +1,16 @@
+- hosts: selection
+  vars:
+    metadata:
+      description: Tear down kubeadm cluster
+      time_consumption: Slow
+      playbook-types:
+      - internal
+      category: Administration
+  gather_facts: no
+  become: True
+  become_user: root
+  tasks:
+  - name: Tear down Kubernetes
+    shell: |
+      kubeadm version > /dev/null 2> /dev/null && kubeadm reset -f
+      killall -q kube-apiserver || true

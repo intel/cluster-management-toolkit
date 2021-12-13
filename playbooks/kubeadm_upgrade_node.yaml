@@ -1,0 +1,45 @@
+- hosts: selection
+  vars:
+    metadata:
+      description: Update a Kubernetes node using kubeadm
+      time_consumption: Slow
+      playbook-types:
+      - node
+      confirm: True
+      allow-on-control-plane: never
+      requires-cluster-info: True
+      category: Administration
+  gather_facts: no
+  become: True
+  become_user: root
+  tasks:
+  - name: Updating APT cache
+    apt: update_cache=yes force_apt_get=yes
+  - name: apt-mark unhold kubeadm kubelet kubectl
+    command: apt-mark unhold kubeadm kubelet kubectl
+  - name: Installing new version of kubeadm
+    apt:
+      pkg:
+      - kubeadm={{ control_plane_k8s_version }}
+      force_apt_get: yes
+  - name: Upgrading node
+    shell: |
+      if [ -n "{{ https_proxy }}" ]; then
+        export https_proxy={{ https_proxy }}
+      else
+        export https_proxy=
+      fi
+      kubeadm upgrade node
+  - name: Installing new versions of kubelet and kubectl
+    apt:
+      pkg:
+      - kubelet={{ control_plane_k8s_version }}
+      - kubectl={{ control_plane_k8s_version }}
+      force_apt_get: yes
+  - name: apt-mark hold kubeadm kubelet kubectl
+    command: apt-mark hold kubeadm kubelet kubectl
+  - name: Restarting kubelet
+    systemd:
+      name: kubelet
+      daemon_reload: yes
+      state: restarted

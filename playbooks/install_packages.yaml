@@ -1,0 +1,33 @@
+- hosts: selection:!nas
+  vars:
+    metadata:
+      description: Install custom packages
+      time_consumption: Potentially slow
+      playbook-types:
+      - inventory
+      - node
+      - internal
+      confirm: True
+      query:
+        string: Packages to install (space separated)
+        function: string
+        variable: packages
+      category: Administration
+  gather_facts: yes
+  become: True
+  become_user: root
+  tasks:
+  - name: Updating APT cache
+    apt: update_cache=yes force_apt_get=yes
+    when: ansible_os_family == 'Debian'
+  - name: Installing custom packages
+    apt:
+      pkg: "{{ packages }}"
+      force_apt_get: yes
+      # allow downgrading packages
+      force: yes
+    when: ansible_os_family == 'Debian'
+  - name: Marking packages as held
+    shell: apt-mark hold "{{ item }}" || true
+    loop: "{{ vars['held_packages'] }}"
+    when: ansible_os_family == 'Debian'

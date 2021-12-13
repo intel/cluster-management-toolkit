@@ -1,0 +1,2235 @@
+#! /usr/bin/env python3
+# Requires: python3 (>= 3.6)
+# Requires: python3-natsort
+# Requires: python3-openssl
+# Requires: python3-paramiko
+
+import base64
+from collections import OrderedDict
+from functools import partial, reduce
+from getpass import getuser
+from glob import glob
+import hashlib
+# ujson is much faster than json,
+# but it might not be available
+try:
+	import ujson as json
+except ModuleNotFoundError:
+	import json
+import os
+from pathlib import Path
+import paramiko
+import re
+from shutil import which
+import socket
+import subprocess
+from subprocess import PIPE, STDOUT
+import sys
+import tarfile
+import tempfile
+import time
+import yaml
+
+try:
+	from natsort import natsorted
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run ikt-install?")
+
+try:
+	import OpenSSL
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: You probably need to install python3-openssl; did you forget to run ikt-install?")
+
+try:
+	import urllib3
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
+
+from commandparser import parse_commandline
+
+from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_set_vars, ansible_run_playbook_on_selection, ansible_add_hosts, ansible_get_hosts_by_group
+from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
+
+HOMEDIR = str(Path.home())
+BINDIR = f"{HOMEDIR}/bin"
+IKTDIR = f"{HOMEDIR}/.ikt"
+IKT_HOOKS_DIR = f"{IKTDIR}/hooks"
+DEPLOYMENTDIR = f"{IKTDIR}/deployments"
+ANSIBLE_PLAYBOOK_DIRNAME = "playbooks"
+PLAYBOOKDIR = f"{IKTDIR}/{ANSIBLE_PLAYBOOK_DIRNAME}"
+IKT_CONFIG_FILENAME = "ikt.yaml"
+IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
+IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
+IKT_INSTALLATION_INFO = f"{IKTDIR}/installation_info.yaml"
+
+from iktprint import iktinput, iktinput_password, iktprint, init_iktprint
+
+import about
+PROGRAMDESCRIPTION = "Setup or teardown a Kubernetes cluster"
+PROGRAMAUTHORS = "Written by David Weinehall."
+
+THEME_DIRNAME = "themes"
+THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
+THEME_PATH = f"{THEMEDIR}/default.yaml"
+
+iktconfig = None
+
+DEFAULT_CNI = "weave"
+
+prepare_targets = OrderedDict()
+prepare_targets = {
+	"kubeadm": {
+		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
+		"playbooks": [
+			f"{ANSIBLE_PLAYBOOK_DIR}/prepare_passwordless_ansible.yaml",
+			f"{ANSIBLE_PLAYBOOK_DIR}/prepare_control_plane.yaml",
+			f"{ANSIBLE_PLAYBOOK_DIR}/add_kubernetes_repo.yaml",
+			f"{ANSIBLE_PLAYBOOK_DIR}/install_packages.yaml",
+		],
+		"deb_packages": [
+			"docker.io",
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+			"kubernetes-cni",
+		],
+		"deb_packages_held": [
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+		],
+	},
+	"localhost": {
+		"pretty_name": [("host system", "programname")],
+		"playbooks": [
+			f"{ANSIBLE_PLAYBOOK_DIR}/prepare_passwordless_ansible.yaml",
+			f"{ANSIBLE_PLAYBOOK_DIR}/add_kubernetes_repo.yaml",
+			f"{ANSIBLE_PLAYBOOK_DIR}/install_packages.yaml",
+		],
+		"deb_packages": [
+			"ansible",
+			# If available
+			# "ansible-mitogen",
+			"kubectl",
+		],
+		"deb_packages_held": [
+			"kubectl",
+		],
+	},
+}
+
+setup_control_plane_targets = OrderedDict()
+setup_control_plane_targets = {
+	"kubeadm": {
+		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
+		"playbooks": [
+			f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_setup_control_plane.yaml",
+			f"{ANSIBLE_PLAYBOOK_DIR}/fetch_kube_config.yaml",
+		],
+	},
+}
+
+upgrade_control_plane_targets = OrderedDict()
+upgrade_control_plane_targets = {
+	"kubeadm": {
+		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
+		"playbooks": [
+			f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_upgrade_control_plane.yaml",
+		],
+	},
+	"localhost": {
+		"pretty_name": [("host system", "programname")],
+		"playbooks": [
+			f"{ANSIBLE_PLAYBOOK_DIR}/install_packages.yaml",
+		],
+		"deb_packages": [
+			"kubectl",
+		],
+		"deb_packages_held": [
+			"kubectl",
+		],
+        },
+}
+
+teardown_control_plane_targets = OrderedDict()
+teardown_control_plane_targets = {
+	"kubeadm": {
+		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
+		"playbooks": [
+			f"{ANSIBLE_PLAYBOOK_DIR}/teardown_cni.yaml",
+			f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_teardown_control_plane.yaml",
+		],
+	},
+}
+
+purge_control_plane_targets = OrderedDict()
+purge_control_plane_targets = {
+	"kubeadm": {
+		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
+		"playbooks": [
+			f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_purge.yaml",
+		],
+		"deb_packages": [
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+			"kubernetes-cni",
+		],
+		"deb_packages_held": [
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+			"kubernetes-cni",
+		],
+	},
+}
+
+def deep_get(dictionary, path, default = None):
+	if dictionary is None:
+		return default
+	if path is None or len(path) == 0:
+		return default
+	return reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
+
+def mkdir_if_not_exists(directory):
+	if not os.path.exists(directory):
+		iktprint([("mkdir ", "programname"), (f"{directory}", "path")])
+		os.mkdir(directory)
+
+def copy_if_not_exists_sudo(src, dst):
+	retval = True
+	if not os.path.exists(dst):
+		iktprint([("cp (sudo) ", "programname"), (f"{src} ", "path"), (f"{dst}", "path")])
+		args = ["sudo", "mv", src, dst]
+		retval = execute_command_with_response(args)
+
+def remove_if_exists_sudo(path):
+	if os.path.exists(path):
+		iktprint([("rm (sudo) ", "programname"), (f"{path}", "path")])
+		args = ["sudo", "rm", path]
+		execute_command_with_response(args)
+
+def set_file_owner_and_group_sudo(path, user, group):
+	iktprint([("chown (sudo) ", "programname"), (f"{user}", "argument"), (":", "separator"), (f"{group} ", "argument"), (f"{path}", "path")])
+	args = ["sudo", "chown", f"{user}:{group}", path]
+	execute_command_with_response(args)
+
+def set_file_permissions(path, permissions):
+	iktprint([("chmod ", "programname"), (f"{permissions} ", "argument"), (f"{path}", "path")])
+	args = ["chmod", permissions, path]
+	execute_command_with_response(args)
+
+def set_file_permissions_sudo(path, permissions):
+	iktprint([("chmod (sudo) ", "programname"), (f"{permissions} ", "argument"), (f"{path}", "path")])
+	args = ["sudo", "chmod", permissions, path]
+	execute_command_with_response(args)
+
+def rmdir_recursive(directory):
+	permitted = [
+		"/etc/cni",
+		"/etc/kubernetes",
+		"/etc/systemd/system/kubelet.service.d",
+		"/opt/cni",
+		"/var/lib/cni",
+		"/var/lib/etcd",
+		"/var/lib/kubelet",
+		f"{DEPLOYMENTDIR}",
+		f"{HOMEDIR}/.kube",
+	]
+
+	if directory == "/" or directory not in permitted:
+		raise Exception(f"Error: There's something seriously wrong; an attempt to remove the directory “{directory}“ was just made. Aborting.")
+
+	if os.path.isdir(directory):
+		iktprint([(f"  {directory}", "path")])
+		args = ["sudo", "rm", "-r", directory]
+		execute_command_with_response(args)
+
+def get_installation_info():
+	info = None
+
+	try:
+		with open(IKT_INSTALLATION_INFO, "r") as f:
+			info = yaml.safe_load(f)
+	except FileNotFoundError:
+		pass
+
+	if info is None:
+		info = {
+			"cluster_name": "<none>",
+			"distro": "<none>",
+			"version": "<none>",
+			"requested_version": "<none>",
+			"state": "<none>",
+			"phase": "<none>",
+			"phase_skiplist": [],
+			"cni": "<none>",
+			"pod_network_cidr": "<none>",
+		}
+
+	return info
+
+def update_installation_info(cluster_name = None, distro = None, version = None, requested_version = None, state = None, phase = None, phase_skiplist = None, cni = None, pod_network_cidr = None):
+	info = get_installation_info()
+
+	if cluster_name is not None:
+		info["cluster_name"] = cluster_name
+	if distro is not None:
+		info["distro"] = distro
+	if version is not None:
+		info["version"] = version
+	if requested_version is not None:
+		info["requested_version"] = requested_version
+	if state is not None:
+		info["state"] = state
+	if phase is not None:
+		info["phase"] = phase
+	if phase_skiplist is not None:
+		info["phase"] = list(phase_skiplist)
+	if cni is not None:
+		info["cni"] = cni
+	if pod_network_cidr is not None:
+		info["pod_network_cidr"] = pod_network_cidr
+
+	with open(IKT_INSTALLATION_INFO, "w") as f:
+		f.write(yaml.dump(info, default_flow_style = False, sort_keys = False))
+
+	return info
+
+def check_and_print_status(retval):
+	if retval == True:
+		iktprint([("OK", "ok")])
+	else:
+		iktprint([("NOT OK", "notok"), ("; aborting.", "default")])
+		sys.exit(2)
+
+def weave_urlgetter():
+	args = ["kubectl", "version"]
+	kubectl_version = execute_command_with_response(args).encode("ascii")
+	version_base64 = base64.urlsafe_b64encode(kubectl_version).decode("ascii")
+	url = f"https://cloud.weave.works/k8s/net?k8s-version=\"{version_base64}\""
+	return url
+
+DEFAULT_POD_NETWORK_CIDR = "10.244.0.0/16"
+
+def str_presenter(dumper, data):
+	if "\n" in data:
+		return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+	return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+def patch_cni_flannel(cni_path, pod_network_cidr):
+	# Ideally we should patch this using a round-trip capable YAML parser,
+	# such as ruamel
+	sedstr = f's#^\(.*"\)Network": "10.244.0.0/16",$#\\1Network:": "{pod_network_cidr}",#'
+	args = ["sed", "-i", "-e", sedstr, cni_path]
+	check_and_print_status(execute_command(args))
+
+cni_data = {
+	"antrea": {
+		"url": "https://raw.githubusercontent.com/vmware-tanzu/antrea/main/build/yamls/antrea.yml",
+		"filename": "antrea.yaml",
+	},
+	"calico": {
+		"url": "https://docs.projectcalico.org/manifests/calico.yaml",
+		"filename": "calico.yaml",
+	},
+	"canal": {
+		"url": "https://docs.projectcalico.org/manifests/canal.yaml",
+		"filename": "canal.yaml",
+	},
+	"cilium": {
+		"url": "https://raw.githubusercontent.com/cilium/cilium/v1.9/install/kubernetes/quick-install.yaml",
+		"filename": "cilium.yaml",
+	},
+	"flannel": {
+		"url": "https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
+		"filename": "flannel.yaml",
+		"patch_cni": patch_cni_flannel,
+	},
+	"kube-router": {
+		"url": "https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml",
+		"filename": "kube-router.yaml",
+	},
+	"weave": {
+		"urlgetter": weave_urlgetter,
+		"filename": "weave.yaml",
+	},
+}
+
+def setup_cni(cni, pod_network_cidr):
+	if cni not in cni_data:
+		iktprint([("Error: ", "error"), (f"{cni}", "argument"), (" is not a valid/supported CNI; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	url = deep_get(cni_data, f"{cni}#url")
+	if url is None:
+		urlgetter = deep_get(cni_data, f"{cni}#urlgetter")
+		if urlgetter is None:
+			raise Exception(f"Both URL and URL getter for {cni} are empty; this is a programming error.")
+		url = urlgetter()
+	filename = deep_get(cni_data, f"{cni}#filename")
+	patch_cni = deep_get(cni_data, f"{cni}#patch_cni", None)
+	cni_path = f"{DEPLOYMENTDIR}/cni/{filename}"
+
+	mkdir_if_not_exists(f"{DEPLOYMENTDIR}")
+	mkdir_if_not_exists(f"{DEPLOYMENTDIR}/cni")
+	check_and_print_status(download_files(f"{DEPLOYMENTDIR}/cni", [(url, filename)]))
+
+	if patch_cni is not None:
+		iktprint([("\n• ", "separator"), ("Patching “", "action"), (f"{cni}", "argument"), ("“ configuration", "action")])
+		patch_cni(cni_path, pod_network_cidr)
+	return cni_path
+
+# This executes a command without capturing the output
+def execute_command(args, env = None):
+	if env is None:
+		retval = subprocess.run(args)
+	else:
+		retval = subprocess.run(args, env = env)
+	return retval.returncode == 0
+
+# This executes a command with the output captured
+def execute_command_with_response(args):
+	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+	return result.stdout.decode("utf-8")
+
+def check_for_ssh_key():
+	retval = False
+	files = [file for file in glob(f"{HOMEDIR}/.ssh/*.pub") if os.path.isfile(file)]
+	for file in files:
+		if os.path.isfile(file) and os.path.isfile(file[:-len(".pub")]):
+			retval = True
+			break
+	return retval
+
+def scan_and_add_ssh_keys():
+	controlplanes = get_control_planes()
+	hosts = [controlplane[0] for controlplane in controlplanes]
+	hosts += [f"{controlplane[0]}.local" for controlplane in controlplanes]
+	hosts += [
+		"localhost",
+	]
+
+	for host in hosts:
+		transport = paramiko.Transport(host)
+		transport.connect()
+		key = transport.get_remote_server_key()
+		transport.close()
+		known_hosts = f"{HOMEDIR}/.ssh/known_hosts"
+
+		# Note: Paramiko seems to have issues if .ssh/known_hosts doesn't exist,
+		# so "touch" the file just in case.
+		open(known_hosts, 'a').close()
+
+		hostfile = paramiko.HostKeys(filename = known_hosts)
+		hostfile.add(hostname = host, key = key, keytype = key.get_name())
+		hostfile.save(filename = known_hosts)
+
+def create_ssh_key():
+	args = ["ssh-keygen", "-t", "ed25519", "-f", f"{HOMEDIR}/.ssh/id_ed25519"]
+	retval = execute_command(args)
+	return retval
+
+def add_ssh_key_to_authorized_keys():
+	pubkey = None
+
+	with open(f"{HOMEDIR}/.ssh/id_ed25519.pub", "r") as f:
+		tmp = f.readlines()
+		if tmp is not None and len(tmp) > 0:
+			pubkey = tmp
+
+	if pubkey is None or len(pubkey) == 0:
+		return False
+
+	exists = False
+
+	with open(f"{HOMEDIR}/.ssh/authorized_keys", "r") as f:
+		tmp = f.readlines()
+
+		if tmp is not None and len(tmp) > 0:
+			for line in tmp:
+				if line == pubkey[0]:
+					exists = True
+					break
+	if exists == False:
+		with open(f"{HOMEDIR}/.ssh/authorized_keys", "a") as f:
+			f.writelines(pubkey)
+
+	return True
+
+def __task_check_and_create_ssh_key(installation_info):
+	if check_for_ssh_key() == False:
+		retval = iktinput([("Warning: ", "warning"), ("No ssh key found in ", "default"), (f"{HOMEDIR}/.ssh", "path"), ("; create one now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting:", "error"), (" No ssh key available.", "default")], stderr = True)
+			sys.exit(2)
+		else:
+			check_and_print_status(create_ssh_key())
+
+def __task_scan_and_add_ssh_keys(installation_info):
+	scan_and_add_ssh_keys()
+
+def __task_add_ssh_key_to_inventory(installation_info):
+	pubkey = None
+	with open(f"{HOMEDIR}/.ssh/id_ed25519.pub", "r") as f:
+		tmp = f.readlines()
+		if tmp is not None and len(tmp) > 0:
+			pubkey = tmp[0]
+
+	if pubkey == None:
+		iktprint([("Error: ", "error"), ("Failed to read ", "default"), (f"{HOMEDIR}/.ssh/id_ed25519.pub", "path"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	d = ansible_get_inventory_dict()
+	__vars = deep_get(d, "all#vars", {})
+	__authorized_keys = __vars.get("authorized_keys", [])
+	if pubkey not in __authorized_keys:
+		__authorized_keys.append(pubkey)
+		__vars["authorized_keys"] = __authorized_keys
+		ansible_set_vars(ANSIBLE_INVENTORY, "all", __vars)
+
+def __task_check_and_add_ssh_key_to_authorized_keys(installation_info):
+	add_ssh_key_to_authorized_keys()
+
+def __task_check_and_install_ansible_posix(installation_info):
+	# Old versions of ansible-galaxy doesn't have the list command;
+	# if it doesn't work we just assume that ansible.posix is missing
+	args = ["ansible-galaxy", "collection", "list"]
+	result = execute_command_with_response(args)
+	if "COLLECTION_ACTION: invalid choice" in result or "ansible.posix" not in result:
+		http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
+		https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+		no_proxy = deep_get(iktconfig, "Network#no_proxy", "")
+		env = {
+			"http_proxy": http_proxy,
+			"https_proxy": https_proxy,
+			"no_proxy": no_proxy,
+		}
+		args = ["ansible-galaxy", "collection", "install", "ansible.posix"]
+		check_and_print_status(execute_command(args, env = env))
+
+def download_files(directory, fetch_urls):
+	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
+	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	retval = True
+
+	if http_proxy is not None and http_proxy != "":
+		pm = urllib3.ProxyManager(http_proxy)
+	else:
+		pm = urllib3.PoolManager()
+	if https_proxy is not None and https_proxy != "":
+		spm = urllib3.ProxyManager(https_proxy)
+	else:
+		spm = urllib3.PoolManager()
+
+	for url in fetch_urls:
+		if type(url) == tuple:
+			url, filename = url
+		else:
+			tmp = re.match(r".*/(.*)", url)
+			if tmp is None:
+				iktprint([("Error: ", "error"), ("Could not extract filename from URL ", "default"), (f"{url}", "url")], stderr = True)
+				retval = False
+				continue
+			filename = tmp[1]
+
+		if url.startswith("http"):
+			r1 = pm.request("GET", url)
+		elif url.startswith("https"):
+			r1 = spm.request("GET", url)
+		else:
+			iktprint([("Error: ", "error"), ("Unknown or missing protocol; URL ", "description"), (f"{url}", "url")], stderr = True)
+			retval = False
+			continue
+
+		if r1.status == 200:
+			with open(f"{directory}/{filename}", "wb") as f:
+				try:
+					f.write(r1.data)
+				except:
+					iktprint([("Error: ", "error"), ("Could not write file ", "default"), (f"{filename}", "path")], stderr = True)
+					retval = False
+					continue
+		else:
+			iktprint([("Error: ", "error"), ("Failed to fetch URL ", "default"), (f"{url}", "url"), ("; HTTP code: ", "default"), (f"{r1.status}", "errorvalue")], stderr = True)
+			retval = False
+			continue
+	pm.clear()
+	spm.clear()
+
+	return retval
+
+def update_apt_cache():
+	retval = subprocess.run(["sudo", "apt-get", "update"])
+	return retval.returncode == 0
+
+def deb_compare_versions(current_version, candidate_version):
+	args = ["dpkg", "--compare-versions", current_version, "lt", candidate_version]
+	retval = subprocess.run(args)
+	return retval.returncode == 1
+
+def __get_theme(string, default):
+	translation = {
+		"<none>": "none",
+		"<unknown>": "unknown",
+	}
+	return translation.get(string, default)
+
+extract_version_re = re.compile(r"^\s*.*?\s\|\s*(.*?)\s\|\s.*")
+
+def extract_version(line):
+	tmp = extract_version_re.match(line)
+	if tmp is None:
+		raise Exception("Error: Failed to extract a version; this is (most likely) a programming error.")
+	return tmp[1]
+
+def check_deb_versions(deb_packages):
+	deb_versions = []
+
+	response = execute_command_with_response(["apt-cache", "policy"] + deb_packages)
+	split_response = response.splitlines()
+	for line in split_response:
+		if line.endswith(":"):
+			package = line[:-1]
+		elif line.startswith("  Installed: "):
+			tmp = re.match(r"\s*Installed: (.*)", line)
+			if tmp is not None:
+				if tmp[1] == "(none)":
+					installed_version = "<none>"
+				else:
+					installed_version = tmp[1]
+			else:
+				installed_version = "<none>"
+		elif line.startswith("  Candidate: "):
+			tmp = re.match(r"\s*Candidate: (.*)", line)
+			if tmp is not None and tmp[1] != installed_version:
+				if tmp[1] == "(none)":
+					if installed_version == "<none>":
+						continue
+					else:
+						candidate_version = "<none>"
+				else:
+					candidate_version = tmp[1]
+			else:
+				candidate_version = ""
+			# We have the current and candidate version now; get all the other versions of the same package
+			_response = execute_command_with_response(["apt-cache", "madison", package])
+			_split_response = _response.splitlines()
+			all_versions = natsorted([extract_version(line) for line in _split_response], reverse = True)
+			deb_versions.append((package, installed_version, candidate_version, all_versions))
+
+	return deb_versions
+
+def check_versions(deb_packages, version_checks):
+	other_versions = []
+
+	# First check all Debian versions
+	deb_versions = check_deb_versions(deb_packages)
+
+	# Now check versions that need special checks
+	for version_check in version_checks:
+		software = version_check[0]
+		args = version_check[1]
+		regex = version_check[2]
+
+		try:
+			response = execute_command_with_response(args)
+		except FileNotFoundError:
+			other_versions.append((software, "<none>", ""))
+			continue
+		except subprocess.CalledProcessError:
+			other_versions.append((software, "<unknown>", ""))
+			continue
+
+		if regex is None:
+			installed_version = response
+		else:
+			tmp = re.match(regex, response)
+			if tmp is not None:
+				installed_version = tmp[1]
+			else:
+				installed_version = "<none>"
+		other_versions.append((software, installed_version, ""))
+
+	# Finally, display the gathered version information; find the longest string of each type
+	# Create lists of header + all values belonging to that header, and get the length of the longest element
+	slen = len(max(["Software:"] + [tmp[0] for tmp in deb_versions + other_versions], key = len))
+	ilen = len(max(["Installed Version:"] + [tmp[1] for tmp in deb_versions + other_versions], key = len))
+	clen = len(max(["Candidate Version:"] + [tmp[2] for tmp in deb_versions + other_versions], key = len))
+
+	# Print a header
+	iktprint([("Software:", "header"), (f"{''.ljust(slen - len('Software:') + 2)}", "default"), ("Installed Version:", "header"), (f"{''.ljust(ilen - len('Installed Version:') + 2)}", "default"), ("Candidate Version:", "header")])
+	for software, installed_version, candidate_version, _ in natsorted(deb_versions):
+		iformat = __get_theme(installed_version, "version")
+		cformat = __get_theme(candidate_version, "version")
+		iktprint([(f"{software.ljust(slen + 2)}", "default"), (f"{installed_version.ljust(ilen + 2)}", iformat), (f"{candidate_version}", cformat)])
+	print()
+	for software, installed_version, candidate_version in natsorted(other_versions):
+		iformat = __get_theme(installed_version, "version")
+		cformat = __get_theme(candidate_version, "version")
+		iktprint([(f"{software.ljust(slen + 2)}", "default"), (f"{installed_version.ljust(ilen + 2)}", iformat), (f"{candidate_version}", cformat)])
+
+	return deb_versions, other_versions
+
+def configure_system(configure_commands):
+	for string, cmd in configure_commands:
+		print(string)
+		check_and_print_status(cmd())
+
+def run_playbooks(playbooks, hosts = None, extra_values = {}):
+	# Set necessary Ansible keys before running playbooks
+	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
+	if http_proxy is None:
+		http_proxy = ""
+	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	if https_proxy is None:
+		https_proxy = ""
+	no_proxy = deep_get(iktconfig, "Network#no_proxy", "")
+	if no_proxy is None:
+		no_proxy = ""
+	insecure_registries = deep_get(iktconfig, "Docker#insecure_registries", [])
+	registry_mirrors = deep_get(iktconfig, "Containerd#registry_mirrors", [])
+	retval = 0
+
+	use_proxy = "no"
+	if len(http_proxy) > 0 or len(https_proxy) > 0:
+		use_proxy = "yes"
+
+	values = {
+		"http_proxy": http_proxy,
+		"https_proxy": https_proxy,
+		"no_proxy": no_proxy,
+		"insecure_registries": insecure_registries,
+		"registry_mirrors": registry_mirrors,
+		"use_proxy": use_proxy,
+	}
+	merged_values = { **values, **extra_values }
+
+	for string, playbookpath in playbooks:
+		iktprint(string)
+		if hosts is None:
+			retval, ansible_results = ansible_run_playbook(playbookpath, values = merged_values)
+		else:
+			retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
+
+		for host in ansible_results:
+			data = ansible_results[host]
+
+			# RUN_ERROR = 1
+			# RUN_FAILED_HOSTS = 2
+			# RUN_UNREACHABLE_HOSTS = 4
+			# RUN_FAILED_BREAK_PLAY = 8
+			extra_status = ""
+			if retval & 1 == 1:
+				extra_status += " Error,"
+			if retval & 2 == 2:
+				extra_status += " Failed hosts,"
+			if retval & 4 == 4:
+				extra_status += " host unreachable,"
+			if retval & 8 == 8:
+				extra_status += " Failed break play,"
+
+			extra_status = extra_status.rstrip(",")
+
+			if retval == 0:
+				iktprint([(f"    [{host}]", "success")])
+			else:
+				iktprint([(f"    [{host}]", "error"), (extra_status, "errorvalue")])
+
+			for task in ansible_results[host]:
+				taskname = task[len("TASK: "):]
+				iktprint([(f"      {taskname}:", "default")])
+				msg = data[task].get("msg", "")
+				if len(msg) > 0:
+					iktprint([(f"        ", "default"), ("msg:", "header")])
+					iktprint([(f"        {msg}", "default")])
+					print("\n")
+				stdout_lines = data[task].get("stdout_lines", [])
+				if len(stdout_lines) > 0:
+					iktprint([(f"        ", "default"), ("stdout:", "header")])
+					for line in data[task]["stdout_lines"]:
+						iktprint([(f"        {line}", "default")])
+					print("\n")
+				stderr_lines = data[task].get("stderr_lines", [])
+				if len(stderr_lines) > 0:
+					iktprint([(f"        ", "default"), ("stderr:", "header")])
+					for line in data[task]["stderr_lines"]:
+						iktprint([(f"        {line}", "default")])
+					print("\n")
+				if len(msg) == 0 and len(stdout_lines) == 0 and len(stderr_lines) == 0:
+					iktprint([(f"        <no output>", "none")])
+					print("\n")
+
+	return retval == 0
+
+# Scan a directory and return an array of playbook paths
+def __playbook_paths_from_path(path):
+	if path is None:
+		raise Exception("No path passed to __playbook_paths_from_path; this is a programming error.")
+
+	playbook_paths = []
+
+	# Populate list of playbooks
+	for filename in os.listdir(path):
+		# Don't process backups, etc.
+		if filename.startswith("~") or filename.startswith("."):
+			continue
+
+		# Only process playbooks
+		tmp = re.match(r"(.*)\.ya?ml", filename)
+		if tmp is None:
+			continue
+
+		playbook_paths.append(os.path.join(path, filename))
+
+	return playbook_paths
+
+# Add all playbooks in the array
+def populate_playbooks_from_paths(paths):
+	playbooks = []
+
+	for playbookpath in paths:
+		# Only process playbooks
+		tmp = re.match(r"(.*)\.ya?ml", os.path.basename(playbookpath))
+		if tmp is None:
+			raise Exception(f"The playbook filename “{os.path.basename(playbookpath)}“ does not end with .yaml or .yml; this is most likely a programming error.")
+
+		playbookname = tmp[1]
+		description = None
+		with open(playbookpath) as f:
+			d = yaml.safe_load(f)
+			description = [(deep_get(d[0], "vars#metadata#description"), "play")]
+
+		if description is None or len(description) == 0:
+			description = [("Running “", "play"), (playbookname, "programname"), ("“", "play")]
+
+		# If there's no description we fallback to just using the filename
+		playbooks.append(([("  • ", "separator")] + description, playbookpath))
+
+	return playbooks
+
+# Add all playbooks in the directory
+def populate_playbooks_from_dir(path):
+	playbook_paths = []
+
+	# Populate list of playbooks
+	for filename in os.listdir(path):
+		# Don't process backups, etc.
+		if filename.startswith("~") or filename.startswith("."):
+			continue
+
+		# Only process playbooks
+		tmp = re.match(r"(.*)\.ya?ml", filename)
+		if tmp is None:
+			continue
+
+		playbookname = tmp[1]
+
+		playbook_paths.append(f"{path}/{filename}")
+	return populate_playbooks_from_paths(playbook_paths)
+
+def __task_request_ansible_password(installation_info):
+	# Check whether ansible_password is defined or not
+	if ansible_configuration.ansible_password == None:
+		iktprint([("Attention: ", "warning"), ("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
+		iktprint([("Since the system will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing when preparing systems.", "default")])
+		ansible_password = iktinput_password([("\nPassword: ", "default")])
+		if len(ansible_password) == 0:
+			iktprint([("\nError: ", "Error"), ("Empty password; aborting.")], stderr = True)
+			sys.exit(2)
+		else:
+			ansible_configuration.ansible_password = ansible_password
+
+def __run_playbooks_on_selection(playbooks, selection, extra_values = {}):
+	check_and_print_status(run_playbooks(playbooks, hosts = selection, extra_values = extra_values))
+
+def __selection_control_planes():
+	__controlplanes = get_control_planes(fail_on_empty = False)
+	return [controlplane[0] for controlplane in __controlplanes]
+
+def __selection_localhost():
+	if os.path.exists("/etc/hostname"):
+		f = open("/etc/hostname", "r")
+		hostname = f.readline().strip()
+	else:
+		raise Exception("Error: /etc/hostname not found; Aborting.")
+
+	return [hostname]
+
+# Run preparation playbooks on localhost
+def __task_run_preparation_playbooks_on_localhost(installation_info):
+	selection = __selection_localhost()
+	playbooks = populate_playbooks_from_paths(prepare_targets["localhost"]["playbooks"])
+	extra_values = {
+		"packages": prepare_targets["localhost"].get("deb_packages", []),
+		"held_packages": prepare_targets["localhost"].get("deb_packages_held", []),
+	}
+	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
+
+def __task_run_preparation_playbooks_on_control_planes(installation_info):
+	distro = installation_info["distro"]
+	requested_version = installation_info["requested_version"]
+	selection = __selection_control_planes()
+	playbooks = populate_playbooks_from_paths(prepare_targets[distro]["playbooks"])
+	extra_values = {
+		"packages": prepare_targets[distro].get("deb_packages", []),
+		"held_packages": prepare_targets[distro].get("deb_packages_held", []),
+	}
+	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
+
+def __task_setup_bash_completion(installation_info):
+	args = ["kubectl", "completion", "bash"]
+	result = execute_command_with_response(args)
+	with tempfile.TemporaryDirectory() as td:
+		with open(f"{td}/kubectl", "w") as f:
+			f.write(result)
+		args = ["sudo", "mv", f"{td}/kubectl", "/etc/bash_completion.d/kubectl"]
+		check_and_print_status(execute_command(args))
+
+def __task_set_cluster_name(installation_info):
+	cluster_name = installation_info["cluster_name"]
+
+	# If no cluster-name has been provided we use the hostname of the first control plane
+	if cluster_name is None or cluster_name == "<none>":
+		controlplanes = __selection_control_planes()
+		cluster_name = controlplanes[0]
+	update_installation_info(cluster_name = cluster_name)
+	check_and_print_status(True)
+
+def __task_run_setup_playbooks_on_control_planes(installation_info):
+	cluster_name = installation_info["cluster_name"]
+	distro = installation_info["distro"]
+	requested_version = installation_info["requested_version"]
+	pod_network_cidr = installation_info["pod_network_cidr"]
+	selection = __selection_control_planes()
+	playbooks = populate_playbooks_from_paths(setup_control_plane_targets[distro]["playbooks"])
+	extra_values = {
+		"cluster_name": cluster_name,
+		"pod_network_cidr": pod_network_cidr,
+	}
+	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
+
+def __task_import_kube_config(installation_info):
+	config_file_name = f"{HOMEDIR}/.kube/config." + installation_info["cluster_name"]
+	cluster_name = "kubernetes+" + installation_info["cluster_name"]
+	admin_name = "kubernetes-admin+" + installation_info["cluster_name"]
+	context_name = f"{admin_name}@{cluster_name}"
+
+	with open(config_file_name, "r") as f:
+		d2 = yaml.safe_load(f)
+
+	if os.path.exists(f"{HOMEDIR}/.kube/config"):
+		with open(f"{HOMEDIR}/.kube/config", "r") as f:
+			d1 = yaml.safe_load(f)
+	else:
+		d1 = dict(d2)
+		# We'll be renaming things anyway, so instead of using a lot of special casing below we just empty
+		# these fields
+		d1["clusters"] = []
+		d1["contexts"] = []
+		d1["current-context"] = context_name
+		d1["users"] = []
+
+	for cluster in d1["clusters"]:
+		if cluster_name == cluster["name"]:
+			iktprint([("Error: ", "error"), ("A cluster named ", "default"), (cluster_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.")], stderr = True)
+			return
+
+	for user in d1["users"]:
+		if admin_name == user["name"]:
+			iktprint([("Error: ", "error"), ("A user named ", "default"), (admin_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.")], stderr = True)
+			return
+
+	for context in d1["contexts"]:
+		if context_name == context["name"]:
+			iktprint([("Error: ", "error"), ("A context named ", "default"), (context_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.")], stderr = True)
+			return
+
+	cad = d2["clusters"][0]["cluster"].get("certificate-authority-data")
+	server = d2["clusters"][0]["cluster"]["server"]
+	insecure_skip_tls_verify = d2["clusters"][0]["cluster"].get("insecure-skip-tls-verify")
+	cluster = {
+		"cluster": {
+			"server": server,
+		},
+		"name": cluster_name,
+	}
+	if cad is not None:
+		cluster["cluster"]["certificate-authority-data"] = cad
+	if insecure_skip_tls_verify is not None:
+		cluster["cluster"]["insecure-skip-tls-verify"] = insecure_skip_tls_verify
+
+	d1["clusters"].append(cluster)
+
+	context = {
+		"context": {
+			"cluster": cluster_name,
+			"user": admin_name,
+		},
+		"name": context_name,
+	}
+	d1["contexts"].append(context)
+
+	ccd = d2["users"][0]["user"].get("client-certificate-data")
+	ckd = d2["users"][0]["user"].get("client-key-data")
+	token = d2["users"][0]["user"].get("token")
+	user = {
+		"user": {
+		},
+		"name": admin_name,
+	}
+	if ccd is not None:
+		user["user"]["client-certificate-data"] = ccd
+	if ckd is not None:
+		user["user"]["client-key-data"] = ckd
+	if token is not None:
+		user["user"]["token"] = token
+
+	d1["users"].append(user)
+
+	with open(f"{HOMEDIR}/.kube/config", "w") as f:
+		f.write(yaml.dump(d1, default_flow_style = False, sort_keys = False))
+
+	check_and_print_status(True)
+
+def __task_setup_kubeadm_cni(installation_info):
+	cni = installation_info["cni"]
+	pod_network_cidr = installation_info["pod_network_cidr"]
+
+	# If everything is successful so far we deploy the pod network
+	cni_path = setup_cni(cni, pod_network_cidr)
+	args = ["kubectl", "apply", "-f", cni_path]
+	check_and_print_status(execute_command(args))
+
+def __task_drain_control_planes(installation_info):
+	controlplanes = __selection_control_planes()
+
+	# Check if there's an API-server running that will listen to our request;
+	# drain is issued during teardown--so if we're resuming a teardown the cluster
+	# might already be partially deconfigured
+	args = ["sudo", "lsof", "-i", "-P", "-n"]
+	response = execute_command_with_response(args)
+	running = False
+	for line in response.splitlines():
+		if "6443 (LISTEN)" in line:
+			running = True
+			break
+	if running == False:
+		return check_and_print_status(True)
+
+	# Check kubectl version
+	args = ["kubectl", "version"]
+	response = execute_command_with_response(args).splitlines()
+	tmp = re.match(r"^Client Version: version.Info{Major:\"(.)\", Minor:\"(.+?)\"", response[0])
+
+	# Build the drain command line based on what version of kubectl is installed
+	args = ["kubectl", "drain", "--ignore-daemonsets"]
+	if tmp is not None:
+		if int(tmp[1]) >= 1 and int(tmp[2]) >= 20:
+			args.append("--delete-emptydir-data")
+		else:
+			args.append("--delete-local-data")
+		if int(tmp[1]) >= 1 and int(tmp[2]) >= 18:
+			args.append("--disable-eviction")
+
+	for controlplane in controlplanes:
+		check_and_print_status(execute_command(args + [controlplane]))
+
+def __task_uncordon_control_planes(installation_info):
+	controlplanes = __selection_control_planes()
+	args = ["kubectl", "uncordon"]
+
+	for controlplane in controlplanes:
+		check_and_print_status(execute_command(args + [controlplane]))
+
+# Run pre-upgrade playbooks on localhost
+def __task_run_preupgrade_playbooks_on_localhost(installation_info):
+	selection = __selection_localhost()
+	playbooks = populate_playbooks_from_paths(upgrade_control_plane_targets["localhost"]["playbooks"])
+	extra_values = {
+		"packages": prepare_targets["localhost"].get("deb_packages", []),
+		"held_packages": upgrade_control_plane_targets["localhost"].get("deb_packages_held", []),
+	}
+	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
+
+# Run pre-upgrade playbooks on control-planes
+def __task_run_preupgrade_playbooks_on_control_planes(installation_info):
+	selection = __selection_control_planes()
+	paths = __playbook_paths_from_path(os.path.join(IKT_HOOKS_DIR, "pre-upgrade.d"))
+	playbooks = populate_playbooks_from_paths(paths)
+	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
+
+# Run upgrade playbooks on control-planes
+def __task_run_upgrade_playbooks_on_control_planes(installation_info):
+	distro = installation_info["distro"]
+	requested_version = installation_info["requested_version"]
+	selection = __selection_control_planes()
+	playbooks = populate_playbooks_from_paths(upgrade_control_plane_targets[distro]["playbooks"])
+	extra_values = {
+		"packages": prepare_targets[distro].get("deb_packages", []),
+		"held_packages": upgrade_control_plane_targets[distro].get("deb_packages_held", []),
+		"requested_control_plane_k8s_version": requested_version,
+	}
+	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
+
+# Run post-upgrade playbooks on control-planes
+def __task_run_postupgrade_playbooks_on_control_planes(installation_info):
+	selection = __selection_control_planes()
+	paths = __playbook_paths_from_path(os.path.join(IKT_HOOKS_DIR, "post-upgrade.d"))
+	playbooks = populate_playbooks_from_paths(paths)
+	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
+
+# Verify that the cluster has no nodes
+def __task_verify_that_cluster_has_no_nodes(installation_info):
+	node_statuses, kh = __get_node_info()
+
+	if node_statuses is not None:
+		for node in node_statuses:
+			if "control-plane" not in node["roles"]:
+				iktprint([("\nPlease delete all nodes (except the ", "warning"), ("control-plane", "emphasis"), (") from the cluster before attempting a teardown.", "warning")])
+				sys.exit(2)
+
+	iktprint([("OK", "ok")])
+
+# Run teardown playbooks on control-planes
+def __task_run_teardown_playbooks_on_control_planes(installation_info):
+	distro = installation_info["distro"]
+	selection = __selection_control_planes()
+	playbooks = populate_playbooks_from_paths(teardown_control_plane_targets[distro]["playbooks"])
+	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
+
+def __task_remove_kube_config(installation_info):
+	cluster_name = "kubernetes+" + installation_info["cluster_name"]
+	admin_name = "kubernetes-admin+" + installation_info["cluster_name"]
+	context_name = f"{admin_name}@{cluster_name}"
+
+	if os.path.exists(f"{HOMEDIR}/.kube/{cluster_name}"):
+		os.remove(f"{HOMEDIR}/.kube/config.{cluster_name}")
+
+	with open(f"{HOMEDIR}/.kube/config", "r") as f:
+		d1 = yaml.safe_load(f)
+
+	# This isn't perfect--there might be leftover users and contexts belonging to this cluster;
+	# but we better not go on a killing spree--better leave cruft than remove everything.
+	d1["clusters"].remove(cluster_name)
+	d1["users"].remove(admin_name)
+	d1["contexts"].remove(context_name)
+
+	# If there's no user or cluster left, remove the config completely
+	if len(d1["users"]) > 0 and len(d1["clusters"]) > 0:
+		os.remove(f"{HOMEDIR}/.kube/config")
+	else:
+		# Set the context to the first remaining context, if any
+		if len(d1["contexts"]) == 0:
+			d1["current-context"] = d1["contexts"][0]["name"]
+
+		with open(f"{HOMEDIR}/.kube/config", "w") as f:
+			f.write(yaml.dump(d1, default_flow_style = False, sort_keys = False))
+
+	check_and_print_status(True)
+
+# Run purge playbooks on control-planes
+def __task_run_purge_playbooks_on_control_planes(installation_info):
+	distro = installation_info["distro"]
+	selection = __selection_control_planes()
+	playbooks = populate_playbooks_from_paths(purge_control_plane_targets[distro]["playbooks"])
+	extra_values = {
+		"packages": purge_control_plane_targets[distro].get("deb_packages", []),
+		"held_packages": purge_control_plane_targets[distro].get("deb_packages_held", []),
+	}
+	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
+
+def __validate_task_index(tasks, task):
+	try:
+		task = int(task)
+	except Exception as e:
+		iktprint([("Error: ", "error"), ("TASK", "argument"), (f" needs to be an integer index in the range [0, {len(tasks) - 1}]. Aborting.", "default")], stderr = True)
+		sys.exit(f"Exception: {e}")
+
+	if task >= len(tasks):
+		iktprint([("Error: ", "error"), ("TASK", "argument"), (f" needs to be in the range [0, {len(tasks)}]. Aborting.", "default")], stderr = True)
+		sys.exit(2)
+	return task
+
+def __list_phases(phases):
+	for i in range(0, len(phases)):
+		tmp = [(f"{str(i).rjust(2)}: ", "emphasis")]
+		tmp += phases[i][0]
+		iktprint(tmp)
+
+def __expand_index_list(index_list):
+	indexes = set()
+
+	for index in index_list.split(","):
+		try:
+			if "-" in index:
+				first, last = index.split("-")
+				first = int(first)
+				last = int(last)
+			else:
+				first = int(index)
+				last = first
+		except Exception as e:
+			iktprint([("Error: ", "error"), (f"{index}", "argument"), (" is not an integer or range of integers. Aborting.", "default")], stderr = True)
+			sys.exit(f"Exception: {e}")
+		for i in range(first, last + 1):
+			indexes.add(i)
+	return indexes
+
+def __format_none(string, fmt):
+	if string is None or string == "<none>":
+		__string = ("<none>", "none")
+	else:
+		__string = (string, fmt)
+	return __string
+
+prepare_tasks = [
+	([("Check for ssh host key and create if needed", "action")], __task_check_and_create_ssh_key),
+	([("Add ssh keys for localhost and the control plane(s) to ", "action"), (f"{HOMEDIR}/.ssh/known_hosts", "path")], __task_scan_and_add_ssh_keys),
+	([("Add ", "action"), (f"{HOMEDIR}/.ssh/id_ed25519.pub", "path"), (" to ", "action"), (f"{HOMEDIR}/.ssh/authorized_keys", "path")], __task_check_and_add_ssh_key_to_authorized_keys),
+	([("Add ssh key to inventory", "action")], __task_add_ssh_key_to_inventory),
+	([("Request the ansible password if necessary", "action")], __task_request_ansible_password),
+	([("Install ", "action"), ("ansible.posix", "programname"), (" if necessary", "action")], __task_check_and_install_ansible_posix),
+	([("Run playbooks on ", "action"), ("localhost", "hostname")], __task_run_preparation_playbooks_on_localhost),
+	([("Run playbooks on ", "action"), ("control-planes", "hostname")], __task_run_preparation_playbooks_on_control_planes),
+	([("Setup ", "action"), ("bash completion", "emphasis"), (" for ", "action"), ("kubectl", "programname")], __task_setup_bash_completion),
+]
+
+__setup_kubeadm_control_plane_tasks = [
+	([("Set cluster name", "action")], __task_set_cluster_name),
+	([("Run playbooks on ", "action"), ("control-planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
+	([("Import kube config", "action")], __task_import_kube_config),
+	([("Setup ", "action"), ("kubeadm", "programname"), (" Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
+]
+
+setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
+
+upgrade_control_plane_tasks = [
+	([("Drain the ", "action"), ("control-planes", "hostname")], __task_drain_control_planes),
+	([("Run pre-upgrade playbooks on ", "action"), ("localhost", "hostname")], __task_run_preupgrade_playbooks_on_localhost),
+	([("Run pre-upgrade playbooks on ", "action"), ("control-planes", "hostname")], __task_run_preupgrade_playbooks_on_control_planes),
+	([("Run upgrade playbooks on ", "action"), ("control-planes", "hostname")], __task_run_upgrade_playbooks_on_control_planes),
+	([("Run post-upgrade playbooks on ", "action"), ("control-planes", "hostname")], __task_run_postupgrade_playbooks_on_control_planes),
+	([("Uncordon the ", "action"), ("control-planes", "hostname")], __task_uncordon_control_planes),
+]
+
+teardown_control_plane_tasks = [
+	([("Verify that only ", "action"), ("control-planes", "hostname"), (" remain in the cluster", "action")], __task_verify_that_cluster_has_no_nodes),
+	([("Drain the ", "action"), ("control-planes", "hostname")], __task_drain_control_planes),
+	([("Run teardown playbooks on ", "action"), ("control-planes", "hostname")], __task_run_teardown_playbooks_on_control_planes),
+	([("Remove kube config", "action")], __task_remove_kube_config),
+]
+
+purge_control_plane_tasks = [
+	([("Run purge playbooks on ", "action"), ("control-planes", "hostname")], __task_run_purge_playbooks_on_control_planes),
+]
+
+def run_tasks(tasks, phase, phase_skiplist, final_state):
+	installation_info = get_installation_info()
+
+	for i in range(phase, len(tasks)):
+		iktprint([("\n• ", "separator")] + tasks[i][0])
+		if i not in phase_skiplist:
+			tasks[i][1](installation_info)
+		if i < len(tasks) - 1:
+			installation_info = update_installation_info(phase = i)
+		else:
+			update_installation_info(state = final_state, phase = "<done>")
+
+def __find_requested_version(distro, version = None):
+	requested_version = None
+
+	if distro == "kubeadm":
+		# If version is an exact match for a package version, use it.
+		# If version is a match for a package version with the package revision ("-nn") removed, use the latest matching package revision.
+		# If no version is specified, use the latest package revision.
+		versions = check_deb_versions(["kubeadm"])
+
+		if version is not None:
+			# The list is sorted in falling order, so the first match is the one we want, since that's the newest package revision.
+			for package_version in versions[0][3]:
+				if package_version.split("-")[0] == version:
+					requested_version = package_version
+					break
+				elif package_version.split(".")[0] + "." + package_version.split(".")[1] == version:
+					requested_version = package_version
+					break
+				elif version.split(".")[0] == version:
+					if package_version.split(".")[0] == version:
+						requested_version = package_version
+						break
+		else:
+			requested_version = versions[0][2]
+
+		if requested_version is None:
+			iktprint([("Error: ", "error"), ("Could not find a matching kubeadm package for version ", "default"), (version, "version"), ("; aborting.", "default")], stderr = True)
+			sys.exit(2)
+	else:
+		raise Exception("No support for other distros implemented")
+
+	major, minor, patchrev = requested_version.split(".")
+	if int(minor) < 11:
+		iktprint([("Error: ", "error"), ("Kubernetes versions older than ", "default"), ("1.11", "version"), (" are not supported by ", "default"), (f"{about.program_suite_name}", "programname"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+	elif int(minor) < 18:
+		iktprint([("Warning: ", "warning"), ("Kubernetes versions older than ", "default"), ("1.18", "version"), (" are not fully supported by ", "default"), (f"{about.program_suite_name}", "programname"), (". Some features may be missing or completely broken.", "default")], stderr = True)
+
+	return requested_version
+
+def prepare_installation(options = None, args = None):
+	installation_info = get_installation_info()
+	distro = installation_info["distro"]
+	version = None
+	requested_version = installation_info["requested_version"]
+	state = installation_info["state"]
+	phase = installation_info["phase"]
+	phase_skiplist = set(installation_info["phase_skiplist"])
+
+	if state is not None and state not in ["<none>", "preparing", "prepared"]:
+		iktprint([("Error: ", "error"), ("Invalid installation state; the system cannot be in a configured or semi-configured state when running prepare; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if phase == "<none>":
+		phase = 0
+
+	if os.path.exists("/etc/hostname"):
+		f = open("/etc/hostname", "r")
+		hostname = f.readline().strip()
+	else:
+		raise Exception("Error: /etc/hostname not found; Aborting.")
+
+	# default options
+	update_cache = True
+
+	__controlplanes = get_control_planes(fail_on_empty = False)
+	controlplanes = [controlplane[0] for controlplane in __controlplanes]
+	if len(controlplanes) == 0:
+		retval = iktinput([("\nWarning: ", "warning"), ("No control plane defined in the inventory; do you want to add ", "default"), (f"{hostname}", "hostname"), (" as control plane? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting: ", "error"), ("No available control plane in inventory.", "default")], stderr = True)
+			sys.exit(2)
+		else:
+			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = "controlplane", skip_all = False)
+
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "--no-cache-update":
+				update_cache = False
+			if opt == "--start-at-task":
+				phase = __validate_task_index(prepare_tasks, optarg)
+			elif opt == "--skip-tasks":
+				skip_phases = __expand_index_list(optarg)
+				for __phase in skip_phases:
+					__validate_task_index(prepare_tasks, __phase)
+				phase_skiplist = skip_phases
+			elif opt == "--list-tasks":
+				__list_phases(prepare_tasks)
+				sys.exit(0)
+			elif opt == "--resume":
+				if phase is None or phase == "<none>":
+					phase = 0
+				elif phase == "<done>":
+					iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed preparation. Exiting.")], stderr = True)
+					sys.exit(0)
+
+				else:
+					phase = __validate_task_index(prepare_tasks, phase)
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	distro = "kubeadm"
+
+	confirm = True
+
+	if len(args) > 0:
+		requested_version = __find_requested_version(distro, args[0])
+	else:
+		requested_version = __find_requested_version(distro)
+
+	installation_info = update_installation_info(distro = distro, requested_version = requested_version, state = "preparing", phase = phase)
+
+	show_configuration()
+
+	if confirm == True:
+		retval = iktinput([("\nStart control plane preparation? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting: ", "error"), ("User stopped control plane preparation.", "default")], stderr = True)
+			os.remove(IKT_INSTALLATION_INFO)
+			sys.exit(2)
+
+	iktprint([(f"\n[Preparing localhost and control plane(s)]", "phase")])
+
+	# Adjust the kube* packages for the control plane(s) and localhost to match the requested cluster version if necessary
+	if distro == "kubeadm":
+		if len(requested_version) > 0:
+			prepare_targets["localhost"]["deb_packages"].remove("kubectl")
+			prepare_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
+			prepare_targets["kubeadm"]["deb_packages"].remove("kubectl")
+			prepare_targets["kubeadm"]["deb_packages"].append(f"kubectl={requested_version}")
+			prepare_targets["kubeadm"]["deb_packages"].remove("kubeadm")
+			prepare_targets["kubeadm"]["deb_packages"].append(f"kubeadm={requested_version}")
+			prepare_targets["kubeadm"]["deb_packages"].remove("kubelet")
+			prepare_targets["kubeadm"]["deb_packages"].append(f"kubelet={requested_version}")
+		else:
+			tmp = check_deb_versions(["kubeadm"])
+			version = tmp[0][1]
+		update_installation_info(requested_version = requested_version)
+
+	iktprint([("\n• ", "separator"), ("Updating installation information", "action")])
+
+	run_tasks(tasks = prepare_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "prepared")
+
+	iktprint([("\nControl plane preparation successful", "success")])
+	print("\nNext step:")
+	iktprint([("• ", "separator"), (f"{about.admin_program_name}", "programname"), (" setup-control-plane ", "command"), ("[", "separator"), ("CNI", "argument"), ("]", "separator")])
+	iktprint([("\nSee “", "separator"), (f"{about.admin_program_name}", "programname"), (" help", "command"), ("“ for more information about valid ", "default"), ("CNI", "argument"), (" options.\n", "default")])
+
+def check_for_updates(options, args):
+	# default options
+	update_cache = True
+
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "--no-cache-update":
+				update_cache = False
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	iktprint([("\n[Checking for software updates]", "phase")])
+
+	if update_cache == True:
+		iktprint([("\n• ", "separator"), ("Updating APT cache", "action")])
+		check_and_print_status(update_apt_cache())
+
+	deb_packages = [
+		"ansible",
+		"ansible-mitogen",
+		"containerd",
+		"containerd.io",
+		"cri-tools",
+		"kubeadm",
+		"kubectl",
+		"kubelet",
+		"kubernetes-cni",
+		"kubernetes-client",
+		"kubernetes-master",
+		"kubernetes-node",
+		"docker.io",
+		"docker-ce",
+		"docker-engine",
+		"python3-natsort",
+		"python3-openssl",
+		"python3-ujson",
+		"python3-urllib3",
+		"runc",
+	]
+
+	version_checks = []
+
+	print()
+	check_versions(deb_packages, version_checks)
+	print()
+
+def show_configuration():
+	installation_info = get_installation_info()
+	distro = installation_info["distro"]
+	version = installation_info["version"]
+	requested_version = installation_info["requested_version"]
+	cni = installation_info["cni"]
+	pod_network_cidr = installation_info["pod_network_cidr"]
+
+	controlplanes = get_control_planes()
+
+	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
+	http_proxy_env = os.getenv("http_proxy")
+	if http_proxy_env is not None and http_proxy_env == "":
+		http_proxy_env = None
+	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	https_proxy_env = os.getenv("https_proxy")
+	if https_proxy_env is not None and https_proxy_env == "":
+		https_proxy_env = None
+	no_proxy = deep_get(iktconfig, "Network#no_proxy", "")
+	no_proxy_env = os.getenv("no_proxy")
+	if no_proxy_env is not None and no_proxy_env == "":
+		no_proxy_env = None
+
+	iktprint([("\n[Summary]", "phase")])
+	iktprint([("\n• ", "separator"), ("Configuration:", "action")])
+	iktprint([("        distribution: ", "action"), (f"{distro}", "programname")])
+	iktprint([("   installed version: ", "action"), __format_none(version, "version")])
+	if requested_version is not None and requested_version != "<none>":
+		iktprint([("   requested version: ", "action"), __format_none(requested_version, "version")])
+	if cni is not None and cni != "<none>":
+		iktprint([("                 CNI: ", "action"), (f"{cni}", "programname")])
+	if pod_network_cidr is not None and pod_network_cidr != "<none>":
+		iktprint([("    Pod Network CIDR: ", "action"), (f"{pod_network_cidr}", "emphasis")])
+	iktprint([("          HTTP Proxy: ", "action"), __format_none(http_proxy, "url"), (" (", "default"), (f"{IKT_CONFIG_FILE}", "path"), (")", "default")])
+	iktprint([("          HTTP Proxy: ", "action"), __format_none(http_proxy_env, "url"), (" (Environment)", "default")])
+	iktprint([("         HTTPS Proxy: ", "action"), __format_none(https_proxy, "url"), (" (", "default"), (f"{IKT_CONFIG_FILE}", "path"), (")", "default")])
+	iktprint([("         HTTPS Proxy: ", "action"), __format_none(https_proxy_env, "url"), (" (Environment)", "default")])
+	iktprint([("            No Proxy: ", "action"), __format_none(no_proxy, "url"), (" (", "default"), (f"{IKT_CONFIG_FILE}", "path"), (")", "default")])
+	iktprint([("            No Proxy: ", "action"), __format_none(no_proxy_env, "url"), (" (Environment)", "default")])
+	if len(controlplanes) > 0:
+		iktprint([("\n• ", "separator"), ("Control plane(s):", "action")])
+		for controlplane in controlplanes:
+			iktprint([("            hostname: ", "action"), (f"{controlplane[0]} ", "emphasis"), ("(", "default"), (f"{controlplane[1]}", "emphasis"), (")", "default")])
+
+def setup_control_plane(options, args):
+	installation_info = get_installation_info()
+	distro = installation_info["distro"]
+	version = None
+	requested_version = installation_info["requested_version"]
+	state = installation_info["state"]
+	phase = installation_info["phase"]
+	phase_skiplist = set(installation_info["phase_skiplist"])
+	cni = installation_info["cni"]
+
+	if state is not None and state in ["installed", "upgrading", "tearing_down", "torn_down", "purging"]:
+		iktprint([("Error: ", "error"), ("Invalid installation state; there is a partial or full installation already; aborting.", "default")], stderr = True)
+		sys.exit(2)
+	elif state is None or state == "preparing":
+		iktprint([("Error: ", "error"), ("The system is not prepared for installation yet; run ", "default"), (f"{about.admin_program_name}", "programname"), (" prepare", "command"), (" before continuing. Aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if state == "prepared" or type(phase) == list:
+		phase = 0
+
+	if options is None:
+		phase = 0
+	else:
+		for opt, optarg in options:
+			if opt == "--start-at-task":
+				phase = __validate_task_index(setup_control_plane_tasks, optarg)
+			elif opt == "--skip-tasks":
+				skip_phases = __expand_index_list(optarg)
+				for __phase in skip_phases:
+					__validate_task_index(setup_control_plane_tasks, __phase)
+				phase_skiplist = skip_phases
+			elif opt == "--list-tasks":
+				__list_phases(setup_control_plane_tasks)
+				sys.exit(0)
+			elif opt == "--resume":
+				if phase is None or phase == "<none>":
+					phase = 0
+				elif phase == "<done>":
+					iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed installation. Exiting.")], stderr = True)
+					sys.exit(0)
+
+				phase = __validate_task_index(setup_control_plane_tasks, phase)
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	if cni is None or cni == "<none>":
+		if len(args) == 0:
+			iktprint([("Warning: ", "warning"), ("No CNI specified; defaulting to ", "default"), (f"{DEFAULT_CNI}", "programname"), (".", "default")], stderr = True)
+			cni = DEFAULT_CNI
+		elif cni != args[0]:
+			cni = args[0]
+
+	if len(args) > 1:
+		pod_network_cidr = args[1]
+	else:
+		pod_network_cidr = DEFAULT_POD_NETWORK_CIDR
+
+	confirm = True
+
+	update_installation_info(cni = cni, pod_network_cidr = pod_network_cidr, state = "installing", phase = phase, phase_skiplist = list(phase_skiplist))
+
+	show_configuration()
+
+	if confirm == True:
+		retval = iktinput([("\nStart installation? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting: ", "error"), ("User stopped installation.", "default")], stderr = True)
+			sys.exit(2)
+
+	iktprint([("\n[Setting up control plane]", "phase")])
+
+	run_tasks(tasks = setup_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "installed")
+	update_installation_info(version = requested_version)
+
+	iktprint([("\nControl plane setup successful", "success")])
+
+def __check_path(args):
+	return os.path.exists(args[0])
+
+def __which(args):
+	return which(args[0]) is not None
+
+def __get_node_info(kh = None):
+	if not os.path.isfile(f"{HOMEDIR}/.kube/config"):
+		return None, None
+
+	# The reason for importing inside the function is to avoid slow startup
+	# when we don't use the Kubernetes helper
+	if kh is None:
+		from kubernetes_helper import KubernetesHelper
+		kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+
+	node_statuses = []
+
+	try:
+		vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
+	except Exception as e:
+		if str(e).startswith("Unhandled error: 504"):
+			return None, None
+		else:
+			raise Exception(e)
+
+	if vlist is not None:
+		retval = False
+
+		for node in vlist:
+			node_name = deep_get(node, "metadata#name")
+			node_schedulable = not deep_get(node, "spec#unschedulable", False)
+			node_roles = kh.get_node_roles(node)
+			node_statuses.append({
+				"name": node_name,
+				"schedulable": node_schedulable,
+				"roles": node_roles,
+			})
+
+	return node_statuses, kh
+
+def get_control_planes(fail_on_empty = True):
+	inventory = ansible_get_inventory_dict()
+	__controlplanes = deep_get(inventory, "controlplane#hosts", {})
+	controlplanes = []
+	if len(__controlplanes) == 0 and fail_on_empty == True:
+		iktprint([("Error: ", "error"), ("No control plane(s) defined in the inventory; rebuilding the inventory using “", "default"), (f"{about.inventory_program_name} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	for controlplane in __controlplanes:
+		ip = socket.gethostbyname(controlplane)
+		controlplanes.append((controlplane, ip))
+	return controlplanes
+
+def teardown_control_plane(options, args):
+	installation_info = get_installation_info()
+	distro = installation_info["distro"]
+	state = installation_info["state"]
+	phase = installation_info["phase"]
+	phase_skiplist = set(installation_info["phase_skiplist"])
+
+	if distro is None or distro == "<none>":
+		iktprint([("Error: ", "error"), ("Could not find reliable installation information. Aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if state is None:
+		iktprint([("Error: ", "error"), ("Cannot determine installation state; aborting.", "default")], stderr = True)
+		sys.exit(2)
+	elif state in ["preparing", "prepared", "torn_down"]:
+		iktprint([("Error: ", "error"), ("The system has no installed cluster; try ", "default"), (f"{about.admin_program_name}", "programname"), (" purge-control-plane", "command"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if options is None:
+		phase = 0
+	else:
+		for opt, optarg in options:
+			if opt == "--start-at-task":
+				phase = __validate_task_index(teardown_control_plane_tasks, optarg)
+			elif opt == "--skip-tasks":
+				skip_phases = __expand_index_list(optarg)
+				for __phase in skip_phases:
+					__validate_task_index(teardown_control_plane_tasks, __phase)
+				phase_skiplist = skip_phases
+			elif opt == "--list-tasks":
+				__list_phases(teardown_control_plane_tasks)
+				sys.exit(0)
+			elif opt == "--resume":
+				if phase is None or phase == "<none>":
+					phase = 0
+				elif phase == "<done>":
+					iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed teardown. Exiting.")], stderr = True)
+					sys.exit(0)
+
+				phase = __validate_task_index(setup_control_plane_tasks, phase)
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	confirm = True
+
+	show_configuration()
+
+	if confirm == True:
+		retval = iktinput([("\nStart teardown? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting: ", "error"), ("User stopped teardown.", "default")], stderr = True)
+			sys.exit(2)
+
+	iktprint([("\n[Tearing down cluster]", "phase")])
+
+	installation_info = update_installation_info(state = "tearing_down", phase = 0)
+
+	run_tasks(tasks = teardown_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "torn_down")
+	iktprint([("\nCluster teardown successful", "success")])
+
+def purge_control_plane(options, args):
+	installation_info = get_installation_info()
+	distro = installation_info["distro"]
+	state = installation_info["state"]
+	phase = installation_info["phase"]
+	phase_skiplist = set(installation_info["phase_skiplist"])
+
+	if state is None or state in ["preparing", "installing", "upgrading"]:
+		iktprint([("Error: ", "error"), ("Invalid installation state; there's no fully installed cluster; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if options is None:
+		phase = 0
+	else:
+		for opt, optarg in options:
+			if opt == "--start-at-task":
+				phase = __validate_task_index(teardown_control_plane_tasks, optarg)
+			elif opt == "--skip-tasks":
+				skip_phases = __expand_index_list(optarg)
+				for __phase in skip_phases:
+					__validate_task_index(teardown_control_plane_tasks, __phase)
+				phase_skiplist = skip_phases
+			elif opt == "--list-tasks":
+				__list_phases(teardown_control_plane_tasks)
+				sys.exit(0)
+			elif opt == "--resume":
+				if phase is None or phase == "<none>":
+					phase = 0
+				elif phase == "<done>":
+					iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed teardown. Exiting.")], stderr = True)
+					sys.exit(0)
+
+				phase = __validate_task_index(setup_control_plane_tasks, phase)
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	# If there's still an installed cluster or if the teardown hasn't finished, teardown the cluster before purging
+	if state in ["installed", "upgraded", "tearing_down"]:
+		teardown_control_plane(options, args)
+		state = "torn_down"
+	else:
+		confirm = True
+
+		show_configuration()
+
+		if confirm == True:
+			retval = iktinput([("\nStart purge? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+			if retval.lower() not in ["y", "yes"]:
+				iktprint([("\nAborting: ", "error"), ("User stopped purge.", "default")], stderr = True)
+				sys.exit(2)
+
+	iktprint([("\n\n[Purging cluster configuration and software]", "phase")])
+
+	# If we're purging the control plane we want to leave kubectl behind; if we have a setup with multiple
+	# control-planes and we run this from one of them, then kubectl will remain on the other two. Just don't do it.
+	if __selection_localhost() == __selection_control_planes():
+		purge_control_plane_targets["kubeadm"]["deb_packages"].remove("kubectl")
+		purge_control_plane_targets["kubeadm"]["deb_packages_held"].remove("kubectl")
+
+	installation_info = update_installation_info(state = "purging", phase = 0)
+
+	run_tasks(tasks = purge_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "purged")
+	os.remove(IKT_INSTALLATION_INFO)
+
+	iktprint([("\nCluster purge successful", "success")])
+
+	iktprint([("\nNote: ", "note"), ("It's recommended to reboot the control plane(s) after purging the cluster\n", "default")])
+
+def upgrade_control_plane(options, args):
+	installation_info = get_installation_info()
+	distro = installation_info["distro"]
+	version = installation_info["version"]
+	requested_version = installation_info["requested_version"]
+	state = installation_info["state"]
+	phase = installation_info["phase"]
+	phase_skiplist = set(installation_info["phase_skiplist"])
+
+	# default options
+	update_cache = True
+	allow_reinstall = False
+	requested_version = None
+
+	if state is None or state in ["<none>", "preparing", "prepared", "installing", "tearing_down", "torn_down", "purging"]:
+		iktprint([("Error: ", "error"), ("Invalid installation state; Kubernetes does not seems to be fully installed; aborting.")], stderr = True)
+		sys.exit(2)
+
+	if state in ["installed", "upgraded"] or type(phase) == list:
+		phase = 0
+
+	if len(args) > 0:
+		requested_version = __find_requested_version(distro, args[0])
+	else:
+		requested_version = __find_requested_version(distro)
+
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "--start-at-task":
+				phase = __validate_task_index(upgrade_control_plane_tasks, optarg)
+			elif opt == "--skip-tasks":
+				skip_phases = __expand_index_list(optarg)
+				for __phase in skip_phases:
+					__validate_task_index(upgrade_control_plane_tasks, __phase)
+				phase_skiplist = skip_phases
+			elif opt == "--list-tasks":
+				__list_phases(setup_control_plane_tasks)
+				sys.exit(0)
+			elif opt == "--resume":
+				if phase is None or phase == "<none>":
+					phase = 0
+				elif phase == "<done>":
+					iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed upgrade. Exiting.")], stderr = True)
+					sys.exit(0)
+
+				phase = __validate_task_index(upgrade_control_plane_tasks, phase)
+			elif opt == "--no-cache-update":
+				update_cache = False
+			elif opt == "--reinstall":
+				allow_reinstall = True
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	# XXX: How do we check that nodes are drained? We can check whether they are cordoned
+	node_status, kh = __get_node_info()
+
+	if node_status is None:
+		iktprint([("Error: ", "error"), ("No ", "default"), (f"{HOMEDIR}/.kube/config", "path"), (" available; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if update_cache == True:
+		iktprint([("\n• ", "separator"), ("Updating APT cache", "action")])
+		check_and_print_status(update_apt_cache())
+
+	iktprint([("\n• ", "separator"), ("Running sanity checks", "action")])
+
+	deb_versions = check_deb_versions(["kubeadm"])
+
+	if requested_version is not None:
+		if requested_version not in deb_versions[0][3]:
+			iktprint([("Error: ", "error"), ("The requested version ", "default"), (f"{requested_version}", "version"), (" is not available; aborting.", "default")], stderr = True)
+			sys.exit(2)
+		elif requested_version == deb_versions[0][1]:
+			if allow_reinstall == False:
+				iktprint([("Error: ", "error"), ("The requested version ", "default"), (f"{requested_version}", "version"), (" is already installed; to reinstall use the option “", "default"), ("--reinstall", "option"), ("“.", "default")], stderr = True)
+				sys.exit(2)
+		elif deb_compare_versions(deb_versions[0][1], requested_version) == True:
+			iktprint([("Error: ", "error"), ("The requested version ", "default"), (f"{requested_version}", "version"), (" is older than than the installed version ", "default"), (f"{deb_versions[0][1]}", "version"), (". Downgrades are not supported; aborting.", "default")], stderr = True)
+			sys.exit(2)
+	else:
+		requested_version = deb_versions[0][2]
+		if len(requested_version) == 0 or requested_version == "<none>":
+			iktprint([("Note: ", "ok"), ("The latest version ", "default"), (f"{deb_versions[0][1]}", "version"), (" is already installed.", "default")])
+			sys.exit(0)
+
+	# Is this an major, minor, or patchrev upgrade?
+	installed_version_tuple = deb_versions[0][1].split(".")
+	requested_version_tuple = requested_version.split(".")
+
+	upgrade_type = None
+
+	if installed_version_tuple[0] != requested_version_tuple[0]:
+		print([("Error: ", "error"), ("Upgrades between ", "default"), ("MAJOR", "emphasis"), (" versions is currently not supported (installed version: ", "default"), (f"{deb_versions[0][1]}", "version"), (", requested version: ", "default"), (f"{requested_version}", "version"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+	elif installed_version_tuple[1] != requested_version_tuple[1]:
+		installed_major_minor = f"{installed_version_tuple[0]}.{installed_version_tuple[1]}"
+		if int(requested_version_tuple[1]) - int(installed_version_tuple[1]) > 1:
+			iktprint([("Error: ", "error"), ("Skipping ", "default"), ("MINOR", "emphasis"), (" versions is not supported, please perform the following upgrades sequentially:", "default")], stderr = True)
+			minor_versions = {}
+			for version in reversed(deb_versions[0][3]):
+				version_tuple = version.split(".")
+				major_minor = f"{version_tuple[0]}.{version_tuple[1]}"
+				if int(version_tuple[1]) > int(installed_version_tuple[1]) and int(version_tuple[1]) <= int(requested_version_tuple[1]) and (major_minor not in minor_versions or minor_versions[major_minor] < version_tuple[2]):
+					minor_versions[major_minor] = version_tuple[2]
+			for version in minor_versions:
+				iktprint([("• ", "separator"), (f"{about.admin_program_name}", "programname"), (" upgrade-control-plane", "command"), (f" {version}.{minor_versions[version]}", "version")])
+			sys.exit(2)
+		else:
+			upgrade_type = "minor"
+	else:
+		upgrade_type = "patchrev"
+
+	# If this is an upgrade to a new patchrev the cluster doesn't have to be drained
+	if upgrade_type == "minor":
+		schedulable_count = 0
+		nodes_to_drain = ""
+		for node in node_status:
+			if node["schedulable"] == False:
+				continue
+
+			if "control-plane" in node["roles"]:
+				continue
+
+			if schedulable_count == 0:
+				iktprint([("\nError: ", "error"), ("The following nodes need to be drained; aborting.", "default")])
+			schedulable_count += 1
+			iktprint([("• ", "separator"), (f"{node['name']}", "emphasis")])
+			nodes_to_drain += node['name']
+
+		if schedulable_count > 0:
+			iktprint([("\nThis can be achieved with: “", "default"), ("kubectl ", "programname"), ("drain ", "command"), ("--ignore-daemonsets --delete-emptydir-data ", "option"), (f"{nodes_to_drain}", "url"), ("“", "default")])
+			sys.exit(2)
+
+	installation_info = update_installation_info(state = "upgrading", requested_version = requested_version, phase = 0)
+
+	# If we got here all the sanity checks were successful
+	iktprint([("OK", "ok")])
+
+	# Adjust package version for localhost
+	upgrade_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
+	upgrade_control_plane_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
+
+	confirm = True
+
+	show_configuration()
+
+	if confirm == True:
+		retval = iktinput([("\nStart upgrade? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting: ", "error"), ("User stopped upgrade.", "default")], stderr = True)
+			sys.exit(2)
+
+	iktprint([("\n[Upgrading control plane]", "phase")])
+
+	run_tasks(tasks = upgrade_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "upgraded")
+	update_installation_info(version = requested_version)
+
+	iktprint([("\nControl plane upgrade successful", "success")])
+
+# This basically just checks downloads the latest CNI yaml and applies it
+def update_cni(options, args):
+	iktprint([("update-cni is not yet implemented", "notok")])
+
+def taint_control_plane(options, args):
+	node_statuses, kh = __get_node_info()
+
+	if node_statuses is None:
+		iktprint([("Critical: ", "critical"), ("Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	first = True
+
+	for node in node_statuses:
+		if "control-plane" in node["roles"] and (len(args) == 0 or node["name"] in args):
+			if first == True:
+				iktprint([("Tainting control-plane(s):", "header")])
+				first = False
+			iktprint([(node["name"], "hostname")])
+			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master:NoSchedule"]
+			response = execute_command_with_response(args).strip("\n")
+			if "with same effect(s) and --overwrite is false" in response:
+				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
+				continue
+			elif response.endswith("tainted"):
+				iktprint([("  Tainted", "success")])
+				continue
+			elif response.startswith("error: "):
+				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.")], stderr = True)
+				sys.exit(2)
+
+	if first == True:
+		iktprint([("Warning: ", "warning"), ("No matching control-planes found. Aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+def untaint_control_plane(options, args):
+	node_statuses, kh = __get_node_info()
+
+	if node_statuses is None:
+		iktprint([("Critical: ", "critical"), ("Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	first = True
+
+	for node in node_statuses:
+		if "control-plane" in node["roles"] and (len(args) == 0 or node["name"] in args):
+			if first == True:
+				iktprint([("Untainting control-plane(s):", "header")])
+				first = False
+			iktprint([(node["name"], "hostname")])
+			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master-"]
+			response = execute_command_with_response(args).strip("\n")
+			if "error: taint \"node-role.kubernetes.io/master\" not found" in response:
+				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
+				continue
+			elif response.endswith("untainted"):
+				iktprint([("  Untainted", "success")])
+				continue
+			elif response.startswith("error: "):
+				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.")], stderr = True)
+				sys.exit(2)
+
+	if first == True:
+		iktprint([("Warning: ", "warning"), ("No matching control-planes found. Aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+
+def read_iktconfig():
+	global iktconfig
+
+	if os.path.isfile(IKT_CONFIG_FILE) is False:
+		return
+
+	# Read the base configuration file
+	with open(IKT_CONFIG_FILE) as f:
+		iktconfig = yaml.safe_load(f)
+
+	# Now read ikt.yaml.d/* if available
+	if os.path.isdir(IKT_CONFIG_FILE_DIR) is False:
+		return
+
+	for item in natsorted(os.listdir(IKT_CONFIG_FILE_DIR)):
+		# Only read entries that end with .y{,a}ml
+		if not (item.endswith(".yml") or item.endswith(".yaml")):
+			continue
+
+		# Read the conflet files
+		with open(f"{IKT_CONFIG_FILE_DIR}/{item}") as f:
+			moreiktconfig = yaml.safe_load(f)
+
+		# Handle config files without any values defined
+		if moreiktconfig is not None:
+			iktconfig = {**iktconfig, **moreiktconfig}
+
+	# Used by the ansible module
+	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)
+	ansible_user = deep_get(iktconfig, "Ansible#ansible_user")
+	if ansible_user is None or len(ansible_user) == 0:
+		ansible_user = getuser()
+	ansible_configuration.ansible_user = ansible_user
+	ansible_password = deep_get(iktconfig, "Ansible#ansible_password")
+	if ansible_password is not None and len(ansible_password) > 0:
+		ansible_configuration.ansible_password = ansible_password
+	ansible_configuration.disable_strict_host_key_checking = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
+	ansible_configuration.save_logs = deep_get(iktconfig, "Ansible#save_logs", False)
+
+commandline = {
+	"Check Versions": {
+		"command": ["check-versions", "cv"],
+		"description": [("Update the package cache and show software versions", "description")],
+		"extended_description": [
+			[("Note: ", "note"), ("some of the listed software might not be relevant", "description")],
+			[("to the configuration in use", "description")],
+		],
+		"options": {
+			"--no-cache-update": {
+				"description": [("Do not update the APT cache", "description")],
+			},
+		},
+		"min_args": 0,
+		"max_args": 0,
+		"callback": check_for_updates,
+	},
+	"Prepare Installation": {
+		"command": ["prepare"],
+		"values": [("[", "separator"), ("KUBERNETES_VERSION", "argument"), ("]", "separator")],
+		"description": [("Install and configure pre-requisites; run this before ", "description"), ("setup-control-plane", "command")],
+		"extended_description": [
+			[("If no version is specified the newest available version will be used", "description")],
+		],
+		"options": {
+			"--no-cache-update": {
+				"description": [("Do not update the APT cache", "description")],
+			},
+			"--resume": {
+				"description": [("Resume preparation; can be used if preparation was aborted", "description")],
+			},
+			"--start-at-task": {
+				"values": [("TASK", "argument")],
+				"description": [("Start at ", "description"), ("TASK", "argument"), (" instead of running all tasks", "description")],
+				"requires_arg": True,
+			},
+			"--skip-tasks": {
+				"values": [("TASK", "argument"), (",", "separator"), ("...", "argument")],
+				"description": [("Skip ", "description"), ("TASK", "argument"), (",", "separator"), ("...", "argument")],
+				"requires_arg": True,
+			},
+			"--list-tasks": {
+				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
+			},
+		},
+		"min_args": 0,
+		"max_args": 1,
+		"callback": prepare_installation,
+	},
+	"Setup Control Plane": {
+		"command": ["setup-control-plane"],
+		"values": [
+			("[", "separator"), ("CNI", "argument"), ("]", "separator"),
+			(" [", "separator"), ("POD_NETWORK_CIDR", "argument"), ("]", "separator"),
+		],
+		"description": [("Setup and launch the control plane", "description")],
+		"extended_description": [
+			[("Valid options for CNI (Container Network Interface, aka Pod Network): ", "description")],
+			[
+				("antrea", "argument"), (", ", "separator"),
+				("calico", "argument"), (", ", "separator"),
+				("canal", "argument"), (", ", "separator"),
+				("cilium", "argument"), (", ", "separator"),
+				("flannel", "argument"), (", ", "separator"),
+				("kube-router", "argument"), (", ", "separator"),
+				("weave", "argument"),
+			],
+			[("By default ", "description"), ("10.244.0.0/16", "argument"), (" will be used as pod network CIDR", "description")],
+		],
+		"options": {
+			"--resume": {
+				"description": [("Resume installation; can be used if installation was aborted", "description")],
+			},
+			"--start-at-task": {
+				"values": [("TASK", "argument")],
+				"description": [("Start at ", "description"), ("TASK", "argument"), (" instead of running all tasks", "description")],
+				"requires_arg": True,
+			},
+			"--skip-tasks": {
+				"values": [("TASK", "argument"), (",", "separator"), ("...", "argument")],
+				"description": [("Skip ", "description"), ("TASK", "argument"), (",", "separator"), ("...", "argument")],
+				"requires_arg": True,
+			},
+			"--list-tasks": {
+				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
+			},
+		},
+		"min_args": 0,
+		"max_args": 2,
+		"callback": setup_control_plane,
+	},
+	"Upgrade Control Plane": {
+		"command": ["upgrade-control-plane"],
+		"values": [("[", "separator"), ("KUBERNETES_VERSION", "argument"), ("]", "separator")],
+		"description": [("Upgrade the control plane", "description")],
+		"extended_description": [
+			[("Upgrades the control plane to ", "description"), ("KUBERNETES_VERSION", "argument"), (" if specified;", "description")],
+			[("if no version is specified the newest available version will be used", "description")],
+			[("Upgrading requires all nodes to be drained first. Once the control-plane", "description")],
+			[("has been upgraded you must upgrade all nodes to the same version.", "description")],
+			[("Important", "emphasis"), (": skipping PATCH REVISIONS is acceptable,", "description")],
+			[("but when upgrading to a newer MINOR version all intermediate MINOR versions", "description")],
+			[("must be installed first; this applies to nodes too", "description")],
+		],
+		"options": {
+			"--no-cache-update": {
+				"description": [("Do not update the APT cache", "description")],
+			},
+			"--resume": {
+				"description": [("Resume upgrade; can be used if upgrade was aborted", "description")],
+			},
+			"--start-at-task": {
+				"values": [("TASK", "argument")],
+				"description": [("Start at ", "description"), ("TASK", "argument"), (" instead of running all tasks", "description")],
+				"requires_arg": True,
+			},
+			"--skip-tasks": {
+				"values": [("TASK", "argument"), (",", "separator"), ("...", "argument")],
+				"description": [("Skip ", "description"), ("TASK", "argument"), (",", "separator"), ("...", "argument")],
+				"requires_arg": True,
+			},
+			"--list-tasks": {
+				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
+			},
+			"--reinstall": {
+				"description": [("Allow installing an already installed Kubernetes version", "description")],
+			},
+		},
+		"min_args": 0,
+		"max_args": 1,
+		"callback": upgrade_control_plane,
+	},
+	"Teardown Control Plane": {
+		"command": ["teardown-control-plane"],
+		"description": [("Tear down the control plane", "description")],
+		"extended_description": [
+			[("Note", "emphasis"), (": Before running this command all nodes must have been removed first", "description")],
+			[("The configuration for the control plane and any software installed", "description")],
+			[("during installation will NOT be removed", "description")],
+
+		],
+		"options": {
+			"--resume": {
+				"description": [("Resume teardown; can be used if teardown was aborted", "description")],
+			},
+			"--start-at-task": {
+				"values": [("TASK", "argument")],
+				"description": [("Start at ", "description"), ("TASK", "argument"), (" instead of running all tasks", "description")],
+				"requires_arg": True,
+			},
+			"--skip-tasks": {
+				"values": [("TASK", "argument"), (",", "separator"), ("...", "argument")],
+				"description": [("Skip ", "description"), ("TASK", "argument"), (",", "separator"), ("...", "argument")],
+				"requires_arg": True,
+			},
+			"--list-tasks": {
+				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
+			},
+		},
+		"min_args": 0,
+		"max_args": 0,
+		"callback": teardown_control_plane,
+	},
+	"Purge Control Plane": {
+		"command": ["purge-control-plane"],
+		"description": [("Purge configuration and installed software", "description")],
+		"extended_description": [
+			[("purge-control-plane", "command"), (" will run ", "description"), ("teardown-control-plane", "command"), (" first if necessary", "description")],
+			[("Software and configuration needed for ", "description"), (f"{about.program_suite_name}", "programname"), (" will not be purged", "description")],
+
+		],
+		"options": {
+			"--resume": {
+				"description": [("Resume purge; can be used if purge was aborted", "description")],
+			},
+			"--start-at-task": {
+				"values": [("TASK", "argument")],
+				"description": [("Start at ", "description"), ("TASK", "argument"), (" instead of running all tasks", "description")],
+				"requires_arg": True,
+			},
+			"--skip-tasks": {
+				"values": [("TASK", "argument"), (",", "separator"), ("...", "argument")],
+				"description": [("Skip ", "description"), ("TASK", "argument"), (",", "separator"), ("...", "argument")],
+				"requires_arg": True,
+			},
+			"--list-tasks": {
+				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
+			},
+		},
+		"min_args": 0,
+		"max_args": 0,
+		"callback": purge_control_plane,
+	},
+	"Taint Control Plane": {
+		"command": ["taint-control-plane"],
+		"values": [("[", "separator"), ("CONTROLPLANE", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
+		"description": [("Mark control-plane(s) as tainted", "description")],
+		"extended_description": [
+			[("If you have previously marked your control-plane(s) as untainted", "description")],
+			[("you can mark them as tainted again using this command", "description")],
+			[("If ", "description"), ("CONTROLPLANE", "argument"), (",", "separator"), ("...", "argument"), (" is not specified all control-planes will be tainted", "description")],
+		],
+		"min_args": 0,
+		"max_args": 1,
+		"callback": taint_control_plane,
+	},
+	"Untaint Control Plane": {
+		"command": ["untaint-control-plane"],
+		"values": [("[", "separator"), ("CONTROLPLANE", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
+		"description": [("Mark control-plane(s) as untainted", "description")],
+		"extended_description": [
+			[("Per default control-planes are marked as tainted; workloads that lack ", "description")],
+			[("tolerations will not be scheduled to them", "description")],
+			[("If you're running a single-node cluster, or if the control-plane is very", "description")],
+			[("powerful it might be useful to permit workloads on control-plane(s) too", "description")],
+			[("If ", "description"), ("CONTROLPLANE", "argument"), (",", "separator"), ("...", "argument"), (" is not specified all control-planes will be untainted", "description")],
+
+		],
+		"min_args": 0,
+		"max_args": 1,
+		"callback": untaint_control_plane,
+	},
+	"spacer1": {
+		"command": [""],
+		"description": [("", "default")],
+	},
+}
+
+def main():
+	init_iktprint(THEME_PATH)
+	command, options, args = parse_commandline(about.admin_program_name, about.admin_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline)
+	read_iktconfig()
+	return command(options, args)
+
+if __name__ == "__main__":
+	main()

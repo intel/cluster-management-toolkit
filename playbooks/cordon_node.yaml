@@ -1,0 +1,15 @@
+- hosts: controlplane
+  vars:
+    metadata:
+      description: Cordon node
+      playbook-types:
+      - node
+      allow-on-control-plane: single
+      category: Scheduling
+  gather_facts: no
+  tasks:
+  - name: Cordon node
+    shell: |
+      nodes="{{ groups["selection"] | join(" ") }}"
+      kubectl cordon ${nodes}
+    delegate_to: localhost

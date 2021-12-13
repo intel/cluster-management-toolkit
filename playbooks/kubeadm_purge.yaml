@@ -1,0 +1,35 @@
+- hosts: selection
+  vars:
+    metadata:
+      description: Purge kubeadm
+      time_consumption: Moderately slow
+      playbook-types:
+      - internal
+      category: Administration
+  gather_facts: yes
+  become: True
+  become_user: root
+  tasks:
+  - name: Unmarking packages as held
+    shell: apt-mark unhold "{{ item }}" || true
+    loop: "{{ held_packages }}"
+    when: ansible_os_family == 'Debian'
+  - name: Removing Kubernetes packages
+    apt:
+      name: "{{ packages }}"
+      force_apt_get: yes
+      state: absent
+      purge: yes
+    when: ansible_os_family == 'Debian'
+  - name: Removing directories
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+    - /etc/kubernetes
+    - /etc/systemd/system/kubelet.service.d
+    - /var/lib/etcd
+    - /var/lib/kubelet
+  - name: Reload systemd configuration
+    systemd:
+      daemon_reload: yes

@@ -1,0 +1,11 @@
+# description: listgpus:List GPUs
+- hosts: selection
+  vars:
+    metadata:
+      description: List GPUs
+      category: Information
+  gather_facts: no
+  tasks:
+  - name: List GPUs
+    shell: lspci -nn | grep -E "VGA|Display"
+    changed_when: False

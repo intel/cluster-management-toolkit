@@ -1,0 +1,36 @@
+- hosts: selection:!nodes:!controlplane:!nas
+  vars:
+    metadata:
+      description: Setup a Kubernetes node using kubeadm
+      time_consumption: Slow
+      playbook-types:
+      - inventory
+      confirm: True
+      allow-on-control-plane: never
+      requires-cluster-info: True
+      run-before:
+      - add_kubernetes_repo
+      add-to-groups:
+      - nodes
+      category: Setup
+  gather_facts: no
+  become: True
+  become_user: root
+  tasks:
+  - name: Updating APT cache
+    apt: update_cache=yes force_apt_get=yes
+  - name: Gathering package facts
+    package_facts:
+      manager: apt
+  - name: Installing Kubernetes packages
+    apt:
+      pkg:
+      - kubelet={{ control_plane_k8s_version }}
+      - kubeadm={{ control_plane_k8s_version }}
+      - kubectl={{ control_plane_k8s_version }}
+      force_apt_get: yes
+  - name: apt-mark hold kubeadm, kubelet, kubectl
+    command: apt-mark hold kubeadm kubelet kubectl
+  - name: Joining node to the cluster
+    shell: |
+      kubeadm join "{{ control_plane_ip }}:{{ control_plane_port }}" --token "{{ join_token }}" --discovery-token-ca-cert-hash "sha256:{{ ca_cert_hash }}"

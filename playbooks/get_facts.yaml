@@ -1,0 +1,11 @@
+- hosts: selection
+  vars:
+    metadata:
+      description: Get package versions
+      playbook-types:
+      - internal
+      category: SHOULD NOT SHOW UP
+  gather_facts: no
+  tasks:
+  - name: Gathering host facts
+    ansible.builtin.setup:

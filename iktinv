@@ -1,0 +1,760 @@
+#! /usr/bin/env python3
+# Requires: ansible
+# Requires: python3 (>= 3.6)
+# Requires: python3-natsort
+# Requires: python3-openssl
+
+from functools import reduce
+import os
+from pathlib import Path
+import re
+import sys
+import yaml
+
+try:
+	from natsort import natsorted
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+
+from commandparser import parse_commandline
+
+from ansible_helper import ansible_configuration, ansible_support, ansible_get_inventory_pretty, ansible_get_groups, ansible_get_groups_by_host, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_remove_groups, ansible_set_hostvars, ansible_set_groupvars, ansible_unset_hostvars, ansible_unset_groupvars, ansible_create_groups, ansible_ping
+from ansible_helper import ANSIBLE_INVENTORY
+
+HOMEDIR = str(Path.home())
+IKTDIR = f"{HOMEDIR}/.ikt"
+IKT_CONFIG_FILENAME = "ikt.yaml"
+IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
+IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
+
+from iktprint import iktprint, init_iktprint
+
+import about
+PROGRAMDESCRIPTION = f"Query or modify the host inventory"
+PROGRAMAUTHORS = "Written by David Weinehall."
+
+THEME_DIRNAME = "themes"
+THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
+THEME_PATH = f"{THEMEDIR}/default.yaml"
+
+iktconfig = None
+
+def deep_get(dictionary, path, default = None):
+	if dictionary is None:
+		return default
+	if path is None or len(path) == 0:
+		return default
+	return reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
+
+def set_host_vars(options = None, args = None):
+	hostvars = []
+	hosts = []
+
+	if args is None or len(args) == 0:
+		raise Exception(f"Programming error; no hosts provided")
+
+	hosts = args[1].split(",")
+	keyvals = args[0].split(",")
+
+	for keyval in keyvals:
+		try:
+			key, value = keyval.split(":")
+		except:
+			iktprint([(f"Error: ", "error"), ("Setting a variable requires a ", "default"), ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
+			print()
+			iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+			sys.exit(2)
+		hostvars.append((key, value))
+
+	# Set vars
+	if len(hostvars) > 0:
+		retval = ansible_set_hostvars(inventory = ANSIBLE_INVENTORY, hosts = hosts, hostvars = hostvars)
+		if retval is False:
+			raise Exception(f"Programming error: failed to set vars for hosts {hosts}")
+
+	return 0
+
+def set_group_vars(options = None, args = None):
+	groupvars = []
+	groups = []
+
+	if args is None or len(args) == 0:
+		raise Exception(f"Programming error; no groups provided")
+
+	groups = args[1].split(",")
+	keyvals = args[0].split(",")
+
+	for keyval in keyvals:
+		try:
+			key, value = keyval.split(":")
+		except:
+			iktprint([(f"Error: ", "error"), ("Setting a variable requires a ", "default"), ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
+			print()
+			iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+			sys.exit(2)
+		groupvars.append((key, value))
+
+	# Set vars
+	if len(groupvars) > 0:
+		retval = ansible_set_groupvars(inventory = ANSIBLE_INVENTORY, groups = groups, groupvars = groupvars)
+		if retval is False:
+			raise Exception(f"Programming error: failed to set vars for groups {groups}")
+
+	return 0
+
+def set_global_vars(options = None, args = None):
+	return set_group_vars(options = [], args = [args[0], "all"])
+
+def unset_host_vars(options = None, args = None):
+	hostvars = []
+	hosts = []
+
+	if args is None or len(args) == 0:
+		raise Exception(f"Programming error; no hosts provided")
+
+	hosts = args[1].split(",")
+	hostvars = args[0].split(",")
+
+	# Unset vars
+	if len(hostvars) > 0:
+		retval = ansible_unset_hostvars(inventory = ANSIBLE_INVENTORY, hosts = hosts, hostvars = hostvars)
+		if retval is False:
+			raise Exception(f"Programming error: failed to unset vars for hosts {hosts}")
+
+	return 0
+
+def unset_group_vars(options = None, args = None):
+	groupvars = []
+	groups = []
+
+	if args is None or len(args) == 0:
+		raise Exception(f"Programming error; no groups provided")
+
+	groups = args[1].split(",")
+	groupvars = args[0].split(",")
+
+	# Unset vars
+	if len(groupvars) > 0:
+		retval = ansible_unset_groupvars(inventory = ANSIBLE_INVENTORY, groups = groups, groupvars = groupvars)
+		if retval is False:
+			raise Exception(f"Programming error: failed to unset vars for groups {groups}")
+
+	return 0
+
+def unset_global_vars(options = None, args = None):
+	return unset_group_vars(options = [], args = [args[0], "all"])
+
+def add_groups(options = None, args = None):
+	groups = []
+	groupvars = []
+
+	if args is None or len(args) == 0:
+		raise Exception(f"Programming error; no groups provided")
+
+	groups = args[0].split(",")
+
+	# We shouldn't try to add "all" (it may cause unexpected issues with variables)
+	if "all" in groups:
+		iktprint([("Warning: ", "warning"), ("ignoring attempt to add group “", "default"), ("all", "argument"), ("“.", "default")], stderr = True)
+		groups.remove("all")
+		if len(groups) == 0:
+			return 0
+
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "--vars":
+				tmp = optarg.split(",")
+				for var in tmp:
+					key, value = var.split(":")
+					groupvars.append((key, value))
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	# Add the groups
+	retval = ansible_create_groups(inventory = ANSIBLE_INVENTORY, groups = groups)
+
+	if retval is False:
+		raise Exception(f"Programming error: failed to add {groups} to inventory")
+
+	# Set vars
+	if len(groupvars) > 0:
+		retval = ansible_set_groupvars(inventory = ANSIBLE_INVENTORY, groups = groups, groupvars = groupvars)
+		if retval is False:
+			raise Exception(f"Programming error: failed to set vars {groupvars} for groups {groups}")
+
+	return 0
+
+def add_hosts(options = None, args = None):
+	groups = []
+	hostvars = []
+	hosts = []
+	groups = []
+
+	if args is None or len(args) == 0:
+		raise Exception(f"Programming error; no hosts provided")
+
+	hosts = args[0].split(",")
+
+	if len(args) > 1:
+		groups = args[1].split(",")
+
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "--vars":
+				tmp = optarg.split(",")
+				for var in tmp:
+					key, value = var.split(":")
+					hostvars.append((key, value))
+			elif opt == "--groups":
+				if len(groups) > 0:
+					iktprint([("Error: ", "error"), ("Invalid option; “", "default"), (f"{opt}", "option"), ("“ cannot be used with ", "default"), ("HOST", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("... ", "argument"), ("syntax.", "default")], stderr = True)
+					print()
+					iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+					sys.exit(2)
+				groups = optarg.split(",")
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	retval = True
+	# Add the host to every specified group
+	if len(groups) == 0:
+		retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, skip_all = False)
+
+		if retval is False:
+			raise Exception(f"Programming error: failed to add {hosts}")
+	else:
+		group = ""
+
+		for group in groups:
+			retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group, skip_all = False)
+
+		if retval is False:
+			raise Exception(f"Programming error: failed to add {hosts} to group {group}")
+
+	# Set vars
+	if len(hostvars) > 0:
+		retval = ansible_set_hostvars(inventory = ANSIBLE_INVENTORY, hosts = hosts, hostvars = hostvars)
+		if retval is False:
+			raise Exception(f"Programming error: failed to set vars for hosts {hosts}")
+
+	return 0
+
+def format_members(group, members):
+	formatted = [(f"{group}: ", "default")]
+	i = 0
+	for i in range(0, len(members)):
+		if i < len(members) - 1:
+			formatted += [(members[i], "yaml_key"), (", ", "separator")]
+		else:
+			formatted += [(members[i], "yaml_key")]
+
+	return formatted
+
+def remove_groups(options = None, args = None):
+	groups = []
+	hostvars = []
+	extrahosts = []
+	forceneeded = False
+	force = False
+
+	if args is None or len(args) == 0:
+		raise Exception(f"Programming error; no groups provided")
+
+	groups = args[0].split(",")
+
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "--force":
+				force = True
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	if "all" in groups:
+		iktprint([("Error: ", "error"), ("The group “", "default"), ("all", "argument"), ("“ cannot be removed.", "default")], stderr = True)
+		print()
+		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		sys.exit(2)
+
+	for group in groups:
+		grouphosts = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, group)
+		if len(grouphosts) > 0:
+			forceneeded = True
+			extrahosts.append((group, grouphosts))
+
+	if forceneeded == True and force == False:
+		if forceneeded == True:
+			iktprint([("Error: ", "error"), ("The following groups are non-empty:", "default")])
+			for group, hosts in extrahosts:
+				iktprint(format_members(group, hosts))
+		print()
+		iktprint([("Removing groups that still contain hosts requires specifying “", "default"), ("--force", "option"), ("“.", "default")], stderr = True)
+		print()
+		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		sys.exit(2)
+
+	retval = ansible_remove_groups(inventory = ANSIBLE_INVENTORY, groups = groups, force = force)
+
+	if retval is False:
+		raise Exception(f"Programming error: failed to remove {groups}")
+
+	return 0
+
+def rebuild_inventory(options = None, args = None):
+	force = False
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "--force":
+				force = True
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	# Is there a pre-existing inventory?
+	if os.path.isfile(ANSIBLE_INVENTORY) and force == False:
+		iktprint([("Error: ", "error"), ("Overwriting an existing inventory requires specifying “", "default"), ("--force", "option"), ("“.", "default")], stderr = True)
+		print()
+		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		sys.exit(2)
+
+	from kubernetes_helper import KubernetesHelper
+
+	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+
+	vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
+
+	if vlist is not None:
+		for node in vlist:
+			roles = kh.get_node_roles(node)
+			if "control-plane" in roles:
+				groups = ["all", "controlplane"]
+			else:
+				groups = ["all", "nodes"]
+
+			group = ""
+			hosts = [deep_get(node, "metadata#name")]
+			retval = True
+			for group in groups:
+				retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group, skip_all = False)
+
+			if retval is False:
+				raise Exception(f"Programming error: failed to add {hosts} to group {group}")
+
+	return 0
+
+def remove_hosts(options = None, args = None):
+	hostvars = []
+	hosts = []
+	groups = ["all"]
+	extragroups = []
+	forceneeded = False
+	force = False
+
+	if args is None or len(args) == 0:
+		raise Exception(f"Programming error; no hosts provided")
+
+	hosts = args[0].split(",")
+
+	if len(args) > 1:
+		groups = args[1].split(",")
+
+		# If the hosts are only members of "all"
+		# (or aren't in the inventory at all),
+		# it's OK to remove them without --force.
+		#
+		# All hosts are members of the groups "all";
+		# this means that if len(hostgroups) > 1
+		# we have auxilliary groups and --force is needed.
+		for host in hosts:
+			hostgroups = ansible_get_groups_by_host(inventory, host)
+			if len(hostgroups) > 1:
+				forceneeded = True
+				hostgroups.remove("all")
+				extragroups.append((host, hostgroups))
+
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "--force":
+				force = True
+			else:
+				raise Exception(f"Programming error; invalid option {opt}")
+
+	if "all" in groups and forceneeded == True and (force == False or len(groups) > 1):
+		if forceneeded == True:
+			iktprint([("Error: ", "error"), (f"The following hosts are parts of other groups than “", "default"), ("all", "argument"), ("“:", "default")])
+			for host, groups in extragroups:
+				iktprint(format_members(host, groups))
+		print()
+		iktprint([("Removing hosts from “", "default"), ("all", "argument"), ("“ requires specifying “", "default"), ("--force", "option"), ("“", "default")], stderr = True)
+		iktprint([(f"unless “", "default"), ("all", "argument"), ("“ is the only group or the hosts are not members of other groups.", "default")], stderr = True)
+		print()
+		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		sys.exit(2)
+
+	retval = True
+
+	# If groups is ["all"] and "force" is specified we need to substitute ["all"] for a list of all groups
+	if groups == ["all"]:
+		groups = ansible_get_groups(inventory = ANSIBLE_INVENTORY)
+
+	for group in groups:
+		retval = ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group)
+
+		if retval is False:
+			raise Exception(f"Programming error: failed to remove {hosts} to group {group}")
+
+	return 0
+
+def inventory(options = None, args = None):
+	include_groupvars = False
+	include_hostvars = False
+
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "--include-vars":
+				include_groupvars = True
+				include_hostvars = True
+
+	groups = None
+
+	if args is not None and len(args) > 0:
+		groups = args[0].split(",")
+
+	for item in ansible_get_inventory_pretty(groups = groups, highlight = True, include_groupvars = include_groupvars, include_hostvars = include_hostvars):
+		iktprint(item)
+
+	return 0
+
+def list_groups(options = None, args = None):
+	include_groupvars = False
+
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "--include-vars":
+				include_groupvars = True
+
+	for item in ansible_get_inventory_pretty(groups = None, highlight = True, include_groupvars = include_groupvars, include_hosts = False):
+		iktprint(item)
+
+	return 0
+
+def list_hosts(options = None, args = None):
+	include_hostvars = False
+
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "--include-vars":
+				include_hostvars = True
+
+	groups = ["all"]
+
+	for item in ansible_get_inventory_pretty(groups = groups, highlight = True, include_hostvars = include_hostvars):
+		iktprint(item)
+
+	return 0
+
+def read_iktconfig():
+	global iktconfig
+
+	if os.path.isfile(IKT_CONFIG_FILE) is False:
+		return
+
+	# Read the base configuration file
+	with open(IKT_CONFIG_FILE) as f:
+		iktconfig = yaml.safe_load(f)
+
+	# Now read ikt.yaml.d/* if available
+	if os.path.isdir(IKT_CONFIG_FILE_DIR) is False:
+		return
+
+	for item in natsorted(os.listdir(IKT_CONFIG_FILE_DIR)):
+		# Only read entries that end with .y{,a}ml
+		if not (item.endswith(".yml") or item.endswith(".yaml")):
+			continue
+
+		# Read the conflet files
+		with open(f"{IKT_CONFIG_FILE_DIR}/{item}") as f:
+			moreiktconfig = yaml.safe_load(f)
+
+		# Handle config files without any values defined
+		if moreiktconfig is not None:
+			iktconfig = {**iktconfig, **moreiktconfig}
+
+def ping(options = None, args = None):
+	hoststatuses = []
+
+	if args is not None and len(args) > 0:
+		selection = args[0]
+	else:
+		selection = "all"
+
+	print("Please stand by, attempting to ping hosts")
+	print()
+
+	retval, output = ansible_ping(inventory = ANSIBLE_INVENTORY, selection = selection)
+
+	if output is None or len(output) == 0:
+		raise Exception(f"Internal error; ansible -m ping failed with: {retval}")
+
+	maxlen = 0
+
+	# This needs to be improved; if there's a message we need to tell the difference
+	# between "Permission denied" and "No route to host"
+	for (host, status) in output:
+		maxlen = max(len(host), maxlen)
+
+		if status == "SUCCESS":
+			status_group = "success"
+		elif status == "FAILED!":
+			status_group = "warning"
+		elif status == "UNREACHABLE!":
+			status_group = "error"
+		elif status == "COULD NOT RESOLVE":
+			status_group = "critical"
+		elif status == "MISSING INTERPRETER?":
+			status_group = "warning"
+		else:
+			status = "UNKNOWN"
+			status_group = "unknown"
+
+		hoststatuses.append((host, status, status_group))
+
+	header = "Hostname:"
+
+	maxlen = max(maxlen, len(header))
+
+	if len(hoststatuses) > 0:
+		iktprint([(header, "header"), (f"{''.ljust(maxlen - len(header))}  ", "default"), ("Status:", "header")])
+
+		for hostname, status, status_group in hoststatuses:
+			iktprint([(f"{hostname.ljust(maxlen)}  ", "default"), (f"{status}", status_group)])
+
+	return 0
+
+commandline = {
+	"Add Groups": {
+		"command": ["add-group", "add-groups"],
+		"values": [("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Add ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument"), (" to inventory", "description")],
+		"options": {
+			"--vars": {
+				"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument")],
+				"description": [("Set these group variables", "description")],
+				"requires_arg": True,
+			},
+		},
+		"min_args": 1,
+		"max_args": 1,
+		"callback": add_groups,
+	},
+	"Add Hosts to Inventory": {
+		"command": ["add-host", "add-hosts"],
+		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Add ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" to inventory", "description")],
+		"options": {
+			"--groups": {
+				"values": [("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+				"description": [("Add the hosts to these groups", "description")],
+				"requires_arg": True,
+			},
+			"--vars": {
+				"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument")],
+				"description": [("Set these host variables", "description")],
+				"requires_arg": True,
+			},
+		},
+		"min_args": 1,
+		"max_args": 2,
+		"callback": add_hosts,
+	},
+	# This is purely for the benefit of the helptext generator
+	"Add Hosts to Groups": {
+		"command": ["add-host", "add-hosts"],
+		"values": [("HOST", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Add ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" to ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+	},
+	"Inventory": {
+		"command": ["inventory", "inv"],
+		"values": [("[", "separator"), ("GROUP", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
+		"description": [("Show inventory, optionally limited to ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"options": {
+			"--include-vars": {
+				"description": [("Show variables", "description")],
+			},
+		},
+		"min_args": 0,
+		"max_args": 1,
+		"callback": inventory,
+	},
+	"List Hosts": {
+		"command": ["list-hosts"],
+		"description": [("List all hosts", "description")],
+		"options": {
+			"--include-vars": {
+				"description": [("Show host variables", "description")],
+			},
+		},
+		"min_args": 0,
+		"max_args": 0,
+		"callback": list_hosts,
+	},
+	"List Groups": {
+		"command": ["list-groups"],
+		"description": [("List all groups", "description")],
+		"options": {
+			"--include-vars": {
+				"description": [("Show group variables", "description")],
+			},
+		},
+		"min_args": 0,
+		"max_args": 0,
+		"callback": list_groups,
+	},
+	"Ping": {
+		"command": ["ping"],
+		"values": [("[", "separator"), ("GROUP/HOST", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
+		"description": [("Ansible ping ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument"), (" or ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" (Default: “", "description"), ("all", "argument"), ("“)", "description")],
+		"min_args": 0,
+		"max_args": 1,
+		"callback": ping,
+	},
+	"Rebuild Inventory": {
+		"command": ["rebuild-inventory"],
+		"description": [("Create inventory for an existing Kubernetes cluster", "description")],
+		"extended_description": [
+			[("In cases where the cluster has not been setup using ", "description"), (f"{about.inventory_program_name}", "programname")],
+			[("this can be used to build a barebones inventory", "description")],
+			[("Note: ", "note"), ("This requires a running cluster", "description")],
+		],
+		"options": {
+			"--force": {
+				"description": [("Allow an ", "description"), ("existing", "underline"), (" inventory to be overwritten", "description")],
+			},
+		},
+		"min_args": 0,
+		"max_args": 0,
+		"callback": rebuild_inventory,
+	},
+	"Remove Groups": {
+		"command": ["remove-group", "remove-groups"],
+		"values": [("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Remove ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument"), (" from inventory", "description")],
+		"extended_description": [
+			[("Note: ", "note"), ("Removing the group “", "description"), ("all", "argument"), ("“ is not permitted", "description")],
+		],
+		"options": {
+			"--force": {
+				"description": [("Allow removal of ", "description"), ("non-empty", "underline"), (" groups", "description")],
+			},
+		},
+		"min_args": 1,
+		"max_args": 1,
+		"callback": remove_groups,
+	},
+	"Remove Hosts from ALL Groups": {
+		"command": ["remove-host", "remove-hosts"],
+		"values": [("HOST", "argument"), (",", "separator"), ("... ", "argument"), ("all", "argument")],
+		"description": [("Remove ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" from the inventory", "description")],
+		"options": {
+			"--force": {
+				"description": [("Allow ", "description"), ("complete", "underline"), (" removal of hosts from the inventory", "description")],
+			},
+		},
+		"min_args": 2,
+		"max_args": 2,
+		"callback": remove_hosts,
+	},
+	# This is purely for the benefit of the helptext generator
+	"Remove Hosts": {
+		"command": ["remove-host", "remove-hosts"],
+		"values": [("HOST", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Remove ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" from ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+	},
+	"Set Global Variables": {
+		"command": ["set-var", "set-vars"],
+		"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Set global ", "description"), ("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument")],
+		"extended_description": [
+			[("Setting global variables is equivalent to setting variables", "description")],
+			[("for the group “", "description"), ("all", "argument"), ("“", "description")],
+		],
+		"min_args": 1,
+		"max_args": 1,
+		"callback": set_global_vars,
+	},
+	"Set Group Variables": {
+		"command": ["set-group-var", "set-group-vars"],
+		"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Set ", "description"), ("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument"), (" for ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"min_args": 2,
+		"max_args": 2,
+		"callback": set_group_vars,
+	},
+	"Set Host Variables": {
+		"command": ["set-host-var", "set-host-vars"],
+		"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("... ", "argument"), ("HOST", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Set ", "description"), ("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument"), (" for ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument")],
+		"min_args": 2,
+		"max_args": 2,
+		"callback": set_host_vars,
+	},
+	"Unset Global Variables": {
+		"command": ["unset-var", "unset-vars"],
+		"values": [("KEY", "argument")],
+		"description": [("Unset global ", "description"), ("KEY", "argument")],
+		"extended_description": [
+			[("Unsetting global variables is equivalent to unsetting variables", "description")],
+			[("for the group “", "description"), ("all", "argument"), ("“", "description")],
+		],
+		"min_args": 1,
+		"max_args": 1,
+		"callback": unset_global_vars,
+	},
+	"Unset Group Variables": {
+		"command": ["unset-group-var", "unset-group-vars"],
+		"values": [("KEY ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Unset ", "description"), ("KEY", "argument"), (" for ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"min_args": 2,
+		"max_args": 2,
+		"callback": unset_group_vars,
+	},
+	"Unset Host Variables": {
+		"command": ["unset-host-var", "unset-host-vars"],
+		"values": [("KEY ", "argument"), ("HOST", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Unset ", "description"), ("KEY", "argument"), (" for ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument")],
+		"min_args": 2,
+		"max_args": 2,
+		"callback": unset_host_vars,
+	},
+	"spacer1": {
+		"command": [""],
+		"description": [("", "default")],
+	},
+}
+
+def main():
+	init_iktprint(THEME_PATH)
+	command, options, args = parse_commandline(about.inventory_program_name, about.inventory_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline, default_command = "inventory", theme = THEME_PATH)
+
+	# iktinv was called without any parameters; assuming inventory
+	if command is None:
+		command = inventory
+		commandname = "inventory"
+
+	if ansible_support == False:
+		iktprint([("Ansible not available", "critical")], stderr = True)
+		print()
+		iktprint([(f"{about.inventory_program_name} ", "programname"), ("requires Ansible for some of its functionality,", "default")], stderr = True)
+		iktprint([("and its sole purpose is to act as ikt's way to manipulate its ansible inventory.", "default")], stderr = True)
+		iktprint([("Please install Ansible.", "default")], stderr = True)
+		sys.exit(2)
+
+	read_iktconfig()
+	# Used by the ansible module
+	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)
+	ansible_configuration.ansible_user = deep_get(iktconfig, "Ansible#ansible_user")
+	ansible_configuration.ansible_password = deep_get(iktconfig, "Ansible#ansible_password")
+	ansible_configuration.disable_strict_host_key_checking = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
+
+	return command(options, args)
+
+if __name__ == "__main__":
+	main()

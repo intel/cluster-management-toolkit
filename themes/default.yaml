@@ -1,0 +1,799 @@
+# This file contains the default theme for iKT.
+
+# About colours:
+# Curses only defined 8 colours
+# COLOR_BLACK   0
+# COLOR_RED     1
+# COLOR_GREEN   2
+# COLOR_YELLOW  3
+# COLOR_BLUE    4
+# COLOR_MAGENTA 5
+# COLOR_CYAN    6
+# COLOR_WHITE   7
+#
+# To achieve other colours, these colours can be redefined, but there can be a maximum of 8 colours
+# Redefine the colours using [R, G, B], where each value can be in the range [0,1000]
+#
+# Colours are then combined into pairs of foreground:background,
+# with additional attributes normal bold. If you don't define a palette the system palette will be used.
+#
+# Terminals are even more limited than this
+
+# Note that the colour in the comment assumes that the terminal program (or user) hasn't redefined the palette
+term:
+  # color, intensity (normal, bright), attribute (normal, underline, inverted, dim)
+  default: "\033[0m"                            # reset
+  programname: "\033[1;37m"                     # white + bright
+  version: "\033[0;32m"                         # green
+  candidateversion: "\033[1;36m"                # cyan + bright
+  command: "\033[1;36m"                         # cyan + bright
+  option: "\033[0;36m"                          # cyan
+  argument: "\033[0;32m"                        # green
+  separator: "\033[38;5;240m"                   # grey + dim
+  description: "\033[0m"                        # reset
+  hostname: "\033[1;37m"                        # white + bright
+  path: "\033[0;36m"                            # cyan
+  url: "\033[1;4;37m"                           # white + bright + underline
+  header: "\033[0;4;37m"                        # white + underline
+  underline: "\033[0;4;37m"                     # white + underline
+  emphasis: "\033[1;37m"                        # white + bright
+  skip: "\033[38;5;240m\033[1m"                 # grey + dim + bold
+  ok: "\033[1;37m"                              # white + bright
+  notok: "\033[1;31m"                           # red + bright
+  success: "\033[1;32m"                         # green + bright
+  note: "\033[0;32m"                            # green
+  error: "\033[1;31m"                           # red + bright
+  warning: "\033[1;33m"                         # yellow + bright
+  critical: "\033[1;41;93m"                     # red + bright + inverted
+  errorvalue: "\033[0;31m"                      # red
+  phase: "\033[1;33m"                           # yellow + bright
+  action: "\033[1;36m"                          # cyan + bright
+  play: "\033[0;36m"                            # cyan
+  none: "\033[38;5;240m\033[1m"                 # grey + dim + bold
+  unknown: "\033[0;31m"                         # red
+  reset: "\033[0m"                              # reset all attributes
+  yaml_list: "\033[1;33m"                       # yellow + bright
+  yaml_key: "\033[1;36m"                        # cyan + bright
+  yaml_key_separator: "\033[0;37m"              # white
+  yaml_value: "\033[0m"                         # reset
+
+# colors:
+#   black: [0, 0, 0]
+#   red: [1000, 0, 0]
+#   green: [0, 1000, 0]
+#   yellow: [1000, 1000, 0]
+#   blue: [0, 0, 1000]
+#   magenta: [1000, 0, 1000]
+#   cyan: [0, 1000, 1000]
+#   white: [1000, 1000, 1000]
+
+color_pairs_curses:
+  tag: [[white, bright], [black, normal]]
+  default: [[white, normal], [black, normal]]
+  highlight:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  dim:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  listheader: [[white, bright], [black, normal]]
+  listheader_arrows: [[cyan, normal], [black, normal]]
+  infoheader: [[white, bright], [black, normal]]
+  boxdrawing: [[white, normal], [black, normal]]
+  mainheader: [[yellow, normal], [blue, normal]]
+  last_update: [[yellow, normal], [blue, normal]]
+  statusbar: [[yellow, normal], [blue, normal]]
+  progressbar: [[yellow, normal], [blue, normal]]
+  scrollbar: [[yellow, normal], [blue, normal]]
+  scrollbar_arrows: [[yellow, normal], [blue, normal]]
+  dragger: [[white, normal], [blue, normal]]
+  dragger_midpoint: [[blue, normal], [white, normal]]
+  widgetboxdrawing: [[yellow, normal], [blue, normal]]
+  widgettitle: [[cyan, normal], [blue, normal]]
+  widgetheader: [[white, bright], [blue, normal]]
+  widgetbright: [[white, bright], [blue, normal]]
+  widgetnotice: [[yellow, normal], [blue, normal]]
+  widgetbullet: [[yellow, normal], [blue, normal]]
+  widgetdefault:
+    unselected: [[white, normal], [blue, normal]]
+    selected: [[blue, bright], [white, normal]]
+  widgethighlight:
+    unselected: [[yellow, normal], [blue, normal]]
+    selected: [[blue, bright], [white, normal]]
+  widgettag:
+    unselected: [[white, bright], [blue, normal]]
+    selected: [[blue, bright], [white, bright]]
+  widgetdim:
+    unselected: [[white, normal], [blue, normal]]
+    selected: [[blue, bright], [white, normal]]
+  widgetalert:
+    unselected: [[white, normal], [red, normal]]
+    selected: [[white, bright], [red, normal]]
+  widget_diffplus:
+    unselected: [[green, bright], [blue, normal]]
+    selected: [[green, normal], [white, normal]]
+  widget_diffminus:
+    unselected: [[red, bright], [blue, normal]]
+    selected: [[red, normal], [white, normal]]
+  widget_diffsame:
+    unselected: [[white, normal], [blue, normal]]
+    selected: [[white, normal], [white, normal]]
+  widget_diffatat:
+    unselected: [[cyan, normal], [blue, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  widget_diffheader:
+    unselected: [[yellow, normal], [blue, normal]]
+    selected: [[yellow, normal], [white, normal]]
+  statusbar_infoheader: [[yellow, normal], [blue, normal]]
+  statusbar_default: [[white, normal], [blue, normal]]
+  statusbar_highlight: [[white, bright], [blue, normal]]
+  timestamp: [[cyan, normal], [black, normal]]
+  facility:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  # FIXME: All severities need selected versions
+  severity_emergency: [[white, bright], [red, bright]]
+  severity_alert: [[black, normal], [red, bright]]
+  severity_critical: [[black, normal], [red, normal]]
+  severity_error: [[red, bright], [black, normal]]
+  severity_warning:
+    unselected: [[yellow, normal], [black, normal]]
+    selected: [[yellow, normal], [white, normal]]
+  severity_notice:
+    unselected: [[green, bright], [black, normal]]
+    selected: [[green, normal], [white, normal]]
+  severity_info:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[white, normal], [white, normal]]
+  severity_debug:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[white, normal], [white, normal]]
+  severity_diffplus:
+    unselected: [[green, bright], [black, normal]]
+    selected: [[green, normal], [white, normal]]
+  severity_diffminus:
+    unselected: [[red, normal], [black, normal]]
+    selected: [[red, normal], [white, normal]]
+  severity_diffsame:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[white, normal], [white, normal]]
+  severity_diffatat:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  severity_diffheader:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[white, normal], [white, normal]]
+  status_critical:
+    unselected: [[black, normal], [red, bright]]
+    selected: [[red, bright], [black, normal]]
+  status_not_ok:
+    unselected: [[red, bright], [black, normal]]
+    selected: [[red, bright], [white, normal]]
+  status_unknown:
+    unselected: [[red, bright], [black, normal]]
+    selected: [[red, bright], [white, normal]]
+  status_admin:
+    unselected: [[yellow, bright], [black, normal]]
+    selected: [[yellow, bright], [white, normal]]
+  status_warning:
+    unselected: [[yellow, normal], [black, normal]]
+    selected: [[yellow, normal], [white, normal]]
+  status_ok:
+    unselected: [[green, normal], [black, normal]]
+    selected: [[green, normal], [white, normal]]
+  status_pending:
+    unselected: [[cyan, bright], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  status_done:
+    unselected: [[green, bright], [black, normal]]
+    selected: [[green, normal], [white, normal]]
+  log_format_ok: [[black, normal], [green, normal]]
+  log_format_unknown: [[black, normal], [red, normal]]
+  log_format_empty: [[black, normal], [yellow, normal]]
+  log_format_raw: [[black, normal], [yellow, normal]]
+  log_status: [[yellow, normal], [blue, normal]]
+  log_status_highlight: [[white, normal], [blue, normal]]
+  type_key:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_key_error:
+    unselected: [[red, normal], [black, normal]]
+    selected: [[red, normal], [white, normal]]
+  type_value:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_generic:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_resource:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_namespace:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_kind:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_api_group:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_field:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_unit:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_watermark_high:
+    unselected: [[red, normal], [black, normal]]
+    selected: [[red, normal], [white, normal]]
+  type_watermark_medium:
+    unselected: [[yellow, normal], [black, normal]]
+    selected: [[yellow, normal], [white, normal]]
+  type_watermark_low:
+    unselected: [[green, normal], [black, normal]]
+    selected: [[green, normal], [white, normal]]
+  type_numerical:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_ipaddress:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_ipmask:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_age:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_timestamp:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_timestamp_newdate:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_version:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_none:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  type_undefined:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  type_unset:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  type_fixme:
+    unselected: [[red, normal], [black, normal]]
+    selected: [[red, normal], [white, normal]]
+  type_host:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_subset:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_service:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_user:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_port:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_uid:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_protocol:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  type_secret_type:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_cputime_user_nice:
+    unselected: [[blue, normal], [black, normal]]
+    selected: [[blue, normal], [white, normal]]
+  type_cputime_user:
+    unselected: [[green, normal], [black, normal]]
+    selected: [[green, normal], [white, normal]]
+  type_cputime_total_system:
+    unselected: [[red, normal], [black, normal]]
+    selected: [[red, normal], [white, normal]]
+  type_cputime_total_guest:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_mem:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  type_buffers:
+    unselected: [[blue, normal], [black, normal]]
+    selected: [[blue, normal], [white, normal]]
+  type_cached:
+    unselected: [[yellow, normal], [black, normal]]
+    selected: [[yellow, normal], [white, normal]]
+  type_swap_used:
+    unselected: [[red, normal], [black, normal]]
+    selected: [[red, normal], [white, normal]]
+  type_separator:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_percentage:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  separator_keyvalue:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_user_uid:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_selector:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  separator_version:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_kind:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_kind_apigroup:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  separator_port:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_host:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_resource:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_service:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_namespace:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_list:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_field:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_ipv4address:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  separator_ipv6address:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  separator_ipmask:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_fraction:
+    unselected: [[green, normal], [black, normal]]
+    selected: [[green, normal], [white, normal]]
+  separator_ellipsis:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  separator_equals:
+    unselected: [[green, normal], [black, normal]]
+    selected: [[green, normal], [white, normal]]
+  separator_not_equals:
+    unselected: [[red, normal], [black, normal]]
+    selected: [[red, bright], [white, normal]]
+  separator_logical_and:
+    unselected: [[yellow, normal], [black, normal]]
+    selected: [[yellow, normal], [white, normal]]
+  separator_logical_or:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_set_start:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_set_end:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_list_start:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_list_end:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_not:
+    unselected: [[red, normal], [black, normal]]
+    selected: [[red, bright], [white, normal]]
+  separator_hosts:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  separator_ports:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  separator_methods:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  separator_paths:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  separator_principals:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  separator_request_principals:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  separator_namespaces:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  separator_ipblocks:
+    unselected: [[cyan, normal], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
+  separator_secret_type:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
+  separator_toml_key_separator: [[white, bright], [black, normal]]
+  separator_yaml_list: [[yellow, bright], [black, normal]]
+  separator_yaml_key_separator: [[white, bright], [black, normal]]
+  separator_pad:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  separator_line_break: [[cyan, normal], [black, normal]]
+  type_dir_dev: [[yellow, normal], [black, bright]]
+  type_dir_sticky: [[black, bright], [green, bright]]
+  type_dir_dir: [[blue, bright], [black, normal]]
+  type_dir_symlink_name: [[cyan, bright], [black, normal]]
+  type_dir_pipe: [[yellow, normal], [black, bright]]
+  type_dir_socket: [[magenta, normal], [black, normal]]
+  type_toml_comment: [[green, normal], [black, normal]]
+  type_toml_table: [[cyan, bright], [black, normal]]
+  type_toml_key: [[blue, bright], [black, normal]]
+  type_toml_value: [[white, normal], [black, normal]]
+  type_yaml_comment: [[black, bright], [black, normal]]
+  type_yaml_key: [[cyan, bright], [black, normal]]
+  type_yaml_value: [[white, normal], [black, normal]]
+  type_yaml_reference: [[magenta, normal], [black, normal]]
+  type_xml_comment: [[cyan, normal], [black, normal]]
+  type_xml_tag: [[cyan, bright], [black, normal]]
+  type_xml_declaration: [[cyan, bright], [black, normal]]
+  type_xml_attribute_key: [[green, bright], [black, normal]]
+  type_xml_attribute_value: [[magenta, bright], [black, normal]]
+  type_xml_escape: [[green, bright], [black, normal]]
+  type_xml_escape_data: [[yellow, bright], [black, normal]]
+  type_caddyfile_site: [[blue, bright], [black, normal]]
+  type_caddyfile_matcher: [[magenta, bright], [black, normal]]
+  type_caddyfile_argument: [[green, bright], [black, normal]]
+  type_caddyfile_comment: [[cyan, normal], [black, normal]]
+  type_caddyfile_directive: [[magenta, normal], [black, normal]]
+  logo_bullet: [[blue, normal], [blue, bright]]
+  logo_letter: [[white, bright], [blue, bright]]
+  about_text_highlight: [[cyan, bright], [blue, bright]]
+  about_text: [[white, normal], [blue, bright]]
+  about_version: [[white, bright], [blue, bright]]
+
+boxdrawing:
+  # By default curses.ACS_HLINE is used
+  # vline:
+  # vline_left:
+  # vline_right:
+  # By default curses.ACS_VLINE is used
+  # hline:
+  # hline_top:
+  # hline_bottom:
+  # By default curses.ACS_LTEE is used
+  # ltee:
+  # By default curses.ACS_RTEE is used
+  # rtee:
+  # By default curses.ACS_TTEE is used
+  # ttee:
+  # By default curses.ACS_BTEE is used
+  # btee:
+  # By default curses.ACS_ULCORNER is used
+  # ulcorner:
+  # By default curses.ACS_URCORNER is used
+  # urcorner:
+  # By default curses.ACS_LLCORNER is used
+  # llcorner:
+  # By default curses.ACS_LRCORNER is used
+  # lrcorner:
+  #
+  # By default curses.ACS_PLUS is used
+  # plus:
+  #
+  # "Checker board (stipple)   " ACS_CKBOARD
+  # "Degree Symbol             " ACS_DEGREE
+  # "Plus/Minus Symbol         " ACS_PLMINUS
+  # "Bullet                    " ACS_BULLET
+  # "Arrow Pointing Left       " ACS_LARROW
+  # "Arrow Pointing Right      " ACS_RARROW
+  # "Arrow Pointing Down       " ACS_DARROW
+  # "Arrow Pointing Up         " ACS_UARROW
+  # "Board of squares          " ACS_BOARD
+  # "Lantern Symbol            " ACS_LANTERN
+  # "Solid Square Block        " ACS_BLOCK
+  # "Less/Equal sign           " ACS_LEQUAL
+  # "Greater/Equal sign        " ACS_GEQUAL
+  # "Not equal                 " ACS_NEQUAL
+  arrowup: "▲"
+  arrowdown: "▼"
+  arrowleft: "◀"
+  arrowright: "▶"
+  arrownone: " "
+  scrollbar: "▒"
+  smallblock: "■"
+  solidblock: "█"
+  dimmedblock: "▒"
+  horizontaldragger_left: "█"
+  horizontaldragger_midpoint: "◉"
+  horizontaldragger_right: "█"
+  verticaldragger_upper: "█"
+  verticaldragger_midpoint: "◉"
+  verticaldragger_lower: "█"
+
+# This contains both extra attributes and colours
+main:
+  # Used for all "normal text"
+  default: default
+  logo_bullet: logo_bullet
+  logo_letter: logo_letter
+  about_text_highlight: [about_text_highlight, bold]
+  about_text: about_text
+  about_version: about_version
+  highlight:
+    unselected: [highlight, bold]
+    selected: highlight
+  dim:
+    unselected: [dim, bold]
+    selected: dim
+  timestamp: timestamp
+  # list header
+  listheader:
+    selected: [listheader, [underline, bold]]
+    unselected: [listheader, bold]
+  listheader_arrows: listheader_arrows
+  # headers in info fields
+  infoheader: [infoheader, bold]
+  # highlight for shortcut key in info fields
+  infoheader_shortcut: [infoheader, [bold, underline]]
+  # Box drawing in the main window
+  boxdrawing: boxdrawing
+  # Main window title
+  header: [mainheader, bold]
+  # Clock
+  last_update: [last_update, bold]
+  # Status bar
+  statusbar: [statusbar, bold]
+  # Used for progressbar
+  progressbar: progressbar
+  # Used for scrollbar
+  scrollbar: scrollbar
+  # Used for scrollbar
+  scrollbar_arrows: scrollbar_arrows
+  # Used for scrollbar
+  dragger: dragger
+  # Used for scrollbar
+  dragger_midpoint: dragger_midpoint
+  status_critical: status_critical
+  status_unknown: status_unknown
+  status_not_ok: status_not_ok
+  status_admin: status_admin
+  status_warning: status_warning
+  status_ok:
+    unselected: [status_ok, bold]
+    selected: status_ok
+  status_pending: status_pending
+  status_done: status_done
+  format_ok: [log_format_ok, bold]
+  format_unknown: [log_format_unknown, bold]
+  format_raw: [log_format_raw, bold]
+  format_empty: [log_format_empty, bold]
+  log_status: [log_status, bold]
+  log_status_highlight: [log_status_highlight, bold]
+
+statusbar:
+  # Used for headers
+  infoheader: [statusbar_infoheader, bold]
+  # Used for normal text
+  default: statusbar_default
+  # Used for highlighted text
+  highlight: [statusbar_highlight, bold]
+  # Used for dimmed text
+  dim: [statusbar_highlight, dim]
+
+windowwidget:
+  # Used for dialog boxes, info boxes, helptexts, etc.
+  boxdrawing: widgetboxdrawing
+  # Used for title
+  title: [widgettitle, bold]
+  # Used for bright notifications
+  bright: [widgetbright, bold]
+  # Used for header
+  header: [widgetheader, bold]
+  # Used for normal text
+  default: widgetdefault
+  # Used for highlighted text
+  highlight: [widgethighlight, bold]
+  # Used for tag
+  tag: [widgettag, bold]
+  # Used for descriptions (metadata, etc)
+  description: widgethighlight
+  # Used for dimmed text
+  dim: [widgetdim, dim]
+  # Used for notice box
+  notice: [widgetnotice, bold]
+  alert: [widgetalert, bold]
+  diffplus: widget_diffplus
+  diffminus: widget_diffminus
+  diffsame: widget_diffsame
+  diffatat: widget_diffatat
+  diffheader: [widget_diffheader, bold]
+
+logview:
+  timestamp: timestamp
+  facility: facility
+  repeat_count: [severity_info, bold]
+  severity_emergency: severity_emergency
+  severity_alert: severity_alert
+  severity_critical: severity_critical
+  severity_error: severity_error
+  severity_warning: severity_warning
+  severity_notice: severity_notice
+  severity_info: severity_info
+  severity_debug: severity_debug
+  severity_diffplus: severity_diffplus
+  severity_diffminus: severity_diffminus
+  severity_diffsame: severity_diffsame
+  severity_diffatat: severity_diffatat
+  severity_diffheader: [severity_diffheader, bold]
+
+types:
+  key: type_key
+  key_error: type_key_error
+  value:
+    unselected: type_value
+    selected: [type_value, bold]
+  generic:
+    unselected: type_generic
+    selected: [type_generic, bold]
+  resource: type_resource
+  namespace: type_namespace
+  field:
+    unselected: type_field
+    selected: [type_field, bold]
+  kind: type_kind
+  api_group: type_api_group
+  unit: type_unit
+  user: type_user
+  uid: type_uid
+  watermark_high: type_watermark_high
+  watermark_medium: [type_watermark_medium, dim]
+  watermark_low: [type_watermark_low, bold]
+  numerical: type_numerical
+  ipaddress: type_ipaddress
+  ipmask: type_ipmask
+  age: type_age
+  timestamp: type_timestamp
+  timestamp_newdate: [type_timestamp, bold]
+  version: type_version
+  none: [type_none, bold]
+  undefined: [type_undefined, bold]
+  unset: [type_unset, bold]
+  host: type_host
+  subset: type_subset
+  service: type_service
+  port: type_port
+  protocol: [type_protocol, bold]
+  secret_type: type_secret_type
+  cputime_user_nice:
+    unselected: [type_cputime_user_nice, bold]
+    selected: type_cputime_user_nice
+  cputime_user: type_cputime_user
+  cputime_total_system: type_cputime_total_system
+  cputime_total_guest: type_cputime_total_guest
+  mem: type_mem
+  buffers:
+    unselected: [type_buffers, bold]
+    selected: type_buffers
+  cached: type_cached
+  swap_used: type_swap_used
+  separator:
+    unselected: [type_separator, bold]
+    selected: type_separator
+  dir_type: type_generic
+  dir_permissions: type_generic
+  dir_linkcount: type_generic
+  dir_owner: type_generic
+  dir_group: type_generic
+  dir_size: type_generic
+  dir_date: type_generic
+  dir_dev: [type_dir_dev, bold]
+  dir_sticky: [type_dir_sticky, bold]
+  dir_dir: [type_dir_dir, bold]
+  dir_file: type_generic
+  dir_symlink_name: [type_dir_symlink_name, bold]
+  dir_symlink_link: type_generic
+  dir_pipe: type_dir_pipe
+  dir_socket: [type_dir_socket, bold]
+  dir_suffix: type_generic
+  dir_unknown: type_generic
+  toml_comment: type_toml_comment
+  toml_table: type_toml_table
+  toml_key: type_toml_key
+  toml_key_separator: separator_toml_key_separator
+  toml_value: type_toml_value
+  yaml_comment: type_yaml_comment
+  yaml_key: type_yaml_key
+  yaml_value: type_yaml_value
+  yaml_reference: type_yaml_reference
+  xml_comment: type_xml_comment
+  xml_content: type_generic
+  xml_tag: [type_xml_tag, bold]
+  xml_declaration: type_xml_declaration
+  xml_attribute_key: type_xml_attribute_key
+  xml_attribute_value: type_xml_attribute_value
+  xml_escape: type_xml_escape
+  xml_escape_data: type_xml_escape_data
+  caddyfile_site: type_caddyfile_site
+  caddyfile_block: type_generic
+  caddyfile_snippet: type_generic
+  caddyfile_matcher: type_caddyfile_matcher
+  caddyfile_argument: type_caddyfile_argument
+  caddyfile_comment: type_caddyfile_comment
+  caddyfile_directive: type_caddyfile_directive
+
+strings:
+  none: [["<none>", [type_none, bold]]]
+  undefined: [["<undefined>", [type_undefined, bold]]]
+  unset: [["<unset>", [type_unset, bold]]]
+  fixme: [["<FIXME>", [type_fixme, bold]]]
+
+separators:
+  no_pad: [["", type_generic]]
+  tag: [["✓ ", [tag, bold]]]
+  mainheader_prefix: [[":: ", [mainheader, bold]]]
+  mainheader_suffix: [[" ::", [mainheader, bold]]]
+  percentage: [["%", [separator_percentage, bold]]]
+  keyvalue: [[":", separator_keyvalue]]
+  keyvalue_log: [["=", separator_keyvalue]]
+  selector: [["=", separator_selector]]
+  version: [[":", separator_version]]
+  user_uid: [[":", separator_user_uid]]
+  kind: [["/", separator_kind]]
+  kind_apigroup: [[".", separator_kind_apigroup]]
+  port: [[":", separator_port]]
+  host: [[":", separator_host]]
+  resource: [[":", separator_resource]]
+  service: [["/", separator_service]]
+  namespace: [["::", separator_namespace]]
+  list: [[", ", separator_list]]
+  selector_list: [[",", separator_list]]
+  field: [["/", separator_field]]
+  ellipsis: [["...", separator_ellipsis]]
+  ipv4address: [[".", separator_ipv4address]]
+  ipv6address: [[":", separator_ipv6address]]
+  ipmask: [["/", separator_ipmask]]
+  fraction: [["/", separator_fraction]]
+  fraction_spaced: [[" / ", separator_fraction]]
+  statusbar_fraction: [["/", statusbar_default]]
+  equals: [["=", separator_equals]]
+  not_equals: [["≠", separator_not_equals]]
+  logical_and: [[" ∧ ", separator_logical_and]]
+  logical_or: [[" ∨ ", separator_logical_or]]
+  set_start: [["{", [separator_set_start, bold]]]
+  set_end: [["}", [separator_set_end, bold]]]
+  list_start: [["[", [separator_list_start, bold]]]
+  list_end: [["]", [separator_list_end, bold]]]
+  list_end_colon: [["]:", [separator_list_end, bold]]]
+  not: [["!", separator_not]]
+  hosts: [["Hosts", separator_hosts]]
+  ports: [["Ports", separator_ports]]
+  methods: [["Methods", separator_methods]]
+  paths: [["Paths", separator_paths]]
+  principals: [["Principals", separator_principals]]
+  request_principals: [["RequestPrincipals", separator_request_principals]]
+  namespaces: [["Namespaces", separator_namespaces]]
+  ipblocks: [["IPBlocks", separator_ipblocks]]
+  secret_type: [["/", separator_secret_type]]
+  widgetbullet: [["• ", [widgetbullet, bold]]]
+  logbullet: [["• ", [severity_debug, bold]]]
+  statusbar: [[" ┃ ", [statusbar_default, dim]]]
+  statusbar_compact: [["┃", [statusbar_default, dim]]]
+  yaml_list: [["- ", separator_yaml_list]]
+  yaml_key_separator: [[":", separator_yaml_key_separator]]
+  pad: [["  ", separator_pad]]
+  line_break: [["⏎", separator_line_break]]

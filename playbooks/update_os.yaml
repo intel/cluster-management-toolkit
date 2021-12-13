@@ -1,0 +1,15 @@
+- hosts: selection:!nas
+  vars:
+    metadata:
+      description: Update the Operating System
+      confirm: True
+      allow-on-control-plane: single
+      category: Administration
+  gather_facts: no
+  become: True
+  become_user: root
+  tasks:
+  - name: Updating APT cache
+    apt: update_cache=yes force_apt_get=yes
+  - name: Upgrade all packages
+    apt: upgrade=safe force_apt_get=yes

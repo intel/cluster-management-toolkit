@@ -1,0 +1,22 @@
+- hosts: controlplane
+  vars:
+    metadata:
+      description: Delete node from cluster
+      playbook-types:
+      - internal
+      category: Administration
+  gather_facts: no
+  tasks:
+  - name: Delete node from cluster
+    shell: |
+      nodes="{{ groups["selection"] | join(" ") }}"
+      minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/")"
+      if [ "${minor_version}" -lt 18 ]; then
+        kubectl drain --delete-local-data --force --grace-period=0 --ignore-daemonsets ${nodes}
+      elif [ "${minor_version}" -ge 20 ]; then
+        kubectl drain --disable-eviction=true --delete-emptydir-data --force --grace-period=0 --ignore-daemonsets ${nodes}
+      else
+        kubectl drain --disable-eviction=true --delete-local-data --force --grace-period=0 --ignore-daemonsets ${nodes}
+      fi
+      kubectl delete node ${nodes}
+    delegate_to: localhost

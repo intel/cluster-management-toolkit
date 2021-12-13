@@ -1,0 +1,15 @@
+- hosts: controlplane
+  vars:
+    metadata:
+      description: Drain node
+      playbook-types:
+      - node
+      allow-on-control-plane: single
+      category: Scheduling
+  gather_facts: no
+  tasks:
+  - name: Drain node
+    shell: |
+      nodes="{{ groups["selection"] | join(" ") }}"
+      kubectl drain --delete-local-data --ignore-daemonsets ${nodes}
+    delegate_to: localhost

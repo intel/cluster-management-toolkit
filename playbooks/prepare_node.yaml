@@ -1,0 +1,79 @@
+- hosts: controlplane:!nas:!nodes
+  vars:
+    metadata:
+      description: Prepare node
+      playbook-types:
+      - inventory
+      confirm: True
+      allow-on-control-plane: never
+      requires-cluster-info: True
+      query:
+        string: sudo password
+        variable: ansible_become_pass
+        function: string
+      category: Setup
+  gather_facts: yes
+  become: True
+  become_user: root
+  tasks:
+  - name: "Adding {{ ansible_user }} to sudoers"
+    lineinfile:
+      path: "/etc/sudoers.d/{{ ansible_user }}"
+      regex: "^{{ ansible_user }}"
+      line: "{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL"
+      state: present
+      mode: "u=rw,g=rw,o="
+      create: yes
+      validate: "visudo -cf %s"
+  - name: "Adding public keys to authorized_keys"
+    ansible.posix.authorized_key:
+      user: "{{ ansible_user }}"
+      state: present
+      key: "{{ item }}"
+    loop: "{{ authorized_keys }}"
+  - name: Updating APT cache
+    apt: update_cache=yes force_apt_get=yes
+  - name: Gathering package facts
+    package_facts:
+      manager: apt
+  - name: Installing Docker
+    apt:
+      name: docker.io
+      state: present
+      force_apt_get: yes
+    when: "'docker-ce' not in ansible_facts.packages"
+  - name: Configuring Docker daemon
+    template:
+      dest: /etc/docker/daemon.json
+      src: templates/etc/docker/daemon.json.j2
+      mode: "u=rw,g=r,o=r"
+      force: yes
+  - name: Creating /etc/systemd/system/docker.service.d
+    file:
+      path: /etc/systemd/system/docker.service.d
+      state: directory
+      mode: "u=rwx,g=rx,o=rx"
+  - name: Configuring docker/http-proxy.conf
+    template:
+      dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+      src: templates/etc/systemd/system/docker.service.d/http-proxy.conf.j2
+      mode: "u=rw,g=r,o=r"
+      force: yes
+  - name: Restarting Docker
+    systemd:
+      name: docker
+      daemon_reload: yes
+      state: restarted
+  - name: Disabling swap
+    shell: |
+      # Disable swap during this boot
+      swapoff -a
+      # Disable swap entries in /etc/fstab
+      sed -i -e 's,^/swapfile,#&,;s,^/swap.img,#&,;s,^UUID=[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]* *none *swap.*,#&,' /etc/fstab
+      # Disable swap units
+      swapunits="$(sudo systemctl --type swap -o json-pretty)"
+      if [ $(echo "${swapunits}" | grep -c "0 loaded units listed") -eq 0 ]; then
+        for swap in $(sudo systemctl --type swap -o json-pretty | grep "unit" | sed -e 's/.*"unit" : "//;s/",$//'); do
+          systemctl mask "${swap}"
+        done
+      fi

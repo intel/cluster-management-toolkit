@@ -1,0 +1,30 @@
+ALL:
+	• We need a better way to handle inventories that takes multiple clusters into account;
+	  we shouldn't use control-plane or node without qualifier
+	• deep_get should be moved to iktlib
+
+iktadm:
+	• Once a cluster is fully installed remove the installation info and rely on heuristics for teardown
+	  (re-create the file during upgrade/teardown/purge and remove it upon completion of upgrade/purge)
+	  | The reason we should do this is that we might want to set up (or import) multiple clusters.
+	  | Only remove .kube if all clusters have been purged.
+
+logparser:
+	• Line too long shouldn't override severity
+	• We cannot replace tabs with spaces in the logparser; we need to do it in the printers instead;
+	  this way we know the real line length (due to facility etc. we might not have the same starting point
+	  for every line, so expanding tabs into spaces won't work properly)
+
+# We shouldn't need to use kubectl for these actions
+cordon node:
+	"application/strategic-merge-patch+json"
+	"api/v1/nodes/NODE"
+	{"spec":{"unschedulable":true}}
+
+drain node:
+	???
+
+uncordon node:
+	"application/strategic-merge-patch+json"
+	"api/v1/nodes/NODE"
+	{"spec":{"unschedulable":null}}

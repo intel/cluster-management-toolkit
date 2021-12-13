@@ -1,0 +1,81 @@
+- hosts: selection:!nas
+  vars:
+    metadata:
+      description: Setup Containerd
+      playbook-types:
+      - inventory
+      - node
+      confirm: True
+      allow-on-control-plane: single
+      requires-cluster-info: True
+      category: Setup
+  gather_facts: yes
+  become: True
+  become_user: root
+  tasks:
+  - name: Updating APT cache
+    apt: update_cache=yes force_apt_get=yes
+  - name: Installing containerd
+    apt:
+      name: containerd
+      state: latest
+      force_apt_get: yes
+  - name: Installing runc
+    apt:
+      name: runc
+      state: latest
+      force_apt_get: yes
+  - name: Configuring crictl
+    template:
+      dest: /etc/crictl.yaml
+      src: templates/etc/crictl.yaml.j2
+      mode: "u=rw,g=r,o=r"
+      force: yes
+  - name: Creating /etc/containerd
+    file:
+      path: /etc/containerd
+      state: directory
+      mode: "u=rwx,g=rx,o=rx"
+  - name: Configuring containerd
+    template:
+      dest: /etc/containerd/config.toml
+      src: templates/etc/containerd/config.toml.j2
+      mode: "u=rw,g=r,o=r"
+  - name: Creating /etc/systemd/system/kubelet.service.d
+    file:
+      path: /etc/systemd/system/kubelet.service.d
+      state: directory
+      mode: "u=rwx,g=rx,o=rx"
+  - name: Configuring containerd-cri
+    template:
+      dest: /etc/systemd/system/kubelet.service.d/containerd-cri.conf
+      src: templates/etc/systemd/system/kubelet.service.d/containerd-cri.conf.j2
+      mode: "u=rw,g=r,o=r"
+      force: yes
+  - name: Creating /etc/systemd/system/containerd.service.d
+    file:
+      path: /etc/systemd/system/containerd.service.d
+      state: directory
+      mode: "u=rwx,g=rx,o=rx"
+  - name: Configuring containerd/http-proxy.conf
+    template:
+      dest: /etc/systemd/system/containerd.service.d/http-proxy.conf
+      src: templates/etc/systemd/system/containerd.service.d/http-proxy.conf.j2
+      mode: "u=rw,g=r,o=r"
+      force: yes
+  - name: Configuring containerd/ip_forward.conf
+    template:
+      dest: /etc/systemd/system/containerd.service.d/ip-forward.conf
+      src: templates/etc/systemd/system/containerd.service.d/ip-forward.conf.j2
+      mode: "u=rw,g=r,o=r"
+      force: yes
+  - name: Restarting Containerd
+    systemd:
+      name: containerd
+      daemon_reload: yes
+      state: restarted
+  - name: Restarting Kubelet
+    systemd:
+      name: kubelet
+      daemon_reload: yes
+      state: restarted
