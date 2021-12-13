@@ -37,9 +37,9 @@
       # Disable swap entries in /etc/fstab
       sed -i -e 's,^/swapfile,#&,;s,^/swap.img,#&,;s,^UUID=[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]* *none *swap.*,#&,' /etc/fstab
       # Disable swap units
-      swapunits="$(sudo systemctl --type swap -o json-pretty)"
+      swapunits="$(systemctl --type swap -o json-pretty)"
       if [ $(echo "${swapunits}" | grep -c "0 loaded units listed") -eq 0 ]; then
-        for swap in $(sudo systemctl --type swap -o json-pretty | grep "unit" | sed -e 's/.*"unit" : "//;s/",$//'); do
+        for swap in $(systemctl --type swap -o json-pretty | grep "unit" | sed -e 's/.*"unit" : "//;s/",$//'); do
           systemctl mask "${swap}"
         done
       fi
