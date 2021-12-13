@@ -4,6 +4,8 @@ ALL:
 	• deep_get should be moved to iktlib
 
 iktadm:
+	• prepare_passwordlesss_ansible won't work on localhost; we're not passing the password,
+	  and the passowrd might not be the same on the remote system and the local system anyway
 	• Once a cluster is fully installed remove the installation info and rely on heuristics for teardown
 	  (re-create the file during upgrade/teardown/purge and remove it upon completion of upgrade/purge)
 	  | The reason we should do this is that we might want to set up (or import) multiple clusters.

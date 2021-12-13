@@ -111,6 +111,7 @@ prepare_targets = {
 			# If available
 			# "ansible-mitogen",
 			"kubectl",
+			"sshpass",
 		],
 		"deb_packages_held": [
 			"kubectl",
@@ -749,22 +750,26 @@ def run_playbooks(playbooks, hosts = None, extra_values = {}):
 				if len(msg) > 0:
 					iktprint([(f"        ", "default"), ("msg:", "header")])
 					iktprint([(f"        {msg}", "default")])
-					print("\n")
+					iktprint([("", "default")])
 				stdout_lines = data[task].get("stdout_lines", [])
 				if len(stdout_lines) > 0:
 					iktprint([(f"        ", "default"), ("stdout:", "header")])
 					for line in data[task]["stdout_lines"]:
 						iktprint([(f"        {line}", "default")])
-					print("\n")
+					iktprint([("", "default")])
 				stderr_lines = data[task].get("stderr_lines", [])
 				if len(stderr_lines) > 0:
 					iktprint([(f"        ", "default"), ("stderr:", "header")])
 					for line in data[task]["stderr_lines"]:
 						iktprint([(f"        {line}", "default")])
-					print("\n")
+					iktprint([("", "default")])
 				if len(msg) == 0 and len(stdout_lines) == 0 and len(stderr_lines) == 0:
 					iktprint([(f"        <no output>", "none")])
-					print("\n")
+					iktprint([("", "default")])
+
+		# We don't want to continue executing playbooks if the first one failed
+		if retval != 0:
+			break
 
 	return retval == 0
 
@@ -869,6 +874,8 @@ def __task_run_preparation_playbooks_on_localhost(installation_info):
 	extra_values = {
 		"packages": prepare_targets["localhost"].get("deb_packages", []),
 		"held_packages": prepare_targets["localhost"].get("deb_packages_held", []),
+		"ansible_become_pass": ansible_configuration.ansible_password,
+		"ansible_ssh_pass": ansible_configuration.ansible_password,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -880,6 +887,8 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info):
 	extra_values = {
 		"packages": prepare_targets[distro].get("deb_packages", []),
 		"held_packages": prepare_targets[distro].get("deb_packages_held", []),
+		"ansible_become_pass": ansible_configuration.ansible_password,
+		"ansible_ssh_pass": ansible_configuration.ansible_password,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
