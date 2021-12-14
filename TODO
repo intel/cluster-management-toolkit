@@ -1,10 +1,13 @@
 ALL:
 	• We need a better way to handle inventories that takes multiple clusters into account;
 	  we shouldn't use control-plane or node without qualifier
+	  | Should we use one inventory per cluster, or one category per cluster (controlplane+<cluster>)
+	  | or have the cluster as metadata for the controlplane/node?
+	• ansible.posix should be installed by ikt-install, not iktadm
 	• deep_get should be moved to iktlib
 
 iktadm:
-	• prepare_passwordlesss_ansible won't work on localhost; we're not passing the password,
+	• prepare_passwordless_ansible won't work on localhost; we're not passing the password,
 	  and the passowrd might not be the same on the remote system and the local system anyway
 	• Once a cluster is fully installed remove the installation info and rely on heuristics for teardown
 	  (re-create the file during upgrade/teardown/purge and remove it upon completion of upgrade/purge)
