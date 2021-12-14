@@ -1773,7 +1773,7 @@ def upgrade_control_plane(options, args):
 		sys.exit(0)
 
 	if state is None or state in ["<none>", "preparing", "prepared", "installing", "tearing_down", "torn_down", "purging"]:
-		iktprint([("Error: ", "error"), ("Invalid installation state; Kubernetes does not seems to be fully installed; aborting.")], stderr = True)
+		iktprint([("Error: ", "error"), ("Invalid installation state; Kubernetes does not seems to be fully installed; aborting.", "default")], stderr = True)
 		sys.exit(2)
 
 	if state in ["installed", "upgraded"] or type(phase) == list:
