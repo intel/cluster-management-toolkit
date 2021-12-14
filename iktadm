@@ -246,6 +246,43 @@ def rmdir_recursive(directory):
 		args = ["sudo", "rm", "-r", directory]
 		execute_command_with_response(args)
 
+def rebuild_installation_info(state = None):
+	cluster_name = None
+	distro = None
+	version = None
+
+	controlplanes = __selection_control_planes()
+	if controlplanes is None or len(controlplanes) == 0:
+		iktprint([("", "default")])
+		iktprint([("Critical:", "critical"), (" No control plane defined in inventory; cannot rebuild installation info. Aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	deb_versions = check_deb_versions(["kubeadm"])
+	if len(deb_versions) == 0 or deb_versions[0][1] == "<none>":
+		iktprint([("", "default")])
+		iktprint([("Critical:", "critical"), (" Failed to identify cluster; are you sure there's one installed? Aborting.", "default")], stderr = True)
+		sys.exit(2)
+	else:
+		version = deb_versions[0][1]
+		distro = "kubeadm"
+
+	cluster_name = get_cluster_name()
+
+	info = {
+		"cluster_name": "<FIXME>",
+		"distro": distro,
+		"version": version,
+		"requested_version": "<none>",
+		"state": state,
+		"phase": "<none>",
+		"phase_skiplist": [],
+		"cni": "<FIXME>",
+		"pod_network_cidr": "<FIXME>",
+	}
+
+	with open(IKT_INSTALLATION_INFO, "w") as f:
+		f.write(yaml.dump(info, default_flow_style = False, sort_keys = False))
+
 def get_installation_info():
 	info = None
 
@@ -900,6 +937,26 @@ def __task_setup_bash_completion(installation_info):
 			f.write(result)
 		args = ["sudo", "mv", f"{td}/kubectl", "/etc/bash_completion.d/kubectl"]
 		check_and_print_status(execute_command(args))
+
+def get_cluster_name():
+	if os.path.exists(f"{HOMEDIR}/.kube/config"):
+		with open(f"{HOMEDIR}/.kube/config", "r") as f:
+			d1 = yaml.safe_load(f)
+	else:
+		return None
+
+	current_context = d1.get("current-context", None)
+	if current_context is None:
+		return None
+
+	cluster_name = None
+
+	for context in d1.get("contexts", []):
+		if context.get("name", "") == current_context:
+			cluster_name = context["context"].get("cluster", None)
+			break
+
+	return cluster_name
 
 def __task_set_cluster_name(installation_info):
 	cluster_name = installation_info["cluster_name"]
@@ -1755,6 +1812,22 @@ def purge_control_plane(options, args):
 	iktprint([("\nNote: ", "note"), ("It's recommended to reboot the control plane(s) after purging the cluster\n", "default")])
 
 def upgrade_control_plane(options, args):
+	# default options
+	update_cache = True
+	allow_reinstall = False
+	requested_version = None
+
+	if options is not None:
+		if "--list-tasks" in [tmp[0] for tmp in options]:
+			__list_phases(setup_control_plane_tasks)
+			sys.exit(0)
+		elif "--override" in [tmp[0] for tmp in options]:
+			if os.path.isfile(IKT_INSTALLATION_INFO) == True:
+				iktprint([("Warning: ", "warning"), ("Overriding ", "default"), (f"{IKT_INSTALLATION_INFO}", "path"), ("; this may cause issues.", "default")], stderr = True)
+			else:
+				iktprint([("Note: ", "note"), (f"{IKT_INSTALLATION_INFO}", "path"), (" does not exist; rebuilding.", "default")])
+			rebuild_installation_info(state = "upgrading")
+
 	installation_info = get_installation_info()
 	distro = installation_info["distro"]
 	version = installation_info["version"]
@@ -1763,14 +1836,9 @@ def upgrade_control_plane(options, args):
 	phase = installation_info["phase"]
 	phase_skiplist = set(installation_info["phase_skiplist"])
 
-	# default options
-	update_cache = True
-	allow_reinstall = False
-	requested_version = None
-
-	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
-		__list_phases(setup_control_plane_tasks)
-		sys.exit(0)
+	if state is None or state in ["<none>"]:
+		iktprint([("Error: ", "error"), ("Unknown installation state; if you believe this is OK (such as when upgrading a cluster not installed using ", "default"), (f"{about.admin_program_name}", "programname"), (" you can try using the “", "default"), ("--override", "argument"), ("“ argument; aborting.", "default")], stderr = True)
+		sys.exit(2)
 
 	if state is None or state in ["<none>", "preparing", "prepared", "installing", "tearing_down", "torn_down", "purging"]:
 		iktprint([("Error: ", "error"), ("Invalid installation state; Kubernetes does not seems to be fully installed; aborting.", "default")], stderr = True)
@@ -1805,6 +1873,8 @@ def upgrade_control_plane(options, args):
 				update_cache = False
 			elif opt == "--reinstall":
 				allow_reinstall = True
+			elif opt in ["--override", "--list-tasks"]:
+				continue
 			else:
 				raise Exception(f"Programming error; invalid option {opt}")
 
@@ -2146,6 +2216,9 @@ commandline = {
 			},
 			"--reinstall": {
 				"description": [("Allow installing an already installed Kubernetes version", "description")],
+			},
+			"--override": {
+				"description": [("Override/rebuild installation info", "description")],
 			},
 		},
 		"min_args": 0,
