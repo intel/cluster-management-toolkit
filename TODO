@@ -1,10 +1,16 @@
 ALL:
+	• Implement local playbooks and themes
 	• We need a better way to handle inventories that takes multiple clusters into account;
 	  we shouldn't use control-plane or node without qualifier
 	  | Should we use one inventory per cluster, or one category per cluster (controlplane+<cluster>)
 	  | or have the cluster as metadata for the controlplane/node?
-	• ansible.posix should be installed by ikt-install, not iktadm
+	• ansible.posix and sshpass should be installed by ikt-install, not iktadm
 	• deep_get should be moved to iktlib
+	• When running either ikt or iku, check whether authorized_keys is in .ikt/ansible/inventory.yaml;
+	  if not, add it
+
+iku:
+	• Error messages are skipped by the ansible handler
 
 iktadm:
 	• prepare_passwordless_ansible won't work on localhost; we're not passing the password,
