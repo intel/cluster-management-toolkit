@@ -10408,7 +10408,7 @@ def __run_playbook(playbookpath, nodes, values = None):
 
 	# FIXME: ensure that we tell apart fail from skip
 	if retval != 0 and len(ansible_results) == 0:
-		iktprint([(f"Failed to execute playbook; retval: ", "error"), ("{retval}", "errorvalue")], stderr = True)
+		iktprint([("Failed to execute playbook; retval: ", "error"), (f"{retval}", "errorvalue")], stderr = True)
 	else:
 		for host in ansible_results:
 			# Start by trying to discern the overall result of the run,
