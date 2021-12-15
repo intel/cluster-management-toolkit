@@ -299,6 +299,26 @@ def remove_groups(options = None, args = None):
 
 	return 0
 
+def get_cluster_name():
+	if os.path.exists(f"{HOMEDIR}/.kube/config"):
+		with open(f"{HOMEDIR}/.kube/config", "r") as f:
+			d1 = yaml.safe_load(f)
+	else:
+		return None
+
+	current_context = d1.get("current-context", None)
+	if current_context is None:
+		return None
+
+	cluster_name = None
+
+	for context in d1.get("contexts", []):
+		if context.get("name", "") == current_context:
+			cluster_name = context["context"].get("cluster", None)
+			break
+
+	return cluster_name
+
 def rebuild_inventory(options = None, args = None):
 	force = False
 	if options is not None:
@@ -317,6 +337,8 @@ def rebuild_inventory(options = None, args = None):
 
 	from kubernetes_helper import KubernetesHelper
 
+	# We ideally want to iterate over all clusters here, but for now we only import the current-context
+	cluster_name = get_cluster_name()
 	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
 
 	vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -325,9 +347,9 @@ def rebuild_inventory(options = None, args = None):
 		for node in vlist:
 			roles = kh.get_node_roles(node)
 			if "control-plane" in roles:
-				groups = ["all", "controlplane"]
+				groups = ["all", "controlplane", cluster_name]
 			else:
-				groups = ["all", "nodes"]
+				groups = ["all", "nodes", cluster_name]
 
 			group = ""
 			hosts = [deep_get(node, "metadata#name")]

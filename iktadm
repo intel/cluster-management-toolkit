@@ -266,23 +266,9 @@ def rebuild_installation_info(state = None):
 		distro = "kubeadm"
 
 	cluster_name = get_cluster_name()
+	update_installation_info(cluster_name, distro = distro, version = version, requested_version = "<none>", state = state, phase = "<none>", phase_skiplist = [], cni = "<FIXME>", pod_network_cidr = "<FIXME>")
 
-	info = {
-		"cluster_name": "<FIXME>",
-		"distro": distro,
-		"version": version,
-		"requested_version": "<none>",
-		"state": state,
-		"phase": "<none>",
-		"phase_skiplist": [],
-		"cni": "<FIXME>",
-		"pod_network_cidr": "<FIXME>",
-	}
-
-	with open(IKT_INSTALLATION_INFO, "w") as f:
-		f.write(yaml.dump(info, default_flow_style = False, sort_keys = False))
-
-def get_installation_info():
+def get_installation_info(cluster_name = None):
 	info = None
 
 	try:
@@ -291,9 +277,12 @@ def get_installation_info():
 	except FileNotFoundError:
 		pass
 
-	if info is None:
-		info = {
-			"cluster_name": "<none>",
+	if info is None or info.get("installation_target") is None:
+		if cluster_name is None:
+			raise Exception("cluster_name cannot be None when the installation_info file is empty")
+
+		info["installation_target"] = cluster_name
+		info[cluster_name] = {
 			"distro": "<none>",
 			"version": "<none>",
 			"requested_version": "<none>",
@@ -303,30 +292,41 @@ def get_installation_info():
 			"cni": "<none>",
 			"pod_network_cidr": "<none>",
 		}
+	elif info.get("installation_target") is None and cluster_name is not None:
+		# Old format file; transition it
+		tmpinfo = info.copy()
+		tmpinfo.pop("cluster_name")
+		info = {}
+		info["installation_target"] = cluster_name
+		info[cluster_name] = tmpinfo
 
 	return info
 
 def update_installation_info(cluster_name = None, distro = None, version = None, requested_version = None, state = None, phase = None, phase_skiplist = None, cni = None, pod_network_cidr = None):
-	info = get_installation_info()
+	info = get_installation_info(cluster_name = cluster_name)
 
-	if cluster_name is not None:
-		info["cluster_name"] = cluster_name
+	if cluster_name is None:
+		cluster_name = info.get("installation_target")
+
+	if info.get("installation_target") is None:
+		info["installation_target"] = cluster_name
+
 	if distro is not None:
-		info["distro"] = distro
+		info[cluster_name]["distro"] = distro
 	if version is not None:
-		info["version"] = version
+		info[cluster_name]["version"] = version
 	if requested_version is not None:
-		info["requested_version"] = requested_version
+		info[cluster_name]["requested_version"] = requested_version
 	if state is not None:
-		info["state"] = state
+		info[cluster_name]["state"] = state
 	if phase is not None:
-		info["phase"] = phase
+		info[cluster_name]["phase"] = phase
 	if phase_skiplist is not None:
-		info["phase"] = list(phase_skiplist)
+		info[cluster_name]["phase_skiplist"] = phase_skiplist
 	if cni is not None:
-		info["cni"] = cni
+		info[cluster_name]["cni"] = cni
 	if pod_network_cidr is not None:
-		info["pod_network_cidr"] = pod_network_cidr
+		info[cluster_name]["pod_network_cidr"] = pod_network_cidr
 
 	with open(IKT_INSTALLATION_INFO, "w") as f:
 		f.write(yaml.dump(info, default_flow_style = False, sort_keys = False))
@@ -916,8 +916,9 @@ def __task_run_preparation_playbooks_on_localhost(installation_info):
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
 def __task_run_preparation_playbooks_on_control_planes(installation_info):
-	distro = installation_info["distro"]
-	requested_version = installation_info["requested_version"]
+	cluster_name = installation_info["installation_target"]
+	distro = installation_info[cluster_name]["distro"]
+	requested_version = installation_info[cluster_name]["requested_version"]
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(prepare_targets[distro]["playbooks"])
 	extra_values = {
@@ -957,21 +958,11 @@ def get_cluster_name():
 
 	return cluster_name
 
-def __task_set_cluster_name(installation_info):
-	cluster_name = installation_info["cluster_name"]
-
-	# If no cluster-name has been provided we use the hostname of the first control plane
-	if cluster_name is None or cluster_name == "<none>":
-		controlplanes = __selection_control_planes()
-		cluster_name = controlplanes[0]
-	update_installation_info(cluster_name = cluster_name)
-	check_and_print_status(True)
-
 def __task_run_setup_playbooks_on_control_planes(installation_info):
-	cluster_name = installation_info["cluster_name"]
-	distro = installation_info["distro"]
-	requested_version = installation_info["requested_version"]
-	pod_network_cidr = installation_info["pod_network_cidr"]
+	cluster_name = installation_info["installation_target"]
+	distro = installation_info[cluster_name]["distro"]
+	requested_version = installation_info[cluster_name]["requested_version"]
+	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(setup_control_plane_targets[distro]["playbooks"])
 	extra_values = {
@@ -981,9 +972,9 @@ def __task_run_setup_playbooks_on_control_planes(installation_info):
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
 def __task_import_kube_config(installation_info):
-	config_file_name = f"{HOMEDIR}/.kube/config." + installation_info["cluster_name"]
-	cluster_name = "kubernetes+" + installation_info["cluster_name"]
-	admin_name = "kubernetes-admin+" + installation_info["cluster_name"]
+	cluster_name = installation_info["installation_target"]
+	config_file_name = f"{HOMEDIR}/.kube/config.{cluster_name}"
+	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
 	with open(config_file_name, "r") as f:
@@ -1064,10 +1055,10 @@ def __task_import_kube_config(installation_info):
 	check_and_print_status(True)
 
 def __task_setup_kubeadm_cni(installation_info):
-	cni = installation_info["cni"]
-	pod_network_cidr = installation_info["pod_network_cidr"]
-	cluster_name = "kubernetes+" + installation_info["cluster_name"]
-	admin_name = "kubernetes-admin+" + installation_info["cluster_name"]
+	cluster_name = installation_info["installation_target"]
+	cni = installation_info[cluster_name]["cni"]
+	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
+	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
 	# If everything is successful so far we deploy the pod network
@@ -1135,8 +1126,9 @@ def __task_run_preupgrade_playbooks_on_control_planes(installation_info):
 
 # Run upgrade playbooks on control-planes
 def __task_run_upgrade_playbooks_on_control_planes(installation_info):
-	distro = installation_info["distro"]
-	requested_version = installation_info["requested_version"]
+	cluster_name = installation_info["installation_target"]
+	distro = installation_info[cluster_name]["distro"]
+	requested_version = installation_info[cluster_name]["requested_version"]
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(upgrade_control_plane_targets[distro]["playbooks"])
 	extra_values = {
@@ -1167,14 +1159,15 @@ def __task_verify_that_cluster_has_no_nodes(installation_info):
 
 # Run teardown playbooks on control-planes
 def __task_run_teardown_playbooks_on_control_planes(installation_info):
-	distro = installation_info["distro"]
+	cluster_name = installation_info["installation_target"]
+	distro = installation_info[cluster_name]["distro"]
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(teardown_control_plane_targets[distro]["playbooks"])
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
 def __task_remove_kube_config(installation_info):
-	cluster_name = "kubernetes+" + installation_info["cluster_name"]
-	admin_name = "kubernetes-admin+" + installation_info["cluster_name"]
+	cluster_name = installation_info["installation_target"]
+	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
 	if os.path.exists(f"{HOMEDIR}/.kube/{cluster_name}"):
@@ -1204,7 +1197,8 @@ def __task_remove_kube_config(installation_info):
 
 # Run purge playbooks on control-planes
 def __task_run_purge_playbooks_on_control_planes(installation_info):
-	distro = installation_info["distro"]
+	cluster_name = installation_info["installation_target"]
+	distro = installation_info[cluster_name]["distro"]
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(purge_control_plane_targets[distro]["playbooks"])
 	extra_values = {
@@ -1270,7 +1264,6 @@ prepare_tasks = [
 ]
 
 __setup_kubeadm_control_plane_tasks = [
-	([("Set cluster name", "action")], __task_set_cluster_name),
 	([("Run playbooks on ", "action"), ("control-planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
 	([("Import kube config", "action")], __task_import_kube_config),
 	([("Setup ", "action"), ("kubeadm", "programname"), (" Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
@@ -1300,10 +1293,11 @@ purge_control_plane_tasks = [
 
 def run_tasks(tasks, phase, phase_skiplist, final_state):
 	installation_info = get_installation_info()
+	cluster_name = installation_info["installation_target"]
 
 	for i in range(phase, len(tasks)):
 		iktprint([("\n• ", "separator")] + tasks[i][0])
-		if i not in phase_skiplist:
+		if i not in set(phase_skiplist):
 			tasks[i][1](installation_info)
 		if i < len(tasks) - 1:
 			installation_info = update_installation_info(phase = i)
@@ -1351,17 +1345,22 @@ def __find_requested_version(distro, version = None):
 	return requested_version
 
 def prepare_installation(options = None, args = None):
-	installation_info = get_installation_info()
-	distro = installation_info["distro"]
-	version = None
-	requested_version = installation_info["requested_version"]
-	state = installation_info["state"]
-	phase = installation_info["phase"]
-	phase_skiplist = set(installation_info["phase_skiplist"])
-
+	# We don't need a cluster name for --list-tasks, so check this first of all
 	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(prepare_tasks)
 		sys.exit(0)
+
+	# Always require the user to specify the name of the cluster to operate against, even when resuming prepare;
+	# this avoids a lot of hairy corner-cases and attempts to figure out what cluster the user intended to operate against
+	cluster_name = args[0]
+
+	installation_info = get_installation_info(cluster_name = cluster_name)
+	distro = installation_info[cluster_name]["distro"]
+	version = None
+	requested_version = installation_info[cluster_name]["requested_version"]
+	state = installation_info[cluster_name]["state"]
+	phase = installation_info[cluster_name]["phase"]
+	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
 	if state is not None and state not in ["<none>", "preparing", "prepared"]:
 		iktprint([("Error: ", "error"), ("Invalid installation state; the system cannot be in a configured or semi-configured state when running prepare; aborting.", "default")], stderr = True)
@@ -1388,6 +1387,7 @@ def prepare_installation(options = None, args = None):
 			sys.exit(2)
 		else:
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = "controlplane", skip_all = False)
+			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = cluster_name, skip_all = True)
 
 	if options is not None:
 		for opt, optarg in options:
@@ -1399,7 +1399,7 @@ def prepare_installation(options = None, args = None):
 				skip_phases = __expand_index_list(optarg)
 				for __phase in skip_phases:
 					__validate_task_index(prepare_tasks, __phase)
-				phase_skiplist = skip_phases
+				phase_skiplist = set(skip_phases)
 			elif opt == "--resume":
 				if phase is None or phase == "<none>":
 					phase = 0
@@ -1507,11 +1507,12 @@ def check_for_updates(options, args):
 
 def show_configuration():
 	installation_info = get_installation_info()
-	distro = installation_info["distro"]
-	version = installation_info["version"]
-	requested_version = installation_info["requested_version"]
-	cni = installation_info["cni"]
-	pod_network_cidr = installation_info["pod_network_cidr"]
+	cluster_name = installation_info["installation_target"]
+	distro = installation_info[cluster_name]["distro"]
+	version = installation_info[cluster_name]["version"]
+	requested_version = installation_info[cluster_name]["requested_version"]
+	cni = installation_info[cluster_name]["cni"]
+	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 
 	controlplanes = get_control_planes()
 
@@ -1550,18 +1551,20 @@ def show_configuration():
 			iktprint([("            hostname: ", "action"), (f"{controlplane[0]} ", "emphasis"), ("(", "default"), (f"{controlplane[1]}", "emphasis"), (")", "default")])
 
 def setup_control_plane(options, args):
-	installation_info = get_installation_info()
-	distro = installation_info["distro"]
-	version = None
-	requested_version = installation_info["requested_version"]
-	state = installation_info["state"]
-	phase = installation_info["phase"]
-	phase_skiplist = set(installation_info["phase_skiplist"])
-	cni = installation_info["cni"]
-
+	# We don't need a cluster name for --list-tasks, so check this first of all
 	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(setup_control_plane_tasks)
 		sys.exit(0)
+
+	installation_info = get_installation_info()
+	cluster_name = installation_info["installation_target"]
+	distro = installation_info[cluster_name]["distro"]
+	version = None
+	requested_version = installation_info[cluster_name]["requested_version"]
+	state = installation_info[cluster_name]["state"]
+	phase = installation_info[cluster_name]["phase"]
+	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
+	cni = installation_info[cluster_name]["cni"]
 
 	if state is not None and state in ["installed", "upgrading", "tearing_down", "torn_down", "purging"]:
 		iktprint([("Error: ", "error"), ("Invalid installation state; there is a partial or full installation already; aborting.", "default")], stderr = True)
@@ -1570,7 +1573,7 @@ def setup_control_plane(options, args):
 		iktprint([("Error: ", "error"), ("The system is not prepared for installation yet; run ", "default"), (f"{about.admin_program_name}", "programname"), (" prepare", "command"), (" before continuing. Aborting.", "default")], stderr = True)
 		sys.exit(2)
 
-	if state == "prepared" or type(phase) == list:
+	if state == "prepared":
 		phase = 0
 
 	if options is None:
@@ -1583,7 +1586,7 @@ def setup_control_plane(options, args):
 				skip_phases = __expand_index_list(optarg)
 				for __phase in skip_phases:
 					__validate_task_index(setup_control_plane_tasks, __phase)
-				phase_skiplist = skip_phases
+				phase_skiplist = set(skip_phases)
 			elif opt == "--resume":
 				if phase is None or phase == "<none>":
 					phase = 0
@@ -1668,28 +1671,38 @@ def __get_node_info(kh = None):
 	return node_statuses, kh
 
 def get_control_planes(fail_on_empty = True):
+	installation_info = get_installation_info()
+	cluster_name = installation_info["installation_target"]
 	inventory = ansible_get_inventory_dict()
 	__controlplanes = deep_get(inventory, "controlplane#hosts", {})
+	__clusterhosts = deep_get(inventory, f"{cluster_name}#hosts", {})
 	controlplanes = []
 	if len(__controlplanes) == 0 and fail_on_empty == True:
 		iktprint([("Error: ", "error"), ("No control plane(s) defined in the inventory; rebuilding the inventory using “", "default"), (f"{about.inventory_program_name} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
 		sys.exit(2)
+	if len(__clusterhosts) == 0 and fail_on_empty == True:
+		iktprint([("Error: ", "error"), ("The cluster ", "default"), (f"{cluster_name}", "hostname"), (" has no hosts in the inventory; rebuilding the inventory using “", "default"), (f"{about.inventory_program_name} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
+		sys.exit(2)
 
 	for controlplane in __controlplanes:
+		# Only include control planes belonging to this cluster
+		if controlplane not in __clusterhosts:
+			continue
 		ip = socket.gethostbyname(controlplane)
 		controlplanes.append((controlplane, ip))
 	return controlplanes
 
 def teardown_control_plane(options, args):
-	installation_info = get_installation_info()
-	distro = installation_info["distro"]
-	state = installation_info["state"]
-	phase = installation_info["phase"]
-	phase_skiplist = set(installation_info["phase_skiplist"])
-
+	# We don't need a cluster name for --list-tasks, so check this first of all
 	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(teardown_control_plane_tasks)
 		sys.exit(0)
+
+	installation_info = get_installation_info()
+	distro = installation_info[cluster_name]["distro"]
+	state = installation_info[cluster_name]["state"]
+	phase = installation_info[cluster_name]["phase"]
+	phase_skiplist = set(installation_info["phase_skiplist"])
 
 	if distro is None or distro == "<none>":
 		iktprint([("Error: ", "error"), ("Could not find reliable installation information. Aborting.", "default")], stderr = True)
@@ -1712,7 +1725,7 @@ def teardown_control_plane(options, args):
 				skip_phases = __expand_index_list(optarg)
 				for __phase in skip_phases:
 					__validate_task_index(teardown_control_plane_tasks, __phase)
-				phase_skiplist = skip_phases
+				phase_skiplist = set(skip_phases)
 			elif opt == "--resume":
 				if phase is None or phase == "<none>":
 					phase = 0
@@ -1742,15 +1755,16 @@ def teardown_control_plane(options, args):
 	iktprint([("\nCluster teardown successful", "success")])
 
 def purge_control_plane(options, args):
-	installation_info = get_installation_info()
-	distro = installation_info["distro"]
-	state = installation_info["state"]
-	phase = installation_info["phase"]
-	phase_skiplist = set(installation_info["phase_skiplist"])
-
+	# We don't need a cluster name for --list-tasks, so check this first of all
 	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(teardown_control_plane_tasks)
 		sys.exit(0)
+
+	installation_info = get_installation_info()
+	distro = installation_info[cluster_name]["distro"]
+	state = installation_info[cluster_name]["state"]
+	phase = installation_info[cluster_name]["phase"]
+	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
 	if state is None or state in ["preparing", "installing", "upgrading"]:
 		iktprint([("Error: ", "error"), ("Invalid installation state; there's no fully installed cluster; aborting.", "default")], stderr = True)
@@ -1766,7 +1780,7 @@ def purge_control_plane(options, args):
 				skip_phases = __expand_index_list(optarg)
 				for __phase in skip_phases:
 					__validate_task_index(teardown_control_plane_tasks, __phase)
-				phase_skiplist = skip_phases
+				phase_skiplist = set(skip_phases)
 			elif opt == "--resume":
 				if phase is None or phase == "<none>":
 					phase = 0
@@ -1816,6 +1830,7 @@ def upgrade_control_plane(options, args):
 	allow_reinstall = False
 	requested_version = None
 
+	# We don't need a cluster name for --list-tasks or --override, so check this first of all
 	if options is not None:
 		if "--list-tasks" in [tmp[0] for tmp in options]:
 			__list_phases(setup_control_plane_tasks)
@@ -1828,12 +1843,13 @@ def upgrade_control_plane(options, args):
 			rebuild_installation_info(state = "upgrading")
 
 	installation_info = get_installation_info()
-	distro = installation_info["distro"]
-	version = installation_info["version"]
-	requested_version = installation_info["requested_version"]
-	state = installation_info["state"]
-	phase = installation_info["phase"]
-	phase_skiplist = set(installation_info["phase_skiplist"])
+	cluster_name = installation_info["installation_target"]
+	distro = installation_info[cluster_name]["distro"]
+	version = installation_info[cluster_name]["version"]
+	requested_version = installation_info[cluster_name]["requested_version"]
+	state = installation_info[cluster_name]["state"]
+	phase = installation_info[cluster_name]["phase"]
+	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
 	if state is None or state in ["<none>"]:
 		iktprint([("Error: ", "error"), ("Unknown installation state; if you believe this is OK (such as when upgrading a cluster not installed using ", "default"), (f"{about.admin_program_name}", "programname"), (" you can try using the “", "default"), ("--override", "argument"), ("“ argument; aborting.", "default")], stderr = True)
@@ -1843,7 +1859,7 @@ def upgrade_control_plane(options, args):
 		iktprint([("Error: ", "error"), ("Invalid installation state; Kubernetes does not seems to be fully installed; aborting.", "default")], stderr = True)
 		sys.exit(2)
 
-	if state in ["installed", "upgraded"] or type(phase) == list:
+	if state in ["installed", "upgraded"]:
 		phase = 0
 
 	if len(args) > 0:
@@ -1859,7 +1875,7 @@ def upgrade_control_plane(options, args):
 				skip_phases = __expand_index_list(optarg)
 				for __phase in skip_phases:
 					__validate_task_index(upgrade_control_plane_tasks, __phase)
-				phase_skiplist = skip_phases
+				phase_skiplist = set(skip_phases)
 			elif opt == "--resume":
 				if phase is None or phase == "<none>":
 					phase = 0
@@ -1978,6 +1994,7 @@ def upgrade_control_plane(options, args):
 
 	iktprint([("\n[Upgrading control plane]", "phase")])
 
+	sys.exit()
 	run_tasks(tasks = upgrade_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "upgraded")
 	update_installation_info(version = requested_version)
 
@@ -2108,7 +2125,7 @@ commandline = {
 	},
 	"Prepare Installation": {
 		"command": ["prepare"],
-		"values": [("[", "separator"), ("KUBERNETES_VERSION", "argument"), ("]", "separator")],
+		"values": [("CLUSTER_NAME", "argument"), (" [", "separator"), ("KUBERNETES_VERSION", "argument"), ("]", "separator")],
 		"description": [("Install and configure pre-requisites; run this before ", "description"), ("setup-control-plane", "command")],
 		"extended_description": [
 			[("If no version is specified the newest available version will be used", "description")],
@@ -2134,8 +2151,8 @@ commandline = {
 				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
 			},
 		},
-		"min_args": 0,
-		"max_args": 1,
+		"min_args": 1,
+		"max_args": 2,
 		"callback": prepare_installation,
 	},
 	"Setup Control Plane": {
