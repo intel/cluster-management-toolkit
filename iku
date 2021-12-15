@@ -15816,10 +15816,12 @@ def main():
 	global defaultview
 
 	read_iktconfig()
-	themefile = deep_get(iktconfig, "theme")
+	themefile = deep_get(iktconfig, "Global#theme")
 	if themefile is None or len(themefile) == 0:
 		themefile = defaultthemefile
-	else:
+	elif themefile.startswith("{HOME}/"):
+		themefile = f"{HOMEDIR}/{themefile[len('{HOME}/'):]}"
+	elif "/" not in themefile:
 		themefile = f"{THEMEDIR}/{themefile}"
 	read_theme(themefile, defaultthemefile)
 	init_iktprint(themefile)
