@@ -9454,9 +9454,10 @@ def genericinfoloop(stdscr, obj, view):
 					else:
 						sys.exit(f"Cannot handle type {type(selected)} in executecommand()")
 					if w_command == [ "<ephemeral>" ]:
-						msg = [(f"Creating ephemeral container sharing process space with ", "action"), (f"{containername}", "path")]
+						ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
+						msg = [(f"Creating ephemeral ", "action"), (ephemeral_image, "programname"), (" container sharing process namespace with ", "action"), (f"{containername}", "path")]
 					else:
-						msg = [(f"Executing ", "action"), (w_command[0], "command"), (" inside ", "action"), (containername, "path")]
+						msg = [(f"Executing ", "action"), (w_command[0], "programname"), (" inside ", "action"), (containername, "path")]
 					executecommand(uip.stdscr, obj, containername, msg, command = w_command, waitforkeypress = w_waitforkeypress)
 					changed = True
 				elif widget == "callout":
@@ -10235,8 +10236,8 @@ def executecommand(stdscr, pod, container, msg, command, waitforkeypress):
 		if command == ["<ephemeral>"]:
 			# It'd be awesome if we could reuse the same name every time we open an ephemeral container,
 			# but it seems Kubernetes is intent on keeping the old ones around marked as Completed
-			# XXX: We should make the image configurable
-			args = ["kubectl", "debug", pod_name, "--target", container, "-n", pod_namespace, "-i", "-t", "--image", "busybox"]
+			ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
+			args = ["kubectl", "debug", pod_name, "--target", container, "-n", pod_namespace, "-i", "-t", "--image", ephemeral_image]
 
 			# Should we perhaps use subprocess.run here?
 			subprocess.call(args)
