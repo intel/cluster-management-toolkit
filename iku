@@ -3589,6 +3589,7 @@ def resource_kind_to_rtype(resource):
 		("Deployment", "apps"): "[controller]",
 		("Endpoints", ""): "[endpoints]",
 		("EndpointSlices", "discovery.k8s.io"): "[endpoint_slices]",
+		("EphemeralContainer", ""): "[ephemeral_container]",
 		("Event", ""): "[event]",
 		("HorizontalPodAutoscaler", "autoscaling"): "[pod_autoscaler]",
 		("Ingress", "networking.k8s.io"): "[ingress]",
@@ -3641,6 +3642,7 @@ def get_resource_info_by_namespace(namespace, resources):
 def get_resource_info(obj):
 	init_containers = True
 	containers = True
+	ephemeral_containers = True
 
 	resource_info = []
 
@@ -3665,6 +3667,16 @@ def get_resource_info(obj):
 			kind = ("Container", "")
 			rtype = resource_kind_to_rtype(kind)
 			status, status_group, restarts, message = get_container_status(deep_get(obj, "status#containerStatuses"), container_name, kind)
+			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, restarts, message))
+
+	if ephemeral_containers == True:
+		for container in deep_get(obj, "spec#ephemeralContainers", []):
+			ref = container
+			container_name = deep_get(container, "name")
+			resource_tuple = ("", container_name)
+			kind = ("EphemeralContainer", "")
+			rtype = resource_kind_to_rtype(kind)
+			status, status_group, restarts, message = get_container_status(deep_get(obj, "status#ephemeralContainerStatuses"), container_name, kind)
 			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, restarts, message))
 
 	# It should be impossible for a pod to have more than one node, but we'll use plural anyway
@@ -9423,7 +9435,7 @@ def genericinfoloop(stdscr, obj, view):
 				elif widget == "executecommand":
 					selected = uip.get_selected()
 					w_kinds = deep_get(value, "kinds")
-					if selected is None or not selected.kind in w_kinds:
+					if (selected is None or not selected.kind in w_kinds) and w_kinds != [("", "")]:
 						continue
 
 					w_inputtitle = deep_get(value, "inputtitle")
@@ -9441,7 +9453,10 @@ def genericinfoloop(stdscr, obj, view):
 						containername = selected.ref["name"]
 					else:
 						sys.exit(f"Cannot handle type {type(selected)} in executecommand()")
-					msg = [(f"Executing ", "action"), (w_command[0], "command"), (" inside ", "action"), (containername, "path")]
+					if w_command == [ "<ephemeral>" ]:
+						msg = [(f"Creating ephemeral container sharing process space with ", "action"), (f"{containername}", "path")]
+					else:
+						msg = [(f"Executing ", "action"), (w_command[0], "command"), (" inside ", "action"), (containername, "path")]
 					executecommand(uip.stdscr, obj, containername, msg, command = w_command, waitforkeypress = w_waitforkeypress)
 					changed = True
 				elif widget == "callout":
@@ -10216,9 +10231,19 @@ def executecommand(stdscr, pod, container, msg, command, waitforkeypress):
 	pod_name = deep_get(pod, "metadata#name")
 	pod_namespace = deep_get(pod, "metadata#namespace")
 	if pod_name is not None and pod_namespace is not None:
-		args = [ "kubectl", "exec", pod_name, "-n", pod_namespace, "-i", "-t", "-c", container, "--" ] + command
-		# Should we perhaps use subprocess.run here?
-		subprocess.call(args)
+		# This is a request to create a new ephemeral container
+		if command == ["<ephemeral>"]:
+			# It'd be awesome if we could reuse the same name every time we open an ephemeral container,
+			# but it seems Kubernetes is intent on keeping the old ones around marked as Completed
+			# XXX: We should make the image configurable
+			args = ["kubectl", "debug", pod_name, "--target", container, "-n", pod_namespace, "-i", "-t", "--image", "busybox"]
+
+			# Should we perhaps use subprocess.run here?
+			subprocess.call(args)
+		else:
+			args = ["kubectl", "exec", pod_name, "-n", pod_namespace, "-i", "-t", "--container", container, "--"] + command
+			# Should we perhaps use subprocess.run here?
+			subprocess.call(args)
 	else:
 		sys.exit("Called execute command with missing pod name (%s) or namespace (%s)" % (pod_name, pod_namespace))
 
@@ -13358,11 +13383,19 @@ infoviews = {
 				"inputtitle": "Command to execute:",
 				"waitforkeypress": True,
 			},
+			# This is only supported in Kubernetes v1.23+; do we need to add some sort of conditional support for this?
+			"Open ephemeral shell in container": {
+				"shortcut": ord(""),
+				"helptext": ("[Ctrl] + D", "Open a debug (ephemeral) shell inside container"),
+				"widget": "executecommand",
+				"kinds": [("Container", ""), ("InitContainer", "")],
+				"command": ["<ephemeral>"],
+			},
 			"Open shell in container": {
 				"shortcut": ord(""),
 				"helptext": ("[Ctrl] + O", "Open a shell inside container"),
 				"widget": "executecommand",
-				"kinds": [("Container", ""), ("InitContainer", "")],
+				"kinds": [("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")],
 				"command": [ "/bin/sh" ],
 			},
 			"Show tolerations": {
