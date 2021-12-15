@@ -11368,7 +11368,7 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None):
 	retval = 0
 
 	for preplaybook in runbefore:
-		preplaybookpath = get_playbook_path("{preplaybook}.yaml")
+		preplaybookpath = get_playbook_path(f"{preplaybook}.yaml")
 		tmpretval = __run_playbook(preplaybookpath, items, values = values)
 		if retval == 0:
 			retval = tmpretval
@@ -11384,10 +11384,7 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None):
 		runafter = action.get("run-after", [])
 
 		for postplaybook in runafter:
-			postplaybookpath = get_playbook_path("{preplaybook}.yaml")
-			# Check if there's a local playbook overriding this one
-			#if os.path.isfile(f"{ANSIBLE_PLAYBOOK_LOCAL_DIR}/{postplaybook}.yaml"):
-			#	postplaybookpath = f"{ANSIBLE_PLAYBOOK_LOCAL_DIR}/{postplaybook}.yaml"
+			postplaybookpath = get_playbook_path(f"{postplaybook}.yaml")
 			tmpretval = __run_playbook(postplaybookpath, items, values = values)
 			if retval == 0:
 				retval = tmpretval
