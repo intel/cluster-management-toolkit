@@ -1,32 +1,41 @@
 ALL:
-	• Implement local playbooks and themes
+	• Implement local themes
 	• We need a better way to handle inventories that takes multiple clusters into account;
 	  we shouldn't use control-plane or node without qualifier
 	  | Should we use one inventory per cluster, or one category per cluster (controlplane+<cluster>)
 	  | or have the cluster as metadata for the controlplane/node?
-	• ansible.posix and sshpass should be installed by ikt-install, not iktadm
+	• How do we handle ansible.posix? We don't have https_proxy set yet in ikt-install, so it's
+	  probably not the right place to install it after all. We'd ideally check if it's available
+	  when running prepare_node, but ironically the systems that are most likely to need it
+	  (the ansible version shipping with Ubuntu 20.04 LTS, for instance) doesn't have the
+	  ansible-galaxy collection list command, so there's no quick way to query whether it's installed...
 	• deep_get should be moved to iktlib
-	• When running either ikt or iku, check whether authorized_keys is in .ikt/ansible/inventory.yaml;
-	  if not, add it
+	• When running either ikt or iku, check whether .ssh/id_ed25519.pub is in authorized_keys
+	  in .ikt/ansible/inventory.yaml; if not, add it
 
 iku:
 	• Error messages are skipped by the ansible handler
 
 iktadm:
 	• prepare_passwordless_ansible won't work on localhost; we're not passing the password,
-	  and the passowrd might not be the same on the remote system and the local system anyway
+	  and the password might not be the same on the remote system and the local system anyway
+	• Add option to pick another cluster name than the default; this needs to be passed as a cluster
+	  configuration to kubeadm init
 	• Once a cluster is fully installed remove the installation info and rely on heuristics for teardown
-	  (re-create the file during upgrade/teardown/purge and remove it upon completion of upgrade/purge)
+	  (re-create the file during upgrade/teardown/purge and remove it upon completion of upgrade/purge),
+	  *or* have one installation_info (or entry) per cluster?
 	  | The reason we should do this is that we might want to set up (or import) multiple clusters.
 	  | Only remove .kube if all clusters have been purged.
 
 logparser:
+	• Support for drop-in parser definitions
 	• Line too long shouldn't override severity
 	• We cannot replace tabs with spaces in the logparser; we need to do it in the printers instead;
 	  this way we know the real line length (due to facility etc. we might not have the same starting point
 	  for every line, so expanding tabs into spaces won't work properly)
 
-# We shouldn't need to use kubectl for these actions
+# We shouldn't need to use kubectl for these actions (ideally we'd do all actions using API calls
+# rather than kubectl, but that's a looooong way off)
 cordon node:
 	"application/strategic-merge-patch+json"
 	"api/v1/nodes/NODE"

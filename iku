@@ -129,16 +129,37 @@ def init_kubernetes_client():
 override_tail_lines = None
 default_tail_lines = 4000
 
+# Pass in the name of a playbook that exists in {ANSIBLE_PLAYBOOK_DIR};
+# returns the path to the drop-in playbook with the highest priority
+# (or the same playbook in case there is no override)
+def get_playbook_path(playbook):
+	path = ""
+
+	# Check if there's a local playbook overriding this one
+	local_playbooks = deep_get(iktconfig, "Ansible#local_playbooks", [])
+	for playbook_path in local_playbooks:
+		# Substitute {HOME}/ for {HOMEDIR}
+		if playbook_path.startswith("{HOME}/"):
+			playbook_path = f"{HOMEDIR}/{playbook_path[len('{HOME}/'):]}"
+		# Skip non-existing playbook paths
+		if not os.path.isdir(playbook_path):
+			continue
+		# We can have multiple directories with local playbooks;
+		# the first match wins
+		if os.path.isfile(f"{playbook_path}/{playbook}") == True:
+			path = f"{playbook_path}/{playbook}"
+			break
+	if len(path) == 0:
+		path = f"{ANSIBLE_PLAYBOOK_DIR}/{playbook}"
+	return path
+
 def get_package_versions(host_name):
 	if ansible_support == False or not os.path.isdir(ANSIBLE_PLAYBOOK_DIR):
 		return []
 
 	control_plane_k8s_version = ""
 
-	get_versions_path = f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml"
-	## Check if there's a local playbook overriding this one
-	#if os.path.isfile(f"{ANSIBLE_PLAYBOOK_LOCAL_DIR}/get_versions.yaml") == True:
-	#	get_versions_path = f"{ANSIBLE_PLAYBOOK_LOCAL_DIR}/get_versions.yaml"
+	get_versions_path = get_playbook_path("get_versions.yaml")
 	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [host_name])
 
 	if len(ansible_results) == 0:
@@ -1801,7 +1822,8 @@ def listgetter_ansible_volumes(obj):
 	return info
 
 def objgetter_ansible_facts(obj):
-	retval, ansible_results = ansible_run_playbook_on_selection(f"{ANSIBLE_PLAYBOOK_DIR}/get_facts.yaml", [obj])
+	get_facts_path = get_playbook_path("get_facts.yaml")
+	retval, ansible_results = ansible_run_playbook_on_selection(get_facts_path, [obj])
 	if retval != 0:
 		return {}
 
@@ -11346,10 +11368,7 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None):
 	retval = 0
 
 	for preplaybook in runbefore:
-		preplaybookpath = f"{ANSIBLE_PLAYBOOK_DIR}/{preplaybook}.yaml"
-		# Check if there's a local playbook overriding this one
-		#if os.path.isfile(f"{ANSIBLE_PLAYBOOK_LOCAL_DIR}/{preplaybook}.yaml"):
-		#	preplaybookpath = f"{ANSIBLE_PLAYBOOK_LOCAL_DIR}/{preplaybook}.yaml"
+		preplaybookpath = get_playbook_path("{preplaybook}.yaml")
 		tmpretval = __run_playbook(preplaybookpath, items, values = values)
 		if retval == 0:
 			retval = tmpretval
@@ -11365,7 +11384,7 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None):
 		runafter = action.get("run-after", [])
 
 		for postplaybook in runafter:
-			postplaybookpath = f"{ANSIBLE_PLAYBOOK_DIR}/{postplaybook}.yaml"
+			postplaybookpath = get_playbook_path("{preplaybook}.yaml")
 			# Check if there's a local playbook overriding this one
 			#if os.path.isfile(f"{ANSIBLE_PLAYBOOK_LOCAL_DIR}/{postplaybook}.yaml"):
 			#	postplaybookpath = f"{ANSIBLE_PLAYBOOK_LOCAL_DIR}/{postplaybook}.yaml"
@@ -11503,7 +11522,7 @@ def __populate_playbooklist(path, action_list = {}):
 
 		playbookname = tmp[1]
 
-		# Check if the playbook already exists in the action list
+		# Check if the playbook already exists in the action list,
 		if playbookname in action_list:
 			continue
 
@@ -11515,11 +11534,20 @@ def __populate_playbooklist(path, action_list = {}):
 				d = yaml.safe_load(f)
 			except Exception as e:
 				# This entry could not be parsed; add a dummy entry
-				action_list[playbookpath] = {
+				action_list[playbookname] = {
 					"description": playbookpath,
 					"playbook": playbookpath,
 					"category": "__INVALID__",
 					"comments": "Failed to parse",
+				}
+				continue
+
+			# Empty files are used to disable playbooks completely
+			if d is None or len(d) == 0:
+				action_list[playbookname] = {
+					"description": playbookpath,
+					"playbook": playbookpath,
+					"category": "__DISABLED__",
 				}
 				continue
 
@@ -11590,7 +11618,15 @@ def __populate_playbooklist(path, action_list = {}):
 def populate_playbooklist(context = None, actions = [], action_list = {}, control_plane_selected = False, single_item = False, cluster_available = True):
 	# Only populate the list of playbooks if we have ansible support
 	if ansible_support == True:
-		#action_list = __populate_playbooklist(ANSIBLE_PLAYBOOK_LOCAL_DIR, action_list = action_list)
+		local_playbooks = deep_get(iktconfig, "Ansible#local_playbooks", [])
+		for playbook_path in local_playbooks:
+			# Substitute {HOME}/ for {HOMEDIR}
+			if playbook_path.startswith("{HOME}/"):
+				playbook_path = f"{HOMEDIR}/{playbook_path[len('{HOME}/'):]}"
+			# Skip non-existing playbook paths
+			if not os.path.isdir(playbook_path):
+				continue
+			action_list = __populate_playbooklist(playbook_path, action_list = action_list)
 		action_list = __populate_playbooklist(ANSIBLE_PLAYBOOK_DIR, action_list = action_list)
 
 		order = []
@@ -11625,6 +11661,8 @@ def populate_playbooklist(context = None, actions = [], action_list = {}, contro
 			elif category == "__INVALID__":
 				lineattrs = widgetlineattrs.UNSELECTABLE & widgetlineattrs.INVALID
 				metadata = [(comments, ("windowwidget", "alert"))]
+			elif category == "__DISABLED__":
+				continue
 			else:
 				metadata = [(comments, ("windowwidget", "highlight"))]
 

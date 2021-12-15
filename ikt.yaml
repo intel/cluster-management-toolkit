@@ -105,12 +105,15 @@ Ansible:
 
   # Path to directories with locally installed playbooks; this can also be used to override
   # the default playbooks--any playbook with the same name as one of the system playbooks
-  # will be overridden by locally installed playbooks
+  # will be overridden by locally installed playbooks; prioritised by the order of directories,
+  # where a playbook in the first listed directory would override a playbook in the second,
+  # etc.
   #
-  # Use {HOME} as part of the path to specify that the playbooks are in the user's home directory
+  # Playbook paths must be quoted. To reference playbooks relative to the user's home directory
+  # you can use "{HOME}/", so for instance:
   # local_playbooks:
-  # - dir1
-  # - dir2
+  # - "{HOME}/local_playbooks"
+  # - "/opt/playbooks"
   # - ...
 
 # Settings to use when configuring docker
