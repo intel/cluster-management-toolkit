@@ -18,7 +18,7 @@ except ModuleNotFoundError:
 
 from commandparser import parse_commandline
 
-from ansible_helper import ansible_configuration, ansible_support, ansible_get_inventory_pretty, ansible_get_groups, ansible_get_groups_by_host, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_remove_groups, ansible_set_hostvars, ansible_set_groupvars, ansible_unset_hostvars, ansible_unset_groupvars, ansible_create_groups, ansible_ping
+from ansible_helper import ansible_configuration, ansible_support, ansible_get_inventory_pretty, ansible_get_groups, ansible_get_groups_by_host, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_remove_groups, ansible_set_vars, ansible_set_hostvars, ansible_set_groupvars, ansible_unset_hostvars, ansible_unset_groupvars, ansible_create_groups, ansible_ping
 from ansible_helper import ANSIBLE_INVENTORY
 
 import iktlib
@@ -355,6 +355,22 @@ def rebuild_inventory(options = None, args = None):
 
 			if retval is False:
 				raise Exception(f"Programming error: failed to add {hosts} to group {group}")
+
+	# Finally import the hostkey into authorized_keys
+	pubkey = None
+	with open(f"{HOMEDIR}/.ssh/id_ed25519.pub", "r") as f:
+		tmp = f.readlines()
+		if tmp is not None and len(tmp) > 0:
+			pubkey = tmp[0]
+
+	if pubkey == None:
+		iktprint([("Error: ", "error"), ("Failed to read ", "default"), (f"{HOMEDIR}/.ssh/id_ed25519.pub", "path"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	values = {
+		"authorized_keys": [pubkey],
+	}
+	ansible_set_vars(ANSIBLE_INVENTORY, "all", values)
 
 	return 0
 
