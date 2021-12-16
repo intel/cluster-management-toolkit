@@ -266,7 +266,7 @@ def rebuild_installation_info(state = None):
 		distro = "kubeadm"
 
 	cluster_name = get_cluster_name()
-	update_installation_info(cluster_name, distro = distro, version = version, requested_version = "<none>", state = state, phase = "<none>", phase_skiplist = [], cni = "<FIXME>", pod_network_cidr = "<FIXME>")
+	update_installation_info(cluster_name = cluster_name, distro = distro, version = version, requested_version = "<none>", state = state, phase = "<none>", phase_skiplist = [], cni = "<FIXME>", pod_network_cidr = "<FIXME>")
 
 def get_installation_info(cluster_name = None):
 	info = None
@@ -719,7 +719,7 @@ def configure_system(configure_commands):
 		print(string)
 		check_and_print_status(cmd())
 
-def run_playbooks(playbooks, hosts = None, extra_values = {}):
+def run_playbook(playbookpath, hosts = None, extra_values = {}, quiet = False):
 	# Set necessary Ansible keys before running playbooks
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
 	if http_proxy is None:
@@ -748,60 +748,68 @@ def run_playbooks(playbooks, hosts = None, extra_values = {}):
 	}
 	merged_values = { **values, **extra_values }
 
+	if hosts is None:
+		retval, ansible_results = ansible_run_playbook(playbookpath, values = merged_values)
+	else:
+		retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
+
+	for host in ansible_results:
+		data = ansible_results[host]
+		if retval == 0 and quiet == True:
+			break
+
+		# RUN_ERROR = 1
+		# RUN_FAILED_HOSTS = 2
+		# RUN_UNREACHABLE_HOSTS = 4
+		# RUN_FAILED_BREAK_PLAY = 8
+		extra_status = ""
+		if retval & 1 == 1:
+			extra_status += " Error,"
+		if retval & 2 == 2:
+			extra_status += " Failed hosts,"
+		if retval & 4 == 4:
+			extra_status += " host unreachable,"
+		if retval & 8 == 8:
+			extra_status += " Failed break play,"
+
+		extra_status = extra_status.rstrip(",")
+
+		if retval == 0:
+			iktprint([(f"    [{host}]", "success")])
+		else:
+			iktprint([(f"    [{host}]", "error"), (extra_status, "errorvalue")])
+
+		for task in ansible_results[host]:
+			taskname = task[len("TASK: "):]
+			iktprint([(f"      {taskname}:", "default")])
+			msg = data[task].get("msg", "").splitlines()
+			if len(msg) > 0:
+				iktprint([(f"        ", "default"), ("msg:", "header")])
+				for line in msg:
+					iktprint([(f"        {line}", "default")])
+				iktprint([("", "default")])
+			stdout_lines = data[task].get("stdout_lines", [])
+			if len(stdout_lines) > 0:
+				iktprint([(f"        ", "default"), ("stdout:", "header")])
+				for line in data[task]["stdout_lines"]:
+					iktprint([(f"        {line}", "default")])
+				iktprint([("", "default")])
+			stderr_lines = data[task].get("stderr_lines", [])
+			if len(stderr_lines) > 0:
+				iktprint([(f"        ", "default"), ("stderr:", "header")])
+				for line in data[task]["stderr_lines"]:
+					iktprint([(f"        {line}", "default")])
+				iktprint([("", "default")])
+			if len(msg) == 0 and len(stdout_lines) == 0 and len(stderr_lines) == 0:
+				iktprint([(f"        <no output>", "none")])
+				iktprint([("", "default")])
+
+	return retval, ansible_results
+
+def run_playbooks(playbooks, hosts = None, extra_values = {}):
 	for string, playbookpath in playbooks:
 		iktprint(string)
-		if hosts is None:
-			retval, ansible_results = ansible_run_playbook(playbookpath, values = merged_values)
-		else:
-			retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
-
-		for host in ansible_results:
-			data = ansible_results[host]
-
-			# RUN_ERROR = 1
-			# RUN_FAILED_HOSTS = 2
-			# RUN_UNREACHABLE_HOSTS = 4
-			# RUN_FAILED_BREAK_PLAY = 8
-			extra_status = ""
-			if retval & 1 == 1:
-				extra_status += " Error,"
-			if retval & 2 == 2:
-				extra_status += " Failed hosts,"
-			if retval & 4 == 4:
-				extra_status += " host unreachable,"
-			if retval & 8 == 8:
-				extra_status += " Failed break play,"
-
-			extra_status = extra_status.rstrip(",")
-
-			if retval == 0:
-				iktprint([(f"    [{host}]", "success")])
-			else:
-				iktprint([(f"    [{host}]", "error"), (extra_status, "errorvalue")])
-
-			for task in ansible_results[host]:
-				taskname = task[len("TASK: "):]
-				iktprint([(f"      {taskname}:", "default")])
-				msg = data[task].get("msg", "")
-				if len(msg) > 0:
-					iktprint([(f"        ", "default"), ("msg:", "header")])
-					iktprint([(f"        {msg}", "default")])
-					iktprint([("", "default")])
-				stdout_lines = data[task].get("stdout_lines", [])
-				if len(stdout_lines) > 0:
-					iktprint([(f"        ", "default"), ("stdout:", "header")])
-					for line in data[task]["stdout_lines"]:
-						iktprint([(f"        {line}", "default")])
-					iktprint([("", "default")])
-				stderr_lines = data[task].get("stderr_lines", [])
-				if len(stderr_lines) > 0:
-					iktprint([(f"        ", "default"), ("stderr:", "header")])
-					for line in data[task]["stderr_lines"]:
-						iktprint([(f"        {line}", "default")])
-					iktprint([("", "default")])
-				if len(msg) == 0 and len(stdout_lines) == 0 and len(stderr_lines) == 0:
-					iktprint([(f"        <no output>", "none")])
-					iktprint([("", "default")])
+		retval, ansible_results = run_playbook(playbookpath, hosts = hosts, extra_values = extra_values)
 
 		# We don't want to continue executing playbooks if the first one failed
 		if retval != 0:
@@ -1459,6 +1467,133 @@ def prepare_installation(options = None, args = None):
 	iktprint([("• ", "separator"), (f"{about.admin_program_name}", "programname"), (" setup-control-plane ", "command"), ("[", "separator"), ("CNI", "argument"), ("]", "separator")])
 	iktprint([("\nSee “", "separator"), (f"{about.admin_program_name}", "programname"), (" help", "command"), ("“ for more information about valid ", "default"), ("CNI", "argument"), (" options.\n", "default")])
 
+def import_cluster(options = None, args = None):
+	if os.path.exists("/etc/hostname"):
+		f = open("/etc/hostname", "r")
+		hostname = f.readline().strip()
+	else:
+		raise Exception("Error: /etc/hostname not found; Aborting.")
+
+	# default options
+	confirm = True
+
+	from kubernetes_helper import KubernetesHelper
+	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+	clusters = kh.list_clusters()
+	available_clusters = [tmp[0] for tmp in clusters]
+
+	pad = len("Cluster:")
+	match = False
+	for cluster_name, context in clusters:
+		if len(args) > 0 and cluster_name not in args[0].split(","):
+			continue
+		pad = max(len(cluster_name), pad)
+		match = True
+
+	if len(args) > 0:
+		for cluster in args[0].split(","):
+			if cluster not in available_clusters and match == True:
+				iktprint([("Warning: ", "warning"), ("Ignoring non-existing cluster ", "default"), (cluster, "hostname"), ("\n", "default")], stderr = True)
+
+	if match == False:
+		iktprint([("Error: ", "error"), ("No matching clusters found; available clusters are:", "default")], stderr = True)
+		for cluster in available_clusters:
+			iktprint([("• ", "separator"), (cluster, "hostname")])
+		iktprint([("\nAborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	iktprint([("Cluster:", "header"), ("".ljust(pad + 2 - len("Cluster:")), "default"), ("Context:", "header")])
+	for cluster_name, context in clusters:
+		if len(args) > 0 and cluster_name not in args[0]:
+			continue
+		iktprint([(cluster_name, "hostname"), ("".ljust(pad + 2 - len(cluster_name)), "default"), (context, "default")])
+
+	if confirm == True:
+		retval = iktinput([("\nImport the following clusters? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting: ", "error"), ("User stopped cluster import.", "default")], stderr = True)
+			sys.exit(2)
+
+	iktprint([(f"\n[Importing cluster(s)]", "phase")])
+
+	# Since the clusters might use different versions of Kubernetes
+	# we always install the latest kubectl on localhost, so no need to adjust version
+
+	contexts = kh.list_contexts()
+	current_context = None
+	for context in contexts:
+		if context[0] == True:
+			current_context = context[1]
+
+	for cluster_name, context in clusters:
+		if len(args) > 0 and cluster_name not in args[0]:
+			continue
+
+		kh.set_context(context)
+
+		vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
+
+		controlplane = None
+
+		if vlist is not None:
+			for node in vlist:
+				node_name = deep_get(node, "metadata#name")
+				node_roles = kh.get_node_roles(node)
+				if "control-plane" in node_roles:
+					controlplane = node_name
+					break
+
+		if controlplane is None:
+			iktprint([("Error: ", "error"), ("Could not find a control plane for the cluster ", "default"), (cluster_name, "hostname"), ("; aborting.", "default")], stderr = True)
+			# Remember to restore current-context
+			kh.set_context(current_context)
+			sys.exit(2)
+
+		iktprint([("Attention: ", "warning"), ("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
+		iktprint([("Since the system will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing when importing systems.", "default")])
+		ansible_password = iktinput_password([("\nPassword (for ", "default"), (controlplane, "hostname"), ("): ", "default")])
+		if len(ansible_password) == 0:
+			iktprint([("\nError: ", "Error"), ("Empty password; aborting.")], stderr = True)
+			sys.exit(2)
+
+		extra_values = {
+			"ansible_become_pass": ansible_password,
+			"ansible_ssh_pass": ansible_password,
+		}
+		
+		retval, ansible_results = run_playbook(f"{ANSIBLE_PLAYBOOK_DIR}/prepare_passwordless_ansible.yaml", hosts = [controlplane], extra_values = extra_values, quiet = True)
+		if retval != 0:
+			break
+
+		cni = kh.identify_cni()
+		if len(cni) != 1:
+			cni = "<unknown>"
+		else:
+			cni = cni[0][0]
+
+		retval, ansible_results = run_playbook(f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml", hosts = [controlplane], extra_values = extra_values, quiet = True)
+		distro = "<unknown>"
+		version = "<unknown>"
+		if retval == 0:
+			for host in ansible_results:
+				if str(host) != controlplane:
+					continue
+
+				data = ansible_results[host]["TASK: package versions"]["msg"].splitlines()
+				for package in data:
+					if package.startswith("kubeadm:"):
+						distro = "kubeadm"
+						version = package.split(" ")[1]
+						break
+				break
+
+		update_installation_info(cluster_name = cluster_name, distro = distro, version = version, requested_version = "<none>", cni = cni, state = "installed", phase = "<none>", pod_network_cidr = "<FIXME>")
+
+	kh.set_context(current_context)
+
+	iktprint([("\nCluster import successful", "success")])
+
 def check_for_updates(options, args):
 	# default options
 	update_cache = True
@@ -1994,7 +2129,6 @@ def upgrade_control_plane(options, args):
 
 	iktprint([("\n[Upgrading control plane]", "phase")])
 
-	sys.exit()
 	run_tasks(tasks = upgrade_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "upgraded")
 	update_installation_info(version = requested_version)
 
@@ -2122,6 +2256,18 @@ commandline = {
 		"min_args": 0,
 		"max_args": 0,
 		"callback": check_for_updates,
+	},
+	"Import Cluster": {
+		"command": ["import-cluster"],
+		"values": [("[", "separator"), ("CLUSTER_NAME", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
+		"description": [("Import existing cluster(s) and prepare them for use with iKT", "description")],
+		"extended_description": [
+			[("If ", "description"), ("CLUSTER_NAME", "argument"), (",", "separator"), ("...", "argument"), (" is not specified all clusters in ", "description"), (f"{HOMEDIR}/.kube/config", "path")],
+			[(" will be imported", "description")],
+		],
+		"min_args": 0,
+		"max_args": 1,
+		"callback": import_cluster,
 	},
 	"Prepare Installation": {
 		"command": ["prepare"],

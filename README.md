@@ -20,7 +20,7 @@ nodes in the cluster, so adding other infrastructure can also be useful.
 _Note_: __iktadm__ runs some minor sanity checks during the prepare step.
 It will check whether a control-plane has been defined in the inventory;
 if not it'll ask if the system that `iktadm prepare` is executed on should be added
-as control plane. It will also check whether passwordless sudo is enabled
+as a control plane. It will also check whether passwordless sudo is enabled
 (this is necessary for most functionality) and, if necessary, create an _ssh_
 hostkey and install that in `.ssh/authorized_keys` to allow the control plane
 to ssh to itself when running playbooks.
@@ -31,8 +31,8 @@ Check out this repository and, while in the repository directory, type:
 
 `./ikt-install`
 
-This will create symlinks, directories, etc. necessary to run iKT; it will not
-install any components of the cluster.
+This will create symlinks, directories, etc. and a few packages necessary to run iKT;
+it will not install any components of the cluster.
 
 ## Using __iKT__ with a pre-existing cluster
 
@@ -41,7 +41,15 @@ nodes into the inventory. This can easily be achieved by doing:
 
 `iktinv rebuild-inventory`
 
-This only works if you have a .kube directory.
+This only works if you have a `.kube/config` file; if that file contains
+several clusters, all of them will be added to the inventory.
+
+After this run:
+
+`iktadm import-cluster`
+
+This will run a subset of the prepare steps that are necessary to run playbooks
+on the imported cluster(s).
 
 ## Pre-requisites
 
@@ -52,7 +60,7 @@ This only works if you have a .kube directory.
 
 0. _OPTIONAL_: Add customisations to `~/.ikt/ikt.yaml.d/` to override the defaults in `~/.ikt/ikt.yaml`
 1. `iktinv add-host --groups controlplane <name of host to use as control plane>`
-2. `iktadm prepare KUBERNETES_VERSION`
+2. `iktadm prepare CLUSTER_NAME [KUBERNETES_VERSION]`
 3. Wait a short while...
 4. `iktadm setup-control-plane [CNI] [POD_NETWORK_CIDR]`
 5. Wait quite a while...

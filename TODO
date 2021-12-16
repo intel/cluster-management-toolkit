@@ -8,11 +8,17 @@ ALL:
 	• When running either ikt or iku, check whether .ssh/id_ed25519.pub is in authorized_keys
 	  in .ikt/ansible/inventory.yaml; if not, add it
 
+kubernetes_helper:
+	• Add CNI identification for antrea
+
 iku:
 	• Error messages are skipped by the ansible handler
 
+iktinv:
+	• Optionally limit rebuild-inventory to a subset of clusters
+
 iktadm:
-	• Add "import" command that imports all configured clusters from .kube/config
+	• Add command to import kube-config (requires cluster-name--unless unique) and a path
 	• Pass cluster_name to kubeadm init
 	• prepare_passwordless_ansible won't work on localhost; we're not passing the password,
 	  and the password might not be the same on the remote system and the local system anyway
