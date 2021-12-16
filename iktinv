@@ -21,6 +21,9 @@ from commandparser import parse_commandline
 from ansible_helper import ansible_configuration, ansible_support, ansible_get_inventory_pretty, ansible_get_groups, ansible_get_groups_by_host, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_remove_groups, ansible_set_hostvars, ansible_set_groupvars, ansible_unset_hostvars, ansible_unset_groupvars, ansible_create_groups, ansible_ping
 from ansible_helper import ANSIBLE_INVENTORY
 
+import iktlib
+from iktlib import deep_get
+
 HOMEDIR = str(Path.home())
 IKTDIR = f"{HOMEDIR}/.ikt"
 IKT_CONFIG_FILENAME = "ikt.yaml"
@@ -38,13 +41,6 @@ THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
 THEME_PATH = f"{THEMEDIR}/default.yaml"
 
 iktconfig = None
-
-def deep_get(dictionary, path, default = None):
-	if dictionary is None:
-		return default
-	if path is None or len(path) == 0:
-		return default
-	return reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
 
 def set_host_vars(options = None, args = None):
 	hostvars = []
@@ -473,33 +469,6 @@ def list_hosts(options = None, args = None):
 
 	return 0
 
-def read_iktconfig():
-	global iktconfig
-
-	if os.path.isfile(IKT_CONFIG_FILE) is False:
-		return
-
-	# Read the base configuration file
-	with open(IKT_CONFIG_FILE) as f:
-		iktconfig = yaml.safe_load(f)
-
-	# Now read ikt.yaml.d/* if available
-	if os.path.isdir(IKT_CONFIG_FILE_DIR) is False:
-		return
-
-	for item in natsorted(os.listdir(IKT_CONFIG_FILE_DIR)):
-		# Only read entries that end with .y{,a}ml
-		if not (item.endswith(".yml") or item.endswith(".yaml")):
-			continue
-
-		# Read the conflet files
-		with open(f"{IKT_CONFIG_FILE_DIR}/{item}") as f:
-			moreiktconfig = yaml.safe_load(f)
-
-		# Handle config files without any values defined
-		if moreiktconfig is not None:
-			iktconfig = {**iktconfig, **moreiktconfig}
-
 def ping(options = None, args = None):
 	hoststatuses = []
 
@@ -753,6 +722,8 @@ commandline = {
 }
 
 def main():
+	global iktconfig
+
 	init_iktprint(THEME_PATH)
 	command, options, args = parse_commandline(about.inventory_program_name, about.inventory_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline, default_command = "inventory", theme = THEME_PATH)
 
@@ -769,7 +740,7 @@ def main():
 		iktprint([("Please install Ansible.", "default")], stderr = True)
 		sys.exit(2)
 
-	read_iktconfig()
+	iktconfig = iktlib.read_iktconfig()
 	# Used by the ansible module
 	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)
 	ansible_configuration.ansible_user = deep_get(iktconfig, "Ansible#ansible_user")

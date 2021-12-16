@@ -17,14 +17,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-urllib3")
 
-from iktlib import stgroup, versiontuple
-
-def deep_get(dictionary, path, default = None):
-	if dictionary is None:
-		return default
-	if path is None or len(path) == 0:
-		return default
-	return reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
+from iktlib import deep_get, stgroup, versiontuple
 
 class KubernetesHelper:
 	tmp_ca_certs_file = None

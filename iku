@@ -50,7 +50,7 @@ except ModuleNotFoundError:
 from logparser import logparser, loglevel, split_msg, lvl_to_4letter_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import stgroup, versiontuple
+from iktlib import deep_get, stgroup, versiontuple
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_ram_usage, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_extract_string, strarray_wrap_line, themearray_to_strarray, themearray_extract_string, attr_to_curses_merged
 
 from ansible_helper import ansible_clean_results, ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
@@ -92,13 +92,6 @@ namespace = ""
 defaultview = ""
 
 kh = None
-
-def deep_get(dictionary, path, default = None):
-	if dictionary is None:
-		return default
-	if path is None or len(path) == 0:
-		return default
-	return reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
 
 # Behaves roughly as which(1)
 def which(commandname):
@@ -15623,33 +15616,6 @@ def checkforview(arg):
 				return view
 	return None
 
-def read_iktconfig():
-	global iktconfig
-
-	if os.path.isfile(IKT_CONFIG_FILE) is False:
-		return
-
-	# Read the base configuration file
-	with open(IKT_CONFIG_FILE) as f:
-		iktconfig = yaml.safe_load(f)
-
-	# Now read ikt.yaml.d/* if available
-	if os.path.isdir(IKT_CONFIG_FILE_DIR) is False:
-		return
-
-	for item in natsorted(os.listdir(IKT_CONFIG_FILE_DIR)):
-		# Only read entries that end with .y{,a}ml
-		if not (item.endswith(".yml") or item.endswith(".yaml")):
-			continue
-
-		# Read the conflet files
-		with open(f"{IKT_CONFIG_FILE_DIR}/{item}") as f:
-			moreiktconfig = yaml.safe_load(f)
-
-		# Handle config files without any values defined
-		if moreiktconfig is not None:
-			iktconfig = {**iktconfig, **moreiktconfig}
-
 def customise_listviews():
 	for view in views:
 		viewref = views[view]
@@ -15701,13 +15667,14 @@ def customise_listviews():
 def main():
 	defaultthemefile = f"{THEMEDIR}/{DEFAULT_THEME}"
 
+	global iktconfig
 	global initial_name
 	global initial_namespace
 	global initial_container
 	global namespace
 	global defaultview
 
-	read_iktconfig()
+	iktconfig = iktlib.read_iktconfig()
 	themefile = deep_get(iktconfig, "Global#theme")
 	if themefile is None or len(themefile) == 0:
 		themefile = defaultthemefile

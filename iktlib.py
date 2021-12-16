@@ -1,6 +1,21 @@
 #! /usr/bin/env python3
+from functools import reduce
+from pathlib import Path
+import os
 import re
 import sys
+import yaml
+
+try:
+	from natsort import natsorted
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+
+HOMEDIR = str(Path.home())
+IKTDIR = f"{HOMEDIR}/.ikt"
+IKT_CONFIG_FILENAME = "ikt.yaml"
+IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
+IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
 
 class stgroup:
 	DONE = 7
@@ -22,6 +37,40 @@ stgroup_mapping = {
 	stgroup.PENDING: "status_pending",
 	stgroup.DONE: "status_done",
 }
+
+def deep_get(dictionary, path, default = None):
+	if dictionary is None:
+		return default
+	if path is None or len(path) == 0:
+		return default
+	return reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
+
+def read_iktconfig():
+	if os.path.isfile(IKT_CONFIG_FILE) is False:
+		return
+
+	# Read the base configuration file
+	with open(IKT_CONFIG_FILE) as f:
+		iktconfig = yaml.safe_load(f)
+
+	# Now read ikt.yaml.d/* if available
+	if os.path.isdir(IKT_CONFIG_FILE_DIR) is False:
+		return
+
+	for item in natsorted(os.listdir(IKT_CONFIG_FILE_DIR)):
+		# Only read entries that end with .y{,a}ml
+		if not (item.endswith(".yml") or item.endswith(".yaml")):
+			continue
+
+		# Read the conflet files
+		with open(f"{IKT_CONFIG_FILE_DIR}/{item}") as f:
+			moreiktconfig = yaml.safe_load(f)
+
+		# Handle config files without any values defined
+		if moreiktconfig is not None:
+			iktconfig = {**iktconfig, **moreiktconfig}
+
+	return iktconfig
 
 # Helper functions
 def versiontuple(ver):
