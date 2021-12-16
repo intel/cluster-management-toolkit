@@ -6,6 +6,7 @@
 # Recommends: python3-ujson
 
 from functools import reduce
+from getpass import getuser
 import os
 from pathlib import Path
 import re
@@ -26,11 +27,14 @@ except ModuleNotFoundError:
 
 from commandparser import parse_commandline
 
+from ansible_helper import ansible_configuration, ansible_set_vars, ansible_run_playbook_on_selection, ansible_get_hosts_by_group
+from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
+
+import iktlib
+from iktlib import deep_get
+
 HOMEDIR = str(Path.home())
 IKTDIR = f"{HOMEDIR}/.ikt"
-IKT_CONFIG_FILENAME = "ikt.yaml"
-IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
-IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
 
 THEME_DIRNAME = "themes"
 THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
@@ -44,12 +48,129 @@ PROGRAMVERSION = "0.1"
 PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
-def deep_get(dictionary, path, default = None):
-	if dictionary is None:
-		return default
-	if path is None or len(path) == 0:
-		return default
-	return reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
+iktconfig = None
+
+def run_playbook(playbookpath, hosts = None, extra_values = {}, quiet = False):
+	# Set necessary Ansible keys before running playbooks
+	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
+	if http_proxy is None:
+		http_proxy = ""
+	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	if https_proxy is None:
+		https_proxy = ""
+	no_proxy = deep_get(iktconfig, "Network#no_proxy", "")
+	if no_proxy is None:
+		no_proxy = ""
+	insecure_registries = deep_get(iktconfig, "Docker#insecure_registries", [])
+	registry_mirrors = deep_get(iktconfig, "Containerd#registry_mirrors", [])
+	retval = 0
+
+	use_proxy = "no"
+	if len(http_proxy) > 0 or len(https_proxy) > 0:
+		use_proxy = "yes"
+
+	values = {
+		"http_proxy": http_proxy,
+		"https_proxy": https_proxy,
+		"no_proxy": no_proxy,
+		"insecure_registries": insecure_registries,
+		"registry_mirrors": registry_mirrors,
+		"use_proxy": use_proxy,
+	}
+	merged_values = { **values, **extra_values }
+
+	if hosts is None:
+		retval, ansible_results = ansible_run_playbook(playbookpath, values = merged_values)
+	else:
+		retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
+
+	for host in ansible_results:
+		data = ansible_results[host]
+		if retval == 0 and quiet == True:
+			break
+
+		# RUN_ERROR = 1
+		# RUN_FAILED_HOSTS = 2
+		# RUN_UNREACHABLE_HOSTS = 4
+		# RUN_FAILED_BREAK_PLAY = 8
+		extra_status = ""
+		if retval & 1 == 1:
+			extra_status += " Error,"
+		if retval & 2 == 2:
+			extra_status += " Failed hosts,"
+		if retval & 4 == 4:
+			extra_status += " host unreachable,"
+		if retval & 8 == 8:
+			extra_status += " Failed break play,"
+
+		extra_status = extra_status.rstrip(",")
+
+		if retval == 0:
+			iktprint([(f"    [{host}]", "success")])
+		else:
+			iktprint([(f"    [{host}]", "error"), (extra_status, "errorvalue")])
+
+		for task in ansible_results[host]:
+			taskname = task[len("TASK: "):]
+			iktprint([(f"      {taskname}:", "default")])
+			msg = data[task].get("msg", "").splitlines()
+			if len(msg) > 0:
+				iktprint([(f"        ", "default"), ("msg:", "header")])
+				for line in msg:
+					iktprint([(f"        {line}", "default")])
+				iktprint([("", "default")])
+			stdout_lines = data[task].get("stdout_lines", [])
+			if len(stdout_lines) > 0:
+				iktprint([(f"        ", "default"), ("stdout:", "header")])
+				for line in data[task]["stdout_lines"]:
+					iktprint([(f"        {line}", "default")])
+				iktprint([("", "default")])
+			stderr_lines = data[task].get("stderr_lines", [])
+			if len(stderr_lines) > 0:
+				iktprint([(f"        ", "default"), ("stderr:", "header")])
+				for line in data[task]["stderr_lines"]:
+					iktprint([(f"        {line}", "default")])
+				iktprint([("", "default")])
+			if len(msg) == 0 and len(stdout_lines) == 0 and len(stderr_lines) == 0:
+				iktprint([(f"        <no output>", "none")])
+				iktprint([("", "default")])
+
+	return retval, ansible_results
+
+def run_playbooks(playbooks, hosts = None, extra_values = {}):
+	for string, playbookpath in playbooks:
+		iktprint(string)
+		retval, ansible_results = run_playbook(playbookpath, hosts = hosts, extra_values = extra_values)
+
+		# We don't want to continue executing playbooks if the first one failed
+		if retval != 0:
+			break
+
+	return retval == 0
+
+# Add all playbooks in the array
+def populate_playbooks_from_paths(paths):
+	playbooks = []
+
+	for playbookpath in paths:
+		# Only process playbooks
+		tmp = re.match(r"(.*)\.ya?ml", os.path.basename(playbookpath))
+		if tmp is None:
+			raise Exception(f"The playbook filename “{os.path.basename(playbookpath)}“ does not end with .yaml or .yml; this is most likely a programming error.")
+
+		playbookname = tmp[1]
+		description = None
+		with open(playbookpath) as f:
+			d = yaml.safe_load(f)
+			description = [(deep_get(d[0], "vars#metadata#description"), "play")]
+
+		if description is None or len(description) == 0:
+			description = [("Running “", "play"), (playbookname, "programname"), ("“", "play")]
+
+		# If there's no description we fallback to just using the filename
+		playbooks.append(([("  • ", "separator")] + description, playbookpath))
+
+	return playbooks
 
 # This executes a command without capturing the output
 def execute_command(args, env = None):
@@ -129,7 +250,37 @@ def upgrade_nodes(options = None, args = None):
 				sys.exit(2)
 		selection = args
 
-	sys.exit("This is not implemented yet")
+	if len(selection) == 0:
+		iktprint([("Error: ", "error"), ("No nodes available; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	iktprint([("\n[Upgrading nodes]", "phase")])
+	iktprint([("\n• ", "separator"), ("Drain nodes", "action")])
+	drain_options = {
+		("--delete-emptydir-data", None),
+		("--disable-eviction", None),
+		("--ignore-daemonsets", None),
+	}
+	drain_nodes(options = drain_options, args = selection)
+
+	iktprint([("\n• ", "separator"), ("Run upgrade playbooks on nodes", "action")])
+	upgrade_playbooks = [
+		f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_upgrade_node.yaml",
+	]
+	playbooks = populate_playbooks_from_paths(upgrade_playbooks)
+
+	extra_values = {}
+	retval = run_playbooks(playbooks = playbooks, hosts = selection, extra_values = extra_values)
+	if retval == True:
+		iktprint([("OK", "ok")])
+	else:
+		iktprint([("NOT OK", "notok"), ("; aborting.", "default")])
+		sys.exit(2)
+
+	iktprint([("\n• ", "separator"), ("Uncordon nodes", "action")])
+	uncordon_nodes(args = selection)
+
+	iktprint([("\nNode upgrade successful", "success")])
 
 def get_resource(options = None, args = None):
 	namespaces = ["default"]
@@ -218,24 +369,24 @@ ikt_commandline = {
 		"max_args": 1,
 		"callback": upgrade_nodes,
 	},
-	"Get": {
-		"command": ["get", "l", "list"],
-		"values": [("RESOURCE", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("List information about ", "description"), ("RESOURCE", "argument"), (",", "separator"), ("...", "argument")],
-		"min_args": 1,
-		"max_args": 1,
-		"options": {
-			("-N", "--namespace"): {
-				"values": [("NAMESPACE", "argument"), (",", "separator"), ("...", "argument")],
-				"description": [("Only show resources belonging to ", "description"), ("NAMESPACE", "argument"), (",", "separator"), ("...", "argument")],
-				"requires_arg": True,
-			},
-			("-A", "--all-namespaces"): {
-				"description": [("Show resources across all namespaces", "description")],
-			},
-		},
-		"callback": get_resource,
-	},
+#	"Get": {
+#		"command": ["get", "l", "list"],
+#		"values": [("RESOURCE", "argument"), (",", "separator"), ("...", "argument")],
+#		"description": [("List information about ", "description"), ("RESOURCE", "argument"), (",", "separator"), ("...", "argument")],
+#		"min_args": 1,
+#		"max_args": 1,
+#		"options": {
+#			("-N", "--namespace"): {
+#				"values": [("NAMESPACE", "argument"), (",", "separator"), ("...", "argument")],
+#				"description": [("Only show resources belonging to ", "description"), ("NAMESPACE", "argument"), (",", "separator"), ("...", "argument")],
+#				"requires_arg": True,
+#			},
+#			("-A", "--all-namespaces"): {
+#				"description": [("Show resources across all namespaces", "description")],
+#			},
+#		},
+#		"callback": get_resource,
+#	},
 	"extended_description": [
 		[("You can use “", "description"), ("ALL", "emphasis"), ("“ as a substitute for all resources in most cases;", "description")],
 		[("for instance “", "description"), (f"{about.tool_program_name}", "programname"), (" upgrade-node ", "command"), ("ALL", "emphasis"), ("“ will upgrade Kubernetes on all nodes", "description")],
@@ -259,6 +410,7 @@ def get_programname(callname):
 	return callname, callnames[callname]
 
 def main():
+	global iktconfig
 	global programname
 	argv = sys.argv
 
@@ -266,6 +418,19 @@ def main():
 	programname, commandline = get_programname(os.path.basename(argv[0]))
 
 	command, options, args = parse_commandline(programname, PROGRAMVERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, argv, commandline)
+	iktconfig = iktlib.read_iktconfig()
+
+	# Used by the ansible module
+	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)
+	ansible_user = deep_get(iktconfig, "Ansible#ansible_user")
+	if ansible_user is None or len(ansible_user) == 0:
+		ansible_user = getuser()
+	ansible_configuration.ansible_user = ansible_user
+	ansible_password = deep_get(iktconfig, "Ansible#ansible_password")
+	if ansible_password is not None and len(ansible_password) > 0:
+		ansible_configuration.ansible_password = ansible_password
+	ansible_configuration.disable_strict_host_key_checking = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
+	ansible_configuration.save_logs = deep_get(iktconfig, "Ansible#save_logs", False)
 
 	return command(options, args)
 
