@@ -10787,7 +10787,7 @@ def __format_toml(lines):
 # Takes a list of yaml dictionaries and returns a single list of themearray
 def __format_yaml(objects):
 	dumps = []
-	indent = deep_get(iktconfig, "indent", 4)
+	indent = deep_get(iktconfig, "Global#indent", 4)
 
 	yaml.add_representer(str, str_presenter)
 
@@ -11072,7 +11072,7 @@ def diff_resource_configuration(uip, items = [], action = {}, values = {}, kind 
 
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
 
-	indent = deep_get(iktconfig, "indent", 4)
+	indent = deep_get(iktconfig, "Global#indent", 4)
 
 	diff = []
 
@@ -11569,7 +11569,7 @@ available_api_families = []
 def selectwindow(stdscr, uip, refresh_apis = False):
 	global available_api_families
 	global defaultview
-	hide_unavailable = deep_get(iktconfig, "hide_unavailable_apis", True)
+	hide_unavailable = deep_get(iktconfig, "Global#hide_unavailable_apis", True)
 
 	if len(available_api_families) == 0 or refresh_apis == True:
 		available_api_families = kh.get_available_api_families()
@@ -15683,7 +15683,7 @@ def main():
 	read_theme(themefile, defaultthemefile)
 	init_iktprint(themefile)
 
-	tmpdefaultview = deep_get(iktconfig, "defaultview", "")
+	tmpdefaultview = deep_get(iktconfig, "Global#defaultview", "")
 	curses_configuration.abouttext = helptexts.about
 	curses_configuration.mousescroll_enable = deep_get(iktconfig, "Mouse#enablescroll", False)
 	# These values are ignored when scrolling is disabled, so the defaults don't matter
