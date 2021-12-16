@@ -530,7 +530,7 @@ def __task_add_ssh_key_to_inventory(installation_info):
 def __task_check_and_add_ssh_key_to_authorized_keys(installation_info):
 	add_ssh_key_to_authorized_keys()
 
-def __task_check_and_install_ansible_posix(installation_info):
+def install_ansible_posix():
 	# Old versions of ansible-galaxy doesn't have the list command;
 	# if it doesn't work we just assume that ansible.posix is missing
 	args = ["ansible-galaxy", "collection", "list"]
@@ -545,7 +545,10 @@ def __task_check_and_install_ansible_posix(installation_info):
 			"no_proxy": no_proxy,
 		}
 		args = ["ansible-galaxy", "collection", "install", "ansible.posix"]
-		check_and_print_status(execute_command(args, env = env))
+		return execute_command(args, env = env)
+
+def __task_check_and_install_ansible_posix(installation_info):
+	check_and_print_status(install_ansible_posix)
 
 def download_files(directory, fetch_urls):
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
@@ -1506,7 +1509,7 @@ def import_cluster(options = None, args = None):
 
 	if confirm == True:
 		retval = iktinput([("\nImport the following clusters? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		
+
 		if retval.lower() not in ["y", "yes"]:
 			iktprint([("\nAborting: ", "error"), ("User stopped cluster import.", "default")], stderr = True)
 			sys.exit(2)
@@ -1557,7 +1560,9 @@ def import_cluster(options = None, args = None):
 			"ansible_become_pass": ansible_password,
 			"ansible_ssh_pass": ansible_password,
 		}
-		
+
+		install_ansible_posix()
+
 		retval, ansible_results = run_playbook(f"{ANSIBLE_PLAYBOOK_DIR}/prepare_passwordless_ansible.yaml", hosts = [controlplane], extra_values = extra_values, quiet = True)
 		if retval != 0:
 			break
