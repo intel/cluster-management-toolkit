@@ -8,8 +8,9 @@ import os
 import sys
 import yaml
 
-from logparser import loglevel, loglevel_to_name
 import iktlib
+from iktlib import stgroup, stgroup_mapping
+from logparser import loglevel, loglevel_to_name
 
 theme = {}
 
@@ -152,27 +153,6 @@ def color_ram_usage(used, selected):
 		attribute = attr_to_curses_merged("types", "watermark_high", selected)
 
 	return attribute
-
-class stgroup:
-	DONE = 7
-	OK = 6
-	PENDING = 5
-	WARNING = 4
-	ADMIN = 3
-	NOT_OK = 2
-	UNKNOWN = 1
-	CRIT = 0
-
-stgroup_mapping = {
-	stgroup.CRIT: "status_critical",
-	stgroup.UNKNOWN: "status_unknown",
-	stgroup.NOT_OK: "status_not_ok",
-	stgroup.ADMIN: "status_admin",
-	stgroup.WARNING: "status_warning",
-	stgroup.OK: "status_ok",
-	stgroup.PENDING: "status_pending",
-	stgroup.DONE: "status_done",
-}
 
 def color_status_group(status_group, selected = False):
 	return attr_to_curses_merged("main", stgroup_mapping[status_group], selected = selected)

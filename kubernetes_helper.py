@@ -17,6 +17,8 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-urllib3")
 
+from iktlib import stgroup, versiontuple
+
 def deep_get(dictionary, path, default = None):
 	if dictionary is None:
 		return default
@@ -85,7 +87,7 @@ class KubernetesHelper:
 	def list_contexts(self, config_path = None):
 		contexts = []
 
-		# If config_path = None we use ${HOME}/.kube/config
+		# If config_path == None we use ${HOME}/.kube/config
 		if config_path == None:
 			# Read kubeconfig
 			config_path = str(Path.home()) + "/.kube/config"
@@ -106,6 +108,36 @@ class KubernetesHelper:
 			cluster = deep_get(context, "context#cluster")
 			contexts.append((current, name, cluster, authinfo, namespace))
 		return contexts
+
+	# Returns a list of (cluster, context),
+	# with only one context per cluster (priority given to contexts with admin in the username)
+	def list_clusters(self, config_path = None):
+		contexts = self.list_contexts(config_path = config_path)
+		__clusters = {}
+		clusters = []
+
+		for context in contexts:
+			name = context[1]
+			cluster = context[2]
+
+			if cluster not in __clusters:
+				__clusters[cluster] = {
+					"contexts": [],
+				}
+			__clusters[cluster]["contexts"].append(name)
+
+		# If we find a context that mentions admin, pick that one,
+		# otherwise just find the first context for each cluster
+		for cluster in __clusters:
+			for context in __clusters[cluster]["contexts"]:
+				# We don't want to risk matches where the *cluster* is named admin
+				tmp = re.match(r"admin.*@", context)
+				if tmp is not None:
+					clusters.append((cluster, context))
+					continue
+			# Nope, no context mentions admin
+			clusters.append((cluster, __clusters[cluster]["contexts"][0]))
+		return clusters
 
 	def set_context(self, config_path = None, name = None):
 		context_name = ""
@@ -271,6 +303,105 @@ class KubernetesHelper:
 			f.write(yaml_str)
 
 		return True
+
+	def make_selector(self, selector_dict):
+		selectors = []
+
+		if selector_dict is not None:
+			for key, value in selector_dict.items():
+				selectors.append(f"{key}={value}")
+
+		return ",".join(selectors)
+
+	def get_image_version(self, image, default = "<undefined>"):
+		tmp = re.match(r"^.*:(.*)", image)
+		if tmp is not None:
+			image_version = f"{tmp[1]}"
+		else:
+			image_version = default
+		return image_version
+
+	# CNI detection helpers
+	def __identify_cni(self, cni_name, controller_kind, controller_selector, container_name):
+		cni = []
+
+		# Is there a controller matching the kind we're looking for?
+		vlist = self.get_list_by_kind_namespace(controller_kind, "", field_selector = controller_selector)
+
+		if len(vlist) == 0:
+			return cni
+
+		cni_matches = 0
+		pod_matches = 0
+		cni_version = None
+		cni_status = ("<unknown>", stgroup.UNKNOWN, "Could not get status")
+
+		# 2. Are there > 0 pods matching the label selector?
+		for obj in vlist:
+			if controller_kind == ("Deployment", "apps"):
+				cni_status = get_dep_status(deep_get(obj, "status#conditions"))
+			elif controller_kind == ("DaemonSet", "apps"):
+				if deep_get(obj, "status#numberUnavailable", 0) > deep_get(obj, "status#maxUnavailable", 0):
+					cni_status = ("Unavailable", stgroup.NOT_OK, "numberUnavailable > maxUnavailable")
+				else:
+					cni_status = ("Available", stgroup.OK, "")
+
+				label_selector = deep_get(obj, "spec#selector")
+
+				vlist2 = self.get_list_by_kind_namespace(("Pod", ""), "", label_selector = self.make_selector(deep_get(obj, "spec#selector#matchLabels")))
+
+				if vlist2 is not None and len(vlist2) > 0:
+					for obj2 in vlist2:
+						# Try to get the version
+						for container in deep_get(obj2, "status#containerStatuses", []):
+							if deep_get(container, "name", "") == container_name:
+								image_version = self.get_image_version(deep_get(container, "image", ""))
+
+								if image_version != "<undefined>":
+									if cni_version is None:
+										cni_version = image_version
+										pod_matches += 1
+									elif versiontuple(image_version) > versiontuple(cni_version):
+										cni_version = image_version
+										pod_matches += 1
+									elif image_version != cni_version:
+										cni_version = image_version
+										pod_matches += 1
+
+		if cni_version is None:
+			cni_version = "<unknown>"
+
+		if pod_matches == 0:
+			cni.append((cni_name, "<incomplete>", cni_status))
+		elif pod_matches == 1:
+			cni.append((cni_name, f"{cni_version}", cni_status))
+		else:
+			cni.append((cni_name, f"{cni_version}*", cni_status))
+
+		return cni
+
+	def identify_cni(self):
+		cni = []
+
+		# We're gonna have to do some sleuthing here
+		# Canal:
+		cni += self.__identify_cni("canal", ("DaemonSet", "apps"), "metadata.name=canal", "calico-node")
+		# Calico:
+		# Since canal is a combination of Calico and Flannel we need to skip Calico if Canal is detected
+		if "canal" not in [cni_name for cni_name, cni_version, cni_status in cni]:
+			cni += self.__identify_cni("calico", ("Deployment", "apps"), "metadata.name=calico-kube-controllers", "calico-kube-controllers")
+		# Cilium:
+		cni += self.__identify_cni("cilium", ("Deployment", "apps"), "metadata.name=cilium-operator", "cilium-operator")
+		# Flannel:
+		cni += self.__identify_cni("flannel", ("DaemonSet", "apps"), "metadata.name=kube-flannel-ds", "kube-flannel")
+		# Kilo:
+		cni += self.__identify_cni("kilo", ("DaemonSet", "apps"), "metadata.name=kilo", "kilo")
+		# Kube-router:
+		cni += self.__identify_cni("kube-router", ("DaemonSet", "apps"), "metadata.name=kube-router", "kube-router")
+		# Weave:
+		cni += self.__identify_cni("weave", ("DaemonSet", "apps"), "metadata.name=weave-net", "weave")
+
+		return cni
 
 	def get_node_roles(self, node):
 		roles = []

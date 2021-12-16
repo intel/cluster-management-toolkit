@@ -50,7 +50,8 @@ except ModuleNotFoundError:
 from logparser import logparser, loglevel, split_msg, lvl_to_4letter_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from curses_helper import curses_configuration, stgroup, color_log_severity, get_mousemask, color_ram_usage, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_extract_string, strarray_wrap_line, themearray_to_strarray, themearray_extract_string, attr_to_curses_merged
+from iktlib import stgroup, versiontuple
+from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_ram_usage, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_extract_string, strarray_wrap_line, themearray_to_strarray, themearray_extract_string, attr_to_curses_merged
 
 from ansible_helper import ansible_clean_results, ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -958,14 +959,6 @@ class ContainerInfo:
 	def __repr__(self):
 		return repr((self.name, self.ref, self.container_type, self.image_version, self.instances, self.image_id, self.pods, self.pod_references))
 
-def get_image_version(image, default = "<undefined>"):
-	tmp = re.match(r"^.*:(.*)", image)
-	if tmp is not None:
-		image_version = f"{tmp[1]}"
-	else:
-		image_version = default
-	return image_version
-
 def get_image_tuple(image):
 	tmp = re.match(r"^(.*):(.*)", image)
 	if tmp is not None:
@@ -982,7 +975,7 @@ def __get_container_info(obj, container_type, spec_path, status_path):
 	for container in deep_get(obj, spec_path, []):
 		container_name = deep_get(container, "name")
 		container_image = deep_get(container, "image")
-		image_version = get_image_version(container_image)
+		image_version = kh.get_image_version(container_image)
 
 		# To get the image ID we need to cross-reference container_image against status#{status_path}->image"
 		image_id = None
@@ -3442,15 +3435,6 @@ def get_container_status(src_statuses, container, kind):
 
 	return reason, status_group, restarts, message
 
-def make_selector(selector_dict):
-	selectors = []
-
-	if selector_dict is not None:
-		for key, value in selector_dict.items():
-			selectors.append(f"{key}={value}")
-
-	return ",".join(selectors)
-
 def make_set_expression(expression_list):
 	expressions = []
 
@@ -4481,14 +4465,14 @@ def get_containers(containers = [], container_statuses = []):
 	for container in containers:
 		container_name = deep_get(container, "name")
 		container_image = deep_get(container, "image")
-		image_version = get_image_version(container_image)
+		image_version = kh.get_image_version(container_image)
 		container_dict[container_name] = image_version
 
 	for container in container_statuses:
 		container_name = deep_get(container, "name")
 		container_image = deep_get(container, "image")
 		if container_dict[container_name] == "<undefined>":
-			image_version = get_image_version(container_image, "<undefined>")
+			image_version = kh.get_image_version(container_image, "<undefined>")
 			container_list.append((container_name, image_version))
 		else:
 			container_list.append((container_name, container_dict[container_name]))
@@ -4691,13 +4675,6 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 			first = False
 
 		uip.addthemearray(listpad, tmp, y = ypos, x = pos + tagprefixlen)
-
-def versiontuple(ver):
-	filled = []
-	for point in ver.split("."):
-		filled.append(point.zfill(8))
-	return tuple(filled)
-
 
 field_templates = {
 	"access_modes": {
@@ -6721,7 +6698,7 @@ def genericlistloop(stdscr, view):
 				for i in range(0, len(labels)):
 					if i in tagged_labels:
 						selectors[labels[i][0]] = labels[i][1]
-				label_selector = make_selector(selectors)
+				label_selector = kh.make_selector(selectors)
 				uip.force_update()
 			tagged_items.clear()
 			uip.refresh_all()
@@ -7634,88 +7611,6 @@ def check_cni_updates(cni, current_version):
 
 	return new_version
 
-# CNI detection helpers
-def __identify_cni(cni_name, controller_kind, controller_selector, container_name):
-	cni = []
-
-	# Is there a controller matching the kind we're looking for?
-	vlist = kh.get_list_by_kind_namespace(controller_kind, "", field_selector = controller_selector)
-
-	if len(vlist) == 0:
-		return cni
-
-	cni_matches = 0
-	pod_matches = 0
-	cni_version = None
-	cni_status = ("<unknown>", stgroup.UNKNOWN, "Could not get status")
-
-	# 2. Are there > 0 pods matching the label selector?
-	for obj in vlist:
-		if controller_kind == ("Deployment", "apps"):
-			cni_status = get_dep_status(deep_get(obj, "status#conditions"))
-		elif controller_kind == ("DaemonSet", "apps"):
-			if deep_get(obj, "status#numberUnavailable", 0) > deep_get(obj, "status#maxUnavailable", 0):
-				cni_status = ("Unavailable", stgroup.NOT_OK, "numberUnavailable > maxUnavailable")
-			else:
-				cni_status = ("Available", stgroup.OK, "")
-
-		label_selector = deep_get(obj, "spec#selector")
-
-		vlist2 = kh.get_list_by_kind_namespace(("Pod", ""), "", label_selector = make_selector(deep_get(obj, "spec#selector#matchLabels")))
-
-		if vlist2 is not None and len(vlist2) > 0:
-			for obj2 in vlist2:
-				# Try to get the version
-				for container in deep_get(obj2, "status#containerStatuses", []):
-					if deep_get(container, "name", "") == container_name:
-						image_version = get_image_version(deep_get(container, "image", ""))
-
-						if image_version != "<undefined>":
-							if cni_version is None:
-								cni_version = image_version
-								pod_matches += 1
-							elif versiontuple(image_version) > versiontuple(cni_version):
-								cni_version = image_version
-								pod_matches += 1
-							elif image_version != cni_version:
-								cni_version = image_version
-								pod_matches += 1
-
-	if cni_version is None:
-		cni_version = "<unknown>"
-
-	if pod_matches == 0:
-		cni.append((cni_name, "<incomplete>", cni_status))
-	elif pod_matches == 1:
-		cni.append((cni_name, f"{cni_version}", cni_status))
-	else:
-		cni.append((cni_name, f"{cni_version}*", cni_status))
-
-	return cni
-
-def identify_cni():
-	cni = []
-
-	# We're gonna have to do some sleuthing here
-	# Canal:
-	cni += __identify_cni("canal", ("DaemonSet", "apps"), "metadata.name=canal", "calico-node")
-	# Calico:
-	# Since canal is a combination of Calico and Flannel we need to skip Calico if Canal is detected
-	if "canal" not in [cni_name for cni_name, cni_version, cni_status in cni]:
-		cni += __identify_cni("calico", ("Deployment", "apps"), "metadata.name=calico-kube-controllers", "calico-kube-controllers")
-	# Cilium:
-	cni += __identify_cni("cilium", ("Deployment", "apps"), "metadata.name=cilium-operator", "cilium-operator")
-	# Flannel:
-	cni += __identify_cni("flannel", ("DaemonSet", "apps"), "metadata.name=kube-flannel-ds", "kube-flannel")
-	# Kilo:
-	cni += __identify_cni("kilo", ("DaemonSet", "apps"), "metadata.name=kilo", "kilo")
-	# Kube-router:
-	cni += __identify_cni("kube-router", ("DaemonSet", "apps"), "metadata.name=kube-router", "kube-router")
-	# Weave:
-	cni += __identify_cni("weave", ("DaemonSet", "apps"), "metadata.name=weave-net", "weave")
-
-	return cni
-
 # FIXME
 def networkinfoloop(stdscr, view):
 	field_list, sortcolumn = fieldgenerator(view)
@@ -7747,7 +7642,7 @@ def networkinfoloop(stdscr, view):
 			uip.update_window()
 
 			# Try to figure out which CNI we're using, if any
-			_cni = identify_cni()
+			_cni = kh.identify_cni()
 
 			if len(_cni) == 0:
 				cni = "<unknown>"
@@ -8834,7 +8729,7 @@ def field_processor_label_selector(obj, path, extra_paths, fallback = None, form
 	selector = deep_get(obj, path)
 	if selector is not None:
 		field = []
-		selector = make_selector(selector)
+		selector = kh.make_selector(selector)
 		split_selector = selector.split(",")
 		for i in range(0, len(split_selector)):
 			field.append((split_selector[i], ("types", "generic")))
@@ -12357,7 +12252,7 @@ infoviews = {
 			},
 		},
 		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
+			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
 			"infogetter": get_pod_info,
 		},
 		"shortcuts": {
@@ -12423,7 +12318,7 @@ infoviews = {
 			},
 		},
 		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
+			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
 			"infogetter": get_pod_info,
 		},
 		"shortcuts": {
@@ -13825,7 +13720,7 @@ infoviews = {
 			},
 		},
 		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
+			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
 			"infogetter": get_pod_info,
 		},
 		"shortcuts": {
@@ -13861,7 +13756,7 @@ infoviews = {
 			},
 		},
 		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = make_selector(deep_get(obj, 'spec#selector')))",
+			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector')))",
 			"infogetter": get_pod_info,
 		},
 	},
@@ -14006,7 +13901,7 @@ infoviews = {
 			},
 		},
 		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = make_selector(deep_get(obj, 'spec#selector')))",
+			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector')))",
 			"infogetter": get_pod_info_with_kind,
 		},
 		"shortcuts": {
@@ -14175,7 +14070,7 @@ infoviews = {
 			},
 		},
 		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
+			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
 			"infogetter": get_pod_info,
 		},
 	},

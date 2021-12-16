@@ -2,7 +2,34 @@
 import re
 import sys
 
+class stgroup:
+	DONE = 7
+	OK = 6
+	PENDING = 5
+	WARNING = 4
+	ADMIN = 3
+	NOT_OK = 2
+	UNKNOWN = 1
+	CRIT = 0
+
+stgroup_mapping = {
+	stgroup.CRIT: "status_critical",
+	stgroup.UNKNOWN: "status_unknown",
+	stgroup.NOT_OK: "status_not_ok",
+	stgroup.ADMIN: "status_admin",
+	stgroup.WARNING: "status_warning",
+	stgroup.OK: "status_ok",
+	stgroup.PENDING: "status_pending",
+	stgroup.DONE: "status_done",
+}
+
 # Helper functions
+def versiontuple(ver):
+	filled = []
+	for point in ver.split("."):
+		filled.append(point.zfill(8))
+	return tuple(filled)
+
 def join_tuple_list(items, _tuple = "", item_prefix = None, item_suffix = None, separator = None):
 	_list = []
 	first = True
