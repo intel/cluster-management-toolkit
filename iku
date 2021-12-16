@@ -493,20 +493,27 @@ def generator_secret_data(obj, field, fieldlen, pad, ralign, selected):
 
 def generator_numerical_range(obj, field, fieldlen, pad, ralign, selected):
 	value = getattr(obj, field)
+	if type(value) == int:
+		value = [value]
 
 	i = 0
 	ranges = deep_get(field_templates, f"{field}#ranges")
 	formatting = ("types", "generic", selected)
 	for start, end, formatting in ranges:
-		if value >= start and value < end:
+		if type(start) == str and int(start) < len(value):
+			start = value[int(start)]
+		if type(end) == str and int(end) < len(value):
+			end = value[int(end)]
+
+		if value[0] >= start and value[0] < end:
 			context, attr = formatting
 			formatting = (context, attr, selected)
 			break
 
-	if value == -1:
+	if value[0] == -1:
 		string = ""
 	else:
-		string = str(value)
+		string = str(value[0])
 
 	array = [
 		(string, formatting)
@@ -1642,7 +1649,7 @@ def get_default(generator):
 	elif generator in [generator_numerical, generator_numerical_range, generator_age]:
 		# Yields an empty string from -1
 		default = -1, {}
-	elif generator in [generator_mem, generator_total]:
+	elif generator in [generator_mem, generator_total, generator_numerical_compare]:
 		default = (None, None), {}
 	elif generator in [generator_mem_single]:
 		default = "0", {}
@@ -3025,20 +3032,6 @@ def get_dep_status(conditions):
 
 	return status, status_group, reason
 
-class RSInfo:
-	def __init__(self, namespace, name, ref, ready_replicas, current_replicas, desired_replicas, max_replicas, age):
-		self.namespace = namespace
-		self.name = name
-		# The reference to the "true" resource object
-		self.ref = ref
-		self.ready_replicas = ready_replicas
-		self.current_replicas = current_replicas
-		self.desired_replicas = desired_replicas
-		self.max_replicas = max_replicas
-		self.age = age
-	def __repr__(self):
-		return repr((self.namespace, self.name, self.ref, self.ready_replicas, self.current_replicas, self.desired_replicas, self.max_replicas, self.age))
-
 def get_desired_replicas(rs):
 	desired = -1
 	max_replicas = -1
@@ -3060,26 +3053,6 @@ def get_webhook_info(vlist, extra_vars = {}):
 			"name": obj["name"]
 		}
 		info.append(type("InfoClass", (), d))
-
-	return info
-
-def get_rs_info(vlist, extra_vars = {}):
-	info = []
-
-	if vlist == []:
-		return []
-
-	for obj in vlist:
-		namespace = deep_get(obj, "metadata#namespace")
-		name = deep_get(obj, "metadata#name")
-		ref = obj
-		timestamp = timestamp_to_datetime(deep_get(obj, "metadata#creationTimestamp"))
-		age = get_since(timestamp)
-		ready_replicas = deep_get(obj, "status#readyReplicas", 0)
-		current_replicas = deep_get(obj, "status#replicas")
-		desired_replicas, max_replicas = get_desired_replicas(obj)
-
-		info.append(RSInfo(namespace, name, ref, ready_replicas, current_replicas, desired_replicas, max_replicas, age))
 
 	return info
 
@@ -4045,6 +4018,8 @@ class NodeInfo:
 		return repr((self.name, self.ref, self.status, self.status_group, self.age, self.kubernetes_roles, self.kubelet_version, self.internal_ips, self.os, self.kernel, self.container_runtime, self.cpu, self.mem, self.taints))
 
 def get_node_status(node):
+	status = "Unknown"
+	status_group = stgroup.UNKNOWN
 	taints = []
 	full_taints = []
 
@@ -4209,14 +4184,20 @@ def get_pod_status(pod):
 	phase = deep_get(pod, "status#phase")
 
 	if phase == "Pending":
+		status = phase
 		status_group = stgroup.PENDING
 
 		# Any containers in ContainerCreating or similar?
 		for condition in deep_get(pod, "status#conditions", []):
 			condition_type = deep_get(condition, "type")
 			condition_status = deep_get(condition, "status")
+			reason = deep_get(condition, "reason", "")
 
-			if condition_type == "ContainersReady" and condition_status == "False":
+			if condition_type == "PodScheduled" and condition_status == "False" and reason == "Unschedulable":
+				status = reason
+				status_group = stgroup.NOT_OK
+				break
+			elif condition_type == "ContainersReady" and condition_status == "False":
 				for container in deep_get(pod, "status#initContainerStatuses", []):
 					if deep_get(container, "ready") == False:
 						reason = deep_get(container, "state#waiting#reason", "").rstrip()
@@ -4228,14 +4209,30 @@ def get_pod_status(pod):
 						if reason is not None and len(reason) > 0:
 							return reason, status_group
 
-		return "Pending", status_group
+		return status, status_group
 	elif phase == "Running":
+		status = "Running"
+		status_group = stgroup.OK
+		last_state = ""
+		exit_code = 0
+
 		# Any container failures?
 		for condition in deep_get(pod, "status#conditions", []):
 			condition_type = deep_get(condition, "type")
 			condition_status = deep_get(condition, "status")
+			ready = True
 
-			if condition_type == "ContainersReady" and condition_status == "False":
+			if condition_type == "Ready" and condition_status == "False":
+				status_group = stgroup.NOT_OK
+				status = "NotReady"
+				# Can we get more info? Is the host available?
+				node_name = deep_get(pod, "spec#nodeName")
+				node = kh.get_ref_by_kind_name_namespace(("Node", ""), node_name, None)
+				node_status = get_node_status(node)
+				if node_status[0] == "Unreachable":
+					status = "NodeUnreachable"
+				ready = False
+			elif condition_type == "ContainersReady" and condition_status == "False":
 				status_group = stgroup.NOT_OK
 
 				for container in deep_get(pod, "status#initContainerStatuses", []):
@@ -4253,11 +4250,8 @@ def get_pod_status(pod):
 					# break here
 					if status_group == stgroup.NOT_OK:
 						break
-				return status, status_group
 
-			if condition_type == "ContainersReady" and condition_status == "True":
-				status_group = stgroup.OK
-				return "Running", status_group
+		return status, status_group
 	elif phase == "Failed":
 		# Failed
 		status_group = stgroup.NOT_OK
@@ -5488,7 +5482,8 @@ field_templates = {
 	"misscheduled_replicas": {
 		"header": "Misscheduled:",
 		"path": "status#numberMisscheduled",
-		"generator": generator_numerical,
+		"generator": generator_numerical_range,
+		"ranges": [(0, 1, ("types", "generic")), (1, sys.maxsize, ("types", "watermark_high"))],
 		"ralign": True,
 	},
 	"model": {
@@ -5752,14 +5747,18 @@ field_templates = {
 	},
 	"ready_replicas": {
 		"header": "Ready:",
-		"path": "status#readyReplicas",
-		"generator": generator_numerical,
+		"path": [("status#readyReplicas", 0), ("status#replicas", 0)],
+		"datagetter": datagetter_pathlist_to_tuple,
+		"generator": generator_numerical_range,
+		"ranges": [(0, "1", ("types", "watermark_high")), ("1", sys.maxsize, ("types", "generic"))],
 		"ralign": True,
 	},
 	"ready_replicas_ds": {
 		"header": "Ready:",
-		"path": "status#numberReady",
-		"generator": generator_numerical,
+		"path": ["status#numberReady", "status#currentNumberScheduled"],
+		"datagetter": datagetter_pathlist_to_tuple,
+		"generator": generator_numerical_range,
+		"ranges": [(0, "1", ("types", "watermark_high")), ("1", sys.maxsize, ("types", "generic"))],
 		"ralign": True,
 	},
 	"ready_replicas_tuple": {
@@ -15242,7 +15241,6 @@ views = {
 		"group": "Workloads",
 		"fields": ["namespace", "name", "ready_replicas", "current_replicas", "desired_replicas", "max_replicas", "age"],
 		"kind": ("ReplicaSet", "apps"),
-		"infogetter": get_rs_info,
 		"actions": {
 			"title": "Perform action on tagged replica sets",
 			"actionlist": {
