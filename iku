@@ -3869,13 +3869,7 @@ def get_inventory_info():
 		inventory["all"]["hosts"][host]["status"] = "UNKNOWN"
 		inventory["all"]["hosts"][host]["status_group"] = stgroup.PENDING
 
-	# Handle the deprecated setting
-	disable_ping = deep_get(iktconfig, "Inventory#disable_ping", False)
-	if disable_ping == False:
-		ping_hosts = "Always"
-	else:
-		ping_hosts = "Never"
-	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", ping_hosts)
+	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", "Lazy")
 
 	# FIXME
 	if ping_hosts == "Always" or (ping_hosts == "Lazy" and latest_info == "Inventory"):
@@ -15651,14 +15645,9 @@ def customise_listviews():
 			blacklist = deep_get(iktconfig, f"{view}#fields", [])
 			viewref["field_blacklist"] = blacklist
 
-	# As a special case, the configuration option "Inventory#disable_ping"
+	# As a special case, the configuration option "Inventory#ping_hosts"
 	# modifies the blacklist, but *only* if the field blacklist is unset
-	disable_ping = deep_get(iktconfig, "Inventory#disable_ping", False)
-	if disable_ping == False:
-		ping_hosts = "Always"
-	else:
-		ping_hosts = "Never"
-	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", ping_hosts)
+	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", "Lazy")
 	if ping_hosts == "Never" and "field_blacklist" not in views["Inventory"]:
 		views["Inventory"]["field_blacklist"] = ["status"]
 
