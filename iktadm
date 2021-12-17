@@ -277,16 +277,18 @@ def get_installation_info(cluster_name = None):
 		if cluster_name is None:
 			raise Exception("cluster_name cannot be None when the installation_info file is empty")
 
-		info["installation_target"] = cluster_name
-		info[cluster_name] = {
-			"distro": "<none>",
-			"version": "<none>",
-			"requested_version": "<none>",
-			"state": "<none>",
-			"phase": "<none>",
-			"phase_skiplist": [],
-			"cni": "<none>",
-			"pod_network_cidr": "<none>",
+		info = {
+			"installation_target": cluster_name,
+			cluster_name: {
+				"distro": "<none>",
+				"version": "<none>",
+				"requested_version": "<none>",
+				"state": "<none>",
+				"phase": "<none>",
+				"phase_skiplist": [],
+				"cni": "<none>",
+				"pod_network_cidr": "<none>",
+			}
 		}
 	elif info.get("installation_target") is None and cluster_name is not None:
 		# Old format file; transition it
