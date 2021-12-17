@@ -17,11 +17,11 @@
   become: True
   become_user: root
   tasks:
-  - name: Updating APT cache
-    apt: update_cache=yes force_apt_get=yes
   - name: Gathering package facts
     package_facts:
       manager: apt
+  - name: apt-mark unhold kubeadm kubelet kubectl
+    command: apt-mark unhold kubeadm kubelet kubectl
   - name: Installing Kubernetes packages
     apt:
       pkg:
