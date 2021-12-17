@@ -12,7 +12,7 @@
   tasks:
   - name: Checking if cluster is already running
     shell: |
-      sudo lsof -i -P -n | grep 6443.*LISTEN > /dev/null
+      lsof -i -P -n | grep 6443.*LISTEN > /dev/null
     register: port_check
     ignore_errors: yes
   - name: Updating APT cache
