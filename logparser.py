@@ -316,6 +316,17 @@ def split_iso_timestamp(message, timestamp):
 			message = tmp[5]
 			break
 
+		# [2021-12-18T20:15:36Z]
+		tmp = re.match(r"^\[(\d\d\d\d-\d\d-\d\d)T(\d\d:\d\d:\d\d)Z\] ?(.*)", message)
+		if tmp is not None:
+			if tmp_timestamp is None:
+				ymd = tmp[1]
+				hms = tmp[2]
+				tmp_timestamp = f"{ymd} {hms}.000+0000"
+			message = tmp[3]
+			break
+
+
 		# 2020-02-20 13:47:41 (assume UTC)
 		# 2020/02/20 13:47:41 (assume UTC)
 		tmp = re.match(r"^(\d\d\d\d)[-/](\d\d)[-/](\d\d) (\d\d:\d\d:\d\d) ?(.*)", message)
@@ -902,6 +913,30 @@ def override_severity(message, severity, facility = None):
 		severity = loglevel.DEBUG
 
 	return message, severity
+
+def custom_override_severity(message, severity, overrides = []):
+	for override in overrides:
+		override_type = override[0]
+		override_pattern = override[1]
+		override_severity = override[2]
+
+		if override_type == "startswith":
+			if not message.startswith(override_pattern):
+				continue
+		elif override_type == "endswith":
+			if not message.endswith(override_pattern):
+				continue
+		elif override_type == "regex":
+			tmp = re.match(pattern, message)
+			if tmp is None:
+				continue
+		else:
+			raise Exception(f"Unknown override_type '{override_type}'; this is a programming error.")
+
+		severity = override_severity
+		break
+
+	return severity
 
 def expand_event(message, severity, remnants = None, fold_msg = True):
 	if fold_msg == True or (remnants is not None and len(remnants) > 0):
@@ -2135,6 +2170,8 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Severity formats
 			if _filter[0] == "bracketed_severity":
 				message, severity = split_bracketed_severity(message, default = _filter[1])
+			if _filter[0] == "override_severity":
+				severity = custom_override_severity(message, severity, _filter[1])
 
 	return facility, severity, message, remnants
 
@@ -2243,7 +2280,7 @@ parsers = [
 	Parser("kilo", "", "", "kube_parser_json_glog"),
 	Parser("", "", "gcr.io/knative", "kube_parser_1"),
 	Parser("k8s-mlperf-image-classification-training", "", "", "kube_parser_1"),
-	Parser("kubernetes-dashboard", "", "", "basic_8601"),
+	Parser("kubernetes-dashboard", "", "", ("custom", ["glog", "8601", "8601", ("override_severity", [("startswith", "Successful initial request to the apiserver, version", loglevel.NOTICE)])])),
 	Parser("kube-apiserver", "", "", "kube_parser_structured_glog"),
 	Parser("", "kube-rbac-proxy", "", "kube_parser_1"),
 	Parser("kube-app-manager-controller", "kube-app-manager", "", "kube_app_manager"),
