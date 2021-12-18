@@ -31,7 +31,7 @@ from ansible_helper import ansible_configuration, ansible_set_vars, ansible_run_
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import iktlib
-from iktlib import deep_get
+from iktlib import deep_get, join_tuple_list
 
 HOMEDIR = str(Path.home())
 IKTDIR = f"{HOMEDIR}/.ikt"
@@ -43,8 +43,6 @@ THEME_PATH = f"{THEMEDIR}/default.yaml"
 from iktprint import iktprint, init_iktprint
 
 import about
-PROGRAMNAME = "ikt"
-PROGRAMVERSION = "0.1"
 PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
@@ -185,16 +183,99 @@ def execute_command_with_response(args):
 	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 	return result.stdout.decode("utf-8")
 
+def get_selection(selection, kind = None, default = None, skip_control_planes = True):
+	all_items = False
+	items1 = []
+	non_existing = []
+	# Only used for controlplanes
+	items2 = []
+
+	if kind is None:
+		raise Exception("Kind is None; this is a programming error")
+
+	if selection is None:
+		if default is None:
+			raise Exception("Both selection and default is None; this is a programming error")
+		selection = default
+
+	if "ALL" in selection:
+		if len(selection) > 1:
+			iktprint([("Error: ", "error"), ("“", "default"), ("ALL", "argument"), ("“ cannot be combined with other arguments; aborting.", "default")], stderr = True)
+			sys.exit(2)
+		else:
+			all_items = True
+
+	# Kubernetes resources
+	if type(kind) == tuple:
+		from kubernetes_helper import KubernetesHelper
+		kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+
+		vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
+		if vlist is not None:
+			for node in vlist:
+				name = deep_get(node, "metadata#name")
+				if all_items == False and name not in selection:
+					continue
+
+				if kind == ("Node", "") and skip_control_planes == True:
+					node_roles = kh.get_node_roles(node)
+					if "control-plane" in node_roles:
+						items2.append(name)
+						continue
+
+				items1.append(name)
+	# str kinds are things such as playbooks; for now iKT doesn't use them
+
+	# Finally, generate a list of non-existing items
+	if all_items == False:
+		for item in selection:
+			if item not in items1 + items2:
+				non_existing.append(item)
+
+	return items1, non_existing, items2
+
 def cordon_nodes(options = None, args = None):
+	include_control_planes = False
+	header = True
+
 	_args = ["kubectl", "cordon"]
-	_args += args
+
+	for opt, optarg in options:
+		if opt == "--include-control-planes":
+			include_control_planes = True
+		elif opt == "--no-header":
+			header = False
+
+	selection = args[0].split(",")
+
+	# It's OK to specify control-planes individually
+	if "ALL" not in selection:
+		include_control_planes = True
+
+	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	if len(non_existing) > 0:
+		iktprint([(f"Error: ", "error"), join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")), (" are not part of the cluster; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if len(nodes) == 0:
+		iktprint([("Error: ", "error"), ("No nodes available; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if header == True:
+		iktprint([("\n[Cordoning nodes]", "phase")])
+	_args += nodes
 	execute_command(_args)
 
 def drain_nodes(options = None, args = None):
+	include_control_planes = False
+	header = True
+
 	# Check kubectl version
 	_args = ["kubectl", "version"]
 	response = execute_command_with_response(_args).splitlines()
 	tmp = re.match(r"^Client Version: version.Info{Major:\"(.)\", Minor:\"(.+?)\"", response[0])
+
 	_args = ["kubectl", "drain"]
 
 	for opt, optarg in options:
@@ -208,49 +289,82 @@ def drain_nodes(options = None, args = None):
 				_args.append(opt)
 		elif opt == "--ignore-daemonsets":
 			_args.append(opt)
+		elif opt == "--include-control-planes":
+			include_control_planes = True
+		elif opt == "--no-header":
+			header = False
 
-	_args += args
+	selection = args[0].split(",")
+
+	# It's OK to specify control-planes individually
+	if "ALL" not in selection:
+		include_control_planes = True
+
+	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	if len(non_existing) > 0:
+		iktprint([(f"Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if len(nodes) == 0:
+		iktprint([("Error: ", "error"), ("No nodes available; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if header == True:
+		iktprint([("\n[Draining nodes]", "phase")])
+	_args += nodes
 	execute_command(_args)
 
 def uncordon_nodes(options = None, args = None):
+	include_control_planes = False
+	header = True
+
 	_args = ["kubectl", "uncordon"]
-	_args += args
+
+	for opt, optarg in options:
+		if opt == "--include-control-planes":
+			include_control_planes = True
+		elif opt == "--no-header":
+			header = False
+
+	selection = args[0].split(",")
+
+	# It's OK to specify control-planes individually
+	if "ALL" not in selection:
+		include_control_planes = True
+
+	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	if len(non_existing) > 0:
+		iktprint([(f"Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if len(nodes) == 0:
+		iktprint([("Error: ", "error"), ("No nodes available; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if header == True:
+		iktprint([("\n[Uncordoning nodes]", "phase")])
+	_args += nodes
 	execute_command(_args)
 
 def setup_nodes(options = None, args = None):
 	return 0
 
 def upgrade_nodes(options = None, args = None):
-	selection = []
-	nodes = []
-	controlplanes = []
+	selection = args[0].split(",")
 
-	from kubernetes_helper import KubernetesHelper
-	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
-	vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
-	if vlist is not None:
-		for node in vlist:
-			node_name = deep_get(node, "metadata#name")
-			node_roles = kh.get_node_roles(node)
-			if "control-plane" in node_roles:
-				controlplanes = node_name
-				continue
-			nodes.append(node_name)
+	if len(controlplanes) > 0 and args[0] != "ALL":
+		iktprint([(f"Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be upgraded using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
 
-	if len(args) == 1 and args[0] == "ALL":
-		selection = nodes
-	else:
-		for arg in args:
-			if arg in controlplanes:
-				iktprint([(f"Error: ", "error"), ("“", "default"), (arg, "hostname"), ("“ is a control-plane and should be upgraded using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
-				sys.exit(2)
-			if arg not in nodes:
-				iktprint([(f"Error: ", "error"), ("“", "default"), (arg, "hostname"), ("“ is not a part of the cluster; aborting.", "default")], stderr = True)
-				sys.exit(2)
-		selection = args
+	if len(non_existing) > 0:
+		iktprint([(f"Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
+		sys.exit(2)
 
-	if len(selection) == 0:
+	if len(nodes) == 0:
 		iktprint([("Error: ", "error"), ("No nodes available; aborting.", "default")], stderr = True)
 		sys.exit(2)
 
@@ -260,8 +374,9 @@ def upgrade_nodes(options = None, args = None):
 		("--delete-emptydir-data", None),
 		("--disable-eviction", None),
 		("--ignore-daemonsets", None),
+		("--no-header", None),
 	}
-	drain_nodes(options = drain_options, args = selection)
+	drain_nodes(options = drain_options, args = nodes.join(","))
 
 	iktprint([("\n• ", "separator"), ("Run upgrade playbooks on nodes", "action")])
 	upgrade_playbooks = [
@@ -270,7 +385,7 @@ def upgrade_nodes(options = None, args = None):
 	playbooks = populate_playbooks_from_paths(upgrade_playbooks)
 
 	extra_values = {}
-	retval = run_playbooks(playbooks = playbooks, hosts = selection, extra_values = extra_values)
+	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values)
 	if retval == True:
 		iktprint([("OK", "ok")])
 	else:
@@ -278,7 +393,7 @@ def upgrade_nodes(options = None, args = None):
 		sys.exit(2)
 
 	iktprint([("\n• ", "separator"), ("Uncordon nodes", "action")])
-	uncordon_nodes(args = selection)
+	uncordon_nodes(args = nodes.join(","))
 
 	iktprint([("\nNode upgrade successful", "success")])
 
@@ -301,15 +416,20 @@ def get_resource(options = None, args = None):
 ikt_commandline = {
 	"Cordon Node": {
 		"command": ["cordon"],
-		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
 		"description": [("Cordon ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
 		"min_args": 1,
 		"max_args": 1,
 		"callback": cordon_nodes,
+		"options": {
+			"--include-control-planes": {
+				"description": [("Include control-planes when ALL is used", "description")],
+			},
+		},
 	},
 	"Drain Node": {
 		"command": ["drain"],
-		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
 		"description": [("Drain ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
 		"min_args": 1,
 		"max_args": 1,
@@ -326,12 +446,15 @@ ikt_commandline = {
 			"--ignore-daemonsets": {
 				"description": [("Ignore pods managed by daemonsets; by default ", "description"), ("drain ", "command"), ("will abort if there are such pods running on the node", "description")],
 			},
+			"--include-control-planes": {
+				"description": [("Include control-planes when ALL is used", "description")],
+			},
 		},
 		"callback": drain_nodes,
 	},
 	"Drain Node (Force)": {
 		"command": ["force-drain"],
-		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
 		"description": [("Force-drain ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
 		"extended_description": [
 			[("When a node is force-drained, pods belonging to daemonsets are ignored, and ", "description"), ("emptyDir", "emphasis"), (" data is deleted", "description")],
@@ -342,6 +465,9 @@ ikt_commandline = {
 			"--disable-eviction": {
 				"description": [("Delete pods instead of using evict; this bypasses ", "description"), ("PodDisruptionBudget", "emphasis")],
 			},
+			"--include-control-planes": {
+				"description": [("Include control-planes when ALL is used", "description")],
+			},
 		},
 		"implicit_options": [
 			("--delete-emptydir-data", None),
@@ -351,15 +477,20 @@ ikt_commandline = {
 	},
 	"Uncordon Node": {
 		"command": ["uncordon"],
-		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
 		"description": [("Uncordon ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
 		"min_args": 1,
 		"max_args": 1,
 		"callback": uncordon_nodes,
+		"options": {
+			"--include-control-planes": {
+				"description": [("Include control-planes when ALL is used", "description")],
+			},
+		},
 	},
 	"Upgrade Node": {
 		"command": ["upgrade-node"],
-		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
 		"description": [("Upgrade Kubernetes on ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
 		"extended_description": [
 			[("Upgrade Kubernetes on ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument"), (" to the version in use on the control-plane(s);", "description")],
@@ -390,6 +521,9 @@ ikt_commandline = {
 	"extended_description": [
 		[("You can use “", "description"), ("ALL", "emphasis"), ("“ as a substitute for all resources in most cases;", "description")],
 		[("for instance “", "description"), (f"{about.tool_program_name}", "programname"), (" upgrade-node ", "command"), ("ALL", "emphasis"), ("“ will upgrade Kubernetes on all nodes", "description")],
+		[("", "default")],
+		[("Note that “", "description"), ("ALL", "emphasis"), ("“ excludes control-planes when used on nodes; to include control-planes", "description")],
+		[("you need to pass the “", "description"), ("--include-control-planes", "option"), ("“ option (where available)", "description")],
 	]
 }
 
@@ -405,7 +539,7 @@ def get_programname(callname):
 	}
 
 	if callname not in callnames:
-		sys.exit(f"{PROGRAMNAME} called with unknown name {callname}; aborting.")
+		sys.exit(f"{about.tool_program_name} called with unknown name {callname}; aborting.")
 
 	return callname, callnames[callname]
 
@@ -417,7 +551,7 @@ def main():
 	init_iktprint(THEME_PATH)
 	programname, commandline = get_programname(os.path.basename(argv[0]))
 
-	command, options, args = parse_commandline(programname, PROGRAMVERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, argv, commandline)
+	command, options, args = parse_commandline(programname, about.tool_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, argv, commandline)
 	iktconfig = iktlib.read_iktconfig()
 
 	# Used by the ansible module
