@@ -808,6 +808,9 @@ def run_playbook(playbookpath, hosts = None, extra_values = {}, quiet = False):
 	return retval, ansible_results
 
 def run_playbooks(playbooks, hosts = None, extra_values = {}):
+	if len(playbooks) == 0 or hosts == None:
+		return True
+
 	for string, playbookpath in playbooks:
 		iktprint(string)
 		retval, ansible_results = run_playbook(playbookpath, hosts = hosts, extra_values = extra_values)
