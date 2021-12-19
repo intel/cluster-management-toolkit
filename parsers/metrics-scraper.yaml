@@ -1,0 +1,11 @@
+- name: metrics-scraper
+  show_in_selector: False
+  matchkeys:
+  - pod_name: dashboard-metrics-scraper
+  - pod_name: kubernetes-metrics-scraper
+  parser_rules:
+  - json
+  - override_severity:
+    - matchtype: startswith
+      matchkey: "Kubernetes host:"
+      loglevel: notice

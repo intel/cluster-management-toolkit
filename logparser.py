@@ -24,8 +24,15 @@ try:
 	import ujson as json
 except ModuleNotFoundError:
 	import json
+import os
+from pathlib import Path
 import re
 import sys
+import yaml
+
+HOMEDIR = str(Path.home())
+IKTDIR = os.path.join(HOMEDIR, ".ikt")
+PARSER_DIRNAME = "parsers"
 
 class loglevel:
 	EMERG = 0
@@ -65,7 +72,7 @@ def loglevel_to_name(severity):
 
 def name_to_loglevel(name):
 	for severity in loglevel_mappings:
-		if loglevel_mappings[severity] == name:
+		if loglevel_mappings[severity].lower() == name.lower():
 			return severity
 	raise Exception(f"Programming error! Loglevel {name} does not exist!")
 
@@ -1404,29 +1411,6 @@ def weave(message, fold_msg = True):
 
 	return facility, severity, message, remnants
 
-# K8s dashboard-metrics-scraper/dashboard-metrics-scraper
-# Example(s):
-# 10.32.0.1 - - [22/Feb/2020:16:34:30 +0000] "GET / HTTP/1.1" 200 6 " [...]
-# {"level":"error","msg":"Error [...]","time":"2020-02-22T16:34:39Z"}
-def dashboard_metrics_scraper(message, fold_msg = True):
-	facility = ""
-	remnants = []
-
-	severity = loglevel.INFO
-
-	# Try to parse it as json
-	if message.startswith("{\""):
-		message, _timestamp, severity, facility, remnants = split_json_style(message, None)
-
-	tmp = re.match(r"(\d+\.\d+\.\d+\.\d+ .*) \[\d+/[A-Z][a-z][a-z]/\d+:\d\d:\d\d:\d\d [\+-]\d+\] (.*)", message)
-	if tmp is not None:
-		message = "%s %s" % (tmp[1], tmp[2])
-
-	# Override severity for the Kubernetes host message
-	message, severity = override_severity(message, severity)
-
-	return facility, severity, message, remnants
-
 # k8s-mlperf-image-classification-training/k8s-mlperf-image-classification-training
 # INFO:tensorflow:Done running local_init_op.
 # 2020-02-24 11:52:00.243943: W [...]
@@ -2157,8 +2141,11 @@ def custom_parser(message, fold_msg = True, filters = []):
 				facility, severity, message, remnants = key_value(message, fold_msg = fold_msg)
 			elif _filter == "directory":
 				facility, severity, message, remnants = directory(message, fold_msg = fold_msg)
+			elif _filter == "json":
+				if message.startswith("{\""):
+					message, _timestamp, severity, facility, remnants = split_json_style(message, None)
 			# Timestamp formats
-			elif _filter == "8601": # Anything that resembles ISO-8601
+			elif _filter == "ts_8601": # Anything that resembles ISO-8601
 				message, _timestamp = split_iso_timestamp(message, None)
 			# Facility formats
 			elif _filter == "colon_facility":
@@ -2166,6 +2153,8 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Severity formats
 			elif _filter == "colon_severity":
 				message, severity = split_colon_severity(message, severity)
+			else:
+				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 		elif type(_filter) == tuple:
 			# Severity formats
 			if _filter[0] == "bracketed_severity":
@@ -2231,7 +2220,6 @@ parsers = [
 	Parser("cluster-local-gateway", "istio-proxy", "", "istio"),
 	Parser("coredns", "", "", "kube_parser_1"),
 
-	Parser("dashboard-metrics-scraper", "", "", "dashboard_metrics_scraper"),
 	Parser("", "", "k8s.gcr.io/descheduler/descheduler", "kube_parser_structured_glog"),
 	Parser("", "", "quay.io/dexidp/dex", "key_value"),
 	Parser("dist-mnist", "", "", "jupyter"),
@@ -2280,7 +2268,6 @@ parsers = [
 	Parser("kilo", "", "", "kube_parser_json_glog"),
 	Parser("", "", "gcr.io/knative", "kube_parser_1"),
 	Parser("k8s-mlperf-image-classification-training", "", "", "kube_parser_1"),
-	Parser("kubernetes-dashboard", "", "", ("custom", ["glog", "8601", "8601", ("override_severity", [("startswith", "Successful initial request to the apiserver, version", loglevel.NOTICE)])])),
 	Parser("kube-apiserver", "", "", "kube_parser_structured_glog"),
 	Parser("", "kube-rbac-proxy", "", "kube_parser_1"),
 	Parser("kube-app-manager-controller", "kube-app-manager", "", "kube_app_manager"),
@@ -2290,7 +2277,6 @@ parsers = [
 	# kubeflow
 	Parser("", "", "gcr.io/arrikto/kubeflow/oidc-authservice", "key_value"),
 	Parser("kube-proxy", "", "", "kube_parser_structured_glog"),
-	Parser("kubernetes-metrics-scraper", "", "", "dashboard_metrics_scraper"),
 	Parser("kube-router", "", "", "kube_parser_structured_glog"),
 	Parser("kube-scheduler", "", "", "kube_parser_structured_glog"),
 	Parser("kube-state-metrics", "", "", "kube_parser_1"),
@@ -2332,8 +2318,8 @@ parsers = [
 	Parser("nginx-ingress-controller", "", "", "kube_parser_1"),
 	Parser("nginx", "", "", "nginx"),
 	Parser("gpu-feature-discovery", "toolkit-validation", "", "basic_8601"),
-	Parser("gpu-feature-discovery", "", "", ("custom", ["colon_facility", "8601"])),
-	Parser("gpu-operator", "", "", ("custom", ["glog", "8601", "spaced_severity_facility", "key_value", "colon_severity"])),
+	Parser("gpu-feature-discovery", "", "", ("custom", ["colon_facility", "ts_8601"])),
+	Parser("gpu-operator", "", "", ("custom", ["glog", "ts_8601", "spaced_severity_facility", "key_value", "colon_severity"])),
 	Parser("nvidia-cuda-validator", "", "", "basic_8601"),
 	Parser("nvidia-device-plugin", "", "", "basic_8601"),
 	Parser("nvidia-container-toolkit", "driver-validation", "", "basic_8601"),
@@ -2472,7 +2458,9 @@ def get_parser_list():
 # subsubfacility is yet another distinction;
 # for K8s this would be used for the name of a docker image when neither pod name nor container
 # name forms a useful distinction
-# "basic_8601" is for used unknown formats with ISO8601 timestamps
+# "basic_8601" is for used unknown formats with ISO8601 timestamps, or other timestamps
+# with similar ordering (YYYY MM DD HH MM SS, with several choices for separators and whitespace,
+# include none, accepted)
 #	2020-02-16T22:03:08.736292621Z
 def logparser(facility, subfacility, subsubfacility, message, fold_msg = True, override_parser = None):
 	# First extract the Kubernetes timestamp
@@ -2488,6 +2476,78 @@ def logparser(facility, subfacility, subsubfacility, message, fold_msg = True, o
 
 	if subsubfacility.startswith("docker-pullable://"):
 		subsubfacility = subsubfacility[len("docker-pullable://"):]
+
+	parser_dir = os.path.join(IKTDIR, PARSER_DIRNAME)
+	if os.path.isdir(parser_dir):
+		for filename in os.listdir(parser_dir):
+			if filename.startswith("~") or filename.startswith("."):
+				continue
+
+			tmp = re.match(r"(.*)\.ya?ml", filename)
+			if tmp is None:
+				continue
+
+			with open(f"{parser_dir}/{filename}", "r") as f:
+				try:
+					d = yaml.safe_load(f)
+				except:
+					continue
+
+				for parser in d:
+					matchrules = []
+					for matchkey in parser.get("matchkeys"):
+						pod_name = matchkey.get("pod_name")
+						if pod_name is None:
+							pod_name = ""
+						container_name = matchkey.get("container_name")
+						if container_name is None:
+							container_name = ""
+						image_name = matchkey.get("image_name")
+						if image_name is None:
+							image_name = ""
+						# We need at least one way of matching
+						if len(pod_name) == 0 and len(container_name) == 0 and len(image_name) == 0:
+							continue
+						matchrule = (pod_name, container_name, image_name)
+						matchrules.append(matchrule)
+
+					if len(matchrules) == 0:
+						continue
+
+					parser_rules = parser.get("parser_rules")
+					if parser_rules is None or len(parser_rules) == 0:
+						continue
+
+					rules = []
+					for rule in parser_rules:
+						if type(rule) == dict:
+							if "override_severity" in rule:
+								rule_name = "override_severity"
+								overrides = []
+								for override in rule["override_severity"]:
+									matchtype = override.get("matchtype", "")
+									if len(matchtype) == 0:
+										sys.exit(f"Parser {filename} has an invalid override rule; matchtype cannot be empty; aborting.")
+									matchkey = override.get("matchkey", "")
+									if len(matchkey) == 0:
+										sys.exit(f"Parser {filename} has an invalid override rule; matchkey cannot be empty; aborting.")
+									_loglevel = override.get("loglevel", "")
+									if len(_loglevel) == 0:
+										sys.exit(f"Parser {filename} has an invalid override rule; loglevel cannot be empty; aborting.")
+									try:
+										severity = name_to_loglevel(_loglevel)
+									except:
+										sys.exit(f"Parser {filename} contains an invalid loglevel {_loglevel}; aborting.")
+
+									overrides.append((matchtype, matchkey, severity))
+								rules.append((rule_name, overrides))
+							else:
+								sys.exit(f"Unknown rule-type {rule}; aborting.")
+						else:
+							rules.append(rule)
+					# XXX: This is not ideal, but we need to fix all parsers before we can improve this
+					for matchrule in matchrules:
+						parsers.insert(0, Parser(matchrule[0], matchrule[1], matchrule[2], ("custom", rules)))
 
 	for parser in parsers:
 		if facility.startswith(parser.facility) and subfacility.startswith(parser.subfacility) and subsubfacility.startswith(parser.subsubfacility):

@@ -1,0 +1,17 @@
+This directory holds parser rules
+
+Every file is a list of rules; even files with only one rule must be a list.
+If a parser rule should be applied multiple times, such as when filtering out
+timestamps, just specify the same rule again.
+
+- name: name of the parser (displayed as parser name)
+  show_in_selector: Should the parser be shown in the override selector?
+    (default: False; Unless the parser is very generic you always want to set this to false)
+  matchkeys:
+  - pod_name: (matches using startswith)
+    container_name: (matches using startswith)
+    image_name: (matches using startswith)
+  parser_rules:
+  - rule
+    ...
+    ...

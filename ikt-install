@@ -20,6 +20,7 @@ ANSIBLE_DIR = f"{IKTDIR}/ansible"
 ANSIBLE_PLAYBOOK_DIRNAME = "playbooks"
 ANSIBLE_LOG_DIR = f"{ANSIBLE_DIR}/logs"
 IKT_HOOKS_DIR = f"{IKTDIR}/hooks"
+PARSER_DIRNAME = "parsers"
 
 IKT_CONFIG_FILENAME = "ikt.yaml"
 IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
@@ -78,6 +79,7 @@ commands = [
 def create_symlinks(verbose = False):
 	replace_symlink(f"{os.getcwd()}/{ANSIBLE_PLAYBOOK_DIRNAME}", f"{IKTDIR}/{ANSIBLE_PLAYBOOK_DIRNAME}")
 	replace_symlink(f"{os.getcwd()}/{THEME_DIRNAME}", f"{IKTDIR}/{THEME_DIRNAME}")
+	replace_symlink(f"{os.getcwd()}/{PARSER_DIRNAME}", f"{IKTDIR}/{PARSER_DIRNAME}")
 
 	for filename in commands:
 		replace_symlink(f"{os.getcwd()}/{filename}", f"{BINDIR}/{filename}")

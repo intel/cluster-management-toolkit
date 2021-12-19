@@ -1,0 +1,12 @@
+- name: kubernetes-dashboard
+  show_in_selector: False
+  matchkeys:
+  - pod_name: kubernetes-dashboard
+  parser_rules:
+  - glog
+  - ts_8601
+  - ts_8601
+  - override_severity:
+    - matchtype: startswith
+      matchkey: "Successful initial request to the apiserver, version"
+      loglevel: notice

@@ -60,7 +60,7 @@ import helptexts
 from kubernetes_helper import KubernetesHelper
 
 HOMEDIR = str(Path.home())
-IKTDIR = f"{HOMEDIR}/.ikt"
+IKTDIR = os.path.join(HOMEDIR, ".ikt")
 DEPLOYMENTDIR = f"{IKTDIR}/deployments"
 IKT_CONFIG_FILENAME = "ikt.yaml"
 IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
