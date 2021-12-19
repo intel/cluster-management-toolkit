@@ -555,7 +555,7 @@ class KubernetesHelper:
 		},
 		# autoscaling
 		("HorizontalPodAutoscaler", "autoscaling"): {
-			"api_family": ["apis/autoscaling/v1/", "apis/autoscaling/v2beta2/"],
+			"api_family": ["apis/autoscaling/v2/", "apis/autoscaling/v2beta2/", "apis/autoscaling/v1/"],
 			"api": "horizontalpodautoscalers",
 		},
 		# batch
@@ -585,12 +585,12 @@ class KubernetesHelper:
 		},
 		# flowcontrol.apiserver.k8s.io
 		("FlowSchema", "flowcontrol.apiserver.k8s.io"): {
-			"api_family": "apis/flowcontrol.apiserver.k8s.io/v1beta1/",
+			"api_family": ["apis/flowcontrol.apiserver.k8s.io/v1beta2/", "apis/flowcontrol.apiserver.k8s.io/v1beta1/"],
 			"api": "flowschemas",
 			"namespaced": False,
 		},
 		("PriorityLevelConfiguration", "flowcontrol.apiserver.k8s.io"): {
-			"api_family": "apis/flowcontrol.apiserver.k8s.io/v1beta1/",
+			"api_family": ["apis/flowcontrol.apiserver.k8s.io/v1beta2/", "apis/flowcontrol.apiserver.k8s.io/v1beta1/"],
 			"api": "prioritylevelconfigurations",
 			"namespaced": False,
 		},
