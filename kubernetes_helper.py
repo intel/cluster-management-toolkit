@@ -1940,6 +1940,7 @@ class KubernetesHelper:
 
 	def __rest_helper_get(self, kind, name = "", namespace = "", label_selector = "", field_selector = ""):
 		vlist = None
+		use_protobuf = False
 
 		if self.cluster_unreachable == True:
 			return []
@@ -1949,6 +1950,11 @@ class KubernetesHelper:
 			"Content-Type": "application/json",
 			"User-Agent": "%s v%s" % (self.programname, self.programversion),
 		}
+
+		if use_protobuf == True:
+			header_params["Accept"] = "application/vnd.kubernetes.protobuf"
+		else:
+			header_params["Accept"] = "application/json"
 
 		if self.token is not None:
 			header_params["Authorization"] = f"Bearer {self.token}"
@@ -2002,7 +2008,14 @@ class KubernetesHelper:
 			# XXX: here we need to add error handling (401, 404, etc)
 			if status == 400:
 				# Bad request; is the feature disabled? If so we ignore the failure
-				d = json.loads(result.data)
+				if use_protobuf == True:
+					# Do we support this version of Kubernetes protobuf?
+					expected_signature = b"k8s\x00"
+					if result.data[0:4] != expected_signature:
+						sys.exit(f"protobuf format not supported")
+					sys.exit(f"Protobuf support not implemented yet;\n{result.data}")
+				else:
+					d = json.loads(result.data)
 				tmp = re.match(r"feature.*disabled", deep_get(d, "message", ""))
 				if tmp is None:
 					raise Exception(f"Bad Request; URL {url}; {result.data}")
@@ -2054,7 +2067,14 @@ class KubernetesHelper:
 				# Gateway Timeout
 				# A request was made for an unrecognised resourceVersion, and timed out waiting for it to become available
 			elif status == 200:
-				d = json.loads(result.data)
+				if use_protobuf == True:
+					# Do we support this version of Kubernetes protobuf?
+					expected_signature = b"k8s\x00"
+					if result.data[0:4] != expected_signature:
+						sys.exit(f"protobuf format not supported")
+					sys.exit(f"Protobuf support not implemented yet;\n{result.data}")
+				else:
+					d = json.loads(result.data)
 
 				# If name is set this is a read request, not a list request
 				if name != "":
