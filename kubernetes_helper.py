@@ -2038,6 +2038,10 @@ class KubernetesHelper:
 			elif status == 406:
 				# Not Acceptable
 				raise Exception(f"406: Not Acceptable; this is probably a programming error; URL {url}; {header_params}")
+			#elif status == 410:
+				# Gone
+				# We requested update events (using resourceVersion), but it's been too long since the previous request;
+				# retry without &resourceVersion=xxxxx
 			elif status == 503:
 				# Service Unavailable
 				# This is most likely a CRD that has failed to deploy properly
@@ -2046,6 +2050,9 @@ class KubernetesHelper:
 					vlist = None
 				else:
 					vlist = []
+			#elif status == 504:
+				# Gateway Timeout
+				# A request was made for an unrecognised resourceVersion, and timed out waiting for it to become available
 			elif status == 200:
 				d = json.loads(result.data)
 
