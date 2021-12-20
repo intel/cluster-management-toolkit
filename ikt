@@ -152,7 +152,7 @@ def populate_playbooks_from_paths(paths):
 
 	for playbookpath in paths:
 		# Only process playbooks
-		tmp = re.match(r"(.*)\.ya?ml", os.path.basename(playbookpath))
+		tmp = re.match(r"(.*)\.ya?ml$", os.path.basename(playbookpath))
 		if tmp is None:
 			raise Exception(f"The playbook filename “{os.path.basename(playbookpath)}“ does not end with .yaml or .yml; this is most likely a programming error.")
 
