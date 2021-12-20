@@ -1,12 +1,12 @@
-- name: metrics-scraper
+- name: coredns
   show_in_selector: false
   matchkeys:
-  - pod_name: dashboard-metrics-scraper
-  - pod_name: kubernetes-metrics-scraper
+  - pod_name: coredns
   parser_rules:
-  - json
+  - name: bracketed_severity
+    default_loglevel: info
   - name: override_severity
     overrides:
     - matchtype: startswith
-      matchkey: "Kubernetes host:"
+      matchkey: "CoreDNS"
       loglevel: notice

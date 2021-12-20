@@ -869,7 +869,6 @@ def override_severity(message, severity, facility = None):
 
 		"cilium-envoy  version",
 		"Cilium Operator",
-		"CoreDNS-",
 		"Kiali: Version: ",
 		"Kiali: Console version: ",
 		"Kubernetes host: ",
@@ -2178,322 +2177,299 @@ def custom_parser(message, fold_msg = True, filters = []):
 # start argo-ui on 0.0.0.0:8001
 # info: 200 GET 13ms / {"meta":{},"timestamp":"2020-04-17T10:18:48.775Z"}
 
-Parser = namedtuple("Parser", "facility subfacility subsubfacility parser")
-parsers = [
-	# Format: pod, container, image, parser
-	# One or more of pod, container, image can be left empty
+builtin_parsers = [
+	# Formats:
+	# pod, container, image, parser (old style)
+	# parser_name, show_in_selector, [match_rules], parser (new style)
+	#
+	# One or more of pod, container, image must be specified
 
-	Parser("internal_error", "", "", "basic_8601_colon_severity"),
+	("internal_error", "", "", "basic_8601_colon_severity"),
 
-	Parser("3scale-kourier-gateway", "", "", "istio"),
+	("3scale-kourier-gateway", "", "", "istio"),
 
-	Parser("activator", "istio-init_init", "", "basic_8601"),
-	Parser("activator", "istio-proxy", "", "istio"),
-	Parser("admission-webhook-bootstrap-stateful-set", "bootstrap", "", "basic_8601"),
-	Parser("admission-webhook-bootstrap", "", "", "basic_8601"),
-	Parser("admission-webhook-deployment", "admission-webhook", "", "kube_parser_1"),
-	Parser("admission-webhook-deployment", "", "", "kube_parser_1"),
-	Parser("alertmanager-main", "config-reloader", "", "kube_parser_structured_glog"),
-	Parser("alertmanager-main", "", "", "key_value"),
-	Parser("antrea", "antrea-ovs", "", "antrea_ovs"),
-	Parser("antrea", "", "", "kube_parser_1"),
-	Parser("application-controller-stateful-set", "manager", "", "kube_parser_1"),
-	Parser("argo-ui", "argo-ui", "", "basic_8601_colon_severity"),
-	Parser("autoscaler-hpa", "autoscaler-hpa", "", "kube_parser_1"),
-	Parser("autoscaler", "istio-init_init", "", "basic_8601"),
-	Parser("autoscaler", "istio-proxy", "", "istio"),
+	("activator", "istio-init_init", "", "basic_8601"),
+	("activator", "istio-proxy", "", "istio"),
+	("admission-webhook-bootstrap-stateful-set", "bootstrap", "", "basic_8601"),
+	("admission-webhook-bootstrap", "", "", "basic_8601"),
+	("admission-webhook-deployment", "admission-webhook", "", "kube_parser_1"),
+	("admission-webhook-deployment", "", "", "kube_parser_1"),
+	("alertmanager-main", "config-reloader", "", "kube_parser_structured_glog"),
+	("alertmanager-main", "", "", "key_value"),
+	("antrea", "antrea-ovs", "", "antrea_ovs"),
+	("antrea", "", "", "kube_parser_1"),
+	("application-controller-stateful-set", "manager", "", "kube_parser_1"),
+	("argo-ui", "argo-ui", "", "basic_8601_colon_severity"),
+	("autoscaler-hpa", "autoscaler-hpa", "", "kube_parser_1"),
+	("autoscaler", "istio-init_init", "", "basic_8601"),
+	("autoscaler", "istio-proxy", "", "istio"),
 
-	Parser("blackbox-exporter", "", "", "kube_parser_structured_glog"),
-	Parser("aic-manager", "aic-manager", "", "aic_manager"),
-	Parser("aic-manager", "init-android", "", "modinfo"),
+	("blackbox-exporter", "", "", "kube_parser_structured_glog"),
+	("aic-manager", "aic-manager", "", "aic_manager"),
+	("aic-manager", "init-android", "", "modinfo"),
 
-	Parser("calico", "", "", "calico"),
-	Parser("canal", "install-cni", "", "kube_parser_structured_glog"),
-	Parser("canal", "", "", "calico"),
-	Parser("cass-operator", "", "", "kube_parser_json"),
-	Parser("cdi-controller", "", "", "kube_parser_1"),
-	Parser("cdi-node", "", "", "kube_parser_1"),
-	Parser("cert-manager", "", "", "kube_parser_structured_glog"),
-	Parser("centraldashboard", "", "", "basic_8601"),
-	Parser("cifar10-training-gpu-worker", "", "", "kube_parser_1"),
-	Parser("cilium", "", "", "key_value"),
-	Parser("cluster-local-gateway", "istio-proxy", "", "istio"),
-	Parser("coredns", "", "", "kube_parser_1"),
+	("calico", "", "", "calico"),
+	("canal", "install-cni", "", "kube_parser_structured_glog"),
+	("canal", "", "", "calico"),
+	("cass-operator", "", "", "kube_parser_json"),
+	("cdi-controller", "", "", "kube_parser_1"),
+	("cdi-node", "", "", "kube_parser_1"),
+	("cert-manager", "", "", "kube_parser_structured_glog"),
+	("centraldashboard", "", "", "basic_8601"),
+	("cifar10-training-gpu-worker", "", "", "kube_parser_1"),
+	("cilium", "", "", "key_value"),
+	("cluster-local-gateway", "istio-proxy", "", "istio"),
 
-	Parser("", "", "k8s.gcr.io/descheduler/descheduler", "kube_parser_structured_glog"),
-	Parser("", "", "quay.io/dexidp/dex", "key_value"),
-	Parser("dist-mnist", "", "", "jupyter"),
-	Parser("dns-autoscaler", "", "", "kube_parser_structured_glog"),
+	("", "", "k8s.gcr.io/descheduler/descheduler", "kube_parser_structured_glog"),
+	("", "", "quay.io/dexidp/dex", "key_value"),
+	("dist-mnist", "", "", "jupyter"),
+	("dns-autoscaler", "", "", "kube_parser_structured_glog"),
 
-	Parser("etcd", "etcd-metrics", "", "kube_parser_json"),
-	Parser("etcd", "", "", ["kube_parser_json", "etcd"]),
-	Parser("master-etcd", "", "", "etcd"),
+	("etcd", "etcd-metrics", "", "kube_parser_json"),
+	("etcd", "", "", ["kube_parser_json", "etcd"]),
+	("master-etcd", "", "", "etcd"),
 
-	Parser("gpu-aware-scheduling", "", "", "kube_parser_1"),
-	Parser("grafana", "", "", "key_value"),
-	Parser("", "grafana-operator", "", "kube_parser_json_glog"),
+	("gpu-aware-scheduling", "", "", "kube_parser_1"),
+	("grafana", "", "", "key_value"),
+	("", "grafana-operator", "", "kube_parser_json_glog"),
 
-	Parser("helm-", "", "", "kube_parser_1"),
+	("helm-", "", "", "kube_parser_1"),
 
-	Parser("ingress-nginx-controller", "", "", "kube_parser_1"),
-	Parser("inteldeviceplugins-controller-manager", "", "", "kube_parser_structured_glog"),
-	Parser("intel-gpu-plugin", "", "", "kube_parser_1"),
-	Parser("intel-qat-plugin", "", "", "kube_parser_1"),
-	Parser("intel-sgx-aesmd", "", "", "kube_parser_1"),
-	Parser("intel-sgx-plugin", "", "", "kube_parser_1"),
-	Parser("intel-telemetry-plugin", "", "", "kube_parser_1"),
-	Parser("intel-vpu-plugin", "", "", "kube_parser_1"),
-	Parser("istio-citadel", "citadel", "", "istio"),
-	Parser("istio-cleanup-secrets", "kubectl", "", "istio"),
-	Parser("istio-egressgateway", "istio-proxy", "", "istio"),
-	Parser("istio-galley", "galley", "", "istio"),
-	Parser("istio-ingressgateway", "istio-proxy", "", "istio"),
-	Parser("", "", "docker.io/istio/proxyv2", "istio_pilot"),
-	Parser("", "", "docker.io/istio/pilot", "istio_pilot"),
-	Parser("istio-pilot", "", "", "istio"),
-	Parser("istio-policy", "", "", "istio"),
-	Parser("istio-sidecar-injector", "sidecar-injector-webhook", "", "istio"),
-	Parser("istio-telemetry", "mixer", "", "kube_parser_json"),
-	Parser("istio-telemetry", "", "", "istio"),
-	Parser("istio-tracing", "jaeger", "", "kube_parser_json"),
+	("ingress-nginx-controller", "", "", "kube_parser_1"),
+	("inteldeviceplugins-controller-manager", "", "", "kube_parser_structured_glog"),
+	("intel-gpu-plugin", "", "", "kube_parser_1"),
+	("intel-qat-plugin", "", "", "kube_parser_1"),
+	("intel-sgx-aesmd", "", "", "kube_parser_1"),
+	("intel-sgx-plugin", "", "", "kube_parser_1"),
+	("intel-telemetry-plugin", "", "", "kube_parser_1"),
+	("intel-vpu-plugin", "", "", "kube_parser_1"),
+	("istio-citadel", "citadel", "", "istio"),
+	("istio-cleanup-secrets", "kubectl", "", "istio"),
+	("istio-egressgateway", "istio-proxy", "", "istio"),
+	("istio-galley", "galley", "", "istio"),
+	("istio-ingressgateway", "istio-proxy", "", "istio"),
+	("", "", "docker.io/istio/proxyv2", "istio_pilot"),
+	("", "", "docker.io/istio/pilot", "istio_pilot"),
+	("istio-pilot", "", "", "istio"),
+	("istio-policy", "", "", "istio"),
+	("istio-sidecar-injector", "sidecar-injector-webhook", "", "istio"),
+	("istio-telemetry", "mixer", "", "kube_parser_json"),
+	("istio-telemetry", "", "", "istio"),
+	("istio-tracing", "jaeger", "", "kube_parser_json"),
 
-	Parser("jaeger", "", "", "kube_parser_structured_glog"),
+	("jaeger", "", "", "kube_parser_structured_glog"),
 
-	Parser("katib-controller", "", "", "kube_parser_json_glog"),
-	Parser("katib-db-manager", "", "", "kube_parser_1"),
-	Parser("katib-ui", "", "", "kube_parser_1"),
-	Parser("kfserving-controller-manager", "", "", "kube_parser_1"),
-	Parser("kfserving-ingressgateway", "istio-proxy", "", "istio"),
-	Parser("kiali", "", "", "kube_parser_1"),
-	Parser("kilo", "", "", "kube_parser_json_glog"),
-	Parser("", "", "gcr.io/knative", "kube_parser_1"),
-	Parser("k8s-mlperf-image-classification-training", "", "", "kube_parser_1"),
-	Parser("kube-apiserver", "", "", "kube_parser_structured_glog"),
-	Parser("", "kube-rbac-proxy", "", "kube_parser_1"),
-	Parser("kube-app-manager-controller", "kube-app-manager", "", "kube_app_manager"),
-	Parser("kube-controller-manager", "", "", "kube_parser_structured_glog"),
-	Parser("kube-flannel", "install-cni", "", "kube_parser_structured_glog"),
-	Parser("kube-flannel", "kube-flannel", "", "kube_parser_1"),
+	("katib-controller", "", "", "kube_parser_json_glog"),
+	("katib-db-manager", "", "", "kube_parser_1"),
+	("katib-ui", "", "", "kube_parser_1"),
+	("kfserving-controller-manager", "", "", "kube_parser_1"),
+	("kfserving-ingressgateway", "istio-proxy", "", "istio"),
+	("kiali", "", "", "kube_parser_1"),
+	("kilo", "", "", "kube_parser_json_glog"),
+	("", "", "gcr.io/knative", "kube_parser_1"),
+	("k8s-mlperf-image-classification-training", "", "", "kube_parser_1"),
+	("kube-apiserver", "", "", "kube_parser_structured_glog"),
+	("", "kube-rbac-proxy", "", "kube_parser_1"),
+	("kube-app-manager-controller", "kube-app-manager", "", "kube_app_manager"),
+	("kube-controller-manager", "", "", "kube_parser_structured_glog"),
+	("kube-flannel", "install-cni", "", "kube_parser_structured_glog"),
+	("kube-flannel", "kube-flannel", "", "kube_parser_1"),
 	# kubeflow
-	Parser("", "", "gcr.io/arrikto/kubeflow/oidc-authservice", "key_value"),
-	Parser("kube-proxy", "", "", "kube_parser_structured_glog"),
-	Parser("kube-router", "", "", "kube_parser_structured_glog"),
-	Parser("kube-scheduler", "", "", "kube_parser_structured_glog"),
-	Parser("kube-state-metrics", "", "", "kube_parser_1"),
+	("", "", "gcr.io/arrikto/kubeflow/oidc-authservice", "key_value"),
+	("kube-proxy", "", "", "kube_parser_structured_glog"),
+	("kube-router", "", "", "kube_parser_structured_glog"),
+	("kube-scheduler", "", "", "kube_parser_structured_glog"),
+	("kube-state-metrics", "", "", "kube_parser_1"),
 
-	Parser("linkerd", "linkerd-init", "", "basic_8601"),
-	Parser("linkerd", "", "", "linkerd"),
-	Parser("local-path-provisioner", "", "", "kube_parser_1"),
+	("linkerd", "linkerd-init", "", "basic_8601"),
+	("linkerd", "", "", "linkerd"),
+	("local-path-provisioner", "", "", "kube_parser_1"),
 
-	Parser("metacontroller", "metacontroller", "", "kube_parser_1"),
-	Parser("metadata-db", "db-container", "", "mysql"),
-	Parser("metadata-deployment", "container", "", "kube_parser_1"),
-	Parser("metadata-envoy-deployment", "container", "", "istio"),
-	Parser("metadata-grpc-deployment", "container", "", "kube_parser_1"),
-	Parser("metadata-ui", "metadata-ui", "", "basic_8601"),
+	("metacontroller", "metacontroller", "", "kube_parser_1"),
+	("metadata-db", "db-container", "", "mysql"),
+	("metadata-deployment", "container", "", "kube_parser_1"),
+	("metadata-envoy-deployment", "container", "", "istio"),
+	("metadata-grpc-deployment", "container", "", "kube_parser_1"),
+	("metadata-ui", "metadata-ui", "", "basic_8601"),
 
-	Parser("", "", "docker.io/metallb", "kube_parser_json_glog"),
-	Parser("", "", "metallb", "kube_parser_json_glog"),
+	("", "", "docker.io/metallb", "kube_parser_json_glog"),
+	("", "", "metallb", "kube_parser_json_glog"),
 
-	Parser("metrics-server", "", "", "kube_parser_1"),
-	Parser("minio", "minio", "", "basic_8601"),
-	Parser("ml-pipeline", "ml-pipeline-api-server", "", "kube_parser_1"),
-	Parser("ml-pipeline", "ml-pipeline-visualizationserver", "", "kube_parser_1"),	#UNKNOWN
-	Parser("ml-pipeline", "ml-pipeline-persistenceagent", "", "kube_parser_structured_glog"),
-	Parser("ml-pipeline", "ml-pipeline-scheduledworkflow", "", "kube_parser_structured_glog"),
-	Parser("ml-pipeline", "ml-pipeline-ui", "", "kube_parser_1"),
-	Parser("ml-pipeline", "ml-pipeline-viewer-controller", "", "kube_parser_1"),
-	Parser("", "", "docker.io/kubeflow/mxnet-operator", "kube_parser_json_glog"),
-	Parser("mysql", "mysql", "", "mysql"),
-	Parser("", "", "docker.io/library/mysql", "mysql"),
+	("metrics-server", "", "", "kube_parser_1"),
+	("minio", "minio", "", "basic_8601"),
+	("ml-pipeline", "ml-pipeline-api-server", "", "kube_parser_1"),
+	("ml-pipeline", "ml-pipeline-visualizationserver", "", "kube_parser_1"),	#UNKNOWN
+	("ml-pipeline", "ml-pipeline-persistenceagent", "", "kube_parser_structured_glog"),
+	("ml-pipeline", "ml-pipeline-scheduledworkflow", "", "kube_parser_structured_glog"),
+	("ml-pipeline", "ml-pipeline-ui", "", "kube_parser_1"),
+	("ml-pipeline", "ml-pipeline-viewer-controller", "", "kube_parser_1"),
+	("", "", "docker.io/kubeflow/mxnet-operator", "kube_parser_json_glog"),
+	("mysql", "mysql", "", "mysql"),
+	("", "", "docker.io/library/mysql", "mysql"),
 
-	Parser("networking-istio", "networking-istio", "", "kube_parser_1"),
-	Parser("nfd-master", "", "", "kube_parser_1"),
-	Parser("nfd-worker", "", "", "kube_parser_1"),
-	Parser("", "", "k8s.gcr.io/sig-storage/nfs-subdir-external-provisioner", "kube_parser_1"),
-	Parser("node-exporter", "", "", "key_value"),
-	Parser("node-problem-detector", "", "", "kube_parser_1"),
-	Parser("nodelocaldns", "", "", "kube_parser_1"),
-	Parser("notebook-controller-deployment", "manager", "", "seldon"),
-	Parser("nginx-ingress-controller", "", "", "kube_parser_1"),
-	Parser("nginx", "", "", "nginx"),
-	Parser("gpu-feature-discovery", "toolkit-validation", "", "basic_8601"),
-	Parser("gpu-feature-discovery", "", "", ("custom", ["colon_facility", "ts_8601"])),
-	Parser("gpu-operator", "", "", ("custom", ["glog", "ts_8601", "spaced_severity_facility", "key_value", "colon_severity"])),
-	Parser("nvidia-cuda-validator", "", "", "basic_8601"),
-	Parser("nvidia-device-plugin", "", "", "basic_8601"),
-	Parser("nvidia-container-toolkit", "driver-validation", "", "basic_8601"),
-	Parser("nvidia-container-toolkit", "", "", "key_value"),
-	Parser("nvidia-dcgm", "toolkit-validation", "", "basic_8601"),
-	Parser("nvidia-dcgm", "", "", "key_value"),
-	Parser("nvidia-operator-validator", "cuda-validation", "", "key_value"),
-	Parser("nvidia-operator-validator", "plugin-validation", "", "key_value"),
-	Parser("nvidia-operator-validator", "", "", "basic_8601"),
-	Parser("nvidia-smi-exporter", "", "", "nvidia_smi_exporter"),
+	("networking-istio", "networking-istio", "", "kube_parser_1"),
+	("nfd-master", "", "", "kube_parser_1"),
+	("nfd-worker", "", "", "kube_parser_1"),
+	("", "", "k8s.gcr.io/sig-storage/nfs-subdir-external-provisioner", "kube_parser_1"),
+	("node-exporter", "", "", "key_value"),
+	("node-problem-detector", "", "", "kube_parser_1"),
+	("nodelocaldns", "", "", "kube_parser_1"),
+	("notebook-controller-deployment", "manager", "", "seldon"),
+	("nginx-ingress-controller", "", "", "kube_parser_1"),
+	("nginx", "", "", "nginx"),
+	("gpu-feature-discovery", "toolkit-validation", "", "basic_8601"),
+	("gpu-feature-discovery", "", "", ("custom", ["colon_facility", "ts_8601"])),
+	("gpu-operator", "", "", ("custom", ["glog", "ts_8601", "spaced_severity_facility", "key_value", "colon_severity"])),
+	("nvidia-cuda-validator", "", "", "basic_8601"),
+	("nvidia-device-plugin", "", "", "basic_8601"),
+	("nvidia-container-toolkit", "driver-validation", "", "basic_8601"),
+	("nvidia-container-toolkit", "", "", "key_value"),
+	("nvidia-dcgm", "toolkit-validation", "", "basic_8601"),
+	("nvidia-dcgm", "", "", "key_value"),
+	("nvidia-operator-validator", "cuda-validation", "", "key_value"),
+	("nvidia-operator-validator", "plugin-validation", "", "key_value"),
+	("nvidia-operator-validator", "", "", "basic_8601"),
+	("nvidia-smi-exporter", "", "", "nvidia_smi_exporter"),
 
-	Parser("", "", "docker.io/openshift/origin-hypershift", "kube_parser_1"),
-	Parser("", "", "docker.io/openshift/origin-service", "kube_parser_1"),
-	Parser("", "", "docker.io/openshift/origin-docker", "key_value"),
-	Parser("", "", "openshift/origin-docker", "key_value"),
-	Parser("", "", "openshift/origin-", "kube_parser_1"),
+	("", "", "docker.io/openshift/origin-hypershift", "kube_parser_1"),
+	("", "", "docker.io/openshift/origin-service", "kube_parser_1"),
+	("", "", "docker.io/openshift/origin-docker", "key_value"),
+	("", "", "openshift/origin-docker", "key_value"),
+	("", "", "openshift/origin-", "kube_parser_1"),
 
-	Parser("", "", "quay.io/operator-framework/olm", "kube_parser_structured_glog"),
-	Parser("", "", "quay.io/operatorhubio/catalog", "kube_parser_structured_glog"),
+	("", "", "quay.io/operator-framework/olm", "kube_parser_structured_glog"),
+	("", "", "quay.io/operatorhubio/catalog", "kube_parser_structured_glog"),
 
-	Parser("apiserver", "", "", "kube_parser_1"),
-	Parser("openshift-apiserver", "", "", "kube_parser_1"),
-	Parser("openshift-config", "", "", "kube_parser_1"),
-	Parser("openshift-controller-manager", "", "", "kube_parser_1"),
-	Parser("controller-manager", "", "", "kube_parser_structured_glog"),
-	Parser("console", "", "quay.io/openshift", "kube_parser_1"),
-	Parser("dns-operator", "", "", "kube_parser_structured_glog"),
-	Parser("dns-default", "", "", "kube_parser_1"),
-	Parser("authentication-operator", "", "", "kube_parser_1"),
-	Parser("oauth-openshift", "", "", "kube_parser_1"),
-	Parser("machine-approver", "", "", "kube_parser_1"),
-	Parser("tuned", "", "", "kube_parser_1"),
-	Parser("cluster-samples-operator", "cluster-samples-operator-watch", "", "kube_parser_1"),
-	Parser("cluster-samples-operator", "", "", "key_value"),
-	Parser("cluster-image-registry-operator", "", "", "kube_parser_1"),
-	Parser("image-registry", "", "", "key_value"),
-	Parser("openshift-kube-scheduler-operator", "", "", "kube_parser_1"),
-	Parser("openshift-kube-scheduler-crc", "", "", "kube_parser_1"),
-	Parser("certified-operators", "", "", "key_value"),
-	Parser("community-operators", "", "", "key_value"),
-	Parser("marketplace-operator", "", "", "key_value"),
-	Parser("redhat-marketplace", "", "", "key_value"),
-	Parser("multus", "", "", "kube_parser_1"),
-	Parser("network-metrics", "", "", "kube_parser_1"),
-	Parser("network-check-", "", "", "kube_parser_1"),
-	Parser("catalog-operator", "", "", "kube_parser_structured_glog"),
-
-	# FIXME
-	#Parser("olm-operator", "", "", "kube_parser_structured_glog"),
-
-	Parser("packageserver", "", "", "kube_parser_structured_glog"),
-	Parser("sdn-", "", "", "kube_parser_1"),
-	Parser("service-ca-", "", "", "kube_parser_1"),
+	("apiserver", "", "", "kube_parser_1"),
+	("openshift-apiserver", "", "", "kube_parser_1"),
+	("openshift-config", "", "", "kube_parser_1"),
+	("openshift-controller-manager", "", "", "kube_parser_1"),
+	("controller-manager", "", "", "kube_parser_structured_glog"),
+	("console", "", "quay.io/openshift", "kube_parser_1"),
+	("dns-operator", "", "", "kube_parser_structured_glog"),
+	("dns-default", "", "", "kube_parser_1"),
+	("authentication-operator", "", "", "kube_parser_1"),
+	("oauth-openshift", "", "", "kube_parser_1"),
+	("machine-approver", "", "", "kube_parser_1"),
+	("tuned", "", "", "kube_parser_1"),
+	("cluster-samples-operator", "cluster-samples-operator-watch", "", "kube_parser_1"),
+	("cluster-samples-operator", "", "", "key_value"),
+	("cluster-image-registry-operator", "", "", "kube_parser_1"),
+	("image-registry", "", "", "key_value"),
+	("openshift-kube-scheduler-operator", "", "", "kube_parser_1"),
+	("openshift-kube-scheduler-crc", "", "", "kube_parser_1"),
+	("certified-operators", "", "", "key_value"),
+	("community-operators", "", "", "key_value"),
+	("marketplace-operator", "", "", "key_value"),
+	("redhat-marketplace", "", "", "key_value"),
+	("multus", "", "", "kube_parser_1"),
+	("network-metrics", "", "", "kube_parser_1"),
+	("network-check-", "", "", "kube_parser_1"),
+	("catalog-operator", "", "", "kube_parser_structured_glog"),
 
 	# FIXME
-	#Parser("ingress-operator", "", "", "seldon"),
+	#("olm-operator", "", "", "kube_parser_structured_glog"),
 
-	Parser("parallel-pipeline", "", "", "kube_parser_1"),
-	Parser("pmem-csi-", "", "", "kube_parser_1"),
-	Parser("profiles-deployment", "kfam", "", "kube_parser_1"),
-	Parser("profiles-deployment", "manager", "", "seldon"),
-	Parser("prometheus-adapter", "", "", "kube_parser_1"),
-	Parser("prometheus-k8s", "rules-configmap-reloader", "", "basic_8601"),
-	Parser("prometheus-k8s", "", "", "kube_parser_structured_glog"),
-	Parser("prometheus-operator", "", "", "key_value"),
-	Parser("", "kube-prometheus-stack", "", "kube_parser_structured_glog"),
+	("packageserver", "", "", "kube_parser_structured_glog"),
+	("sdn-", "", "", "kube_parser_1"),
+	("service-ca-", "", "", "kube_parser_1"),
+
+	# FIXME
+	#("ingress-operator", "", "", "seldon"),
+
+	("parallel-pipeline", "", "", "kube_parser_1"),
+	("pmem-csi-", "", "", "kube_parser_1"),
+	("profiles-deployment", "kfam", "", "kube_parser_1"),
+	("profiles-deployment", "manager", "", "seldon"),
+	("prometheus-adapter", "", "", "kube_parser_1"),
+	("prometheus-k8s", "rules-configmap-reloader", "", "basic_8601"),
+	("prometheus-k8s", "", "", "kube_parser_structured_glog"),
+	("prometheus-operator", "", "", "key_value"),
+	("", "kube-prometheus-stack", "", "kube_parser_structured_glog"),
 	# This needs to be last of the prometheus parsers
-	Parser("prometheus", "prometheus", "", "kube_parser_structured_glog"),
-	Parser("pytorch-operator", "", "", "kube_parser_1"),	#ALMOST
+	("prometheus", "prometheus", "", "kube_parser_structured_glog"),
+	("pytorch-operator", "", "", "kube_parser_1"),	#ALMOST
 
-	Parser("", "reaper-operator", "", "kube_app_manager"),
+	("", "reaper-operator", "", "kube_app_manager"),
 
-	Parser("seldon-controller-manager", "", "", "seldon"),
-	Parser("spark-operatorcrd-cleanup", "delete-scheduledsparkapp-crd", "", "kube_parser_1"),	#ALMOST
-	Parser("spark-operatorcrd-cleanup", "delete-sparkapp-crd", "", "kube_parser_1"),	#ALMOST
-	Parser("spark-operatorsparkoperator", "", "", "kube_parser_1"),
-	Parser("spartakus-volunteer", "", "", "kube_parser_1"),
+	("seldon-controller-manager", "", "", "seldon"),
+	("spark-operatorcrd-cleanup", "delete-scheduledsparkapp-crd", "", "kube_parser_1"),	#ALMOST
+	("spark-operatorcrd-cleanup", "delete-sparkapp-crd", "", "kube_parser_1"),	#ALMOST
+	("spark-operatorsparkoperator", "", "", "kube_parser_1"),
+	("spartakus-volunteer", "", "", "kube_parser_1"),
 
 	# This is starboard; the pod names seem to be UUIDs, so pointless to try to match
 	# XXX: The kube-bench log format is actually structured, but it seems to be malformed
-	Parser("", "kube-bench", "", "basic_8601"),
-	Parser("", "kube-hunter", "", "kube_parser_json"),
-	Parser("", "polaris", "", "kube_parser_structured_glog"),
-	Parser("", "create", "docker.io/aquasec/trivy", "kube_parser_json_glog"),
-	Parser("", "", "docker.io/aquasec/trivy", "basic_8601"),
-	Parser("starboard-operator", "", "", "kube_parser_json_glog"),
+	("", "kube-bench", "", "basic_8601"),
+	("", "kube-hunter", "", "kube_parser_json"),
+	("", "polaris", "", "kube_parser_structured_glog"),
+	("", "create", "docker.io/aquasec/trivy", "kube_parser_json_glog"),
+	("", "", "docker.io/aquasec/trivy", "basic_8601"),
+	("starboard-operator", "", "", "kube_parser_json_glog"),
 
-	Parser("telemetry-aware-scheduling", "", "", "kube_parser_1"),
-	Parser("tensorboard-controller-controller-manager", "manager", "", "istio_pilot"),
-	Parser("tensorboard", "tensorboard", "", "kube_parser_1"),
-	Parser("tf-job-operator", "", "", "kube_parser_1"),
-	Parser("tiller-deploy", "tiller", "", "tiller"),
-	Parser("traefik", "", "", "kube_parser_json"),
+	("telemetry-aware-scheduling", "", "", "kube_parser_1"),
+	("tensorboard-controller-controller-manager", "manager", "", "istio_pilot"),
+	("tensorboard", "tensorboard", "", "kube_parser_1"),
+	("tf-job-operator", "", "", "kube_parser_1"),
+	("tiller-deploy", "tiller", "", "tiller"),
+	("traefik", "", "", "kube_parser_json"),
 
-	Parser("svclb-traefik", "", "", "kube_parser_1"),
+	("svclb-traefik", "", "", "kube_parser_1"),
 
-	Parser("", "", "gcr.io/ml-pipeline/viewer-crd-controller", "kube_parser_1"),
-	Parser("virt-operator", "", "", "kube_parser_json"),
-	Parser("volcano-admission-init", "", "docker.io/volcanosh/vc-webhook-manager", "basic_8601_raw"),
-	Parser("", "", "docker.io/volcanosh/vc-webhook-manager", "kube_parser_1"),
-	Parser("", "", "docker.io/volcanosh/vc-controller-manager", "kube_parser_1"),
-	Parser("", "", "docker.io/volcanosh/vc-scheduler", "kube_parser_1"),
+	("", "", "gcr.io/ml-pipeline/viewer-crd-controller", "kube_parser_1"),
+	("virt-operator", "", "", "kube_parser_json"),
+	("volcano-admission-init", "", "docker.io/volcanosh/vc-webhook-manager", "basic_8601_raw"),
+	("", "", "docker.io/volcanosh/vc-webhook-manager", "kube_parser_1"),
+	("", "", "docker.io/volcanosh/vc-controller-manager", "kube_parser_1"),
+	("", "", "docker.io/volcanosh/vc-scheduler", "kube_parser_1"),
 
-	Parser("weave-net", "", "", "weave"),
-	Parser("weave-scope", "", "", "weave_scope"),
-	Parser("jupyter-web-app", "", "", "web_app"),
-	Parser("tensorboards-web-app", "", "", "web_app"),
-	Parser("volumes-web-app", "", "", "web_app"),
-	Parser("workflow-controller", "", "", "kube_parser_structured_glog"),
+	("weave-net", "", "", "weave"),
+	("weave-scope", "", "", "weave_scope"),
+	("jupyter-web-app", "", "", "web_app"),
+	("tensorboards-web-app", "", "", "web_app"),
+	("volumes-web-app", "", "", "web_app"),
+	("workflow-controller", "", "", "kube_parser_structured_glog"),
 
-	Parser("", "", "docker.io/kubeflow/xgboost-operator", "kube_parser_json"),
+	("", "", "docker.io/kubeflow/xgboost-operator", "kube_parser_json"),
 
-	Parser("raw", "", "", "basic_8601_raw"),
+	("raw", "", "", "basic_8601_raw"),
 	# This should always be last
-	Parser("", "", "", "basic_8601")
+	("", "", "", "basic_8601")
 ]
 
-def get_parser_list():
-	_parsers = set()
-	for _pod, _image, _container, parser in parsers:
-		if type(parser) == list:
-			for p in parser:
-				_parsers.add(p)
-		elif type(parser) == tuple:
-			# Since custom parser are, by definition, custom
-			# we shouldn't include them in the list of parsers
-			continue
-		else:
-			_parsers.add(parser)
-	return _parsers
+Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser")
+parsers = []
 
-# facility is the originator of the log message;
-# for K8s this is the name of the pod
-# subfacility is for further distinction;
-# for K8s this is the container--sometimes a pod has containers with different log formats
-# subsubfacility is yet another distinction;
-# for K8s this would be used for the name of a docker image when neither pod name nor container
-# name forms a useful distinction
-# "basic_8601" is for used unknown formats with ISO8601 timestamps, or other timestamps
-# with similar ordering (YYYY MM DD HH MM SS, with several choices for separators and whitespace,
-# include none, accepted)
-#	2020-02-16T22:03:08.736292621Z
-def logparser(facility, subfacility, subsubfacility, message, fold_msg = True, override_parser = None):
-	# First extract the Kubernetes timestamp
-	message, timestamp = split_iso_timestamp(message, None)
+def init_parser_list():
+	global parsers
 
-	if override_parser is not None:
-		# Any other timestamps (as found in the logs) are ignored
-		try:
-			facility, severity, message, remnants = eval(override_parser)(message, fold_msg = fold_msg)
-			return timestamp, facility, severity, message, remnants, ("<override>", str(override_parser))
-		except Exception as e:
-			return timestamp, "", loglevel.ERR, f"Could not parse using {str(override_parser)}:", [(message, loglevel.INFO)], ("<override>", str(override_parser))
-
-	if subsubfacility.startswith("docker-pullable://"):
-		subsubfacility = subsubfacility[len("docker-pullable://"):]
-
+	# Start by adding files from the parsers directory
 	parser_dir = os.path.join(IKTDIR, PARSER_DIRNAME)
 	if os.path.isdir(parser_dir):
 		for filename in os.listdir(parser_dir):
 			if filename.startswith("~") or filename.startswith("."):
 				continue
 
-			tmp = re.match(r"(.*)\.ya?ml", filename)
+			tmp = re.match(r"(.*)\.ya?ml$", filename)
 			if tmp is None:
 				continue
 
-			with open(f"{parser_dir}/{filename}", "r") as f:
+			with open(os.path.join(parser_dir, filename), "r") as f:
 				try:
 					d = yaml.safe_load(f)
 				except:
 					continue
 
+				try:
+					for parser in d:
+						print()
+				except:
+					sys.exit(f"{os.path.join(parser_dir, filename)=}\n{d=}")
 				for parser in d:
+					parser_name = parser.get("name")
+					if parser_name is None or len(parser_name) == 0:
+						continue
+					show_in_selector = parser.get("show_in_selector", False)
 					matchrules = []
 					for matchkey in parser.get("matchkeys"):
 						pod_name = matchkey.get("pod_name")
@@ -2521,10 +2497,10 @@ def logparser(facility, subfacility, subsubfacility, message, fold_msg = True, o
 					rules = []
 					for rule in parser_rules:
 						if type(rule) == dict:
-							if "override_severity" in rule:
-								rule_name = "override_severity"
+							rule_name = rule.get("name")
+							if rule_name == "override_severity":
 								overrides = []
-								for override in rule["override_severity"]:
+								for override in rule.get("overrides"):
 									matchtype = override.get("matchtype", "")
 									if len(matchtype) == 0:
 										sys.exit(f"Parser {filename} has an invalid override rule; matchtype cannot be empty; aborting.")
@@ -2541,38 +2517,114 @@ def logparser(facility, subfacility, subsubfacility, message, fold_msg = True, o
 
 									overrides.append((matchtype, matchkey, severity))
 								rules.append((rule_name, overrides))
+							elif rule_name == "bracketed_severity":
+								_loglevel = rule.get("default_loglevel", loglevel.INFO)
+								try:
+									default_loglevel = name_to_loglevel(_loglevel)
+								except:
+									sys.exit(f"Parser {filename} contains an invalid loglevel {_loglevel}; aborting.")
+								rules.append((rule_name, default_loglevel))
 							else:
 								sys.exit(f"Unknown rule-type {rule}; aborting.")
 						else:
 							rules.append(rule)
-					# XXX: This is not ideal, but we need to fix all parsers before we can improve this
-					for matchrule in matchrules:
-						parsers.insert(0, Parser(matchrule[0], matchrule[1], matchrule[2], ("custom", rules)))
+
+					parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = ("custom", rules)))
+
+	# Now do the same for built-in parsers
+	for builtin_parser in builtin_parsers:
+		# Old-style parser definition
+		if type(builtin_parser[2]) == str:
+			if type(builtin_parser[3]) == tuple and builtin_parser[3][0] == "custom":
+				parser_name = "custom"
+				show_in_selector = False
+			elif type(builtin_parser[3]) == list:
+				parser_name = "|".join(builtin_parser[3])
+				show_in_selector = False
+			else:
+				parser_name = builtin_parser[3]
+				show_in_selector = True
+			matchrules = [(builtin_parser[0], builtin_parser[1], builtin_parser[2])]
+		# New-style parser definition; 
+		elif type(builtin_parser[2]) == list:
+			parser_name = builtin_parser[0]
+			show_in_selector = builtin_parser[1]
+			matchrules = builtin_parser[2]
+			parser = builtin_parser[3]
+		else:
+			sys.exit(f"Could not determine parser type for entry: {builtin_parser}; aborting.")
+
+		parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = builtin_parser[3]))
+
+def get_parser_list():
+	_parsers = set()
+	for parser in parsers:
+		if parser.show_in_selector == False:
+			continue
+		else:
+			_parsers.add(parser.parser_name)
+
+	return _parsers
+
+# pod_name, container_name, and image_name are used to decide what parser to use;
+# this allows for different containers in the same pod to use different parsers,
+# and different versions of pod to use different parsers
+# "basic_8601" is for used unknown formats with ISO8601 timestamps, or other timestamps
+# with similar ordering (YYYY MM DD HH MM SS, with several choices for separators and whitespace,
+# include none, accepted)
+#	2020-02-16T22:03:08.736292621Z
+def logparser(pod_name, container_name, image_name, message, fold_msg = True, override_parser = None):
+	# First extract the Kubernetes timestamp
+	message, timestamp = split_iso_timestamp(message, None)
+
+	if len(parsers) == 0:
+		init_parser_list()
+
+	if override_parser is not None:
+		# Any other timestamps (as found in the logs) are ignored
+		try:
+			pod_name, severity, message, remnants = eval(override_parser)(message, fold_msg = fold_msg)
+			return timestamp, pod_name, severity, message, remnants, ("<override>", str(override_parser))
+		except Exception as e:
+			return timestamp, "", loglevel.ERR, f"Could not parse using {str(override_parser)}:", [(message, loglevel.INFO)], ("<override>", str(override_parser))
+
+	if image_name.startswith("docker-pullable://"):
+		image_name = image_name[len("docker-pullable://"):]
 
 	for parser in parsers:
-		if facility.startswith(parser.facility) and subfacility.startswith(parser.subfacility) and subsubfacility.startswith(parser.subsubfacility):
-			# Any other timestamps (as found in the logs) are ignored
-			if type(parser.parser) == list:
-				for uparser in parser.parser:
-					try:
-						facility, severity, message, remnants = eval(uparser)(message, fold_msg = fold_msg)
-						break
-					except:
-						pass
-			elif type(parser.parser) == tuple and parser.parser[0] == "custom":
-				uparser = "custom"
-				facility, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1])
-			else:
-				uparser = parser.parser
-				facility, severity, message, remnants = eval(uparser)(message, fold_msg = fold_msg)
-			if len(parser.facility) > 0:
-				lparser = parser.facility
-			elif len(parser.subfacility) > 0:
-				lparser = parser.subfacility
-			elif len(parser.subsubfacility) > 0:
-				lparser = parser.subsubfacility
-			else:
-				lparser = "unknown"
+		uparser = None
+		lparser = None
+
+		for matchrule in parser.match_rules:
+			pod_prefix = matchrule[0]
+			container_prefix = matchrule[1]
+			image_prefix = matchrule[2]
+
+			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and image_name.startswith(image_prefix):
+				uparser = parser.parser_name
+				# This allows for multiple parsers to be tested on the same log until a match is found
+				if type(parser.parser) == list:
+					for uparser in parser.parser:
+						try:
+							pod_name, severity, message, remnants = eval(uparser)(message, fold_msg = fold_msg)
+							break
+						except:
+							pass
+				elif type(parser.parser) == tuple and parser.parser[0] == "custom":
+					pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1])
+				else:
+					pod_name, severity, message, remnants = eval(parser.parser)(message, fold_msg = fold_msg)
+				_lparser = []
+				if len(pod_prefix) > 0:
+					_lparser.append(pod_prefix)
+				if len(container_prefix) > 0:
+					_lparser.append(container_prefix)
+				if len(image_prefix) > 0:
+					_lparser.append(image_prefix)
+				lparser = "|".join(_lparser)
+				break
+
+		if lparser is not None:
 			break
 
 	if len(message) > 16383:
@@ -2586,4 +2638,4 @@ def logparser(facility, subfacility, subsubfacility, message, fold_msg = True, o
 	message = replace_tabs(message)
 	remnants = replace_tabs(remnants)
 
-	return timestamp, facility, severity, message, remnants, (lparser, str(uparser))
+	return timestamp, pod_name, severity, message, remnants, (lparser, str(uparser))
