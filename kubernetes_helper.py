@@ -2030,7 +2030,13 @@ class KubernetesHelper:
 				raise Exception(f"Unauthorized; URL {url}")
 			elif status == 403:
 				# Forbidden: request denied
-				raise Exception(f"403: Forbidden; URL {url}")
+				# This most likely means that the requested resource is not available from this context
+
+				# If name is set this is a read request, not a list request
+				if name != "":
+					vlist = None
+				else:
+					vlist = []
 			elif status == 404:
 				# page not found (API not available or possibly programming error)
 				# raise Exception(f"API not available; this is probably a programming error; URL {url}")
