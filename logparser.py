@@ -2334,8 +2334,8 @@ builtin_parsers = [
 	("", "", "docker.io/openshift/origin-hypershift", "kube_parser_1"),
 	("", "", "docker.io/openshift/origin-service", "kube_parser_1"),
 	("", "", "docker.io/openshift/origin-docker", "key_value"),
-	("", "", "openshift/origin-docker", "key_value"),
-	("", "", "openshift/origin-", "kube_parser_1"),
+	("", "", "docker.io/openshift/origin-docker", "key_value"),
+	("", "", "docker.io/openshift/origin-", "kube_parser_1"),
 
 	("", "", "quay.io/operator-framework/olm", "kube_parser_structured_glog"),
 	("", "", "quay.io/operatorhubio/catalog", "kube_parser_structured_glog"),
