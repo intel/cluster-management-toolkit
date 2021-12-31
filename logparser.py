@@ -1114,8 +1114,6 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 # [10/Feb/2020:23:09:45 +0000]TCP200000.000
 # coredns
 # [INFO] plugin/reload: Running configuration MD5 = cb191f785bff0d5c3182d766e6656707
-# metrics-server:
-# [restful] 2020/03/04 10:24:17 log.go:33: [restful/swagger] listing is available at https://:443/swaggerapi
 def kube_parser_1(message, fold_msg = True):
 	remnants = None
 
@@ -1172,12 +1170,6 @@ def kube_parser_1(message, fold_msg = True):
 		severity = letter_to_severity(tmp[1])
 		facility = tmp[2]
 		message = tmp[3]
-
-	# metrics-server has something special going on
-	tmp = re.match(r"^\[.*?\]\s.*?\s.*?\s(.+?:\d+?): (\[.*?\]\s.*)", message)
-	if tmp is not None:
-		facility = tmp[1]
-		message = tmp[2]
 
 	# JSON/Python dict
 	message, _timestamp, severity, facility, remnants = split_json_style(message, None, severity, facility, fold_msg)
@@ -1744,13 +1736,17 @@ def tiller(message, fold_msg = True):
 
 	return facility, severity, message, remnants
 
+# [main] 2021/03/27 20:45:25 Starting Tiller v2.16.10 (tls=false)
+# [restful] 2020/03/04 10:24:17 log.go:33: [restful/swagger] listing is available at https://:443/swaggerapi
 def split_tiller_style(message, facility = None):
-	tmp = re.match(r"^\[(.+?)\] \d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d (.*)", message)
+	tmp = re.match(r"^\[(.+?)\] \d\d\d\d\/\d\d\/\d\d \d\d:\d\d:\d\d (.+?:\d+: |)(.*)", message)
 
 	if tmp is not None:
-		facility = tmp[1]
-		# Another timestamp to strip
-		message, _timestamp = split_iso_timestamp(tmp[2], None)
+		if len(tmp[2]) > 0:
+			facility = tmp[2][:-2]
+		else:
+			facility = tmp[1]
+		message = tmp[3]
 	return message, facility
 
 # This should possibly be merged with kube_parser_structured_glog
@@ -2545,7 +2541,7 @@ def init_parser_list():
 				parser_name = builtin_parser[3]
 				show_in_selector = True
 			matchrules = [(builtin_parser[0], builtin_parser[1], builtin_parser[2])]
-		# New-style parser definition; 
+		# New-style parser definition;
 		elif type(builtin_parser[2]) == list:
 			parser_name = builtin_parser[0]
 			show_in_selector = builtin_parser[1]
