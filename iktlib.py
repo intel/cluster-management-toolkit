@@ -45,6 +45,14 @@ def deep_get(dictionary, path, default = None):
 		return default
 	return reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
 
+def deep_get_with_fallback(obj, paths, default = None):
+	result = None
+	for path in paths:
+		result = deep_get(obj, path, default = default)
+		if result is not None:
+			break
+	return result
+
 def read_iktconfig():
 	if os.path.isfile(IKT_CONFIG_FILE) is False:
 		return
