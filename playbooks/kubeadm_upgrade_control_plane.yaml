@@ -21,11 +21,6 @@
       force_apt_get: yes
   - name: Plan upgrade
     shell: |
-      if [ -n "{{ https_proxy }}" ]; then
-        export https_proxy={{ https_proxy }}
-      else
-        export https_proxy=
-      fi
       kubeadm upgrade plan
   - name: Pulling Kubernetes images
     shell: |
