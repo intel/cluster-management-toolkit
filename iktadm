@@ -1897,7 +1897,7 @@ def teardown_control_plane(options, args):
 def purge_control_plane(options, args):
 	# We don't need a cluster name for --list-tasks, so check this first of all
 	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
-		__list_phases(teardown_control_plane_tasks)
+		__list_phases(purge_control_plane_tasks)
 		sys.exit(0)
 
 	installation_info = get_installation_info()
@@ -1973,7 +1973,7 @@ def upgrade_control_plane(options, args):
 	# We don't need a cluster name for --list-tasks or --override, so check this first of all
 	if options is not None:
 		if "--list-tasks" in [tmp[0] for tmp in options]:
-			__list_phases(setup_control_plane_tasks)
+			__list_phases(upgrade_control_plane_tasks)
 			sys.exit(0)
 		elif "--override" in [tmp[0] for tmp in options]:
 			if os.path.isfile(IKT_INSTALLATION_INFO) == True:
