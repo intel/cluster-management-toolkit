@@ -3761,7 +3761,7 @@ def get_resource_info(obj):
 				resource_tuple = (kind[0], deep_get(event, "metadata#name"))
 				status = deep_get(event, "type")
 				status_group = get_event_status_group(status)
-				#seen = __get_timestamp_with_fallback(event, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp"])
+				#seen = __get_timestamp_with_fallback(event, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"])
 				message = deep_get(event, "message").rstrip()
 				resource_info.append(ResourceInfo(resource_tuple, event, rtype, kind, status, status_group, -1, message))
 
@@ -4475,7 +4475,7 @@ def get_events_by_kind_name_namespace(kind, name, namespace):
 		involved_name = deep_get_with_fallback(obj, ["regarding#name", "involvedObject#name"])
 		ev_name = deep_get(obj, "metadata#name")
 		ev_namespace = deep_get(obj, "metadata#namespace", "")
-		last_seen = __get_timestamp_with_fallback(obj, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp"])
+		last_seen = __get_timestamp_with_fallback(obj, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"])
 		status = deep_get(obj, "type", "")
 		reason = deep_get(obj, "reason", "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
 		src_component = deep_get_with_fallback(obj, ["reportingController", "deprecatedSource#component", "source#component"], "")
@@ -5863,7 +5863,8 @@ field_templates = {
 	},
 	"seen": {
 		"header": "Last Seen:",
-		"path": ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp"],
+		# If there's no lastObservedTime we fallback to eventTime
+		"path": ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"],
 		"datagetter": datagetter_timestamp_with_fallback,
 		"generator": generator_age,
 		"ralign": True,
