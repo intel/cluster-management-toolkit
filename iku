@@ -50,7 +50,7 @@ except ModuleNotFoundError:
 from logparser import logparser, loglevel, split_msg, lvl_to_4letter_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import deep_get, stgroup, versiontuple
+from iktlib import deep_get, deep_get_with_fallback, stgroup, versiontuple
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_ram_usage, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_extract_string, strarray_wrap_line, themearray_to_strarray, themearray_extract_string, attr_to_curses_merged
 
 from ansible_helper import ansible_clean_results, ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
@@ -1468,15 +1468,14 @@ def datagetter_external_ips(obj, path, default):
 
 	return get_external_ips(obj), {}
 
+def __get_timestamp_with_fallback(obj, paths):
+	return timestamp_to_datetime(deep_get_with_fallback(obj, paths))
+
 def datagetter_timestamp_with_fallback(obj, path, default):
 	if obj is None or path is None or len(path) == 0:
 		return default
 
-	fallback_timestamp = deep_get(obj, path[1])
-	main_timestamp = deep_get(obj, path[0])
-	if main_timestamp is None:
-		main_timestamp = fallback_timestamp
-	timestamp = timestamp_to_datetime(main_timestamp)
+	timestamp = __get_timestamp_with_fallback(obj, path)
 	return get_since(timestamp), {}
 
 def datagetter_pathlist_to_tuple(obj, path, default):
@@ -3756,13 +3755,13 @@ def get_resource_info(obj):
 		rtype = resource_kind_to_rtype(kind)
 
 		for event in kh.get_list_by_kind_namespace(kind, ""):
-			event_involved_object_name = deep_get(event, "involvedObject#name")
-			event_involved_object_namespace = deep_get(event, "involvedObject#namespace")
+			event_involved_object_name = deep_get_with_fallback(event, ["regarding#name", "involvedObject#name"])
+			event_involved_object_namespace = deep_get_with_fallback(event, ["regarding#namespace", "involvedObject#namespace"])
 			if event_involved_object_name == pod_name and event_involved_object_namespace == pod_namespace:
 				resource_tuple = (kind[0], deep_get(event, "metadata#name"))
 				status = deep_get(event, "type")
 				status_group = get_event_status_group(status)
-				#seen = get_since(deep_get(event, "lastTimestamp"))
+				#seen = __get_timestamp_with_fallback(event, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp"])
 				message = deep_get(event, "message").rstrip()
 				resource_info.append(ResourceInfo(resource_tuple, event, rtype, kind, status, status_group, -1, message))
 
@@ -4470,30 +4469,26 @@ def get_events_by_kind_name_namespace(kind, name, namespace):
 	events = []
 	vlist = kh.get_list_by_kind_namespace(("Event", ""), "")
 	for obj in vlist:
-		involved_kind = kh.kind_api_version_to_kind(deep_get(obj, "involvedObject#kind"), deep_get(obj, "involvedObject#apiVersion", ""))
-		involved_name = deep_get(obj, "involvedObject#name")
+		__involved_kind = deep_get_with_fallback(obj, ["regarding#kind", "involvedObject#kind"])
+		__involved_api_version = deep_get_with_fallback(obj, ["regarding#apiVersion", "involvedObject#apiVersion"])
+		involved_kind = kh.kind_api_version_to_kind(__involved_kind, __involved_api_version)
+		involved_name = deep_get_with_fallback(obj, ["regarding#name", "involvedObject#name"])
 		ev_name = deep_get(obj, "metadata#name")
 		ev_namespace = deep_get(obj, "metadata#namespace", "")
-		last_seen = datetime_to_timestamp(timestamp_to_datetime(deep_get(obj, "lastTimestamp")))
+		last_seen = __get_timestamp_with_fallback(obj, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp"])
 		status = deep_get(obj, "type", "")
 		reason = deep_get(obj, "reason", "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
-		src_component = deep_get(obj, "source#component", "")
-		src_host = deep_get(obj, "source#host", "")
+		src_component = deep_get_with_fallback(obj, ["reportingController", "deprecatedSource#component", "source#component"], "")
+		src_host = deep_get_with_fallback(obj, ["reportingInstance", "deprecatedSource#host", "source#host"], "")
 		if len(src_component) == 0:
 			source = src_host
 		elif len(src_host) == 0:
 			source = src_component
 		else:
 			source = f"{src_host}/{src_component}"
-		first_seen = deep_get(obj, "firstTimestamp")
+		first_seen = __get_timestamp_with_fallback(obj, ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"])
 
-		# Fallback
-		if first_seen is None:
-			first_seen = deep_get(obj, "eventTime")
-
-		first_seen = datetime_to_timestamp(timestamp_to_datetime(first_seen))
-
-		count = deep_get(obj, "count")
+		count = deep_get_with_fallback(obj, ["series#count", "deprecatedCount", "count"], "")
 		if count is None:
 			count = ""
 		else:
@@ -5116,7 +5111,7 @@ field_templates = {
 	},
 	"first_seen": {
 		"header": "First Seen:",
-		"path": ["firstTimestamp", "eventTime"],
+		"path": ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"],
 		"datagetter": datagetter_timestamp_with_fallback,
 		"generator": generator_age,
 		"ralign": True,
@@ -5868,8 +5863,8 @@ field_templates = {
 	},
 	"seen": {
 		"header": "Last Seen:",
-		"path": "lastTimestamp",
-		"datagetter": datagetter_age,
+		"path": ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp"],
+		"datagetter": datagetter_timestamp_with_fallback,
 		"generator": generator_age,
 		"ralign": True,
 	},
