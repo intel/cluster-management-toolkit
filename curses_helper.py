@@ -3,7 +3,7 @@
 
 import curses
 from datetime import datetime
-from operator import itemgetter, attrgetter
+from operator import attrgetter
 import os
 import sys
 import yaml

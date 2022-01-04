@@ -21,7 +21,7 @@ try:
 	import ujson as json
 except ModuleNotFoundError:
 	import json
-from operator import itemgetter, attrgetter
+from operator import itemgetter
 import os
 from pathlib import Path
 import re
@@ -11563,7 +11563,18 @@ available_api_families = []
 def selectwindow(stdscr, uip, refresh_apis = False):
 	global available_api_families
 	global defaultview
-	hide_unavailable = deep_get(iktconfig, "Global#hide_unavailable_apis", True)
+	hide_unavailable = deep_get(iktconfig, "Global#hide_unavailable_apis", None)
+	hide_unavailable = deep_get(iktconfig, "Selector#hide_unavailable_apis", hide_unavailable)
+	sortcolumn = deep_get(iktconfig, "Selector#sortcolumn", "kind")
+
+	if sortcolumn == "kind":
+		sortkey1 = 1
+		sortkey2 = 2
+	elif sortcolumn == "name":
+		sortkey1 = 1
+		sortkey2 = 0
+	else:
+		sys.exit(f"Invalid sortcolumn {sortcolumn} for Selector; aborting.")
 
 	if len(available_api_families) == 0 or refresh_apis == True:
 		available_api_families = kh.get_available_api_families()
@@ -11603,7 +11614,7 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 		order.append((item, group, api_group))
 
 	currentgroup = ""
-	for item in sorted(order, key = itemgetter(1, 2)):
+	for item in sorted(order, key = itemgetter(sortkey1, sortkey2)):
 		view = item[0]
 		viewref = views[view]
 
@@ -15165,7 +15176,6 @@ views = {
 		"kind": ("PodMetrics", "metrics.k8s.io"),
 	},
 	# policy
-	# Deprecated Kubernetes 1.21
 	"Pod Security Policies": {
 		"commandline": ["podsecuritypolicies", "podsecuritypolicy", "psp"],
 		"group": "Policy",
