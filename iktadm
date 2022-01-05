@@ -1872,6 +1872,7 @@ def teardown_control_plane(options, args):
 		sys.exit(0)
 
 	installation_info = get_installation_info()
+	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
 	state = installation_info[cluster_name]["state"]
 	phase = installation_info[cluster_name]["phase"]
@@ -1936,6 +1937,7 @@ def purge_control_plane(options, args):
 		sys.exit(0)
 
 	installation_info = get_installation_info()
+	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
 	state = installation_info[cluster_name]["state"]
 	phase = installation_info[cluster_name]["phase"]
