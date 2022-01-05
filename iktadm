@@ -1386,13 +1386,17 @@ def prepare_installation(options = None, args = None):
 	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(prepare_tasks)
 		sys.exit(0)
+	elif len(args) == 0:
+		iktprint([(f"{about.admin_program_name}", "programname"), (": “", "default"), ("prepare", "command"), ("“ requires at least 1 arguments.", "default")], stderr = True)
+		iktprint([("Try “", "default"), (f"{about.admin_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		sys.exit(2)
 
 	# Always require the user to specify the name of the cluster to operate against, even when resuming prepare;
 	# this avoids a lot of hairy corner-cases and attempts to figure out what cluster the user intended to operate against
 	cluster_name = args[0]
 
 	installation_info = get_installation_info(cluster_name = cluster_name)
-	distro = installation_info[cluster_name]["distro"]
+	distro = "kubeadm"
 	version = None
 	requested_version = installation_info[cluster_name]["requested_version"]
 	state = installation_info[cluster_name]["state"]
@@ -1455,8 +1459,6 @@ def prepare_installation(options = None, args = None):
 				confirm = False
 			else:
 				raise Exception(f"Programming error; invalid option {opt}")
-
-	distro = "kubeadm"
 
 	if len(args) > 1:
 		requested_version = __find_requested_version(distro, args[1])
@@ -2324,7 +2326,7 @@ commandline = {
 				"description": [("Do not ask for confirmation before performing actions", "description")],
 			},
 		},
-		"min_args": 1,
+		"min_args": 0,
 		"max_args": 2,
 		"callback": prepare_installation,
 	},
