@@ -1703,6 +1703,7 @@ def show_configuration():
 
 	iktprint([("\n[Summary]", "phase")])
 	iktprint([("\n• ", "separator"), ("Configuration:", "action")])
+	iktprint([("        cluster name: ", "action"), (f"{cluster_name}", "hostname")])
 	iktprint([("        distribution: ", "action"), (f"{distro}", "programname")])
 	iktprint([("   installed version: ", "action"), __format_none(version, "version")])
 	if requested_version is not None and requested_version != "<none>":
