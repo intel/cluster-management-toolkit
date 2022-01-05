@@ -43,7 +43,10 @@ def deep_get(dictionary, path, default = None):
 		return default
 	if path is None or len(path) == 0:
 		return default
-	return reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
+	result = reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
+	if result is None:
+		result = default
+	return result
 
 def deep_get_with_fallback(obj, paths, default = None):
 	result = None

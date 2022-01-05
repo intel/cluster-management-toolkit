@@ -1325,6 +1325,9 @@ def run_tasks(tasks, phase, phase_skiplist, final_state):
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
 
+	if type(phase) is not int:
+		phase = 0
+
 	for i in range(phase, len(tasks)):
 		iktprint([("\n• ", "separator")] + tasks[i][0])
 		if i not in set(phase_skiplist):
