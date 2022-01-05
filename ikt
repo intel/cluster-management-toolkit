@@ -27,7 +27,7 @@ except ModuleNotFoundError:
 
 from commandparser import parse_commandline
 
-from ansible_helper import ansible_configuration, ansible_set_vars, ansible_run_playbook_on_selection, ansible_get_hosts_by_group
+from ansible_helper import ansible_configuration, ansible_set_vars, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_remove_hosts
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import iktlib
@@ -409,6 +409,11 @@ def remove_nodes(options = None, args = None):
 	else:
 		iktprint([("NOT OK", "notok"), ("; aborting.", "default")])
 		sys.exit(2)
+
+	iktprint([("\n• ", "separator"), ("Removing nodes from the inventory", "action")])
+	ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = "nodes")
+	# XXX: We need to get the cluster name to do this
+	#ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = cluster_name)
 
 	iktprint([("\nNode removal successful", "success")])
 
