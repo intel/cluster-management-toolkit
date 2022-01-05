@@ -1389,6 +1389,8 @@ def prepare_installation(options = None, args = None):
 	# default options
 	update_cache = True
 
+	installation_info = update_installation_info(cluster_name = cluster_name, distro = distro, requested_version = requested_version, state = "preparing", phase = phase)
+
 	__controlplanes = get_control_planes(fail_on_empty = False)
 	controlplanes = [controlplane[0] for controlplane in __controlplanes]
 	if len(controlplanes) == 0:
@@ -1427,12 +1429,10 @@ def prepare_installation(options = None, args = None):
 
 	confirm = True
 
-	if len(args) > 0:
-		requested_version = __find_requested_version(distro, args[0])
+	if len(args) > 1:
+		requested_version = __find_requested_version(distro, args[1])
 	else:
 		requested_version = __find_requested_version(distro)
-
-	installation_info = update_installation_info(distro = distro, requested_version = requested_version, state = "preparing", phase = phase)
 
 	show_configuration()
 
@@ -1842,7 +1842,7 @@ def teardown_control_plane(options, args):
 	distro = installation_info[cluster_name]["distro"]
 	state = installation_info[cluster_name]["state"]
 	phase = installation_info[cluster_name]["phase"]
-	phase_skiplist = set(installation_info["phase_skiplist"])
+	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
 	if distro is None or distro == "<none>":
 		iktprint([("Error: ", "error"), ("Could not find reliable installation information. Aborting.", "default")], stderr = True)
