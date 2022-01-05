@@ -11559,8 +11559,7 @@ available_api_families = []
 def selectwindow(stdscr, uip, refresh_apis = False):
 	global available_api_families
 	global defaultview
-	hide_unavailable = deep_get(iktconfig, "Global#hide_unavailable_apis", None)
-	hide_unavailable = deep_get(iktconfig, "Selector#hide_unavailable_apis", hide_unavailable)
+	hide_unavailable = deep_get_with_fallback(iktconfig, ["Selector#hide_unavailable_apis", "Global#hide_unavailable_apis"], True)
 	sortcolumn = deep_get(iktconfig, "Selector#sortcolumn", "kind")
 
 	if sortcolumn == "kind":

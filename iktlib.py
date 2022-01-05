@@ -48,9 +48,11 @@ def deep_get(dictionary, path, default = None):
 def deep_get_with_fallback(obj, paths, default = None):
 	result = None
 	for path in paths:
-		result = deep_get(obj, path, default = default)
+		result = deep_get(obj, path)
 		if result is not None:
 			break
+	if result is None:
+		result = default
 	return result
 
 def read_iktconfig():
