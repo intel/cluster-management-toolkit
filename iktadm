@@ -1211,7 +1211,7 @@ def __task_remove_kube_config(installation_info):
 				break
 
 	# If there's no cluster left, remove the config completely
-	if d1 is not None and len(d1["clusters"]) > 0:
+	if d1 is None or len(d1["clusters"]) == 0:
 		os.remove(f"{HOMEDIR}/.kube/config")
 		# If there's nothing else than the cache subdirectory in .kube, remove .kube too
 		filecount = len(os.listdir(f"{HOMEDIR}/.kube"))
@@ -1219,7 +1219,7 @@ def __task_remove_kube_config(installation_info):
 			shutil.rmtree(f"{HOMEDIR}/.kube")
 	else:
 		# Set the context to the first remaining context, if any
-		if len(d1["contexts"]) == 0:
+		if len(d1["contexts"]) > 0:
 			d1["current-context"] = d1["contexts"][0]["name"]
 
 		with open(f"{HOMEDIR}/.kube/config", "w") as f:
@@ -1417,8 +1417,6 @@ def prepare_installation(options = None, args = None):
 		raise Exception("Error: /etc/hostname not found; Aborting.")
 
 	# default options
-	update_cache = True
-
 	installation_info = update_installation_info(cluster_name = cluster_name, distro = distro, requested_version = requested_version, state = "preparing", phase = phase)
 
 	__controlplanes = get_control_planes(fail_on_empty = False)
@@ -1437,8 +1435,6 @@ def prepare_installation(options = None, args = None):
 			if opt == "--control-plane":
 				ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = "controlplane", skip_all = False)
 				ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = cluster_name, skip_all = True)
-			elif opt == "--no-cache-update":
-				update_cache = False
 			elif opt == "--start-at-task":
 				phase = __validate_task_index(prepare_tasks, optarg)
 			elif opt == "--skip-tasks":
@@ -1460,11 +1456,6 @@ def prepare_installation(options = None, args = None):
 			else:
 				raise Exception(f"Programming error; invalid option {opt}")
 
-	if len(args) > 1:
-		requested_version = __find_requested_version(distro, args[1])
-	else:
-		requested_version = __find_requested_version(distro)
-
 	show_configuration()
 
 	if confirm == True:
@@ -1476,25 +1467,29 @@ def prepare_installation(options = None, args = None):
 
 	iktprint([(f"\n[Preparing localhost and control plane(s)]", "phase")])
 
-	# Adjust the kube* packages for the control plane(s) and localhost to match the requested cluster version if necessary
-	if distro == "kubeadm":
-		if len(requested_version) > 0:
-			prepare_targets["localhost"]["deb_packages"].remove("kubectl")
-			prepare_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
-			prepare_targets["kubeadm"]["deb_packages"].remove("kubectl")
-			prepare_targets["kubeadm"]["deb_packages"].append(f"kubectl={requested_version}")
-			prepare_targets["kubeadm"]["deb_packages"].remove("kubeadm")
-			prepare_targets["kubeadm"]["deb_packages"].append(f"kubeadm={requested_version}")
-			prepare_targets["kubeadm"]["deb_packages"].remove("kubelet")
-			prepare_targets["kubeadm"]["deb_packages"].append(f"kubelet={requested_version}")
-		else:
-			tmp = check_deb_versions(["kubeadm"])
-			version = tmp[0][1]
-		update_installation_info(requested_version = requested_version)
+	run_tasks(tasks = prepare_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "prepared")
 
 	iktprint([("\n• ", "separator"), ("Updating installation information", "action")])
 
-	run_tasks(tasks = prepare_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "prepared")
+	# Adjust the kube* packages for the control plane(s) and localhost to match the requested cluster version if necessary;
+	# we couldn't do this before since the apt repository wasn't available then
+	if len(args) > 1:
+		requested_version = __find_requested_version(distro, args[1])
+	else:
+		requested_version = __find_requested_version(distro)
+
+	if distro == "kubeadm":
+		prepare_targets["localhost"]["deb_packages"].remove("kubectl")
+		prepare_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
+		prepare_targets["kubeadm"]["deb_packages"].remove("kubectl")
+		prepare_targets["kubeadm"]["deb_packages"].append(f"kubectl={requested_version}")
+		prepare_targets["kubeadm"]["deb_packages"].remove("kubeadm")
+		prepare_targets["kubeadm"]["deb_packages"].append(f"kubeadm={requested_version}")
+		prepare_targets["kubeadm"]["deb_packages"].remove("kubelet")
+		prepare_targets["kubeadm"]["deb_packages"].append(f"kubelet={requested_version}")
+
+	iktprint([("   Requested version: ", "action"), (requested_version, "version")])
+	update_installation_info(requested_version = requested_version)
 
 	iktprint([("\nControl plane preparation successful", "success")])
 	print("\nNext step:")
@@ -2302,9 +2297,6 @@ commandline = {
 				"values": [("HOST", "argument")],
 				"description": [("Use ", "description"), ("HOST", "argument"), (" as control plane ", "description")],
 				"requires_arg": True,
-			},
-			"--no-cache-update": {
-				"description": [("Do not update the APT cache", "description")],
 			},
 			"--resume": {
 				"description": [("Resume preparation; can be used if preparation was aborted", "description")],
