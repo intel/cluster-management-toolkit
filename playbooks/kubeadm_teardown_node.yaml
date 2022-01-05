@@ -14,13 +14,15 @@
       remove-from-groups:
       - nodes
       category: Administration
-  gather_facts: no
+  gather_facts: yes
   become: True
   become_user: root
   tasks:
   - name: Tear down Kubernetes
     shell: |
-      kubeadm version > /dev/null 2> /dev/null && kubeadm reset -f
+      if kubeadm version > /dev/null 2> /dev/null; then
+        kubeadm reset -f
+      fi
   - name: Unmarking packages as held
     shell: apt-mark unhold kubeadm kubectl kubelet || true
     when: ansible_os_family == 'Debian'

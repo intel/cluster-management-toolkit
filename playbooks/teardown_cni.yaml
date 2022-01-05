@@ -32,7 +32,7 @@
       for network in $(cat /proc/net/dev | grep -E "^datapath|^vxlan|^weave" | cut -f 1 -d:); do
         ifconfig "${network}" down || ip link set dev "${network}" down || true
       done
-      killall weaver
+      killall -q weaver || true
   - name: Removing leftover network configurations
     shell: |
       rm -rf /etc/cni /opt/cni /var/lib/cni /var/lib/weave
