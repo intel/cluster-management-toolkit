@@ -1129,14 +1129,14 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info):
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
-# Run pre-upgrade playbooks on control-planes
+# Run pre-upgrade playbooks on control planes
 def __task_run_preupgrade_playbooks_on_control_planes(installation_info):
 	selection = __selection_control_planes()
 	paths = __playbook_paths_from_path(os.path.join(IKT_HOOKS_DIR, "pre-upgrade.d"))
 	playbooks = populate_playbooks_from_paths(paths)
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
-# Run upgrade playbooks on control-planes
+# Run upgrade playbooks on control planes
 def __task_run_upgrade_playbooks_on_control_planes(installation_info):
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
@@ -1150,7 +1150,7 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info):
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
-# Run post-upgrade playbooks on control-planes
+# Run post-upgrade playbooks on control planes
 def __task_run_postupgrade_playbooks_on_control_planes(installation_info):
 	selection = __selection_control_planes()
 	paths = __playbook_paths_from_path(os.path.join(IKT_HOOKS_DIR, "post-upgrade.d"))
@@ -1164,12 +1164,12 @@ def __task_verify_that_cluster_has_no_nodes(installation_info):
 	if node_statuses is not None:
 		for node in node_statuses:
 			if "control-plane" not in node["roles"]:
-				iktprint([("\nPlease delete all nodes (except the ", "warning"), ("control-plane", "emphasis"), (") from the cluster before attempting a teardown.", "warning")])
+				iktprint([("\nPlease delete all nodes (except the ", "warning"), ("control plane", "emphasis"), (") from the cluster before attempting a teardown.", "warning")])
 				sys.exit(2)
 
 	iktprint([("OK", "ok")])
 
-# Run teardown playbooks on control-planes
+# Run teardown playbooks on control planes
 def __task_run_teardown_playbooks_on_control_planes(installation_info):
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
@@ -1225,7 +1225,7 @@ def __task_remove_kube_config(installation_info):
 
 	check_and_print_status(True)
 
-# Run purge playbooks on control-planes
+# Run purge playbooks on control planes
 def __task_run_purge_playbooks_on_control_planes(installation_info):
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
@@ -1289,12 +1289,12 @@ prepare_tasks = [
 	([("Request the ansible password if necessary", "action")], __task_request_ansible_password),
 	([("Install ", "action"), ("ansible.posix", "programname"), (" if necessary", "action")], __task_check_and_install_ansible_posix),
 	([("Run playbooks on ", "action"), ("localhost", "hostname")], __task_run_preparation_playbooks_on_localhost),
-	([("Run playbooks on ", "action"), ("control-planes", "hostname")], __task_run_preparation_playbooks_on_control_planes),
+	([("Run playbooks on ", "action"), ("control planes", "hostname")], __task_run_preparation_playbooks_on_control_planes),
 	([("Setup ", "action"), ("bash completion", "emphasis"), (" for ", "action"), ("kubectl", "programname")], __task_setup_bash_completion),
 ]
 
 __setup_kubeadm_control_plane_tasks = [
-	([("Run playbooks on ", "action"), ("control-planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
+	([("Run playbooks on ", "action"), ("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
 	([("Import kube config", "action")], __task_import_kube_config),
 	([("Setup ", "action"), ("kubeadm", "programname"), (" Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
 ]
@@ -1302,23 +1302,23 @@ __setup_kubeadm_control_plane_tasks = [
 setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
 
 upgrade_control_plane_tasks = [
-	([("Drain the ", "action"), ("control-planes", "hostname")], __task_drain_control_planes),
+	([("Drain the ", "action"), ("control planes", "hostname")], __task_drain_control_planes),
 	([("Run pre-upgrade playbooks on ", "action"), ("localhost", "hostname")], __task_run_preupgrade_playbooks_on_localhost),
-	([("Run pre-upgrade playbooks on ", "action"), ("control-planes", "hostname")], __task_run_preupgrade_playbooks_on_control_planes),
-	([("Run upgrade playbooks on ", "action"), ("control-planes", "hostname")], __task_run_upgrade_playbooks_on_control_planes),
-	([("Run post-upgrade playbooks on ", "action"), ("control-planes", "hostname")], __task_run_postupgrade_playbooks_on_control_planes),
-	([("Uncordon the ", "action"), ("control-planes", "hostname")], __task_uncordon_control_planes),
+	([("Run pre-upgrade playbooks on ", "action"), ("control planes", "hostname")], __task_run_preupgrade_playbooks_on_control_planes),
+	([("Run upgrade playbooks on ", "action"), ("control planes", "hostname")], __task_run_upgrade_playbooks_on_control_planes),
+	([("Run post-upgrade playbooks on ", "action"), ("control planes", "hostname")], __task_run_postupgrade_playbooks_on_control_planes),
+	([("Uncordon the ", "action"), ("control planes", "hostname")], __task_uncordon_control_planes),
 ]
 
 teardown_control_plane_tasks = [
-	([("Verify that only ", "action"), ("control-planes", "hostname"), (" remain in the cluster", "action")], __task_verify_that_cluster_has_no_nodes),
-	([("Drain the ", "action"), ("control-planes", "hostname")], __task_drain_control_planes),
-	([("Run teardown playbooks on ", "action"), ("control-planes", "hostname")], __task_run_teardown_playbooks_on_control_planes),
+	([("Verify that only ", "action"), ("control planes", "hostname"), (" remain in the cluster", "action")], __task_verify_that_cluster_has_no_nodes),
+	([("Drain the ", "action"), ("control planes", "hostname")], __task_drain_control_planes),
+	([("Run teardown playbooks on ", "action"), ("control planes", "hostname")], __task_run_teardown_playbooks_on_control_planes),
 	([("Remove kube config", "action")], __task_remove_kube_config),
 ]
 
 purge_control_plane_tasks = [
-	([("Run purge playbooks on ", "action"), ("control-planes", "hostname")], __task_run_purge_playbooks_on_control_planes),
+	([("Run purge playbooks on ", "action"), ("control planes", "hostname")], __task_run_purge_playbooks_on_control_planes),
 ]
 
 def run_tasks(tasks, phase, phase_skiplist, final_state):
@@ -1375,6 +1375,8 @@ def __find_requested_version(distro, version = None):
 	return requested_version
 
 def prepare_installation(options = None, args = None):
+	confirm = True
+
 	# We don't need a cluster name for --list-tasks, so check this first of all
 	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(prepare_tasks)
@@ -1412,7 +1414,7 @@ def prepare_installation(options = None, args = None):
 
 	__controlplanes = get_control_planes(fail_on_empty = False)
 	controlplanes = [controlplane[0] for controlplane in __controlplanes]
-	if len(controlplanes) == 0:
+	if len(controlplanes) == 0 and "--control-plane" not in [tmp[0] for tmp in options]:
 		retval = iktinput([("\nWarning: ", "warning"), ("No control plane defined in the inventory; do you want to add ", "default"), (f"{hostname}", "hostname"), (" as control plane? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ["y", "yes"]:
 			iktprint([("\nAborting: ", "error"), ("No available control plane in inventory.", "default")], stderr = True)
@@ -1423,9 +1425,12 @@ def prepare_installation(options = None, args = None):
 
 	if options is not None:
 		for opt, optarg in options:
-			if opt == "--no-cache-update":
+			if opt == "--control-plane":
+				ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = "controlplane", skip_all = False)
+				ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = cluster_name, skip_all = True)
+			elif opt == "--no-cache-update":
 				update_cache = False
-			if opt == "--start-at-task":
+			elif opt == "--start-at-task":
 				phase = __validate_task_index(prepare_tasks, optarg)
 			elif opt == "--skip-tasks":
 				skip_phases = __expand_index_list(optarg)
@@ -1441,12 +1446,12 @@ def prepare_installation(options = None, args = None):
 
 				else:
 					phase = __validate_task_index(prepare_tasks, phase)
+			elif opt == "-Y":
+				confirm = False
 			else:
 				raise Exception(f"Programming error; invalid option {opt}")
 
 	distro = "kubeadm"
-
-	confirm = True
 
 	if len(args) > 1:
 		requested_version = __find_requested_version(distro, args[1])
@@ -1498,6 +1503,11 @@ def import_cluster(options = None, args = None):
 
 	# default options
 	confirm = True
+
+	if options is not None:
+		for opt, optarg in options:
+			if opt == "-Y":
+				confirm = False
 
 	from kubernetes_helper import KubernetesHelper
 	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
@@ -1710,6 +1720,8 @@ def show_configuration():
 			iktprint([("            hostname: ", "action"), (f"{controlplane[0]} ", "emphasis"), ("(", "default"), (f"{controlplane[1]}", "emphasis"), (")", "default")])
 
 def setup_control_plane(options, args):
+	confirm = True
+
 	# We don't need a cluster name for --list-tasks, so check this first of all
 	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(setup_control_plane_tasks)
@@ -1754,6 +1766,8 @@ def setup_control_plane(options, args):
 					sys.exit(0)
 
 				phase = __validate_task_index(setup_control_plane_tasks, phase)
+			elif opt == "-Y":
+				confirm = False
 			else:
 				raise Exception(f"Programming error; invalid option {opt}")
 
@@ -1768,8 +1782,6 @@ def setup_control_plane(options, args):
 		pod_network_cidr = args[1]
 	else:
 		pod_network_cidr = DEFAULT_POD_NETWORK_CIDR
-
-	confirm = True
 
 	update_installation_info(cni = cni, pod_network_cidr = pod_network_cidr, state = "installing", phase = phase, phase_skiplist = list(phase_skiplist))
 
@@ -1852,6 +1864,8 @@ def get_control_planes(fail_on_empty = True):
 	return controlplanes
 
 def teardown_control_plane(options, args):
+	confirm = True
+
 	# We don't need a cluster name for --list-tasks, so check this first of all
 	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(teardown_control_plane_tasks)
@@ -1893,10 +1907,10 @@ def teardown_control_plane(options, args):
 					sys.exit(0)
 
 				phase = __validate_task_index(setup_control_plane_tasks, phase)
+			elif opt == "-Y":
+				confirm = False
 			else:
 				raise Exception(f"Programming error; invalid option {opt}")
-
-	confirm = True
 
 	show_configuration()
 
@@ -1914,6 +1928,8 @@ def teardown_control_plane(options, args):
 	iktprint([("\nCluster teardown successful", "success")])
 
 def purge_control_plane(options, args):
+	confirm = True
+
 	# We don't need a cluster name for --list-tasks, so check this first of all
 	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(purge_control_plane_tasks)
@@ -1948,6 +1964,8 @@ def purge_control_plane(options, args):
 					sys.exit(0)
 
 				phase = __validate_task_index(setup_control_plane_tasks, phase)
+			elif opt == "-Y":
+				confirm = False
 			else:
 				raise Exception(f"Programming error; invalid option {opt}")
 
@@ -1956,8 +1974,6 @@ def purge_control_plane(options, args):
 		teardown_control_plane(options, args)
 		state = "torn_down"
 	else:
-		confirm = True
-
 		show_configuration()
 
 		if confirm == True:
@@ -1969,7 +1985,7 @@ def purge_control_plane(options, args):
 	iktprint([("\n\n[Purging cluster configuration and software]", "phase")])
 
 	# If we're purging the control plane we want to leave kubectl behind; if we have a setup with multiple
-	# control-planes and we run this from one of them, then kubectl will remain on the other two. Just don't do it.
+	# control planes and we run this from one of them, then kubectl will remain on the other two. Just don't do it.
 	if __selection_localhost() == __selection_control_planes():
 		purge_control_plane_targets["kubeadm"]["deb_packages"].remove("kubectl")
 		purge_control_plane_targets["kubeadm"]["deb_packages_held"].remove("kubectl")
@@ -1984,6 +2000,8 @@ def purge_control_plane(options, args):
 	iktprint([("\nNote: ", "note"), ("It's recommended to reboot the control plane(s) after purging the cluster\n", "default")])
 
 def upgrade_control_plane(options, args):
+	confirm = True
+
 	# default options
 	update_cache = True
 	allow_reinstall = False
@@ -2049,6 +2067,8 @@ def upgrade_control_plane(options, args):
 				allow_reinstall = True
 			elif opt in ["--override", "--list-tasks"]:
 				continue
+			elif opt == "-Y":
+				confirm = False
 			else:
 				raise Exception(f"Programming error; invalid option {opt}")
 
@@ -2141,8 +2161,6 @@ def upgrade_control_plane(options, args):
 	upgrade_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
 	upgrade_control_plane_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
 
-	confirm = True
-
 	show_configuration()
 
 	if confirm == True:
@@ -2178,7 +2196,7 @@ def taint_control_plane(options, args):
 	for node in node_statuses:
 		if "control-plane" in node["roles"] and (len(args) == 0 or node["name"] in args):
 			if first == True:
-				iktprint([("Tainting control-plane(s):", "header")])
+				iktprint([("Tainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
 			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master:NoSchedule"]
@@ -2194,7 +2212,7 @@ def taint_control_plane(options, args):
 				sys.exit(2)
 
 	if first == True:
-		iktprint([("Warning: ", "warning"), ("No matching control-planes found. Aborting.", "default")], stderr = True)
+		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(2)
 
 def untaint_control_plane(options, args):
@@ -2209,7 +2227,7 @@ def untaint_control_plane(options, args):
 	for node in node_statuses:
 		if "control-plane" in node["roles"] and (len(args) == 0 or node["name"] in args):
 			if first == True:
-				iktprint([("Untainting control-plane(s):", "header")])
+				iktprint([("Untainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
 			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master-"]
@@ -2225,7 +2243,7 @@ def untaint_control_plane(options, args):
 				sys.exit(2)
 
 	if first == True:
-		iktprint([("Warning: ", "warning"), ("No matching control-planes found. Aborting.", "default")], stderr = True)
+		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(2)
 
 commandline = {
@@ -2256,6 +2274,11 @@ commandline = {
 		"min_args": 0,
 		"max_args": 1,
 		"callback": import_cluster,
+		"options": {
+			"-Y": {
+				"description": [("Do not ask for confirmation before performing actions", "description")],
+			},
+		},
 	},
 	"Prepare Installation": {
 		"command": ["prepare"],
@@ -2265,6 +2288,11 @@ commandline = {
 			[("If no version is specified the newest available version will be used", "description")],
 		],
 		"options": {
+			"--control-plane": {
+				"values": [("HOST", "argument")],
+				"description": [("Use ", "description"), ("HOST", "argument"), (" as control plane ", "description")],
+				"requires_arg": True,
+			},
 			"--no-cache-update": {
 				"description": [("Do not update the APT cache", "description")],
 			},
@@ -2283,6 +2311,9 @@ commandline = {
 			},
 			"--list-tasks": {
 				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
+			},
+			"-Y": {
+				"description": [("Do not ask for confirmation before performing actions", "description")],
 			},
 		},
 		"min_args": 1,
@@ -2326,6 +2357,9 @@ commandline = {
 			"--list-tasks": {
 				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
 			},
+			"-Y": {
+				"description": [("Do not ask for confirmation before performing actions", "description")],
+			},
 		},
 		"min_args": 0,
 		"max_args": 2,
@@ -2338,7 +2372,7 @@ commandline = {
 		"extended_description": [
 			[("Upgrades the control plane to ", "description"), ("KUBERNETES_VERSION", "argument"), (" if specified;", "description")],
 			[("if no version is specified the newest available version will be used", "description")],
-			[("Upgrading requires all nodes to be drained first. Once the control-plane", "description")],
+			[("Upgrading requires all nodes to be drained first. Once the control plane", "description")],
 			[("has been upgraded you must upgrade all nodes to the same version.", "description")],
 			[("Important", "emphasis"), (": skipping PATCH REVISIONS is acceptable,", "description")],
 			[("but when upgrading to a newer MINOR version all intermediate MINOR versions", "description")],
@@ -2369,6 +2403,9 @@ commandline = {
 			},
 			"--override": {
 				"description": [("Override/rebuild installation info", "description")],
+			},
+			"-Y": {
+				"description": [("Do not ask for confirmation before performing actions", "description")],
 			},
 		},
 		"min_args": 0,
@@ -2401,6 +2438,9 @@ commandline = {
 			"--list-tasks": {
 				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
 			},
+			"-Y": {
+				"description": [("Do not ask for confirmation before performing actions", "description")],
+			},
 		},
 		"min_args": 0,
 		"max_args": 0,
@@ -2431,6 +2471,9 @@ commandline = {
 			"--list-tasks": {
 				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
 			},
+			"-Y": {
+				"description": [("Do not ask for confirmation before performing actions", "description")],
+			},
 		},
 		"min_args": 0,
 		"max_args": 0,
@@ -2439,11 +2482,11 @@ commandline = {
 	"Taint Control Plane": {
 		"command": ["taint-control-plane"],
 		"values": [("[", "separator"), ("CONTROLPLANE", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
-		"description": [("Mark control-plane(s) as tainted", "description")],
+		"description": [("Mark control plane(s) as tainted", "description")],
 		"extended_description": [
-			[("If you have previously marked your control-plane(s) as untainted", "description")],
+			[("If you have previously marked your control plane(s) as untainted", "description")],
 			[("you can mark them as tainted again using this command", "description")],
-			[("If ", "description"), ("CONTROLPLANE", "argument"), (",", "separator"), ("...", "argument"), (" is not specified all control-planes will be tainted", "description")],
+			[("If ", "description"), ("CONTROLPLANE", "argument"), (",", "separator"), ("...", "argument"), (" is not specified all control planes will be tainted", "description")],
 		],
 		"min_args": 0,
 		"max_args": 1,
@@ -2452,13 +2495,13 @@ commandline = {
 	"Untaint Control Plane": {
 		"command": ["untaint-control-plane"],
 		"values": [("[", "separator"), ("CONTROLPLANE", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
-		"description": [("Mark control-plane(s) as untainted", "description")],
+		"description": [("Mark control plane(s) as untainted", "description")],
 		"extended_description": [
-			[("Per default control-planes are marked as tainted; workloads that lack ", "description")],
+			[("Per default control planes are marked as tainted; workloads that lack ", "description")],
 			[("tolerations will not be scheduled to them", "description")],
-			[("If you're running a single-node cluster, or if the control-plane is very", "description")],
-			[("powerful it might be useful to permit workloads on control-plane(s) too", "description")],
-			[("If ", "description"), ("CONTROLPLANE", "argument"), (",", "separator"), ("...", "argument"), (" is not specified all control-planes will be untainted", "description")],
+			[("If you're running a single-node cluster, or if the control plane is very", "description")],
+			[("powerful it might be useful to permit workloads on control plane(s) too", "description")],
+			[("If ", "description"), ("CONTROLPLANE", "argument"), (",", "separator"), ("...", "argument"), (" is not specified all control planes will be untainted", "description")],
 
 		],
 		"min_args": 0,

@@ -18,7 +18,7 @@ the inventory view in `iku` allows for running playbooks even on hosts that aren
 nodes in the cluster, so adding other infrastructure can also be useful.
 
 _Note_: __iktadm__ runs some minor sanity checks during the prepare step.
-It will check whether a control-plane has been defined in the inventory;
+It will check whether a control plane has been defined in the inventory;
 if not it'll ask if the system that `iktadm prepare` is executed on should be added
 as a control plane. It will also check whether passwordless sudo is enabled
 (this is necessary for most functionality) and, if necessary, create an _ssh_
