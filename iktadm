@@ -20,6 +20,7 @@ import os
 from pathlib import Path
 import paramiko
 import re
+import shutil
 from shutil import which
 import socket
 import subprocess
@@ -1180,22 +1181,40 @@ def __task_remove_kube_config(installation_info):
 	cluster_name = installation_info["installation_target"]
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
+	d1 = None
+
+	if not os.path.exists(f"{HOMEDIR}/.kube"):
+		check_and_print_status(True)
 
 	if os.path.exists(f"{HOMEDIR}/.kube/{cluster_name}"):
 		os.remove(f"{HOMEDIR}/.kube/config.{cluster_name}")
 
-	with open(f"{HOMEDIR}/.kube/config", "r") as f:
-		d1 = yaml.safe_load(f)
+	if os.path.isfile(f"{HOMEDIR}/.kube/config"):
+		with open(f"{HOMEDIR}/.kube/config", "r") as f:
+			d1 = yaml.safe_load(f)
 
-	# This isn't perfect--there might be leftover users and contexts belonging to this cluster;
-	# but we better not go on a killing spree--better leave cruft than remove everything.
-	d1["clusters"].remove(cluster_name)
-	d1["users"].remove(admin_name)
-	d1["contexts"].remove(context_name)
+		# This isn't perfect--there might be leftover users and contexts belonging to this cluster;
+		# but we better not go on a killing spree--better leave cruft behind than remove everything.
+		for i in range(0, len(d1["clusters"])):
+			if d1["clusters"][i].get("name") == cluster_name:
+				d1["clusters"].pop(i)
+				break
+		for i in range(0, len(d1["users"])):
+			if d1["users"][i].get("name") == admin_name:
+				d1["users"].pop(i)
+				break
+		for i in range(0, len(d1["contexts"])):
+			if d1["contexts"][i].get("name") == context_name:
+				d1["contexts"].pop(i)
+				break
 
-	# If there's no user or cluster left, remove the config completely
-	if len(d1["users"]) > 0 and len(d1["clusters"]) > 0:
+	# If there's no cluster left, remove the config completely
+	if d1 is not None and len(d1["clusters"]) > 0:
 		os.remove(f"{HOMEDIR}/.kube/config")
+		# If there's nothing else than the cache subdirectory in .kube, remove .kube too
+		filecount = len(os.listdir(f"{HOMEDIR}/.kube"))
+		if filecount == 0 or filecount == 1 and os.path.isdir(f"{HOMEDIR}/.kube/cache"):
+			shutil.rmtree(f"{HOMEDIR}/.kube")
 	else:
 		# Set the context to the first remaining context, if any
 		if len(d1["contexts"]) == 0:
