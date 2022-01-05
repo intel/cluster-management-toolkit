@@ -548,9 +548,11 @@ def install_ansible_posix():
 		}
 		args = ["ansible-galaxy", "collection", "install", "ansible.posix"]
 		return execute_command(args, env = env)
+	else:
+		return True
 
 def __task_check_and_install_ansible_posix(installation_info):
-	check_and_print_status(install_ansible_posix)
+	check_and_print_status(install_ansible_posix())
 
 def download_files(directory, fetch_urls):
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
