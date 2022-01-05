@@ -351,6 +351,67 @@ def uncordon_nodes(options = None, args = None):
 def setup_nodes(options = None, args = None):
 	return 0
 
+def remove_nodes(options = None, args = None):
+	force = False
+
+	selection = args[0].split(",")
+
+	for opt, optarg in options:
+		if opt == "--force":
+			force = True
+
+	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	if len(controlplanes) > 0 and args[0] != "ALL":
+		iktprint([(f"Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be removed using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if len(non_existing) > 0:
+		if force == False:
+			iktprint([(f"Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
+			sys.exit(2)
+		else:
+			iktprint([(f"Warning: ", "warning")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; attempting to purge them anyway since “", "description"), ("--force", "argument"), ("“ was specified.", "default")], stderr = True)
+			nodes += non_existing
+
+	if len(nodes) == 0:
+		iktprint([("Error: ", "error"), ("No nodes available; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	iktprint([("\n[Removing nodes]", "phase")])
+	iktprint([("\n• ", "separator"), ("Deleting nodes from the cluster", "action")])
+	delete_playbooks = [
+		f"{ANSIBLE_PLAYBOOK_DIR}/delete_node.yaml",
+	]
+	playbooks = populate_playbooks_from_paths(delete_playbooks)
+
+	extra_values = {}
+	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values)
+	if retval == True:
+		iktprint([("OK", "ok")])
+	elif force == True:
+		iktprint([("NOT OK", "notok"), ("; ignoring since “", "description"), ("--force", "argument"), ("“ was specified.", "default")])
+	else:
+		iktprint([("NOT OK", "notok"), ("; aborting.", "default")])
+		sys.exit(2)
+
+	iktprint([("\n• ", "separator"), ("Purging Kubernetes from the nodes", "action")])
+	teardown_playbooks = [
+		f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_teardown_node.yaml",
+		f"{ANSIBLE_PLAYBOOK_DIR}/teardown_cni.yaml",
+	]
+	playbooks = populate_playbooks_from_paths(teardown_playbooks)
+
+	extra_values = {}
+	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values)
+	if retval == True:
+		iktprint([("OK", "ok")])
+	else:
+		iktprint([("NOT OK", "notok"), ("; aborting.", "default")])
+		sys.exit(2)
+
+	iktprint([("\nNode removal successful", "success")])
+
 def upgrade_nodes(options = None, args = None):
 	selection = args[0].split(",")
 
@@ -485,6 +546,19 @@ ikt_commandline = {
 		"options": {
 			"--include-control-planes": {
 				"description": [("Include control-planes when ALL is used", "description")],
+			},
+		},
+	},
+	"Remove Node": {
+		"command": ["remove-node"],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
+		"description": [("Remove ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument"), (" from a Kubernetes cluster", "description")],
+		"min_args": 1,
+		"max_args": 1,
+		"callback": remove_nodes,
+		"options": {
+			"--force": {
+				"description": [("Attempt to purge Kubernetes from hosts that are no longer in the cluster", "description")],
 			},
 		},
 	},
