@@ -7502,6 +7502,9 @@ cmdata_format = [
 	("", "", "", ".yml", "YAML"),
 	("istio-system", "istio", "", "", "YAML"),
 	("kube-public", "cluster-info", "kubeconfig", "", "YAML"),
+	("kube-system", "antrea", "antrea-agent", "", "YAML"),
+	("kube-system", "antrea", "antrea-controller", "", "YAML"),
+	("kube-system", "antrea", "antrea-cni", "", "JSON"),
 	("kube-system", "coredns", "Corefile", "", "CaddyFile"),
 	("kube-system", "kubeadm-config", "", "", "YAML"),
 	("kube-system", "kubelet-config", "", "", "YAML"),
@@ -10847,8 +10850,10 @@ def __format_yaml(objects):
 	yaml.add_representer(str, str_presenter)
 
 	for obj in objects:
-		dump = yaml.dump(obj, default_flow_style = False, indent = indent, width = sys.maxsize)
-		split_dump = dump.split("\n")
+		if type(obj) == dict:
+			split_dump = yaml.dump(obj, default_flow_style = False, indent = indent, width = sys.maxsize).splitlines()
+		else:
+			split_dump = obj.splitlines()
 		first = True
 		if len(split_dump) > 0 and "\n" not in obj and split_dump[0].startswith("'") and split_dump[0].endswith("'"):
 			split_dump[0] = split_dump[0][1:-1]
