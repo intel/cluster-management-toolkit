@@ -1755,6 +1755,43 @@ class KubernetesHelper:
 			"api_family": "apis/tensorboard.kubeflow.org/v1alpha1/",
 			"api": "tensorboards",
 		},
+		# traefik.containo.us
+		("IngressRoute", "traefik.containo.us"): {
+			"api_family": ["apis/traefik.containo.us/v1alpha1/"],
+			"api": "ingressroutes",
+		},
+		("IngressRouteTCP", "traefik.containo.us"): {
+			"api_family": ["apis/traefik.containo.us/v1alpha1/"],
+			"api": "ingressroutetcps",
+		},
+		("IngressRouteUDP", "traefik.containo.us"): {
+			"api_family": ["apis/traefik.containo.us/v1alpha1/"],
+			"api": "ingressrouteudps",
+		},
+		("Middleware", "traefik.containo.us"): {
+			"api_family": ["apis/traefik.containo.us/v1alpha1/"],
+			"api": "middlewares",
+		},
+		("MiddlewareTCP", "traefik.containo.us"): {
+			"api_family": ["apis/traefik.containo.us/v1alpha1/"],
+			"api": "middlewaretcps",
+		},
+		("ServersTransport", "traefik.containo.us"): {
+			"api_family": ["apis/traefik.containo.us/v1alpha1/"],
+			"api": "serverstransports",
+		},
+		("TLSOption", "traefik.containo.us"): {
+			"api_family": ["apis/traefik.containo.us/v1alpha1/"],
+			"api": "tlsoptions",
+		},
+		("TLSStore", "traefik.containo.us"): {
+			"api_family": ["apis/traefik.containo.us/v1alpha1/"],
+			"api": "tlsstores",
+		},
+		("TraefikService", "traefik.containo.us"): {
+			"api_family": ["apis/traefik.containo.us/v1alpha1/"],
+			"api": "traefikservices",
+		},
 		# tuned.openshift.io
 		("Profile", "tuned.openshift.io"): {
 			"api_family": "apis/tuned.openshift.io/v1/",
