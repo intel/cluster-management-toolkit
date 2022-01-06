@@ -63,10 +63,10 @@ HOMEDIR = str(Path.home())
 IKTDIR = os.path.join(HOMEDIR, ".ikt")
 DEPLOYMENTDIR = f"{IKTDIR}/deployments"
 IKT_CONFIG_FILENAME = "ikt.yaml"
-IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
-IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
+IKT_CONFIG_FILE = os.path.join(IKTDIR, IKT_CONFIG_FILENAME)
+IKT_CONFIG_FILE = os.path.join(IKTDIR, f"{IKT_CONFIG_FILENAME}.d")
 THEME_DIRNAME = "themes"
-THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
+THEMEDIR = os.path.join(IKTDIR, THEME_DIRNAME)
 DEFAULT_THEME = "default.yaml"
 
 from iktprint import iktprint, init_iktprint
@@ -14909,6 +14909,30 @@ views = {
 		"sortcolumn": "namespace",
 		"kind": ("Ingress", "networking.k8s.io"),
 	},
+	# traefik.containo.us
+	"Ingress Routes": {
+		"commandline": ["ingressroutes", "ingressroute", "ingroutes", "ingroute"],
+		"group": "Network",
+		"fields": ["namespace", "name", "age"],
+		"sortcolumn": "namespace",
+		"kind": ("IngressRoute", "traefik.containo.us"),
+	},
+	# traefik.containo.us
+	"Ingress Route TCPs": {
+		"commandline": ["ingressroutetcps", "ingressroutetcp", "ingroutetcps", "ingroutetcp"],
+		"group": "Network",
+		"fields": ["namespace", "name", "age"],
+		"sortcolumn": "namespace",
+		"kind": ("IngressRouteTCP", "traefik.containo.us"),
+	},
+	# traefik.containo.us
+	"Ingress Route UDPs": {
+		"commandline": ["ingressrouteudps", "ingressrouteudp", "ingrouteudps", "ingrouteudp"],
+		"group": "Network",
+		"fields": ["namespace", "name", "age"],
+		"sortcolumn": "namespace",
+		"kind": ("IngressRouteUDP", "traefik.containo.us"),
+	},
 	# special
 	"Inventory": {
 		"commandline": ["hosts", "machines", "mach", "inventory", "inv", "hosts", "baremetal"],
@@ -15058,6 +15082,22 @@ views = {
 				"View YAML dump": {},
 			},
 		},
+	},
+	# traefik.containo.us
+	"Middlewares": {
+		"commandline": ["middlewares", "middleware"],
+		"group": "Network",
+		"fields": ["namespace", "name", "age"],
+		"sortcolumn": "namespace",
+		"kind": ("Middleware", "traefik.containo.us"),
+	},
+	# traefik.containo.us
+	"Middleware TCPs": {
+		"commandline": ["middlewaretcps", "middlewaretcp"],
+		"group": "Network",
+		"fields": ["namespace", "name", "age"],
+		"sortcolumn": "namespace",
+		"kind": ("MiddlewareTCP", "traefik.containo.us"),
 	},
 	# kubeflow.org
 	"MPI Jobs": {
@@ -15386,6 +15426,14 @@ views = {
 		"fields": ["namespace", "name", "secret_type", "data", "age"],
 		"kind": ("Secret", ""),
 	},
+	# traefik.containo.us
+	"Servers Transports": {
+		"commandline": ["serverstransports", "serverstransport"],
+		"group": "Network",
+		"fields": ["namespace", "name", "age"],
+		"sortcolumn": "namespace",
+		"kind": ("ServersTransport", "traefik.containo.us"),
+	},
 	# core API
 	"Services": {
 		"commandline": ["services", "service", "svc"],
@@ -15495,6 +15543,30 @@ views = {
 	#	"sortcolumn": "namespace",
 	#	"kind": ("ThanosRuler", "monitoring.coreos.com"),
 	#},
+	# traefik.containo.us
+	"TLS Options": {
+		"commandline": ["tlsoptions", "tlsoption"],
+		"group": "Network",
+		"fields": ["namespace", "name", "age"],
+		"sortcolumn": "namespace",
+		"kind": ("TLSOption", "traefik.containo.us"),
+	},
+	# traefik.containo.us
+	"TLS Stores": {
+		"commandline": ["tlsstores", "tlsstore"],
+		"group": "Network",
+		"fields": ["namespace", "name", "age"],
+		"sortcolumn": "namespace",
+		"kind": ("TLSStore", "traefik.containo.us"),
+	},
+	# traefik.containo.us
+	"Traefik Services": {
+		"commandline": ["traefikservices", "traefikservice"],
+		"group": "Network",
+		"fields": ["namespace", "name", "age"],
+		"sortcolumn": "namespace",
+		"kind": ("TraefikService", "traefik.containo.us"),
+	},
 	# admissionregistration.k8s.io
 	"Validating Webhook Configurations": {
 		"commandline": ["validatingwebhookconfigurations",  "validatingwebhookconfigurations", "vwhcs", "vwhc"],
