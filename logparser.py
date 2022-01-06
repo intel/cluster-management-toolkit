@@ -623,8 +623,8 @@ def strip_ansicodes(message):
 
 	return message
 
-def split_bracketed_timestamp_severity_facility(message):
-	severity = loglevel.INFO
+def split_bracketed_timestamp_severity_facility(message, default = loglevel.INFO):
+	severity = default
 	facility = ""
 
 	tmp = re.match(r"\[(.*?) (.*?) (.*?)\]: (.*)", message)
@@ -635,16 +635,6 @@ def split_bracketed_timestamp_severity_facility(message):
 		message = tmp[4]
 
 	return message, severity, facility
-
-def antrea_ovs(message, fold_msg = True):
-	facility = ""
-	remnants = []
-
-	message = strip_ansicodes(message)
-
-	message, severity, facility = split_bracketed_timestamp_severity_facility(message)
-
-	return facility, severity, message, remnants
 
 # Calico
 # Calico uses a mix of Kubernetes style logging and its own log format
@@ -2148,13 +2138,19 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Severity formats
 			elif _filter == "colon_severity":
 				message, severity = split_colon_severity(message, severity)
+			# Filters
+			elif _filter == "strip_ansicodes":
+				message = strip_ansicodes(message)
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 		elif type(_filter) == tuple:
+			# Multiparsers
+			if _filter[0] == "bracketed_timestamp_severity_facility":
+				message, severity, facility = split_bracketed_timestamp_severity_facility(message, default = _filter[1])
 			# Severity formats
-			if _filter[0] == "bracketed_severity":
+			elif _filter[0] == "bracketed_severity":
 				message, severity = split_bracketed_severity(message, default = _filter[1])
-			if _filter[0] == "override_severity":
+			elif _filter[0] == "override_severity":
 				severity = custom_override_severity(message, severity, _filter[1])
 
 	return facility, severity, message, remnants
@@ -2192,8 +2188,6 @@ builtin_parsers = [
 	("admission-webhook-deployment", "", "", "kube_parser_1"),
 	("alertmanager-main", "config-reloader", "", "kube_parser_structured_glog"),
 	("alertmanager-main", "", "", "key_value"),
-	("antrea", "antrea-ovs", "", "antrea_ovs"),
-	("antrea", "", "", "kube_parser_1"),
 	("application-controller-stateful-set", "manager", "", "kube_parser_1"),
 	("argo-ui", "argo-ui", "", "basic_8601_colon_severity"),
 	("autoscaler-hpa", "autoscaler-hpa", "", "kube_parser_1"),
@@ -2494,7 +2488,9 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name == "override_severity":
+							if rule_name in ["glog", "strip_ansicodes"]:
+								rules.append(rule_name)
+							elif rule_name == "override_severity":
 								overrides = []
 								for override in rule.get("overrides"):
 									matchtype = override.get("matchtype", "")
@@ -2513,7 +2509,7 @@ def init_parser_list():
 
 									overrides.append((matchtype, matchkey, severity))
 								rules.append((rule_name, overrides))
-							elif rule_name == "bracketed_severity":
+							elif rule_name in ["bracketed_severity", "bracketed_timestamp_severity_facility"]:
 								_loglevel = rule.get("default_loglevel", loglevel.INFO)
 								try:
 									default_loglevel = name_to_loglevel(_loglevel)
