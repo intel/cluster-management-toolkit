@@ -1,0 +1,15 @@
+- name: jaeger
+  show_in_selector: false
+  matchkeys:
+  - pod_name: jaeger
+  parser_rules:
+  - name: ts_8601
+  - name: json
+- name: istio-tracing
+  show_in_selector: false
+  matchkeys:
+  - pod_name: istio-tracing
+    container_name: jaeger
+  parser_rules:
+  - name: ts_8601
+  - name: json

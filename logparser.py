@@ -22,8 +22,10 @@ import difflib
 # but it might not be available
 try:
 	import ujson as json
+	json_is_ujson = True
 except ModuleNotFoundError:
 	import json
+	json_is_ujson = False
 import os
 from pathlib import Path
 import re
@@ -62,6 +64,14 @@ loglevel_mappings = {
 	loglevel.DIFFSAME: "Diffsame",
 	loglevel.ALL: "Debug",
 }
+
+def json_dumps(obj):
+	indent = 8
+	if json_is_ujson:
+		string = json.dumps(obj, indent = indent, escape_forward_slashes = False)
+	else:
+		string = json.dumps(obj, indent = indent)
+	return string
 
 def get_loglevel_names():
 	# Ugly way of removing duplicate values from dict
@@ -490,7 +500,7 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 
 		if d is not None:
 			try:
-				logentry = json.loads(json.dumps(d))
+				logentry = json_dumps(d)
 			except ValueError as e:
 				pass
 
@@ -544,7 +554,7 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 					tmpseverity = loglevel.INFO
 				else:
 					tmpseverity = severity
-				remnants = (json.dumps(logentry, indent = 8), tmpseverity)
+				remnants = (json_dumps(logentry), tmpseverity)
 
 	return message, timestamp, severity, facility, remnants
 
@@ -822,7 +832,7 @@ def kube_parser_json(message, fold_msg = True, glog = False):
 					tmpseverity = loglevel.INFO
 				else:
 					tmpseverity = severity
-				remnants = (json.dumps(logentry, indent = 8), tmpseverity)
+				remnants = (json_dumps(logentry), tmpseverity)
 			if "\n" in message:
 				tmp = message.split("\n")
 				message = tmp[0]
@@ -2137,7 +2147,7 @@ def custom_parser(message, fold_msg = True, filters = []):
 				facility, severity, message, remnants = directory(message, fold_msg = fold_msg)
 			elif _filter == "json":
 				if message.startswith("{\""):
-					message, _timestamp, severity, facility, remnants = split_json_style(message, None)
+					message, _timestamp, severity, facility, remnants = split_json_style(message, timestamp = None, fold_msg = fold_msg)
 			# Timestamp formats
 			elif _filter == "ts_8601": # Anything that resembles ISO-8601
 				message, _timestamp = split_iso_timestamp(message, None)
@@ -2254,9 +2264,6 @@ builtin_parsers = [
 	("istio-sidecar-injector", "sidecar-injector-webhook", "", "istio"),
 	("istio-telemetry", "mixer", "", "kube_parser_json"),
 	("istio-telemetry", "", "", "istio"),
-	("istio-tracing", "jaeger", "", "kube_parser_json"),
-
-	("jaeger", "", "", "kube_parser_structured_glog"),
 
 	("katib-controller", "", "", "kube_parser_json_glog"),
 	("katib-db-manager", "", "", "kube_parser_1"),
@@ -2496,7 +2503,7 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name in ["glog", "key_value", "strip_ansicodes"]:
+							if rule_name in ["glog", "json", "key_value", "strip_ansicodes", "ts_8601"]:
 								rules.append(rule_name)
 							elif rule_name == "override_severity":
 								overrides = []
