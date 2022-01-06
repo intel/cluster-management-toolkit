@@ -265,11 +265,21 @@ def datetime_to_timestamp(timestamp):
 		string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 	return string
 
+def generator_str_timestamp(obj, field, fieldlen, pad, ralign, selected):
+	string = processor_str_timestamp(obj, field)
+
+	if len(string) == 0:
+		array = [(string, ("types", "generic", selected))]
+	else:
+		array = format_numerical_with_units(string, "timestamp", selected)
+
+	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+
 def generator_timestamp(obj, field, fieldlen, pad, ralign, selected):
 	value = getattr(obj, field)
 
 	string = datetime_to_timestamp(value)
-	if value == None:
+	if value is None:
 		array = [(string, ("types", "generic", selected))]
 	elif value == datetime.fromtimestamp(0).astimezone():
 		array = [(string, ("types", "generic", selected))]
@@ -603,7 +613,7 @@ def generator_age(obj, field, fieldlen, pad, ralign, selected):
 def generator_mem(obj, field, fieldlen, pad, ralign, selected):
 	free, total = getattr(obj, field)
 
-	if free == None and total == None:
+	if free is None and total is None:
 		return generator_basic(obj, field, fieldlen, pad, ralign, selected)
 
 	used = "{:0.1f}".format(100 - (100 * int(free) / int(total)))
@@ -630,7 +640,7 @@ def generator_mem(obj, field, fieldlen, pad, ralign, selected):
 def generator_total(obj, field, fieldlen, pad, ralign, selected):
 	free, total = getattr(obj, field)
 
-	if free == None and total == None:
+	if free is None and total is None:
 		return generator_basic(obj, field, fieldlen, pad, ralign, selected)
 
 	stringlen = len(str(free)) + len(themearray_extract_string("fraction", "separators")) + len(str(total))
@@ -661,10 +671,24 @@ def generator_status(obj, field, fieldlen, pad, ralign, selected):
 
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
+def processor_str_timestamp(obj, field):
+	value = getattr(obj, field)
+	timestamp = ""
+
+	if value is not None:
+		for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y-%m-%d %H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z"]:
+			try:
+				timestamp = datetime.strptime(value, fmt).astimezone().strftime("%Y-%m-%d %H:%M:%S")
+				break
+			except ValueError:
+				pass
+
+	return timestamp
+
 def processor_timestamp(obj, field):
 	value = getattr(obj, field)
 
-	if value == None:
+	if value is None:
 		return ""
 	else:
 		return value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
@@ -820,6 +844,7 @@ default_processor = {
 	generator_list_with_status: processor_list_with_status,
 	generator_mem: processor_mem,
 	generator_timestamp: processor_timestamp,
+	generator_str_timestamp: processor_str_timestamp,
 	generator_total: processor_total,
 }
 
@@ -1606,6 +1631,29 @@ def datagetter_pod_selector(obj, path, default):
 		pod_selector.append((key, value))
 	return pod_selector, {}
 
+def datagetter_condition_field(obj, path, default):
+	if obj is None:
+		return default
+
+	field = ""
+	extra_vars = {}
+
+	# path is a list of tuples
+	# each tuple has element 0 as the condition list,
+	# element 1 the condition type,
+	# element 2 the field of the condition to return
+	for conditions in path:
+		for condition in deep_get(obj, conditions[0], []):
+			if deep_get(condition, "type", "") == conditions[1]:
+				field = deep_get(condition, conditions[2], "")
+				if deep_get(condition, "status", "True") == "True":
+					extra_vars = { "status_group": stgroup.OK }
+				else:
+					extra_vars = { "status_group": stgroup.NOT_OK }
+				return field, extra_vars
+
+	return field, extra_vars
+
 def datagetter_condition_ready(obj, path, default):
 	if obj is None:
 		return default
@@ -1622,7 +1670,7 @@ def datagetter_substitute_quotationmarks(obj, path, default):
 def get_default(generator):
 	if generator is None:
 		default = None, {}
-	elif generator in [generator_basic, generator_priority_level]:
+	elif generator in [generator_basic, generator_priority_level, generator_str_timestamp]:
 		# This expects indata to be a string
 		default = "", {}
 	elif generator == generator_status:
@@ -1635,7 +1683,7 @@ def get_default(generator):
 		default = None, {}
 	elif generator == generator_timestamp:
 		# This expects indata to be a timestamp,
-		# but returns an empty string is None is passed in
+		# but returns an empty string if None is passed in
 		default = None, {}
 	elif generator in [generator_list, generator_list_with_status]:
 		# Expects a list or a tuple; an empty list yields
@@ -3863,7 +3911,7 @@ def get_inventory_info():
 	# Before we ping the hosts their status is unknown
 	for host in deep_get(inventory, "all#hosts", []):
 		# We don't want to risk overwriting hostvars
-		if deep_get(inventory, "all#hosts#%s" % host) == None:
+		if deep_get(inventory, "all#hosts#%s" % host) is None:
 			inventory["all"]["hosts"][host] = {}
 		inventory["all"]["hosts"][host]["status"] = "UNKNOWN"
 		inventory["all"]["hosts"][host]["status_group"] = stgroup.PENDING
@@ -3894,7 +3942,7 @@ def get_inventory_info():
 				status_group = stgroup.WARNING
 			if host in deep_get(inventory, "all#hosts"):
 				# We don't want to risk overwriting hostvars
-				if deep_get(inventory, "all#hosts#%s" % host) == None:
+				if deep_get(inventory, "all#hosts#%s" % host) is None:
 					inventory["all"]["hosts"][host] = {}
 				inventory["all"]["hosts"][host]["status"] = status
 				inventory["all"]["hosts"][host]["status_group"] = status_group
@@ -5196,6 +5244,12 @@ field_templates = {
 	"hard": {
 		"header": "Hard:",
 	},
+	"healthy_antrea": {
+		"header": "Healthy:",
+		"datagetter": datagetter_condition_field,
+		"generator": generator_status,
+		"path": [("agentConditions", "AgentHealthy", "status"), ("controllerConditions", "ControllerHealthy", "status")],
+	},
 	"high_severity": {
 		"header": "High:",
 		"path": "report#summary#highCount",
@@ -5350,6 +5404,12 @@ field_templates = {
 		"header": "Roles:",
 		"datagetter": datagetter_node_roles,
 		"generator": generator_list,
+	},
+	"last_heartbeat_antrea": {
+		"header": "Last Heartbeat:",
+		"datagetter": datagetter_condition_field,
+		"generator": generator_str_timestamp,
+		"path": [("agentConditions", "AgentHealthy", "lastHeartbeatTime"), ("controllerConditions", "ControllerHealthy", "lastHeartbeatTime")],
 	},
 	"last_schedule": {
 		"header": "Last Schedule:",
@@ -5659,6 +5719,11 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
 		"field_separators": [("separators", "port"), ("separators", "service")],
+	},
+	"priority_tier": {
+		"header": "Priority:",
+		"path": "spec#priority",
+		"generator": generator_numerical,
 	},
 	"priority": {
 		"header": "Value:",
@@ -7854,7 +7919,7 @@ def __field_processor_list(values, formatting = None):
 		i += 1
 		# Inserting an item_separator of None
 		# means that these two items shouldn't be separated
-		if item_separator == None:
+		if item_separator is None:
 			continue
 		field.append(item_separator)
 	return field
@@ -11285,7 +11350,7 @@ nodeplaybooks = {
 }
 
 def ssh_to_host(stdscr, host):
-	if host == None:
+	if host is None:
 		return
 
 	msg = [("SSH:ing to ", "action"), (host, "hostname"), (":\n", "action")]
@@ -11635,7 +11700,7 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 	selection = None
 
 	# Ideally we want to return to the same selection
-	while selection == None:
+	while selection is None:
 		title = "Choose view"
 		tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items, title = title, preselection = defaultview)
 		if tmpselection is not None:
@@ -14281,26 +14346,33 @@ views = {
 		"fields": ["namespace", "name", "version", "replicas", "age"],
 		"kind": ("Alertmanager", "monitoring.coreos.com"),
 	},
-	# clusterinformation.antrea.tanzu.vmware.com
+	# crd.antrea.io
 	"Antrea Agent Infos": {
 		"commandline": ["antreaagentinfos", "antreaagentinfo", "aai"],
 		"group": "CNI",
-		"fields": ["name", "age"],
-		"kind": ("AntreaAgentInfo", "clusterinformation.antrea.tanzu.vmware.com"),
+		"fields": ["name", "healthy_antrea", "last_heartbeat_antrea"],
+		"kind": ("AntreaAgentInfo", "crd.antrea.io"),
 	},
-	# clusterinformation.antrea.tanzu.vmware.com
+	# crd.antrea.io
 	"Antrea Controller Infos (Cluster)": {
 		"commandline": ["antreacontrollerinfos", "antreacontrollerinfo", "aci"],
 		"group": "CNI",
-		"fields": ["name", "age"],
-		"kind": ("AntreaControllerInfo", "clusterinformation.antrea.tanzu.vmware.com"),
+		"fields": ["name", "healthy_antrea", "last_heartbeat_antrea"],
+		"kind": ("AntreaControllerInfo", "crd.antrea.io"),
 	},
-	# system.antrea.tanzu.vmware.com
+	# crd.antrea.io
+	"Tiers": {
+		"commandline": ["tiers", "tr"],
+		"group": "CNI",
+		"fields": ["name", "priority_tier", "age"],
+		"kind": ("Tier", "crd.antrea.io"),
+	},
+	# system.antrea.io
 	"Antrea Controller Infos (System)": {
 		"commandline": ["antreasystemcontrollerinfos", "antreasystemcontrollerinfo"],
 		"group": "CNI",
-		"fields": ["name", "controller_conditions"],
-		"kind": ("AntreaControllerInfo", "system.antrea.tanzu.vmware.com"),
+		"fields": ["name", "healthy_antrea", "last_heartbeat_antrea"],
+		"kind": ("ControllerInfo", "system.antrea.io"),
 	},
 	# apiregistration.k8s.io
 	"API Services": {

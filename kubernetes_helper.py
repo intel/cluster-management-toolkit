@@ -886,19 +886,6 @@ class KubernetesHelper:
 			"api": "ciliumnodes",
 			"namespaced": False,
 		},
-		# clusterinformation.antrea.tanzu.vmware.com
-		("AntreaAgentInfo", "clusterinformation.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/clusterinformation.antrea.tanzu.vmware.com/v1beta1/"],
-			"api": "antreaagentinfos",
-			"aliases": ["antreaagentinfo", "aai"],
-			"namespaced": False,
-		},
-		("AntreaControllerInfo", "clusterinformation.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/clusterinformation.antrea.tanzu.vmware.com/v1beta1/"],
-			"api": "antreacontrollerinfos",
-			"aliases": ["antreacontrollerinfo", "aci"],
-			"namespaced": False,
-		},
 		# config.openshift.io
 		("APIServer", "config.openshift.io"): {
 			"api_family": ["apis/config.openshift.io/v1/"],
@@ -990,42 +977,95 @@ class KubernetesHelper:
 			"api": "schedulers",
 			"namespaced": False,
 		},
-		# controlplane.antrea.tanzu.vmware.com
-		("AddressGroup", "controlplane.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/controlplane.antrea.tanzu.vmware.com/v1beta2"],
+		# controlplane.antrea.io
+		("AddressGroup", "controlplane.antrea.io"): {
+			"api_family": ["apis/controlplane.antrea.io/v1beta2/"],
 			"api": "addressgroups",
 			"aliases": ["addressgroup"],
 			"namespaced": False,
 		},
-		("AppliedToGroup", "controlplane.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/controlplane.antrea.tanzu.vmware.com/v1beta2"],
+		("AppliedToGroup", "controlplane.antrea.io"): {
+			"api_family": ["apis/controlplane.antrea.io/v1beta2/"],
 			"api": "appliedtogroups",
 			"aliases": ["appliedtogroup"],
 			"namespaced": False,
 		},
-		("NetworkPolicy", "controlplane.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/controlplane.antrea.tanzu.vmware.com/v1beta2"],
+		("EgressGroup", "controlplane.antrea.io"): {
+			"api_family": ["apis/controlplane.antrea.io/v1beta2/"],
+			"api": "egressgroups",
+			"aliases": ["egressgroup"],
+			"namespaced": False,
+		},
+		("NetworkPolicy", "controlplane.antrea.io"): {
+			"api_family": ["apis/controlplane.antrea.io/v1beta2/"],
 			"api": "networkpolicies",
 			"aliases": ["networkpolicy"],
 			"namespaced": False,
 		},
-		("NodeStatsSummary", "controlplane.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/controlplane.antrea.tanzu.vmware.com/v1beta2"],
-			"api": "nodestatssummaries",
-			"aliases": ["nodestatssummary"],
+		# crd.antrea.io
+		("AntreaAgentInfo", "crd.antrea.io"): {
+			"api_family": ["apis/crd.antrea.io/v1beta1/"],
+			"api": "antreaagentinfos",
+			"aliases": ["antreaagentinfo", "aai"],
 			"namespaced": False,
 		},
-		# core.antrea.tanzu.vmware.com
-		("ClusterGroup", "core.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/core.antrea.tanzu.vmware.com/v1alpha2"],
+		("AntreaControllerInfo", "crd.antrea.io"): {
+			"api_family": ["apis/crd.antrea.io/v1beta1/"],
+			"api": "antreacontrollerinfos",
+			"aliases": ["antreacontrollerinfo", "aci"],
+			"namespaced": False,
+		},
+		("ClusterGroup", "crd.antrea.io"): {
+			"api_family": ["apis/crd.antrea.io/v1alpha3/", "apis/crd.antrea.io/v1alpha2/"],
 			"api": "clustergroups",
 			"aliases": ["clustergroup", "cg"],
 			"namespaced": False,
 		},
-		("ExternalEntity", "core.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/core.antrea.tanzu.vmware.com/v1alpha2"],
+		("ClusterNetworkPolicy", "crd.antrea.io"): {
+			"api_family": ["apis/crd.antrea.io/v1alpha1/"],
+			"api": "clusternetworkpolicies",
+			"aliases": ["clusternetpolicy"],
+			"namespaced": False,
+		},
+		("Egress", "crd.antrea.io"): {
+			"api_family": ["apis/crd.antrea.io/v1alpha2/"],
+			"api": "egresses",
+			"aliases": ["egress", "eg"],
+			"namespaced": False,
+		},
+		("ExternalEntity", "crd.antrea.io"): {
+			"api_family": ["apis/crd.antrea.io/v1alpha2/"],
 			"api": "externalentities",
 			"aliases": ["externalentity", "ee"],
+		},
+		("ExternalIPPool", "crd.antrea.io"): {
+			"api_family": ["apis/crd.antrea.io/v1alpha2/"],
+			"api": "externalippools",
+			"aliases": ["externalippool", "eip"],
+			"namespaced": False,
+		},
+		("IPPool", "crd.antrea.io"): {
+			"api_family": ["apis/crd.antrea.io/v1alpha2/"],
+			"api": "ippools",
+			"aliases": ["ippool", "ipp"],
+			"namespaced": False,
+		},
+		("NetworkPolicy", "crd.antrea.io"): {
+			"api_family": ["apis/crd.antrea.io/v1alpha1/"],
+			"api": "networkpolicies",
+			"aliases": ["networkpolicy", "anp"],
+		},
+		("Tier", "crd.antrea.io"): {
+			"api_family": ["apis/crd.antrea.io/v1alpha1/"],
+			"api": "tiers",
+			"aliases": ["tier", "tr"],
+			"namespaced": False,
+		},
+		("TraceFlow", "crd.antrea.io"): {
+			"api_family": ["apis/crd.antrea.io/v1alpha1/"],
+			"api": "traceflows",
+			"aliases": ["traceflow", "tf"],
+			"namespaced": False,
 		},
 		# crd.projectcalico.org
 		("BGPConfiguration", "crd.projectcalico.org"): {
@@ -1667,26 +1707,26 @@ class KubernetesHelper:
 			"api_family": ["split.smi-spec.io/v1alpha4/", "split.smi-spec.io/v1alpha3/", "split.smi-spec.io/v1alpha2/", "split.smi-spec.io/v1alpha1/"],
 			"api": "trafficsplits",
 		},
-		# stats.antrea.tanzu.vmware.com
-		("AntreaClusterNetworkPolicyStats", "stats.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/stats.antrea.tanzu.vmware.com/v1alpha1/"],
+		# stats.antrea.io
+		("AntreaClusterNetworkPolicyStats", "stats.antrea.io"): {
+			"api_family": ["apis/stats.antrea.io/v1alpha1/"],
 			"api": "antreaclusternetworkpolicystats",
 			"aliases": ["antreaclusternetpolstats"],
 			"namespaced": False,
 		},
-		("AntreaNetworkPolicyStats", "stats.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/stats.antrea.tanzu.vmware.com/v1alpha1/"],
+		("AntreaNetworkPolicyStats", "stats.antrea.io"): {
+			"api_family": ["apis/stats.antrea.io/v1alpha1/"],
 			"api": "antreanetworkpolicystats",
 			"aliases": ["antreanetpolstats"],
 		},
-		("NetworkPolicyStats", "stats.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/stats.antrea.tanzu.vmware.com/v1alpha1/"],
+		("NetworkPolicyStats", "stats.antrea.io"): {
+			"api_family": ["apis/stats.antrea.io/v1alpha1/"],
 			"api": "networkpolicystats",
 			"aliases": ["netpolstats"],
 		},
-		# system.antrea.tanzu.vmware.com
-		("AntreaControllerInfo", "system.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/system.antrea.tanzu.vmware.com/v1beta1/"],
+		# system.antrea.io
+		("ControllerInfo", "system.antrea.io"): {
+			"api_family": ["apis/system.antrea.io/v1beta1/"],
 			"api": "controllerinfos",
 			"aliases": ["controllerinfo"],
 			"namespaced": False,
