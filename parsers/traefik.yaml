@@ -1,0 +1,12 @@
+- name: traefik
+  show_in_selector: false
+  matchkeys:
+  - pod_name: traefik-ingress-controller
+  parser_rules:
+  - name: glog
+  - name: key_value
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Traefik version"
+      loglevel: notice

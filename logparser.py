@@ -1457,6 +1457,8 @@ def format_key_value(key, value, severity):
 # Facility: subsys|caller|logger|source
 def key_value(message, fold_msg = True):
 	extract_msg = True		# msg="foo" or msg=foo => foo
+	linebreaks = True		# msg="foo\nbar" => foo
+					#                   bar
 	bullet_collectors = True	# collector=foo => • foo
 	merge_starting_version = True	# msg="Starting foo" version="(version=.*)" => Starting foo (version=.*)
 	facility = ""
@@ -1564,6 +1566,18 @@ def key_value(message, fold_msg = True):
 					message = ""
 				remnants = (tmp, severity)
 
+	if linebreaks == True and "\\n" in message and type(message) == str and fold_msg == False:
+		lines = message.split("\\n")
+		message = lines[0]
+		_remnants = []
+		for line in lines[1:]:
+			_remnants.append((line, severity))
+		if type(remnants) == tuple:
+			for remnant in remnants[0]:
+				_remnants.append((remnant, remnants[1]))
+			remnants = _remnants
+		elif type(remnants) == list:
+			remnants = _remnants + remnants
 	return facility, severity, message, remnants
 
 # [2021-09-24 12:43:53 +0000] [11] [INFO] Booting worker with pid: 11
@@ -2116,8 +2130,9 @@ def custom_parser(message, fold_msg = True, filters = []):
 				message, severity, facility, remnants, _match = split_glog(message)
 			elif _filter == "spaced_severity_facility":
 				message, severity, facility = __split_severity_facility_style(message, severity, facility)
-			elif _filter == "key_value" and "=" in message:
-				facility, severity, message, remnants = key_value(message, fold_msg = fold_msg)
+			elif _filter == "key_value":
+				if "=" in message:
+					facility, severity, message, remnants = key_value(message, fold_msg = fold_msg)
 			elif _filter == "directory":
 				facility, severity, message, remnants = directory(message, fold_msg = fold_msg)
 			elif _filter == "json":
@@ -2396,7 +2411,6 @@ builtin_parsers = [
 	("tensorboard", "tensorboard", "", "kube_parser_1"),
 	("tf-job-operator", "", "", "kube_parser_1"),
 	("tiller-deploy", "tiller", "", "tiller"),
-	("traefik", "", "", "kube_parser_json"),
 
 	("svclb-traefik", "", "", "kube_parser_1"),
 
@@ -2482,7 +2496,7 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name in ["glog", "strip_ansicodes"]:
+							if rule_name in ["glog", "key_value", "strip_ansicodes"]:
 								rules.append(rule_name)
 							elif rule_name == "override_severity":
 								overrides = []
