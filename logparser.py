@@ -1102,8 +1102,6 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 # E0702 11:03:23.913858859       1 server_chttp2.cc:40]        {"created":
 # http-style messages
 # [10/Feb/2020:23:09:45 +0000]TCP200000.000
-# coredns
-# [INFO] plugin/reload: Running configuration MD5 = cb191f785bff0d5c3182d766e6656707
 def kube_parser_1(message, fold_msg = True):
 	remnants = None
 
@@ -1136,10 +1134,6 @@ def kube_parser_1(message, fold_msg = True):
 
 	# While other logs have the severity after the timestamp
 	message, tmpseverity = split_colon_severity(message, severity)
-	severity = min(tmpseverity, severity)
-
-	# coredns (possibly others) can have some messages with another severity format
-	message, tmpseverity = split_bracketed_severity(message)
 	severity = min(tmpseverity, severity)
 
 	# tuned (possibly others) can have some messages with yet another format
