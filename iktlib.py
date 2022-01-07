@@ -157,3 +157,115 @@ def seconds_to_age(seconds):
 		age += f"{seconds}s"
 
 	return age
+
+def __str_representer(dumper, data):
+	if "\n" in data:
+		return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+	return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+# Takes a list of yaml dictionaries and returns a single list of themearray
+def format_yaml(objects, override_formatting = {}):
+	dumps = []
+	indent = 4 #deep_get(iktconfig, "Global#indent", 4)
+
+	yaml.add_representer(str, __str_representer)
+
+	if type(override_formatting) == dict:
+		generic_format = ("types", "generic")
+		comment_format = ("types", "yaml_comment")
+		key_format = ("types", "yaml_key")
+		value_format = ("types", "yaml_value")
+		list_format = ("separators", "yaml_list")
+		separator_format = ("types", "generic")
+		reference_format = ("types", "yaml_reference")
+	elif type(override_formatting) == tuple:
+		generic_format = override_formatting
+		comment_format = override_formatting
+		key_format = override_formatting
+		value_format = override_formatting
+		list_format = ("- ", override_formatting)
+		separator_format = override_formatting
+		reference_format = override_formatting
+
+	for i in range(0, len(objects)):
+		obj = objects[i]
+		if type(obj) == dict:
+			split_dump = yaml.dump(obj, default_flow_style = False, indent = indent, width = sys.maxsize).splitlines()
+		else:
+			split_dump = obj.splitlines()
+		first = True
+		if len(split_dump) > 0 and "\n" not in obj and split_dump[0].startswith("'") and split_dump[0].endswith("'"):
+			split_dump[0] = split_dump[0][1:-1]
+
+		for line in split_dump:
+			# This allows us to use the yaml formatter for json too
+			if first == True:
+				first = False
+				if line in ["|", "|-"]:
+					continue
+			if len(line) == 0:
+				continue
+
+			tmpline = []
+			if line.lstrip(" ").startswith("#"):
+				tmpline += [
+					(line, comment_format),
+				]
+				dumps.append(tmpline)
+				continue
+			if line.lstrip(" ").startswith("- "):
+				tmp = re.match("^(\s*?)- (.*)", line)
+				tmpline += [
+					(f"{tmp[1]}", generic_format),
+					list_format,
+				]
+				line = tmp[2]
+				if len(line) == 0:
+					dumps.append(tmpline)
+					continue
+
+			if line.endswith(":"):
+				if type(override_formatting) == dict:
+					_key_format = deep_get(override_formatting, f"{line[:-1]}#key", key_format)
+				else:
+					_key_format = key_format
+				tmpline += [
+					(f"{line[:-1]}", _key_format),
+					(":", separator_format),
+				]
+			else:
+				tmp = re.match(r"^(.*?)(:\s*?)(&|\.|)(.*)", line)
+				if tmp is not None and (tmp[1].strip().startswith("\"") and tmp[1].strip().endswith("\"") or (not tmp[1].strip().startswith("\"") and not tmp[1].strip().endswith("\""))):
+					key = tmp[1]
+					reference = tmp[2]
+					separator = tmp[3]
+					value = tmp[4]
+					if type(override_formatting) == dict:
+						_key_format = deep_get(override_formatting, f"{key.strip()}#key", key_format)
+						_value_format = deep_get(override_formatting, f"{key.strip()}#value", value_format)
+					else:
+						_key_format = key_format
+						_value_format = value_format
+					tmpline += [
+						(f"{key}", _key_format),
+						(f"{separator}", separator_format),
+						(f"{reference}", reference_format),
+						(f"{value}", _value_format),
+					]
+				else:
+					if type(override_formatting) == dict:
+						_value_format = deep_get(override_formatting, f"{line}#value", value_format)
+					else:
+						_value_format = value_format
+					tmpline += [
+						(f"{line}", _value_format),
+					]
+
+			dumps.append(tmpline)
+
+		if i < len(objects) - 1:
+			dumps.append([("", generic_format)])
+			dumps.append([("", generic_format)])
+			dumps.append([("", generic_format)])
+
+	return dumps

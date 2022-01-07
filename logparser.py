@@ -32,6 +32,8 @@ import re
 import sys
 import yaml
 
+from iktlib import deep_get_with_fallback, format_yaml
+
 HOMEDIR = str(Path.home())
 IKTDIR = os.path.join(HOMEDIR, ".ikt")
 PARSER_DIRNAME = "parsers"
@@ -64,6 +66,34 @@ loglevel_mappings = {
 	loglevel.DIFFSAME: "Diffsame",
 	loglevel.ALL: "Debug",
 }
+
+class logparser_configuration:
+	# Keep or strip timestamps in structured logs
+	pop_ts = True
+	# Keep or strip severity in structured logs
+	pop_severity = True
+	# Keep or strip facility in structured logs
+	pop_facility = True
+	# msg="foo" or msg=foo => foo
+	msg_extract = True
+	# If msg_extract is False,
+	# this decides whether or not to put msg="foo" first or not
+	# this also affects err="foo" and error="foo"
+	msg_first = True
+	# if msg_extract is True,
+	# this decides whether msg="foo\nbar" should be converted to:
+	# foo
+	# bar
+	# This does (currently) not affect "err=" and "error="
+	msg_linebreaks = True
+	# Should "* " be replaced with real bullets?
+	msg_realbullets = True
+	# collector=foo => • foo
+	bullet_collectors = True
+	# if msg_extract is True,
+	# this decides whether should be converted to:
+	# msg="Starting foo" version="(version=.*)" => Starting foo (version=.*)
+	merge_starting_version = True
 
 def json_dumps(obj):
 	indent = 8
@@ -505,58 +535,100 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 				pass
 
 	if logentry is not None and type(logentry) == dict:
-		msg = logentry.pop("msg", "")
-		level = logentry.pop("level", None)
-		# FIXME: timestamp since epoch?!
-		# if timestamp = "":
-		#	tmptimestamp = logentry.pop("ts", None)
-		logentry.pop("ts", None)
-		logentry.pop("time", None)
-		logentry.pop("timestamp", None)
+		# If msg_first we reorder the dict
+		if logparser_configuration.msg_first == True:
+			_d = {}
+			for key in ["msg", "err", "error"]:
+				value = logentry.get(key, None)
+				if value is not None:
+					_d[key] = value
+			for key in logentry:
+				if key not in ["msg", "err", "error"]:
+					value = logentry.get(key, "")
+					if value is not None:
+						_d[key] = value
+			logentry = _d
 
-		logger = logentry.pop("logger", None)
-		caller = logentry.pop("caller", None)
+		msg = logentry.get("msg", "")
+		level = logentry.get("level", None)
+		if logparser_configuration.pop_severity == True:
+			logentry.pop("level", None)
+		if logparser_configuration.pop_ts == True:
+			logentry.pop("ts", None)
+			logentry.pop("time", None)
+			logentry.pop("timestamp", None)
+
+		if facility == "":
+			facility = deep_get_with_fallback(logentry, ["logger", "caller", "filename"], "")
+		if logparser_configuration.pop_facility == True:
+			logentry.pop("logger", None)
+			logentry.pop("caller", None)
 
 		if level is not None:
-			tmpseverity = text_to_severity(level)
-		else:
-			tmpseverity = loglevel.DEBUG
-
-		severity = min(tmpseverity, severity)
-
-		if facility == "":
-			if caller is not None:
-				facility = caller
-			elif logger is not None:
-				facility = logger
-
-		# Only if the facility is still empty after all this we try the filename
-		if facility == "":
-			facility = logentry.pop("filename", "")
+			severity = text_to_severity(level)
 
 		# If the message is folded, append the rest
 		if fold_msg == True:
+			msgseverity = severity
 			# Append all remaining fields to message
-			tmp = ""
 			if msg == "":
 				message = str(logentry)
 			else:
-				if len(logentry) > 0:
-					message = f"{msg}  {logentry}"
+				if logparser_configuration.msg_extract == True:
+					logentry.pop("msg", None)
+					if len(logentry) > 0:
+						message = f"{msg} {logentry}"
+					else:
+						message = msg
 				else:
-					message = msg
+					message = str(logentry)
 		# else return an expanded representation
 		else:
-			message = msg
-			if len(logentry) > 0:
-				# Don't make the mistake of setting the loglevel higher than that of the main message
-				if severity < loglevel.INFO:
-					tmpseverity = loglevel.INFO
-				else:
-					tmpseverity = severity
-				remnants = (json_dumps(logentry), tmpseverity)
+			if severity == loglevel.DEBUG:
+				structseverity = severity
+			else:
+				structseverity = loglevel.INFO
 
-	return message, timestamp, severity, facility, remnants
+			if "err" not in logentry and "error" not in logentry:
+				msgseverity = severity
+			else:
+				msgseverity = structseverity
+			errorseverity = severity
+			if logparser_configuration.msg_extract == True:
+				message = msg
+				logentry.pop("msg", None)
+			else:
+				message = ""
+
+			if len(logentry) > 0:
+				if structseverity == loglevel.DEBUG:
+					override_formatting = ("logview", f"severity_{loglevel_to_name(structseverity).lower()}")
+				else:
+					override_formatting = {
+						"\"msg\"": {
+							"key": ("types", "yaml_key"),
+							"value": ("logview", f"severity_{loglevel_to_name(msgseverity).lower()}")
+						},
+						"\"err\"": {
+							"key": ("types", "yaml_key_error"),
+							"value": ("logview", f"severity_{loglevel_to_name(errorseverity).lower()}")
+						},
+						"\"error\"": {
+							"key": ("types", "yaml_key_error"),
+							"value": ("logview", f"severity_{loglevel_to_name(errorseverity).lower()}")
+						}
+					}
+				dump = json_dumps(logentry)
+				tmp = format_yaml([dump], override_formatting = override_formatting)
+				remnants = []
+				if len(message) == 0:
+					message = tmp[0]
+					tmp.pop(0)
+					msgseverity = structseverity
+				for line in tmp:
+					remnants.append((line, severity))
+
+	return message, timestamp, msgseverity, facility, remnants
 
 # log messages of the format:
 # 2020-05-14 08:25:24.481670: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcudart.so.10.1
@@ -921,6 +993,10 @@ def override_severity(message, severity, facility = None):
 	return message, severity
 
 def custom_override_severity(message, severity, overrides = []):
+	# FIXME: override_severity isn't implemented for strarrays yet
+	if type(message) == list:
+		return severity
+
 	for override in overrides:
 		override_type = override[0]
 		override_pattern = override[1]
@@ -1102,7 +1178,6 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 
 	return message, remnants
 
-# kube-apiserver/kube-api-server
 # kube-proxy/kube-proxy
 # nginx-ingress-controller/nginx-ingress-controller
 # metrics-server/metrics-server
@@ -1455,9 +1530,11 @@ def nvidia_smi_exporter(message, fold_msg = True):
 
 	return facility, severity, message, remnants
 
-def format_key_value(key, value, severity):
-	if key == "error":
+def format_key_value(key, value, severity, force_severity = False):
+	if key in ["error", "err"]:
 		tmp = [(f"{key}", ("types", "key_error")), ("separators", "keyvalue_log"), (f"{value}", ("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+	elif force_severity == True:
+		tmp = [(f"{key}", ("types", "key")), ("separators", "keyvalue_log"), (f"{value}", ("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 	else:
 		tmp = [(f"{key}", ("types", "key")), ("separators", "keyvalue_log"), (f"{value}", ("types", "value"))]
 	return tmp
@@ -1465,15 +1542,8 @@ def format_key_value(key, value, severity):
 # Severity: lvl=|level=
 # Timestamps: t=|ts=|time= (all of these are ignored)
 # Facility: subsys|caller|logger|source
-def key_value(message, fold_msg = True):
-	extract_msg = True		# msg="foo" or msg=foo => foo
-	linebreaks = True		# msg="foo\nbar" => foo
-					#                   bar
-	bullet_collectors = True	# collector=foo => • foo
-	merge_starting_version = True	# msg="Starting foo" version="(version=.*)" => Starting foo (version=.*)
-	facility = ""
+def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True):
 	remnants = []
-	severity = loglevel.INFO
 
 	# Replace embedded quotes with fancy quotes
 	message = message.replace("\\\"", "”")
@@ -1497,12 +1567,14 @@ def key_value(message, fold_msg = True):
 					break
 			# XXX: Instead of just giving up we should probably do something with the leftovers...
 
-		d.pop("t", None)
-		d.pop("ts", None)
-		d.pop("time", None)
-		level = d.pop("level", None)
-		if level is None:
-			level = d.pop("lvl", "info")
+		if logparser_configuration.pop_ts == True:
+			d.pop("t", None)
+			d.pop("ts", None)
+			d.pop("time", None)
+		level = deep_get_with_fallback(d, ["level", "lvl"], "info")
+		if logparser_configuration.pop_severity == True:
+			d.pop("level", None)
+			d.pop("lvl", None)
 		severity = level_to_severity(level)
 
 		msg = d.get("msg", "")
@@ -1519,17 +1591,16 @@ def key_value(message, fold_msg = True):
 		if tmp is not None:
 			severity = min(severity, loglevel.NOTICE)
 
-		facility = d.pop("subsys", "")
-		if facility == "":
-			facility = d.pop("caller", "")
-		if facility == "":
-			facility = d.pop("logger", "")
-		if facility == "":
-			facility = d.pop("source", "").strip("\"")
-		if facility == "":
-			facility = d.pop("Topic", "")
+		facility = d.get("source", facility).strip("\"")
+		facility = deep_get_with_fallback(d, ["subsys", "caller", "logger", "Topic"], facility)
+		if logparser_configuration.pop_facility == True:
+			d.pop("subsys", None)
+			d.pop("caller", None)
+			d.pop("logger", None)
+			d.pop("source", None)
+			d.pop("Topic", None)
 
-		if fold_msg == False and len(d) == 2 and merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
+		if fold_msg == False and len(d) == 2 and logparser_configuration.merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
 			message = f"{msg} {version}"
 		elif "err" in d and ("errors occurred:" in d["err"] or "error occurred:" in d["err"]) and fold_msg == False:
 			err = d["err"]
@@ -1543,24 +1614,44 @@ def key_value(message, fold_msg = True):
 				for line in s:
 					if len(line) > 0:
 						# Real bullets look so much nicer
-						if line.startswith("* "):
+						if line.startswith("* ") and logparser_configuration.msg_realbullets == True:
 							remnants.append(([("separators", "logbullet"), (f"{line[2:]}", ("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 						else:
 							remnants.append((f"{line}", severity))
 		else:
 			tmp = []
-			# We always want msg first
-			if extract_msg == True and fold_msg == False and len(msg) > 0:
+			msg = ""
+			# If we're extracting msg we always want msg first
+			if logparser_configuration.msg_extract == True and fold_msg == False and len(msg) > 0:
 				tmp.append(msg)
 				d.pop("msg", "")
+				for key in ["err", "error"]:
+					value = d.pop(key, "")
+					if len(value) > 0:
+						tmp.append(format_key_value(key, value, severity))
 			else:
-				msg = d.pop("msg", "")
-				if len(msg) > 0:
-					tmp.append(f"msg={msg}")
+				if logparser_configuration.msg_first == True:
+					if fold_msg == True:
+						for key in ["msg", "err", "error"]:
+							value = d.pop(key, "")
+							if len(value) > 0:
+								tmp.append(f"{key}={value}")
+					else:
+						msg = d.get("msg", "")
+						if len(msg) > 0:
+							force_severity = False
+							if "err" not in d and "error" not in d:
+								force_severity = True
+							tmp.append(format_key_value("msg", msg, severity, force_severity = force_severity))
+						d.pop("msg", "")
+						for key in ["err", "error"]:
+							value = d.pop(key, "")
+							if len(value) > 0:
+								tmp.append(format_key_value(key, value, severity))
 
 			for item in d:
 				if fold_msg == False:
-					if item == "collector" and bullet_collectors == True:
+					if item == "collector" and logparser_configuration.bullet_collectors == True:
 						tmp.append(f"• {d[item]}")
 					else:
 						tmp.append(format_key_value(item, d[item], severity))
@@ -1576,18 +1667,46 @@ def key_value(message, fold_msg = True):
 					message = ""
 				remnants = (tmp, severity)
 
-	if linebreaks == True and "\\n" in message and type(message) == str and fold_msg == False:
+	if logparser_configuration.msg_linebreaks == True and "\\n" in message and type(message) == str and fold_msg == False:
 		lines = message.split("\\n")
 		message = lines[0]
 		_remnants = []
-		for line in lines[1:]:
-			_remnants.append((line, severity))
-		if type(remnants) == tuple:
-			for remnant in remnants[0]:
-				_remnants.append((remnant, remnants[1]))
-			remnants = _remnants
-		elif type(remnants) == list:
-			remnants = _remnants + remnants
+		if len(lines) > 1:
+			for line in lines[1:]:
+				_remnants.append((line, severity))
+			if type(remnants) == tuple:
+				for remnant in remnants[0]:
+					_remnants.append((remnant, remnants[1]))
+				remnants = _remnants
+			elif type(remnants) == list:
+				remnants = _remnants + remnants
+	return facility, severity, message, remnants
+
+# For messages along the lines of:
+# "Foo" "key"="value" "key"="value"
+# Foo key=value key=value
+def key_value_with_leading_message(message, severity = loglevel.INFO, facility = "", fold_msg = True):
+	remnants = []
+
+	if fold_msg == True:
+		return facility, severity, message, remnants
+
+	# Split into substrings based on spaces
+	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
+	if tmp is not None and len(tmp) > 0:
+		if "=" not in tmp[0]:
+			for item in tmp[1:]:
+				# we couldn't parse this as "msg key=value"; give up
+				if "=" not in item:
+					return facility, severity, message, remnants
+			rest = message[len(tmp[0]):]
+			message = tmp[0]
+			global logparser_configuration
+			tmp_msg_extract = logparser_configuration.msg_extract
+			logparser_configuration.msg_extract = False
+			facility, severity, _message, _remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility)
+			logparser_configuration.msg_extract = tmp_msg_extract
+			remnants.append((_message, severity))
 	return facility, severity, message, remnants
 
 # [2021-09-24 12:43:53 +0000] [11] [INFO] Booting worker with pid: 11
@@ -2128,6 +2247,11 @@ def directory(message, fold_msg = True):
 
 	return facility, severity, _message, remnants
 
+def substitute_bullets(message, prefix):
+	if message.startswith(prefix):
+		message = message[0:len(prefix)].replace("*", "•") + message[len(prefix):]
+	return message
+
 def custom_parser(message, fold_msg = True, filters = []):
 	facility = ""
 	severity = loglevel.INFO
@@ -2142,7 +2266,10 @@ def custom_parser(message, fold_msg = True, filters = []):
 				message, severity, facility = __split_severity_facility_style(message, severity, facility)
 			elif _filter == "key_value":
 				if "=" in message:
-					facility, severity, message, remnants = key_value(message, fold_msg = fold_msg)
+					facility, severity, message, remnants = key_value(message, fold_msg = fold_msg, severity = severity, facility = facility)
+			elif _filter == "key_value_with_leading_message":
+				if "=" in message:
+					facility, severity, message, remnants = key_value_with_leading_message(message, fold_msg = fold_msg, severity = severity, facility = facility)
 			elif _filter == "directory":
 				facility, severity, message, remnants = directory(message, fold_msg = fold_msg)
 			elif _filter == "json":
@@ -2171,6 +2298,9 @@ def custom_parser(message, fold_msg = True, filters = []):
 				message, severity = split_bracketed_severity(message, default = _filter[1])
 			elif _filter[0] == "override_severity":
 				severity = custom_override_severity(message, severity, _filter[1])
+			# Filters
+			elif _filter[0] == "substitute_bullets":
+				message = substitute_bullets(message, _filter[1])
 
 	return facility, severity, message, remnants
 
@@ -2274,7 +2404,6 @@ builtin_parsers = [
 	("kilo", "", "", "kube_parser_json_glog"),
 	("", "", "gcr.io/knative", "kube_parser_1"),
 	("k8s-mlperf-image-classification-training", "", "", "kube_parser_1"),
-	("kube-apiserver", "", "", "kube_parser_structured_glog"),
 	("", "kube-rbac-proxy", "", "kube_parser_1"),
 	("kube-app-manager-controller", "kube-app-manager", "", "kube_app_manager"),
 	("kube-controller-manager", "", "", "kube_parser_structured_glog"),
@@ -2503,8 +2632,11 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name in ["glog", "json", "key_value", "strip_ansicodes", "ts_8601"]:
+							if rule_name in ["glog", "json", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601"]:
 								rules.append(rule_name)
+							elif rule_name == "substitute_bullets":
+								prefix = rule.get("prefix", "* ")
+								rules.append((rule_name, prefix))
 							elif rule_name == "override_severity":
 								overrides = []
 								for override in rule.get("overrides"):

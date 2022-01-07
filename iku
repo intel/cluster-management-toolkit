@@ -50,7 +50,7 @@ except ModuleNotFoundError:
 from logparser import logparser, loglevel, split_msg, lvl_to_4letter_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import deep_get, deep_get_with_fallback, stgroup, versiontuple
+from iktlib import deep_get, deep_get_with_fallback, stgroup, versiontuple, format_yaml
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_ram_usage, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_extract_string, strarray_wrap_line, themearray_to_strarray, themearray_extract_string, attr_to_curses_merged
 
 from ansible_helper import ansible_clean_results, ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
@@ -7558,7 +7558,7 @@ def cmdataloop(stdscr, obj, view, info = None):
 				dataformat = "__Raw"
 
 			if dataformat in ["YAML", "JSON"]:
-				messages = __format_yaml([obj.data])
+				messages = format_yaml([obj.data])
 			elif dataformat == "TOML":
 				messages = __format_toml(split_msg(obj.data))
 			elif dataformat == "CRT":
@@ -10462,11 +10462,6 @@ def __run_playbook(playbookpath, nodes, values = None):
 def run_playbook(playbook, nodes, values = None):
 	return __run_playbook(playbook.get("playbook"), nodes, values = values)
 
-def str_presenter(dumper, data):
-	if "\n" in data:
-		return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
-	return dumper.represent_scalar("tag:yaml.org,2002:str", data)
-
 # Take a certificate and highlight the markup
 def __format_crt(cert):
 	dumps = []
@@ -10842,80 +10837,6 @@ def __format_toml(lines):
 			# dumps.append([(line, ("types", "generic"))])
 	return dumps
 
-# Takes a list of yaml dictionaries and returns a single list of themearray
-def __format_yaml(objects):
-	dumps = []
-	indent = deep_get(iktconfig, "Global#indent", 4)
-
-	yaml.add_representer(str, str_presenter)
-
-	for obj in objects:
-		if type(obj) == dict:
-			split_dump = yaml.dump(obj, default_flow_style = False, indent = indent, width = sys.maxsize).splitlines()
-		else:
-			split_dump = obj.splitlines()
-		first = True
-		if len(split_dump) > 0 and "\n" not in obj and split_dump[0].startswith("'") and split_dump[0].endswith("'"):
-			split_dump[0] = split_dump[0][1:-1]
-
-		for line in split_dump:
-			# This allows us to use the yaml formatter for json too
-			if first == True:
-				first = False
-				if line in ["|", "|-"]:
-					continue
-			if len(line) == 0:
-				continue
-
-			tmpline = []
-			if line.lstrip(" ").startswith("#"):
-				tmpline += [
-					(line, ("types", "yaml_comment")),
-				]
-				dumps.append(tmpline)
-				continue
-			if line.lstrip(" ").startswith("- "):
-				tmp = re.match("^(\s*?)- (.*)", line)
-				tmpline += [
-					(f"{tmp[1]}", ("types", "generic")),
-					("separators", "yaml_list"),
-				]
-				line = tmp[2]
-				if len(line) == 0:
-					dumps.append(tmpline)
-					continue
-
-			if line.endswith(":"):
-				tmpline += [
-					(f"{line[:-1]}", ("types", "yaml_key")),
-					("separators", "yaml_key_separator"),
-				]
-			else:
-				tmp = re.match(r"^(.*?):(\s*?)(&|\.|)(.*)", line)
-				if tmp is not None:
-					key = tmp[1]
-					reference = tmp[2]
-					separator = tmp[3]
-					value = tmp[4]
-					tmpline += [
-						(f"{key}", ("types", "yaml_key")),
-						("separators", "yaml_key_separator"),
-						(f"{separator}", ("types", "generic")),
-						(f"{reference}", ("types", "yaml_reference")),
-						(f"{value}", ("types", "yaml_value")),
-					]
-				else:
-					tmpline += [
-						(f"{line}", ("types", "yaml_value")),
-					]
-
-			dumps.append(tmpline)
-		dumps.append([("", ("types", "generic"))])
-		dumps.append([("", ("types", "generic"))])
-		dumps.append([("", ("types", "generic"))])
-
-	return dumps
-
 def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None):
 	objects = []
 
@@ -10928,11 +10849,11 @@ def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None):
 		obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 		objects.append(obj)
 
-	themearrays = __format_yaml(objects)
+	themearrays = format_yaml(objects)
 	resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
 
 def infoview_view_yaml(uip, kind, obj, selected = None, title = None, headers = None, itemgetter = None, sortcolumn = None):
-	themearrays = __format_yaml([obj])
+	themearrays = format_yaml([obj])
 	resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
 
 def infoview_view_last_applied_configuration(uip, kind, obj, selected = None, title = None, headers = None, itemgetter = None, sortcolumn = None):
@@ -10941,7 +10862,7 @@ def infoview_view_last_applied_configuration(uip, kind, obj, selected = None, ti
 		data = json.loads(last_applied_configuration)
 	else:
 		return
-	themearrays = __format_yaml([data])
+	themearrays = format_yaml([data])
 	resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
 
 def delete_resource(uip, items = [], action = {}, values = {}, kind = None):
