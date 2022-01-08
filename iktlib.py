@@ -163,13 +163,7 @@ def __str_representer(dumper, data):
 		return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
 	return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
-# Takes a list of yaml dictionaries and returns a single list of themearray
-def format_yaml(objects, override_formatting = {}):
-	dumps = []
-	indent = 4 #deep_get(iktconfig, "Global#indent", 4)
-
-	yaml.add_representer(str, __str_representer)
-
+def format_yaml_line(line, override_formatting = {}):
 	if type(override_formatting) == dict:
 		generic_format = ("types", "generic")
 		comment_format = ("types", "yaml_comment")
@@ -186,6 +180,68 @@ def format_yaml(objects, override_formatting = {}):
 		list_format = ("- ", override_formatting)
 		separator_format = override_formatting
 		reference_format = override_formatting
+
+	tmpline = []
+	if line.lstrip(" ").startswith("#"):
+		tmpline += [
+			(line, comment_format),
+		]
+		return tmpline
+	if line.lstrip(" ").startswith("- "):
+		tmp = re.match("^(\s*?)- (.*)", line)
+		tmpline += [
+			(f"{tmp[1]}", generic_format),
+			list_format,
+		]
+		line = tmp[2]
+		if len(line) == 0:
+			return tmpline
+
+	if line.endswith(":"):
+		if type(override_formatting) == dict:
+			_key_format = deep_get(override_formatting, f"{line[:-1]}#key", key_format)
+		else:
+			_key_format = key_format
+		tmpline += [
+			(f"{line[:-1]}", _key_format),
+			(":", separator_format),
+		]
+	else:
+		tmp = re.match(r"^(.*?)(:\s*?)(&|\.|)(.*)", line)
+		if tmp is not None and (tmp[1].strip().startswith("\"") and tmp[1].strip().endswith("\"") or (not tmp[1].strip().startswith("\"") and not tmp[1].strip().endswith("\""))):
+			key = tmp[1]
+			reference = tmp[2]
+			separator = tmp[3]
+			value = tmp[4]
+			if type(override_formatting) == dict:
+				_key_format = deep_get(override_formatting, f"{key.strip()}#key", key_format)
+				_value_format = deep_get(override_formatting, f"{key.strip()}#value", value_format)
+			else:
+				_key_format = key_format
+				_value_format = value_format
+			tmpline += [
+				(f"{key}", _key_format),
+				(f"{separator}", separator_format),
+				(f"{reference}", reference_format),
+				(f"{value}", _value_format),
+			]
+		else:
+			if type(override_formatting) == dict:
+				_value_format = deep_get(override_formatting, f"{line}#value", value_format)
+			else:
+				_value_format = value_format
+			tmpline += [
+				(f"{line}", _value_format),
+			]
+
+	return tmpline
+
+# Takes a list of yaml dictionaries and returns a single list of themearray
+def format_yaml(objects, override_formatting = {}):
+	dumps = []
+	indent = 4 #deep_get(iktconfig, "Global#indent", 4)
+
+	yaml.add_representer(str, __str_representer)
 
 	for i in range(0, len(objects)):
 		obj = objects[i]
@@ -206,61 +262,7 @@ def format_yaml(objects, override_formatting = {}):
 			if len(line) == 0:
 				continue
 
-			tmpline = []
-			if line.lstrip(" ").startswith("#"):
-				tmpline += [
-					(line, comment_format),
-				]
-				dumps.append(tmpline)
-				continue
-			if line.lstrip(" ").startswith("- "):
-				tmp = re.match("^(\s*?)- (.*)", line)
-				tmpline += [
-					(f"{tmp[1]}", generic_format),
-					list_format,
-				]
-				line = tmp[2]
-				if len(line) == 0:
-					dumps.append(tmpline)
-					continue
-
-			if line.endswith(":"):
-				if type(override_formatting) == dict:
-					_key_format = deep_get(override_formatting, f"{line[:-1]}#key", key_format)
-				else:
-					_key_format = key_format
-				tmpline += [
-					(f"{line[:-1]}", _key_format),
-					(":", separator_format),
-				]
-			else:
-				tmp = re.match(r"^(.*?)(:\s*?)(&|\.|)(.*)", line)
-				if tmp is not None and (tmp[1].strip().startswith("\"") and tmp[1].strip().endswith("\"") or (not tmp[1].strip().startswith("\"") and not tmp[1].strip().endswith("\""))):
-					key = tmp[1]
-					reference = tmp[2]
-					separator = tmp[3]
-					value = tmp[4]
-					if type(override_formatting) == dict:
-						_key_format = deep_get(override_formatting, f"{key.strip()}#key", key_format)
-						_value_format = deep_get(override_formatting, f"{key.strip()}#value", value_format)
-					else:
-						_key_format = key_format
-						_value_format = value_format
-					tmpline += [
-						(f"{key}", _key_format),
-						(f"{separator}", separator_format),
-						(f"{reference}", reference_format),
-						(f"{value}", _value_format),
-					]
-				else:
-					if type(override_formatting) == dict:
-						_value_format = deep_get(override_formatting, f"{line}#value", value_format)
-					else:
-						_value_format = value_format
-					tmpline += [
-						(f"{line}", _value_format),
-					]
-
+			tmpline = format_yaml_line(line, override_formatting = override_formatting)
 			dumps.append(tmpline)
 
 		if i < len(objects) - 1:
