@@ -1,0 +1,31 @@
+- name: starboard
+  show_in_selector: false
+  matchkeys:
+  - pod_name: starboard-operator
+  - image_name: aquasec/kube-hunter
+  - image_name: aquasec/kube-bench
+  parser_rules:
+  - name: glog
+  - name: json
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Starting operator"
+      loglevel: notice
+- name: starboard
+  show_in_selector: false
+  matchkeys:
+  - image_name: aquasec/trivy
+    container_type: init_container
+  parser_rules:
+  - name: strip_ansicodes
+  - name: ts_8601
+  - name: 4letter_spaced_severity
+- name: starboard
+  show_in_selector: false
+  matchkeys:
+  - image_name: aquasec/trivy
+    container_type: container
+  - image_name: /fairwinds/polaris
+  parser_rules:
+  - name: json_line

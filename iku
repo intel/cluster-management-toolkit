@@ -9603,8 +9603,10 @@ def containerinfoloop(stdscr, container, kind, obj):
 
 			if kind == ("InitContainer", ""):
 				src_statuses = deep_get(pod_info.ref, "status#initContainerStatuses", [])
+				container_type = "init_container"
 			else:
 				src_statuses = deep_get(pod_info.ref, "status#containerStatuses", [])
+				container_type = "container"
 			container_status = None
 			for container_status in src_statuses:
 				if deep_get(container_status, "name") == containername:
@@ -9636,11 +9638,11 @@ def containerinfoloop(stdscr, container, kind, obj):
 
 			for line in splitmsg:
 				if internal_error:
-					timestamp, facility, severity, message, remnants, parser = logparser("internal_error", "", "", line)
+					timestamp, facility, severity, message, remnants, parser = logparser("internal_error", "", "", line, container_type = container_type)
 				elif raw_logs:
-					timestamp, facility, severity, message, remnants, parser = logparser("raw", "", "", line)
+					timestamp, facility, severity, message, remnants, parser = logparser("raw", "", "", line, container_type = container_type)
 				else:
-					timestamp, facility, severity, message, remnants, parser = logparser(podname, containername, image, line, fold_msg = fold_msg, override_parser = override_parser)
+					timestamp, facility, severity, message, remnants, parser = logparser(podname, containername, image, line, fold_msg = fold_msg, override_parser = override_parser, container_type = container_type)
 				# If this is a (themestr, severity) tuple, ignore the severity;
 				# it's only necessary for remnants since the severity is passed separarely
 				if type(message) == tuple:

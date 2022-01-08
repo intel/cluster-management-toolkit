@@ -32,7 +32,7 @@ import re
 import sys
 import yaml
 
-from iktlib import deep_get_with_fallback, format_yaml
+from iktlib import deep_get_with_fallback, format_yaml, format_yaml_line
 
 HOMEDIR = str(Path.home())
 IKTDIR = os.path.join(HOMEDIR, ".ikt")
@@ -2230,12 +2230,11 @@ def directory(message, fold_msg = True):
 
 	return facility, severity, _message, remnants
 
-# input messages of the format:
-# [     0.000384s]  INFO ThreadId(01) linkerd2_proxy::rt: Using single-threaded proxy runtime
+# input: [     0.000384s]  INFO ThreadId(01) linkerd2_proxy::rt: Using single-threaded proxy runtime
 # output:
-# severity: loglevel.INFO
-# facility: ThreadId(01)
-# msg: [     0.000384s] linkerd2_proxy::rt: Using single-threaded proxy runtime
+#   severity: loglevel.INFO
+#   facility: ThreadId(01)
+#   msg: [     0.000384s] linkerd2_proxy::rt: Using single-threaded proxy runtime
 def seconds_severity_facility(message, fold_msg = True):
 	facility = ""
 	severity = loglevel.INFO
@@ -2251,6 +2250,7 @@ def seconds_severity_facility(message, fold_msg = True):
 
 def substitute_bullets(message, prefix):
 	if message.startswith(prefix):
+		# We don't want to replace all "*" in the message with bullet, just prefixes
 		message = message[0:len(prefix)].replace("*", "•") + message[len(prefix):]
 	return message
 
@@ -2277,6 +2277,8 @@ def custom_parser(message, fold_msg = True, filters = []):
 			elif _filter == "json":
 				if message.startswith("{\""):
 					message, _timestamp, severity, facility, remnants = split_json_style(message, timestamp = None, fold_msg = fold_msg)
+			elif _filter == "json_line":
+				message = format_yaml_line(message, override_formatting = {})
 			elif _filter == "seconds_severity_facility":
 				facility, severity, message, remnants = seconds_severity_facility(message, fold_msg = fold_msg)
 			# Timestamp formats
@@ -2309,20 +2311,6 @@ def custom_parser(message, fold_msg = True, filters = []):
 				message = substitute_bullets(message, _filter[1])
 
 	return facility, severity, message, remnants
-
-# istio-proxy:
-# 2020-04-17T10:58:19.855304Z     info    FLAG: --applicationPorts="[]"
-# 2020-04-17T10:58:19.855418Z     info    Version root@1844d064-72cc-11e9-a0d5-0a580a2c0304-docker.io/istio-1.1.6-04850e14d38a69a38c16c800e237b1108056513e-Clean
-# [2020-04-17 10:58:19.870][18][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Cluster.hosts' from file cds.proto.
-# 2020-04-14T14:20:47.966209Z     info    ControlZ available at 10.32.0.25:9876
-
-# application-controller-stateful-set
-# 2020/04/17 12:41:22 Requested Deployment.apps, Registered: apps/v1beta1, Kind=DeploymentList
-# 2020/04/17 12:41:22 *v1beta1.Application/knative-serving/knative-serving-install(cmpnt:app)  Expected Resources:
-
-# argo-ui:
-# start argo-ui on 0.0.0.0:8001
-# info: 200 GET 13ms / {"meta":{},"timestamp":"2020-04-17T10:18:48.775Z"}
 
 builtin_parsers = [
 	# Formats:
@@ -2535,15 +2523,6 @@ builtin_parsers = [
 	("spark-operatorsparkoperator", "", "", "kube_parser_1"),
 	("spartakus-volunteer", "", "", "kube_parser_1"),
 
-	# This is starboard; the pod names seem to be UUIDs, so pointless to try to match
-	# XXX: The kube-bench log format is actually structured, but it seems to be malformed
-	("", "kube-bench", "", "basic_8601"),
-	("", "kube-hunter", "", "kube_parser_json"),
-	("", "polaris", "", "kube_parser_structured_glog"),
-	("", "create", "docker.io/aquasec/trivy", "kube_parser_json_glog"),
-	("", "", "docker.io/aquasec/trivy", "basic_8601"),
-	("starboard-operator", "", "", "kube_parser_json_glog"),
-
 	("telemetry-aware-scheduling", "", "", "kube_parser_1"),
 	("tensorboard-controller-controller-manager", "manager", "", "istio_pilot"),
 	("tensorboard", "tensorboard", "", "kube_parser_1"),
@@ -2611,10 +2590,11 @@ def init_parser_list():
 						pod_name = matchkey.get("pod_name", "")
 						container_name = matchkey.get("container_name", "")
 						image_name = matchkey.get("image_name", "")
+						container_type = matchkey.get("container_type", "container")
 						# We need at least one way of matching
 						if len(pod_name) == 0 and len(container_name) == 0 and len(image_name) == 0:
 							continue
-						matchrule = (pod_name, container_name, image_name)
+						matchrule = (pod_name, container_name, image_name, container_type)
 						matchrules.append(matchrule)
 
 					if len(matchrules) == 0:
@@ -2628,7 +2608,7 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name in ["glog", "json", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601", "seconds_severity_facility", "4letter_spaced_severity"]:
+							if rule_name in ["glog", "json", "json_line", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601", "seconds_severity_facility", "4letter_spaced_severity"]:
 								rules.append(rule_name)
 							elif rule_name == "substitute_bullets":
 								prefix = rule.get("prefix", "* ")
@@ -2678,7 +2658,7 @@ def init_parser_list():
 			else:
 				parser_name = builtin_parser[3]
 				show_in_selector = True
-			matchrules = [(builtin_parser[0], builtin_parser[1], builtin_parser[2])]
+			matchrules = [(builtin_parser[0], builtin_parser[1], builtin_parser[2], "container")]
 		# New-style parser definition;
 		elif type(builtin_parser[2]) == list:
 			parser_name = builtin_parser[0]
@@ -2707,7 +2687,7 @@ def get_parser_list():
 # with similar ordering (YYYY MM DD HH MM SS, with several choices for separators and whitespace,
 # include none, accepted)
 #	2020-02-16T22:03:08.736292621Z
-def logparser(pod_name, container_name, image_name, message, fold_msg = True, override_parser = None):
+def logparser(pod_name, container_name, image_name, message, fold_msg = True, override_parser = None, container_type = "container"):
 	# First extract the Kubernetes timestamp
 	message, timestamp = split_iso_timestamp(message, None)
 
@@ -2733,13 +2713,14 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 			pod_prefix = matchrule[0]
 			container_prefix = matchrule[1]
 			image_prefix = matchrule[2]
+			_container_type = matchrule[3]
 			_image_name = image_name
 			if image_prefix.startswith("/"):
 				tmp = image_name.split("/", 1)
 				if len(tmp) == 2:
 					_image_name = "/" + tmp[1]
 
-			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and _image_name.startswith(image_prefix):
+			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and _image_name.startswith(image_prefix) and container_type  == _container_type:
 				uparser = parser.parser_name
 				# This allows for multiple parsers to be tested on the same log until a match is found
 				if type(parser.parser) == list:
