@@ -1,0 +1,38 @@
+- name: linkerd
+  show_in_selector: false
+  matchkeys:
+  - container_name: linkerd-proxy
+  parser_rules:
+  - name: seconds_severity_facility
+- name: linkerd
+  matchkeys:
+  - pod_name: linkerd-destination
+    container_name: policy
+  parser_rules:
+  - name: ts_8601
+  - name: 4letter_spaced_severity
+- name: linkerd
+  matchkeys:
+  - pod_name: linkerd-destination
+    container_name: destination
+  - pod_name: linkerd-destination
+    container_name: sp-validator
+  - pod_name: linkerd-identity
+    container_name: identity
+  - pod_name: linkerd-proxy-injector
+    container_name: proxy-injector
+  - image_name: /linkerd/web
+  - image_name: /linkerd/tap
+  parser_rules:
+  - name: ts_8601
+  - name: key_value
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "http: TLS handshake error"
+      loglevel: warning
+- name: linkerd
+  matchkeys:
+  - container_name: linkerd-init
+  parser_rules:
+  - name: ts_8601

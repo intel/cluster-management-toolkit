@@ -186,7 +186,7 @@ def lvl_to_4letter_severity(lvl):
 
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
-def split_4letter_severity(message):
+def split_4letter_colon_severity(message):
 	severities = {
 		"CRIT: ": loglevel.CRIT,
 		"FATA: ": loglevel.CRIT,
@@ -202,6 +202,24 @@ def split_4letter_severity(message):
 		severity = loglevel.INFO
 	else:
 		message = message[len("ERRO: "):]
+
+	return message, severity
+
+def split_4letter_spaced_severity(message, severity = loglevel.INFO):
+	severities = {
+		"CRIT": loglevel.CRIT,
+		"FATA": loglevel.CRIT,
+		"ERRO": loglevel.ERR,
+		"WARN": loglevel.WARNING,
+		"NOTI": loglevel.NOTICE,
+		"INFO": loglevel.INFO,
+		"DEBU": loglevel.DEBUG,
+	}
+
+	tmp = re.match(r"\s*([a-zA-Z]{4})\s+(.*)", message)
+	if tmp is not None:
+		severity = severities.get(tmp[1], severity)
+		message = tmp[2]
 
 	return message, severity
 
@@ -499,14 +517,6 @@ def __split_severity_facility_style(message, severity = loglevel.INFO, facility 
 		severity = text_to_severity(tmp[1], default = severity)
 		facility = tmp[2]
 		message = tmp[3]
-
-	return message, severity, facility
-
-# 2020-12-27T02:57:49.887Z        INFO    controller-runtime.manager      starting metrics server {"path": "/metrics"}
-def split_severity_facility_style(message, severity = loglevel.INFO, facility = ""):
-	_message, _timestamp = split_iso_timestamp(message, None)
-	if _message != message:
-		message, severity, facility = split_severity_facility_style(_message, severity, facility)
 
 	return message, severity, facility
 
@@ -1349,7 +1359,7 @@ def weave_scope(message, fold_msg = True):
 		facility = tmp[1]
 		message = tmp[2]
 
-		message, severity = split_4letter_severity(message)
+		message, severity = split_4letter_colon_severity(message)
 		message, _timestamp = split_iso_timestamp(message, None)
 	else:
 		# Try to parse this as key=value
@@ -1370,7 +1380,7 @@ def weave(message, fold_msg = True):
 	# It seems for some reason we may end up with NUL in the log; remove them
 	message = message.replace("\0", "")
 
-	message, severity = split_4letter_severity(message)
+	message, severity = split_4letter_colon_severity(message)
 	# Another timestamp to remove
 	message, _timestamp = split_iso_timestamp(message, None)
 
@@ -1620,7 +1630,6 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True)
 							remnants.append((f"{line}", severity))
 		else:
 			tmp = []
-			msg = ""
 			# If we're extracting msg we always want msg first
 			if logparser_configuration.msg_extract == True and fold_msg == False and len(msg) > 0:
 				tmp.append(msg)
@@ -1686,6 +1695,7 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True)
 # "Foo" "key"="value" "key"="value"
 # Foo key=value key=value
 def key_value_with_leading_message(message, severity = loglevel.INFO, facility = "", fold_msg = True):
+	global logparser_configuration
 	remnants = []
 
 	if fold_msg == True:
@@ -1701,7 +1711,6 @@ def key_value_with_leading_message(message, severity = loglevel.INFO, facility =
 					return facility, severity, message, remnants
 			rest = message[len(tmp[0]):]
 			message = tmp[0]
-			global logparser_configuration
 			tmp_msg_extract = logparser_configuration.msg_extract
 			logparser_configuration.msg_extract = False
 			facility, severity, _message, _remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility)
@@ -1875,36 +1884,6 @@ def split_tiller_style(message, facility = None):
 			facility = tmp[1]
 		message = tmp[3]
 	return message, facility
-
-# This should possibly be merged with kube_parser_structured_glog
-def linkerd(message, fold_msg = True):
-	facility = ""
-	severity = loglevel.INFO
-	remnants = []
-
-	# Linkerd specific
-	tmp = re.match(r"\[[0-9.\ss]+\]\s*([A-Z]+)\s(ThreadId\(\d+\))\s*(.*)", message)
-
-	if tmp is not None:
-		severity = text_to_severity(tmp[1])
-		facility = f"{tmp[2]}"
-		message = tmp[3]
-
-	# Split into substrings based on spaces
-	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
-
-	if tmp is not None and len(tmp) > 0 and "=" in tmp[0]:
-		fac, sev, message, remnants = key_value(message, fold_msg = fold_msg)
-		if len(facility) == 0:
-			facility = fac
-		if sev < severity:
-			severity = sev
-
-	# If the message contains a version,
-	# or something similarly useful, bump the severity
-	message, severity = override_severity(message, severity)
-
-	return facility, severity, message, remnants
 
 # Messages on the format:
 # <key>:<whitespace>...<value>
@@ -2247,6 +2226,25 @@ def directory(message, fold_msg = True):
 
 	return facility, severity, _message, remnants
 
+# input messages of the format:
+# [     0.000384s]  INFO ThreadId(01) linkerd2_proxy::rt: Using single-threaded proxy runtime
+# output:
+# severity: loglevel.INFO
+# facility: ThreadId(01)
+# msg: [     0.000384s] linkerd2_proxy::rt: Using single-threaded proxy runtime
+def seconds_severity_facility(message, fold_msg = True):
+	facility = ""
+	severity = loglevel.INFO
+	remnants = []
+
+	tmp = re.match(r"(\[\s*?\d+?\.\d+?s\])\s+(....)\s+(.+?)\s(.*)", message)
+	if tmp is not None:
+		severity = text_to_severity(tmp[2], default = severity)
+		facility = tmp[3]
+		message = [(f"{tmp[1]} ", ("logview", "timestamp")), (f"{tmp[4]}", ("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+
+	return facility, severity, message, remnants
+
 def substitute_bullets(message, prefix):
 	if message.startswith(prefix):
 		message = message[0:len(prefix)].replace("*", "•") + message[len(prefix):]
@@ -2275,6 +2273,8 @@ def custom_parser(message, fold_msg = True, filters = []):
 			elif _filter == "json":
 				if message.startswith("{\""):
 					message, _timestamp, severity, facility, remnants = split_json_style(message, timestamp = None, fold_msg = fold_msg)
+			elif _filter == "seconds_severity_facility":
+				facility, severity, message, remnants = seconds_severity_facility(message, fold_msg = fold_msg)
 			# Timestamp formats
 			elif _filter == "ts_8601": # Anything that resembles ISO-8601
 				message, _timestamp = split_iso_timestamp(message, None)
@@ -2284,6 +2284,8 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Severity formats
 			elif _filter == "colon_severity":
 				message, severity = split_colon_severity(message, severity)
+			elif _filter == "4letter_spaced_severity":
+				message, severity = split_4letter_spaced_severity(message, severity)
 			# Filters
 			elif _filter == "strip_ansicodes":
 				message = strip_ansicodes(message)
@@ -2416,8 +2418,6 @@ builtin_parsers = [
 	("kube-scheduler", "", "", "kube_parser_structured_glog"),
 	("kube-state-metrics", "", "", "kube_parser_1"),
 
-	("linkerd", "linkerd-init", "", "basic_8601"),
-	("linkerd", "", "", "linkerd"),
 	("local-path-provisioner", "", "", "kube_parser_1"),
 
 	("metacontroller", "metacontroller", "", "kube_parser_1"),
@@ -2600,21 +2600,15 @@ def init_parser_list():
 				except:
 					sys.exit(f"{os.path.join(parser_dir, filename)=}\n{d=}")
 				for parser in d:
-					parser_name = parser.get("name")
-					if parser_name is None or len(parser_name) == 0:
+					parser_name = parser.get("name", "")
+					if len(parser_name) == 0:
 						continue
 					show_in_selector = parser.get("show_in_selector", False)
 					matchrules = []
 					for matchkey in parser.get("matchkeys"):
-						pod_name = matchkey.get("pod_name")
-						if pod_name is None:
-							pod_name = ""
-						container_name = matchkey.get("container_name")
-						if container_name is None:
-							container_name = ""
-						image_name = matchkey.get("image_name")
-						if image_name is None:
-							image_name = ""
+						pod_name = matchkey.get("pod_name", "")
+						container_name = matchkey.get("container_name", "")
+						image_name = matchkey.get("image_name", "")
 						# We need at least one way of matching
 						if len(pod_name) == 0 and len(container_name) == 0 and len(image_name) == 0:
 							continue
@@ -2632,7 +2626,7 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name in ["glog", "json", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601"]:
+							if rule_name in ["glog", "json", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601", "seconds_severity_facility", "4letter_spaced_severity"]:
 								rules.append(rule_name)
 							elif rule_name == "substitute_bullets":
 								prefix = rule.get("prefix", "* ")
@@ -2669,7 +2663,6 @@ def init_parser_list():
 							rules.append(rule)
 
 					parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = ("custom", rules)))
-
 	# Now do the same for built-in parsers
 	for builtin_parser in builtin_parsers:
 		# Old-style parser definition
@@ -2738,8 +2731,13 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 			pod_prefix = matchrule[0]
 			container_prefix = matchrule[1]
 			image_prefix = matchrule[2]
+			_image_name = image_name
+			if image_prefix.startswith("/"):
+				tmp = image_name.split("/", 1)
+				if len(tmp) == 2:
+					_image_name = "/" + tmp[1]
 
-			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and image_name.startswith(image_prefix):
+			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and _image_name.startswith(image_prefix):
 				uparser = parser.parser_name
 				# This allows for multiple parsers to be tested on the same log until a match is found
 				if type(parser.parser) == list:

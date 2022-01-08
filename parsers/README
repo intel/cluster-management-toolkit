@@ -4,6 +4,16 @@ Every file is a list of rules; even files with only one rule must be a list.
 If a parser rule should be applied multiple times, such as when filtering out
 timestamps, just specify the same rule again.
 
+If you need multiple different rules for a resource depending on the pod/container
+combination, but want them all listed as the same parser you can specify the
+same name multiple times. Note, however, that such rules cannot be shown
+in the selector.
+
+Note that if image_name starts with "/" the match will first strip the server
+from the path to the image. This should be the typical case, since other behaviour
+won't allow for images fetched from mirrors. In cases where you want to be able
+to treat images from different servers differently you simply match against the full URL.
+
 - name: name of the parser (displayed as parser name)
   show_in_selector: Should the parser be shown in the override selector?
     (default: False; Unless the parser is very generic you always want to set this to false)
