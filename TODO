@@ -4,17 +4,15 @@ ALL:
 	  when running prepare_node, but ironically the systems that are most likely to need it
 	  (the ansible version shipping with Ubuntu 20.04 LTS, for instance) doesn't have the
 	  ansible-galaxy collection list command, so there's no quick way to query whether it's installed...
-	• deep_get should be moved to iktlib
 	• When running either ikt or iku, check whether .ssh/id_ed25519.pub is in authorized_keys
 	  in .ikt/ansible/inventory.yaml; if not, add it
 
 kubernetes_helper:
-	• Add CNI identification for antrea
+	• ...
 
 iku:
 	• Error messages are skipped by the ansible handler
 	• config map YAML-parser should handle single-line files (optionally unfolding)
-	• config map YAML-parser should not have a base-indent by default
 
 iktinv:
 	• Optionally limit rebuild-inventory to a subset of clusters
@@ -26,8 +24,8 @@ iktadm:
 	  and the password might not be the same on the remote system and the local system anyway
 
 logparser:
-	• Support for drop-in parser definitions
 	• Line too long shouldn't override severity
+	  | Ideally max line length should be a.) configurable, b.) trigger line splitting into remnants
 	• We cannot replace tabs with spaces in the logparser; we need to do it in the printers instead;
 	  this way we know the real line length (due to facility etc. we might not have the same starting point
 	  for every line, so expanding tabs into spaces won't work properly)

@@ -377,6 +377,8 @@ class KubernetesHelper:
 		cni = []
 
 		# We're gonna have to do some sleuthing here
+		# Antrea:
+		cni += self.__identify_cni("antrea", ("DaemonSet", "apps"), "metadata.name=antrea-agent", "antrea-agent")
 		# Canal:
 		cni += self.__identify_cni("canal", ("DaemonSet", "apps"), "metadata.name=canal", "calico-node")
 		# Calico:
