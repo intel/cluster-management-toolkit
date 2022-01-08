@@ -1337,7 +1337,7 @@ class KubernetesHelper:
 		},
 		# linkerd.io
 		("ServiceProfile", "linkerd.io"): {
-			"api_family": "linkerd.io/v1alpha2/",
+			"api_family": ["linkerd.io/v1alpha2/"],
 			"api": "serviceprofiles",
 		},
 		# machinelearning.seldon.io
@@ -1565,6 +1565,17 @@ class KubernetesHelper:
 			"api_family": "apis/packages.operators.coreos.com/v1/",
 			"api": "packagemanifests",
 			"aliases": ["pkgmanifests"],
+		},
+		# policy.linkerd.io
+		("ServerAuthorization", "policy.linkerd.io"): {
+			"api_family": ["policy.linkerd.io/v1beta1/"],
+			"api": "serverauthorizations",
+			"aliases": ["saz"],
+		},
+		("Server", "policy.linkerd.io"): {
+			"api_family": ["policy.linkerd.io/v1beta1/"],
+			"api": "servers",
+			"aliases": ["srv"],
 		},
 		# project.openshift.io
 		("ProjectRequest", "project.openshift.io"): {
