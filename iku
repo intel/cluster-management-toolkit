@@ -5684,6 +5684,9 @@ field_templates = {
 		"field_colors": [("types", "generic"), ("types", "generic")],
 		"field_separators": [("separators", "selector")],
 	},
+	"policy_type": {
+		"header": "Policy Type:",
+	},
 	"port": {
 		# (name, port, protocol)
 		"header": "Port:",
@@ -5691,16 +5694,9 @@ field_templates = {
 		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
 		"field_separators": [("separators", "port"), ("separators", "service")],
 	},
-	"policy_type": {
-		"header": "Policy Type:",
-	},
-	"ports_svc": {
-		# (name, port, protocol)
-		"header": "Ports:",
-		"datagetter": datagetter_svc_ports,
-		"generator": generator_list,
-		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
-		"field_separators": [("separators", "port"), ("separators", "service")],
+	"port_linkerd": {
+		"header": "Port:",
+		"path": "spec#port",
 	},
 	"ports_ep": {
 		# (name, port, protocol)
@@ -5716,6 +5712,14 @@ field_templates = {
 		"header": "Ports:",
 		"path": "ports",
 		"datagetter": datagetter_eps_ports,
+		"generator": generator_list,
+		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
+		"field_separators": [("separators", "port"), ("separators", "service")],
+	},
+	"ports_svc": {
+		# (name, port, protocol)
+		"header": "Ports:",
+		"datagetter": datagetter_svc_ports,
 		"generator": generator_list,
 		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
 		"field_separators": [("separators", "port"), ("separators", "service")],
@@ -5743,6 +5747,10 @@ field_templates = {
 		"header": "Privileged:",
 		"path": "spec#privileged",
 		"default": "False",
+	},
+	"protocol": {
+		"header": "Protocol:",
+		"path": "spec#proxyProtocol",
 	},
 	"provider": {
 		"header": "Provider:",
@@ -5937,6 +5945,10 @@ field_templates = {
 	"selinux": {
 		"header": "SELinux:",
 		"path": "spec#seLinux#rule",
+	},
+	"server": {
+		"header": "Server:",
+		"path": "spec#server#name",
 	},
 	"service": {
 		# (namespace, name, port)
@@ -15348,6 +15360,22 @@ views = {
 		"fields": ["namespace", "name", "secret_type", "data", "age"],
 		"kind": ("Secret", ""),
 	},
+	# policy.linkerd.io
+	"Server Authorizations": {
+		"commandline": ["serverauthorizations", "serverauthorization", "saz"],
+		"group": "Network",
+		"fields": ["namespace", "name", "server"],
+		"sortcolumn": "namespace",
+		"kind": ("ServerAuthorization", "policy.linkerd.io"),
+	},
+	# policy.linkerd.io
+	"Servers": {
+		"commandline": ["servers", "server", "srv"],
+		"group": "Network",
+		"fields": ["namespace", "name", "port_linkerd", "protocol"],
+		"sortcolumn": "namespace",
+		"kind": ("Server", "policy.linkerd.io"),
+	},
 	# traefik.containo.us
 	"Servers Transports": {
 		"commandline": ["serverstransports", "serverstransport"],
@@ -15392,6 +15420,14 @@ views = {
 		"group": "Monitoring",
 		"fields": ["namespace", "name", "age"],
 		"kind": ("ServiceMonitor", "monitoring.coreos.com"),
+	},
+	# linkerd.io
+	"Service Profiles": {
+		"commandline": ["serviceprofiles", "serviceprofile", "sp"],
+		"group": "Network",
+		"fields": ["namespace", "name", "age"],
+		"sortcolumn": "namespace",
+		"kind": ("ServiceProfile", "linkerd.io"),
 	},
 	# networking.istio.io
 	"Sidecars": {
