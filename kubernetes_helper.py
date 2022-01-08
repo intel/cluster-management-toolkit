@@ -712,7 +712,7 @@ class KubernetesHelper:
 
 		# access.smi-spec.io
 		("TrafficTarget", "access.smi-spec.io"): {
-			"api_family": "split.smi-spec.io/v1alpha2/",
+			"api_family": "apis/access.smi-spec.io/v1alpha2/",
 			"api": "traffictargets",
 		},
 		# acme.cert-manager.io <= split from: cert-manager.io
@@ -1339,7 +1339,7 @@ class KubernetesHelper:
 		},
 		# linkerd.io
 		("ServiceProfile", "linkerd.io"): {
-			"api_family": ["linkerd.io/v1alpha2/"],
+			"api_family": ["apis/linkerd.io/v1alpha2/"],
 			"api": "serviceprofiles",
 		},
 		# machinelearning.seldon.io
@@ -1570,12 +1570,12 @@ class KubernetesHelper:
 		},
 		# policy.linkerd.io
 		("ServerAuthorization", "policy.linkerd.io"): {
-			"api_family": ["policy.linkerd.io/v1beta1/"],
+			"api_family": ["apis/policy.linkerd.io/v1beta1/"],
 			"api": "serverauthorizations",
 			"aliases": ["saz"],
 		},
 		("Server", "policy.linkerd.io"): {
-			"api_family": ["policy.linkerd.io/v1beta1/"],
+			"api_family": ["apis/policy.linkerd.io/v1beta1/"],
 			"api": "servers",
 			"aliases": ["srv"],
 		},
@@ -1704,20 +1704,20 @@ class KubernetesHelper:
 		},
 		# specs.smi-spec.io
 		("HTTPRouteGroup", "specs.smi-spec.io"): {
-			"api_family": ["specs.smi-spec.io/v1alpha4/", "specs.smi-spec.io/v1alpha3/", "specs.smi-spec.io/v1alpha3/"],
+			"api_family": ["apis/specs.smi-spec.io/v1alpha4/", "apis/specs.smi-spec.io/v1alpha3/", "apis/specs.smi-spec.io/v1alpha3/"],
 			"api": "httproutegroups",
 		},
 		("TCPRoute", "specs.smi-spec.io"): {
-			"api_family": ["specs.smi-spec.io/v1alpha4/", "specs.smi-spec.io/v1alpha3/"],
+			"api_family": ["apis/specs.smi-spec.io/v1alpha4/", "apis/specs.smi-spec.io/v1alpha3/"],
 			"api": "tcproutes",
 		},
 		("UDPRoute", "specs.smi-spec.io"): {
-			"api_family": "specs.smi-spec.io/v1alpha4/",
+			"api_family": "apis/specs.smi-spec.io/v1alpha4/",
 			"api": "tcproutes",
 		},
 		# split.smi-spec.io
 		("TrafficSplit", "split.smi-spec.io"): {
-			"api_family": ["split.smi-spec.io/v1alpha4/", "split.smi-spec.io/v1alpha3/", "split.smi-spec.io/v1alpha2/", "split.smi-spec.io/v1alpha1/"],
+			"api_family": ["apis/split.smi-spec.io/v1alpha4/", "apis/split.smi-spec.io/v1alpha3/", "apis/split.smi-spec.io/v1alpha2/", "apis/split.smi-spec.io/v1alpha1/"],
 			"api": "trafficsplits",
 		},
 		# stats.antrea.io
