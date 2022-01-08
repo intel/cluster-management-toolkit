@@ -1,0 +1,12 @@
+- name: grafana
+  show_in_selector: false
+  matchkeys:
+  - pod_name: grafana
+    container_name: grafana
+  parser_rules:
+  - name: key_value
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Starting Grafana"
+      loglevel: notice

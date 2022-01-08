@@ -1,0 +1,12 @@
+- name: prometheus
+  show_in_selector: false
+  matchkeys:
+  - pod_name: prometheus
+    container_name: prometheus
+  parser_rules:
+  - name: key_value
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Starting Prometheus"
+      loglevel: notice

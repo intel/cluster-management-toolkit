@@ -1644,7 +1644,11 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True)
 						for key in ["msg", "err", "error"]:
 							value = d.pop(key, "")
 							if len(value) > 0:
-								tmp.append(f"{key}={value}")
+								if logparser_configuration.msg_extract == True and key == "msg":
+									# We already have the message extracted
+									tmp.append(msg)
+								else:
+									tmp.append(f"{key}={value}")
 					else:
 						msg = d.get("msg", "")
 						if len(msg) > 0:
@@ -2521,8 +2525,6 @@ builtin_parsers = [
 	("prometheus-k8s", "", "", "kube_parser_structured_glog"),
 	("prometheus-operator", "", "", "key_value"),
 	("", "kube-prometheus-stack", "", "kube_parser_structured_glog"),
-	# This needs to be last of the prometheus parsers
-	("prometheus", "prometheus", "", "kube_parser_structured_glog"),
 	("pytorch-operator", "", "", "kube_parser_1"),	#ALMOST
 
 	("", "reaper-operator", "", "kube_app_manager"),
