@@ -850,6 +850,7 @@ class KubernetesHelper:
 		("ClusterIssuer", "cert-manager.io"): {
 			"api_family": ["apis/cert-manager.io/v1/", "apis/cert-manager.io/v1alpha2/", "apis/certmanager.k8s.io/v1alpha1/"],
 			"api": "clusterissuers",
+			"namespaced": False,
 		},
 		("Issuer", "cert-manager.io"): {
 			"api_family": ["apis/cert-manager.io/v1/", "apis/cert-manager.io/v1alpha2/", "apis/certmanager.k8s.io/v1alpha1/"],
