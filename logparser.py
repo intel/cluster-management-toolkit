@@ -548,12 +548,12 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 		# If msg_first we reorder the dict
 		if logparser_configuration.msg_first == True:
 			_d = {}
-			for key in ["msg", "err", "error"]:
+			for key in ["msg", "message", "err", "error"]:
 				value = logentry.get(key, None)
 				if value is not None:
 					_d[key] = value
 			for key in logentry:
-				if key not in ["msg", "err", "error"]:
+				if key not in ["msg", "message", "err", "error"]:
 					value = logentry.get(key, "")
 					if value is not None:
 						_d[key] = value
@@ -1146,8 +1146,7 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 						facility = value
 					continue
 				elif entry == "level":
-					# This is used as severity by prometheus,
-					# but probably not by cert-manager
+					# This is used as severity by prometheus
 					s = text_to_severity(value, -1)
 					if s != -1 and s < severity:
 						severity = s
@@ -1559,7 +1558,7 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True)
 	message = message.replace("\\\"", "”")
 
 	# split all key=value pairs
-	tmp = re.findall(r'(?:[^\s,"]|"(?:\\.|[^"])*")+', message)
+	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
 	if tmp is not None:
 		d = {}
 		for item in tmp:
@@ -1708,18 +1707,25 @@ def key_value_with_leading_message(message, severity = loglevel.INFO, facility =
 	# Split into substrings based on spaces
 	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
 	if tmp is not None and len(tmp) > 0:
-		if "=" not in tmp[0]:
+		if "=" in tmp[0]:
+			# Try parsing this as regular key_value
+			facility, severity, message, remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility)
+		else:
 			for item in tmp[1:]:
 				# we couldn't parse this as "msg key=value"; give up
 				if "=" not in item:
 					return facility, severity, message, remnants
-			rest = message[len(tmp[0]):]
+			rest = message[len(tmp[0]):].lstrip()
 			message = tmp[0]
 			tmp_msg_extract = logparser_configuration.msg_extract
 			logparser_configuration.msg_extract = False
 			facility, severity, _message, _remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility)
 			logparser_configuration.msg_extract = tmp_msg_extract
-			remnants.append((_message, severity))
+			if _remnants is not None and len(_remnants) > 0:
+				_remnant_strs, _remnants_severity = _remnants
+				remnants = ([_message] + _remnant_strs, severity)
+			else:
+				remnants = ([_message], severity)
 	return facility, severity, message, remnants
 
 # [2021-09-24 12:43:53 +0000] [11] [INFO] Booting worker with pid: 11
@@ -1954,8 +1960,6 @@ def bracketed_timestamp_severity(message, fold_msg = True):
 
 	return facility, severity, message, remnants
 
-# cert-manager:
-# I0414 22:31:37.014288       1 start.go:76] cert-manager "level"=0 "msg"="starting controller"  "git-commit"="b030b7eb4" "version"="v0.11.0"
 def kube_parser_structured_glog(message, fold_msg = True):
 	facility = ""
 	severity = loglevel.INFO
@@ -1979,12 +1983,6 @@ def kube_parser_structured_glog(message, fold_msg = True):
 				severity = sev
 	else:
 		header = ""
-
-		# Handle both cert-manager and prometheus
-		#tmp = re.match(r"^(.*?) (.*)", message)
-		#if tmp is not None and not "=" in tmp[1]:
-		#	header = tmp[1]
-		#	message = tmp[2]
 
 		# Split into substrings based on spaces
 		tmp = re.findall(r"(?:\".*?\"|\S)+", message)
@@ -2049,8 +2047,6 @@ def kube_parser_structured_glog(message, fold_msg = True):
 							facility = value
 						continue
 					elif entry == "level":
-						# This is used as severity by prometheus,
-						# but probably not by cert-manager
 						s = text_to_severity(value, -1)
 						if s != -1 and s < severity:
 							severity = s
@@ -2347,7 +2343,6 @@ builtin_parsers = [
 	("cass-operator", "", "", "kube_parser_json"),
 	("cdi-controller", "", "", "kube_parser_1"),
 	("cdi-node", "", "", "kube_parser_1"),
-	("cert-manager", "", "", "kube_parser_structured_glog"),
 	("centraldashboard", "", "", "basic_8601"),
 	("cifar10-training-gpu-worker", "", "", "kube_parser_1"),
 	("cilium", "", "", "key_value"),
