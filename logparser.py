@@ -527,9 +527,11 @@ def __split_severity_facility_style(message, severity = loglevel.INFO, facility 
 
 	return message, severity, facility
 
-def split_json_style(message, timestamp, severity = loglevel.INFO, facility = "", fold_msg = True):
+def split_json_style(message, timestamp, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
 	logentry = None
 	remnants = None
+
+	facilities = options.get("facilities", ["logger", "caller", "filename"])
 
 	try:
 		logentry = json.loads(message)
@@ -576,10 +578,10 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 			logentry.pop("timestamp", None)
 
 		if facility == "":
-			facility = deep_get_with_fallback(logentry, ["logger", "caller", "filename"], "")
+			facility = deep_get_with_fallback(logentry, facilities, "")
 		if logparser_configuration.pop_facility == True:
-			logentry.pop("logger", None)
-			logentry.pop("caller", None)
+			for _fac in facilities:
+				logentry.pop(_fac, None)
 
 		if level is not None:
 			severity = text_to_severity(level)
@@ -2300,9 +2302,6 @@ def custom_parser(message, fold_msg = True, filters = []):
 					facility, severity, message, remnants = key_value_with_leading_message(message, fold_msg = fold_msg, severity = severity, facility = facility)
 			elif _filter == "directory":
 				facility, severity, message, remnants = directory(message, fold_msg = fold_msg)
-			elif _filter == "json":
-				if message.startswith("{\""):
-					message, _timestamp, severity, facility, remnants = split_json_style(message, timestamp = None, fold_msg = fold_msg)
 			elif _filter == "json_line":
 				message = format_yaml_line(message, override_formatting = {})
 			elif _filter == "seconds_severity_facility":
@@ -2333,6 +2332,10 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Multiparsers
 			if _filter[0] == "bracketed_timestamp_severity_facility":
 				message, severity, facility = split_bracketed_timestamp_severity_facility(message, default = _filter[1])
+			elif _filter[0] == "json":
+				_parser_options = _filter[1]
+				if message.startswith("{\""):
+					message, _timestamp, severity, facility, remnants = split_json_style(message, timestamp = None, fold_msg = fold_msg, options = _parser_options)
 			# Severity formats
 			elif _filter[0] == "bracketed_severity":
 				message, severity = split_bracketed_severity(message, default = _filter[1])
@@ -2563,7 +2566,6 @@ builtin_parsers = [
 	("svclb-traefik", "", "", "kube_parser_1"),
 
 	("", "", "gcr.io/ml-pipeline/viewer-crd-controller", "kube_parser_1"),
-	("virt-operator", "", "", "kube_parser_json"),
 	("volcano-admission-init", "", "docker.io/volcanosh/vc-webhook-manager", "basic_8601_raw"),
 	("", "", "docker.io/volcanosh/vc-webhook-manager", "kube_parser_1"),
 	("", "", "docker.io/volcanosh/vc-controller-manager", "kube_parser_1"),
@@ -2639,8 +2641,10 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name in ["glog", "json", "json_line", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity"]:
+							if rule_name in ["glog", "json_line", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity"]:
 								rules.append(rule_name)
+							elif rule_name == "json":
+								rules.append((rule_name, rule.get("options", {})))
 							elif rule_name == "substitute_bullets":
 								prefix = rule.get("prefix", "* ")
 								rules.append((rule_name, prefix))
