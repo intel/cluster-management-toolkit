@@ -6268,7 +6268,10 @@ def fieldgenerator(view, fields = None, sortcolumn = None, blacklist = []):
 
 	# delete all blacklisted fields
 	for field in blacklist:
-		fields.remove(field)
+		try:
+			fields.remove(field)
+		except ValueError:
+			pass
 
 	# OK, we've pruned all unwanted fields; now we need to check that the sort column
 	# is still valid, and if not pick another one
