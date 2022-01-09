@@ -1321,8 +1321,9 @@ class KubernetesHelper:
 		},
 		# kubevirt.io
 		("KubeVirt", "kubevirt.io"): {
-			"api_family": "apis/kubevirt.io/v1alpha3/",
+			"api_family": ["apis/kubevirt.io/v1/"],
 			"api": "kubevirts",
+			"aliases": ["kvs", "kv"],
 		},
 		("VirtualMachineInstanceMigration", "kubevirt.io"): {
 			"api_family": "apis/kubevirt.io/v1alpha3/",
