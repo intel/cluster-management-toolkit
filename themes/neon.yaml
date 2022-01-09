@@ -428,6 +428,7 @@ color_pairs_curses:
   separator_secret_type:
     unselected: [[black, bright], [black, normal]]
     selected: [[black, bright], [white, normal]]
+  separator_ini_key_separator: [[white, bright], [black, normal]]
   separator_toml_key_separator: [[white, bright], [black, normal]]
   separator_yaml_list: [[white, bright], [black, normal]]
   separator_yaml_key_separator: [[white, bright], [black, normal]]
@@ -441,6 +442,10 @@ color_pairs_curses:
   type_dir_symlink_name: [[cyan, bright], [black, normal]]
   type_dir_pipe: [[yellow, normal], [black, bright]]
   type_dir_socket: [[magenta, normal], [black, normal]]
+  type_ini_comment: [[green, normal], [black, normal]]
+  type_ini_section: [[white, bright], [black, normal]]
+  type_ini_key: [[blue, bright], [black, normal]]
+  type_ini_value: [[white, normal], [black, normal]]
   type_toml_comment: [[green, normal], [black, normal]]
   type_toml_table: [[cyan, bright], [black, normal]]
   type_toml_key: [[blue, bright], [black, normal]]
@@ -715,6 +720,11 @@ types:
   dir_socket: [type_dir_socket, bold]
   dir_suffix: type_generic
   dir_unknown: type_generic
+  ini_section: type_ini_section
+  ini_comment: type_ini_comment
+  ini_key: type_ini_key
+  ini_key_separator: separator_ini_key_separator
+  ini_value: type_ini_value
   toml_comment: type_toml_comment
   toml_table: type_toml_table
   toml_key: type_toml_key

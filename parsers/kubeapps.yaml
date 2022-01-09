@@ -1,0 +1,46 @@
+- name: kubeapps
+  show_in_selector: false
+  matchkeys:
+  - pod_name: kubeapps-internal-apprepository-controller
+  parser_rules:
+  - name: glog
+  - name: key_value
+- name: kubeapps
+  show_in_selector: false
+  matchkeys:
+  - pod_name: kubeapps
+    container_name: nginx
+  - pod_name: kubeapps-internal-dashboard
+  parser_rules:
+  - name: strip_ansicodes
+  - name: ts_8601
+  - name: bracketed_severity
+  - name: facility_hh_mm_ss_ms_severity
+- name: kubeapps
+  show_in_selector: false
+  matchkeys:
+  - pod_name: kubeapps-internal-kubeappsapis
+  parser_rules:
+  - name: glog
+- name: kubeapps
+  show_in_selector: false
+  matchkeys:
+  - pod_name: kubeapps-internal-kubeops
+  parser_rules:
+  - name: glog
+  #- name: bracketed_facility
+- name: kubeapps
+  show_in_selector: false
+  matchkeys:
+  - pod_name: kubeapps-postgresql
+  parser_rules:
+  - name: strip_ansicodes
+  - name: ts_8601_tz
+  - name: facility_hh_mm_ss_ms_severity
+  - name: strip_bracketed_pid
+- name: kubeapps
+  show_in_selector: false
+  matchkeys:
+  - pod_name: apprepo-kubeapps-sync
+  parser_rules:
+  - name: glog

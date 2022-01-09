@@ -5855,6 +5855,14 @@ field_templates = {
 		"path": "spec#replicas",
 		"ralign": True,
 	},
+	"repo_type": {
+		"header": "Type:",
+		"path": "spec#type",
+	},
+	"repo_url": {
+		"header": "URL:",
+		"path": "spec#url",
+	},
 	"request": {
 		# [(resource, used, hard), ...]
 		"header": "Request:",
@@ -7507,12 +7515,15 @@ cmdata_format = [
 	("", "", "", ".crt", "CRT"),
 	("", "", "", ".pem", "CRT"),
 	("", "", "", "client-ca-file", "CRT"),
+	("", "", "", ".ini", "INI"),
 	("", "", "", ".json", "JSON"),
 	("", "", "", ".toml", "TOML"),
 	("", "", "", ".xml", "XML"),
 	("", "", "", ".yaml", "YAML"),
 	("", "", "", ".yml", "YAML"),
 	("istio-system", "istio", "", "", "YAML"),
+	("", "kubeapps-clusters-config", "clusters.conf", "", "JSON"),
+	("", "kubeapps-internal-kubeappsapis-configmap", "plugins.conf", "", "JSON"),
 	("kube-public", "cluster-info", "kubeconfig", "", "YAML"),
 	("kube-system", "antrea", "antrea-agent", "", "YAML"),
 	("kube-system", "antrea", "antrea-controller", "", "YAML"),
@@ -7578,6 +7589,8 @@ def cmdataloop(stdscr, obj, view, info = None):
 				messages = __format_crt(split_msg(obj.data))
 			elif dataformat == "XML":
 				messages = __format_xml(split_msg(obj.data))
+			elif dataformat == "INI":
+				messages = __format_ini(split_msg(obj.data))
 			elif dataformat == "CaddyFile":
 				messages = __format_caddyfile(split_msg(obj.data))
 			else:
@@ -10778,7 +10791,7 @@ def __format_xml(lines):
 # Takes a TOML file and returns a single list of themearray
 def __format_toml(lines):
 	# FIXME: necessary improvements:
-	# * Instead of only checking for lines that end with a commen for key = value,
+	# * Instead of only checking for lines that end with a comment for key = value,
 	#   and for full comment lines, check for lines that end with a comment
 	#   in any situation (except multiline). Split out the comment and add it last.
 	# * Handle quoting and escaping of quotes; \''' shouldn't end a multiline, for instance.
@@ -10804,13 +10817,13 @@ def __format_toml(lines):
 			continue
 
 		tmpline = []
-		if line.lstrip(" ").startswith("#"):
+		if line.lstrip().startswith("#"):
 			tmpline += [
 				(line, ("types", "toml_comment")),
 			]
 			dumps.append(tmpline)
 			continue
-		elif line.lstrip(" ").startswith("[") and line.rstrip(" ").endswith("]"):
+		elif line.lstrip().startswith("[") and line.rstrip(" ").endswith("]"):
 			tmpline += [
 				(line, ("types", "toml_table")),
 			]
@@ -10840,7 +10853,7 @@ def __format_toml(lines):
 					(f"{indentation}", ("types", "generic")),
 					(f"{key}", ("types", "toml_key")),
 					(f"{separator}", ("types", "toml_key_separator")),
-					(f"{value}", ("types", "yaml_value")),
+					(f"{value}", ("types", "toml_value")),
 				]
 				if len(comment) > 0:
 					tmpline += [
@@ -10850,6 +10863,37 @@ def __format_toml(lines):
 
 
 			# dumps.append([(line, ("types", "generic"))])
+	return dumps
+
+# Takes an INI file and returns a single list of themearray
+def __format_ini(lines):
+	dumps = []
+
+	for line in lines:
+		tmpline = []
+		if line.lstrip().startswith(("#", ";")):
+			tmpline = [
+				(line, ("types", "ini_comment")),
+			]
+		elif line.lstrip().startswith("[") and line.rstrip().endswith("]"):
+			tmpline = [
+				(line, ("types", "ini_section")),
+			]
+		else:
+			tmp = re.match("^(\s*?)(.*)(\s*?=\s*?)(.*)", line)
+			if tmp is not None:
+				indentation = tmp[1]
+				key = tmp[2]
+				separator = tmp[3]
+				value = tmp[4]
+
+				tmpline = [
+					(f"{indentation}", ("types", "generic")),
+					(f"{key}", ("types", "ini_key")),
+					(f"{separator}", ("types", "ini_key_separator")),
+					(f"{value}", ("types", "ini_value")),
+				]
+		dumps.append(tmpline)
 	return dumps
 
 def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None):
@@ -14329,6 +14373,14 @@ views = {
 		"fields": ["namespace", "name", "age", "description"],
 		"sortcolumn": "namespace",
 		"kind": ("Application", "app.k8s.io"),
+	},
+	# kubeapps.com
+	"App Repositories": {
+		"commandline": ["apprepositories", "apprepository", "apprepos", "apprepo"],
+		"group": "API & Extendability",
+		"fields": ["namespace", "name", "repo_type", "repo_url"],
+		"sortcolumn": "namespace",
+		"kind": ("AppRepository", "kubeapps.com"),
 	},
 	# security.istio.io
 	"Authorization Policies": {

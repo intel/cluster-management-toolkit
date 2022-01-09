@@ -413,6 +413,13 @@ def split_iso_timestamp(message, timestamp):
 	# message + either a timestamp or None is passed in, so it's safe just to return it too
 	return message, timestamp
 
+# 2020-02-20 13:47:01.531 GMT
+def strip_iso_timestamp_with_tz(message):
+	tmp = re.match(r"^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d\.\d\d\d [A-Z]{3}(\s+?|$)(.*)", message)
+	if tmp is not None:
+		message = tmp[2]
+	return message
+
 # Will split timestamp from messages that begin with timestamps of the form:
 # [10/Feb/2020:23:09:45 [+-]0000]<message>
 def split_dd_mmm_yyyy_timestamp(message, timestamp):
@@ -707,6 +714,12 @@ def basic_8601_raw(message, fold_msg = True):
 	remnants = []
 
 	return facility, severity, message, remnants
+
+def strip_bracketed_pid(message):
+	tmp = re.match(r"^\[\d+\]\s*(.*)", message)
+	if tmp is not None:
+		message = tmp[1]
+	return message
 
 def strip_ansicodes(message):
 	tmp = re.findall(r"(\x1b\[\d*m|\x1b\[\d+;\d+m|\x1b\[\d+;\d+;\d+m|.*?)", message)
@@ -2226,11 +2239,28 @@ def directory(message, fold_msg = True):
 
 	return facility, severity, _message, remnants
 
+# input: nginx 08:44:38.88 INFO  ==> ** Starting NGINX setup **
+# output:
+#   severity: loglevel.INFO
+#   facility: nginx
+#   msg: ==> ** Starting NGINX setup **
+#   remnants: []
+def facility_hh_mm_ss_ms_severity(message, severity = loglevel.INFO, fold_msg = True):
+	facility = ""
+	remnants = []
+
+	tmp = re.match(r"^(.+?)\s+?(\d\d:\d\d:\d\d\.\d\d)(\s+?|$)(.*)", message)
+	if tmp is not None:
+		facility = tmp[1]
+		message, severity = split_4letter_spaced_severity(tmp[4])
+	return facility, severity, message, remnants
+
 # input: [     0.000384s]  INFO ThreadId(01) linkerd2_proxy::rt: Using single-threaded proxy runtime
 # output:
 #   severity: loglevel.INFO
 #   facility: ThreadId(01)
 #   msg: [     0.000384s] linkerd2_proxy::rt: Using single-threaded proxy runtime
+#   remnants: []
 def seconds_severity_facility(message, fold_msg = True):
 	facility = ""
 	severity = loglevel.INFO
@@ -2277,9 +2307,13 @@ def custom_parser(message, fold_msg = True, filters = []):
 				message = format_yaml_line(message, override_formatting = {})
 			elif _filter == "seconds_severity_facility":
 				facility, severity, message, remnants = seconds_severity_facility(message, fold_msg = fold_msg)
+			elif _filter == "facility_hh_mm_ss_ms_severity":
+				facility, severity, message, remnants = facility_hh_mm_ss_ms_severity(message, severity = severity, fold_msg = fold_msg)
 			# Timestamp formats
 			elif _filter == "ts_8601": # Anything that resembles ISO-8601
 				message, _timestamp = split_iso_timestamp(message, None)
+			elif _filter == "ts_8601_tz": # ISO-8601 with 3-letter timezone; since the offset is dependent on date we don't even try to parse
+				message = strip_iso_timestamp_with_tz(message)
 			# Facility formats
 			elif _filter == "colon_facility":
 				message, facility = split_colon_facility(message, facility)
@@ -2291,6 +2325,8 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Filters
 			elif _filter == "strip_ansicodes":
 				message = strip_ansicodes(message)
+			elif _filter == "strip_bracketed_pid":
+				message = strip_bracketed_pid(message)
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 		elif type(_filter) == tuple:
@@ -2603,7 +2639,7 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name in ["glog", "json", "json_line", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601", "seconds_severity_facility", "4letter_spaced_severity"]:
+							if rule_name in ["glog", "json", "json_line", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity"]:
 								rules.append(rule_name)
 							elif rule_name == "substitute_bullets":
 								prefix = rule.get("prefix", "* ")
@@ -2628,7 +2664,7 @@ def init_parser_list():
 									overrides.append((matchtype, matchkey, severity))
 								rules.append((rule_name, overrides))
 							elif rule_name in ["bracketed_severity", "bracketed_timestamp_severity_facility"]:
-								_loglevel = rule.get("default_loglevel", loglevel.INFO)
+								_loglevel = rule.get("default_loglevel", "info")
 								try:
 									default_loglevel = name_to_loglevel(_loglevel)
 								except:
@@ -2741,6 +2777,10 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 
 		if lparser is not None:
 			break
+	if uparser is None and lparser is None:
+		pod_name, severity, message, remnants = basic_8601(message, fold_msg = fold_msg)
+		lparser = "<unknown format>"
+		uparser = "basic_8601"
 
 	if len(message) > 16383:
 		remnants = (message[0:16383], severity)

@@ -1263,6 +1263,12 @@ class KubernetesHelper:
 			"api": "peers",
 			"namespaced": False,
 		},
+		# kubeapps.com
+		("AppRepository", "kubeapps.com"): {
+			"api_family": ["apis/kubeapps.com/v1alpha1/"],
+			"api": "apprepositories",
+			"aliases": ["apprepos"],
+		},
 		# kubeflow.org
 		("Experiment", "kubeflow.org"): {
 			"api_family": "apis/kubeflow.org/v1beta1/",
