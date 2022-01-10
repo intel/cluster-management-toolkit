@@ -1,0 +1,16 @@
+- name: ingress-nginx
+  show_in_selector: false
+  matchkeys:
+  - pod_name: ingress-nginx-controller
+  parser_rules:
+  - name: glog
+  - name: expand_event
+  - name: key_value_with_leading_message
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "NGINX Ingress controller"
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "  Release:"
+      loglevel: notice

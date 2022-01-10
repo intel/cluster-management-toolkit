@@ -972,7 +972,6 @@ def override_severity(message, severity, facility = None):
 		"Kiali: Console version: ",
 		"Kubernetes host: ",
 		"kube-router version",
-		"NGINX Ingress controller",
 		"nginx version:",
 		"Node Feature Discovery Master v",
 		"Node Feature Discovery Worker v",
@@ -1205,7 +1204,6 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 	return message, remnants
 
 # kube-proxy/kube-proxy
-# nginx-ingress-controller/nginx-ingress-controller
 # metrics-server/metrics-server
 # kube-state-metrics/*
 # Example(s):
@@ -2310,6 +2308,9 @@ def custom_parser(message, fold_msg = True, filters = []):
 				facility, severity, message, remnants = seconds_severity_facility(message, fold_msg = fold_msg)
 			elif _filter == "facility_hh_mm_ss_ms_severity":
 				facility, severity, message, remnants = facility_hh_mm_ss_ms_severity(message, severity = severity, fold_msg = fold_msg)
+			elif _filter == "expand_event":
+				if message.startswith("Event(v1.ObjectReference{"):
+					message, remnants = expand_event(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
 			# Timestamp formats
 			elif _filter == "ts_8601": # Anything that resembles ISO-8601
 				message, _timestamp = split_iso_timestamp(message, None)
@@ -2404,7 +2405,6 @@ builtin_parsers = [
 
 	("helm-", "", "", "kube_parser_1"),
 
-	("ingress-nginx-controller", "", "", "kube_parser_1"),
 	("inteldeviceplugins-controller-manager", "", "", "kube_parser_structured_glog"),
 	("intel-gpu-plugin", "", "", "kube_parser_1"),
 	("intel-qat-plugin", "", "", "kube_parser_1"),
@@ -2476,7 +2476,6 @@ builtin_parsers = [
 	("node-problem-detector", "", "", "kube_parser_1"),
 	("nodelocaldns", "", "", "kube_parser_1"),
 	("notebook-controller-deployment", "manager", "", "seldon"),
-	("nginx-ingress-controller", "", "", "kube_parser_1"),
 	("nginx", "", "", "nginx"),
 	("gpu-feature-discovery", "toolkit-validation", "", "basic_8601"),
 	("gpu-feature-discovery", "", "", ("custom", ["colon_facility", "ts_8601"])),
@@ -2641,7 +2640,7 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name in ["glog", "json_line", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity"]:
+							if rule_name in ["glog", "json_line", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event"]:
 								rules.append(rule_name)
 							elif rule_name == "json":
 								rules.append((rule_name, rule.get("options", {})))
