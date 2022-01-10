@@ -646,6 +646,8 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 					msgseverity = structseverity
 				for line in tmp:
 					remnants.append((line, severity))
+	else:
+		msgseverity = severity
 
 	return message, timestamp, msgseverity, facility, remnants
 
