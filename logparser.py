@@ -2390,7 +2390,6 @@ builtin_parsers = [
 	("cilium", "", "", "key_value"),
 	("cluster-local-gateway", "istio-proxy", "", "istio"),
 
-	("", "", "k8s.gcr.io/descheduler/descheduler", "kube_parser_structured_glog"),
 	("", "", "quay.io/dexidp/dex", "key_value"),
 	("dist-mnist", "", "", "jupyter"),
 	("dns-autoscaler", "", "", "kube_parser_structured_glog"),
