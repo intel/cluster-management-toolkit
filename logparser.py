@@ -531,6 +531,10 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 	logentry = None
 	remnants = None
 
+	messages = options.get("messages", ["msg", "message"])
+	errors = options.get("errors", ["err", "error"])
+	timestamps = options.get("timestamps", ["ts", "time", "timestamp"])
+	severities = options.get("severities", ["level"])
 	facilities = options.get("facilities", ["logger", "caller", "filename"])
 
 	try:
@@ -557,25 +561,25 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 		# If msg_first we reorder the dict
 		if logparser_configuration.msg_first == True:
 			_d = {}
-			for key in ["msg", "message", "err", "error"]:
+			for key in messages + errors:
 				value = logentry.get(key, None)
 				if value is not None:
 					_d[key] = value
 			for key in logentry:
-				if key not in ["msg", "message", "err", "error"]:
+				if key not in messages + errors:
 					value = logentry.get(key, "")
 					if value is not None:
 						_d[key] = value
 			logentry = _d
 
-		msg = logentry.get("msg", "")
-		level = logentry.get("level", None)
+		msg = deep_get_with_fallback(logentry, messages, "")
+		level = deep_get_with_fallback(logentry, severities, None)
 		if logparser_configuration.pop_severity == True:
-			logentry.pop("level", None)
+			for _sev in severities:
+				logentry.pop(_sev, None)
 		if logparser_configuration.pop_ts == True:
-			logentry.pop("ts", None)
-			logentry.pop("time", None)
-			logentry.pop("timestamp", None)
+			for _ts in timestamps:
+				logentry.pop(_ts, None)
 
 		if facility == "":
 			facility = deep_get_with_fallback(logentry, facilities, "")
@@ -594,7 +598,11 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 				message = str(logentry)
 			else:
 				if logparser_configuration.msg_extract == True:
-					logentry.pop("msg", None)
+					# Pop the first matching _msg
+					for _msg in messages:
+						if _msg in logentry:
+							logentry.pop(_msg, None)
+							break
 					if len(logentry) > 0:
 						message = f"{msg} {logentry}"
 					else:
@@ -615,7 +623,11 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 			errorseverity = severity
 			if logparser_configuration.msg_extract == True:
 				message = msg
-				logentry.pop("msg", None)
+				# Pop the first matching _msg
+				for _msg in messages:
+					if _msg in logentry:
+						logentry.pop(_msg, None)
+						break
 			else:
 				message = ""
 
@@ -1566,8 +1578,14 @@ def format_key_value(key, value, severity, force_severity = False):
 # Severity: lvl=|level=
 # Timestamps: t=|ts=|time= (all of these are ignored)
 # Facility: subsys|caller|logger|source
-def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True):
+def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
 	remnants = []
+
+	messages = options.get("messages", ["msg"])
+	errors = options.get("errors", ["err", "error"])
+	timestamps = options.get("timestamps", ["t", "ts", "time"])
+	severities = options.get("severities", ["level", "lvl"])
+	facilities = options.get("facilities", ["source", "subsys", "caller", "logger", "Topic"])
 
 	# Replace embedded quotes with fancy quotes
 	message = message.replace("\\\"", "”")
@@ -1592,16 +1610,15 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True)
 			# XXX: Instead of just giving up we should probably do something with the leftovers...
 
 		if logparser_configuration.pop_ts == True:
-			d.pop("t", None)
-			d.pop("ts", None)
-			d.pop("time", None)
-		level = deep_get_with_fallback(d, ["level", "lvl"], "info")
+			for _ts in timestamps:
+				d.pop(_ts, None)
+		level = deep_get_with_fallback(d, severities, "info")
 		if logparser_configuration.pop_severity == True:
-			d.pop("level", None)
-			d.pop("lvl", None)
+			for _sev in severities:
+				d.pop(_sev, None)
 		severity = level_to_severity(level)
 
-		msg = d.get("msg", "")
+		msg = deep_get_with_fallback(d, messages, "")
 		if msg.startswith("\"") and msg.endswith("\""):
 			msg = msg[1:-1]
 		version = d.get("version", "")
@@ -1615,14 +1632,10 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True)
 		if tmp is not None:
 			severity = min(severity, loglevel.NOTICE)
 
-		facility = d.get("source", facility).strip("\"")
-		facility = deep_get_with_fallback(d, ["subsys", "caller", "logger", "Topic"], facility)
+		facility = deep_get_with_fallback(d, facilities, facility).strip("\"")
 		if logparser_configuration.pop_facility == True:
-			d.pop("subsys", None)
-			d.pop("caller", None)
-			d.pop("logger", None)
-			d.pop("source", None)
-			d.pop("Topic", None)
+			for _fac in facilities:
+				d.pop(_fac, None)
 
 		if fold_msg == False and len(d) == 2 and logparser_configuration.merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
 			message = f"{msg} {version}"
@@ -1647,31 +1660,39 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True)
 			# If we're extracting msg we always want msg first
 			if logparser_configuration.msg_extract == True and fold_msg == False and len(msg) > 0:
 				tmp.append(msg)
-				d.pop("msg", "")
-				for key in ["err", "error"]:
+				# Pop the first matching _msg
+				for _msg in messages:
+					if _msg in d:
+						d.pop(_msg, "")
+						break
+				for key in errors:
 					value = d.pop(key, "")
 					if len(value) > 0:
 						tmp.append(format_key_value(key, value, severity))
 			else:
 				if logparser_configuration.msg_first == True:
 					if fold_msg == True:
-						for key in ["msg", "err", "error"]:
+						for key in messages + errors:
 							value = d.pop(key, "")
 							if len(value) > 0:
-								if logparser_configuration.msg_extract == True and key == "msg":
+								if logparser_configuration.msg_extract == True and key in messages:
 									# We already have the message extracted
 									tmp.append(msg)
 								else:
 									tmp.append(f"{key}={value}")
 					else:
-						msg = d.get("msg", "")
+						msg = deep_get_with_fallback(d, messages, "")
 						if len(msg) > 0:
 							force_severity = False
-							if "err" not in d and "error" not in d:
+							if not any(_err in errors for key in d):
 								force_severity = True
 							tmp.append(format_key_value("msg", msg, severity, force_severity = force_severity))
-						d.pop("msg", "")
-						for key in ["err", "error"]:
+						# Pop the first matching _msg
+						for _msg in messages:
+							if _msg in d:
+								d.pop(_msg, "")
+								break
+						for key in errors:
 							value = d.pop(key, "")
 							if len(value) > 0:
 								tmp.append(format_key_value(key, value, severity))
@@ -1712,7 +1733,7 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True)
 # For messages along the lines of:
 # "Foo" "key"="value" "key"="value"
 # Foo key=value key=value
-def key_value_with_leading_message(message, severity = loglevel.INFO, facility = "", fold_msg = True):
+def key_value_with_leading_message(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
 	global logparser_configuration
 	remnants = []
 
@@ -1724,7 +1745,7 @@ def key_value_with_leading_message(message, severity = loglevel.INFO, facility =
 	if tmp is not None and len(tmp) > 0:
 		if "=" in tmp[0]:
 			# Try parsing this as regular key_value
-			facility, severity, message, remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility)
+			facility, severity, message, remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
 		else:
 			for item in tmp[1:]:
 				# we couldn't parse this as "msg key=value"; give up
@@ -1734,7 +1755,7 @@ def key_value_with_leading_message(message, severity = loglevel.INFO, facility =
 			message = tmp[0]
 			tmp_msg_extract = logparser_configuration.msg_extract
 			logparser_configuration.msg_extract = False
-			facility, severity, _message, _remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility)
+			facility, severity, _message, _remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
 			logparser_configuration.msg_extract = tmp_msg_extract
 			if _remnants is not None and len(_remnants) > 0:
 				_remnant_strs, _remnants_severity = _remnants
@@ -2294,12 +2315,6 @@ def custom_parser(message, fold_msg = True, filters = []):
 				message, severity, facility, remnants, _match = split_glog(message)
 			elif _filter == "spaced_severity_facility":
 				message, severity, facility = __split_severity_facility_style(message, severity, facility)
-			elif _filter == "key_value":
-				if "=" in message:
-					facility, severity, message, remnants = key_value(message, fold_msg = fold_msg, severity = severity, facility = facility)
-			elif _filter == "key_value_with_leading_message":
-				if "=" in message:
-					facility, severity, message, remnants = key_value_with_leading_message(message, fold_msg = fold_msg, severity = severity, facility = facility)
 			elif _filter == "directory":
 				facility, severity, message, remnants = directory(message, fold_msg = fold_msg)
 			elif _filter == "json_line":
@@ -2339,6 +2354,14 @@ def custom_parser(message, fold_msg = True, filters = []):
 				_parser_options = _filter[1]
 				if message.startswith("{\""):
 					message, _timestamp, severity, facility, remnants = split_json_style(message, timestamp = None, fold_msg = fold_msg, options = _parser_options)
+			elif _filter[0] == "key_value":
+				_parser_options = _filter[1]
+				if "=" in message:
+					facility, severity, message, remnants = key_value(message, fold_msg = fold_msg, severity = severity, facility = facility, options = _parser_options)
+			elif _filter[0] == "key_value_with_leading_message":
+				_parser_options = _filter[1]
+				if "=" in message:
+					facility, severity, message, remnants = key_value_with_leading_message(message, fold_msg = fold_msg, severity = severity, facility = facility, options = _parser_options)
 			# Severity formats
 			elif _filter[0] == "bracketed_severity":
 				message, severity = split_bracketed_severity(message, default = _filter[1])
@@ -2634,9 +2657,9 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name in ["glog", "json_line", "key_value", "key_value_with_leading_message", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event"]:
+							if rule_name in ["glog", "json_line", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event"]:
 								rules.append(rule_name)
-							elif rule_name == "json":
+							elif rule_name in ["json", "key_value", "key_value_with_leading_message"]:
 								rules.append((rule_name, rule.get("options", {})))
 							elif rule_name == "substitute_bullets":
 								prefix = rule.get("prefix", "* ")
