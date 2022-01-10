@@ -2422,7 +2422,6 @@ builtin_parsers = [
 	("", "", "docker.io/library/mysql", "mysql"),
 
 	("networking-istio", "networking-istio", "", "kube_parser_1"),
-	("", "", "k8s.gcr.io/sig-storage/nfs-subdir-external-provisioner", "kube_parser_1"),
 	("node-exporter", "", "", "key_value"),
 	("node-problem-detector", "", "", "kube_parser_1"),
 	("nodelocaldns", "", "", "kube_parser_1"),
