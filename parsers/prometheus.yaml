@@ -2,6 +2,14 @@
   show_in_selector: false
   matchkeys:
   - pod_name: prometheus
+    container_name: prometheus-adapter
+  parser_rules:
+  - name: glog
+  - name: key_value_with_leading_message
+- name: prometheus
+  show_in_selector: false
+  matchkeys:
+  - pod_name: prometheus
     container_name: prometheus
   - pod_name: blackbox-exporter
     container_name: blackbox-exporter
