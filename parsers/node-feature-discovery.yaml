@@ -1,0 +1,15 @@
+- name: node-feature-discovery
+  show_in_selector: false
+  matchkeys:
+  - pod_name: nfd-master
+  - pod_name: nfd-worker
+  parser_rules:
+  - name: glog
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Node Feature Discovery Worker v"
+      loglevel: notice 
+    - matchtype: startswith
+      matchkey: "NodeName:"
+      loglevel: notice 
