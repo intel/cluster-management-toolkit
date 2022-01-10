@@ -1,0 +1,36 @@
+- name: weave
+  show_in_selector: false
+  matchkeys:
+  - pod_name: weave-scope-agent
+  - pod_name: weave-scope-app
+  - pod_name: weave-scope-cluster-agent
+  parser_rules:
+  - name: key_value
+  - name: angle_bracketed_facility
+  - name: 4letter_colon_severity
+  - name: ts_8601
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "probe starting, version"
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "app starting, version"
+      loglevel: notice
+- name: weave
+  show_in_selector: false
+  matchkeys:
+  - pod_name: weave-net
+    container_name: weave-npc
+  parser_rules:
+  - name: colon_severity
+  - name: ts_8601
+  - name: json_event
+- name: weave
+  show_in_selector: false
+  matchkeys:
+  - pod_name: weave-net
+    container_name: weave
+  parser_rules:
+  - name: colon_severity
+  - name: ts_8601

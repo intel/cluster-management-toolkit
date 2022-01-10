@@ -149,6 +149,9 @@ color_pairs_curses:
   severity_debug:
     unselected: [[black, bright], [black, normal]]
     selected: [[white, normal], [white, normal]]
+  severity_modified:
+    unselected: [[green, normal], [black, normal]]
+    selected: [[green, normal], [white, normal]]
   severity_diffplus:
     unselected: [[green, bright], [black, normal]]
     selected: [[green, normal], [white, normal]]
@@ -636,6 +639,8 @@ logview:
   timestamp: timestamp
   facility: facility
   repeat_count: [severity_info, bold]
+  unchanged: severity_debug
+  modified: severity_modified
   severity_emergency: severity_emergency
   severity_alert: severity_alert
   severity_critical: severity_critical

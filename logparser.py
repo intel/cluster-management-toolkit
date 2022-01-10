@@ -186,7 +186,7 @@ def lvl_to_4letter_severity(lvl):
 
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
-def split_4letter_colon_severity(message):
+def split_4letter_colon_severity(message, severity = loglevel.INFO):
 	severities = {
 		"CRIT: ": loglevel.CRIT,
 		"FATA: ": loglevel.CRIT,
@@ -197,10 +197,9 @@ def split_4letter_colon_severity(message):
 		"DEBU: ": loglevel.DEBUG,
 	}
 
-	severity = severities.get(message[0:len("ERRO: ")], -1)
-	if severity == -1:
-		severity = loglevel.INFO
-	else:
+	_severity = severities.get(message[0:len("ERRO: ")], -1)
+	if _severity != -1:
+		severity = _severity
 		message = message[len("ERRO: "):]
 
 	return message, severity
@@ -663,6 +662,86 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 
 	return message, timestamp, msgseverity, facility, remnants
 
+def split_json_style_raw(message, timestamp, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}, merge_message = False):
+	global logparser_configuration
+
+	tmp_msg_first = logparser_configuration.msg_first
+	tmp_msg_extract = logparser_configuration.msg_extract
+	tmp_pop_severity = logparser_configuration.pop_severity
+	tmp_pop_ts = logparser_configuration.pop_ts
+	tmp_pop_facility = logparser_configuration.pop_facility
+
+	logparser_configuration.msg_first = False
+	logparser_configuration.msg_extract = False
+	logparser_configuration.pop_severity = False
+	logparser_configuration.pop_ts = False
+	logparser_configuration.pop_facility = False
+
+	_message, timestamp, _severity, _facility, _remnants = split_json_style(message = message, timestamp = timestamp, severity = severity, facility = facility, fold_msg = fold_msg, options = options)
+
+	logparser_configuration.msg_first = tmp_msg_first
+	logparser_configuration.msg_extract = tmp_msg_extract
+	logparser_configuration.pop_severity = tmp_pop_severity
+	logparser_configuration.pop_ts = tmp_pop_ts
+	logparser_configuration.pop_facility = tmp_pop_facility
+
+	if merge_message == True:
+		remnants = [(_message, severity)] + _remnants
+		message = ""
+	else:
+		remnants = _remnants
+
+	return message, timestamp, severity, facility, remnants
+
+def json_event(message, timestamp, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
+	remnants = []
+	tmp = message.split(" ", 2)
+
+	# At least events from weave seems to be able to end up with \0; remove them
+	message.replace("\0", "")
+
+	if not message.startswith("EVENT ") or len(tmp) < 3:
+		return message, timestamp, severity, facility, remnants
+
+	event = tmp[1]
+
+	if event in ["AddPod", "DeletePod"] or (event == "UpdatePod" and not "} {" in tmp[2]):
+		msg = tmp[2]
+		_message, _timestamp, _severity, _facility, remnants = split_json_style_raw(message = msg, timestamp = timestamp, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_message = True)
+		message = f"{tmp[0]} {event}"
+		if event == "UpdatePod":
+			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [No changes]", ("logview", f"unchanged"))]
+	elif event in ["UpdatePod"]:
+		tmp2 = re.match(r"^({.*})\s*({.*})", tmp[2])
+		if tmp2 is not None:
+			old = json.loads(tmp2[1])
+			old_str = json_dumps(old)
+			try:
+				new = json.loads(tmp2[2])
+			except ValueError as e:
+				message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [Error: could not parse JSON]", ("logview", f"severity_error"))]
+				remnants = [(tmp[2], severity)]
+				return message, timestamp, severity, facility, remnants
+			new_str = json_dumps(new)
+
+			remnants = []
+			y = 0
+			for el in difflib.unified_diff(old_str.split("\n"), new_str.split("\n"), n = sys.maxsize, lineterm = ""):
+				y += 1
+				if y < 4:
+					continue
+				if el.startswith("+"):
+					remnants.append((el, loglevel.DIFFPLUS))
+				elif el.startswith("-"):
+					remnants.append((el, loglevel.DIFFMINUS))
+				else:
+					remnants.append((format_yaml_line(el), loglevel.DIFFSAME))
+			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [State modified]", ("logview", f"modified"))]
+	else:
+		sys.exit(f"json_event: Unknown EVENT type:\n{message}")
+
+	return message, timestamp, severity, facility, remnants
+
 # log messages of the format:
 # 2020-05-14 08:25:24.481670: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcudart.so.10.1
 # This also handles facilities that lack a line#
@@ -674,6 +753,13 @@ def split_tensorflow_style(message, timestamp, severity = loglevel.INFO, facilit
 		facility = tmp[2]
 		message = tmp[3]
 	return message, timestamp, severity, facility
+
+def split_angle_bracketed_facility(message, facility = ""):
+	tmp = re.match(r"^<(.+?)>\s?(.*)", message)
+	if tmp is not None:
+		facility = tmp[1]
+		message = tmp[2]
+	return message, facility
 
 def split_colon_facility(message, facility = ""):
 	tmp = re.match(r"^(.+?):\s?(.*)", message)
@@ -1368,142 +1454,6 @@ def mysql(message, fold_msg = True):
 		severity = loglevel.NOTICE
 	# Override severity for a message that looks like it should be warning
 	message, severity = override_severity(message, severity)
-
-	return facility, severity, message, remnants
-
-# K8s weave-scope
-# Example(s):
-# time="2020-11-03T22:35:47Z" level=info msg="publishing to: weave-scope-app.weave.svc.cluster.local:80"
-# <probe> INFO: 2020/11/03 22:35:47.831489 Basic authentication disabled
-def weave_scope(message, fold_msg = True):
-	facility = ""
-	remnants = None
-
-	# There only seems to be one type of key=value; the initial timestamp message
-	tmp = re.match(r"^<(.*?)> ([A-Z][A-Z][A-Z][A-Z]: .*)", message)
-	if tmp is not None:
-		facility = tmp[1]
-		message = tmp[2]
-
-		message, severity = split_4letter_colon_severity(message)
-		message, _timestamp = split_iso_timestamp(message, None)
-	else:
-		# Try to parse this as key=value
-		facility, severity, message, remnants = key_value(message, fold_msg = fold_msg)
-
-	return facility, severity, message, remnants
-
-# K8s weave-net/weave
-# K8s weave-net/weave-npc
-# Example(s):
-#INFO: 2020/02/22 00:13:38.845733 weave  2.6.0
-#DEBU: 2020/02/22 00:13:40.072753 [kube-peers] [...]
-#Sat Feb 22 00:13:44 2020 <5> ulogd.c:843 building new pluginstance stack: 'log1:NFLOG,base1:BASE,pcap1:PCAP'
-def weave(message, fold_msg = True):
-	facility = ""
-	remnants = None
-
-	# It seems for some reason we may end up with NUL in the log; remove them
-	message = message.replace("\0", "")
-
-	message, severity = split_4letter_colon_severity(message)
-	# Another timestamp to remove
-	message, _timestamp = split_iso_timestamp(message, None)
-
-	message, severity, facility, remnants, _match = split_glog(message, severity)
-
-	# Believe it or not, another timestamp format... A seriously weird format.
-	message, _timestamp = split_wd_mmm_dd_hh_mm_ss_yyyy_timestamp(message, None)
-
-	# The message we get back from the previous timestamp might contain facility and severity
-	# on the format <5> ulogd.c:843; extract it
-
-	tmp = re.match(r"^<(\d)> (.*?:\d+) (.*)", message)
-
-	if tmp is not None:
-		severity = int(tmp[1])
-		facility = tmp[2]
-		message = tmp[3]
-
-	# Some log messages have an additional JSON portion at the end;
-	# expand it if available and the configuration requests this.
-	# However, there are update messages that are used to indicate change
-	# from one state to another: this means that there are two JSON objects
-	# on one line. This will make the parser puke, which is generally not
-	# a good idea.
-	#
-	# When the line is folded we don't really care though,
-	# since the parser will simply return the message unchanged
-	# if it cannot parse it.
-	raw_message = message
-	tmp = re.match(r"^(.*?)\s*?({.*})", message)
-	if tmp is not None:
-		message = tmp[1]
-
-		if fold_msg == False and tmp[1].startswith("EVENT") and "} {" in tmp[2]:
-			tmp = re.match(r"^({.*})\s*({.*})", tmp[2])
-
-			if tmp is not None:
-				old = tmp[1]
-				new = tmp[2]
-
-				if old != new:
-					# We cannot do anything sensible here except ignore extra_message
-					old_extra_message, _timestamp, severity, facility, old_remnants = split_json_style(old, None, severity, facility, fold_msg)
-					new_extra_message, _timestamp, severity, facility, new_remnants = split_json_style(new, None, severity, facility, fold_msg)
-
-					oldstring = None
-					newstring = None
-					try:
-						oldstring, oldseverity = old_remnants
-					except TypeError:
-						pass
-					try:
-						newstring, newseverity = new_remnants
-					except TypeError:
-						pass
-					if oldstring is None or newstring is None:
-						message = raw_message
-						tmp = None
-					else:
-						remnants = []
-						y = 0
-						for el in difflib.unified_diff(oldstring.split("\n"), newstring.split("\n"), n = sys.maxsize, lineterm = ""):
-							y += 1
-							if y < 4:
-								continue
-							if el.startswith("+"):
-								remnants.append((el, loglevel.DIFFPLUS))
-							elif el.startswith("-"):
-								remnants.append((el, loglevel.DIFFMINUS))
-							else:
-								remnants.append((el, loglevel.DIFFSAME))
-
-						if severity > loglevel.INFO:
-							tmpseverity = loglevel.INFO
-						else:
-							tmpseverity = severity
-						message += " [State modified]"
-						# To avoid processing twice
-						tmp = None
-				else:
-					message += " [No changes]"
-
-	if tmp is not None:
-		# No matter if we got one or two objects tmp[2] will conveniently contain a copy of the object
-		extra_message, _timestamp, severity, facility, remnants = split_json_style(tmp[2], None, severity, facility, fold_msg)
-		if len(extra_message) > 0:
-			if remnants is None or len(remnants) == 0:
-				message = "%s  %s" % (message, extra_message)
-			else:
-				raise Exception("message: %s\nextra_message: %s" % (message, extra_message))
-
-	# Override the severity for the version string
-	message, severity = override_severity(message, severity)
-	if re.match(r"^weave\W+\d+\.\d+\.\d+$", message):
-		severity = loglevel.NOTICE
-	elif re.match(r"^Weave version.*is available; please update", message):
-		severity = loglevel.NOTICE
 
 	return facility, severity, message, remnants
 
@@ -2334,9 +2284,13 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Facility formats
 			elif _filter == "colon_facility":
 				message, facility = split_colon_facility(message, facility)
+			elif _filter == "angle_bracketed_facility":
+				message, facility = split_angle_bracketed_facility(message, facility)
 			# Severity formats
 			elif _filter == "colon_severity":
 				message, severity = split_colon_severity(message, severity)
+			elif _filter == "4letter_colon_severity":
+				message, severity = split_4letter_colon_severity(message, severity)
 			elif _filter == "4letter_spaced_severity":
 				message, severity = split_4letter_spaced_severity(message, severity)
 			# Filters
@@ -2354,6 +2308,11 @@ def custom_parser(message, fold_msg = True, filters = []):
 				_parser_options = _filter[1]
 				if message.startswith("{\""):
 					message, _timestamp, severity, facility, remnants = split_json_style(message, timestamp = None, fold_msg = fold_msg, options = _parser_options)
+			elif _filter[0] == "json_event":
+				_parser_options = _filter[1]
+				# We don't extract the facility/severity from folded messages, so just skip if fold_msg == True
+				if message.startswith("EVENT ") and fold_msg == False:
+					message, _timestamp, severity, facility, remnants = json_event(message, timestamp = None, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "key_value":
 				_parser_options = _filter[1]
 				if "=" in message:
@@ -2587,8 +2546,6 @@ builtin_parsers = [
 	("", "", "docker.io/volcanosh/vc-controller-manager", "kube_parser_1"),
 	("", "", "docker.io/volcanosh/vc-scheduler", "kube_parser_1"),
 
-	("weave-net", "", "", "weave"),
-	("weave-scope", "", "", "weave_scope"),
 	("jupyter-web-app", "", "", "web_app"),
 	("tensorboards-web-app", "", "", "web_app"),
 	("volumes-web-app", "", "", "web_app"),
@@ -2657,9 +2614,9 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name in ["glog", "json_line", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event"]:
+							if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "json_line", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event"]:
 								rules.append(rule_name)
-							elif rule_name in ["json", "key_value", "key_value_with_leading_message"]:
+							elif rule_name in ["json", "json_event", "key_value", "key_value_with_leading_message"]:
 								rules.append((rule_name, rule.get("options", {})))
 							elif rule_name == "substitute_bullets":
 								prefix = rule.get("prefix", "* ")
