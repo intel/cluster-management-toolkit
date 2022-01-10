@@ -2484,10 +2484,6 @@ builtin_parsers = [
 	("pmem-csi-", "", "", "kube_parser_1"),
 	("profiles-deployment", "kfam", "", "kube_parser_1"),
 	("profiles-deployment", "manager", "", "seldon"),
-	("prometheus-adapter", "", "", "kube_parser_1"),
-	("prometheus-k8s", "rules-configmap-reloader", "", "basic_8601"),
-	("prometheus-k8s", "", "", "kube_parser_structured_glog"),
-	("prometheus-operator", "", "", "key_value"),
 	("", "kube-prometheus-stack", "", "kube_parser_structured_glog"),
 	("pytorch-operator", "", "", "kube_parser_1"),	#ALMOST
 
