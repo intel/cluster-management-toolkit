@@ -5,6 +5,14 @@
     container_name: grafana
   parser_rules:
   - name: key_value
+  - name: json
+    options:
+      severities:
+      - "@level"
+      timestamps:
+      - "@timestamp"
+      messages:
+      - "@message"
   - name: override_severity
     overrides:
     - matchtype: startswith
