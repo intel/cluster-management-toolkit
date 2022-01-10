@@ -760,7 +760,7 @@ def split_angle_bracketed_facility(message, facility = ""):
 	return message, facility
 
 def split_colon_facility(message, facility = ""):
-	tmp = re.match(r"^(.+?):\s?(.*)", message)
+	tmp = re.match(r"^(\S+?):\s?(.*)", message)
 	if tmp is not None:
 		facility = tmp[1]
 		message = tmp[2]
@@ -1068,9 +1068,6 @@ def override_severity(message, severity, facility = None):
 		"Kiali: Console version: ",
 		"Kubernetes host: ",
 		"kube-router version",
-		"nginx version:",
-		"Node Feature Discovery Master v",
-		"Node Feature Discovery Worker v",
 		"NodeName: ",
 		"OpenShift Web Console Version",
 		"  Release:    ",
@@ -1808,26 +1805,6 @@ def istio_pilot(message, fold_msg = True):
 
 	return facility, severity, message, remnants
 
-# nginx:
-# 10-listen-on-ipv6-by-default.sh: error: /etc/nginx/conf.d/default.conf is not a file or does not exist
-# [notice] 1#1: nginx/1.19.3
-def nginx(message, fold_msg = True):
-	facility = ""
-	severity = loglevel.INFO
-	remnants = []
-
-	# Another timestamp to strip
-	message, _timestamp = split_iso_timestamp(message, None)
-
-	message, severity = split_bracketed_severity(message)
-
-	tmp = re.match(r"^(.*?):\s(.*)", message)
-	if tmp is not None:
-		facility = tmp[1]
-		message = tmp[2]
-
-	return facility, severity, message, remnants
-
 # jupyter:
 # [I 10:29:35.079 NotebookApp] Writing notebook server cookie secret to /root/.local/share/jupyter/runtime/notebook_cookie_secret
 # [W 10:29:35.131 NotebookApp] WARNING: The notebook server is listening on all IP addresses and not using encryption. This is not recommended.
@@ -2450,7 +2427,6 @@ builtin_parsers = [
 	("node-problem-detector", "", "", "kube_parser_1"),
 	("nodelocaldns", "", "", "kube_parser_1"),
 	("notebook-controller-deployment", "manager", "", "seldon"),
-	("nginx", "", "", "nginx"),
 	("gpu-feature-discovery", "toolkit-validation", "", "basic_8601"),
 	("gpu-feature-discovery", "", "", ("custom", ["colon_facility", "ts_8601"])),
 	("nvidia-cuda-validator", "", "", "basic_8601"),
