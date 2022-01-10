@@ -3,6 +3,8 @@
   matchkeys:
   - pod_name: prometheus
     container_name: prometheus
+  - pod_name: blackbox-exporter
+    container_name: blackbox-exporter
   parser_rules:
   - name: key_value
   - name: override_severity
@@ -10,3 +12,13 @@
     - matchtype: startswith
       matchkey: "Starting Prometheus"
       loglevel: notice
+    - matchtype: startswith
+      matchkey: "Starting blackbox_exporter"
+      loglevel: notice
+- name: prometheus
+  show_in_selector: false
+  matchkeys:
+  - pod_name: blackbox-exporter
+    container_name: module-configmap-reloader
+  parser_rules:
+  - name: ts_8601
