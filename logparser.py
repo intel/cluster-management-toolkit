@@ -2433,14 +2433,11 @@ builtin_parsers = [
 	("", "", "gcr.io/knative", "kube_parser_1"),
 	("k8s-mlperf-image-classification-training", "", "", "kube_parser_1"),
 	("kube-app-manager-controller", "kube-app-manager", "", "kube_app_manager"),
-	("kube-controller-manager", "", "", "kube_parser_structured_glog"),
 	("kube-flannel", "install-cni", "", "kube_parser_structured_glog"),
 	("kube-flannel", "kube-flannel", "", "kube_parser_1"),
 	# kubeflow
 	("", "", "gcr.io/arrikto/kubeflow/oidc-authservice", "key_value"),
-	("kube-proxy", "", "", "kube_parser_structured_glog"),
 	("kube-router", "", "", "kube_parser_structured_glog"),
-	("kube-scheduler", "", "", "kube_parser_structured_glog"),
 	("kube-state-metrics", "", "", "kube_parser_1"),
 
 	("local-path-provisioner", "", "", "kube_parser_1"),
