@@ -1296,9 +1296,7 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 
 	return message, remnants
 
-# kube-proxy/kube-proxy
 # metrics-server/metrics-server
-# kube-state-metrics/*
 # Example(s):
 # I0221 23:26:05.862399       1 server.go:150] Version: v1.17.3
 # E0702 11:03:23.913858859       1 server_chttp2.cc:40]        {"created":
@@ -2393,7 +2391,6 @@ builtin_parsers = [
 	# kubeflow
 	("", "", "gcr.io/arrikto/kubeflow/oidc-authservice", "key_value"),
 	("kube-router", "", "", "kube_parser_structured_glog"),
-	("kube-state-metrics", "", "", "kube_parser_1"),
 
 	("local-path-provisioner", "", "", "kube_parser_1"),
 
