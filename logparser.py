@@ -2405,7 +2405,6 @@ builtin_parsers = [
 
 	("helm-", "", "", "kube_parser_1"),
 
-	("inteldeviceplugins-controller-manager", "", "", "kube_parser_structured_glog"),
 	("intel-gpu-plugin", "", "", "kube_parser_1"),
 	("intel-qat-plugin", "", "", "kube_parser_1"),
 	("intel-sgx-aesmd", "", "", "kube_parser_1"),
@@ -2434,7 +2433,6 @@ builtin_parsers = [
 	("kilo", "", "", "kube_parser_json_glog"),
 	("", "", "gcr.io/knative", "kube_parser_1"),
 	("k8s-mlperf-image-classification-training", "", "", "kube_parser_1"),
-	("", "kube-rbac-proxy", "", "kube_parser_1"),
 	("kube-app-manager-controller", "kube-app-manager", "", "kube_app_manager"),
 	("kube-controller-manager", "", "", "kube_parser_structured_glog"),
 	("kube-flannel", "install-cni", "", "kube_parser_structured_glog"),
