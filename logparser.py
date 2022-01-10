@@ -2324,8 +2324,6 @@ builtin_parsers = [
 	("admission-webhook-bootstrap", "", "", "basic_8601"),
 	("admission-webhook-deployment", "admission-webhook", "", "kube_parser_1"),
 	("admission-webhook-deployment", "", "", "kube_parser_1"),
-	("alertmanager-main", "config-reloader", "", "kube_parser_structured_glog"),
-	("alertmanager-main", "", "", "key_value"),
 	("application-controller-stateful-set", "manager", "", "kube_parser_1"),
 	("argo-ui", "argo-ui", "", "basic_8601_colon_severity"),
 	("autoscaler-hpa", "autoscaler-hpa", "", "kube_parser_1"),

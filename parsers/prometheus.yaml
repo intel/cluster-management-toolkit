@@ -13,6 +13,7 @@
     container_name: prometheus
   - pod_name: blackbox-exporter
     container_name: blackbox-exporter
+  - pod_name: alertmanager
   parser_rules:
   - name: key_value
   - name: override_severity
@@ -22,6 +23,12 @@
       loglevel: notice
     - matchtype: startswith
       matchkey: "Starting blackbox_exporter"
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "Starting Alertmanager"
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "Starting prometheus-config-reloader"
       loglevel: notice
 - name: prometheus
   show_in_selector: false
