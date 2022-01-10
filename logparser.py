@@ -290,8 +290,6 @@ def split_colon_severity(message, severity = loglevel.INFO):
 	if tmp is not None:
 		severity = severities.get(tmp[1].upper(), severity)
 		message = tmp[2]
-	else:
-		severity = loglevel.INFO
 
 	return message, severity
 
@@ -2455,7 +2453,6 @@ builtin_parsers = [
 	("nginx", "", "", "nginx"),
 	("gpu-feature-discovery", "toolkit-validation", "", "basic_8601"),
 	("gpu-feature-discovery", "", "", ("custom", ["colon_facility", "ts_8601"])),
-	("gpu-operator", "", "", ("custom", ["glog", "ts_8601", "spaced_severity_facility", "key_value", "colon_severity"])),
 	("nvidia-cuda-validator", "", "", "basic_8601"),
 	("nvidia-device-plugin", "", "", "basic_8601"),
 	("nvidia-container-toolkit", "driver-validation", "", "basic_8601"),
@@ -2614,7 +2611,7 @@ def init_parser_list():
 					for rule in parser_rules:
 						if type(rule) == dict:
 							rule_name = rule.get("name")
-							if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "json_line", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event"]:
+							if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "json_line", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility"]:
 								rules.append(rule_name)
 							elif rule_name in ["json", "json_event", "key_value", "key_value_with_leading_message"]:
 								rules.append((rule_name, rule.get("options", {})))
