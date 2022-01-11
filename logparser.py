@@ -1067,7 +1067,6 @@ def override_severity(message, severity, facility = None):
 		"Kiali: Version: ",
 		"Kiali: Console version: ",
 		"Kubernetes host: ",
-		"kube-router version",
 		"NodeName: ",
 		"OpenShift Web Console Version",
 		"  Release:    ",
@@ -1128,7 +1127,7 @@ def custom_override_severity(message, severity, overrides = []):
 			if not message.endswith(override_pattern):
 				continue
 		elif override_type == "regex":
-			tmp = re.match(pattern, message)
+			tmp = re.match(override_pattern, message)
 			if tmp is None:
 				continue
 		else:
@@ -2390,7 +2389,6 @@ builtin_parsers = [
 	("kube-flannel", "kube-flannel", "", "kube_parser_1"),
 	# kubeflow
 	("", "", "gcr.io/arrikto/kubeflow/oidc-authservice", "key_value"),
-	("kube-router", "", "", "kube_parser_structured_glog"),
 
 	("local-path-provisioner", "", "", "kube_parser_1"),
 
