@@ -860,33 +860,40 @@ class KubernetesHelper:
 		("CiliumClusterwideNetworkPolicy", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumclusterwidenetworkpolicies",
+			"aliases": ["ccnp"],
 			"namespaced": False,
 		},
 		("CiliumEndpoint", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumendpoints",
+			"aliases": ["ciliumep", "cep"],
 		},
 		("CiliumExternalWorkload", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumexternalworkloads",
+			"aliases": ["cew"],
 			"namespaced": False,
 		},
 		("CiliumIdentity", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumidentities",
+			"aliases": ["ciliumid"],
 			"namespaced": False,
 		},
 		("CiliumLocalRedirectPolicy", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumlocalredirectpolicies",
+			"aliases": ["clrp"],
 		},
 		("CiliumNetworkPolicy", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumnetworkpolicies",
+			"aliases": ["ciliumnp", "cnp"],
 		},
 		("CiliumNode", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumnodes",
+			"aliases": ["ciliumn", "cn"],
 			"namespaced": False,
 		},
 		# config.openshift.io
