@@ -32,7 +32,7 @@ import re
 import sys
 import yaml
 
-from iktlib import deep_get_with_fallback, format_yaml, format_yaml_line
+from iktlib import deep_get, deep_get_with_fallback, format_yaml, format_yaml_line
 
 HOMEDIR = str(Path.home())
 IKTDIR = os.path.join(HOMEDIR, ".ikt")
@@ -129,7 +129,7 @@ def month_to_numerical(month):
 	raise TypeError("No matching month")
 
 # Mainly used by glog
-def letter_to_severity(letter):
+def letter_to_severity(letter, default = None):
 	severities = {
 		"F": loglevel.EMERG,
 		"E": loglevel.ERR,
@@ -140,9 +140,21 @@ def letter_to_severity(letter):
 		"D": loglevel.DEBUG,
 	}
 
-	return severities.get(letter, loglevel.INFO)
+	return severities.get(letter, default)
 
-def text_to_severity(text, default = loglevel.INFO):
+def str_4letter_to_severity(string, default = None):
+	severities = {
+		"CRIT": loglevel.CRIT,
+		"FATA": loglevel.CRIT,
+		"ERRO": loglevel.ERR,
+		"WARN": loglevel.WARNING,
+		"NOTI": loglevel.NOTICE,
+		"INFO": loglevel.INFO,
+		"DEBU": loglevel.DEBUG,
+	}
+	return severities.get(severity_str, default)
+
+def str_to_severity(text, default = None):
 	severities = {
 		"error": loglevel.ERR,
 		"warn": loglevel.WARNING,
@@ -410,6 +422,10 @@ def split_iso_timestamp(message, timestamp):
 	# message + either a timestamp or None is passed in, so it's safe just to return it too
 	return message, timestamp
 
+def strip_iso_timestamp(message):
+	message, _timestamp = split_iso_timestamp(message, None)
+	return message
+
 # 2020-02-20 13:47:01.531 GMT
 def strip_iso_timestamp_with_tz(message):
 	tmp = re.match(r"^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d\.\d\d\d [A-Z]{3}(\s+?|$)(.*)", message)
@@ -518,13 +534,13 @@ def split_glog(message, severity = None):
 def __split_severity_facility_style(message, severity = loglevel.INFO, facility = ""):
 	tmp = re.match(r"^\s*([A-Z]+)\s+([a-zA-Z-\.]+)\s+(.*)", message)
 	if tmp is not None:
-		severity = text_to_severity(tmp[1], default = severity)
+		severity = str_to_severity(tmp[1], default = severity)
 		facility = tmp[2]
 		message = tmp[3]
 
 	return message, severity, facility
 
-def split_json_style(message, timestamp, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
+def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
 	logentry = None
 	remnants = None
 
@@ -585,7 +601,7 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 				logentry.pop(_fac, None)
 
 		if level is not None:
-			severity = text_to_severity(level)
+			severity = str_to_severity(level)
 
 		# If the message is folded, append the rest
 		if fold_msg == True:
@@ -658,9 +674,9 @@ def split_json_style(message, timestamp, severity = loglevel.INFO, facility = ""
 	else:
 		msgseverity = severity
 
-	return message, timestamp, msgseverity, facility, remnants
+	return message, msgseverity, facility, remnants
 
-def split_json_style_raw(message, timestamp, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}, merge_message = False):
+def split_json_style_raw(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}, merge_message = False):
 	global logparser_configuration
 
 	tmp_msg_first = logparser_configuration.msg_first
@@ -675,7 +691,7 @@ def split_json_style_raw(message, timestamp, severity = loglevel.INFO, facility 
 	logparser_configuration.pop_ts = False
 	logparser_configuration.pop_facility = False
 
-	_message, timestamp, _severity, _facility, _remnants = split_json_style(message = message, timestamp = timestamp, severity = severity, facility = facility, fold_msg = fold_msg, options = options)
+	_message, _severity, _facility, _remnants = split_json_style(message = message, severity = severity, facility = facility, fold_msg = fold_msg, options = options)
 
 	logparser_configuration.msg_first = tmp_msg_first
 	logparser_configuration.msg_extract = tmp_msg_extract
@@ -689,9 +705,9 @@ def split_json_style_raw(message, timestamp, severity = loglevel.INFO, facility 
 	else:
 		remnants = _remnants
 
-	return message, timestamp, severity, facility, remnants
+	return message, severity, facility, remnants
 
-def json_event(message, timestamp, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
+def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
 	remnants = []
 	tmp = message.split(" ", 2)
 
@@ -699,13 +715,13 @@ def json_event(message, timestamp, severity = loglevel.INFO, facility = "", fold
 	message.replace("\0", "")
 
 	if not message.startswith("EVENT ") or len(tmp) < 3:
-		return message, timestamp, severity, facility, remnants
+		return message, severity, facility, remnants
 
 	event = tmp[1]
 
 	if event in ["AddPod", "DeletePod"] or (event == "UpdatePod" and not "} {" in tmp[2]):
 		msg = tmp[2]
-		_message, _timestamp, _severity, _facility, remnants = split_json_style_raw(message = msg, timestamp = timestamp, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_message = True)
+		_message, _severity, _facility, remnants = split_json_style_raw(message = msg, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_message = True)
 		message = f"{tmp[0]} {event}"
 		if event == "UpdatePod":
 			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [No changes]", ("logview", f"unchanged"))]
@@ -719,7 +735,7 @@ def json_event(message, timestamp, severity = loglevel.INFO, facility = "", fold
 			except ValueError as e:
 				message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [Error: could not parse JSON]", ("logview", f"severity_error"))]
 				remnants = [(tmp[2], severity)]
-				return message, timestamp, severity, facility, remnants
+				return message, severity, facility, remnants
 			new_str = json_dumps(new)
 
 			remnants = []
@@ -738,7 +754,7 @@ def json_event(message, timestamp, severity = loglevel.INFO, facility = "", fold
 	else:
 		sys.exit(f"json_event: Unknown EVENT type:\n{message}")
 
-	return message, timestamp, severity, facility, remnants
+	return message, severity, facility, remnants
 
 # log messages of the format:
 # 2020-05-14 08:25:24.481670: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcudart.so.10.1
@@ -835,7 +851,7 @@ def split_bracketed_timestamp_severity_facility(message, default = loglevel.INFO
 	tmp = re.match(r"\[(.*?) (.*?) (.*?)\]: (.*)", message)
 
 	if tmp is not None:
-		severity = text_to_severity(tmp[2])
+		severity = str_to_severity(tmp[2])
 		facility = tmp[3]
 		message = tmp[4]
 
@@ -872,67 +888,6 @@ def calico(message, fold_msg = True):
 		severity = min(loglevel.NOTICE, severity)
 	if message.endswith("\\n"):
 		message = message[:-2]
-
-	return facility, severity, message, remnants
-
-# K8s etcd/etcd
-# Note: Uses logger which has its own log messages
-#       to warn about deprecated usage...
-# So we're essentially parsing two formats in one. "Yay!"
-# Example(s):
-# Also, all lines (except the raft lines) seem to be prefixed
-# by a facility
-# raft2020/02/21 23:26:05 INFO:
-# There are also log messages from grpc that have another format...
-# WARNING: 2020/04/03 04:54:55 grpc: Server.processUnaryRPC failed [...]
-def etcd(message, fold_msg = True):
-	remnants = []
-
-	message, tmpseverity1, facility, remnants, _match = split_glog(message)
-
-	# Reformat log messages from grpc
-	# Do this before splitting second round of timestamps
-	# since the warning precedes the timestamp
-	message, tmpseverity2 = split_colon_severity(message)
-
-	# Split second round of timestamps...
-	message, _timestamp = split_iso_timestamp(message, None)
-
-	# Get rid of the warning from logger
-	message, tmpseverity3 = split_bracketed_severity(message)
-	severity = min(tmpseverity1, tmpseverity2, tmpseverity3)
-
-	tmp = re.match(r"^(. \| |[A-Z]+: )(.*)", message)
-
-	if tmp is not None:
-		if tmp[1][2] == "|":
-			severity = letter_to_severity(tmp[1][0])
-			message = tmp[2]
-		else:
-			# The severity we get here is "<severity>: "
-			# the parser expects "<severity>",
-			# so strip the last two characters
-			severity = text_to_severity(tmp[1][:-2])
-			message = tmp[2]
-
-	tmp = re.match(r"^(raft)\d+\/\d\d\/\d\d \d\d:\d\d:\d\d ([A-Z]+): (.*)", message)
-	if tmp is not None:
-		facility = tmp[1]
-		severity = text_to_severity(tmp[2])
-		message = tmp[3]
-	else:
-		tmp = re.match(r"^(.*?): (.*)", message)
-
-		if tmp is not None:
-			facility = tmp[1]
-			message = tmp[2]
-		else:
-			facility = ""
-
-		if message.startswith("etcd Version: "):
-			severity = loglevel.NOTICE
-		elif message == "/health OK (status code 200)":
-			severity = loglevel.DEBUG
 
 	return facility, severity, message, remnants
 
@@ -982,7 +937,7 @@ def kube_parser_json(message, fold_msg = True, glog = False):
 		caller = logentry.pop("caller", None)
 
 		if level is not None:
-			tmpseverity = text_to_severity(level)
+			tmpseverity = str_to_severity(level)
 		else:
 			tmpseverity = loglevel.INFO
 
@@ -1062,8 +1017,6 @@ def override_severity(message, severity, facility = None):
 		"Version: ",
 		"\"Version info\"",
 
-		"cilium-envoy  version",
-		"Cilium Operator",
 		"Kiali: Version: ",
 		"Kiali: Console version: ",
 		"Kubernetes host: ",
@@ -1255,7 +1208,7 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 					continue
 				elif entry == "level":
 					# This is used as severity by prometheus
-					s = text_to_severity(value, -1)
+					s = str_to_severity(value, -1)
 					if s != -1 and s < severity:
 						severity = s
 					continue
@@ -1375,7 +1328,7 @@ def seldon(message, fold_msg = True):
 	# This log uses a rather special format for severity and facility
 	tmp = re.match(r"^\s*([A-Z]+)\s*([-a-zA-Z.]*)\s*(.*)", message)
 	if tmp is not None:
-		severity = text_to_severity(tmp[1])
+		severity = str_to_severity(tmp[1])
 		facility = tmp[2]
 		message = tmp[3]
 
@@ -1409,7 +1362,7 @@ def mysql(message, fold_msg = True):
 	else:
 		tmp = re.match(r"^([A-Z][a-z]+):\s+(.*)", message)
 		if tmp is not None:
-			_severity = text_to_severity(tmp[1], -1)
+			_severity = str_to_severity(tmp[1], -1)
 			if severity != -1:
 				severity = _severity
 				message = tmp[2]
@@ -1500,7 +1453,7 @@ def nvidia_smi_exporter(message, fold_msg = True):
 
 	if tmp is not None:
 		facility = tmp[1]
-		severity = text_to_severity(tmp[2])
+		severity = str_to_severity(tmp[2])
 		message = tmp[3]
 	else:
 		facility = ""
@@ -1719,14 +1672,14 @@ def web_app(message, fold_msg = True):
 			if tmp is not None:
 				_timestamp = tmp[1]
 				_pid = tmp[2]
-				severity = text_to_severity(tmp[3])
+				severity = str_to_severity(tmp[3])
 				message = tmp[4]
 		else:
 			tmp = re.match(r"^(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d,\d\d\d) \| (.+?) \| ([A-Z]+) \| (.*)", message)
 			if tmp is not None:
 				_timestamp = tmp[1]
 				facility = tmp[2]
-				severity = text_to_severity(tmp[3])
+				severity = str_to_severity(tmp[3])
 				message = tmp[4]
 
 	if severity is None:
@@ -1747,7 +1700,7 @@ def istio(message, fold_msg = True):
 
 	tmp = re.match(r"^\s+([a-z]+)\s+(.*)", message)
 	if tmp is not None:
-		severity = text_to_severity(tmp[1])
+		severity = str_to_severity(tmp[1])
 		message = tmp[2]
 
 	tmp = re.match(r"^\[(\d+-\d\d-\d\d \d\d:\d\d:\d\d\.\d+)\]\[\d+\]\[([a-z]+)\]\[([a-z]+)\] \[(.+)\] (.*)", message)
@@ -1755,7 +1708,7 @@ def istio(message, fold_msg = True):
 		# timestamp = tmp[1]
 		# something = tmp[3]
 		if severity is None:
-			severity = text_to_severity(tmp[2])
+			severity = str_to_severity(tmp[2])
 		facility = tmp[4]
 		message = tmp[5]
 
@@ -1788,7 +1741,7 @@ def istio_pilot(message, fold_msg = True):
 
 	tmp = re.match(r"^\s+([A-Za-z]+)\s+(.*)", message)
 	if tmp is not None:
-		severity = text_to_severity(tmp[1])
+		severity = str_to_severity(tmp[1])
 		message = tmp[2]
 	else:
 		severity = loglevel.INFO
@@ -2005,7 +1958,7 @@ def kube_parser_structured_glog(message, fold_msg = True):
 							facility = value
 						continue
 					elif entry == "level":
-						s = text_to_severity(value, -1)
+						s = str_to_severity(value, -1)
 						if s != -1 and s < severity:
 							severity = s
 						continue
@@ -2213,7 +2166,7 @@ def seconds_severity_facility(message, fold_msg = True):
 
 	tmp = re.match(r"(\[\s*?\d+?\.\d+?s\])\s+(....)\s+(.+?)\s(.*)", message)
 	if tmp is not None:
-		severity = text_to_severity(tmp[2], default = severity)
+		severity = str_to_severity(tmp[2], default = severity)
 		facility = tmp[3]
 		message = [(f"{tmp[1]} ", ("logview", "timestamp")), (f"{tmp[4]}", ("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 
@@ -2224,6 +2177,32 @@ def substitute_bullets(message, prefix):
 		# We don't want to replace all "*" in the message with bullet, just prefixes
 		message = message[0:len(prefix)].replace("*", "•") + message[len(prefix):]
 	return message
+
+def custom_splitter(message, severity = None, facility = "", fold_msg = True, options = {}):
+	regex_pattern = deep_get(options, "regex", None)
+	severity_field = deep_get(options, "severity#field", None)
+	severity_transform = deep_get(options, "severity#transform", None)
+	facility_field = deep_get(options, "facility#field", None)
+	message_field = deep_get(options, "message#field", None)
+
+	# The bare minimum for these rules is
+	if regex_pattern is None or message_field is None:
+		raise Exception("parser rule is missing regex or message field")
+
+	tmp = re.match(regex_pattern, message)
+	if tmp is not None:
+		if severity_field is not None and severity_transform is not None:
+			if severity_transform == "letter":
+				severity = letter_to_severity(tmp[severity_field], severity)
+			elif severity_transform == "4letter":
+				severity = str_4letter_to_severity(tmp[severity_field], severity)
+			elif severity_transform == "str":
+				severity = str_to_severity(tmp[severity_field], severity)
+		if facility_field is not None and len(facility) == 0:
+			facility = tmp[facility_field]
+		message = tmp[message_field]
+
+	return message, severity, facility
 
 def custom_parser(message, fold_msg = True, filters = []):
 	facility = ""
@@ -2236,6 +2215,8 @@ def custom_parser(message, fold_msg = True, filters = []):
 			if _filter == "glog":
 				message, severity, facility, remnants, _match = split_glog(message)
 			elif _filter == "spaced_severity_facility":
+				message, severity, facility = __split_severity_facility_style(message, severity, facility)
+			elif _filter == "letter_severity_colon_facility":
 				message, severity, facility = __split_severity_facility_style(message, severity, facility)
 			elif _filter == "directory":
 				facility, severity, message, remnants = directory(message, fold_msg = fold_msg)
@@ -2250,7 +2231,7 @@ def custom_parser(message, fold_msg = True, filters = []):
 					message, remnants = expand_event(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
 			# Timestamp formats
 			elif _filter == "ts_8601": # Anything that resembles ISO-8601
-				message, _timestamp = split_iso_timestamp(message, None)
+				message = strip_iso_timestamp(message)
 			elif _filter == "ts_8601_tz": # ISO-8601 with 3-letter timezone; since the offset is dependent on date we don't even try to parse
 				message = strip_iso_timestamp_with_tz(message)
 			# Facility formats
@@ -2276,15 +2257,18 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Multiparsers
 			if _filter[0] == "bracketed_timestamp_severity_facility":
 				message, severity, facility = split_bracketed_timestamp_severity_facility(message, default = _filter[1])
+			elif _filter[0] == "custom_splitter":
+				_parser_options = _filter[1]
+				message, severity, facility = custom_splitter(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "json":
 				_parser_options = _filter[1]
 				if message.startswith("{\""):
-					message, _timestamp, severity, facility, remnants = split_json_style(message, timestamp = None, fold_msg = fold_msg, options = _parser_options)
+					message, severity, facility, remnants = split_json_style(message, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "json_event":
 				_parser_options = _filter[1]
 				# We don't extract the facility/severity from folded messages, so just skip if fold_msg == True
 				if message.startswith("EVENT ") and fold_msg == False:
-					message, _timestamp, severity, facility, remnants = json_event(message, timestamp = None, fold_msg = fold_msg, options = _parser_options)
+					message, severity, facility, remnants = json_event(message, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "key_value":
 				_parser_options = _filter[1]
 				if "=" in message:
@@ -2301,6 +2285,9 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Filters
 			elif _filter[0] == "substitute_bullets":
 				message = substitute_bullets(message, _filter[1])
+
+	if severity is None:
+		severity = loglevel.INFO
 
 	return facility, severity, message, remnants
 
@@ -2339,16 +2326,11 @@ builtin_parsers = [
 	("cdi-node", "", "", "kube_parser_1"),
 	("centraldashboard", "", "", "basic_8601"),
 	("cifar10-training-gpu-worker", "", "", "kube_parser_1"),
-	("cilium", "", "", "key_value"),
 	("cluster-local-gateway", "istio-proxy", "", "istio"),
 
 	("", "", "quay.io/dexidp/dex", "key_value"),
 	("dist-mnist", "", "", "jupyter"),
 	("dns-autoscaler", "", "", "kube_parser_structured_glog"),
-
-	("etcd", "etcd-metrics", "", "kube_parser_json"),
-	("etcd", "", "", ["kube_parser_json", "etcd"]),
-	("master-etcd", "", "", "etcd"),
 
 	("gpu-aware-scheduling", "", "", "kube_parser_1"),
 	("grafana", "", "", "key_value"),
@@ -2547,6 +2529,7 @@ def init_parser_list():
 						print()
 				except:
 					sys.exit(f"{os.path.join(parser_dir, filename)=}\n{d=}")
+
 				for parser in d:
 					parser_name = parser.get("name", "")
 					if len(parser_name) == 0:
@@ -2577,7 +2560,7 @@ def init_parser_list():
 							rule_name = rule.get("name")
 							if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "json_line", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility"]:
 								rules.append(rule_name)
-							elif rule_name in ["json", "json_event", "key_value", "key_value_with_leading_message"]:
+							elif rule_name in ["json", "json_event", "key_value", "key_value_with_leading_message", "custom_splitter"]:
 								rules.append((rule_name, rule.get("options", {})))
 							elif rule_name == "substitute_bullets":
 								prefix = rule.get("prefix", "* ")
