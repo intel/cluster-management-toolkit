@@ -87,7 +87,6 @@ prepare_targets = {
 			f"{ANSIBLE_PLAYBOOK_DIR}/prepare_passwordless_ansible.yaml",
 			f"{ANSIBLE_PLAYBOOK_DIR}/prepare_control_plane.yaml",
 			f"{ANSIBLE_PLAYBOOK_DIR}/add_kubernetes_repo.yaml",
-			f"{ANSIBLE_PLAYBOOK_DIR}/install_packages.yaml",
 		],
 		"deb_packages": [
 			"docker.io",
@@ -113,10 +112,6 @@ prepare_targets = {
 			"ansible",
 			# If available
 			# "ansible-mitogen",
-			"kubectl",
-		],
-		"deb_packages_held": [
-			"kubectl",
 		],
 	},
 }
@@ -126,8 +121,32 @@ setup_control_plane_targets = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
 		"playbooks": [
+			f"{ANSIBLE_PLAYBOOK_DIR}/install_packages.yaml",
 			f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_setup_control_plane.yaml",
 			f"{ANSIBLE_PLAYBOOK_DIR}/fetch_kube_config.yaml",
+		],
+		"deb_packages": [
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+			"kubernetes-cni",
+		],
+		"deb_packages_held": [
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+		],
+	},
+	"localhost": {
+		"pretty_name": [("host system", "programname")],
+		"playbooks": [
+			f"{ANSIBLE_PLAYBOOK_DIR}/install_packages.yaml",
+		],
+		"deb_packages": [
+			"kubectl",
+		],
+		"deb_packages_held": [
+			"kubectl",
 		],
 	},
 }
@@ -972,6 +991,21 @@ def get_cluster_name():
 
 	return cluster_name
 
+def __task_run_setup_playbooks_on_localhost(installation_info):
+	cluster_name = installation_info["installation_target"]
+	distro = installation_info[cluster_name]["distro"]
+	requested_version = installation_info[cluster_name]["requested_version"]
+	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
+	selection = __selection_control_planes()
+	playbooks = populate_playbooks_from_paths(setup_control_plane_targets["localhost"]["playbooks"])
+	extra_values = {
+		"cluster_name": cluster_name,
+		"pod_network_cidr": pod_network_cidr,
+		"packages": setup_control_plane_targets["localhost"].get("deb_packages", []),
+		"held_packages": setup_control_plane_targets["localhost"].get("deb_packages_held", []),
+	}
+	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
+
 def __task_run_setup_playbooks_on_control_planes(installation_info):
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
@@ -982,6 +1016,8 @@ def __task_run_setup_playbooks_on_control_planes(installation_info):
 	extra_values = {
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
+		"packages": setup_control_plane_targets[distro].get("deb_packages", []),
+		"held_packages": setup_control_plane_targets[distro].get("deb_packages_held", []),
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -1292,10 +1328,11 @@ prepare_tasks = [
 	([("Install ", "action"), ("ansible.posix", "programname"), (" if necessary", "action")], __task_check_and_install_ansible_posix),
 	([("Run playbooks on ", "action"), ("localhost", "hostname")], __task_run_preparation_playbooks_on_localhost),
 	([("Run playbooks on ", "action"), ("control planes", "hostname")], __task_run_preparation_playbooks_on_control_planes),
-	([("Setup ", "action"), ("bash completion", "emphasis"), (" for ", "action"), ("kubectl", "programname")], __task_setup_bash_completion),
 ]
 
 __setup_kubeadm_control_plane_tasks = [
+	([("Run playbooks on ", "action"), ("localhost", "hostname")], __task_run_setup_playbooks_on_localhost),
+	([("Setup ", "action"), ("bash completion", "emphasis"), (" for ", "action"), ("kubectl", "programname")], __task_setup_bash_completion),
 	([("Run playbooks on ", "action"), ("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
 	([("Import kube config", "action")], __task_import_kube_config),
 	([("Setup ", "action"), ("kubeadm", "programname"), (" Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
@@ -1478,22 +1515,12 @@ def prepare_installation(options = None, args = None):
 	else:
 		requested_version = __find_requested_version(distro)
 
-	if distro == "kubeadm":
-		prepare_targets["localhost"]["deb_packages"].remove("kubectl")
-		prepare_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
-		prepare_targets["kubeadm"]["deb_packages"].remove("kubectl")
-		prepare_targets["kubeadm"]["deb_packages"].append(f"kubectl={requested_version}")
-		prepare_targets["kubeadm"]["deb_packages"].remove("kubeadm")
-		prepare_targets["kubeadm"]["deb_packages"].append(f"kubeadm={requested_version}")
-		prepare_targets["kubeadm"]["deb_packages"].remove("kubelet")
-		prepare_targets["kubeadm"]["deb_packages"].append(f"kubelet={requested_version}")
-
 	iktprint([("   Requested version: ", "action"), (requested_version, "version")])
 	update_installation_info(requested_version = requested_version)
 
 	iktprint([("\nControl plane preparation successful", "success")])
 	print("\nNext step:")
-	iktprint([("• ", "separator"), (f"{about.admin_program_name}", "programname"), (" setup-control-plane ", "command"), ("[", "separator"), ("CNI", "argument"), ("]", "separator")])
+	iktprint([("• ", "separator"), (f"{about.admin_program_name}", "programname"), (" setup-control-plane ", "command"), ("[", "separator"), ("CNI", "argument"), ("]", "separator"), (" [", "separator"), ("POD_NETWORK_CIDR", "argument"), ("]", "separator")])
 	iktprint([("\nSee “", "separator"), (f"{about.admin_program_name}", "programname"), (" help", "command"), ("“ for more information about valid ", "default"), ("CNI", "argument"), (" options.\n", "default")])
 
 def import_cluster(options = None, args = None):
@@ -1797,6 +1824,16 @@ def setup_control_plane(options, args):
 			sys.exit(2)
 
 	iktprint([("\n[Setting up control plane]", "phase")])
+
+	if distro == "kubeadm":
+		setup_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
+		setup_control_plane_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
+		setup_control_plane_targets["kubeadm"]["deb_packages"].remove("kubectl")
+		setup_control_plane_targets["kubeadm"]["deb_packages"].append(f"kubectl={requested_version}")
+		setup_control_plane_targets["kubeadm"]["deb_packages"].remove("kubeadm")
+		setup_control_plane_targets["kubeadm"]["deb_packages"].append(f"kubeadm={requested_version}")
+		setup_control_plane_targets["kubeadm"]["deb_packages"].remove("kubelet")
+		setup_control_plane_targets["kubeadm"]["deb_packages"].append(f"kubelet={requested_version}")
 
 	run_tasks(tasks = setup_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "installed")
 	update_installation_info(version = requested_version)
