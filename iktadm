@@ -1224,7 +1224,7 @@ def __task_remove_kube_config(installation_info):
 	if not os.path.exists(f"{HOMEDIR}/.kube"):
 		check_and_print_status(True)
 
-	if os.path.exists(f"{HOMEDIR}/.kube/{cluster_name}"):
+	if os.path.exists(f"{HOMEDIR}/.kube/config.{cluster_name}"):
 		os.remove(f"{HOMEDIR}/.kube/config.{cluster_name}")
 
 	if os.path.isfile(f"{HOMEDIR}/.kube/config"):
@@ -1249,9 +1249,18 @@ def __task_remove_kube_config(installation_info):
 	# If there's no cluster left, remove the config completely
 	if d1 is None or len(d1["clusters"]) == 0:
 		os.remove(f"{HOMEDIR}/.kube/config")
-		# If there's nothing else than the cache subdirectory in .kube, remove .kube too
-		filecount = len(os.listdir(f"{HOMEDIR}/.kube"))
-		if filecount == 0 or filecount == 1 and os.path.isdir(f"{HOMEDIR}/.kube/cache"):
+		_dir = os.listdir(f"{HOMEDIR}/.kube")
+		try:
+			_dir.remove(f"cache")
+		except ValueError:
+			pass
+		try:
+			_dir.remove(f"http-cache")
+		except ValueError:
+			pass
+
+		# If there's nothing else than the cache subdirectories in .kube, remove .kube too
+		if len(_dir) == 0:
 			shutil.rmtree(f"{HOMEDIR}/.kube")
 	else:
 		# Set the context to the first remaining context, if any
@@ -1911,6 +1920,10 @@ def teardown_control_plane(options, args):
 		__list_phases(teardown_control_plane_tasks)
 		sys.exit(0)
 
+	if not os.path.exists(IKT_INSTALLATION_INFO):
+		iktprint([("Error: ", "error"), ("Could not find reliable installation information. Aborting.", "default")], stderr = True)
+		sys.exit(2)
+
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
@@ -1975,6 +1988,10 @@ def purge_control_plane(options, args):
 	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(purge_control_plane_tasks)
 		sys.exit(0)
+
+	if not os.path.exists(IKT_INSTALLATION_INFO):
+		iktprint([("Error: ", "error"), ("Could not find reliable installation information. Aborting.", "default")], stderr = True)
+		sys.exit(2)
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
