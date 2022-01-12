@@ -14,10 +14,12 @@
     apt: update_cache=yes force_apt_get=yes
   - name: apt-mark unhold kubeadm kubelet kubectl
     command: apt-mark unhold kubeadm kubelet kubectl
-  - name: Installing new version of kubeadm
+  - name: Installing new versions of kubeadm, kubelet and kubectl
     apt:
       pkg:
       - kubeadm={{ requested_control_plane_k8s_version }}
+      - kubelet={{ requested_control_plane_k8s_version }}
+      - kubectl={{ requested_control_plane_k8s_version }}
       force_apt_get: yes
   - name: Plan upgrade
     shell: |
@@ -33,12 +35,6 @@
   - name: Upgrading control plane
     shell: |
       kubeadm upgrade apply -y {{ requested_control_plane_k8s_version.split("-")[0] }}
-  - name: Installing new versions of kubelet and kubectl
-    apt:
-      pkg:
-      - kubelet={{ requested_control_plane_k8s_version }}
-      - kubectl={{ requested_control_plane_k8s_version }}
-      force_apt_get: yes
   - name: apt-mark hold kubeadm kubelet kubectl
     command: apt-mark hold kubeadm kubelet kubectl
   - name: Restarting kubelet
