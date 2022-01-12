@@ -152,9 +152,9 @@ def str_4letter_to_severity(string, default = None):
 		"INFO": loglevel.INFO,
 		"DEBU": loglevel.DEBUG,
 	}
-	return severities.get(severity_str, default)
+	return severities.get(string, default)
 
-def str_to_severity(text, default = None):
+def str_to_severity(string, default = None):
 	severities = {
 		"error": loglevel.ERR,
 		"warn": loglevel.WARNING,
@@ -164,7 +164,7 @@ def str_to_severity(text, default = None):
 		"debug": loglevel.DEBUG,
 	}
 
-	return severities.get(text.lower(), default)
+	return severities.get(string.lower(), default)
 
 def level_to_severity(level):
 	severities = {
