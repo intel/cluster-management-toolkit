@@ -719,13 +719,13 @@ def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True
 
 	event = tmp[1]
 
-	if event in ["AddPod", "DeletePod"] or (event == "UpdatePod" and not "} {" in tmp[2]):
+	if event in ["AddPod", "DeletePod", "AddNamespace", "DeleteNamespace"] or (event in ["UpdatePod", "UpdateNamespace"] and not "} {" in tmp[2]):
 		msg = tmp[2]
 		_message, _severity, _facility, remnants = split_json_style_raw(message = msg, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_message = True)
 		message = f"{tmp[0]} {event}"
-		if event == "UpdatePod":
+		if event in ["UpdatePod", "UpdateNamespace"]:
 			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [No changes]", ("logview", f"unchanged"))]
-	elif event in ["UpdatePod"]:
+	elif event in ["UpdatePod", "UpdateNamespace"]:
 		tmp2 = re.match(r"^({.*})\s*({.*})", tmp[2])
 		if tmp2 is not None:
 			old = json.loads(tmp2[1])
@@ -2198,6 +2198,8 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 				severity = str_4letter_to_severity(tmp[severity_field], severity)
 			elif severity_transform == "str":
 				severity = str_to_severity(tmp[severity_field], severity)
+			elif severity_transform == "int":
+				severity = int(tmp[severity_field])
 		if facility_field is not None and len(facility) == 0:
 			facility = tmp[facility_field]
 		message = tmp[message_field]
