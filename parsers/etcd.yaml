@@ -4,6 +4,7 @@
   - pod_name: etcd
   parser_rules:
   - name: ts_8601
+  - name: bracketed_severity
   - name: custom_splitter
     options:
       regex: '^([A-Z]) \| (\S+?): (.*)'
@@ -12,6 +13,16 @@
         transform: letter
       facility:
         field: 2
+      message:
+        field: 3
+  - name: custom_splitter
+    options:
+      regex: '^(raft)\d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d ([A-Z]{4}): (.*)'
+      severity:
+        field: 2
+        transform: 4letter
+      facility:
+        field: 1
       message:
         field: 3
   - name: override_severity
