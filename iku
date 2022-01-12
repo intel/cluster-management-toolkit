@@ -9653,7 +9653,22 @@ def containerinfoloop(stdscr, container, kind, obj):
 			hidden_msgs = 0
 			merged_lines = 0
 
+			linecount = len(splitmsg)
+			linepercent = int(linecount * 0.01)
+
+			i = 0
+
+			if linecount > 1000:
+				progressbar = curses_helper.progressbar(None, y = uip.maxy // 2, minx = (uip.minx + 8), maxx = (uip.maxx - 8), progress = 0, title = "Parsing log")
+
 			for line in splitmsg:
+				# We probably need a progress bar once we reach this many lines
+				if linecount > 1000 and (i % linepercent) == 0:
+					curses_helper.progressbar(progressbar, y = uip.maxy // 2, minx = (uip.minx + 8), maxx = (uip.maxx - 8), progress = 100 - 100 * ((linecount - i) / linecount))
+					# XXX: add support for aborting log parsing
+
+				i += 1
+
 				if internal_error:
 					timestamp, facility, severity, message, remnants, parser = logparser("internal_error", "", "", line, container_type = container_type)
 				elif raw_logs:

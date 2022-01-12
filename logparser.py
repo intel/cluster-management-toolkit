@@ -2491,13 +2491,13 @@ def init_parser_list():
 				try:
 					d = yaml.safe_load(f)
 				except:
-					continue
+					sys.exit(f"Parser-file {os.path.join(parser_dir, filename)} is invalid; aborting.")
 
 				try:
 					for parser in d:
-						print()
+						pass
 				except:
-					sys.exit(f"{os.path.join(parser_dir, filename)=}\n{d=}")
+					sys.exit(f"Parser-file {os.path.join(parser_dir, filename)} is invalid; aborting.")
 
 				for parser in d:
 					parser_name = parser.get("name", "")
