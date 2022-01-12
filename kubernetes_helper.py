@@ -1093,6 +1093,11 @@ class KubernetesHelper:
 			"api": "blockaffinities",
 			"namespaced": False,
 		},
+		("CalicoNodeStatus", "crd.projectcalico.org"): {
+			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api": "caliconodestatuses",
+			"namespaced": False,
+		},
 		("ClusterInformation", "crd.projectcalico.org"): {
 			"api_family": "apis/crd.projectcalico.org/v1/",
 			"api": "clusterinformations",
@@ -1136,6 +1141,11 @@ class KubernetesHelper:
 		("IPPool", "crd.projectcalico.org"): {
 			"api_family": "apis/crd.projectcalico.org/v1/",
 			"api": "ippools",
+			"namespaced": False,
+		},
+		("IPReservation", "crd.projectcalico.org"): {
+			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api": "ipreservations",
 			"namespaced": False,
 		},
 		("KubeControllersConfiguration", "crd.projectcalico.org"): {
