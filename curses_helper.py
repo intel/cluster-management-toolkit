@@ -379,7 +379,7 @@ def alert(stdscr, y, x, message):
 # Pass in progress in 0-100; once done clean up with:
 # stdscr.touchwin()
 # stdscr.refresh()
-def progressbar(win, y, minx, maxx, progress):
+def progressbar(win, y, minx, maxx, progress, title = None):
 	width = maxx - minx + 1
 
 	if progress < 0:
@@ -403,16 +403,20 @@ def progressbar(win, y, minx, maxx, progress):
 		win.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
 		col, __discard = attr_to_curses("windowwidget", "default")
 		win.bkgd(" ", col)
+		if title is not None:
+			win.addstr(0, 1, title, attr_to_curses_merged("windowwidget", "title"))
 
 	# progress is in % of the total length
 	for x in range(0, width - 2):
 		if x < (width * progress) // 100:
-			win.addch(1, x + 1, theme["boxdrawing"]["solidblock"], attr_to_curses_merged("progressbar"))
+			win.addch(1, x + 1, theme["boxdrawing"]["solidblock"], attr_to_curses_merged("main", "progressbar"))
 		else:
-			win.addch(1, x + 1, theme["boxdrawing"]["dimmedblock"], attr_to_curses_merged("progressbar"))
+			win.addch(1, x + 1, theme["boxdrawing"]["dimmedblock"], attr_to_curses_merged("main", "progressbar"))
 
 	win.noutrefresh()
 	curses.doupdate()
+
+	return win
 
 ignoreinput = False
 
