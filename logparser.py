@@ -857,40 +857,6 @@ def split_bracketed_timestamp_severity_facility(message, default = loglevel.INFO
 
 	return message, severity, facility
 
-# Calico
-# Calico uses a mix of Kubernetes style logging and its own log format
-# Example(s):
-# I1007 15:50:18.167829       1 client.go:360] parsed scheme: "endpoint"
-# 2020-10-28 16:12:03.681 [INFO][48] felix/int_dataplane.go 1259: Finished applying updates to dataplane. msecToApply=10.347240000000001
-# time="2020-11-14T04:56:17Z" level=info msg="Running as a Kubernetes pod" source="install.go:140"
-def calico(message, fold_msg = True):
-	remnants = []
-	facility = ""
-
-	message, _timestamp = split_iso_timestamp(message, None)
-	message, severity = split_bracketed_severity(message)
-
-	if message.startswith("time=\""):
-		# Try to parse this as key=value
-		facility, severity, message, remnants = key_value(message, fold_msg = fold_msg)
-	else:
-		tmp = re.match(r"^(\[\d+\])\s+(.*\..*)\s+(\d+): (.*)", message)
-		if tmp is not None:
-			# We don't really care about the pid,
-			# but let's assign it just to document what it is
-			pid = tmp[1]
-			facility = f"{tmp[2]}:{tmp[3]}"
-			message = tmp[4]
-		else:
-			message, severity, facility, remnants, _match = split_glog(message)
-
-	if message.startswith("CNI plugin version"):
-		severity = min(loglevel.NOTICE, severity)
-	if message.endswith("\\n"):
-		message = message[:-2]
-
-	return facility, severity, message, remnants
-
 # kube-app-manager
 # 2020-12-27T02:57:49.788Z        INFO    controller-runtime.metrics      metrics server is starting to listen    {"addr": "127.0.0.1:8080"}
 # 2020-12-27T02:57:49.789Z        INFO    setup   starting kube-app-manager
@@ -2182,7 +2148,8 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 	regex_pattern = deep_get(options, "regex", None)
 	severity_field = deep_get(options, "severity#field", None)
 	severity_transform = deep_get(options, "severity#transform", None)
-	facility_field = deep_get(options, "facility#field", None)
+	facility_fields = deep_get(options, "facility#fields", None)
+	facility_separators = deep_get(options, "facility#separators", "")
 	message_field = deep_get(options, "message#field", None)
 
 	# The bare minimum for these rules is
@@ -2200,8 +2167,13 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 				severity = str_to_severity(tmp[severity_field], severity)
 			elif severity_transform == "int":
 				severity = int(tmp[severity_field])
-		if facility_field is not None and len(facility) == 0:
-			facility = tmp[facility_field]
+		if facility_fields is not None and len(facility) == 0:
+			i = 0
+			facility = ""
+			for field in facility_fields:
+				if len(facility) > 0:
+					facility += facility_separators[min(i, len(facility_separators))]
+				facility += tmp[field]
 		message = tmp[message_field]
 
 	return message, severity, facility
@@ -2320,9 +2292,6 @@ builtin_parsers = [
 	("aic-manager", "aic-manager", "", "aic_manager"),
 	("aic-manager", "init-android", "", "modinfo"),
 
-	("calico", "", "", "calico"),
-	("canal", "install-cni", "", "kube_parser_structured_glog"),
-	("canal", "", "", "calico"),
 	("cass-operator", "", "", "kube_parser_json"),
 	("cdi-controller", "", "", "kube_parser_1"),
 	("cdi-node", "", "", "kube_parser_1"),
@@ -2369,8 +2338,6 @@ builtin_parsers = [
 	("", "", "gcr.io/knative", "kube_parser_1"),
 	("k8s-mlperf-image-classification-training", "", "", "kube_parser_1"),
 	("kube-app-manager-controller", "kube-app-manager", "", "kube_app_manager"),
-	("kube-flannel", "install-cni", "", "kube_parser_structured_glog"),
-	("kube-flannel", "kube-flannel", "", "kube_parser_1"),
 	# kubeflow
 	("", "", "gcr.io/arrikto/kubeflow/oidc-authservice", "key_value"),
 
