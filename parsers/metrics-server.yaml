@@ -1,0 +1,14 @@
+- name: metrics-server
+  show_in_selector: false
+  matchkeys:
+  - pod_name: metrics-server
+  parser_rules:
+  - name: glog
+  - name: custom_splitter
+    options:
+      regex: '^\[[a-z]+?\] \d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d (\S+?:\d+): (.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2

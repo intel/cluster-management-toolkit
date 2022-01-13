@@ -1,0 +1,19 @@
+- name: ml-pipeline
+  show_in_selector: false
+  matchkeys:
+  - pod_name: ml-pipeline-ui-artifact
+  parser_rules:
+  - name: json_line
+    options:
+      passlist:
+      - " "
+      - "{"
+      - "}"
+  - name: custom_splitter
+    options:
+      regex: '^\[([A-Z]+?)\] (.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2

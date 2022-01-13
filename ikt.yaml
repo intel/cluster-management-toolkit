@@ -109,15 +109,15 @@ Ansible:
 
   # Path to directories with locally installed playbooks; this can also be used to override
   # the default playbooks--any playbook with the same name as one of the system playbooks
-  # will be overridden by locally installed playbooks; prioritised by the order of directories,
+  # will override the system playbook; prioritised by the order of directories,
   # where a playbook in the first listed directory would override a playbook in the second,
   # etc.
   #
-  # Playbook paths must be quoted. To reference playbooks relative to the user's home directory
+  # Playbook paths must be quoted. To reference playbook directories relative to the user's home directory
   # you can use "{HOME}/", so for instance:
   # local_playbooks:
   # - "{HOME}/local_playbooks"
-  # - "/opt/playbooks"
+  # - "/opt/ikt/playbooks"
   # - ...
 
 # Settings to use when configuring docker
@@ -219,6 +219,19 @@ Pods:
 
   # Show borders and scrollbars
   # show_borders: True
+
+  # Path to directories with locally installed parser files; this can also be used to override
+  # the default parsers--any locally provided match rules will apply be applied before
+  # the default parsers; prioritised by the order of directories,
+  # where a parser rule in the first listed directory would override a playbook in the second,
+  # etc.
+  #
+  # Parser paths must be quoted. To reference parser directories relative to the user's home directory
+  # you can use "{HOME}/", so for instance:
+  # local_parsers:
+  # - "{HOME}/local_parsers"
+  # - "/opt/ikt/parsers"
+  # - ...
 
 Debug:
   # The image to use when creating ephemeral containers

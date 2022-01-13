@@ -32,6 +32,12 @@ import re
 import sys
 import yaml
 
+try:
+	from natsort import natsorted
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+
+import iktlib
 from iktlib import deep_get, deep_get_with_fallback, format_yaml, format_yaml_line
 
 HOMEDIR = str(Path.home())
@@ -362,8 +368,9 @@ def split_iso_timestamp(message, timestamp):
 			break
 
 		# 2020-02-13 12:06:18[+-]00:00 (+timezone)
+		# [2020-02-13 12:06:18 [+-]00:00] (+timezone)
 		# 2020-02-13T12:06:18[+-]0000 (+timezone)
-		tmp = re.match(r"^(\d\d\d\d-\d\d-\d\d)[ T](\d\d:\d\d:\d\d)([\+-])(\d\d):?(\d\d) ?(.*)", message)
+		tmp = re.match(r"^\[?(\d\d\d\d-\d\d-\d\d)[ T](\d\d:\d\d:\d\d) ?([\+-])(\d\d):?(\d\d)\]? ?(.*)", message)
 		if tmp is not None:
 			if tmp_timestamp is None:
 				ymd = tmp[1]
@@ -800,8 +807,6 @@ def replace_tabs(message):
 	return message
 
 # Basic with colon severity prefix (with ISO8601 timestamps):
-# transcode-server-gpu/{dirs,transcode-server-fifo,transcode-server-gpu}
-# transcode-server-cpu/{dirs,transcode-server-fifo,transcode-server-gpu}
 # Only split the lines and separate out timestamps
 def basic_8601_colon_severity(message, fold_msg = True):
 	facility = ""
@@ -873,7 +878,7 @@ def kube_app_manager(message, fold_msg = True):
 	tmp = re.match(r"^(.*?)\s*?({.*})", message)
 	if tmp is not None:
 		message = tmp[1]
-		extra_message, _timestamp, _severity, _facility, remnants = split_json_style(tmp[2], None, severity = severity, facility = facility, fold_msg = fold_msg)
+		extra_message, _severity, _facility, remnants = split_json_style(tmp[2], severity = severity, facility = facility, fold_msg = fold_msg)
 		if len(extra_message) > 0:
 			if remnants is None or len(remnants) == 0:
 				message = f"{messsage}  {extra_message}"
@@ -1274,7 +1279,7 @@ def kube_parser_1(message, fold_msg = True):
 		message = tmp[3]
 
 	# JSON/Python dict
-	message, _timestamp, severity, facility, remnants = split_json_style(message, None, severity, facility, fold_msg)
+	message, severity, facility, remnants = split_json_style(message, severity = severity, facility = facility, fold_msg = fold_msg)
 	message, severity = override_severity(message, severity)
 
 	return facility, severity, message, remnants
@@ -1303,7 +1308,7 @@ def seldon(message, fold_msg = True):
 	tmp = re.match(r"^(.*?)\s*?({.*})", message)
 	if tmp is not None:
 		message = tmp[1]
-		extra_message, _timestamp, severity, facility, remnants = split_json_style(tmp[2], None, severity, facility, fold_msg)
+		extra_message, severity, facility, remnants = split_json_style(tmp[2], severity = severity, facility = facility, fold_msg = fold_msg)
 		if len(extra_message) > 0:
 			if remnants is None or len(remnants) == 0:
 				message = "%s  %s" % (message, extra_message)
@@ -1792,35 +1797,6 @@ def modinfo(message, fold_msg = True):
 		]
 	return facility, severity, message, remnants
 
-def aic_manager(message, fold_msg = True):
-	facility = ""
-	severity = loglevel.INFO
-	remnants = []
-
-	tmp = re.match(r"^(.)/(.+?)\( (\d+?)\): (.*)", message)
-	if tmp is not None:
-		severity = letter_to_severity(tmp[1])
-		facility = tmp[2]
-		pid = tmp[3]
-		message = tmp[4]
-		return facility, severity, message, remnants
-
-	tmp = re.match(r"^(sh): (\d+?): (.*)", message)
-	if tmp is not None:
-		facility = f"{tmp[1]}:{tmp[2]}"
-		message = tmp[3]
-		if message.startswith("cannot create"):
-			severity = loglevel.WARNING
-		return facility, severity, message, remnants
-
-	tmp = re.match("\[(/.+?) \((\d+?/\d+?)\)\] (.*)", message)
-	if tmp is not None:
-		facility = tmp[1]
-		pid = tmp[2]
-		message = tmp[3]
-
-	return facility, severity, message, remnants
-
 # Messages on the format:
 # [timestamp] [severity] message
 def bracketed_timestamp_severity(message, fold_msg = True):
@@ -2148,9 +2124,13 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 	regex_pattern = deep_get(options, "regex", None)
 	severity_field = deep_get(options, "severity#field", None)
 	severity_transform = deep_get(options, "severity#transform", None)
-	facility_fields = deep_get(options, "facility#fields", None)
+	facility_fields = deep_get_with_fallback(options, ["facility#fields", "facility#field"], None)
 	facility_separators = deep_get(options, "facility#separators", "")
 	message_field = deep_get(options, "message#field", None)
+
+	# This message is already formatted
+	if type(message) == list:
+		return message, severity, facility
 
 	# The bare minimum for these rules is
 	if regex_pattern is None or message_field is None:
@@ -2168,12 +2148,16 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 			elif severity_transform == "int":
 				severity = int(tmp[severity_field])
 		if facility_fields is not None and len(facility) == 0:
+			if type(facility_fields) == str:
+				facility_fields = [facility_fields]
 			i = 0
 			facility = ""
 			for field in facility_fields:
-				if len(facility) > 0:
-					facility += facility_separators[min(i, len(facility_separators))]
-				facility += tmp[field]
+				if i > 0:
+					facility += facility_separators[min(i - 1, len(facility_separators) - 1)]
+				if field != 0:
+					facility += tmp[field]
+				i += 1
 		message = tmp[message_field]
 
 	return message, severity, facility
@@ -2194,8 +2178,6 @@ def custom_parser(message, fold_msg = True, filters = []):
 				message, severity, facility = __split_severity_facility_style(message, severity, facility)
 			elif _filter == "directory":
 				facility, severity, message, remnants = directory(message, fold_msg = fold_msg)
-			elif _filter == "json_line":
-				message = format_yaml_line(message, override_formatting = {})
 			elif _filter == "seconds_severity_facility":
 				facility, severity, message, remnants = seconds_severity_facility(message, fold_msg = fold_msg)
 			elif _filter == "facility_hh_mm_ss_ms_severity":
@@ -2203,6 +2185,8 @@ def custom_parser(message, fold_msg = True, filters = []):
 			elif _filter == "expand_event":
 				if message.startswith("Event(v1.ObjectReference{"):
 					message, remnants = expand_event(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
+			elif _filter == "modinfo":
+				facility, severity, message, remnants = modinfo(message, fold_msg = fold_msg)
 			# Timestamp formats
 			elif _filter == "ts_8601": # Anything that resembles ISO-8601
 				message = strip_iso_timestamp(message)
@@ -2243,6 +2227,12 @@ def custom_parser(message, fold_msg = True, filters = []):
 				# We don't extract the facility/severity from folded messages, so just skip if fold_msg == True
 				if message.startswith("EVENT ") and fold_msg == False:
 					message, severity, facility, remnants = json_event(message, fold_msg = fold_msg, options = _parser_options)
+			elif _filter[0] == "json_line":
+				_parser_options = _filter[1]
+				blocklist = tuple(deep_get(_parser_options, "blocklist", []))
+				passlist = tuple(deep_get(_parser_options, "passlist", []))
+				if message.startswith(passlist) and not message.startswith(blocklist):
+					message = format_yaml_line(message, override_formatting = {})
 			elif _filter[0] == "key_value":
 				_parser_options = _filter[1]
 				if "=" in message:
@@ -2289,8 +2279,6 @@ builtin_parsers = [
 	("autoscaler", "istio-proxy", "", "istio"),
 
 	("blackbox-exporter", "", "", "kube_parser_structured_glog"),
-	("aic-manager", "aic-manager", "", "aic_manager"),
-	("aic-manager", "init-android", "", "modinfo"),
 
 	("cass-operator", "", "", "kube_parser_json"),
 	("cdi-controller", "", "", "kube_parser_1"),
@@ -2303,18 +2291,11 @@ builtin_parsers = [
 	("dist-mnist", "", "", "jupyter"),
 	("dns-autoscaler", "", "", "kube_parser_structured_glog"),
 
-	("gpu-aware-scheduling", "", "", "kube_parser_1"),
 	("grafana", "", "", "key_value"),
 	("", "grafana-operator", "", "kube_parser_json_glog"),
 
 	("helm-", "", "", "kube_parser_1"),
 
-	("intel-gpu-plugin", "", "", "kube_parser_1"),
-	("intel-qat-plugin", "", "", "kube_parser_1"),
-	("intel-sgx-aesmd", "", "", "kube_parser_1"),
-	("intel-sgx-plugin", "", "", "kube_parser_1"),
-	("intel-telemetry-plugin", "", "", "kube_parser_1"),
-	("intel-vpu-plugin", "", "", "kube_parser_1"),
 	("istio-citadel", "citadel", "", "istio"),
 	("istio-cleanup-secrets", "kubectl", "", "istio"),
 	("istio-egressgateway", "istio-proxy", "", "istio"),
@@ -2353,7 +2334,6 @@ builtin_parsers = [
 	("", "", "docker.io/metallb", "kube_parser_json_glog"),
 	("", "", "metallb", "kube_parser_json_glog"),
 
-	("metrics-server", "", "", "kube_parser_1"),
 	("minio", "minio", "", "basic_8601"),
 	("ml-pipeline", "ml-pipeline-api-server", "", "kube_parser_1"),
 	("ml-pipeline", "ml-pipeline-visualizationserver", "", "kube_parser_1"),	#UNKNOWN
@@ -2444,7 +2424,6 @@ builtin_parsers = [
 	("spark-operatorsparkoperator", "", "", "kube_parser_1"),
 	("spartakus-volunteer", "", "", "kube_parser_1"),
 
-	("telemetry-aware-scheduling", "", "", "kube_parser_1"),
 	("tensorboard-controller-controller-manager", "manager", "", "istio_pilot"),
 	("tensorboard", "tensorboard", "", "kube_parser_1"),
 	("tf-job-operator", "", "", "kube_parser_1"),
@@ -2473,99 +2452,119 @@ builtin_parsers = [
 Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser")
 parsers = []
 
+iktconfig = None
+
 def init_parser_list():
 	global parsers
+	global iktconfig
 
+	# Get a full list of parsers from all parser directories
 	# Start by adding files from the parsers directory
-	parser_dir = os.path.join(IKTDIR, PARSER_DIRNAME)
-	if os.path.isdir(parser_dir):
-		for filename in os.listdir(parser_dir):
-			if filename.startswith("~") or filename.startswith("."):
+
+	parser_dirs = []
+
+	if iktconfig is None:
+		iktconfig = iktlib.read_iktconfig()
+		parser_dirs += deep_get(iktconfig, "Pods#local_parsers", [])
+
+	parser_dirs.append(os.path.join(IKTDIR, PARSER_DIRNAME))
+
+	parser_files = []
+
+	for parser_dir in parser_dirs:
+		if parser_dir.startswith("{HOME}"):
+			parser_dir = parser_dir.replace("{HOME}", HOMEDIR, 1)
+
+		if not os.path.isdir(parser_dir):
+			continue
+
+		for filename in natsorted(os.listdir(parser_dir)):
+			if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
 				continue
 
-			tmp = re.match(r"(.*)\.ya?ml$", filename)
-			if tmp is None:
-				continue
+			parser_files.append(os.path.join(parser_dir, filename))
 
-			with open(os.path.join(parser_dir, filename), "r") as f:
-				try:
-					d = yaml.safe_load(f)
-				except:
-					sys.exit(f"Parser-file {os.path.join(parser_dir, filename)} is invalid; aborting.")
+	for parser_file in parser_files:
+		with open(parser_file, "r") as f:
+			try:
+				d = yaml.safe_load(f)
+			except:
+				sys.exit(f"Parser-file {parser_file} is invalid; aborting.")
 
-				try:
-					for parser in d:
-						pass
-				except:
-					sys.exit(f"Parser-file {os.path.join(parser_dir, filename)} is invalid; aborting.")
-
+			try:
 				for parser in d:
-					parser_name = parser.get("name", "")
-					if len(parser_name) == 0:
+					pass
+			except:
+				sys.exit(f"Parser-file {parser_file} is invalid; aborting.")
+
+			for parser in d:
+				parser_name = parser.get("name", "")
+				if len(parser_name) == 0:
+					continue
+				show_in_selector = parser.get("show_in_selector", False)
+				matchrules = []
+				for matchkey in parser.get("matchkeys"):
+					pod_name = matchkey.get("pod_name", "")
+					container_name = matchkey.get("container_name", "")
+					image_name = matchkey.get("image_name", "")
+					container_type = matchkey.get("container_type", "container")
+					# We need at least one way of matching
+					if len(pod_name) == 0 and len(container_name) == 0 and len(image_name) == 0:
 						continue
-					show_in_selector = parser.get("show_in_selector", False)
-					matchrules = []
-					for matchkey in parser.get("matchkeys"):
-						pod_name = matchkey.get("pod_name", "")
-						container_name = matchkey.get("container_name", "")
-						image_name = matchkey.get("image_name", "")
-						container_type = matchkey.get("container_type", "container")
-						# We need at least one way of matching
-						if len(pod_name) == 0 and len(container_name) == 0 and len(image_name) == 0:
-							continue
-						matchrule = (pod_name, container_name, image_name, container_type)
-						matchrules.append(matchrule)
+					matchrule = (pod_name, container_name, image_name, container_type)
+					matchrules.append(matchrule)
 
-					if len(matchrules) == 0:
-						continue
+				if len(matchrules) == 0:
+					continue
 
-					parser_rules = parser.get("parser_rules")
-					if parser_rules is None or len(parser_rules) == 0:
-						continue
+				parser_rules = parser.get("parser_rules")
+				if parser_rules is None or len(parser_rules) == 0:
+					continue
 
-					rules = []
-					for rule in parser_rules:
-						if type(rule) == dict:
-							rule_name = rule.get("name")
-							if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "json_line", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility"]:
-								rules.append(rule_name)
-							elif rule_name in ["json", "json_event", "key_value", "key_value_with_leading_message", "custom_splitter"]:
-								rules.append((rule_name, rule.get("options", {})))
-							elif rule_name == "substitute_bullets":
-								prefix = rule.get("prefix", "* ")
-								rules.append((rule_name, prefix))
-							elif rule_name == "override_severity":
-								overrides = []
-								for override in rule.get("overrides"):
-									matchtype = override.get("matchtype", "")
-									if len(matchtype) == 0:
-										sys.exit(f"Parser {filename} has an invalid override rule; matchtype cannot be empty; aborting.")
-									matchkey = override.get("matchkey", "")
-									if len(matchkey) == 0:
-										sys.exit(f"Parser {filename} has an invalid override rule; matchkey cannot be empty; aborting.")
-									_loglevel = override.get("loglevel", "")
-									if len(_loglevel) == 0:
-										sys.exit(f"Parser {filename} has an invalid override rule; loglevel cannot be empty; aborting.")
-									try:
-										severity = name_to_loglevel(_loglevel)
-									except:
-										sys.exit(f"Parser {filename} contains an invalid loglevel {_loglevel}; aborting.")
-
-									overrides.append((matchtype, matchkey, severity))
-								rules.append((rule_name, overrides))
-							elif rule_name in ["bracketed_severity", "bracketed_timestamp_severity_facility"]:
-								_loglevel = rule.get("default_loglevel", "info")
+				rules = []
+				for rule in parser_rules:
+					if type(rule) == dict:
+						rule_name = rule.get("name")
+						if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo"]:
+							rules.append(rule_name)
+						elif rule_name in ["json", "json_event", "json_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
+							rules.append((rule_name, rule.get("options", {})))
+						elif rule_name == "substitute_bullets":
+							prefix = rule.get("prefix", "* ")
+							rules.append((rule_name, prefix))
+						elif rule_name == "override_severity":
+							overrides = []
+							for override in rule.get("overrides"):
+								matchtype = override.get("matchtype", "")
+								if len(matchtype) == 0:
+									sys.exit(f"Parser {parser_file} has an invalid override rule; matchtype cannot be empty; aborting.")
+								matchkey = override.get("matchkey", "")
+								if len(matchkey) == 0:
+									sys.exit(f"Parser {parser_file} has an invalid override rule; matchkey cannot be empty; aborting.")
+								_loglevel = override.get("loglevel", "")
+								if len(_loglevel) == 0:
+									sys.exit(f"Parser {parser_file} has an invalid override rule; loglevel cannot be empty; aborting.")
 								try:
-									default_loglevel = name_to_loglevel(_loglevel)
+									severity = name_to_loglevel(_loglevel)
 								except:
-									sys.exit(f"Parser {filename} contains an invalid loglevel {_loglevel}; aborting.")
-								rules.append((rule_name, default_loglevel))
-							else:
-								sys.exit(f"Unknown rule-type {rule}; aborting.")
-						else:
-							rules.append(rule)
+									sys.exit(f"Parser {parser_file} contains an invalid loglevel {_loglevel}; aborting.")
 
-					parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = ("custom", rules)))
+								overrides.append((matchtype, matchkey, severity))
+							rules.append((rule_name, overrides))
+						elif rule_name in ["bracketed_severity", "bracketed_timestamp_severity_facility"]:
+							_loglevel = rule.get("default_loglevel", "info")
+							try:
+								default_loglevel = name_to_loglevel(_loglevel)
+							except:
+								sys.exit(f"Parser {parser_file} contains an invalid loglevel {_loglevel}; aborting.")
+							rules.append((rule_name, default_loglevel))
+						else:
+							sys.exit(f"Parser {parser_file} has an unknown rule-type {rule}; aborting.")
+					else:
+						rules.append(rule)
+
+				parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = ("custom", rules)))
+
 	# Now do the same for built-in parsers
 	for builtin_parser in builtin_parsers:
 		# Old-style parser definition
