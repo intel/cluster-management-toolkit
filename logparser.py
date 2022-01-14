@@ -2421,9 +2421,6 @@ builtin_parsers = [
 	("metadata-grpc-deployment", "container", "", "kube_parser_1"),
 	("metadata-ui", "metadata-ui", "", "basic_8601"),
 
-	("", "", "docker.io/metallb", "kube_parser_json_glog"),
-	("", "", "metallb", "kube_parser_json_glog"),
-
 	("minio", "minio", "", "basic_8601"),
 	("ml-pipeline", "ml-pipeline-api-server", "", "kube_parser_1"),
 	("ml-pipeline", "ml-pipeline-visualizationserver", "", "kube_parser_1"),	#UNKNOWN
