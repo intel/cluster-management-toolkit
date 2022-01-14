@@ -29,3 +29,11 @@
   - image_name: /fairwinds/polaris
   parser_rules:
   - name: json_line
+    options:
+      block_start:
+      - matchtype: exact
+        matchkey: "{"
+        matchline: any
+      - matchtype: startswith
+        matchkey: "  "
+        matchline: first

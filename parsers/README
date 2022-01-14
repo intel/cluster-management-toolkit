@@ -26,3 +26,32 @@ to treat images from different servers differently you simply match against the 
   - rule
     ...
     ...
+
+Some possible parser rules:
+* ts_8601:
+  this rule strips timestamps in ISO-8601 *order* (YYYY MM DD HH MM SS); it's flexible
+  when it comes to separators, milliseconds, timezones, etc. The timestamps are stripped,
+  NOT extracted for later use.
+* custom_splitter:
+  this rule allows you to split a line into (facility, severity, message) and strip
+  away unused parts; facility and severity are optional
+* key_value / key_value_with_leading_message:
+  these rules allows you to format messages of the form:
+  key=value key=value key=value
+  and
+  message key=value key=value
+  respectively
+* json:
+  this rule (tries to) format messages where the an entire line is a JSON expression
+* json_line:
+  this rule (tries to) format messages where a JSON expression is spread over multiple lines;
+  there's some heuristics involved, and you might need to provide extra information
+* glog:
+  this rule extracts severity and facility from GLOG style log entries
+* override_severity:
+  this rule allows you to match by startswith/endswith/regex and override severity
+  based on message content; this is useful if you, for instance,
+  want to highlight software versions, errors that do not have a useful severity tag, etc.
+
+This is not meant to be a complete list. The best way to figure this out is to look at
+the other files in this directory and see how they are structured.

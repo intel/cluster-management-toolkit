@@ -9668,14 +9668,14 @@ def containerinfoloop(stdscr, container, kind, obj):
 					curses_helper.progressbar(progressbar, y = uip.maxy // 2, minx = (uip.minx + 8), maxx = (uip.maxx - 8), progress = 100 - 100 * ((linecount - i) / linecount))
 					# XXX: add support for aborting log parsing
 
-				i += 1
-
 				if internal_error == True:
-					timestamp, facility, severity, message, remnants, parser = logparser("internal_error", "", "", line, container_type = container_type)
+					timestamp, facility, severity, message, remnants, parser = logparser("internal_error", "", "", line, container_type = container_type, line = i)
 				elif raw_logs == True:
-					timestamp, facility, severity, message, remnants, parser = logparser("raw", "", "", line, container_type = container_type)
+					timestamp, facility, severity, message, remnants, parser = logparser("raw", "", "", line, container_type = container_type, line = i)
 				else:
-					timestamp, facility, severity, message, remnants, parser = logparser(podname, containername, image, line, fold_msg = fold_msg, override_parser = override_parser, container_type = container_type)
+					timestamp, facility, severity, message, remnants, parser = logparser(podname, containername, image, line, fold_msg = fold_msg, override_parser = override_parser, container_type = container_type, line = i)
+
+				i += 1
 
 				# In some cases rather than expanding a single line into multiple lines,
 				# we want to parse multiple lines as a single block;

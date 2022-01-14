@@ -2168,7 +2168,7 @@ def json_line_scanner(message, fold_msg = True):
 	severity = loglevel.INFO
 	message, _timestamp = split_iso_timestamp(message, None)
 
-	if message.rstrip() == "}":
+	if message == "}":
 		remnants = format_yaml_line(message, override_formatting = {})
 		processor = ["end_block", None]
 	elif message.lstrip() != message:
@@ -2179,9 +2179,30 @@ def json_line_scanner(message, fold_msg = True):
 
 	return processor, (timestamp, facility, severity, remnants)
 
-def json_line(message, fold_msg = True):
+def json_line(message, fold_msg = True, options = {}):
 	remnants = []
-	if message.rstrip() == "{":
+	matched = False
+
+	block_start = deep_get(options, "block_start", [{
+		"matchtype": "exact",
+		"matchkey": "{",
+		"matchline": "any",
+	}])
+	line = deep_get(options, "__line", 0)
+
+	for _bs in block_start:
+		matchtype = _bs["matchtype"]
+		matchkey = _bs["matchkey"]
+		matchline = _bs["matchline"]
+		if matchline == "any" or matchline == "first" and line == 0:
+			if matchtype == "exact":
+				if message == matchkey:
+					matched = True
+			elif matchtype == "startswith":
+				if message.startswith(matchkey):
+					matched = True
+
+	if matched == True:
 		remnants = format_yaml_line(message, override_formatting = {})
 		message = ["start_block", json_line_scanner]
 	return message, remnants
@@ -2228,7 +2249,7 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 
 	return message, severity, facility
 
-def custom_parser(message, fold_msg = True, filters = []):
+def custom_parser(message, fold_msg = True, filters = [], options = {}):
 	facility = ""
 	severity = loglevel.INFO
 	remnants = []
@@ -2278,8 +2299,6 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Block starters
 			elif _filter == "python_traceback":
 				message, remnants = python_traceback(message, fold_msg = fold_msg)
-			elif _filter == "json_line":
-				message, remnants = json_line(message, fold_msg = fold_msg)
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 		elif type(_filter) == tuple:
@@ -2314,6 +2333,12 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Filters
 			elif _filter[0] == "substitute_bullets":
 				message = substitute_bullets(message, _filter[1])
+			# Block starters
+			elif _filter[0] == "json_line":
+				_parser_options = {**_filter[1], **options}
+				message, remnants = json_line(message, fold_msg = fold_msg, options = _parser_options)
+			else:
+				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 
 	if severity is None:
 		severity = loglevel.INFO
@@ -2590,9 +2615,9 @@ def init_parser_list():
 				for rule in parser_rules:
 					if type(rule) == dict:
 						rule_name = rule.get("name")
-						if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback", "json_line"]:
+						if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"]:
 							rules.append(rule_name)
-						elif rule_name in ["json", "json_event", "key_value", "key_value_with_leading_message", "custom_splitter"]:
+						elif rule_name in ["json", "json_event", "json_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
 							rules.append((rule_name, rule.get("options", {})))
 						elif rule_name == "substitute_bullets":
 							prefix = rule.get("prefix", "* ")
@@ -2672,7 +2697,7 @@ def get_parser_list():
 # with similar ordering (YYYY MM DD HH MM SS, with several choices for separators and whitespace,
 # include none, accepted)
 #	2020-02-16T22:03:08.736292621Z
-def logparser(pod_name, container_name, image_name, message, fold_msg = True, override_parser = None, container_type = "container"):
+def logparser(pod_name, container_name, image_name, message, fold_msg = True, override_parser = None, container_type = "container", line = 0):
 	# First extract the Kubernetes timestamp
 	message, timestamp = split_iso_timestamp(message, None)
 
@@ -2716,7 +2741,10 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 						except:
 							pass
 				elif type(parser.parser) == tuple and parser.parser[0] == "custom":
-					pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1])
+					options = {
+						"__line": line,
+					}
+					pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1], options = options)
 				else:
 					pod_name, severity, message, remnants = eval(parser.parser)(message, fold_msg = fold_msg)
 				_lparser = []
