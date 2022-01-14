@@ -2162,6 +2162,30 @@ def python_traceback(message, fold_msg = True):
 		message = ["start_block", python_traceback_scanner]
 	return message, remnants
 
+def json_line_scanner(message, fold_msg = True):
+	timestamp = None
+	facility = ""
+	severity = loglevel.INFO
+	message, _timestamp = split_iso_timestamp(message, None)
+
+	if message.rstrip() == "}":
+		remnants = format_yaml_line(message, override_formatting = {})
+		processor = ["end_block", None]
+	elif message.lstrip() != message:
+		remnants = format_yaml_line(message, override_formatting = {})
+		processor = ["block", json_line_scanner]
+	else:
+		processor = ["break", None]
+
+	return processor, (timestamp, facility, severity, remnants)
+
+def json_line(message, fold_msg = True):
+	remnants = []
+	if message.rstrip() == "{":
+		remnants = format_yaml_line(message, override_formatting = {})
+		message = ["start_block", json_line_scanner]
+	return message, remnants
+
 def custom_splitter(message, severity = None, facility = "", fold_msg = True, options = {}):
 	regex_pattern = deep_get(options, "regex", None)
 	severity_field = deep_get(options, "severity#field", None)
@@ -2254,6 +2278,8 @@ def custom_parser(message, fold_msg = True, filters = []):
 			# Block starters
 			elif _filter == "python_traceback":
 				message, remnants = python_traceback(message, fold_msg = fold_msg)
+			elif _filter == "json_line":
+				message, remnants = json_line(message, fold_msg = fold_msg)
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 		elif type(_filter) == tuple:
@@ -2272,12 +2298,6 @@ def custom_parser(message, fold_msg = True, filters = []):
 				# We don't extract the facility/severity from folded messages, so just skip if fold_msg == True
 				if message.startswith("EVENT ") and fold_msg == False:
 					message, severity, facility, remnants = json_event(message, fold_msg = fold_msg, options = _parser_options)
-			elif _filter[0] == "json_line":
-				_parser_options = _filter[1]
-				blocklist = tuple(deep_get(_parser_options, "blocklist", []))
-				passlist = tuple(deep_get(_parser_options, "passlist", []))
-				if message.startswith(passlist) and not message.startswith(blocklist):
-					message = format_yaml_line(message, override_formatting = {})
 			elif _filter[0] == "key_value":
 				_parser_options = _filter[1]
 				if "=" in message:
@@ -2570,9 +2590,9 @@ def init_parser_list():
 				for rule in parser_rules:
 					if type(rule) == dict:
 						rule_name = rule.get("name")
-						if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"]:
+						if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback", "json_line"]:
 							rules.append(rule_name)
-						elif rule_name in ["json", "json_event", "json_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
+						elif rule_name in ["json", "json_event", "key_value", "key_value_with_leading_message", "custom_splitter"]:
 							rules.append((rule_name, rule.get("options", {})))
 						elif rule_name == "substitute_bullets":
 							prefix = rule.get("prefix", "* ")
