@@ -1611,7 +1611,7 @@ def key_value_with_leading_message(message, severity = loglevel.INFO, facility =
 	if tmp is not None and len(tmp) > 0:
 		if "=" in tmp[0]:
 			# Try parsing this as regular key_value
-			facility, severity, message, remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
+			facility, severity, message, remnants = key_value(message, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
 		else:
 			for item in tmp[1:]:
 				# we couldn't parse this as "msg key=value"; give up
@@ -2120,6 +2120,48 @@ def substitute_bullets(message, prefix):
 		message = message[0:len(prefix)].replace("*", "•") + message[len(prefix):]
 	return message
 
+def python_traceback_scanner(message, fold_msg = True):
+	timestamp = None
+	facility = ""
+	severity = loglevel.ERR
+	message, _timestamp = split_iso_timestamp(message, None)
+	processor = ["block", python_traceback_scanner]
+
+	# Default case
+	remnants = [
+		(message, ("logview", "severity_info")),
+	]
+
+	tmp = re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", message)
+	if tmp is not None:
+		remnants = [
+			(tmp[1], ("logview", "severity_info")),
+			(tmp[2], ("types", "path")),
+			(tmp[3], ("logview", "severity_info")),
+			(tmp[4], ("types", "lineno")),
+			(tmp[5], ("logview", "severity_info")),
+			(tmp[6], ("types", "path"))
+		]
+	else:
+		tmp = re.match(r"(^\S+?Error:|Exception:|GeneratorExit:|KeyboardInterrupt:|StopIteration:|StopAsyncIteration:|SystemExit:)( .*)", message)
+		if tmp is not None:
+			remnants = [
+				(tmp[1], ("logview", "severity_error")),
+				(tmp[2], ("logview", "severity_info"))
+			]
+			processor = ["end_block", None]
+		elif message.lstrip() == message:
+			processor = ["break", None]
+
+	return processor, (timestamp, facility, severity, remnants)
+
+def python_traceback(message, fold_msg = True):
+	remnants = []
+	if message == "Traceback (most recent call last):":
+		remnants = [(message, ("logview", "severity_error"))]
+		message = ["start_block", python_traceback_scanner]
+	return message, remnants
+
 def custom_splitter(message, severity = None, facility = "", fold_msg = True, options = {}):
 	regex_pattern = deep_get(options, "regex", None)
 	severity_field = deep_get(options, "severity#field", None)
@@ -2209,6 +2251,9 @@ def custom_parser(message, fold_msg = True, filters = []):
 				message = strip_ansicodes(message)
 			elif _filter == "strip_bracketed_pid":
 				message = strip_bracketed_pid(message)
+			# Block starters
+			elif _filter == "python_traceback":
+				message, remnants = python_traceback(message, fold_msg = fold_msg)
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 		elif type(_filter) == tuple:
@@ -2525,7 +2570,7 @@ def init_parser_list():
 				for rule in parser_rules:
 					if type(rule) == dict:
 						rule_name = rule.get("name")
-						if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo"]:
+						if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"]:
 							rules.append(rule_name)
 						elif rule_name in ["json", "json_event", "json_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
 							rules.append((rule_name, rule.get("options", {})))
