@@ -6451,14 +6451,14 @@ def genericlistloop(stdscr, view):
 		uip.refresh_statusbar()
 		curses.doupdate()
 
-		# If this function returns True then the match was exact
-		#if uip.goto_first_match(initial_name, initial_namespace) == True:
 		unique_match = uip.goto_first_match_by_name_namespace(initial_name, initial_namespace)
 		initial_name = None
 		initial_namespace = None
 		if unique_match is not None:
 			selected = uip.get_selected()
-			uip.activatedfun(uip.stdscr, unique_match, kind)
+			retval = uip.activatedfun(uip.stdscr, unique_match, kind)
+			if retval == curses_helper.retval.RETURNFULL:
+				return retval
 			uip.force_update()
 			uip.refresh_all()
 			continue
@@ -7049,9 +7049,11 @@ def genericlistloop(stdscr, view):
 			call = deep_get(value, "call", None)
 			if call is not None:
 				if queryval is not None:
-					call(uip, selected, title, values = selection_vars)
+					retval = call(uip, selected, title, values = selection_vars)
 				else:
-					call(uip.stdscr, selected.name)
+					retval = call(uip.stdscr, selected.name)
+				if retval is not None and retval == curses_helper.retval.RETURNFULL:
+					return retval
 
 			_eval = deep_get(value, "eval", None)
 			if _eval is not None:
@@ -7483,14 +7485,20 @@ def clusteroverviewloop(stdscr, view):
 						break
 		elif c == ord("P"):
 			if selected_heatmap == "Pod":
-				resourceinfodispatch(stdscr, podinfo[selected_pod].ref, ("Pod", ""))
+				retval = resourceinfodispatch(stdscr, podinfo[selected_pod].ref, ("Pod", ""))
+				if retval is not None and retval == curses_helper.retval.RETURNFULL:
+					return retval
 			uip.force_update()
 		elif c == ord("N"):
 			if selected_heatmap == "Pod":
 				ref = kh.get_ref_by_kind_name_namespace(("Namespace", ""), podinfo[selected_pod].namespace, "")
-				resourceinfodispatch(stdscr, ref, ("Namespace", ""))
+				retval = resourceinfodispatch(stdscr, ref, ("Namespace", ""))
+				if retval is not None and retval == curses_helper.retval.RETURNFULL:
+					return retval
 			elif selected_heatmap == "Node":
-				resourceinfodispatch(stdscr, nodeinfo[selected_node].ref, ("Node", ""))
+				retval = resourceinfodispatch(stdscr, nodeinfo[selected_node].ref, ("Node", ""))
+				if retval is not None and retval == curses_helper.retval.RETURNFULL:
+					return retval
 			uip.force_update()
 		elif c == ord("V"):
 			win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = "Fetching package versions...")
@@ -8987,7 +8995,7 @@ def genericinfoloop(stdscr, obj, view):
 	uip = UIProps(stdscr)
 
 	if view not in infoviews:
-		return
+		return curses_helper.retval.NOMATCH
 
 	viewref = infoviews[view]
 
@@ -8995,7 +9003,7 @@ def genericinfoloop(stdscr, obj, view):
 	if objgetter is not None:
 		obj = objgetter(obj)
 		if obj is None or len(obj) == 0:
-			return
+			return curses_helper.retval.NOMATCH
 
 	fields = deep_get(viewref, "fields")
 	sortcolumn = deep_get(viewref, "sortcolumn")
@@ -9271,7 +9279,9 @@ def genericinfoloop(stdscr, obj, view):
 				initial_container = None
 
 				if match is not None and match_count == 1:
-					uip.activatedfun(uip.stdscr, match, ikind, info = obj)
+					retval = uip.activatedfun(uip.stdscr, match, ikind, info = obj)
+					if retval == curses_helper.retval.RETURNFULL:
+						return retval
 					uip.force_update()
 					uip.refresh_all()
 					continue
@@ -9466,7 +9476,9 @@ def genericinfoloop(stdscr, obj, view):
 					w_callout = deep_get(value, "callout")
 					w_kind = deep_get(value, "kind", view)
 					# Try to be as generic as we can
-					w_callout(uip, w_kind, obj, selected, w_title, w_headers, w_itemgetter, w_sortcolumn)
+					retval = w_callout(uip, w_kind, obj, selected, w_title, w_headers, w_itemgetter, w_sortcolumn)
+					if retval is not None and retval == curses_helper.retval.RETURNFULL:
+						return retval
 			else:
 				call = deep_get(value, "call")
 				call_name = None
@@ -9518,12 +9530,16 @@ def genericinfoloop(stdscr, obj, view):
 
 				if call is not None and call_name is not None:
 					if kind is None or kind == ("", ""):
-						call(uip.stdscr, call_name)
+						retval = call(uip.stdscr, call_name)
+						if retval is not None and retval == curses_helper.retval.RETURNFULL:
+							return retval
 					else:
 						if type(kind) == str:
 							kind = kh.guess_kind(kind)
 						ref = kh.get_ref_by_kind_name_namespace(kind, call_name, call_namespace)
-						call(uip.stdscr, ref, kind)
+						retval = call(uip.stdscr, ref, kind)
+						if retval is not None and retval == curses_helper.retval.RETURNFULL:
+							return retval
 					changed = True
 			if force_update == True:
 				uip.force_update()
@@ -10129,11 +10145,14 @@ def containerinfoloop(stdscr, container, kind, obj):
 		elif c == ord("I"):
 			# XXX: This is very inefficient
 			_vlist = get_container_info()
+			retval = None
 			for _obj in _vlist:
 				if _obj.name == containername and _obj.image_id == image_id:
-					resourceinfodispatch(stdscr, _obj.ref, ("__Container", ""))
+					retval = resourceinfodispatch(stdscr, _obj.ref, ("__Container", ""))
 					uip.force_update()
 					break
+			if retval is not None and retval == curses_helper.retval.RETURNFULL:
+				return retval
 		elif c == ord("R"):
 			if uip.continuous_log:
 				continue
@@ -10971,11 +10990,11 @@ def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None):
 		objects.append(obj)
 
 	themearrays = format_yaml(objects)
-	resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
+	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
 
 def infoview_view_yaml(uip, kind, obj, selected = None, title = None, headers = None, itemgetter = None, sortcolumn = None):
 	themearrays = format_yaml([obj])
-	resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
+	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
 
 def infoview_view_last_applied_configuration(uip, kind, obj, selected = None, title = None, headers = None, itemgetter = None, sortcolumn = None):
 	last_applied_configuration = deep_get(obj, "metadata#annotations#kubectl.kubernetes.io/last-applied-configuration", {})
@@ -10984,7 +11003,7 @@ def infoview_view_last_applied_configuration(uip, kind, obj, selected = None, ti
 	else:
 		return
 	themearrays = format_yaml([data])
-	resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
+	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
 
 def delete_resource(uip, items = [], action = {}, values = {}, kind = None):
 	for item in items:
@@ -11768,8 +11787,9 @@ def selectorloop(stdscr, view):
 	uip.init_window(field_list = field_list, windowheader = windowheader, sortcolumn = sortcolumn)
 
 	while True:
-		if selectwindow(stdscr, uip) == curses_helper.retval.RETURNFULL:
-			return curses_helper.retval.RETURNFULL
+		retval = selectwindow(stdscr, uip)
+		if retval == curses_helper.retval.RETURNFULL:
+			return retval
 
 listviewactions = {
 	"Apply configuration from file": {
