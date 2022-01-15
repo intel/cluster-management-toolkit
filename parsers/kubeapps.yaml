@@ -28,7 +28,15 @@
   - pod_name: kubeapps-internal-kubeops
   parser_rules:
   - name: glog
-  #- name: bracketed_facility
+  - name: custom_splitter
+    options:
+      regex: '^\[(\S+?)\] (.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2
+  - name: ts_8601
 - name: kubeapps
   show_in_selector: false
   matchkeys:
