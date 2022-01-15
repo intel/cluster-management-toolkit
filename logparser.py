@@ -2107,7 +2107,7 @@ def seconds_severity_facility(message, fold_msg = True):
 	severity = loglevel.INFO
 	remnants = []
 
-	tmp = re.match(r"(\[\s*?\d+?\.\d+?s\])\s+(....)\s+(.+?)\s(.*)", message)
+	tmp = re.match(r"(\[\s*?\d+?\.\d+?s\])\s+([A-Z]+?)\s+(\S+?)\s(.*)", message)
 	if tmp is not None:
 		severity = str_to_severity(tmp[2], default = severity)
 		facility = tmp[3]
