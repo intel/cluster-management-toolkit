@@ -9599,6 +9599,8 @@ def containerinfoloop(stdscr, container, kind, obj):
 	show_facility = deep_get(iktconfig, "Pods#show_facility", "Full")
 	override_parser = None
 
+	reload = False
+
 	while True:
 		uip.countdown_to_update()
 
@@ -9666,7 +9668,13 @@ def containerinfoloop(stdscr, container, kind, obj):
 				# We probably need a progress bar once we reach this many lines
 				if linecount > 1000 and (i % linepercent) == 0:
 					curses_helper.progressbar(progressbar, y = uip.maxy // 2, minx = (uip.minx + 8), maxx = (uip.maxx - 8), progress = 100 - 100 * ((linecount - i) / linecount))
-					# XXX: add support for aborting log parsing
+					progressbar.timeout(10)
+					c = progressbar.getch()
+					if c == 27:	# ESCAPE
+						if reload == True:
+							break
+						else:
+							return curses_helper.retval.RETURNDONE
 
 				if internal_error == True:
 					timestamp, facility, severity, message, remnants, parser = logparser("internal_error", "", "", line, container_type = container_type, line = i)
@@ -9755,6 +9763,8 @@ def containerinfoloop(stdscr, container, kind, obj):
 					else:
 						for message, severity in remnants:
 							timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message)
+
+			reload = True
 
 			# If the last message in the log is a repeat we need to add the repeat signature
 			if repeat_count > 0 and merge_repeats:
@@ -10104,7 +10114,6 @@ def containerinfoloop(stdscr, container, kind, obj):
 
 			# Toggle full logs; this might be VERY slow
 			uip.continuous_log = False
-			tail_lines = override_tail_lines
 
 			if tail_lines == override_tail_lines:
 				if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = "Show full log (Potentially very slow):", default = False):
@@ -10112,6 +10121,10 @@ def containerinfoloop(stdscr, container, kind, obj):
 			else:
 				tail_lines = override_tail_lines
 
+			uip.refresh_infopad()
+			uip.refresh_logpad()
+			uip.refresh_statusbar()
+			curses.doupdate()
 			uip.force_update()
 		elif c == ord("I"):
 			# XXX: This is very inefficient
