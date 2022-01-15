@@ -1739,10 +1739,10 @@ class UIProps:
 		if self.statusbar is not None:
 			col, __discard = attr_to_curses("statusbar", "default")
 			self.statusbar.bkgd(" ", col)
-			self.statusbar.noutrefresh(0, 0, self.statusbarxpos, 0, self.maxy, self.maxx)
+			self.statusbar.noutrefresh(0, 0, self.statusbarypos, 0, self.maxy, self.maxx)
 
 	def resize_statusbar(self):
-		self.statusbarxpos = self.maxy - 1
+		self.statusbarypos = self.maxy - 1
 		if self.statusbar is not None:
 			self.statusbar.erase()
 			self.statusbar.resize(2, self.maxx + 1)
