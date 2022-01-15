@@ -4523,7 +4523,7 @@ def get_events_by_kind_name_namespace(kind, name, namespace):
 		involved_name = deep_get_with_fallback(obj, ["regarding#name", "involvedObject#name"])
 		ev_name = deep_get(obj, "metadata#name")
 		ev_namespace = deep_get(obj, "metadata#namespace", "")
-		last_seen = __get_timestamp_with_fallback(obj, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"])
+		last_seen = datetime_to_timestamp(__get_timestamp_with_fallback(obj, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]))
 		status = deep_get(obj, "type", "")
 		reason = deep_get(obj, "reason", "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
 		src_component = deep_get_with_fallback(obj, ["reportingController", "deprecatedSource#component", "source#component"], "")
@@ -4534,7 +4534,7 @@ def get_events_by_kind_name_namespace(kind, name, namespace):
 			source = src_component
 		else:
 			source = f"{src_host}/{src_component}"
-		first_seen = __get_timestamp_with_fallback(obj, ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"])
+		first_seen = datetime_to_timestamp(__get_timestamp_with_fallback(obj, ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]))
 
 		count = deep_get_with_fallback(obj, ["series#count", "deprecatedCount", "count"], "")
 		if count is None:
@@ -9042,21 +9042,82 @@ def genericinfoloop(stdscr, obj, view):
 			maxyx = stdscr.getmaxyx()
 			infopadheight = max(infopadheight, maxyx[0] - 3)
 
+	shortcuts = deep_get(viewref, "shortcuts", {})
+	namespace_path = deep_get(viewref, "namespace_path", "metadata#namespace")
+
+	# Shortcuts
+	# Always include the shortcut for namespaces, unless overriden
+	# or the namespace_path returns None
+	#
+	# An override is necessary if metadata#namespace isn't the correct path
+	# or some other changes are necessary
+	if deep_get(shortcuts, "Namespace") is None and deep_get(obj, namespace_path) is not None:
+		shortcuts["Namespace"] = {
+			"shortcut": ord("N"),
+			"helptext": ("[Shift] + N", "Open info page for namespace"),
+			"call": resourceinfodispatch,
+			"kind": ("Namespace", ""),
+			"name_path": "metadata#namespace",
+		}
+
+	# Always include the shortcut for security contexts,
+	# unless the path returns None
+	if "securityContext" in deep_get(obj, "spec", {}):
+		shortcuts["Show Security Context"] = {
+			"shortcut": ord("x"),
+			"helptext": ("X", "Show security context information"),
+			"widget": "windowwidget",
+			"title": "Security Context Policies:",
+			"headers": ["Policy:", "Value:"],
+			"itemgetter": get_security_context,
+		}
+
+	# Always include the shortcut for conditions,
+	# unless the path returns None
+	if "conditions" in deep_get(obj, "status", {}):
+		shortcuts["Show Resource Conditions"] = {
+			"shortcut": ord("c"),
+			"helptext": ("C", "Show resource conditions"),
+			"widget": "windowwidget",
+			"title": "Conditions:",
+			"headers": ["Type:", "Status:", "Last Probe:", "Last Transition:", "Message:"],
+			"itemgetter": __get_conditions,
+		}
+
+	# Always include the shortcut for events unless overriden
+	shortcuts["Show Events"] = {
+		"shortcut": ord("e"),
+		"helptext": ("E", "Show events"),
+		"widget": "windowwidget",
+		"title": "Events:",
+		"headers": ["Namespace:", "Name:", "Last Seen:", "Status:", "Reason:", "Source:", "First Seen:", "Count:", "Message:"],
+		"itemgetter": __get_events,
+	}
+
+	# Always include the shortcut for YAML dump, unless overridden
+	if deep_get(viewref, "shortcuts#YAML") is None:
+		shortcuts["View YAML dump of resource"] = {
+			"shortcut": ord("y"),
+			"helptext": ("Y", "View YAML dump of resource"),
+			"widget": "callout",
+			"callout": infoview_view_yaml,
+		}
+
+	# Always include the shortcut for last applied configuration, unless overridden
+	if deep_get(viewref, "shortcuts#Last Applied Configuration") is None:
+		shortcuts["Last Applied Configuration"] = {
+			"shortcut": ord("L"),
+			"helptext": ("[Shift] + L", "Show last applied configuration"),
+			"widget": "callout",
+			"callout": infoview_view_last_applied_configuration,
+		}
+
 	# Conditional helptexts
 	additional_helptexts = []
-	namespace_path = deep_get(viewref, "namespace_path", "metadata#namespace")
-	if deep_get(viewref, "shortcuts#Namespace") is None and deep_get(obj, namespace_path) is not None:
-		additional_helptexts += helptexts.namespace
-	if "securityContext" in deep_get(obj, "spec", {}):
-		additional_helptexts += helptexts.securitycontext
 	if deep_get(obj, labels) is not None:
 		additional_helptexts += helptexts.labels
 	if deep_get(obj, annotations) is not None:
 		additional_helptexts += helptexts.annotations
-	if deep_get(viewref, "shortcuts#Conditions") is None and deep_get(obj, "status#conditions") is not None:
-		additional_helptexts += helptexts.conditions
-	if deep_get(viewref, "shortcuts#YAML") is None:
-		additional_helptexts += helptexts.yamldump
 
 	helptext = generate_helptext(view, "infoview", additional_helptexts)
 
@@ -9311,71 +9372,6 @@ def genericinfoloop(stdscr, obj, view):
 			uip.toggle_borders()
 			uip.refresh_all()
 			uip.force_update()
-
-		shortcuts = deep_get(viewref, "shortcuts", {})
-
-		# Shortcuts
-		# Always include the shortcut for namespaces, unless overriden
-		# or the namespace_path returns None
-		#
-		# An override is necessary if metadata#namespace isn't the correct path
-		# or some other changes are necessary
-		if deep_get(shortcuts, "Namespace") is None and deep_get(obj, namespace_path) is not None:
-			shortcuts["Namespace"] = {
-				"shortcut": ord("N"),
-				"call": resourceinfodispatch,
-				"kind": ("Namespace", ""),
-				"name_path": "metadata#namespace",
-			}
-
-		# Always include the shortcut for security contexts,
-		# unless the path returns None
-		if "securityContext" in deep_get(obj, "spec", {}):
-			shortcuts["Show Security Context"] = {
-				"shortcut": ord("x"),
-				"widget": "windowwidget",
-				"title": "Security Context Policies:",
-				"headers": ["Policy:", "Value:"],
-				"itemgetter": get_security_context,
-			}
-
-		# Always include the shortcut for conditions,
-		# unless the path returns None
-		if "conditions" in deep_get(obj, "status", {}):
-			shortcuts["Show Resource Conditions"] = {
-				"shortcut": ord("c"),
-				"widget": "windowwidget",
-				"title": "Conditions:",
-				"headers": ["Type:", "Status:", "Last Probe:", "Last Transition:", "Message:"],
-				"itemgetter": __get_conditions,
-			}
-
-		# Always include the shortcut for events unless overriden
-		shortcuts["Show Events"] = {
-			"shortcut": ord("e"),
-			"widget": "windowwidget",
-			"title": "Events:",
-			"headers": ["Namespace:", "Name:", "Last Seen:", "Status:", "Reason:", "Source:", "First Seen:", "Count:", "Message:"],
-			"itemgetter": __get_events,
-		}
-
-		# Always include the shortcut for YAML dump, unless overridden
-		if deep_get(viewref, "shortcuts#YAML") is None:
-			shortcuts["View YAML dump of resource"] = {
-				"shortcut": ord("y"),
-				"helptext": ("Y", "View YAML dump of resource"),
-				"widget": "callout",
-				"callout": infoview_view_yaml,
-			}
-
-		# Always include the shortcut for last applied configuration, unless overridden
-		if deep_get(viewref, "shortcuts#Last Applied Configuration") is None:
-			shortcuts["Last Applied Configuration"] = {
-				"shortcut": ord("L"),
-				"helptext": ("[Shift] + L", "Show last applied configuration"),
-				"widget": "callout",
-				"callout": infoview_view_last_applied_configuration,
-			}
 
 		for key, value in shortcuts.items():
 			shortcut_keys = deep_get(value, "shortcut")

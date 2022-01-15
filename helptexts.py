@@ -123,22 +123,6 @@ spacer = [
 	("", ""),
 ]
 
-namespace = [
-	("[Shift] + N", "Open info page for namespace"),
-]
-
-securitycontext = [
-	("X", "Show security context information"),
-]
-
-conditions = [
-	("C", "Show resource conditions"),
-]
-
-yamldump = [
-	("Y", "View YAML dump of resource"),
-]
-
 clusteroverview = [
 	("[Ctrl] + X", "Exit program"),
 	("[Shift] + M", "Toggle mouse on/off"),
