@@ -398,7 +398,8 @@ def split_iso_timestamp(message, timestamp):
 			break
 
 		# [2021-12-18T20:15:36Z]
-		tmp = re.match(r"^\[(\d\d\d\d-\d\d-\d\d)T(\d\d:\d\d:\d\d)Z\] ?(.*)", message)
+		# 2021-12-18T20:15:36Z
+		tmp = re.match(r"^\[?(\d\d\d\d-\d\d-\d\d)T(\d\d:\d\d:\d\d)Z\]? ?(.*)", message)
 		if tmp is not None:
 			if tmp_timestamp is None:
 				ymd = tmp[1]
@@ -2756,7 +2757,7 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 
 		if lparser is not None:
 			break
-	if uparser is None and lparser is None:
+	if uparser is None and lparser is None or len(lparser) == 0:
 		pod_name, severity, message, remnants = basic_8601(message, fold_msg = fold_msg)
 		lparser = "<unknown format>"
 		uparser = "basic_8601"
