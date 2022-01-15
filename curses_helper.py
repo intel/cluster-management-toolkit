@@ -25,8 +25,8 @@ class curses_configuration:
 class retval:
 	NOMATCH = 0	# No keypress matched/processed; further checks needed (if any)
 	MATCH = 1	# keypress matched/processed; no further action
-	RETURNONE = 2	# keypress matched/processed, callback called; return up entire callstack
-	RETURNFULL = 3	# keypress matched/processed; return up one level
+	RETURNONE = 2	# keypress matched/processed; return up one level
+	RETURNFULL = 3	# keypress matched/processed, callback called; return up entire callstack
 	RETURNDONE = 4	# We've done our Return One
 
 def set_mousemask(mask):
