@@ -1,0 +1,35 @@
+- name: openshift-ingress
+  show_in_selector: false
+  matchkeys:
+  - pod_name: router-default
+    container_name: router
+  parser_rules:
+  - name: glog
+  - name: key_value_with_leading_message
+- name: openshift-ingress
+  show_in_selector: false
+  matchkeys:
+  - pod_name: ingress-operator
+    container_name: ingress-operator
+  parser_rules:
+  - name: ts_8601
+  - name: glog
+  - name: custom_splitter
+    options:
+      regex: '^\t([A-Z]+?)\t(\S+?)\t(\S+?:\d+?)\t(.*)'
+      severity:
+        field: 1
+        transform: str
+      facility:
+        fields:
+        - 2
+        - 3
+        separators:
+        - "|"
+      message:
+        field: 4
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Trace["
+      loglevel: debug

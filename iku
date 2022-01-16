@@ -4582,7 +4582,8 @@ def get_pod_info(vlist, extra_vars = {"show_kind": "", "show_evicted": True}, fi
 		timestamp = timestamp_to_datetime(deep_get(obj, "metadata#creationTimestamp"))
 		age = get_since(timestamp)
 
-		controller = get_controller_from_owner_references(deep_get(obj, "metadata#ownerReferences", []))
+		owr = deep_get(obj, "metadata#ownerReferences", [])
+		controller = get_controller_from_owner_references(owr)
 		show_kind = deep_get(extra_vars, "show_kind", "").lower()
 		controller = format_controller(controller, show_kind)
 
@@ -7528,6 +7529,7 @@ cmdata_format = [
 	("", "", "", "client-ca-file", "CRT"),
 	("", "", "", ".ini", "INI"),
 	("", "", "", ".json", "JSON"),
+	("", "", "", ".sh", "Shell Script"),
 	("", "", "", ".toml", "TOML"),
 	("", "", "", ".xml", "XML"),
 	("", "", "", ".yaml", "YAML"),
@@ -7548,6 +7550,9 @@ cmdata_format = [
 	("", "linkerd-config", "values", "", "YAML"),
 	("", "nfd-worker-conf", "nfd-worker.conf", "", "YAML"),
 	("", "", "", ".py", "Python"),
+	# Openshift
+	("", "dns-default", "Corefile", "", "CaddyFile"),
+	("", "v4-0-config-system-cliconfig", "v4-0-config-system-cliconfig", "", "JSON"),
 	# Keep last; match everything that doesn't match anything
 	("", "", "", "", "Text"),
 ]
@@ -9705,15 +9710,21 @@ def containerinfoloop(stdscr, container, kind, obj):
 				if type(message) == list and message[0] == "start_block" and raw_logs == False:
 					_logentries = [(timestamp, facility, severity, remnants)]
 					processor = message
+					options = {}
+					if len(processor) == 3:
+						options = processor[2]
 					for j in range(i, len(splitmsg)):
-						processor, _logentry = processor[1](splitmsg[j], fold_msg = fold_msg)
+						processor, _logentry = processor[1](splitmsg[j], fold_msg = fold_msg, options = options)
 						_logentries.append(_logentry)
 
 						if processor[0] == "end_block":
-							# OK, we've got a block; append it
-							for _timestamp, _facility, _severity, _message in _logentries:
-								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, _timestamp, "".ljust(len(_facility)), _severity, _message)
-							break
+							# OK, we've got a block; start by appending the first line
+							if len(_logentries) > 0:
+								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, _logentries[0][3])
+							if len(_logentries) > 1:
+								for _timestamp, _facility, _severity, _message in _logentries[1:]:
+									timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, _timestamp, "".ljust(len(facility)), severity, _message)
+								break
 						elif processor[0] == "break":
 							# We got something indicating that this isn't a valid block; abort
 							break

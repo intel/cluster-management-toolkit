@@ -11,14 +11,20 @@
       matchkey: "Version: v"
       loglevel: notice
     - matchtype: startswith
+      matchkey: "cert-regeneration-controller version"
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "check-endpoints version"
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "kube-apiserver-operator version"
+      loglevel: notice
+    - matchtype: startswith
       matchkey: "Trace["
       loglevel: debug
     - matchtype: startswith
-      matchkey: "Flag --insecure-port has been deprecated"
-      loglevel: warning
-    - matchtype: startswith
       matchkey: "ERROR "
       loglevel: error
-    - matchtype: startswith
-      matchkey: "Flag --port has been deprecated"
+    - matchtype: regex
+      matchkey: 'Flag \S+? has been deprecated'
       loglevel: warning

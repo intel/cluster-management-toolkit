@@ -1,0 +1,18 @@
+- name: openshift-multus
+  show_in_selector: false
+  matchkeys:
+  - pod_name: multus
+    container_name: kube-multus
+  parser_rules:
+  - name: ts_8601
+  - name: json
+- name: openshift-multus
+  show_in_selector: false
+  matchkeys:
+  - pod_name: multus-admission-controller
+    container_name: multus-admission-controller
+  - pod_name: network-metrics-daemon
+    container_name: network-metrics-daemon
+    image_name: /openshift
+  parser_rules:
+  - name: glog

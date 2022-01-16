@@ -1,0 +1,13 @@
+- name: openshift-olm
+  show_in_selector: false
+  matchkeys:
+  - pod_name: catalog-operator
+    container_name: catalog-operator
+  - pod_name: olm-operator
+    container_name: olm-operator
+  - pod_name: packageserver
+    container_name: packageserver
+  parser_rules:
+  - name: json
+  - name: glog
+  - name: key_value_with_leading_message

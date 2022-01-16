@@ -1,0 +1,20 @@
+- name: openshift-controller-manager
+  show_in_selector: false
+  matchkeys:
+  - pod_name: openshift-controller-manager
+  - pod_name: controller-manager
+    image_name: /openshift
+  parser_rules:
+  - name: glog
+  - name: expand_event
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "openshift-controller-manager-operator version"
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "Starting controllers on"
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "Trace["
+      loglevel: debug

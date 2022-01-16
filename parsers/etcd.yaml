@@ -27,9 +27,21 @@
         - 1
       message:
         field: 3
+  - name: custom_splitter
+    options:
+      regex: '^([A-Z]+?): \d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d (\S+?): (.*)'
+      severity:
+        field: 1
+        transform: str
+      facility:
+        fields:
+        - 2
+      message:
+        field: 3
   - name: override_severity
     overrides:
     - matchtype: startswith
       matchkey: "etcd Version"
       loglevel: notice
   - name: json
+  - name: glog

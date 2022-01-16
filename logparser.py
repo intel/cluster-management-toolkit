@@ -272,28 +272,6 @@ def split_bracketed_severity(message, default = loglevel.INFO):
 
 	return message, severity
 
-# Possibly klog style?
-def split_tuned_style(message, facility = None, default = loglevel.INFO):
-	severities = {
-		"FATAL   ": loglevel.CRIT,
-		"ERROR   ": loglevel.ERR,
-		"WARNING ": loglevel.WARNING,
-		"INFO    ": loglevel.INFO,
-	}
-
-	tmp = re.match(r"^([A-Za-z ]+) (.*?): (.*)", message)
-	if tmp is not None:
-		severity = severities.get(tmp[1])
-		if severity is not None:
-			facility = tmp[2]
-			message = tmp[3]
-		else:
-			severity = default
-	else:
-		severity = default
-
-	return message, facility, severity
-
 def split_colon_severity(message, severity = loglevel.INFO):
 	severities = {
 		"CRITICAL:": loglevel.CRIT,
@@ -503,9 +481,8 @@ def split_http_style(message, timestamp):
 # log messages of the format:
 # E0514 09:01:55.108028382       1 server_chttp2.cc:40]
 # I0511 14:31:10.500543       1 start.go:76]
-def split_glog(message, severity = None):
-	match = False
-	facility = ""
+def split_glog(message, severity = None, facility = None):
+	matched = False
 	loggingerror = None
 	remnants = []
 
@@ -525,7 +502,7 @@ def split_glog(message, severity = None):
 
 		facility = "%s" % (tmp[3])
 		message = "%s" % (tmp[4])
-		match = True
+		matched = True
 	else:
 		if severity is None:
 			severity = loglevel.INFO
@@ -536,7 +513,7 @@ def split_glog(message, severity = None):
 		message = loggingerror
 		severity = loglevel.ERR
 
-	return message, severity, facility, remnants, match
+	return message, severity, facility, remnants, matched
 
 # \tINFO\tcontrollers.Reaper\tstarting reconciliation\t{"reaper": "default/k8ssandra-cluster-a-reaper-k8ssandra"}
 def __split_severity_facility_style(message, severity = loglevel.INFO, facility = ""):
@@ -1258,10 +1235,6 @@ def kube_parser_1(message, fold_msg = True):
 
 	# While other logs have the severity after the timestamp
 	message, tmpseverity = split_colon_severity(message, severity)
-	severity = min(tmpseverity, severity)
-
-	# tuned (possibly others) can have some messages with yet another format
-	message, facility, tmpseverity = split_tuned_style(message, facility = facility)
 	severity = min(tmpseverity, severity)
 
 	# For messages of the format
@@ -2163,7 +2136,7 @@ def python_traceback(message, fold_msg = True):
 		message = ["start_block", python_traceback_scanner]
 	return message, remnants
 
-def json_line_scanner(message, fold_msg = True):
+def json_line_scanner(message, fold_msg = True, options = {}):
 	timestamp = None
 	facility = ""
 	severity = loglevel.INFO
@@ -2176,6 +2149,7 @@ def json_line_scanner(message, fold_msg = True):
 		remnants = format_yaml_line(message, override_formatting = {})
 		processor = ["block", json_line_scanner]
 	else:
+		remnants = None
 		processor = ["break", None]
 
 	return processor, (timestamp, facility, severity, remnants)
@@ -2202,10 +2176,94 @@ def json_line(message, fold_msg = True, options = {}):
 			elif matchtype == "startswith":
 				if message.startswith(matchkey):
 					matched = True
+			elif matchtype == "regex":
+				tmp = re.match(matchkey, message)
+				if tmp is not None:
+					matched = True
 
 	if matched == True:
 		remnants = format_yaml_line(message, override_formatting = {})
 		message = ["start_block", json_line_scanner]
+	return message, remnants
+
+def yaml_line_scanner(message, fold_msg = True, options = {}):
+	timestamp = None
+	facility = None
+	severity = loglevel.INFO
+	message, _timestamp = split_iso_timestamp(message, None)
+	remnants = None
+	matched = True
+
+	# If no block end is defined we continue until EOF
+	block_end = deep_get(options, "block_end")
+
+	format_block_end = False
+
+	for _be in block_end:
+		matchtype = _be["matchtype"]
+		matchkey = _be["matchkey"]
+		format_block_end = deep_get(_be, "format_block_end", False)
+		if matchtype == "empty":
+			if len(message.strip()) == 0:
+				matched = False
+		elif matchtype == "exact":
+			if message == matchkey:
+				matched = False
+		elif matchtype == "startswith":
+			if message.startswith(matchkey):
+				matched = False
+		elif matchtype == "regex":
+			tmp = re.match(matchkey, message)
+			if tmp is not None:
+				matched = False
+
+	if matched == True:
+		remnants = format_yaml_line(message, override_formatting = {})
+		processor = ["block", yaml_line_scanner, options]
+	else:
+		if format_block_end == True:
+			remnants = format_yaml_line(message, override_formatting = {})
+		else:
+			remnants = [(message, ("logview", "severity_info"))]
+		processor = ["end_block", None]
+
+	return processor, (timestamp, facility, severity, remnants)
+
+def yaml_line(message, fold_msg = True, options = {}):
+	remnants = []
+	matched = False
+
+	block_start = deep_get(options, "block_start", [{
+		"matchtype": "regex",
+		"matchkey": "\S+?: \S.*|\S+?:$",
+		"matchline": "any",
+		"format_block_start": False,
+	}])
+	line = deep_get(options, "__line", 0)
+
+	for _bs in block_start:
+		matchtype = _bs["matchtype"]
+		matchkey = _bs["matchkey"]
+		matchline = _bs["matchline"]
+		format_block_start = deep_get(_bs, "format_block_start", False)
+		if matchline == "any" or matchline == "first" and line == 0:
+			if matchtype == "exact":
+				if message == matchkey:
+					matched = True
+			elif matchtype == "startswith":
+				if message.startswith(matchkey):
+					matched = True
+			elif matchtype == "regex":
+				tmp = re.match(matchkey, message)
+				if tmp is not None:
+					matched = True
+
+	if matched == True:
+		if format_block_start == True:
+			remnants = format_yaml_line(message, override_formatting = {})
+		else:
+			remnants = message
+		message = ["start_block", yaml_line_scanner, options]
 	return message, remnants
 
 def custom_splitter(message, severity = None, facility = "", fold_msg = True, options = {}):
@@ -2213,7 +2271,7 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 	severity_field = deep_get(options, "severity#field", None)
 	severity_transform = deep_get(options, "severity#transform", None)
 	facility_fields = deep_get_with_fallback(options, ["facility#fields", "facility#field"], None)
-	facility_separators = deep_get(options, "facility#separators", "")
+	facility_separators = deep_get_with_fallback(options, ["facility#separators", "facility#separator"], "")
 	message_field = deep_get(options, "message#field", None)
 
 	# This message is already formatted
@@ -2235,9 +2293,13 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 				severity = str_to_severity(tmp[severity_field], severity)
 			elif severity_transform == "int":
 				severity = int(tmp[severity_field])
+			else:
+				sys.exit(f"Unknown severity transform rule {severity_transform}; aborting.")
 		if facility_fields is not None and len(facility) == 0:
 			if type(facility_fields) == str:
 				facility_fields = [facility_fields]
+			if type(facility_separators) == str:
+				facility_separators = [facility_separators]
 			i = 0
 			facility = ""
 			for field in facility_fields:
@@ -2252,14 +2314,14 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 
 def custom_parser(message, fold_msg = True, filters = [], options = {}):
 	facility = ""
-	severity = loglevel.INFO
+	severity = None
 	remnants = []
 
 	for _filter in filters:
 		if type(_filter) == str:
 			# Multiparsers
 			if _filter == "glog":
-				message, severity, facility, remnants, _match = split_glog(message)
+				message, severity, facility, remnants, _match = split_glog(message, severity, facility)
 			elif _filter == "spaced_severity_facility":
 				message, severity, facility = __split_severity_facility_style(message, severity, facility)
 			elif _filter == "letter_severity_colon_facility":
@@ -2334,12 +2396,18 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 			# Filters
 			elif _filter[0] == "substitute_bullets":
 				message = substitute_bullets(message, _filter[1])
-			# Block starters
+			# Block starters; these are treated as parser loop terminators if a match is found
 			elif _filter[0] == "json_line":
 				_parser_options = {**_filter[1], **options}
 				message, remnants = json_line(message, fold_msg = fold_msg, options = _parser_options)
+			elif _filter[0] == "yaml_line":
+				_parser_options = {**_filter[1], **options}
+				message, remnants = yaml_line(message, fold_msg = fold_msg, options = _parser_options)
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
+
+		if type(message) == list and message[0] == "start_block":
+			break
 
 	if severity is None:
 		severity = loglevel.INFO
@@ -2451,51 +2519,8 @@ builtin_parsers = [
 	("nvidia-operator-validator", "", "", "basic_8601"),
 	("nvidia-smi-exporter", "", "", "nvidia_smi_exporter"),
 
-	("", "", "docker.io/openshift/origin-hypershift", "kube_parser_1"),
-	("", "", "docker.io/openshift/origin-service", "kube_parser_1"),
-	("", "", "docker.io/openshift/origin-docker", "key_value"),
-	("", "", "docker.io/openshift/origin-docker", "key_value"),
-	("", "", "docker.io/openshift/origin-", "kube_parser_1"),
-
 	("", "", "quay.io/operator-framework/olm", "kube_parser_structured_glog"),
 	("", "", "quay.io/operatorhubio/catalog", "kube_parser_structured_glog"),
-
-	("apiserver", "", "", "kube_parser_1"),
-	("openshift-apiserver", "", "", "kube_parser_1"),
-	("openshift-config", "", "", "kube_parser_1"),
-	("openshift-controller-manager", "", "", "kube_parser_1"),
-	("controller-manager", "", "", "kube_parser_structured_glog"),
-	("console", "", "quay.io/openshift", "kube_parser_1"),
-	("dns-operator", "", "", "kube_parser_structured_glog"),
-	("dns-default", "", "", "kube_parser_1"),
-	("authentication-operator", "", "", "kube_parser_1"),
-	("oauth-openshift", "", "", "kube_parser_1"),
-	("machine-approver", "", "", "kube_parser_1"),
-	("tuned", "", "", "kube_parser_1"),
-	("cluster-samples-operator", "cluster-samples-operator-watch", "", "kube_parser_1"),
-	("cluster-samples-operator", "", "", "key_value"),
-	("cluster-image-registry-operator", "", "", "kube_parser_1"),
-	("image-registry", "", "", "key_value"),
-	("openshift-kube-scheduler-operator", "", "", "kube_parser_1"),
-	("openshift-kube-scheduler-crc", "", "", "kube_parser_1"),
-	("certified-operators", "", "", "key_value"),
-	("community-operators", "", "", "key_value"),
-	("marketplace-operator", "", "", "key_value"),
-	("redhat-marketplace", "", "", "key_value"),
-	("multus", "", "", "kube_parser_1"),
-	("network-metrics", "", "", "kube_parser_1"),
-	("network-check-", "", "", "kube_parser_1"),
-	("catalog-operator", "", "", "kube_parser_structured_glog"),
-
-	# FIXME
-	#("olm-operator", "", "", "kube_parser_structured_glog"),
-
-	("packageserver", "", "", "kube_parser_structured_glog"),
-	("sdn-", "", "", "kube_parser_1"),
-	("service-ca-", "", "", "kube_parser_1"),
-
-	# FIXME
-	#("ingress-operator", "", "", "seldon"),
 
 	("parallel-pipeline", "", "", "kube_parser_1"),
 	("pmem-csi-", "", "", "kube_parser_1"),
@@ -2503,8 +2528,6 @@ builtin_parsers = [
 	("profiles-deployment", "manager", "", "seldon"),
 	("", "kube-prometheus-stack", "", "kube_parser_structured_glog"),
 	("pytorch-operator", "", "", "kube_parser_1"),	#ALMOST
-
-	("", "reaper-operator", "", "kube_app_manager"),
 
 	("seldon-controller-manager", "", "", "seldon"),
 	("spark-operatorcrd-cleanup", "delete-scheduledsparkapp-crd", "", "kube_parser_1"),	#ALMOST
@@ -2615,7 +2638,7 @@ def init_parser_list():
 						rule_name = rule.get("name")
 						if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"]:
 							rules.append(rule_name)
-						elif rule_name in ["json", "json_event", "json_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
+						elif rule_name in ["json", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
 							rules.append((rule_name, rule.get("options", {})))
 						elif rule_name == "substitute_bullets":
 							prefix = rule.get("prefix", "* ")

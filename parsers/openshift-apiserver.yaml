@@ -1,0 +1,12 @@
+- name: openshift-apiserver
+  show_in_selector: false
+  matchkeys:
+  - pod_name: apiserver
+    container_name: openshift-apiserver-check-endpoints
+  - pod_name: apiserver
+    container_name: openshift-apiserver
+  - pod_name: openshift-apiserver-operator
+    container_name: openshift-apiserver-operator
+  parser_rules:
+  - name: glog
+  - name: expand_event

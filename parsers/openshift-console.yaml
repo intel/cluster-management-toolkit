@@ -1,0 +1,14 @@
+- name: openshift-console
+  show_in_selector: false
+  matchkeys:
+  - pod_name: console-operator
+    container_name: console-operator
+  - pod_name: console
+    container_name: console
+    image_name: /openshift
+  - pod_name: downloads
+    container_name: download-server
+    image_name: /openshift
+  parser_rules:
+  - name: glog
+  - name: expand_event
