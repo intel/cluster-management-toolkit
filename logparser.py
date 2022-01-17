@@ -2504,7 +2504,6 @@ builtin_parsers = [
 
 	("networking-istio", "networking-istio", "", "kube_parser_1"),
 	("node-exporter", "", "", "key_value"),
-	("node-problem-detector", "", "", "kube_parser_1"),
 	("nodelocaldns", "", "", "kube_parser_1"),
 	("notebook-controller-deployment", "manager", "", "seldon"),
 	("gpu-feature-discovery", "toolkit-validation", "", "basic_8601"),
