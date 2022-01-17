@@ -1885,7 +1885,7 @@ class KubernetesHelper:
 
 	def kind_api_version_to_kind(self, kind, api_version):
 		# The API group is anything before /, or the empty string if there's no "/"
-		if "/" in api_version:
+		if api_version is not None and "/" in api_version:
 			tmp = re.match(r"(.*)/.*", api_version)
 			if tmp is None:
 				raise Exception(f"Could not extract API group from {api_version}")
