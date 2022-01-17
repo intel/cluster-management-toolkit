@@ -278,14 +278,17 @@ def split_colon_severity(message, severity = loglevel.INFO):
 		"ERROR:": loglevel.ERR,
 		"WARNING:": loglevel.WARNING,
 		"NOTICE:": loglevel.NOTICE,
+		"NOTE:": loglevel.NOTICE,
 		"INFO:": loglevel.INFO,
 		"DEBUG:": loglevel.DEBUG,
 	}
 
 	tmp = re.match(r"^([A-Za-z]+?:) ?(.*)", message)
 	if tmp is not None:
-		severity = severities.get(tmp[1].upper(), severity)
-		message = tmp[2]
+		_severity = severities.get(tmp[1].upper())
+		if _severity is not None:
+			message = tmp[2]
+			severity = _severity
 
 	return message, severity
 
@@ -1918,9 +1921,7 @@ def kube_parser_structured_glog(message, fold_msg = True):
 
 	return facility, severity, message, remnants
 
-def directory(message, fold_msg = True):
-	facility = ""
-	severity = loglevel.INFO
+def directory(message, fold_msg = True, severity = loglevel.INFO, facility = ""):
 	remnants = []
 
 	tmp = re.match(r"^(total)\s+(\d+)$", message)
@@ -2321,13 +2322,13 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 		if type(_filter) == str:
 			# Multiparsers
 			if _filter == "glog":
-				message, severity, facility, remnants, _match = split_glog(message, severity, facility)
+				message, severity, facility, remnants, _match = split_glog(message, severity = severity, facility = facility)
 			elif _filter == "spaced_severity_facility":
-				message, severity, facility = __split_severity_facility_style(message, severity, facility)
+				message, severity, facility = __split_severity_facility_style(message, severity = severity, facility = facility)
 			elif _filter == "letter_severity_colon_facility":
-				message, severity, facility = __split_severity_facility_style(message, severity, facility)
+				message, severity, facility = __split_severity_facility_style(message, severity = severity, facility = facility)
 			elif _filter == "directory":
-				facility, severity, message, remnants = directory(message, fold_msg = fold_msg)
+				facility, severity, message, remnants = directory(message, fold_msg = fold_msg, severity = severity, facility = facility)
 			elif _filter == "seconds_severity_facility":
 				facility, severity, message, remnants = seconds_severity_facility(message, fold_msg = fold_msg)
 			elif _filter == "facility_hh_mm_ss_ms_severity":
@@ -2636,7 +2637,7 @@ def init_parser_list():
 				for rule in parser_rules:
 					if type(rule) == dict:
 						rule_name = rule.get("name")
-						if rule_name in ["colon_severity", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"]:
+						if rule_name in ["colon_severity", "directory", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"]:
 							rules.append(rule_name)
 						elif rule_name in ["json", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
 							rules.append((rule_name, rule.get("options", {})))
