@@ -6,21 +6,27 @@
       playbook-types:
       - internal
       category: Administration
-  gather_facts: no
-  become: True
+  gather_subset:
+  - '!min'
+  - '!all'
+  - distribution
+  become: true
   become_user: root
   tasks:
   - name: Updating APT cache
     apt: update_cache=yes force_apt_get=yes
+    when: ansible_os_family == 'Debian'
   - name: apt-mark unhold kubeadm kubelet kubectl
     command: apt-mark unhold kubeadm kubelet kubectl
+    when: ansible_os_family == 'Debian'
   - name: Installing new versions of kubeadm, kubelet and kubectl
     apt:
       pkg:
       - kubeadm={{ requested_control_plane_k8s_version }}
       - kubelet={{ requested_control_plane_k8s_version }}
       - kubectl={{ requested_control_plane_k8s_version }}
-      force_apt_get: yes
+      force_apt_get: true
+    when: ansible_os_family == 'Debian'
   - name: Plan upgrade
     shell: |
       kubeadm upgrade plan
@@ -37,8 +43,9 @@
       kubeadm upgrade apply -y {{ requested_control_plane_k8s_version.split("-")[0] }}
   - name: apt-mark hold kubeadm kubelet kubectl
     command: apt-mark hold kubeadm kubelet kubectl
+    when: ansible_os_family == 'Debian'
   - name: Restarting kubelet
     systemd:
       name: kubelet
-      daemon_reload: yes
+      daemon_reload: true
       state: restarted

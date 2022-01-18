@@ -5,8 +5,8 @@
       playbook-types:
       - internal
       category: Setup
-  gather_facts: no
-  become: True
+  gather_facts: false
+  become: true
   become_user: root
   tasks:
   - name: Creating .kube if it doesn't exist
@@ -18,5 +18,5 @@
     fetch:
       src: /etc/kubernetes/admin.conf
       dest: ~/.kube/config.{{ cluster_name }}
-      flat: yes
+      flat: true
       mode: "0600"

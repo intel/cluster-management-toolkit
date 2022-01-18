@@ -4,10 +4,10 @@
     metadata:
       description: Fetch dmesg
       category: Administration
-      quiet: True
-  gather_facts: no
-  become: True
+      quiet: true
+  gather_facts: false
+  become: true
   become_user: root
   tasks:
   - name: Fetch dmesg
-    shell: journalctl -k #--no-pager -ojson -n 1000
+    shell: journalctl -k # --no-pager -ojson -n 1000

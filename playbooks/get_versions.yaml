@@ -5,11 +5,15 @@
       playbook-types:
       - internal
       category: SHOULD NOT SHOW UP
-  gather_facts: no
+  gather_subset:
+  - '!min'
+  - '!all'
+  - distribution
   tasks:
   - name: Gathering package facts
     package_facts:
       manager: apt
+    when: ansible_os_family == 'Debian'
   - name: package versions
     debug:
       msg: |

@@ -6,22 +6,25 @@
       playbook-types:
       - internal
       category: Setup
-  gather_facts: no
-  become: True
+  gather_subset:
+  - '!min'
+  - '!all'
+  - distribution
+  become: true
   become_user: root
   tasks:
   - name: Checking if cluster is already running
     shell: |
       lsof -i -P -n | grep 6443.*LISTEN > /dev/null
     register: port_check
-    ignore_errors: yes
+    ignore_errors: true
   - name: Updating APT cache
     apt: update_cache=yes force_apt_get=yes
-    when: port_check.rc == 1
+    when: port_check.rc == 1 and ansible_os_familiy == 'Debian'
   - name: Gathering package facts
     package_facts:
       manager: apt
-    when: port_check.rc == 1
+    when: port_check.rc == 1 and ansible_os_familiy == 'Debian'
   - name: Pulling Kubernetes images
     shell: |
       if [ -n "{{ https_proxy }}" ]; then

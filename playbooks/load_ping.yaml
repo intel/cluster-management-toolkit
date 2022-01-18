@@ -5,17 +5,17 @@
 #      playbook-types:
 #      - internal
       category: Information
-      quiet: True
-  gather_facts: no
-  become: True
+      quiet: true
+  gather_facts: false
+  become: true
   become_user: root
   tasks:
   - name: Fetch /proc/loadavg
     command: cat /proc/loadavg
-    changed_when: False
+    changed_when: false
   - name: Fetch /proc/meminfo
     command: cat /proc/meminfo
-    changed_when: False
+    changed_when: false
   - name: Fetch /proc/stat
     command: cat /proc/stat
-    changed_when: False
+    changed_when: false

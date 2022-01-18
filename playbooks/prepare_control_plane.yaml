@@ -4,8 +4,8 @@
       description: Prepare control plane
       playbook-types:
       - internal
-  gather_facts: no
-  become: True
+  gather_facts: false
+  become: true
   become_user: root
   tasks:
   - name: Configuring Docker daemon
@@ -13,7 +13,7 @@
       dest: /etc/docker/daemon.json
       src: templates/etc/docker/daemon.json.j2
       mode: "0644"
-      force: yes
+      force: true
   - name: Creating /etc/systemd/system/docker.service.d
     file:
       path: /etc/systemd/system/docker.service.d
@@ -24,11 +24,11 @@
       dest: /etc/systemd/system/docker.service.d/http-proxy.conf
       src: templates/etc/systemd/system/docker.service.d/http-proxy.conf.j2
       mode: "0644"
-      force: yes
+      force: true
   - name: Restarting Docker
     systemd:
       name: docker
-      daemon_reload: yes
+      daemon_reload: true
       state: restarted
   - name: Disabling swap
     shell: |

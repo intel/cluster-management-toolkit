@@ -3,7 +3,7 @@
     metadata:
       description: Show NVidia information
       category: Information
-  gather_facts: no
+  gather_facts: false
   tasks:
   - name: Show NVidia information
     shell: |
@@ -12,4 +12,4 @@
       else
         printf -- "[SKIP] nvidia-smi not installed\n"
       fi
-    changed_when: False
+    changed_when: false

@@ -7,14 +7,17 @@
       - inventory
       - node
       - internal
-      confirm: True
+      confirm: true
       query:
         string: Packages to install (space separated)
         function: string
         variable: packages
       category: Administration
-  gather_facts: yes
-  become: True
+  gather_subset:
+  - '!min'
+  - '!all'
+  - distribution
+  become: true
   become_user: root
   tasks:
   - name: Updating APT cache
@@ -23,9 +26,9 @@
   - name: Installing custom packages
     apt:
       pkg: "{{ packages }}"
-      force_apt_get: yes
+      force_apt_get: true
       # allow downgrading packages
-      force: yes
+      force: true
     when: ansible_os_family == 'Debian'
   - name: Marking packages as held
     shell: apt-mark hold "{{ item }}" || true

@@ -5,32 +5,39 @@
       time_consumption: Slow
       playbook-types:
       - inventory
-      confirm: True
+      confirm: true
       allow-on-control-plane: never
-      requires-cluster-info: True
+      requires-cluster-info: true
       run-before:
       - add_kubernetes_repo
       add-to-groups:
       - nodes
       category: Setup
-  gather_facts: no
-  become: True
+  gather_subset:
+  - '!min'
+  - '!all'
+  - distribution
+  become: true
   become_user: root
   tasks:
   - name: Gathering package facts
     package_facts:
       manager: apt
+    when: ansible_os_family == 'Debian'
   - name: apt-mark unhold kubeadm kubelet kubectl
     command: apt-mark unhold kubeadm kubelet kubectl
+    when: ansible_os_family == 'Debian'
   - name: Installing Kubernetes packages
     apt:
       pkg:
       - kubelet={{ control_plane_k8s_version }}
       - kubeadm={{ control_plane_k8s_version }}
       - kubectl={{ control_plane_k8s_version }}
-      force_apt_get: yes
+      force_apt_get: true
+    when: ansible_os_family == 'Debian'
   - name: apt-mark hold kubeadm, kubelet, kubectl
     command: apt-mark hold kubeadm kubelet kubectl
+    when: ansible_os_family == 'Debian'
   - name: Joining node to the cluster
     shell: |
       kubeadm join "{{ control_plane_ip }}:{{ control_plane_port }}" --token "{{ join_token }}" --discovery-token-ca-cert-hash "sha256:{{ ca_cert_hash }}"

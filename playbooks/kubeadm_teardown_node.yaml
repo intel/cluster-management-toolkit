@@ -5,7 +5,7 @@
       time_consumption: Slow
       playbook-types:
       - node
-      confirm: True
+      confirm: true
       allow-on-control-plane: never
       run-before:
       - delete_node
@@ -14,8 +14,11 @@
       remove-from-groups:
       - nodes
       category: Administration
-  gather_facts: yes
-  become: True
+  gather_subset:
+  - '!min'
+  - '!all'
+  - distribution
+  become: true
   become_user: root
   tasks:
   - name: Tear down Kubernetes
@@ -33,7 +36,7 @@
       - kubectl
       - kubelet
       - kubernetes-cni
-      force_apt_get: yes
+      force_apt_get: true
       state: absent
-      purge: yes
+      purge: true
     when: ansible_os_family == 'Debian'

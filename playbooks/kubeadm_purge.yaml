@@ -6,8 +6,11 @@
       playbook-types:
       - internal
       category: Administration
-  gather_facts: yes
-  become: True
+  gather_subset:
+  - '!min'
+  - '!all'
+  - distribution
+  become: true
   become_user: root
   tasks:
   - name: Unmarking packages as held
@@ -17,9 +20,9 @@
   - name: Removing Kubernetes packages
     apt:
       name: "{{ packages }}"
-      force_apt_get: yes
+      force_apt_get: true
       state: absent
-      purge: yes
+      purge: true
     when: ansible_os_family == 'Debian'
   - name: Removing directories
     file:
@@ -32,4 +35,4 @@
     - /var/lib/kubelet
   - name: Reload systemd configuration
     systemd:
-      daemon_reload: yes
+      daemon_reload: true

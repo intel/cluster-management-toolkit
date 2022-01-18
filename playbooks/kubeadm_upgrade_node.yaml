@@ -5,25 +5,31 @@
       time_consumption: Slow
       playbook-types:
       - node
-      confirm: True
+      confirm: true
       allow-on-control-plane: never
-      requires-cluster-info: True
+      requires-cluster-info: true
       category: Administration
-  gather_facts: no
-  become: True
+  gather_subset:
+  - '!min'
+  - '!all'
+  - distribution
+  become: true
   become_user: root
   tasks:
   - name: Updating APT cache
     apt: update_cache=yes force_apt_get=yes
+    when: ansible_os_family == 'Debian'
   - name: apt-mark unhold kubeadm kubelet kubectl
     command: apt-mark unhold kubeadm kubelet kubectl
+    when: ansible_os_family == 'Debian'
   - name: Installing new versions of kubeadm, kubelet and kubectl
     apt:
       pkg:
       - kubeadm={{ requested_control_plane_k8s_version }}
       - kubelet={{ requested_control_plane_k8s_version }}
       - kubectl={{ requested_control_plane_k8s_version }}
-      force_apt_get: yes
+      force_apt_get: true
+    when: ansible_os_family == 'Debian'
   - name: Upgrading node
     shell: |
       if [ -n "{{ https_proxy }}" ]; then
@@ -34,8 +40,9 @@
       kubeadm upgrade node
   - name: apt-mark hold kubeadm kubelet kubectl
     command: apt-mark hold kubeadm kubelet kubectl
+    when: ansible_os_family == 'Debian'
   - name: Restarting kubelet
     systemd:
       name: kubelet
-      daemon_reload: yes
+      daemon_reload: true
       state: restarted

@@ -5,32 +5,38 @@
       playbook-types:
       - inventory
       - node
-      confirm: True
+      confirm: true
       allow-on-control-plane: single
-      requires-cluster-info: True
+      requires-cluster-info: true
       category: Setup
-  gather_facts: yes
-  become: True
+  gather_subset:
+  - '!min'
+  - '!all'
+  - distribution
+  become: true
   become_user: root
   tasks:
   - name: Updating APT cache
     apt: update_cache=yes force_apt_get=yes
+    when: ansible_os_family == 'Debian'
   - name: Installing containerd
     apt:
       name: containerd
       state: latest
-      force_apt_get: yes
+      force_apt_get: true
+    when: ansible_os_family == 'Debian'
   - name: Installing runc
     apt:
       name: runc
       state: latest
-      force_apt_get: yes
+      force_apt_get: true
+    when: ansible_os_family == 'Debian'
   - name: Configuring crictl
     template:
       dest: /etc/crictl.yaml
       src: templates/etc/crictl.yaml.j2
       mode: "0644"
-      force: yes
+      force: true
   - name: Creating /etc/containerd
     file:
       path: /etc/containerd
@@ -51,7 +57,7 @@
       dest: /etc/systemd/system/kubelet.service.d/containerd-cri.conf
       src: templates/etc/systemd/system/kubelet.service.d/containerd-cri.conf.j2
       mode: "0644"
-      force: yes
+      force: true
   - name: Creating /etc/systemd/system/containerd.service.d
     file:
       path: /etc/systemd/system/containerd.service.d
@@ -62,20 +68,20 @@
       dest: /etc/systemd/system/containerd.service.d/http-proxy.conf
       src: templates/etc/systemd/system/containerd.service.d/http-proxy.conf.j2
       mode: "0644"
-      force: yes
+      force: true
   - name: Configuring containerd/ip_forward.conf
     template:
       dest: /etc/systemd/system/containerd.service.d/ip-forward.conf
       src: templates/etc/systemd/system/containerd.service.d/ip-forward.conf.j2
       mode: "0644"
-      force: yes
+      force: true
   - name: Restarting Containerd
     systemd:
       name: containerd
-      daemon_reload: yes
+      daemon_reload: true
       state: restarted
   - name: Restarting Kubelet
     systemd:
       name: kubelet
-      daemon_reload: yes
+      daemon_reload: true
       state: restarted
