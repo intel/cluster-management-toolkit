@@ -7524,6 +7524,8 @@ def clusteroverviewloop(stdscr, view):
 
 cmdata_format = [
 	# cm namespace, cm name prefix, cmdata prefix, cmdata suffix, dataformat
+	# To do an exact match on cmdata set both cmdata prefix and cmdata suffix to the same string
+	# (this will work unless you have a string that contains the same substring twice)
 	("", "", "", ".crt", "CRT"),
 	("", "", "", ".pem", "CRT"),
 	("", "", "", "client-ca-file", "CRT"),
@@ -7547,6 +7549,8 @@ cmdata_format = [
 	("kube-system", "kubelet-config", "", "", "YAML"),
 	("kube-system", "kube-proxy", "", "config.conf", "YAML"),
 	("kube-system", "scheduler-extender-policy", "policy.cfg", "", "JSON"),
+	("", "kubeapps", "vhost.conf", "vhost.conf", "NGINX"),
+	("", "kubeapps", "k8s-api-proxy.conf", "k8s-api-proxy.conf", "NGINX"),
 	("", "linkerd-config", "values", "", "YAML"),
 	("", "nfd-worker-conf", "nfd-worker.conf", "", "YAML"),
 	("", "", "", ".py", "Python"),
@@ -7610,6 +7614,8 @@ def cmdataloop(stdscr, obj, view, info = None):
 				messages = __format_ini(split_msg(obj.data))
 			elif dataformat == "CaddyFile":
 				messages = __format_caddyfile(split_msg(obj.data))
+			elif dataformat == "NGINX":
+				messages = __format_nginx(split_msg(obj.data))
 			else:
 				messages = []
 				for line in split_msg(obj.data):
@@ -10720,6 +10726,55 @@ def __format_caddyfile(lines):
 
 	return dumps
 
+# Take an NGINX file and apply syntax highlighting
+def __format_nginx(lines):
+	dumps = []
+
+	for line in lines:
+		dump = []
+		if len(line.strip()) == 0:
+			if len(dump) == 0:
+				dump += [
+					("", ("types", "generic"))
+				]
+			dumps.append(dump)
+			continue
+
+		# key {
+		# key value[ value...];
+		# key value[ value...] {
+		tmp = re.match(r"^(\s*)(#.*$|}|\S+|$)(.+;|.+{|)(\s*#.*$|)", line)
+		if tmp is not None:
+			if len(tmp[1]) > 0:
+				dump += [
+					(tmp[1], ("types", "generic")),	# whitespace
+				]
+			if len(tmp[2]) > 0:
+				if tmp[2] == "}":
+					dump += [
+						(tmp[2], ("types", "generic")),	# block end
+					]
+				elif tmp[2].startswith("#"):
+					dump += [
+						(tmp[2], ("types", "nginx_comment"))
+					]
+				else:
+					dump += [
+						(tmp[2], ("types", "nginx_key"))
+					]
+			if len(tmp[3]) > 0:
+					dump += [
+						(tmp[3][:-1], ("types", "nginx_value")),
+						(tmp[3][-1:], ("types", "generic")),	# block start / statement end
+					]
+			if len(tmp[4]) > 0:
+				dump += [
+					(tmp[4], ("types", "nginx_comment"))
+				]
+			dumps.append(dump)
+		else:
+			sys.exit(f"Couldn't match line {line=}")
+	return dumps
 
 # Take an XML file and highlight the markup
 def __format_xml(lines):
