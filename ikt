@@ -245,6 +245,8 @@ def cordon_nodes(options = None, args = None):
 			include_control_planes = True
 		elif opt == "--no-header":
 			header = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	selection = args[0].split(",")
 
@@ -293,6 +295,8 @@ def drain_nodes(options = None, args = None):
 			include_control_planes = True
 		elif opt == "--no-header":
 			header = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	selection = args[0].split(",")
 
@@ -326,6 +330,8 @@ def uncordon_nodes(options = None, args = None):
 			include_control_planes = True
 		elif opt == "--no-header":
 			header = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	selection = args[0].split(",")
 
@@ -359,6 +365,8 @@ def remove_nodes(options = None, args = None):
 	for opt, optarg in options:
 		if opt == "--force":
 			force = True
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
@@ -390,12 +398,12 @@ def remove_nodes(options = None, args = None):
 	if retval == True:
 		iktprint([("OK", "ok")])
 	elif force == True:
-		iktprint([("NOT OK", "notok"), ("; ignoring since “", "description"), ("--force", "argument"), ("“ was specified.", "default")])
+		iktprint([("NOT OK", "notok"), ("; ignoring since “", "description"), ("--force", "argument"), ("“ was specified.", "default")], stderr = True)
 	else:
-		iktprint([("NOT OK", "notok"), ("; aborting.", "default")])
+		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
 		sys.exit(2)
 
-	iktprint([("\n• ", "separator"), ("Purging Kubernetes from the nodes", "action")])
+	iktprint([("\n• ", "separator"), ("Tearing down Kubernetes on the nodes", "action")])
 	teardown_playbooks = [
 		f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_teardown_node.yaml",
 		f"{ANSIBLE_PLAYBOOK_DIR}/teardown_cni.yaml",
@@ -407,7 +415,7 @@ def remove_nodes(options = None, args = None):
 	if retval == True:
 		iktprint([("OK", "ok")])
 	else:
-		iktprint([("NOT OK", "notok"), ("; aborting.", "default")])
+		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
 		sys.exit(2)
 
 	iktprint([("\n• ", "separator"), ("Removing nodes from the inventory", "action")])
@@ -416,6 +424,80 @@ def remove_nodes(options = None, args = None):
 	#ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = cluster_name)
 
 	iktprint([("\nNode removal successful", "success")])
+
+def purge_hosts(options = None, args = None):
+	ignore_non_existing = False
+
+	selection = args[0].split(",")
+
+	if "ALL" in selection:
+		iktprint([("Error: ", "error"), ("ALL", "hostname"), (" cannot be used with ", "default"), ("purge", "command"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	for opt, optarg in options:
+		if opt == "--ignore-non-existing":
+			ignore_non_existing = True
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
+
+	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	if len(controlplanes) > 0:
+		iktprint([(f"Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be removed using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if len(nodes) > 0:
+		iktprint([(f"Error: ", "error")] + join_tuple_list(nodes, _tuple = "hostname", separator = (",", "separator")) + [(" are still node(s) in the cluster; please run ", "default"), (f"{about.tool_program_name}", "programname"), (" remove-node", "command"), (" first to remove them from the cluster; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	hosts = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+
+	not_in_inventory = []
+	for host in selection:
+		if host not in hosts:
+			not_in_inventory.append(host)
+			selection.remove(host)
+
+	if len(not_in_inventory) > 0:
+		if ignore_non_existing == False:
+			iktprint([(f"Error: ", "error")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not in the inventory; aborting.", "default")], stderr = True)
+			sys.exit(2)
+		else:
+			iktprint([(f"Warning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not in the inventory; ignoring them since “", "description"), ("--ignore-non-existing", "argument"), ("“ was specified.", "default")], stderr = True)
+
+	if len(selection) == 0:
+		iktprint([(f"Error: ", "error"), (" none of the specified hosts are part of the inventory; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	iktprint([("\n• ", "separator"), ("Purging Kubernetes from the hosts", "action")])
+	purge_playbooks = [
+		f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_purge.yaml",
+	]
+	playbooks = populate_playbooks_from_paths(purge_playbooks)
+
+	hosts = selection
+
+	extra_values = {
+		"packages": [
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+			"kubernetes-cni",
+		],
+		"held_packages": [
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+		]
+	}
+	retval = run_playbooks(playbooks = playbooks, hosts = hosts, extra_values = extra_values)
+	if retval == True:
+		iktprint([("OK", "ok")])
+	else:
+		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	iktprint([("\nHost purge successful", "success")])
 
 def upgrade_nodes(options = None, args = None):
 	selection = args[0].split(",")
@@ -455,7 +537,7 @@ def upgrade_nodes(options = None, args = None):
 	if retval == True:
 		iktprint([("OK", "ok")])
 	else:
-		iktprint([("NOT OK", "notok"), ("; aborting.", "default")])
+		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
 		sys.exit(2)
 
 	iktprint([("\n• ", "separator"), ("Uncordon nodes", "action")])
@@ -563,7 +645,20 @@ ikt_commandline = {
 		"callback": remove_nodes,
 		"options": {
 			"--force": {
-				"description": [("Attempt to purge Kubernetes from hosts that are no longer in the cluster", "description")],
+				"description": [("Attempt to teardown Kubernetes nodes that are no longer in the cluster", "description")],
+			},
+		},
+	},
+	"Purge": {
+		"command": ["purge"],
+		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
+		"description": [("Remove Kubernetes configuration and packages from ", "description"), ("HOST", "argument")],
+		"min_args": 1,
+		"max_args": 1,
+		"callback": purge_hosts,
+		"options": {
+			"--ignore-non-existing": {
+				"description": [("Ignore hosts that cannot be found in the inventory", "description")],
 			},
 		},
 	},

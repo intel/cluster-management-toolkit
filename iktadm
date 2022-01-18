@@ -192,7 +192,6 @@ purge_control_plane_targets = {
 			"kubeadm",
 			"kubectl",
 			"kubelet",
-			"kubernetes-cni",
 		],
 	},
 }
@@ -345,7 +344,7 @@ def check_and_print_status(retval):
 	if retval == True:
 		iktprint([("OK", "ok")])
 	else:
-		iktprint([("NOT OK", "notok"), ("; aborting.", "default")])
+		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
 		sys.exit(2)
 
 def weave_urlgetter():
