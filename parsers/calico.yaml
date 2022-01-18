@@ -3,7 +3,7 @@
   matchkeys:
   - container_name: install-cni
     container_type: init_container
-    image_name: calico/cni
+    image_name: /calico/cni
   parser_rules:
   - name: key_value
   - name: json_line
@@ -11,6 +11,9 @@
   matchkeys:
   - container_name: calico-node
   - container_name: calico-kube-controllers
+  - container_name: upgrade-ipam
+    container_type: init_container
+    image_name: /calico/cni
   parser_rules:
   - name: glog
   - name: ts_8601
@@ -19,7 +22,7 @@
       regex: '^\[([A-Z]+)\]\[\d+\] (\S+) (\d+): (.*)'
       severity:
         field: 1
-        transform: 4letter
+        transform: str
       facility:
         fields:
         - 2
