@@ -6,8 +6,12 @@
   - name: ts_8601
   - name: bracketed_severity
     default_loglevel: info
+  - name: glog
   - name: override_severity
     overrides:
     - matchtype: startswith
       matchkey: "CoreDNS"
       loglevel: notice
+    - matchtype: startswith
+      matchkey: "Trace["
+      loglevel: debug
