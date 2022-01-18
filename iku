@@ -27,9 +27,10 @@ from pathlib import Path
 import re
 import socket
 import subprocess
-from subprocess import PIPE
+from subprocess import PIPE, STDOUT
 import sys
 import tempfile
+import time
 import yaml
 
 try:
@@ -9449,7 +9450,9 @@ def genericinfoloop(stdscr, obj, view):
 				elif widget == "executecommand":
 					selected = uip.get_selected()
 					w_kinds = deep_get(value, "kinds")
-					if (selected is None or not selected.kind in w_kinds) and w_kinds != [("", "")]:
+					if (w_kinds is None):
+						continue
+					if w_kinds != ["<native>"] and (selected is None or not selected.kind in w_kinds) and w_kinds != [("", "")]:
 						continue
 
 					w_inputtitle = deep_get(value, "inputtitle")
@@ -9465,11 +9468,15 @@ def genericinfoloop(stdscr, obj, view):
 					if type(selected) == ResourceInfo:
 						# This needs to be generalised somehow; so does the message
 						containername = selected.ref["name"]
-					else:
-						sys.exit(f"Cannot handle type {type(selected)} in executecommand()")
+					elif not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
+						sys.exit(f"Cannot handle type {type(selected)} in executecommand();\nw_kinds={w_kinds}\nw_command={w_command}")
 					if w_command == [ "<ephemeral>" ]:
 						ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
 						msg = [(f"Creating ephemeral ", "action"), (ephemeral_image, "programname"), (" container sharing process namespace with ", "action"), (f"{containername}", "path")]
+					elif w_command == [ "<dnsutils>" ]:
+						node_name = deep_get(obj, "metadata#name")
+						containername = None
+						msg = [(f"Opening dnsutils container on ", "action"), (node_name, "hostname")]
 					else:
 						msg = [(f"Executing ", "action"), (w_command[0], "programname"), (" inside ", "action"), (containername, "path")]
 					executecommand(uip.stdscr, obj, containername, msg, command = w_command, waitforkeypress = w_waitforkeypress)
@@ -10312,30 +10319,73 @@ def containerinfoloop(stdscr, container, kind, obj):
 					f.write("%s  %s%s%s\n" % (timestamp, severity, facility, messages[y]))
 			f.close()
 
-def executecommand(stdscr, pod, container, msg, command, waitforkeypress):
+def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 	# This should probably be done using connect_get_namespaced_pod_exec()
 	curses.endwin()
 	os.system("clear")
 	iktprint(msg)
 	print()
-	pod_name = deep_get(pod, "metadata#name")
-	pod_namespace = deep_get(pod, "metadata#namespace")
-	if pod_name is not None and pod_namespace is not None:
+	if obj is not None:
+		obj_name = deep_get(obj, "metadata#name")
+		obj_namespace = deep_get(obj, "metadata#namespace")
 		# This is a request to create a new ephemeral container
 		if command == ["<ephemeral>"]:
-			# It'd be awesome if we could reuse the same name every time we open an ephemeral container,
-			# but it seems Kubernetes is intent on keeping the old ones around marked as Completed
+			# Should we perhaps use subprocess.run here?
 			ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
-			args = ["kubectl", "debug", pod_name, "--target", container, "-n", pod_namespace, "-i", "-t", "--image", ephemeral_image]
+			args = ["kubectl", "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image, "--attach=false"]
+			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+			if result.returncode != 0:
+				iktprint([(f"Error: ", "error"), ("Failed to create debug image", "default")], stderr = True)
+			else:
+				output = result.stdout.decode('utf-8')
+				tmp = re.match("Creating debugging pod (\S+) with container (\S+) .*", output)
+				if tmp is not None:
+					pod_name = tmp[1]
+					container_name = tmp[2]
+				else:
+					sys.exit(f"executecommand failed to parse output; {output}; aborting.")
 
-			# Should we perhaps use subprocess.run here?
-			subprocess.call(args)
+				time.sleep(2)
+				# Attach to the image
+				# Should we perhaps use subprocess.run here?
+				args = ["kubectl", "attach", pod_name, "-c", container_name, "-it", "--pod-running-timeout=1m0s"]
+				subprocess.call(args)
+
+				# Delete the image
+				# Should we perhaps use subprocess.run here?
+				args = ["kubectl", "delete",  "pod", pod_name]
+				subprocess.call(args)
+		elif command == ["<dnsutils>"]:
+			dnsutils_image = deep_get(iktconfig, "Debug#network_image", "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
+			args = ["kubectl", "debug", f"node/{obj_name}", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
+			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+			if result.returncode != 0:
+				iktprint([(f"Error: ", "error"), ("Failed to create debug image", "default")], stderr = True)
+			else:
+				output = result.stdout.decode('utf-8')
+				tmp = re.match("Creating debugging pod (\S+) with container (\S+) .*", output)
+				if tmp is not None:
+					pod_name = tmp[1]
+					container_name = tmp[2]
+				else:
+					sys.exit(f"executecommand failed to parse output; {output}; aborting.")
+
+				time.sleep(2)
+				# Attach to the image
+				# Should we perhaps use subprocess.run here?
+				args = ["kubectl", "attach", pod_name, "-c", container_name, "-it", "--pod-running-timeout=1m0s"]
+				subprocess.call(args)
+
+				# Delete the image
+				# Should we perhaps use subprocess.run here?
+				args = ["kubectl", "delete",  "pod", pod_name]
+				subprocess.call(args)
 		else:
-			args = ["kubectl", "exec", pod_name, "-n", pod_namespace, "-i", "-t", "--container", container, "--"] + command
 			# Should we perhaps use subprocess.run here?
+			args = ["kubectl", "exec", obj_name, "-n", obj_namespace, "-i", "-t", "--container", container, "--"] + command
 			subprocess.call(args)
 	else:
-		sys.exit("Called execute command with missing pod name (%s) or namespace (%s)" % (pod_name, pod_namespace))
+		sys.exit("Called execute command with obj=None")
 
 	if waitforkeypress:
 		input("\nPress Enter to continue...")
@@ -13275,6 +13325,13 @@ infoviews = {
 				"helptext": ("[Shift] + S", "SSH to node"),
 				"call": ssh_to_host,
 				"name_path": "metadata#name",
+			},
+			"Open dnsutils pod on Node": {
+				"shortcut": ord(""),
+				"helptext": ("[Ctrl] + N", "Open a dnsutils pod on Node"),
+				"widget": "executecommand",
+				"command": ["<dnsutils>"],
+				"kinds": ["<native>"],
 			},
 			"show Package Versions": {
 				"shortcut": ord("V"),
