@@ -2383,7 +2383,7 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 			elif _filter[0] == "json":
 				_parser_options = _filter[1]
 				if message.startswith("{\""):
-					message, severity, facility, remnants = split_json_style(message, fold_msg = fold_msg, options = _parser_options)
+					message, severity, facility, remnants = split_json_style(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "json_event":
 				_parser_options = _filter[1]
 				# We don't extract the facility/severity from folded messages, so just skip if fold_msg == True
