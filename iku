@@ -9728,9 +9728,10 @@ def containerinfoloop(stdscr, container, kind, obj):
 						options = processor[2]
 					for j in range(i, len(splitmsg)):
 						processor, _logentry = processor[1](splitmsg[j], fold_msg = fold_msg, options = options)
-						_logentries.append(_logentry)
+						if processor[0] != "end_block_not_processed":
+							_logentries.append(_logentry)
 
-						if processor[0] == "end_block":
+						if processor[0] in ["end_block", "end_block_not_processed"]:
 							# OK, we've got a block; start by appending the first line
 							if len(_logentries) > 0:
 								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, _logentries[0][3])
@@ -9744,6 +9745,10 @@ def containerinfoloop(stdscr, container, kind, obj):
 					if processor[0] == "end_block":
 						# We've got a block and it's been appended, so go on
 						i = j + 1
+						continue
+					elif processor[0] == "end_block_not_processed":
+						# We've got a block and it's been appended, but the last line needs processing again
+						i = j
 						continue
 					else:
 						message = remnants

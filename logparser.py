@@ -2146,15 +2146,19 @@ def python_traceback(message, fold_msg = True):
 	return message, remnants
 
 def json_line_scanner(message, fold_msg = True, options = {}):
+	allow_empty_lines = True #deep_get(options, "allow_empty_lines", False)
 	timestamp = None
 	facility = ""
 	severity = loglevel.INFO
 	message, _timestamp = split_iso_timestamp(message, None)
 
-	if message == "}":
+	if message == "}".rstrip():
 		remnants = format_yaml_line(message, override_formatting = {})
 		processor = ["end_block", None]
 	elif message.lstrip() != message:
+		remnants = format_yaml_line(message, override_formatting = {})
+		processor = ["block", json_line_scanner]
+	elif len(message.strip()) == 0 and allow_empty_lines == True:
 		remnants = format_yaml_line(message, override_formatting = {})
 		processor = ["block", json_line_scanner]
 	else:
@@ -2171,6 +2175,7 @@ def json_line(message, fold_msg = True, options = {}):
 		"matchtype": "exact",
 		"matchkey": "{",
 		"matchline": "any",
+		"format_block_start": False,
 	}])
 	line = deep_get(options, "__line", 0)
 
@@ -2178,6 +2183,7 @@ def json_line(message, fold_msg = True, options = {}):
 		matchtype = _bs["matchtype"]
 		matchkey = _bs["matchkey"]
 		matchline = _bs["matchline"]
+		format_block_start = deep_get(_bs, "format_block_start", False)
 		if matchline == "any" or matchline == "first" and line == 0:
 			if matchtype == "exact":
 				if message == matchkey:
@@ -2191,8 +2197,11 @@ def json_line(message, fold_msg = True, options = {}):
 					matched = True
 
 	if matched == True:
-		remnants = format_yaml_line(message, override_formatting = {})
-		message = ["start_block", json_line_scanner]
+		if format_block_start == True:
+			remnants = format_yaml_line(message, override_formatting = {})
+		else:
+			remnants = message
+		message = ["start_block", json_line_scanner, options]
 	return message, remnants
 
 def yaml_line_scanner(message, fold_msg = True, options = {}):
@@ -2207,11 +2216,13 @@ def yaml_line_scanner(message, fold_msg = True, options = {}):
 	block_end = deep_get(options, "block_end")
 
 	format_block_end = False
+	process_block_end = True
 
 	for _be in block_end:
 		matchtype = _be["matchtype"]
 		matchkey = _be["matchkey"]
 		format_block_end = deep_get(_be, "format_block_end", False)
+		process_block_end = deep_get(_be, "process_block_end", True)
 		if matchtype == "empty":
 			if len(message.strip()) == 0:
 				matched = False
@@ -2230,11 +2241,14 @@ def yaml_line_scanner(message, fold_msg = True, options = {}):
 		remnants = format_yaml_line(message, override_formatting = {})
 		processor = ["block", yaml_line_scanner, options]
 	else:
-		if format_block_end == True:
-			remnants = format_yaml_line(message, override_formatting = {})
+		if process_block_end == True:
+			if format_block_end == True:
+				remnants = format_yaml_line(message, override_formatting = {})
+			else:
+				remnants = [(message, ("logview", "severity_info"))]
+			processor = ["end_block", None]
 		else:
-			remnants = [(message, ("logview", "severity_info"))]
-		processor = ["end_block", None]
+			processor = ["end_block_not_processed", None]
 
 	return processor, (timestamp, facility, severity, remnants)
 
@@ -2384,6 +2398,16 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 				_parser_options = _filter[1]
 				if message.startswith("{\""):
 					message, severity, facility, remnants = split_json_style(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
+			elif _filter[0] == "json_with_leading_message":
+				_parser_options = _filter[1]
+				parts = message.split("{", 1)
+				if len(parts) == 2:
+					if severity is None:
+						message = [(parts[0], ("logview", "severity_info"))]
+						_message, severity, facility, remnants = split_json_style_raw("{" + parts[1], severity = loglevel.INFO, facility = facility, fold_msg = fold_msg, options = _parser_options, merge_message = True)
+					else:
+						message = [(parts[0], ("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+						_message, severity, facility, remnants = split_json_style_raw("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options, merge_message = True)
 			elif _filter[0] == "json_event":
 				_parser_options = _filter[1]
 				# We don't extract the facility/severity from folded messages, so just skip if fold_msg == True
@@ -2435,7 +2459,6 @@ builtin_parsers = [
 	("3scale-kourier-gateway", "", "", "istio"),
 
 	("activator", "istio-init_init", "", "basic_8601"),
-	("activator", "istio-proxy", "", "istio"),
 	("admission-webhook-bootstrap-stateful-set", "bootstrap", "", "basic_8601"),
 	("admission-webhook-bootstrap", "", "", "basic_8601"),
 	("admission-webhook-deployment", "admission-webhook", "", "kube_parser_1"),
@@ -2444,7 +2467,6 @@ builtin_parsers = [
 	("argo-ui", "argo-ui", "", "basic_8601_colon_severity"),
 	("autoscaler-hpa", "autoscaler-hpa", "", "kube_parser_1"),
 	("autoscaler", "istio-init_init", "", "basic_8601"),
-	("autoscaler", "istio-proxy", "", "istio"),
 
 	("blackbox-exporter", "", "", "kube_parser_structured_glog"),
 
@@ -2453,7 +2475,6 @@ builtin_parsers = [
 	("cdi-node", "", "", "kube_parser_1"),
 	("centraldashboard", "", "", "basic_8601"),
 	("cifar10-training-gpu-worker", "", "", "kube_parser_1"),
-	("cluster-local-gateway", "istio-proxy", "", "istio"),
 
 	("", "", "quay.io/dexidp/dex", "key_value"),
 	("dist-mnist", "", "", "jupyter"),
@@ -2466,9 +2487,7 @@ builtin_parsers = [
 
 	("istio-citadel", "citadel", "", "istio"),
 	("istio-cleanup-secrets", "kubectl", "", "istio"),
-	("istio-egressgateway", "istio-proxy", "", "istio"),
 	("istio-galley", "galley", "", "istio"),
-	("istio-ingressgateway", "istio-proxy", "", "istio"),
 	("", "", "docker.io/istio/proxyv2", "istio_pilot"),
 	("", "", "docker.io/istio/pilot", "istio_pilot"),
 	("istio-pilot", "", "", "istio"),
@@ -2481,7 +2500,6 @@ builtin_parsers = [
 	("katib-db-manager", "", "", "kube_parser_1"),
 	("katib-ui", "", "", "kube_parser_1"),
 	("kfserving-controller-manager", "", "", "kube_parser_1"),
-	("kfserving-ingressgateway", "istio-proxy", "", "istio"),
 	("kiali", "", "", "kube_parser_1"),
 	("kilo", "", "", "kube_parser_json_glog"),
 	("", "", "gcr.io/knative", "kube_parser_1"),
@@ -2646,7 +2664,7 @@ def init_parser_list():
 						rule_name = rule.get("name")
 						if rule_name in ["colon_severity", "directory", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"]:
 							rules.append(rule_name)
-						elif rule_name in ["json", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
+						elif rule_name in ["json", "json_with_leading_message", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
 							rules.append((rule_name, rule.get("options", {})))
 						elif rule_name == "substitute_bullets":
 							prefix = rule.get("prefix", "* ")
