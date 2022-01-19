@@ -593,7 +593,10 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 
 		# If the message is folded, append the rest
 		if fold_msg == True:
-			msgseverity = severity
+			if severity is not None:
+				msgseverity = severity
+			else:
+				msgseverity = loglevel.INFO
 			# Append all remaining fields to message
 			if msg == "":
 				message = str(logentry)
@@ -612,16 +615,23 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 					message = str(logentry)
 		# else return an expanded representation
 		else:
-			if severity == loglevel.DEBUG:
+			if severity is not None and severity == loglevel.DEBUG:
 				structseverity = severity
 			else:
 				structseverity = loglevel.INFO
 
 			if "err" not in logentry and "error" not in logentry:
-				msgseverity = severity
+				if severity is not None:
+					msgseverity = severity
+				else:
+					msgseverity = loglevel.INFO
 			else:
 				msgseverity = structseverity
-			errorseverity = severity
+			if severity is not None:
+				errorseverity = severity
+			else:
+				errorseverity = loglevel.ERR
+
 			if logparser_configuration.msg_extract == True:
 				message = msg
 				# Pop the first matching _msg
@@ -659,10 +669,8 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 					msgseverity = structseverity
 				for line in tmp:
 					remnants.append((line, severity))
-	else:
-		msgseverity = severity
 
-	return message, msgseverity, facility, remnants
+	return message, severity, facility, remnants
 
 def split_json_style_raw(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}, merge_message = False):
 	global logparser_configuration
