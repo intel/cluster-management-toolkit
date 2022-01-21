@@ -726,9 +726,9 @@ class KubernetesHelper:
 		},
 		# apps.openshift.io
 		("DeploymentConfig", "apps.openshift.io"): {
-			"api_family": "apis/apps.openshift.io/v1/",
+			"api_family": ["apis/apps.openshift.io/v1/"],
 			"api": "deploymentconfigs",
-			"aliases": "dc",
+			"aliases": ["dc"],
 		},
 		# argoproj.io
 		("ClusterWorkflowTemplate", "argoproj.io"): {
@@ -777,15 +777,15 @@ class KubernetesHelper:
 		},
 		# autoscaling.openshift.io
 		("ClusterAutoscaler", "autoscaling.openshift.io"): {
-			"api_family": "apis/autoscaling.openshift.io/v1/",
+			"api_family": ["apis/autoscaling.openshift.io/v1/"],
 			"api": "clusterautoscalers",
 			"namespaced": False,
-			"aliases": "ca",
+			"aliases": ["ca"],
 		},
 		("MachineAutoscaler", "autoscaling.openshift.io"): {
-			"api_family": "apis/autoscaling.openshift.io/v1beta1/",
+			"api_family": ["apis/autoscaling.openshift.io/v1beta1/"],
 			"api": "machineautoscalers",
-			"aliases": "ma",
+			"aliases": ["ma"],
 		},
 		# autoscaling.internal.knative.dev
 		("Metric", "autoscaling.internal.knative.dev"): {
@@ -808,9 +808,9 @@ class KubernetesHelper:
 		},
 		# build.openshift.io
 		("BuildConfig", "build.openshift.io"): {
-			"api_family": "apis/build.openshift.io/v1/",
+			"api_family": ["apis/build.openshift.io/v1/"],
 			"api": "buildconfigs",
-			"aliases": "bc",
+			"aliases": ["bc"],
 		},
 		("Build", "build.openshift.io"): {
 			"api_family": "apis/build.openshift.io/v1/",
@@ -823,18 +823,18 @@ class KubernetesHelper:
 		},
 		# cassandra.datastax.com
 		("CassandraDatacenter", "cassandra.datastax.com"): {
-			"api_family": "apis/cassandra.datastax.com/v1beta1/",
+			"api_family": ["apis/cassandra.datastax.com/v1beta1/"],
 			"api": "cassandradatacenters",
 			"aliases": ["cassandradatacenter", "cassdcs", "cassdc"],
 		},
 		# cassandra.k8ssandra.io
 		("CassandraBackup", "cassandra.k8ssandra.io"): {
-			"api_family": "apis/cassandra.k8ssandra.io/v1alpha1/",
+			"api_family": ["apis/cassandra.k8ssandra.io/v1alpha1/"],
 			"api": "cassandrabackups",
 			"aliases": ["cassandrabackup"],
 		},
 		("CassandraRestore", "cassandra.k8ssandra.io"): {
-			"api_family": "apis/cassandra.k8ssandra.io/v1alpha1/",
+			"api_family": ["apis/cassandra.k8ssandra.io/v1alpha1/"],
 			"api": "cassandrarestores",
 			"aliases": ["cassandrarestore"],
 		},
@@ -1161,6 +1161,32 @@ class KubernetesHelper:
 			"api_family": "apis/crd.projectcalico.org/v1/",
 			"api": "networksets",
 		},
+		# deviceplugin.intel.com
+		("DsaDevicePlugin", "deviceplugin.intel.com"): {
+			"api_family": ["apis/deviceplugin.intel.com/v1/"],
+			"api": "dsadeviceplugins",
+			"namespaced": False,
+		},
+		("FpgaDevicePlugin", "deviceplugin.intel.com"): {
+			"api_family": ["apis/deviceplugin.intel.com/v1/"],
+			"api": "fpgadeviceplugins",
+			"namespaced": False,
+		},
+		("GpuDevicePlugin", "deviceplugin.intel.com"): {
+			"api_family": ["apis/deviceplugin.intel.com/v1/"],
+			"api": "gpudeviceplugins",
+			"namespaced": False,
+		},
+		("QatDevicePlugin", "deviceplugin.intel.com"): {
+			"api_family": ["apis/deviceplugin.intel.com/v1/"],
+			"api": "qatdeviceplugins",
+			"namespaced": False,
+		},
+		("SgxDevicePlugin", "deviceplugin.intel.com"): {
+			"api_family": ["apis/deviceplugin.intel.com/v1/"],
+			"api": "sgxdeviceplugins",
+			"namespaced": False,
+		},
 		# dex.coreos.com
 		("AuthCode", "dex.coreos.com"): {
 			"api_family": "apis/dex.coreos.com/v1/",
@@ -1221,6 +1247,17 @@ class KubernetesHelper:
 			"api_family": "apis/flows.knative.dev/v1/",
 			"api": "sequences",
 		},
+		# fpga.intel.com
+		("AcceleratorFunction", "fpga.intel.com"): {
+			"api_family": ["apis/fpga.intel.com/v2/"],
+			"api": "acceleratorfunctions",
+			"aliases": ["af"],
+		},
+		("FpgaRegion", "fpga.intel.com"): {
+			"api_family": ["apis/fpga.intel.com/v2/"],
+			"api": "fpgaregions",
+			"aliases": ["fpga"],
+		},
 		# helm.cattle.io
 		("HelmChartConfig", "helm.cattle.io"): {
 			"api_family": "apis/helm.cattle.io/v1/",
@@ -1237,14 +1274,14 @@ class KubernetesHelper:
 			"namespaced": False,
 		},
 		("ImageStream", "image.openshift.io"): {
-			"api_family": "apis/image.openshift.io/v1/",
+			"api_family": ["apis/image.openshift.io/v1/"],
 			"api": "imagestreams",
-			"aliases": "is",
+			"aliases": ["is"],
 		},
 		("ImageStreamTag", "image.openshift.io"): {
-			"api_family": "apis/image.openshift.io/v1/",
+			"api_family": ["apis/image.openshift.io/v1/"],
 			"api": "imagestreamtags",
-			"aliases": "istag",
+			"aliases": ["istag"],
 		},
 		# install.istio.io
 		("IstioOperator", "install.istio.io"): {
@@ -1288,7 +1325,7 @@ class KubernetesHelper:
 		},
 		# kubeflow.org
 		("Experiment", "kubeflow.org"): {
-			"api_family": "apis/kubeflow.org/v1beta1/",
+			"api_family": ["apis/kubeflow.org/v1beta1/"],
 			"api": "experiments",
 		},
 		("MPIJob", "kubeflow.org"): {
@@ -1296,15 +1333,15 @@ class KubernetesHelper:
 			"api": "mpijobs",
 		},
 		("MXJob", "kubeflow.org"): {
-			"api_family": "apis/kubeflow.org/v1/",
+			"api_family": ["apis/kubeflow.org/v1/"],
 			"api": "mxjobs",
 		},
 		("Notebook", "kubeflow.org"): {
-			"api_family": "apis/kubeflow.org/v1/",
+			"api_family": ["apis/kubeflow.org/v1/"],
 			"api": "notebooks",
 		},
 		("PodDefault", "kubeflow.org"): {
-			"api_family": "apis/kubeflow.org/v1alpha1/",
+			"api_family": ["apis/kubeflow.org/v1alpha1/"],
 			"api": "poddefaults",
 		},
 		("Profile", "kubeflow.org"): {
@@ -1313,11 +1350,11 @@ class KubernetesHelper:
 			"namespaced": False,
 		},
 		("PyTorchJob", "kubeflow.org"): {
-			"api_family": "apis/kubeflow.org/v1/",
+			"api_family": ["apis/kubeflow.org/v1/"],
 			"api": "pytorchjobs",
 		},
 		("ScheduledWorkflow", "kubeflow.org"): {
-			"api_family": "apis/kubeflow.org/v1beta1/",
+			"api_family": ["apis/kubeflow.org/v1beta1/"],
 			"api": "scheduledworkflow",
 		},
 		("Suggestion", "kubeflow.org"): {
@@ -1325,7 +1362,7 @@ class KubernetesHelper:
 			"api": "suggestions",
 		},
 		("TFJob", "kubeflow.org"): {
-			"api_family": "apis/kubeflow.org/v1/",
+			"api_family": ["apis/kubeflow.org/v1/"],
 			"api": "tfjobs",
 		},
 		("Trial", "kubeflow.org"): {
@@ -1426,23 +1463,23 @@ class KubernetesHelper:
 		},
 		# network.openshift.io
 		("ClusterNetwork", "network.openshift.io"): {
-			"api_family": "apis/network.openshift.io/v1/",
+			"api_family": ["apis/network.openshift.io/v1/"],
 			"api": "clusternetworks",
-			"aliases": "clusternets",
+			"aliases": ["clusternets"],
 			"namespaced": False,
 		},
 		("EgressNetworkPolicy", "network.openshift.io"): {
-			"api_family": "apis/network.openshift.io/v1/",
+			"api_family": ["apis/network.openshift.io/v1/"],
 			"api": "egressnetworkpolicies",
 			"aliases": ["egressnetpols", "egressnetpol"],
 		},
 		("HostSubnet", "network.openshift.io"): {
-			"api_family": "apis/network.openshift.io/v1/",
+			"api_family": ["apis/network.openshift.io/v1/"],
 			"api": "hostsubnets",
 			"namespaced": False,
 		},
 		("NetNamespace", "network.openshift.io"): {
-			"api_family": "apis/network.openshift.io/v1/",
+			"api_family": ["apis/network.openshift.io/v1/"],
 			"api": "netnamespaces",
 			"namespaced": False,
 		},
@@ -1550,33 +1587,33 @@ class KubernetesHelper:
 		},
 		# operators.coreos.com
 		("CatalogSource", "operators.coreos.com"): {
-			"api_family": "apis/operators.coreos.com/v1alpha1/",
+			"api_family": ["apis/operators.coreos.com/v1alpha1/"],
 			"api": "catalogsources",
 			"aliases": ["catalogsource", "catsrcs", "catsrc"],
 		},
 		("ClusterServiceVersion", "operators.coreos.com"): {
-			"api_family": "apis/operators.coreos.com/v1alpha1/",
+			"api_family": ["apis/operators.coreos.com/v1alpha1/"],
 			"api": "clusterserviceversions",
 			"aliases": ["clusterserviceversion", "csvs", "csv"],
 		},
 		("InstallPlan", "operators.coreos.com"): {
-			"api_family": "apis/operators.coreos.com/v1alpha1/",
+			"api_family": ["apis/operators.coreos.com/v1alpha1/"],
 			"api": "installplans",
 			"aliases": ["installplan", "ip"],
 		},
 		("OperatorGroup", "operators.coreos.com"): {
-			"api_family": "apis/operators.coreos.com/v1/",
+			"api_family": ["apis/operators.coreos.com/v1/"],
 			"api": "operatorgroups",
 			"aliases": ["operatorgroup", "og"],
 		},
 		("Operator", "operators.coreos.com"): {
-			"api_family": "apis/operators.coreos.com/v1/",
+			"api_family": ["apis/operators.coreos.com/v1/"],
 			"api": "operators",
 			"aliases": ["operator"],
 			"namespaced": False,
 		},
 		("Subscription", "operators.coreos.com"): {
-			"api_family": "apis/operators.coreos.com/v1alpha1/",
+			"api_family": ["apis/operators.coreos.com/v1alpha1/"],
 			"api": "subscriptions",
 			"aliases": ["subscription", "subs", "sub"],
 		},
@@ -1589,7 +1626,7 @@ class KubernetesHelper:
 		},
 		# packages.operators.coreos.com
 		("PackageManifest", "packages.operators.coreos.com"): {
-			"api_family": "apis/packages.operators.coreos.com/v1/",
+			"api_family": ["apis/packages.operators.coreos.com/v1/"],
 			"api": "packagemanifests",
 			"aliases": ["pkgmanifests"],
 		},
@@ -1606,9 +1643,9 @@ class KubernetesHelper:
 		},
 		# project.openshift.io
 		("ProjectRequest", "project.openshift.io"): {
-			"api_family": "apis/project.openshift.io/v1/",
+			"api_family": ["apis/project.openshift.io/v1/"],
 			"api": "projectrequests",
-			"aliases": "projectreqs",
+			"aliases": ["projectreqs"],
 			"namespaced": False,
 		},
 		("Project", "project.openshift.io"): {
@@ -1618,19 +1655,19 @@ class KubernetesHelper:
 		},
 		# quota.openshift.io
 		("AppliedClusterResourceQuota", "quota.openshift.io"): {
-			"api_family": "apis/quota.openshift.io/v1/",
+			"api_family": ["apis/quota.openshift.io/v1/"],
 			"api": "appliedclusterresourcequota",
-			"aliases": "projectreqs",
+			"aliases": ["projectreqs"],
 		},
 		("ClusterResourceQuota", "quota.openshift.io"): {
-			"api_family": "apis/quota.openshift.io/v1/",
+			"api_family": ["apis/quota.openshift.io/v1/"],
 			"api": "clusterresourcequota",
-			"aliases": "clusterquota",
+			"aliases": ["clusterquota"],
 			"namespaced": False,
 		},
 		# reaper.cassandra-reaper.io
 		("Reaper", "reaper.cassandra-reaper.io"): {
-			"api_family": "apis/reaper.cassandra-reaper.io/v1alpha1/",
+			"api_family": ["apis/reaper.cassandra-reaper.io/v1alpha1/"],
 			"api": "reapers",
 			"aliases": ["reaper"],
 		},
@@ -1654,20 +1691,20 @@ class KubernetesHelper:
 		},
 		# security.openshift.io
 		("RangeAllocation", "security.openshift.io"): {
-			"api_family": "apis/security.openshift.io/v1/",
+			"api_family": ["apis/security.openshift.io/v1/"],
 			"api": "rangeallocations",
-			"aliases": "scc",
+			"aliases": ["scc"],
 			"namespaced": False,
 		},
 		("SecurityContextConstraint", "security.openshift.io"): {
-			"api_family": "apis/security.openshift.io/v1/",
+			"api_family": ["apis/security.openshift.io/v1/"],
 			"api": "securitycontextconstraints",
-			"aliases": "scc",
+			"aliases": ["scc"],
 			"namespaced": False,
 		},
 		# servicecertsigner.config.openshift.io
 		("ServiceCertSignerOperatorConfig", "servicecertsigner.config.openshift.io"): {
-			"api_family": "apis/servicecertsigner.config.openshift.io/v1alpha1/",
+			"api_family": ["apis/servicecertsigner.config.openshift.io/v1alpha1/"],
 			"api": "servicecertsigneroperatorconfigs",
 			"namespaced": False,
 		},

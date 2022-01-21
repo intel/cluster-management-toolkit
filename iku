@@ -646,14 +646,32 @@ def generator_total(obj, field, fieldlen, pad, ralign, selected):
 
 	stringlen = len(str(free)) + len(themearray_extract_string("fraction", "separators")) + len(str(total))
 
+	ranges = deep_get(field_templates, f"{field}#ranges", [])
+	formatting = ("types", "numerical", selected)
+
 	# If the values are -1/-1 we substitute with an empty string of the same length
 	if free == -1 and total == -1:
 		array = [
 			("".ljust(stringlen), ("types", "generic", selected))
 		]
 	else:
+		value = int(free)
+		for start, end, formatting in ranges:
+			# exact match against total, or value inside range
+			if start == -1 and end == -1:
+				if value == int(total):
+					context, attr = formatting
+					formatting = (context, attr, selected)
+					break
+				else:
+					continue
+			if (value >= start and value < end) or (value >= start and end == -1):
+				context, attr = formatting
+				formatting = (context, attr, selected)
+				break
+
 		array = [
-			(str(free), ("types", "numerical", selected)),
+			(str(free), formatting),
 			(("separators", "fraction"), selected),
 			(str(total), ("types", "numerical", selected)),
 		]
@@ -5574,6 +5592,10 @@ field_templates = {
 	"node_id": {
 		"header": "Node ID:",
 	},
+	"node_selector": {
+		"header": "Node Selector:",
+		"path": "spec#nodeSelector",
+	},
 	"node_status": {
 		"header": "Status:",
 		"datagetter": datagetter_node_status,
@@ -5809,6 +5831,14 @@ field_templates = {
 		"generator": generator_status,
 		"sortkey1": "status_group",
 	},
+	"ready_scheduled_plugins": {
+		"header": "Ready:",
+		"path": [("status#numberReady", 0), ("status#desiredNumberScheduled", 0)],
+		"datagetter": datagetter_pathlist_to_tuple,
+		"generator": generator_total,
+		"ranges": [(-1, -1, ("types", "numerical")), (0, 1, ("types", "watermark_high")), (1, -1, ("types", "watermark_medium"))],
+		"ralign": True,
+	},
 	"ready_replicas": {
 		"header": "Ready:",
 		"path": [("status#readyReplicas", 0), ("status#replicas", 0)],
@@ -5831,6 +5861,7 @@ field_templates = {
 		"path": [("status#readyReplicas", 0), ("status#replicas", 0)],
 		"datagetter": datagetter_pathlist_to_tuple,
 		"generator": generator_total,
+		"ranges": [(-1, -1, ("types", "numerical")), (0, 1, ("types", "watermark_high")), (1, -1, ("types", "watermark_medium"))],
 		"ralign": True,
 	},
 	"reason": {
@@ -15000,6 +15031,13 @@ views = {
 		"group": "CNI",
 		"fields": ["name", "age"],
 		"kind": ("GlobalNetworkSet", "crd.projectcalico.org"),
+	},
+	# deviceplugin.intel.com
+	"GPU Device Plugins": {
+		"commandline": ["gpudeviceplugins", "gpudeviceplugin", "gpudevplugins", "gpudevplugin"],
+		"group": "Accelerators",
+		"fields": ["name", "ready_scheduled_plugins", "node_selector", "age"],
+		"kind": ("GpuDevicePlugin", "deviceplugin.intel.com"),
 	},
 	# integreatly.org
 	"Grafanas": {
