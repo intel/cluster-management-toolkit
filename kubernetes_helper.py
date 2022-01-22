@@ -444,66 +444,66 @@ class KubernetesHelper:
 	kubernetes_resources = {
 		# core API
 		("ConfigMap", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "configmaps",
 		},
 		("Endpoints", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "endpoints",
 		},
 		("Event", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "events",
 		},
 		("LimitRange", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "limitranges",
 		},
 		("Namespace", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "namespaces",
 			"namespaced": False,
 		},
 		("Node", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "nodes",
 			"namespaced": False,
 		},
 		("PersistentVolume", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "persistentvolumes",
 			"namespaced": False,
 		},
 		("PersistentVolumeClaim", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "persistentvolumeclaims",
 		},
 		("Pod", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "pods",
 		},
 		("PodTemplate", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "podtemplates",
 		},
 		("ReplicationController", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "replicationcontrollers",
 		},
 		("ResourceQuota", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "resourcequotas",
 		},
 		("Secret", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "secrets",
 		},
 		("Service", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "services",
 		},
 		("ServiceAccount", ""): {
-			"api_family": "api/v1/",
+			"api_family": ["api/v1/"],
 			"api": "serviceaccounts",
 		},
 		# admissionregistration.k8s.io
@@ -525,34 +525,34 @@ class KubernetesHelper:
 		},
 		# apiregistration.k8s.io
 		("APIService", "apiregistration.k8s.io"): {
-			"api_family": "apis/apiregistration.k8s.io/v1/",
+			"api_family": ["apis/apiregistration.k8s.io/v1/"],
 			"api": "apiservices",
 			"namespaced": False,
 		},
 		# app.k8s.io
 		("Application", "app.k8s.io"): {
-			"api_family": "apis/app.k8s.io/v1beta1/",
+			"api_family": ["apis/app.k8s.io/v1beta1/"],
 			"api": "applications",
 		},
 		# apps
 		("ControllerRevision", "apps"): {
-			"api_family": "apis/apps/v1/",
+			"api_family": ["apis/apps/v1/"],
 			"api": "controllerrevisions",
 		},
 		("DaemonSet", "apps"): {
-			"api_family": "apis/apps/v1/",
+			"api_family": ["apis/apps/v1/"],
 			"api": "daemonsets",
 		},
 		("Deployment", "apps"): {
-			"api_family": "apis/apps/v1/",
+			"api_family": ["apis/apps/v1/"],
 			"api": "deployments",
 		},
 		("ReplicaSet", "apps"): {
-			"api_family": "apis/apps/v1/",
+			"api_family": ["apis/apps/v1/"],
 			"api": "replicasets",
 		},
 		("StatefulSet", "apps"): {
-			"api_family": "apis/apps/v1/",
+			"api_family": ["apis/apps/v1/"],
 			"api": "statefulsets",
 		},
 		# autoscaling
@@ -571,13 +571,13 @@ class KubernetesHelper:
 		},
 		# certificates.k8s.io
 		("CertificateSigningRequest", "certificates.k8s.io"): {
-			"api_family": "apis/certificates.k8s.io/v1/",
+			"api_family": ["apis/certificates.k8s.io/v1/"],
 			"api": "certificatesigningrequests",
 			"namespaced": False,
 		},
 		# coordination.k8s.io
 		("Lease", "coordination.k8s.io"): {
-			"api_family": "apis/coordination.k8s.io/v1/",
+			"api_family": ["apis/coordination.k8s.io/v1/"],
 			"api": "leases",
 		},
 		# discovery.k8s.io
@@ -598,17 +598,17 @@ class KubernetesHelper:
 		},
 		# metacontroller.k8s.io
 		("CompositeController", "metacontroller.k8s.io"): {
-			"api_family": "apis/metacontroller.k8s.io/v1alpha1/",
+			"api_family": ["apis/metacontroller.k8s.io/v1alpha1/"],
 			"api": "compositecontrollers",
 			"namespaced": False,
 		},
 		("ControllerRevision", "metacontroller.k8s.io"): {
 			# => "apps" ?
-			"api_family": "apis/metacontroller.k8s.io/v1alpha1/",
+			"api_family": ["apis/metacontroller.k8s.io/v1alpha1/"],
 			"api": "controllerrevisions",
 		},
 		("DecoratorController", "metacontroller.k8s.io"): {
-			"api_family": "apis/metacontroller.k8s.io/v1alpha1/",
+			"api_family": ["apis/metacontroller.k8s.io/v1alpha1/"],
 			"api": "decoratorcontrollers",
 			"namespaced": False,
 		},
@@ -638,7 +638,7 @@ class KubernetesHelper:
 			"api": "poddisruptionbudgets",
 		},
 		("PodSecurityPolicy", "policy"): {
-			"api_family": "apis/policy/v1beta1/",
+			"api_family": ["apis/policy/v1beta1/"],
 			"api": "podsecuritypolicies",
 			"namespaced": False,
 			"deprecated": "v1.21",
@@ -646,73 +646,73 @@ class KubernetesHelper:
 		},
 		# rbac.authorization.k8s.io
 		("ClusterRole", "rbac.authorization.k8s.io"): {
-			"api_family": "apis/rbac.authorization.k8s.io/v1/",
+			"api_family": ["apis/rbac.authorization.k8s.io/v1/"],
 			"api": "clusterroles",
 			"namespaced": False,
 		},
 		("ClusterRoleBinding", "rbac.authorization.k8s.io"): {
-			"api_family": "apis/rbac.authorization.k8s.io/v1/",
+			"api_family": ["apis/rbac.authorization.k8s.io/v1/"],
 			"api": "clusterrolebindings",
 			"namespaced": False,
 		},
 		("Role", "rbac.authorization.k8s.io"): {
-			"api_family": "apis/rbac.authorization.k8s.io/v1/",
+			"api_family": ["apis/rbac.authorization.k8s.io/v1/"],
 			"api": "roles",
 		},
 		("RoleBinding", "rbac.authorization.k8s.io"): {
-			"api_family": "apis/rbac.authorization.k8s.io/v1/",
+			"api_family": ["apis/rbac.authorization.k8s.io/v1/"],
 			"api": "rolebindings",
 		},
 		# scheduling.k8s.io
 		("PriorityClass", "scheduling.k8s.io"): {
-			"api_family": "apis/scheduling.k8s.io/v1/",
+			"api_family": ["apis/scheduling.k8s.io/v1/"],
 			"api": "priorityclasses",
 			"namespaced": False,
 		},
 		# snapshot.storage.k8s.io
 		("VolumeSnapshot", "snapshot.storage.k8s.io"): {
-			"api_family": "apis/snapshot.storage.k8s.io/v1beta1/",
+			"api_family": ["apis/snapshot.storage.k8s.io/v1beta1/"],
 			"api": "volumesnapshots",
 		},
 		("VolumeSnapshotClass", "snapshot.storage.k8s.io"): {
-			"api_family": "apis/snapshot.storage.k8s.io/v1beta1/",
+			"api_family": ["apis/snapshot.storage.k8s.io/v1beta1/"],
 			"api": "volumesnapshotclasses",
 			"namespaced": False,
 		},
 		("VolumeSnapshotContent", "snapshot.storage.k8s.io"): {
-			"api_family": "apis/snapshot.storage.k8s.io/v1beta1/",
+			"api_family": ["apis/snapshot.storage.k8s.io/v1beta1/"],
 			"api": "volumesnapshotcontent",
 			"namespaced": False,
 		},
 		# storage.k8s.io
 		("CSIDriver", "storage.k8s.io"): {
-			"api_family": "apis/storage.k8s.io/v1/",
+			"api_family": ["apis/storage.k8s.io/v1/"],
 			"api": "csidrivers",
 			"namespaced": False,
 		},
 		("CSINode", "storage.k8s.io"): {
-			"api_family": "apis/storage.k8s.io/v1/",
+			"api_family": ["apis/storage.k8s.io/v1/"],
 			"api": "csinodes",
 			"namespaced": False,
 		},
 		("CSIStorageCapacity", "storage.k8s.io"): {
-			"api_family": "apis/storage.k8s.io/v1beta1/",
+			"api_family": ["apis/storage.k8s.io/v1beta1/"],
 			"api": "csistoragecapacities",
 		},
 		("StorageClass", "storage.k8s.io"): {
-			"api_family": "apis/storage.k8s.io/v1/",
+			"api_family": ["apis/storage.k8s.io/v1/"],
 			"api": "storageclasses",
 			"namespaced": False,
 		},
 		("VolumeAttachment", "storage.k8s.io"): {
-			"api_family": "apis/storage.k8s.io/v1/",
+			"api_family": ["apis/storage.k8s.io/v1/"],
 			"api": "volumeattachments",
 			"namespaced": False,
 		},
 
 		# access.smi-spec.io
 		("TrafficTarget", "access.smi-spec.io"): {
-			"api_family": "apis/access.smi-spec.io/v1alpha2/",
+			"api_family": ["apis/access.smi-spec.io/v1alpha2/"],
 			"api": "traffictargets",
 		},
 		# acme.cert-manager.io <= split from: cert-manager.io
@@ -732,47 +732,47 @@ class KubernetesHelper:
 		},
 		# argoproj.io
 		("ClusterWorkflowTemplate", "argoproj.io"): {
-			"api_family": "apis/argoproj.io/v1alpha1/",
+			"api_family": ["apis/argoproj.io/v1alpha1/"],
 			"api": "clusterworkflowtemplates",
 		},
 		("CronWorkflow", "argoproj.io"): {
-			"api_family": "apis/argoproj.io/v1alpha1/",
+			"api_family": ["apis/argoproj.io/v1alpha1/"],
 			"api": "cronworkflows",
 		},
 		("WorkflowEventBinding", "argoproj.io"): {
-			"api_family": "apis/argoproj.io/v1alpha1/",
+			"api_family": ["apis/argoproj.io/v1alpha1/"],
 			"api": "workfloweventbindings",
 		},
 		("Workflow", "argoproj.io"): {
-			"api_family": "apis/argoproj.io/v1alpha1/",
+			"api_family": ["apis/argoproj.io/v1alpha1/"],
 			"api": "workflows",
 		},
 		("WorkflowTemplate", "argoproj.io"): {
-			"api_family": "apis/argoproj.io/v1alpha1/",
+			"api_family": ["apis/argoproj.io/v1alpha1/"],
 			"api": "workflowtemplates",
 		},
 		# aquasecurity.github.io
 		("CISKubeBenchReport", "aquasecurity.github.io"): {
-			"api_family": "apis/aquasecurity.github.io/v1alpha1/",
+			"api_family": ["apis/aquasecurity.github.io/v1alpha1/"],
 			"api": "ciskubebenchreports",
 			"namespaced": False,
 		},
 		("ConfigAuditReport", "aquasecurity.github.io"): {
-			"api_family": "apis/aquasecurity.github.io/v1alpha1/",
+			"api_family": ["apis/aquasecurity.github.io/v1alpha1/"],
 			"api": "configauditreports",
 		},
 		("KubeHunterReport", "aquasecurity.github.io"): {
-			"api_family": "apis/aquasecurity.github.io/v1alpha1/",
+			"api_family": ["apis/aquasecurity.github.io/v1alpha1/"],
 			"api": "kubehunterreports",
 			"namespaced": False,
 		},
 		("VulnerabilityReport", "aquasecurity.github.io"): {
-			"api_family": "apis/aquasecurity.github.io/v1alpha1/",
+			"api_family": ["apis/aquasecurity.github.io/v1alpha1/"],
 			"api": "vulnerabilityreports",
 		},
 		# authorization.openshift.io
 		("RoleBindingRestriction", "authorization.openshift.io"): {
-			"api_family": "apis/authorization.openshift.io/v1/",
+			"api_family": ["apis/authorization.openshift.io/v1/"],
 			"api": "rolebindingrestrictions",
 		},
 		# autoscaling.openshift.io
@@ -789,21 +789,21 @@ class KubernetesHelper:
 		},
 		# autoscaling.internal.knative.dev
 		("Metric", "autoscaling.internal.knative.dev"): {
-			"api_family": "apis/autoscaling.internal.knative.dev/v1alpha1/",
+			"api_family": ["apis/autoscaling.internal.knative.dev/v1alpha1/"],
 			"api": "metrics",
 		},
 		("PodAutoscaler", "autoscaling.internal.knative.dev"): {
-			"api_family": "apis/autoscaling.internal.knative.dev/v1alpha1/",
+			"api_family": ["apis/autoscaling.internal.knative.dev/v1alpha1/"],
 			"api": "podautoscalers",
 		},
 		# batch.volcano.sh
 		("Job", "batch.volcano.sh"): {
-			"api_family": "apis/batch.volcano.sh/v1alpha1/",
+			"api_family": ["apis/batch.volcano.sh/v1alpha1/"],
 			"api": "jobs",
 		},
 		# bus.volcano.sh
 		("Command", "bus.volcano.sh"): {
-			"api_family": "apis/bus.volcano.sh/v1alpha1/",
+			"api_family": ["apis/bus.volcano.sh/v1alpha1/"],
 			"api": "commands",
 		},
 		# build.openshift.io
@@ -813,12 +813,12 @@ class KubernetesHelper:
 			"aliases": ["bc"],
 		},
 		("Build", "build.openshift.io"): {
-			"api_family": "apis/build.openshift.io/v1/",
+			"api_family": ["apis/build.openshift.io/v1/"],
 			"api": "builds",
 		},
 		# caching.internal.knative.dev
 		("Image", "caching.internal.knative.dev"): {
-			"api_family": "apis/caching.internal.knative.dev/v1alpha1/",
+			"api_family": ["apis/caching.internal.knative.dev/v1alpha1/"],
 			"api": "images",
 		},
 		# cassandra.datastax.com
@@ -1079,86 +1079,86 @@ class KubernetesHelper:
 		},
 		# crd.projectcalico.org
 		("BGPConfiguration", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "bgpconfigurations",
 			"namespaced": False,
 		},
 		("BGPPeer", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "bgppeers",
 			"namespaced": False,
 		},
 		("BlockAffinity", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "blockaffinities",
 			"namespaced": False,
 		},
 		("CalicoNodeStatus", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "caliconodestatuses",
 			"namespaced": False,
 		},
 		("ClusterInformation", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "clusterinformations",
 			"namespaced": False,
 		},
 		("FelixConfiguration", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "felixconfigurations",
 			"namespaced": False,
 		},
 		("GlobalNetworkPolicy", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "globalnetworkpolicies",
 			"namespaced": False,
 		},
 		("GlobalNetworkSet", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "globalnetworksets",
 			"namespaced": False,
 		},
 		("HostEndpoint", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "hostendpoints",
 			"namespaced": False,
 		},
 		("IPAMBlock", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "ipamblocks",
 			"namespaced": False,
 		},
 		("IPAMConfig", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "ipamconfigs",
 			"namespaced": False,
 		},
 		("IPAMHandle", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "ipamhandles",
 			"namespaced": False,
 		},
 		("IPPool", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "ippools",
 			"namespaced": False,
 		},
 		("IPReservation", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "ipreservations",
 			"namespaced": False,
 		},
 		("KubeControllersConfiguration", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "kubecontrollersconfigurations",
 			"namespaced": False,
 		},
 		("NetworkPolicy", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "networkpolicies",
 		},
 		("NetworkSet", "crd.projectcalico.org"): {
-			"api_family": "apis/crd.projectcalico.org/v1/",
+			"api_family": ["apis/crd.projectcalico.org/v1/"],
 			"api": "networksets",
 		},
 		# deviceplugin.intel.com
@@ -1189,40 +1189,40 @@ class KubernetesHelper:
 		},
 		# dex.coreos.com
 		("AuthCode", "dex.coreos.com"): {
-			"api_family": "apis/dex.coreos.com/v1/",
+			"api_family": ["apis/dex.coreos.com/v1/"],
 			"api": "authcodes",
 		},
 		("AuthRequest", "dex.coreos.com"): {
-			"api_family": "apis/dex.coreos.com/v1/",
+			"api_family": ["apis/dex.coreos.com/v1/"],
 			"api": "authrequests",
 		},
 		("Connector", "dex.coreos.com"): {
-			"api_family": "apis/dex.coreos.com/v1/",
+			"api_family": ["apis/dex.coreos.com/v1/"],
 			"api": "connectors",
 		},
 		("OAuth2Client", "dex.coreos.com"): {
-			"api_family": "apis/dex.coreos.com/v1/",
+			"api_family": ["apis/dex.coreos.com/v1/"],
 			"api": "oauth2clients",
 		},
 		("OfflineSessions", "dex.coreos.com"): {
-			"api_family": "apis/dex.coreos.com/v1/",
+			"api_family": ["apis/dex.coreos.com/v1/"],
 			"api": "offlinesessionses",
 		},
 		("Password", "dex.coreos.com"): {
-			"api_family": "apis/dex.coreos.com/v1/",
+			"api_family": ["apis/dex.coreos.com/v1/"],
 			"api": "passwords",
 		},
 		("RefreshToken", "dex.coreos.com"): {
-			"api_family": "apis/dex.coreos.com/v1/",
+			"api_family": ["apis/dex.coreos.com/v1/"],
 			"api": "refreshtokens",
 		},
 		("SigningKey", "dex.coreos.com"): {
-			"api_family": "apis/dex.coreos.com/v1/",
+			"api_family": ["apis/dex.coreos.com/v1/"],
 			"api": "signingkeies",
 		},
 		# etcd.database.coreos.com
 		("EtcdCluster", "etcd.database.coreos.com"): {
-			"api_family": "apis/etcd.database.coreos.com/v1beta2/",
+			"api_family": ["apis/etcd.database.coreos.com/v1beta2/"],
 			"api": "etcdclusters",
 		},
 		# eventing.knative.dev
@@ -1240,11 +1240,11 @@ class KubernetesHelper:
 		},
 		# flows.knative.dev
 		("Parallel", "flow.knative.dev"): {
-			"api_family": "apis/flows.knative.dev/v1/",
+			"api_family": ["apis/flows.knative.dev/v1/"],
 			"api": "parallels",
 		},
 		("Sequence", "flow.knative.dev"): {
-			"api_family": "apis/flows.knative.dev/v1/",
+			"api_family": ["apis/flows.knative.dev/v1/"],
 			"api": "sequences",
 		},
 		# fpga.intel.com
@@ -1260,16 +1260,16 @@ class KubernetesHelper:
 		},
 		# helm.cattle.io
 		("HelmChartConfig", "helm.cattle.io"): {
-			"api_family": "apis/helm.cattle.io/v1/",
+			"api_family": ["apis/helm.cattle.io/v1/"],
 			"api": "helmchartconfigs",
 		},
 		("HelmChart", "helm.cattle.io"): {
-			"api_family": "apis/helm.cattle.io/v1/",
+			"api_family": ["apis/helm.cattle.io/v1/"],
 			"api": "helmcharts",
 		},
 		# image.openshift.io
 		("Image", "image.openshift.io"): {
-			"api_family": "apis/image.openshift.io/v1/",
+			"api_family": ["apis/image.openshift.io/v1/"],
 			"api": "images",
 			"namespaced": False,
 		},
@@ -1285,35 +1285,57 @@ class KubernetesHelper:
 		},
 		# install.istio.io
 		("IstioOperator", "install.istio.io"): {
-			"api_family": "apis/install.istio.io/v1alpha1/",
+			"api_family": ["apis/install.istio.io/v1alpha1/"],
 			"api": "istiooperators",
+			"aliases": ["iop", "io"],
 		},
 		# integreatly.org
 		("Grafana", "integreatly.org"): {
-			"api_family": "apis/integreatly.org/v1alpha1/",
+			"api_family": ["apis/integreatly.org/v1alpha1/"],
 			"api": "grafanas",
 		},
 		("GrafanaDashboard", "integreatly.org"): {
-			"api_family": "apis/integreatly.org/v1alpha1/",
+			"api_family": ["apis/integreatly.org/v1alpha1/"],
 			"api": "grafanadashboards",
 		},
 		("GrafanaDataSource", "integreatly.org"): {
-			"api_family": "apis/integreatly.org/v1alpha1/",
+			"api_family": ["apis/integreatly.org/v1alpha1/"],
 			"api": "grafanadatasources",
 		},
 		# jaegertracing.io
 		("Jaeger", "jaegertracing.io"): {
-			"api_family": "apis/jaegertracing.io/v1/",
+			"api_family": ["apis/jaegertracing.io/v1/"],
 			"api": "jaegers",
 		},
 		# k3s.cattle.io
 		("Addon", "k3s.cattle.io"): {
-			"api_family": "apis/k3s.cattle.io/v1/",
+			"api_family": ["apis/k3s.cattle.io/v1/"],
 			"api": "addons",
+		},
+		# keda.sh
+		("ClusterTriggerAuthentication", "keda.sh"): {
+			"api_family": ["apis/keda.sh/v1alpha1/"],
+			"api": "clustertriggerauthentications",
+			"aliases": ["cta", "clustertriggerauth"],
+		},
+		("ScaledJob", "keda.sh"): {
+			"api_family": ["apis/keda.sh/v1alpha1/"],
+			"api": "scaledjobs",
+			"aliases": ["sj"],
+		},
+		("ScaledObject", "keda.sh"): {
+			"api_family": ["apis/keda.sh/v1alpha1/"],
+			"api": "scaledobjects",
+			"aliases": ["so"],
+		},
+		("TriggerAuthentication", "keda.sh"): {
+			"api_family": ["apis/keda.sh/v1alpha1/"],
+			"api": "triggerauthentications",
+			"aliases": ["ta", "triggerauth"],
 		},
 		# kilo.squat.ai
 		("Peer", "kilo.squat.ai"): {
-			"api_family": "apis/kilo.squat.ai/v1alpha1/",
+			"api_family": ["apis/kilo.squat.ai/v1alpha1/"],
 			"api": "peers",
 			"namespaced": False,
 		},
@@ -1380,23 +1402,23 @@ class KubernetesHelper:
 			"aliases": ["kvs", "kv"],
 		},
 		("VirtualMachineInstanceMigration", "kubevirt.io"): {
-			"api_family": "apis/kubevirt.io/v1alpha3/",
+			"api_family": ["apis/kubevirt.io/v1alpha3/"],
 			"api": "virtualmachineinstancemigrations",
 		},
 		("VirtualMachineInstancePreset", "kubevirt.io"): {
-			"api_family": "apis/kubevirt.io/v1alpha3/",
+			"api_family": ["apis/kubevirt.io/v1alpha3/"],
 			"api": "virtualmachineinstancepresets",
 		},
 		("VirtualMachineInstanceReplicaSet", "kubevirt.io"): {
-			"api_family": "apis/kubevirt.io/v1alpha3/",
+			"api_family": ["apis/kubevirt.io/v1alpha3/"],
 			"api": "virtualmachineinstancereplicasets",
 		},
 		("VirtualMachineInstance", "kubevirt.io"): {
-			"api_family": "apis/kubevirt.io/v1alpha3/",
+			"api_family": ["apis/kubevirt.io/v1alpha3/"],
 			"api": "virtualmachineinstances",
 		},
 		("VirtualMachine", "kubevirt.io"): {
-			"api_family": "apis/kubevirt.io/v1alpha3/",
+			"api_family": ["apis/kubevirt.io/v1alpha3/"],
 			"api": "virtualmachines",
 		},
 		# linkerd.io
@@ -1411,54 +1433,54 @@ class KubernetesHelper:
 		},
 		# messaging.knative.dev
 		("Channel", "messaging.knative.dev"): {
-			"api_family": "apis/messaging.knative.dev/v1/",
+			"api_family": ["apis/messaging.knative.dev/v1/"],
 			"api": "channels",
 		},
 		("InMemoryChannel", "messaging.knative.dev"): {
-			"api_family": "apis/messaging.knative.dev/v1/",
+			"api_family": ["apis/messaging.knative.dev/v1/"],
 			"api": "inmemorychannels",
 		},
 		("Subscription", "messaging.knative.dev"): {
-			"api_family": "apis/messaging.knative.dev/v1/",
+			"api_family": ["apis/messaging.knative.dev/v1/"],
 			"api": "subscriptions",
 		},
 		# metrics.k8s.io
 		("NodeMetrics", "metrics.k8s.io"): {
-			"api_family": "apis/metrics.k8s.io/v1beta1/",
+			"api_family": ["apis/metrics.k8s.io/v1beta1/"],
 			"api": "nodes",
 			"namespaced": False,
 		},
 		("PodMetrics", "metrics.k8s.io"): {
-			"api_family": "apis/metrics.k8s.io/v1beta1/",
+			"api_family": ["apis/metrics.k8s.io/v1beta1/"],
 			"api": "pods",
 		},
 		# monitoring.coreos.com
 		("Alertmanager", "monitoring.coreos.com"): {
-			"api_family": "apis/monitoring.coreos.com/v1/",
+			"api_family": ["apis/monitoring.coreos.com/v1/"],
 			"api": "alertmanagers",
 		},
 		("PodMonitor", "monitoring.coreos.com"): {
-			"api_family": "apis/monitoring.coreos.com/v1/",
+			"api_family": ["apis/monitoring.coreos.com/v1/"],
 			"api": "podmonitors",
 		},
 		("Probe", "monitoring.coreos.com"): {
-			"api_family": "apis/monitoring.coreos.com/v1/",
+			"api_family": ["apis/monitoring.coreos.com/v1/"],
 			"api": "probes",
 		},
 		("Prometheus", "monitoring.coreos.com"): {
-			"api_family": "apis/monitoring.coreos.com/v1/",
+			"api_family": ["apis/monitoring.coreos.com/v1/"],
 			"api": "prometheuses",
 		},
 		("PrometheusRule", "monitoring.coreos.com"): {
-			"api_family": "apis/monitoring.coreos.com/v1/",
+			"api_family": ["apis/monitoring.coreos.com/v1/"],
 			"api": "prometheusrules",
 		},
 		("ServiceMonitor", "monitoring.coreos.com"): {
-			"api_family": "apis/monitoring.coreos.com/v1/",
+			"api_family": ["apis/monitoring.coreos.com/v1/"],
 			"api": "servicemonitors",
 		},
 		("ThanosRuler", "monitoring.coreos.com"): {
-			"api_family": "apis/monitoring.coreos.com/v1/",
+			"api_family": ["apis/monitoring.coreos.com/v1/"],
 			"api": "thanosrulers",
 		},
 		# network.openshift.io
@@ -1504,21 +1526,22 @@ class KubernetesHelper:
 		},
 		# networking.internal.knative.dev
 		("Certificate", "networking.internal.knative.dev"): {
-			"api_family": "apis/networking.internal.knative.dev/v1alpha1/",
+			"api_family": ["apis/networking.internal.knative.dev/v1alpha1/"],
 			"api": "certificates",
 		},
 		("Ingress", "networking.internal.knative.dev"): {
-			"api_family": "apis/networking.internal.knative.dev/v1alpha1/",
+			"api_family": ["apis/networking.internal.knative.dev/v1alpha1/"],
 			"api": "certificates",
 		},
 		("ServerlessService", "networking.internal.knative.dev"): {
-			"api_family": "apis/networking.internal.knative.dev/v1alpha1/",
+			"api_family": ["apis/networking.internal.knative.dev/v1alpha1/"],
 			"api": "serverlessservices",
 		},
 		# networking.istio.io
 		("DestinationRule", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
 			"api": "destinationrules",
+			"aliases": ["dr"],
 		},
 		("EnvoyFilter", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
@@ -1527,10 +1550,12 @@ class KubernetesHelper:
 		("Gateway", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
 			"api": "gateways",
+			"aliases": ["gw"],
 		},
 		("ServiceEntry", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
 			"api": "serviceentries",
+			"aliases": ["se"],
 		},
 		("Sidecar", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
@@ -1539,50 +1564,53 @@ class KubernetesHelper:
 		("VirtualService", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
 			"api": "virtualservices",
+			"aliases": ["vs"],
 		},
 		("WorkloadEntry", "networking.istio.io"): {
-			"api_family": "apis/networking.istio.io/v1beta1/",
+			"api_family": ["apis/networking.istio.io/v1beta1/"],
 			"api": "workloadentries",
+			"aliases": ["we"],
 		},
 		("WorkloadGroup", "networking.istio.io"): {
-			"api_family": "apis/networking.istio.io/v1alpha3/",
+			"api_family": ["apis/networking.istio.io/v1alpha3/"],
 			"api": "workloadgroups",
+			"aliases": ["wg"],
 		},
 		# nodeinfo.volcano.sh
 		("Numatopology", "nodeinfo.volcano.sh"): {
-			"api_family": "apis/nodeinfo.volcano.sh/v1alpha1/",
+			"api_family": ["apis/nodeinfo.volcano.sh/v1alpha1/"],
 			"api": "numatopologies",
 		},
 		# nvidia.com
 		("ClusterPolicy", "nvidia.com"): {
-			"api_family": "apis/nvidia.com/v1/",
+			"api_family": ["apis/nvidia.com/v1/"],
 			"api": "clusterpolicies",
 			"namespaced": False,
 		},
 		# oauth.openshift.io
 		("OAuthAccessToken", "oauth.openshift.io"): {
-			"api_family": "apis/oauth.openshift.io/v1/",
+			"api_family": ["apis/oauth.openshift.io/v1/"],
 			"api": "oauthaccesstokens",
 			"namespaced": False,
 		},
 		("OAuthAuthorizeToken", "oauth.openshift.io"): {
-			"api_family": "apis/oauth.openshift.io/v1/",
+			"api_family": ["apis/oauth.openshift.io/v1/"],
 			"api": "oauthauthorizetokens",
 			"namespaced": False,
 		},
 		("OAuthClientAuthorization", "oauth.openshift.io"): {
-			"api_family": "apis/oauth.openshift.io/v1/",
+			"api_family": ["apis/oauth.openshift.io/v1/"],
 			"api": "oauthclientauthorizations",
 			"namespaced": False,
 		},
 		("OAuthClient", "oauth.openshift.io"): {
-			"api_family": "apis/oauth.openshift.io/v1/",
+			"api_family": ["apis/oauth.openshift.io/v1/"],
 			"api": "oauthclients",
 			"namespaced": False,
 		},
 		# opentelemetry.io
 		("OpenTelemetryCollector", "opentelemetry.io"): {
-			"api_family": "apis/opentelemetry.io/v1alpha1/",
+			"api_family": ["apis/opentelemetry.io/v1alpha1/"],
 			"api": "opentelemetrycollectors",
 		},
 		# operators.coreos.com
@@ -1649,7 +1677,7 @@ class KubernetesHelper:
 			"namespaced": False,
 		},
 		("Project", "project.openshift.io"): {
-			"api_family": "apis/project.openshift.io/v1/",
+			"api_family": ["apis/project.openshift.io/v1/"],
 			"api": "projects",
 			"namespaced": False,
 		},
@@ -1673,21 +1701,23 @@ class KubernetesHelper:
 		},
 		# route.openshift.io
 		("Route", "route.openshift.io"): {
-			"api_family": "apis/route.openshift.io/v1/",
+			"api_family": ["apis/route.openshift.io/v1/"],
 			"api": "routes",
 		},
 		# security.istio.io
 		("AuthorizationPolicy", "security.istio.io"): {
-			"api_family": "apis/security.istio.io/v1beta1/",
+			"api_family": ["apis/security.istio.io/v1beta1/"],
 			"api": "authorizationpolicies",
 		},
 		("PeerAuthentication", "security.istio.io"): {
-			"api_family": "apis/security.istio.io/v1beta1/",
+			"api_family": ["apis/security.istio.io/v1beta1/"],
 			"api": "peerauthentications",
+			"aliases": ["pa"],
 		},
 		("RequestAuthentication", "security.istio.io"): {
-			"api_family": "apis/security.istio.io/v1beta1/",
+			"api_family": ["apis/security.istio.io/v1beta1/"],
 			"api": "requestauthentications",
+			"aliases": ["ra"],
 		},
 		# security.openshift.io
 		("RangeAllocation", "security.openshift.io"): {
@@ -1731,37 +1761,37 @@ class KubernetesHelper:
 			"api": "inferenceservices",
 		},
 		("TrainedModel", "serving.kubeflow.org"): {
-			"api_family": "apis/serving.kubeflow.org/v1alpha2/",
+			"api_family": ["apis/serving.kubeflow.org/v1alpha2/"],
 			"api": "trainedmodels",
 		},
 		# snapshot.kubevirt.io
 		("VirtualMachineRestore", "snapshot.kubevirt.io"): {
-			"api_family": "apis/snapshot.kubevirt.io/v1alpha1/",
+			"api_family": ["apis/snapshot.kubevirt.io/v1alpha1/"],
 			"api": "virtualmachinerestores",
 		},
 		("VirtualMachineSnapshotContent", "snapshot.kubevirt.io"): {
-			"api_family": "apis/snapshot.kubevirt.io/v1alpha1/",
+			"api_family": ["apis/snapshot.kubevirt.io/v1alpha1/"],
 			"api": "virtualmachinesnapshotcontents",
 		},
 		("VirtualMachineSnapshot", "snapshot.kubevirt.io"): {
-			"api_family": "apis/snapshot.kubevirt.io/v1alpha1/",
+			"api_family": ["apis/snapshot.kubevirt.io/v1alpha1/"],
 			"api": "virtualmachinesnapshots",
 		},
 		# sources.knative.dev
 		("ApiServerSource", "sources.knative.dev"): {
-			"api_family": "apis/sources.knative.dev/v1beta1/",
+			"api_family": ["apis/sources.knative.dev/v1beta1/"],
 			"api": "apiserversources",
 		},
 		("ContainerSource", "sources.knative.dev"): {
-			"api_family": "apis/sources.knative.dev/v1beta1/",
+			"api_family": ["apis/sources.knative.dev/v1beta1/"],
 			"api": "containersources",
 		},
 		("PingSource", "sources.knative.dev"): {
-			"api_family": "apis/sources.knative.dev/v1beta1/",
+			"api_family": ["apis/sources.knative.dev/v1beta1/"],
 			"api": "pingsources",
 		},
 		("SinkBinding", "sources.knative.dev"): {
-			"api_family": "apis/sources.knative.dev/v1beta1/",
+			"api_family": ["apis/sources.knative.dev/v1beta1/"],
 			"api": "sinkbindings",
 		},
 		# specs.smi-spec.io
@@ -1774,7 +1804,7 @@ class KubernetesHelper:
 			"api": "tcproutes",
 		},
 		("UDPRoute", "specs.smi-spec.io"): {
-			"api_family": "apis/specs.smi-spec.io/v1alpha4/",
+			"api_family": ["apis/specs.smi-spec.io/v1alpha4/"],
 			"api": "tcproutes",
 		},
 		# split.smi-spec.io
@@ -1808,26 +1838,32 @@ class KubernetesHelper:
 		},
 		# telemetry.intel.com
 		("TASPolicy", "telemetry.intel.com"): {
-			"api_family": "apis/telemetry.intel.com/v1alpha1/",
+			"api_family": ["apis/telemetry.intel.com/v1alpha1/"],
 			"api": "taspolicies",
+		},
+		# telemetry.istio.io
+		("Telemetry", "telemetry.intel.com"): {
+			"api_family": ["apis/telemetry.istio.io/v1alpha1/"],
+			"api": "telemetries",
+			"aliases": ["telemetry"],
 		},
 		# template.openshift.io
 		("BrokerTemplateInstance", "servicecertsigner.config.openshift.io"): {
-			"api_family": "apis/template.openshift.io/v1/",
+			"api_family": ["apis/template.openshift.io/v1/"],
 			"api": "brokertemplateinstances",
 			"namespaced": False,
 		},
 		("TemplateInstance", "servicecertsigner.config.openshift.io"): {
-			"api_family": "apis/template.openshift.io/v1/",
+			"api_family": ["apis/template.openshift.io/v1/"],
 			"api": "templateinstances",
 		},
 		("Template", "servicecertsigner.config.openshift.io"): {
-			"api_family": "apis/template.openshift.io/v1/",
+			"api_family": ["apis/template.openshift.io/v1/"],
 			"api": "templates",
 		},
 		# tensorboard.kubeflow.org
 		("Tensorboard", "tensorboard.kubeflow.org"): {
-			"api_family": "apis/tensorboard.kubeflow.org/v1alpha1/",
+			"api_family": ["apis/tensorboard.kubeflow.org/v1alpha1/"],
 			"api": "tensorboards",
 		},
 		# traefik.containo.us
@@ -1869,53 +1905,53 @@ class KubernetesHelper:
 		},
 		# tuned.openshift.io
 		("Profile", "tuned.openshift.io"): {
-			"api_family": "apis/tuned.openshift.io/v1/",
+			"api_family": ["apis/tuned.openshift.io/v1/"],
 			"api": "profiles",
 		},
 		("Tuned", "tuned.openshift.io"): {
-			"api_family": "apis/tuned.openshift.io/v1/",
+			"api_family": ["apis/tuned.openshift.io/v1/"],
 			"api": "tuneds",
 		},
 		# user.openshift.io
 		("Group", "user.openshift.io"): {
-			"api_family": "apis/user.openshift.io/v1/",
+			"api_family": ["apis/user.openshift.io/v1/"],
 			"api": "groups",
 			"namespaced": False,
 		},
 		("Identity", "user.openshift.io"): {
-			"api_family": "apis/user.openshift.io/v1/",
+			"api_family": ["apis/user.openshift.io/v1/"],
 			"api": "identities",
 			"namespaced": False,
 		},
 		("User", "user.openshift.io"): {
-			"api_family": "apis/user.openshift.io/v1/",
+			"api_family": ["apis/user.openshift.io/v1/"],
 			"api": "users",
 			"namespaced": False,
 		},
 		#("UserIdentityMapping", "user.openshift.io"): {
-		#	"api_family": "apis/user.openshift.io/v1/",
+		#	"api_family": ["apis/user.openshift.io/v1/"],
 		#	"api": "useridentitymappings",
 		#	"namespaced": False,
 		#},
 		# scheduling.volcano.sh
 		("PodGroup", "scheduling.volcano.sh"): {
-			"api_family": "apis/scheduling.volcano.sh/v1beta1/",
+			"api_family": ["apis/scheduling.volcano.sh/v1beta1/"],
 			"api": "podgroups",
 		},
 		("Queue", "scheduling.volcano.sh"): {
-			"api_family": "apis/scheduling.volcano.sh/v1beta1/",
+			"api_family": ["apis/scheduling.volcano.sh/v1beta1/"],
 			"api": "queues",
 			"namespaced": False,
 		},
 		# webconsole.openshift.io
 		("OpenShiftWebConsoleConfig", "webconsole.openshift.io"): {
-			"api_family": "apis/webconsole.openshift.io/v1/",
+			"api_family": ["apis/webconsole.openshift.io/v1/"],
 			"api": "openshiftwebconsoleconfigs",
 			"namespaced": False,
 		},
 		# xgboostjob.kubeflow.org
 		("XGBoostJob", "xgboostjob.kubeflow.org"): {
-			"api_family": "apis/xgboostjob.kubeflow.org/v1/",
+			"api_family": ["apis/xgboostjob.kubeflow.org/v1/"],
 			"api": "xgboostjobs",
 		},
 	}
@@ -1957,8 +1993,6 @@ class KubernetesHelper:
 		if kind in self.kubernetes_resources:
 			resource = self.kubernetes_resources[kind]
 			api_families = deep_get(resource, "api_family", [])
-			if type(api_families) == str:
-				api_families = [api_families]
 
 			if len(api_families) == 0:
 				raise Exception(f"Programming error! Resource {kind} lacks api_family")
@@ -1974,8 +2008,6 @@ class KubernetesHelper:
 
 		for resource in self.kubernetes_resources:
 			api_family = deep_get(self.kubernetes_resources[resource], "api_family", [])
-			if type(api_family) == str:
-				api_family = [api_family]
 
 			if len(api_family) == 0:
 				raise Exception(f"Programming error! Resource {resource} lacks api_family")
@@ -2041,9 +2073,6 @@ class KubernetesHelper:
 
 		if namespaced == False:
 			namespace_part = ""
-
-		if type(api_family) == str:
-			api_family = [api_family]
 
 		status = None
 
@@ -2140,9 +2169,6 @@ class KubernetesHelper:
 
 		if namespaced == False:
 			namespace_part = ""
-
-		if type(api_family) == str:
-			api_family = [api_family]
 
 		status = None
 
