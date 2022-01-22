@@ -345,6 +345,7 @@ def percentagebar(win, y, minx, maxx, total, subsets):
 			rx += 1
 			ax += 1
 	win.addstr(y, maxx, "]")
+	return win
 
 def __notification(stdscr, y, x, message, formatting):
 	height = 3
@@ -368,12 +369,13 @@ def __notification(stdscr, y, x, message, formatting):
 	win.addstr(1, 1, message, attr_to_curses_merged(formatting[0], formatting[1]))
 	win.noutrefresh()
 	curses.doupdate()
+	return win
 
 def notice(stdscr, y, x, message):
-	__notification(stdscr, y, x, message, ("windowwidget", "notice"))
+	return __notification(stdscr, y, x, message, ("windowwidget", "notice"))
 
 def alert(stdscr, y, x, message):
-	__notification(stdscr, y, x, message, ("windowwidget", "alert"))
+	return __notification(stdscr, y, x, message, ("windowwidget", "alert"))
 
 # Usage: Initialise by calling with a reference to a variable set to None
 # Pass in progress in 0-100; once done clean up with:

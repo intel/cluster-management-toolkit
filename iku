@@ -9662,14 +9662,16 @@ def containerinfoloop(stdscr, container, kind, obj):
 
 	reload = False
 
+	uip.update_window()
+	uip.force_update()
+	uip.refresh_window()
+	uip.refresh_statusbar()
+	curses.doupdate()
+
 	while True:
 		uip.countdown_to_update()
 
 		if uip.is_update_triggered():
-			# The data in some fields might become shorter, so we need to trigger a clear
-			uip.infopad.erase()
-			uip.statusbar.erase()
-
 			# When following the log we update the log continuously, but tail lines is limited to the number of lines
 			# that fits on the screen, and cursor movements are disabled; as soon as the user presses a key the log
 			# will stop scrolling and the whole log (default number of tail lines) will be loaded
@@ -9696,7 +9698,14 @@ def containerinfoloop(stdscr, container, kind, obj):
 			else:
 				image = "<unavailable>"
 
+			notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Fetching log")
 			rawmsg, internal_error = get_pod_log_by_name_namespace_container(podname, namespace, containername, tail_lines = tail_lines)
+			del notice
+			uip.refresh_window()
+			uip.refresh_infopad()
+			uip.refresh_logpad()
+			uip.refresh_statusbar()
+			curses.doupdate()
 
 			splitmsg = split_msg(rawmsg)
 
@@ -9719,6 +9728,7 @@ def containerinfoloop(stdscr, container, kind, obj):
 			linecount = len(splitmsg)
 			linepercent = int(linecount * 0.01)
 
+			progressbar = None
 			if linecount > 1000:
 				progressbar = curses_helper.progressbar(None, y = uip.maxy // 2, minx = (uip.minx + 8), maxx = (uip.maxx - 8), progress = 0, title = "Parsing log")
 
@@ -9837,6 +9847,12 @@ def containerinfoloop(stdscr, container, kind, obj):
 							timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message)
 
 			reload = True
+
+			# The data in some fields might become shorter, so we need to trigger a clear
+			uip.infopad.erase()
+			uip.statusbar.erase()
+
+			del progressbar
 
 			# If the last message in the log is a repeat we need to add the repeat signature
 			if repeat_count > 0 and merge_repeats:
