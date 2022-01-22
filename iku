@@ -11867,7 +11867,10 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 		sys.exit(f"Invalid sortcolumn {sortcolumn} for Selector; aborting.")
 
 	if len(available_api_families) == 0 or refresh_apis == True:
+		notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Refreshing list of available APIs")
 		available_api_families = kh.get_available_api_families()
+		del notice
+		curses.doupdate()
 
 	items = []
 	order = []
