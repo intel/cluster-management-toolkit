@@ -1479,13 +1479,6 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 		if version.startswith("\"") and version.endswith("\""):
 			version = version[1:-1]
 
-		# If the message contains a version,
-		# or something similarly useful, bump the severity
-		msg, severity = override_severity(msg, severity)
-		tmp = re.match(r"Cilium \d+\.\d+", msg)
-		if tmp is not None:
-			severity = min(severity, loglevel.NOTICE)
-
 		facility = deep_get_with_fallback(d, facilities, facility).strip("\"")
 		if logparser_configuration.pop_facility == True:
 			for _fac in facilities:
@@ -1567,7 +1560,8 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 					message = tmp.pop(0)
 				else:
 					message = ""
-				remnants = (tmp, severity)
+				if len(tmp) > 0:
+					remnants = (tmp, severity)
 
 	if logparser_configuration.msg_linebreaks == True and "\\n" in message and type(message) == str and fold_msg == False:
 		lines = message.split("\\n")
@@ -2583,10 +2577,6 @@ builtin_parsers = [
 	("workflow-controller", "", "", "kube_parser_structured_glog"),
 
 	("", "", "docker.io/kubeflow/xgboost-operator", "kube_parser_json"),
-
-	("raw", "", "", "basic_8601_raw"),
-	# This should always be last
-	("", "", "", "basic_8601")
 ]
 
 Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser")
@@ -2606,6 +2596,8 @@ def init_parser_list():
 	if iktconfig is None:
 		iktconfig = iktlib.read_iktconfig()
 		parser_dirs += deep_get(iktconfig, "Pods#local_parsers", [])
+
+	disable_builtin_parsers = deep_get(iktconfig, "Internal#disable_builtin_parsers", False)
 
 	parser_dirs.append(os.path.join(IKTDIR, PARSER_DIRNAME))
 
@@ -2705,30 +2697,36 @@ def init_parser_list():
 
 				parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = ("custom", rules)))
 
-	# Now do the same for built-in parsers
-	for builtin_parser in builtin_parsers:
-		# Old-style parser definition
-		if type(builtin_parser[2]) == str:
-			if type(builtin_parser[3]) == tuple and builtin_parser[3][0] == "custom":
-				parser_name = "custom"
-				show_in_selector = False
-			elif type(builtin_parser[3]) == list:
-				parser_name = "|".join(builtin_parser[3])
-				show_in_selector = False
+	# Now do the same for built-in parsers, unless disabled
+	if disable_builtin_parsers == False:
+		for builtin_parser in builtin_parsers:
+			# Old-style parser definition
+			if type(builtin_parser[2]) == str:
+				if type(builtin_parser[3]) == tuple and builtin_parser[3][0] == "custom":
+					parser_name = "custom"
+					show_in_selector = False
+				elif type(builtin_parser[3]) == list:
+					parser_name = "|".join(builtin_parser[3])
+					show_in_selector = False
+				else:
+					parser_name = builtin_parser[3]
+					show_in_selector = True
+				matchrules = [(builtin_parser[0], builtin_parser[1], builtin_parser[2], "container")]
+			# New-style parser definition;
+			elif type(builtin_parser[2]) == list:
+				parser_name = builtin_parser[0]
+				show_in_selector = builtin_parser[1]
+				matchrules = builtin_parser[2]
+				parser = builtin_parser[3]
 			else:
-				parser_name = builtin_parser[3]
-				show_in_selector = True
-			matchrules = [(builtin_parser[0], builtin_parser[1], builtin_parser[2], "container")]
-		# New-style parser definition;
-		elif type(builtin_parser[2]) == list:
-			parser_name = builtin_parser[0]
-			show_in_selector = builtin_parser[1]
-			matchrules = builtin_parser[2]
-			parser = builtin_parser[3]
-		else:
-			sys.exit(f"Could not determine parser type for entry: {builtin_parser}; aborting.")
+				sys.exit(f"Could not determine parser type for entry: {builtin_parser}; aborting.")
 
-		parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = builtin_parser[3]))
+			parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = builtin_parser[3]))
+
+	# Fallback entries
+	parsers.append(Parser(parser_name = "basic_8601_raw", show_in_selector = True, match_rules = [("raw", "", "", "container")], parser = "basic_8601_raw"))
+	# This should always be last
+	parsers.append(Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("", "", "", "container")], parser = "basic_8601"))
 
 def get_parser_list():
 	_parsers = set()
