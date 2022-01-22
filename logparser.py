@@ -299,12 +299,15 @@ def split_colon_severity(message, severity = loglevel.INFO):
 # 2020-02-13T12:06:18[+-]0000 (+/-timezone)
 # 2020-02-20 13:47:41,008 (assume UTC)
 # 2020-02-20 13:47:41.008416 (assume UTC)
-# 2020-02-20 13:47:41.008416Z (Z = UTF)
+# 2020-02-20 13:47:41.008416Z (Z = UTC)
 # 2020-02-20 13:47:41 (assume UTC)
-# Technically not in ISO format, but close enough;
+# Technically not in ISO-8601/RFC 3339 format, but close enough;
 # at least the order is sensible
 # 2020/02/20 13:47:41.008416 (assume UTC)
 # 2020/02/20 13:47:41 (assume UTC)
+#
+# XXX: According to ISO-8601 timestamps that lack timezone should be assumed to be local timezone,
+#      NOT UTC. Does this make a difference though? Are these timestamps actually used anywhere?
 def split_iso_timestamp(message, timestamp):
 	tmp_timestamp = timestamp
 
@@ -795,7 +798,7 @@ def replace_tabs(message):
 
 	return message
 
-# Basic with colon severity prefix (with ISO8601 timestamps):
+# Basic with colon severity prefix (with ISO8601:ish / RFC3339:ish timestamps):
 # Only split the lines and separate out timestamps
 def basic_8601_colon_severity(message, fold_msg = True):
 	facility = ""
@@ -805,7 +808,7 @@ def basic_8601_colon_severity(message, fold_msg = True):
 
 	return facility, severity, message, remnants
 
-# Basic (with ISO8601 timestamps):
+# Basic (with ISO8601:ish timestamps):
 # Only split the lines and separate out timestamps
 def basic_8601(message, fold_msg = True):
 	facility = ""
@@ -2361,9 +2364,9 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 			elif _filter == "modinfo":
 				facility, severity, message, remnants = modinfo(message, fold_msg = fold_msg)
 			# Timestamp formats
-			elif _filter == "ts_8601": # Anything that resembles ISO-8601
+			elif _filter == "ts_8601": # Anything that resembles ISO-8601 / RFC 3339
 				message = strip_iso_timestamp(message)
-			elif _filter == "ts_8601_tz": # ISO-8601 with 3-letter timezone; since the offset is dependent on date we don't even try to parse
+			elif _filter == "ts_8601_tz": # ISO-8601 / RFC 3339 with 3-letter timezone; since the offset is dependent on date we don't even try to parse
 				message = strip_iso_timestamp_with_tz(message)
 			# Facility formats
 			elif _filter == "colon_facility":
