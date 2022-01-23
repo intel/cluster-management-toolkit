@@ -11170,15 +11170,18 @@ def infoview_view_last_applied_configuration(uip, kind, obj, selected = None, ti
 	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
 
 def delete_resource(uip, items = [], action = {}, values = {}, kind = None):
+	success = True
+
 	for item in items:
 		namespace, name = item
-		retval, message = kh.delete_obj_by_kind_name_namespace(kind, name, namespace)
-		if retval == False:
+		message, status = kh.delete_obj_by_kind_name_namespace(kind, name, namespace)
+		if status != 200:
 			win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = message)
+			success = False
 			break
 
 	# We successfully deleted everything
-	if retval == True:
+	if success == True:
 		win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = "Successfully deleted all specified resources")
 
 	# Wait for a keypress
@@ -11868,10 +11871,9 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 
 	if len(available_api_families) == 0 or refresh_apis == True:
 		notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Refreshing list of available APIs")
-		available_api_families = kh.get_available_api_families()
+		available_api_families, status = kh.get_available_api_families()
 		del notice
 		curses.doupdate()
-
 	items = []
 	order = []
 
@@ -11883,7 +11885,7 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 			continue
 		if hide_unavailable == True:
 			kind = deep_get(viewref, "kind", ("", ""))
-			if kind is not None and kind != ("", "") and not kind[0].startswith("__") and kh.is_kind_available(kind, available_api_families) == False:
+			if kind is not None and kind != ("", "") and not kind[0].startswith("__") and kind not in available_api_families:
 				continue
 		group = views[item].get("group")
 		# XXX: Do override in a nicer manner; perhaps we want all "built-in" groups first?
@@ -11923,7 +11925,7 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 			items.append((widgetlineattrs.SEPARATOR, [(f" {group} ", ("windowwidget", "highlight"))], [("", ("windowwidget", "default"))]))
 			currentgroup = group
 		lineattrs = widgetlineattrs.NORMAL
-		if kind is not None and kind != ("", "") and not kind[0].startswith("__") and kh.is_kind_available(kind, available_api_families) == False:
+		if kind is not None and kind != ("", "") and not kind[0].startswith("__") and kind not in available_api_families:
 			lineattrs = widgetlineattrs.UNSELECTABLE
 		if api_group == "":
 			items.append((lineattrs, [(f"{view}", ("windowwidget", "default"))], [(f"", ("windowwidget", "dim"))]))

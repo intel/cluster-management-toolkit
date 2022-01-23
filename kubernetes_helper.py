@@ -452,7 +452,7 @@ class KubernetesHelper:
 			"api": "endpoints",
 		},
 		("Event", ""): {
-			"api_family": ["api/v1/"],
+			"api_family": ["/apis/events.k8s.io/v1/", "api/v1/"],
 			"api": "events",
 		},
 		("LimitRange", ""): {
@@ -1984,47 +1984,87 @@ class KubernetesHelper:
 
 		raise Exception(f"Couldn't guess kubernetes resource for kind: {kind}")
 
-	def is_kind_available(self, kind, available_api_families):
-		if kind is None or len(kind) == 0:
-			return False
-
-		kind = self.guess_kind(kind)
-
-		if kind in self.kubernetes_resources:
-			resource = self.kubernetes_resources[kind]
-			api_families = deep_get(resource, "api_family", [])
-
-			if len(api_families) == 0:
-				raise Exception(f"Programming error! Resource {kind} lacks api_family")
-
-			for api_family in api_families:
-				if api_family in available_api_families:
-					return True
-		return False
-
 	def get_available_api_families(self):
-		api_families = []
-		available_api_families = []
+		available_apis = set()
 
-		for resource in self.kubernetes_resources:
-			api_family = deep_get(self.kubernetes_resources[resource], "api_family", [])
+		# First get all core APIs
+		core_apis = {}
 
-			if len(api_family) == 0:
-				raise Exception(f"Programming error! Resource {resource} lacks api_family")
+		method = "GET"
+		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/api/v1"
+		data, message, status = self.__rest_helper_generic_json(method = method, url = url)
 
-			for api in api_family:
-				if api not in api_families:
-					api_families.append(api)
+		if status == 200:
+			core_apis = json.loads(data)
+		else:
+			# We couldn't get the core APIs; there's no use continuing
+			return [], status
 
-		# Now we have a list of known API families; now find out how many of them are available
-		for api_family in api_families:
-			tmp, status = self.get_api_resources(api_family)
-			if status == 200:
-				available_api_families.append(api_family)
-			elif status in [503, 42503]:
-				break
+		for api in deep_get(core_apis, "resources", []):
+			if "list" not in deep_get(api, "verbs", []):
+				# Ignore non-list APIs
+				continue
+			name = deep_get(api, "name", "")
+			kind = deep_get(api, "kind", "")
+			if (kind, "") in self.kubernetes_resources:
+				available_apis.add((kind, ""))
 
-		return available_api_families
+		# Now fetch non-core APIs
+		non_core_apis = {}
+
+		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis"
+		data, message, status = self.__rest_helper_generic_json(method = method, url = url)
+
+		if status == 200:
+			non_core_apis = json.loads(data)
+		else:
+			# No non-core APIs found; this is a bit worrying, but OK...
+			pass
+
+		# These are all API groups we know of
+		_api_groups = set(api_group for kind, api_group in self.kubernetes_resources)
+
+		# Now create a cross-section between known APIs and available APIs
+		api_groups = set()
+
+		for api_group in deep_get(non_core_apis, "groups", []):
+			name = deep_get(api_group, "name", "")
+			known_api_group = name in _api_groups
+			if known_api_group == False:
+				continue
+
+			versions = deep_get(api_group, "versions", [])
+
+			# Now we need to check what kinds this api_group supports
+			# and using what version
+			for version in versions:
+				_version = deep_get(version, "groupVersion")
+				if _version is None:
+					# This shouldn't happen, but ignore it
+					continue
+				url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis/{_version}"
+				data, message, status = self.__rest_helper_generic_json(method = method, url = url)
+
+				if status != 200:
+					# Could not get API info; this is worrying, but ignore it
+					continue
+				data = json.loads(data)
+				match = False
+				for resource in deep_get(data, "resources", []):
+					if "list" not in deep_get(resource, "verbs", []):
+						continue
+					kind = deep_get(resource, "kind", "")
+					if len(kind) == 0:
+						continue
+					if (kind, name) in self.kubernetes_resources and f"apis/{_version}/" in self.kubernetes_resources[(kind, name)].get("api_family", ""):
+						# We're special casing this since the core API is deprecated and handled transparently
+						if (kind, name) == ("Event", "events.k8s.io"):
+							continue
+						available_apis.add((kind, name))
+						continue
+
+		# Now post-process
+		return list(available_apis), status
 
 	def get_list_of_namespaced_resources(self):
 		vlist = []
@@ -2034,9 +2074,14 @@ class KubernetesHelper:
 				vlist.append(resource)
 		return vlist
 
-	def __rest_helper_delete(self, kind, name, namespace = ""):
+	def __rest_helper_generic_json(self, method = None, url = None, query_params = []):
+		data = None
+		message = ""
+
 		if self.cluster_unreachable == True:
-			return
+			status = 42503
+			message = "Cluster Unreachable"
+			return data, message, status
 
 		header_params = {
 			"Accept": "application/json",
@@ -2047,8 +2092,78 @@ class KubernetesHelper:
 		if self.token is not None:
 			header_params["Authorization"] = f"Bearer {self.token}"
 
-		query_params = []
+		if method is None:
+			raise Exception("REST API called without method; this is a programming error!")
 
+		if url is None:
+			raise Exception("REST API called without URL; this is a programming error!")
+
+		try:
+			result = self.pool_manager.request(method, url, headers = header_params, fields = query_params)
+			status = result.status
+		except urllib3.exceptions.MaxRetryError as e:
+			# No route to host doesn't have a HTTP response; make one up...
+			# 503 is Service Unavailable; this is generally temporary, but to distinguish it from a real 503
+			# we prefix it...
+			status = 42503
+
+		if status == 200:
+			# YAY, things went fine!
+			retval = True
+			d = result.data
+			data = d
+		elif status == 204:
+			# No Content
+			pass
+		elif status == 400:
+			d = json.loads(result.data)
+			# Bad request; is the feature disabled? If so we ignore the failure
+			message = deep_get(d, "message", "")
+			tmp = re.match(r"feature.*disabled", message)
+			if tmp is None:
+				raise Exception(f"400: Bad Request; method {method} URL {url} header_params: {header_params}; result.data: {result.data}")
+		elif status == 401:
+			# Unauthorized
+			message = f"401: Unauthorized; method {method} URL {url} header_params: {header_params}"
+		elif status == 403:
+			# Forbidden: request denied
+			message = f"403: Forbidden; method {method} URL {url} header_params: {header_params}"
+		elif status == 404:
+			# page not found (API not available or possibly programming error)
+			message = f"404: Not Found; method {method} URL {url} header_params: {header_params}"
+		elif status == 405:
+			# Method not allowed
+			raise Exception(f"405: Method Not Allowed; this is probably a programming error; method: {method} URL {url}; header_params: {header_params}")
+		elif status == 406:
+			# Not Acceptable
+			raise Exception(f"406: Not Acceptable; this is probably a programming error; method: {method} URL {url}; header_params: {header_params}")
+		elif status == 410:
+			# Gone
+			# Most likely a update events were requested (using resourceVersion), but it's been too long since the previous request;
+			# caller should retry without &resourceVersion=xxxxx
+			pass
+		elif status == 500:
+			# Internal Server Error
+			d = eval(result.data.decode("utf-8"))
+			msg = deep_get(d, "message")
+			message = f"500: Internal Server Error; method: {method} URL {url}; header_params: {header_params}; message: {msg}"
+		elif status == 503:
+			# Service Unavailable
+			# This is might be a CRD that has failed to deploy properly
+			message = f"503: Service Unavailable; method: {method} URL {url}; header_params: {header_params}"
+		elif status == 504:
+			# Gateway Timeout
+			# A request was made for an unrecognised resourceVersion, and timed out waiting for it to become available
+			message = f"504: Gateway Timeout; method: {method} URL {url}; header_params: {header_params}"
+		elif status == 42503:
+			message = f"No route to host; method: {method} URL {url}; header_params: {header_params}"
+		else:
+			raise Exception(f"Unhandled error: {result.status}; method {method} URL {url}; header_params: {header_params}")
+
+		return data, message, status
+
+	def __rest_helper_delete(self, kind, name, namespace = ""):
+		query_params = []
 		method = "DELETE"
 
 		namespace_part = ""
@@ -2056,7 +2171,7 @@ class KubernetesHelper:
 			namespace_part = "namespaces/%s/" % namespace
 
 		if kind is None:
-			raise Exception("REST API called with kind None")
+			raise Exception("__rest_helper_delete called with kind None")
 
 		kind = self.guess_kind(kind)
 
@@ -2079,68 +2194,35 @@ class KubernetesHelper:
 		status = None
 
 		retval = False
-		message = ""
 
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
 			url = "https://%s:%s/%s%s%s%s" % (self.control_plane_ip, self.control_plane_port, api_family[i], namespace_part, api, name)
-
-			try:
-				result = self.pool_manager.request(method, url, headers = header_params, fields = query_params)
-			except urllib3.exceptions.MaxRetryError as e:
-				continue
-
-			status = result.status
-
-			# XXX: here we need to add error handling (401, 404, etc)
-			if status == 400:
-				# Bad request
-				raise Exception("Bad Request; URL {url}")
-			elif status == 401:
-				# Unauthorized
-				message = f"Failed to delete {fullitem}; 401: Unauthorized"
-			elif status == 403:
-				# Forbidden: request denied
-				message = f"Failed to delete {fullitem}; 403: Forbidden"
-			elif status == 404:
-				# page not found (API not available or possibly programming error)
-				message = f"Failed to delete {fullitem}; 404: Not Found"
-			elif status == 405:
-				# Method not allowed
-				raise Exception(f"405: Method Not Allowed; this is probably a programming error; URL {url}; {header_params}")
-			elif status == 406:
-				# Not Acceptable
-				raise Exception(f"406: Not Acceptable; this is probably a programming error; URL {url}; {header_params}")
-			elif status == 200:
-				retval = True
+			data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
+			if status in [200, 204, 42503]:
 				break
-			elif status == 204:
-				break
-			else:
-				raise Exception(f"Unhandled error: {result.status}")
 
-		return retval, message
+		return message, status
+
+	def __rest_helper_generic_protobuf(self, method = None, url = None, query_params = []):
+		header_params["Accept"] = "application/vnd.kubernetes.protobuf"
+		if self.token is not None:
+			header_params["Authorization"] = f"Bearer {self.token}"
+		# Do we support this version of Kubernetes protobuf?
+		expected_signature = b"k8s\x00"
+		if result.data[0:4] != expected_signature:
+			sys.exit(f"protobuf format not supported")
+		sys.exit(f"Protobuf support not implemented yet;\n{result.data}")
 
 	def __rest_helper_get(self, kind, name = "", namespace = "", label_selector = "", field_selector = ""):
 		vlist = None
 		use_protobuf = False
 
 		if self.cluster_unreachable == True:
-			return []
-
-		header_params = {
-			"Accept": "application/json",
-			"Content-Type": "application/json",
-			"User-Agent": "%s v%s" % (self.programname, self.programversion),
-		}
-
-		if use_protobuf == True:
-			header_params["Accept"] = "application/vnd.kubernetes.protobuf"
-		else:
-			header_params["Accept"] = "application/json"
-
-		if self.token is not None:
-			header_params["Authorization"] = f"Bearer {self.token}"
+			# If name is not set is a list request, so return an empty list instead of None
+			if name == "":
+				vlist = []
+			return vlist
 
 		query_params = []
 		if field_selector != "":
@@ -2155,7 +2237,7 @@ class KubernetesHelper:
 			namespace_part = "namespaces/%s/" % namespace
 
 		if kind is None:
-			raise Exception("REST API called with kind None")
+			raise Exception("__rest_helper_get API called with kind None")
 
 		kind = self.guess_kind(kind)
 
@@ -2177,90 +2259,22 @@ class KubernetesHelper:
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
 			url = "https://%s:%s/%s%s%s%s" % (self.control_plane_ip, self.control_plane_port, api_family[i], namespace_part, api, name)
+			if use_protobuf == True:
+				data, message, status = self.__rest_helper_generic_protobuf(method = method, url = url, query_params = query_params)
+			else:
+				data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
 
-			try:
-				result = self.pool_manager.request(method, url, headers = header_params, fields = query_params)
-			except urllib3.exceptions.MaxRetryError as e:
-				continue
-
-			status = result.status
-
-			# XXX: here we need to add error handling (401, 404, etc)
-			if status == 400:
-				# Bad request; is the feature disabled? If so we ignore the failure
+			# All fatal failures are handled in __rest_helper_generic
+			if status == 200:
+				# Success
 				if use_protobuf == True:
 					# Do we support this version of Kubernetes protobuf?
 					expected_signature = b"k8s\x00"
-					if result.data[0:4] != expected_signature:
+					if data[0:4] != expected_signature:
 						sys.exit(f"protobuf format not supported")
 					sys.exit(f"Protobuf support not implemented yet;\n{result.data}")
 				else:
-					d = json.loads(result.data)
-				tmp = re.match(r"feature.*disabled", deep_get(d, "message", ""))
-				if tmp is None:
-					raise Exception(f"Bad Request; URL {url}; {result.data}")
-
-				# If name is set this is a read request, not a list request
-				if name != "":
-					vlist = None
-				else:
-					vlist = []
-			elif status == 401:
-				# Unauthorized
-				raise Exception(f"Unauthorized; URL {url}")
-			elif status == 403:
-				# Forbidden: request denied
-				# This most likely means that the requested resource is not available from this context
-
-				# If name is set this is a read request, not a list request
-				if name != "":
-					vlist = None
-				else:
-					vlist = []
-			elif status == 404:
-				# page not found (API not available or possibly programming error)
-				# raise Exception(f"API not available; this is probably a programming error; URL {url}")
-
-				# Is this the oldest API family we support? If not, we continue,
-				# otherwise we give up and return an empty list
-				if i < len(api_family) - 1:
-					continue
-
-				# If name is set this is a read request, not a list request
-				if name != "":
-					vlist = None
-				else:
-					vlist = []
-			elif status == 405:
-				# Method not allowed
-				raise Exception(f"405: Method Not Allowed; this is probably a programming error; URL {url}; {header_params}")
-			elif status == 406:
-				# Not Acceptable
-				raise Exception(f"406: Not Acceptable; this is probably a programming error; URL {url}; {header_params}")
-			#elif status == 410:
-				# Gone
-				# We requested update events (using resourceVersion), but it's been too long since the previous request;
-				# retry without &resourceVersion=xxxxx
-			elif status == 503:
-				# Service Unavailable
-				# This is most likely a CRD that has failed to deploy properly
-				# If name is set this is a read request, not a list request
-				if name != "":
-					vlist = None
-				else:
-					vlist = []
-			#elif status == 504:
-				# Gateway Timeout
-				# A request was made for an unrecognised resourceVersion, and timed out waiting for it to become available
-			elif status == 200:
-				if use_protobuf == True:
-					# Do we support this version of Kubernetes protobuf?
-					expected_signature = b"k8s\x00"
-					if result.data[0:4] != expected_signature:
-						sys.exit(f"protobuf format not supported")
-					sys.exit(f"Protobuf support not implemented yet;\n{result.data}")
-				else:
-					d = json.loads(result.data)
+					d = json.loads(data)
 
 				# If name is set this is a read request, not a list request
 				if name != "":
@@ -2268,61 +2282,31 @@ class KubernetesHelper:
 				else:
 					vlist = d["items"]
 				break
-			elif status == 204:
-				# No Content
-				# If name is set this is a read request, not a list request
-				if name != "":
-					vlist = None
-				else:
-					vlist = []
-			else:
-				raise Exception(f"Unhandled error: {result.status}; url: {url}")
+			elif status in [204, 400, 403, 503]:
+				# We didn't get any data, but we might not want to fail
+				continue
+			elif status == 404:
+				# We didn't get any data, but we might not want to fail
 
-		if status == None:
-			# No Content
-			# If name is set this is a read request, not a list request
-			if name != "":
-				vlist = None
-			else:
-				vlist = []
+				# page not found (API not available or possibly programming error)
+				# raise Exception(f"API not available; this is probably a programming error; URL {url}")
+
+				# Is this the oldest API family we support? If not, we continue,
+				# otherwise we give up and return an empty list
+				if i < len(api_family) - 1:
+					continue
+			#elif status == 410:
+				# XXX: Should be handled when we implement support for update events
+
+				# Gone
+				# We requested update events (using resourceVersion), but it's been too long since the previous request;
+				# retry without &resourceVersion=xxxxx
+
+		# If name is not set is a list request, so return an empty list instead of None
+		if name == "" and vlist is None:
+			vlist = []
 
 		return vlist
-
-	def get_api_resources(self, api_family):
-		vlist = None
-
-		if self.cluster_unreachable == True:
-			return [], 503
-
-		header_params = {
-			"Accept": "application/json",
-			"Content-Type": "application/json",
-			"User-Agent": "%s v%s" % (self.programname, self.programversion),
-		}
-
-		if self.token is not None:
-			header_params["Authorization"] = f"Bearer {self.token}"
-
-		query_params = []
-
-		method = "GET"
-
-		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family}/"
-
-		try:
-			result = self.pool_manager.request(method, url, headers = header_params, fields = query_params)
-			status = result.status
-		except urllib3.exceptions.MaxRetryError as e:
-			# No route to host doesn't have a HTTP response; make one up...
-			# 500 is Service Unavailable; this is generally temporary, but to distinguish it from a real 503
-			# we prefix it...
-			status = 42503
-
-		if status == 200:
-			d = json.loads(result.data)
-			vlist = d
-
-		return vlist, status
 
 	def delete_obj_by_kind_name_namespace(self, kind, name, namespace):
 		return self.__rest_helper_delete(kind, name, namespace)
@@ -2334,18 +2318,6 @@ class KubernetesHelper:
 		return self.__rest_helper_get(kind, name, namespace, "", "")
 
 	def read_namespaced_pod_log(self, name, namespace, container = None, tail_lines = 0):
-		if self.cluster_unreachable == True:
-			return [], 503
-
-		header_params = {
-			"Accept": "application/json",
-			"Content-Type": "application/json",
-			"User-Agent": "%s v%s" % (self.programname, self.programversion),
-		}
-
-		if self.token is not None:
-			header_params["Authorization"] = f"Bearer {self.token}"
-
 		query_params = []
 		if container is not None:
 			query_params.append(("container", container))
@@ -2354,43 +2326,14 @@ class KubernetesHelper:
 		query_params.append(("timestamps", True))
 
 		method = "GET"
-
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/api/v1/namespaces/{namespace}/pods/{name}/log"
+		data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
 
-		result = self.pool_manager.request(method, url, headers = header_params, fields = query_params)
-
-		status = result.status
-
-		# XXX: here we need to add error handling (401, 404, etc)
-		if status == 400:
-			# Bad request
-			msg = f"400: Bad request; this is probably a programming error; URL {url}; {header_params}"
-		elif status == 401:
-			# Unauthorized
-			msg = f"401: Unauthorized; this is probably a programming error; URL {url}; {header_params}"
-		elif status == 403:
-			# Forbidden: request denied
-			msg = f"403: Forbidden: Request Denied; this might be a programming error; URL {url}; {header_params}"
-		elif status == 404:
-			# page not found (API not available or possibly programming error)
-			msg = f"404: Page Not Found; this might be a programming error; URL {url}; {header_params}"
-		elif status == 405:
-			# Method not allowed
-			msg = f"405: Method Not Allowed; this is probably a programming error; URL {url}; {header_params}"
-		elif status == 406:
-			# Not Acceptable
-			msg = f"406: Not Acceptable; this is probably a programming error; URL {url}; {header_params}"
-		elif status == 500:
-			# Internal Server Error
-			d = eval(result.data.decode("utf-8"))
-			msg = deep_get(d, "message")
-		elif status == 200:
-			msg = result.data.decode("utf-8")
+		if status == 200:
+			msg = data.decode("utf-8")
 		elif status == 204:
 			# No Content
 			msg = "No Content"
-		else:
-			raise Exception(f"Unhandled error: {status}")
 
 		return msg, status
 
