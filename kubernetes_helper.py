@@ -1965,7 +1965,7 @@ class KubernetesHelper:
 			api_group = tmp[1]
 		else:
 			api_group = ""
-		return (kind, api_group)
+		return kind, api_group
 
 	# In cases where we get a kind that doesn't include the API group
 	# (such as from owner references), we have to guess
@@ -1980,7 +1980,7 @@ class KubernetesHelper:
 		# as we get a match.
 		for _kind, _api_group in self.kubernetes_resources:
 			if kind == _kind:
-				return (_kind, _api_group)
+				return _kind, _api_group
 
 		raise Exception(f"Couldn't guess kubernetes resource for kind: {kind}")
 
@@ -2021,6 +2021,8 @@ class KubernetesHelper:
 			tmp, status = self.get_api_resources(api_family)
 			if status == 200:
 				available_api_families.append(api_family)
+			elif status in [503, 42503]:
+				break
 
 		return available_api_families
 
@@ -2117,7 +2119,7 @@ class KubernetesHelper:
 			else:
 				raise Exception(f"Unhandled error: {result.status}")
 
-		return (retval, message)
+		return retval, message
 
 	def __rest_helper_get(self, kind, name = "", namespace = "", label_selector = "", field_selector = ""):
 		vlist = None
@@ -2311,7 +2313,10 @@ class KubernetesHelper:
 			result = self.pool_manager.request(method, url, headers = header_params, fields = query_params)
 			status = result.status
 		except urllib3.exceptions.MaxRetryError as e:
-			status = 404
+			# No route to host doesn't have a HTTP response; make one up...
+			# 500 is Service Unavailable; this is generally temporary, but to distinguish it from a real 503
+			# we prefix it...
+			status = 42503
 
 		if status == 200:
 			d = json.loads(result.data)
@@ -2330,7 +2335,7 @@ class KubernetesHelper:
 
 	def read_namespaced_pod_log(self, name, namespace, container = None, tail_lines = 0):
 		if self.cluster_unreachable == True:
-			return []
+			return [], 503
 
 		header_params = {
 			"Accept": "application/json",
