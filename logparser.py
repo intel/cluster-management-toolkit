@@ -2100,7 +2100,7 @@ def substitute_bullets(message, prefix):
 		message = message[0:len(prefix)].replace("*", "•") + message[len(prefix):]
 	return message
 
-def python_traceback_scanner(message, fold_msg = True):
+def python_traceback_scanner(message, fold_msg = True, options = {}):
 	timestamp = None
 	facility = ""
 	severity = loglevel.ERR
