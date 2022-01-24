@@ -644,7 +644,17 @@ def generator_total(obj, field, fieldlen, pad, ralign, selected):
 	if free is None and total is None:
 		return generator_basic(obj, field, fieldlen, pad, ralign, selected)
 
-	stringlen = len(str(free)) + len(themearray_extract_string("fraction", "separators")) + len(str(total))
+	# Strip millicores
+	if free.endswith("m"):
+		_free = int(free.strip("m")) // 1000
+	else:
+		_free = int(free)
+	if total.endswith("m"):
+		_total = int(total.strip("m")) // 1000
+	else:
+		_total = int(total)
+
+	stringlen = len(str(_free)) + len(themearray_extract_string("fraction", "separators")) + len(str(_total))
 
 	ranges = deep_get(field_templates, f"{field}#ranges", [])
 	formatting = ("types", "numerical", selected)
@@ -655,25 +665,24 @@ def generator_total(obj, field, fieldlen, pad, ralign, selected):
 			("".ljust(stringlen), ("types", "generic", selected))
 		]
 	else:
-		value = int(free)
 		for start, end, formatting in ranges:
 			# exact match against total, or value inside range
 			if start == -1 and end == -1:
-				if value == int(total):
+				if _free == _total:
 					context, attr = formatting
 					formatting = (context, attr, selected)
 					break
 				else:
 					continue
-			if (value >= start and value < end) or (value >= start and end == -1):
+			if (_free >= start and _free < end) or (_free >= start and end == -1):
 				context, attr = formatting
 				formatting = (context, attr, selected)
 				break
 
 		array = [
-			(str(free), formatting),
+			(str(_free), formatting),
 			(("separators", "fraction"), selected),
-			(str(total), ("types", "numerical", selected)),
+			(str(_total), ("types", "numerical", selected)),
 		]
 
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
@@ -715,7 +724,16 @@ def processor_timestamp(obj, field):
 def processor_total(obj, field):
 	free, total = getattr(obj, field)
 
-	return "%s/%s" % (str(free), str(total))
+	# Strip millicores
+	if free.endswith("m"):
+		_free = int(free.strip("m")) // 1000
+	else:
+		_free = int(free)
+	if total.endswith("m"):
+		_total = int(total.strip("m")) // 1000
+	else:
+		_total = int(total)
+	return "%s/%s" % (str(_free), str(_total))
 
 # For the list processor to work we need to know the length of all the separators
 def processor_list(obj, field, item_separator = ("separators", "list"), field_separators = [("separators", "field")], ellipsise = -1, ellipsis = ("separators", "ellipsis"), field_prefixes = None, field_suffixes = None):
