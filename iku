@@ -9671,6 +9671,8 @@ def containerinfoloop(stdscr, container, kind, obj):
 	# Currently not working properly
 	highlight_new_dates = False
 	wrap_lines = False
+	# Show severity as text
+	severity_prefix = deep_get(iktconfig, "Pods#severity_prefix", False)
 
 	# This decides whether or not compound log messages,
 	# such as Python dicts and JSON, should be expanded
@@ -10140,6 +10142,12 @@ def containerinfoloop(stdscr, container, kind, obj):
 
 				msgstrarray = []
 
+				if severity_prefix == True:
+					if len(timestamp.strip()) != 0 or y >= len(timestamps):
+						msgstrarray.append((f"[{lvl_to_4letter_severity(severity)}] ", color_log_severity(severity, False)))
+					else:
+						msgstrarray.append(("".ljust(len(f"[{lvl_to_4letter_severity(severity)}] ")), color_log_severity(severity, False)))
+
 				if facility != "":
 					if facility.rstrip() != "":
 						facilitystr = "<%s> " % (facility)
@@ -10383,9 +10391,9 @@ def containerinfoloop(stdscr, container, kind, obj):
 					facility = "<%s> " % (facilities[y])
 
 				if uip.yoffset + y >= len(severities):
-					severity = lvl_to_4letter_severity(loglevel.INFO)
+					severity = f"{lvl_to_4letter_severity(loglevel.INFO)}: "
 				else:
-					severity = lvl_to_4letter_severity(severities[y])
+					severity = f"{lvl_to_4letter_severity(severities[y])}: "
 
 				if raw_logs:
 					f.write("%s  %s\n" % (timestamp, messages[y]))

@@ -194,12 +194,12 @@ def level_to_severity(level):
 
 def lvl_to_4letter_severity(lvl):
 	severities = {
-		loglevel.CRIT: "CRIT: ",
-		loglevel.ERR: "ERRO: ",
-		loglevel.WARNING: "WARN: ",
-		loglevel.NOTICE: "NOTI: ",
-		loglevel.INFO: "INFO: ",
-		loglevel.DEBUG: "DEBU: ",
+		loglevel.CRIT: "CRIT",
+		loglevel.ERR: "ERRO",
+		loglevel.WARNING: "WARN",
+		loglevel.NOTICE: "NOTI",
+		loglevel.INFO: "INFO",
+		loglevel.DEBUG: "DEBU",
 	}
 
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
