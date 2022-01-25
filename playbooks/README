@@ -16,7 +16,7 @@ Playbooks as used by iKT are a bit stricter than generic Ansible playbooks:
       # - internal (never show in any menus; used by internal tasks)
       # - nodes
       # - inventory
-      playbook-types: <list>
+      playbook_types: <list>
 
       # A question to ask before running the playbook
       # string: The question to ask
@@ -34,22 +34,32 @@ Playbooks as used by iKT are a bit stricter than generic Ansible playbooks:
       # never -- never allow the playbook to be run on control-plane
       # single -- only allow if control-plane is the only selected node
       # always -- always allow the playbook to be run on control-plane [default]
-      allow-on-control-plane: {never,single,always}
+      allow_on_control_plane: {never,single,always}
 
       # Ask for confirmation before running the playbook
       confirm: <boolean>
 
       # Update the inventory with cluster information before running the playbook
-      requires-cluster-info: <boolean>
+      requires_cluster_info: <boolean>
 
       # A list of playbooks to run before this playbook
-      run-before: <list>
+      run_before: <list>
 
       # A list of playbooks to run after this playbook
-      run-after: <list>
+      run_after: <list>
 
       # A list of groups to add the host to after the playbook completes
-      add-to-groups: <list>
+      add_to_groups: <list>
 
       # A list of groups to remove the host from after the playbook completes
-      remove-from-groups: <list>
+      remove_from_groups: <list>
+
+      # An estimate of time consumption for the playbook
+      time_consumption: <string>
+
+      # Whether or not the playbook performs changes;
+      # when iku is started with --read-only all playbooks where read_only: true isn't
+      # explicitly set will be ignored
+      # true -- The playbook does not perform any changes to cluster, host, or node state
+      # false -- The playbook (potentially) performs changes to cluster, host, or node state [default]
+      read_only: <boolean>

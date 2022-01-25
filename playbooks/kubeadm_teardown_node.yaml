@@ -3,15 +3,15 @@
     metadata:
       description: Remove Kubernetes node from cluster
       time_consumption: Slow
-      playbook-types:
+      playbook_types:
       - node
       confirm: true
-      allow-on-control-plane: never
-      run-before:
+      allow_on_control_plane: never
+      run_before:
       - delete_node
-      run-after:
+      run_after:
       - teardown_cni
-      remove-from-groups:
+      remove_from_groups:
       - nodes
       category: Administration
   gather_subset:

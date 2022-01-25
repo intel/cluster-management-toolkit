@@ -257,6 +257,9 @@ usage += [("configmap ", "command"), ("[", "separator"), ("NAMESPACE/", "argumen
 usage += [("                         start in the configmap info view matching ", "description"), ("NAME", "argument"), (", ", "description"),  (" NAMESPACE", "argument"), (", ", "description"),  (" CONFIGMAP", "argument"), (";\n", "description")]
 usage += [("                         if ", "description"), ("NAME", "argument"), (" has exactly one configmap, then ", "description"), ("NAME:", "argument"), (" opens that configmap\n", "description")]
 usage += [("\n", "description")]
+usage += [("  --read-only ", "option"),
+          ("  disable all commands that modify state", "description")]
+usage += [("\n", "description")]
 usage += [("  --namespace ", "option"), ("NAMESPACE", "argument"),
           ("  only show namespace ", "description"), ("NAMESPACE", "argument"), (" (valid for all namespaced views)\n", "description")]
 usage += [("\n", "description")]

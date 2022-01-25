@@ -86,6 +86,9 @@ initial_name = None
 initial_namespace = None
 initial_container = None
 
+# Is iku running in read only-mode?
+read_only_mode = False
+
 # Namespace
 namespace = ""
 
@@ -1919,7 +1922,7 @@ def objgetter_ansible_log(obj):
 		with open(tmpobj["playbook_path"], "r") as f:
 			playbook = yaml.safe_load(f)[0]
 			tmpobj["name"] = deep_get(playbook, "vars#metadata#description")
-			tmpobj["playbook_types"] = deep_get(playbook, "vars#metadata#playbook-types", ["<any>"])
+			tmpobj["playbook_types"] = deep_get(playbook, "vars#metadata#playbook_types", ["<any>"])
 			tmpobj["category"] = deep_get(playbook, "vars#metadata#category", "Uncategorized")
 	except FileNotFoundError:
 		tmpobj["name"] = "File not found"
@@ -6577,8 +6580,8 @@ def genericlistloop(stdscr, view):
 					if tmpdescription == selection:
 						actionfunc = deep_get(actionlist, f"{action}#actionfunc", command_hosts)
 						# These are only relevant for node and inventory view
-						allowoncontrolplane = deep_get(actionlist, f"{action}#allow-on-control-plane", True)
-						singleoncontrolplane = deep_get(actionlist, f"{action}#single-on-control-plane", False)
+						allowoncontrolplane = deep_get(actionlist, f"{action}#allow_on_control_plane", True)
+						singleoncontrolplane = deep_get(actionlist, f"{action}#single_on_control_plane", False)
 						confirm = deep_get(actionlist, f"{action}#confirm", False)
 						query = deep_get(actionlist, f"{action}#query")
 						queryval = deep_get(actionlist, f"{action}#queryval")
@@ -6913,6 +6916,7 @@ def genericlistloop(stdscr, view):
 				"View YAML dump": {
 					"description": "View YAML dump of resource",
 					"actionfunc": view_yaml_dump,
+					"read_only": True,
 				},
 				"Edit resource": {
 					"description": "Edit resource",
@@ -11550,13 +11554,13 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None):
 	curses.endwin()
 	os.system("clear")
 
-	if action.get("requires-cluster-info") == True:
+	if action.get("requires_cluster_info") == True:
 		gather_cluster_info()
 
 	iktprint(msg)
 
-	# If run-before is set we have one or several playbooks that need to be run before this one
-	runbefore = action.get("run-before", [])
+	# If run_before is set we have one or several playbooks that need to be run before this one
+	runbefore = action.get("run_before", [])
 
 	retval = 0
 
@@ -11574,7 +11578,7 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None):
 
 	# If everything was successful it's time for the run-after playbooks
 	if retval == 0:
-		runafter = action.get("run-after", [])
+		runafter = action.get("run_after", [])
 
 		for postplaybook in runafter:
 			postplaybookpath = get_playbook_path(f"{postplaybook}.yaml")
@@ -11584,12 +11588,12 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None):
 			else:
 				break
 
-	# If everything was successful we execute the add-to-groups/remove-from-groups actions
+	# If everything was successful we execute the add_to_groups/remove_from_groups actions
 	if retval == 0:
-		for group in action.get("add-to-groups", []):
+		for group in action.get("add_to_groups", []):
 			ansible_add_hosts(ANSIBLE_INVENTORY, items, group = group, skip_all = True)
 
-		for group in action.get("remove-from-groups", []):
+		for group in action.get("remove_from_groups", []):
 			ansible_remove_hosts(ANSIBLE_INVENTORY, items, group = group)
 
 	waitforkeypress = True
@@ -11680,12 +11684,15 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 		allowoncontrolplane = deep_get(action_list, f"{item[2]}#allow_on_controlplane", True)
 		singleoncontrolplane = deep_get(action_list, f"{item[2]}#single_on_controlplane", False)
 		singleonly = deep_get(action_list, f"{item[2]}#single_only", False)
+		readonly = deep_get(action_list, f"{item[2]}#read_only", False)
 		metadata = deep_get(action_list, f"{item[2]}#metadata", [])
 		if singleonly == True and single_item == False:
 			continue
 		if singleoncontrolplane == True and control_plane_selected == True and single_item == False:
 			continue
 		elif allowoncontrolplane == False and control_plane_selected == True:
+			continue
+		if readonly == False and read_only_mode == True:
 			continue
 
 		if currentcategory != category:
@@ -11758,7 +11765,7 @@ def __populate_playbooklist(path, action_list = {}):
 					raise Exception(f"unknown queryfunc “{queryfunc}“ provided")
 
 			confirm = deep_get(d[0], "vars#metadata#confirm", False)
-			tmpallowoncontrolplane = deep_get(d[0], "vars#metadata#allow-on-control-plane")
+			tmpallowoncontrolplane = deep_get(d[0], "vars#metadata#allow_on_control_plane")
 			if tmpallowoncontrolplane is None or tmpallowoncontrolplane == "always":
 				allowoncontrolplane = True
 				singleoncontrolplane = False
@@ -11771,14 +11778,15 @@ def __populate_playbooklist(path, action_list = {}):
 			else:
 				raise Exception(f"{playbookpath}: Invalid values for allow-on-control-plane")
 
-			requiresclusterinfo = deep_get(d[0], "vars#metadata#requires-cluster-info", False)
-			runbefore = deep_get(d[0], "vars#metadata#run-before", [])
-			runafter = deep_get(d[0], "vars#metadata#run-after", [])
-			addtogroups = deep_get(d[0], "vars#metadata#add-to-groups", [])
-			removefromgroups = deep_get(d[0], "vars#metadata#remove-from-groups", [])
+			requiresclusterinfo = deep_get_with_fallback(d[0], ["vars#metadata#requires_cluster_info", "vars#metadata#requires-cluster-info"], False)
+			runbefore = deep_get_with_fallback(d[0], ["vars#metadata#run_before", "vars#metadata#run-before"], [])
+			runafter = deep_get_with_fallback(d[0], ["vars#metadata#add_to_groups", "vars#metadata#run-after"], [])
+			addtogroups = deep_get_with_fallback(d[0], ["vars#metadata#add_to_groups", "vars#metadata#add-to-groups"], [])
+			removefromgroups = deep_get_with_fallback(d[0], ["vars#metadata#remove_from_groups", "vars#metadata#remove-from-groups"], [])
 			category = deep_get(d[0], "vars#metadata#category", "Uncategorized")
-			playbooktypes = deep_get(d[0], "vars#metadata#playbook-types", [])
+			playbooktypes = deep_get_with_fallback(d[0], ["vars#metadata#playbook_types", "vars#metadata#playbook-types"], [])
 			comments = deep_get(d[0], "vars#metadata#comments", "")
+			readonly = deep_get_with_fallback(d[0], ["vars#metadata#read_only", "vars#metadata#read-only"], False)
 			extravars = {
 				"quiet": deep_get(d[0], "vars#metadata#quiet", False),
 			}
@@ -11790,16 +11798,17 @@ def __populate_playbooklist(path, action_list = {}):
 				"queryval": queryval,
 				"queryfunc": queryfunc,
 				"confirm": confirm,
-				"allow-on-control-plane": allowoncontrolplane,
-				"single-on-control-plane": singleoncontrolplane,
-				"requires-cluster-info": requiresclusterinfo,
-				"run-before": runbefore,
-				"run-after": runafter,
-				"add-to-groups": addtogroups,
-				"remove-from-groups": removefromgroups,
+				"allow_on_control_plane": allowoncontrolplane,
+				"single_on_control_plane": singleoncontrolplane,
+				"requires_cluster_info": requiresclusterinfo,
+				"run_before": runbefore,
+				"run_after": runafter,
+				"add_to_groups": addtogroups,
+				"remove_from_groups": removefromgroups,
 				"category": category,
-				"playbook-types": playbooktypes,
+				"playbook_types": playbooktypes,
 				"comments": comments,
+				"read_only": readonly,
 				"extravars": extravars,
 			}
 
@@ -11821,7 +11830,7 @@ def populate_playbooklist(context = None, actions = [], action_list = {}, contro
 
 		order = []
 		for item in action_list:
-			playbooktypes = action_list[item].get("playbook-types", [])
+			playbooktypes = action_list[item].get("playbook_types", [])
 			if context is not None and playbooktypes != [] and context not in playbooktypes:
 				continue
 
@@ -11834,15 +11843,18 @@ def populate_playbooklist(context = None, actions = [], action_list = {}, contro
 		for item in sorted(order, key = itemgetter(1, 0)):
 			action = item[0]
 			category = item[1]
-			allowoncontrolplane = action_list[item[2]].get("allow-on-control-plane", True)
-			singleoncontrolplane = action_list[item[2]].get("single-on-control-plane", True)
+			allowoncontrolplane = action_list[item[2]].get("allow_on_control_plane", True)
+			singleoncontrolplane = action_list[item[2]].get("single_on_control_plane", True)
+			readonly = action_list[item[2]].get("read_only", False)
 			comments = action_list[item[2]].get("comments", "")
 			lineattrs = widgetlineattrs.NORMAL
+			if read_only_mode == True and readonly == False:
+				continue
 			if singleoncontrolplane == True and control_plane_selected == True and single_item == False:
 				continue
 			elif allowoncontrolplane == False and control_plane_selected == True:
 				continue
-			elif action_list[item[2]].get("requires-cluster-info", False) == True and cluster_available == False:
+			elif action_list[item[2]].get("requires_cluster_info", False) == True and cluster_available == False:
 				metadata = []
 				if len(comments) > 0:
 					metadata.append((f"{comments},", ("windowwidget", "highlight")))
@@ -16115,6 +16127,7 @@ def main():
 	global initial_name
 	global initial_namespace
 	global initial_container
+	global read_only_mode
 	global namespace
 	global defaultview
 
@@ -16165,6 +16178,8 @@ def main():
 		elif arg == "--namespace":
 			namespace = sys.argv[y + 1]
 			y += 1
+		elif arg == "--read-only":
+			read_only_mode = True
 		elif arg == "list-namespaces":
 			init_kubernetes_client()
 			list_namespaces()
