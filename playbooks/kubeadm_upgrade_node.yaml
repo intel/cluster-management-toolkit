@@ -25,9 +25,9 @@
   - name: Installing new versions of kubeadm, kubelet and kubectl
     apt:
       pkg:
-      - kubeadm={{ requested_control_plane_k8s_version }}
-      - kubelet={{ requested_control_plane_k8s_version }}
-      - kubectl={{ requested_control_plane_k8s_version }}
+      - kubeadm={{ control_plane_k8s_version }}
+      - kubelet={{ control_plane_k8s_version }}
+      - kubectl={{ control_plane_k8s_version }}
       force_apt_get: true
     when: ansible_os_family == 'Debian'
   - name: Upgrading node

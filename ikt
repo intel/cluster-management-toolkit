@@ -524,7 +524,7 @@ def upgrade_nodes(options = None, args = None):
 		("--ignore-daemonsets", None),
 		("--no-header", None),
 	}
-	drain_nodes(options = drain_options, args = nodes.join(","))
+	drain_nodes(options = drain_options, args = [",".join(nodes)])
 
 	iktprint([("\n• ", "separator"), ("Run upgrade playbooks on nodes", "action")])
 	upgrade_playbooks = [
@@ -541,7 +541,7 @@ def upgrade_nodes(options = None, args = None):
 		sys.exit(2)
 
 	iktprint([("\n• ", "separator"), ("Uncordon nodes", "action")])
-	uncordon_nodes(args = nodes.join(","))
+	uncordon_nodes(args = [",".join(nodes)])
 
 	iktprint([("\nNode upgrade successful", "success")])
 

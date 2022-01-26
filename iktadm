@@ -2222,7 +2222,7 @@ def upgrade_control_plane(options, args):
 
 	run_tasks(tasks = upgrade_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "upgraded")
 	values = {
-		"control_plane_k8s_version": version,
+		"control_plane_k8s_version": requested_version,
 	}
 	ansible_set_vars(ANSIBLE_INVENTORY, "all", values)
 	update_installation_info(version = requested_version)
