@@ -2338,6 +2338,8 @@ class KubernetesHelper:
 		elif status == 204:
 			# No Content
 			msg = "No Content"
+		else:
+			msg = message
 
 		return msg, status
 
