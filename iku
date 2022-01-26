@@ -728,11 +728,11 @@ def processor_total(obj, field):
 	free, total = getattr(obj, field)
 
 	# Strip millicores
-	if free.endswith("m"):
+	if type(free) == str and free.endswith("m"):
 		_free = int(free.strip("m")) // 1000
 	else:
 		_free = int(free)
-	if total.endswith("m"):
+	if type(total) == str and total.endswith("m"):
 		_total = int(total.strip("m")) // 1000
 	else:
 		_total = int(total)
