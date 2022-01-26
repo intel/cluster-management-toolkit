@@ -32,11 +32,6 @@
     when: ansible_os_family == 'Debian'
   - name: Upgrading node
     shell: |
-      if [ -n "{{ https_proxy }}" ]; then
-        export https_proxy={{ https_proxy }}
-      else
-        export https_proxy=
-      fi
       kubeadm upgrade node
   - name: apt-mark hold kubeadm kubelet kubectl
     command: apt-mark hold kubeadm kubelet kubectl
