@@ -11222,9 +11222,9 @@ def delete_resource(uip, items = [], action = {}, values = {}, kind = None):
 			del win
 			break
 
-def force_delete_resource(uip, items = [], actions = {}, values = {}, kind = None):
+def force_delete_resource(uip, items = [], action = {}, values = {}, kind = None):
 	values["__force"] = True
-	return delete_resource(uip, items = items, actions = actions, values = values, kind = kind)
+	return delete_resource(uip, items = items, action = action, values = values, kind = kind)
 
 def __create_namespace(name):
 	args = [ "kubectl", "create", "namespace", f"{name}" ]
