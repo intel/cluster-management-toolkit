@@ -6659,7 +6659,7 @@ def genericlistloop(stdscr, view):
 					if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Perform “{description}“?", default = False) == False:
 						continue
 
-				actionfunc(uip, [], actionlist[action], values = selection_vars, kind = kind)
+				actionfunc(uip, items = [], actions = actionlist[action], values = selection_vars, kind = kind)
 
 				uip.force_update()
 				tagged_items.clear()
@@ -11222,6 +11222,10 @@ def delete_resource(uip, items = [], action = {}, values = {}, kind = None):
 			del win
 			break
 
+def force_delete_resource(uip, items = [], actions = {}, values = {}, kind = None):
+	values["__force"] = True
+	return delete_resource(uip, items = [], actions = actionlist[action], values = selection_vars, kind = kind)
+
 def __create_namespace(name):
 	args = [ "kubectl", "create", "namespace", f"{name}" ]
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
@@ -15554,6 +15558,11 @@ views = {
 					"description": "Delete resource",
 					"confirm": True,
 					"actionfunc": delete_resource,
+				},
+				"Force delete resource": {
+					"description": "Delete resource (No grace period)",
+					"confirm": True,
+					"actionfunc": force_delete_resource,
 				},
 			},
 		},

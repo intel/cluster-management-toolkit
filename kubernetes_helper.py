@@ -2162,8 +2162,7 @@ class KubernetesHelper:
 
 		return data, message, status
 
-	def __rest_helper_delete(self, kind, name, namespace = ""):
-		query_params = []
+	def __rest_helper_delete(self, kind, name, namespace = "", query_params = []):
 		method = "DELETE"
 
 		namespace_part = ""
@@ -2308,8 +2307,13 @@ class KubernetesHelper:
 
 		return vlist
 
-	def delete_obj_by_kind_name_namespace(self, kind, name, namespace):
-		return self.__rest_helper_delete(kind, name, namespace)
+	def delete_obj_by_kind_name_namespace(self, kind, name, namespace, force = False):
+		query_params = []
+
+		if force == True:
+			query_params.append(("gracePeriodSeconds", 0))
+
+		return self.__rest_helper_delete(kind, name, namespace, query_params = query_params)
 
 	def get_list_by_kind_namespace(self, kind, namespace, label_selector = "", field_selector = ""):
 		return self.__rest_helper_get(kind, "", namespace, label_selector, field_selector)
