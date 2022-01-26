@@ -10427,7 +10427,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 				else:
 					sys.exit(f"executecommand failed to parse output; {output}; aborting.")
 
-				time.sleep(2)
+				time.sleep(5)
 				# Attach to the image
 				# Should we perhaps use subprocess.run here?
 				args = ["kubectl", "attach", pod_name, "-c", container_name, "-it", "--pod-running-timeout=1m0s"]
@@ -11224,7 +11224,7 @@ def delete_resource(uip, items = [], action = {}, values = {}, kind = None):
 
 def force_delete_resource(uip, items = [], actions = {}, values = {}, kind = None):
 	values["__force"] = True
-	return delete_resource(uip, items = [], actions = actionlist[action], values = selection_vars, kind = kind)
+	return delete_resource(uip, items = items, actions = actions, values = values, kind = kind)
 
 def __create_namespace(name):
 	args = [ "kubectl", "create", "namespace", f"{name}" ]
