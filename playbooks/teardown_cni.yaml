@@ -29,7 +29,7 @@
       for network in $(cat /proc/net/dev | grep -E "^kube-bridge" | cut -f 1 -d:); do
         ifconfig "${network}" down || ip link set dev "${network}" down || true
       done
-      for network in $(cat /proc/net/dev | grep -E "^datapath|^vxlan|^weave" | cut -f 1 -d:); do
+      for network in $(cat /proc/net/dev | grep -E "^datapath|^vxlan|^\s*weave" | cut -f 1 -d:); do
         ifconfig "${network}" down || ip link set dev "${network}" down || true
       done
       killall -q weaver || true
