@@ -11588,7 +11588,7 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None):
 	if retval == 0:
 		retval = run_playbook(action, items, values = values)
 
-	# If everything was successful it's time for the run-after playbooks
+	# If everything was successful it's time for the run_after playbooks
 	if retval == 0:
 		runafter = action.get("run_after", [])
 
@@ -11792,7 +11792,7 @@ def __populate_playbooklist(path, action_list = {}):
 
 			requiresclusterinfo = deep_get_with_fallback(d[0], ["vars#metadata#requires_cluster_info", "vars#metadata#requires-cluster-info"], False)
 			runbefore = deep_get_with_fallback(d[0], ["vars#metadata#run_before", "vars#metadata#run-before"], [])
-			runafter = deep_get_with_fallback(d[0], ["vars#metadata#add_to_groups", "vars#metadata#run-after"], [])
+			runafter = deep_get_with_fallback(d[0], ["vars#metadata#run_after", "vars#metadata#run-after"], [])
 			addtogroups = deep_get_with_fallback(d[0], ["vars#metadata#add_to_groups", "vars#metadata#add-to-groups"], [])
 			removefromgroups = deep_get_with_fallback(d[0], ["vars#metadata#remove_from_groups", "vars#metadata#remove-from-groups"], [])
 			category = deep_get(d[0], "vars#metadata#category", "Uncategorized")
