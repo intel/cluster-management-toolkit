@@ -11747,7 +11747,7 @@ def __populate_playbooklist(path, action_list = {}):
 					"description": playbookpath,
 					"playbook": playbookpath,
 					"category": "__INVALID__",
-					"comments": "Failed to parse",
+					"comments": "Failed to parse (Not valid YAML)",
 				}
 				continue
 
@@ -11757,6 +11757,16 @@ def __populate_playbooklist(path, action_list = {}):
 					"description": playbookpath,
 					"playbook": playbookpath,
 					"category": "__DISABLED__",
+				}
+				continue
+
+			if type(d) != list:
+				# This entry could not be parsed; add a dummy entry
+				action_list[playbookname] = {
+					"description": playbookpath,
+					"playbook": playbookpath,
+					"category": "__INVALID__",
+					"comments": "Failed to parse (Not a list of plays)",
 				}
 				continue
 
