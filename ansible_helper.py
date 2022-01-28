@@ -993,6 +993,7 @@ if ansible_support == True:
 		if "ansible_user" not in d["all"]["vars"]:
 			values["ansible_user"] = ansible_configuration.ansible_user
 
-		ansible_set_vars(ANSIBLE_TMP_INVENTORY, group = "all", values = values)
+		if len(values) > 0:
+			ansible_set_vars(ANSIBLE_TMP_INVENTORY, group = "all", values = values)
 
 		return ansible_run_playbook(playbook)
