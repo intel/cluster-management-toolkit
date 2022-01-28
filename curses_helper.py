@@ -1557,14 +1557,14 @@ class UIProps:
 	def refresh_infopad(self):
 		if self.infopad is not None:
 			height = self.infopadheight
-			if self.borders == False:
-				if self.logpad is None and self.listpad is None:
-					height = self.maxy - 2
-				self.infopad.noutrefresh(0, 0, self.infopadypos, self.infopadxpos - 1, height, self.maxx)
-			else:
+			if self.borders == True:
 				if self.logpad is None and self.listpad is None:
 					height = self.maxy - 3
 				self.infopad.noutrefresh(0, 0, self.infopadypos, self.infopadxpos, height, self.maxx - 1)
+			else:
+				if self.logpad is None and self.listpad is None:
+					height = self.maxy - 2
+				self.infopad.noutrefresh(0, 0, self.infopadypos, self.infopadxpos - 1, height, self.maxx)
 
 			# If there's no logpad and no listpad, then the infopad is responsible for scrollbars
 			if self.listpad is None and self.logpad is None and self.borders == True:
@@ -1602,7 +1602,10 @@ class UIProps:
 		if width != -1:
 			self.listpadwidth = max(width + 1, self.listpadminwidth)
 
-		self.maxcurypos = min(height - 1, self.maxy - self.listpadypos - 3)
+		if self.borders == True:
+			self.maxcurypos = min(height - 1, self.maxy - self.listpadypos - 3)
+		else:
+			self.maxcurypos = min(height - 1, self.maxy - self.listpadypos - 2)
 		self.maxyoffset = height - (self.maxcurypos - self.mincurypos) - 1
 		self.headerpadwidth = self.listpadwidth
 		self.maxxoffset = max(0, self.listpadwidth - self.listpadminwidth)
@@ -1616,17 +1619,19 @@ class UIProps:
 
 	def refresh_listpad(self):
 		xpos = self.listpadxpos
+		maxx = self.maxx - 1
 		if self.borders == False:
 			xpos -= 1
+			maxx = self.maxx
 		if self.headerpad is not None:
-			self.headerpad.noutrefresh(0, self.xoffset, self.headerpadypos, xpos, self.headerpadypos, self.maxx - 1)
+			self.headerpad.noutrefresh(0, self.xoffset, self.headerpadypos, xpos, self.headerpadypos, maxx)
 		if self.listpad is not None:
 			if self.borders == True:
-				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 3, self.maxx - 1)
-				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.listpadypos, self.maxy - 3, self.listpadheight, self.yoffset, attr_to_curses_merged("main", "boxdrawing"))
-				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, self.listpadxpos, self.maxx - 1, self.listpadwidth - 1, self.xoffset, attr_to_curses_merged("main", "boxdrawing"))
+				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 3, maxx)
+				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, maxx + 1, self.listpadypos, self.maxy - 3, self.listpadheight, self.yoffset, attr_to_curses_merged("main", "boxdrawing"))
+				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, self.listpadxpos, maxx, self.listpadwidth - 1, self.xoffset, attr_to_curses_merged("main", "boxdrawing"))
 			else:
-				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 2, self.maxx)
+				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
 
 	# Recalculate the xpos of the log; this is needed when timestamps are toggled
 	def recalculate_logpad_xpos(self, tspadxpos = -1, timestamps = None):
@@ -1680,18 +1685,23 @@ class UIProps:
 	def resize_logpad(self, height, width):
 		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos)
 		if height != -1:
-			self.tspadheight = height
-			self.logpadheight = height
+			if self.borders == True:
+				self.tspadheight = height
+				self.logpadheight = height
+			else:
+				self.tspadheight = height + 1
+				self.logpadheight = height + 1
 		if width != -1:
 			self.logpadminwidth = self.maxx - self.logpadxpos
 			self.logpadwidth = max(width, self.logpadminwidth)
 
 		if self.logpadheight > 0:
-			if self.tspad is not None:
+			if self.tspad is not None and self.tspadxpos != self.logpadxpos:
 				self.tspad.resize(self.tspadheight + 1, self.tspadwidth + 1)
 			self.logpad.resize(self.logpadheight + 1, self.logpadwidth + 1)
 		self.maxyoffset = max(0, self.loglen - self.logpadheight)
 		self.maxxoffset = max(0, self.logpadwidth - self.logpadminwidth)
+		self.yoffset = min(self.yoffset, self.maxyoffset)
 
 	def refresh_logpad(self):
 		if self.logpad is None:
@@ -1731,6 +1741,8 @@ class UIProps:
 			self.borders = not self.borders
 		else:
 			self.borders = borders
+
+		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos)
 
 	def init_statusbar(self):
 		self.resize_statusbar()
