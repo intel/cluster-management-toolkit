@@ -289,40 +289,40 @@ def generate_heatmap(maxwidth, stgroups, selected):
 	selectedblock = theme["boxdrawing"].get("block", "█")
 	x = 0
 
-	colour = -1
+	color = -1
 	tmp = ""
 
 	# Try to make minimise the colour changes
 	for i in range(0, len(stgroups)):
 		heat = stgroups[i]
-		nextcolour = color_status_group(heat, False)
+		nextcolor = color_status_group(heat, False)
 		if selected == i:
 			sblock = selectedblock
 		else:
 			sblock = block
 
 		if x > maxwidth:
-			row.append((tmp, colour))
+			row.append((tmp, color))
 			x = 0
 			array.append(row)
-			colour = -1
+			color = -1
 			row = []
 
 		# If we have a new colour we need a new element in the array,
 		# otherwise we just extend the current element
-		if colour == -1:
-			colour = nextcolour
+		if color == -1:
+			color = nextcolor
 			tmp = f"{sblock}"
-		elif nextcolour == colour:
+		elif nextcolor == color:
 			tmp += f"{sblock}"
-		elif nextcolour != colour:
-			row.append((tmp, colour))
+		elif nextcolor != color:
+			row.append((tmp, color))
 			tmp = f"{sblock}"
-			colour = nextcolour
+			color = nextcolor
 
 		x += 1
 		if i == len(stgroups) - 1:
-			row.append((tmp, colour))
+			row.append((tmp, color))
 			array.append(row)
 			break
 
@@ -1628,8 +1628,8 @@ class UIProps:
 		if self.listpad is not None:
 			if self.borders == True:
 				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 3, maxx)
-				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, maxx + 1, self.listpadypos, self.maxy - 3, self.listpadheight, self.yoffset, attr_to_curses_merged("main", "boxdrawing"))
-				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, self.listpadxpos, maxx, self.listpadwidth - 1, self.xoffset, attr_to_curses_merged("main", "boxdrawing"))
+				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, x = maxx + 1, miny = self.listpadypos, maxy = self.maxy - 3, height = self.listpadheight, yoffset = self.yoffset, clear_color = attr_to_curses_merged("main", "boxdrawing"))
+				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, y = self.maxy - 2, minx = self.listpadxpos, maxx = maxx, width = self.listpadwidth - 1, xoffset = self.xoffset, clear_color = attr_to_curses_merged("main", "boxdrawing"))
 			else:
 				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
 

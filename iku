@@ -7262,7 +7262,8 @@ def clusteroverviewloop(stdscr, view):
 			pod_heatmap = curses_helper.generate_heatmap(((uip.maxx - uip.minx - 1) // 2) - 1, pod_statuses, selected_pod)
 
 			# Resize the list pad to fit the heatmaps
-			uip.resize_listpad(max(len(node_heatmap), len(pod_heatmap), uip.maxy - 1), -1)
+			# XXX this needs to be fixed when we add more information
+			uip.resize_listpad(max(len(node_heatmap), len(pod_heatmap)), -1)
 
 		namearray = [
 			("Control Plane: ", ("main", "infoheader")),
@@ -14000,7 +14001,7 @@ infoviews = {
 				"formatting": {
 					"item_separators": [("", curses.A_NORMAL)],
 					"field_separators": [("", curses.A_NORMAL)],
-					"field_colours": [("types", "generic")],
+					"field_colors": [("types", "generic")],
 					"conditionals": {
 						"<<<none>>>": {
 							"substitute": "",
@@ -14014,7 +14015,7 @@ infoviews = {
 				"formatting": {
 					"item_separators": [("", curses.A_NORMAL)],
 					"field_separators": [("", curses.A_NORMAL)],
-					"field_colours": [("types", "generic")],
+					"field_colors": [("types", "generic")],
 					"conditionals": {
 						"<<<none>>>:<<<0>>>": {
 							"substitute": "Record",
