@@ -464,6 +464,89 @@ def split_wd_mmm_dd_hh_mm_ss_yyyy_timestamp(message, timestamp):
 
 	return message, timestamp
 
+# http:
+# 10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"
+# 10.244.0.1 - - [29/Jan/2022:10:33:50 +0000] "GET /v0/healthz/ HTTP/1.1" 200 3 "http://10.244.0.123:8000/v0/healthz" "kube-probe/1.23"
+def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
+	remnants = []
+	reformat_timestamps = deep_get(options, "reformat_timestamps", False)
+
+	tmp = re.match(r"^(\d+\.\d+\.\d+\.\d+)"
+			"( - - )"
+			"(\[)"
+			"(\d\d)"
+			"/"
+			"([A-Z][a-z][a-z])"
+			"/"
+			"(\d{4})"
+			":"
+			"(\d\d:\d\d:\d\d)"
+			"(\s\+\d{4}|\s-\d{4})"
+			"(\])"
+			"(\s\")"
+			"([A-Z]*?\s)"
+			"(\S*?)"
+			"(\s\S*?)"
+			"(\"\s)"
+			"(\d+?)"
+			"(\s\d+?\s\")"
+			"(.*?)"
+			"(\"\s\")"
+			"(.*?)"
+			"(\")", message)
+
+	if tmp is not None:
+		address1 = tmp[1]
+		separator1 = tmp[2]
+		separator2 = tmp[3]
+		day = tmp[4]
+		_month = tmp[5]
+		month = month_to_numerical(_month)
+		year = tmp[6]
+		hms = tmp[7]
+		tz = tmp[8]
+		if reformat_timestamps == True:
+			ts = f"{year}-{month}-{day} {hms}{tz}"
+		else:
+			ts = f"{day}/{_month}/{year}:{hms}{tz}"
+		separator3 = tmp[9]
+		separator4 = tmp[10]
+		verb = tmp[11]
+		address3 = tmp[12]
+		protocol = tmp[13]
+		separator5 = tmp[14]
+		statuscode = tmp[15]
+		_statuscode = int(statuscode)
+		if _statuscode >= 100 and _statuscode < 300:
+			severity = loglevel.NOTICE
+		if _statuscode >= 300 and _statuscode < 400:
+			severity = loglevel.WARNING
+		if _statuscode >= 400:
+			severity = loglevel.ERR
+		separator6 = tmp[16]
+		address4 = tmp[17]
+		separator7 = tmp[18]
+		address5 = tmp[19]
+		separator8 = tmp[20]
+		message = [
+			(address1, ("logview", "hostname")),
+			(separator1, ("logview", "severity_info")),
+			(f"{separator2}{ts}{separator3}", ("logview", "timestamp")),
+			(separator4, ("logview", "severity_info")),
+			(verb, ("logview", "protocol")),
+			(address3, ("logview", "url")),
+			(protocol, ("logview", "protocol")),
+			(separator5, ("logview", "severity_info")),
+			(statuscode, ("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+			(separator6, ("logview", "severity_info")),
+			(address4, ("logview", "url")),
+			(separator7, ("logview", "severity_info")),
+			(address5, ("logview", "url")),
+			(separator8, ("logview", "severity_info")),
+		]
+
+	return message, severity, facility
+
 # Will split messages of the format into ISO-8601 timestamp + message
 # 10.32.0.1 - - [22/Feb/2020:16:34:30 +0000] "GET / HTTP/1.1" 200 6 " [...]
 # 10.32.0.1 - [10.32.0.1] - - [10/Feb/2020:23:10:25 +0000] [...]
@@ -540,6 +623,7 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 	timestamps = options.get("timestamps", ["ts", "time", "timestamp"])
 	severities = options.get("severities", ["level"])
 	facilities = options.get("facilities", ["logger", "caller", "filename"])
+	versions = options.get("versions", [])
 
 	try:
 		logentry = json.loads(message)
@@ -586,10 +670,34 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 				logentry.pop(_ts, None)
 
 		if facility == "":
-			facility = deep_get_with_fallback(logentry, facilities, "")
+			for _fac in facilities:
+				if type(_fac) == str:
+					facility = deep_get(logentry, _fac, "")
+					break
+				elif type(_fac) == dict:
+					_facilities = deep_get(_fac, "keys", [])
+					_separators = deep_get(_fac, "separators", [])
+					for i in range(0, len(_facilities)):
+						# This is to allow prefixes/suffixes
+						if _facilities[i] != "":
+							if _facilities[i] not in logentry:
+								break
+							facility += str(deep_get(logentry, _facilities[i], ""))
+						if i < len(_separators):
+							facility += _separators[i]
+
 		if logparser_configuration.pop_facility == True:
 			for _fac in facilities:
-				logentry.pop(_fac, None)
+				if type(_fac) == str:
+					logentry.pop(_fac, None)
+				elif type(_fac) == dict:
+					# This is a list, since the order of the facilities matter when outputting
+					# it doesn't matter when popping though
+					for __fac in deep_get(_fac, "keys", []):
+						if __fac == "":
+							continue
+						else:
+							logentry.pop(__fac, None)
 
 		if level is not None:
 			severity = str_to_severity(level)
@@ -647,22 +755,24 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 
 			if len(logentry) > 0:
 				if structseverity == loglevel.DEBUG:
-					override_formatting = ("logview", f"severity_{loglevel_to_name(structseverity).lower()}")
+					override_formatting = ("logview", f"severity_debug")
 				else:
-					override_formatting = {
-						"\"msg\"": {
+					override_formatting = {}
+					for _msg in versions:
+						override_formatting[f"\"{_msg}\""] = {
+							"key": ("types", "yaml_key"),
+							"value": ("logview", "severity_notice")
+						}
+					for _msg in messages:
+						override_formatting[f"\"{_msg}\""] = {
 							"key": ("types", "yaml_key"),
 							"value": ("logview", f"severity_{loglevel_to_name(msgseverity).lower()}")
-						},
-						"\"err\"": {
-							"key": ("types", "yaml_key_error"),
-							"value": ("logview", f"severity_{loglevel_to_name(errorseverity).lower()}")
-						},
-						"\"error\"": {
-							"key": ("types", "yaml_key_error"),
-							"value": ("logview", f"severity_{loglevel_to_name(errorseverity).lower()}")
 						}
-					}
+					for _err in errors:
+						override_formatting[f"\"{_err}\""] = {
+							"key": ("types", "yaml_key_error"),
+							"value": ("logview", f"severity_{loglevel_to_name(errorseverity).lower()}"),
+						}
 				dump = json_dumps(logentry)
 				tmp = format_yaml([dump], override_formatting = override_formatting)
 				remnants = []
@@ -675,7 +785,16 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 
 	return message, severity, facility, remnants
 
-def split_json_style_raw(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}, merge_message = False):
+def merge_message(message, remnants = None, severity = loglevel.INFO):
+	if remnants is not None:
+		remnants = [(message, severity)] + remnants
+	else:
+		remnants = [(message, severity)]
+	message = ""
+
+	return message, remnants
+
+def split_json_style_raw(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}, merge_msg = False):
 	global logparser_configuration
 
 	tmp_msg_first = logparser_configuration.msg_first
@@ -698,11 +817,15 @@ def split_json_style_raw(message, severity = loglevel.INFO, facility = "", fold_
 	logparser_configuration.pop_ts = tmp_pop_ts
 	logparser_configuration.pop_facility = tmp_pop_facility
 
-	if merge_message == True:
-		remnants = [(_message, severity)] + _remnants
-		message = ""
+	if merge_msg == True:
+		message, remnants = merge_message(message, _remnants, severity)
 	else:
 		remnants = _remnants
+
+	if severity is None:
+		severity = _severity
+	if facility == "":
+		facility = _facility
 
 	return message, severity, facility, remnants
 
@@ -720,7 +843,7 @@ def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True
 
 	if event in ["AddPod", "DeletePod", "AddNamespace", "DeleteNamespace"] or (event in ["UpdatePod", "UpdateNamespace"] and not "} {" in tmp[2]):
 		msg = tmp[2]
-		_message, _severity, _facility, remnants = split_json_style_raw(message = msg, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_message = True)
+		_message, _severity, _facility, remnants = split_json_style_raw(message = msg, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_msg = True)
 		message = f"{tmp[0]} {event}"
 		if event in ["UpdatePod", "UpdateNamespace"]:
 			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [No changes]", ("logview", f"unchanged"))]
@@ -1440,6 +1563,7 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 	timestamps = options.get("timestamps", ["t", "ts", "time"])
 	severities = options.get("severities", ["level", "lvl"])
 	facilities = options.get("facilities", ["source", "subsys", "caller", "logger", "Topic"])
+	versions = options.get("versions", [])
 
 	# Replace embedded quotes with fancy quotes
 	message = message.replace("\\\"", "”")
@@ -1475,14 +1599,36 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 		msg = deep_get_with_fallback(d, messages, "")
 		if msg.startswith("\"") and msg.endswith("\""):
 			msg = msg[1:-1]
-		version = d.get("version", "")
-		if version.startswith("\"") and version.endswith("\""):
-			version = version[1:-1]
+		version = deep_get_with_fallback(d, versions, "").strip("\"")
 
-		facility = deep_get_with_fallback(d, facilities, facility).strip("\"")
+		if facility == "":
+			for _fac in facilities:
+				if type(_fac) == str:
+					facility = deep_get(d, _fac, "")
+					break
+				elif type(_fac) == dict:
+					_facilities = deep_get(_fac, "keys", [])
+					_separators = deep_get(_fac, "separators", [])
+					for i in range(0, len(_facilities)):
+						# This is to allow prefixes/suffixes
+						if _facilities[i] != "":
+							if _facilities[i] not in d:
+								break
+							facility += str(deep_get(d, _facilities[i], ""))
+						if i < len(_separators):
+							facility += _separators[i]
 		if logparser_configuration.pop_facility == True:
 			for _fac in facilities:
-				d.pop(_fac, None)
+				if type(_fac) == str:
+					d.pop(_fac, None)
+				elif type(_fac) == dict:
+					# This is a list, since the order of the facilities matter when outputting
+					# it doesn't matter when popping though
+					for __fac in deep_get(_fac, "keys", []):
+						if __fac == "":
+							continue
+						else:
+							d.pop(__fac)
 
 		if fold_msg == False and len(d) == 2 and logparser_configuration.merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
 			message = f"{msg} {version}"
@@ -1548,6 +1694,8 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 				if fold_msg == False:
 					if item == "collector" and logparser_configuration.bullet_collectors == True:
 						tmp.append(f"• {d[item]}")
+					elif item in versions:
+						tmp.append(format_key_value(item, d[item], loglevel.NOTICE, force_severity = True))
 					else:
 						tmp.append(format_key_value(item, d[item], severity))
 				else:
@@ -2391,6 +2539,9 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 			elif _filter[0] == "custom_splitter":
 				_parser_options = _filter[1]
 				message, severity, facility = custom_splitter(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
+			elif _filter[0] == "http":
+				_parser_options = _filter[1]
+				message, severity, facility = http(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "json":
 				_parser_options = _filter[1]
 				if message.startswith("{\""):
@@ -2399,12 +2550,16 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 				_parser_options = _filter[1]
 				parts = message.split("{", 1)
 				if len(parts) == 2:
-					if severity is None:
-						message = [(parts[0], ("logview", "severity_info"))]
-						_message, severity, facility, remnants = split_json_style_raw("{" + parts[1], severity = loglevel.INFO, facility = facility, fold_msg = fold_msg, options = _parser_options, merge_message = True)
+					# No leading message
+					if len(parts[0]) == 0:
+						message, severity, facility, remnants = split_json_style("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 					else:
-						message = [(parts[0], ("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
-						_message, severity, facility, remnants = split_json_style_raw("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options, merge_message = True)
+						_message, severity, facility, remnants = split_json_style("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
+						_severity = severity
+						if _severity is None:
+							_severity = loglevel.INFO
+						_message, remnants = merge_message(_message, remnants, severity = severity)
+						message = [(parts[0], ("logview", f"severity_{loglevel_to_name(_severity).lower()}"))]
 			elif _filter[0] == "json_event":
 				_parser_options = _filter[1]
 				# We don't extract the facility/severity from folded messages, so just skip if fold_msg == True
@@ -2659,7 +2814,7 @@ def init_parser_list():
 						rule_name = rule.get("name")
 						if rule_name in ["colon_severity", "directory", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"]:
 							rules.append(rule_name)
-						elif rule_name in ["json", "json_with_leading_message", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
+						elif rule_name in ["http", "json", "json_with_leading_message", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
 							rules.append((rule_name, rule.get("options", {})))
 						elif rule_name == "substitute_bullets":
 							prefix = rule.get("prefix", "* ")
@@ -2755,7 +2910,15 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 	if override_parser is not None:
 		# Any other timestamps (as found in the logs) are ignored
 		try:
-			pod_name, severity, message, remnants = eval(override_parser)(message, fold_msg = fold_msg)
+			for parser in parsers:
+				if parser.parser_name == override_parser:
+					if type(parser.parser) == tuple and parser.parser[0] == "custom":
+						options = {
+							"__line": line,
+						}
+						pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1], options = options)
+					else:
+						pod_name, severity, message, remnants = eval(parser.parser)(message, fold_msg = fold_msg)
 			return timestamp, pod_name, severity, message, remnants, ("<override>", str(override_parser))
 		except Exception as e:
 			return timestamp, "", loglevel.ERR, f"Could not parse using {str(override_parser)}:", [(message, loglevel.INFO)], ("<override>", str(override_parser))
