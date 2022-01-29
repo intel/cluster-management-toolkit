@@ -1772,7 +1772,10 @@ class UIProps:
 		if win != self.stdscr:
 			win.resize(newmaxy, newmaxx)
 		elif win == self.stdscr and (winmaxy, winmaxx) != (newmaxy, newmaxx):
-			raise Exception("Cannot resize stdscr dynamically")
+			# If there's an attempt to print a message that would resize the window,
+			# just pretend success instead of raising an exception
+			cury, curx = win.getyx()
+			return cury, curx
 		if y == -1:
 			y = cury
 		if x == -1:
