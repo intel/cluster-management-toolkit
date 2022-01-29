@@ -8315,6 +8315,8 @@ def field_processor_conditions(obj, path, extra_paths = None, fallback = None, f
 	conditions = get_conditions(deep_get(obj, path))
 	field = []
 
+	completed = False
+
 	for condition, state, reason, message in conditions:
 		# These are inverted; False means that everything is fine, True means things are bad
 		# Showing them when they're causing issues feels wrong
@@ -8329,6 +8331,11 @@ def field_processor_conditions(obj, path, extra_paths = None, fallback = None, f
 		elif state == "False":
 			condition = f"!{condition}"
 
+		# If the pod has completed we need no other conditions
+		if reason == "PodCompleted":
+			completed = True
+			break
+
 		if state == "False":
 			status_group = stgroup.NOT_OK
 		elif state == "True":
@@ -8338,6 +8345,9 @@ def field_processor_conditions(obj, path, extra_paths = None, fallback = None, f
 			status_group = stgroup.UNKNOWN
 
 		field.append((f"{condition} ", color_status_group(status_group)))
+
+	if completed == True:
+		field = [("PodCompleted", color_status_group(stgroup.DONE))]
 
 	return field
 
