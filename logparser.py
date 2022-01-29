@@ -38,7 +38,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 import iktlib
-from iktlib import deep_get, deep_get_with_fallback, format_yaml, format_yaml_line
+from iktlib import deep_get, deep_get_with_fallback
 
 HOMEDIR = str(Path.home())
 IKTDIR = os.path.join(HOMEDIR, ".ikt")
@@ -774,7 +774,7 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 							"value": ("logview", f"severity_{loglevel_to_name(errorseverity).lower()}"),
 						}
 				dump = json_dumps(logentry)
-				tmp = format_yaml([dump], override_formatting = override_formatting)
+				tmp = iktlib.format_yaml([dump], override_formatting = override_formatting)
 				remnants = []
 				if len(message) == 0:
 					message = tmp[0]
@@ -871,7 +871,7 @@ def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True
 				elif el.startswith("-"):
 					remnants.append((el, loglevel.DIFFMINUS))
 				else:
-					remnants.append((format_yaml_line(el), loglevel.DIFFSAME))
+					remnants.append((iktlib.format_yaml_line(el), loglevel.DIFFSAME))
 			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [State modified]", ("logview", f"modified"))]
 	else:
 		sys.exit(f"json_event: Unknown EVENT type:\n{message}")
@@ -2298,13 +2298,13 @@ def json_line_scanner(message, fold_msg = True, options = {}):
 	message, _timestamp = split_iso_timestamp(message, None)
 
 	if message == "}".rstrip():
-		remnants = format_yaml_line(message, override_formatting = {})
+		remnants = iktlib.format_yaml_line(message, override_formatting = {})
 		processor = ["end_block", None]
 	elif message.lstrip() != message:
-		remnants = format_yaml_line(message, override_formatting = {})
+		remnants = iktlib.format_yaml_line(message, override_formatting = {})
 		processor = ["block", json_line_scanner]
 	elif len(message.strip()) == 0 and allow_empty_lines == True:
-		remnants = format_yaml_line(message, override_formatting = {})
+		remnants = iktlib.format_yaml_line(message, override_formatting = {})
 		processor = ["block", json_line_scanner]
 	else:
 		remnants = None
@@ -2343,7 +2343,7 @@ def json_line(message, fold_msg = True, options = {}):
 
 	if matched == True:
 		if format_block_start == True:
-			remnants = format_yaml_line(message, override_formatting = {})
+			remnants = iktlib.format_yaml_line(message, override_formatting = {})
 		else:
 			remnants = message
 		message = ["start_block", json_line_scanner, options]
@@ -2383,12 +2383,12 @@ def yaml_line_scanner(message, fold_msg = True, options = {}):
 				matched = False
 
 	if matched == True:
-		remnants = format_yaml_line(message, override_formatting = {})
+		remnants = iktlib.format_yaml_line(message, override_formatting = {})
 		processor = ["block", yaml_line_scanner, options]
 	else:
 		if process_block_end == True:
 			if format_block_end == True:
-				remnants = format_yaml_line(message, override_formatting = {})
+				remnants = iktlib.format_yaml_line(message, override_formatting = {})
 			else:
 				remnants = [(message, ("logview", "severity_info"))]
 			processor = ["end_block", None]
@@ -2428,7 +2428,7 @@ def yaml_line(message, fold_msg = True, options = {}):
 
 	if matched == True:
 		if format_block_start == True:
-			remnants = format_yaml_line(message, override_formatting = {})
+			remnants = iktlib.format_yaml_line(message, override_formatting = {})
 		else:
 			remnants = message
 		message = ["start_block", yaml_line_scanner, options]

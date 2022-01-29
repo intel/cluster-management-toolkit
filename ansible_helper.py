@@ -83,7 +83,7 @@ def ansible_ping(inventory, selection = "all"):
 	result = subprocess.run(ansible_command, stdout = PIPE, stderr = PIPE, universal_newlines = True)
 
 	for line in result.stdout.splitlines():
-		tmp = re.match("^(.*?) \| (.*?):? (.*)", line)
+		tmp = re.match(r"^(.*?) \| (.*?):? (.*)", line)
 		if tmp is not None:
 			host = tmp[1]
 			status = tmp[2]
@@ -174,7 +174,7 @@ def ansible_get_inventory_pretty(groups = None, highlight = False, include_group
 		i = 0
 		for i in range(0, len(dump)):
 			# Is it a list?
-			tmp = re.match("^(\s*)((- )+)(.*)", dump[i])
+			tmp = re.match(r"^(\s*)((- )+)(.*)", dump[i])
 			if tmp is not None:
 				indent = tmp[1]
 				listmarker = tmp[2]
@@ -183,7 +183,7 @@ def ansible_get_inventory_pretty(groups = None, highlight = False, include_group
 				continue
 
 			# Is it key: value?
-			tmp = re.match("(.*?)(:)(.*)", dump[i])
+			tmp = re.match(r"(.*?)(:)(.*)", dump[i])
 			if tmp is not None:
 				key = tmp[1]
 				separator = tmp[2]
@@ -693,7 +693,7 @@ def ansible_get_logs():
 		#if os.path.isdir(item) == False:
 		#	continue
 
-		tmp = re.match("^(\d\d\d\d-\d\d-\d\d_\d\d:\d\d:\d\d\.\d+)_(.*)", item)
+		tmp = re.match(r"^(\d\d\d\d-\d\d-\d\d_\d\d:\d\d:\d\d\.\d+)_(.*)", item)
 		if tmp is not None:
 			date = datetime.strptime(tmp[1], "%Y-%m-%d_%H:%M:%S.%f")
 			full_name = item
@@ -716,7 +716,7 @@ def ansible_write_log(start_date, playbook, ansible_results):
 
 	playbook_name = playbook
 	if "/" in playbook_name:
-		tmp = re.match(".*/(.*).yaml", playbook)
+		tmp = re.match(r".*/(.*).yaml", playbook)
 		playbook_name = tmp[1]
 
 	directory_name = f"{start_date}_{playbook_name}".replace(" ", "_")

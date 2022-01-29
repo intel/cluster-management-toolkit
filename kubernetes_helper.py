@@ -67,7 +67,7 @@ class KubernetesHelper:
 			if "--" in name:
 				invalid = True
 			# As is any port-name that doesn't contain any character in [a-z]
-			if re.match(".*[a-z].*", name.lower()) is None:
+			if re.match(r".*[a-z].*", name.lower()) is None:
 				invalid = True
 			# A portname can be at most 15 characters long
 			# and cannot start or end with "-"

@@ -113,7 +113,7 @@ def join_tuple_list(items, _tuple = "", item_prefix = None, item_suffix = None, 
 def age_to_seconds(age):
 	seconds = 0
 
-	tmp = re.match("^(\d+d)?(\d+h)?(\d+m)?(\d+s)?", age)
+	tmp = re.match(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?", age)
 	if tmp is not None:
 		if len(tmp[0]) == 0:
 			seconds = -1
@@ -188,7 +188,7 @@ def format_yaml_line(line, override_formatting = {}):
 		]
 		return tmpline
 	if line.lstrip(" ").startswith("- "):
-		tmp = re.match("^(\s*?)- (.*)", line)
+		tmp = re.match(r"^(\s*?)- (.*)", line)
 		tmpline += [
 			(f"{tmp[1]}", generic_format),
 			list_format,
@@ -273,4 +273,492 @@ def format_yaml(objects, override_formatting = {}):
 			dumps.append([("", generic_format)])
 			dumps.append([("", generic_format)])
 
+	return dumps
+
+# Take a certificate and highlight the markup
+def format_crt(cert):
+	dumps = []
+
+	for line in cert:
+		if line in ["-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----"]:
+			dumps.append([(line, ("types", "separator"))])
+		else:
+			dumps.append([(line, ("types", "generic"))])
+	return dumps
+
+# Take a CaddyFile and highlight the markup
+def format_caddyfile(lines):
+	dumps = []
+
+	i = 0
+
+	single_site = True
+	site = False
+
+	for line in lines:
+		tmpline = []
+
+		# Empty line
+		if len(line) == 0 and len(tmpline) == 0:
+			tmpline = [
+				("", ("types", "xml_content")),
+			]
+
+		directive = False
+		block_depth = 0
+
+		while len(line) > 0:
+			# Is this a comment?
+			if "#" in line:
+				tmpline += [
+					(line, ("types", "caddyfile_comment")),
+				]
+				line = ""
+				continue
+
+			# Are we opening a block?
+			tmp = re.match(r"(\s*)({)(.*)", line)
+			if tmp is not None:
+				block_depth += 1
+				if len(tmp[1]) > 0:
+					tmpline += [
+						(tmp[1], ("types", "caddyfile_block")),
+					]
+				tmpline += [
+					(tmp[2], ("types", "caddyfile_block")),
+				]
+				line = tmp[3]
+				if site == True:
+					single_site = False
+				continue
+
+			# Is this a snippet?
+			tmp = re.match(r"(\s*)(\(.+?\))(.*)", line)
+			if tmp is not None:
+				if len(tmp[1]) > 0:
+					tmpline += [
+						(tmp[1], ("types", "caddyfile_snippet")),
+					]
+				tmpline += [
+					(tmp[2], ("types", "caddyfile_snippet")),
+				]
+				line = tmp[3]
+				continue
+
+			# Is this a site?
+			tmp = re.match(r"(\s*)(.+?)(\s+{\s*$|$)", line)
+			if tmp is not None:
+				if block_depth == 0 and site == False and (single_site == True or "{" in tmp[3]):
+					if len(tmp[1]) > 0:
+						tmpline += [
+							(tmp[1], ("types", "caddyfile_site")),
+						]
+					tmpline += [
+						(tmp[2], ("types", "caddyfile_site")),
+					]
+					line = tmp[3]
+					site = True
+					single_site = False
+					continue
+
+			# Are we closing a block?
+			tmp = re.match(r"(\s*)(}\s*$)", line)
+			if tmp is not None:
+				block_depth -= 1
+				if len(tmp[1]) > 0:
+					tmpline += [
+						(tmp[1], ("types", "caddyfile_block")),
+					]
+				tmpline += [
+					(tmp[2], ("types", "caddyfile_block")),
+				]
+				line = ""
+				continue
+
+			# Is this a matcher?
+			tmp = re.match(r"(\s*)(@.*?|\*/.*?)(\s.*)", line)
+			if tmp is not None:
+				if len(tmp[1]) > 0:
+					tmpline += [
+						(tmp[1], ("types", "caddyfile_matcher")),
+					]
+				tmpline += [
+					(tmp[2], ("types", "caddyfile_matcher")),
+				]
+				line = tmp[3]
+				continue
+
+			# Is this a directive?
+			if directive == False:
+				tmp = re.match(r"(\s*)(.+?)(\s.*|$)", line)
+				if tmp is not None:
+					if len(tmp[1]) > 0:
+						tmpline += [
+							(tmp[1], ("types", "caddyfile_directive")),
+						]
+					tmpline += [
+						(tmp[2], ("types", "caddyfile_directive")),
+					]
+					line = tmp[3]
+					directive = True
+					continue
+			else:
+				# OK, we have a directive already, and this isn't a matcher or a block,
+				# which means that it's an argument
+				tmp = re.match(r"(.*?)(\s{\s*$|$)", line)
+				if tmp is not None:
+					tmpline += [
+						(tmp[1], ("types", "caddyfile_argument")),
+					]
+					line = tmp[2]
+					continue
+
+		dumps.append(tmpline)
+
+	return dumps
+
+# Take an NGINX file and apply syntax highlighting
+def format_nginx(lines):
+	dumps = []
+
+	for line in lines:
+		dump = []
+		if len(line.strip()) == 0:
+			if len(dump) == 0:
+				dump += [
+					("", ("types", "generic"))
+				]
+			dumps.append(dump)
+			continue
+
+		# key {
+		# key value[ value...];
+		# key value[ value...] {
+		tmp = re.match(r"^(\s*)(#.*$|}|\S+|$)(.+;|.+{|)(\s*#.*$|)", line)
+		if tmp is not None:
+			if len(tmp[1]) > 0:
+				dump += [
+					(tmp[1], ("types", "generic")),	# whitespace
+				]
+			if len(tmp[2]) > 0:
+				if tmp[2] == "}":
+					dump += [
+						(tmp[2], ("types", "generic")),	# block end
+					]
+				elif tmp[2].startswith("#"):
+					dump += [
+						(tmp[2], ("types", "nginx_comment"))
+					]
+				else:
+					dump += [
+						(tmp[2], ("types", "nginx_key"))
+					]
+			if len(tmp[3]) > 0:
+					dump += [
+						(tmp[3][:-1], ("types", "nginx_value")),
+						(tmp[3][-1:], ("types", "generic")),	# block start / statement end
+					]
+			if len(tmp[4]) > 0:
+				dump += [
+					(tmp[4], ("types", "nginx_comment"))
+				]
+			dumps.append(dump)
+		else:
+			sys.exit(f"__format_nginx(): Couldn't match line={line}")
+	return dumps
+
+# Take an XML file and highlight the markup
+def format_xml(lines):
+	dumps = []
+	tag_open = False
+	tag_named = False
+	comment = False
+
+	i = 0
+	for line in lines:
+		tmpline = []
+
+		# Empty line
+		if len(line) == 0 and len(tmpline) == 0:
+			tmpline = [
+				("", ("types", "xml_content")),
+			]
+
+		while len(line) > 0:
+			before = line
+			if tag_open == False:
+				# Are we opening a tag?
+				tmp = re.match(r"(\s*)(</|<!--|<\?|<)(.*)", line)
+				if tmp is not None:
+					tag_open = True
+					tag_named = False
+
+					# Don't add 0-length "indentation"
+					if len(tmp[1]) > 0:
+						tmpline += [
+							(tmp[1], ("types", "xml_declaration")),
+						]
+
+					if tmp[2] == "<?":
+						# declaration tags are implicitly named
+						tag_named = True
+						tmpline += [
+							(tmp[2], ("types", "xml_declaration")),
+						]
+						line = tmp[3]
+						continue
+					elif tmp[2] == "<!--":
+						comment = True
+						tmpline += [
+							(tmp[2], ("types", "xml_comment")),
+						]
+						line = tmp[3]
+						continue
+					else:
+						tmpline += [
+							(tmp[2], ("types", "xml_tag")),
+						]
+						line = tmp[3]
+						continue
+
+				# Is this an escape?
+				tmp = re.match(r"(\s*)(&)(.+?)(;)(.*)", line)
+				if tmp is not None:
+					tmpline += [
+						(tmp[1], ("types", "xml_content")),
+						(tmp[2], ("types", "xml_escape")),
+						(tmp[3], ("types", "xml_escape_data")),
+						(tmp[4], ("types", "xml_escape")),
+					]
+					line = tmp[5]
+					continue
+
+				# Nope, it's content; split to first & or <
+				tmp = re.match(r"(.*?)(<.*|&.*)", line)
+				if tmp is not None:
+					tmpline += [
+						(tmp[1], ("types", "xml_content")),
+					]
+					line = tmp[2]
+				else:
+					tmpline += [
+						(line, ("types", "xml_content")),
+					]
+					line = ""
+			else:
+				# Are we closing a tag?
+				tmp = re.match(r"(\s*)(/>|\?>|-->|>)(.*)", line)
+				if tmp is not None:
+					# Don't add 0-length "indentation"
+					if len(tmp[1]) > 0:
+						tmpline += [
+							(tmp[1], ("types", "xml_comment")),
+						]
+
+					# > is ignored within comments
+					if tmp[2] == ">" and comment == True or tmp[2] == "-->":
+						tmpline += [
+							(tmp[2], ("types", "xml_comment")),
+						]
+						line = tmp[3]
+						if tmp[2] == "-->":
+							comment = False
+							tag_open = False
+						continue
+					elif tmp[2] == "?>":
+						tmpline += [
+							(tmp[2], ("types", "xml_declaration")),
+						]
+						line = tmp[3]
+						tag_open = False
+						continue
+					else:
+						tmpline += [
+							(tmp[2], ("types", "xml_tag")),
+						]
+						line = tmp[3]
+						tag_open = False
+						continue
+
+				if tag_named == False and comment == False:
+					# Is this either "[<]tag", "[<]tag ", "[<]tag>" or "[<]tag/>"?
+					tmp = re.match(r"(.+?)(\s*>|\s*\?>|\s*$|\s+.*)", line)
+					if tmp is not None:
+						tmpline += [
+							(tmp[1], ("types", "xml_tag")),
+						]
+						line = tmp[2]
+						tag_named = True
+						continue
+				else:
+					# This *should* match all remaining cases
+					tmp = re.match(r"(\s*.+?)(=|)(\".+?\"|)(\s*$|\s*/>|\s*\?>|\s*-->|\s*>|\s+)(.*|)", line)
+					if tmp is not None:
+						if comment == True:
+							tmpline += [
+								(tmp[1], ("types", "xml_comment")),
+								(tmp[2], ("types", "xml_comment")),
+								(tmp[3], ("types", "xml_comment")),
+							]
+						else:
+							tmpline += [
+								(tmp[1], ("types", "xml_attribute_key")),
+							]
+
+							if len(tmp[2]) > 0:
+								tmpline += [
+									(tmp[2], ("types", "xml_content")),
+									(tmp[3], ("types", "xml_attribute_value")),
+								]
+						line = tmp[4] + tmp[5]
+						continue
+					else:
+						raise Exception(f"XML syntax highlighter failed to parse {line}")
+			if before == line:
+				raise Exception(f"XML syntax highlighter parse failure at line #{i + 1}:\n{lines}\nParsed fragments of line:\n{tmpline}\nUnparsed fragments of line:\n{line}")
+
+		dumps.append(tmpline)
+		i += 1
+
+	return dumps
+
+# Takes a TOML file and returns a single list of themearray
+def format_toml(lines):
+	# FIXME: necessary improvements:
+	# * Instead of only checking for lines that end with a comment for key = value,
+	#   and for full comment lines, check for lines that end with a comment
+	#   in any situation (except multiline). Split out the comment and add it last.
+	# * Handle quoting and escaping of quotes; \''' shouldn't end a multiline, for instance.
+	# * XXX: should we highlight key=value for inline tables? Probably not
+	# * XXX: should we highlight different types (integer, string, etc.)? Almost certainly not.
+	dumps = []
+	multiline_basic = False
+	multiline_literal = False
+
+	for line in lines:
+		if len(line) == 0:
+			continue
+
+		if multiline_basic == True or multiline_literal == True:
+			tmpline += [
+				(line, ("types", "toml_value")),
+			]
+			dumps.append(tmpline)
+			if multiline_basic == True and line.lstrip(" ").endswith("\"\"\""):
+				multiline_basic = False
+			elif multiline_literal == True and line.lstrip(" ").endswith("'''"):
+				multiline_literal = False
+			continue
+
+		tmpline = []
+		if line.lstrip().startswith("#"):
+			tmpline += [
+				(line, ("types", "toml_comment")),
+			]
+			dumps.append(tmpline)
+			continue
+		elif line.lstrip().startswith("[") and line.rstrip(" ").endswith("]"):
+			tmpline += [
+				(line, ("types", "toml_table")),
+			]
+
+			dumps.append(tmpline)
+			continue
+		else:
+			tmp = re.match(r"^(\s*?)(.*)(\s*?=\s*?)(.*)", line)
+			if tmp is not None:
+				indentation = tmp[1]
+				key = tmp[2]
+				separator = tmp[3]
+				value = tmp[4]
+				if value.rstrip(" ").endswith("\"\"\""):
+					multiline_basic = True
+				elif value.rstrip(" ").endswith("'''"):
+					multiline_literal = True
+				else:
+					# Does this line end with a comment?
+					tmp = re.match(r"^(.*?)(#.*)", value)
+					if tmp is not None:
+						value = tmp[1]
+						comment = tmp[2]
+					else:
+						comment = ""
+				tmpline += [
+					(f"{indentation}", ("types", "generic")),
+					(f"{key}", ("types", "toml_key")),
+					(f"{separator}", ("types", "toml_key_separator")),
+					(f"{value}", ("types", "toml_value")),
+				]
+				if len(comment) > 0:
+					tmpline += [
+						(f"{comment}", ("types", "toml_comment")),
+					]
+				dumps.append(tmpline)
+
+
+			# dumps.append([(line, ("types", "generic"))])
+	return dumps
+
+def format_fluentbit(lines):
+	dumps = []
+
+	for line in lines:
+		if line.lstrip().startswith("#"):
+			tmpline = [
+				(line, ("types", "ini_comment")),
+			]
+		elif line.lstrip().startswith("[") and line.rstrip().endswith("]"):
+			tmpline = [
+				(line, ("types", "ini_section")),
+			]
+		elif len(line.strip()) == 0:
+			tmpline = [
+				("", ("types", "generic")),
+			]
+		else:
+			tmp = re.match(r"^(\s*)(\S*)(\s*)(.*)", line)
+			if tmp is not None:
+				indentation = tmp[1]
+				key = tmp[2]
+				separator = tmp[3]
+				value = tmp[4]
+
+				tmpline = [
+					(f"{indentation}", ("types", "generic")),
+					(f"{key}", ("types", "ini_key")),
+					(f"{separator}", ("types", "ini_key_separator")),
+					(f"{value}", ("types", "ini_value")),
+				]
+		dumps.append(tmpline)
+	return dumps
+
+# Takes an INI file and returns a single list of themearray
+def format_ini(lines):
+	dumps = []
+
+	for line in lines:
+		tmpline = []
+		if line.lstrip().startswith(("#", ";")):
+			tmpline = [
+				(line, ("types", "ini_comment")),
+			]
+		elif line.lstrip().startswith("[") and line.rstrip().endswith("]"):
+			tmpline = [
+				(line, ("types", "ini_section")),
+			]
+		else:
+			tmp = re.match(r"^(\s*?)(.*)(\s*?=\s*?)(.*)", line)
+			if tmp is not None:
+				indentation = tmp[1]
+				key = tmp[2]
+				separator = tmp[3]
+				value = tmp[4]
+
+				tmpline = [
+					(f"{indentation}", ("types", "generic")),
+					(f"{key}", ("types", "ini_key")),
+					(f"{separator}", ("types", "ini_key_separator")),
+					(f"{value}", ("types", "ini_value")),
+				]
+		dumps.append(tmpline)
 	return dumps
