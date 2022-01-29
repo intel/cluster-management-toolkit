@@ -1,4 +1,4 @@
-- name: openshift-olm
+- name: olm
   show_in_selector: false
   matchkeys:
   - pod_name: catalog-operator
@@ -7,7 +7,17 @@
     container_name: olm-operator
   - pod_name: packageserver
     container_name: packageserver
+  - pod_name: packageserver
+    container_name: packageserver
   parser_rules:
   - name: glog
   - name: json
   - name: key_value_with_leading_message
+- name: olm
+  show_in_selector: false
+  matchkeys:
+  - pod_name: operatorhubio-catalog
+    container_name: registry-server
+  parser_rules:
+  - name: strip_ansicodes
+  - name: key_value

@@ -958,7 +958,12 @@ def strip_bracketed_pid(message):
 	return message
 
 def strip_ansicodes(message):
-	tmp = re.findall(r"(\x1b\[\d*m|\x1b\[\d+;\d+m|\x1b\[\d+;\d+;\d+m|.*?)", message)
+	message = message.replace("\\x1b", "\x1b")
+	tmp = re.findall(r"("
+	                  "\x1b\[\d+m|"
+	                  "\x1b\[\d+;\d+m|"
+			  "\x1b\[\d+;\d+;\d+m|"
+			  ".*?)", message)
 	if tmp is not None:
 		message = "".join(item for item in tmp if not item.startswith("\x1b"))
 
@@ -2696,9 +2701,6 @@ builtin_parsers = [
 	("nvidia-operator-validator", "plugin-validation", "", "key_value"),
 	("nvidia-operator-validator", "", "", "basic_8601"),
 	("nvidia-smi-exporter", "", "", "nvidia_smi_exporter"),
-
-	("", "", "quay.io/operator-framework/olm", "kube_parser_structured_glog"),
-	("", "", "quay.io/operatorhubio/catalog", "kube_parser_structured_glog"),
 
 	("parallel-pipeline", "", "", "kube_parser_1"),
 	("pmem-csi-", "", "", "kube_parser_1"),
