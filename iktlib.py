@@ -215,7 +215,10 @@ def format_yaml_line(line, override_formatting = {}):
 			value = tmp[4]
 			if type(override_formatting) == dict:
 				_key_format = deep_get(override_formatting, f"{key.strip()}#key", key_format)
-				_value_format = deep_get(override_formatting, f"{key.strip()}#value", value_format)
+				if value.strip() in ["{", "["]:
+					_value_format = value_format
+				else:
+					_value_format = deep_get(override_formatting, f"{key.strip()}#value", value_format)
 			else:
 				_key_format = key_format
 				_value_format = value_format
