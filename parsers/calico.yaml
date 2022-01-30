@@ -7,6 +7,11 @@
   parser_rules:
   - name: key_value
   - name: json_line
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "CNI plugin version:"
+      loglevel: notice
 - name: calico
   matchkeys:
   - container_name: calico-node
