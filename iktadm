@@ -1416,11 +1416,11 @@ def __find_requested_version(distro, version = None):
 
 	return requested_version
 
-def prepare_installation(options = None, args = None):
+def prepare_installation(options = [], args = None):
 	confirm = True
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
-	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
+	if "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(prepare_tasks)
 		sys.exit(0)
 	elif len(args) == 0:
@@ -1467,31 +1467,30 @@ def prepare_installation(options = None, args = None):
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = "controlplane", skip_all = False)
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = cluster_name, skip_all = True)
 
-	if options is not None:
-		for opt, optarg in options:
-			if opt == "--control-plane":
-				ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = "controlplane", skip_all = False)
-				ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = cluster_name, skip_all = True)
-			elif opt == "--start-at-task":
-				phase = __validate_task_index(prepare_tasks, optarg)
-			elif opt == "--skip-tasks":
-				skip_phases = __expand_index_list(optarg)
-				for __phase in skip_phases:
-					__validate_task_index(prepare_tasks, __phase)
-				phase_skiplist = set(skip_phases)
-			elif opt == "--resume":
-				if phase is None or phase == "<none>":
-					phase = 0
-				elif phase == "<done>":
-					iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed preparation. Exiting.")], stderr = True)
-					sys.exit(0)
+	for opt, optarg in options:
+		if opt == "--control-plane":
+			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = "controlplane", skip_all = False)
+			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = cluster_name, skip_all = True)
+		elif opt == "--start-at-task":
+			phase = __validate_task_index(prepare_tasks, optarg)
+		elif opt == "--skip-tasks":
+			skip_phases = __expand_index_list(optarg)
+			for __phase in skip_phases:
+				__validate_task_index(prepare_tasks, __phase)
+			phase_skiplist = set(skip_phases)
+		elif opt == "--resume":
+			if phase is None or phase == "<none>":
+				phase = 0
+			elif phase == "<done>":
+				iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed preparation. Exiting.")], stderr = True)
+				sys.exit(0)
 
-				else:
-					phase = __validate_task_index(prepare_tasks, phase)
-			elif opt == "-Y":
-				confirm = False
 			else:
-				raise Exception(f"Programming error; invalid option {opt}")
+				phase = __validate_task_index(prepare_tasks, phase)
+		elif opt == "-Y":
+			confirm = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	show_configuration()
 
@@ -1523,7 +1522,7 @@ def prepare_installation(options = None, args = None):
 	iktprint([("• ", "separator"), (f"{about.admin_program_name}", "programname"), (" setup-control-plane ", "command"), ("[", "separator"), ("CNI", "argument"), ("]", "separator"), (" [", "separator"), ("POD_NETWORK_CIDR", "argument"), ("]", "separator")])
 	iktprint([("\nSee “", "separator"), (f"{about.admin_program_name}", "programname"), (" help", "command"), ("“ for more information about valid ", "default"), ("CNI", "argument"), (" options.\n", "default")])
 
-def import_cluster(options = None, args = None):
+def import_cluster(options = [], args = None):
 	if os.path.exists("/etc/hostname"):
 		f = open("/etc/hostname", "r")
 		hostname = f.readline().strip()
@@ -1533,10 +1532,9 @@ def import_cluster(options = None, args = None):
 	# default options
 	confirm = True
 
-	if options is not None:
-		for opt, optarg in options:
-			if opt == "-Y":
-				confirm = False
+	for opt, optarg in options:
+		if opt == "-Y":
+			confirm = False
 
 	from kubernetes_helper import KubernetesHelper
 	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
@@ -1657,16 +1655,15 @@ def import_cluster(options = None, args = None):
 
 	iktprint([("\nCluster import successful", "success")])
 
-def check_for_updates(options, args):
+def check_for_updates(options = [], args = None):
 	# default options
 	update_cache = True
 
-	if options is not None:
-		for opt, optarg in options:
-			if opt == "--no-cache-update":
-				update_cache = False
-			else:
-				raise Exception(f"Programming error; invalid option {opt}")
+	for opt, optarg in options:
+		if opt == "--no-cache-update":
+			update_cache = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	iktprint([("\n[Checking for software updates]", "phase")])
 
@@ -1715,14 +1712,20 @@ def show_configuration():
 	controlplanes = get_control_planes()
 
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
+	if http_proxy is not None and http_proxy == "":
+		http_proxy = None
 	http_proxy_env = os.getenv("http_proxy")
 	if http_proxy_env is not None and http_proxy_env == "":
 		http_proxy_env = None
 	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	if https_proxy is not None and https_proxy == "":
+		https_proxy = None
 	https_proxy_env = os.getenv("https_proxy")
 	if https_proxy_env is not None and https_proxy_env == "":
 		https_proxy_env = None
 	no_proxy = deep_get(iktconfig, "Network#no_proxy", "")
+	if no_proxy is not None and no_proxy == "":
+		no_proxy = None
 	no_proxy_env = os.getenv("no_proxy")
 	if no_proxy_env is not None and no_proxy_env == "":
 		no_proxy_env = None
@@ -1749,11 +1752,11 @@ def show_configuration():
 		for controlplane in controlplanes:
 			iktprint([("            hostname: ", "action"), (f"{controlplane[0]} ", "emphasis"), ("(", "default"), (f"{controlplane[1]}", "emphasis"), (")", "default")])
 
-def setup_control_plane(options, args):
+def setup_control_plane(options = [], args = None):
 	confirm = True
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
-	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
+	if "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(setup_control_plane_tasks)
 		sys.exit(0)
 
@@ -1777,29 +1780,26 @@ def setup_control_plane(options, args):
 	if state == "prepared":
 		phase = 0
 
-	if options is None:
-		phase = 0
-	else:
-		for opt, optarg in options:
-			if opt == "--start-at-task":
-				phase = __validate_task_index(setup_control_plane_tasks, optarg)
-			elif opt == "--skip-tasks":
-				skip_phases = __expand_index_list(optarg)
-				for __phase in skip_phases:
-					__validate_task_index(setup_control_plane_tasks, __phase)
-				phase_skiplist = set(skip_phases)
-			elif opt == "--resume":
-				if phase is None or phase == "<none>":
-					phase = 0
-				elif phase == "<done>":
-					iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed installation. Exiting.")], stderr = True)
-					sys.exit(0)
+	for opt, optarg in options:
+		if opt == "--start-at-task":
+			phase = __validate_task_index(setup_control_plane_tasks, optarg)
+		elif opt == "--skip-tasks":
+			skip_phases = __expand_index_list(optarg)
+			for __phase in skip_phases:
+				__validate_task_index(setup_control_plane_tasks, __phase)
+			phase_skiplist = set(skip_phases)
+		elif opt == "--resume":
+			if phase is None or phase == "<none>":
+				phase = 0
+			elif phase == "<done>":
+				iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed installation. Exiting.")], stderr = True)
+				sys.exit(0)
 
-				phase = __validate_task_index(setup_control_plane_tasks, phase)
-			elif opt == "-Y":
-				confirm = False
-			else:
-				raise Exception(f"Programming error; invalid option {opt}")
+			phase = __validate_task_index(setup_control_plane_tasks, phase)
+		elif opt == "-Y":
+			confirm = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	if cni is None or cni == "<none>":
 		if len(args) == 0:
@@ -1903,11 +1903,11 @@ def get_control_planes(fail_on_empty = True):
 		controlplanes.append((controlplane, ip))
 	return controlplanes
 
-def teardown_control_plane(options, args):
+def teardown_control_plane(options = [], args = None):
 	confirm = True
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
-	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
+	if "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(teardown_control_plane_tasks)
 		sys.exit(0)
 
@@ -1933,29 +1933,26 @@ def teardown_control_plane(options, args):
 		iktprint([("Error: ", "error"), ("The system has no installed cluster; try ", "default"), (f"{about.admin_program_name}", "programname"), (" purge-control-plane", "command"), ("; aborting.", "default")], stderr = True)
 		sys.exit(2)
 
-	if options is None:
-		phase = 0
-	else:
-		for opt, optarg in options:
-			if opt == "--start-at-task":
-				phase = __validate_task_index(teardown_control_plane_tasks, optarg)
-			elif opt == "--skip-tasks":
-				skip_phases = __expand_index_list(optarg)
-				for __phase in skip_phases:
-					__validate_task_index(teardown_control_plane_tasks, __phase)
-				phase_skiplist = set(skip_phases)
-			elif opt == "--resume":
-				if phase is None or phase == "<none>":
-					phase = 0
-				elif phase == "<done>":
-					iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed teardown. Exiting.")], stderr = True)
-					sys.exit(0)
+	for opt, optarg in options:
+		if opt == "--start-at-task":
+			phase = __validate_task_index(teardown_control_plane_tasks, optarg)
+		elif opt == "--skip-tasks":
+			skip_phases = __expand_index_list(optarg)
+			for __phase in skip_phases:
+				__validate_task_index(teardown_control_plane_tasks, __phase)
+			phase_skiplist = set(skip_phases)
+		elif opt == "--resume":
+			if phase is None or phase == "<none>":
+				phase = 0
+			elif phase == "<done>":
+				iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed teardown. Exiting.")], stderr = True)
+				sys.exit(0)
 
-				phase = __validate_task_index(setup_control_plane_tasks, phase)
-			elif opt == "-Y":
-				confirm = False
-			else:
-				raise Exception(f"Programming error; invalid option {opt}")
+			phase = __validate_task_index(setup_control_plane_tasks, phase)
+		elif opt == "-Y":
+			confirm = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	show_configuration()
 
@@ -1972,11 +1969,11 @@ def teardown_control_plane(options, args):
 	run_tasks(tasks = teardown_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "torn_down")
 	iktprint([("\nCluster teardown successful", "success")])
 
-def purge_control_plane(options, args):
+def purge_control_plane(options = [], args = None):
 	confirm = True
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
-	if options is not None and "--list-tasks" in [tmp[0] for tmp in options]:
+	if "--list-tasks" in [tmp[0] for tmp in options]:
 		__list_phases(purge_control_plane_tasks)
 		sys.exit(0)
 
@@ -1995,29 +1992,29 @@ def purge_control_plane(options, args):
 		iktprint([("Error: ", "error"), ("Invalid installation state; there's no fully installed cluster; aborting.", "default")], stderr = True)
 		sys.exit(2)
 
-	if options is None:
+	if len(options) == 0:
 		phase = 0
-	else:
-		for opt, optarg in options:
-			if opt == "--start-at-task":
-				phase = __validate_task_index(teardown_control_plane_tasks, optarg)
-			elif opt == "--skip-tasks":
-				skip_phases = __expand_index_list(optarg)
-				for __phase in skip_phases:
-					__validate_task_index(teardown_control_plane_tasks, __phase)
-				phase_skiplist = set(skip_phases)
-			elif opt == "--resume":
-				if phase is None or phase == "<none>":
-					phase = 0
-				elif phase == "<done>":
-					iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed teardown. Exiting.")], stderr = True)
-					sys.exit(0)
 
-				phase = __validate_task_index(setup_control_plane_tasks, phase)
-			elif opt == "-Y":
-				confirm = False
-			else:
-				raise Exception(f"Programming error; invalid option {opt}")
+	for opt, optarg in options:
+		if opt == "--start-at-task":
+			phase = __validate_task_index(teardown_control_plane_tasks, optarg)
+		elif opt == "--skip-tasks":
+			skip_phases = __expand_index_list(optarg)
+			for __phase in skip_phases:
+				__validate_task_index(teardown_control_plane_tasks, __phase)
+			phase_skiplist = set(skip_phases)
+		elif opt == "--resume":
+			if phase is None or phase == "<none>":
+				phase = 0
+			elif phase == "<done>":
+				iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed teardown. Exiting.")], stderr = True)
+				sys.exit(0)
+
+			phase = __validate_task_index(setup_control_plane_tasks, phase)
+		elif opt == "-Y":
+			confirm = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	# If there's still an installed cluster or if the teardown hasn't finished, teardown the cluster before purging
 	if state in ["installed", "upgraded", "tearing_down"]:
@@ -2049,7 +2046,7 @@ def purge_control_plane(options, args):
 
 	iktprint([("\nNote: ", "note"), ("It's recommended to reboot the control plane(s) after purging the cluster\n", "default")])
 
-def upgrade_control_plane(options, args):
+def upgrade_control_plane(options = [], args = None):
 	confirm = True
 
 	# default options
@@ -2058,16 +2055,15 @@ def upgrade_control_plane(options, args):
 	requested_version = None
 
 	# We don't need a cluster name for --list-tasks or --override, so check this first of all
-	if options is not None:
-		if "--list-tasks" in [tmp[0] for tmp in options]:
-			__list_phases(upgrade_control_plane_tasks)
-			sys.exit(0)
-		elif "--override" in [tmp[0] for tmp in options]:
-			if os.path.isfile(IKT_INSTALLATION_INFO) == True:
-				iktprint([("Warning: ", "warning"), ("Overriding ", "default"), (f"{IKT_INSTALLATION_INFO}", "path"), ("; this may cause issues.", "default")], stderr = True)
-			else:
-				iktprint([("Note: ", "note"), (f"{IKT_INSTALLATION_INFO}", "path"), (" does not exist; rebuilding.", "default")])
-			rebuild_installation_info(state = "upgrading")
+	if "--list-tasks" in [tmp[0] for tmp in options]:
+		__list_phases(upgrade_control_plane_tasks)
+		sys.exit(0)
+	elif "--override" in [tmp[0] for tmp in options]:
+		if os.path.isfile(IKT_INSTALLATION_INFO) == True:
+			iktprint([("Warning: ", "warning"), ("Overriding ", "default"), (f"{IKT_INSTALLATION_INFO}", "path"), ("; this may cause issues.", "default")], stderr = True)
+		else:
+			iktprint([("Note: ", "note"), (f"{IKT_INSTALLATION_INFO}", "path"), (" does not exist; rebuilding.", "default")])
+		rebuild_installation_info(state = "upgrading")
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
@@ -2094,33 +2090,32 @@ def upgrade_control_plane(options, args):
 	else:
 		requested_version = __find_requested_version(distro)
 
-	if options is not None:
-		for opt, optarg in options:
-			if opt == "--start-at-task":
-				phase = __validate_task_index(upgrade_control_plane_tasks, optarg)
-			elif opt == "--skip-tasks":
-				skip_phases = __expand_index_list(optarg)
-				for __phase in skip_phases:
-					__validate_task_index(upgrade_control_plane_tasks, __phase)
-				phase_skiplist = set(skip_phases)
-			elif opt == "--resume":
-				if phase is None or phase == "<none>":
-					phase = 0
-				elif phase == "<done>":
-					iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed upgrade. Exiting.")], stderr = True)
-					sys.exit(0)
+	for opt, optarg in options:
+		if opt == "--start-at-task":
+			phase = __validate_task_index(upgrade_control_plane_tasks, optarg)
+		elif opt == "--skip-tasks":
+			skip_phases = __expand_index_list(optarg)
+			for __phase in skip_phases:
+				__validate_task_index(upgrade_control_plane_tasks, __phase)
+			phase_skiplist = set(skip_phases)
+		elif opt == "--resume":
+			if phase is None or phase == "<none>":
+				phase = 0
+			elif phase == "<done>":
+				iktprint([("Warning: ", "warning"), ("Ignoring request to resume a completed upgrade. Exiting.")], stderr = True)
+				sys.exit(0)
 
-				phase = __validate_task_index(upgrade_control_plane_tasks, phase)
-			elif opt == "--no-cache-update":
-				update_cache = False
-			elif opt == "--reinstall":
-				allow_reinstall = True
-			elif opt in ["--override", "--list-tasks"]:
-				continue
-			elif opt == "-Y":
-				confirm = False
-			else:
-				raise Exception(f"Programming error; invalid option {opt}")
+			phase = __validate_task_index(upgrade_control_plane_tasks, phase)
+		elif opt == "--no-cache-update":
+			update_cache = False
+		elif opt == "--reinstall":
+			allow_reinstall = True
+		elif opt in ["--override", "--list-tasks"]:
+			continue
+		elif opt == "-Y":
+			confirm = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	# XXX: How do we check that nodes are drained? We can check whether they are cordoned
 	node_status, kh = __get_node_info()
@@ -2231,10 +2226,10 @@ def upgrade_control_plane(options, args):
 	iktprint([("\nControl plane upgrade successful", "success")])
 
 # This basically just checks downloads the latest CNI yaml and applies it
-def update_cni(options, args):
+def update_cni(options = [], args = None):
 	iktprint([("update-cni is not yet implemented", "notok")])
 
-def taint_control_plane(options, args):
+def taint_control_plane(options = [], args = None):
 	node_statuses, kh = __get_node_info()
 
 	if node_statuses is None:
@@ -2265,7 +2260,7 @@ def taint_control_plane(options, args):
 		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(2)
 
-def untaint_control_plane(options, args):
+def untaint_control_plane(options = [], args = None):
 	node_statuses, kh = __get_node_info()
 
 	if node_statuses is None:

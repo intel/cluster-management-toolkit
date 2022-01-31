@@ -101,15 +101,14 @@ def install_software(verbose = False):
 	args = ["sudo", "apt-get", "install"] + packages
 	subprocess.call(args)
 
-def install(options = None, args = None):
+def install(options = [], args = None):
 	verbose = False
 
-	if options is not None:
-		for opt, optarg in options:
-			if opt == "--verbose":
-				verbose = True
-			else:
-				raise Exception(f"Programming error; invalid option {opt}")
+	for opt, optarg in options:
+		if opt == "--verbose":
+			verbose = True
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	create_directories(verbose = verbose)
 	copy_configuration_files(verbose = verbose)

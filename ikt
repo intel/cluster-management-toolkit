@@ -27,7 +27,7 @@ except ModuleNotFoundError:
 
 from commandparser import parse_commandline
 
-from ansible_helper import ansible_configuration, ansible_set_vars, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_remove_hosts
+from ansible_helper import ansible_configuration, ansible_set_vars, ansible_run_playbook_on_host_list, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import iktlib
@@ -35,18 +35,32 @@ from iktlib import deep_get, join_tuple_list
 
 HOMEDIR = str(Path.home())
 IKTDIR = f"{HOMEDIR}/.ikt"
+IKT_CONFIG_FILENAME = "ikt.yaml"
+IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
 
 THEME_DIRNAME = "themes"
 THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
 THEME_PATH = f"{THEMEDIR}/default.yaml"
 
-from iktprint import iktprint, init_iktprint
+from iktprint import iktprint, iktinput, iktinput_password, init_iktprint
 
 import about
 PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
 iktconfig = None
+
+def request_ansible_password():
+	# Check whether ansible_password is defined or not
+	if ansible_configuration.ansible_password == None:
+		iktprint([("Attention: ", "warning"), ("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
+		iktprint([("Since the system will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing when preparing systems.", "default")])
+		ansible_password = iktinput_password([("\nPassword: ", "default")])
+		if len(ansible_password) == 0:
+			iktprint([("\nError: ", "Error"), ("Empty password; aborting.")], stderr = True)
+			sys.exit(2)
+		else:
+			ansible_configuration.ansible_password = ansible_password
 
 def run_playbook(playbookpath, hosts = None, extra_values = {}, quiet = False):
 	# Set necessary Ansible keys before running playbooks
@@ -135,6 +149,47 @@ def run_playbook(playbookpath, hosts = None, extra_values = {}, quiet = False):
 
 	return retval, ansible_results
 
+def __format_none(string, fmt):
+	if string is None or string == "<none>":
+		__string = ("<none>", "none")
+	else:
+		__string = (string, fmt)
+	return __string
+
+def show_configuration(hosts):
+	# cluster_name = 
+	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
+	if http_proxy is not None and http_proxy == "":
+		http_proxy = None
+	http_proxy_env = os.getenv("http_proxy")
+	if http_proxy_env is not None and http_proxy_env == "":
+		http_proxy_env = None
+	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	if https_proxy is not None and https_proxy == "":
+		https_proxy = None
+	https_proxy_env = os.getenv("https_proxy")
+	if https_proxy_env is not None and https_proxy_env == "":
+		https_proxy_env = None
+	no_proxy = deep_get(iktconfig, "Network#no_proxy", "")
+	if no_proxy is not None and no_proxy == "":
+		no_proxy = None
+	no_proxy_env = os.getenv("no_proxy")
+	if no_proxy_env is not None and no_proxy_env == "":
+		no_proxy_env = None
+
+	iktprint([("\n[Summary]", "phase")])
+	iktprint([("\n• ", "separator"), ("Configuration:", "action")])
+	iktprint([("          HTTP Proxy: ", "action"), __format_none(http_proxy, "url"), (" (", "default"), (f"{IKT_CONFIG_FILE}", "path"), (")", "default")])
+	iktprint([("          HTTP Proxy: ", "action"), __format_none(http_proxy_env, "url"), (" (Environment)", "default")])
+	iktprint([("         HTTPS Proxy: ", "action"), __format_none(https_proxy, "url"), (" (", "default"), (f"{IKT_CONFIG_FILE}", "path"), (")", "default")])
+	iktprint([("         HTTPS Proxy: ", "action"), __format_none(https_proxy_env, "url"), (" (Environment)", "default")])
+	iktprint([("            No Proxy: ", "action"), __format_none(no_proxy, "url"), (" (", "default"), (f"{IKT_CONFIG_FILE}", "path"), (")", "default")])
+	iktprint([("            No Proxy: ", "action"), __format_none(no_proxy_env, "url"), (" (Environment)", "default")])
+	iktprint([("", "default")])
+	iktprint([("Target hosts:", "header")])
+	for host in hosts:
+		iktprint([("  • ", "separator"), (host, "hostname")])
+	
 def run_playbooks(playbooks, hosts = None, extra_values = {}):
 	for string, playbookpath in playbooks:
 		iktprint(string)
@@ -234,7 +289,7 @@ def get_selection(selection, kind = None, default = None, skip_control_planes = 
 
 	return items1, non_existing, items2
 
-def cordon_nodes(options = None, args = None):
+def cordon_nodes(options = [], args = None):
 	include_control_planes = False
 	header = True
 
@@ -269,7 +324,7 @@ def cordon_nodes(options = None, args = None):
 	_args += nodes
 	execute_command(_args)
 
-def drain_nodes(options = None, args = None):
+def drain_nodes(options = [], args = None):
 	include_control_planes = False
 	header = True
 
@@ -319,7 +374,7 @@ def drain_nodes(options = None, args = None):
 	_args += nodes
 	execute_command(_args)
 
-def uncordon_nodes(options = None, args = None):
+def uncordon_nodes(options = [], args = None):
 	include_control_planes = False
 	header = True
 
@@ -354,10 +409,214 @@ def uncordon_nodes(options = None, args = None):
 	_args += nodes
 	execute_command(_args)
 
-def setup_nodes(options = None, args = None):
+def setup_nodes(options = [], args = None):
 	return 0
 
-def remove_nodes(options = None, args = None):
+def prepare_hosts(options = [], args = None):
+	ignore_existing = False
+	no_password = False
+
+	selection = args[0].split(",")
+
+	if "ALL" in selection:
+		iktprint([("Error: ", "error"), ("ALL", "hostname"), (" cannot be used with ", "default"), ("prepare", "command"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	for opt, optarg in options:
+		if opt == "--ignore-existing":
+			ignore_existing = True
+		elif opt == "--no-password":
+			no_password = True
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
+
+	# Correlate the list of hosts with the nodes in the cluster
+	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	if len(nodes) > 0 or len(controlplanes) > 0:
+		if ignore_existing == False:
+			iktprint([(f"Error: ", "error")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; aborting.", "default")], stderr = True)
+			sys.exit(2)
+		else:
+			iktprint([(f"Warning: ", "warning")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; ignoring them since “", "description"), ("--ignore-existing", "argument"), ("“ was specified.", "default")], stderr = True)
+
+	if len(non_existing) == 0:
+		iktprint([(f"Error: ", "error"), (" no valid hosts specified; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	# Check if the hosts are part of the inventory
+	inventory = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+	not_in_inventory = []
+	for host in non_existing:
+		if host not in inventory:
+			not_in_inventory.append(host)
+
+	if len(not_in_inventory) > 0:
+		retval = iktinput([("\nWarning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the inventory; do you want to add them now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting: ", "error"), ("Nodes not added to the inventory.", "default")], stderr = True)
+			sys.exit(2)
+		else:
+			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = not_in_inventory, skip_all = False)
+
+	show_configuration(non_existing)
+
+	confirm = True
+	if confirm == True:
+		retval = iktinput([("\nStart host preparation? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting: ", "error"), ("User stopped host preparation.", "default")], stderr = True)
+			sys.exit(2)
+
+	iktprint([(f"\n[Preparing host(s)]", "phase")])
+
+	# We most likely won't be able to connect to the remote host without a password
+	if no_password == False:
+		request_ansible_password()
+
+	prepare_playbooks = [
+		f"{ANSIBLE_PLAYBOOK_DIR}/prepare_node.yaml",
+	]
+	playbooks = populate_playbooks_from_paths(prepare_playbooks)
+
+	extra_values = {
+		"ansible_become_pass": ansible_configuration.ansible_password,
+		"ansible_ssh_pass": ansible_configuration.ansible_password,
+	}
+
+	retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
+	if retval == True:
+		iktprint([("OK", "ok")])
+	else:
+		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	iktprint([("\nHosts successfully prepared", "success")])
+
+
+def add_nodes(options = [], args = None):
+	ignore_existing = False
+	ignore_non_existing = False
+
+	selection = args[0].split(",")
+
+	if "ALL" in selection:
+		iktprint([("Error: ", "error"), ("ALL", "hostname"), (" cannot be used with ", "default"), ("add-node", "command"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	for opt, optarg in options:
+		if opt == "--ignore-existing":
+			ignore_existing = True
+		elif opt == "--ignore-non-existing":
+			ignore_non_existing = True
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
+
+	# Correlate the list of hosts with the nodes in the cluster
+	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	if len(nodes) > 0 or len(controlplanes) > 0:
+		if ignore_existing == False:
+			iktprint([(f"Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; aborting.", "default")], stderr = True)
+			sys.exit(2)
+		else:
+			iktprint([(f"Warning: ", "warning")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; ignoring them since “", "description"), ("--ignore-existing", "argument"), ("“ was specified.", "default")], stderr = True)
+
+	if len(non_existing) == 0:
+		iktprint([(f"Error: ", "error"), (" no valid hosts specified; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	# Check if the hosts are part of the inventory
+	inventory = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+	not_in_inventory = []
+	for host in non_existing:
+		if host not in inventory:
+			not_in_inventory.append(host)
+
+	if len(not_in_inventory) > 0:
+		if ignore_non_existing == False:
+			iktprint([(f"Error: ", "error")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the inventory; aborting.", "default")], stderr = True)
+			sys.exit(2)
+		else:
+			iktprint([(f"Warning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the invetory; ignoring them since “", "description"), ("--ignore-non-existing", "argument"), ("“ was specified.", "default")], stderr = True)
+
+	show_configuration(non_existing)
+	
+	confirm = True
+	if confirm == True:
+		retval = iktinput([("\nStart node setup? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting: ", "error"), ("User stopped node setup.", "default")], stderr = True)
+			sys.exit(2)
+
+	# Time to setup and add the hosts to the cluster
+	iktprint([("\n[Adding nodes]", "phase")])
+	add_playbooks = [
+		# ikt doesn't use run_before/run_after/add_to_groups/remove_from_groups,
+		# so we have to do all of that explicitly
+		f"{ANSIBLE_PLAYBOOK_DIR}/add_kubernetes_repo.yaml",
+		f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_setup_node.yaml",
+	]
+	playbooks = populate_playbooks_from_paths(add_playbooks)
+
+	# Get variables that need to be available when setting up nodes
+	from kubernetes_helper import KubernetesHelper
+	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+
+	join_token = kh.get_join_token()
+	ca_cert_hash = kh.get_ca_cert_hash()
+	control_plane_ip, control_plane_port = kh.get_control_plane_address()
+	# Now that we have the IP address of the API-server we can use that to get the package
+	# version for kubeadm
+	retval, ansible_results = ansible_run_playbook_on_host_list(f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml", hosts = [control_plane_ip])
+	if len(ansible_results) == 0:
+		iktprint([("Error: ", "error"), ("Failed to get package versions from control-plane at {control_plane_ip} (retval: {retval}); aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	for host in ansible_results:
+		data = ansible_results[host]
+
+		for task in data:
+			if "package versions" in task.replace("_", " "):
+				tmp = str(data[task].get("msg", "")).split("\n")
+
+	if len(tmp) == 0:
+		iktprint([("Error: ", "error"), ("Failed to get package versions from control-plane at {control_plane_ip} (playbook returned no valid data); aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	kubeadm_version = ""
+	for line in tmp:
+		tmp = re.match(r"^(.*?): (.*)", line)
+		if tmp is None:
+			continue
+		if tmp[1] == "kubeadm":
+			kubeadm_version = tmp[2]
+			break
+
+	if len(kubeadm_version) == 0:
+		iktprint([("Error: ", "error"), ("Failed to get ", "default"), ("kubeadm", "programname"), (" package version from control-plane at {control_plane_ip}; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	extra_values = {
+		"control_plane_ip": control_plane_ip,
+		"control_plane_port": control_plane_port,
+		"join_token": join_token,
+		"ca_cert_hash": ca_cert_hash,
+		"control_plane_k8s_version": kubeadm_version,
+	}
+	retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
+	if retval == True:
+		iktprint([("OK", "ok")])
+	else:
+		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = non_existing, group = "nodes", skip_all = True)
+	# XXX: We need to get the cluster name to do this
+	#ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = non_existing, group = cluster_name, skip_all = True)
+	iktprint([("\nNodes successfully added", "success")])
+
+def remove_nodes(options = [], args = None):
 	force = False
 
 	selection = args[0].split(",")
@@ -423,9 +682,9 @@ def remove_nodes(options = None, args = None):
 	# XXX: We need to get the cluster name to do this
 	#ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = cluster_name)
 
-	iktprint([("\nNode removal successful", "success")])
+	iktprint([("\nNodes successfully removed", "success")])
 
-def purge_hosts(options = None, args = None):
+def purge_hosts(options = [], args = None):
 	ignore_non_existing = False
 
 	selection = args[0].split(",")
@@ -497,9 +756,9 @@ def purge_hosts(options = None, args = None):
 		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
 		sys.exit(2)
 
-	iktprint([("\nHost purge successful", "success")])
+	iktprint([("\nHosts successfully purged", "success")])
 
-def upgrade_nodes(options = None, args = None):
+def upgrade_nodes(options = [], args = None):
 	selection = args[0].split(",")
 
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
@@ -545,18 +804,17 @@ def upgrade_nodes(options = None, args = None):
 
 	iktprint([("\nNode upgrade successful", "success")])
 
-def get_resource(options = None, args = None):
+def get_resource(options = [], args = None):
 	namespaces = ["default"]
 
-	if options is not None:
-		for opt, optarg in options:
-			# This is a tuple option, so the easiest way is to check this way
-			if "--all-namespaces" in opt:
-				namespaces = None
-			elif "--namespace" in opt:
-				namespaces = optarg.split(",")
-			else:
-				raise Exception(f"Programming error; invalid option {opt}")
+	for opt, optarg in options:
+		# This is a tuple option, so the easiest way is to check this way
+		if "--all-namespaces" in opt:
+			namespaces = None
+		elif "--namespace" in opt:
+			namespaces = optarg.split(",")
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	# We might have to get the resources across multiple namespaces, so we need to do multiple requests
 	return
@@ -636,8 +894,40 @@ ikt_commandline = {
 			},
 		},
 	},
+	"Prepare Host": {
+		"command": ["prepare"],
+		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Prepare ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" for use as a node in a Kubernetes cluster", "description")],
+		"min_args": 1,
+		"max_args": 1,
+		"callback": prepare_hosts,
+		"options": {
+			"--ignore-existing": {
+				"description": [("Ignore hosts that are already part of the cluster", "description")],
+			},
+			"--no-password": {
+				"description": [("Do not prompt for a password; use this if the hosts you're preparing are already configured for login using an SSH key", "description")],
+			},
+		},
+	},
+	"Add Node": {
+		"command": ["add-node", "add-nodes"],
+		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Add ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" as Kubernetes nodes to a cluster", "description")],
+		"min_args": 1,
+		"max_args": 1,
+		"callback": add_nodes,
+		"options": {
+			"--ignore-existing": {
+				"description": [("Ignore hosts that are already part of the cluster", "description")],
+			},
+			"--ignore-non-existing": {
+				"description": [("Ignore hosts that are not part of the inventory", "description")],
+			},
+		},
+	},
 	"Remove Node": {
-		"command": ["remove-node"],
+		"command": ["remove-node", "remove-nodes"],
 		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
 		"description": [("Remove ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument"), (" from a Kubernetes cluster", "description")],
 		"min_args": 1,
@@ -663,7 +953,7 @@ ikt_commandline = {
 		},
 	},
 	"Upgrade Node": {
-		"command": ["upgrade-node"],
+		"command": ["upgrade-node", "upgrade-nodes"],
 		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
 		"description": [("Upgrade Kubernetes on ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
 		"extended_description": [

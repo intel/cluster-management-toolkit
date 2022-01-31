@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+from datetime import datetime, timezone
 from functools import reduce
 from pathlib import Path
 import os
@@ -157,6 +158,32 @@ def seconds_to_age(seconds):
 		age += f"{seconds}s"
 
 	return age
+
+def get_since(timestamp):
+	if timestamp is None:
+		since = 0
+	else:
+		timediff = datetime.now(timezone.utc) - timestamp
+		since = timediff.days * 24 * 60 * 60 + timediff.seconds
+
+	return since
+
+# Will take a timestamp and convert it to datetime
+def timestamp_to_datetime(timestamp, default = None):
+	if timestamp is None:
+		return default
+
+	# Add timezone; all timestamps are assumed to be UTC
+	timestamp += "+0000"
+
+	dt = None
+
+	for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ%z", "%Y-%m-%d %H:%M:%S.%fZ%z", "%Y-%m-%dT%H:%M:%SZ%z"):
+		try:
+			return datetime.strptime(timestamp, fmt)
+		except ValueError:
+			pass
+	raise ValueError("Could not parse date: %s" % timestamp)
 
 def __str_representer(dumper, data):
 	if "\n" in data:

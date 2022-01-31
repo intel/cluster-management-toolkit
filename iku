@@ -13,7 +13,6 @@ import curses.textpad
 from datetime import datetime, timezone
 from functools import reduce
 from getpass import getuser
-import hashlib
 import http.client
 # ujson is much faster than json,
 # but it might not be available
@@ -39,11 +38,6 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 try:
-	import OpenSSL
-except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
-
-try:
 	import urllib3
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
@@ -51,7 +45,7 @@ except ModuleNotFoundError:
 from logparser import logparser, loglevel, split_msg, lvl_to_4letter_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import deep_get, deep_get_with_fallback, stgroup, versiontuple
+from iktlib import deep_get, deep_get_with_fallback, stgroup, versiontuple, timestamp_to_datetime, get_since
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_ram_usage, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_extract_string, strarray_wrap_line, themearray_to_strarray, themearray_extract_string, attr_to_curses_merged
 
 from ansible_helper import ansible_clean_results, ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
@@ -176,8 +170,6 @@ def get_package_versions(host_name):
 	package_versions = []
 
 	for line in tmp:
-		if len(line) == 0:
-			continue
 		tmp = re.match(r"^(.*?): (.*)", line)
 		if tmp is None:
 			continue
@@ -191,8 +183,8 @@ def gather_cluster_info():
 	iktprint([("[Gathering cluster information]\n", "phase")])
 
 	# Set global variables that need to be available when executing playbooks
-	join_token = get_join_token()
-	ca_cert_hash = get_ca_cert_hash()
+	join_token = kh.get_join_token()
+	ca_cert_hash = kh.get_ca_cert_hash()
 	control_plane_ip, control_plane_port = kh.get_control_plane_address()
 	control_plane_node, control_plane_name = get_control_plane()
 
@@ -346,23 +338,6 @@ def format_timestamp(timestamp, localtimezone = False):
 		stringarray = format_numerical_with_units(ftimestamp, "timestamp", False)
 
 	return stringarray
-
-# Will take a timestamp and convert it to datetime
-def timestamp_to_datetime(timestamp, default = None):
-	if timestamp is None:
-		return default
-
-	# Add timezone; all timestamps are assumed to be UTC
-	timestamp += "+0000"
-
-	dt = None
-
-	for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ%z", "%Y-%m-%d %H:%M:%S.%fZ%z", "%Y-%m-%dT%H:%M:%SZ%z"):
-		try:
-			return datetime.strptime(timestamp, fmt)
-		except ValueError:
-			pass
-	raise ValueError("Could not parse date: %s" % timestamp)
 
 def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separators", "list"), field_separators = [("separators", "field")], field_colors = [("types", "generic")], ellipsise = -1, ellipsis = ("separators", "ellipsis"), field_prefixes = None, field_suffixes = None):
 	array = []
@@ -3249,69 +3224,6 @@ def get_key_value_info(vlist):
 
 	return info
 
-def get_join_token():
-	join_token = ""
-
-	vlist = kh.get_list_by_kind_namespace(("Secret", ""), "kube-system")
-
-	if vlist != []:
-		age = -1
-
-		# Find the newest bootstrap token
-		for secret in vlist:
-			if deep_get(secret, "metadata#name").startswith("bootstrap-token-"):
-				timestamp = timestamp_to_datetime(deep_get(secret, "metadata#creationTimestamp"))
-				newage = get_since(timestamp)
-				if age == -1 or newage < age:
-					try:
-						tmp1 = base64.b64decode(deep_get(secret, "data#token-id", "")).decode("utf-8")
-					except UnicodeDecodeError as e:
-						tmp1 = secret.data.get("data#token-id", "")
-
-					try:
-						tmp2 = base64.b64decode(deep_get(secret, "data#token-secret", "")).decode("utf-8")
-					except UnicodeDecodeError as e:
-						tmp2 = deep_get(secret, "data#token-secret", "")
-
-					if tmp1 != "" and tmp2 != "":
-						join_token = "%s.%s" % (tmp1, tmp2)
-						age = newage
-
-	return join_token
-
-def get_ca_cert_hash():
-	ca_cert_hash = ""
-
-	vlist = kh.get_list_by_kind_namespace(("Secret", ""), "kube-system")
-
-	if vlist != []:
-		age = -1
-		ca_cert = ""
-
-		# Find the newest bootstrap token
-		for secret in vlist:
-			if deep_get(secret, "metadata#name").startswith("certificate-controller-token-"):
-				timestamp = timestamp_to_datetime(deep_get(secret, "metadata#creationTimestamp"))
-				newage = get_since(timestamp)
-				if age == -1 or newage < age:
-					try:
-						tmp1 = base64.b64decode(deep_get(secret, "data#ca.crt", "")).decode("utf-8")
-					except UnicodeDecodeError as e:
-						tmp1 = deep_get(secret, "data#ca.crt", "")
-
-					if tmp1 != "":
-						ca_cert = tmp1
-						age = newage
-
-		# we have the CA cert; now to extract the public key and hash it
-		if ca_cert != "":
-			x509obj = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, ca_cert)
-			pubkey = x509obj.get_pubkey()
-			pubkeyasn1 = OpenSSL.crypto.dump_publickey(OpenSSL.crypto.FILETYPE_ASN1, pubkey)
-			ca_cert_hash = hashlib.sha256(pubkeyasn1).hexdigest()
-
-	return ca_cert_hash
-
 def get_external_ips(svc):
 	external_ips = []
 
@@ -3392,15 +3304,6 @@ def get_event_status_group(status):
 		status_group = stgroup.UNKNOWN
 
 	return status_group
-
-def get_since(timestamp):
-	if timestamp is None:
-		since = 0
-	else:
-		timediff = datetime.now(timezone.utc) - timestamp
-		since = timediff.days * 24 * 60 * 60 + timediff.seconds
-
-	return since
 
 class FilterInfo:
 	def __init__(self, name, ftype):

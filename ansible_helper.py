@@ -905,7 +905,7 @@ if ansible_support == True:
 
 			active_task = str(task)
 
-	def ansible_run_playbook(playbook):
+	def ansible_run_playbook(playbook, override_inventory = False):
 		global ansible_results
 		global active_task
 		global suffix
@@ -935,7 +935,10 @@ if ansible_support == True:
 
 		results_callback = ResultCallback()
 		loader = DataLoader()
-		sources = [ANSIBLE_INVENTORY]
+		if override_inventory == True:
+			sources = []
+		else:
+			sources = [ANSIBLE_INVENTORY]
 		if os.path.exists(ANSIBLE_TMP_INVENTORY):
 			sources.append(ANSIBLE_TMP_INVENTORY)
 		inventory = InventoryManager(loader = loader, sources = sources)
@@ -960,6 +963,20 @@ if ansible_support == True:
 			os.remove(ANSIBLE_TMP_INVENTORY)
 
 		return result, ansible_results
+
+	# Execute a playbook on a list of hosts
+	# by creating a temporary inventory
+	def ansible_run_playbook_on_host_list(playbook, hosts, values = None):
+		# Remove old temporary inventory
+		if os.path.isfile(ANSIBLE_TMP_INVENTORY):
+			os.remove(ANSIBLE_TMP_INVENTORY)
+
+		ansible_add_hosts(ANSIBLE_TMP_INVENTORY, hosts, group = "selection", skip_all = False)
+
+		if values is not None and len(values) > 0:
+			ansible_set_vars(ANSIBLE_TMP_INVENTORY, group = "all", values = values)
+
+		return ansible_run_playbook(playbook, override_inventory = True)
 
 	# Execute a playbook using ansible
 	def ansible_run_playbook_on_selection(playbook, selection, values = None):

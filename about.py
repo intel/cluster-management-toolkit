@@ -11,7 +11,7 @@ ui_program_name = "iku"
 ui_program_version = "0.1.3"
 
 tool_program_name = "ikt"
-tool_program_version = "0.1.3"
+tool_program_version = "0.1.4"
 
 install_program_name = "ikt-install"
 install_program_version = "0.1"

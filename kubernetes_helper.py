@@ -1,5 +1,6 @@
 import base64
 from functools import reduce
+import hashlib
 # ujson is much faster than json,
 # but it might not be available
 try:
@@ -17,7 +18,12 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-urllib3")
 
-from iktlib import deep_get, stgroup, versiontuple
+try:
+	import OpenSSL
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
+
+from iktlib import deep_get, stgroup, versiontuple, timestamp_to_datetime, get_since
 
 class KubernetesHelper:
 	tmp_ca_certs_file = None
@@ -439,6 +445,74 @@ class KubernetesHelper:
 
 	def get_control_plane_address(self, cluster = ""):
 		return self.control_plane_ip, self.control_plane_port
+
+	def get_join_token(self):
+		join_token = ""
+
+		vlist = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
+
+		if len(vlist) == 0:
+			return join_token
+
+		age = -1
+
+		# Find the newest bootstrap token
+		for secret in vlist:
+			if deep_get(secret, "metadata#name").startswith("bootstrap-token-"):
+				timestamp = timestamp_to_datetime(deep_get(secret, "metadata#creationTimestamp"))
+				newage = get_since(timestamp)
+				if age == -1 or newage < age:
+					try:
+						tmp1 = base64.b64decode(deep_get(secret, "data#token-id", "")).decode("utf-8")
+					except UnicodeDecodeError as e:
+						tmp1 = secret.data.get("data#token-id", "")
+
+					try:
+						tmp2 = base64.b64decode(deep_get(secret, "data#token-secret", "")).decode("utf-8")
+					except UnicodeDecodeError as e:
+						tmp2 = deep_get(secret, "data#token-secret", "")
+
+					if tmp1 != "" and tmp2 != "":
+						join_token = f"{tmp1}.{tmp2}"
+						age = newage
+
+		return join_token
+
+	def get_ca_cert_hash(self):
+		ca_cert_hash = ""
+
+		vlist = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
+
+		if len(vlist) == 0:
+			return ca_cert_hash
+
+		age = -1
+		ca_cert = ""
+
+		# Find the newest certificate-controller-token
+		for secret in vlist:
+			if deep_get(secret, "metadata#name").startswith("certificate-controller-token-"):
+				timestamp = timestamp_to_datetime(deep_get(secret, "metadata#creationTimestamp"))
+				newage = get_since(timestamp)
+				if age == -1 or newage < age:
+					try:
+						tmp1 = base64.b64decode(deep_get(secret, "data#ca.crt", "")).decode("utf-8")
+					except UnicodeDecodeError as e:
+						tmp1 = deep_get(secret, "data#ca.crt", "")
+
+					if tmp1 != "":
+						ca_cert = tmp1
+						age = newage
+
+		# we have the CA cert; now to extract the public key and hash it
+		if ca_cert != "":
+			x509obj = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, ca_cert)
+			pubkey = x509obj.get_pubkey()
+			pubkeyasn1 = OpenSSL.crypto.dump_publickey(OpenSSL.crypto.FILETYPE_ASN1, pubkey)
+			ca_cert_hash = hashlib.sha256(pubkeyasn1).hexdigest()
+
+		return ca_cert_hash
+
 
 	# A list of all K8s resources we have some knowledge about
 	kubernetes_resources = {

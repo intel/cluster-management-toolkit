@@ -17,7 +17,7 @@ def themearray_len(themearray):
 		tlen += len(_str)
 	return tlen
 
-def version(options = None, args = None):
+def version(options = [], args = None):
 	iktprint([(f"{programname} ", "programname"), (f"{programversion}", "version")])
 	iktprint([(f"{about.program_suite_full_name} ({about.program_suite_name}) ", "programname"), (f"{about.program_suite_version}", "version")])
 	print()
@@ -27,7 +27,7 @@ def version(options = None, args = None):
 	print(programauthors)
 	return 0
 
-def usage(options = None, args = None):
+def usage(options = [], args = None):
 	has_commands = False
 	has_options = False
 	has_args = False
