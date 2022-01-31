@@ -2389,6 +2389,12 @@ class KubernetesHelper:
 
 		return self.__rest_helper_delete(kind, name, namespace, query_params = query_params)
 
+	def get_metrics(self):
+		query_params = []
+		url = "https://%s:%s/metrics" % (self.control_plane_ip, self.control_plane_port)
+		data, message, status = self.__rest_helper_generic_json(method = "GET", url = url, query_params = query_params)
+		return data.decode("utf-8").splitlines()
+
 	def get_list_by_kind_namespace(self, kind, namespace, label_selector = "", field_selector = ""):
 		return self.__rest_helper_get(kind, "", namespace, label_selector, field_selector)
 

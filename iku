@@ -7,6 +7,7 @@
 
 from collections import OrderedDict
 import base64
+import csv
 import curses
 from curses import wrapper
 import curses.textpad
@@ -909,6 +910,42 @@ def update_field_widths(field_list, objects):
 
 	return linelen
 
+def get_metrics_list(extra_vars = {filter: None}):
+	vlist = []
+
+	metrics = kh.get_metrics()
+
+	# metrics are on the form:
+	# aggregator_openapi_v2_regeneration_count{apiservice="*",reason="startup"} 0
+	# apiserver_requested_deprecated_apis{group="autoscaling",removed_release="1.25",resource="horizontalpodautoscalers",subresource="",version="v2beta1"} 1
+	for line in metrics:
+		tmp = re.match(r"^(\S+?){(.*)}\s\d+$", line)
+		if tmp is None:
+			continue
+		metric = tmp[1]
+		if deep_get(extra_vars, "filter") is not None:
+			if metric not in deep_get(extra_vars, "filter"):
+				continue
+
+		fields = ['{}'.format(x) for x in next(csv.reader([tmp[2]], delimiter = ",", quotechar = "\""))]
+		if len(fields) == 0:
+			continue
+		d = {
+			"name": metric,
+			"fields": {},
+		}
+		for field in fields:
+			key_value = ['{}'.format(x) for x in next(csv.reader([field], delimiter = "=", quotechar = "\""))]
+			try:
+				key, value = key_value
+			except:
+				sys.exit(f"{key_value=}")
+			d["fields"][key] = value.strip("\"")
+
+		vlist.append(d)
+
+	return vlist
+
 class ContextInfo:
 	def __init__(self, current, name, cluster, authinfo, namespace):
 		self.current = current
@@ -919,7 +956,7 @@ class ContextInfo:
 	def __repr__(self):
 		return repr((self.current, self.name, self.cluster, self.authinfo, self.namespace))
 
-def get_context_info():
+def get_context_info(extra_vars = {}):
 	info = []
 
 	vlist = kh.list_contexts()
@@ -1040,7 +1077,7 @@ def __get_container_info(obj, container_type, spec_path, status_path):
 
 	return containers
 
-def get_container_info():
+def get_container_info(extra_vars = {}):
 	info = []
 	containers = {}
 
@@ -1102,7 +1139,7 @@ class LogInfo:
 	def __repr__(self):
 		return repr((self.name, self.ref, self.created_at, self.log_type))
 
-def get_log_info():
+def get_log_info(extra_vars = {}):
 	info = []
 
 	# Get the list of available Ansible logs
@@ -1219,6 +1256,33 @@ def normalise_mem_bytes_to_str(_mem):
 		suffix = "Yi"
 
 	return f"{mem:0.1f}{suffix}B"
+
+def datagetter_metrics(obj, path, default):
+	if obj is None or path is None:
+		return default
+
+	# fields is a dict
+	fields = deep_get(obj, "fields", {})
+	result = []
+
+	if type(path[0]) == list:
+		return_type = path[1]
+		rfields = path[0]
+	else:
+		return_type = "list"
+		rfields = path
+
+	for field in rfields:
+		result.append(deep_get(obj, f"fields#{field}", ""))
+
+	if return_type == "str":
+		result = str("".join(result))
+	elif return_type == "tuple":
+		result = tuple(result)
+	elif return_type != "list":
+		raise Exception(f"datagetter_metrics: Invalid return type {return_type}; this is a programming error")
+
+	return result, {}
 
 def datagetter_pod_metrics_memory(obj, path, default):
 	if obj is None or path is None:
@@ -3828,7 +3892,7 @@ class InventoryInfo:
 	def __repr__(self):
 		return repr((self.name, self.ips, self.kubernetes_roles, self.ansible_groups, self.status, self.status_group))
 
-def get_inventory_info():
+def get_inventory_info(extra_vars = {}):
 	global latest_info
 	info = []
 	nodes = []
@@ -4985,6 +5049,18 @@ field_templates = {
 	},
 	"default_limit": {
 		"header": "Default Limit:",
+	},
+	"deprecated_api": {
+		"header": "Deprecated API:",
+		"path": [["resource", "group", "version"], "tuple"],
+		"datagetter": datagetter_metrics,
+		"generator": generator_list,
+		"field_separators": [("separators", "kind_apigroup"), ("separators", "kind")],
+	},
+	"deprecated_removed_release": {
+		"header": "Planned Removal:",
+		"path": [["removed_release"], "str"],
+		"datagetter": datagetter_metrics,
 	},
 	"description": {
 		"header": "Description:",
@@ -6374,16 +6450,20 @@ def genericlistloop(stdscr, view):
 			infogetter = deep_get(viewref, "infogetter", generic_infogetter)
 			infogetter_extra_vars = deep_get(viewref, "extra_vars#infogetter", {})
 
-			if listgetter:
+			if listgetter is not None:
 				listgetter = eval(listgetter)
-				vlist = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
+				listgetter_extra_vars = deep_get(viewref, "extra_vars#listgetter", {})
+				if kind[0].startswith("__"):
+					vlist = listgetter(extra_vars = listgetter_extra_vars)
+				else:
+					vlist = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
 				if infogetter == generic_infogetter:
 					fields = deep_get(viewref, "fields")
 					info = infogetter(vlist, fields)
 				else:
 					info = infogetter(vlist, extra_vars = infogetter_extra_vars)
 			else:
-				info = deep_get(viewref, "infogetter")()
+				info = infogetter(extra_vars = infogetter_extra_vars)
 			latest_info = view
 			listlen = uip.update_info(info)
 			linelen = update_field_widths(field_list, uip.info)
@@ -14070,6 +14150,22 @@ views = {
 		"activatedfun": None,
 		"listgetter": None,
 		"infogetter": None,
+		"is_taggable": False,
+	},
+	# special
+	"Deprecations": {
+		"commandline": ["deprecations"],
+		"group": "Debugging",
+		"fields": ["deprecated_api", "deprecated_removed_release"],
+		"kind": ("__Deprecations", ""),
+		"sortcolumn": "deprecated_api",
+		"activatedfun": None,
+		"listgetter": "get_metrics_list",
+		"extra_vars": {
+			"listgetter": {
+				"filter": "apiserver_requested_deprecated_apis",
+			},
+		},
 		"is_taggable": False,
 	},
 	# special
