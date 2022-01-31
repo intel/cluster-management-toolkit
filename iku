@@ -3329,7 +3329,7 @@ def get_filter_info(obj):
 	return info
 
 class ResourceInfo:
-	def __init__(self, resource_tuple, ref, rtype, kind, status, status_group, restarts, message):
+	def __init__(self, resource_tuple, ref, rtype, kind, status, status_group, restarts, message, age = -1):
 		self.resource_tuple = resource_tuple
 		# The reference to the "true" resource object
 		self.ref = ref
@@ -3339,8 +3339,9 @@ class ResourceInfo:
 		self.status_group = status_group
 		self.restarts = restarts
 		self.message = message
+		self.age = age
 	def __repr__(self):
-		return repr((self.resource_tuple, self.ref, self.rtype, self.kind, self.status, self.status_group, self.restarts, self.message))
+		return repr((self.resource_tuple, self.ref, self.rtype, self.kind, self.status, self.status_group, self.restarts, self.message, age))
 
 def get_container_status(src_statuses, container, kind):
 	reason = "UNKNOWN"
@@ -3752,9 +3753,10 @@ def get_resource_info(obj):
 				resource_tuple = (kind[0], deep_get(event, "metadata#name"))
 				status = deep_get(event, "type")
 				status_group = get_event_status_group(status)
-				#seen = __get_timestamp_with_fallback(event, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"])
+				tmp = __get_timestamp_with_fallback(event, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"])
+				seen = get_since(tmp)
 				message = deep_get(event, "message").rstrip()
-				resource_info.append(ResourceInfo(resource_tuple, event, rtype, kind, status, status_group, -1, message))
+				resource_info.append(ResourceInfo(resource_tuple, event, rtype, kind, status, status_group, -1, message, age = seen))
 
 	# XXX
 	if "scheduler" not in deep_get(iktconfig, "Pods#filter_resources", []):
@@ -13073,7 +13075,7 @@ infoviews = {
 		},
 	},
 	("Pod", ""): {
-		"fields": ["resource_tuple", "rtype", "status", "restarts", "message"],
+		"fields": ["resource_tuple", "rtype", "status", "restarts", "age", "message"],
 		"sortcolumn": "rtype",
 		"extraref": "kind",
 		"data": True,
