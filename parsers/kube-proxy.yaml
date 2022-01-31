@@ -5,8 +5,14 @@
   parser_rules:
   - name: glog
   - name: key_value_with_leading_message
+    options:
+      versions:
+       - "version"
   - name: override_severity
     overrides:
     - matchtype: startswith
       matchkey: "Version: v"
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "\"Version info\""
       loglevel: notice
