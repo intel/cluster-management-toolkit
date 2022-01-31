@@ -38,13 +38,16 @@
         - 2
       message:
         field: 3
-  - name: override_severity
-    overrides:
-    - matchtype: startswith
-      matchkey: "etcd Version"
-      loglevel: notice
   - name: glog
   - name: json
     options:
       versions:
        - "etcd-version"
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "etcd Version"
+      loglevel: notice
+    - matchtype: regex 
+      matchkey: 'starting an etcd server.*etcd-version'
+      loglevel: notice
