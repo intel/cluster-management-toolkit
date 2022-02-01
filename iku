@@ -1284,6 +1284,11 @@ def datagetter_metrics(obj, path, default):
 
 	return result, {}
 
+def datagetter_deprecated_api(obj, path, default):
+	result, extra_vars = datagetter_metrics(obj, path, default)
+	kind = kh.guess_kind((result[0], result[1]))
+	return (kind[0], kind[1], result[2]), extra_vars
+
 def datagetter_pod_metrics_memory(obj, path, default):
 	if obj is None or path is None:
 		return default
@@ -3650,6 +3655,34 @@ def resource_kind_to_rtype(resource):
 
 	return rtypes.get(resource, "[unknown]")
 
+def get_resource_info_by_last_applied_configuration(configuration, resources = []):
+	resource_info = []
+
+	for resource in resources:
+		for item in kh.get_list_by_kind_namespace(resource, ""):
+			last_applied_configuration = deep_get(item, "metadata#annotations#kubectl.kubernetes.io/last-applied-configuration", {})
+			if last_applied_configuration is None or len(last_applied_configuration) == 0:
+				continue
+			data = json.loads(last_applied_configuration)
+			match = True
+			for key in configuration:
+				if key not in data or configuration[key] != data[key]:
+					match = False
+					break
+			if match == True:
+				name = deep_get(item, "metadata#name")
+				namespace = deep_get(item, "metadata#namespace", "")
+				d = {
+					"kind": kh.guess_kind(resource),
+					"metadata": {
+						"namespace": namespace,
+						"name": name,
+					}
+				}
+				resource_info.append(d)
+
+	return resource_info
+
 def get_resource_info_by_namespace(namespace, resources):
 	resource_info = []
 
@@ -5053,8 +5086,9 @@ field_templates = {
 	"deprecated_api": {
 		"header": "Deprecated API:",
 		"path": [["resource", "group", "version"], "tuple"],
-		"datagetter": datagetter_metrics,
+		"datagetter": datagetter_deprecated_api,
 		"generator": generator_list,
+		"field_colors": [("types", "kind"), ("types", "api_group")],
 		"field_separators": [("separators", "kind_apigroup"), ("separators", "kind")],
 	},
 	"deprecated_removed_release": {
@@ -5414,7 +5448,9 @@ field_templates = {
 	"kind": {
 		# (kind, api_group)
 		"header": "Kind:",
+		"path": "kind",
 		"generator": generator_list,
+		"field_colors": [("types", "kind"), ("types", "api_group")],
 		"field_separators": [("separators", "kind_apigroup")],
 	},
 	"kubelet_version": {
@@ -7927,6 +7963,60 @@ def networkinfoloop(stdscr, view):
 			uip.refresh_all()
 		"""
 
+def field_processor_kind(obj, path, extra_path = None, fallback = None, formatting = None):
+	match = True
+	if path is None or type(path) != list or len(path) != 2 or obj is None:
+		match = False
+	else:
+		resource = deep_get(obj, path[0])
+		group = deep_get(obj, path[1])
+		kind = kh.guess_kind((deep_get(obj, path[0]), deep_get(obj, path[1])))
+
+	if match == False:
+		if fallback is None:
+			field = [("strings", "none")]
+		else:
+			field = fallback
+	else:
+		resource, group = kind
+		if formatting is not None:
+			field = __field_processor_list([resource, group], formatting = formatting)
+		else:
+			field = __field_processor_list([resource, group])
+	return field
+
+def field_processor_latest_api_version(obj, path, extra_path = None, fallback = None, formatting = None):
+	match = True
+	if path is None or type(path) != list or len(path) != 3 or obj is None:
+		match = False
+	else:
+		resource = deep_get(obj, path[0])
+		group = deep_get(obj, path[1])
+		deprecated_api = deep_get(obj, path[2])
+		if resource is None or len(resource) == 0:
+			match = False
+		else:
+			kind = kh.guess_kind((deep_get(obj, path[0]), deep_get(obj, path[1])))
+			latest_api = kh.get_latest_api(kind)
+
+	if match == False:
+		if fallback is None:
+			field = [("strings", "none")]
+		else:
+			field = fallback
+	else:
+		if latest_api == deprecated_api:
+			value = "No newer API known; the API might be deprecated"
+			formatting = ("main", "status_not_ok")
+			field = [(f"{value}", formatting)]
+		else:
+			group, version = latest_api.split("/")
+			if formatting is not None:
+				field = __field_processor_list([group, version], formatting = formatting)
+			else:
+				field = __field_processor_list([group, version])
+	return field
+
 # All field processors have to return format lists (aka lists of tuples)
 def field_processor_empty(obj, path, extra_paths = None, fallback = None, formatting = None):
 	value = deep_get(obj, path)
@@ -9093,11 +9183,11 @@ def genericinfoloop(stdscr, obj, view):
 	infopadheight = 0
 	if "infopad" in viewref:
 		# Number of fields added conditionally
-		if name_path is not None:
+		if name_path is not None and len(name_path) > 0 and deep_get(obj, name_path) is not None:
 			infopadheight += 1
-		if namespace_path is not None and deep_get(obj, namespace_path) is not None:
+		if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, namespace_path) is not None:
 			infopadheight += 1
-		if creation_timestamp_path is not None:
+		if creation_timestamp_path is not None and len(creation_timestamp_path) > 0:
 			infopadheight += 1
 		# Number of custom fields
 		infopadheight += len(deep_get(viewref, "infopad", {}))
@@ -9108,7 +9198,6 @@ def genericinfoloop(stdscr, obj, view):
 			infopadheight = max(infopadheight, maxyx[0] - 3)
 
 	shortcuts = deep_get(viewref, "shortcuts", {})
-	namespace_path = deep_get(viewref, "namespace_path", "metadata#namespace")
 
 	# Shortcuts
 	# Always include the shortcut for namespaces, unless overriden
@@ -9287,14 +9376,14 @@ def genericinfoloop(stdscr, obj, view):
 
 			if infopad is not None:
 				y = 0
-				if name_path is not None:
+				if name_path is not None and len(name_path) > 0:
 					fieldarray = [
 						("Name:", ("main", "infoheader")),
 						(f" {deep_get(obj, name_path)}", ("types", "generic"))
 					]
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 					y += 1
-				if namespace_path is not None and deep_get(obj, namespace_path) is not None:
+				if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, namespace_path) is not None:
 					fieldarray = [
 						("N", ("main", "infoheader_shortcut")), ("amespace:", ("main", "infoheader")),
 						(f" {deep_get(obj, namespace_path)}", ("types", "generic"))
@@ -9335,7 +9424,7 @@ def genericinfoloop(stdscr, obj, view):
 					uip.addthemearray(infopad, fieldarray, y = y)
 					y += 1
 
-				if creation_timestamp_path is not None:
+				if creation_timestamp_path is not None and len(creation_timestamp_path) > 0:
 					fieldarray = [
 						("Created: ", ("main", "infoheader")),
 					]
@@ -12221,6 +12310,49 @@ infoviews = {
 			},
 		},
 	},
+	("__Deprecation", ""): {
+		"windowheader": "Deprecation Info",
+		"fields": ["kind", "namespace", "name"],
+		"sortcolumn": "namespace",
+		"extraref": "kind",
+		"activatedfun": resourceinfodispatch,
+		"name_path": "",
+		"namespace_path": "",
+		"creation_timestamp_path": "",
+		"infopad": {
+			"Deprecated API:": {
+				"path": ["fields#resource", "fields#group"],
+				"processor": field_processor_kind,
+				"formatting": {
+					"field_colors": [("types", "kind"), ("types", "api_group")],
+					"item_separators": [("separators", "kind_apigroup")],
+				},
+			},
+			"Deprecated Version:": {
+				"processor": field_processor_list,
+				"formatting": {
+					"field_colors": [("types", "generic"), ("types", "generic")],
+					"item_separators": [("separators", "kind")],
+				},
+				"extra_paths": ["fields#group", "fields#version"]
+			},
+			"Latest Version:": {
+				"processor": field_processor_latest_api_version,
+				"formatting": {
+					"field_colors": [("types", "generic"), ("types", "generic")],
+					"item_separators": [("separators", "kind")],
+				},
+				"path": ["fields#resource", "fields#group", "fields#version"],
+			},
+			"Planned removal:": {
+				"path": "fields#removed_release",
+			},
+		},
+		"listpad": {
+			"listgetter": "get_resource_info_by_last_applied_configuration(configuration = {'apiVersion': deep_get(obj, 'fields#group') + '/' + deep_get(obj, 'fields#version', ''), 'kind': kh.guess_kind((deep_get(obj, 'fields#resource'), deep_get(obj, 'fields#group', '')))[0]}, resources = [(deep_get(obj, 'fields#resource'), deep_get(obj, 'fields#group', ''))])",
+			"infogetter": generic_infogetter,
+		},
+	},
 	("DestinationRule", "networking.istio.io"): {
 		"windowheader": "Destination Rule Info",
 		"infopad": {
@@ -14170,9 +14302,8 @@ views = {
 		"commandline": ["deprecations"],
 		"group": "Debugging",
 		"fields": ["deprecated_api", "deprecated_removed_release"],
-		"kind": ("__Deprecations", ""),
+		"kind": ("__Deprecation", ""),
 		"sortcolumn": "deprecated_api",
-		"activatedfun": None,
 		"listgetter": "get_metrics_list",
 		"extra_vars": {
 			"listgetter": {

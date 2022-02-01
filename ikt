@@ -189,7 +189,7 @@ def show_configuration(hosts):
 	iktprint([("Target hosts:", "header")])
 	for host in hosts:
 		iktprint([("  • ", "separator"), (host, "hostname")])
-	
+
 def run_playbooks(playbooks, hosts = None, extra_values = {}):
 	for string, playbookpath in playbooks:
 		iktprint(string)
@@ -541,7 +541,7 @@ def add_nodes(options = [], args = None):
 			iktprint([(f"Warning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the invetory; ignoring them since “", "description"), ("--ignore-non-existing", "argument"), ("“ was specified.", "default")], stderr = True)
 
 	show_configuration(non_existing)
-	
+
 	confirm = True
 	if confirm == True:
 		retval = iktinput([("\nStart node setup? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])

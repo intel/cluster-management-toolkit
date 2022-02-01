@@ -2041,12 +2041,32 @@ class KubernetesHelper:
 			api_group = ""
 		return kind, api_group
 
+	def get_latest_api(self, kind):
+		if kind not in self.kubernetes_resources:
+			raise Exception(f"Could not determine latest API; kind {kind} not found in kubernetes_resources")
+
+		latest_api = deep_get(self.kubernetes_resources[kind], "api_family")[0]
+		if latest_api.startswith("api/"):
+			latest_api = latest_api[len("api/"):]
+		elif latest_api.startswith("apis/"):
+			latest_api = latest_api[len("apis/"):]
+		if latest_api.endswith("/"):
+			latest_api = latest_api[:-len("/")]
+		return latest_api
+
 	# In cases where we get a kind that doesn't include the API group
 	# (such as from owner references), we have to guess
 	def guess_kind(self, kind):
 		# If we already have a tuple, don't guess
 		if type(kind) == tuple:
-			return kind
+			if kind in self.kubernetes_resources:
+				return kind
+
+			# We have a tuple, but it didn't have an entry in kubernetes_resources;
+			# it might be api + api_family instead though, but for that we need to scan
+			for _kind in self.kubernetes_resources:
+				if deep_get(self.kubernetes_resources[_kind], "api") == kind[0] and _kind[1] == kind[1]:
+					return _kind
 
 		# APIs are grouped in two: Kubernetes "native",
 		# and everything else, with native entries first.
