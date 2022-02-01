@@ -13895,6 +13895,10 @@ infoviews = {
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
 		"infopad": {
+			"Controller:": {
+				"fieldname": [("C", ("main", "infoheader_shortcut")), ("ontroller:", ("main", "infoheader"))],
+				"processor": field_processor_controller,
+			},
 			"Label Selector:": {
 				"path": "spec#selector#matchLabels",
 				"processor": field_processor_label_selector,
@@ -13969,6 +13973,15 @@ infoviews = {
 		"listpad": {
 			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
 			"infogetter": get_pod_info,
+		},
+		"shortcuts": {
+			"Controller": {
+				"shortcut": ord("C"),
+				"helptext": ("[Shift] + C", "Open info page for controller"),
+				"call": resourceinfodispatch,
+				"namespace_path": "metadata#namespace",
+				"owner_references_path": "metadata#ownerReferences",
+			},
 		},
 	},
 	("StorageClass", "storage.k8s.io"): {
