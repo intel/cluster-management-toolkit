@@ -4425,19 +4425,19 @@ def get_security_context(obj):
 	security_policies = []
 
 	tmp = [
-		("Run as User", deep_get(obj, "spec#securityContext#runAsUser")),
-		("Run as non-Root", deep_get(obj, "spec#securityContext#runAsNonRoot")),
-		("Run as Group", deep_get(obj, "spec#securityContext#runAsGroup")),
-		("FS Group", deep_get(obj, "spec#securityContext#fsGroup")),
-		("FS Group-change Policy", deep_get(obj, "spec#securityContext#fsGroupChangePolicy")),
-		("Allow Privilege Escalation", deep_get(obj, "spec#securityContext#allowPrivilegeEscalation")),
-		("Capabilities",deep_get(obj, "spec#securityContext#capabilities")),
-		("Privileged", deep_get(obj, "spec#securityContext#privileged")),
-		("Proc Mount", deep_get(obj, "spec#securityContext#procMount")),
-		("Read-only Root Filesystem", deep_get(obj, "spec#securityContext#readOnlyRootFilesystem")),
-		("SELinux Options", deep_get(obj, "spec#securityContext#seLinuxOptions")),
-		("Seccomp Profile", deep_get(obj, "spec#securityContext#seccompProfile")),
-		("Windows Options", deep_get(obj, "spec#securityContext#windowsOptions")),
+		("Run as User", deep_get_with_fallback(obj, ["spec#securityContext#runAsUser", "spec#template#spec#securityContext#runAsUser"])),
+		("Run as non-Root", deep_get_with_fallback(obj, ["spec#securityContext#runAsNonRoot", "spec#template#spec#securityContext#runAsNonRoot"])),
+		("Run as Group", deep_get_with_fallback(obj, ["spec#securityContext#runAsGroup", "spec#template#spec#securityContext#runAsGroup"])),
+		("FS Group", deep_get_with_fallback(obj, ["spec#securityContext#fsGroup", "spec#template#spec#securityContext#fsGroup"])),
+		("FS Group-change Policy", deep_get_with_fallback(obj, ["spec#securityContext#fsGroupChangePolicy", "spec#template#spec#securityContext#fsGroupChangePolicy"])),
+		("Allow Privilege Escalation", deep_get_with_fallback(obj, ["spec#securityContext#allowPrivilegeEscalation", "spec#template#spec#securityContext#allowPrivilegeEscalation"])),
+		("Capabilities",deep_get_with_fallback(obj, ["spec#securityContext#capabilities", "spec#template#spec#securityContext#capabilities"])),
+		("Privileged", deep_get_with_fallback(obj, ["spec#securityContext#privileged", "spec#template#spec#securityContext#privileged"])),
+		("Proc Mount", deep_get_with_fallback(obj, ["spec#securityContext#procMount", "spec#template#spec#securityContext#procMount"])),
+		("Read-only Root Filesystem", deep_get_with_fallback(obj, ["spec#securityContext#readOnlyRootFilesystem", "spec#template#spec#securityContext#readOnlyRootFilesystem"])),
+		("SELinux Options", deep_get_with_fallback(obj, ["spec#securityContext#seLinuxOptions", "spec#template#spec#securityContext#seLinuxOptions"])),
+		("Seccomp Profile", deep_get_with_fallback(obj, ["spec#securityContext#seccompProfile", "spec#template#spec#securityContext#seccompProfile"])),
+		("Windows Options", deep_get_with_fallback(obj, ["spec#securityContext#windowsOptions", "spec#template#spec#securityContext#windowsOptions"])),
 	]
 
 	for policy in tmp:
@@ -8223,8 +8223,10 @@ def field_processor_cidr(obj, path = None, extra_paths = None, fallback = None, 
 
 def field_processor_images(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	# This is to handle Prometheus
+	if path is None:
+		path = "spec#image"
 	base_image = deep_get(obj, "spec#baseImage")
-	image = deep_get(obj, "spec#image", base_image)
+	image = deep_get(obj, path, base_image)
 
 	if image is not None:
 		name, version = get_image_tuple(image)
@@ -8576,8 +8578,14 @@ def field_processor_controller(obj, owr_path = None, extra_paths = None, fallbac
 	owr = deep_get(obj, owr_path)
 	show_kind = deep_get(formatting, "show_kind", "mixed")
 	controller = get_controller_from_owner_references(owr)
-	controller = format_controller(controller, show_kind)
-	field = format_list(controller, 0, 0, False, False, field_colors = [("types", "kind"), ("types", "generic")], field_separators = [("separators", "kind")])
+	if controller is None or controller == (("", ""), ""):
+		if fallback is not None:
+			field = fallback
+		else:
+			field = [("strings", "none")]
+	else:
+		controller = format_controller(controller, show_kind)
+		field = format_list(controller, 0, 0, False, False, field_colors = [("types", "kind"), ("types", "generic")], field_separators = [("separators", "kind")])
 	return field
 
 # All fields except obj and owr_path will be ignored
@@ -12190,6 +12198,11 @@ infoviews = {
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
 		"infopad": {
+			"Controller:": {
+				"fieldname": [("C", ("main", "infoheader_shortcut")), ("ontroller:", ("main", "infoheader"))],
+				"processor": field_processor_controller,
+				"fallback": [("strings", "none")],
+			},
 			"Label Selector:": {
 				"path": "spec#selector#matchLabels",
 				"processor": field_processor_label_selector,
@@ -12201,6 +12214,27 @@ infoviews = {
 			"Priority Class:": {
 				"fieldname": [("P", ("main", "infoheader_shortcut")), ("riority Class:", ("main", "infoheader"))],
 				"path": "spec#template#spec#priorityClassName",
+			},
+			"Scheduler:": {
+				"path": "spec#template#spec#schedulerName",
+			},
+			"DNS Policy:": {
+				"path": "spec#template#spec#dnsPolicy",
+			},
+			"Restart Policy:": {
+				"path": "spec#template#spec#restartPolicy",
+			},
+			"Host IPC:": {
+				"path": "spec#template#spec#hostIPC",
+				"fallback": [("False", ("types", "none"))],
+			},
+			"Host PID:": {
+				"path": "spec#template#spec#hostPID",
+				"fallback": [("False", ("types", "none"))],
+			},
+			"Host Network:": {
+				"path": "spec#template#spec#hostNetwork",
+				"fallback": [("False", ("types", "none"))],
 			},
 			"Nodes:": {
 				"extra_paths": ["status#currentNumberScheduled", "", "status#desiredNumberScheduled", "", "status#updatedNumberScheduled", "", "status#numberAvailable", "", "status#numberMisscheduled"],
@@ -12229,18 +12263,70 @@ infoviews = {
 				"path": "spec#template#spec#nodeSelector",
 				"processor": field_processor_label_selector,
 			},
+			"Service Account:": {
+				"fieldname": [("S", ("main", "infoheader_shortcut")), ("ervice Account:", ("main", "infoheader"))],
+				"path": "spec#template#spec#serviceAccountName",
+			},
+			"Update Strategy:": {
+				"extra_paths": ["spec#updateStrategy#type", "", "spec#updateStrategy#rollingUpdate#maxSurge", "", "spec#updateStrategy#rollingUpdate#maxUnavailable", ""],
+				"formatting": {
+					"field_colors": [("types", "generic"), ("types", "numerical"), ("types", "numerical")],
+					"item_separators": [
+						(" (", ("types", "generic")),
+						("Max Surge: ", ("main", "infoheader")),
+						("separators", "list"),
+						("Max Unavailable: ", ("main", "infoheader")),
+						(")", ("types", "generic")),
+					],
+					"conditionals": {
+						"RollingUpdate:<<<0>>>": {
+							"substitute": "Rolling Update",
+						},
+						"<<<none>>>:<<<0>>>": {
+							"substitute": "Rolling Update",
+						},
+						"Recreate": {
+							"stop": True,
+						},
+					},
+				},
+				"processor": field_processor_list,
+			},
 		},
 		"listpad": {
 			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
 			"infogetter": get_pod_info,
 		},
 		"shortcuts": {
+			"Controller": {
+				"shortcut": ord("C"),
+				"helptext": ("[Shift] + C", "Open info page for controller"),
+				"call": resourceinfodispatch,
+				"namespace_path": "metadata#namespace",
+				"owner_references_path": "metadata#ownerReferences",
+			},
 			"Priority Class": {
 				"shortcut": ord("P"),
 				"helptext": ("[Shift] + P", "Open info page for priority class"),
 				"call": resourceinfodispatch,
 				"kind": ("PriorityClass", "scheduling.k8s.io"),
 				"name_path": "spec#template#spec#priorityClassName",
+			},
+			"Service Account": {
+				"shortcut": ord("S"),
+				"helptext": ("[Shift] + S", "Open info page for service account"),
+				"call": resourceinfodispatch,
+				"kind": ("ServiceAccount", ""),
+				"name_path": "spec#template#spec#serviceAccountName",
+				"namespace_path": "metadata#namespace",
+			},
+			"Show Security Context Policies": {
+				"shortcut": ord("x"),
+				"helptext": ("X", "Show security context policies"),
+				"widget": "windowwidget",
+				"title": "Security Context Policies:",
+				"headers": ["Policy:", "Value:"],
+				"itemgetter": get_security_context,
 			},
 		},
 	},
@@ -12580,6 +12666,33 @@ infoviews = {
 		},
 		"listpad": {
 			"infogetter": get_gw_server_info,
+		},
+	},
+	("GpuDevicePlugin", "deviceplugin.intel.com"): {
+		"infopad": {
+			"Image:": {
+				"processor": field_processor_images,
+			},
+			"Init Image:": {
+				"path": "spec#initImage",
+				"processor": field_processor_images,
+			},
+			"Node Selector:": {
+				"path": "spec#nodeSelector",
+				"processor": field_processor_label_selector,
+			},
+			"Enable Monitoring:": {
+				"path": "spec#enableMonitoring",
+			},
+			"Loglevel:": {
+				"path": "spec#logLevel",
+			},
+			"Resource Manager:": {
+				"path": "spec#resourceManager",
+			},
+			"Shared Device Number:": {
+				"path": "spec#sharedDevNum",
+			},
 		},
 	},
 	("Group", "user.openshift.io"): {
