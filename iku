@@ -9066,7 +9066,7 @@ def export_data(filename, value):
 		raise Exception(f"Trying to export unknown vtype: {vtype}")
 	f.close()
 
-def callout_show_package_versions(uip, kind, obj, selected, title, headers, itemgetter, sortcolumn):
+def callout_show_package_versions(uip, kind, obj, **kwargs):
 	win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = "Fetching package versions...")
 	host_name = deep_get(obj, "metadata#name")
 	package_versions = get_package_versions(host_name)
@@ -9144,7 +9144,7 @@ def generate_helptext(view, viewtype, additional_helptexts = []):
 
 	return helptext
 
-def genericinfoloop(stdscr, obj, view):
+def genericinfoloop(stdscr, obj, view, **kwargs):
 	global initial_container
 
 	# If obj is a tuple we got the object as obj[0]
@@ -9174,7 +9174,10 @@ def genericinfoloop(stdscr, obj, view):
 	field_list, sortcolumn = fieldgenerator(None, fields = fields, sortcolumn = sortcolumn, blacklist = field_blacklist)
 
 	# If no window header has been specified that overrides the default, just use the view name with " Info" tacked on at the end
-	windowheader = deep_get(viewref, "windowheader", f"{view[0]} Info")
+	if "title" in kwargs:
+		windowheader = deep_get(kwargs, "title")
+	else:
+		windowheader = deep_get(viewref, "windowheader", f"{view[0]} Info")
 	sortorder_reverse = deep_get(viewref, "sortorder_reverse", False)
 	reversible = deep_get(viewref, "reversible", True)
 	activatedfun = deep_get(viewref, "activatedfun")
@@ -9224,7 +9227,7 @@ def genericinfoloop(stdscr, obj, view):
 
 	# Always include the shortcut for security contexts,
 	# unless the path returns None
-	if "securityContext" in deep_get(obj, "spec", {}):
+	if "securityContext" in deep_get(obj, "spec", {}) or "securityContext" in deep_get(obj, "spec#template#spec", {}):
 		shortcuts["Show Security Context"] = {
 			"shortcut": ord("x"),
 			"helptext": ("X", "Show security context information"),
@@ -9247,14 +9250,15 @@ def genericinfoloop(stdscr, obj, view):
 		}
 
 	# Always include the shortcut for events unless overriden
-	shortcuts["Show Events"] = {
-		"shortcut": ord("e"),
-		"helptext": ("E", "Show events"),
-		"widget": "windowwidget",
-		"title": "Events:",
-		"headers": ["Namespace:", "Name:", "Last Seen:", "Status:", "Reason:", "Source:", "First Seen:", "Count:", "Message:"],
-		"itemgetter": __get_events,
-	}
+	if deep_get(viewref, "shortcuts#Show Events") is None:
+		shortcuts["Show Events"] = {
+			"shortcut": ord("e"),
+			"helptext": ("E", "Show events"),
+			"widget": "windowwidget",
+			"title": "Events:",
+			"headers": ["Namespace:", "Name:", "Last Seen:", "Status:", "Reason:", "Source:", "First Seen:", "Count:", "Message:"],
+			"itemgetter": __get_events,
+		}
 
 	# Always include the shortcut for YAML dump, unless overridden
 	if deep_get(viewref, "shortcuts#YAML") is None:
@@ -9262,6 +9266,7 @@ def genericinfoloop(stdscr, obj, view):
 			"shortcut": ord("y"),
 			"helptext": ("Y", "View YAML dump of resource"),
 			"widget": "callout",
+			"title": "YAML dump",
 			"callout": infoview_view_yaml,
 		}
 
@@ -9271,6 +9276,7 @@ def genericinfoloop(stdscr, obj, view):
 			"shortcut": ord("L"),
 			"helptext": ("[Shift] + L", "Show last applied configuration"),
 			"widget": "callout",
+			"title": "Last applied configuration",
 			"callout": infoview_view_last_applied_configuration,
 		}
 
@@ -9280,6 +9286,10 @@ def genericinfoloop(stdscr, obj, view):
 		additional_helptexts += helptexts.labels
 	if deep_get(obj, annotations) is not None:
 		additional_helptexts += helptexts.annotations
+	for shortcut in shortcuts:
+		tmp = deep_get(shortcuts[shortcut], "helptext")
+		if tmp is not None:
+			additional_helptexts += [tmp]
 
 	helptext = generate_helptext(view, "infoview", additional_helptexts)
 
@@ -9605,7 +9615,7 @@ def genericinfoloop(stdscr, obj, view):
 					if w_kinds != ["<native>"] and (selected is None or not selected.kind in w_kinds) and w_kinds != [("", "")]:
 						continue
 
-					w_inputtitle = deep_get(value, "inputtitle")
+					w_inputtitle = deep_get(value, "inputtitle", "")
 					if w_inputtitle is not None:
 						w_input = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, title = w_inputtitle)
 						w_command = w_input.split()
@@ -9633,14 +9643,15 @@ def genericinfoloop(stdscr, obj, view):
 					changed = True
 				elif widget == "callout":
 					selected = uip.get_selected()
-					w_title = deep_get(value, "inputtitle", "")
+					w_title = deep_get(value, "title", "")
 					w_headers = deep_get(value, "headers")
 					w_itemgetter = deep_get(value, "itemgetter")
 					w_sortcolumn = deep_get(value, "sortcolumn")
 					w_callout = deep_get(value, "callout")
 					w_kind = deep_get(value, "kind", view)
-					# Try to be as generic as we can
-					retval = w_callout(uip, w_kind, obj, selected, w_title, w_headers, w_itemgetter, w_sortcolumn)
+					# Try to be as generic as we can;
+					# pass all kinds of information and let the handler use whatever information it needs
+					retval = w_callout(uip, w_kind, obj, selected = selected, title = w_title, headers = w_headers, itemgetter = w_itemgetter, sortcolumn = w_sortcolumn)
 					if retval is not None and retval == curses_helper.retval.RETURNFULL:
 						return retval
 			else:
@@ -9697,7 +9708,7 @@ def genericinfoloop(stdscr, obj, view):
 						retval = call(uip.stdscr, call_name)
 						if retval is not None and retval == curses_helper.retval.RETURNFULL:
 							return retval
-					else:
+					elif len(kind) > 0:
 						if type(kind) == str:
 							kind = kh.guess_kind(kind)
 						ref = kh.get_ref_by_kind_name_namespace(kind, call_name, call_namespace)
@@ -10590,12 +10601,12 @@ def csi_driver_dispatch(stdscr, obj, kind):
 
 # This dispatches to info views; as soon as one is added this function will
 # dispatch to that view.
-def resourceinfodispatch(stdscr, obj, kind, info = None):
+def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 	if obj is None:
 		return None
 
 	if kind in infoviews:
-		return genericinfoloop(stdscr, obj, kind)
+		return genericinfoloop(stdscr, obj, kind, **kwargs)
 	# Exceptions
 	elif kind in [("Container", ""), ("InitContainer", "")]:
 		# Do not try to open pending containers
@@ -10828,18 +10839,20 @@ def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None):
 	themearrays = iktlib.format_yaml(objects)
 	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
 
-def infoview_view_yaml(uip, kind, obj, selected = None, title = None, headers = None, itemgetter = None, sortcolumn = None):
+def infoview_view_yaml(uip, kind, obj, **kwargs):
+	title = deep_get(kwargs, "title")
 	themearrays = iktlib.format_yaml([obj])
-	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
+	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
 
-def infoview_view_last_applied_configuration(uip, kind, obj, selected = None, title = None, headers = None, itemgetter = None, sortcolumn = None):
+def infoview_view_last_applied_configuration(uip, kind, obj, **kwargs):
+	title = deep_get(kwargs, "title")
 	last_applied_configuration = deep_get(obj, "metadata#annotations#kubectl.kubernetes.io/last-applied-configuration", {})
 	if last_applied_configuration is not None and len(last_applied_configuration) > 0:
 		data = json.loads(last_applied_configuration)
 	else:
 		return
 	themearrays = iktlib.format_yaml([data])
-	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
+	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
 
 def delete_resource(uip, items = [], action = {}, values = {}, kind = None):
 	success = True
@@ -11774,7 +11787,7 @@ infoviews = {
 			},
 		},
 		"shortcuts": {
-			"Service": {
+			"Service Account": {
 				"shortcut": ord("S"),
 				"helptext": ("[Shift] + S", "Open info page for service account"),
 				"call": resourceinfodispatch,
@@ -11940,6 +11953,7 @@ infoviews = {
 		"shortcuts": {
 			"Issuer": {
 				"shortcut": ord("I"),
+				"helptext": ("[Shift] + I", "Open info page for issuer"),
 				"call": resourceinfodispatch,
 				"kind_path": "spec#issuerRef#kind",
 				"name_path": "spec#issuerRef#name",
@@ -11974,6 +11988,7 @@ infoviews = {
 		#"shortcuts": {
 		#	"Requesting User": {
 		#		"shortcut": ord("R"),
+		#		"helptext": ("[Shift] + R", "Open info page for requesting user"),
 		#		"call": resourceinfodispatch,
 		#		"kind": ("???", "???"),
 		#		"name_path": "spec#username",
@@ -12024,6 +12039,7 @@ infoviews = {
 		"shortcuts": {
 			"CA Secret Name": {
 				"shortcut": ord("C"),
+				"helptext": ("[Shift] + C", "Open info page for CA Secret Name"),
 				"call": resourceinfodispatch,
 				"name_path": "spec#ca#secretName",
 				# XXX: This can be reconfigured; how can that be queried?
@@ -12320,14 +12336,6 @@ infoviews = {
 				"name_path": "spec#template#spec#serviceAccountName",
 				"namespace_path": "metadata#namespace",
 			},
-			"Show Security Context Policies": {
-				"shortcut": ord("x"),
-				"helptext": ("X", "Show security context policies"),
-				"widget": "windowwidget",
-				"title": "Security Context Policies:",
-				"headers": ["Policy:", "Value:"],
-				"itemgetter": get_security_context,
-			},
 		},
 	},
 	("Deployment", "apps"): {
@@ -12605,6 +12613,7 @@ infoviews = {
 			},
 			"Target Reference": {
 				"shortcut": [ curses.KEY_ENTER, 10, 13 ],
+				"helptext": ("[Enter]", "Open info page for target reference"),
 				"call": resourceinfodispatch,
 				"call_kind_name_namespace_selection_path": "target_ref",
 				"call_kind_name_namespace_selection_order": (0, 2, 1),
@@ -13232,7 +13241,7 @@ infoviews = {
 				"command": ["<dnsutils>"],
 				"kinds": ["<native>"],
 			},
-			"show Package Versions": {
+			"Show Package Versions": {
 				"shortcut": ord("V"),
 				"helptext": ("[Shift] + V", "Show package versions"),
 				"widget": "callout",
@@ -13272,7 +13281,7 @@ infoviews = {
 				"title": "Allowed IPs:",
 				"itemgetter": get_allowed_ips,
 				# This isn't supported for now
-				#"sortcolumn": "key",
+				"sortcolumn": "key",
 			},
 		},
 	},
@@ -13349,7 +13358,7 @@ infoviews = {
 				"itemgetter": get_volume_properties,
 				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
 				# This isn't supported for now
-				#"sortcolumn": "key",
+				"sortcolumn": "key",
 			},
 		},
 	},
@@ -13670,20 +13679,6 @@ infoviews = {
 			"infogetter": get_pod_info,
 			"infogetter_filters": [("\"spec#priorityClassName\"", "f\"{deep_get(obj, 'metadata#name')}\"")],
 		},
-		"shortcuts": {
-			"Controller": {
-				"shortcut": ord("C"),
-				"call": resourceinfodispatch,
-				"namespace_path": "metadata#namespace",
-				"owner_references_path": "metadata#ownerReferences",
-			},
-			"Priority Class": {
-				"shortcut": ord("P"),
-				"call": resourceinfodispatch,
-				"kind": ("PriorityClass", "scheduling.k8s.io"),
-				"name_path": "spec#template#spec#priorityClassName",
-			},
-		},
 	},
 	("PriorityLevelConfiguration", "flowcontrol.apiserver.k8s.io"): {
 		"windowheader": "Priority Level Configuration Info",
@@ -13754,13 +13749,6 @@ infoviews = {
 				"kind": ("ServiceAccount", ""),
 				"name_path": "spec#serviceAccountName",
 				"namespace_path": "metadata#namespace",
-			},
-			"Show Security Context": {
-				"shortcut": ord("x"),
-				"widget": "windowwidget",
-				"title": "Security Context Policies:",
-				"headers": ["Policy:", "Value:"],
-				"itemgetter": get_security_context,
 			},
 		},
 	},
@@ -13918,6 +13906,12 @@ infoviews = {
 		"logpad": {
 			"infogetter": get_themearrays,
 		},
+		"shortcuts": {
+			# The viewer cannot view...
+			"Show Events": {},
+			"Last Applied Configuration": {},
+			"YAML": {},
+		}
 	},
 	("Role", "rbac.authorization.k8s.io"): {
 		"fields": ["api_group", "resource", "non_resource_urls", "resource_names", "verbs"],
@@ -14377,6 +14371,7 @@ infoviews = {
 		"shortcuts": {
 			"ServiceAccount": {
 				"shortcut": ord("S"),
+				"helptext": ("[Shift] + S", "Open info page for service account"),
 				"call": resourceinfodispatch,
 				"kind": ("ServiceAccount", ""),
 				"namespace_path": "metadata#namespace",
