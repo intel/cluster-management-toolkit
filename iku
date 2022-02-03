@@ -6956,6 +6956,7 @@ def genericlistloop(stdscr, view):
 				"View YAML dump": {
 					"description": "View YAML dump of resource",
 					"actionfunc": view_yaml_dump,
+					"title": "YAML dump",
 					"read_only": True,
 				},
 				"Edit resource": {
@@ -7018,6 +7019,7 @@ def genericlistloop(stdscr, view):
 						queryval = deep_get(actionlist, f"{action}#queryval")
 						queryfunc = deep_get(actionlist, f"{action}#queryfunc")
 						extravars = deep_get(actionlist, f"{action}#extravars", {})
+						title = deep_get(actionlist, f"{action}#title")
 						break
 
 				if actionfunc is None:
@@ -7089,7 +7091,7 @@ def genericlistloop(stdscr, view):
 					if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Are you sure you want to perform “{description}“?", default = False) == False:
 						continue
 
-				actionfunc(uip, items, actionlist[action], values = selection_vars, kind = kind)
+				actionfunc(uip, items, actionlist[action], values = selection_vars, kind = kind, title = title)
 
 				uip.force_update()
 				tagged_items.clear()
@@ -10688,7 +10690,7 @@ def executecommand_multiple(stdscr, msg, command, items, waitforkeypress):
 
 	if waitforkeypress or retval > 0:
 		if retval > 0:
-			iktprint([(f"Error: ", "error"), (f"{' '.join(command)} {item}", "command"), (" returned ", "default"), (f"{retval}", "errorvalue")], stderr = True)
+			iktprint([(f"Error: ", "error")] + format_commandline(args) + [(" returned ", "default"), (f"{retval}", "errorvalue")], stderr = True)
 		input("\nPress Enter to continue...")
 	stdscr.refresh()
 
@@ -10874,7 +10876,8 @@ def __run_playbook(playbookpath, nodes, values = None):
 def run_playbook(playbook, nodes, values = None):
 	return __run_playbook(playbook.get("playbook"), nodes, values = values)
 
-def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None):
+def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+	title = deep_get(kwargs, "title")
 	objects = []
 
 	for item in items:
@@ -10887,7 +10890,7 @@ def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None):
 		objects.append(obj)
 
 	themearrays = iktlib.format_yaml(objects)
-	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""))
+	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
 
 def infoview_view_yaml(uip, kind, obj, **kwargs):
 	title = deep_get(kwargs, "title")
@@ -10904,7 +10907,7 @@ def infoview_view_last_applied_configuration(uip, kind, obj, **kwargs):
 	themearrays = iktlib.format_yaml([data])
 	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
 
-def delete_resource(uip, items = [], action = {}, values = {}, kind = None):
+def delete_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	success = True
 
 	for item in items:
@@ -10927,7 +10930,7 @@ def delete_resource(uip, items = [], action = {}, values = {}, kind = None):
 			del win
 			break
 
-def force_delete_resource(uip, items = [], action = {}, values = {}, kind = None):
+def force_delete_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	values["__force"] = True
 	return delete_resource(uip, items = items, action = action, values = values, kind = kind)
 
@@ -10936,7 +10939,7 @@ def __create_namespace(name):
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
 	return result
 
-def create_namespace(uip, items = [], action = {}, values = {}, kind = None):
+def create_namespace(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
 	os.system("clear")
 
@@ -11006,7 +11009,7 @@ def __edit_resource(kind, namespace, name):
 	result = subprocess.run(args, universal_newlines = True)
 	return result.returncode, args
 
-def apply_configuration_from_file(uip, items = [], action = {}, values = {}, kind = None):
+def apply_configuration_from_file(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
 	os.system("clear")
 	resource_path, rtype = values["resource_path"]
@@ -11021,7 +11024,7 @@ def apply_configuration_from_file(uip, items = [], action = {}, values = {}, kin
 	result = subprocess.run(args, universal_newlines = True)
 	return result.returncode, args
 
-def apply_configuration_from_url(uip, items = [], action = {}, values = {}, kind = None):
+def apply_configuration_from_url(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
 	os.system("clear")
 	resource_path = values["resource_url"]
@@ -11031,7 +11034,7 @@ def apply_configuration_from_url(uip, items = [], action = {}, values = {}, kind
 	return result.returncode, args
 
 # We should probably download and apply locally instead
-def create_resource_from_url(uip, items = [], action = {}, values = {}, kind = None):
+def create_resource_from_url(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
 	os.system("clear")
 	resource_path, rtype = values["resource_url"]
@@ -11055,7 +11058,7 @@ def __summarise_resources(path):
 			resources.append((merged_kind, namespace, name))
 	return resources
 
-def create_resource_from_file(uip, items = [], action = {}, values = {}, kind = None):
+def create_resource_from_file(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	resource_path, rtype = values["resource_path"]
 	resource_list = []
 
@@ -11087,7 +11090,7 @@ def create_resource_from_file(uip, items = [], action = {}, values = {}, kind = 
 
 	return result, args
 
-def diff_resource_configuration(uip, items = [], action = {}, values = {}, kind = None):
+def diff_resource_configuration(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	resource_path, rtype = values["resource_path"]
 
 	if rtype == "Configuration File":
@@ -11130,7 +11133,28 @@ def diff_resource_configuration(uip, items = [], action = {}, values = {}, kind 
 
 	tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, diff, title = "Diff between current and would be configuration:", cursor = False)
 
-def edit_resource(uip, items = [], action = {}, values = {}, kind = None):
+def format_commandline(args, implicit_command = True):
+	strarray = []
+
+	command = implicit_command
+
+	for i in range(0, len(args)):
+		# The first argument is the program name
+		if i == 0:
+			strarray += [(args[i], "programname")]
+		# This is an option
+		elif args[i].startswith(("-")):
+			strarray += [(f" {args[i]}", "option")]
+		# The first non-option argument is the command
+		elif command == False:
+			strarray += [(f" {args[i]}", "command")]
+			command = True
+		else:
+			strarray += [(f" {args[i]}", "argument")]
+
+	return strarray
+
+def edit_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
 	os.system("clear")
 	if type(items[0]) == tuple:
@@ -11143,11 +11167,11 @@ def edit_resource(uip, items = [], action = {}, values = {}, kind = None):
 	waitforkeypress = False
 	if waitforkeypress or retval > 0:
 		if retval > 0:
-			iktprint([(f"\nError: ", "error"), ("{' '.join(args)}", "argument"), (" returned ", "default"), (retval, "errorvalue")], stderr = True)
+			iktprint([("\nError: ", "error")] + format_commandline(args, implicit_command = False) + [(" returned ", "default"), (retval, "errorvalue")], stderr = True)
 		input("\nPress Enter to continue...")
 	uip.stdscr.refresh()
 
-def restart_resource_rescale(uip, items = [], action = {}, values = {}, kind = None):
+def restart_resource_rescale(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
 	os.system("clear")
 
@@ -11166,7 +11190,7 @@ def restart_resource_rescale(uip, items = [], action = {}, values = {}, kind = N
 		input("\nPress Enter to continue...")
 	uip.stdscr.refresh()
 
-def restart_resource_rollout(uip, items = [], action = {}, values = {}, kind = None):
+def restart_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
 	os.system("clear")
 
@@ -11183,7 +11207,7 @@ def restart_resource_rollout(uip, items = [], action = {}, values = {}, kind = N
 		input("\nPress Enter to continue...")
 	uip.stdscr.refresh()
 
-def rescale_resource(uip, items = [], action = {}, values = {}, kind = None):
+def rescale_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
 	os.system("clear")
 
@@ -11204,7 +11228,7 @@ def rescale_resource(uip, items = [], action = {}, values = {}, kind = None):
 
 # Valid kinds:
 # ("Deployment", "apps")
-def pause_resource_rollout(uip, items = [], action = {}, values = {}, kind = None):
+def pause_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
 	os.system("clear")
 
@@ -11223,7 +11247,7 @@ def pause_resource_rollout(uip, items = [], action = {}, values = {}, kind = Non
 
 # Valid kinds:
 # ("Deployment", "apps")
-def resume_resource_rollout(uip, items = [], action = {}, values = {}, kind = None):
+def resume_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
 	os.system("clear")
 
@@ -11242,7 +11266,7 @@ def resume_resource_rollout(uip, items = [], action = {}, values = {}, kind = No
 
 # Valid kinds:
 # ("Deployment", "apps")
-def stop_resource_rescale(uip, items = [], action = {}, values = {}, kind = None):
+def stop_resource_rescale(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
 	os.system("clear")
 
@@ -11264,7 +11288,7 @@ def delete_logs(uip, items = [], action = {}, values = {}, kind = None):
 	for item in items:
 		ansible_delete_log(item)
 
-def command_hosts(uip, items = [], action = {}, values = {}, kind = None):
+def command_hosts(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	hosts = iktlib.join_tuple_list(items, _tuple = "hostname", separator = (", ", "separator"))
 	msg = [("Executing playbook “", "action"), (action.get("description"), "argument"), ("“ on the following hosts: ", "action")] + hosts + [("\n", "action")]
 
@@ -11919,6 +11943,16 @@ infoviews = {
 		},
 		"listpad": {
 			"infogetter": get_app_status_info,
+		},
+	},
+	("AppRepository", "kubeapps.com"): {
+		"infopad": {
+			"Type:": {
+				"path": "spec#type",
+			},
+			"URL:": {
+				"path": "spec#url",
+			},
 		},
 	},
 	("AuthorizationPolicy", "security.istio.io"): {
