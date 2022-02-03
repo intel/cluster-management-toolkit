@@ -4485,6 +4485,19 @@ def get_volume_properties(obj):
 
 	return volume_properties
 
+def get_endpoint_slices(obj):
+	svcname = deep_get(obj, "metadata#name")
+	svcnamespace = deep_get(obj, "metadata#namespace")
+	# We need to find all Endpoint Slices in the same namespace as the service that have this service
+	# as its controller
+	vlist = kh.get_list_by_kind_namespace(("EndpointSlices", "discovery.k8s.io"), svcnamespace, label_selector = f"kubernetes.io/service-name={svcname}")
+	tmp = []
+	for item in vlist:
+		epsnamespace = deep_get(item, "metadata#namespace")
+		epsname = deep_get(item, "metadata#name")
+		tmp.append((epsnamespace, epsname))
+	return tmp
+
 def get_sc_parameters(obj):
 	params = deep_get(obj, "parameters", {})
 
@@ -9050,6 +9063,23 @@ def field_processor_endpoints(obj, path = None, extra_paths = None, fallback = N
 	]
 	return field
 
+def field_processor_endpoint_slices(obj, path = None, extra_paths = None, fallback = None, formatting = None):
+	tmp = get_endpoint_slices(obj)
+
+	field = []
+	for item in tmp:
+		field += [
+			(item[0], ("types", "namespace")),
+			("separators", "namespace"),
+			(item[1], ("types", "generic")),
+			("separators", "list")
+		]
+	# Remove the trailing comma
+	if len(field) > 0:
+		field.pop(len(field) - 1)
+
+	return field
+
 def export_data(filename, value):
 	vtype, value = decode_value(value)
 
@@ -9065,6 +9095,17 @@ def export_data(filename, value):
 	else:
 		raise Exception(f"Trying to export unknown vtype: {vtype}")
 	f.close()
+
+def callout_obj(uip, kind, obj, **kwargs):
+	if "selection" in kwargs:
+		_discard_field, namespace_field, name_field = deep_get(kwargs, "selection")
+		namespace = namespace_field[0][0]
+		name = name_field[0][0]
+		obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
+		return resourceinfodispatch(uip.stdscr, obj, kind, **kwargs)
+	# Add other ways to override obj here later on
+	else:
+		return resourceinfodispatch(uip.stdscr, obj, kind, **kwargs)
 
 def callout_show_package_versions(uip, kind, obj, **kwargs):
 	win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = "Fetching package versions...")
@@ -9286,10 +9327,6 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		additional_helptexts += helptexts.labels
 	if deep_get(obj, annotations) is not None:
 		additional_helptexts += helptexts.annotations
-	for shortcut in shortcuts:
-		tmp = deep_get(shortcuts[shortcut], "helptext")
-		if tmp is not None:
-			additional_helptexts += [tmp]
 
 	helptext = generate_helptext(view, "infoview", additional_helptexts)
 
@@ -9564,6 +9601,9 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					w_title = deep_get(value, "title", "")
 					w_headers = deep_get(value, "headers")
 					w_itemgetter = deep_get(value, "itemgetter")
+					w_selectable = deep_get(value, "selectable", False)
+					w_callout = deep_get(value, "callout", None)
+					w_kind = deep_get(value, "kind", view)
 					w_items = w_itemgetter(obj)
 
 					# If the first element is an integer we assume that we've been provided
@@ -9584,7 +9624,11 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 					if w_items is not None and len(w_items) > 0:
 						w_sortcolumn = deep_get(value, "sortcolumn")
-						curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items = w_items, headers = w_headers, title = w_title, cursor = False)
+						tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items = w_items, headers = w_headers, title = w_title, cursor = w_selectable)
+						if w_selectable is True and w_callout is not None:
+							retval = w_callout(uip, w_kind, obj, selection = tmpselection)
+							if retval is not None and retval == curses_helper.retval.RETURNFULL:
+								return retval
 						changed = True
 				elif widget == "inputbox":
 					selected = uip.get_selected()
@@ -14012,6 +14056,10 @@ infoviews = {
 				"fieldname": [("E", ("main", "infoheader_shortcut")), ("ndpoints:", ("main", "infoheader"))],
 				"processor": field_processor_endpoints,
 			},
+			"Endpoint Slices:": {
+				"fieldname": [("Endpoint ", ("main", "infoheader")), ("S", ("main", "infoheader_shortcut")), ("lices:", ("main", "infoheader"))],
+				"processor": field_processor_endpoint_slices,
+			},
 			"Type:": {
 				"path": "spec#type",
 			},
@@ -14048,6 +14096,19 @@ infoviews = {
 				"kind": ("Endpoints", ""),
 				"name_path": "metadata#name",
 				"namespace_path": "metadata#namespace",
+			},
+			"Endpoint Slices": {
+				"shortcut": ord("S"),
+				"helptext": ("[Shift] + S", "List endpoint slices"),
+				"widget": "windowwidget",
+				"title": "Endpoint Slices:",
+				"headers": ["Namespace:", "Name:"],
+				"selectable": True,
+				"callout": callout_obj,
+				"kind": ("EndpointSlices", "discovery.k8s.io"),
+				"itemgetter": get_endpoint_slices,
+				# This isn't supported for now
+				"sortcolumn": "namespace",
 			},
 			"Ports": {
 				"shortcut": ord("P"),
