@@ -655,7 +655,7 @@ class KubernetesHelper:
 			"api": "leases",
 		},
 		# discovery.k8s.io
-		("EndpointSlices", "discovery.k8s.io"): {
+		("EndpointSlice", "discovery.k8s.io"): {
 			"api_family": ["apis/discovery.k8s.io/v1/", "apis/discovery.k8s.io/v1beta1/"],
 			"api": "endpointslices",
 		},

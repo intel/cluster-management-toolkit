@@ -3620,7 +3620,7 @@ def resource_kind_to_rtype(resource):
 		("DaemonSet", "apps"): "[controller]",
 		("Deployment", "apps"): "[controller]",
 		("Endpoints", ""): "[endpoints]",
-		("EndpointSlices", "discovery.k8s.io"): "[endpoint_slices]",
+		("EndpointSlice", "discovery.k8s.io"): "[endpoint_slices]",
 		("EphemeralContainer", ""): "[ephemeral_container]",
 		("Event", ""): "[event]",
 		("HorizontalPodAutoscaler", "autoscaling"): "[pod_autoscaler]",
@@ -4490,7 +4490,7 @@ def get_endpoint_slices(obj):
 	svcnamespace = deep_get(obj, "metadata#namespace")
 	# We need to find all Endpoint Slices in the same namespace as the service that have this service
 	# as its controller
-	vlist = kh.get_list_by_kind_namespace(("EndpointSlices", "discovery.k8s.io"), svcnamespace, label_selector = f"kubernetes.io/service-name={svcname}")
+	vlist = kh.get_list_by_kind_namespace(("EndpointSlice", "discovery.k8s.io"), svcnamespace, label_selector = f"kubernetes.io/service-name={svcname}")
 	tmp = []
 	for item in vlist:
 		epsnamespace = deep_get(item, "metadata#namespace")
@@ -12633,7 +12633,7 @@ infoviews = {
 			"infogetter": get_subsets_info,
 		},
 	},
-	("EndpointSlices", "discovery.k8s.io"): {
+	("EndpointSlice", "discovery.k8s.io"): {
 		"windowheader": "Endpoint Slices Info",
 		"fields": ["addresstype", "addresses", "ports_eps", "status", "target_ref", "topology"],
 		"sortcolumn": "addresses",
@@ -14105,7 +14105,7 @@ infoviews = {
 				"headers": ["Namespace:", "Name:"],
 				"selectable": True,
 				"callout": callout_obj,
-				"kind": ("EndpointSlices", "discovery.k8s.io"),
+				"kind": ("EndpointSlice", "discovery.k8s.io"),
 				"itemgetter": get_endpoint_slices,
 				# This isn't supported for now
 				"sortcolumn": "namespace",
@@ -14915,7 +14915,7 @@ views = {
 		"group": "Core",
 		"fields": ["namespace", "name", "addresstype", "ports_eps", "endpoints_eps", "age"],
 		"sortcolumn": "namespace",
-		"kind": ("EndpointSlices", "discovery.k8s.io"),
+		"kind": ("EndpointSlice", "discovery.k8s.io"),
 	},
 	# networking.istio.io
 	"Envoy Filters": {
