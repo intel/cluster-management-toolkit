@@ -18,6 +18,8 @@ IKT_CONFIG_FILENAME = "ikt.yaml"
 IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
 IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
 
+iktconfig = {}
+
 class stgroup:
 	DONE = 7
 	OK = 6
@@ -60,6 +62,8 @@ def deep_get_with_fallback(obj, paths, default = None):
 	return result
 
 def read_iktconfig():
+	global iktconfig
+
 	if os.path.isfile(IKT_CONFIG_FILE) is False:
 		return
 
@@ -269,7 +273,7 @@ def format_yaml_line(line, override_formatting = {}):
 # Takes a list of yaml dictionaries and returns a single list of themearray
 def format_yaml(objects, override_formatting = {}):
 	dumps = []
-	indent = 4 #deep_get(iktconfig, "Global#indent", 4)
+	indent = deep_get(iktconfig, "Global#indent", 4)
 
 	yaml.add_representer(str, __str_representer)
 
