@@ -11976,6 +11976,22 @@ infoviews = {
 			"infogetter": get_auth_rule_info,
 		},
 	},
+	("CatalogSource", "operators.coreos.com"): {
+		"infopad": {
+			"Display Name:": {
+				"path": "spec#displayName",
+			},
+			"Image:": {
+				"path": "spec#image",
+			},
+			"Publisher:": {
+				"path": "spec#publisher",
+			},
+			"Source Type:": {
+				"path": "spec#sourceType",
+			},
+		},
+	},
 	("Certificate", "cert-manager.io"): {
 		"infopad": {
 			"Common Name:": {
@@ -15782,7 +15798,7 @@ views = {
 	#"Subscriptions": {
 	#	"commandline": ["subscriptions", "subscription", "subs", "sub"],
 	#	"group": "API & Extendability",
-	#	"fields": FIXME,
+	#	"fields": ["namespace", "name", "catalogsource"],
 	#	"sortcolumn": "namespace",
 	#	"kind": ("Subscription", "operators.coreos.com"),
 	#},
