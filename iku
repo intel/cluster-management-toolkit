@@ -2826,8 +2826,14 @@ def get_eps_subsets_info(eps):
 				not_ready_addresses.append(address)
 		target_ref = (deep_get(endpoint, "targetRef#kind", ""), deep_get(endpoint, "targetRef#namespace", ""), deep_get(endpoint, "targetRef#name", ""))
 		topology = []
-		for key, value in deep_get(endpoint, "topology", {}).items():
-			topology.append((key, value))
+		# If nodeName is available this is the new API where topology is replaced by nodeName and zone
+		if "nodeName" in endpoint:
+			topology.append(("nodeName", deep_get(endpoint, "nodeName", "<unset>")))
+			if "zone" in endpoint:
+				topology.append(("zone", deep_get(endpoint, "zone", "<unset>")))
+		else:
+			for key, value in deep_get(endpoint, "topology", {}).items():
+				topology.append((key, value))
 
 		if len(ready_addresses) > 0:
 			subsets.append(EPSSubsetsInfo(addresstype, ready_addresses, ports, "Ready", stgroup.OK, target_ref, topology))
