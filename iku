@@ -936,10 +936,7 @@ def get_metrics_list(extra_vars = {filter: None}):
 		}
 		for field in fields:
 			key_value = ['{}'.format(x) for x in next(csv.reader([field], delimiter = "=", quotechar = "\""))]
-			try:
-				key, value = key_value
-			except:
-				sys.exit(f"{key_value=}")
+			key, value = key_value
 			d["fields"][key] = value.strip("\"")
 
 		vlist.append(d)
@@ -3064,7 +3061,7 @@ def get_conditions(conditions):
 	return condition_list
 
 # Raw events
-def __get_events(obj):
+def __get_events(obj, **kwargs):
 	event_list = []
 
 	kind = deep_get(obj, "kind")
@@ -3076,12 +3073,12 @@ def __get_events(obj):
 	return event_list
 
 # Raw conditions
-def __get_conditions(obj):
+def __get_conditions(obj, **kwargs):
 	condition_list = []
 
 	for condition in deep_get(obj, "status#conditions", []):
-		ctype = deep_get(condition, "type")
-		status = deep_get(condition, "status")
+		ctype = deep_get(condition, "type", "")
+		status = deep_get_with_fallback(condition, ["status", "phase"], "")
 		last_probe = deep_get(condition, "lastProbeTime")
 		if last_probe is None:
 			last_probe = "<unset>"
@@ -3096,7 +3093,6 @@ def __get_conditions(obj):
 			last_transition = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 		message = deep_get(condition, "message", "")
 		condition_list.append((ctype, status, last_probe, last_transition, message))
-
 	return condition_list
 
 def get_status_latest_condition(conditions):
@@ -3334,7 +3330,7 @@ def get_svc_ports(svc):
 		ports = [("", "", "")]
 	return ports
 
-def get_svc_port_target_endpoints(obj):
+def get_svc_port_target_endpoints(obj, **kwargs):
 	svcname = deep_get(obj, "metadata#name")
 	svcnamespace = deep_get(obj, "metadata#namespace")
 	port_target_endpoints = []
@@ -4354,7 +4350,7 @@ def get_pod_status(pod):
 		status_group = stgroup.DONE
 		return phase, status_group
 
-def get_pod_affinity(obj):
+def get_pod_affinity(obj, **kwargs):
 	affinities = []
 
 	for affinity in deep_get(obj, "spec#affinity", []):
@@ -4392,10 +4388,10 @@ def get_pod_affinity(obj):
 
 	return affinities
 
-def get_pod_tolerations(pod):
+def get_pod_tolerations(obj, **kwargs):
 	tolerations = []
 
-	for toleration in deep_get(pod, "spec#tolerations", []):
+	for toleration in deep_get(obj, "spec#tolerations", []):
 		status_group = stgroup.OK
 
 		effect = deep_get(toleration, "effect", "All")
@@ -4430,7 +4426,7 @@ def get_pod_tolerations(pod):
 def set_cluster_context(uip, name):
 	kh.set_context(name = name)
 
-def get_security_context(obj):
+def get_security_context(obj, **kwargs):
 	security_policies = []
 
 	tmp = [
@@ -4455,7 +4451,7 @@ def get_security_context(obj):
 
 	return security_policies
 
-def get_allowed_ips(obj):
+def get_allowed_ips(obj, **kwargs):
 	allowed_ips = []
 
 	for addr in deep_get(obj, "spec#allowedIPs"):
@@ -4471,7 +4467,7 @@ def get_allowed_ips(obj):
 
 	return allowed_ips
 
-def get_volume_properties(obj):
+def get_volume_properties(obj, **kwargs):
 	volume_properties = []
 
 	# First find out what kind of volume we're dealing with
@@ -4494,7 +4490,7 @@ def get_volume_properties(obj):
 
 	return volume_properties
 
-def get_endpoint_slices(obj):
+def get_endpoint_slices(obj, **kwargs):
 	svcname = deep_get(obj, "metadata#name")
 	svcnamespace = deep_get(obj, "metadata#namespace")
 	# We need to find all Endpoint Slices in the same namespace as the service that have this service
@@ -4507,17 +4503,32 @@ def get_endpoint_slices(obj):
 		tmp.append((epsnamespace, epsname))
 	return tmp
 
-def get_sc_parameters(obj):
-	params = deep_get(obj, "parameters", {})
+def get_key_value(obj, **kwargs):
+	vlist = []
+	if "path" in kwargs:
+		path = deep_get(kwargs, "path", "")
+		d = deep_get(kwargs, "path", {})
 
-	parameters = []
+		for key in d:
+			vlist.append((key, d[key]))
 
-	for item in params:
-		parameters.append((item, params[item]))
+	return vlist
 
-	return parameters
+def get_list_fields(obj, **kwargs):
+	vlist = []
 
-def get_alertmanagers(obj):
+	if "path" in kwargs and "fields" in kwargs:
+		path = deep_get(kwargs, "path")
+		fields = deep_get(kwargs, "fields", [])
+		for item in deep_get(obj, path, []):
+			tmp = []
+			for field in fields:
+				tmp.append(str(deep_get(item, field, "")))
+			vlist.append(tmp)
+
+	return vlist
+
+def get_alertmanagers(obj, **kwargs):
 	alertmanagers = []
 
 	for alertmanager in deep_get(obj, "spec#alerting#alertmanagers", []):
@@ -4528,7 +4539,7 @@ def get_alertmanagers(obj):
 
 	return alertmanagers
 
-def get_resources(obj):
+def get_resources(obj, **kwargs):
 	resources = []
 
 	for limit in list(deep_get(obj, "spec#resources#limits", {})):
@@ -4571,7 +4582,7 @@ def get_containers(containers = [], container_statuses = []):
 
 	return container_list
 
-def get_workload_labels(obj):
+def get_workload_labels(obj, **kwargs):
 	return curses_helper.get_labels(deep_get(obj, "spec#workloadLabels"))
 
 def get_pod_info_with_kind(vlist):
@@ -9464,7 +9475,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					path = deep_get(value, "path")
 					extra_paths = deep_get(value, "extra_paths")
 					fallback = deep_get(value, "fallback")
-					field_processor = deep_get(value, "processor", field_processor_empty)
+					if "processor" in value:
+						field_processor = deep_get(value, "processor")
+					else:
+						field_processor = field_processor_empty
 					formatting = deep_get(value, "formatting")
 
 					# objparam will replace fallback; this is too ugly for words
@@ -9612,10 +9626,11 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					w_title = deep_get(value, "title", "")
 					w_headers = deep_get(value, "headers")
 					w_itemgetter = deep_get(value, "itemgetter")
+					w_itemgetter_args = deep_get(value, "itemgetter_args", {})
 					w_selectable = deep_get(value, "selectable", False)
 					w_callout = deep_get(value, "callout", None)
 					w_kind = deep_get(value, "kind", view)
-					w_items = w_itemgetter(obj)
+					w_items = w_itemgetter(obj, **w_itemgetter_args)
 
 					# If the first element is an integer we assume that we've been provided
 					# a pre-formatted list. Otherwise we apply formatting if available.
@@ -9703,10 +9718,11 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					w_itemgetter = deep_get(value, "itemgetter")
 					w_sortcolumn = deep_get(value, "sortcolumn")
 					w_callout = deep_get(value, "callout")
+					w_callout_args = deep_get(value, "callout_args", {})
 					w_kind = deep_get(value, "kind", view)
 					# Try to be as generic as we can;
 					# pass all kinds of information and let the handler use whatever information it needs
-					retval = w_callout(uip, w_kind, obj, selected = selected, title = w_title, headers = w_headers, itemgetter = w_itemgetter, sortcolumn = w_sortcolumn)
+					retval = w_callout(uip, w_kind, obj, selected = selected, title = w_title, headers = w_headers, itemgetter = w_itemgetter, sortcolumn = w_sortcolumn, **w_callout_args)
 					if retval is not None and retval == curses_helper.retval.RETURNFULL:
 						return retval
 			else:
@@ -10896,8 +10912,16 @@ def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None, **kwa
 	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
 
 def infoview_view_yaml(uip, kind, obj, **kwargs):
+	if "path" in kwargs:
+		path = deep_get(kwargs, "path")
+		if deep_get(kwargs, "include_final_path", False) == True:
+			_obj = [{f"{path.rsplit('#')[-1]}": deep_get(obj, path)}]
+		else:
+			_obj = [deep_get(obj, path)]
+	else:
+		_obj = [obj]
 	title = deep_get(kwargs, "title")
-	themearrays = iktlib.format_yaml([obj])
+	themearrays = iktlib.format_yaml(_obj)
 	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
 
 def infoview_view_last_applied_configuration(uip, kind, obj, **kwargs):
@@ -11977,6 +12001,7 @@ infoviews = {
 		},
 	},
 	("CatalogSource", "operators.coreos.com"): {
+		"windowheader": "Catalog Source",
 		"infopad": {
 			"Display Name:": {
 				"path": "spec#displayName",
@@ -12182,6 +12207,88 @@ infoviews = {
 		},
 		"listpad": {
 			"infogetter": get_subject_info,
+		},
+	},
+	("ClusterServiceVersion", "operators.coreos.com"): {
+		"windowheader": "Cluster Service Version",
+		"infopad": {
+			"Display Name:": {
+				"path": "spec#displayName",
+			},
+			"Description:": {
+				"path": "spec#description",
+			},
+			"Keywords:": {
+				"extra_paths": "spec#keywords",
+				"processor": field_processor_list,
+			},
+			"Maturity:": {
+				"path": "spec#maturity",
+			},
+			"Version:": {
+				"path": "spec#version",
+			},
+			"Minimum Kubernetes Version:": {
+				"path": "spec#minKubeVersion",
+			},
+		},
+		"shortcuts": {
+			"Maintainers": {
+				"shortcut": ord("m"),
+				"helptext": ("M", "Show maintainers"),
+				"widget": "windowwidget",
+				"title": "Maintainers:",
+				"headers": ["Name:", "E-mail:"],
+				"itemgetter": get_list_fields,
+				"itemgetter_args": {
+					"path": "spec#maintainers",
+					"fields": [
+						"name",
+						"email",
+					],
+				},
+				# This isn't supported for now
+				"sortcolumn": "name",
+			},
+			"Installation Spec": {
+				"shortcut": ord("i"),
+				"helptext": ("I", "Show installation specification"),
+				"widget": "callout",
+				"title": "Installation specification",
+				"callout": infoview_view_yaml,
+				"callout_args": {
+					"path": "spec#install",
+					"include_final_path": True,
+				},
+			},
+			"Supported Installation Modes": {
+				"shortcut": ord("I"),
+				"helptext": ("[Shift] + I", "Show supported installation modes"),
+				"widget": "windowwidget",
+				"title": "Supported Installation Modes:",
+				"headers": ["Mode:", "Supported:"],
+				"itemgetter": get_list_fields,
+				"itemgetter_args": {
+					"path": "spec#installModes",
+					"fields": [
+						"type",
+						"supported",
+					],
+				},
+				# This isn't supported for now
+				"sortcolumn": "type",
+			},
+			"Custom Resource Definitions": {
+				"shortcut": ord("C"),
+				"helptext": ("[Shift] + C", "Show custom resource definitions"),
+				"widget": "callout",
+				"title": "Custom Resource Definitions",
+				"callout": infoview_view_yaml,
+				"callout_args": {
+					"path": "spec#customresourcedefinitions",
+					"include_final_path": True,
+				},
+			},
 		},
 	},
 	("__Container", ""): {
@@ -14380,8 +14487,11 @@ infoviews = {
 				"helptext": ("[Shift] + P", "Show storage class parameters"),
 				"widget": "windowwidget",
 				"title": "Parameters:",
-				"headers": ["Parameter:", "Value"],
-				"itemgetter": get_sc_parameters,
+				"headers": ["Parameter:", "Value:"],
+				"itemgetter": get_key_value,
+				"itemgetter_args": {
+					"path": "parameters",
+				},
 				# This isn't supported for now
 				"sortcolumn": "parameter",
 			},
