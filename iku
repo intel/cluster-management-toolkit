@@ -3626,7 +3626,7 @@ def resource_kind_to_rtype(resource):
 		("DaemonSet", "apps"): "[controller]",
 		("Deployment", "apps"): "[controller]",
 		("Endpoints", ""): "[endpoints]",
-		("EndpointSlice", "discovery.k8s.io"): "[endpoint_slices]",
+		("EndpointSlice", "discovery.k8s.io"): "[endpoint_slice]",
 		("EphemeralContainer", ""): "[ephemeral_container]",
 		("Event", ""): "[event]",
 		("HorizontalPodAutoscaler", "autoscaling"): "[pod_autoscaler]",
@@ -3766,6 +3766,9 @@ def get_resource_info(obj):
 	for owr in deep_get(obj, "metadata#ownerReferences", []):
 		owr_kind = deep_get(owr, "kind", "")
 		owr_name = deep_get(owr, "name", "")
+		is_controller = deep_get(owr, "controller", False)
+		if is_controller == False:
+			continue
 		# We don't have to guess the rtype; it's a controller
 		rtype = "[controller]"
 
