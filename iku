@@ -9144,7 +9144,7 @@ def callout_show_package_versions(uip, kind, obj, **kwargs):
 	headers = ["Package:", "Version:"]
 	curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, package_versions, title = title, headers = headers, cursor = False)
 
-def generate_helptext(view, viewtype, additional_helptexts = []):
+def generate_helptext(view, viewtype, additional_helptexts = [], shortcuts = []):
 	helptext = []
 
 	if viewtype == "infoview":
@@ -9165,9 +9165,9 @@ def generate_helptext(view, viewtype, additional_helptexts = []):
 			helptext += helptexts.spacer
 			helptext += additional_helptexts
 
-		if "shortcuts" in viewref:
-			for shortcut in deep_get(viewref, "shortcuts"):
-				tmp = deep_get(viewref, f"shortcuts#{shortcut}#helptext")
+		if len(shortcuts) > 0:
+			for shortcut in shortcuts:
+				tmp = deep_get(shortcuts[shortcut], f"helptext")
 				if tmp is not None:
 					helptext.append(tmp)
 
@@ -9350,7 +9350,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	if deep_get(obj, annotations) is not None:
 		additional_helptexts += helptexts.annotations
 
-	helptext = generate_helptext(view, "infoview", additional_helptexts)
+	helptext = generate_helptext(view, "infoview", additional_helptexts, shortcuts = shortcuts)
 
 	uip.init_window(field_list, windowheader = windowheader, view = viewoverride, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, reversible = reversible, helptext = helptext, activatedfun = activatedfun, extraref = extraref, data = obj)
 
@@ -12314,6 +12314,11 @@ infoviews = {
 			"listref": "pod_references",
 			"infogetter": get_pod_info,
 		},
+		"shortcuts": {
+			# Inventory have no last applied configuration
+			"Show Events": {},
+			"Last Applied Configuration": {},
+		},
 	},
 	("ConfigMap", ""): {
 		"windowheader": "Config Map Info",
@@ -12655,6 +12660,11 @@ infoviews = {
 		"listpad": {
 			"listgetter": "get_resource_info_by_last_applied_configuration(configuration = {'apiVersion': deep_get(obj, 'fields#group') + '/' + deep_get(obj, 'fields#version', ''), 'kind': kh.guess_kind((deep_get(obj, 'fields#resource'), deep_get(obj, 'fields#group', '')))[0]}, resources = [(deep_get(obj, 'fields#resource'), deep_get(obj, 'fields#group', ''))])",
 			"infogetter": generic_infogetter,
+		},
+		"shortcuts": {
+			# Logs have no last applied configuration
+			"Show Events": {},
+			"Last Applied Configuration": {},
 		},
 	},
 	("DestinationRule", "networking.istio.io"): {
@@ -13098,6 +13108,11 @@ infoviews = {
 			"listgetter": listgetter_ansible_volumes,
 			"infogetter": generic_infogetter,
 		},
+		"shortcuts": {
+			# Inventory have no last applied configuration
+			"Show Events": {},
+			"Last Applied Configuration": {},
+		},
 	},
 	("IPAMHandle", "crd.projectcalico.org"): {
 		"infopad": {
@@ -13293,6 +13308,10 @@ infoviews = {
 		},
 		"listpad": {
 			"infogetter": get_ansible_log_info,
+		},
+		"shortcuts": {
+			# Logs have no last applied configuration
+			"Last Applied Configuration": {},
 		},
 	},
 	("__LogView", ""): {
