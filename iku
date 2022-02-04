@@ -4484,12 +4484,12 @@ def get_volume_properties(obj, **kwargs):
 			value = ",".join(value)
 		elif type(value) == dict:
 			value = ",".join(f"{key}:{val}" for (key, val) in value.items())
-		elif type(value) == int or type(value) == float:
+		elif type(value) in [int, float, bool]:
 			value = str(value)
 		elif type(value) == str:
 			value = value
 		else:
-			raise Exception("Unhandled type {type(_value)} for {field}={value}")
+			raise Exception(f"Unhandled type {type(value)} for {field}={value}")
 		volume_properties.append((volume_property, value))
 
 	return volume_properties
@@ -4519,12 +4519,12 @@ def get_key_value(obj, **kwargs):
 				value = ",".join(_value)
 			elif type(_value) == dict:
 				value = ",".join(f"{key}:{val}" for (key, val) in _value.items())
-			elif type(_value) == int or type(_value) == float:
+			elif type(_value) in [int, bool, float]:
 				value = str(_value)
 			elif type(_value) == str:
 				value = _value
 			else:
-				raise Exception("Unhandled type {type(_value)} for {field}={value}")
+				raise Exception(f"Unhandled type {type(_value)} for {field}={value}")
 			vlist.append((_key, _value))
 
 	return vlist
@@ -4552,12 +4552,12 @@ def get_list_fields(obj, **kwargs):
 					value = ",".join(_value)
 				elif type(_value) == dict:
 					value = ",".join(f"{key}:{val}" for (key, val) in _value.items())
-				elif type(_value) == int or type(_value) == float:
+				elif type(_value) in [int, float, bool]:
 					value = str(_value)
 				elif type(_value) == str:
 					value = _value
 				else:
-					raise Exception("Unhandled type {type(_value)} for {field}={value}")
+					raise Exception(f"Unhandled type {type(_value)} for {field}={value}")
 				tmp.append(value)
 			vlist.append(tmp)
 
