@@ -3076,7 +3076,9 @@ def __get_events(obj, **kwargs):
 def __get_conditions(obj, **kwargs):
 	condition_list = []
 
-	for condition in deep_get(obj, "status#conditions", []):
+	path = deep_get(kwargs, "path", "status#conditions")
+
+	for condition in deep_get(obj, path, []):
 		ctype = deep_get(condition, "type", "")
 		status = deep_get_with_fallback(condition, ["status", "phase"], "")
 		last_probe = deep_get(condition, "lastProbeTime")
@@ -3614,6 +3616,7 @@ def get_pod_log_by_name_namespace_container(name, namespace, container, tail_lin
 
 def resource_kind_to_rtype(resource):
 	rtypes = {
+		("AntreaAgentInfo", "crd.antrea.io"): "[antrea_agent_info]",
 		("ConfigMap", ""): "[configmap]",
 		("Container", ""): "[container]",
 		("Controller", ""): "[controller]",
@@ -3908,12 +3911,25 @@ def get_resource_info(obj):
 
 	if "pod_metrics" not in deep_get(iktconfig, "Pods#filter_resources", []):
 		kind = ("PodMetrics", "metrics.k8s.io")
-		obj = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
-		if obj is not None:
+		podmetrics = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
+		if podmetrics is not None:
+			ref = podmetrics
 			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = ("", pod_name)
-			resource_info.append(ResourceInfo(resource_tuple, obj, rtype, kind, "", stgroup.OK, -1, ""))
+			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, "", stgroup.OK, -1, ""))
 
+	if "antrea_agents" not in deep_get(iktconfig, "Pods#filter_resources", []) and deep_get(obj, "metadata#labels#component", "") == "antrea-agent":
+		# OK, this pod is an antrea-agent, so we should look for one that matches it
+		kind = ("AntreaAgentInfo", "crd.antrea.io")
+		antreaagents = kh.get_list_by_kind_namespace(kind, "")
+		for item in antreaagents:
+			if deep_get(item, "podRef#namespace", "") == pod_namespace and deep_get(item, "podRef#name", "") == pod_name:
+				ref = item
+				name = deep_get(item, "metadata#name")
+				rtype = resource_kind_to_rtype(kind)
+				resource_tuple = ("", name)
+				resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, "", stgroup.OK, -1, ""))
+				break
 	# Lease?
 
 	return resource_info
@@ -4544,18 +4560,33 @@ def get_list_fields(obj, **kwargs):
 	if "path" in kwargs and "fields" in kwargs:
 		path = deep_get(kwargs, "path")
 		fields = deep_get(kwargs, "fields", [])
+		override_types = deep_get(kwargs, "override_types", [])
 		for item in deep_get(obj, path, []):
 			tmp = []
-			for field in fields:
+			for i in range(0, len(fields)):
+				field = fields[i]
 				_value = deep_get(item, field, "")
-				if type(_value) == list:
+				if type(_value) == list or (i < len(fields) and i < len(override_types) and override_types[i] == "list"):
 					value = ",".join(_value)
-				elif type(_value) == dict:
+				elif type(_value) == dict or (i < len(fields) and i < len(override_types) and override_types[i] == "dict"):
 					value = ",".join(f"{key}:{val}" for (key, val) in _value.items())
-				elif type(_value) in [int, float, bool]:
+				elif type(_value) in [int, float, bool] or (i < len(fields) and i < len(override_types) and override_types[i] == "str"):
 					value = str(_value)
 				elif type(_value) == str:
-					value = _value
+					if i < len(fields) and i < len(override_types) and override_types[i] == "timestamp":
+						if _value is None:
+							value = "<unset>"
+						else:
+							timestamp = timestamp_to_datetime(_value)
+							value = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+					elif i < len(fields) and i < len(override_types) and override_types[i] == "age":
+						if _value is None:
+							value = "<unset>"
+						else:
+							timestamp = timestamp_to_datetime(_value)
+							value = iktlib.seconds_to_age(get_since(timestamp))
+					else:
+						value = _value
 				else:
 					raise Exception(f"Unhandled type {type(_value)} for {field}={value}")
 				tmp.append(value)
@@ -9410,6 +9441,21 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			"callout": infoview_view_last_applied_configuration,
 		}
 
+	if deep_get(iktconfig, "Internal#sanity_check_views", False) == True:
+		sanity = True
+		_shortcuts = {}
+		for shortcut in shortcuts:
+			_shortcut = shortcuts[shortcut].get("shortcut")
+			if _shortcut is None:
+				continue
+			if type(_shortcut) != list:
+				_shortcut = [_shortcut]
+			for _sc in _shortcut:
+				if _sc in _shortcuts:
+					sys.exit(f"infoview {view}: The same keypress ({_shortcut}) is used for both \"{shortcut}\" and \"{_shortcuts[_shortcut]}\"; aborting.")
+				else:
+					_shortcuts[_sc] = shortcut
+
 	# Conditional helptexts
 	additional_helptexts = []
 	if deep_get(obj, labels) is not None:
@@ -9420,8 +9466,6 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	helptext = generate_helptext(view, "infoview", additional_helptexts, shortcuts = shortcuts)
 
 	uip.init_window(field_list, windowheader = windowheader, view = viewoverride, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, reversible = reversible, helptext = helptext, activatedfun = activatedfun, extraref = extraref, data = obj)
-
-	# XXX: Should we calculate y-pos based on needed space?
 
 	# For generic information
 	if infopadheight > 0:
@@ -11899,8 +11943,18 @@ listviewactions = {
 # Name		Shortcut	Path				Special
 # ---		---		---				---
 # Name:				metadata#name			Always first
-# Namespace:	N		metadata#namespace		Always second; optional
+# Namespace:	[Shift] + N	metadata#namespace		Always second; optional
 # Created:			metadata#creationTimestamp	Always last; uses field_processor_timestamp()
+#
+# Wherever applicable the following shortcuts will be available:
+#
+# Name                               Shortcut
+# ---                                ---
+# Show security context information  X
+# Show resource conditions           C
+# Show events                        E
+# View YAML dump of resource         Y
+# Show last applied configuration    [Shift] + L
 #
 # Brief overview of infopad:
 #
@@ -11922,6 +11976,7 @@ listviewactions = {
 #		"extra_paths": [ "path", ... ]	# Extra paths to pass to the processor
 #		"fallback": formatlist		# Fallback format list
 #       }
+#
 # Note: For complex data it might be easier to write a custom processor and just pass in the object
 #
 # The most versatile, but also complex, processor is field_processor_list();
@@ -11965,7 +12020,85 @@ infoviews = {
 			},
 		},
 	},
-	# apiregistration.k8s.io
+	("AntreaAgentInfo", "crd.antrea.io"): {
+		"windowheader": "Antrea Agent Info",
+		"infopad": {
+			"Node": {
+				"fieldname": [("N", ("main", "infoheader_shortcut")), ("ode:", ("main", "infoheader"))],
+				"path": "nodeRef#name",
+			},
+			"Pod": {
+				"fieldname": [("P", ("main", "infoheader_shortcut")), ("od:", ("main", "infoheader"))],
+				"extra_paths": ["podRef#namespace", "podRef#name"],
+				"formatting": {
+					"field_colors": [("types", "namespace"), ("types", "generic")],
+					"item_separators": [("separators", "namespace")],
+				},
+				"processor": field_processor_list,
+			},
+			"Node Subnets:": {
+				"extra_paths": "nodeSubnets",
+				"processor": field_processor_list,
+			},
+			"Version:": {
+				"path": "version",
+			},
+		},
+		"shortcuts": {
+			"Node": {
+				"shortcut": ord("N"),
+				"helptext": ("[Shift] + N", "Open info page for Node"),
+				"call": resourceinfodispatch,
+				"kind_path": "nodeRef#kind",
+				"name_path": "nodeRef#name",
+			},
+			"Pod": {
+				"shortcut": ord("P"),
+				"helptext": ("[Shift] + P", "Open info page for Pod"),
+				"call": resourceinfodispatch,
+				"kind_path": "podRef#kind",
+				"namespace_path": "podRef#namespace",
+				"name_path": "podRef#name",
+			},
+			"View Network Policy Controller Info": {
+				"shortcut": ord("C"),
+				"helptext": ("[Shift] + C", "View network policy controller info"),
+				"widget": "callout",
+				"title": "Network Policy Controller Info",
+				"callout": infoview_view_yaml,
+				"callout_args": {
+					"path": "networkPolicyControllerInfo",
+				},
+			},
+			"View Open vSwitch Info": {
+				"shortcut": ord("O"),
+				"helptext": ("[Shift] + O", "View Open vSwitch info"),
+				"widget": "callout",
+				"title": "Open vSwitch Info",
+				"callout": infoview_view_yaml,
+				"callout_args": {
+					"path": "ovsInfo",
+				},
+			},
+			"Show Resource Conditions": {
+				"shortcut": ord("c"),
+				"helptext": ("C", "Show resource conditions"),
+				"widget": "windowwidget",
+				"title": "Conditions:",
+				"headers": ["Type:", "Status:", "Last Heartbeat:"],
+				"itemgetter": get_list_fields,
+				"itemgetter_args": {
+					"path": "agentConditions",
+					"fields": [
+						"type",
+						"status",
+						"lastHeartbeatTime",
+					],
+					"override_types": ["", "", "timestamp"]
+				}
+			},
+		},
+	},
 	("APIService", "apiregistration.k8s.io"): {
 		"windowheader": "API Service Info",
 		"infopad": {
@@ -11985,7 +12118,7 @@ infoviews = {
 			"Service:": {
 				"path": "spec#service",
 				"fieldname": [("S", ("main", "infoheader_shortcut")), ("ervice:", ("main", "infoheader"))],
-				"extra_paths": [ "spec#service#namespace", "spec#service#name" ],
+				"extra_paths": ["spec#service#namespace", "spec#service#name"],
 				"formatting": {
 					"field_colors": [("types", "namespace"), ("types", "generic")],
 					"item_separators": [("separators", "namespace")],
