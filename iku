@@ -12040,6 +12040,7 @@ infoviews = {
 		},
 	},
 	("AppRepository", "kubeapps.com"): {
+		"windowheader": "App Repository Info",
 		"infopad": {
 			"Type:": {
 				"path": "spec#type",
@@ -12050,9 +12051,9 @@ infoviews = {
 		},
 	},
 	("AuthorizationPolicy", "security.istio.io"): {
+		"windowheader": "Authorization Policy Info",
 		"fields": ["source", "operation", "condition"],
 		"sortcolumn": "source",
-		"windowheader": "Authorization Policy Info",
 		"infopad": {
 			"Workload Selector:": {
 				"path": "spec#selector#labels",
@@ -12068,7 +12069,7 @@ infoviews = {
 		},
 	},
 	("CatalogSource", "operators.coreos.com"): {
-		"windowheader": "Catalog Source",
+		"windowheader": "Catalog Source Info",
 		"infopad": {
 			"Display Name:": {
 				"path": "spec#displayName",
@@ -12277,7 +12278,7 @@ infoviews = {
 		},
 	},
 	("ClusterServiceVersion", "operators.coreos.com"): {
-		"windowheader": "Cluster Service Version",
+		"windowheader": "Cluster Service Version Info",
 		"infopad": {
 			"Display Name:": {
 				"path": "spec#displayName",
@@ -12879,7 +12880,7 @@ infoviews = {
 		},
 	},
 	("EndpointSlice", "discovery.k8s.io"): {
-		"windowheader": "Endpoint Slices Info",
+		"windowheader": "Endpoint Slice Info",
 		"fields": ["addresstype", "addresses", "ports_eps", "status", "target_ref", "topology"],
 		"sortcolumn": "addresses",
 		"infopad": {
@@ -12967,6 +12968,7 @@ infoviews = {
 		},
 	},
 	("GpuDevicePlugin", "deviceplugin.intel.com"): {
+		"windowheader": "GPU Device Plugin Info",
 		"infopad": {
 			"Image:": {
 				"processor": field_processor_images,
@@ -13184,6 +13186,7 @@ infoviews = {
 		},
 	},
 	("IPAMHandle", "crd.projectcalico.org"): {
+		"windowheader": "IPAM Handle Info",
 		"infopad": {
 			"Handle ID:": {
 				"path": "spec#handleID",
@@ -13195,6 +13198,7 @@ infoviews = {
 		},
 	},
 	("IPPool", "crd.projectcalico.org"): {
+		"windowheader": "IP Pool Info",
 		"infopad": {
 			"Block Size:": {
 				"path": "spec#blockSize",
@@ -13457,6 +13461,7 @@ infoviews = {
 		},
 	},
 	("NetworkPolicy", "networking.k8s.io"): {
+		"windowheader": "Network Policy Info",
 		"fields": ["policy_type", "ports", "ipblock", "ipblock_exceptions", "pod_selector", "namespace_selector"],
 		"sortcolumn": "policy_type",
 		"infopad": {
@@ -13548,6 +13553,7 @@ infoviews = {
 		},
 	},
 	("NodeMetrics", "metrics.k8s.io"): {
+		"windowheader": "Node Metrics Info",
 		"infopad": {
 			"CPU Usage:": {
 				"path": "usage#cpu",
@@ -13557,6 +13563,23 @@ infoviews = {
 			},
 			"Window:": {
 				"path": "window",
+			},
+		},
+	},
+	("OperatorGroup", "operators.coreos.com"): {
+		"windowheader": "Operator Group Info",
+		"infopad": {
+			"Target Namespaces:": {
+				"extra_paths": "spec#targetNamespaces",
+				"processor": field_processor_list,
+			},
+			"Namespaces:": {
+				"extra_paths": "status#namespaces",
+				"processor": field_processor_list,
+			},
+			"Last Updated:": {
+				"path": "status#lastUpdated",
+				"processor": field_processor_timestamp,
 			},
 		},
 	},
@@ -13852,6 +13875,7 @@ infoviews = {
 		},
 	},
 	("PodMetrics", "metrics.k8s.io"): {
+		"windowheader": "Pod Metrics Info",
 		"fields": [("name", "Container:"), "cpu_millicores", "mem_bytes"],
 		"infopad": {
 			"Window:": {
@@ -13960,7 +13984,6 @@ infoviews = {
 			},
 		},
 	},
-	# scheduling.k8s.io
 	("PriorityClass", "scheduling.k8s.io"): {
 		"windowheader": "Priority Class Info",
 		"fields": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts"],
@@ -14443,7 +14466,7 @@ infoviews = {
 		},
 	},
 	("ServiceEntry", "networking.istio.io"): {
-		"windowheader": "Service Monitor Info",
+		"windowheader": "Service Entry Info",
 		"infopad": {
 			"Hosts:": {
 				"extra_paths": "spec#hosts",
@@ -14680,17 +14703,12 @@ infoviews = {
 			"infogetter": get_webhook_info,
 		},
 	},
-	("VolumeSnapshot", "snapshot.storage.k8s.io"): {
-		"windowheader": "Volume Snapshot Class Info",
-		"infopad": {
-			"Deletion Policy:": {
-				"path": "deletionPolicy",
-			},
-			"Driver:": {
-				"path": "driver",
-			},
-		},
-	},
+	#("VolumeSnapshot", "snapshot.storage.k8s.io"): {
+	#	"windowheader": "Volume Snapshot Info",
+	#	"infopad": {
+	#		# FIXME
+	#	},
+	#},
 	("VirtualService", "networking.istio.io"): {
 		"windowheader": "Virtual Service Info",
 		"fields": ["rule_type", "destinations"],
