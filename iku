@@ -4484,8 +4484,12 @@ def get_volume_properties(obj, **kwargs):
 			value = ",".join(value)
 		elif type(value) == dict:
 			value = ",".join(f"{key}:{val}" for (key, val) in value.items())
-		elif type(value) == int:
-			value = str(int)
+		elif type(value) == int or type(value) == float:
+			value = str(value)
+		elif type(value) == str:
+			value = value
+		else:
+			raise Exception("Unhandled type {type(_value)} for {field}={value}")
 		volume_properties.append((volume_property, value))
 
 	return volume_properties
@@ -4509,8 +4513,19 @@ def get_key_value(obj, **kwargs):
 		path = deep_get(kwargs, "path", "")
 		d = deep_get(obj, path, {})
 
-		for key in d:
-			vlist.append((key, d[key]))
+		for _key in d:
+			_value = d[_key]
+			if type(_value) == list:
+				value = ",".join(_value)
+			elif type(_value) == dict:
+				value = ",".join(f"{key}:{val}" for (key, val) in _value.items())
+			elif type(_value) == int or type(_value) == float:
+				value = str(_value)
+			elif type(_value) == str:
+				value = _value
+			else:
+				raise Exception("Unhandled type {type(_value)} for {field}={value}")
+			vlist.append((_key, _value))
 
 	return vlist
 
@@ -4523,7 +4538,18 @@ def get_list_fields(obj, **kwargs):
 		for item in deep_get(obj, path, []):
 			tmp = []
 			for field in fields:
-				tmp.append(str(deep_get(item, field, "")))
+				_value = deep_get(item, field, "")
+				if type(_value) == list:
+					value = ",".join(_value)
+				elif type(_value) == dict:
+					value = ",".join(f"{key}:{val}" for (key, val) in _value.items())
+				elif type(_value) == int or type(_value) == float:
+					value = str(_value)
+				elif type(_value) == str:
+					value = _value
+				else:
+					raise Exception("Unhandled type {type(_value)} for {field}={value}")
+				tmp.append(value)
 			vlist.append(tmp)
 
 	return vlist
@@ -8086,6 +8112,7 @@ def field_processor_description(obj, path, extra_paths = None, fallback = None, 
 
 	return field
 
+# XXX: Should be rewritten to handle tuple-lists too
 def __field_processor_list(values, formatting = None):
 	prefix = deep_get(formatting, "prefix", [])
 	field_colors = deep_get(formatting, "field_colors", [("types", "field")])
@@ -8155,6 +8182,42 @@ def field_processor_ansible_processor(obj, path = None, extra_paths = None, fall
 	if formatting is None:
 		formatting = ("types", "generic")
 	field = [(f"{value}", formatting)]
+	return field
+
+# extra_paths is a tuple (path, [key, ...]), that references a list with named keys that should be returned;
+# if there are multiple keys the return value will be a list of tuples, otherwise a list
+# If extra_paths[0] does not exist, path will be used as fallback if defined;
+# if path is also empty, fallback will be used
+def field_processor_list_keys(obj, path = None, extra_paths = None, fallback = None, formatting = None):
+	item_separators = deep_get(formatting, "item_separators", [("separators", "list")])
+	field_separators = deep_get(formatting, "field_separators", [("separators", "field")])
+	field_colors = deep_get(formatting, "field_colors", [("types", "field")])
+
+	items = deep_get(obj, extra_paths[0])
+	if items is None:
+		tmp = deep_get(obj, path)
+		if tmp is not None:
+			items = [tmp]
+
+	if items is None:
+		return fallback
+
+	keys = extra_paths[1]
+	field = []
+
+	for i in range(0, len(items)):
+		for j in range(0, len(keys)):
+			value = deep_get(items[i], keys[j])
+			if value is None:
+				field.append([("strings", "unset")])
+			elif len(value) == 0:
+				field.append([("strings", "empty")])
+			else:
+				field += [(value, field_colors[min(j, len(field_colors) - 1)])]
+			if j < len(keys) - 1:
+				field.append(field_separators[min(j, len(field_separators) - 1)])
+		if i < len(items) - 1:
+			field.append(item_separators[min(i, len(item_separators) - 1)])
 	return field
 
 def field_processor_ansible_facts(obj, path = None, extra_paths = None, fallback = None, formatting = None):
@@ -12247,6 +12310,7 @@ infoviews = {
 						"email",
 					],
 				},
+				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
 				# This isn't supported for now
 				"sortcolumn": "name",
 			},
@@ -12275,6 +12339,7 @@ infoviews = {
 						"supported",
 					],
 				},
+				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
 				# This isn't supported for now
 				"sortcolumn": "type",
 			},
@@ -13665,12 +13730,17 @@ infoviews = {
 			"QoS Class:": {
 				"path": "status#qosClass",
 			},
-			"Pod IP:": {
+			"Pod IPs:": {
 				"path": "status#podIP",
+				"extra_paths": ["status#podIPs", ["ip"]],
+				"processor": field_processor_list_keys,
 			},
 			"Termination Grace Period:": {
 				"path": "spec#terminationGracePeriodSeconds",
 				"processor": field_processor_grace_period,
+			},
+			"Enable Service Links:": {
+				"path": "spec#enableServiceLinks",
 			},
 		},
 		"listpad": {
@@ -14511,6 +14581,7 @@ infoviews = {
 				"itemgetter_args": {
 					"path": "parameters",
 				},
+				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
 				# This isn't supported for now
 				"sortcolumn": "parameter",
 			},
