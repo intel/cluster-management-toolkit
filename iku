@@ -4529,6 +4529,15 @@ def get_key_value(obj, **kwargs):
 
 	return vlist
 
+def get_list_as_list(obj, **kwargs):
+	vlist = []
+	if "path" in kwargs:
+		path = deep_get(kwargs, "path")
+		items = deep_get(obj, path, [])
+		for item in items:
+			vlist.append([item])
+	return vlist
+
 def get_list_fields(obj, **kwargs):
 	vlist = []
 
@@ -4553,17 +4562,6 @@ def get_list_fields(obj, **kwargs):
 			vlist.append(tmp)
 
 	return vlist
-
-def get_alertmanagers(obj, **kwargs):
-	alertmanagers = []
-
-	for alertmanager in deep_get(obj, "spec#alerting#alertmanagers", []):
-		name = deep_get(alertmanager, "name", "")
-		namespace = deep_get(alertmanager, "namespace", "")
-		port = deep_get(alertmanager, "port", "")
-		alertmanagers.append((name, namespace, port))
-
-	return alertmanagers
 
 def get_resources(obj, **kwargs):
 	resources = []
@@ -9183,9 +9181,14 @@ def export_data(filename, value):
 
 def callout_obj(uip, kind, obj, **kwargs):
 	if "selection" in kwargs:
-		_discard_field, namespace_field, name_field = deep_get(kwargs, "selection")
-		namespace = namespace_field[0][0]
-		name = name_field[0][0]
+		namespace_field = deep_get(kwargs, "namespace_field", 1)
+		name_field = deep_get(kwargs, "name_field", 2)
+		kind_field = deep_get(kwargs, "kind_field")
+		selection = deep_get(kwargs, "selection")
+		namespace = curses_helper.themearray_get_string(selection[namespace_field][0])
+		name = curses_helper.themearray_get_string(selection[name_field][0])
+		if kind_field is not None:
+			kind = curses_helper.themearray_get_string(selection[kind_field][0])
 		obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 		return resourceinfodispatch(uip.stdscr, obj, kind, **kwargs)
 	# Add other ways to override obj here later on
@@ -9361,6 +9364,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			"title": "Security Context Policies:",
 			"headers": ["Policy:", "Value:"],
 			"itemgetter": get_security_context,
+			"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
 		}
 
 	# Always include the shortcut for conditions,
@@ -13636,6 +13640,16 @@ infoviews = {
 			"infogetter": get_pod_info,
 		},
 		"shortcuts": {
+			"Mount Options": {
+				"shortcut": ord("m"),
+				"helptext": ("M", "Show mount options"),
+				"widget": "windowwidget",
+				"title": "Mount options:",
+				"itemgetter": get_list_as_list,
+				"itemgetter_args": {
+					"path": "spec#mountOptions",
+				},
+			},
 			"Persistent Volume Claim": {
 				"shortcut": ord("P"),
 				"helptext": ("[Shift] + P", "Open info page for Persistent Volume Claim"),
@@ -14051,13 +14065,28 @@ infoviews = {
 			}
 		},
 		"shortcuts": {
-			"Alertmanager": {
+			"Alertmanager Endpoints": {
 				"shortcut": ord("A"),
-				"helptext": ("[Shift] + A", "Show alertmanager information"),
+				"helptext": ("[Shift] + A", "Show alertmanager endpoint information"),
 				"widget": "windowwidget",
-				"title": "Alertmanagers:",
-				"headers": ["Name:", "Namespace:", "Port:"],
-				"itemgetter": get_alertmanagers,
+				"title": "Alertmanager Endpoints:",
+				"headers": ["Namespace:", "Name:", "Port:"],
+				"selectable": True,
+				"callout": callout_obj,
+				"callout_args": {
+					"namespace_field": 1,
+					"name_field": 2,
+				},
+				"kind": ("Endpoints", ""),
+				"itemgetter": get_list_fields,
+				"itemgetter_args": {
+					"path": "spec#alerting#alertmanagers",
+					"fields": [
+						"namespace",
+						"name",
+						"port",
+					],
+				},
 			},
 			"Resources": {
 				"shortcut": ord("r"),
