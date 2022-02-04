@@ -4507,7 +4507,7 @@ def get_key_value(obj, **kwargs):
 	vlist = []
 	if "path" in kwargs:
 		path = deep_get(kwargs, "path", "")
-		d = deep_get(kwargs, "path", {})
+		d = deep_get(obj, path, {})
 
 		for key in d:
 			vlist.append((key, d[key]))
