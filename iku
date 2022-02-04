@@ -14003,6 +14003,32 @@ infoviews = {
 			},
 		},
 	},
+	("Profile", "kubeflow.org"): {
+		"infopad": {
+			"Owner:": {
+				"processor": None,
+			},
+			"  Kind:": {
+				"path": "spec#owner#kind",
+			},
+			"  Name:": {
+				"path": "spec#owner#name",
+			},
+		},
+		"shortcuts": {
+			"Resource Quota": {
+				"shortcut": ord("Q"),
+				"helptext": ("[Shift] + Q", "Show Resource Quotas"),
+				"widget": "windowwidget",
+				"title": "Resource Quotas:",
+				"itemgetter": get_key_value,
+				"itemgetter_args": {
+					"path": "spec#resourceQuotaSpec#hard",
+				},
+				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
+			},
+		},
+	},
 	("Prometheus", "monitoring.coreos.com"): {
 		"infopad": {
 			"Image:": {
