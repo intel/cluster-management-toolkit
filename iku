@@ -9651,7 +9651,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if w_items is not None and len(w_items) > 0:
 						w_sortcolumn = deep_get(value, "sortcolumn")
 						tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items = w_items, headers = w_headers, title = w_title, cursor = w_selectable)
-						if w_selectable is True and w_callout is not None:
+						if w_selectable is True and w_callout is not None and tmpselection != (0, [("", None)]):
 							retval = w_callout(uip, w_kind, obj, selection = tmpselection)
 							if retval is not None and retval == curses_helper.retval.RETURNFULL:
 								return retval
