@@ -334,24 +334,23 @@ def rebuild_inventory(options = [], args = None):
 	cluster_name = get_cluster_name()
 	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
 
-	vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
+	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 
-	if vlist is not None:
-		for node in vlist:
-			roles = kh.get_node_roles(node)
-			if "control-plane" in roles:
-				groups = ["all", "controlplane", cluster_name]
-			else:
-				groups = ["all", "nodes", cluster_name]
+	for node in vlist:
+		roles = kh.get_node_roles(node)
+		if "control-plane" in roles:
+			groups = ["all", "controlplane", cluster_name]
+		else:
+			groups = ["all", "nodes", cluster_name]
 
-			group = ""
-			hosts = [deep_get(node, "metadata#name")]
-			retval = True
-			for group in groups:
-				retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group, skip_all = False)
+		group = ""
+		hosts = [deep_get(node, "metadata#name")]
+		retval = True
+		for group in groups:
+			retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group, skip_all = False)
 
-			if retval is False:
-				raise Exception(f"Programming error: failed to add {hosts} to group {group}")
+		if retval is False:
+			raise Exception(f"Programming error: failed to add {hosts} to group {group}")
 
 	# Finally import the hostkey into authorized_keys
 	pubkey = None

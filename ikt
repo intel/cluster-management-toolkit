@@ -265,21 +265,20 @@ def get_selection(selection, kind = None, default = None, skip_control_planes = 
 		from kubernetes_helper import KubernetesHelper
 		kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
 
-		vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
-		if vlist is not None:
-			for node in vlist:
-				name = deep_get(node, "metadata#name")
-				if all_items == False and name not in selection:
+		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+		for node in vlist:
+			name = deep_get(node, "metadata#name")
+			if all_items == False and name not in selection:
+				continue
+
+			if kind == ("Node", "") and skip_control_planes == True:
+				node_roles = kh.get_node_roles(node)
+				if "control-plane" in node_roles:
+					items2.append(name)
 					continue
 
-				if kind == ("Node", "") and skip_control_planes == True:
-					node_roles = kh.get_node_roles(node)
-					if "control-plane" in node_roles:
-						items2.append(name)
-						continue
-
-				items1.append(name)
-	# str kinds are things such as playbooks; for now iKT doesn't use them
+			items1.append(name)
+	# str kinds are things such as playbooks; for now ikt doesn't use them
 
 	# Finally, generate a list of non-existing items
 	if all_items == False:

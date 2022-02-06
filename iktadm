@@ -1591,17 +1591,16 @@ def import_cluster(options = [], args = None):
 
 		kh.set_context(context)
 
-		vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
+		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 
 		controlplane = None
 
-		if vlist is not None:
-			for node in vlist:
-				node_name = deep_get(node, "metadata#name")
-				node_roles = kh.get_node_roles(node)
-				if "control-plane" in node_roles:
-					controlplane = node_name
-					break
+		for node in vlist:
+			node_name = deep_get(node, "metadata#name")
+			node_roles = kh.get_node_roles(node)
+			if "control-plane" in node_roles:
+				controlplane = node_name
+				break
 
 		if controlplane is None:
 			iktprint([("Error: ", "error"), ("Could not find a control plane for the cluster ", "default"), (cluster_name, "hostname"), ("; aborting.", "default")], stderr = True)
@@ -1858,26 +1857,24 @@ def __get_node_info(kh = None):
 
 	node_statuses = []
 
-	try:
-		vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
-	except Exception as e:
-		if str(e).startswith("Unhandled error: 504"):
-			return None, None
-		else:
-			raise Exception(e)
+	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+	if status == 504:
+		return None, None
+	elif status != 200:
+		iktprint([("Error: ", "error"), ("API-server returned ", "default"), (status, "errorvalue"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
 
-	if vlist is not None:
-		retval = False
+	retval = False
 
-		for node in vlist:
-			node_name = deep_get(node, "metadata#name")
-			node_schedulable = not deep_get(node, "spec#unschedulable", False)
-			node_roles = kh.get_node_roles(node)
-			node_statuses.append({
-				"name": node_name,
-				"schedulable": node_schedulable,
-				"roles": node_roles,
-			})
+	for node in vlist:
+		node_name = deep_get(node, "metadata#name")
+		node_schedulable = not deep_get(node, "spec#unschedulable", False)
+		node_roles = kh.get_node_roles(node)
+		node_statuses.append({
+			"name": node_name,
+			"schedulable": node_schedulable,
+			"roles": node_roles,
+		})
 
 	return node_statuses, kh
 

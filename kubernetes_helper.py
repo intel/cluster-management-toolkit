@@ -138,13 +138,14 @@ class KubernetesHelper:
 			clusters.append((cluster, __clusters[cluster]["contexts"][0]))
 		return clusters
 
+	# Returns False if the context wasn't changed (for whatever reason)
 	def set_context(self, config_path = None, name = None):
 		context_name = ""
 		cluster_name = ""
 		user_name = ""
 		namespace_name = ""
 
-		# If config_path = None we use ${HOME}/.kube/config
+		# If config_path == None we use ${HOME}/.kube/config
 		if config_path == None:
 			# Read kubeconfig
 			config_path = str(Path.home()) + "/.kube/config"
@@ -153,12 +154,14 @@ class KubernetesHelper:
 			with open(config_path, "r") as f:
 				kubeconfig = yaml.safe_load(f)
 		except FileNotFoundError:
-			return
+			return False
 
 		current_context = deep_get(kubeconfig, "current-context", "")
 
+		unchanged = True
 		# If we didn't get a context name we try current-context
 		if name is None or len(name) == 0:
+			unchanged = False
 			name = current_context
 
 		for context in deep_get(kubeconfig, "contexts", []):
@@ -171,7 +174,7 @@ class KubernetesHelper:
 				namespace_name = deep_get(context, "context#namespace", "")
 				break
 
-		if len(user_name) == 0 or len(cluster_name) == 0:
+		if unchanged == True and current_context == context_name:
 			return False
 
 		control_plane_ip = None
@@ -325,7 +328,7 @@ class KubernetesHelper:
 		cni = []
 
 		# Is there a controller matching the kind we're looking for?
-		vlist = self.get_list_by_kind_namespace(controller_kind, "", field_selector = controller_selector)
+		vlist, status = self.get_list_by_kind_namespace(controller_kind, "", field_selector = controller_selector)
 
 		if len(vlist) == 0:
 			return cni
@@ -338,34 +341,37 @@ class KubernetesHelper:
 		# 2. Are there > 0 pods matching the label selector?
 		for obj in vlist:
 			if controller_kind == ("Deployment", "apps"):
-				cni_status = get_dep_status(deep_get(obj, "status#conditions"))
+				cni_status = ("Unavailable", stgroup.NOT_OK)
+				for condition in deep_get(obj, "status#conditions"):
+					ctype = deep_get(condition, "type")
+					if ctype == "Available":
+						cni_status = (ctype, stgroup.OK)
+						break
 			elif controller_kind == ("DaemonSet", "apps"):
 				if deep_get(obj, "status#numberUnavailable", 0) > deep_get(obj, "status#maxUnavailable", 0):
 					cni_status = ("Unavailable", stgroup.NOT_OK, "numberUnavailable > maxUnavailable")
 				else:
 					cni_status = ("Available", stgroup.OK, "")
 
-				label_selector = deep_get(obj, "spec#selector")
+			vlist2, status = self.get_list_by_kind_namespace(("Pod", ""), "", label_selector = self.make_selector(deep_get(obj, "spec#selector#matchLabels")))
 
-				vlist2 = self.get_list_by_kind_namespace(("Pod", ""), "", label_selector = self.make_selector(deep_get(obj, "spec#selector#matchLabels")))
+			if vlist2 is not None and len(vlist2) > 0:
+				for obj2 in vlist2:
+					# Try to get the version
+					for container in deep_get(obj2, "status#containerStatuses", []):
+						if deep_get(container, "name", "") == container_name:
+							image_version = self.get_image_version(deep_get(container, "image", ""))
 
-				if vlist2 is not None and len(vlist2) > 0:
-					for obj2 in vlist2:
-						# Try to get the version
-						for container in deep_get(obj2, "status#containerStatuses", []):
-							if deep_get(container, "name", "") == container_name:
-								image_version = self.get_image_version(deep_get(container, "image", ""))
-
-								if image_version != "<undefined>":
-									if cni_version is None:
-										cni_version = image_version
-										pod_matches += 1
-									elif versiontuple(image_version) > versiontuple(cni_version):
-										cni_version = image_version
-										pod_matches += 1
-									elif image_version != cni_version:
-										cni_version = image_version
-										pod_matches += 1
+							if image_version != "<undefined>":
+								if cni_version is None:
+									cni_version = image_version
+									pod_matches += 1
+								elif versiontuple(image_version) > versiontuple(cni_version):
+									cni_version = image_version
+									pod_matches += 1
+								elif image_version != cni_version:
+									cni_version = image_version
+									pod_matches += 1
 
 		if cni_version is None:
 			cni_version = "<unknown>"
@@ -443,13 +449,16 @@ class KubernetesHelper:
 		self.__close_certs()
 		self.context_name = ""
 
+	def is_cluster_reachable(self):
+		return self.cluster_unreachable == False
+
 	def get_control_plane_address(self, cluster = ""):
 		return self.control_plane_ip, self.control_plane_port
 
 	def get_join_token(self):
 		join_token = ""
 
-		vlist = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
+		vlist, status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
 
 		if len(vlist) == 0:
 			return join_token
@@ -481,7 +490,7 @@ class KubernetesHelper:
 	def get_ca_cert_hash(self):
 		ca_cert_hash = ""
 
-		vlist = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
+		vlist, status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
 
 		if len(vlist) == 0:
 			return ca_cert_hash
@@ -2079,6 +2088,9 @@ class KubernetesHelper:
 		raise Exception(f"Couldn't guess kubernetes resource for kind: {kind}")
 
 	def get_available_api_families(self):
+		if self.cluster_unreachable == True:
+			return [], 42503
+
 		available_apis = set()
 
 		# First get all core APIs
@@ -2180,7 +2192,7 @@ class KubernetesHelper:
 		header_params = {
 			"Accept": "application/json",
 			"Content-Type": "application/json",
-			"User-Agent": "%s v%s" % (self.programname, self.programversion),
+			"User-Agent": f"{self.programname} v{self.programversion}",
 		}
 
 		if self.token is not None:
@@ -2261,7 +2273,7 @@ class KubernetesHelper:
 
 		namespace_part = ""
 		if namespace is not None and namespace != "":
-			namespace_part = "namespaces/%s/" % namespace
+			namespace_part = f"namespaces/{namespace}/"
 
 		if kind is None:
 			raise Exception("__rest_helper_delete called with kind None")
@@ -2290,7 +2302,7 @@ class KubernetesHelper:
 
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
-			url = "https://%s:%s/%s%s%s%s" % (self.control_plane_ip, self.control_plane_port, api_family[i], namespace_part, api, name)
+			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
 			data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
 			if status in [200, 204, 42503]:
 				break
@@ -2307,15 +2319,23 @@ class KubernetesHelper:
 			sys.exit(f"protobuf format not supported")
 		sys.exit(f"Protobuf support not implemented yet;\n{result.data}")
 
+	# On failure this function should always return [] for list requests, and None for other requests;
+	# this way lists the result can be handled unconditionally in for loops
 	def __rest_helper_get(self, kind, name = "", namespace = "", label_selector = "", field_selector = ""):
 		vlist = None
 		use_protobuf = False
 
+		if kind is None:
+			raise Exception("__rest_helper_get API called with kind None")
+
 		if self.cluster_unreachable == True:
+			# Our arbitrary return value for Cluster Unreachable
+			status = 42503
+
 			# If name is not set this is a list request, so return an empty list instead of None
 			if name == "":
 				vlist = []
-			return vlist
+			return vlist, status
 
 		query_params = []
 		if field_selector != "":
@@ -2327,10 +2347,7 @@ class KubernetesHelper:
 
 		namespace_part = ""
 		if namespace is not None and namespace != "":
-			namespace_part = "namespaces/%s/" % namespace
-
-		if kind is None:
-			raise Exception("__rest_helper_get API called with kind None")
+			namespace_part = f"namespaces/{namespace}/"
 
 		kind = self.guess_kind(kind)
 
@@ -2351,7 +2368,7 @@ class KubernetesHelper:
 
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
-			url = "https://%s:%s/%s%s%s%s" % (self.control_plane_ip, self.control_plane_port, api_family[i], namespace_part, api, name)
+			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
 			if use_protobuf == True:
 				data, message, status = self.__rest_helper_generic_protobuf(method = method, url = url, query_params = query_params)
 			else:
@@ -2399,7 +2416,7 @@ class KubernetesHelper:
 		if name == "" and vlist is None:
 			vlist = []
 
-		return vlist
+		return vlist, status
 
 	def delete_obj_by_kind_name_namespace(self, kind, name, namespace, force = False):
 		query_params = []
@@ -2410,16 +2427,28 @@ class KubernetesHelper:
 		return self.__rest_helper_delete(kind, name, namespace, query_params = query_params)
 
 	def get_metrics(self):
+		if self.cluster_unreachable == True:
+			return [], 42503
+
 		query_params = []
-		url = "https://%s:%s/metrics" % (self.control_plane_ip, self.control_plane_port)
+		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/metrics"
 		data, message, status = self.__rest_helper_generic_json(method = "GET", url = url, query_params = query_params)
-		return data.decode("utf-8").splitlines()
+		if status == 200:
+			msg = data.decode("utf-8").splitlines()
+		elif status == 204:
+			# No Content; pretend that everything is fine
+			msg = []
+			status = 200
+		else:
+			msg = []
+		return msg, status
 
 	def get_list_by_kind_namespace(self, kind, namespace, label_selector = "", field_selector = ""):
 		return self.__rest_helper_get(kind, "", namespace, label_selector, field_selector)
 
 	def get_ref_by_kind_name_namespace(self, kind, name, namespace):
-		return self.__rest_helper_get(kind, name, namespace, "", "")
+		ref, status = self.__rest_helper_get(kind, name, namespace, "", "")
+		return ref
 
 	def read_namespaced_pod_log(self, name, namespace, container = None, tail_lines = 0):
 		query_params = []
@@ -2446,4 +2475,5 @@ class KubernetesHelper:
 	# Namespace must be the namespace of the resource; the owner reference itself lacks namespace
 	# since owners have to reside in the same namespace as their owned resources
 	def get_ref_from_owr(self, owr, namespace):
-		return self.__rest_helper_get(deep_get(owr, "kind"), deep_get(owr, "name"), namespace)
+		ref, status = self.__rest_helper_get(deep_get(owr, "kind"), deep_get(owr, "name"), namespace)
+		return ref

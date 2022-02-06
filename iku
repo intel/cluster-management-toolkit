@@ -913,7 +913,7 @@ def update_field_widths(field_list, objects):
 def get_metrics_list(extra_vars = {filter: None}):
 	vlist = []
 
-	metrics = kh.get_metrics()
+	metrics, status = kh.get_metrics()
 
 	# metrics are on the form:
 	# aggregator_openapi_v2_regeneration_count{apiservice="*",reason="startup"} 0
@@ -941,7 +941,7 @@ def get_metrics_list(extra_vars = {filter: None}):
 
 		vlist.append(d)
 
-	return vlist
+	return vlist, status
 
 class ContextInfo:
 	def __init__(self, current, name, cluster, authinfo, namespace):
@@ -1082,7 +1082,9 @@ def get_container_info(extra_vars = {}):
 	# as defined by the tuple (name, type, version, image_id),
 	# so we need to iterate the list of all pods and extract this
 	# information.
-	vlist = kh.get_list_by_kind_namespace(("Pod", ""), "")
+	vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
+	if status != 200:
+		return info
 
 	for obj in vlist:
 		pod_reference = obj
@@ -1940,7 +1942,7 @@ def listgetter_ansible_volumes(obj):
 		}
 		info.append(d)
 
-	return info
+	return info, "OK"
 
 def objgetter_ansible_facts(obj):
 	get_facts_path = get_playbook_path("get_facts.yaml")
@@ -3134,38 +3136,36 @@ def get_status_latest_condition(conditions):
 
 def get_dep_status(conditions):
 	status = "Unknown"
-	reason = ""
+	message = ""
 	status_group = stgroup.UNKNOWN
 
 	for condition in conditions:
-		if deep_get(condition, "type") == "Available":
+		ctype = deep_get(condition, "type")
+		message = deep_get(condition, "message", "").rstrip()
+
+		if ctype == "Available":
 			if deep_get(condition, "status") == "True":
 				status = "Available"
 				status_group = stgroup.OK
-				reason = deep_get(condition, "message", "").rstrip()
 				# Available has highest priority
 				break
 			else:
 				status = "Not Available"
 				status_group = stgroup.NOT_OK
-				reason = deep_get(condition, "message", "").rstrip()
-		elif deep_get(condition, "type") == "Progressing":
+		elif ctype == "Progressing":
 			if deep_get(condition, "status") == "True":
 				status = "Progressing"
 				status_group = stgroup.PENDING
-				reason = deep_get(condition, "message", "").rstrip()
 			else:
 				status = "Not Progressing"
 				status_group = stgroup.NOT_OK
-				reason = deep_get(condition, "message", "").rstrip()
-		elif deep_get(condition, "type") == "ReplicaFailure":
+		elif ctype == "ReplicaFailure":
 				status = "Replica Failure"
 				status_group = stgroup.NOT_OK
-				reason = deep_get(condition, "message", "").rstrip()
 		else:
-			sys.exit(f"Unknown deployment condition: {deep_get(condition, 'type')}, reason: {deep_get(condition, 'message')}")
+			sys.exit(f"Unknown deployment condition: {ctype}, reason: {message}")
 
-	return status, status_group, reason
+	return status, status_group, message
 
 def get_desired_replicas(rs):
 	desired = -1
@@ -3414,7 +3414,7 @@ class ResourceInfo:
 		self.message = message
 		self.age = age
 	def __repr__(self):
-		return repr((self.resource_tuple, self.ref, self.rtype, self.kind, self.status, self.status_group, self.restarts, self.message, age))
+		return repr((self.resource_tuple, self.ref, self.rtype, self.kind, self.status, self.status_group, self.restarts, self.message, self.age))
 
 def get_container_status(src_statuses, container, kind):
 	reason = "UNKNOWN"
@@ -3522,13 +3522,15 @@ def get_pv_from_pvc_name(pvc_name):
 	pv_name = None
 	field_selector = f"metadata.name={pvc_name}"
 
-	for pvc in kh.get_list_by_kind_namespace(("PersistentVolumeClaim", ""), "", field_selector = field_selector):
-		if deep_get(pvc, "metadata#name") == pvc_name:
-			volume_name = deep_get(pvc, "spec#volumeName")
-			if volume_name is not None:
-				pv_name = volume_name
-				pv = kh.get_ref_by_kind_name_namespace(("PersistentVolume", ""), pv_name, None)
-				break
+	vlist, status = kh.get_list_by_kind_namespace(("PersistentVolumeClaim", ""), "", field_selector = field_selector)
+	if status == 200:
+		for pvc in vlist:
+			if deep_get(pvc, "metadata#name") == pvc_name:
+				volume_name = deep_get(pvc, "spec#volumeName")
+				if volume_name is not None:
+					pv_name = volume_name
+					pv = kh.get_ref_by_kind_name_namespace(("PersistentVolume", ""), pv_name, None)
+					break
 
 	return pv, pv_name
 
@@ -3537,48 +3539,42 @@ def get_pods_by_pvc(pvc):
 
 	pvc_name = deep_get(pvc, "metadata#name")
 	pvc_namespace = deep_get(pvc, "metadata#namespace")
-	all_pods = kh.get_list_by_kind_namespace(("Pod", ""), pvc_namespace)
-	for pod in all_pods:
-		for volume in deep_get(pod, "spec#volumes", []):
-			if deep_get(volume, "persistentVolumeClaim") is None:
-				continue
-			if deep_get(volume, "persistentVolumeClaim#claimName") == pvc_name:
-				pods.append(pod)
-	return pods
+	vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), pvc_namespace)
+	if status == 200:
+		for pod in vlist:
+			for volume in deep_get(pod, "spec#volumes", []):
+				if deep_get(volume, "persistentVolumeClaim") is None:
+					continue
+				if deep_get(volume, "persistentVolumeClaim#claimName") == pvc_name:
+					pods.append(pod)
+	return pods, status
 
 def get_pods_by_pv(pv):
 	claim_ref = deep_get(pv, "spec#claimRef")
 
 	if claim_ref is None:
-		return []
+		return [], 200
 
 	# PV<=>PVC is a 1:1 mapping, but multiple pods can share the same PVC
 	name = deep_get(claim_ref, "name")
 	namespace = deep_get(claim_ref, "namespace")
-	pvc = kh.get_ref_by_kind_name_namespace(("PersistentVolumeClaim", ""), name, namespace)
+	pvc, status = kh.get_ref_by_kind_name_namespace(("PersistentVolumeClaim", ""), name, namespace)
 
-	if pvc is None:
-		return []
+	if status != 200:
+		return [], status
 
 	return get_pods_by_pvc(pvc)
-
-def get_pods_by_pc(pc):
-	pods = []
-
-	for pod in kh.get_list_by_kind_namespace(("Pod", ""), ""):
-		if deep_get(pod, "spec#priorityClassName") == pc:
-			pods.append(pod)
-
-	return pods
 
 def get_pods_by_node(node):
 	pods = []
 
-	for pod in kh.get_list_by_kind_namespace(("Pod", ""), ""):
-		if deep_get(pod, "spec#nodeName") == node:
-			pods.append(pod)
+	vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
+	if status == 200:
+		for pod in vlist:
+			if deep_get(pod, "spec#nodeName") == node:
+				pods.append(pod)
 
-	return pods
+	return pods, status
 
 def abbreviate_access_mode(mode):
 	if mode == "ReadWriteOnce":
@@ -3662,9 +3658,19 @@ def resource_kind_to_rtype(resource):
 
 def get_resource_info_by_last_applied_configuration(configuration, resources = []):
 	resource_info = []
+	status = None
 
 	for resource in resources:
-		for item in kh.get_list_by_kind_namespace(resource, ""):
+		items, _status = kh.get_list_by_kind_namespace(resource, "")
+		# This should ensure that we always get a status set (if we're passed resources)
+		# and that we return 200 if there's at least one match, and otherwise the first error
+		if _status != 200:
+			if status is None:
+				status = _status
+			continue
+		status = 200
+
+		for item in items:
 			last_applied_configuration = deep_get(item, "metadata#annotations#kubectl.kubernetes.io/last-applied-configuration", {})
 			if last_applied_configuration is None or len(last_applied_configuration) == 0:
 				continue
@@ -3686,13 +3692,23 @@ def get_resource_info_by_last_applied_configuration(configuration, resources = [
 				}
 				resource_info.append(d)
 
-	return resource_info
+	return resource_info, status
 
 def get_resource_info_by_namespace(namespace, resources):
 	resource_info = []
+	status = None
 
 	for resource in resources:
-		for item in kh.get_list_by_kind_namespace(resource, namespace):
+		items, _status = kh.get_list_by_kind_namespace(resource, namespace)
+		# This should ensure that we always get a status set (if we're passed resources)
+		# and that we return 200 if there's at least one match, and otherwise the first error
+		if _status != 200:
+			if status is None:
+				status = _status
+			continue
+		status = 200
+
+		for item in items:
 			ref = item
 			kind = resource
 			rtype = resource_kind_to_rtype(resource)
@@ -3702,7 +3718,7 @@ def get_resource_info_by_namespace(namespace, resources):
 			resource_tuple = ("", name)
 			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
 
-	return resource_info
+	return resource_info, status
 
 def get_resource_info(obj):
 	init_containers = True
@@ -3851,7 +3867,8 @@ def get_resource_info(obj):
 		kind = ("Event", "")
 		rtype = resource_kind_to_rtype(kind)
 
-		for event in kh.get_list_by_kind_namespace(kind, ""):
+		vlist, status = kh.get_list_by_kind_namespace(kind, "")
+		for event in vlist:
 			event_involved_object_name = deep_get_with_fallback(event, ["regarding#name", "involvedObject#name"])
 			event_involved_object_namespace = deep_get_with_fallback(event, ["regarding#namespace", "involvedObject#namespace"])
 			if event_involved_object_name == pod_name and event_involved_object_namespace == pod_namespace:
@@ -3878,7 +3895,8 @@ def get_resource_info(obj):
 		# XXX: Are there are other means of specifying what pod to apply the PDB to than this?
 		if "app" in deep_get(obj, "metadata#labels", {}):
 			kind = ("PodDisruptionBudget", "policy")
-			for pdb in kh.get_list_by_kind_namespace(kind, "", label_selector = "app=%s" % deep_get(obj, "metadata#labels")["app"]):
+			vlist, status = kh.get_list_by_kind_namespace(kind, "", label_selector = f"app={deep_get(obj, 'metadata#labels')['app']}")
+			for pdb in vlist:
 				rtype = resource_kind_to_rtype(kind)
 				pdb_name = deep_get(pdb, "metadata#name")
 				pdb_namespace = deep_get(pdb, "metadata#namespace")
@@ -3921,8 +3939,8 @@ def get_resource_info(obj):
 	if "antrea_agents" not in deep_get(iktconfig, "Pods#filter_resources", []) and deep_get(obj, "metadata#labels#component", "") == "antrea-agent":
 		# OK, this pod is an antrea-agent, so we should look for one that matches it
 		kind = ("AntreaAgentInfo", "crd.antrea.io")
-		antreaagents = kh.get_list_by_kind_namespace(kind, "")
-		for item in antreaagents:
+		vlist, status = kh.get_list_by_kind_namespace(kind, "")
+		for item in vlist:
 			if deep_get(item, "podRef#namespace", "") == pod_namespace and deep_get(item, "podRef#name", "") == pod_name:
 				ref = item
 				name = deep_get(item, "metadata#name")
@@ -3953,14 +3971,14 @@ def get_inventory_info(extra_vars = {}):
 
 	control_plane_node, control_plane_name = get_control_plane()
 
-	vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
+	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 
-	if vlist is not None:
-		for node in vlist:
-			roles = kh.get_node_roles(node)
-			if "control-plane" in roles:
-				continue
-			nodes.append(deep_get(node, "metadata#name"))
+	for node in vlist:
+		roles = kh.get_node_roles(node)
+		if "control-plane" in roles:
+			continue
+		nodes.append(deep_get(node, "metadata#name"))
+	if len(nodes) > 0:
 		ansible_add_hosts(ANSIBLE_INVENTORY, nodes, group = "nodes")
 
 	# This returns a YAML tree with the inventory of nodes
@@ -4232,10 +4250,10 @@ def get_node_info(vlist, extra_vars = {}):
 
 # To make the failure case easier, return both the ref and the name of the control plane
 def get_control_plane():
-	vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
+	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 	control_planes = []
 
-	if vlist is None or len(vlist) == 0:
+	if vlist is None or len(vlist) == 0 or status != 200:
 		return None, ""
 
 	# Find control planes; but for now only return the first match
@@ -4440,7 +4458,13 @@ def get_pod_tolerations(obj, **kwargs):
 	return tolerations
 
 def set_cluster_context(uip, name):
-	kh.set_context(name = name)
+	global available_api_families
+	retval = kh.set_context(name = name)
+	# If we actually changed context we need to force an API reload,
+	# since we might have changed between different clusters (or switched
+	# to a role that does not have access to a particular API)
+	if retval == True:
+		available_api_families = []
 
 def get_security_context(obj, **kwargs):
 	security_policies = []
@@ -4515,7 +4539,7 @@ def get_endpoint_slices(obj, **kwargs):
 	svcnamespace = deep_get(obj, "metadata#namespace")
 	# We need to find all Endpoint Slices in the same namespace as the service that have this service
 	# as its controller
-	vlist = kh.get_list_by_kind_namespace(("EndpointSlice", "discovery.k8s.io"), svcnamespace, label_selector = f"kubernetes.io/service-name={svcname}")
+	vlist, status = kh.get_list_by_kind_namespace(("EndpointSlice", "discovery.k8s.io"), svcnamespace, label_selector = f"kubernetes.io/service-name={svcname}")
 	tmp = []
 	for item in vlist:
 		epsnamespace = deep_get(item, "metadata#namespace")
@@ -4645,7 +4669,7 @@ def get_pod_info_with_kind(vlist):
 
 def get_events_by_kind_name_namespace(kind, name, namespace):
 	events = []
-	vlist = kh.get_list_by_kind_namespace(("Event", ""), "")
+	vlist, status = kh.get_list_by_kind_namespace(("Event", ""), "")
 	for obj in vlist:
 		__involved_kind = deep_get_with_fallback(obj, ["regarding#kind", "involvedObject#kind"])
 		__involved_api_version = deep_get_with_fallback(obj, ["regarding#apiVersion", "involvedObject#apiVersion"])
@@ -6563,9 +6587,6 @@ def genericlistloop(stdscr, view):
 			if view != "Contexts" and ("namespace" in blacklist or "namespace" in deep_get(viewref, "fields")):
 				statusarray2 += [("Namespace: ", ("statusbar", "infoheader")), (f"{namespace if len(namespace) > 0 else '<All>'}", ("statusbar", "highlight"))]
 
-			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
-			uip.addthemearray(statusbar, statusarray2, y = 1, x = 0)
-
 			if "listgetter" in viewref:
 				listgetter = deep_get(viewref, "listgetter")
 			else:
@@ -6578,16 +6599,33 @@ def genericlistloop(stdscr, view):
 				listgetter = eval(listgetter)
 				listgetter_extra_vars = deep_get(viewref, "extra_vars#listgetter", {})
 				if kind[0].startswith("__"):
-					vlist = listgetter(extra_vars = listgetter_extra_vars)
+					vlist, status = listgetter(extra_vars = listgetter_extra_vars)
 				else:
-					vlist = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
+					vlist, status = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
 				if infogetter == generic_infogetter:
 					fields = deep_get(viewref, "fields")
 					info = infogetter(vlist, fields)
 				else:
 					info = infogetter(vlist, extra_vars = infogetter_extra_vars)
 			else:
+				status = "OK"
 				info = infogetter(extra_vars = infogetter_extra_vars)
+
+			if status == 42503:
+				serverstatus = "Server Unavailable"
+			else:
+				serverstatus = str(status)
+
+			if len(statusarray2) > 0:
+				statusarray2 += [("separators", "statusbar")]
+			statusarray2 += [
+				("API Status: ", ("statusbar", "infoheader")),
+				(f"{serverstatus}", ("statusbar", "default")),
+			]
+
+			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
+			uip.addthemearray(statusbar, statusarray2, y = 1, x = 0)
+
 			latest_info = view
 			listlen = uip.update_info(info)
 			linelen = update_field_widths(field_list, uip.info)
@@ -6785,9 +6823,10 @@ def genericlistloop(stdscr, view):
 				preselection = namespace
 			namespace_list = [(widgetlineattrs.NORMAL, [(f"{all_ns}", ("windowwidget", "default"))])]
 
-			tmp = kh.get_list_by_kind_namespace(("Namespace", ""), "")
-			for ns in [deep_get(item, "metadata#name") for item in tmp]:
-				namespace_list.append((widgetlineattrs.NORMAL, [(f"{ns}", ("windowwidget", "default"))]))
+			tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
+			if status == 200:
+				for ns in [deep_get(item, "metadata#name") for item in tmp]:
+					namespace_list.append((widgetlineattrs.NORMAL, [(f"{ns}", ("windowwidget", "default"))]))
 
 			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, namespace_list, title = "Select Namespace", cursor = True, preselection = preselection)
 			selection = None
@@ -7360,12 +7399,12 @@ def clusteroverviewloop(stdscr, view):
 					cputimetotalused = cputimeuser + cputimeusernice + cputimetotalsystem + cputimesteal + cputimetotalguest
 
 			# Get the list of all nodes
-			vlist = kh.get_list_by_kind_namespace(("Node", ""), "")
+			vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 			nodeinfo = get_node_info(vlist)
 			node_statuses = [s.status_group for s in nodeinfo]
 
 			# Get the list of all pods
-			vlist = kh.get_list_by_kind_namespace(("Pod", ""), "")
+			vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
 			podinfo = get_pod_info(vlist)
 			pod_statuses = [s.status_group for s in podinfo]
 
@@ -9538,9 +9577,9 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					vlist = deep_get(obj, listref)
 				elif listgetter is not None:
 					if type(listgetter) == str:
-						vlist = eval(listgetter)
+						vlist, status = eval(listgetter)
 					else:
-						vlist = listgetter(obj)
+						vlist, status = listgetter(obj)
 				else:
 					vlist = obj
 
@@ -10800,7 +10839,7 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 
 def get_all_namespaced_resources(obj):
 	namespace = deep_get(obj, "metadata#name")
-	info = get_resource_info_by_namespace(namespace, kh.get_list_of_namespaced_resources())
+	info, status = get_resource_info_by_namespace(namespace, kh.get_list_of_namespaced_resources())
 	return info
 
 # Iterate over the list of items and execute command on all of them
@@ -11804,8 +11843,13 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 			continue
 		if hide_unavailable == True:
 			kind = deep_get(viewref, "kind", ("", ""))
-			if kind is not None and kind != ("", "") and not kind[0].startswith("__") and kind not in available_api_families:
-				continue
+			if kind is not None and kind != ("", ""):
+				if not kind[0].startswith("__") and kind not in available_api_families:
+					continue
+			check_availability = deep_get(viewref, "check_availability", None)
+			if check_availability is not None:
+				if check_availability() == False:
+					continue
 		group = views[item].get("group")
 		# XXX: Do override in a nicer manner; perhaps we want all "built-in" groups first?
 		if group == "Administration":
@@ -14493,7 +14537,7 @@ infoviews = {
 			},
 		},
 		"listpad": {
-			"listgetter": "deep_get(obj, 'data', {}).items()",
+			"listgetter": "deep_get(obj, 'data', {}).items(), 200",
 			"infogetter": get_key_value_info,
 		},
 		"shortcuts": {
@@ -14907,6 +14951,13 @@ infoviews = {
 	},
 }
 
+def is_cluster_reachable():
+	reachable = False
+
+	if kh is not None:
+		reachable = kh.is_cluster_reachable()
+	return reachable
+
 views = {
 	# special
 	"Selector": {
@@ -14930,6 +14981,7 @@ views = {
 		"listgetter": None,
 		"infogetter": None,
 		"is_taggable": False,
+		"check_availability": is_cluster_reachable,
 	},
 	# special
 	"Deprecations": {
@@ -14945,6 +14997,7 @@ views = {
 			},
 		},
 		"is_taggable": False,
+		"check_availability": is_cluster_reachable,
 	},
 	# special
 	"Contexts": {
@@ -15224,6 +15277,7 @@ views = {
 		"listgetter": None,
 		"infogetter": get_container_info,
 		"is_taggable": False,
+		"check_availability": is_cluster_reachable,
 	},
 	# apps
 	"Controller Revisions": {
@@ -15797,6 +15851,7 @@ views = {
 		"activatedfun": None,
 		"listgetter": None,
 		"infogetter": None,
+		"check_availability": is_cluster_reachable,
 	},
 	# networking.k8s.io
 	"Network Policies": {
@@ -16335,9 +16390,14 @@ def setupui(stdscr):
 			sys.exit()
 
 def list_namespaces():
-	tmp = kh.get_list_by_kind_namespace(("Namespace", ""), "")
-	namespaces = iktlib.join_tuple_list([deep_get(item, "metadata#name") for item in tmp], _tuple = "argument", separator = (", ", "separator"))
-	iktprint([("Valid namespaces: ", "default")] + namespaces + [(".", "separator")])
+	tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
+	if status == 200:
+		namespaces = iktlib.join_tuple_list([deep_get(item, "metadata#name") for item in tmp], _tuple = "argument", separator = (", ", "separator"))
+		iktprint([("Valid namespaces: ", "default")] + namespaces + [(".", "separator")])
+	elif status == 42503:
+		iktprint([("Error: ", "error"), ("API-server unavailable", "default")], stderr = True)
+	else:
+		iktprint([("Error: ", "error"), ("API-server returned ", "default"), (status, "errorvalue")], stderr = True)
 
 def list_views():
 	viewfields = []
