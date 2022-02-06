@@ -2312,7 +2312,7 @@ class KubernetesHelper:
 		use_protobuf = False
 
 		if self.cluster_unreachable == True:
-			# If name is not set is a list request, so return an empty list instead of None
+			# If name is not set this is a list request, so return an empty list instead of None
 			if name == "":
 				vlist = []
 			return vlist
@@ -2395,7 +2395,7 @@ class KubernetesHelper:
 				# We requested update events (using resourceVersion), but it's been too long since the previous request;
 				# retry without &resourceVersion=xxxxx
 
-		# If name is not set is a list request, so return an empty list instead of None
+		# If name is not set this is a list request, so return an empty list instead of None
 		if name == "" and vlist is None:
 			vlist = []
 
