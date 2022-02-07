@@ -853,6 +853,15 @@ class KubernetesHelper:
 			"api_family": ["apis/aquasecurity.github.io/v1alpha1/"],
 			"api": "vulnerabilityreports",
 		},
+		# auth.kio.kasten.io
+		("K10ClusterRoleBinding", "auth.kio.kasten.io"): {
+			"api_family": ["apis/auth.kio.kasten.io/v1alpha1/"],
+			"api": "k10clusterrolebindings",
+		},
+		("K10ClusterRole", "auth.kio.kasten.io"): {
+			"api_family": ["apis/auth.kio.kasten.io/v1alpha1/"],
+			"api": "k10clusterroles",
+		},
 		# authorization.openshift.io
 		("RoleBindingRestriction", "authorization.openshift.io"): {
 			"api_family": ["apis/authorization.openshift.io/v1/"],
@@ -979,6 +988,15 @@ class KubernetesHelper:
 			"aliases": ["ciliumn", "cn"],
 			"namespaced": False,
 		},
+		# config.kio.kasten.io
+		("Policy", "config.kio.kasten.io"): {
+			"api_family": ["apis/config.kio.kasten.io/v1alpha1/"],
+			"api": "policies",
+		},
+		("Profile", "config.kio.kasten.io"): {
+			"api_family": ["apis/config.kio.kasten.io/v1alpha1/"],
+			"api": "profiles",
+		},
 		# config.openshift.io
 		("APIServer", "config.openshift.io"): {
 			"api_family": ["apis/config.openshift.io/v1/"],
@@ -1094,6 +1112,19 @@ class KubernetesHelper:
 			"api": "networkpolicies",
 			"aliases": ["networkpolicy"],
 			"namespaced": False,
+		},
+		# cr.kanister.io
+		("ActionSet", "cr.kanister.io"): {
+			"api_family": ["apis/cr.kanister.io/v1alpha1/"],
+			"api": "actionsets",
+		},
+		("Blueprint", "cr.kanister.io"): {
+			"api_family": ["apis/cr.kanister.io/v1alpha1/"],
+			"api": "blueprints",
+		},
+		("Profile", "cr.kanister.io"): {
+			"api_family": ["apis/cr.kanister.io/v1alpha1/"],
+			"api": "profiles",
 		},
 		# crd.antrea.io
 		("AntreaAgentInfo", "crd.antrea.io"): {
@@ -1302,6 +1333,19 @@ class KubernetesHelper:
 		("SigningKey", "dex.coreos.com"): {
 			"api_family": ["apis/dex.coreos.com/v1/"],
 			"api": "signingkeies",
+		},
+		# dist.kio.kasten.io
+		("Bootstrap", "dist.kio.kasten.io"): {
+			"api_family": ["apis/dist.kio.kasten.io/v1alpha1/"],
+			"api": "bootstraps",
+		},
+		("Cluster", "dist.kio.kasten.io"): {
+			"api_family": ["apis/dist.kio.kasten.io/v1alpha1/"],
+			"api": "clusters",
+		},
+		("Distribution", "dist.kio.kasten.io"): {
+			"api_family": ["apis/dist.kio.kasten.io/v1alpha1/"],
+			"api": "distributions",
 		},
 		# etcd.database.coreos.com
 		("EtcdCluster", "etcd.database.coreos.com"): {
@@ -1781,6 +1825,11 @@ class KubernetesHelper:
 			"api_family": ["apis/reaper.cassandra-reaper.io/v1alpha1/"],
 			"api": "reapers",
 			"aliases": ["reaper"],
+		},
+		# reporting.kio.kasten.io
+		("Report", "reporting.kio.kasten.io"): {
+			"api_family": ["apis/reporting.kio.kasten.io/v1alpha1/"],
+			"api": "reports",
 		},
 		# route.openshift.io
 		("Route", "route.openshift.io"): {
