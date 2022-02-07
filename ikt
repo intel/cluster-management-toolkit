@@ -617,12 +617,15 @@ def add_nodes(options = [], args = None):
 
 def remove_nodes(options = [], args = None):
 	force = False
+	purge = False
 
 	selection = args[0].split(",")
 
 	for opt, optarg in options:
 		if opt == "--force":
 			force = True
+		elif opt == "--purge":
+			purge = True
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -676,12 +679,15 @@ def remove_nodes(options = [], args = None):
 		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
 		sys.exit(2)
 
+	iktprint([("\nNodes successfully removed from cluster", "success")])
+
+	if purge == True:
+		purge_hosts(options = [("--ignore-non-existing", None)], args = [",".join(nodes)])
+
 	iktprint([("\n• ", "separator"), ("Removing nodes from the inventory", "action")])
 	ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = "nodes")
 	# XXX: We need to get the cluster name to do this
 	#ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = cluster_name)
-
-	iktprint([("\nNodes successfully removed", "success")])
 
 def purge_hosts(options = [], args = None):
 	ignore_non_existing = False
@@ -936,11 +942,14 @@ ikt_commandline = {
 			"--force": {
 				"description": [("Attempt to teardown Kubernetes nodes that are no longer in the cluster", "description")],
 			},
+			"--purge": {
+				"description": [("Purge hosts if teardown completes successfully", "description")],
+			},
 		},
 	},
 	"Purge": {
 		"command": ["purge"],
-		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
+		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument")],
 		"description": [("Remove Kubernetes configuration and packages from ", "description"), ("HOST", "argument")],
 		"min_args": 1,
 		"max_args": 1,
