@@ -14982,6 +14982,16 @@ infoviews = {
 			"infogetter": get_strategy_info,
 		},
 	},
+	("Tier", "crd.antrea.io"): {
+		"infopad": {
+			"Description:": {
+				"path": "spec#description",
+			},
+			"Priority:": {
+				"path": "spec#priority",
+			},
+		},
+	},
 	("User", "user.openshift.io"): {
 		"infopad": {
 			"Groups:": {
@@ -15176,13 +15186,6 @@ views = {
 		"group": "CNI",
 		"fields": ["name", "healthy_antrea", "last_heartbeat_antrea"],
 		"kind": ("AntreaControllerInfo", "crd.antrea.io"),
-	},
-	# crd.antrea.io
-	"Tiers": {
-		"commandline": ["tiers", "tr"],
-		"group": "CNI",
-		"fields": ["name", "priority_tier", "age"],
-		"kind": ("Tier", "crd.antrea.io"),
 	},
 	# system.antrea.io
 	"Antrea Controller Infos (System)": {
@@ -16409,6 +16412,13 @@ views = {
 	#	"sortcolumn": "namespace",
 	#	"kind": ("ThanosRuler", "monitoring.coreos.com"),
 	#},
+	# crd.antrea.io
+	"Tiers": {
+		"commandline": ["tiers", "tr"],
+		"group": "CNI",
+		"fields": ["name", "priority_tier", "age"],
+		"kind": ("Tier", "crd.antrea.io"),
+	},
 	# traefik.containo.us
 	"TLS Options": {
 		"commandline": ["tlsoptions", "tlsoption"],
