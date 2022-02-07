@@ -4274,7 +4274,7 @@ def get_control_plane():
 	return control_planes[0][0], control_planes[0][1]
 
 class PodInfo:
-	def __init__(self, namespace, name, ref, status, status_group, node, pod_ip, age, restarts, controller, tolerations, containers):
+	def __init__(self, namespace, name, ref, status, status_group, node, pod_ip, age, restarts, last_restart, controller, tolerations, containers):
 		self.namespace = namespace
 		self.name = name
 		# The reference to the "true" resource object
@@ -4285,22 +4285,29 @@ class PodInfo:
 		self.pod_ip = pod_ip
 		self.age = age
 		self.restarts = restarts
+		self.last_restart = last_restart
 		self.controller = controller
 		self.tolerations = tolerations
 		self.containers = containers
 	def __repr__(self):
-		return repr((self.namespace, self.name, self.ref, self.status, self.status_group, self.node, self.pod_ip, self.age, self.restarts, self.controller, self.tolerations, self.containers))
+		return repr((self.namespace, self.name, self.ref, self.status, self.status_group, self.node, self.pod_ip, self.age, self.restarts, self.last_restart, self.controller, self.tolerations, self.containers))
 
 def get_pod_restarts_total(pod):
 	restarts = 0
+	restarted_at = None
 
-	for status in deep_get(pod, "status#initContainerStatuses", []):
-		restarts += deep_get(status, "restartCount", 0)
-
+	#for status in deep_get(pod, "status#initContainerStatuses", []) + deep_get(pod, "status#containerStatuses", []):
 	for status in deep_get(pod, "status#containerStatuses", []):
-		restarts += deep_get(status, "restartCount", 0)
+		restart_count = deep_get(status, "restartCount", 0)
+		restarts += restart_count
+		if restart_count > 0:
+			started_at = timestamp_to_datetime(deep_get_with_fallback(status, ["state#running#startedAt", "lastState#terminated#finishedAt"], None))
+			if started_at is not None and (restarted_at is None or restarted_at < started_at):
+				restarted_at = started_at
 
-	return restarts
+	if restarts == 0:
+		restarted_at = -1
+	return restarts, restarted_at
 
 def get_pod_status(pod):
 	phase = deep_get(pod, "status#phase")
@@ -4743,12 +4750,16 @@ def get_pod_info(vlist, extra_vars = {"show_kind": "", "show_evicted": True}, fi
 
 		pod_ip = deep_get(obj, "status#podIP", "<unset>")
 		status, status_group = get_pod_status(obj)
-		pod_restarts = get_pod_restarts_total(obj)
+		pod_restarts, restarted_at = get_pod_restarts_total(obj)
+		if restarted_at == -1:
+			last_restart = -1
+		else:
+			last_restart = get_since(restarted_at)
 		tolerations = get_pod_tolerations(obj)
 		containers = get_containers(deep_get(obj, "spec#initContainers", []), deep_get(obj, "status#initContainerStatuses", []))
 		containers += get_containers(deep_get(obj, "spec#containers", []), deep_get(obj, "status#containerStatuses", []))
 
-		info.append(PodInfo(namespace, name, ref, status, status_group, nodename, pod_ip, age, pod_restarts, controller, tolerations, containers))
+		info.append(PodInfo(namespace, name, ref, status, status_group, nodename, pod_ip, age, pod_restarts, last_restart, controller, tolerations, containers))
 
 	return info
 
@@ -5580,6 +5591,11 @@ field_templates = {
 		"datagetter": datagetter_condition_field,
 		"generator": generator_str_timestamp,
 		"path": [("agentConditions", "AgentHealthy", "lastHeartbeatTime"), ("controllerConditions", "ControllerHealthy", "lastHeartbeatTime")],
+	},
+	"last_restart": {
+		"header": "Last Restart:",
+		"generator": generator_age,
+		"ralign": True,
 	},
 	"last_schedule": {
 		"header": "Last Schedule:",
@@ -15944,7 +15960,7 @@ views = {
 	"Pods": {
 		"commandline": ["pods", "pod", "po"],
 		"group": "Workloads",
-		"fields": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		"fields": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts", "last_restart"],
 		"sortcolumn": "status",
 		"activatedfun": genericinfoloop,
 		"kind": ("Pod", ""),
