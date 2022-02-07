@@ -987,7 +987,7 @@ def __task_run_setup_playbooks_on_localhost(installation_info):
 	distro = installation_info[cluster_name]["distro"]
 	requested_version = installation_info[cluster_name]["requested_version"]
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
-	selection = __selection_control_planes()
+	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(setup_control_plane_targets["localhost"]["playbooks"])
 	extra_values = {
 		"cluster_name": cluster_name,
