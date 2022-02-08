@@ -8320,7 +8320,10 @@ def field_processor_list_keys(obj, path = None, extra_paths = None, fallback = N
 			items = [tmp]
 
 	if items is None:
-		return fallback
+		if fallback is None:
+			return [("strings", "unset")]
+		else:
+			return fallback
 
 	keys = extra_paths[1]
 	field = []
@@ -8357,7 +8360,10 @@ def field_processor_list(obj, path = None, extra_paths = None, fallback = None, 
 	if path is not None:
 		cpath = deep_get(obj, path)
 		if cpath is None or len(cpath) == 0:
-			return fallback
+			if fallback is None:
+				return [("strings", "unset")]
+			else:
+				return fallback
 
 	values = []
 
@@ -8540,7 +8546,10 @@ def field_processor_csi_node(obj, path = None, extra_paths = None, fallback = No
 	ref = kh.get_ref_by_kind_name_namespace(("CSINode", "storage.k8s.io"), deep_get(obj, "metadata#name"), "")
 	csinodename = deep_get(ref, "metadata#name")
 	if csinodename is None:
-		field = fallback
+		if fallback is None:
+			return [("strings", "unset")]
+		else:
+			field = fallback
 	else:
 		field = [(f"{csinodename}", ("types", "generic"))]
 
@@ -8701,7 +8710,10 @@ def field_processor_issuer_type(obj, path = None, extra_paths = None, fallback =
 def field_processor_crl_distribution_points(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	itype, crl_distribution_points, ca_secret_name = __get_issuer_info(obj)
 	if crl_distribution_points is None or len(crl_distribution_points) == 0:
-		field = fallback
+		if fallback is None:
+			field = [("strings", "unset")]
+		else:
+			field = fallback
 	else:
 		field = __field_processor_list(crl_distribution_points, formatting)
 	return field
@@ -8709,7 +8721,10 @@ def field_processor_crl_distribution_points(obj, path = None, extra_paths = None
 def field_processor_ca_secret_name(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	itype, crl_distribution_points, ca_secret_name = __get_issuer_info(obj)
 	if ca_secret_name is None or len(ca_secret_name) == 0:
-		field = fallback
+		if fallback is None:
+			field = [("strings", "unset")]
+		else:
+			field = fallback
 	else:
 		field = [(f"{ca_secret_name}", ("types", "generic"))]
 	return field
@@ -8755,7 +8770,10 @@ def field_processor_key_value(obj, path, extra_paths = None, fallback = None, fo
 def field_processor_taints(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	status, status_group, taints, full_taints = get_node_status(obj)
 	if len(full_taints) == 0:
-		field = [("strings", "none")]
+		if fallback is None:
+			field = [("strings", "none")]
+		else:
+			field = fallback
 	else:
 		# FIXME
 		field = format_list(full_taints, 0, 0, False, False, field_colors = [("types", "key"), ("types", "value")], field_separators = [(("separators", "keyvalue"))])
