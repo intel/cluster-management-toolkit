@@ -12522,7 +12522,20 @@ infoviews = {
 	("CiliumIdentity", "cilium.io"): {
 		"windowheader": "Cilium Identity Info",
 		"infopad": {},
-		# Should we have a link to the Cilium Endpoint here?
+		"shortcuts": {
+			"Show Security Labels": {
+				"shortcut": ord("S"),
+				"helptext": ("[Shift] + S", "Show security labels"),
+				"widget": "windowwidget",
+				"title": "Security Labels:",
+				"headers": ["Label:", "Value:"],
+				"itemgetter": get_key_value,
+				"itemgetter_args": {
+					"path": "security-labels",
+				},
+				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
+			},
+		},
 	},
 	("ClusterInformation", ""): {
 		"windowheader": "Cluster Information Info",
