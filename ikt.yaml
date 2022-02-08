@@ -35,7 +35,7 @@
 # Note that the defaults are shown; the list does NOT take
 # into account customisations that have been made in this file.
 #
-# Also note that unless you set "hide_unavailable_api: False",
+# Also note that unless you set "hide_unavailable_api: false",
 # the list is likely to contain a lot more VIEWs than you'll
 # see when using the program.
 #
@@ -64,9 +64,9 @@ Selector:
   # Hide unavailable APIs in the selector menu
   # the list of available APIs can be updated by accessing the selection
   # menu using F3 instead of F2
-  # If this option is set to False, unavailable APIs will be listed
+  # If this option is set to false, unavailable APIs will be listed
   # but dimmed out and unselectable instead
-  # hide_unavailable_apis: True
+  # hide_unavailable_apis: true
   #
   # The primary sort column (valid options: name, kind)
   # sortcolumn: kind
@@ -82,7 +82,7 @@ Network:
 
   # This option might be necessary if you're running iku from another
   # system than the control plane is running on.
-  # allow_insecure_requests: False
+  # allow_insecure_requests: false
 
 Ansible:
   # This determines the parallelism of the commands being executed;
@@ -105,7 +105,7 @@ Ansible:
   # If this is set to true all logs are saved whenever you execute ansible actions;
   # these logs can later be accessed on a per host (via the node/host view)
   # or per action (in the logs view)
-  # save_logs: True
+  # save_logs: true
 
   # Path to directories with locally installed playbooks; this can also be used to override
   # the default playbooks--any playbook with the same name as one of the system playbooks
@@ -135,7 +135,7 @@ Mouse:
   # there seem to be no established standards for this
   # (at least not in python curses),
   # so the defaults here is what worked with the setup this is tested on.
-  # enablescroll: True
+  # enablescroll: true
 
   # This seems to work with at least some Logitech mice:
   # - 0b10000000000000000000
@@ -156,15 +156,15 @@ Nodes:
   # This opens you up to Man in the Middle (MITM) attacks,
   # and is, again, NOT for use on production systems.
   # For test setups it can, however, be convenient.
-  # disablestricthostkeychecking: False
+  # disablestricthostkeychecking: false
 
 Pods:
   # Filter out successfully completed pods in Pod List
-  # filter_succeeded: False
+  # filter_succeeded: false
 
   # Merge repeated messages; this will display the first occurence
   # and then a count of how many times the message is repeated
-  # merge_repeated_messages: False
+  # merge_repeated_messages: false
 
   # Resources to filter out on the Pod Info page;
   # filtering out resources will impair the navigation
@@ -203,10 +203,10 @@ Pods:
   # loglevel: Info
 
   # Fold log messages by default;
-  # choosing False here will (try)
+  # choosing false here will (try)
   # to expand lines that are valid JSON or python dicts,
   # as well as lines that contain multiple key=value pairs
-  # fold_msg: True
+  # fold_msg: true
 
   # How to show the log facility:
   # Full -- For files, show the full path (default)
@@ -215,16 +215,32 @@ Pods:
   # show_facility: "Full"
 
   # Show timestamps
-  # show_timestamps: True
+  # show_timestamps: true
 
   # Prefix all messages with the severity
-  # By default all identifiable severity markers are stripped; severity is instead just
-  # visualised by log message colour.  From an accessibility point of view this is suboptimal,
-  # so this option can prepend all log messages with standardised 4-letter severity tags
-  # severity_prefix: False
+  # By default all identifiable severity markers are stripped; severity is instead
+  # visualised by log message colour.  From an accessibility point of view this
+  # can be suboptimal, so optionally a severity prefix can be used.
+  # The prefix is configured through a list of options (with the empty list to disable)
+  # severity_prefix: ["PREFIX", "severity_type", "SUFFIX"]
+  # Options for severity_type are:
+  # letter -- A one-letter severity ("W" for warning)
+  # 4letter -- A 4-letter severity ("WARN" for warning)
+  # full -- Full word severity ("WARNING" for warning)
+  # The options are case sensitive:
+  # LETTER yields upper-case severity
+  # Letter yields capitalised severity
+  # letter yields lower-case severity
+  # (and no, leTtER or similar will NOT yield random capitalisation)
+  #
+  # Examples:
+  # ["", "Letter", ":"] -- "W:<message>"
+  # ["[", "4Letter", "] "] -- "[Warn] <message>"
+  # ["[", "FULL", "]"] -- "[WARNING]<message>"
+  # severity_prefix: []
 
   # Show borders and scrollbars
-  # show_borders: True
+  # show_borders: true
 
   # Path to directories with locally installed parser files; this can also be used to override
   # the default parsers--any locally provided match rules will apply be applied before

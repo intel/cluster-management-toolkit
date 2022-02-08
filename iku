@@ -43,7 +43,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
-from logparser import logparser, loglevel, split_msg, lvl_to_4letter_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
+from logparser import logparser, loglevel, split_msg, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
 from iktlib import deep_get, deep_get_with_fallback, stgroup, versiontuple, timestamp_to_datetime, get_since
@@ -60,7 +60,7 @@ IKTDIR = os.path.join(HOMEDIR, ".ikt")
 DEPLOYMENTDIR = f"{IKTDIR}/deployments"
 IKT_CONFIG_FILENAME = "ikt.yaml"
 IKT_CONFIG_FILE = os.path.join(IKTDIR, IKT_CONFIG_FILENAME)
-IKT_CONFIG_FILE = os.path.join(IKTDIR, f"{IKT_CONFIG_FILENAME}.d")
+IKT_CONFIG_FILE_DIR = os.path.join(IKTDIR, f"{IKT_CONFIG_FILENAME}.d")
 THEME_DIRNAME = "themes"
 THEMEDIR = os.path.join(IKTDIR, THEME_DIRNAME)
 DEFAULT_THEME = "default.yaml"
@@ -10053,7 +10053,13 @@ def containerinfoloop(stdscr, container, kind, obj):
 	highlight_new_dates = False
 	wrap_lines = False
 	# Show severity as text
-	severity_prefix = deep_get(iktconfig, "Pods#severity_prefix", False)
+	severity_prefix = deep_get(iktconfig, "Pods#severity_prefix", [])
+	# Backwards compatibility
+	if type(severity_prefix) is bool:
+		if severity_prefix == False:
+			severity_prefix = []
+		else:
+			severity_prefix = ["[", "4LETTER", "] "]
 
 	# This decides whether or not compound log messages,
 	# such as Python dicts and JSON, should be expanded
@@ -10523,11 +10529,26 @@ def containerinfoloop(stdscr, container, kind, obj):
 
 				msgstrarray = []
 
-				if severity_prefix == True:
-					if len(timestamp.strip()) != 0 or y >= len(timestamps):
-						msgstrarray.append((f"[{lvl_to_4letter_severity(severity)}] ", color_log_severity(severity, False)))
+				if len(severity_prefix) > 0:
+					_prefix, _severity_type, _suffix = severity_prefix
+					if _severity_type.lower() == "letter":
+						_severity = lvl_to_letter_severity(severity)
+					elif _severity_type.lower() == "4letter":
+						_severity = lvl_to_4letter_severity(severity)
+					elif _severity_type.lower() == "full":
+						_severity = lvl_to_word_severity(severity)
+
+					if _severity_type.startswith(("LE", "4LE", "FU")):
+						_severity = f"{_prefix}{_severity.upper()}{_suffix}"
+					elif _severity_type.startswith(("Le", "4Le", "Fu")):
+						_severity = f"{_prefix}{_severity.capitalize()}{_suffix}"
 					else:
-						msgstrarray.append(("".ljust(len(f"[{lvl_to_4letter_severity(severity)}] ")), color_log_severity(severity, False)))
+						_severity = f"{_prefix}{_severity.lower()}{_suffix}"
+
+					if len(timestamp.strip()) != 0 or y >= len(timestamps):
+						msgstrarray.append((f"{_severity}", color_log_severity(severity, False)))
+					else:
+						msgstrarray.append(("".ljust(len(f"{_severity}")), color_log_severity(severity, False)))
 
 				if facility != "":
 					if facility.rstrip() != "":
