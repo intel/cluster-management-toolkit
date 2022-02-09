@@ -1801,11 +1801,17 @@ def generic_infogetter(vlist, fields):
 		d["ref"] = obj
 		# fields both specify formatting and where to get the data from; here we're only concerned with the data
 		for field in fields:
+			# A tuple field is:
+			# (field, header[, path])
+			path = None
 			if type(field) == tuple:
+				if len(field) > 2:
+					path = field[2]
 				field = field[0]
 			generator = deep_get(field_templates, f"{field}#generator", generator_basic)
 			datagetter = deep_get(field_templates, f"{field}#datagetter", None)
-			path = deep_get(field_templates, f"{field}#path", "")
+			if path is None:
+				path = deep_get(field_templates, f"{field}#path", "")
 			default = deep_get(field_templates, f"{field}#default", get_default(generator))
 			if datagetter is None:
 				if type(default) is not tuple:
@@ -3614,6 +3620,7 @@ def resource_kind_to_rtype(resource):
 	rtypes = {
 		("AntreaAgentInfo", "crd.antrea.io"): "[antrea_agent_info]",
 		("AntreaControllerInfo", "crd.antrea.io"): "[antrea_controller_info]",
+		("CiliumEndpoint", "cilium.io"): "[cilium_endpoint]",
 		("ConfigMap", ""): "[configmap]",
 		("Container", ""): "[container]",
 		("Controller", ""): "[controller]",
@@ -3984,6 +3991,16 @@ def get_resource_info(obj):
 				resource_tuple = ("", name)
 				resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
 				break
+
+	if "cilium_endpoints" not in deep_get(iktconfig, "Pods#filter_resources", []):
+		# Check if there's a matching cilium endpoint
+		kind = ("CiliumEndpoint", "cilium.io")
+		ref = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
+		if ref is not None:
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = ("", pod_name)
+			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, "", stgroup.OK, -1, ""))
+
 	# Lease?
 
 	return resource_info
@@ -6511,7 +6528,15 @@ def fieldgenerator(view, fields = None, sortcolumn = None, blacklist = []):
 	# OK, we've pruned all unwanted fields; now we need to check that the sort column
 	# is still valid, and if not pick another one
 	if sortcolumn is not None and sortcolumn not in fields:
-		sortcolumn = "name"
+		if "name" in fields:
+			sortcolumn = "name"
+		elif "namespace" in fields:
+			sortcolumn = "namespace"
+		else:
+			if type(fields[0]) == str:
+				sortcolumn = fields[0]
+			elif type(fields[0]) == tuple:
+				sortcolumn = fields[0][0]
 	elif sortcolumn is None:
 		sortcolumn = deep_get(iktconfig, f"{view}#sortcolumn", "")
 		if sortcolumn not in fields:
@@ -6524,9 +6549,11 @@ def fieldgenerator(view, fields = None, sortcolumn = None, blacklist = []):
 	for field in fields:
 		header = ""
 
-		# If we get a tuple the first part is field, the second overrides header
+		# If we get a tuple the first part is field, the second overrides header;
+		# we don't care about the remaining parts
 		if type(field) is tuple and len(field) > 1:
-			field, header = field
+			header = field[1]
+			field = field[0]
 
 		if field not in field_templates:
 			raise Exception(f"Programming error! Field “{field}“ not defined in field_templates")
@@ -9561,7 +9588,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				_shortcut = [_shortcut]
 			for _sc in _shortcut:
 				if _sc in _shortcuts:
-					sys.exit(f"infoview {view}: The same keypress ({_shortcut}) is used for both \"{shortcut}\" and \"{_shortcuts[_shortcut]}\"; aborting.")
+					sys.exit(f"infoview {view}: The same keypress ({_sc}) is used for both \"{shortcut}\" and \"{_shortcuts[_sc]}\"; aborting.")
 				else:
 					_shortcuts[_sc] = shortcut
 
@@ -12536,6 +12563,56 @@ infoviews = {
 		#		"name_path": "spec#username",
 		#	},
 		#},
+	},
+	("CiliumEndpoint", "cilium.io"): {
+		"windowheader": "Cilium Endpoint Info",
+		"infopad": {
+			"Cilium Identity:": {
+				"fieldname": [("C", ("main", "infoheader_shortcut")), ("ilium Identity:", ("main", "infoheader"))],
+				"path": "status#identity#id",
+			},
+		},
+		"shortcuts": {
+			"Pod": {
+				"shortcut": ord("P"),
+				"helptext": ("[Shift] + P", "Open info page for Pod"),
+				"call": resourceinfodispatch,
+				"kind": ("Pod", ""),
+				"name_path": "metadata#name",
+				"namespace_path": "metadata#namespace",
+			},
+			"Cilium Identity": {
+				"shortcut": ord("C"),
+				"helptext": ("[Shift] + C", "Open info page for Cilium Identity"),
+				"call": resourceinfodispatch,
+				"kind": "CiliumIdentity",
+				"name_path": "status#identity#id",
+			},
+			"Show Cilium Identity Labels": {
+				"shortcut": ord("I"),
+				"helptext": ("[Shift] + I", "Show Cilium identity labels"),
+				"widget": "windowwidget",
+				"title": "Identity Labels:",
+				"itemgetter": get_list_as_list,
+				"itemgetter_args": {
+					"path": "status#identity#labels",
+				},
+				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
+			},
+			"Show Named Ports": {
+				"shortcut": ord("S"),
+				"helptext": ("[Shift] + S", "Show named ports"),
+				"widget": "windowwidget",
+				"title": "Named Ports:",
+				"headers": ["Name:", "Port:", "Protocol:"],
+				"itemgetter": get_list_fields,
+				"itemgetter_args": {
+					"path": "status#named-ports",
+					"fields": ["name", "port", "protocol"],
+				},
+				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
+			},
+		},
 	},
 	("CiliumIdentity", "cilium.io"): {
 		"windowheader": "Cilium Identity Info",
