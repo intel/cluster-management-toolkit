@@ -3564,10 +3564,10 @@ def get_pods_by_pv(pv):
 	# PV<=>PVC is a 1:1 mapping, but multiple pods can share the same PVC
 	name = deep_get(claim_ref, "name")
 	namespace = deep_get(claim_ref, "namespace")
-	pvc, status = kh.get_ref_by_kind_name_namespace(("PersistentVolumeClaim", ""), name, namespace)
+	pvc = kh.get_ref_by_kind_name_namespace(("PersistentVolumeClaim", ""), name, namespace)
 
-	if status != 200:
-		return [], status
+	if pvc is None:
+		return []
 
 	return get_pods_by_pvc(pvc)
 
