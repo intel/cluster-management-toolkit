@@ -13636,6 +13636,15 @@ infoviews = {
 	("IPPool", "crd.projectcalico.org"): {
 		"windowheader": "IP Pool Info",
 		"infopad": {
+			# XXX: This is *NOT* a Kubernetes style nodeSelector;
+			# for now we just show it as a string, but we should probably create a field processor for it
+			"Node Selector:": {
+				"path": "spec#nodeSelector",
+			},
+			"Disabled:": {
+				"path": "spec#disabled",
+				"fallback": [("False", ("types", "generic"))],
+			},
 			"Block Size:": {
 				"path": "spec#blockSize",
 			},
@@ -13651,6 +13660,16 @@ infoviews = {
 			},
 			"VXLAN Mode:": {
 				"path": "spec#vxlanMode",
+			},
+			"Disable BGP Export:": {
+				"path": "spec#disableBGPExport",
+				"fallback": [("False", ("types", "generic")), (" (Default)", ("types", "generic"))],
+			},
+			"allowedUses:": {
+				"path": "spec#allowedUses",
+				"extra_paths": ["spec#allowedUses"],
+				"processor": field_processor_list,
+				"fallback": [("Workload", ("types", "generic")), ("separators", "list"), ("Tunnel", ("types", "generic")), (" (Default)", ("types", "generic"))],
 			},
 		},
 	},
@@ -15068,7 +15087,7 @@ infoviews = {
 			},
 			"Allow Volume Expansion:": {
 				"path": "allowVolumeExpansion",
-				"fallback": [("False", curses.A_NORMAL)],
+				"fallback": [("False", ("types", "generic"))],
 			},
 			"Mount Options:": {
 				"path": "mountOptions",
@@ -15081,7 +15100,7 @@ infoviews = {
 			},
 			"Volume Binding Mode:": {
 				"path": "volumeBindingMode",
-				"fallback": [("Immediate", curses.A_NORMAL)],
+				"fallback": [("Immediate", ("types", "generic"))],
 			},
 		},
 		"shortcuts": {
