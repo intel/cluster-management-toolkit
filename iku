@@ -4678,6 +4678,23 @@ def get_list_fields(obj, **kwargs):
 
 	return vlist
 
+def get_image_list(obj, **kwargs):
+	vlist = []
+	path = deep_get(kwargs, "path", "")
+
+	for image in deep_get(obj, path, []):
+		name = ""
+		for name in deep_get(image, "names", []):
+			# This is the preferred name
+			if "@sha256:" not in name:
+				break
+
+		if len(name) == 0:
+			continue
+		size = disksize_to_human(deep_get(image, "sizeBytes", 0))
+		vlist.append([name, size])
+	return sorted(vlist)
+
 def get_resources(obj, **kwargs):
 	resources = []
 
@@ -13973,13 +13990,13 @@ infoviews = {
 				"path": "status#conditions",
 				"processor": field_processor_conditions,
 			},
-			"Internal-IPs:": {
-				#"fieldname": [("I", ("main", "infoheader_shortcut")), ("nternal-IPs:", ("main", "infoheader"))],
+			"Internal IPs:": {
+				#"fieldname": [("I", ("main", "infoheader_shortcut")), ("nternal IPs:", ("main", "infoheader"))],
 				# XXX: maybe we should ellipsise?
 				"processor": field_processor_internal_ips,
 			},
-			"External-IPs:": {
-				#"fieldname": [("E", ("main", "infoheader_shortcut")), ("xternal-IPs:", ("main", "infoheader"))],
+			"External IPs:": {
+				#"fieldname": [("E", ("main", "infoheader_shortcut")), ("xternal IPs:", ("main", "infoheader"))],
 				# XXX: maybe we should ellipsise?
 				"processor": field_processor_external_ips,
 			},
@@ -13991,6 +14008,21 @@ infoviews = {
 			},
 			"kube-proxy Version:": {
 				"path": "status#nodeInfo#kubeProxyVersion",
+			},
+			"kubelet Version:": {
+				"path": "status#nodeInfo#kubeletVersion",
+			},
+			"Kubelet Endpoint:": {
+				"path": "status#daemonEndpoints#kubeletEndpoint#Port",
+			},
+			"Pod CIDRs:": {
+				"path": ("spec#podCIDR", "spec#podCIDR"),
+				"extra_paths": "status#podCIDRs",
+				"processor": field_processor_list,
+				"fallback": [("N/A", ("types", "none"))],
+			},
+			"Allocatable Pods:": {
+				"path": "status#allocatable#pods",
 			},
 			"Taints:": {
 				"processor": field_processor_taints,
@@ -14013,6 +14045,18 @@ infoviews = {
 				"helptext": ("[Shift] + S", "SSH to node"),
 				"call": ssh_to_host,
 				"name_path": "metadata#name",
+			},
+			"Container Images": {
+				"shortcut": ord("I"),
+				"helptext": ("[Shift] + I", "List container images on node"),
+				"widget": "windowwidget",
+				"title": "Container images",
+				"headers": ["Name:", "Size:"],
+				"itemgetter": get_image_list,
+				"itemgetter_args": {
+					"path": "status#images",
+				},
+				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
 			},
 			"Open dnsutils pod on Node": {
 				"shortcut": ord(""),
