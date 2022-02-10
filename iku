@@ -8386,9 +8386,15 @@ def field_processor_ansible_facts(obj, path = None, extra_paths = None, fallback
 # [prefix]item1[separator(s)]item2[separator(s)]item...[suffix]
 #
 # path can be used as conditional; if path returns None or len(path) is 0,
-# it will be substited with fallback
+# it will be substituted with fallback.
+# If path is a tuple, the second argument is either a path or a list of paths
+# that should be tried to obtain a value before using the fallback
 def field_processor_list(obj, path = None, extra_paths = None, fallback = None, formatting = None):
+	fallback_path = None
+
 	if path is not None:
+		if type(path) is tuple:
+			path, fallback_path = path
 		cpath = deep_get(obj, path)
 		if cpath is None or len(cpath) == 0:
 			if fallback is None:
@@ -8411,6 +8417,18 @@ def field_processor_list(obj, path = None, extra_paths = None, fallback = None, 
 				value = deep_get(obj, epath)
 				value = "<<<none>>>" if value is None else str(value)
 			values.append(value)
+	if len(values) == 0:
+		if fallback_path is not None:
+			if type(fallback_path) is str:
+				fallback_path = [fallback_path]
+			tmp = deep_get_with_fallback(obj, fallback_path, None)
+			if tmp is not None:
+				values = [tmp]
+		else:
+			if fallback is None:
+				return [("strings", "unset")]
+			else:
+				return fallback
 
 	return __field_processor_list(values, formatting)
 
@@ -14855,8 +14873,21 @@ infoviews = {
 			"Type:": {
 				"path": "spec#type",
 			},
-			"Cluster-IP:": {
-				"path": "spec#clusterIP",
+			"Cluster IPs:": {
+				"path": ("spec#clusterIPs", "spec#clusterIP"),
+				"extra_paths": "spec#clusterIPs",
+				"processor": field_processor_list,
+			},
+			"Internal Traffic Policy:": {
+				"path": "spec#internalTrafficPolicy",
+			},
+			"IP Families:": {
+				"path": "spec#ipFamilies",
+				"extra_paths": "spec#ipFamilies",
+				"processor": field_processor_list,
+			},
+			"IP Family Policy:": {
+				"path": "spec#ipFamilyPolicy",
 			},
 			"External-IP(s):": {
 				"path": "spec#externalIPs",
@@ -14872,8 +14903,11 @@ infoviews = {
 			"Topology Keys:": {
 				"path": "spec#topologyKeys",
 				"extra_paths": "spec#topologyKeys",
-				"fallback": [("strings", "none")],
+				"fallback": [("strings", "unset")],
 				"processor": field_processor_list,
+			},
+			"Session Affinity:": {
+				"path": "spec#sessionAffinity",
 			},
 		},
 		"listpad": {
