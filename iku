@@ -2648,7 +2648,7 @@ def get_cilium_ep_info(vlist, extra_vars = {}):
 		ingress_enforcement = deep_get(obj, "status#policy#ingress#enforcing", "")
 		egress_enforcement = deep_get(obj, "status#policy#egress#enforcing", "")
 		visibility_policy = deep_get(obj, "status#policy#visibility#enforcing", "")
-		endpoint_state  = deep_get(obj, "status#state", "Unknown")
+		endpoint_state = deep_get(obj, "status#state", "Unknown")
 		ipv4 = []
 		ipv6 = []
 		for item in deep_get(obj, "status#networking#addressing", []):
@@ -3597,7 +3597,7 @@ def abbreviate_access_mode(mode):
 	return abbr
 
 def get_pod_log_by_name_namespace_container(name, namespace, container, tail_lines = default_tail_lines):
-	internal_error  = False
+	internal_error = False
 
 	rawmsg, status = kh.read_namespaced_pod_log(name, namespace, container = container, tail_lines = tail_lines)
 	if status == 200:
@@ -10171,7 +10171,7 @@ def containerinfoloop(stdscr, container, kind, obj):
 			# When following the log we update the log continuously, but tail lines is limited to the number of lines
 			# that fits on the screen, and cursor movements are disabled; as soon as the user presses a key the log
 			# will stop scrolling and the whole log (default number of tail lines) will be loaded
-			if uip.continuous_log:
+			if uip.continuous_log == True:
 				tail_lines = uip.logpadheight
 
 			pod_info = get_pod_info([obj])[0]
@@ -10194,9 +10194,12 @@ def containerinfoloop(stdscr, container, kind, obj):
 			else:
 				image = "<unavailable>"
 
-			notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Fetching log")
+			# We don't want the "Fetching Log" notification every few seconds; we're just loading a few lines...
+			if uip.continuous_log == False:
+				notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Fetching log")
 			rawmsg, internal_error = get_pod_log_by_name_namespace_container(podname, namespace, containername, tail_lines = tail_lines)
-			del notice
+			if uip.continuous_log == False:
+				del notice
 			uip.refresh_window()
 			uip.refresh_infopad()
 			uip.refresh_logpad()
