@@ -2713,8 +2713,6 @@ builtin_parsers = [
 	("node-exporter", "", "", "key_value"),
 	("nodelocaldns", "", "", "kube_parser_1"),
 	("notebook-controller-deployment", "manager", "", "seldon"),
-	("gpu-feature-discovery", "toolkit-validation", "", "basic_8601"),
-	("gpu-feature-discovery", "", "", ("custom", ["colon_facility", "ts_8601"])),
 	("nvidia-cuda-validator", "", "", "basic_8601"),
 	("nvidia-device-plugin", "", "", "basic_8601"),
 	("nvidia-container-toolkit", "driver-validation", "", "basic_8601"),
@@ -2919,6 +2917,35 @@ def get_parser_list():
 
 	return _parsers
 
+# We've already defined the parser, so no need to do it again
+def logparser_initialised(parser = None, message = "", fold_msg = True, line = 0):
+	# First extract the Kubernetes timestamp
+	message, timestamp = split_iso_timestamp(message, None)
+
+	if parser == None:
+		raise Exception("logparser_initialised called with parser == None")
+
+	if type(parser.parser) == tuple and parser.parser[0] == "custom":
+		options = {
+			"__line": line,
+		}
+		pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1], options = options)
+	else:
+		pod_name, severity, message, remnants = eval(parser.parser)(message, fold_msg = fold_msg)
+
+	if len(message) > 16383:
+		remnants = (message[0:16383], severity)
+		severity = loglevel.ERR
+		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes"
+
+	# The UI gets mightily confused by tabs, so replace them with spaces
+	# XXX: Doing this here doesn't make sense; at this point we don't know how long the line is.
+	#      The only place where we can do this sensibly is in the curses helper.
+	message = replace_tabs(message)
+	remnants = replace_tabs(remnants)
+
+	return timestamp, pod_name, severity, message, remnants
+
 # pod_name, container_name, and image_name are used to decide what parser to use;
 # this allows for different containers in the same pod to use different parsers,
 # and different versions of pod to use different parsers
@@ -2945,9 +2972,9 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 						pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1], options = options)
 					else:
 						pod_name, severity, message, remnants = eval(parser.parser)(message, fold_msg = fold_msg)
-			return timestamp, pod_name, severity, message, remnants, ("<override>", str(override_parser))
+			return timestamp, pod_name, severity, message, remnants, ("<override>", str(override_parser)), parser
 		except Exception as e:
-			return timestamp, "", loglevel.ERR, f"Could not parse using {str(override_parser)}:", [(message, loglevel.INFO)], ("<override>", str(override_parser))
+			return timestamp, "", loglevel.ERR, f"Could not parse using {str(override_parser)}:", [(message, loglevel.INFO)], ("<override>", str(override_parser)), None
 
 	if image_name.startswith("docker-pullable://"):
 		image_name = image_name[len("docker-pullable://"):]
@@ -2969,15 +2996,7 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 
 			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and _image_name.startswith(image_prefix) and container_type  == _container_type:
 				uparser = parser.parser_name
-				# This allows for multiple parsers to be tested on the same log until a match is found
-				if type(parser.parser) == list:
-					for uparser in parser.parser:
-						try:
-							pod_name, severity, message, remnants = eval(uparser)(message, fold_msg = fold_msg)
-							break
-						except:
-							pass
-				elif type(parser.parser) == tuple and parser.parser[0] == "custom":
+				if type(parser.parser) == tuple and parser.parser[0] == "custom":
 					options = {
 						"__line": line,
 					}
@@ -3000,6 +3019,7 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 		pod_name, severity, message, remnants = basic_8601(message, fold_msg = fold_msg)
 		lparser = "<unknown format>"
 		uparser = "basic_8601"
+		parser = basic_8601
 
 	if len(message) > 16383:
 		remnants = (message[0:16383], severity)
@@ -3012,4 +3032,4 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 	message = replace_tabs(message)
 	remnants = replace_tabs(remnants)
 
-	return timestamp, pod_name, severity, message, remnants, (lparser, str(uparser))
+	return timestamp, pod_name, severity, message, remnants, (lparser, str(uparser)), parser

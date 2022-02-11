@@ -43,7 +43,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
-from logparser import logparser, loglevel, split_msg, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
+from logparser import logparser, logparser_initialised, loglevel, split_msg, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
 from iktlib import deep_get, deep_get_with_fallback, stgroup, versiontuple, timestamp_to_datetime, get_since
@@ -10154,6 +10154,7 @@ def containerinfoloop(stdscr, container, kind, obj):
 	# and if so how it is to be displayed
 	show_facility = deep_get(iktconfig, "Pods#show_facility", "Full")
 	override_parser = None
+	_parser = None
 
 	reload = False
 
@@ -10243,11 +10244,13 @@ def containerinfoloop(stdscr, container, kind, obj):
 							return curses_helper.retval.RETURNDONE
 
 				if internal_error == True:
-					timestamp, facility, severity, message, remnants, parser = logparser("internal_error", "", "", line, container_type = container_type, line = i)
+					timestamp, facility, severity, message, remnants, parser, _parser = logparser("internal_error", "", "", message = line, container_type = container_type, line = i)
 				elif raw_logs == True:
-					timestamp, facility, severity, message, remnants, parser = logparser("raw", "", "", line, container_type = container_type, line = i)
+					timestamp, facility, severity, message, remnants, parser, _parser = logparser("raw", "", "", message = line, container_type = container_type, line = i)
+				elif override_parser is not None or _parser is None or parser == "":
+					timestamp, facility, severity, message, remnants, parser, _parser = logparser(podname, containername, image, message = line, fold_msg = fold_msg, override_parser = override_parser, container_type = container_type, line = i)
 				else:
-					timestamp, facility, severity, message, remnants, parser = logparser(podname, containername, image, line, fold_msg = fold_msg, override_parser = override_parser, container_type = container_type, line = i)
+					timestamp, facility, severity, message, remnants = logparser_initialised(parser = _parser, message = line, fold_msg = fold_msg, line = i)
 
 				i += 1
 
@@ -10778,6 +10781,7 @@ def containerinfoloop(stdscr, container, kind, obj):
 					override_parser = None
 				else:
 					override_parser = selection
+				_parser = None
 			uip.yoffset = 0
 			uip.xoffset = 0
 			uip.force_update()
