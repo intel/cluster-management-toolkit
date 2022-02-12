@@ -1377,6 +1377,13 @@ class UIProps:
 		self.extraref = extraref
 		self.data = data
 
+	def reinit_window(self, field_list, sortcolumn):
+		self.field_list = field_list
+		self.searchkey = ""
+		self.sortcolumn = sortcolumn
+		self.sortkey1, self.sortkey2 = self.get_sortkeys()
+		self.resize_window()
+
 	def update_window(self):
 		maxyx = self.stdscr.getmaxyx()
 		if self.maxy != (maxyx[0] - 1) or self.maxx != (maxyx[1] - 1):
@@ -2197,7 +2204,10 @@ class UIProps:
 		field = self.field_list.get(self.sortcolumn)
 
 		if field is None:
-			raise Exception(f"Invalid sortcolumn: {self.sortcolumn} does not exist in field_list:\n{yaml.dump(self.field_list)}")
+			valid_fields = []
+			for f in self.field_list:
+				valid_fields.append(f)
+			raise Exception(f"Invalid sortcolumn: {self.sortcolumn} does not exist in field_list:\nvalid fields are: {valid_fields}")
 		else:
 			sortkey1 = self.field_list[self.sortcolumn]["sortkey1"]
 			sortkey2 = self.field_list[self.sortcolumn]["sortkey2"]

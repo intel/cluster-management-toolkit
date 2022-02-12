@@ -37,6 +37,7 @@ about = [
 listviewheader = [
 	("[Ctrl] + X", "Exit program"),
 	("[Shift] + M", "Toggle mouse on/off"),
+	("[Shift] + W", "Toggle custom/normal/wide fields (when available)"),
 	("", ""),
 	("[F1] / [Shift] + H", "Show this helptext"),
 	("[F2]", "Switch main view"),

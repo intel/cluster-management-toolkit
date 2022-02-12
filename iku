@@ -6629,8 +6629,22 @@ def genericlistloop(stdscr, view):
 	global initial_namespace
 	global latest_info
 	blacklist = deep_get(views, f"{view}#field_blacklist", [])
+	fields_custom = deep_get(views, f"{view}#custom_fields", [])
+	fields_narrow = deep_get(views, f"{view}#fields", [])
+	fields_wide = deep_get(views, f"{view}#fields_wide", [])
 
-	field_list, sortcolumn = fieldgenerator(view, blacklist = blacklist)
+	fields_types = [{"name": "Normal", "fields": fields_narrow}]
+	fields_index = 0
+	if len(fields_wide) > 0:
+		fields_types.append({"name": "Wide", "fields": fields_wide})
+		fields_index = len(fields_types) - 1
+	if len(fields_custom) > 0:
+		fields_types.append({"name": "Custom", "fields": fields_custom})
+		fields_index = len(fields_types) - 1
+	fields = deep_get(fields_types[fields_index], "fields")
+	fields_name = deep_get(fields_types[fields_index], "name")
+
+	field_list, sortcolumn = fieldgenerator(view, fields = fields, blacklist = blacklist)
 	uip = UIProps(stdscr)
 
 	windowheader = view
@@ -6677,6 +6691,7 @@ def genericlistloop(stdscr, view):
 				interval = "Manual"
 
 			statusarray1 = [
+				("Fields: ", ("statusbar", "infoheader")), (deep_get(fields_types[fields_index], "name"), ("statusbar", "highlight"))
 			]
 			if len(label_selector) > 0:
 				statusarray1 += [
@@ -6684,7 +6699,7 @@ def genericlistloop(stdscr, view):
 				]
 			statusarray2 = [
 			]
-			if view != "Contexts" and ("namespace" in blacklist or "namespace" in deep_get(viewref, "fields")):
+			if view != "Contexts" and ("namespace" in blacklist or "namespace" in fields):
 				statusarray2 += [("Namespace: ", ("statusbar", "infoheader")), (f"{namespace if len(namespace) > 0 else '<All>'}", ("statusbar", "highlight"))]
 
 			if "listgetter" in viewref:
@@ -6703,7 +6718,6 @@ def genericlistloop(stdscr, view):
 				else:
 					vlist, status = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
 				if infogetter == generic_infogetter:
-					fields = deep_get(viewref, "fields")
 					info = infogetter(vlist, fields)
 				else:
 					info = infogetter(vlist, extra_vars = infogetter_extra_vars)
@@ -6787,6 +6801,21 @@ def genericlistloop(stdscr, view):
 			uip.refresh_all()
 		elif c == ord("B"):
 			uip.toggle_borders()
+			uip.refresh_all()
+			uip.force_update()
+		elif c == ord("W"):
+			if len(fields_wide) == 0 and len(fields_custom) == 0:
+				continue
+
+			# Toggle field width
+			fields_index += 1
+			if fields_index > len(fields_types) - 1:
+				fields_index = 0
+			fields = deep_get(fields_types[fields_index], "fields")
+			fields_name = deep_get(fields_types[fields_index], "name")
+			field_list, sortcolumn = fieldgenerator(view, fields = fields, blacklist = blacklist)
+			uip.reinit_window(field_list, sortcolumn = sortcolumn)
+			uip.resize_listpad(height = -1, width = -1)
 			uip.refresh_all()
 			uip.force_update()
 		elif c == curses.KEY_F7:
@@ -6913,7 +6942,7 @@ def genericlistloop(stdscr, view):
 				continue
 			tagged_items.clear()
 		elif c == ord("N"):
-			if "namespace" not in deep_get(viewref, "fields", []):
+			if "namespace" not in fields:
 				continue
 
 			all_ns = "<All>"
@@ -9503,7 +9532,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		if obj is None or len(obj) == 0:
 			return curses_helper.retval.NOMATCH
 
-	fields = deep_get(viewref, "fields")
+	fields = deep_get_with_fallback(viewref, ["custom_fields", "fields"])
 	sortcolumn = deep_get(viewref, "sortcolumn")
 	field_blacklist = deep_get(viewref, "field_blacklist", [])
 	field_list, sortcolumn = fieldgenerator(None, fields = fields, sortcolumn = sortcolumn, blacklist = field_blacklist)
@@ -16314,7 +16343,8 @@ views = {
 	"Pods": {
 		"commandline": ["pods", "pod", "po"],
 		"group": "Workloads",
-		"fields": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts", "last_restart"],
+		"fields_wide": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts", "last_restart"],
+		"fields": ["namespace", "name", "controller", "status", "node", "age", "restarts", "last_restart"],
 		"sortcolumn": "status",
 		"activatedfun": genericinfoloop,
 		"kind": ("Pod", ""),
