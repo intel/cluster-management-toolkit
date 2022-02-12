@@ -7,6 +7,7 @@
 
 from collections import OrderedDict
 import base64
+import copy
 import csv
 import curses
 from curses import wrapper
@@ -46,7 +47,7 @@ except ModuleNotFoundError:
 from logparser import logparser, logparser_initialised, loglevel, split_msg, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import deep_get, deep_get_with_fallback, stgroup, versiontuple, timestamp_to_datetime, get_since
+from iktlib import deep_get, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, get_since
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_ram_usage, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_extract_string, strarray_wrap_line, themearray_to_strarray, themearray_extract_string, attr_to_curses_merged
 
 from ansible_helper import ansible_clean_results, ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
@@ -62,6 +63,7 @@ IKT_CONFIG_FILENAME = "ikt.yaml"
 IKT_CONFIG_FILE = os.path.join(IKTDIR, IKT_CONFIG_FILENAME)
 IKT_CONFIG_FILE_DIR = os.path.join(IKTDIR, f"{IKT_CONFIG_FILENAME}.d")
 THEME_DIRNAME = "themes"
+VIEW_DIRNAME = "views"
 THEMEDIR = os.path.join(IKTDIR, THEME_DIRNAME)
 DEFAULT_THEME = "default.yaml"
 
@@ -1529,6 +1531,14 @@ def datagetter_count(obj, path, default):
 		tmp = []
 	return len(tmp), {}
 
+def datagetter_pod_status(obj, path, default):
+	if obj is None:
+		return default
+
+	status, status_group = get_pod_status(obj)
+
+	return status, {"status_group": status_group}
+
 def datagetter_pv_status(obj, path, default):
 	if obj is None:
 		return default
@@ -1629,6 +1639,21 @@ def datagetter_certsignreq_conditions(obj, path, default):
 	if obj is None:
 		return default
 	return get_certsignreq_conditions(deep_get(obj, "status")), {}
+
+def datagetter_pod_restarts(obj, path, default):
+	if obj is None:
+		return default
+	restarts, restarted_at = get_pod_restarts_total(obj)
+	if path == "restarts":
+		return restarts, {}
+	elif path == "restarted_at":
+		if restarted_at == -1:
+			last_restart = -1
+		else:
+			last_restart = get_since(restarted_at)
+		return last_restart, {}
+	else:
+		raise Exception(f"Invalid data {path} requested")
 
 def datagetter_status_latest_condition(obj, path, default):
 	status, status_group, status_message = get_status_latest_condition(deep_get(obj, path))
@@ -1789,7 +1814,7 @@ def get_default(generator):
 
 latest_info = None
 
-def generic_infogetter(vlist, fields):
+def generic_infogetter(vlist, fields, **kwargs):
 	info = []
 
 	# Generate an empty entry
@@ -1827,6 +1852,44 @@ def generic_infogetter(vlist, fields):
 				d[field], extradata = datagetter(obj, path, default)
 				for key, value in extradata.items():
 					d[key] = value
+
+		# We've got all the information we can get now; time to apply filters
+		filters = deep_get(kwargs, "filters", {})
+		skip = False
+		for f in filters:
+			if deep_get(filters[f], "enabled", True) == False:
+				continue
+
+			# If len(allow) > 0, we only allow fields that match
+			allow = deep_get(filters[f], "allow", [])
+			# If len(block) > 0, we skip fields that match
+			block = deep_get(filters[f], "block", [])
+			source = deep_get(filters[f], "source", "")
+			if source == "object":
+				src = obj
+			else:
+				src = d
+			if len(allow) > 0:
+				# If all field + value pairs match we allow
+				for rule in allow:
+					key = deep_get(rule, "key", "")
+					values = deep_get(rule, "values", "")
+
+					if deep_get(src, key, "").rstrip() not in values:
+						skip = True
+						break
+			if len(block) > 0:
+				# If all field + value pairs match we block
+				for rule in block:
+					key = deep_get(rule, "key", "")
+					values = deep_get(rule, "values", "")
+					if deep_get(src, key, "").rstrip() in values:
+						skip = True
+						break
+			if skip == True:
+				break
+		if skip == True:
+			continue
 
 		info.append(type("InfoClass", (), d))
 	return info
@@ -4744,6 +4807,9 @@ def get_workload_labels(obj, **kwargs):
 def get_pod_info_with_kind(vlist):
 	return get_pod_info(vlist, extra_vars = {"show_kind": "mixed"})
 
+def generic_listgetter(kind, namespace, **kwargs):
+	return kh.get_list_by_kind_namespace(kind, namespace, label_selector = deep_get(kwargs, "label_selector"))
+
 def get_events_by_kind_name_namespace(kind, name, namespace):
 	events = []
 	vlist, status = kh.get_list_by_kind_namespace(("Event", ""), "")
@@ -5002,6 +5068,8 @@ field_templates = {
 	"api_service": {
 		# (namespace, name, port)
 		"header": "Service",
+		# Note: path is always spec#service; this is used to denote the info about
+		# the API service that's requested; status_message, service, or available
 		"path": "service",
 		"datagetter": datagetter_api_service,
 		"generator": generator_list,
@@ -5668,6 +5736,8 @@ field_templates = {
 	},
 	"last_restart": {
 		"header": "Last Restart:",
+		"path": "restarted_at",
+		"datagetter": datagetter_pod_restarts,
 		"generator": generator_age,
 		"ralign": True,
 	},
@@ -5832,6 +5902,11 @@ field_templates = {
 	"node_id": {
 		"header": "Node ID:",
 	},
+	"node_name": {
+		"header": "Node:",
+		"path": "spec#nodeName",
+		"default": "<none>",
+	},
 	"node_selector": {
 		"header": "Node Selector:",
 		"path": "spec#nodeSelector",
@@ -5939,6 +6014,8 @@ field_templates = {
 	},
 	"pod_ip": {
 		"header": "Pod IP:",
+		"path": "status#podIP",
+		"default": "<unset>",
 	},
 	"pod_selector": {
 		# [(key, value), ...]
@@ -6034,6 +6111,11 @@ field_templates = {
 	"publisher": {
 		"header": "Publisher:",
 		"path": "spec#publisher",
+	},
+	"pod_status": {
+		"header": "Status:",
+		"datagetter": datagetter_pod_status,
+		"generator": generator_status,
 	},
 	"pv_status": {
 		"header": "Status:",
@@ -6167,6 +6249,8 @@ field_templates = {
 	},
 	"restarts": {
 		"header": "Restarts:",
+		"path": "restarts",
+		"datagetter": datagetter_pod_restarts,
 		"generator": generator_numerical,
 		"ralign": True,
 	},
@@ -6676,12 +6760,58 @@ def genericlistloop(stdscr, view):
 
 	label_selector = ""
 
+	# These values can be toggled, so we need to read them first
+	listview_args = copy.deepcopy(viewref.get("listview_args", {}))
+
 	while True:
 		uip.countdown_to_update()
 
 		if uip.is_update_triggered():
 			uip.update_window()
 
+			if "listgetter" in viewref:
+				listgetter = deep_get(viewref, "listgetter")
+			else:
+				listgetter = "kh.get_list_by_kind_namespace"
+
+			infogetter = deep_get(viewref, "infogetter", generic_infogetter)
+			infogetter_extra_vars = deep_get(viewref, "extra_vars#infogetter", {})
+
+			if listgetter is not None:
+				if listgetter == generic_listgetter:
+					listgetter_args = deep_get(viewref, "listgetter_args", {})
+					listgetter_args["label_selector"] = label_selector
+					vlist, status = listgetter(deep_get(viewref, "kind"), namespace, **listgetter_args)
+				else:
+					listgetter = eval(listgetter)
+					listgetter_extra_vars = deep_get(viewref, "extra_vars#listgetter", {})
+					if kind[0].startswith("__"):
+						vlist, status = listgetter(extra_vars = listgetter_extra_vars)
+					else:
+						vlist, status = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
+				if infogetter == generic_infogetter:
+					info = infogetter(vlist, fields, **listview_args)
+				else:
+					info = infogetter(vlist, extra_vars = infogetter_extra_vars)
+			else:
+				status = "OK"
+				info = infogetter(extra_vars = infogetter_extra_vars)
+
+			if status == 42503:
+				serverstatus = "Server Unavailable"
+			else:
+				serverstatus = str(status)
+
+			latest_info = view
+			listlen = uip.update_info(info)
+			linelen = update_field_widths(field_list, uip.info)
+			if is_taggable == True:
+				linelen += len("✓ ")
+			uip.resize_listpad(listlen, linelen)
+
+			tagged_items = set()
+
+		if uip.refresh:
 			# The data in some fields might become shorter, so we need to trigger a clear
 			uip.statusbar.erase()
 
@@ -6694,6 +6824,8 @@ def genericlistloop(stdscr, view):
 				("Fields: ", ("statusbar", "infoheader")), (deep_get(fields_types[fields_index], "name"), ("statusbar", "highlight"))
 			]
 			if len(label_selector) > 0:
+				if len(statusarray1) > 0:
+					statusarray1 += [("separators", "statusbar")]
 				statusarray1 += [
 					("Label selector: ", ("statusbar", "infoheader")), (f"{label_selector}", ("statusbar", "highlight"))
 				]
@@ -6702,34 +6834,6 @@ def genericlistloop(stdscr, view):
 			if view != "Contexts" and ("namespace" in blacklist or "namespace" in fields):
 				statusarray2 += [("Namespace: ", ("statusbar", "infoheader")), (f"{namespace if len(namespace) > 0 else '<All>'}", ("statusbar", "highlight"))]
 
-			if "listgetter" in viewref:
-				listgetter = deep_get(viewref, "listgetter")
-			else:
-				listgetter = "kh.get_list_by_kind_namespace"
-
-			infogetter = deep_get(viewref, "infogetter", generic_infogetter)
-			infogetter_extra_vars = deep_get(viewref, "extra_vars#infogetter", {})
-
-			if listgetter is not None:
-				listgetter = eval(listgetter)
-				listgetter_extra_vars = deep_get(viewref, "extra_vars#listgetter", {})
-				if kind[0].startswith("__"):
-					vlist, status = listgetter(extra_vars = listgetter_extra_vars)
-				else:
-					vlist, status = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
-				if infogetter == generic_infogetter:
-					info = infogetter(vlist, fields)
-				else:
-					info = infogetter(vlist, extra_vars = infogetter_extra_vars)
-			else:
-				status = "OK"
-				info = infogetter(extra_vars = infogetter_extra_vars)
-
-			if status == 42503:
-				serverstatus = "Server Unavailable"
-			else:
-				serverstatus = str(status)
-
 			if len(statusarray2) > 0:
 				statusarray2 += [("separators", "statusbar")]
 			statusarray2 += [
@@ -6737,18 +6841,17 @@ def genericlistloop(stdscr, view):
 				(f"{serverstatus}", ("statusbar", "default")),
 			]
 
+			for key, path in deep_get(viewref, "statusmsg", []):
+				value = str(deep_get(listview_args, path, "<unset>"))
+				if len(statusarray2) > 0:
+					statusarray2 += [("separators", "statusbar")]
+				statusarray2 += [
+					(key, ("statusbar", "infoheader")),
+					(value, ("statusbar", "default")),
+				]
+
 			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
 			uip.addthemearray(statusbar, statusarray2, y = 1, x = 0)
-
-			latest_info = view
-			listlen = uip.update_info(info)
-			linelen = update_field_widths(field_list, uip.info)
-			if is_taggable == True:
-				linelen += len("✓ ")
-			uip.resize_listpad(listlen, linelen)
-
-			tagged_items = set()
-
 
 		# Output list
 		y = 0
@@ -6855,6 +6958,8 @@ def genericlistloop(stdscr, view):
 						tmpdescription += metadata[0]
 					if tmpdescription == selection:
 						actionfunc = deep_get(actionlist, f"{action}#actionfunc", command_hosts)
+						if type(actionfunc) == str:
+							actionfunc = eval(actionfunc)
 						# These are only relevant for node and inventory view
 						allowoncontrolplane = deep_get(actionlist, f"{action}#allow_on_control_plane", True)
 						singleoncontrolplane = deep_get(actionlist, f"{action}#single_on_control_plane", False)
@@ -7248,6 +7353,8 @@ def genericlistloop(stdscr, view):
 						tmpdescription += metadata[0]
 					if tmpdescription == selection:
 						actionfunc = deep_get(actionlist, f"{action}#actionfunc", command_hosts)
+						if type(actionfunc) == str:
+							actionfunc = eval(actionfunc)
 						# These are only relevant for node and inventory view
 						allowoncontrolplane = deep_get(actionlist, f"{action}#allow-on-control-plane", True)
 						singleoncontrolplane = deep_get(actionlist, f"{action}#single-on-control-plane", False)
@@ -7394,6 +7501,14 @@ def genericlistloop(stdscr, view):
 				expr = compile(_eval, "<string>", "exec")
 				eval(expr)
 
+			action = deep_get(value, "action", None)
+			if action is not None:
+				action_args = deep_get(value, "action_args", {})
+				if action == "toggle_var":
+					var = deep_get(action_args, "var")
+					if var is not None:
+						tmp = deep_get(listview_args, var)
+						deep_set(listview_args, var, not tmp)
 			if force_update == True:
 				uip.force_update()
 
@@ -15714,7 +15829,7 @@ views = {
 		"commandline": ["customresourcedefinitions", "customresourcedefinition", "crds", "crd"],
 		"group": "API & Extendability",
 		"fields": ["name", "api_group_crd", "created_at"],
-		"sortcolumn": "group",
+		"sortcolumn": "api_group_crd",
 		"activatedfun": resourcelistdispatch,
 		"kind": ("CustomResourceDefinition", "apiextensions.k8s.io"),
 	},
@@ -16776,6 +16891,167 @@ views = {
 	},
 }
 
+# This function is called before parsing the command-line; it cannot use Kubernetes information,
+# since that would be far too slow, so
+def populate_views():
+	# Get a full list of views from all view directories
+	# Start by adding files from the views directory
+	view_dirs = []
+	view_dirs += deep_get(iktconfig, "General#local_views", [])
+
+	disable_builtin_views = deep_get(iktconfig, "Internal#disable_builtin_views", False)
+
+	view_dirs.append(os.path.join(IKTDIR, VIEW_DIRNAME))
+
+	view_files = []
+
+	for view_dir in view_dirs:
+		if view_dir.startswith("{HOME}"):
+			view_dir = view_dir.replace("{HOME}", HOMEDIR, 1)
+
+		if not os.path.isdir(view_dir):
+			continue
+
+		for filename in natsorted(os.listdir(view_dir)):
+			if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
+				continue
+
+			view_files.append(os.path.join(view_dir, filename))
+
+	for view_file in view_files:
+		with open(view_file, "r") as f:
+			try:
+				d = yaml.safe_load(f)
+			except:
+				sys.exit(f"View-file {view_file} is invalid; aborting.")
+
+			try:
+				for view in d:
+					pass
+			except:
+				sys.exit(f"View-file {view_file} is invalid; aborting.")
+
+			kind = deep_get(d, "kind", "<missing>")
+			default_command = deep_get(d, "default_command", "<missing>")
+			if kind is None or default_command is None or "<missing>" in [kind, default_command]:
+				sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None:\n"
+					 f"kind: {kind}\n"
+					 f"default_command: {default_command}\n"
+					  "Aborting.")
+
+			api_family = deep_get(d, "api_family", "")
+			# Use a set to avoid duplicates
+			_command = set()
+			_command.add(kind.lower())
+			if len(deep_get(d, "command", [])) > 0:
+				_command = set.union(_command, set(deep_get(d, "command", [])))
+			# OK, we've got all commands we wanted; now we want the preferred form first
+			_command.discard(default_command)
+			_command = [default_command] + list(_command)
+			# Finally, now that we have a list, add variants with api_family suffixed
+			command = list(_command)
+			if len(api_family) > 0:
+				for item in _command:
+					command.append(f"{item}.{api_family}")
+
+			if "listview" in d:
+				name = deep_get(d, "listview#name", "<missing>")
+				group = deep_get(d, "listview#group")
+				sortcolumn = deep_get(d, "listview#sortcolumn")
+				fields = deep_get(d, "listview#fields", "<missing>")
+				fields_wide = deep_get(d, "listview#fields_wide")
+
+				if name is None or group is None or fields is None or len(fields) == 0 or "<missing>" in [name, group, fields]:
+					sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing, empty or None:\n"
+						  "listview:\n"
+						 f"  name: {name}\n"
+						 f"  group: {group}\n"
+						 f"  fields: {fields}\n"
+						  "Aborting.")
+				listview_entry = {
+					"kind": (kind, api_family),
+					"commandline": command,
+					"group": group,
+					"fields": fields,
+					"fields_wide": fields_wide,
+					"activatedfun": genericinfoloop,
+					"listview_args": deep_get(d, "listview#listview_args", {}),
+					"statusmsg": deep_get(d, "listview#statusmsg", {}),
+					"listgetter": generic_listgetter,
+					"infogetter": generic_infogetter,
+					"infogetter_args": deep_get(d, "listview#infogetter_args", {}),
+					"actions": deep_get(d, "listview#actions", {}),
+				}
+				if sortcolumn is not None:
+					listview_entry["sortcolumn"] = sortcolumn
+
+				shortcuts = {}
+
+				_shortcuts = deep_get(d, "listview#shortcuts", {})
+				for shortcut in _shortcuts:
+					# If the shortcut is empty we're disabling a default shortcut
+					if len(shortcut) == 0:
+						shortcuts[shortcut] == {}
+						continue
+
+					key = deep_get(_shortcuts[shortcut], "key", "<missing>")
+					modifier = deep_get(_shortcuts[shortcut], "modifier", "")
+					helptext = deep_get(_shortcuts[shortcut], "helptext", "<missing>")
+					action = deep_get(_shortcuts[shortcut], "action", "<missing>")
+					action_args = deep_get(_shortcuts[shortcut], "action_args", {})
+					if key is None or helptext is None or action is None or "<missing>" in [key, helptext, action]:
+						sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
+							 f"key: {key}\n"
+							 f"helptext: {helptext}\n"
+							 f"action: {action}\n"
+							  "Aborting.")
+
+					key = key.lower()
+					modifier = modifier.lower()
+
+					if len(modifier) > 0 and modifier not in ["ctrl", "shift"]:
+						sys.exit(f"View-file {view_file} is invalid: unknown modifier {modifier}; valid modifiers are shift, ctrl; aborting")
+
+					if key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and len(modifier) == 0:
+						shortcut_key = eval(f"curses.KEY_{key.upper()}")
+						help_key = key.upper()
+					elif key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and modifier == "shift":
+						num = int(key[1:]) + 12
+						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
+						help_key = f"[Shift] + {key.upper()} / {key[0]}{num}"
+					elif key in ["f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24"] and len(modifier) == 0:
+						num = int(key[1:]) - 12
+						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
+						help_key = f"[Shift] + {key[0]}{num} / {key.upper()}"
+					elif modifier is not None:
+						if modifier == "shift":
+							help_key = f"[Shift] + {key.upper()}"
+							shortcut_key = ord(key.upper())
+						elif modifier == "ctrl":
+							help_key = f"[Ctrl] + {key.upper()}"
+							shortcut_key = ord(key) - 96
+					elif key in ["enter", "return"]:
+						help_key = "[Enter]"
+						shortcut_key = [curses.KEY_ENTER, 10, 13]
+					else:
+						help_key = f"{key.upper()}"
+						shortcut_key = ord(key)
+
+					shortcuts[shortcut] = {
+						"shortcut": shortcut_key,
+						"helptext": (help_key, helptext),
+						"action": action,
+						"action_args": action_args,
+					}
+				if len(shortcuts) > 0:
+					listview_entry["shortcuts"] = shortcuts
+
+				# Replace existing listviews with the same name
+				views.pop(name, None)
+
+				# Add the new view
+				views[name] = listview_entry
+
 def setupui(stdscr):
 	# Hide the cursor
 	curses.curs_set(False)
@@ -16811,7 +17087,7 @@ def list_views():
 	maxviewlen = 0
 	maxkindlen = 0
 
-	for view in views:
+	for view in natsorted(views):
 		viewref = views[view]
 		if "skip" in viewref:
 			continue
@@ -16990,7 +17266,9 @@ def main():
 	ansible_configuration.ansible_password = deep_get(iktconfig, "Ansible#ansible_password")
 	ansible_configuration.disable_strict_host_key_checking = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
 	ansible_configuration.save_logs = deep_get(iktconfig, "Ansible#save_logs", True)
+
 	# Customises the list views
+	populate_views()
 	customise_listviews()
 
 	y = 1

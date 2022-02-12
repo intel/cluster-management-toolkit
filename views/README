@@ -1,0 +1,148 @@
+This directory holds YAML-definitions of views
+(currently only listviews implemented).
+
+Template:
+
+kind: Pod
+# This is not necessary for pod, since it's a core API
+# api_family:
+
+# XXX: commandline names will eventually be populated from
+# name, kind, shortNames from the Kubernetes API
+# after that additional aliases are added
+#
+# By default no checks are performed whether the commandline
+# names are unique or not, so care needs to be taken
+#
+# If its not already included in the command list,
+# kind will be added automagically. Note that the list of views
+# is populated when iku is started, so access to the Kubernetes API server
+# is not yet available, and querying this information would take too long
+# to be userfriendly, meaning you need to specify all forms here,
+# even though this information is already defined as part of the API descriptions
+#
+# default command is the one displayed by "iku help"
+default_command: pods
+
+# In this particular case, "pod" (the kind) will be added automagically,
+# since it's the kind. For all kinds, except members of the core API,
+# the commands with ".<api_family>" will also be added
+command:
+- po
+
+# XXX: currently not implemented
+#
+# args is the arguments the view takes
+# by default the view takes 0-2 arguments:
+# ikt VIEW
+# ikt VIEW NAME
+# ikt VIEW NAMESPACE/NAME
+# ikt VIEW NAME NAMESPACE
+# If the NAME is unique across namespaces,
+# or if NAME is unique in NAMESPACE
+# the infoview for that object will be opened; otherwise the
+# cursor will jump to the first matching entry
+#
+# pods and configmaps can take a third argument,
+# and has additional 1-2 argument syntax:
+# ikt pod/configmap NAME:
+# ikt pod/configmap NAME: NAMESPACE
+# ikt pod/configmap NAME:CONTAINER/CONFIGMAP NAMESPACE
+# ikt pod/configmap NAMESPACE/NAME:
+# ikt pod/configmap NAMESPACE/NAME:CONTAINER
+# ikt pod/configmap NAME NAMESPACE CONTAINER/CONFIGMAP
+# These will open the named configmap/container
+# (Note: if there's both a container and an init-container
+#  with the same name, the container takes priority over
+#  the init-container)
+# args:
+
+# There are two general types of views:
+# list views and info views
+# List views show all (or a subset of all) objects of a specific
+# kind; the info view shows information about a particular object
+listview:
+  # The name of the view
+  name: Pods
+  # This is the group it'll be placed in
+  group: Workloads
+
+  # fields contains all fields shown by default (unless fields_wide
+  # is defined, in which case fields is shown when the user toggles
+  # between wide and narrow view)
+  #
+  # Some fields currently have default handlers and paths; these include
+  # namespace, name, controller, status, age.
+  #
+  # This will be revamped.
+  fields: [namespace, name, controller, pod_status, node_name, age, restarts, last_restart]
+
+  # fields_wide (optional) is used for cases where a more verbose output
+  # is wanted; the user can then toggled between the wide view (which will
+  # be used as the default unless overridden in the config-file)
+  # and the non-wide view
+  fields_wide: [namespace, name, controller, pod_status, node_name, pod_ip, age, containers, restarts, last_restart]
+
+  # sortcolumn overrides the default sort column (name) and should be one of the fields in fields;
+  # do not use fields that only exist in fields_wide as sortcolumn
+  sortcolumn: pod_status
+
+  # listview_args is extra variables used for this particular view; for now the first implemented use case is filters
+  listview_args:
+    # filters limit the list to a subset of the full set available; best used together with a toggle to turn them on/off
+    filters:
+      # the name of the filter; this is arbitrary
+      evicted:
+        # This can be either object or fields;
+	# object operates on the raw data from the LIST request from Kubernetes, while fields operates on the cooked output
+        source: object
+	# This is used to enable/disable the filter; the main usecase is for toggling filters
+        enabled: true
+	# Block rules will block any object that matches *all* key/values pairs;
+	# so for instance this rule filters out Pods if they are in phase=Failed *and* reason=Evicted
+        block:
+        - key: "status#phase"
+          values: [Failed]
+        - key: "status#reason"
+          values: [Evicted]
+	# Allow filters will block any elements NOT matching *all* key/values pairs;
+	# so for instance this rule would filter out all Pods that are not in phase=Running
+	# allow:
+        #- key: "status#phase"
+        #  values: [Running]
+  # These are actions that are added to the menu shown when pressing ";"
+  actions:
+    # The menu title
+    title: Perform action on tagged pods
+    actionlist:
+      # The name of the rule; this is not displayed
+      "Delete resource":
+        # The decription of the action; this is displayed in the menu
+        description: Delete resource
+	# Does the action ask for confirmation?
+        confirm: true
+	# XXX: The internal function to call (this requires internal knowledge of iku)
+        actionfunc: delete_resource
+      "Force delete resource":
+        description: Delete resource (No grace period)
+        confirm: true
+        actionfunc: force_delete_resource
+  # These are keyboard shortcuts
+  shortcuts:
+    # The name of the rule; this is not displayed
+    "Show Evicted Pods":
+      # The base key
+      key: e
+      # The modifier (valid are shift, ctrl); leave empty if no modifier
+      modifier: shift
+      # The helptext to show when pressing F1
+      helptext: "Show / Hide evicted pods"
+      # The action to perform; toggle_var will toggle a boolean variable
+      action: toggle_var
+      # The arguments to pass to the action
+      action_args:
+        var: "filters#evicted#enabled"
+  # Status messages to add to the statusbar; format:
+  # Description, path to value
+  statusmsg:
+  - ["Hide evicted pods: ", "filters#evicted#enabled"]

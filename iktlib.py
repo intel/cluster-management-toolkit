@@ -41,6 +41,22 @@ stgroup_mapping = {
 	stgroup.DONE: "status_done",
 }
 
+def deep_set(dictionary, path, value):
+	if dictionary is None or path is None or len(path) == 0:
+		raise Exception(f"deep_set: dictionary {dictionary} or path {path} invalid/unset")
+
+	ref = dictionary
+	pathsplit = path.split("#")
+	for i in range(0, len(pathsplit)):
+		if pathsplit[i] in ref:
+			if i == len(pathsplit) - 1:
+				ref[pathsplit[i]] = value
+				break
+			else:
+				ref = ref.get(pathsplit[i])
+				if ref is None or not isinstance(ref, dict):
+					raise Exception(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
+
 def deep_get(dictionary, path, default = None):
 	if dictionary is None:
 		return default

@@ -1,0 +1,41 @@
+kind: Pod
+default_command: pods
+command:
+- po
+listview:
+  name: Pods
+  group: Workloads
+  fields: [namespace, name, controller, pod_status, node_name, age, restarts, last_restart]
+  fields_wide: [namespace, name, controller, pod_status, node_name, pod_ip, age, containers, restarts, last_restart]
+  sortcolumn: pod_status
+  listview_args:
+    filters:
+      evicted:
+        source: object
+        enabled: true
+        block:
+        - key: "status#phase"
+          values: [Failed]
+        - key: "status#reason"
+          values: [Evicted]
+  actions:
+    title: Perform action on tagged pods
+    actionlist:
+      "Delete resource":
+        description: Delete resource
+        confirm: true
+        actionfunc: delete_resource
+      "Force delete resource":
+        description: Delete resource (No grace period)
+        confirm: true
+        actionfunc: force_delete_resource
+  shortcuts:
+    "Show Evicted Pods":
+      key: e
+      modifier: shift
+      helptext: "Show / Hide evicted pods"
+      action: toggle_var
+      action_args:
+        var: "filters#evicted#enabled"
+  statusmsg:
+  - ["Hide evicted pods: ", "filters#evicted#enabled"]

@@ -1605,9 +1605,13 @@ class UIProps:
 		self.listpadminwidth = self.maxx
 		if height != -1:
 			self.listpadheight = height
+		else:
+			height = self.listpadheight
 		self.listpad.erase()
 		if width != -1:
 			self.listpadwidth = max(width + 1, self.listpadminwidth)
+		else:
+			width = self.listpadwidth
 
 		if self.borders == True:
 			self.maxcurypos = min(height - 1, self.maxy - self.listpadypos - 3)
