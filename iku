@@ -15479,8 +15479,8 @@ def is_cluster_reachable():
 		reachable = kh.is_cluster_reachable()
 	return reachable
 
-views = {
-	# special
+# These views are always defined internally and cannot be disabled
+views_special = {
 	"Selector": {
 		"windowheader": "",
 		"commandline": ["selector"],
@@ -15489,7 +15489,6 @@ views = {
 		"skip": True,
 		"is_taggable": False,
 	},
-	# special
 	"Cluster Overview": {
 		"commandline": ["clusteroverview", "clusterinfo", "overview", "co", "ci"],
 		"group": "Administration",
@@ -15504,7 +15503,6 @@ views = {
 		"is_taggable": False,
 		"check_availability": is_cluster_reachable,
 	},
-	# special
 	"Deprecations": {
 		"commandline": ["deprecations"],
 		"group": "Debugging",
@@ -15520,7 +15518,6 @@ views = {
 		"is_taggable": False,
 		"check_availability": is_cluster_reachable,
 	},
-	# special
 	"Contexts": {
 		"commandline": ["contexts", "context", "ctx"],
 		"group": "Administration",
@@ -15540,6 +15537,74 @@ views = {
 		},
 		"is_taggable": False,
 	},
+	"Inventory": {
+		"commandline": ["hosts", "machines", "mach", "inventory", "inv", "hosts", "baremetal"],
+		"group": "Administration",
+		"fields": ["name", "ips", "kubernetes_roles", "ansible_groups", "status"],
+		"sortcolumn": "kubernetes_roles",
+		"sortorder_reverse": True,
+		"helptext": helptexts.inventorylist,
+		"kind": ("__Inventory", ""),
+		"labels": False,
+		"listgetter": None,
+		"infogetter": get_inventory_info,
+		"actions": {
+			"playbooklist": {
+				"context": "inventory",
+			},
+			"actionlist": {
+				"Edit resource": {},
+				"View YAML dump": {},
+			},
+		},
+		"shortcuts": {
+			"SSH to Host": {
+				"shortcut": ord("S"),
+				"helptext": ("[Shift] + S", "SSH to host"),
+				"call": ssh_to_host,
+			},
+		},
+	},
+	"Logs": {
+		"commandline": ["logs", "log"],
+		"group": "Administration",
+		"fields": ["name", "action", "created_at", "log_type"],
+		"sortcolumn": "created_at",
+		"sortorder_reverse": True,
+		"kind": ("__Log", ""),
+		"labels": False,
+		"listgetter": None,
+		"infogetter": get_log_info,
+		"actions": {
+			"actionlist": {
+				"Delete log": {
+					"description": "Delete log",
+					"confirm": True,
+					"actionfunc": delete_logs,
+				},
+				# Override:
+				"Edit resource": {},
+				"View YAML dump": {},
+			},
+		},
+	},
+	"Network Info": {
+		"commandline": ["network", "net", "cni"],
+		"group": "Administration",
+		"viewfunc": networkinfoloop,
+		"fields": None,
+		"sortcolumn": None,
+		"helptext": helptexts.networkinfo,
+		"activatedfun": None,
+		"listgetter": None,
+		"infogetter": None,
+		"check_availability": is_cluster_reachable,
+	},
+}
+
+# These are the "regular" builtin views that will eventually
+# be defined through yaml-files in the views directory
+views_builtin = {
 	# helm.cattle.io
 	"Addons": {
 		"commandline": ["addons", "addon"],
@@ -15574,13 +15639,6 @@ views = {
 		"group": "CNI",
 		"fields": ["name", "healthy_antrea", "last_heartbeat_antrea"],
 		"kind": ("ControllerInfo", "system.antrea.io"),
-	},
-	# apiregistration.k8s.io
-	"API Services": {
-		"commandline": ["apiservices", "apiservice", "apisvcs", "apisvc", "as"],
-		"group": "API & Extendability",
-		"fields": ["name", "api_service", "available", "age", "api_service_status_message"],
-		"kind": ("APIService", "apiregistration.k8s.io"),
 	},
 	# app.k8s.io
 	"Applications": {
@@ -15774,15 +15832,6 @@ views = {
 		"kind": ("ConfigAuditReport", "aquasecurity.github.io"),
 	},
 	# core API
-	"Config Maps": {
-		"commandline": ["configmaps", "configmap", "cm"],
-		"group": "Core",
-		"fields": ["namespace", "name", "data", "immutable", "age"],
-		"sortcolumn": "namespace",
-		"helptext": helptexts.configmaplist,
-		"kind": ("ConfigMap", ""),
-	},
-	# core API
 	"Containers": {
 		"commandline": ["containers", "container"],
 		"group": "Core",
@@ -15792,15 +15841,6 @@ views = {
 		"infogetter": get_container_info,
 		"is_taggable": False,
 		"check_availability": is_cluster_reachable,
-	},
-	# apps
-	"Controller Revisions": {
-		"commandline": ["controllerrevisions", "controllerrevision", "cr"],
-		"group": "API & Extendability",
-		"fields": ["namespace", "name", "controller", "revision", "age"],
-		"sortcolumn": "namespace",
-		"helptext": helptexts.controllerrevisionlist,
-		"kind": ("ControllerRevision", "apps"),
 	},
 	# batch
 	"Cron Jobs": {
@@ -15933,22 +15973,6 @@ views = {
 		"fields": ["namespace", "name", "host", "age"],
 		"sortcolumn": "namespace",
 		"kind": ("DestinationRule", "networking.istio.io"),
-	},
-	# core API
-	"Endpoints": {
-		"commandline": ["endpoints", "endpoint", "ep"],
-		"group": "Core",
-		"fields": ["namespace", "name", "endpoints", "ports_ep", "age"],
-		"sortcolumn": "namespace",
-		"kind": ("Endpoints", ""),
-	},
-	# discovery.k8s.io
-	"Endpoint Slices": {
-		"commandline": ["endpointslices", "eps"],
-		"group": "Core",
-		"fields": ["namespace", "name", "addresstype", "ports_eps", "endpoints_eps", "age"],
-		"sortcolumn": "namespace",
-		"kind": ("EndpointSlice", "discovery.k8s.io"),
 	},
 	# networking.istio.io
 	"Envoy Filters": {
@@ -16145,35 +16169,6 @@ views = {
 		"sortcolumn": "namespace",
 		"kind": ("IngressRouteUDP", "traefik.containo.us"),
 	},
-	# special
-	"Inventory": {
-		"commandline": ["hosts", "machines", "mach", "inventory", "inv", "hosts", "baremetal"],
-		"group": "Administration",
-		"fields": ["name", "ips", "kubernetes_roles", "ansible_groups", "status"],
-		"sortcolumn": "kubernetes_roles",
-		"sortorder_reverse": True,
-		"helptext": helptexts.inventorylist,
-		"kind": ("__Inventory", ""),
-		"labels": False,
-		"listgetter": None,
-		"infogetter": get_inventory_info,
-		"actions": {
-			"playbooklist": {
-				"context": "inventory",
-			},
-			"actionlist": {
-				"Edit resource": {},
-				"View YAML dump": {},
-			},
-		},
-		"shortcuts": {
-			"SSH to Host": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "SSH to host"),
-				"call": ssh_to_host,
-			},
-		},
-	},
 	# crd.projectcalico.org
 	"IPAM Blocks": {
 		"commandline": ["ipamblocks", "ipamblock", "ipamblks", "ipamblk"],
@@ -16279,30 +16274,6 @@ views = {
 		"fields": ["namespace", "name", "created_at"],
 		"kind": ("LimitRange", ""),
 	},
-	# special
-	"Logs": {
-		"commandline": ["logs", "log"],
-		"group": "Administration",
-		"fields": ["name", "action", "created_at", "log_type"],
-		"sortcolumn": "created_at",
-		"sortorder_reverse": True,
-		"kind": ("__Log", ""),
-		"labels": False,
-		"listgetter": None,
-		"infogetter": get_log_info,
-		"actions": {
-			"actionlist": {
-				"Delete log": {
-					"description": "Delete log",
-					"confirm": True,
-					"actionfunc": delete_logs,
-				},
-				# Override:
-				"Edit resource": {},
-				"View YAML dump": {},
-			},
-		},
-	},
 	# traefik.containo.us
 	"Middlewares": {
 		"commandline": ["middlewares", "middleware"],
@@ -16353,19 +16324,6 @@ views = {
 				"queryfunc": "string",
 			},
 		},
-	},
-	# special
-	"Network Info": {
-		"commandline": ["network", "net", "cni"],
-		"group": "Administration",
-		"viewfunc": networkinfoloop,
-		"fields": None,
-		"sortcolumn": None,
-		"helptext": helptexts.networkinfo,
-		"activatedfun": None,
-		"listgetter": None,
-		"infogetter": None,
-		"check_availability": is_cluster_reachable,
 	},
 	# networking.k8s.io
 	"Network Policies": {
@@ -16453,45 +16411,6 @@ views = {
 		"group": "Storage & Backups",
 		"fields": ["namespace", "name", "pvc_status", "volume", "capacity", "access_modes", "storage_class", "age", "volume_mode"],
 		"kind": ("PersistentVolumeClaim", ""),
-	},
-	# core API
-	"Pods": {
-		"commandline": ["pods", "pod", "po"],
-		"group": "Workloads",
-		"fields_wide": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts", "last_restart"],
-		"fields": ["namespace", "name", "controller", "status", "node", "age", "restarts", "last_restart"],
-		"sortcolumn": "status",
-		"activatedfun": genericinfoloop,
-		"kind": ("Pod", ""),
-		"infogetter": get_pod_info,
-		"extra_vars": {
-			"infogetter": {
-				"show_kind": "mixed",
-				"show_evicted": False,
-			},
-		},
-		"actions": {
-			"title": "Perform action on tagged pods",
-			"actionlist": {
-				"Delete resource": {
-					"description": "Delete resource",
-					"confirm": True,
-					"actionfunc": delete_resource,
-				},
-				"Force delete resource": {
-					"description": "Delete resource (No grace period)",
-					"confirm": True,
-					"actionfunc": force_delete_resource,
-				},
-			},
-		},
-		"shortcuts": {
-			"Show Evicted Pods": {
-				"shortcut": ord("E"),
-				"helptext": ("[Shift] + E", "Show / Hide evicted pods"),
-				"eval": "_tmp = extra_vars['infogetter']['show_evicted']; extra_vars['infogetter']['show_evicted'] = not _tmp",
-			},
-		},
 	},
 	# policy
 	"Pod Disruption Budgets": {
@@ -16646,13 +16565,6 @@ views = {
 		"fields": ["name", "handler", "age"],
 		"kind": ("RuntimeClass", "node.k8s.io"),
 	},
-	# core API
-	"Secrets": {
-		"commandline": ["secrets", "secret", "sec"],
-		"group": "Core",
-		"fields": ["namespace", "name", "secret_type", "data", "age"],
-		"kind": ("Secret", ""),
-	},
 	# policy.linkerd.io
 	"Server Authorizations": {
 		"commandline": ["serverauthorizations", "serverauthorization", "saz"],
@@ -16676,14 +16588,6 @@ views = {
 		"fields": ["namespace", "name", "age"],
 		"sortcolumn": "namespace",
 		"kind": ("ServersTransport", "traefik.containo.us"),
-	},
-	# core API
-	"Services": {
-		"commandline": ["services", "service", "svc"],
-		"group": "Core",
-		"fields": ["namespace", "name", "svc_type", "cluster_ip", "external_ip", "ports_svc", "age"],
-		"sortcolumn": "namespace",
-		"kind": ("Service", ""),
 	},
 	# core API
 	"Service Accounts": {
@@ -16891,15 +16795,21 @@ views = {
 	},
 }
 
+views = {**views_special, **views_builtin}
+
 # This function is called before parsing the command-line; it cannot use Kubernetes information,
 # since that would be far too slow, so
 def populate_views():
+	global views
+
 	# Get a full list of views from all view directories
 	# Start by adding files from the views directory
 	view_dirs = []
 	view_dirs += deep_get(iktconfig, "General#local_views", [])
 
 	disable_builtin_views = deep_get(iktconfig, "Internal#disable_builtin_views", False)
+	if disable_builtin_views == True:
+		views = {**views_special}
 
 	view_dirs.append(os.path.join(IKTDIR, VIEW_DIRNAME))
 

@@ -21,7 +21,7 @@ about = [
 	(0, [(f" {about.program_suite_full_name} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{about.program_suite_version}", ("main", "about_version"))]),
 	(0, [(f" {about.ui_program_name} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{about.ui_program_version}", ("main", "about_version"))]),
 	(0, [("", ("main", "about_text"))]),
-	(0, [(" Copyright © 2019-2021 Intel Corporation", ("main", "about_text_highlight"))]),
+	(0, [(" Copyright © 2019-2022 Intel Corporation", ("main", "about_text_highlight"))]),
 	(0, [("", ("main", "about_text"))]),
 	(0, [(" Author(s):", ("main", "about_text_highlight"))]),
 	(0, [(" David Weinehall", ("main", "about_text"))]),
@@ -151,32 +151,15 @@ clusteroverview = [
 genericlist = listviewheader + [
 ] + spacer + listmovement
 
-componentstatuslist = listviewheader + [
-	("[F5]", "Refresh component status list"),
-] + spacer + listmovement
-
 configmapdata = infoviewheader + spacer + [
 	("[Shift] + R", "Toggle syntax highlighting (default: On)"),
 ] + spacer + logmovement
 
-configmaplist = listviewheader + [
-	("[F5]", "Refresh config map list"),
-	("", ""),
-	("[Enter]", "Open info page for selected config map"),
-] + spacer + listmovement
-
-controllerrevisionlist = listviewheader + [
-	("[F5]", "Refresh controller revision list"),
-] + spacer + listmovement
-
 eventlist = listviewheader + [
-	("", ""),
 	("[Enter]", "Open info page for the resource that triggered the event"),
 ] + spacer + listmovement
 
 inventorylist = listviewheader + [
-	("[F5]", "Refresh inventory list"),
-	("", ""),
 	("[Enter]", "Open info page for selected host"),
 	("[Shift] + S", "SSH to selected host"),
 	("T", "Tag / Untag host"),
@@ -193,8 +176,6 @@ networkinfo = infoviewheader + [
 ]
 
 nodelist = listviewheader + [
-	("[F5]", "Refresh node list"),
-	("", ""),
 	("[Enter]", "Open info page for selected node"),
 	("[Shift] + S", "SSH to selected node"),
 	("T", "Tag / Untag node"),
