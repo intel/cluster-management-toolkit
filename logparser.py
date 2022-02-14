@@ -3019,7 +3019,7 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 		pod_name, severity, message, remnants = basic_8601(message, fold_msg = fold_msg)
 		lparser = "<unknown format>"
 		uparser = "basic_8601"
-		parser = basic_8601
+		parser = Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("", "", "", "container")], parser = "basic_8601")
 
 	if len(message) > 16383:
 		remnants = (message[0:16383], severity)
