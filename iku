@@ -1199,6 +1199,19 @@ def get_sidecar_info(obj):
 
 	return info
 
+def normalise_cpu_usage_to_millicores(_cpu_usage):
+	cpu_usage = 0
+
+	if _cpu_usage.isnumeric():
+		cpu_usage = _cpu_usage * 1000
+	elif _cpu_usage.endswith("m"):
+		cpu_usage = int(_cpu_usage[0:-1])
+	elif _cpu_usage.endswith("u"):
+		cpu_usage = int(_cpu_usage[0:-1]) / 1000
+	elif _cpu_usage.endswith("n"):
+		cpu_usage = int(_cpu_usage[0:-1]) / 1000000
+	return cpu_usage
+
 def normalise_mem_to_bytes(_mem):
 	mem = 0
 
@@ -1289,35 +1302,6 @@ def datagetter_deprecated_api(obj, path, default):
 	result, extra_vars = datagetter_metrics(obj, path, default)
 	kind = kh.guess_kind((result[0], result[1]))
 	return (kind[0], kind[1], result[2]), extra_vars
-
-def datagetter_pod_metrics_memory(obj, path, default):
-	if obj is None or path is None:
-		return default
-
-	mem = 0
-
-	for item in deep_get(obj, "containers", []):
-		_mem = deep_get(item, path)
-		mem += normalise_mem_to_bytes(_mem)
-	return normalise_mem_bytes_to_str(mem), {}
-
-def datagetter_pod_metrics_cpu(obj, path, default):
-	if obj is None or path is None:
-		return default
-
-	cpu = 0
-
-	for item in deep_get(obj, "containers", []):
-		_cpu = deep_get(item, path)
-		if _cpu == "0":
-			pass
-		elif _cpu.endswith("u"):
-			cpu += int(_cpu[0:-1]) * 1000000
-		elif _cpu.endswith("n"):
-			cpu += int(_cpu[0:-1])
-		else:
-			raise Exception(f"FIXME: implement support for CPU usage {_cpu}")
-	return f"{cpu / 1000000:0.1f}", {}
 
 def datagetter_api_service(obj, path, default):
 	if obj is None or path is None:
@@ -1833,11 +1817,82 @@ def generic_infogetter(vlist, fields, **kwargs):
 				if len(field) > 2:
 					path = field[2]
 				field = field[0]
-			generator = deep_get(field_templates, f"{field}#generator", generator_basic)
-			datagetter = deep_get(field_templates, f"{field}#datagetter", None)
-			if path is None:
-				path = deep_get(field_templates, f"{field}#path", "")
-			default = deep_get(field_templates, f"{field}#default", get_default(generator))
+
+			if type(field) == dict:
+				default = deep_get(field, "default", "<unset>")
+				name = deep_get(field, "name")
+				paths = deep_get(field, "paths", [])
+				converters = deep_get(field, "converters", [])
+				default = deep_get(field, "default", "")
+				values = []
+				for _path in paths:
+					vtype = deep_get(_path, "type", "str")
+					path = deep_get(_path, "path")
+					ptype = deep_get(_path, "pathtype", "list")
+					action = deep_get(_path, "action")
+					subpaths = deep_get_with_fallback(_path, ["subpaths", "subpath"], [])
+					if type(subpaths) == str:
+						subpaths = [subpaths]
+
+					if ptype == "list":
+						# Just return the list
+						value = deep_get(obj, path, default)
+					elif ptype == "items":
+						if len(subpaths) == 0:
+							raise Exception("When using action == items a subpath must be specified")
+						value = []
+						for item in deep_get(obj, path, []):
+							tmp = []
+							for subpath in subpaths:
+								tmp.append(deep_get(item, subpath))
+							if len(tmp) == 1:
+								value.append(tmp[0])
+							else:
+								value.append(tuple(tmp))
+					else:
+						value = deep_get(obj, path, default)
+					if vtype == "str":
+						# no need to convert
+						pass
+					elif vtype in ["float", "int", "bool"]:
+						if type(value) == tuple:
+							tmp = []
+							for tmp1 in value:
+								tmp.append(str(value))
+							value = tmp
+						else:
+							value = str(value)
+					elif vtype == "cpu_usage":
+						if action == "add" and type(value) == list:
+							tmp = 0
+							for tmp1 in value:
+								tmp += normalise_cpu_usage_to_millicores(tmp1)
+						else:
+							tmp = normalise_cpu_usage_to_millicores(value)
+						value = f"{tmp:0.1f}"
+					elif vtype == "mem_usage":
+						if action == "add" and type(value) == list:
+							tmp = 0
+							for tmp1 in value:
+								tmp += normalise_mem_to_bytes(tmp1)
+						else:
+							tmp = normalise_mem_to_bytes(value)
+						value = normalise_mem_bytes_to_str(tmp)
+					values.append(value)
+				if len(values) == 1:
+					value = values[0]
+				else:
+					# here we need to add support for merging multiple values
+					raise Exception("FIXME: implement support for value lists")
+				d[name] = value
+				continue
+			else:
+				generator = deep_get(field_templates, f"{field}#generator", generator_basic)
+				datagetter = deep_get(field_templates, f"{field}#datagetter", None)
+				if path is None:
+					path = deep_get(field_templates, f"{field}#path", "")
+				default = deep_get(field_templates, f"{field}#default", get_default(generator))
+
 			if datagetter is None:
 				if type(default) is not tuple:
 					extradata = {}
@@ -2951,7 +3006,7 @@ def cpu_usage_to_millicores(cpu_usage):
 		cpu_usage = f"{float(cpu_usage[:-1]):0.1f}"
 		return cpu_usage
 	else:
-		raise Exception("Unknown cpu usage metrics: {cpu_usage=}")
+		raise Exception("Unknown cpu usage metrics: {cpu_usage}")
 
 def get_pod_metrics_info(obj):
 	info = []
@@ -5280,13 +5335,6 @@ field_templates = {
 		"path": "cpu_millicores",
 		"ralign": True,
 	},
-	"cpu_pod_metrics_total": {
-		"header": "CPU (millicores):",
-		"path": "usage#cpu",
-		"datagetter": datagetter_pod_metrics_cpu,
-		"generator": generator_mem_single,
-		"ralign": True,
-	},
 	"created_at": {
 		"header": "Created At:",
 		"path": "metadata#creationTimestamp",
@@ -5827,13 +5875,6 @@ field_templates = {
 	"mem_bytes": {
 		"header": "Memory:",
 		"path": "mem_bytes",
-		"generator": generator_mem_single,
-		"ralign": True,
-	},
-	"mem_pod_metrics_total": {
-		"header": "Memory:",
-		"path": "usage#memory",
-		"datagetter": datagetter_pod_metrics_memory,
 		"generator": generator_mem_single,
 		"ralign": True,
 	},
@@ -6656,40 +6697,73 @@ def fieldgenerator(view, fields = None, sortcolumn = None, blacklist = []):
 
 		# If we get a tuple the first part is field, the second overrides header;
 		# we don't care about the remaining parts
-		if type(field) is tuple and len(field) > 1:
+		if type(field) == tuple and len(field) > 1:
 			header = field[1]
 			field = field[0]
+		elif type(field) == dict:
+			# This is a custom field, so we need to construct one that's usable here
+			name = deep_get(field, "name")
+			header = deep_get(field, "header")
+			formatter = deep_get(field, "formatter")
+			if formatter is None:
+				pass
+			elif formatter == "mem":
+				generator = generator_mem_single
+				processor = None
+			elif formatter in ["float"]:
+				# The generator is the same, but the name is unfortunate
+				generator = generator_mem_single
+				processor = None
+			else:
+				raise Exception(f"Unknown formatter {formatter}")
+			align = deep_get(field, "align", "left")
+			ralign = align == "right"
+			sortkey1 = name
+			# If sortkey1 == sortcolumn this "fails", but it's good enough
+			sortkey2 = sortcolumn
 
-		if field not in field_templates:
-			raise Exception(f"Programming error! Field “{field}“ not defined in field_templates")
+			field_colors = [("types", "field")]
+			field_prefixes = None
+			field_suffixes = None
+			field_separators = [("separators", "field")]
+			ellipsise = -1
+			ellipsis = ("separators", "ellipsis")
+			item_separator = ("separators", "list")
 
-		if "header" not in deep_get(field_templates, field):
-			raise Exception(f"Programming error! Field “{field}“ lacks mandatory field “header“")
+		if type(field) != dict:
+			if field not in field_templates:
+				raise Exception(f"Programming error! Field “{field}“ not defined in field_templates")
 
-		if len(header) == 0:
-			header = deep_get(field_templates, f"{field}#header")
-		generator = deep_get(field_templates, f"{field}#generator", generator_basic)
-		processor = deep_get(field_templates, f"{field}#processor", None)
-		if processor is None:
-			processor = default_processor.get(generator)
-		ralign = deep_get(field_templates, f"{field}#ralign", False)
-		field_colors = deep_get(field_templates, f"{field}#field_colors", [("types", "field")])
-		field_prefixes = deep_get(field_templates, f"{field}#field_prefixes", None)
-		field_suffixes = deep_get(field_templates, f"{field}#field_suffixes", None)
-		field_separators = deep_get(field_templates, f"{field}#field_separators", [("separators", "field")])
-		ellipsise = deep_get(field_templates, f"{field}#ellipsise", -1)
-		ellipsis = deep_get(field_templates, f"{field}#ellipsis", ("separators", "ellipsis"))
-		item_separator = deep_get(field_templates, f"{field}#item_separator", ("separators", "list"))
-		sortkey1 = field
-		# If sortkey1 == sortcolumn this "fails", but it's good enough
-		sortkey2 = sortcolumn
-		# Special case:
-		if field == "status":
-			sortkey2 = "status"
-		if sortkey1 == sortkey2 and "status" in fields:
-			sortkey2 = "status_group"
+			if "header" not in deep_get(field_templates, field):
+				raise Exception(f"Programming error! Field “{field}“ lacks mandatory field “header“")
 
-		tmp_field[field] = {
+			name = field
+
+			if len(header) == 0:
+				header = deep_get(field_templates, f"{field}#header")
+
+			generator = deep_get(field_templates, f"{field}#generator", generator_basic)
+			processor = deep_get(field_templates, f"{field}#processor", None)
+			if processor is None:
+				processor = default_processor.get(generator)
+			ralign = deep_get(field_templates, f"{field}#ralign", False)
+			field_colors = deep_get(field_templates, f"{field}#field_colors", [("types", "field")])
+			field_prefixes = deep_get(field_templates, f"{field}#field_prefixes", None)
+			field_suffixes = deep_get(field_templates, f"{field}#field_suffixes", None)
+			field_separators = deep_get(field_templates, f"{field}#field_separators", [("separators", "field")])
+			ellipsise = deep_get(field_templates, f"{field}#ellipsise", -1)
+			ellipsis = deep_get(field_templates, f"{field}#ellipsis", ("separators", "ellipsis"))
+			item_separator = deep_get(field_templates, f"{field}#item_separator", ("separators", "list"))
+			sortkey1 = field
+			# If sortkey1 == sortcolumn this "fails", but it's good enough
+			sortkey2 = sortcolumn
+			# Special case:
+			if field == "status":
+				sortkey2 = "status"
+			if sortkey1 == sortkey2 and "status" in fields:
+				sortkey2 = "status_group"
+
+		tmp_field[name] = {
 			"header": header,
 			"generator": generator,
 			"processor": processor,
@@ -14224,20 +14298,6 @@ infoviews = {
 			},
 		},
 	},
-	("NodeMetrics", "metrics.k8s.io"): {
-		"windowheader": "Node Metrics Info",
-		"infopad": {
-			"CPU Usage:": {
-				"path": "usage#cpu",
-			},
-			"Memory Usage:": {
-				"path": "usage#memory",
-			},
-			"Window:": {
-				"path": "window",
-			},
-		},
-	},
 	("OperatorGroup", "operators.coreos.com"): {
 		"windowheader": "Operator Group Info",
 		"infopad": {
@@ -15857,13 +15917,6 @@ views_builtin = {
 		"fields": ["name", "attach_required", "pod_info_on_mount", "volume_lifecycle_modes", "age"],
 		"kind": ("CSIDriver", "storage.k8s.io"),
 	},
-	# storage.k8s.io
-	"CSI Nodes": {
-		"commandline": ["csinodes", "csinode"],
-		"group": "Storage & Backups",
-		"fields": ["name", "drivers", "age"],
-		"kind": ("CSINode", "storage.k8s.io"),
-	},
 	# apiextensions.k8s.io
 	"Custom Resource Definitions": {
 		"commandline": ["customresourcedefinitions", "customresourcedefinition", "crds", "crd"],
@@ -16006,14 +16059,6 @@ views_builtin = {
 		"group": "CNI",
 		"fields": ["name", "age"],
 		"kind": ("FelixConfiguration", "crd.projectcalico.org"),
-	},
-	# flowcontrol.apiserver.k8s.io
-	"Flow Schemas": {
-		"commandline": ["flowschemas", "flowschema"],
-		"group": "Scheduling",
-		"fields": ["name", "priority_level", "matching_precedence", "distinguisher_method", "age"],
-		"sortcolumn": "matching_precedence",
-		"kind": ("FlowSchema", "flowcontrol.apiserver.k8s.io"),
 	},
 	# networking.istio.io
 	"Gateways": {
@@ -16259,14 +16304,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("KubeVirt", "kubevirt.io"),
 	},
-	# coordination.k8s.io
-	"Leases": {
-		"commandline": ["leases", "lease"],
-		"group": "Coordination",
-		"fields": ["namespace", "name", "holder", "age"],
-		"sortcolumn": "namespace",
-		"kind": ("Lease", "coordination.k8s.io"),
-	},
 	# core API
 	"Limit Ranges": {
 		"commandline": ["limitranges", "limitrange", "limits", "lr"],
@@ -16412,13 +16449,6 @@ views_builtin = {
 		"fields": ["namespace", "name", "pvc_status", "volume", "capacity", "access_modes", "storage_class", "age", "volume_mode"],
 		"kind": ("PersistentVolumeClaim", ""),
 	},
-	# policy
-	"Pod Disruption Budgets": {
-		"commandline": ["poddisruptionbudgets", "poddisruptionbudget", "pdb"],
-		"group": "Policy",
-		"fields": ["namespace", "name", "min_available", "max_unavailable", "allowed_disruptions", "age"],
-		"kind": ("PodDisruptionBudget", "policy"),
-	},
 	# monitoring.coreos.com
 	#"Pod Monitors": {
 	#	"commandline": ["podmonitors", "podmonitor", "podmons", "podmon"],
@@ -16426,13 +16456,6 @@ views_builtin = {
 	#	"fields": [FIXME],
 	#	"kind": ("PodMonitor", "monitoring.coreos.com"),
 	#},
-	# metrics.k8s.io
-	"Pod Metrics": {
-		"commandline": ["podmetrics", "podmetric"],
-		"group": "Monitoring",
-		"fields": ["namespace", "name", "mem_pod_metrics_total", "cpu_pod_metrics_total", "container_count", "timestamp", "window"],
-		"kind": ("PodMetrics", "metrics.k8s.io"),
-	},
 	# policy
 	"Pod Security Policies": {
 		"commandline": ["podsecuritypolicies", "podsecuritypolicy", "psp"],
@@ -16448,20 +16471,6 @@ views_builtin = {
 	#	"sortcolumn": "namespace",
 	#	"kind": ("PodTemplate", ""),
 	#},
-	# scheduling.k8s.io
-	"Priority Classes": {
-		"commandline": ["priorityclasses", "priorityclass", "pc"],
-		"group": "Scheduling",
-		"fields": ["name", "priority", "global_default", "age"],
-		"kind": ("PriorityClass", "scheduling.k8s.io"),
-	},
-	# flowcontrol.apiserver.k8s.io
-	"Priority Level Configurations": {
-		"commandline": ["prioritylevelconfigurations", "prioritylevelconfiguration", "priolevelconfs", "priolevelconf"],
-		"group": "Scheduling",
-		"fields": ["name", "priority_type", "assured_concurrency_shares", "queues", "hand_size", "queue_length_limit", "age"],
-		"kind": ("PriorityLevelConfiguration", "flowcontrol.apiserver.k8s.io"),
-	},
 	# kubeflow.org
 	"Profiles": {
 		"commandline": ["profiles", "profile"],
@@ -16557,13 +16566,6 @@ views_builtin = {
 		"group": "Authorization & Access Control",
 		"fields": ["namespace", "name", "age"],
 		"kind": ("Role", "rbac.authorization.k8s.io"),
-	},
-	# node.k8s.io
-	"Runtime Classes": {
-		"commandline": ["runtimeclasses", "runtimeclass"],
-		"group": "Policy",
-		"fields": ["name", "handler", "age"],
-		"kind": ("RuntimeClass", "node.k8s.io"),
 	},
 	# policy.linkerd.io
 	"Server Authorizations": {
@@ -16666,13 +16668,6 @@ views_builtin = {
 				},
 			},
 		},
-	},
-	# storage.k8s.io
-	"Storage Classes": {
-		"commandline": ["storageclasses", "storageclass", "scs", "sc"],
-		"group": "Storage & Backups",
-		"fields": ["name", "provisioner", "reclaim_policy", "volume_binding_mode", "allow_volume_expansion", "age"],
-		"kind": ("StorageClass", "storage.k8s.io"),
 	},
 	# operators.coreos.com
 	#"Subscriptions": {
@@ -16801,6 +16796,8 @@ views = {**views_special, **views_builtin}
 # since that would be far too slow, so
 def populate_views():
 	global views
+
+	prefix_internal = deep_get(iktconfig, "Internal#prefix_internal", False)
 
 	viewdir = os.path.join(IKTDIR, VIEW_DIRNAME)
 	if not os.path.isdir(viewdir):
@@ -16962,6 +16959,9 @@ def populate_views():
 
 				# Replace existing listviews with the same name
 				views.pop(name, None)
+
+				if prefix_internal == True:
+					name = f"*{name}"
 
 				# Add the new view
 				views[name] = listview_entry

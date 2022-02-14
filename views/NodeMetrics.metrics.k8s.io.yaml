@@ -1,0 +1,25 @@
+kind: NodeMetrics
+api_family: metrics.k8s.io
+default_command: nodemetrics
+command:
+- nodemetric
+listview:
+  name: Node Metrics
+  group: Monitoring
+  fields:
+  - name
+  - name: cpu_usage
+    header: "CPU (millicores):"
+    paths:
+    - path: "usage#cpu"
+      type: cpu_usage
+    align: right
+    formatter: float
+  - name: memory_usage
+    header: "Memory:"
+    paths:
+    - path: "usage#memory"
+      type: mem_usage
+    formatter: mem
+    align: right
+  - window

@@ -1,0 +1,34 @@
+kind: PodMetrics
+api_family: metrics.k8s.io
+default_command: podmetrics
+command:
+- podmetric
+listview:
+  name: Pod Metrics
+  group: Monitoring
+  fields:
+  - namespace
+  - name
+  - name: cpu_total
+    header: "CPU (millicores):"
+    paths:
+    - path: containers
+      pathtype: items
+      subpath: "usage#cpu"
+      action: add
+      type: cpu_usage
+    align: right
+    formatter: float
+  - name: mem_total
+    header: "Memory:"
+    paths:
+    - path: containers
+      pathtype: items
+      subpath: "usage#memory"
+      action: add
+      type: mem_usage
+    align: right
+    formatter: mem
+  - container_count
+  - timestamp
+  - window

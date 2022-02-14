@@ -1,0 +1,9 @@
+kind: PodDisruptionBudget
+api_family: policy
+default_command: poddisruptionbudgets
+command:
+- pdb
+listview:
+  name: Pod Disruption Budgets
+  group: Policy
+  fields: [namespace, name, min_available, max_unavailable, allowed_disruptions, age]
