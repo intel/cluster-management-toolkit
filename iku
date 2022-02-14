@@ -16802,6 +16802,10 @@ views = {**views_special, **views_builtin}
 def populate_views():
 	global views
 
+	viewdir = os.path.join(IKTDIR, VIEW_DIRNAME)
+	if not os.path.isdir(viewdir):
+		sys.exit(f"{viewdir} does not exist; please re-run {install_program_name}")
+
 	# Get a full list of views from all view directories
 	# Start by adding files from the views directory
 	view_dirs = []
@@ -16811,7 +16815,7 @@ def populate_views():
 	if disable_builtin_views == True:
 		views = {**views_special}
 
-	view_dirs.append(os.path.join(IKTDIR, VIEW_DIRNAME))
+	view_dirs.append(viewdir)
 
 	view_files = []
 
