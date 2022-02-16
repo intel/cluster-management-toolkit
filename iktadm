@@ -9,16 +9,8 @@ from collections import OrderedDict
 from functools import partial, reduce
 from getpass import getuser
 from glob import glob
-import hashlib
-# ujson is much faster than json,
-# but it might not be available
-try:
-	import ujson as json
-except ModuleNotFoundError:
-	import json
 import os
 from pathlib import Path
-import paramiko
 import re
 import shutil
 from shutil import which
@@ -30,15 +22,12 @@ import tempfile
 import time
 import yaml
 
+import paramiko
+
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run ikt-install?")
-
-try:
-	import OpenSSL
-except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: You probably need to install python3-openssl; did you forget to run ikt-install?")
 
 try:
 	import urllib3
@@ -477,36 +466,59 @@ def scan_and_add_ssh_keys():
 		hostfile.save(filename = known_hosts)
 
 def create_ssh_key():
-	args = ["ssh-keygen", "-t", "ed25519", "-f", f"{HOMEDIR}/.ssh/id_ed25519"]
-	retval = execute_command(args)
+	if not os.path.exists(f"{HOMEDIR}/.ssh/id_ed25519"):
+		args = ["ssh-keygen", "-t", "ed25519", "-f", f"{HOMEDIR}/.ssh/id_ed25519"]
+		retval = execute_command(args)
+	else:
+		retval = True
 	return retval
 
 def add_ssh_key_to_authorized_keys():
 	pubkey = None
+	retval = False
 
-	with open(f"{HOMEDIR}/.ssh/id_ed25519.pub", "r") as f:
-		tmp = f.readlines()
-		if tmp is not None and len(tmp) > 0:
-			pubkey = tmp
+	# Since we run create_ssh_key() before this task we can safely
+	# assume that .ssh/ exists
+	for item in os.listdir(f"{HOMEDIR}/.ssh"):
+		if not item.endswith(".pub"):
+			continue
 
-	if pubkey is None or len(pubkey) == 0:
-		return False
+		with open(f"{HOMEDIR}/.ssh/{item}", "r") as f:
+			tmp = f.readlines()
+			if tmp is not None and len(tmp) > 0:
+				pubkey = tmp
 
-	exists = False
+		if pubkey is None or len(pubkey) == 0:
+			continue
 
-	with open(f"{HOMEDIR}/.ssh/authorized_keys", "r") as f:
-		tmp = f.readlines()
+		exists = False
 
-		if tmp is not None and len(tmp) > 0:
-			for line in tmp:
-				if line == pubkey[0]:
-					exists = True
-					break
-	if exists == False:
-		with open(f"{HOMEDIR}/.ssh/authorized_keys", "a") as f:
-			f.writelines(pubkey)
+		try:
+			with open(f"{HOMEDIR}/.ssh/authorized_keys", "r") as f:
+				tmp = f.readlines()
 
-	return True
+				if tmp is not None and len(tmp) > 0:
+					for line in tmp:
+						if line == pubkey[0]:
+							exists = True
+							break
+		except FileNotFoundError:
+			pass
+
+		# This either means that the key doesn't exist in the file,
+		# or that authorized_keys doesn't exist at all.  Hence we open
+		# with a+ to ensure that it's created if it doesn't exist.
+		# While we technically only need to worry about authorized_keys
+		# not existing for the first key we add, it's better not to
+		# special case things
+		if exists == False:
+			with open(f"{HOMEDIR}/.ssh/authorized_keys", "a+") as f:
+				f.writelines(pubkey)
+
+		# We've added at least one public key
+		retval = True
+
+	return retval
 
 def __task_check_and_create_ssh_key(installation_info):
 	if check_for_ssh_key() == False:
@@ -522,22 +534,35 @@ def __task_scan_and_add_ssh_keys(installation_info):
 
 def __task_add_ssh_key_to_inventory(installation_info):
 	pubkey = None
-	with open(f"{HOMEDIR}/.ssh/id_ed25519.pub", "r") as f:
-		tmp = f.readlines()
-		if tmp is not None and len(tmp) > 0:
-			pubkey = tmp[0]
-
-	if pubkey == None:
-		iktprint([("Error: ", "error"), ("Failed to read ", "default"), (f"{HOMEDIR}/.ssh/id_ed25519.pub", "path"), ("; aborting.", "default")], stderr = True)
-		sys.exit(2)
-
 	d = ansible_get_inventory_dict()
 	__vars = deep_get(d, "all#vars", {})
 	__authorized_keys = __vars.get("authorized_keys", [])
-	if pubkey not in __authorized_keys:
-		__authorized_keys.append(pubkey)
-		__vars["authorized_keys"] = __authorized_keys
-		ansible_set_vars(ANSIBLE_INVENTORY, "all", __vars)
+	found_key = False
+
+	for item in os.listdir(f"{HOMEDIR}/.ssh"):
+		if not item.endswith(".pub"):
+			continue
+
+		with open(f"{HOMEDIR}/.ssh/{item}.pub", "r") as f:
+			tmp = f.readlines()
+			if tmp is not None and len(tmp) > 0:
+				pubkey = tmp[0]
+
+		if pubkey == None:
+			iktprint([("Warning: ", "warning"), ("Failed to read ", "default"), (f"{HOMEDIR}/.ssh/{item}.pub", "path"), ("; skipping.", "default")], stderr = True)
+			continue
+
+		if pubkey not in __authorized_keys:
+			__authorized_keys.append(pubkey)
+
+		found_key = True
+
+	if found_key == False:
+		iktprint([("Error: ", "error"), ("Could not find a valid public key in ", "default"), (f"{HOMEDIR}/.ssh", "path"), ("; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	__vars["authorized_keys"] = __authorized_keys
+	ansible_set_vars(ANSIBLE_INVENTORY, "all", __vars)
 
 def __task_check_and_add_ssh_key_to_authorized_keys(installation_info):
 	add_ssh_key_to_authorized_keys()
@@ -1121,7 +1146,8 @@ def __task_drain_control_planes(installation_info):
 			running = True
 			break
 	if running == False:
-		return check_and_print_status(True)
+		check_and_print_status(True)
+		return
 
 	# Check kubectl version
 	args = ["kubectl", "version"]
@@ -1322,7 +1348,7 @@ def __format_none(string, fmt):
 prepare_tasks = [
 	([("Check for ssh host key and create if needed", "action")], __task_check_and_create_ssh_key),
 	([("Add ssh keys for localhost and the control plane(s) to ", "action"), (f"{HOMEDIR}/.ssh/known_hosts", "path")], __task_scan_and_add_ssh_keys),
-	([("Add ", "action"), (f"{HOMEDIR}/.ssh/id_ed25519.pub", "path"), (" to ", "action"), (f"{HOMEDIR}/.ssh/authorized_keys", "path")], __task_check_and_add_ssh_key_to_authorized_keys),
+	([("Add public ssh keys to ", "action"), (f"{HOMEDIR}/.ssh/authorized_keys", "path")], __task_check_and_add_ssh_keys_to_authorized_keys),
 	([("Add ssh key to inventory", "action")], __task_add_ssh_key_to_inventory),
 	([("Request the ansible password if necessary", "action")], __task_request_ansible_password),
 	([("Install ", "action"), ("ansible.posix", "programname"), (" if necessary", "action")], __task_check_and_install_ansible_posix),
