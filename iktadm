@@ -473,7 +473,7 @@ def create_ssh_key():
 		retval = True
 	return retval
 
-def add_ssh_key_to_authorized_keys():
+def add_ssh_keys_to_authorized_keys():
 	pubkey = None
 	retval = False
 
@@ -532,7 +532,7 @@ def __task_check_and_create_ssh_key(installation_info):
 def __task_scan_and_add_ssh_keys(installation_info):
 	scan_and_add_ssh_keys()
 
-def __task_add_ssh_key_to_inventory(installation_info):
+def __task_add_ssh_keys_to_inventory(installation_info):
 	pubkey = None
 	d = ansible_get_inventory_dict()
 	__vars = deep_get(d, "all#vars", {})
@@ -564,8 +564,8 @@ def __task_add_ssh_key_to_inventory(installation_info):
 	__vars["authorized_keys"] = __authorized_keys
 	ansible_set_vars(ANSIBLE_INVENTORY, "all", __vars)
 
-def __task_check_and_add_ssh_key_to_authorized_keys(installation_info):
-	add_ssh_key_to_authorized_keys()
+def __task_check_and_add_ssh_keys_to_authorized_keys(installation_info):
+	add_ssh_keys_to_authorized_keys()
 
 def install_ansible_posix():
 	# Old versions of ansible-galaxy doesn't have the list command;
@@ -1349,7 +1349,7 @@ prepare_tasks = [
 	([("Check for ssh host key and create if needed", "action")], __task_check_and_create_ssh_key),
 	([("Add ssh keys for localhost and the control plane(s) to ", "action"), (f"{HOMEDIR}/.ssh/known_hosts", "path")], __task_scan_and_add_ssh_keys),
 	([("Add public ssh keys to ", "action"), (f"{HOMEDIR}/.ssh/authorized_keys", "path")], __task_check_and_add_ssh_keys_to_authorized_keys),
-	([("Add ssh key to inventory", "action")], __task_add_ssh_key_to_inventory),
+	([("Add public ssh keys to inventory", "action")], __task_add_ssh_keys_to_inventory),
 	([("Request the ansible password if necessary", "action")], __task_request_ansible_password),
 	([("Install ", "action"), ("ansible.posix", "programname"), (" if necessary", "action")], __task_check_and_install_ansible_posix),
 	([("Run playbooks on ", "action"), ("localhost", "hostname")], __task_run_preparation_playbooks_on_localhost),
