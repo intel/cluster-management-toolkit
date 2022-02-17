@@ -8,6 +8,11 @@
   become: true
   become_user: root
   tasks:
+  - name: Creating /etc/docker
+    file:
+      path: /etc/docker
+      state: directory
+      mode: "0755"
   - name: Configuring Docker daemon
     template:
       dest: /etc/docker/daemon.json
@@ -26,8 +31,9 @@
       mode: "0644"
       force: true
   - name: Restarting Docker
-    systemd:
+    ansible.builtin.systemd:
       name: docker
+      enabled: true
       daemon_reload: true
       state: restarted
   - name: Disabling swap

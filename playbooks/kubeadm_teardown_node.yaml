@@ -30,7 +30,7 @@
     shell: apt-mark unhold kubeadm kubectl kubelet || true
     when: ansible_os_family == 'Debian'
   - name: Removing Kubernetes packages
-    apt:
+    ansible.builtin.apt:
       pkg:
       - kubeadm
       - kubectl
@@ -40,3 +40,15 @@
       state: absent
       purge: true
     when: ansible_os_family == 'Debian'
+  - name: Unmarking packages as held
+    shell: dnf versionlock delete kubeadm kubelet kubectl || true
+    when: ansible_os_family == 'RedHat'
+  - name: Removing Kubernetes packages
+    ansible.builtin.dnf:
+      pkg:
+      - kubeadm
+      - kubectl
+      - kubelet
+      - kubernetes-cni
+      state: absent
+    when: ansible_os_family == 'RedHat'

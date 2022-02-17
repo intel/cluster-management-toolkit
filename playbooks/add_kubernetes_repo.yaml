@@ -27,7 +27,7 @@
     environment:
       https_proxy: "{{ https_proxy }}"
     when: ansible_os_family == 'Debian'
-  - name: Configuring APT repository for Kubernetes
+  - name: Configuring package repository for Kubernetes
     shell: |
       if [ -n "{{ https_proxy }}" ]; then
         cat <<EOF | tee /etc/apt/apt.conf.d/01proxy-kubernetes > /dev/null
@@ -39,6 +39,29 @@
     args:
       creates: /etc/apt/sources.list.d/kubernetes.list
     when: ansible_os_family == 'Debian'
-  - name: Updating APT cache
+  - name: Updating package cache
     ansible.builtin.apt: update_cache=yes force_apt_get=yes
     when: ansible_os_family == 'Debian'
+  - name: Configuring package repository for Kubernetes
+    shell: |
+      cat <<EOF | tee /etc/yum.repos.d/kubernetes.repo > /dev/null
+      [kubernetes]
+      name=Kubernetes
+      baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+      enabled=1
+      gpgcheck=1
+      repo_gpgcheck=1
+      gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+      exclude=kubelet kubeadm kubectl
+      EOF
+      if [ -n "{{ https_proxy }}" ]; then
+        echo "proxy={{ https_proxy }}" | tee -a /etc/yum.repos.d/kubernetes.repo > /dev/null
+      fi
+    args:
+      creates: /etc/yum.repos.d/apt.conf.d/kubernetes.repo
+    when: ansible_os_family == 'RedHat'
+  - name: Installing dnf-plugin-versionlock
+    ansible.builtin.dnf:
+      update_cache: yes
+      name: dnf-plugin-versionlock
+    when: ansible_os_family == 'RedHat'

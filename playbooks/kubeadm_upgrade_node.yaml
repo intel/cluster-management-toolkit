@@ -16,28 +16,45 @@
   become: true
   become_user: root
   tasks:
-  - name: Updating APT cache
-    apt: update_cache=yes force_apt_get=yes
+  - name: Updating package cache
+    ansible.builtin.apt: update_cache=yes force_apt_get=yes
     when: ansible_os_family == 'Debian'
-  - name: apt-mark unhold kubeadm kubelet kubectl
-    command: apt-mark unhold kubeadm kubelet kubectl
+  - name: Unmarking packages as held
+    shell: apt-mark unhold kubeadm kubelet kubectl || true
     when: ansible_os_family == 'Debian'
   - name: Installing new versions of kubeadm, kubelet and kubectl
-    apt:
+    ansible.builtin.apt:
       pkg:
       - kubeadm={{ control_plane_k8s_version }}
       - kubelet={{ control_plane_k8s_version }}
       - kubectl={{ control_plane_k8s_version }}
       force_apt_get: true
     when: ansible_os_family == 'Debian'
+  - name: Marking packages as held
+    shell: apt-mark hold kubeadm kubelet kubectl || true
+    when: ansible_os_family == 'Debian'
+  - name: Updating package cache
+    ansible.builtin.dnf: update_cache=yes
+    when: ansible_os_family == 'RedHat'
+  - name: Unmarking packages as held
+    shell: dnf versionlock delete kubeadm kubelet kubectl || true
+    when: ansible_os_family == 'RedHat'
+  - name: Installing new versions of kubeadm, kubelet and kubectl
+    ansible.builtin.apt:
+      pkg:
+      - kubeadm-{{ control_plane_k8s_version }}
+      - kubelet-{{ control_plane_k8s_version }}
+      - kubectl-{{ control_plane_k8s_version }}
+      disable_excludes: kubernetes
+    when: ansible_os_family == 'RedHat'
+  - name: Marking packages as held
+    shell: dnf versionlock add kubeadm kubelet kubectl || true
+    when: ansible_os_family == 'RedHat'
   - name: Upgrading node
     shell: |
       kubeadm upgrade node
-  - name: apt-mark hold kubeadm kubelet kubectl
-    command: apt-mark hold kubeadm kubelet kubectl
-    when: ansible_os_family == 'Debian'
   - name: Restarting kubelet
-    systemd:
+    ansible.builtin.systemd:
       name: kubelet
       daemon_reload: true
       state: restarted

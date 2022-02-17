@@ -34,19 +34,52 @@
       state: present
       key: "{{ item }}"
     loop: "{{ authorized_keys }}"
-  - name: Updating APT cache
-    apt: update_cache=yes force_apt_get=yes
+  - name: Updating package cache
+    ansible.builtin.apt: update_cache=yes force_apt_get=yes
     when: ansible_os_family == 'Debian'
   - name: Gathering package facts
     package_facts:
       manager: apt
     when: ansible_os_family == 'Debian'
   - name: Installing Docker
-    apt:
+    ansible.builtin.apt:
       name: docker.io
       state: present
       force_apt_get: true
     when: ("'docker-ce' not in ansible_facts.packages") and (ansible_os_family == 'Debian')
+  - name: Adding Docker repo
+    shell: |
+      cat <<EOF | tee /etc/yum.repos.d/docker.repo > /dev/null
+      [docker]
+      baseurl=https://download.docker.com/linux/centos/8/x86_64/stable/
+      gpgcheck=0
+      EOF
+      if [ -n "{{ https_proxy }}" ]; then
+        echo "proxy={{ https_proxy }}" | tee -a /etc/yum.repos.d/docker.repo > /dev/null
+      fi
+    when: ansible_os_family == 'RedHat'
+  - name: Updating package cache
+    ansible.builtin.dnf: update_cache=yes
+    when: ansible_os_family == 'RedHat'
+  - name: Gathering package facts
+    package_facts:
+      manager: rpm
+    when: ansible_os_family == 'RedHat'
+  - name: Removing runc (Due to Docker conflict)
+    ansible.builtin.dnf:
+      name: runc
+      state: absent
+    when: ansible_os_family == 'RedHat'
+  - name: Installing Docker
+    ansible.builtin.dnf:
+      name: docker-ce
+      state: present
+    when: ansible_os_family == 'RedHat'
+  - name: Creating /etc/docker
+    file:
+      path: /etc/docker
+      state: directory
+      mode: "0755"
   - name: Configuring Docker daemon
     template:
       dest: /etc/docker/daemon.json
@@ -65,8 +98,9 @@
       mode: "0644"
       force: true
   - name: Restarting Docker
-    systemd:
+    ansible.builtin.systemd:
       name: docker
+      enabled: true
       daemon_reload: true
       state: restarted
   - name: Disabling swap
@@ -83,3 +117,8 @@
         done
       fi
     changed_when: false
+  - name: Setting SELinux to permissive mode
+    shell: |
+      setenforce 0
+      sed -i -e 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+    when: ansible_os_family == 'RedHat'

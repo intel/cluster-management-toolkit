@@ -12,9 +12,17 @@
   become: true
   become_user: root
   tasks:
-  - name: Updating APT cache
-    apt: update_cache=yes force_apt_get=yes
+  - name: Updating package cache
+    ansible.builtin.apt: update_cache=yes force_apt_get=yes
     when: ansible_os_family == 'Debian'
   - name: Upgrading all packages
-    apt: upgrade=safe force_apt_get=yes
+    ansible.builtin.apt: upgrade=safe force_apt_get=yes
     when: ansible_os_family == 'Debian'
+  - name: Updating package cache
+    ansible.builtin.dnf: update_cache=yes
+    when: ansible_os_family == 'RedHat'
+  - name: Upgrading all packages
+    ansible.builtin.dnf:
+      name: '*'
+      state: latest
+    when: ansible_os_family == 'RedHat'

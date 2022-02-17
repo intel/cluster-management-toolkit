@@ -24,20 +24,44 @@
     package_facts:
       manager: apt
     when: ansible_os_family == 'Debian'
-  - name: apt-mark unhold kubeadm kubelet kubectl
-    command: apt-mark unhold kubeadm kubelet kubectl
+  - name: Unmarking packages as held
+    shell: apt-mark unhold kubeadm kubelet kubectl || true
     when: ansible_os_family == 'Debian'
   - name: Installing Kubernetes packages
-    apt:
+    ansible.builtin.apt:
       pkg:
       - kubelet={{ control_plane_k8s_version }}
       - kubeadm={{ control_plane_k8s_version }}
       - kubectl={{ control_plane_k8s_version }}
       force_apt_get: true
     when: ansible_os_family == 'Debian'
-  - name: apt-mark hold kubeadm, kubelet, kubectl
-    command: apt-mark hold kubeadm kubelet kubectl
+  - name: Marking packages as held
+    shell: apt-mark hold kubeadm kubelet kubectl || true
     when: ansible_os_family == 'Debian'
+  - name: Gathering package facts
+    package_facts:
+      manager: rpm
+    when: ansible_os_family == 'RedHat'
+  - name: Unmarking packages as held
+    shell: dnf versionlock delete kubeadm kubelet kubectl || true
+    when: ansible_os_family == 'RedHat'
+  - name: Installing Kubernetes packages
+    ansible.builtin.dnf:
+      pkg:
+      - kubelet-{{ control_plane_k8s_version }}
+      - kubeadm-{{ control_plane_k8s_version }}
+      - kubectl-{{ control_plane_k8s_version }}
+      disable_excludes: kubernetes
+    when: ansible_os_family == 'RedHat'
+  - name: Marking packages as held
+    shell: dnf versionlock add kubeadm kubelet kubectl || true
+    when: ansible_os_family == 'RedHat'
+  - name: Enabling kubelet
+    ansible.builtin.systemd:
+      name: kubelet
+      enabled: true
+      state: started
+    when: ansible_os_family == 'RedHat'
   - name: Joining node to the cluster
     shell: |
       kubeadm join "{{ control_plane_ip }}:{{ control_plane_port }}" --token "{{ join_token }}" --discovery-token-ca-cert-hash "sha256:{{ ca_cert_hash }}"

@@ -15,6 +15,10 @@
     package_facts:
       manager: apt
     when: ansible_os_family == 'Debian'
+  - name: Gathering package facts
+    package_facts:
+      manager: rpm
+    when: ansible_os_family == 'RedHat'
   - name: package versions
     debug:
       msg: |

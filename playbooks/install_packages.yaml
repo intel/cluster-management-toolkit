@@ -20,11 +20,11 @@
   become: true
   become_user: root
   tasks:
-  - name: Updating APT cache
-    apt: update_cache=yes force_apt_get=yes
+  - name: Updating package cache
+    ansible.builtin.apt: update_cache=yes force_apt_get=yes
     when: ansible_os_family == 'Debian'
   - name: Installing custom packages
-    apt:
+    ansible.builtin.apt:
       pkg: "{{ packages }}"
       force_apt_get: true
       # allow downgrading packages
@@ -34,3 +34,16 @@
     shell: apt-mark hold "{{ item }}" || true
     loop: "{{ vars['held_packages'] }}"
     when: ansible_os_family == 'Debian'
+  - name: Updating package cache
+    ansible.builtin.dnf: update_cache=yes
+    when: ansible_os_family == 'RedHat'
+  - name: Installing custom packages
+    ansible.builtin.dnf:
+      pkg: "{{ packages }}"
+      allow_downgrade: true
+      disable_excludes: kubernetes
+    when: ansible_os_family == 'RedHat'
+  - name: Marking packages as held
+    shell: dnf versionlock add "{{ item }}" || true
+    loop: "{{ vars['held_packages'] }}"
+    when: ansible_os_family == 'RedHat'

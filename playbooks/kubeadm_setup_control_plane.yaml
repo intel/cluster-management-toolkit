@@ -19,13 +19,12 @@
     register: port_check
     ignore_errors: true
     changed_when: false
-  - name: Updating APT cache
-    apt: update_cache=yes force_apt_get=yes
-    when: (port_check.rc == 1) and (ansible_os_family == 'Debian')
-  - name: Gathering package facts
-    package_facts:
-      manager: apt
-    when: (port_check.rc == 1) and (ansible_os_family == 'Debian')
+  - name: Enabling kubelet
+    ansible.builtin.systemd:
+      name: kubelet
+      enabled: true
+      state: started
+    when: ansible_os_family == 'RedHat'
   - name: Pulling Kubernetes images
     shell: |
       if [ -n "{{ https_proxy }}" ]; then

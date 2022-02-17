@@ -16,7 +16,7 @@
   become: true
   become_user: root
   tasks:
-  - name: Updating APT cache
+  - name: Updating package cache
     apt: update_cache=yes force_apt_get=yes
     when: ansible_os_family == 'Debian'
   - name: Installing containerd
@@ -76,12 +76,12 @@
       mode: "0644"
       force: true
   - name: Restarting Containerd
-    systemd:
+    ansible.builtin.systemd:
       name: containerd
       daemon_reload: true
       state: restarted
   - name: Restarting Kubelet
-    systemd:
+    ansible.builtin.systemd:
       name: kubelet
       daemon_reload: true
       state: restarted

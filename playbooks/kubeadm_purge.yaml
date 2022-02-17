@@ -18,12 +18,21 @@
     loop: "{{ held_packages }}"
     when: ansible_os_family == 'Debian'
   - name: Removing Kubernetes packages
-    apt:
+    ansible.builtin.apt:
       name: "{{ packages }}"
       force_apt_get: true
       state: absent
       purge: true
     when: ansible_os_family == 'Debian'
+  - name: Unmarking packages as held
+    shell: dnf versionlock delete "{{ item }}" || true
+    loop: "{{ held_packages }}"
+    when: ansible_os_family == 'RedHat'
+  - name: Removing Kubernetes packages
+    ansible.builtin.dnf:
+      name: "{{ packages }}"
+      state: absent
+    when: ansible_os_family == 'RedHat'
   - name: Removing directories
     file:
       path: "{{ item }}"
@@ -34,5 +43,5 @@
     - /var/lib/etcd
     - /var/lib/kubelet
   - name: Reloading systemd configuration
-    systemd:
+    ansible.builtin.systemd:
       daemon_reload: true
