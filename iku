@@ -6837,6 +6837,8 @@ def genericlistloop(stdscr, view):
 	# These values can be toggled, so we need to read them first
 	listview_args = copy.deepcopy(viewref.get("listview_args", {}))
 
+	vlist = None
+
 	while True:
 		uip.countdown_to_update()
 
@@ -7202,7 +7204,7 @@ def genericlistloop(stdscr, view):
 							tagged_items.remove(item)
 				except re.error:
 					continue
-		elif c == ord("l") and is_taggable == True and len(vlist) > 0:
+		elif c == ord("l") and is_taggable == True and vlist is not None and listlen > 0:
 			# List the union of all labels of the tagged objects (if the objects support labels)
 			if len(tagged_items) == 0:
 				selected = uip.get_selected()
@@ -7238,7 +7240,7 @@ def genericlistloop(stdscr, view):
 			tagged_items.clear()
 			uip.refresh_all()
 			curses.doupdate()
-		elif c == ord("f") and is_taggable == True and len(vlist) > 0:
+		elif c == ord("f") and is_taggable == True and vlist is not None and listlen > 0:
 			# List the union of all labels of the tagged objects and create a label selector
 			# from the choices made by the user (if the objects support labels)
 			if len(tagged_items) == 0:
@@ -7337,7 +7339,7 @@ def genericlistloop(stdscr, view):
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, taggeditemlist, title = "Tagged items", cursor = False)
 			uip.refresh_all()
 			curses.doupdate()
-		elif c == ord(";") and is_taggable == True and len(vlist) > 0:
+		elif c == ord(";") and is_taggable == True and listlen > 0:
 			cluster_available = True
 			items = []
 			control_plane = False

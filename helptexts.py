@@ -162,12 +162,8 @@ eventlist = listviewheader + [
 inventorylist = listviewheader + [
 	("[Enter]", "Open info page for selected host"),
 	("[Shift] + S", "SSH to selected host"),
-	("T", "Tag / Untag host"),
-	("[Shift] + T", "Tag host by pattern"),
-	("[Ctrl] + T", "Untag host by pattern"),
-	("L", "List tagged hosts"),
-	(";", "Perform action on tagged hosts"),
-	("[Shift] + A", "Set / unset Ansible groups for tagged hosts"),
+] + tagactions + [
+	("[Shift] + A", "Set / unset Ansible groups for tagged items"),
 ] + spacer + listmovement
 
 networkinfo = infoviewheader + [
