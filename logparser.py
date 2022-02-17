@@ -1619,11 +1619,15 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 		if logparser_configuration.pop_ts == True:
 			for _ts in timestamps:
 				d.pop(_ts, None)
-		level = deep_get_with_fallback(d, severities, "info")
+		level = deep_get_with_fallback(d, severities)
 		if logparser_configuration.pop_severity == True:
 			for _sev in severities:
 				d.pop(_sev, None)
-		severity = level_to_severity(level)
+		if level is not None:
+			severity = level_to_severity(level)
+		else:
+			if severity is None:
+				severity = loglevel.INFO
 
 		msg = deep_get_with_fallback(d, messages, "")
 		if msg.startswith("\"") and msg.endswith("\""):
@@ -1765,6 +1769,7 @@ def key_value_with_leading_message(message, severity = loglevel.INFO, facility =
 	if fold_msg == True:
 		return facility, severity, message, remnants
 
+	rawmsg = message
 	# Split into substrings based on spaces
 	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
 	if tmp is not None and len(tmp) > 0:
