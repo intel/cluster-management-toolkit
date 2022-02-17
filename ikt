@@ -563,6 +563,22 @@ def add_nodes(options = [], args = None):
 	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
 
 	join_token = kh.get_join_token()
+	if len(join_token) == 0:
+		iktprint([("Error: ", "error"), ("No join token found; create a one now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")], stderr = True)
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting: ", "error"), ("No join token available.", "default")], stderr = True)
+			sys.exit(2)
+		else:
+			create_join_token_playbooks = [
+				f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_create_join_token.yaml",
+			]
+			playbooks = populate_playbooks_from_paths(create_join_token_playbooks)
+			retval = run_playbooks(playbooks = playbooks, hosts = control_planes, extra_values = extra_values)
+			join_token = kh.get_join_token()
+			if len(join_token) == 0:
+				iktprint([("Critical: ", "critical"), ("failed to create join token; aborting", "default")], stderr = True)
+				sys.exit(2)
+
 	ca_cert_hash = kh.get_ca_cert_hash()
 	control_plane_ip, control_plane_port = kh.get_control_plane_address()
 	# Now that we have the IP address of the API-server we can use that to get the package

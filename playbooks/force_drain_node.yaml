@@ -9,7 +9,7 @@
       category: Scheduling
   gather_facts: false
   tasks:
-  - name: Drain node (No grace period)
+  - name: Draining node (No grace period)
     shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
       minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/")"

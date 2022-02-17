@@ -8,7 +8,7 @@
       category: Scheduling
   gather_facts: false
   tasks:
-  - name: Cordon node
+  - name: Cordoning node
     shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
       kubectl cordon ${nodes}

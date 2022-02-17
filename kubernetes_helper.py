@@ -467,7 +467,8 @@ class KubernetesHelper:
 
 		# Find the newest bootstrap token
 		for secret in vlist:
-			if deep_get(secret, "metadata#name").startswith("bootstrap-token-"):
+			name = deep_get(secret, "metadata#name")
+			if name.startswith("bootstrap-token-"):
 				timestamp = timestamp_to_datetime(deep_get(secret, "metadata#creationTimestamp"))
 				newage = get_since(timestamp)
 				if age == -1 or newage < age:

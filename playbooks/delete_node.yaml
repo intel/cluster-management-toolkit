@@ -7,7 +7,7 @@
       category: Administration
   gather_facts: false
   tasks:
-  - name: Delete node from cluster
+  - name: Deleting node from cluster
     shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
       minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/")"

@@ -1,0 +1,18 @@
+- hosts: controlplane
+  vars:
+    metadata:
+      description: Create a join token
+      playbook_types:
+      - internal
+      category: Setup
+  become: true
+  become_user: root
+  - name: Checking that cluster is running
+    shell: |
+      lsof -i -P -n | grep 6443.*LISTEN > /dev/null
+    register: port_check
+    ignore_errors: true
+    changed_when: false
+  - name: Creating permanent join token
+    command: kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command
+    when: port_check.rc == 0

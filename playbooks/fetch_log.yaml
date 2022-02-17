@@ -15,5 +15,5 @@
   become: true
   become_user: root
   tasks:
-  - name: Fetch a journald log
+  - name: Fetching a journald log
     shell: journalctl -u "{{ unit }}" --no-pager -n 1000

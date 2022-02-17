@@ -38,6 +38,6 @@
   - name: Initialising Kubernetes cluster
     command: kubeadm init --skip-token-print --pod-network-cidr={{ pod_network_cidr }}
     when: port_check.rc == 1
-  - name: Create permanent join token
+  - name: Creating permanent join token
     command: kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command
     when: port_check.rc == 1
