@@ -12234,14 +12234,23 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 	global available_api_families
 	global defaultview
 	hide_unavailable = deep_get_with_fallback(iktconfig, ["Selector#hide_unavailable_apis", "Global#hide_unavailable_apis"], True)
+	categorise = deep_get_with_fallback(iktconfig, ["Selector#categorise"], True)
 	sortcolumn = deep_get(iktconfig, "Selector#sortcolumn", "kind")
 
-	if sortcolumn == "kind":
-		sortkey1 = 1
-		sortkey2 = 2
+	if sortcolumn == "family":
+		if categorise == True:
+			sortkey1 = 1
+			sortkey2 = 2
+		else:
+			sortkey1 = 2
+			sortkey2 = 0
 	elif sortcolumn == "name":
-		sortkey1 = 1
-		sortkey2 = 0
+		if categorise == True:
+			sortkey1 = 1
+			sortkey2 = 0
+		else:
+			sortkey1 = 0
+			sortkey2 = 2
 	else:
 		sys.exit(f"Invalid sortcolumn {sortcolumn} for Selector; aborting.")
 
@@ -12302,7 +12311,7 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 		else:
 			api_group = ""
 
-		if currentgroup != group:
+		if currentgroup != group and categorise == True:
 			items.append((widgetlineattrs.SEPARATOR, [(f" {group} ", ("windowwidget", "highlight"))], [("", ("windowwidget", "default"))]))
 			currentgroup = group
 		lineattrs = widgetlineattrs.NORMAL
