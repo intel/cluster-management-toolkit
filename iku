@@ -6815,7 +6815,11 @@ def genericlistloop(stdscr, view):
 	else:
 		helptext = generate_helptext(view, "listview", [])
 	if "activatedfun" in viewref:
-		activatedfun = viewref["activatedfun"]
+		_activatedfun = viewref["activatedfun"]
+		if type(_activatedfun) == str:
+			activatedfun = eval(_activatedfun)
+		else:
+			activatedfun = _activatedfun
 	else:
 		activatedfun = genericinfoloop
 	update_delay = deep_get(viewref, "update_delay", -1)
@@ -7580,11 +7584,20 @@ def genericlistloop(stdscr, view):
 			action = deep_get(value, "action", None)
 			if action is not None:
 				action_args = deep_get(value, "action_args", {})
+				if "_pass_obj" in action_args:
+					action_args["obj"] = selected.ref
+					action_args.pop("_pass_obj")
+				action_call = deep_get(value, "action_call")
 				if action == "toggle_var":
 					var = deep_get(action_args, "var")
 					if var is not None:
 						tmp = deep_get(listview_args, var)
 						deep_set(listview_args, var, not tmp)
+				elif action == "call" and action_call is not None:
+					retval = action_call(uip.stdscr, **action_args)
+					if retval is not None and retval == curses_helper.retval.RETURNFULL:
+						return retval
+
 			if force_update == True:
 				uip.force_update()
 
@@ -10231,6 +10244,17 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					retval = w_callout(uip, w_kind, obj, selected = selected, title = w_title, headers = w_headers, itemgetter = w_itemgetter, sortcolumn = w_sortcolumn, **w_callout_args)
 					if retval is not None and retval == curses_helper.retval.RETURNFULL:
 						return retval
+			elif "action" in value:
+				action = deep_get(value, "action", "")
+				action_args = deep_get(value, "action_args", {})
+				if "_pass_obj" in action_args:
+					action_args["obj"] = obj
+					action_args.pop("_pass_obj")
+				action_call = deep_get(value, "action_call")
+				if action == "call" and action_call is not None:
+					retval = action_call(uip.stdscr, **action_args)
+					if retval is not None and retval == curses_helper.retval.RETURNFULL:
+						return retval
 			else:
 				call = deep_get(value, "call")
 				call_name = None
@@ -11186,17 +11210,27 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 		input("\nPress Enter to continue...")
 	stdscr.refresh()
 
-def resourcelistdispatch(stdscr, ref, kind):
-	plural = deep_get(ref, "status#acceptedNames#plural")
+def listviewdispatch(stdscr, **kwargs):
+	obj = deep_get(kwargs, "obj")
+	if obj is None:
+		return curses_helper.retval.RETURNDONE
 
-	view = checkforview(plural)
+	kind_path = deep_get(kwargs, "kind_path")
+	kind = deep_get(obj, kind_path)
+	api_family_path = deep_get(kwargs, "api_family_path")
+	api_family = deep_get(obj, api_family_path, "")
+
+	if kind is None:
+		return curses_helper.retval.RETURNDONE
+
+	view = checkforview((kind, api_family))
 
 	if view is not None:
 		if "viewfunc" in views[view]:
 			viewfunc = views[view]["viewfunc"]
 		else:
 			viewfunc = genericlistloop
-		viewfunc(stdscr, view)
+		return viewfunc(stdscr, view)
 
 	return curses_helper.retval.RETURNDONE
 
@@ -11916,7 +11950,7 @@ def ssh_to_host(stdscr, host):
 
 	# ansible_user in the inventory overrides that defined in ikt.yaml
 	# thus we get these in ascending over of priority
-        # if no user is specified we assume that we're to use the user we're running as;
+	# if no user is specified we assume that we're to use the user we're running as;
 	# but really, ansible
 	sshuser = deep_get(iktconfig, "Ansible#ansible_user")
 	sshuser = deep_get(inventory, "all#vars#ansible_user", sshuser)
@@ -13191,6 +13225,46 @@ infoviews = {
 				"owner_references_path": "metadata#ownerReferences",
 				# Note: This cannot be (kind, api_group)
 				"owner_references_kind": "Node",
+			},
+		},
+	},
+	("CustomResourceDefinition", "apiextensions.k8s.io"): {
+		"windowheader": "Custom Resource Definition Info",
+		"infopad": {
+			"Kind:": {
+				"path": "spec#names#kind",
+			},
+			"List Kind:": {
+				"path": "spec#names#listKind",
+			},
+			"API-Group:": {
+				"path": "spec#group",
+			},
+			"Singular:": {
+				"path": "spec#names#singular",
+			},
+			"Plural:": {
+				"path": "spec#names#plural",
+			},
+			"Short Names:": {
+				"extra_paths": "spec#names#shortNames",
+				"processor": field_processor_list,
+			},
+			"Scope:": {
+				"path": "spec#scope",
+			},
+		},
+		"shortcuts": {
+			"Custom Resource List View": {
+				"shortcut": ord("R"),
+				"helptext": ("[Shift] + R", "Open custom resource list view"),
+				"action": "call",
+				"action_call": listviewdispatch,
+				"action_args": {
+					"_pass_obj": True,
+					"kind_path": "spec#names#kind",
+					"api_family_path": "spec#group",
+				}
 			},
 		},
 	},
@@ -15919,15 +15993,6 @@ views_builtin = {
 		"fields": ["name", "attach_required", "pod_info_on_mount", "volume_lifecycle_modes", "age"],
 		"kind": ("CSIDriver", "storage.k8s.io"),
 	},
-	# apiextensions.k8s.io
-	"Custom Resource Definitions": {
-		"commandline": ["customresourcedefinitions", "customresourcedefinition", "crds", "crd"],
-		"group": "API & Extendability",
-		"fields": ["name", "api_group_crd", "created_at"],
-		"sortcolumn": "api_group_crd",
-		"activatedfun": resourcelistdispatch,
-		"kind": ("CustomResourceDefinition", "apiextensions.k8s.io"),
-	},
 	# apps
 	"Daemon Sets": {
 		"commandline": ["daemonsets", "daemonset", "ds"],
@@ -16887,7 +16952,7 @@ def populate_views():
 					"group": group,
 					"fields": fields,
 					"fields_wide": fields_wide,
-					"activatedfun": genericinfoloop,
+					"activatedfun": deep_get(d, "listview#activatedfun", genericinfoloop),
 					"listview_args": deep_get(d, "listview#listview_args", {}),
 					"statusmsg": deep_get(d, "listview#statusmsg", {}),
 					"listgetter": generic_listgetter,
@@ -16910,8 +16975,10 @@ def populate_views():
 					key = deep_get(_shortcuts[shortcut], "key", "<missing>")
 					modifier = deep_get(_shortcuts[shortcut], "modifier", "")
 					helptext = deep_get(_shortcuts[shortcut], "helptext", "<missing>")
+					call = deep_get(_shortcuts[shortcut], "call", "<missing>")
 					action = deep_get(_shortcuts[shortcut], "action", "<missing>")
 					action_args = deep_get(_shortcuts[shortcut], "action_args", {})
+					action_call = deep_get(_shortcuts[shortcut], "action_call", None)
 					if key is None or helptext is None or action is None or "<missing>" in [key, helptext, action]:
 						sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
 							 f"key: {key}\n"
@@ -16936,6 +17003,10 @@ def populate_views():
 						num = int(key[1:]) - 12
 						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
 						help_key = f"[Shift] + {key[0]}{num} / {key.upper()}"
+					elif key in ["enter", "return"]:
+						if modifier is not None:
+							help_key = "[Enter]"
+							shortcut_key = [curses.KEY_ENTER, 10, 13]
 					elif modifier is not None:
 						if modifier == "shift":
 							help_key = f"[Shift] + {key.upper()}"
@@ -16943,9 +17014,6 @@ def populate_views():
 						elif modifier == "ctrl":
 							help_key = f"[Ctrl] + {key.upper()}"
 							shortcut_key = ord(key) - 96
-					elif key in ["enter", "return"]:
-						help_key = "[Enter]"
-						shortcut_key = [curses.KEY_ENTER, 10, 13]
 					else:
 						help_key = f"{key.upper()}"
 						shortcut_key = ord(key)
@@ -16955,7 +17023,12 @@ def populate_views():
 						"helptext": (help_key, helptext),
 						"action": action,
 						"action_args": action_args,
+						"action_call": action_args,
 					}
+					if action == "call":
+						action_call = eval(action_call)
+						shortcuts[shortcut]["action_call"] = action_call
+
 				if len(shortcuts) > 0:
 					listview_entry["shortcuts"] = shortcuts
 
@@ -17097,9 +17170,13 @@ def set_default_view(view):
 
 def checkforview(arg):
 	for view in views:
-		for cl in views[view]["commandline"]:
-			if arg == cl:
+		if type(arg) == str:
+			if arg in deep_get(views[view], "commandline", []):
 				return view
+		else:
+			if arg == deep_get(views[view], "kind", ("", "")):
+				return view
+
 	return None
 
 def customise_listviews():
