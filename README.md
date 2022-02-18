@@ -25,7 +25,7 @@ as a control plane. It will also check whether passwordless sudo is enabled
 hostkey and install that in `.ssh/authorized_keys` to allow the control plane
 to ssh to itself when running playbooks.
 
-## Installating iKT
+## Installing iKT
 
 Check out this repository and, while in the repository directory, type:
 
@@ -54,7 +54,7 @@ on the imported cluster(s).
 ## Pre-requisites
 
 * One or several hosts running Debian, Ubuntu (at least 20.04 LTS) or another Debian-derivative
-* The user should be allowed to sudo to root
+* The user must be allowed to sudo to root
 
 ## Setting up a new cluster using __iKT__
 
@@ -72,19 +72,10 @@ _Docker_, and _Containerd_.
 
 ## Add nodes
 
-1. `iktinv add-host <host1>[,<host2>,...]`
-2. `iku inv` (help for _iku_ can be viewed using `F1` or `[Shift] + H`)
-3. Tag the nodes you want to add using `T` (or using `[Shift] + T` and match by pattern)
-4. Press `;` to perform an action on tagged nodes
-5. Select `Prepare node`
-6. Input ssh/sudo password for host
-7. Wait a short while...
-8. Tag the nodes you want to add using `T` (or using `[Shift] + T` and match by pattern)
-9. Press `;` to perform an action on tagged nodes
-10. Select `Setup Kubernetes node`
+1. `ikt prepare <host1>[,<host2>,...]`
+2. Wait a short while...
+3. `ikt add-nodes <host1>[,<host2>,...]`
 11. Wait quite a while...
-12. Once the action finishes successfully, you can switch to the _Node_ view
-    by pressing `F2` and selecting `Nodes` (or similarly for other views)
 
 ## _OPTIONAL_: Using __containerd__ instead of __docker__
 
@@ -93,7 +84,7 @@ _Docker_, and _Containerd_.
 3. Press `;` to perform an action on tagged nodes
 4. Select `Setup Containerd`
 5. Wait a short while...
-6. Tag all remaning nodes using `T` (or using `[Shift] + T` and match by pattern)
+6. Tag all remaining nodes using `T` (or using `[Shift] + T` and match by pattern)
 7. Press `;` to perform an action on tagged nodes
 8. Select `Setup Containerd`
 9. Wait a short while...
