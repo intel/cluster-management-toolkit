@@ -65,9 +65,11 @@
     package_facts:
       manager: rpm
     when: ansible_os_family == 'RedHat'
-  - name: Removing runc (Due to Docker conflict)
+  - name: Removing runc and containers-common (Due to Docker conflict)
     ansible.builtin.dnf:
-      name: runc
+      pkg:
+      - runc
+      - containers-common
       state: absent
     when: ansible_os_family == 'RedHat'
   - name: Installing Docker
