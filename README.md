@@ -88,3 +88,8 @@ _Docker_, and _Containerd_.
 7. Press `;` to perform an action on tagged nodes
 8. Select `Setup Containerd`
 9. Wait a short while...
+
+## Removing nodes (purging configuration)
+
+1. `ikt force-drain <node1>[,<node2>,...]`
+2. `ikt remove-nodes --purge <node1>[,<node2>,...]`
