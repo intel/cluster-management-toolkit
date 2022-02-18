@@ -9753,7 +9753,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			infopadheight += 1
 		if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, namespace_path) is not None:
 			infopadheight += 1
-		if creation_timestamp_path is not None and len(creation_timestamp_path) > 0:
+		if creation_timestamp_path is not None and len(creation_timestamp_path) > 0 and deep_get(obj, creation_timestamp_path) is not None:
 			infopadheight += 1
 		# Number of custom fields
 		infopadheight += len(deep_get(viewref, "infopad", {}))
@@ -10010,7 +10010,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					uip.addthemearray(infopad, fieldarray, y = y)
 					y += 1
 
-				if creation_timestamp_path is not None and len(creation_timestamp_path) > 0:
+				if creation_timestamp_path is not None and len(creation_timestamp_path) > 0 and deep_get(obj, creation_timestamp_path) is not None:
 					fieldarray = [
 						("Created: ", ("main", "infoheader")),
 					]
