@@ -1878,12 +1878,28 @@ def generic_infogetter(vlist, fields, **kwargs):
 						else:
 							tmp = normalise_mem_to_bytes(value)
 						value = normalise_mem_bytes_to_str(tmp)
+					elif vtype in ["regex_to_tuples", "regex_to_list"]:
+						_regex = deep_get(_path, "regex")
+						_values = []
+						if len(value) > 0:
+							if type(value) == str:
+								value = [value]
+							for item in value:
+								tmp = re.match(_regex, item)
+								groups = []
+								if tmp is not None:
+									for group in tmp.groups():
+										groups.append(group)
+									if vtype == "regex_to_tuples":
+										_values.append(tuple(groups))
+									else:
+										_values += groups
+						value = _values
+					elif vtype == "len":
+						value = str(len(value))
 					values.append(value)
 				if len(values) == 1:
 					value = values[0]
-				else:
-					# here we need to add support for merging multiple values
-					raise Exception("FIXME: implement support for value lists")
 				d[name] = value
 				continue
 			else:
@@ -5116,13 +5132,9 @@ field_templates = {
 	"api_group": {
 		"header": "API Group:",
 	},
-	"api_group_crd": {
-		"header": "API Group:",
-		"path": "spec#group",
-	},
 	"api_service": {
 		# (namespace, name, port)
-		"header": "Service",
+		"header": "Service:",
 		# Note: path is always spec#service; this is used to denote the info about
 		# the API service that's requested; status_message, service, or available
 		"path": "service",
@@ -5374,13 +5386,6 @@ field_templates = {
 		"generator": generator_numerical_range,
 		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_high"))],
 		"path": "report#summary#dangerCount",
-		"ralign": True,
-	},
-	"data": {
-		"header": "# of Data:",
-		"path": "data",
-		"datagetter": datagetter_count,
-		"generator": generator_numerical,
 		"ralign": True,
 	},
 	"default_endpoint": {
@@ -5660,10 +5665,6 @@ field_templates = {
 	},
 	"image_version": {
 		"header": "Version:",
-	},
-	"immutable": {
-		"header": "Immutable:",
-		"path": "immutable",
 	},
 	"index": {
 		"header": "Index:",
@@ -5960,13 +5961,6 @@ field_templates = {
 	"non_resource_urls": {
 		"header": "Non-Resource URLs:",
 		"generator": generator_list,
-	},
-	"nrofsecrets": {
-		"header": "# of Secrets:",
-		"path": "secrets",
-		"datagetter": datagetter_count,
-		"generator": generator_numerical,
-		"ralign": True,
 	},
 	"obj": {
 		# (kind, name)
@@ -6333,13 +6327,6 @@ field_templates = {
 		"header": "Secret:",
 		"path": "spec#secretName",
 	},
-	"secret_type": {
-		"header": "Type:",
-		"path": (r"^(.*)/(.*)|^(.*)", ["type"]),
-		"datagetter": datagetter_regex_split_to_tuples,
-		"generator": generator_list,
-		"field_colors": [("types", "secret_type"), ("types", "generic")],
-	},
 	"seen": {
 		"header": "Last Seen:",
 		# If there's no lastObservedTime we fallback to eventTime
@@ -6648,6 +6635,42 @@ field_templates = {
 	},
 }
 
+# The return type of the formatting will be the same
+# as the type of the default, so default == None is a programming error
+def get_formatting(field, formatting, default):
+	result = []
+	items = deep_get(field, f"formatting#{formatting}")
+	if items is None:
+		return default
+
+	if default is None:
+		raise Exception(f"default cannot be None for field {field}, formatting {formatting}; this is a programming error")
+
+	if type(default) == tuple:
+		items = [items]
+
+	for item in items:
+		context = None
+		if formatting in ["item_separator", "field_separators", "ellipsis", "field_prefixes", "field_suffixes"]:
+			context = "separators"
+		elif formatting == "field_colors":
+			context = "types"
+		context = deep_get(item, "context", context)
+		ftype = deep_get(item, "type")
+		if len(items) < 1:
+			raise Exception(f"field {field}, formatting {formatting}: format list item is empty; this is likely an error in the view file")
+		if ftype is None or context is None:
+			raise Exception(f"field {field}, formatting {formatting}: context={context} type={ftype}; list type or context missing/formatting has no implicit context; this is likely an error in the view file")
+		result.append((context, ftype))
+
+	if type(default) == tuple:
+		if len(result) > 1:
+			raise Exception(f"field {field}, formatting {formatting}: default is of type {type(default)}, but formatting is a list with length {len(result)} that cannot be represented as a tuple; this is likely an error in the view file")
+		result = result[0]
+
+	return result
+
+
 def fieldgenerator(view, fields = None, sortcolumn = None, blacklist = []):
 	global namespace
 
@@ -6714,21 +6737,25 @@ def fieldgenerator(view, fields = None, sortcolumn = None, blacklist = []):
 				# The generator is the same, but the name is unfortunate
 				generator = generator_mem_single
 				processor = None
+			elif formatter in ["list"]:
+				generator = generator_list
+				processor = processor_list
 			else:
 				raise Exception(f"Unknown formatter {formatter}")
+
 			align = deep_get(field, "align", "left")
 			ralign = align == "right"
 			sortkey1 = name
 			# If sortkey1 == sortcolumn this "fails", but it's good enough
 			sortkey2 = sortcolumn
 
-			field_colors = [("types", "field")]
-			field_prefixes = None
-			field_suffixes = None
-			field_separators = [("separators", "field")]
-			ellipsise = -1
-			ellipsis = ("separators", "ellipsis")
-			item_separator = ("separators", "list")
+			field_colors = get_formatting(field, "field_colors", [("types", "field")])
+			field_prefixes = get_formatting(field, "field_prefixes", [])
+			field_suffixes = get_formatting(field, "field_suffixes", [])
+			field_separators = get_formatting(field, "field_separators", [("separators", "field")])
+			ellipsise = deep_get(field, "formatting#ellipsise", -1)
+			ellipsis = get_formatting(field, "ellipsis", ("separators", "ellipsis"))
+			item_separator = get_formatting(field, "item_separator", ("separators", "list"))
 
 		if type(field) != dict:
 			if field not in field_templates:
@@ -12941,7 +12968,7 @@ infoviews = {
 			},
 		},
 	},
-	("ClusterInformation", ""): {
+	("ClusterInformation", "crd.projectcalico.org"): {
 		"windowheader": "Cluster Information Info",
 		"infopad": {
 			"Calico Version:": {
@@ -15823,13 +15850,6 @@ views_builtin = {
 		"fields": ["name", "age"],
 		"kind": ("BGPPeer", "crd.projectcalico.org"),
 	},
-	# crd.projectcalico.org
-	"Block Affinities": {
-		"commandline": ["blockaffinities", "blockaffinity", "blkaffinities", "blkaffinity"],
-		"group": "CNI",
-		"fields": ["name", "age"],
-		"kind": ("BlockAffinity", "crd.projectcalico.org"),
-	},
 	# operators.coreos.com
 	"Catalog Sources": {
 		"commandline": ["catalogsources", "catalogsource", "catsrcs", "catsrc"],
@@ -15916,13 +15936,6 @@ views_builtin = {
 		"group": "Security",
 		"fields": ["name", "fail_count", "warn_count", "info_count", "pass_count", "age"],
 		"kind": ("CISKubeBenchReport", "aquasecurity.github.io"),
-	},
-	# crd.projectcalico.org
-	"Cluster Informations": {
-		"commandline": ["clusterinformations", "clusterinformation", "clrinfos", "clrinfo"],
-		"group": "CNI",
-		"fields": ["name", "age"],
-		"kind": ("ClusterInformation", "crd.projectcalico.org"),
 	},
 	# cert-manager.io <= rename from: certmanager.k8s.io
 	"Cluster Issuers": {
@@ -16666,14 +16679,6 @@ views_builtin = {
 		"fields": ["namespace", "name", "age"],
 		"sortcolumn": "namespace",
 		"kind": ("ServersTransport", "traefik.containo.us"),
-	},
-	# core API
-	"Service Accounts": {
-		"commandline": ["serviceaccounts", "serviceaccount", "sa"],
-		"group": "Authorization & Access Control",
-		"fields": ["namespace", "name", "nrofsecrets", "age"],
-		"sortcolumn": "namespace",
-		"kind": ("ServiceAccount", ""),
 	},
 	# servicecertsigner.config.openshift.io
 	"Service Cert Signer Operator Configs": {

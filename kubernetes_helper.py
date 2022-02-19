@@ -527,6 +527,11 @@ class KubernetesHelper:
 	# A list of all K8s resources we have some knowledge about
 	kubernetes_resources = {
 		# core API
+		# ComponentStatus is deprecated
+		("ComponentStatus", ""): {
+			"api_family": ["api/v1/"],
+			"api": "componentstatuses",
+		},
 		("ConfigMap", ""): {
 			"api_family": ["api/v1/"],
 			"api": "configmaps",

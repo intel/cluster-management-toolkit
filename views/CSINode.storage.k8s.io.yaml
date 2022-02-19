@@ -4,4 +4,12 @@ default_command: csinodes
 listview:
   name: CSI Nodes
   group: Storage & Backups
-  fields: [name, drivers, age]
+  fields:
+  - name
+  - name: "drivers"
+    header: "# of Drivers:"
+    paths:
+    - path: "spec#drivers"
+      type: len
+    align: right
+  - age
