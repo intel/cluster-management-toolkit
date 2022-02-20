@@ -1,0 +1,37 @@
+kind: ClusterRoleBinding
+api_family: rbac.authorization.k8s.io
+default_command: clusterrolebindings
+command:
+- clrb
+listview:
+  name: Cluster Role Bindings
+  group: "Authorization & Access Control"
+  fields_wide:
+  - name
+  - name: role
+    header: "Role:"
+    paths:
+    - path: "roleRef#name"
+  - name: subjects
+    header: "Subjects:"
+    paths:
+    - path: "subjects"
+      pathtype: "items"
+      subpaths:
+      - kind
+      - name
+    formatting:
+      field_colors:
+      - type: "kind"
+      - type: "generic"
+    formatter: list
+  - age
+  fields:
+  - name
+  - name: subjects
+    header: "# of Subjects:"
+    paths:
+    - path: "subjects"
+      type: len
+    align: right
+  - age

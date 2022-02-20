@@ -1,0 +1,39 @@
+kind: RoleBinding
+api_family: rbac.authorization.k8s.io
+default_command: rolebindings
+command:
+- rb
+listview:
+  name: Role Bindings
+  group: "Authorization & Access Control"
+  fields_wide:
+  - namespace
+  - name
+  - name: role
+    header: "Role:"
+    paths:
+    - path: "roleRef#name"
+  - name: subjects
+    header: "Subjects:"
+    paths:
+    - path: "subjects"
+      pathtype: "items"
+      subpaths:
+      - kind
+      - name
+    formatting:
+      field_colors:
+      - type: "kind"
+      - type: "generic"
+    formatter: list
+  - age
+  fields:
+  - namespace
+  - name
+  - name: subjects
+    header: "# of Subjects:"
+    paths:
+    - path: "subjects"
+      type: len
+    align: right
+  - age

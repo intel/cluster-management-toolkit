@@ -1,0 +1,18 @@
+kind: ValidatingWebhookConfiguration
+api_family: admissionregistration.k8s.io
+default_command: validatingwebhookconfigurations
+command:
+- vwhcs
+- vwhc
+listview:
+  name: Validating Webhook Configurations
+  group: API & Extendability
+  fields:
+  - name
+  - name: data
+    header: "# of Webhooks:"
+    paths:
+    - path: "webhooks"
+      type: len
+    align: right
+  - age

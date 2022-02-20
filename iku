@@ -1356,37 +1356,6 @@ def datagetter_ingress_hosts(obj, path, default):
 	else:
 		raise Exception("Unknown ingress field")
 
-def datagetter_subject(obj, path, default):
-	users = []
-	groups = []
-	serviceaccounts = []
-
-	# Note: We're not using kind for anything else than identifying the subject at the moment,
-	# but let's complete it just in case we have use for it in the future.
-	for subject in deep_get(obj, "subjects", []):
-		sname = deep_get(subject, "name")
-		kind = deep_get(subject, "kind")
-		if kind == "User":
-			kind = ("User", deep_get(subject, "api_group", "rbac.authorization.k8s.io"))
-			users.append(sname)
-		elif kind == "Group":
-			kind = ("Group", deep_get(subject, "api_group", "rbac.authorization.k8s.io"))
-			groups.append(sname)
-		elif kind == "ServiceAccount":
-			kind = ("Group", deep_get(subject, "api_group", ""))
-			serviceaccounts.append(sname)
-		else:
-			raise Exception(f"Unknown subject kind {kind}")
-
-	if path == "users":
-		return users, {}
-	elif path == "groups":
-		return groups, {}
-	elif path == "serviceaccounts":
-		return serviceaccounts, {}
-	else:
-		raise Exception("Unknown subject type")
-
 def datagetter_regex_split_to_tuples(obj, paths, default):
 	if obj is None or paths is None or len(paths) < 2:
 		return default
@@ -2499,20 +2468,20 @@ def get_auth_rule_info(obj):
 	return info
 
 class PolicyRuleInfo:
-	def __init__(self, api_group, resource, non_resource_urls, resource_names, verbs):
-		self.api_group = api_group
+	def __init__(self, resource, api_group, non_resource_urls, resource_names, verbs):
 		self.resource = resource
+		self.api_group = api_group
 		self.non_resource_urls = non_resource_urls
 		self.resource_names = resource_names
 		self.verbs = verbs
 	def __repr__(self):
-		return repr((self.api_group, self.resource, self.non_resource_urls, self.resource_names, self.verbs))
+		return repr((self.resource, self.api_group, self.non_resource_urls, self.resource_names, self.verbs))
 
 def get_policy_rule_info(role):
 	info = []
 
 	if role == []:
-		#api_group, resource, non_resource_urls, resource_names, verbs
+		# resource, api_group, non_resource_urls, resource_names, verbs
 		return [PolicyRuleInfo(["<none>"], [], [], [], [])]
 
 	# We want one entry per resource, hence a dict
@@ -2534,7 +2503,7 @@ def get_policy_rule_info(role):
 
 		for api_group in api_groups:
 			for resource in resourcelist:
-				tmp = (api_group, resource)
+				tmp = (resource, api_group)
 				if tmp not in resources:
 					resources[tmp] = {
 						"non_resource_urls": {},
@@ -2554,7 +2523,7 @@ def get_policy_rule_info(role):
 		non_resource_urls = list(deep_get(data, "non_resource_urls", {}))
 		resource_names = list(deep_get(data, "resource_names", {}))
 		verbs = list(deep_get(data, "verbs", {}))
-		info.append(PolicyRuleInfo(api_group, resource, non_resource_urls, resource_names, verbs))
+		info.append(PolicyRuleInfo(resource, api_group, non_resource_urls, resource_names, verbs))
 
 	return info
 
@@ -2648,50 +2617,45 @@ def get_sas_info(serviceaccount):
 	return info
 
 class SubjectInfo:
-	def __init__(self, namespace, api_group, name, ref, kind, rtype):
+	def __init__(self, namespace, name, ref, kind):
 		self.namespace = namespace
-		self.api_group = api_group
 		self.name = name
 		# The reference to the "true" resource object
 		self.ref = ref
 		self.kind = kind
-		self.rtype = rtype
 	def __repr__(self):
-		return repr((self.namespace, self.api_group, self.name, self.ref, self.kind, self.rtype))
+		return repr((self.namespace, self.name, self.ref, self.kind))
 
 def get_subject_info(rolebinding):
 	subject_info = []
 
 	if rolebinding == [] or deep_get(rolebinding, "subjects") is None:
-		#namespace, api_group, name, ref, kind, rtype
-		return [SubjectInfo("N/A", "N/A", "<none>", None, "", "")]
+		# namespace, name, ref, kind
+		return [SubjectInfo("", "", None, "")]
+
+	# This works for both RoleBinding and ClusterRoleBinding since
+	# ClusterRoleBinding doesn't have a namespace field
+	rolebinding_namespace = deep_get(rolebinding, "metadata#namespace", "")
 
 	for subject in deep_get(rolebinding, "subjects", []):
 		kind = deep_get(subject, "kind")
 		name = deep_get(subject, "name")
 		api_group = deep_get(subject, "apiGroup", "")
-		namespace = deep_get(subject, "namespace", "")
-		rtype = "[subject]"
 		ref = None
-		if kind in ["ServiceAccount", "User", "Group"]:
+		if kind == "ServiceAccount":
+			namespace = deep_get(subject, "namespace", rolebinding_namespace)
 			try:
 				ref = kh.get_ref_by_kind_name_namespace((kind, api_group), name, namespace)
 			except:
 				kind = f"*{kind}"
+			if ref is None:
+				kind = f"*{kind}"
+		elif kind in ["User", "Group"]:
+			namespace = ""
+			kind = f"*{kind}"
 		else:
 			raise Exception(f"Unknown subject type; kind: {kind}, api_group: {api_group}")
-		subject_info.append(SubjectInfo(namespace, api_group, name, ref, (kind, api_group), rtype))
-
-	kind = deep_get(rolebinding, "roleRef#kind")
-	name = deep_get(rolebinding, "roleRef#name")
-	api_group = deep_get(rolebinding, "roleRef#apiGroup", "")
-	namespace = deep_get(rolebinding, "metadata#namespace", "")
-	rtype = "[roleRef]"
-	ref = kh.get_ref_by_kind_name_namespace((kind, api_group), name, namespace)
-	if ref is None:
-		kind = f"*{kind}"
-
-	subject_info.append(SubjectInfo(namespace, api_group, name, ref, (kind, api_group), rtype))
+		subject_info.append(SubjectInfo(namespace, name, ref, (kind, api_group)))
 
 	return subject_info
 
@@ -5130,7 +5094,7 @@ field_templates = {
 		"generator": generator_list,
 	},
 	"api_group": {
-		"header": "API Group:",
+		"header": "API-Group:",
 	},
 	"api_service": {
 		# (namespace, name, port)
@@ -6419,25 +6383,12 @@ field_templates = {
 	"stype": {
 		"header": "Type:",
 	},
-	"subject_groups": {
-		# [group, ...]
-		"header": "Groups:",
-		"path": "groups",
-		"datagetter": datagetter_subject,
-		"generator": generator_list,
-	},
-	"subject_serviceaccounts": {
-		"header": "Service Accounts:",
-		"path": "serviceaccounts",
-		"datagetter": datagetter_subject,
-		"generator": generator_list,
-	},
-	"subject_users": {
-		# [user, ...]
-		"header": "Users:",
-		"path": "users",
-		"datagetter": datagetter_subject,
-		"generator": generator_list,
+	"subject_count": {
+		"header": "# of Subjects:",
+		"path": "subjects",
+		"datagetter": datagetter_count,
+		"generator": generator_numerical,
+		"ralign": True,
 	},
 	"supgroups": {
 		# [group, ...]
@@ -6618,14 +6569,6 @@ field_templates = {
 		"path": "report#summary#warningCount",
 		"generator": generator_numerical_range,
 		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_medium"))],
-		"ralign": True,
-	},
-	"webhooks": {
-		# Number of webhooks
-		"header": "Webhooks:",
-		"path": "webhooks",
-		"datagetter": datagetter_count,
-		"generator": generator_numerical,
 		"ralign": True,
 	},
 	"window": {
@@ -8458,7 +8401,7 @@ def field_processor_kind(obj, path, extra_path = None, fallback = None, formatti
 		match = False
 	else:
 		resource = deep_get(obj, path[0])
-		group = deep_get(obj, path[1])
+		api_group = deep_get(obj, path[1])
 		kind = kh.guess_kind((deep_get(obj, path[0]), deep_get(obj, path[1])))
 
 	if match == False:
@@ -8467,11 +8410,14 @@ def field_processor_kind(obj, path, extra_path = None, fallback = None, formatti
 		else:
 			field = fallback
 	else:
-		resource, group = kind
+		resource, api_group = kind
+		tmp = [resource]
+		if len(api_group) > 0:
+			tmp.append(api_group)
 		if formatting is not None:
-			field = __field_processor_list([resource, group], formatting = formatting)
+			field = __field_processor_list(tmp, formatting = formatting)
 		else:
-			field = __field_processor_list([resource, group])
+			field = __field_processor_list(tmp)
 	return field
 
 def field_processor_latest_api_version(obj, path, extra_path = None, fallback = None, formatting = None):
@@ -8555,6 +8501,12 @@ def __field_processor_list(values, formatting = None):
 		if i < len(field_colors):
 			field_color = field_colors[i]
 		# An empty value means that we want the separators listed, but no value
+		# unless there's an explicit "<<<empty>>>" conditional
+		if "<<<empty>>>" in conditionals and value == "":
+			value = "<<<empty>>>"
+
+		noseparator = False
+
 		if value != "":
 			conditional = deep_get(conditionals, value)
 			if conditional is None:
@@ -8577,6 +8529,7 @@ def __field_processor_list(values, formatting = None):
 				substitute = deep_get(conditional, "substitute")
 				stop = deep_get(conditional, "stop")
 				field_color = deep_get(conditional, "field_color", field_color)
+				noseparator = deep_get(conditional, "no_separator", False)
 
 				if substitute is not None:
 					value = substitute
@@ -8588,9 +8541,10 @@ def __field_processor_list(values, formatting = None):
 				field.append((f"{value}", field_color))
 
 		# If this is the last element in the list, append the suffix instead
+		item_separator = None
 		if i == len(values) - 1:
 			item_separator = suffix
-		elif i < len(item_separators):
+		elif i < len(item_separators) and noseparator == False:
 			item_separator = item_separators[i]
 		i += 1
 		# Inserting an item_separator of None
@@ -9629,6 +9583,20 @@ def field_processor_endpoint_slices(obj, path = None, extra_paths = None, fallba
 
 	return field
 
+# Returns True if the object exists, False if not
+def field_processor_exists(obj, path = None, extra_paths = None, fallback = None, formatting = None):
+	# If the has len(4) it's [resource_path, api_group_path, name, namespace]
+	# otherwise it's [kind, name, namespace]
+	if len(path) == 4:
+		kind = (deep_get(obj, path[0]), deep_get(obj, path[1], ""))
+		name = deep_get(obj, path[2])
+		namespace = deep_get(obj, path[3], "")
+	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
+	if ref is None:
+		return [("No", ("main", "status_not_ok"))]
+	else:
+		return [("Yes", ("main", "status_ok"))]
+
 def export_data(filename, value):
 	vtype, value = decode_value(value)
 
@@ -10307,7 +10275,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					kind = deep_get(value, "kind")
 					if kind is None:
 						kind_path = deep_get(value, "kind_path", "")
-						kind = deep_get(obj, kind_path)
+						if type(kind_path) == tuple:
+							kind = (deep_get(obj, kind_path[0]), deep_get(obj, kind_path[1]))
+						else:
+							kind = deep_get(obj, kind_path)
 					if call_name_path is not None:
 						call_name = deep_get(obj, call_name_path)
 
@@ -13018,8 +12989,8 @@ infoviews = {
 	},
 	("ClusterRole", "rbac.authorization.k8s.io"): {
 		"windowheader": "Cluster Role Info",
-		"fields": ["api_group", "resource", "non_resource_urls", "resource_names", "verbs"],
-		"sortcolumn": "resource",
+		"fields": ["resource", "api_group", "non_resource_urls", "resource_names", "verbs"],
+		"sortcolumn": "api_group",
 		"infopad": {},
 		"listpad": {
 			"infogetter": get_policy_rule_info,
@@ -13027,26 +12998,43 @@ infoviews = {
 	},
 	("ClusterRoleBinding", "rbac.authorization.k8s.io"): {
 		"windowheader": "Cluster Role Binding Info",
-		"fields": ["namespace", "name", "kind", "rtype"],
-		"sortcolumn": "name",
+		"fields": ["namespace", "name", "kind"],
+		"sortcolumn": "rtype",
 		"activatedfun": resourceinfodispatch,
 		"extraref": "kind",
 		"infopad": {
 			"Cluster Role:": {
+				"fieldname": [("Cluster ", ("main", "infoheader")), ("R", ("main", "infoheader_shortcut")), ("ole:", ("main", "infoheader"))],
 				"processor": None,
-			},
-			"  API Group:": {
-				"path": "roleRef#apiGroup",
 			},
 			"  Name:": {
 				"path": "roleRef#name",
 			},
 			"  Kind:": {
-				"path": "roleRef#kind",
+				"path": ["roleRef#kind", "roleRef#apiGroup"],
+				"processor": field_processor_kind,
+				"formatting": {
+					"field_colors": [("types", "kind"), ("types", "api_group")],
+					"item_separators": [("separators", "kind_apigroup")],
+				},
+			},
+			"  Exists:": {
+				"path": ["roleRef#kind", "roleRef#apiGroup", "roleRef#name", "metadata#namespace"],
+				"processor": field_processor_exists,
 			},
 		},
 		"listpad": {
 			"infogetter": get_subject_info,
+		},
+		"shortcuts": {
+			"Role Reference": {
+				"shortcut": ord("R"),
+				"helptext": ("[Shift] + R", "Open info page for Cluster Role"),
+				"call": resourceinfodispatch,
+				"name_path": "roleRef#name",
+				"namespace_path": "metadata#namespace",
+				"kind_path": ("roleRef#kind", "roleRef#apiGroup"),
+			},
 		},
 	},
 	("ClusterServiceVersion", "operators.coreos.com"): {
@@ -13524,6 +13512,12 @@ infoviews = {
 				"formatting": {
 					"field_colors": [("types", "generic"), ("types", "generic")],
 					"item_separators": [("separators", "kind")],
+					"conditionals": {
+						"<<<empty>>>": {
+							"skip": True,
+							"no_separator": True,
+						},
+					},
 				},
 				"extra_paths": ["fields#group", "fields#version"]
 			},
@@ -15135,8 +15129,8 @@ infoviews = {
 		}
 	},
 	("Role", "rbac.authorization.k8s.io"): {
-		"fields": ["api_group", "resource", "non_resource_urls", "resource_names", "verbs"],
-		"sortcolumn": "resource",
+		"fields": ["resource", "api_group", "non_resource_urls", "resource_names", "verbs"],
+		"sortcolumn": "api_group",
 		"infopad": {},
 		"listpad": {
 			"infogetter": get_policy_rule_info,
@@ -15144,26 +15138,43 @@ infoviews = {
 	},
 	("RoleBinding", "rbac.authorization.k8s.io"): {
 		"windowheader": "Role Binding Info",
-		"fields": ["namespace", "api_group", "name", "kind", "rtype"],
-		"sortcolumn": "name",
+		"fields": ["namespace", "name", "kind"],
+		"sortcolumn": "rtype",
 		"activatedfun": resourceinfodispatch,
 		"extraref": "kind",
 		"infopad": {
 			"Role:": {
+				"fieldname": [("R", ("main", "infoheader_shortcut")), ("ole:", ("main", "infoheader"))],
 				"processor": None,
-			},
-			"  API Group:": {
-				"path": "roleRef#apiGroup",
 			},
 			"  Name:": {
 				"path": "roleRef#name",
 			},
 			"  Kind:": {
-				"path": "roleRef#kind",
+				"path": ["roleRef#kind", "roleRef#apiGroup"],
+				"processor": field_processor_kind,
+				"formatting": {
+					"field_colors": [("types", "kind"), ("types", "api_group")],
+					"item_separators": [("separators", "kind_apigroup")],
+				},
+			},
+			"  Exists:": {
+				"path": ["roleRef#kind", "roleRef#apiGroup", "roleRef#name", "metadata#namespace"],
+				"processor": field_processor_exists,
 			},
 		},
 		"listpad": {
 			"infogetter": get_subject_info,
+		},
+		"shortcuts": {
+			"Role Reference": {
+				"shortcut": ord("R"),
+				"helptext": ("[Shift] + R", "Open info page for Cluster Role"),
+				"call": resourceinfodispatch,
+				"name_path": "roleRef#name",
+				"namespace_path": "metadata#namespace",
+				"kind_path": ("roleRef#kind", "roleRef#apiGroup"),
+			},
 		},
 	},
 	("RuntimeClass", "node.k8s.io"): {
@@ -15951,20 +15962,6 @@ views_builtin = {
 		"fields": ["name", "age"],
 		"kind": ("ClusterPolicy", "nvidia.com"),
 	},
-	# rbac.authorization.k8s.io
-	"Cluster Role Bindings": {
-		"commandline": ["clusterrolebindings", "clusterrolebinding", "clrb"],
-		"group": "Authorization & Access Control",
-		"fields": ["name", "age", "role", "subject_users", "subject_groups", "subject_serviceaccounts"],
-		"kind": ("ClusterRoleBinding", "rbac.authorization.k8s.io"),
-	},
-	# rbac.authorization.k8s.io
-	"Cluster Roles": {
-		"commandline": ["clusterroles", "clusterrole", "clr"],
-		"group": "Authorization & Access Control",
-		"fields": ["name", "age"],
-		"kind": ("ClusterRole", "rbac.authorization.k8s.io"),
-	},
 	# operators.coreos.com
 	"Cluster Service Versions": {
 		"commandline": ["clusterserviceversions", "clusterserviceversion", "csvs", "csv"],
@@ -16425,13 +16422,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("MPIJob", "kubeflow.org"),
 	},
-	# admissionregistration.k8s.io
-	"Mutating Webhook Configurations": {
-		"group": "API & Extendability",
-		"commandline": ["mutatingwebhookconfigurations",  "mutatingwebhookconfigurations", "mwhcs", "mwhc"],
-		"fields": ["name", "webhooks", "age"],
-		"kind": ("MutatingWebhookConfiguration", "admissionregistration.k8s.io"),
-	},
 	# core API
 	"Namespaces": {
 		"commandline": ["namespaces", "namespace", "ns"],
@@ -16642,20 +16632,6 @@ views_builtin = {
 		"fields": ["namespace", "name", "age", "request", "limit"],
 		"kind": ("ResourceQuota", ""),
 	},
-	# rbac.authorization.k8s.io
-	"Role Bindings": {
-		"commandline": ["rolebindings", "rolebinding", "rb"],
-		"group": "Authorization & Access Control",
-		"fields": ["namespace", "name", "age"],
-		"kind": ("RoleBinding", "rbac.authorization.k8s.io"),
-	},
-	# rbac.authorization.k8s.io
-	"Roles": {
-		"commandline": ["roles", "role"],
-		"group": "Authorization & Access Control",
-		"fields": ["namespace", "name", "age"],
-		"kind": ("Role", "rbac.authorization.k8s.io"),
-	},
 	# policy.linkerd.io
 	"Server Authorizations": {
 		"commandline": ["serverauthorizations", "serverauthorization", "saz"],
@@ -16804,13 +16780,6 @@ views_builtin = {
 		"fields": ["namespace", "name", "age"],
 		"sortcolumn": "namespace",
 		"kind": ("TraefikService", "traefik.containo.us"),
-	},
-	# admissionregistration.k8s.io
-	"Validating Webhook Configurations": {
-		"commandline": ["validatingwebhookconfigurations",  "validatingwebhookconfigurations", "vwhcs", "vwhc"],
-		"group": "API & Extendability",
-		"fields": ["name", "webhooks", "age"],
-		"kind": ("ValidatingWebhookConfiguration", "admissionregistration.k8s.io"),
 	},
 	# networking.istio.io
 	"Virtual Services": {
