@@ -67,13 +67,13 @@ def deep_get(dictionary, path, default = None):
 		result = default
 	return result
 
-def deep_get_with_fallback(obj, paths, default = None):
+def deep_get_with_fallback(obj, paths, default = None, fallback_on_empty = False):
 	result = None
 	for path in paths:
 		result = deep_get(obj, path)
-		if result is not None:
+		if result is not None and not (type(result) in [list, str, dict] and len(result) == 0 and fallback_on_empty == True):
 			break
-	if result is None:
+	if result is None or type(result) in [list, str, dict] and len(result) == 0 and fallback_on_empty == True:
 		result = default
 	return result
 

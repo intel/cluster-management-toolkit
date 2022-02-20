@@ -1,4 +1,6 @@
 kind: Event
+# For now this doesn't work; to be fixed
+# api_family: events.k8s.io
 default_command: events
 command:
 - ev
@@ -8,14 +10,66 @@ listview:
   fields:
   - namespace
   - name
-  - seen
+  - name: seen
+    header: "Last Seen:"
+    paths:
+    - path: ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
+      pathtype: value
+      type: timestamp
+    formatter: age
+    align: right
   - event_status
   - event_reason
-  - obj
-  - source
-  - first_seen
-  - count
+  - name: regarding
+    header: "Regarding:"
+    paths:
+    # Ideally we want to include the API-family here too, and convert it to mixed form,
+    # but for that we need a custom handler
+    - path: [["regarding#kind", "involvedObject#kind"], ["regarding#name", "involvedObject#name"]]
+      pathtype: tuple
+      type: raw
+    formatting:
+      field_colors:
+      - type: kind
+      - type: generic
+    formatter: list
+  - name: reporter
+    header: "Reporter:"
+    paths:
+    - path: [["reportingController", "deprecatedSource#component", "source#component"], ["reportingInstance", "deprecatedSource#host", "source#host"]]
+      # This is needed, because the old Events API can return the new fields empty
+      fallback_on_empty: true
+      pathtype: tuple
+      type: raw
+    formatting:
+      field_colors:
+      - type: generic
+      - type: generic
+    formatter: list
+  - name: first_seen
+    header: "First Seen:"
+    paths:
+    - path: ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
+      pathtype: value
+      type: timestamp
+    formatter: age
+    align: right
+  - name: count
+    header: "Count:"
+    paths:
+    - path: ["series#count", "deprecatedCount", "count"]
+      pathtype: value
+      type: raw
+    formatter: numerical
+    align: right
   - message
+  - name: message
+    header: "Message:"
+    paths:
+    - path: "message"
+      pathtype: value
+      type: str
+      replace_quotes: same
   sortcolumn: seen
   shortcuts:
     "Show Resource":
@@ -26,7 +80,7 @@ listview:
       action_call: eventdispatch
       action_args:
         _pass_obj: true
-        kind_path: "involvedObject#kind"
-        name_path: "involvedObject#name"
-        namespace_path: "involvedObject#namespace"
-        api_version_path: "involvedObject#apiVersion"
+        kind_path: ["regarding#kind", "involvedObject#kind"]
+        name_path: ["regarding#kind", "involvedObject#name"]
+        namespace_path: ["regarding#kind", "involvedObject#namespace"]
+        api_version_path: ["regarding#apiVersion", "involvedObject#apiVersion"]

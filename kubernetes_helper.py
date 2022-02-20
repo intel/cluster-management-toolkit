@@ -544,6 +544,10 @@ class KubernetesHelper:
 			"api_family": ["/apis/events.k8s.io/v1/", "api/v1/"],
 			"api": "events",
 		},
+		("Event", "events.k8s.io"): {
+			"api_family": ["/apis/events.k8s.io/v1/", "api/v1/"],
+			"api": "events",
+		},
 		("LimitRange", ""): {
 			"api_family": ["api/v1/"],
 			"api": "limitranges",

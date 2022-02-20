@@ -1795,22 +1795,26 @@ def generic_infogetter(vlist, fields, **kwargs):
 				default = deep_get(field, "default", "")
 				values = []
 				for _path in paths:
-					vtype = deep_get(_path, "type", "str")
+					vtype = deep_get(_path, "type", "raw")
 					path = deep_get(_path, "path")
 					ptype = deep_get(_path, "pathtype", "list")
 					action = deep_get(_path, "action")
 					subpaths = deep_get_with_fallback(_path, ["subpaths", "subpath"], [])
+					fallback_on_empty = deep_get(_path, "fallback_on_empty", False)
+					replace_quotes = deep_get(_path, "replace_quotes", "no")
 					if type(subpaths) == str:
 						subpaths = [subpaths]
 
+					if type(path) == str:
+						path = [path]
 					if ptype == "list":
 						# Just return the list
-						value = deep_get(obj, path, default)
+						value = deep_get_with_fallback(obj, path, default = default, fallback_on_empty = fallback_on_empty)
 					elif ptype == "items":
 						if len(subpaths) == 0:
 							raise Exception("When using action == items a subpath must be specified")
 						value = []
-						for item in deep_get(obj, path, []):
+						for item in deep_get_with_fallback(obj, path, [], fallback_on_empty = fallback_on_empty):
 							tmp = []
 							for subpath in subpaths:
 								tmp.append(deep_get(item, subpath))
@@ -1818,11 +1822,20 @@ def generic_infogetter(vlist, fields, **kwargs):
 								value.append(tmp[0])
 							else:
 								value.append(tuple(tmp))
+					elif ptype == "tuple":
+						value = []
+						for _path in path:
+							value.append(deep_get_with_fallback(obj, _path, fallback_on_empty = fallback_on_empty))
+						value = tuple(value)
 					else:
-						value = deep_get(obj, path, default)
+						value = deep_get_with_fallback(obj, path, default)
 					if vtype == "str":
-						# no need to convert
-						pass
+						# We don't want any newlines, and extra trailing whitespace
+						value = value.replace("\n", "\\n").rstrip()
+						if replace_quotes == "pretty":
+							value = value.replace("\\\"", "“")
+						elif replace_quotes == "same":
+							value = value.replace("\\\"", "\"")
 					elif vtype in ["float", "int", "bool"]:
 						if type(value) == tuple:
 							tmp = []
@@ -1866,10 +1879,18 @@ def generic_infogetter(vlist, fields, **kwargs):
 						value = _values
 					elif vtype == "len":
 						value = str(len(value))
+					elif vtype == "timestamp":
+						value = get_since(timestamp_to_datetime(value))
+					elif vtype == "raw":
+						# Don't convert this type
+						pass
+					else:
+						raise Exception(f"Unknown value type {vtype}; the view file is probably invalid")
 					values.append(value)
 				if len(values) == 1:
-					value = values[0]
-				d[name] = value
+					d[name] = values[0]
+				else:
+					d[name] = values
 				continue
 			else:
 				generator = deep_get(field_templates, f"{field}#generator", generator_basic)
@@ -3682,7 +3703,7 @@ def resource_kind_to_rtype(resource):
 		("Endpoints", ""): "[endpoints]",
 		("EndpointSlice", "discovery.k8s.io"): "[endpoint_slice]",
 		("EphemeralContainer", ""): "[ephemeral_container]",
-		("Event", ""): "[event]",
+		("Event", "events.k8s.io"): "[event]",
 		("HorizontalPodAutoscaler", "autoscaling"): "[pod_autoscaler]",
 		("Ingress", "networking.k8s.io"): "[ingress]",
 		("InitContainer", ""): "[init_container]",
@@ -3923,7 +3944,7 @@ def get_resource_info(obj):
 			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
 
 	if "events" not in deep_get(iktconfig, "Pods#filter_resources", []):
-		kind = ("Event", "")
+		kind = ("Event", "events.k8s.io")
 		rtype = resource_kind_to_rtype(kind)
 
 		vlist, status = kh.get_list_by_kind_namespace(kind, "")
@@ -4800,7 +4821,7 @@ def generic_listgetter(kind, namespace, **kwargs):
 
 def get_events_by_kind_name_namespace(kind, name, namespace):
 	events = []
-	vlist, status = kh.get_list_by_kind_namespace(("Event", ""), "")
+	vlist, status = kh.get_list_by_kind_namespace(("Event", "events.k8s.io"), "")
 	for obj in vlist:
 		__involved_kind = deep_get_with_fallback(obj, ["regarding#kind", "involvedObject#kind"])
 		__involved_api_version = deep_get_with_fallback(obj, ["regarding#apiVersion", "involvedObject#apiVersion"])
@@ -4811,8 +4832,12 @@ def get_events_by_kind_name_namespace(kind, name, namespace):
 		last_seen = datetime_to_timestamp(__get_timestamp_with_fallback(obj, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]))
 		status = deep_get(obj, "type", "")
 		reason = deep_get(obj, "reason", "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
-		src_component = deep_get_with_fallback(obj, ["reportingController", "deprecatedSource#component", "source#component"], "")
-		src_host = deep_get_with_fallback(obj, ["reportingInstance", "deprecatedSource#host", "source#host"], "")
+		src_component = deep_get(obj, "reportingController", "")
+		if len(src_component) == 0:
+			src_component = deep_get_with_fallback(obj, ["deprecatedSource#component", "source#component"], "")
+		src_host = deep_get(obj, "reportingInstance", "")
+		if len(src_host) == 0:
+			src_host = deep_get_with_fallback(obj, ["deprecatedSource#host", "source#host"], "")
 		if len(src_component) == 0:
 			source = src_host
 		elif len(src_host) == 0:
@@ -5246,12 +5271,6 @@ field_templates = {
 		"datagetter": datagetter_status_latest_condition,
 		"generator": generator_status,
 	},
-	"count": {
-		"header": "Count:",
-		"generator": generator_numerical,
-		"path": "count",
-		"ralign": True,
-	},
 	"cpu": {
 		"header": "CPUs:",
 		"path": ["status#allocatable#cpu", "status#capacity#cpu"],
@@ -5433,13 +5452,6 @@ field_templates = {
 		"path": "report#summary#failCount",
 		"generator": generator_numerical_range,
 		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_high"))],
-		"ralign": True,
-	},
-	"first_seen": {
-		"header": "First Seen:",
-		"path": ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"],
-		"datagetter": datagetter_timestamp_with_fallback,
-		"generator": generator_age,
 		"ralign": True,
 	},
 	"from": {
@@ -5859,14 +5871,6 @@ field_templates = {
 		"header": "Non-Resource URLs:",
 		"generator": generator_list,
 	},
-	"obj": {
-		# (kind, name)
-		"header": "Object:",
-		"path": ["involvedObject#kind", "involvedObject#name"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_list,
-		"field_colors": [("types", "kind"), ("types", "generic")],
-	},
 	"operation": {
 		"header": "Operation:",
 		"generator": generator_list,
@@ -6224,14 +6228,6 @@ field_templates = {
 		"header": "Secret:",
 		"path": "spec#secretName",
 	},
-	"seen": {
-		"header": "Last Seen:",
-		# If there's no lastObservedTime we fallback to eventTime
-		"path": ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"],
-		"datagetter": datagetter_timestamp_with_fallback,
-		"generator": generator_age,
-		"ralign": True,
-	},
 	"selinux": {
 		"header": "SELinux:",
 		"path": "spec#seLinux#rule",
@@ -6544,11 +6540,11 @@ def get_formatting(field, formatting, default):
 	return result
 
 
-def fieldgenerator(view, fields = None, sortcolumn = None, blacklist = []):
+def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 	global namespace
 
-	if namespace != "" and "namespace" not in blacklist:
-		blacklist.append("namespace")
+	if namespace != "" and "namespace" not in denylist:
+		denylist.append("namespace")
 
 	if fields is None:
 		if deep_get(views, f"{view}#fields") is None:
@@ -6560,35 +6556,57 @@ def fieldgenerator(view, fields = None, sortcolumn = None, blacklist = []):
 		else:
 			fields += views[view]["fields"]
 
-	# delete all blacklisted fields
-	for field in blacklist:
+	field_names = []
+	for field in fields:
+		if type(field) == str:
+			field_names.append(field)
+		elif type(field) == tuple:
+			field_names.append(field[0])
+		elif type(field) == dict:
+			field_names.append(field["name"])
+
+	# delete all denylisted fields
+	for field in denylist:
 		try:
-			fields.remove(field)
+			field_names.remove(field)
 		except ValueError:
 			pass
 
 	# OK, we've pruned all unwanted fields; now we need to check that the sort column
 	# is still valid, and if not pick another one
 	if sortcolumn is not None and sortcolumn not in fields:
-		if "name" in fields:
+		if "name" in field_names:
 			sortcolumn = "name"
-		elif "namespace" in fields:
+		elif "namespace" in field_names:
 			sortcolumn = "namespace"
 		else:
 			if type(fields[0]) == str:
 				sortcolumn = fields[0]
 			elif type(fields[0]) == tuple:
 				sortcolumn = fields[0][0]
+			elif type(fields[0]) == dict:
+				sortcolumn = fields[0]["name"]
 	elif sortcolumn is None:
 		sortcolumn = deep_get(iktconfig, f"{view}#sortcolumn", "")
-		if sortcolumn not in fields:
+		if sortcolumn not in field_names:
 			sortcolumn = deep_get(views, f"{view}#sortcolumn", "")
-		if sortcolumn not in fields:
+		if sortcolumn not in field_names:
 			sortcolumn = "name"
 
 	tmp_field = OrderedDict()
 
 	for field in fields:
+		if type(field) == str:
+			name = field
+		elif type(field) == tuple:
+			name = field[0]
+		elif type(field) == dict:
+			name = field["name"]
+
+		# Only fields left in field_names should be included
+		if name not in field_names:
+			continue
+
 		header = ""
 
 		# If we get a tuple the first part is field, the second overrides header;
@@ -6615,6 +6633,12 @@ def fieldgenerator(view, fields = None, sortcolumn = None, blacklist = []):
 			elif formatter in ["list"]:
 				generator = generator_list
 				processor = processor_list
+			elif formatter in "numerical":
+				generator = generator_numerical
+				processor = None
+			elif formatter == "age":
+				generator = generator_age
+				processor = processor_age
 			else:
 				raise Exception(f"Unknown formatter {formatter}")
 
@@ -6688,7 +6712,7 @@ def genericlistloop(stdscr, view):
 	global initial_name
 	global initial_namespace
 	global latest_info
-	blacklist = deep_get(views, f"{view}#field_blacklist", [])
+	denylist = deep_get(views, f"{view}#field_denylist", [])
 	fields_custom = deep_get(views, f"{view}#custom_fields", [])
 	fields_narrow = deep_get(views, f"{view}#fields", [])
 	fields_wide = deep_get(views, f"{view}#fields_wide", [])
@@ -6704,7 +6728,7 @@ def genericlistloop(stdscr, view):
 	fields = deep_get(fields_types[fields_index], "fields")
 	fields_name = deep_get(fields_types[fields_index], "name")
 
-	field_list, sortcolumn = fieldgenerator(view, fields = fields, blacklist = blacklist)
+	field_list, sortcolumn = fieldgenerator(view, fields = fields, denylist = denylist)
 	uip = UIProps(stdscr)
 
 	windowheader = view
@@ -6813,7 +6837,7 @@ def genericlistloop(stdscr, view):
 				]
 			statusarray2 = [
 			]
-			if view != "Contexts" and ("namespace" in blacklist or "namespace" in fields):
+			if view != "Contexts" and ("namespace" in denylist or "namespace" in fields):
 				statusarray2 += [("Namespace: ", ("statusbar", "infoheader")), (f"{namespace if len(namespace) > 0 else '<All>'}", ("statusbar", "highlight"))]
 
 			if len(statusarray2) > 0:
@@ -6898,7 +6922,7 @@ def genericlistloop(stdscr, view):
 				fields_index = 0
 			fields = deep_get(fields_types[fields_index], "fields")
 			fields_name = deep_get(fields_types[fields_index], "name")
-			field_list, sortcolumn = fieldgenerator(view, fields = fields, blacklist = blacklist)
+			field_list, sortcolumn = fieldgenerator(view, fields = fields, denylist = denylist)
 			uip.reinit_window(field_list, sortcolumn = sortcolumn)
 			uip.resize_listpad(height = -1, width = -1)
 			uip.refresh_all()
@@ -7054,7 +7078,7 @@ def genericlistloop(stdscr, view):
 					namespace = ""
 				else:
 					namespace = selection
-			field_list, sortcolumn = fieldgenerator(view, blacklist = [])
+			field_list, sortcolumn = fieldgenerator(view, denylist = [])
 			uip.init_window(field_list, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun)
 			headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = 1, xpos = 1)
 
@@ -9664,8 +9688,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 	fields = deep_get_with_fallback(viewref, ["custom_fields", "fields"])
 	sortcolumn = deep_get(viewref, "sortcolumn")
-	field_blacklist = deep_get(viewref, "field_blacklist", [])
-	field_list, sortcolumn = fieldgenerator(None, fields = fields, sortcolumn = sortcolumn, blacklist = field_blacklist)
+	field_denylist = deep_get(viewref, "field_denylist", [])
+	field_list, sortcolumn = fieldgenerator(None, fields = fields, sortcolumn = sortcolumn, denylist = field_denylist)
 
 	# If no window header has been specified that overrides the default, just use the view name with " Info" tacked on at the end
 	if "title" in kwargs:
@@ -10255,9 +10279,9 @@ def eventdispatch(stdscr, **kwargs):
 		return curses_helper.retval.RETURNDONE
 
 	kind_path = deep_get(kwargs, "kind_path")
-	kind = deep_get(obj, kind_path)
+	kind = deep_get_with_fallback(obj, kind_path)
 	api_version_path = deep_get(kwargs, "api_version_path")
-	api_version = deep_get(obj, api_version_path, "")
+	api_version = deep_get_with_fallback(obj, api_version_path, "")
 	# Is this a core API?
 	if "/" not in api_version:
 		api_family = ""
@@ -10266,9 +10290,9 @@ def eventdispatch(stdscr, **kwargs):
 	kind = (kind, api_family)
 
 	name_path = deep_get(kwargs, "name_path")
-	name = deep_get(obj, name_path)
+	name = deep_get_with_fallback(obj, name_path)
 	namespace_path = deep_get(kwargs, "namespace_path")
-	namespace = deep_get_with_fallback(obj, [namespace_path, "metadata#namespace"], "")
+	namespace = deep_get_with_fallback(obj, namespace_path + ["metadata#namespace"], "")
 	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	return resourceinfodispatch(stdscr, ref, kind)
 
@@ -12177,7 +12201,7 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 	global defaultview
 	hide_unavailable = deep_get_with_fallback(iktconfig, ["Selector#hide_unavailable_apis", "Global#hide_unavailable_apis"], True)
 	categorise = deep_get_with_fallback(iktconfig, ["Selector#categorise"], True)
-	sortcolumn = deep_get(iktconfig, "Selector#sortcolumn", "kind")
+	sortcolumn = deep_get(iktconfig, "Selector#sortcolumn", "family")
 
 	if sortcolumn == "family":
 		if categorise == True:
@@ -17105,16 +17129,16 @@ def customise_listviews():
 			custom_fields[field] = None
 		viewref["custom_fields"] = list(custom_fields)
 
-		# Next up it's time for the field blacklist
-		if "blacklist" in deep_get(iktconfig, f"{view}", {}):
-			blacklist = deep_get(iktconfig, f"{view}#fields", [])
-			viewref["field_blacklist"] = blacklist
+		# Next up it's time for the field denylist
+		if "denylist" in deep_get(iktconfig, f"{view}", {}):
+			denylist = deep_get(iktconfig, f"{view}#fields", [])
+			viewref["field_denylist"] = denylist
 
 	# As a special case, the configuration option "Inventory#ping_hosts"
-	# modifies the blacklist, but *only* if the field blacklist is unset
+	# modifies the denylist, but *only* if the field denylist is unset
 	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", "Lazy")
-	if ping_hosts == "Never" and "field_blacklist" not in views["Inventory"]:
-		views["Inventory"]["field_blacklist"] = ["status"]
+	if ping_hosts == "Never" and "field_denylist" not in views["Inventory"]:
+		views["Inventory"]["field_denylist"] = ["status"]
 
 def main():
 	defaultthemefile = f"{THEMEDIR}/{DEFAULT_THEME}"
