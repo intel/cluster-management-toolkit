@@ -2711,53 +2711,6 @@ def get_controller_from_owner_references(owner_references):
 				controller = (kind, deep_get(owr, "name"))
 	return controller
 
-class CiliumEndpointInfo:
-	def __init__(self, namespace, name, ref, endpoint_id, identity_id, ingress_enforcement, egress_enforcement, visibility_policy, endpoint_state, ipv4, ipv6, age):
-		self.namespace = namespace
-		self.name = name
-		# The reference to the "true" resource object
-		self.ref = ref
-		self.endpoint_id = endpoint_id
-		self.identity_id = identity_id
-		self.ingress_enforcement = ingress_enforcement
-		self.egress_enforcement = egress_enforcement
-		self.visibility_policy = visibility_policy
-		self.endpoint_state = endpoint_state
-		self.ipv4 = ipv4
-		self.ipv6 = ipv6
-		self.age = age
-	def __repr__(self):
-		return repr((self.namespace, self.name, self.ref, self.endpoint_id, self.identity_id, self.ingress_enforcement, self.egress_enforcement, self.visibility_policy, self.endpoint_state, self.ipv4, self.ipv6, self.age))
-
-def get_cilium_ep_info(vlist, extra_vars = {}):
-	info = []
-
-	if vlist == []:
-		return []
-
-	for obj in vlist:
-		name = deep_get(obj, "metadata#name")
-		namespace = deep_get(obj, "metadata#namespace")
-		ref = obj
-		timestamp = timestamp_to_datetime(deep_get(obj, "metadata#creationTimestamp"))
-		age = get_since(timestamp)
-		endpoint_id = deep_get(obj, "status#id", "")
-		identity_id = deep_get(obj, "status#identity#id", "")
-		ingress_enforcement = deep_get(obj, "status#policy#ingress#enforcing", "")
-		egress_enforcement = deep_get(obj, "status#policy#egress#enforcing", "")
-		visibility_policy = deep_get(obj, "status#policy#visibility#enforcing", "")
-		endpoint_state = deep_get(obj, "status#state", "Unknown")
-		ipv4 = []
-		ipv6 = []
-		for item in deep_get(obj, "status#networking#addressing", []):
-			if "ipv4" in item:
-				ipv4.append(item["ipv4"])
-			if "ipv6" in item:
-				ipv6.append(item["ipv6"])
-		info.append(CiliumEndpointInfo(namespace, name, ref, endpoint_id, identity_id, ingress_enforcement, egress_enforcement, visibility_policy, endpoint_state, ipv4, ipv6, age))
-
-	return info
-
 def get_endpoint_ips(subsets):
 	endpoints = []
 	notready = 0
@@ -5443,15 +5396,6 @@ field_templates = {
 		"generator": generator_age,
 		"ralign": True,
 	},
-	"egress_enforcement": {
-		"header": "Egress Enforcement:",
-	},
-	"endpoint_id": {
-		"header": "Endpoint ID:",
-	},
-	"endpoint_state": {
-		"header": "Endpoint State:",
-	},
 	"endpoints": {
 		"header": "Endpoints:",
 		"path": "subsets",
@@ -5647,9 +5591,6 @@ field_templates = {
 		"datagetter": datagetter_ingress_address,
 		"generator": generator_list,
 	},
-	"ingress_enforcement": {
-		"header": "Ingress Enforcement:",
-	},
 	"ingress_hosts": {
 		"header": "Hosts:",
 		# Note: Artificial path
@@ -5694,14 +5635,6 @@ field_templates = {
 		"header": "IPs:",
 		"generator": generator_list,
 		"ellipsise": 3,
-	},
-	"ipv4": {
-		"header": "IPv4:",
-		"generator": generator_list,
-	},
-	"ipv6": {
-		"header": "IPv6:",
-		"generator": generator_list,
 	},
 	"issuer": {
 		# (kind, name)
@@ -6521,9 +6454,6 @@ field_templates = {
 		"header": "Version:",
 		"path": "spec#version",
 	},
-	"visibility_policy": {
-		"header": "Visibility Policy:",
-	},
 	"vlen": {
 		"header": "Length:",
 		"ralign": True,
@@ -6672,6 +6602,8 @@ def fieldgenerator(view, fields = None, sortcolumn = None, blacklist = []):
 			header = deep_get(field, "header")
 			formatter = deep_get(field, "formatter")
 			if formatter is None:
+				generator = generator_basic
+				processor = None
 				pass
 			elif formatter == "mem":
 				generator = generator_mem_single
@@ -7556,7 +7488,6 @@ def genericlistloop(stdscr, view):
 				action_args = deep_get(value, "action_args", {})
 				if "_pass_obj" in action_args:
 					action_args["obj"] = selected.ref
-					action_args.pop("_pass_obj")
 				action_call = deep_get(value, "action_call")
 				if action == "toggle_var":
 					var = deep_get(action_args, "var")
@@ -10318,13 +10249,26 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			if force_update == True:
 				uip.force_update()
 
-def eventdispatch(stdscr, ref, view):
-	kind = deep_get(ref, "involvedObject#kind")
-	kind = kh.guess_kind(kind)
-	name = deep_get(ref, "involvedObject#name")
-	namespace = deep_get(ref, "involvedObject#namespace")
-	if namespace is None:
-		namespace = deep_get(ref, "metadata#namespace")
+def eventdispatch(stdscr, **kwargs):
+	obj = deep_get(kwargs, "obj")
+	if obj is None:
+		return curses_helper.retval.RETURNDONE
+
+	kind_path = deep_get(kwargs, "kind_path")
+	kind = deep_get(obj, kind_path)
+	api_version_path = deep_get(kwargs, "api_version_path")
+	api_version = deep_get(obj, api_version_path, "")
+	# Is this a core API?
+	if "/" not in api_version:
+		api_family = ""
+	else:
+		api_family = api_version.split("/")[0]
+	kind = (kind, api_family)
+
+	name_path = deep_get(kwargs, "name_path")
+	name = deep_get(obj, name_path)
+	namespace_path = deep_get(kwargs, "namespace_path")
+	namespace = deep_get_with_fallback(obj, [namespace_path, "metadata#namespace"], "")
 	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	return resourceinfodispatch(stdscr, ref, kind)
 
@@ -15898,28 +15842,12 @@ views_builtin = {
 	#	"kind": ("CiliumClusterwideNetworkPolicy", "cilium.io"),
 	#},
 	# cilium.io
-	"Cilium Endpoints": {
-		"commandline": ["ciliumendpoints", "ciliumendpoint", "ciliumeps", "ciliumep", "ceps", "cep"],
-		"group": "CNI",
-		"fields": ["namespace", "name", "endpoint_id", "identity_id", "ingress_enforcement", "egress_enforcement", "visibility_policy", "endpoint_state", "ipv4", "ipv6", "age"],
-		"sortcolumn": "namespace",
-		"kind": ("CiliumEndpoint", "cilium.io"),
-		"infogetter": get_cilium_ep_info,
-	},
-	# cilium.io
 	#"Cilium External Workloads": {
 	#	"commandline": ["ciliumexternalworkloads", "ciliumexternalworkload", "cews", "cew"],
 	#	"group": "CNI",
 	#	"fields": [FIXME],
 	#	"kind": ("CiliumExternalWorkload", "cilium.io"),
 	#},
-	# cilium.io
-	"Cilium Identities": {
-		"commandline": ["ciliumidentities", "ciliumidentity", "ciliumids", "ciliumid"],
-		"group": "CNI",
-		"fields": ["name", "age"],
-		"kind": ("CiliumIdentity", "cilium.io"),
-	},
 	# cilium.io
 	#"Cilium Local Redirect Policies": {
 	#	"commandline": ["ciliumlocalredirectpolicies", "ciliumlocalredirectpolicy", "clrps", "clrp"],
@@ -15934,13 +15862,6 @@ views_builtin = {
 	#	"fields": [FIXME],
 	#	"kind": ("CiliumNetworkPolicy", "cilium.io"),
 	#},
-	# cilium.io
-	"Cilium Nodes": {
-		"commandline": ["ciliumnodes", "ciliumnode", "ciliumns", "ciliumn", "cns", "cn"],
-		"group": "CNI",
-		"fields": ["name", "age"],
-		"kind": ("CiliumNode", "cilium.io"),
-	},
 	# aquasecurity.github.io
 	"CIS Kube-Bench Reports": {
 		"commandline": ["ciskubebenchreports", "ciskubebenchreport", "kubebench"],
@@ -16129,16 +16050,6 @@ views_builtin = {
 	#	"kind": ("EtcdCluster", "etcd.database.coreos.com"),
 	#},
 	# core API
-	"Events": {
-		"commandline": ["events", "event", "ev"],
-		"group": "Core",
-		"fields": ["namespace", "name", "seen", "event_status", "event_reason", "obj", "source", "first_seen", "count", "message"],
-		"update_delay": 50,
-		"sortcolumn": "seen",
-		"helptext": helptexts.eventlist,
-		"activatedfun": eventdispatch,
-		"kind": ("Event", ""),
-	},
 	# crd.projectcalico.org
 	"Felix Configurations": {
 		"commandline": ["felixconfigurations", "felixconfiguration", "felixconfs", "felixconf"],
@@ -17252,7 +17163,7 @@ def main():
 	while y < len(sys.argv):
 		arg = sys.argv[y]
 
-		tmp = checkforview(arg)
+		tmp = checkforview(arg.lower())
 
 		if tmp is not None and defaultview == "":
 			defaultview = tmp
@@ -17314,6 +17225,11 @@ def main():
 		y += 1
 
 	if defaultview == "":
+		if initial_name is not None:
+			iktprint([(f"{about.ui_program_name}", "programname"), (": unsupported view “", "default"), (f"{initial_name}", "command"), ("“.", "default")], stderr = True)
+			iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+			sys.exit(2)
+
 		if tmpdefaultview is not None and tmpdefaultview != "":
 			defaultview = tmpdefaultview
 		else:

@@ -155,10 +155,6 @@ configmapdata = infoviewheader + spacer + [
 	("[Shift] + R", "Toggle syntax highlighting (default: On)"),
 ] + spacer + logmovement
 
-eventlist = listviewheader + [
-	("[Enter]", "Open info page for the resource that triggered the event"),
-] + spacer + listmovement
-
 inventorylist = listviewheader + [
 	("[Enter]", "Open info page for selected host"),
 	("[Shift] + S", "SSH to selected host"),

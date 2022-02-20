@@ -1,0 +1,32 @@
+kind: Event
+default_command: events
+command:
+- ev
+listview:
+  name: Events
+  group: Core
+  fields:
+  - namespace
+  - name
+  - seen
+  - event_status
+  - event_reason
+  - obj
+  - source
+  - first_seen
+  - count
+  - message
+  sortcolumn: seen
+  shortcuts:
+    "Show Resource":
+      key: r
+      modifier: shift
+      helptext: "Open info page for the resource that triggered the event"
+      action: call
+      action_call: eventdispatch
+      action_args:
+        _pass_obj: true
+        kind_path: "involvedObject#kind"
+        name_path: "involvedObject#name"
+        namespace_path: "involvedObject#namespace"
+        api_version_path: "involvedObject#apiVersion"

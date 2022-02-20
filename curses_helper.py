@@ -2138,7 +2138,7 @@ class UIProps:
 	# The sort order used will still be the default, to ensure that the partial
 	# match ends up being the first.
 	def goto_first_match_by_name_namespace(self, name, namespace):
-		if self.info is None or name is None or len(name) == 0:
+		if self.info is None or name is None or len(name) == 0 or hasattr(self.info, "name") == False:
 			return None
 
 		# Search within sort category

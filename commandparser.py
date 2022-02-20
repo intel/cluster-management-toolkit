@@ -227,7 +227,7 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 					commandname, command, key, min_args, max_args = __find_command(commandline, default_command)
 
 				if command is None:
-					iktprint([(f"{programname}", "programname"), (": unknown command “", "default"), (f"{argv[i]}", "command"), ("“.", "default")], stderr = True)
+					iktprint([(f"{programname}", "programname"), (": unrecognised command “", "default"), (f"{argv[i]}", "command"), ("“.", "default")], stderr = True)
 					iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 					sys.exit(2)
 		# OK, we have a command, time to check for options

@@ -1,0 +1,94 @@
+kind: CiliumEndpoint
+api_family: cilium.io
+default_command: ciliumendpoints
+command:
+- ciliumeps
+- ciliumep
+- ceps
+- cep
+listview:
+  name: Cilium Endpoints
+  group: CNI
+  fields_wide:
+  - namespace
+  - name
+  - name: endpoint_id
+    header: "Endpoint ID:"
+    paths:
+    - path: "status#id"
+      pathtype: value
+  - name: identity_id
+    header: "Identity ID:"
+    paths:
+    - path: "status#identity#id"
+      pathtype: value
+  - name: ingress_enforcement
+    header: "Ingress Enforcement:"
+    paths:
+    - path: "status#policy#ingress#enforcing"
+      pathtype: value
+  - name: egress_enforcement
+    header: "Egress Enforcement:"
+    paths:
+    - path: "status#policy#egress#enforcing"
+      pathtype: value
+  - name: visibility_policy
+    header: "Visibility Policy:"
+    paths:
+    - path: "status#policy#visibility#enforcing"
+      pathtype: value
+  - name: endpoint_state
+    header: "Endpoint State:"
+    paths:
+    - path: "status#state"
+      pathtype: value
+    default: "<unknown>"
+  - name: ipv4
+    header: "IPv4:"
+    paths:
+    - path: "status#networking#addressing"
+      pathtype: items
+      subpath: ipv4
+    formatter: list
+  - name: ipv6
+    header: "IPv6:"
+    paths:
+    - path: "status#networking#addressing"
+      pathtype: items
+      subpath: ipv6
+    formatter: list
+  - name: node
+    header: "Node:"
+    paths:
+    - path: "status#networking#node"
+      pathtype: value
+  - age
+  fields:
+  - namespace
+  - name
+  - name: endpoint_state
+    header: "Endpoint State:"
+    paths:
+    - path: "status#state"
+      pathtype: value
+    default: "<unknown>"
+  - name: ipv4
+    header: "IPv4:"
+    paths:
+    - path: "status#networking#addressing"
+      pathtype: items
+      subpath: ipv4
+    formatter: list
+  - name: ipv6
+    header: "IPv6:"
+    paths:
+    - path: "status#networking#addressing"
+      pathtype: items
+      subpath: ipv6
+    formatter: list
+  - name: node
+    header: "Node:"
+    paths:
+    - path: "status#networking#node"
+      pathtype: value
+  - age
