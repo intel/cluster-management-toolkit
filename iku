@@ -47,7 +47,7 @@ except ModuleNotFoundError:
 from logparser import logparser, logparser_initialised, loglevel, split_msg, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import deep_get, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, get_since
+from iktlib import deep_get, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_ram_usage, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_extract_string, strarray_wrap_line, themearray_to_strarray, themearray_extract_string, attr_to_curses_merged
 
 from ansible_helper import ansible_clean_results, ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
@@ -254,15 +254,6 @@ def generator_basic(obj, field, fieldlen, pad, ralign, selected):
 	]
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
-
-def datetime_to_timestamp(timestamp):
-	if timestamp is None:
-		string = ""
-	elif timestamp == datetime.fromtimestamp(0).astimezone():
-		string = "".ljust(len(str(datetime.fromtimestamp(0).astimezone())))
-	else:
-		string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
-	return string
 
 def generator_str_timestamp(obj, field, fieldlen, pad, ralign, selected):
 	string = processor_str_timestamp(obj, field)
@@ -699,8 +690,9 @@ def processor_timestamp(obj, field):
 
 	if value is None:
 		return ""
-	else:
-		return value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+
+	string = value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+	return string
 
 def processor_total(obj, field):
 	free, total = getattr(obj, field)
@@ -975,53 +967,6 @@ def get_context_info(extra_vars = {}):
 
 	return info
 
-class AnsibleLogInfo:
-	def __init__(self, index, name, log_path, host, start_date, end_date, retval):
-		self.index = index
-		self.name = name
-		self.ref = log_path
-		self.host = host
-		self.start_time = start_date
-		self.completion_time = end_date
-		self.retval = retval
-	def __repr__(self):
-		return repr((self.index, self.name, self.ref, self.host, self.created_at, self.completion_time, self.rettval))
-
-def get_ansible_log_info(obj):
-	info = []
-
-	log_path = deep_get(obj, "log_path")
-	for item in os.listdir(log_path):
-		if item == "metadata.yaml":
-			continue
-
-		tmp = re.match(r"^(\d\d)-([a-z0-9][-.a-z0-9]*?[a-z0-9])_(.*)", item)
-		ref = f"{log_path}/{item}"
-		if tmp is not None:
-			index = tmp[1]
-			host = tmp[2]
-		else:
-			sys.exit("couldn't parse %s" % item)
-
-		with open(f"{log_path}/{item}", "r") as f:
-			d = yaml.safe_load(f)
-			name = d["task"]
-			start_date = deep_get(d, "start_date")
-			if start_date == "None":
-				start_date = None
-			end_date = deep_get(d, "end_date")
-			if end_date == "None":
-				end_date = None
-			if start_date is not None:
-				start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S.%f")
-			if end_date is not None:
-				end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S.%f")
-			retval = d["retval"]
-
-		info.append(AnsibleLogInfo(index, name, ref, host, start_date, end_date, retval))
-
-	return info
-
 class ContainerInfo:
 	def __init__(self, name, ref, container_type, image_version, instances, image_id, pods, pod_references):
 		self.name = name
@@ -1210,6 +1155,8 @@ def normalise_cpu_usage_to_millicores(_cpu_usage):
 		cpu_usage = int(_cpu_usage[0:-1]) / 1000
 	elif _cpu_usage.endswith("n"):
 		cpu_usage = int(_cpu_usage[0:-1]) / 1000000
+	else:
+		raise ValueError(f"Unknown unit for CPU usage in {_mem}")
 	return cpu_usage
 
 def normalise_mem_to_bytes(_mem):
@@ -1234,7 +1181,7 @@ def normalise_mem_to_bytes(_mem):
 	elif _mem.endswith("Yi"):
 		mem = int(_mem[0:-2]) * 1024 ** 8
 	else:
-		raise Exception(f"FIXME: implement support for memory usage {_mem}")
+		raise ValueError(f"Unknown unit for memory usage in {_mem}")
 
 	return mem
 
@@ -1793,6 +1740,7 @@ def generic_infogetter(vlist, fields, **kwargs):
 				paths = deep_get(field, "paths", [])
 				converters = deep_get(field, "converters", [])
 				default = deep_get(field, "default", "")
+				formatter = deep_get(field, "formatter")
 				values = []
 				for _path in paths:
 					vtype = deep_get(_path, "type", "raw")
@@ -1871,7 +1819,8 @@ def generic_infogetter(vlist, fields, **kwargs):
 								groups = []
 								if tmp is not None:
 									for group in tmp.groups():
-										groups.append(group)
+										if group is not None:
+											groups.append(group)
 									if vtype == "regex_to_tuples":
 										_values.append(tuple(groups))
 									else:
@@ -1880,7 +1829,10 @@ def generic_infogetter(vlist, fields, **kwargs):
 					elif vtype == "len":
 						value = str(len(value))
 					elif vtype == "timestamp":
-						value = get_since(timestamp_to_datetime(value))
+						value = timestamp_to_datetime(value)
+						# If we're gonna format this as age we want this passed through get_since()
+						if formatter == "age":
+							value = get_since(value)
 					elif vtype == "raw":
 						# Don't convert this type
 						pass
@@ -2103,6 +2055,17 @@ def objgetter_ansible_log(obj):
 		tmpobj["category"] = "Unavailable"
 		pass
 
+	logs = []
+	for path in natsorted(os.listdir(obj)):
+		if path == "metadata.yaml":
+			continue
+		with open(f"{obj}/{path}", "r") as f:
+			logs.append({
+				"index": path.split("-")[0],
+				"log": yaml.safe_load(f)
+			})
+	tmpobj["logs"] = logs
+
 	return tmpobj
 
 def objgetter_ansible_task_log(obj):
@@ -2116,9 +2079,9 @@ def objgetter_ansible_task_log(obj):
 def get_task_log(obj):
 	field = []
 
-	stdout_lines = deep_get(obj, "stdout_lines", [])
-	stderr_lines = deep_get(obj, "stderr_lines", [])
-	msg_lines = deep_get(obj, "msg_lines", [])
+	stdout_lines = deep_get(obj, "log#stdout_lines", [])
+	stderr_lines = deep_get(obj, "log#stderr_lines", [])
+	msg_lines = deep_get(obj, "log#msg_lines", [])
 
 	if len(stderr_lines) > 0:
 		field.append([("stderr:", curses.A_BOLD | curses.A_UNDERLINE)])
@@ -4819,6 +4782,11 @@ def get_pod_info_with_kind(vlist):
 def generic_listgetter(kind, namespace, **kwargs):
 	return kh.get_list_by_kind_namespace(kind, namespace, label_selector = deep_get(kwargs, "label_selector"))
 
+def listgetter_field(obj, **kwargs):
+	path = deep_get(kwargs, "path")
+	vlist = deep_get(obj, path)
+	return vlist, 200
+
 def get_events_by_kind_name_namespace(kind, name, namespace):
 	events = []
 	vlist, status = kh.get_list_by_kind_namespace(("Event", "events.k8s.io"), "")
@@ -5052,12 +5020,6 @@ field_templates = {
 	},
 	"allocatable_count": {
 		"header": "Allocatable (Count):",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"allowed_disruptions": {
-		"header": "Allowed Disruptions:",
-		"path": "status#disruptionsAllowed",
 		"generator": generator_numerical,
 		"ralign": True,
 	},
@@ -5762,12 +5724,6 @@ field_templates = {
 		"generator": generator_numerical,
 		"ralign": True,
 	},
-	"max_unavailable": {
-		"header": "Max Unavailable:",
-		"path": "spec#minAvailable",
-		"default": "N/A",
-		"ralign": True,
-	},
 	"medium_severity": {
 		"header": "Medium:",
 		"path": "report#summary#mediumCount",
@@ -5796,12 +5752,6 @@ field_templates = {
 	"methods": {
 		"header": "Methods:",
 		"generator": generator_list,
-	},
-	"min_available": {
-		"header": "Min Available:",
-		"path": "spec#minAvailable",
-		"default": "N/A",
-		"ralign": True,
 	},
 	"minpods": {
 		"header": "Min Pods:",
@@ -5933,6 +5883,12 @@ field_templates = {
 	},
 	"phase": {
 		"header": "Phase:",
+		"path": "status#phase",
+		"datagetter": datagetter_phase,
+		"generator": generator_status,
+	},
+	"phase_namespace": {
+		"header": "Status:",
 		"path": "status#phase",
 		"datagetter": datagetter_phase,
 		"generator": generator_status,
@@ -6190,10 +6146,6 @@ field_templates = {
 		"generator": generator_numerical,
 		"ralign": True,
 	},
-	"retval": {
-		"header": "Return Value:",
-		"ralign": True,
-	},
 	"revision": {
 		"header": "Revision:",
 		"path": "revision",
@@ -6301,6 +6253,10 @@ field_templates = {
 		"header": "Message:",
 		"path": "status#conditions",
 		"datagetter": datagetter_status_message_deployment,
+	},
+	"status_message_mpi_jobs": {
+		"header": "Message:",
+		"datagetter": datagetter_condition_ready,
 	},
 	"storage_class": {
 		"header": "Storage Class:",
@@ -6582,8 +6538,6 @@ def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 		else:
 			if type(fields[0]) == str:
 				sortcolumn = fields[0]
-			elif type(fields[0]) == tuple:
-				sortcolumn = fields[0][0]
 			elif type(fields[0]) == dict:
 				sortcolumn = fields[0]["name"]
 	elif sortcolumn is None:
@@ -6636,6 +6590,9 @@ def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 			elif formatter in "numerical":
 				generator = generator_numerical
 				processor = None
+			elif formatter == "timestamp":
+				generator = generator_timestamp
+				processor = processor_timestamp
 			elif formatter == "age":
 				generator = generator_age
 				processor = processor_age
@@ -9552,6 +9509,16 @@ def field_processor_exists(obj, path = None, extra_paths = None, fallback = None
 	else:
 		return [("Yes", ("main", "status_ok"))]
 
+def field_processor_cpu(obj, path = None, extra_paths = None, fallback = None, formatting = None):
+	tmp = deep_get(obj, path)
+	value = f"{normalise_cpu_usage_to_millicores(tmp):0.1f}"
+	return format_numerical_with_units(value, "field", False)
+
+def field_processor_mem(obj, path = None, extra_paths = None, fallback = None, formatting = None):
+	tmp = deep_get(obj, path)
+	value = normalise_mem_to_bytes(tmp)
+	return format_numerical_with_units(normalise_mem_bytes_to_str(value), "field", False)
+
 def export_data(filename, value):
 	vtype, value = decode_value(value)
 
@@ -9881,6 +9848,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			if listpad is not None:
 				listref = deep_get(viewref, "listpad#listref")
 				listgetter = deep_get(viewref, "listpad#listgetter")
+				listgetter_args = deep_get(viewref, "listpad#listgetter_args", {})
 				infogetter = deep_get(viewref, "listpad#infogetter")
 				infogetter_filters = deep_get(viewref, "listpad#infogetter_filters", None)
 				filters = None
@@ -9898,7 +9866,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if type(listgetter) == str:
 						vlist, status = eval(listgetter)
 					else:
-						vlist, status = listgetter(obj)
+						vlist, status = listgetter(obj, **listgetter_args)
 				else:
 					vlist = obj
 
@@ -14152,10 +14120,78 @@ infoviews = {
 	},
 	("__Log", ""): {
 		"windowheader": "Playbook Log Info",
-		"fields": ["index", ("name", "Task:"), "host", ("start_time", "Started At:"), ("completion_time", "Finished at:"), "retval"],
+		"fields": [
+			{
+				"name": "index",
+				"header": "Index:",
+				"paths": [
+					{
+						"path": "index",
+						"pathtype": "raw",
+					},
+				],
+				"align": "right",
+			},
+			{
+				"name": "name",
+				"header": "Task:",
+				"paths": [
+					{
+						"path": "log#task",
+						"pathtype": "value",
+					},
+				],
+			},
+			{
+				"name": "host",
+				"header": "Host:",
+				"paths": [
+					{
+						"path": "log#host",
+						"pathtype": "value",
+					},
+				],
+			},
+			{
+				"name": "start_time",
+				"header": "Started At:",
+				"paths": [
+					{
+						"path": "log#start_date",
+						"pathtype": "value",
+						"type": "timestamp",
+					},
+				],
+				"formatter": "timestamp",
+			},
+			{
+				"name": "completion_time",
+				"header": "Finished At:",
+				"paths": [
+					{
+						"path": "log#end_date",
+						"pathtype": "value",
+						"type": "timestamp",
+					},
+				],
+				"formatter": "timestamp",
+			},
+			{
+				"name": "retval",
+				"header": "Return Value:",
+				"paths": [
+					{
+						"path": "log#retval",
+						"pathtype": "value",
+						"type": "int",
+					},
+				],
+				"align": "right",
+			},
+		],
 		"sortcolumn": "index",
-		"objgetter": objgetter_ansible_log,
 		# We're not getting the information the normal way
+		"objgetter": objgetter_ansible_log,
 		"name_path": "name",
 		"creation_timestamp_path": "created_at",
 		"activatedfun": resourceinfodispatch,
@@ -14173,7 +14209,11 @@ infoviews = {
 			},
 		},
 		"listpad": {
-			"infogetter": get_ansible_log_info,
+			"listgetter": listgetter_field,
+			"listgetter_args": {
+				"path": "logs",
+			},
+			"infogetter": generic_infogetter,
 		},
 		"shortcuts": {
 			# Logs have no last applied configuration
@@ -14182,18 +14222,18 @@ infoviews = {
 	},
 	("__LogView", ""): {
 		"windowheader": "Task Log View",
-		"objgetter": objgetter_ansible_task_log,
+		#"objgetter": objgetter_ansible_task_log,
 		# We're not getting the information the normal way
-		"name_path": "task",
+		"name_path": "log#task",
 		"namespace_path": None,
 		"creation_timestamp_path": None,
 		"timestamps": False,
 		"infopad": {
 			"Host:": {
-				"path": "host",
+				"path": "log#host",
 			},
 			"Return Value:": {
-				"path": "retval",
+				"path": "log#retval",
 			},
 		},
 		"logpad": {
@@ -14369,6 +14409,22 @@ infoviews = {
 				"helptext": ("[Shift] + V", "Show package versions"),
 				"widget": "callout",
 				"callout": callout_show_package_versions,
+			},
+		},
+	},
+	("NodeMetrics", "metrics.k8s.io"): {
+		"windowheader": "Node Metrics Info",
+		"infopad": {
+			"CPU (millicores):": {
+				"path": "usage#cpu",
+				"processor": field_processor_cpu,
+			},
+			"Memory:": {
+				"path": "usage#memory",
+				"processor": field_processor_mem,
+			},
+			"Window:": {
+				"path": "window",
 			},
 		},
 	},
@@ -14682,7 +14738,20 @@ infoviews = {
 	},
 	("PodMetrics", "metrics.k8s.io"): {
 		"windowheader": "Pod Metrics Info",
-		"fields": [("name", "Container:"), "cpu_millicores", "mem_bytes"],
+		"fields": [
+			{
+				"name": "name",
+				"header": "Container:",
+				"paths": [
+					{
+						"path": "name",
+						"pathtype": "value",
+					}
+				],
+			},
+			"cpu_millicores",
+			"mem_bytes"
+		],
 		"infopad": {
 			"Window:": {
 				"path": "window",
@@ -16353,7 +16422,7 @@ views_builtin = {
 		"commandline": ["mpijobs", "mpijob", "mpij", "mj"],
 		# "group": "Workloads",
 		"group": "Kubeflow",
-		"fields": ["namespace", "name", "age", "status_latest_condition", ("status_message", "Message:")],
+		"fields": ["namespace", "name", "age", "status_latest_condition", "status_message_mpi_jobs"],
 		"sortcolumn": "namespace",
 		"kind": ("MPIJob", "kubeflow.org"),
 	},
@@ -16361,7 +16430,7 @@ views_builtin = {
 	"Namespaces": {
 		"commandline": ["namespaces", "namespace", "ns"],
 		"group": "Core",
-		"fields": ["name", ("phase", "Status:"), "age"],
+		"fields": ["name", "phase_namespace", "age"],
 		"kind": ("Namespace", ""),
 		"shortcuts": {
 			"Create namespace": {
@@ -16404,13 +16473,6 @@ views_builtin = {
 				"call": ssh_to_host,
 			},
 		},
-	},
-	# metrics.k8s.io
-	"Node Metrics": {
-		"commandline": ["nodemetrics", "nodemetric"],
-		"group": "Monitoring",
-		"fields": ["name", "timestamp", "window"],
-		"kind": ("NodeMetrics", "metrics.k8s.io"),
 	},
 	# opentelemetry.io
 	"OpenTelemetry Collectors": {
@@ -17263,9 +17325,9 @@ def main():
 		# Role, RoleBinding, ClusterRole, and ClusterRoleBinding can contain ":"
 		# Most resources do not allow ":" at all, and for pods we use it to indicate a container name
 
-		colon_whitelist = { "Roles", "Role Bindings", "Cluster Roles", "Cluster Role Bindings" }
+		colon_allowlist = ["Roles", "Role Bindings", "Cluster Roles", "Cluster Role Bindings", "Logs"]
 
-		if defaultview not in colon_whitelist:
+		if defaultview not in colon_allowlist:
 			tmp = re.match(r"^(.+):(.*)$", initial_name)
 			if tmp is not None:
 				if ":" in tmp[1]:

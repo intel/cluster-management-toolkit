@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta, date
 from functools import reduce
 from pathlib import Path
 import os
@@ -40,6 +40,9 @@ stgroup_mapping = {
 	stgroup.PENDING: "status_pending",
 	stgroup.DONE: "status_done",
 }
+
+def none_timestamp():
+	return (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
 
 def deep_set(dictionary, path, value):
 	if dictionary is None or path is None or len(path) == 0:
@@ -188,22 +191,36 @@ def get_since(timestamp):
 
 	return since
 
+# Will take datetime and convert it to a timestamp
+def datetime_to_timestamp(timestamp):
+	if timestamp is None or timestamp == none_timestamp():
+		string = ""
+	elif timestamp == datetime.fromtimestamp(0).astimezone():
+		string = "".ljust(len(str(datetime.fromtimestamp(0).astimezone())))
+	else:
+		string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+	return string
+
 # Will take a timestamp and convert it to datetime
-def timestamp_to_datetime(timestamp, default = None):
-	if timestamp is None:
+def timestamp_to_datetime(timestamp, default = none_timestamp()):
+	if timestamp is None or timestamp == "None":
 		return default
 
-	# Add timezone; all timestamps are assumed to be UTC
+	# Timestamps that end with Z are already in UTC; strip that
+	if timestamp.endswith("Z"):
+		timestamp = timestamp[:-1]
+
+	# For timestamp without timezone add one; all timestamps are assumed to be UTC
 	timestamp += "+0000"
 
 	dt = None
 
-	for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ%z", "%Y-%m-%d %H:%M:%S.%fZ%z", "%Y-%m-%dT%H:%M:%SZ%z"):
+	for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%d %H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d %H:%M:%S%z"):
 		try:
 			return datetime.strptime(timestamp, fmt)
 		except ValueError:
 			pass
-	raise ValueError("Could not parse date: %s" % timestamp)
+	raise ValueError(f"Could not parse date: {timestamp}")
 
 def __str_representer(dumper, data):
 	if "\n" in data:

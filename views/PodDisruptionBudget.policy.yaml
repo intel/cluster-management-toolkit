@@ -6,4 +6,28 @@ command:
 listview:
   name: Pod Disruption Budgets
   group: Policy
-  fields: [namespace, name, min_available, max_unavailable, allowed_disruptions, age]
+  fields:
+  - namespace
+  - name
+  - name: min_available
+    header: "Min Available:"
+    paths:
+    - path: "spec#minAvailable"
+      type: int
+    align: right
+    default: "N/A"
+  - name: max_unavailable
+    header: "Max Available:"
+    paths:
+    - path: "spec#maxUnavailable"
+      type: int
+    align: right
+    default: "N/A"
+  - name: allowed_disruptions
+    header: "Allowed Disruptions:"
+    paths:
+    - path: "status#disruptionsAllowed"
+      type: int
+    align: right
+    default: 0
+  - age
