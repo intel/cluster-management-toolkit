@@ -1,0 +1,18 @@
+kind: ReplicaSet
+api_family: apps
+default_command: replicasets
+command:
+- rs
+listview:
+  name: Replica Sets
+  group: Workloads
+  fields: [namespace, name, ready_replicas, current_replicas, desired_replicas, max_replicas, age]
+  actions:
+    actionlist:
+      "Rescale resource":
+        description: Rescale resource
+        confirm: true
+        actionfunc: rescale_resource
+        query: New scale
+        queryval: scale
+        queryfunc: string

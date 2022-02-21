@@ -3419,29 +3419,6 @@ def get_event_status_group(status):
 
 	return status_group
 
-class FilterInfo:
-	def __init__(self, name, ftype):
-		self.name = name
-		self.ftype = ftype
-	def __repr__(self):
-		return repr((self.name, self.ftype))
-
-def get_filter_info(obj):
-	info = []
-
-	if len(deep_get(obj, "spec#filters", [])) == 0:
-		#name, ftype
-		return [FilterInfo("<none>", "")]
-
-	for efilter in deep_get(obj, "spec#filters", []):
-		name = deep_get(efilter, "filterName")
-		ftype = deep_get(efilter, "filterType")
-
-		#name, ftype
-		info.append(FilterInfo(name, ftype))
-
-	return info
-
 class ResourceInfo:
 	def __init__(self, resource_tuple, ref, rtype, kind, status, status_group, restarts, message, age = -1):
 		self.resource_tuple = resource_tuple
@@ -11956,6 +11933,13 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 		singleonly = deep_get(action_list, f"{item[2]}#single_only", False)
 		readonly = deep_get(action_list, f"{item[2]}#read_only", False)
 		metadata = deep_get(action_list, f"{item[2]}#metadata", [])
+		tmp = []
+		for _str, _fmt in metadata:
+			if type(_fmt) == list:
+				tmp.append((_str, tuple(_fmt)))
+			else:
+				tmp.append((_str, _fmt))
+		metadata = tmp
 		if singleonly == True and single_item == False:
 			continue
 		if singleoncontrolplane == True and control_plane_selected == True and single_item == False:
@@ -13654,20 +13638,51 @@ infoviews = {
 	},
 	("EnvoyFilter", "networking.istio.io"): {
 		"windowheader": "Envoy Filter Info",
-		"fields": ["name", "ftype"],
-		"sortcolumn": "name",
-		"infopad": {},
-		"listpad": {
-			"infogetter": get_filter_info,
-		},
-		"shortcuts": {
-			"Workload Labels": {
-				"shortcut": ord("w"),
-				"helptext": ("W", "Show workload labels"),
-				"widget": "windowwidget",
-				"title": "Workload Labels:",
-				"itemgetter": get_workload_labels,
+		"fields": [
+			{
+				"name": "apply_to",
+				"header": "Apply To:",
+				"paths": [
+					{
+						"path": "applyTo",
+						"pathtype": "value",
+					},
+				],
 			},
+			{
+				"name": "context",
+				"header": "Context:",
+				"paths": [
+					{
+						"path": "match#context",
+						"pathtype": "value",
+					},
+				],
+			},
+			{
+				"name": "patch_operation",
+				"header": "Patch Operation:",
+				"paths": [
+					{
+						"path": "patch#operation",
+						"pathtype": "value",
+					},
+				],
+			},
+		],
+		"sortcolumn": "apply_to",
+		"infopad": {
+			"Workload Selector:": {
+				"path": "spec#workloadSelector",
+				"processor": field_processor_label_selector,
+			},
+		},
+		"listpad": {
+			"listgetter": listgetter_field,
+			"listgetter_args": {
+				"path": "spec#configPatches",
+			},
+			"infogetter": generic_infogetter,
 		},
 	},
 	("FlowSchema", "flowcontrol.apiserver.k8s.io"): {
@@ -16026,25 +16041,6 @@ views_builtin = {
 		"fields": ["name", "attach_required", "pod_info_on_mount", "volume_lifecycle_modes", "age"],
 		"kind": ("CSIDriver", "storage.k8s.io"),
 	},
-	# apps
-	"Daemon Sets": {
-		"commandline": ["daemonsets", "daemonset", "ds"],
-		"group": "Workloads",
-		"fields": ["namespace", "name", "desired_replicas_ds", "current_replicas_ds", "ready_replicas_ds", "uptodate_replicas_ds", "available_replicas_ds", "misscheduled_replicas", "age"],
-		"sortcolumn": "namespace",
-		"kind": ("DaemonSet", "apps"),
-		"actions": {
-			"title": "Perform action on tagged daemon sets",
-			"actionlist": {
-				"Restart daemon set (Rollout)": {
-					"description": "Restart daemon set",
-					"metadata": [("Strategy: Rollout",  ("windowwidget", "description"))],
-					"confirm": True,
-					"actionfunc": restart_resource_rollout,
-				},
-			},
-		},
-	},
 	# apps.openshift.io
 	"Deployment Configurations": {
 		"commandline": ["deploymentconfigs", "deploymentconfig", "dc"],
@@ -16056,69 +16052,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("DeploymentConfig", "apps.openshift.io"),
 	},
-	# apps
-	"Deployments": {
-		"commandline": ["deployments", "deployment", "deploy", "dep"],
-		"group": "Workloads",
-		"fields": ["namespace", "name", "ready_replicas_tuple", "uptodate_replicas", "available_replicas", "age", "status_deployment", "status_message_deployment"],
-		"sortcolumn": "namespace",
-		"kind": ("Deployment", "apps"),
-		"actions": {
-			"title": "Perform action on tagged deployments",
-			"actionlist": {
-				#"Delete resource": {
-				#	"description": "Delete resource",
-				#	"category": "Resource Level",
-				#	"confirm": True,
-				#	"actionfunc": delete_resource,
-				#},
-				"Rescale deployment": {
-					"description": "Rescale deployment",
-					"category": "Resource Level",
-					"confirm": True,
-					"actionfunc": rescale_resource,
-					"query": "New scale",
-					"queryval": "scale",
-					"queryfunc": "string",
-				},
-				"Pause deployment (Rollout)": {
-					"description": "Pause deployment",
-					"metadata": [("Strategy: Rollout",  ("windowwidget", "description"))],
-					"category": "Resource Level",
-					"confirm": True,
-					"actionfunc": pause_resource_rollout,
-				},
-				"Resume deployment (Rollout)": {
-					"description": "Resume deployment",
-					"metadata": [("Strategy: Rollout",  ("windowwidget", "description"))],
-					"category": "Resource Level",
-					"confirm": True,
-					"actionfunc": resume_resource_rollout,
-				},
-				"Restart deployment (Rollout)": {
-					"description": "Restart deployment",
-					"metadata": [("Strategy: Rollout",  ("windowwidget", "description"))],
-					"category": "Resource Level",
-					"confirm": True,
-					"actionfunc": restart_resource_rollout,
-				},
-				"Restart deployment (Rescale)": {
-					"description": "Restart deployment",
-					"metadata": [("Strategy: Rescale", ("windowwidget", "description"))],
-					"category": "Deprecated",
-					"confirm": True,
-					"actionfunc": restart_resource_rescale,
-				},
-				"Stop deployment (Rescale)": {
-					"description": "Stop deployment",
-					"metadata": [("Strategy: Rescale", ("windowwidget", "description"))],
-					"category": "Deprecated",
-					"confirm": True,
-					"actionfunc": stop_resource_rescale,
-				},
-			},
-		},
-	},
 	# networking.istio.io
 	"Destination Rules": {
 		"commandline": ["destinationrules", "destinationrule", "destrules", "destrule", "dstrules", "dstrule"],
@@ -16126,14 +16059,6 @@ views_builtin = {
 		"fields": ["namespace", "name", "host", "age"],
 		"sortcolumn": "namespace",
 		"kind": ("DestinationRule", "networking.istio.io"),
-	},
-	# networking.istio.io
-	"Envoy Filters": {
-		"commandline": ["envoyfilters", "envoyfilter"],
-		"group": "Istio",
-		"fields": ["namespace", "name", "age"],
-		"sortcolumn": "namespace",
-		"kind": ("EnvoyFilter", "networking.istio.io"),
 	},
 	# etcd.database.coreos.com
 	#"Etcd Cluster": {
@@ -16582,46 +16507,6 @@ views_builtin = {
 		"fields": ["namespace", "name", "age"],
 		"kind": ("Reaper", "reaper.cassandra-reaper.io"),
 	},
-	# apps
-	"Replica Sets": {
-		"commandline": ["replicasets", "replicaset", "rs"],
-		"group": "Workloads",
-		"fields": ["namespace", "name", "ready_replicas", "current_replicas", "desired_replicas", "max_replicas", "age"],
-		"kind": ("ReplicaSet", "apps"),
-		"actions": {
-			"title": "Perform action on tagged replica sets",
-			"actionlist": {
-				"Rescale replica set": {
-					"description": "Rescale replica set",
-					"confirm": True,
-					"actionfunc": rescale_resource,
-					"query": "New scale",
-					"queryval": "scale",
-					"queryfunc": "string",
-				},
-			},
-		},
-	},
-	# core API
-	"Replication Controllers": {
-		"commandline": ["replicationcontrollers", "replicationcontroller", "rcs", "rc"],
-		"group": "Workloads",
-		"fields": ["namespace", "name", "ready_replicas", "current_replicas", "desired_replicas", "age"],
-		"kind": ("ReplicationController", ""),
-		"actions": {
-			"title": "Perform action on tagged replication controllers",
-			"actionlist": {
-				"Rescale replication controller": {
-					"description": "Rescale replication controller",
-					"confirm": True,
-					"actionfunc": rescale_resource,
-					"query": "New scale",
-					"queryval": "scale",
-					"queryfunc": "string",
-				},
-			},
-		},
-	},
 	# core API
 	"Resource Quotas": {
 		"commandline": ["resourcequotas", "resourcequota", "quotas", "quota", "rq"],
@@ -16695,33 +16580,6 @@ views_builtin = {
 		"group": "Dex",
 		"fields": ["namespace", "name", "age"],
 		"kind": ("SigningKey", "dex.coreos.com"),
-	},
-	# apps
-	"Stateful Sets": {
-		"commandline": ["statefulsets", "statefulset", "sts"],
-		"group": "Workloads",
-		"fields": ["namespace", "name", "ready_replicas_tuple", "age"],
-		"sortcolumn": "namespace",
-		"kind": ("StatefulSet", "apps"),
-		"actions": {
-			"title": "Perform action on tagged stateful sets",
-			"actionlist": {
-				"Rescale stateful set": {
-					"description": "Rescale stateful set",
-					"confirm": True,
-					"actionfunc": rescale_resource,
-					"query": "New scale",
-					"queryval": "scale",
-					"queryfunc": "string",
-				},
-				"Restart stateful set (Rollout)": {
-					"description": "Restart stateful set",
-					"metadata": [("Strategy: Rollout",  ("windowwidget", "description"))],
-					"confirm": True,
-					"actionfunc": restart_resource_rollout,
-				},
-			},
-		},
 	},
 	# operators.coreos.com
 	#"Subscriptions": {
@@ -17324,10 +17182,9 @@ def main():
 	if initial_name is not None:
 		# Role, RoleBinding, ClusterRole, and ClusterRoleBinding can contain ":"
 		# Most resources do not allow ":" at all, and for pods we use it to indicate a container name
-
 		colon_allowlist = ["Roles", "Role Bindings", "Cluster Roles", "Cluster Role Bindings", "Logs"]
 
-		if defaultview not in colon_allowlist:
+		if defaultview.lstrip("*") not in colon_allowlist:
 			tmp = re.match(r"^(.+):(.*)$", initial_name)
 			if tmp is not None:
 				if ":" in tmp[1]:
@@ -17340,7 +17197,7 @@ def main():
 					initial_container = tmp[2]
 
 	# Containers and Config Maps can have a third level (container/data)
-	if initial_container is not None and not (defaultview in ["Pods", "Config Maps"]):
+	if initial_container is not None and not (defaultview.lstrip("*") in ["Pods", "Config Maps"]):
 		iktprint([(f"{about.ui_program_name}", "programname"), (": invalid syntax “", "default"), (f"{about.ui_program_name} ", "programname"), (f"{' '.join(sys.argv[1:])}", "argument"), ("”", "default")], stderr = True)
 		iktprint([(f"CONTAINER", "argument"), ("/", "separator"), ("CONFIGMAP", "argument"), (" only makes sense in ", "default"), ("pod", "command"), ("/", "separator"), ("configmap", "command"), (" view.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)

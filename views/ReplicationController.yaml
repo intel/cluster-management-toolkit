@@ -1,0 +1,18 @@
+kind: ReplicationController
+default_command: replicationcontrollers
+command:
+- rcs
+- rc
+listview:
+  name: Replication Controllers
+  group: Workloads
+  fields: [namespace, name, ready_replicas, current_replicas, desired_replicas, age]
+  actions:
+    actionlist:
+      "Rescale resource":
+        description: Rescale resource
+        confirm: true
+        actionfunc: rescale_resource
+        query: New scale
+        queryval: scale
+        queryfunc: string
