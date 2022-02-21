@@ -2100,17 +2100,25 @@ class UIProps:
 
 		# Search within sort category
 		sorted_list = sorted(info, key = attrgetter(self.sortkey1, self.sortkey2))
+		match = False
 		for y in range(pos, len(sorted_list)):
 			tmp2 = getattr(sorted_list[y], self.sortcolumn)
 			if self.sortkey1 == "age" or self.sortkey1 == "seen":
-				tmp2 = iktlib.seconds_to_age(tmp2)
+				tmp2 = [iktlib.seconds_to_age(tmp2)]
 			else:
-				tmp2 = str(tmp2)
-			tmp2 = tmp2[0:len(searchkey)].rstrip().lower()
-			if searchkey == tmp2:
-				offset = y - pos
-				if offset > 0:
-					break
+				if type(tmp2) in [list, tuple]:
+					tmp2 = map(str, tmp2)
+				else:
+					tmp2 = [str(tmp2)]
+			for part in tmp2:
+				part = part[0:len(searchkey)].rstrip().lower()
+				if searchkey == part:
+					offset = y - pos
+					if offset > 0:
+						match = True
+						break
+			if match == True:
+				break
 
 		# If we don't match we'll just end up with the old pos
 		self.move_cur_with_offset(offset)
@@ -2121,17 +2129,25 @@ class UIProps:
 
 		# Search within sort category
 		sorted_list = sorted(info, key = attrgetter(self.sortkey1, self.sortkey2))
+		match = False
 		for y in reversed(range(0, pos)):
 			tmp2 = getattr(sorted_list[y], self.sortcolumn)
 			if self.sortkey1 == "age" or self.sortkey1 == "seen":
-				tmp2 = iktlib.seconds_to_age(tmp2)
+				tmp2 = [iktlib.seconds_to_age(tmp2)]
 			else:
-				tmp2 = str(tmp2)
-			tmp2 = tmp2[0:len(searchkey)].rstrip().lower()
-			if searchkey == tmp2:
-				offset = y - pos
-				if offset < 0:
-					break
+				if type(tmp2) in [list, tuple]:
+					tmp2 = map(str, tmp2)
+				else:
+					tmp2 = [str(tmp2)]
+			for part in tmp2:
+				part = part[0:len(searchkey)].rstrip().lower()
+				if searchkey == part:
+					offset = y - pos
+					if offset < 0:
+						match = True
+						break
+			if match == True:
+				break
 
 		# If we don't match we'll just end up with the old pos
 		self.move_cur_with_offset(offset)
@@ -2140,7 +2156,7 @@ class UIProps:
 	# The sort order used will still be the default, to ensure that the partial
 	# match ends up being the first.
 	def goto_first_match_by_name_namespace(self, name, namespace):
-		if self.info is None or name is None or len(name) == 0 or hasattr(self.info, "name") == False:
+		if self.info is None or name is None or len(name) == 0 or hasattr(self.info[0], "name") == False:
 			return None
 
 		# Search within sort category
