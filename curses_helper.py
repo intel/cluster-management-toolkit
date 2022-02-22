@@ -2099,7 +2099,7 @@ class UIProps:
 		offset = 0
 
 		# Search within sort category
-		sorted_list = sorted(info, key = attrgetter(self.sortkey1, self.sortkey2))
+		sorted_list = sorted(info, key = attrgetter(self.sortkey1, self.sortkey2), reverse = self.sortorder_reverse)
 		match = False
 		for y in range(pos, len(sorted_list)):
 			tmp2 = getattr(sorted_list[y], self.sortcolumn)
@@ -2128,7 +2128,7 @@ class UIProps:
 		offset = 0
 
 		# Search within sort category
-		sorted_list = sorted(info, key = attrgetter(self.sortkey1, self.sortkey2))
+		sorted_list = sorted(info, key = attrgetter(self.sortkey1, self.sortkey2), reverse = self.sortorder_reverse)
 		match = False
 		for y in reversed(range(0, pos)):
 			tmp2 = getattr(sorted_list[y], self.sortcolumn)
