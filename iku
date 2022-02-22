@@ -10099,7 +10099,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if w_kinds != ["<native>"] and (selected is None or not selected.kind in w_kinds) and w_kinds != [("", "")]:
 						continue
 
-					w_inputtitle = deep_get(value, "inputtitle", "")
+					w_inputtitle = deep_get(value, "inputtitle")
 					if w_inputtitle is not None:
 						w_input = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, title = w_inputtitle)
 						w_command = w_input.split()
