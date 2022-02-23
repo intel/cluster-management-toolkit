@@ -4529,7 +4529,9 @@ def get_pod_tolerations(obj, **kwargs):
 
 	return tolerations
 
-def set_cluster_context(uip, name):
+def set_cluster_context(uip, **kwargs):
+	host = deep_get(kwargs, "selected#name")
+
 	global available_api_families
 	retval = kh.set_context(name = name)
 	# If we actually changed context we need to force an API reload,
@@ -7235,17 +7237,6 @@ def genericlistloop(stdscr, view):
 			tmp_action_src_list = deep_get(viewref, "actions#actionlist", {})
 
 			action_src_list = {
-				"View YAML dump": {
-					"description": "View YAML dump of resource",
-					"actionfunc": view_yaml_dump,
-					"title": "YAML dump",
-					"read_only": True,
-				},
-				"Edit resource": {
-					"description": "Edit resource",
-					"actionfunc": edit_resource,
-					"single_only": True,
-				},
 			}
 
 			for action in tmp_action_src_list:
@@ -7384,6 +7375,32 @@ def genericlistloop(stdscr, view):
 
 		shortcuts = deep_get(viewref, "shortcuts", {})
 
+		# Always include the shortcut for YAML dump, unless overridden
+		if deep_get(viewref, "shortcuts#View YAML dump") is None:
+			shortcuts["View YAML dump of resource"] = {
+				"shortcut": ord("y"),
+				"helptext": ("Y", "View YAML dump of resource"),
+				"action": "call",
+				"action_call": view_yaml,
+				"action_args": {
+					"title": "YAML dump",
+					"_pass_obj": True,
+				},
+				"read_only": True,
+			}
+		# Always include the shortcut for edit resource, unless overridden
+		if deep_get(viewref, "shortcuts#Edit resource") is None:
+			shortcuts["Edit resource"] = {
+				"shortcut": ord("e"),
+				"helptext": ("E", "Edit resource"),
+				"action": "call",
+				"action_call": edit_resource,
+				"action_args": {
+					"_pass_obj": True,
+					"_pass_kind": True,
+				},
+			}
+
 		for key, value in shortcuts.items():
 			shortcut_keys = deep_get(value, "shortcut")
 			if shortcut_keys is None:
@@ -7432,7 +7449,7 @@ def genericlistloop(stdscr, view):
 				if queryval is not None:
 					retval = call(uip, selected, title, values = selection_vars)
 				else:
-					retval = call(uip.stdscr, selected.name)
+					retval = call(uip.stdscr, **{"selected": selected})
 				if retval is not None and retval == curses_helper.retval.RETURNFULL:
 					return retval
 
@@ -7446,6 +7463,10 @@ def genericlistloop(stdscr, view):
 				action_args = deep_get(value, "action_args", {})
 				if "_pass_obj" in action_args:
 					action_args["obj"] = selected.ref
+				if "_pass_kind" in action_args:
+					action_args["kind"] = kind
+				if "_pass_selected" in action_args:
+					action_args["selected"] = selected
 				action_call = deep_get(value, "action_call")
 				if action == "toggle_var":
 					var = deep_get(action_args, "var")
@@ -10144,7 +10165,6 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				action_args = deep_get(value, "action_args", {})
 				if "_pass_obj" in action_args:
 					action_args["obj"] = obj
-					action_args.pop("_pass_obj")
 				action_call = deep_get(value, "action_call")
 				if action == "call" and action_call is not None:
 					retval = action_call(uip.stdscr, **action_args)
@@ -10204,7 +10224,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 				if call is not None and call_name is not None:
 					if kind is None or kind == ("", ""):
-						retval = call(uip.stdscr, call_name)
+						retval = call(uip.stdscr, **{"selected": call_name})
 						if retval is not None and retval == curses_helper.retval.RETURNFULL:
 							return retval
 					elif len(kind) > 0:
@@ -11390,6 +11410,12 @@ def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None, **kwa
 	themearrays = iktlib.format_yaml(objects)
 	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
 
+def view_yaml(stdscr, **kwargs):
+	obj = deep_get(kwargs, "obj")
+	title = deep_get(kwargs, "title")
+	themearrays = iktlib.format_yaml([obj])
+	return resourceinfodispatch(stdscr, themearrays, ("__ResourceView", ""), title = title)
+
 def infoview_view_yaml(uip, kind, obj, **kwargs):
 	if "path" in kwargs:
 		path = deep_get(kwargs, "path")
@@ -11660,14 +11686,16 @@ def format_commandline(args, implicit_command = True):
 
 	return strarray
 
-def edit_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def edit_resource(stdscr, **kwargs):
+	obj = deep_get(kwargs, "obj")
+	kind = deep_get(kwargs, "kind")
+	name = deep_get(obj, "metadata#name")
+	namespace = deep_get(obj, "metadata#namespace", "")
+	if name is None:
+		return
+
 	curses.endwin()
 	os.system("clear")
-	if type(items[0]) == tuple:
-		namespace, name = items[0]
-	else:
-		namespace = None
-		name = items[0]
 	retval, args = __edit_resource(kind, namespace, name)
 
 	waitforkeypress = False
@@ -11675,7 +11703,7 @@ def edit_resource(uip, items = [], action = {}, values = {}, kind = None, **kwar
 		if retval > 0:
 			iktprint([("\nError: ", "error")] + format_commandline(args, implicit_command = False) + [(" returned ", "default"), (retval, "errorvalue")], stderr = True)
 		input("\nPress Enter to continue...")
-	uip.stdscr.refresh()
+	stdscr.refresh()
 
 def restart_resource_rescale(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
@@ -11851,7 +11879,15 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None, **kwar
 nodeplaybooks = {
 }
 
-def ssh_to_host(stdscr, host):
+def ssh_to_host(stdscr, **kwargs):
+	selected = deep_get(kwargs, "selected")
+	if type(selected) == tuple:
+		host = selected[0]
+	elif type(selected) == str:
+		host = selected
+	else:
+		host = selected.name
+
 	if host is None:
 		return
 
@@ -15750,6 +15786,11 @@ views_special = {
 				"filter": "apiserver_requested_deprecated_apis",
 			},
 		},
+		"shortcuts": {
+			# Override:
+			"Edit resource": {},
+			"View YAML dump": {},
+		},
 		"is_taggable": False,
 		"check_availability": is_cluster_reachable,
 	},
@@ -15769,6 +15810,9 @@ views_special = {
 				"title": "Switch cluster context",
 				"call": set_cluster_context,
 			},
+			# Override:
+			"Edit resource": {},
+			"View YAML dump": {},
 		},
 		"is_taggable": False,
 	},
@@ -15787,17 +15831,20 @@ views_special = {
 			"playbooklist": {
 				"context": "inventory",
 			},
-			"actionlist": {
-				"Edit resource": {},
-				"View YAML dump": {},
-			},
 		},
 		"shortcuts": {
 			"SSH to Host": {
 				"shortcut": ord("S"),
 				"helptext": ("[Shift] + S", "SSH to host"),
-				"call": ssh_to_host,
+				"action": "call",
+				"action_call": ssh_to_host,
+				"action_args": {
+					"_pass_selected": True,
+				},
 			},
+			# Override:
+			"Edit resource": {},
+			"View YAML dump": {},
 		},
 	},
 	"Logs": {
@@ -15817,10 +15864,12 @@ views_special = {
 					"confirm": True,
 					"actionfunc": delete_logs,
 				},
-				# Override:
-				"Edit resource": {},
-				"View YAML dump": {},
 			},
+		},
+		"shortcuts": {
+			# Override:
+			"Edit resource": {},
+			"View YAML dump": {},
 		},
 	},
 	"Network Info": {
@@ -16378,27 +16427,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("NetworkPolicy", "networking.k8s.io"),
 	},
-	# core API
-	"Nodes": {
-		"commandline": ["nodes", "node", "no"],
-		"group": "Core",
-		"fields": ["name", "node_status", "kubernetes_roles", "age", "kubelet_version", "internal_ips", "os", "kernel", "container_runtime", "cpu", "mem", "taints"],
-		"helptext": helptexts.nodelist,
-		"activatedfun": genericinfoloop,
-		"kind": ("Node", ""),
-		"actions": {
-			"playbooklist": {
-				"context": "node",
-			},
-		},
-		"shortcuts": {
-			"SSH to Node": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "SSH to node"),
-				"call": ssh_to_host,
-			},
-		},
-	},
 	# opentelemetry.io
 	"OpenTelemetry Collectors": {
 		"commandline": ["opentelemetrycollectors", "opentelemetrycollectors", "otelcols", "otelcol"],
@@ -16806,8 +16834,8 @@ def populate_views():
 				_shortcuts = deep_get(d, "listview#shortcuts", {})
 				for shortcut in _shortcuts:
 					# If the shortcut is empty we're disabling a default shortcut
-					if len(shortcut) == 0:
-						shortcuts[shortcut] == {}
+					if _shortcuts[shortcut] is None or len(_shortcuts[shortcut]) == 0:
+						shortcuts[shortcut] = {}
 						continue
 
 					key = deep_get(_shortcuts[shortcut], "key", "<missing>")

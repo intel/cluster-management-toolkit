@@ -167,16 +167,6 @@ networkinfo = infoviewheader + [
 	("[Shift] + U", "Update CNI network (if a newer candidate is available)"),
 ]
 
-nodelist = listviewheader + [
-	("[Enter]", "Open info page for selected node"),
-	("[Shift] + S", "SSH to selected node"),
-	("T", "Tag / Untag node"),
-	("[Shift] + T", "Tag nodes by pattern"),
-	("[Ctrl] + T", "Untag nodes by pattern"),
-	("L", "List tagged nodes"),
-	(";", "Perform action on tagged nodes"),
-] + spacer + listmovement
-
 containerinfo = [
 	("[ESC]", "Return to previous screen"),
 	("", ""),

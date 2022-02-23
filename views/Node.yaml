@@ -1,0 +1,20 @@
+kind: Node
+default_command: nodes
+command:
+- "no"
+listview:
+  name: Nodes
+  group: Core
+  fields: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel, container_runtime, cpu, mem, taints]
+  actions:
+    playbooklist:
+      context: node
+  shortcuts:
+    "SSH to host":
+      key: s
+      modifier: shift
+      helptext: SSH to host
+      action: call
+      action_call: ssh_to_host
+      action_args:
+        _pass_selected: true
