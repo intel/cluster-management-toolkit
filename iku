@@ -1735,7 +1735,6 @@ def generic_infogetter(vlist, fields, **kwargs):
 				field = field[0]
 
 			if type(field) == dict:
-				default = deep_get(field, "default", "<unset>")
 				name = deep_get(field, "name")
 				paths = deep_get(field, "paths", [])
 				converters = deep_get(field, "converters", [])
@@ -1772,8 +1771,15 @@ def generic_infogetter(vlist, fields, **kwargs):
 								value.append(tuple(tmp))
 					elif ptype == "tuple":
 						value = []
-						for _path in path:
-							value.append(deep_get_with_fallback(obj, _path, fallback_on_empty = fallback_on_empty))
+						for i in range(0, len(path)):
+							if type(default) == str:
+								_default = default
+							else:
+								if i < len(default):
+									_default = default[i]
+								else:
+									_default = None
+							value.append(deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty))
 						value = tuple(value)
 					else:
 						value = deep_get_with_fallback(obj, path, default)
