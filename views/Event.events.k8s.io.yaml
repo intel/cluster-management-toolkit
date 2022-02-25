@@ -41,6 +41,7 @@ listview:
     header: "Reporter:"
     paths:
     - path: [["reportingController", "deprecatedSource#component", "source#component"], ["reportingInstance", "deprecatedSource#host", "source#host"]]
+      default: ["", ""]
       # This is needed, because the old Events API can return the new fields empty
       fallback_on_empty: true
       pathtype: tuple
@@ -64,6 +65,7 @@ listview:
     - path: ["series#count", "deprecatedCount", "count"]
       pathtype: value
       type: raw
+    default: -1
     formatter: numerical
     align: right
   - message
