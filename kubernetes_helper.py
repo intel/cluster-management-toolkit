@@ -316,11 +316,13 @@ class KubernetesHelper:
 		return ",".join(selectors)
 
 	def get_image_version(self, image, default = "<undefined>"):
-		tmp = re.match(r"^.*:(.*)", image)
-		if tmp is not None:
-			image_version = f"{tmp[1]}"
-		else:
-			image_version = default
+		image_version = default
+		regexes = [r"^.+/[^:^/]+:(.+?)@.*", r"^.+/[^:^/]+:(.+)"]
+		for _regex in regexes:
+			tmp = re.match(_regex, image)
+			if tmp is not None:
+				image_version = f"{tmp[1]}"
+				break
 		return image_version
 
 	# CNI detection helpers
