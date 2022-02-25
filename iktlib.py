@@ -185,6 +185,8 @@ def seconds_to_age(seconds):
 def get_since(timestamp):
 	if timestamp is None:
 		since = 0
+	elif timestamp == -1:
+		since = -1
 	else:
 		timediff = datetime.now(timezone.utc) - timestamp
 		since = timediff.days * 24 * 60 * 60 + timediff.seconds
