@@ -208,6 +208,9 @@ def timestamp_to_datetime(timestamp, default = none_timestamp()):
 	if timestamp is None or timestamp == "None":
 		return default
 
+	if timestamp == -1:
+		return -1
+
 	# Timestamps that end with Z are already in UTC; strip that
 	if timestamp.endswith("Z"):
 		timestamp = timestamp[:-1]

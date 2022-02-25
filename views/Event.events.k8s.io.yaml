@@ -9,6 +9,59 @@ listview:
   group: Core
   fields:
   - namespace
+  - name: seen
+    header: "Last Seen:"
+    paths:
+    - path: ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
+      pathtype: value
+      type: timestamp
+    formatter: age
+    align: right
+  - name: type
+    header: "Type:"
+    path: "type"
+    type: "str"
+    formatter: value_mapper
+    formatting:
+      mapping:
+        mappings:
+          Error:
+            field_colors:
+            - context: main
+              type: status_not_ok
+          Warning:
+            field_colors:
+            - context: main
+              type: status_admin
+          Normal:
+            field_colors:
+            - context: main
+              type: status_ok
+  - event_reason
+  - name: regarding
+    header: "Regarding:"
+    paths:
+    - path: [["regarding#kind", "involvedObject#kind"], ["regarding#apiVersion", "involvedObject#apiVersion"], ["regarding#name", "involvedObject#name"]]
+      pathtype: tuple
+      type: [kind, api_version, name]
+    formatting:
+      field_colors:
+      - type: kind
+      - type: kind
+      - type: generic
+      field_separators:
+      - type: "kind_apigroup"
+      - type: "kind"
+    formatter: list
+  - name: message
+    header: "Message:"
+    paths:
+    - path: "message"
+      pathtype: value
+      type: str
+      replace_quotes: same
+  fields_wide:
+  - namespace
   - name
   - name: seen
     header: "Last Seen:"
@@ -18,13 +71,30 @@ listview:
       type: timestamp
     formatter: age
     align: right
-  - event_status
+  - name: type
+    header: "Type:"
+    path: "type"
+    type: "str"
+    formatter: value_mapper
+    formatting:
+      mapping:
+        mappings:
+          Error:
+            field_colors:
+            - context: main
+              type: status_not_ok
+          Warning:
+            field_colors:
+            - context: main
+              type: status_admin
+          Normal:
+            field_colors:
+            - context: main
+              type: status_ok
   - event_reason
   - name: regarding
     header: "Regarding:"
     paths:
-    # Ideally we want to include the API-family here too, and convert it to mixed form,
-    # but for that we need a custom handler
     - path: [["regarding#kind", "involvedObject#kind"], ["regarding#apiVersion", "involvedObject#apiVersion"], ["regarding#name", "involvedObject#name"]]
       pathtype: tuple
       type: [kind, api_version, name]
@@ -68,7 +138,6 @@ listview:
     default: -1
     formatter: numerical
     align: right
-  - message
   - name: message
     header: "Message:"
     paths:

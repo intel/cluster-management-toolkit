@@ -45,9 +45,10 @@ listview:
     - path: "status#containerStatuses"
       pathtype: items
       subpath: "restartCount"
-      action: add
+      action: sum
       type: int
     align: right
+    default: 0
   - name: last_restart
     header: "Latest Restart:"
     paths:
@@ -107,9 +108,10 @@ listview:
     - path: "status#containerStatuses"
       pathtype: items
       subpath: "restartCount"
-      action: add
+      action: sum
       type: int
     align: right
+    default: 0
   - name: last_restart
     header: "Latest Restart:"
     paths:

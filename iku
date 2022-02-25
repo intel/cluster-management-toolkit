@@ -690,6 +690,55 @@ def generator_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
 
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
+def generator_value_mapper(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	value = getattr(obj, field)
+	ranges = deep_get(formatting, "mapping#ranges", [])
+	mapping = deep_get(formatting, "mapping#mappings", {})
+	match_case = deep_get(formatting, "mapping#match_case", True)
+
+	field_colors = None
+
+	if type(value) in [int, float] and len(ranges) > 0:
+		default_index = -1
+		for i in range(0, len(ranges)):
+			if deep_get(ranges[i], "default", False) == True:
+				if default_index != -1:
+					raise Exception("Field {field}: range cannot contain more than one default")
+				default_index = i
+				continue
+			_min = deep_get(ranges[i], "min")
+			_max = deep_get(ranges[i], "max")
+			if (_min is None or value >= _min) and (_max is None or value < _max):
+				field_colors = deep_get(ranges[i], "field_colors")
+				break
+		if field_colors is None and default_index != -1:
+			field_colors = deep_get(ranges[default_index], "field_colors")
+		string = str(value)
+	elif type(value) in [str, bool] or len(ranges) == 0:
+		string = str(value)
+		_string = string
+		if match_case is False:
+			if string in mapping and string.lower() in mapping and string != string.lower():
+				raise Exception("Field {field}: when using match_case = False the mapping cannot contain keys that only differ in case")
+			for key in mapping:
+				if key.lower() == string.lower():
+					_string = key
+		field_colors = deep_get(mapping, f"{_string}#field_colors")
+	else:
+		raise Exception("Unknown type {type(value)} for mapping/range")
+
+	attr_ref = None
+	if field_colors is not None:
+		context = deep_get(field_colors[0], "context", "main")
+		attr_ref = deep_get(field_colors[0], "type")
+	if attr_ref is None:
+		context, attr_ref = ("types", "generic")
+	formatting = (context, attr_ref, selected)
+	array = [
+		(string, formatting)
+	]
+	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+
 def processor_str_timestamp(obj, field):
 	value = getattr(obj, field)
 	timestamp = ""
@@ -1733,6 +1782,131 @@ def get_default(generator):
 
 latest_info = None
 
+def process_value(field_name, value, vtype, view, fields_name, action, formatter, replace_quotes, _regex):
+	override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{fields_name}", f"{view}#kind_format"], "mixed")
+
+	if vtype == "str":
+		# We don't want any newlines, and extra trailing whitespace
+		value = value.replace("\n", "\\n").rstrip()
+		if replace_quotes == "pretty":
+			value = value.replace("\\\"", "“")
+		elif replace_quotes == "same":
+			value = value.replace("\\\"", "\"")
+	elif vtype in ["float", "int", "bool"]:
+		if action == "sum" and type(value) in [list, tuple]:
+			value = sum(value)
+
+		if type(value) == tuple:
+			tmp = []
+			for tmp1 in value:
+				tmp.append(str(value))
+			value = tmp
+		else:
+			value = str(value)
+	elif vtype == "cpu_usage":
+		if action == "sum" and type(value) == list:
+			tmp = 0
+			for tmp1 in value:
+				tmp += normalise_cpu_usage_to_millicores(tmp1)
+		else:
+			tmp = normalise_cpu_usage_to_millicores(value)
+		value = f"{tmp:0.1f}"
+	elif vtype == "mem_usage":
+		if action == "sum" and type(value) == list:
+			tmp = 0
+			for tmp1 in value:
+				tmp += normalise_mem_to_bytes(tmp1)
+		else:
+			tmp = normalise_mem_to_bytes(value)
+		value = normalise_mem_bytes_to_str(tmp)
+	elif vtype in ["regex_to_tuples", "regex_to_list"]:
+		_values = []
+		if len(value) > 0:
+			if type(value) == str:
+				value = [value]
+			for item in value:
+				tmp = re.match(_regex, item)
+				groups = []
+				if tmp is not None:
+					for group in tmp.groups():
+						if group is not None:
+							groups.append(group)
+					if vtype == "regex_to_tuples":
+						_values.append(tuple(groups))
+					else:
+						_values += groups
+		value = _values
+	elif vtype == "len":
+		value = str(len(value))
+	elif vtype == "timestamp":
+		if action in ["earliest", "latest"] and type(value) in [list, tuple]:
+			tmp = None
+			for tmp1 in value:
+				if tmp1 is None:
+					continue
+				if tmp1 == -1:
+					timestamp = -1
+				else:
+					timestamp = timestamp_to_datetime(tmp1)
+				if tmp is None or timestamp == -1:
+					tmp = timestamp
+				else:
+					if timestamp < tmp and action == "earliest":
+						tmp = timestamp
+					elif timestamp > tmp and action == "latest":
+						tmp = timestamp
+			value = tmp
+		else:
+			value = timestamp_to_datetime(value)
+
+		# If we're gonna format this as age we want this passed through get_since()
+		if formatter == "age":
+			value = get_since(value)
+	elif type(vtype) == list:
+		if type(value) not in [list, tuple]:
+			raise Exception(f"Field {field_name}: type is {vtype}; for type {vtype} pathtype must be a multi-element type")
+		_values = []
+		override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{fields_name}", f"{view}#kind_format"], "mixed")
+		for i in range(0, len(value)):
+			if i < len(vtype):
+				_vtype = vtype[i]
+			else:
+				_vtype = "raw"
+			if _vtype in ["raw", "name"]:
+				_values.append(value[i])
+			elif _vtype == "kind":
+				if override_kind == "skip":
+					_values.append("")
+				else:
+					_values.append(value[i])
+			elif _vtype == "api_version":
+				if override_kind != "mixed":
+					_values.append("")
+					continue
+
+				if "/" in value[i]:
+					_values.append(value[i].split("/")[0])
+				else:
+					_values.append("")
+			elif _vtype in ["skip"]:
+				_values.append("")
+			else:
+				raise Exception(f"Field {name}: type[{i}] ({vtype}) is unknown")
+		if type(value) == list:
+			value = _values
+		elif type(value) == tuple:
+			value = tuple(_values)
+	elif vtype == "raw":
+		# Don't convert this type
+		pass
+	else:
+		theme = get_theme_ref()
+
+		# Is a custom type used for theming?
+		if vtype not in theme["types"]:
+			raise Exception(f"Unknown value type {vtype}; the view file is probably invalid")
+	return value
+
 def generic_infogetter(**kwargs):
 	info = []
 
@@ -1785,18 +1959,19 @@ def generic_infogetter(**kwargs):
 
 					ptype = deep_get(_path, "pathtype", "list")
 					action = deep_get(_path, "action")
-					subpaths = deep_get_with_fallback(_path, ["subpaths", "subpath"], [])
+					subpath = deep_get(_path, "subpath", "")
+					subpaths = deep_get(_path, "subpaths", [])
 					fallback_on_empty = deep_get(_path, "fallback_on_empty", False)
 					replace_quotes = deep_get(_path, "replace_quotes", "no")
-					if type(subpaths) == str:
-						subpaths = [subpaths]
-
 					if ptype == "list":
 						# Just return the list
 						value = deep_get_with_fallback(obj, path, default = default, fallback_on_empty = fallback_on_empty)
 					elif ptype == "items":
-						if len(subpaths) == 0:
-							raise Exception(f"Field {name}: when using action: 'items' a subpath must be specified")
+						if len(subpath) > 0:
+							if len(subpaths) > 0:
+								raise Exception(f"Field {name}: when using action: 'items' exactly one of subpath and subpaths must be specified")
+							else:
+								subpaths = [subpath]
 						value = []
 						when_key = deep_get(_path, "when#key")
 						when_eq = deep_get(_path, "when#eq")
@@ -1853,13 +2028,26 @@ def generic_infogetter(**kwargs):
 								continue
 
 							tmp = []
-							for subpath in subpaths:
-								if type(subpath) == dict:
-									_subpath = deep_get(subpath, "subpath")
-									_regexes = deep_get(subpath, "regex")
+							for i in range(0, len(subpaths)):
+								if type(default) == list:
+									if i < len(default):
+										_default = default[i]
+									else:
+										_default = None
+								else:
+									_default = default
+
+								if vtype in ["int", "float"] and type(default) not in [int, float]:
+									_default = 0
+
+								if type(subpaths[i]) == dict:
+									_subpath = deep_get(subpaths[i], "subpath")
+									if type(_subpath) == str:
+										_subpath = [_subpath]
+									_regexes = deep_get(subpaths[i], "regex")
 									if type(_regexes) == str:
 										_regexes = [_regexes]
-									_raw = deep_get(item, _subpath)
+									_raw = deep_get_with_fallback(item, _subpath, _default)
 									for _regex in _regexes:
 										_tmp = re.match(_regex, _raw)
 										if _tmp is not None:
@@ -1868,23 +2056,30 @@ def generic_infogetter(**kwargs):
 													tmp.append(group)
 											break
 								else:
-									tmp.append(deep_get(item, subpath, default))
+									_subpath = subpaths[i]
+									if type(_subpath) == str:
+										_subpath = [_subpath]
+									tmp.append(deep_get_with_fallback(item, _subpath, _default))
 							if len(tmp) == 1:
 								value.append(tmp[0])
 							else:
 								value.append(tuple(tmp))
-						if len(value) == 1 and formatter != "list":
-							value = value[0]
+						if len(value) == 0:
+							value = default
 					elif ptype == "tuple":
 						value = []
 						for i in range(0, len(path)):
-							if type(default) == str:
-								_default = default
-							else:
+							if type(default) == list:
 								if i < len(default):
 									_default = default[i]
 								else:
 									_default = None
+							else:
+								_default = default
+
+							if vtype in ["int", "float"] and type(default) not in [int, float]:
+								_default = 0
+
 							value.append(deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty))
 						value = tuple(value)
 					else:
@@ -1893,127 +2088,16 @@ def generic_infogetter(**kwargs):
 
 				values = []
 
-				for value, vtype in _values:
-					if vtype == "str":
-						# We don't want any newlines, and extra trailing whitespace
-						value = value.replace("\n", "\\n").rstrip()
-						if replace_quotes == "pretty":
-							value = value.replace("\\\"", "“")
-						elif replace_quotes == "same":
-							value = value.replace("\\\"", "\"")
-					elif vtype in ["float", "int", "bool"]:
-						if type(value) == tuple:
-							tmp = []
-							for tmp1 in value:
-								tmp.append(str(value))
-							value = tmp
-						else:
-							value = str(value)
-					elif vtype == "cpu_usage":
-						if action == "add" and type(value) == list:
-							tmp = 0
-							for tmp1 in value:
-								tmp += normalise_cpu_usage_to_millicores(tmp1)
-						else:
-							tmp = normalise_cpu_usage_to_millicores(value)
-						value = f"{tmp:0.1f}"
-					elif vtype == "mem_usage":
-						if action == "add" and type(value) == list:
-							tmp = 0
-							for tmp1 in value:
-								tmp += normalise_mem_to_bytes(tmp1)
-						else:
-							tmp = normalise_mem_to_bytes(value)
-						value = normalise_mem_bytes_to_str(tmp)
-					elif vtype in ["regex_to_tuples", "regex_to_list"]:
-						_regex = deep_get(_path, "regex")
-						_values = []
-						if len(value) > 0:
-							if type(value) == str:
-								value = [value]
-							for item in value:
-								tmp = re.match(_regex, item)
-								groups = []
-								if tmp is not None:
-									for group in tmp.groups():
-										if group is not None:
-											groups.append(group)
-									if vtype == "regex_to_tuples":
-										_values.append(tuple(groups))
-									else:
-										_values += groups
-						value = _values
-					elif vtype == "len":
-						value = str(len(value))
-					elif vtype == "timestamp":
-						if action in ["earliest", "latest"] and type(value) in [list, tuple]:
-							tmp = None
-							for tmp1 in value:
-								if tmp1 is None:
-									continue
-								if tmp1 == -1:
-									timestamp = -1
-								else:
-									timestamp = timestamp_to_datetime(tmp1)
-								if tmp is None or timestamp == -1:
-									tmp = timestamp
-								else:
-									if timestamp < tmp and action == "earliest":
-										tmp = timestamp
-									elif timestamp > tmp and action == "latest":
-										tmp = timestamp
-							value = tmp
-						else:
-							value = timestamp_to_datetime(value)
-						# If we're gonna format this as age we want this passed through get_since()
-						if value is None:
-							value = default
-						if formatter == "age":
-							value = get_since(value)
-					elif type(vtype) == list:
-						if type(value) not in [list, tuple]:
-							raise Exception(f"Field {name}: pathtype is {ptype}, but type is {vtype}; for type {vtype} paththype must be a multi-element type")
-						_values = []
-						override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{fields_name}", f"{view}#kind_format"], "mixed")
-						for i in range(0, len(value)):
-							if i < len(vtype):
-								_vtype = vtype[i]
-							else:
-								_vtype = "raw"
-							if _vtype in ["raw", "name"]:
-								_values.append(value[i])
-							elif _vtype == "kind":
-								if override_kind == "skip":
-									_values.append("")
-								else:
-									_values.append(value[i])
-							elif _vtype == "api_version":
-								if override_kind != "mixed":
-									_values.append("")
-									continue
-
-								if "/" in value[i]:
-									_values.append(value[i].split("/")[0])
-								else:
-									_values.append("")
-							elif _vtype in ["skip"]:
-								_values.append("")
-							else:
-								raise Exception(f"Field {name}: type[{i}] ({vtype}) is unknown")
-						if type(value) == list:
-							value = _values
-						elif type(value) == tuple:
-							value = tuple(_values)
-					elif vtype == "raw":
-						# Don't convert this type
-						pass
+				for value, _vtype in _values:
+					_regex = deep_get(_path, "regex")
+					if type(value) == list and type(_vtype) == list:
+						tmp = []
+						for _value in value:
+							tmp.append(process_value(name, _value, _vtype, view, fields_name, action, formatter, replace_quotes, _regex))
 					else:
-						theme = get_theme_ref()
+						tmp = process_value(name, value, _vtype, view, fields_name, action, formatter, replace_quotes, _regex)
+					values.append(tmp)
 
-						# Is a custom type used for theming?
-						if vtype not in theme["types"]:
-							raise Exception(f"Unknown value type {vtype}; the view file is probably invalid")
-					values.append(value)
 				if len(values) == 1:
 					d[name] = values[0]
 				else:
@@ -5134,6 +5218,7 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 			"ellipsis": field_list[field].get("ellipsis", ("separators", "ellipsis")),
 			"field_prefixes": field_list[field].get("field_prefixes", None),
 			"field_suffixes": field_list[field].get("field_suffixes", None),
+			"mapping": field_list[field].get("mapping", {}),
 		}
 
 		tmp = generator(data, field, fieldlen, fpad, ralign, is_selected, **formatting)
@@ -6768,6 +6853,9 @@ def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 			elif formatter == "age":
 				generator = generator_age
 				processor = processor_age
+			elif formatter == "value_mapper":
+				generator = generator_value_mapper
+				processor = None
 			else:
 				raise Exception(f"Unknown formatter {formatter}")
 
@@ -6791,6 +6879,7 @@ def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 			ellipsise = deep_get(field, "formatting#ellipsise", -1)
 			ellipsis = get_formatting(field, "ellipsis", ("separators", "ellipsis"))
 			item_separator = get_formatting(field, "item_separator", ("separators", "list"))
+			mapping = deep_get(field, "formatting#mapping", {})
 		else:
 			if field not in field_templates:
 				raise Exception(f"Programming error! Field “{field}“ not defined in field_templates")
@@ -6815,6 +6904,7 @@ def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 			ellipsise = deep_get(field_templates, f"{field}#ellipsise", -1)
 			ellipsis = deep_get(field_templates, f"{field}#ellipsis", ("separators", "ellipsis"))
 			item_separator = deep_get(field_templates, f"{field}#item_separator", ("separators", "list"))
+			mapping = {}
 			sortkey1 = field
 			# If sortkey1 == sortcolumn this "fails", but it's good enough
 			sortkey2 = sortcolumn
@@ -6836,6 +6926,7 @@ def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 			"ellipsise": ellipsise,
 			"ellipsis": ellipsis,
 			"item_separator": item_separator,
+			"mapping": mapping,
 			"sortkey1": sortkey1,
 			"sortkey2": sortkey2,
 		}
