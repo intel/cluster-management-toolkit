@@ -237,9 +237,10 @@ def align_and_pad(array, pad, fieldlen, stringlen, ralign, selected):
 		array.append((("separators", "pad"), selected))
 	return array
 
-def generator_basic(obj, field, fieldlen, pad, ralign, selected):
+def generator_basic(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 	string = str(value)
+	field_colors = deep_get(formatting, f"field_colors", [("types", "generic")])
 
 	if string == "None":
 		string = "<none>"
@@ -247,7 +248,8 @@ def generator_basic(obj, field, fieldlen, pad, ralign, selected):
 	if string in ["<none>", "<unset>", "<unknown>"]:
 		formatting = ("types", "none", selected)
 	else:
-		formatting = ("types", "generic", selected)
+		context, attr_ref = field_colors[0]
+		formatting = (context, attr_ref, selected)
 
 	array = [
 		(string, formatting)
@@ -255,7 +257,7 @@ def generator_basic(obj, field, fieldlen, pad, ralign, selected):
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_str_timestamp(obj, field, fieldlen, pad, ralign, selected):
+def generator_str_timestamp(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	string = processor_str_timestamp(obj, field)
 
 	if len(string) == 0:
@@ -265,7 +267,7 @@ def generator_str_timestamp(obj, field, fieldlen, pad, ralign, selected):
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_timestamp(obj, field, fieldlen, pad, ralign, selected):
+def generator_timestamp(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 
 	string = datetime_to_timestamp(value)
@@ -278,7 +280,7 @@ def generator_timestamp(obj, field, fieldlen, pad, ralign, selected):
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_yesno(obj, field, fieldlen, pad, ralign, selected):
+def generator_yesno(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 
 	if value is None:
@@ -296,7 +298,7 @@ def generator_yesno(obj, field, fieldlen, pad, ralign, selected):
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_priority_level(obj, field, fieldlen, pad, ralign, selected):
+def generator_priority_level(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 
 	if value is None:
@@ -405,34 +407,51 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 
 	return align_and_pad(array, pad, fieldlen, totallen, ralign, selected)
 
-def generator_list(obj, field, fieldlen, pad, ralign, selected, item_separator = None, field_separators = None, field_colors = None, ellipsise = -1, ellipsis = None, field_prefixes = None, field_suffixes = None):
+def generator_list(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	items = getattr(obj, field)
 
+	item_separator = deep_get(formatting, "item_separator")
 	if item_separator is None:
 		item_separator = ("separators", "list")
 
+	field_separators = deep_get(formatting, "field_separators")
 	if field_separators is None:
 		field_separators = [("separators", "field")]
 
+	field_colors = deep_get(formatting, "field_colors")
 	if field_colors is None:
-		field_colors = [("types", "generic")]
+		field_colors = [("types", "field")]
 
+	ellipsise = deep_get(formatting, "ellipsise", -1)
+
+	ellipsis = deep_get(formatting, "ellipsis")
 	if ellipsis is None:
 		ellipsis = ("separators", "ellipsis")
 
+	field_prefixes = deep_get(formatting, "field_prefixes")
+	field_suffixes = deep_get(formatting, "field_prefixes")
 	return format_list(items, fieldlen, pad, ralign, selected, item_separator = item_separator, field_separators = field_separators, field_colors = field_colors, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
 
-def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, item_separator = None, field_separators = None, field_colors = None, ellipsise = -1, ellipsis = None, field_prefixes = None, field_suffixes = None):
+def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	items = getattr(obj, field)
 
+
+	item_separator = deep_get(formatting, "item_separator")
 	if item_separator is None:
 		item_separator = ("separators", "list")
 
+	field_separators = deep_get(formatting, "field_separators")
 	if field_separators is None:
 		field_separators = [("separators", "field")]
 
+	ellipsise = deep_get(formatting, "ellipsise", -1)
+
+	ellipsis = deep_get(formatting, "ellipsis")
 	if ellipsis is None:
 		ellipsis = ("separators", "ellipsis")
+
+	field_prefixes = deep_get(formatting, "field_prefixes")
+	field_suffixes = deep_get(formatting, "field_prefixes")
 
 	newitems = []
 
@@ -448,7 +467,7 @@ def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, item
 
 	return format_list(newitems, fieldlen, pad, ralign, selected, item_separator = item_separator, field_separators = field_separators, field_colors = field_colors, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
 
-def generator_secret_data(obj, field, fieldlen, pad, ralign, selected):
+def generator_secret_data(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 	string = str(value)
 
@@ -474,7 +493,7 @@ def generator_secret_data(obj, field, fieldlen, pad, ralign, selected):
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_numerical_range(obj, field, fieldlen, pad, ralign, selected):
+def generator_numerical_range(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 	if type(value) == int:
 		value = [value]
@@ -504,7 +523,7 @@ def generator_numerical_range(obj, field, fieldlen, pad, ralign, selected):
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_numerical(obj, field, fieldlen, pad, ralign, selected):
+def generator_numerical(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 
 	if value == -1:
@@ -520,7 +539,7 @@ def generator_numerical(obj, field, fieldlen, pad, ralign, selected):
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_mem_single(obj, field, fieldlen, pad, ralign, selected):
+def generator_mem_single(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 	string = str(value)
 
@@ -567,7 +586,7 @@ def format_numerical_with_units(string, ftype, selected):
 
 	return array
 
-def generator_age(obj, field, fieldlen, pad, ralign, selected):
+def generator_age(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 
 	if value == -1:
@@ -583,7 +602,7 @@ def generator_age(obj, field, fieldlen, pad, ralign, selected):
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_mem(obj, field, fieldlen, pad, ralign, selected):
+def generator_mem(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	free, total = getattr(obj, field)
 
 	if free is None and total is None:
@@ -610,7 +629,7 @@ def generator_mem(obj, field, fieldlen, pad, ralign, selected):
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
 # Generator for {available,ready} / total
-def generator_total(obj, field, fieldlen, pad, ralign, selected):
+def generator_total(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	free, total = getattr(obj, field)
 
 	if free is None and total is None:
@@ -659,7 +678,7 @@ def generator_total(obj, field, fieldlen, pad, ralign, selected):
 
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
-def generator_status(obj, field, fieldlen, pad, ralign, selected):
+def generator_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	status = getattr(obj, field)
 	status_group = getattr(obj, "status_group")
 	attribute = color_status_group(status_group, selected)
@@ -947,7 +966,7 @@ class ContextInfo:
 	def __repr__(self):
 		return repr((self.current, self.name, self.cluster, self.authinfo, self.namespace))
 
-def get_context_info(extra_vars = {}):
+def get_context_info(**kwargs):
 	info = []
 
 	vlist = kh.list_contexts()
@@ -1021,7 +1040,7 @@ def __get_container_info(obj, container_type, spec_path, status_path):
 
 	return containers
 
-def get_container_info(extra_vars = {}):
+def get_container_info(**kwargs):
 	info = []
 	containers = {}
 
@@ -1085,7 +1104,7 @@ class LogInfo:
 	def __repr__(self):
 		return repr((self.name, self.ref, self.created_at, self.log_type))
 
-def get_log_info(extra_vars = {}):
+def get_log_info(**kwargs):
 	info = []
 
 	# Get the list of available Ansible logs
@@ -1111,12 +1130,12 @@ class SidecarInfo:
 	def __repr__(self):
 		return repr((self.traffic_type, self.port, self.ref, self.bind, self.capture_mode, self.default_endpoint, self.hosts))
 
-def get_sidecar_info(obj):
+def get_sidecar_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if obj is None or (len(deep_get(obj, "spec#ingress", [])) == 0 and len(deep_get(obj, "spec#egress", [])) == 0):
-		# traffic_type, port, ref, bind, capture_mode, default_endpoint, hosts):
-		return [SidecarInfo("<none>", ("", "", ""), None, "", "", "", [])]
+	if obj is None:
+		return []
 
 	for item in deep_get(obj, "spec#ingress", []):
 		traffic_type = "Ingress"
@@ -1714,36 +1733,56 @@ def get_default(generator):
 
 latest_info = None
 
-def generic_infogetter(vlist, fields, **kwargs):
+def generic_infogetter(**kwargs):
 	info = []
+
+	vlist = deep_get(kwargs, "_vlist", [])
 
 	# Generate an empty entry
 	if vlist == []:
 		return []
+
+	fields = deep_get(kwargs, "_fields", [])
+	fields_name = deep_get(kwargs, "_fields_name", "normal")
+
+	# If we know the view we can use it to get overrides from ikt.yaml
+	view = deep_get(kwargs, "_view", "")
 
 	for obj in vlist:
 		d = {}
 		d["ref"] = obj
 		# fields both specify formatting and where to get the data from; here we're only concerned with the data
 		for field in fields:
-			# A tuple field is:
-			# (field, header[, path])
-			path = None
-			if type(field) == tuple:
-				if len(field) > 2:
-					path = field[2]
-				field = field[0]
-
 			if type(field) == dict:
 				name = deep_get(field, "name")
+				path = deep_get(field, "path")
 				paths = deep_get(field, "paths", [])
 				converters = deep_get(field, "converters", [])
 				default = deep_get(field, "default", "")
 				formatter = deep_get(field, "formatter")
-				values = []
+
+				if path is None and len(paths) == 0 or path is not None and len(paths) > 0:
+					raise Exception("Field {name}: exactly one of path and paths must be non-empty")
+
+				_values = []
+
+				if path is not None:
+					if deep_get(field, "type") is None:
+						raise Exception("Field {name}: the path field has no default type; type must always be specified")
+					_values.append((deep_get(obj, path, default), deep_get(field, "type")))
+
 				for _path in paths:
 					vtype = deep_get(_path, "type", "raw")
 					path = deep_get(_path, "path")
+					mpaths = deep_get(_path, "paths")
+					if path is not None and mpaths is not None or path is None and mpaths is None:
+						raise Exception("Field {name}: exactly one of path & paths must be used in a 'paths:' block")
+
+					if mpaths is None:
+						if type(path) == str:
+							path = [path]
+						mpaths = [path]
+
 					ptype = deep_get(_path, "pathtype", "list")
 					action = deep_get(_path, "action")
 					subpaths = deep_get_with_fallback(_path, ["subpaths", "subpath"], [])
@@ -1752,23 +1791,90 @@ def generic_infogetter(vlist, fields, **kwargs):
 					if type(subpaths) == str:
 						subpaths = [subpaths]
 
-					if type(path) == str:
-						path = [path]
 					if ptype == "list":
 						# Just return the list
 						value = deep_get_with_fallback(obj, path, default = default, fallback_on_empty = fallback_on_empty)
 					elif ptype == "items":
 						if len(subpaths) == 0:
-							raise Exception("When using action == items a subpath must be specified")
+							raise Exception(f"Field {name}: when using action: 'items' a subpath must be specified")
 						value = []
-						for item in deep_get_with_fallback(obj, path, [], fallback_on_empty = fallback_on_empty):
+						when_key = deep_get(_path, "when#key")
+						when_eq = deep_get(_path, "when#eq")
+						when_ne = deep_get(_path, "when#ne")
+						when_lt = deep_get(_path, "when#lt")
+						when_lte = deep_get(_path, "when#lte")
+						when_gt = deep_get(_path, "when#gt")
+						when_gte = deep_get(_path, "when#gte")
+						when_in = deep_get(_path, "when#in")
+						when_notin = deep_get(_path, "when#notin")
+						when_missing = deep_get(_path, "when#missing")
+						when_notmissing = deep_get(_path, "when#notmissing")
+						when_none = deep_get(_path, "when#none")
+						when_notnone = deep_get(_path, "when#notnone")
+						items = []
+						for mpath in mpaths:
+							if type(mpath) == str:
+								mpath = [mpath]
+							items += deep_get_with_fallback(obj, mpath, [], fallback_on_empty = fallback_on_empty)
+
+						for item in items:
+							# Check for existance
+							if when_missing is not None and when_missing in item:
+								continue
+							if when_notmissing is not None and when_notmissing not in item:
+								continue
+
+							# Check for none
+							_val = deep_get(item, when_key)
+							if when_notnone is not None and _val is None:
+								continue
+							if when_none is not None and _val is not None:
+								continue
+
+							# Set-based checks
+							if when_in is not None and _val not in when_in:
+								continue
+							if when_notin is not None and _val in when_notin:
+								continue
+
+							# Check for equality
+							if when_eq is not None and (_val is None or _val != type(_val)(when_eq)):
+								continue
+							if when_ne is not None and (_val is None or _val == type(_val)(when_ne)):
+								continue
+
+							if when_lt is not None and not _val < type(_val)(when_lt):
+								continue
+							if when_lte is not None and not _val <= type(_val)(when_lte):
+								continue
+							if when_gt is not None and not _val > type(_val)(when_gt):
+								continue
+							if when_gte is not None and _val >= type(_val)(when_gte):
+								continue
+
 							tmp = []
 							for subpath in subpaths:
-								tmp.append(deep_get(item, subpath))
+								if type(subpath) == dict:
+									_subpath = deep_get(subpath, "subpath")
+									_regexes = deep_get(subpath, "regex")
+									if type(_regexes) == str:
+										_regexes = [_regexes]
+									_raw = deep_get(item, _subpath)
+									for _regex in _regexes:
+										_tmp = re.match(_regex, _raw)
+										if _tmp is not None:
+											for group in _tmp.groups():
+												if group is not None:
+													tmp.append(group)
+											break
+								else:
+									tmp.append(deep_get(item, subpath, default))
 							if len(tmp) == 1:
 								value.append(tmp[0])
 							else:
 								value.append(tuple(tmp))
+						if len(value) == 1 and formatter != "list":
+							value = value[0]
 					elif ptype == "tuple":
 						value = []
 						for i in range(0, len(path)):
@@ -1783,6 +1889,11 @@ def generic_infogetter(vlist, fields, **kwargs):
 						value = tuple(value)
 					else:
 						value = deep_get_with_fallback(obj, path, default)
+					_values.append((value, vtype))
+
+				values = []
+
+				for value, vtype in _values:
 					if vtype == "str":
 						# We don't want any newlines, and extra trailing whitespace
 						value = value.replace("\n", "\\n").rstrip()
@@ -1835,15 +1946,73 @@ def generic_infogetter(vlist, fields, **kwargs):
 					elif vtype == "len":
 						value = str(len(value))
 					elif vtype == "timestamp":
-						value = timestamp_to_datetime(value)
+						if action in ["earliest", "latest"] and type(value) in [list, tuple]:
+							tmp = None
+							for tmp1 in value:
+								if tmp1 is None:
+									continue
+								if tmp1 == -1:
+									timestamp = -1
+								else:
+									timestamp = timestamp_to_datetime(tmp1)
+								if tmp is None or timestamp == -1:
+									tmp = timestamp
+								else:
+									if timestamp < tmp and action == "earliest":
+										tmp = timestamp
+									elif timestamp > tmp and action == "latest":
+										tmp = timestamp
+							value = tmp
+						else:
+							value = timestamp_to_datetime(value)
 						# If we're gonna format this as age we want this passed through get_since()
+						if value is None:
+							value = default
 						if formatter == "age":
 							value = get_since(value)
+					elif type(vtype) == list:
+						if type(value) not in [list, tuple]:
+							raise Exception(f"Field {name}: pathtype is {ptype}, but type is {vtype}; for type {vtype} paththype must be a multi-element type")
+						_values = []
+						override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{fields_name}", f"{view}#kind_format"], "mixed")
+						for i in range(0, len(value)):
+							if i < len(vtype):
+								_vtype = vtype[i]
+							else:
+								_vtype = "raw"
+							if _vtype in ["raw", "name"]:
+								_values.append(value[i])
+							elif _vtype == "kind":
+								if override_kind == "skip":
+									_values.append("")
+								else:
+									_values.append(value[i])
+							elif _vtype == "api_version":
+								if override_kind != "mixed":
+									_values.append("")
+									continue
+
+								if "/" in value[i]:
+									_values.append(value[i].split("/")[0])
+								else:
+									_values.append("")
+							elif _vtype in ["skip"]:
+								_values.append("")
+							else:
+								raise Exception(f"Field {name}: type[{i}] ({vtype}) is unknown")
+						if type(value) == list:
+							value = _values
+						elif type(value) == tuple:
+							value = tuple(_values)
 					elif vtype == "raw":
 						# Don't convert this type
 						pass
 					else:
-						raise Exception(f"Unknown value type {vtype}; the view file is probably invalid")
+						theme = get_theme_ref()
+
+						# Is a custom type used for theming?
+						if vtype not in theme["types"]:
+							raise Exception(f"Unknown value type {vtype}; the view file is probably invalid")
 					values.append(value)
 				if len(values) == 1:
 					d[name] = values[0]
@@ -1853,8 +2022,7 @@ def generic_infogetter(vlist, fields, **kwargs):
 			else:
 				generator = deep_get(field_templates, f"{field}#generator", generator_basic)
 				datagetter = deep_get(field_templates, f"{field}#datagetter", None)
-				if path is None:
-					path = deep_get(field_templates, f"{field}#path", "")
+				path = deep_get(field_templates, f"{field}#path", "")
 				default = deep_get(field_templates, f"{field}#default", get_default(generator))
 
 			if datagetter is None:
@@ -1873,7 +2041,8 @@ def generic_infogetter(vlist, fields, **kwargs):
 					d[key] = value
 
 		# We've got all the information we can get now; time to apply filters
-		filters = deep_get(kwargs, "filters", {})
+		filters = deep_get(kwargs, "_filters", {})
+
 		skip = False
 		for f in filters:
 			if deep_get(filters[f], "enabled", True) == False:
@@ -2126,12 +2295,12 @@ class NetworkPolicyRuleInfo:
 	def __repr__(self):
 		return repr((self.policy_type, self.ports, self.ipblock, self.ipblock_exceptions, self.pod_selector, self.namespace_selector))
 
-def get_netpol_rule_info(obj):
+def get_netpol_rule_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if obj is None or (len(deep_get(obj, "spec#egress", [])) == 0 and len(deep_get(obj, "spec#ingress", [])) == 0):
-		# policy_type, ports, ipblock, ipblock_exceptions, pod_selector, namespace_selector
-		return [NetworkPolicyRuleInfo("<none>", [], "", [], [], [])]
+	if obj is None:
+		return []
 
 	policy_type = "Egress"
 
@@ -2183,12 +2352,12 @@ class VirtSVCRuleInfo:
 	def __repr__(self):
 		return repr((self.rule_type, self.ref, self.destinations))
 
-def get_virtsvc_rule_info(obj):
+def get_virtsvc_rule_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
 	if obj is None:
-		# rule_type, ref, destination
-		return [VirtSVCRuleInfo("<none>", None, [])]
+		return []
 
 	# XXX: Currently we have no good value for ref; set it to None
 	ref = None
@@ -2254,15 +2423,14 @@ class PromRulesInfo:
 	def __repr__(self):
 		return repr((self.group, self.ref, self.rtype, self.alertrecord, self.duration))
 
-def get_promrules_info(obj):
+def get_promrules_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	groups = deep_get(obj, "spec#groups", [])
-	if len(groups) == 0:
-		#name, ref
-		return [PromRulesInfo("<none>", None, "", "", "")]
+	if obj is None:
+		return []
 
-	for group in groups:
+	for group in deep_get(obj, "spec#groups", []):
 		for rule in deep_get(group, "rules"):
 			name = deep_get(group, "name")
 			ref = (rule, [name])
@@ -2311,12 +2479,12 @@ class SVCMonEndpointsInfo:
 	def __repr__(self):
 		return repr((self.bearer_token_file, self.ref, self.port, self.target_port, self.interval, self.scheme, self.path, self.honor_labels, self.proxy_url))
 
-def get_svcmon_endpoints_info(obj):
+def get_svcmon_endpoints_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if obj is None or len(deep_get(obj, "spec#endpoints", [])) == 0:
-		#bearer_token_file, ref, port, target_port, interval, scheme, path, honor_labels, proxy_url
-		return [SVCMonEndpointsInfo("<none>", None, "", "", "", "", "", "", "")]
+	if obj is None:
+		return []
 
 	for item in deep_get(obj, "spec#endpoints"):
 		bearer_token_file = deep_get(item, "bearerTokenFile", "")
@@ -2341,12 +2509,12 @@ class GatewayServerInfo:
 	def __repr__(self):
 		return repr((self.hosts, self.ref, self.port))
 
-def get_gw_server_info(obj):
+def get_gw_server_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if obj is None or len(deep_get(obj, "spec#servers", [])) == 0:
-		# hosts, ref, port
-		return [GatewayServerInfo("<none>", None, [])]
+	if obj is None:
+		return []
 
 	for item in deep_get(obj, "spec#servers"):
 		hosts = deep_get(item, "hosts")
@@ -2369,37 +2537,38 @@ class LimitInfo:
 	def __repr__(self):
 		return repr((self.ltype, self.name, self.ref, self.lmin, self.lmax, self.default_request, self.default_limit, self.max_lr_ratio))
 
-def get_limit_info(vlist):
+def get_limit_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if vlist == []:
+	if obj is None:
 		return []
 
-	for obj in deep_get(vlist, "spec#limits", []):
+	for limit in deep_get(obj, "spec#limits", []):
 		resources = set()
 
-		for item in deep_get(obj, "default", []):
+		for item in deep_get(limit, "default", []):
 			resources.add(item)
-		for item in deep_get(obj, "defaultRequest", []):
+		for item in deep_get(limit, "defaultRequest", []):
 			resources.add(item)
-		for item in deep_get(obj, "min", []):
+		for item in deep_get(limit, "min", []):
 			resources.add(item)
-		for item in deep_get(obj, "max", []):
+		for item in deep_get(limit, "max", []):
 			resources.add(item)
-		for item in deep_get(obj, "max", []):
+		for item in deep_get(limit, "max", []):
 			resources.add(item)
-		for item in deep_get(obj, "maxLimitRequestRatio", []):
+		for item in deep_get(limit, "maxLimitRequestRatio", []):
 			resources.add(item)
-		ltype = deep_get(obj, "type")
-		ref = obj
+		ltype = deep_get(limit, "type")
+		ref = limit
 
 		for item in resources:
 			name = item
-			lmin = deep_get(obj, "min#%s" % item, "-")
-			lmax = deep_get(obj, "max#%s" % item, "-")
-			default_request = deep_get(obj, "defaultRequest#%s" % item, "-")
-			default_limit = deep_get(obj, "default#%s" % item, "-")
-			max_lr_ratio = deep_get(obj, "maxLimitRequestRatio#%s" % item, "-")
+			lmin = deep_get(limit, "min#%s" % item, "-")
+			lmax = deep_get(limit, "max#%s" % item, "-")
+			default_request = deep_get(limit, "defaultRequest#%s" % item, "-")
+			default_limit = deep_get(limit, "default#%s" % item, "-")
+			max_lr_ratio = deep_get(limit, "maxLimitRequestRatio#%s" % item, "-")
 			info.append(LimitInfo(ltype, name, ref, lmin, lmax, default_request, default_limit, max_lr_ratio))
 
 	return info
@@ -2412,11 +2581,11 @@ class AuthRuleInfo:
 	def __repr__(self):
 		return repr((self.source, self.operation, self.condition))
 
-def get_auth_rule_info(obj):
+def get_auth_rule_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if obj == [] or len(deep_get(obj, "spec#rules", [])) == 0:
-		# source, operation, condition
+	if obj is None:
 		return []
 
 	for item in deep_get(obj, "spec#rules", []):
@@ -2467,12 +2636,12 @@ class PolicyRuleInfo:
 	def __repr__(self):
 		return repr((self.resource, self.api_group, self.non_resource_urls, self.resource_names, self.verbs))
 
-def get_policy_rule_info(role):
+def get_policy_rule_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if role == []:
-		# resource, api_group, non_resource_urls, resource_names, verbs
-		return [PolicyRuleInfo(["<none>"], [], [], [], [])]
+	if obj is None:
+		return []
 
 	# We want one entry per resource, hence a dict
 	# Structure:
@@ -2484,7 +2653,7 @@ def get_policy_rule_info(role):
 	# }
 	resources = {}
 
-	for rule in deep_get(role, "rules", []):
+	for rule in deep_get(obj, "rules", []):
 		non_resource_urls = deep_get(rule, "nonResourceURLs", [])
 		resource_names = deep_get(rule, "resourceNames", [])
 		verbs = deep_get(rule, "verbs", [])
@@ -2546,14 +2715,14 @@ class IngressRuleInfo:
 	def __repr__(self):
 		return repr((self.host, self.path, self.backends))
 
-def get_ingress_rule_info(ingress):
+def get_ingress_rule_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	ingress_rules = []
 
-	if deep_get(ingress, "spec#rules") is None:
-		#host, path, backends
-		return [IngressRuleInfo("<none>", "", [])]
+	if obj is None:
+		return []
 
-	for rule in deep_get(ingress, "spec#rules", []):
+	for rule in deep_get(obj, "spec#rules", []):
 		host = deep_get(rule, "host", "*")
 
 		if deep_get(rule, "http") is not None:
@@ -2579,15 +2748,16 @@ class ServiceAccountSecretInfo:
 	def __repr__(self):
 		return repr((self.stype, self.namespace, self.name, self.ref))
 
-def get_sas_info(serviceaccount):
+def get_sas_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
+
 	info = []
 
-	if serviceaccount == []:
-		#stype, namespace, name, ref
-		return [ServiceAccountSecretInfo("", "N/A", "<none>", None)]
+	if obj is None:
+		return []
 
-	for secret in deep_get(serviceaccount, "secrets", []):
-		snamespace = deep_get(secret, "namespace", deep_get(serviceaccount, "metadata#namespace"))
+	for secret in deep_get(obj, "secrets", []):
+		snamespace = deep_get(secret, "namespace", deep_get(obj, "metadata#namespace"))
 		secret_name = deep_get(secret, "name")
 
 		# Get a reference to the secret
@@ -2595,8 +2765,8 @@ def get_sas_info(serviceaccount):
 
 		info.append(ServiceAccountSecretInfo("Mountable", snamespace, secret_name, ref))
 
-	for secret in deep_get(serviceaccount, "imagePullSecrets", []):
-		snamespace = deep_get(secret, "namespace", deep_get(serviceaccount, "metadata#namespace"))
+	for secret in deep_get(obj, "imagePullSecrets", []):
+		snamespace = deep_get(secret, "namespace", deep_get(obj, "metadata#namespace"))
 		secret_name = deep_get(secret, "name")
 
 		# Get a reference to the secret
@@ -2616,18 +2786,18 @@ class SubjectInfo:
 	def __repr__(self):
 		return repr((self.namespace, self.name, self.ref, self.kind))
 
-def get_subject_info(rolebinding):
+def get_subject_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	subject_info = []
 
-	if rolebinding == [] or deep_get(rolebinding, "subjects") is None:
-		# namespace, name, ref, kind
-		return [SubjectInfo("", "", None, "")]
+	if obj is None:
+		return subject_info
 
 	# This works for both RoleBinding and ClusterRoleBinding since
 	# ClusterRoleBinding doesn't have a namespace field
-	rolebinding_namespace = deep_get(rolebinding, "metadata#namespace", "")
+	rolebinding_namespace = deep_get(obj, "metadata#namespace", "")
 
-	for subject in deep_get(rolebinding, "subjects", []):
+	for subject in deep_get(obj, "subjects", []):
 		kind = deep_get(subject, "kind")
 		name = deep_get(subject, "name")
 		api_group = deep_get(subject, "apiGroup", "")
@@ -2779,17 +2949,17 @@ class SubsetsInfo:
 	def __repr__(self):
 		return repr((self.addresses, self.ports_ep, self.status, self.status_group))
 
-def get_subsets_info(ep):
+def get_subsets_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	subsets = []
 
-	if deep_get(ep, "subsets", []) == []:
-		# addresses, ports, status, status_group
-		return [SubsetsInfo(["<none>"], [], "", stgroup.NOT_OK)]
+	if obj is None:
+		return []
 
 	# Policy for subsets expansion
 	expand_subsets = deep_get(iktconfig, "Endpoints#expand_subsets", "None")
 
-	for subset in deep_get(ep, "subsets", []):
+	for subset in deep_get(obj, "subsets", []):
 		ready_addresses = []
 		not_ready_addresses = []
 		ports = []
@@ -2847,21 +3017,21 @@ class EPSSubsetsInfo:
 	def __repr__(self):
 		return repr((self.addresstype, self.addresses, self.ports_eps, self.status, self.status_group, self.target_ref, self.topology))
 
-def get_eps_subsets_info(eps):
+def get_eps_subsets_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	subsets = []
 
-	if deep_get(eps, "endpoints") is None:
-		# addresstype, addresses, ports, status, status_group, target_ref, topology
-		return [EPSSubsetsInfo("", ["<none>"], [], "", stgroup.NOT_OK, [], [])]
+	if obj is None:
+		return []
 
-	addresstype = deep_get(eps, "addressType")
+	addresstype = deep_get(obj, "addressType")
 	ports = []
 
-	for port in deep_get(eps, "ports", []):
+	for port in deep_get(obj, "ports", []):
 		port_name = deep_get(port, "name", "")
 		ports.append((port_name, deep_get(port, "port"), deep_get(port, "protocol")))
 
-	for endpoint in deep_get(eps, "endpoints", []):
+	for endpoint in deep_get(obj, "endpoints", []):
 		ready_addresses = []
 		not_ready_addresses = []
 
@@ -2931,7 +3101,8 @@ def cpu_usage_to_millicores(cpu_usage):
 	else:
 		raise Exception("Unknown cpu usage metrics: {cpu_usage}")
 
-def get_pod_metrics_info(obj):
+def get_pod_metrics_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
 	if obj is None:
@@ -2960,16 +3131,14 @@ class AppStatusInfo:
 	def __repr__(self):
 		return repr((self.name, self.status, self.status_group, self.link))
 
-def get_app_status_info(obj):
+def get_app_status_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	components = deep_get(obj, "status#components")
+	if obj is None:
+		return []
 
-	if components is None or len(components) == 0:
-		#name, status, status_group, link
-		return [AppStatusInfo("N/A", "", stgroup.UNKNOWN, "")]
-
-	for item in components:
+	for item in deep_get(obj, "status#components", []):
 		name = deep_get(item, "name")
 		status = deep_get(item, "status")
 		if status == "Ready":
@@ -2992,20 +3161,20 @@ class ConfigMapDataInfo:
 	def __repr__(self):
 		return repr((self.configmap, self.cm_name, self.cm_namespace, self.rtype, self.data))
 
-def get_cm_data_info(cm):
+def get_cm_data_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	data = []
 
-	cm_name = deep_get(cm, "metadata#name")
-	cm_namespace = deep_get(cm, "metadata#namespace")
-	for key, value in deep_get(cm, "binary_data", {}).items():
+	if obj is None:
+		return []
+
+	cm_name = deep_get(obj, "metadata#name")
+	cm_namespace = deep_get(obj, "metadata#namespace")
+	for key, value in deep_get(obj, "binary_data", {}).items():
 		data.append(ConfigMapDataInfo(key, cm_name, cm_namespace, "Binary", value))
 
-	for key, value in deep_get(cm, "data", {}).items():
+	for key, value in deep_get(obj, "data", {}).items():
 		data.append(ConfigMapDataInfo(key, cm_name, cm_namespace, identify_cmdata(key, cm_name, cm_namespace, value), value))
-
-	if data == []:
-		#configmap, rtype, data
-		return [ConfigMapDataInfo("<none>", "", "", "Empty", None)]
 
 	return data
 
@@ -3018,15 +3187,16 @@ class StrategyInfo:
 	def __repr__(self):
 		return repr((self.operator, self.rule, self.operator, self.target))
 
-def get_strategy_info(vlist):
+def get_strategy_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if vlist == []:
+	if obj is None:
 		return []
 
-	deschedule_rules = deep_get(vlist, "spec#strategies#deschedule#rules", [])
-	dontschedule_rules = deep_get(vlist, "spec#strategies#dontschedule#rules", [])
-	scheduleonmetric_rules = deep_get(vlist, "spec#strategies#scheduleonmetric#rules", [])
+	deschedule_rules = deep_get(obj, "spec#strategies#deschedule#rules", [])
+	dontschedule_rules = deep_get(obj, "spec#strategies#dontschedule#rules", [])
+	scheduleonmetric_rules = deep_get(obj, "spec#strategies#scheduleonmetric#rules", [])
 
 	if len(deschedule_rules) > 0:
 		strategy = "deschedule"
@@ -3224,15 +3394,16 @@ def get_desired_replicas(rs):
 			max_replicas = value
 	return desired, max_replicas
 
-def get_webhook_info(vlist, extra_vars = {}):
+def get_webhook_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if vlist == [] or len(vlist["webhooks"]) == 0:
+	if obj is None:
 		return []
 
-	for obj in vlist["webhooks"]:
+	for wh in deep_get(obj, "webhooks", []):
 		d = {
-			"name": obj["name"]
+			"name": wh["name"]
 		}
 		info.append(type("InfoClass", (), d))
 
@@ -3246,12 +3417,12 @@ class RQItemInfo:
 	def __repr__(self):
 		return repr((self.resource, self.used, self.hard))
 
-def get_rq_item_info(obj):
+def get_rq_item_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if rqi == []:
-		#resource, used, hard
-		return [RQItemInfo("", "", "")]
+	if obj is None:
+		return []
 
 	for resource in deep_get(obj, "spec#hard", []):
 		used = deep_get(obj, f"status#used#{resource}", [])
@@ -3268,14 +3439,14 @@ class RuntimeClassOverheadInfo:
 	def __repr__(self):
 		return repr((self.resource, self.overhead))
 
-def get_runtime_class_overhead_info(obj):
+def get_runtime_class_overhead_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if obj is None or len(deep_get(obj, "overhead", {})) == 0:
-		# resource, overhead
-		return [RuntimeClassOverheadInfo("<none>", "")]
+	if obj is None:
+		return []
 
-	for resource, overhead in deep_get(obj, "overhead"):
+	for resource, overhead in deep_get(obj, "overhead", []):
 		info.append(RuntimeClassOverheadInfo(resource, overhead))
 
 	return info
@@ -3319,11 +3490,9 @@ def decode_value(value):
 
 	return vtype, value
 
-def get_key_value_info(vlist):
+def get_key_value_info(**kwargs):
+	vlist = deep_get(kwargs, "_vlist")
 	info = []
-
-	if vlist == []:
-		return []
 
 	for key, value in vlist:
 		decoded_value = ""
@@ -3746,7 +3915,9 @@ def get_resource_info_by_namespace(namespace, resources):
 
 	return resource_info, status
 
-def get_resource_info(obj):
+def get_resource_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
+
 	init_containers = True
 	containers = True
 	ephemeral_containers = True
@@ -4035,7 +4206,7 @@ class InventoryInfo:
 	def __repr__(self):
 		return repr((self.name, self.ips, self.kubernetes_roles, self.ansible_groups, self.status, self.status_group))
 
-def get_inventory_info(extra_vars = {}):
+def get_inventory_info(**kwargs):
 	global latest_info
 	info = []
 	nodes = []
@@ -4172,12 +4343,12 @@ class CSINodeDriverInfo:
 	def __repr__(self):
 		return repr((self.name, self.ref, self.node_id, self.topology_keys, self.allocatable_count))
 
-def get_csi_node_driver_info(obj):
+def get_csi_node_driver_info(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	info = []
 
-	if obj is None or len(obj) == 0 or deep_get(obj, "spec#drivers") is None or len(deep_get(obj, "spec#drivers")) == 0:
-		#name, ref, node_id, topology_keys, allocatable_count
-		return [CSINodeDriverInfo("<none>", None, "", [], "")]
+	if obj is None:
+		return []
 
 	for item in deep_get(obj, "spec#drivers", []):
 		name = deep_get(item, "name")
@@ -4432,6 +4603,7 @@ def get_pod_status(pod):
 				if node_status[0] == "Unreachable":
 					status = "NodeUnreachable"
 				ready = False
+				break
 			elif condition_type == "ContainersReady" and condition_status == "False":
 				status_group = stgroup.NOT_OK
 
@@ -4536,9 +4708,10 @@ def get_pod_tolerations(obj, **kwargs):
 	return tolerations
 
 def set_cluster_context(uip, **kwargs):
-	host = deep_get(kwargs, "selected#name")
-
 	global available_api_families
+
+	name = deep_get(kwargs, "selected").name
+
 	retval = kh.set_context(name = name)
 	# If we actually changed context we need to force an API reload,
 	# since we might have changed between different clusters (or switched
@@ -4761,8 +4934,9 @@ def get_containers(containers = [], container_statuses = []):
 def get_workload_labels(obj, **kwargs):
 	return curses_helper.get_labels(deep_get(obj, "spec#workloadLabels"))
 
-def get_pod_info_with_kind(vlist):
-	return get_pod_info(vlist, extra_vars = {"show_kind": "mixed"})
+def get_pod_info_with_kind(**kwargs):
+	deep_set(kwargs, "extra_vars#show_kind", "mixed")
+	return get_pod_info(**kwargs)
 
 def generic_listgetter(kind, namespace, **kwargs):
 	return kh.get_list_by_kind_namespace(kind, namespace, label_selector = deep_get(kwargs, "label_selector"))
@@ -4810,7 +4984,10 @@ def get_events_by_kind_name_namespace(kind, name, namespace):
 			events.append(event)
 	return events
 
-def get_pod_info(vlist, extra_vars = {"show_kind": "", "show_evicted": True}, filters = []):
+def get_pod_info(**kwargs):
+	vlist = deep_get(kwargs, "_vlist")
+	extra_vars = deep_get(kwargs, "extra_vars", {"show_kind": "", "show_evicted": True})
+	filters = deep_get(kwargs, "filters", [])
 	info = []
 
 	if vlist == []:
@@ -4946,19 +5123,20 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 			fpad = len(themearray_extract_string("pad", context = "separators"))
 		else:
 			fpad = 0
-		ralign = field_list[field].get("ralign", False)
-		item_separator = field_list[field].get("item_separator", ("separators", "list"))
-		field_separators = field_list[field].get("field_separators", [("separators", "field")])
-		field_colors = field_list[field].get("field_colors", [("types", "field")])
-		ellipsise = field_list[field].get("ellipsise", -1)
-		ellipsis = field_list[field].get("ellipsis", ("separators", "ellipsis"))
-		field_prefixes = field_list[field].get("field_prefixes", None)
-		field_suffixes = field_list[field].get("field_suffixes", None)
 
-		if generator in [generator_list, generator_list_with_status]:
-			tmp = generator(data, field, fieldlen, fpad, ralign, is_selected, item_separator = item_separator, field_separators = field_separators, field_colors = field_colors, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
-		else:
-			tmp = generator(data, field, fieldlen, fpad, ralign, is_selected)
+		ralign = field_list[field].get("ralign", False)
+
+		formatting = {
+			"item_separator": field_list[field].get("item_separator", ("separators", "list")),
+			"field_separators": field_list[field].get("field_separators", [("separators", "field")]),
+			"field_colors": field_list[field].get("field_colors", [("types", "field")]),
+			"ellipsise": field_list[field].get("ellipsise", -1),
+			"ellipsis": field_list[field].get("ellipsis", ("separators", "ellipsis")),
+			"field_prefixes": field_list[field].get("field_prefixes", None),
+			"field_suffixes": field_list[field].get("field_suffixes", None),
+		}
+
+		tmp = generator(data, field, fieldlen, fpad, ralign, is_selected, **formatting)
 
 		pos = field_list[field]["pos"]
 
@@ -4967,6 +5145,29 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 			first = False
 
 		uip.addthemearray(listpad, tmp, y = ypos, x = pos + tagprefixlen)
+
+builtin_fields = {
+	"age": {
+		"header": "Age:",
+		"paths": {
+			"path": ["metadata#creationTimestamp"],
+			"type": "timestamp",
+		},
+		"formatter": "age",
+		"default": -1,
+		"align": "right",
+	},
+	"name": {
+		"header": "Name:",
+		"path": "metadata#name",
+		"type": "str",
+	},
+	"namespace": {
+		"header": "Namespace:",
+		"path": "metadata#namespace",
+		"type": "str",
+	},
+}
 
 field_templates = {
 	"access_modes": {
@@ -5788,11 +5989,6 @@ field_templates = {
 	"node_id": {
 		"header": "Node ID:",
 	},
-	"node_name": {
-		"header": "Node:",
-		"path": "spec#nodeName",
-		"default": "<none>",
-	},
 	"node_selector": {
 		"header": "Node Selector:",
 		"path": "spec#nodeSelector",
@@ -6501,8 +6697,6 @@ def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 	for field in fields:
 		if type(field) == str:
 			field_names.append(field)
-		elif type(field) == tuple:
-			field_names.append(field[0])
 		elif type(field) == dict:
 			field_names.append(field["name"])
 
@@ -6537,8 +6731,6 @@ def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 	for field in fields:
 		if type(field) == str:
 			name = field
-		elif type(field) == tuple:
-			name = field[0]
 		elif type(field) == dict:
 			name = field["name"]
 
@@ -6548,12 +6740,7 @@ def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 
 		header = ""
 
-		# If we get a tuple the first part is field, the second overrides header;
-		# we don't care about the remaining parts
-		if type(field) == tuple and len(field) > 1:
-			header = field[1]
-			field = field[0]
-		elif type(field) == dict:
+		if type(field) == dict:
 			# This is a custom field, so we need to construct one that's usable here
 			name = deep_get(field, "name")
 			header = deep_get(field, "header")
@@ -6590,15 +6777,21 @@ def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 			# If sortkey1 == sortcolumn this "fails", but it's good enough
 			sortkey2 = sortcolumn
 
-			field_colors = get_formatting(field, "field_colors", [("types", "field")])
+			theme = get_theme_ref()
+			if deep_get(field, "formatting#field_colors") is None:
+				if "type" in field and field["type"] and field["type"] in theme["types"]:
+					field_colors = [("types", deep_get(field, "type"))]
+				else:
+					field_colors = get_formatting(field, "field_colors", [("types", "field")])
+			else:
+				field_colors = get_formatting(field, "field_colors", [("types", "field")])
 			field_prefixes = get_formatting(field, "field_prefixes", [])
 			field_suffixes = get_formatting(field, "field_suffixes", [])
 			field_separators = get_formatting(field, "field_separators", [("separators", "field")])
 			ellipsise = deep_get(field, "formatting#ellipsise", -1)
 			ellipsis = get_formatting(field, "ellipsis", ("separators", "ellipsis"))
 			item_separator = get_formatting(field, "item_separator", ("separators", "list"))
-
-		if type(field) != dict:
+		else:
 			if field not in field_templates:
 				raise Exception(f"Programming error! Field “{field}“ not defined in field_templates")
 
@@ -6655,7 +6848,7 @@ def genericlistloop(stdscr, view):
 	global initial_namespace
 	global latest_info
 	denylist = deep_get(views, f"{view}#field_denylist", [])
-	fields_custom = deep_get(views, f"{view}#custom_fields", [])
+	fields_custom = deep_get_with_fallback(views, [f"{view}#fields_custom", f"{view}#custom_fields"], [])
 	fields_narrow = deep_get(views, f"{view}#fields", [])
 	fields_wide = deep_get(views, f"{view}#fields_wide", [])
 
@@ -6693,7 +6886,7 @@ def genericlistloop(stdscr, view):
 	update_delay = deep_get(viewref, "update_delay", -1)
 
 	sortorder_reverse = deep_get(viewref, "sortorder_reverse", False)
-	is_taggable = deep_get(viewref, "is_taggable", True)
+	is_taggable = deep_get(viewref, "is_taggable", True) and "actions" in viewref
 	extra_vars = deep_get(viewref, "extra_vars", {})
 
 	uip.init_window(field_list, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun)
@@ -6723,7 +6916,10 @@ def genericlistloop(stdscr, view):
 				listgetter = "kh.get_list_by_kind_namespace"
 
 			infogetter = deep_get(viewref, "infogetter", generic_infogetter)
-			infogetter_extra_vars = deep_get(viewref, "extra_vars#infogetter", {})
+			infogetter_extra_vars = deep_get(viewref, "extra_vars#infogetter", { "_view": view.strip("*") })
+			infogetter_extra_vars["_fields_name"] = fields_name.lower()
+			if "filters" in listview_args:
+				infogetter_extra_vars["_filters"] = deep_get(listview_args, "filters")
 
 			if listgetter is not None:
 				if listgetter == generic_listgetter:
@@ -6737,13 +6933,11 @@ def genericlistloop(stdscr, view):
 						vlist, status = listgetter(extra_vars = listgetter_extra_vars)
 					else:
 						vlist, status = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
-				if infogetter == generic_infogetter:
-					info = infogetter(vlist, fields, **listview_args)
-				else:
-					info = infogetter(vlist, extra_vars = infogetter_extra_vars)
+				infogetter_extra_vars["_vlist"] = vlist
+				infogetter_extra_vars["_fields"] = fields
 			else:
 				status = "OK"
-				info = infogetter(extra_vars = infogetter_extra_vars)
+			info = infogetter(**infogetter_extra_vars)
 
 			if status == 42503:
 				serverstatus = "Server Unavailable"
@@ -7450,29 +7644,18 @@ def genericlistloop(stdscr, view):
 					continue
 
 			selected = uip.get_selected()
-			call = deep_get(value, "call", None)
-			if call is not None:
-				if queryval is not None:
-					retval = call(uip, selected, title, values = selection_vars)
-				else:
-					retval = call(uip.stdscr, **{"selected": selected})
-				if retval is not None and retval == curses_helper.retval.RETURNFULL:
-					return retval
-
-			_eval = deep_get(value, "eval", None)
-			if _eval is not None:
-				expr = compile(_eval, "<string>", "exec")
-				eval(expr)
 
 			action = deep_get(value, "action", None)
 			if action is not None:
 				action_args = deep_get(value, "action_args", {})
-				if "_pass_obj" in action_args:
+				if "_pass_obj" in action_args and selected is not None:
 					action_args["obj"] = selected.ref
 				if "_pass_kind" in action_args:
 					action_args["kind"] = kind
-				if "_pass_selected" in action_args:
+				if "_pass_selected" in action_args and selected is not None:
 					action_args["selected"] = selected
+				if "_pass_selection_vars" in action_args:
+					action_args["selection_vars"] = selection_vars
 				action_call = deep_get(value, "action_call")
 				if action == "toggle_var":
 					var = deep_get(action_args, "var")
@@ -7624,7 +7807,7 @@ def clusteroverviewloop(stdscr, view):
 
 			# Get the list of all pods
 			vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
-			podinfo = get_pod_info(vlist)
+			podinfo = get_pod_info(**{"_vlist": vlist})
 			pod_statuses = [s.status_group for s in podinfo]
 
 			node_heatmap = curses_helper.generate_heatmap(((uip.maxx - uip.minx - 1) // 2) - 1, node_statuses, selected_node)
@@ -9855,8 +10038,9 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				listgetter_args = deep_get(viewref, "listpad#listgetter_args", {})
 				infogetter = deep_get(viewref, "listpad#infogetter")
 				infogetter_filters = deep_get(viewref, "listpad#infogetter_filters", None)
-				filters = None
+				infogetter_args = deep_get(viewref, "listpad#infogetter_args", {})
 
+				filters = None
 				if infogetter_filters is not None:
 					filters = []
 					if infogetter_filters is not None:
@@ -9874,13 +10058,22 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				else:
 					vlist = obj
 
-				if infogetter == generic_infogetter:
-					info = infogetter(vlist, fields)
-				else:
-					if filters is not None:
-						info = infogetter(vlist, filters = filters)
-					else:
-						info = infogetter(vlist)
+				infogetter_args.pop("_vlist", None)
+				infogetter_args["_vlist"] = vlist
+
+				infogetter_args.pop("_fields", None)
+				infogetter_args["_fields"] = fields
+
+				infogetter_args.pop("_fields_name", None)
+				infogetter_args["_fields_name"] = "normal"
+
+				infogetter_args.pop("_filters", None)
+				infogetter_args["_filters"] = filters
+
+				infogetter_args.pop("_obj", None)
+				infogetter_args["_obj"] = obj
+
+				info = infogetter(**infogetter_args)
 
 				listlen = uip.update_info(info)
 				linelen = update_field_widths(field_list, uip.info)
@@ -10355,7 +10548,7 @@ def containerinfoloop(stdscr, container, kind, obj):
 			if uip.continuous_log == True:
 				tail_lines = uip.logpadheight
 
-			pod_info = get_pod_info([obj])[0]
+			pod_info = get_pod_info(**{"_vlist": [obj]})[0]
 			podname = pod_info.name
 			namespace = pod_info.namespace
 			containername = deep_get(container, "name")
@@ -11192,7 +11385,8 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 	else:
 		return None
 
-def get_all_namespaced_resources(obj):
+def get_all_namespaced_resources(**kwargs):
+	obj = deep_get(kwargs, "_obj")
 	namespace = deep_get(obj, "metadata#name")
 	info, status = get_resource_info_by_namespace(namespace, kh.get_list_of_namespaced_resources())
 	return info
@@ -11477,17 +11671,18 @@ def __create_namespace(name):
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
 	return result
 
-def create_namespace(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def create_namespace(stdscr, **kwargs):
+	selection_vars = deep_get(kwargs, "selection_vars")
+	name = deep_get(selection_vars, "namespace")
+
 	curses.endwin()
 	os.system("clear")
-
-	name = values["namespace"]
 
 	# Verify that the name of the new namespace is valid
 	if kh.validate_name("dns-label", name) == False:
 		msg = [("Error: ", "error"), ("“", "default"), (name, "argument"), ("“ is not a valid name", "default")]
 		iktprint(msg, stderr = True)
-	elif kh.get_ref_by_kind_name_namespace(kind, name, "") is not None:
+	elif kh.get_ref_by_kind_name_namespace(("Namespace", ""), name, "") is not None:
 		msg = [("Error: ", "error"), ("namespace “", "default"), (name, "argument"), ("“ already exists", "default")]
 		iktprint(msg, stderr = True)
 	else:
@@ -11500,7 +11695,7 @@ def create_namespace(uip, items = [], action = {}, values = {}, kind = None, **k
 	waitforkeypress = True
 	if waitforkeypress:
 		input("\nPress Enter to continue...")
-	uip.stdscr.refresh()
+	stdscr.refresh()
 
 # Valid kinds:
 # ("Deployment", "apps")
@@ -13727,6 +13922,23 @@ infoviews = {
 			"infogetter": generic_infogetter,
 		},
 	},
+	("FelixConfiguration", "crd.projectcalico.org"): {
+		"windowheader": "Felix Configuration",
+		"infopad": {
+			"BPF Log Level:": {
+				"path": "spec#bpfLogLevel",
+			},
+			"Log Severity Screen:": {
+				"path": "spec#logSeverityScreen",
+			},
+			"Reporting Interval:": {
+				"path": "spec#reportingInterval",
+			},
+			"VXLAN Enabled:": {
+				"path": "spec#vxlanEnabled",
+			},
+		},
+	},
 	("FlowSchema", "flowcontrol.apiserver.k8s.io"): {
 		"windowheader": "Flow Schema Info",
 		"infopad": {
@@ -15780,6 +15992,7 @@ views_special = {
 		"is_taggable": False,
 		"check_availability": is_cluster_reachable,
 	},
+	# Requires Kubernetes v1.19 or newer
 	"Deprecations": {
 		"commandline": ["deprecations"],
 		"group": "Debugging",
@@ -15814,7 +16027,11 @@ views_special = {
 				"helptext": ("[Enter]", "Switch cluster context"),
 				"confirm": True,
 				"title": "Switch cluster context",
-				"call": set_cluster_context,
+				"action": "call",
+				"action_call": set_cluster_context,
+				"action_args": {
+					"_pass_selected": True,
+				},
 			},
 			# Override:
 			"Edit resource": {},
@@ -16418,7 +16635,11 @@ views_builtin = {
 				"helptext": ("[Shift] + C", "Create a new namespace"),
 				"confirm": True,
 				"title": "Create namespace",
-				"call": create_namespace,
+				"action": "call",
+				"action_call": create_namespace,
+				"action_args": {
+					"_pass_selection_vars": True,
+				},
 				"query": "New namespace",
 				"queryval": "namespace",
 				"queryfunc": "string",
@@ -16847,7 +17068,6 @@ def populate_views():
 					key = deep_get(_shortcuts[shortcut], "key", "<missing>")
 					modifier = deep_get(_shortcuts[shortcut], "modifier", "")
 					helptext = deep_get(_shortcuts[shortcut], "helptext", "<missing>")
-					call = deep_get(_shortcuts[shortcut], "call", "<missing>")
 					action = deep_get(_shortcuts[shortcut], "action", "<missing>")
 					action_args = deep_get(_shortcuts[shortcut], "action_args", {})
 					action_call = deep_get(_shortcuts[shortcut], "action_call", None)
@@ -17081,7 +17301,7 @@ def customise_listviews():
 				iktprint([("Warning: ", "warning"), ("“", "default"), (field, "option"), ("“ is specified twice (or more) for the view “", "default"), (view, "argument"), ("“; ignoring.", "default")], stderr = True)
 				continue
 			custom_fields[field] = None
-		viewref["custom_fields"] = list(custom_fields)
+		viewref["fields_custom"] = list(custom_fields)
 
 		# Next up it's time for the field denylist
 		if "denylist" in deep_get(iktconfig, f"{view}", {}):

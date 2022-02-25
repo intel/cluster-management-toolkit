@@ -5,8 +5,144 @@ command:
 listview:
   name: Pods
   group: Workloads
-  fields: [namespace, name, controller, pod_status, node_name, age, restarts, last_restart]
-  fields_wide: [namespace, name, controller, pod_status, node_name, pod_ip, age, containers, restarts, last_restart]
+  fields:
+  - namespace
+  - name
+  - name: controller
+    header: "Controller:"
+    paths:
+    # Ideally we want to include the API-family here too, and convert it to mixed form,
+    # but for that we need a custom handler
+    - path: "metadata#ownerReferences"
+      pathtype: items
+      subpaths:
+      - kind
+      - apiVersion
+      - name
+      when:
+        key: controller
+        eq: true
+      type: [kind, api_version, name]
+    formatting:
+      field_colors:
+      - type: kind
+      - type: kind
+      - type: generic
+      field_separators:
+      - type: kind_apigroup
+      - type: kind
+    formatter: list
+  - pod_status
+  - name: node_name
+    header: "Node:"
+    path: "spec#nodeName"
+    type: "host"
+    default: "<none>"
+  - age
+  - name: restarts
+    header: "Restarts:"
+    paths:
+    - path: "status#containerStatuses"
+      pathtype: items
+      subpath: "restartCount"
+      action: add
+      type: int
+    align: right
+  - name: last_restart
+    header: "Latest Restart:"
+    paths:
+    - path: "status#containerStatuses"
+      pathtype: items
+      subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+      when:
+        key: "restartCount"
+        gt: 0
+      action: latest
+      type: timestamp
+    default: -1
+    formatter: age
+    align: right
+  fields_wide:
+  - namespace
+  - name
+  - name: controller
+    header: "Controller:"
+    paths:
+    # Ideally we want to include the API-family here too, and convert it to mixed form,
+    # but for that we need a custom handler
+    - path: "metadata#ownerReferences"
+      pathtype: items
+      subpaths:
+      - kind
+      - apiVersion
+      - name
+      when:
+        key: controller
+        eq: true
+      type: [kind, api_version, name]
+    formatting:
+      field_colors:
+      - type: kind
+      - type: kind
+      - type: generic
+      field_separators:
+      - type: kind_apigroup
+      - type: kind
+    formatter: list
+  - pod_status
+  - name: node_name
+    header: "Node:"
+    path: "spec#nodeName"
+    type: "host"
+    default: "<none>"
+  - name: pod_ip
+    header: "Pod IP:"
+    path: "status#podIP"
+    default: "<unset>"
+    type: "ipaddress"
+  - age
+  - name: restarts
+    header: "Restarts:"
+    paths:
+    - path: "status#containerStatuses"
+      pathtype: items
+      subpath: "restartCount"
+      action: add
+      type: int
+    align: right
+  - name: last_restart
+    header: "Latest Restart:"
+    paths:
+    - path: "status#containerStatuses"
+      pathtype: items
+      subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+      when:
+        key: "restartCount"
+        gt: 0
+      action: latest
+      type: timestamp
+    default: -1
+    formatter: age
+    align: right
+  - name: containers
+    header: "Containers:"
+    paths:
+    - paths:
+      - "spec#initContainers"
+      - "spec#containers"
+      pathtype: items
+      subpaths:
+      - name
+      - subpath: image
+        regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+      type: raw
+    formatter: list
+    formatting:
+      field_colors:
+      - type: generic
+      - type: version
+      field_separators:
+      - type: version
   sortcolumn: pod_status
   listview_args:
     filters:

@@ -25,13 +25,17 @@ listview:
     paths:
     # Ideally we want to include the API-family here too, and convert it to mixed form,
     # but for that we need a custom handler
-    - path: [["regarding#kind", "involvedObject#kind"], ["regarding#name", "involvedObject#name"]]
+    - path: [["regarding#kind", "involvedObject#kind"], ["regarding#apiVersion", "involvedObject#apiVersion"], ["regarding#name", "involvedObject#name"]]
       pathtype: tuple
-      type: raw
+      type: [kind, api_version, name]
     formatting:
       field_colors:
       - type: kind
+      - type: kind
       - type: generic
+      field_separators:
+      - type: "kind_apigroup"
+      - type: "kind"
     formatter: list
   - name: reporter
     header: "Reporter:"

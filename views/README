@@ -75,6 +75,14 @@ listview:
   # namespace, name, controller, status, age.
   #
   # This will be revamped.
+  #
+  # Note: The following fields are templated and need not be fully defined
+  # (unless there's a need to redefine them); either due to their
+  # complexity, or due to them being in frequent use:
+  # namespace
+  # name
+  # pod_status
+  # age
   fields: [namespace, name, controller, pod_status, node_name, age, restarts, last_restart]
 
   # fields_wide (optional) is used for cases where a more verbose output
@@ -87,7 +95,7 @@ listview:
   # do not use fields that only exist in fields_wide as sortcolumn
   sortcolumn: pod_status
 
-  # listview_args is extra variables used for this particular view; for now the first implemented use case is filters
+  # listview_args are extra variables used for this particular view; for now the first implemented use case is filters
   listview_args:
     # filters limit the list to a subset of the full set available; best used together with a toggle to turn them on/off
     filters:
