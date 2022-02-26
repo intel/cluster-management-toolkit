@@ -426,6 +426,8 @@ def prepare_hosts(options = [], args = None):
 			ignore_existing = True
 		elif opt == "--no-password":
 			no_password = True
+		elif opt == "--save-ansible-logs":
+			ansible_configuration.save_logs = True
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -508,6 +510,8 @@ def add_nodes(options = [], args = None):
 			ignore_existing = True
 		elif opt == "--ignore-non-existing":
 			ignore_non_existing = True
+		elif opt == "--save-ansible-logs":
+			ansible_configuration.save_logs = True
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -642,6 +646,8 @@ def remove_nodes(options = [], args = None):
 			force = True
 		elif opt == "--purge":
 			purge = True
+		elif opt == "--save-ansible-logs":
+			ansible_configuration.save_logs = True
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -717,6 +723,8 @@ def purge_hosts(options = [], args = None):
 	for opt, optarg in options:
 		if opt == "--ignore-non-existing":
 			ignore_non_existing = True
+		elif opt == "--save-ansible-logs":
+			ansible_configuration.save_logs = True
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -781,6 +789,12 @@ def purge_hosts(options = [], args = None):
 
 def upgrade_nodes(options = [], args = None):
 	selection = args[0].split(",")
+
+	for opt, optarg in options:
+		if opt == "--save-ansible-logs":
+			ansible_configuration.save_logs = True
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
@@ -929,6 +943,9 @@ ikt_commandline = {
 			"--no-password": {
 				"description": [("Do not prompt for a password; use this if the hosts you're preparing are already configured for login using an SSH key", "description")],
 			},
+			"--save-ansible-logs": {
+				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
+			},
 		},
 	},
 	"Add Node": {
@@ -944,6 +961,9 @@ ikt_commandline = {
 			},
 			"--ignore-non-existing": {
 				"description": [("Ignore hosts that are not part of the inventory", "description")],
+			},
+			"--save-ansible-logs": {
+				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
 			},
 		},
 	},
@@ -961,6 +981,9 @@ ikt_commandline = {
 			"--purge": {
 				"description": [("Purge hosts if teardown completes successfully", "description")],
 			},
+			"--save-ansible-logs": {
+				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
+			},
 		},
 	},
 	"Purge": {
@@ -973,6 +996,9 @@ ikt_commandline = {
 		"options": {
 			"--ignore-non-existing": {
 				"description": [("Ignore hosts that cannot be found in the inventory", "description")],
+			},
+			"--save-ansible-logs": {
+				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
 			},
 		},
 	},
@@ -987,6 +1013,11 @@ ikt_commandline = {
 		"min_args": 1,
 		"max_args": 1,
 		"callback": upgrade_nodes,
+		"options": {
+			"--save-ansible-logs": {
+				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
+			},
+		},
 	},
 #	"Get": {
 #		"command": ["get", "l", "list"],
