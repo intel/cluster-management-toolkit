@@ -1167,6 +1167,36 @@ def get_log_info(**kwargs):
 
 	return info
 
+def get_pod_containers_list(**kwargs):
+	vlist = []
+	_vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
+
+	if status == 200:
+		for obj in _vlist:
+			namespace = deep_get(obj, "metadata#namespace")
+			name = deep_get(obj, "metadata#name")
+			node_name = deep_get(obj, "spec#nodeName")
+			for container in deep_get(obj, "spec#containers"):
+				container_name = deep_get(container, "name")
+				reason, status_group, restarts, message = get_container_status(deep_get(obj, "status#containerStatuses"), container_name, ("Container", ""))
+				for container_status in deep_get(obj, "status#containerStatuses", []):
+					if deep_get(container_status, "name") == container_name:
+						break
+				if container_status is not None:
+					image_id = deep_get(container_status, "imageID", "")
+				else:
+					image_id = "<unavailable>"
+				vlist.append({
+					"namespace": namespace,
+					"name": name,
+					"container": container_name,
+					"status": reason,
+					"node_name": node_name,
+					"image_id": image_id,
+				})
+
+	return vlist, status
+
 class SidecarInfo:
 	def __init__(self, traffic_type, port, ref, bind, capture_mode, default_endpoint, hosts):
 		self.traffic_type = traffic_type
@@ -1934,6 +1964,8 @@ def generic_infogetter(**kwargs):
 				converters = deep_get(field, "converters", [])
 				default = deep_get(field, "default", "")
 				formatter = deep_get(field, "formatter")
+				action = None
+				replace_quotes = None
 
 				if path is None and len(paths) == 0 or path is not None and len(paths) > 0:
 					raise Exception("Field {name}: exactly one of path and paths must be non-empty")
@@ -1945,6 +1977,7 @@ def generic_infogetter(**kwargs):
 						raise Exception("Field {name}: the path field has no default type; type must always be specified")
 					_values.append((deep_get(obj, path, default), deep_get(field, "type")))
 
+				_path = None
 				for _path in paths:
 					vtype = deep_get(_path, "type", "raw")
 					path = deep_get(_path, "path")
@@ -7273,7 +7306,9 @@ def genericlistloop(stdscr, view):
 					if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Perform “{description}“?", default = False) == False:
 						continue
 
-				actionfunc(uip, items = [], actions = actionlist[action], values = selection_vars, kind = kind)
+				retval = actionfunc(uip, items = [], actions = actionlist[action], values = selection_vars, kind = kind)
+				if retval is not None and retval == curses_helper.retval.RETURNFULL:
+					return retval
 
 				uip.force_update()
 				tagged_items.clear()
@@ -7657,7 +7692,10 @@ def genericlistloop(stdscr, view):
 					if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Are you sure you want to perform “{description}“?", default = False) == False:
 						continue
 
-				actionfunc(uip, items, actionlist[action], values = selection_vars, kind = kind, title = title)
+				selection_vars["_tagged_items"] = list(tagged_items)
+				retval = actionfunc(uip, items, actionlist[action], values = selection_vars, kind = kind, title = title)
+				if retval is not None and retval == curses_helper.retval.RETURNFULL:
+					return retval
 
 				uip.force_update()
 				tagged_items.clear()
@@ -10551,19 +10589,28 @@ def eventdispatch(stdscr, **kwargs):
 	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	return resourceinfodispatch(stdscr, ref, kind)
 
-def log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, message):
+def log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, message, facility_prefix):
 	if timestamp is not None:
 		timestamps.append(timestamp.astimezone())
 	else:
 		timestamps.append("")
-	facilities.append(facility)
+	if facility_prefix is None:
+		facilities.append(facility)
+	else:
+		facilities.append((facility_prefix, facility))
 	severities.append(severity)
 	messages.append(message)
 
 	return timestamps, facilities, severities, messages
 
-def containerinfoloop(stdscr, container, kind, obj):
+def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 	global override_tail_lines
+
+	multilog_containers_full = deep_get(kwargs, "multilog_containers_full", [])
+	multilog_containers = deep_get(kwargs, "multilog_containers", [])
+	all_same_namespace = deep_get(kwargs, "all_same_namespace", False)
+	multilog_prefix = ["namespace", "podname", "container"]
+	facility_prefix = None
 
 	uip = UIProps(stdscr)
 
@@ -10639,30 +10686,73 @@ def containerinfoloop(stdscr, container, kind, obj):
 			if uip.continuous_log == True:
 				tail_lines = uip.logpadheight
 
-			pod_info = get_pod_info(**{"_vlist": [obj]})[0]
-			podname = pod_info.name
-			namespace = pod_info.namespace
-			containername = deep_get(container, "name")
+			if len(multilog_containers) == 0:
+				pod_info = get_pod_info(**{"_vlist": [obj]})[0]
+				podname = pod_info.name
+				namespace = pod_info.namespace
+				containername = deep_get(container, "name")
 
-			if kind == ("InitContainer", ""):
-				src_statuses = deep_get(pod_info.ref, "status#initContainerStatuses", [])
-				container_type = "init_container"
-			else:
-				src_statuses = deep_get(pod_info.ref, "status#containerStatuses", [])
-				container_type = "container"
-			container_status = None
-			for container_status in src_statuses:
-				if deep_get(container_status, "name") == containername:
-					break
-			if container_status is not None:
-				image = deep_get(container_status, "imageID", "")
-			else:
-				image = "<unavailable>"
+				if kind == ("InitContainer", ""):
+					src_statuses = deep_get(pod_info.ref, "status#initContainerStatuses", [])
+					container_type = "init_container"
+				else:
+					src_statuses = deep_get(pod_info.ref, "status#containerStatuses", [])
+					container_type = "container"
+				container_status = None
+				for container_status in src_statuses:
+					if deep_get(container_status, "name") == containername:
+						break
+				if container_status is not None:
+					image = deep_get(container_status, "imageID", "")
+				else:
+					image = "<unavailable>"
 
 			# We don't want the "Fetching Log" notification every few seconds; we're just loading a few lines...
 			if uip.continuous_log == False:
 				notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Fetching log")
-			rawmsg, internal_error = get_pod_log_by_name_namespace_container(podname, namespace, containername, tail_lines = tail_lines)
+			if len(multilog_containers) == 0:
+				rawmsg, internal_error = get_pod_log_by_name_namespace_container(podname, namespace, containername, tail_lines = tail_lines)
+				splitmsg = split_msg(rawmsg)
+			else:
+				container_type = "container"
+				splitmsg = []
+				for namespace, podname, containername, image_id in multilog_containers_full:
+					if len(multilog_containers) == 1:
+						facility_prefix = None
+					elif multilog_prefix == ["container"]:
+						facility_prefix = [
+							(f"[", color_log_severity(loglevel.DEBUG, False)),
+							(f"{containername}", ("types", "facility_prefix")),
+							(f"] ", color_log_severity(loglevel.DEBUG, False)),
+						]
+					elif multilog_prefix == ["podname", "container"] or multilog_prefix == ["namespace", "podname", "container"] and all_same_namespace == True:
+						facility_prefix = [
+							(f"[", color_log_severity(loglevel.DEBUG, False)),
+							(f"{podname}", ("types", "facility_prefix")),
+							("separators", "container"),
+							(f"{containername}", ("types", "facility_prefix")),
+							(f"] ", color_log_severity(loglevel.DEBUG, False)),
+						]
+					elif multilog_prefix == ["namespace", "podname", "container"]:
+						facility_prefix = [
+							(f"[", color_log_severity(loglevel.DEBUG, False)),
+							(f"{namespace}", ("types", "facility_prefix")),
+							("separators", "namespace"),
+							(f"{podname}", ("types", "facility_prefix")),
+							("separators", "container"),
+							(f"{containername}", ("types", "facility_prefix")),
+							(f"] ", color_log_severity(loglevel.DEBUG, False)),
+						]
+					rawmsg, internal_error = get_pod_log_by_name_namespace_container(podname, namespace, containername, tail_lines = tail_lines)
+					if internal_error == True:
+						splitmsg = split_msg(rawmsg)
+						break
+					# Now we have one per line; now we need to add (podname, containername, image, facility_prefix) to each line, to allow the logparser
+					# to function without guessing
+					for line in split_msg(rawmsg):
+						splitmsg.append((line, podname, containername, image_id, facility_prefix))
+				splitmsg = natsorted(splitmsg, key = itemgetter(0))
+
 			if uip.continuous_log == False:
 				del notice
 			uip.refresh_window()
@@ -10670,8 +10760,6 @@ def containerinfoloop(stdscr, container, kind, obj):
 			uip.refresh_logpad()
 			uip.refresh_statusbar()
 			curses.doupdate()
-
-			splitmsg = split_msg(rawmsg)
 
 			timestamps = []
 			facilities = []
@@ -10698,7 +10786,7 @@ def containerinfoloop(stdscr, container, kind, obj):
 
 			i = 0
 			while i < len(splitmsg):
-				line = splitmsg[i]
+				_line = splitmsg[i]
 
 				# We probably need a progress bar once we reach this many lines
 				if linecount > 1000 and (i % linepercent) == 0:
@@ -10711,6 +10799,12 @@ def containerinfoloop(stdscr, container, kind, obj):
 						else:
 							return curses_helper.retval.RETURNDONE
 
+				if type(_line) == tuple:
+					line, podname, containername, image, facility_prefix = _line
+					# We need to identify parser again and again and again for every line
+					_parser = None
+				else:
+					line = _line
 				if internal_error == True:
 					timestamp, facility, severity, message, remnants, parser, _parser = logparser("internal_error", "", "", message = line, container_type = container_type, line = i)
 				elif raw_logs == True:
@@ -10741,10 +10835,10 @@ def containerinfoloop(stdscr, container, kind, obj):
 						if processor[0] in ["end_block", "end_block_not_processed"]:
 							# OK, we've got a block; start by appending the first line
 							if len(_logentries) > 0:
-								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, _logentries[0][3])
+								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, _logentries[0][3], facility_prefix)
 							if len(_logentries) > 1:
 								for _timestamp, _facility, _severity, _message in _logentries[1:]:
-									timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, _timestamp, "".ljust(len(facility)), severity, _message)
+									timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, _timestamp, "".ljust(len(facility)), severity, _message, facility_prefix)
 								break
 						elif processor[0] == "break":
 							# We got something indicating that this isn't a valid block; abort
@@ -10780,7 +10874,7 @@ def containerinfoloop(stdscr, container, kind, obj):
 						continue
 				else:
 					if repeat_count > 0 and merge_repeats:
-						timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity, [("[previous message repeated ", color_log_severity(prev_severity, False)), (f"{repeat_count}", ("logview", "repeat_count")), (" times]", color_log_severity(prev_severity, False))])
+						timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity, [("[previous message repeated ", color_log_severity(prev_severity, False)), (f"{repeat_count}", ("logview", "repeat_count")), (" times]", color_log_severity(prev_severity, False))], facility_prefix)
 					repeat_count = 0
 					prev_timestamp = timestamp
 					prev_facility = facility
@@ -10788,7 +10882,7 @@ def containerinfoloop(stdscr, container, kind, obj):
 					prev_message = message
 					prev_remnants = remnants
 
-				timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, message)
+				timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, message, facility_prefix)
 
 				if remnants is not None and len(remnants) > 0:
 					# Remnants are used for unfolding multi-line messages that have been folded into one,
@@ -10804,13 +10898,13 @@ def containerinfoloop(stdscr, container, kind, obj):
 
 						if type(tmpmessages) == list:
 							for message in tmpmessages:
-								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message)
+								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message, facility_prefix)
 						else:
 							for message in tmpmessages.split("\n"):
-								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message)
+								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message, facility_prefix)
 					else:
 						for message, severity in remnants:
-							timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message)
+							timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message, facility_prefix)
 
 			reload = True
 
@@ -10822,69 +10916,104 @@ def containerinfoloop(stdscr, container, kind, obj):
 
 			# If the last message in the log is a repeat we need to add the repeat signature
 			if repeat_count > 0 and merge_repeats:
-				timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity, [("[previous message repeated ", color_log_severity(prev_severity, False)), (f"{repeat_count}", ("logview", "repeat_count")), (" times]", color_log_severity(prev_severity, False))])
+				timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity, [("[previous message repeated ", color_log_severity(prev_severity, False)), (f"{repeat_count}", ("logview", "repeat_count")), (" times]", color_log_severity(prev_severity, False))], facility_prefix)
 
 			uip.update_log_info(timestamps, facilities, severities, messages)
 			uip.loglen = len(messages)
 			uip.update_window()
 
-			containertypearray = f" [Type: {kind[0]}]"
-			if kind == ("InitContainer", ""):
-				src_statuses = deep_get(pod_info.ref, "status#initContainerStatuses")
-			else:
-				src_statuses = deep_get(pod_info.ref, "status#containerStatuses")
+			if len(multilog_containers) == 0:
+				containertypearray = f" [Type: {kind[0]}]"
+				if kind == ("InitContainer", ""):
+					src_statuses = deep_get(pod_info.ref, "status#initContainerStatuses")
+				else:
+					src_statuses = deep_get(pod_info.ref, "status#containerStatuses")
 
-			if src_statuses is None or len(src_statuses) == 0:
-				break
-
-			for container_status in src_statuses:
-				if deep_get(container_status, "name") == containername:
+				if src_statuses is None or len(src_statuses) == 0:
 					break
 
-			status, status_group, restarts, message = get_container_status(src_statuses, containername, kind)
-			containerarray = [
-				("Container: ", ("main", "infoheader")),
-				(f"{containername}{containertypearray}", ("types", "generic"))
-			]
-			statusarray = [
-				("Status: ", ("main", "infoheader")),
-				(f"{status}", color_status_group(status_group, False))
-			]
-			if message != "":
-				statusarray.append((f" ({message})", ("types", "generic")))
-			restartsarray = [
-				("Restarts: ", ("main", "infoheader")),
-				(f"{restarts}", ("types", "numerical"))
-			]
-			podarray = [
-				("Pod: ", ("main", "infoheader")),
-				(f"{pod_info.name}", ("types", "generic"))
-			]
-			containeridarray = [
-				("Container ID: ", ("main", "infoheader")),
-				(f"{deep_get(container_status, 'containerID')}", ("types", "generic"))
-			]
-			image_name, image_version = get_image_tuple(deep_get(container_status, "image"))
-			imagearray = [
-				("Image: ", ("main", "infoheader")),
-				(f"{image_name}", ("types", "generic")),
-				("separators", "version"),
-				(f"{image_version}", ("types", "version")),
-			]
-			image_id = deep_get(container_status, "imageID")
-			imageidarray = [
-				("I", ("main", "infoheader_shortcut")),
-				("mage ID: ", ("main", "infoheader")),
-				(f"{image_id}", ("types", "generic"))
-			]
+				for container_status in src_statuses:
+					if deep_get(container_status, "name") == containername:
+						break
 
-			uip.addthemearray(infopad, containerarray, y = 0, x = 0)
-			uip.addthemearray(infopad, statusarray, y = 1, x = 0)
-			uip.addthemearray(infopad, restartsarray, y = 2, x = 0)
-			uip.addthemearray(infopad, podarray, y = 3, x = 0)
-			uip.addthemearray(infopad, containeridarray, y = 4, x = 0)
-			uip.addthemearray(infopad, imagearray, y = 5, x = 0)
-			uip.addthemearray(infopad, imageidarray, y = 6, x = 0)
+				status, status_group, restarts, message = get_container_status(src_statuses, containername, kind)
+				containerarray = [
+					("Container: ", ("main", "infoheader")),
+					(f"{containername}{containertypearray}", ("types", "generic"))
+				]
+				statusarray = [
+					("Status: ", ("main", "infoheader")),
+					(f"{status}", color_status_group(status_group, False))
+				]
+				if message != "":
+					statusarray.append((f" ({message})", ("types", "generic")))
+				restartsarray = [
+					("Restarts: ", ("main", "infoheader")),
+					(f"{restarts}", ("types", "numerical"))
+				]
+				podarray = [
+					("Pod: ", ("main", "infoheader")),
+					(f"{pod_info.name}", ("types", "generic")),
+				]
+				containeridarray = [
+					("Container ID: ", ("main", "infoheader")),
+					(f"{deep_get(container_status, 'containerID')}", ("types", "generic")),
+				]
+				image_name, image_version = get_image_tuple(deep_get(container_status, "image"))
+				imagearray = [
+					("Image: ", ("main", "infoheader")),
+					(f"{image_name}", ("types", "generic")),
+					("separators", "version"),
+					(f"{image_version}", ("types", "version")),
+				]
+				image_id = deep_get(container_status, "imageID")
+				imageidarray = [
+					("I", ("main", "infoheader_shortcut")),
+					("mage ID: ", ("main", "infoheader")),
+					(f"{image_id}", ("types", "generic")),
+				]
+				uip.addthemearray(infopad, containerarray, y = 0, x = 0)
+				uip.addthemearray(infopad, statusarray, y = 1, x = 0)
+				uip.addthemearray(infopad, restartsarray, y = 2, x = 0)
+				uip.addthemearray(infopad, podarray, y = 3, x = 0)
+				uip.addthemearray(infopad, containeridarray, y = 4, x = 0)
+				uip.addthemearray(infopad, imagearray, y = 5, x = 0)
+				uip.addthemearray(infopad, imageidarray, y = 6, x = 0)
+			else:
+				if len(multilog_containers) == 1:
+					containerarray = [
+						("Container: ", ("main", "infoheader")),
+						(f"{containername}", ("types", "generic")),
+					]
+					podarray = [
+						("Pod: ", ("main", "infoheader")),
+						(f"{podname}", ("types", "generic")),
+					]
+					namespacearray = [
+						("Namespace: ", ("main", "infoheader")),
+						(f"{namespace}", ("types", "namespace")),
+					]
+					containeridarray = [
+						("I", ("main", "infoheader_shortcut")),
+						("mage ID: ", ("main", "infoheader")),
+						(f"{image_id}", ("types", "generic")),
+					]
+					uip.addthemearray(infopad, podarray, y = 1, x = 0)
+					uip.addthemearray(infopad, namespacearray, y = 2, x = 0)
+					uip.addthemearray(infopad, containeridarray, y = 3, x = 0)
+				else:
+					containerarray = [
+						("Containers: ", ("main", "infoheader")),
+					]
+					containerarray += format_list(multilog_containers, 0, 0, False, False, field_colors = [("types", "namespace"), ("types", "generic"), ("types", "generic")], field_separators = [("separators", "namespace"), ("separators", "container")], ellipsise = 3)
+					if all_same_namespace == True:
+						namespacearray = [
+							("Namespace: ", ("main", "infoheader")),
+							(f"{namespace}", ("types", "namespace")),
+						]
+						uip.addthemearray(infopad, namespacearray, y = 1, x = 0)
+				uip.addthemearray(infopad, containerarray, y = 0, x = 0)
+
 			uip.refresh = True
 
 		if uip.refresh:
@@ -11105,11 +11234,19 @@ def containerinfoloop(stdscr, container, kind, obj):
 					else:
 						msgstrarray.append(("".ljust(len(f"{_severity}")), color_log_severity(severity, False)))
 
+				if type(facility) == tuple:
+					facility_prefix, facility = facility
+				else:
+					facility_prefix = ""
+
+				if len(facility_prefix) > 0:
+					msgstrarray += facility_prefix
+
 				if facility != "":
 					if facility.rstrip() != "":
-						facilitystr = "<%s> " % (facility)
+						facilitystr = f"<{facility}> "
 					else:
-						facilitystr = " %s  " % (facility)
+						facilitystr = f" {facility}  "
 					msgstrarray.append((facilitystr, color_log_severity(loglevel.DEBUG, False)))
 
 				msg = messages[uip.yoffset + y]
@@ -11346,7 +11483,7 @@ def containerinfoloop(stdscr, container, kind, obj):
 				if y >= len(facilities) or facilities[y] == "":
 					facility = ""
 				else:
-					facility = "<%s> " % (facilities[y])
+					facility = f"<{facilities[y]}> "
 
 				if uip.yoffset + y >= len(severities):
 					severity = f"{lvl_to_4letter_severity(loglevel.INFO)}: "
@@ -11706,6 +11843,34 @@ def view_yaml(stdscr, **kwargs):
 	title = deep_get(kwargs, "title")
 	themearrays = iktlib.format_yaml([obj])
 	return resourceinfodispatch(stdscr, themearrays, ("__ResourceView", ""), title = title)
+
+def view_pod_logs(stdscr, **kwargs):
+	containers = []
+	containers_full = []
+	items = deep_get(kwargs, "_tagged_items", [])
+	selected = deep_get(kwargs, "selected")
+	if selected is not None:
+		items = [selected]
+	namespaces = set()
+	for obj in items:
+		namespace = getattr(obj, "namespace")
+		namespaces.add(namespace)
+		name = getattr(obj, "name")
+		container_name = getattr(obj, "container")
+		image_id = getattr(obj, "image_id")
+		containers.append((namespace, name, container_name))
+		containers_full.append((namespace, name, container_name, image_id))
+
+	multilog_args = {
+		"multilog_containers": containers,
+		"multilog_containers_full": containers_full,
+		"all_same_namespace": len(namespaces) == 1
+	}
+
+	return containerinfoloop(stdscr, container = None, kind = None, obj = None, **multilog_args)
+
+def action_view_pod_logs(uip, items = [], action = {}, values = {}, kind = None, title = ""):
+	return view_pod_logs(uip.stdscr, **values)
 
 def infoview_view_yaml(uip, kind, obj, **kwargs):
 	if "path" in kwargs:
@@ -12110,7 +12275,7 @@ def stop_resource_rescale(uip, items = [], action = {}, values = {}, kind = None
 		input("\nPress Enter to continue...")
 	uip.stdscr.refresh()
 
-def delete_logs(uip, items = [], action = {}, values = {}, kind = None):
+def delete_logs(uip, items = [], action = {}, values = {}, kind = None, title = ""):
 	for item in items:
 		ansible_delete_log(item)
 
@@ -16161,6 +16326,76 @@ views_special = {
 			"View YAML dump": {},
 		},
 	},
+	"Pod Log Viewer": {
+		"commandline": ["podlogviewer", "podlog"],
+		"group": "Administration",
+		"fields": [
+			{
+				"name": "namespace",
+				"header": "Pod Namespace:",
+				"path": "namespace",
+				"type": "namespace",
+			},
+			{
+				"name": "name",
+				"header": "Pod Name:",
+				"path": "name",
+				"type": "str",
+			},
+			{
+				"name": "container",
+				"header": "Container:",
+				"path": "container",
+				"type": "str",
+			},
+			{
+				"name": "_status",
+				"header": "Status:",
+				"path": "status",
+				# FIXME; should have formatting with mapping
+				"type": "str",
+			},
+			{
+				"name": "node_name",
+				"header": "Node:",
+				"path": "node_name",
+				"type": "host",
+				"default": "<none>",
+			},
+			{
+				"name": "image_id",
+				"header": "Image:",
+				"path": "image_id",
+				"type": "str",
+			},
+		],
+		"actions": {
+			"actionlist": {
+				"View Logs": {
+					"description": "View logs for tagged resources interleaved",
+					"actionfunc": action_view_pod_logs,
+				},
+			},
+		},
+		"shortcuts": {
+			"View Log": {
+				"shortcut": [ curses.KEY_ENTER, 10, 13 ],
+				"helptext": ("[Enter]", "View log for selected resource"),
+				"action": "call",
+				"action_call": view_pod_logs,
+				"action_args": {
+					"_pass_selected": True,
+				},
+			},
+			# Override:
+			"Edit resource": {},
+			"View YAML dump": {},
+		},
+		"sortcolumn": "namespace",
+		"kind": ("__PodLogMonitor", ""),
+		"labels": False,
+		"listgetter": "get_pod_containers_list",
+	},
 	"Logs": {
 		"commandline": ["logs", "log"],
 		"group": "Administration",
@@ -17104,7 +17339,8 @@ def populate_views():
 			api_family = deep_get(d, "api_family", "")
 			# Use a set to avoid duplicates
 			_command = set()
-			_command.add(kind.lower())
+			if not kind.startswith("__"):
+				_command.add(kind.lower())
 			if len(deep_get(d, "command", [])) > 0:
 				_command = set.union(_command, set(deep_get(d, "command", [])))
 			# OK, we've got all commands we wanted; now we want the preferred form first
@@ -17117,6 +17353,10 @@ def populate_views():
 					command.append(f"{item}.{api_family}")
 
 			if "listview" in d:
+				# Do we need to override kind?
+				if deep_get(d, "listview#kind") is not None:
+					kind = deep_get(d, "listview#kind")
+					api_family = deep_get(d, "listview#api_family", "")
 				name = deep_get(d, "listview#name", "<missing>")
 				group = deep_get(d, "listview#group")
 				sortcolumn = deep_get(d, "listview#sortcolumn")

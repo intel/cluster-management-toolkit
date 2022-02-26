@@ -367,6 +367,9 @@ color_pairs_curses:
   separator_namespace:
     unselected: [[black, bright], [black, normal]]
     selected: [[black, bright], [white, normal]]
+  separator_container:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
   separator_list:
     unselected: [[black, bright], [black, normal]]
     selected: [[black, bright], [white, normal]]
@@ -487,6 +490,7 @@ color_pairs_curses:
   type_caddyfile_argument: [[green, bright], [black, normal]]
   type_caddyfile_comment: [[cyan, normal], [black, normal]]
   type_caddyfile_directive: [[magenta, normal], [black, normal]]
+  type_facility_prefix: [[yellow, normal], [black, normal]]
   logo_bullet: [[blue, normal], [blue, bright]]
   logo_letter: [[white, bright], [blue, bright]]
   about_text_highlight: [[cyan, bright], [blue, bright]]
@@ -779,6 +783,7 @@ types:
   caddyfile_directive: type_caddyfile_directive
   path: type_path
   lineno: type_lineno
+  facility_prefix: type_facility_prefix
 
 strings:
   none: [["<none>", [type_none, bold]]]
@@ -804,6 +809,7 @@ separators:
   resource: [[":", separator_resource]]
   service: [["/", separator_service]]
   namespace: [["::", separator_namespace]]
+  container: [[":", separator_container]]
   list: [[", ", separator_list]]
   selector_list: [[",", separator_list]]
   field: [["/", separator_field]]
