@@ -2287,7 +2287,7 @@ def untaint_control_plane(options = [], args = None):
 	node_statuses, kh = __get_node_info()
 
 	if node_statuses is None:
-		iktprint([("Critical: ", "critical"), ("Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
+		iktprint([("Critical:", "critical"), (" Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
 		sys.exit(2)
 
 	first = True
@@ -2314,6 +2314,148 @@ def untaint_control_plane(options = [], args = None):
 		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(2)
 
+def troubleshoot(options = [], args = None):
+	error = 0
+	warning = 0
+	note = 0
+	total = 0
+
+	# First start with the really basic: does the cluster respond?
+	# Check no_proxy, perhaps?
+
+	# Is the version of kubectl within one version of the cluster version?
+	iktprint([("[Checking client/server version match]\n", "phase")])
+	args = ["kubectl", "version", "-oyaml"]
+	response = execute_command_with_response(args)
+	version_data = yaml.safe_load(response)
+
+	server_major = int("".join(filter(str.isdigit, deep_get(version_data, "serverVersion#major"))))
+	server_minor = int("".join(filter(str.isdigit, deep_get(version_data, "serverVersion#minor"))))
+	kubectl_minor = int("".join(filter(str.isdigit, deep_get(version_data, "clientVersion#minor"))))
+	server_git_version = deep_get(version_data, "serverVersion#gitVersion")
+	kubectl_git_version = deep_get(version_data, "clientVersion#gitVersion")
+
+	iktprint([("       kubectl ", "programname"), ("version: ", "default"), (f"{kubectl_git_version}", "version")])
+	iktprint([("kube-apiserver ", "programname"), ("version: ", "default"), (f"{server_git_version}", "version")])
+
+	print()
+
+	if server_major != 1:
+		iktprint([("Critical:", "critical"), (f" {about.program_suite_name}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; aborting.", "default")], stderr = True)
+		sys.exit(2)
+
+	if kubectl_minor > server_minor and kubectl_minor == server_minor + 1:
+		iktprint([("Note: ", "note"), ("The ", "default"), ("kubectl", "programname"), (f" version is one minor version newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
+		iktprint([("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
+		note += 1
+	elif kubectl_minor > server_minor:
+		iktprint([("Warning: ", "warning"), ("The ", "default"), ("kubectl", "programname"), (f" version is more than one minor versions newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
+		iktprint([("         this might work, but it's generally recommended to keep the versions in sync.", "default")], stderr = True)
+		warning += 1
+	elif kubectl_minor < server_minor and kubectl_minor + 1 == server_minor:
+		iktprint([("Note: ", "note"), ("The ", "default"), ("kubectl", "programname"), (f" version is one minor version older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
+		iktprint([("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
+		warning += 1
+	elif kubectl_minor < server_minor:
+		iktprint([("Error: ", "error"), ("The ", "default"), ("kubectl", "programname"), (f" version is much older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
+		iktprint([("       this is NOT supported and is likely to cause issues.", "default")], stderr = True)
+		error += 1
+
+	total = error + warning + note
+
+	if total == 0:
+		iktprint([("OK", "ok")])
+
+	# Kubernetes API based checks
+	iktprint([("\n[Checking kubelet & kube-proxy versions]", "phase")])
+
+	from kubernetes_helper import KubernetesHelper
+	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+
+	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+
+	# Check kubelet and kube-proxy versions;
+	# they can be up to two minor versions older than kube-apiserver,
+	# but most not be newer
+	critical = False
+
+	for node in vlist:
+		node_name = deep_get(node, "metadata#name")
+		kubelet_version = deep_get(node, "status#nodeInfo#kubeletVersion")
+		kubeproxy_version = deep_get(node, "status#nodeInfo#kubeProxyVersion")
+		tmp = re.match(r"^v(\d+)\.(\d+)\..*", kubelet_version)
+
+		kubelet_major = None
+		kubelet_minor = None
+		kubeproxy_major = None
+		kubeproxy_minor = None
+		if tmp is not None:
+			kubelet_major = int(tmp[1])
+			kubelet_minor = int(tmp[2])
+		else:
+			iktprint([("Error: ", "error"), ("Failed to extract ", "default"), ("kubelet", "programname"), (" version on node ", "default"), (f"{node_name}", "hostname")], stderr = True)
+			critical = True
+
+		tmp = re.match(r"^v(\d+)\.(\d+)\..*", kubeproxy_version)
+		if tmp is not None:
+			kubeproxy_major = int(tmp[1])
+			kubeproxy_minor = int(tmp[2])
+		else:
+			iktprint([("Error: ", "error"), ("Failed to extract ", "default"), ("kube-proxy", "programname"), (" version on node ", "default"), (f"{node_name}", "hostname")], stderr = True)
+			critical = True
+
+		if kubelet_major is not None and kubelet_major != 1:
+			iktprint([(f"Critical:", "critical"), (f" {about.program_suite_name}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"), (" runs ", "default"), ("kubelet ", "programname"), ("version ", "default"), (f"{kubelet_version}", "version")], stderr = True)
+			critical = True
+
+		if kubeproxy_major is not None and kubeproxy_major != 1:
+			iktprint([(f"Critical:", "critical"), (f" {about.program_suite_name}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"), (" runs ", "default"), ("kube-proxy ", "programname"), ("version ", "default"), (f"{kubeproxy_version}", "version")], stderr = True)
+			critical = True
+
+		if kubelet_minor is not None and kubelet_minor > server_minor:
+			iktprint([(f"Error: ", "error"), ("The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major}.{kubelet_minor}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is newer than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major}.{server_minor}", "version"), (");", "default")], stderr = True)
+			iktprint([(f"       this is not supported.", "default")], stderr = True)
+			error += 1
+		elif kubelet_minor is not None and kubelet_minor < server_minor and kubelet_minor + 2 >= server_minor:
+			iktprint([(f"Warning: ", "warning"), ("The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major}.{kubelet_minor}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is a bit older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major}.{server_minor}", "version"), (");", "default")], stderr = True)
+			iktprint([(f"         this is supported, but not recommended.", "default")], stderr = True)
+			warning += 1
+		elif kubelet_minor is not None and kubelet_minor < server_minor:
+			iktprint([(f"Error: ", "error"), ("The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major}.{kubelet_minor}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is a much older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major}.{server_minor}", "version"), (");", "default")], stderr = True)
+			iktprint([(f"       this is not supported.", "default")], stderr = True)
+			error += 1
+
+		if kubelet_minor is not None and kubeproxy_minor is not None and kubelet_minor != kubeproxy_minor:
+			iktprint([(f"Error: ", "error"), ("The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major}.{kubelet_minor}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is not the same as that of ", "default"), ("kube-proxy", "programname"), (" (", "default"), (f"{kubeproxy_major}.{kubeproxy_minor}", "version"), (");", "default")], stderr = True)
+			iktprint([(f"       this is not supported.", "default")], stderr = True)
+			error += 1
+
+	if critical == True:
+		print()
+		iktprint([("Critical errors detected; aborting.", "emphasis")], stderr = True)
+		sys.exit(2)
+
+	print()
+
+	if error + warning + note == total:
+		iktprint([("OK", "ok")])
+
+	total += error + warning + note
+
+	# Check kube-controller-manager, kube-scheduler, and cloud-controller-manager;
+	# they should match, but can be up to one version older,
+	# but most not be newer
+
+	# check whether role bindings and cluster role bindings refer to non-existing roles/cluster roles
+
+	
+	print()
+
+	iktprint([("Summary:", "header")])
+	iktprint([(f"  Errors: {error}", "error")])
+	iktprint([(f"Warnings: {warning}", "warning")])
+	iktprint([(f"   Notes: {note}", "note")])
+
 commandline = {
 	"Check Versions": {
 		"command": ["check-versions", "cv"],
@@ -2334,7 +2476,7 @@ commandline = {
 	"Import Cluster": {
 		"command": ["import-cluster"],
 		"values": [("[", "separator"), ("CLUSTER_NAME", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
-		"description": [("Import existing cluster(s) and prepare them for use with iKT", "description")],
+		"description": [(f"Import existing cluster(s) and prepare them for use with {about.program_suite_name}", "description")],
 		"extended_description": [
 			[("If ", "description"), ("CLUSTER_NAME", "argument"), (",", "separator"), ("...", "argument"), (" is not specified all clusters in ", "description"), (f"{HOMEDIR}/.kube/config", "path")],
 			[(" will be imported", "description")],
@@ -2572,6 +2714,13 @@ commandline = {
 		"min_args": 0,
 		"max_args": 1,
 		"callback": untaint_control_plane,
+	},
+	"Troubleshoot": {
+		"command": ["troubleshoot"],
+		"description": [("Search for potential issues", "description")],
+		"min_args": 0,
+		"max_args": 0,
+		"callback": troubleshoot,
 	},
 	"spacer1": {
 		"command": [""],
