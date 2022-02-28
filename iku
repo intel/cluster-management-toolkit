@@ -6767,7 +6767,7 @@ def genericlistloop(stdscr, view):
 	viewref = views[view]
 
 	kind = viewref["kind"]
-	if kind[0].startswith("__"):
+	if kind is None or kind[0].startswith("__"):
 		is_namespaced = False
 	else:
 		is_namespaced = kh.is_kind_namespaced(kind)
