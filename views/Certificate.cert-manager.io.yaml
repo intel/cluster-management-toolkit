@@ -1,0 +1,16 @@
+kind: Certificate
+api_family: cert-manager.io
+default_command: certificates
+command:
+- certs
+- cert
+listview:
+  name: Certificates
+  group: Certificate Management
+  field_indexes:
+    Normal: [namespace, name, condition_ready, secret, issuer, status_message, age]
+  fields:
+    secret:
+      header: "Secret:"
+      path: "spec#secretName"
+      type: str

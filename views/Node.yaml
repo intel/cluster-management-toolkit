@@ -6,8 +6,17 @@ listview:
   name: Nodes
   group: Core
   field_indexes:
-    Wide: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel, container_runtime, cpu, mem, taints]
+    Wide: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel_version, container_runtime, cpu, mem, taints]
     Normal: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, cpu, mem, taints]
+  fields:
+    kubelet_version:
+      header: "Version:"
+      path: "status#nodeInfo#kubeletVersion"
+      type: version
+    kernel_version:
+      header: "Kernel Version:"
+      path: "status#nodeInfo#kernelVersion"
+      type: version
   actions:
     playbooklist:
       context: node

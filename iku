@@ -5756,6 +5756,7 @@ field_templates = {
 	},
 	"image_version": {
 		"header": "Version:",
+		"type": "version",
 	},
 	"index": {
 		"header": "Index:",
@@ -5832,11 +5833,6 @@ field_templates = {
 		"datagetter": datagetter_job_state,
 		"generator": generator_status,
 	},
-	"kernel": {
-		"header": "Kernel-Version:",
-		"path": "status#nodeInfo#kernelVersion",
-		"type": "str",
-	},
 	"key": {
 		"header": "Key:",
 	},
@@ -5847,11 +5843,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "kind"), ("types", "api_group")],
 		"field_separators": [("separators", "kind_apigroup")],
-	},
-	"kubelet_version": {
-		"header": "Version:",
-		"path": "status#nodeInfo#kubeletVersion",
-		"type": "str",
 	},
 	"kubernetes_roles": {
 		# [role, ...]
@@ -6000,10 +5991,6 @@ field_templates = {
 	},
 	"node_id": {
 		"header": "Node ID:",
-	},
-	"node_selector": {
-		"header": "Node Selector:",
-		"path": "spec#nodeSelector",
 	},
 	"node_status": {
 		"header": "Status:",
@@ -6336,10 +6323,6 @@ field_templates = {
 	"scheme": {
 		"header": "Scheme:",
 	},
-	"secret": {
-		"header": "Secret:",
-		"path": "spec#secretName",
-	},
 	"selinux": {
 		"header": "SELinux:",
 		"path": "spec#seLinux#rule",
@@ -6560,6 +6543,7 @@ field_templates = {
 	"version": {
 		"header": "Version:",
 		"path": "spec#version",
+		"type": "str",
 	},
 	"vlen": {
 		"header": "Length:",
@@ -6783,7 +6767,10 @@ def genericlistloop(stdscr, view):
 	viewref = views[view]
 
 	kind = viewref["kind"]
-	is_namespaced = kh.is_kind_namespaced(kind)
+	if kind[0].startswith("__"):
+		is_namespaced = False
+	else:
+		is_namespaced = kh.is_kind_namespaced(kind)
 
 	if "helptext" in views[view]:
 		helptext = viewref["helptext"]
@@ -16498,15 +16485,6 @@ views_builtin = {
 		},
 		"kind": ("Addon", "k3s.cattle.io"),
 	},
-	# monitoring.coreos.com
-	"Alertmanagers": {
-		"commandline": ["alertmanagers", "alertmanager", "alm"],
-		"group": "Monitoring",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "version", "replicas", "age"],
-		},
-		"kind": ("Alertmanager", "monitoring.coreos.com"),
-	},
 	# crd.antrea.io
 	"Antrea Agent Infos": {
 		"commandline": ["antreaagentinfos", "antreaagentinfo", "aai"],
@@ -16591,15 +16569,6 @@ views_builtin = {
 		},
 		"sortcolumn": "namespace",
 		"kind":	("CatalogSource", "operators.coreos.com"),
-	},
-	# cert-manager.io <= rename from: certmanager.k8s.io
-	"Certificates": {
-		"commandline": ["certificates", "certificate", "certs", "cert"],
-		"group": "Certificate Management",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "condition_ready", "secret", "issuer", "status_message", "age"],
-		},
-		"kind": ("Certificate", "cert-manager.io"),
 	},
 	# cert-manager.io <= rename from: certmanager.k8s.io
 	"Certificate Requests": {
@@ -16807,15 +16776,6 @@ views_builtin = {
 			"Normal": ["name", "age"],
 		},
 		"kind": ("GlobalNetworkSet", "crd.projectcalico.org"),
-	},
-	# deviceplugin.intel.com
-	"GPU Device Plugins": {
-		"commandline": ["gpudeviceplugins", "gpudeviceplugin", "gpudevplugins", "gpudevplugin"],
-		"group": "Accelerators",
-		"field_indexes": {
-			"Normal": ["name", "ready_scheduled_plugins", "node_selector", "age"],
-		},
-		"kind": ("GpuDevicePlugin", "deviceplugin.intel.com"),
 	},
 	# integreatly.org
 	"Grafanas": {

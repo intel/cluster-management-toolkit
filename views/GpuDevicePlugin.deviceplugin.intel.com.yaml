@@ -1,0 +1,16 @@
+kind: GpuDevicePlugin
+api_family: deviceplugin.intel.com
+default_command: gpudeviceplugins
+command:
+- gpudevplugins
+- gpudevplugin
+listview:
+  name: GPU Device Plugins
+  group: Accelerators
+  field_indexes:
+    Normal: [name, ready_scheduled_plugins, node_selector, age]
+  fields:
+    node_selector:
+      header: "Node Selector:"
+      path: "spec#nodeSelector"
+      type: raw
