@@ -10987,21 +10987,27 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				new_date = False
 
 				if show_facility == "None" or uip.yoffset + y >= len(facilities):
+					facility_prefix = ""
 					facility = ""
 				elif show_facility == "Short":
-					tmp = re.match(r"^.*/(.*)", facilities[uip.yoffset + y])
+					_facility = facilities[uip.yoffset + y]
+					if type(_facility) == tuple:
+						facility_prefix, _facility = _facility
+					tmp = re.match(r"^.*/(.*)", _facility)
 					if tmp is not None:
 						facility = tmp[1]
 						latest_facility_len = len(tmp[1])
-					elif len(facilities[uip.yoffset + y].strip()) != len(facilities[uip.yoffset + y]) and len(facilities[uip.yoffset + y].strip()) == 0:
+					elif len(_facility.strip()) != len(_facility) and len(_facility.strip()) == 0:
 						if latest_facility_len == -1:
-							facility = facilities[uip.yoffset + y]
+							facility = _facility
 						else:
-							facility = facilities[uip.yoffset + y][0:latest_facility_len]
+							facility = _facility[0:latest_facility_len]
 					else:
-						facility = facilities[uip.yoffset + y]
+						facility = _facility
 				else:
 					facility = facilities[uip.yoffset + y]
+					if type(facility) == tuple:
+						facility_prefix, facility = facility
 
 				if uip.yoffset + y >= len(severities):
 					severity = loglevel.INFO
@@ -11030,11 +11036,6 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						msgstrarray.append((f"{_severity}", color_log_severity(severity, False)))
 					else:
 						msgstrarray.append(("".ljust(len(f"{_severity}")), color_log_severity(severity, False)))
-
-				if type(facility) == tuple:
-					facility_prefix, facility = facility
-				else:
-					facility_prefix = ""
 
 				if len(facility_prefix) > 0:
 					msgstrarray += facility_prefix
