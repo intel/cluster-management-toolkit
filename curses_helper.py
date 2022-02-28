@@ -8,6 +8,11 @@ import os
 import sys
 import yaml
 
+try:
+	from natsort import natsorted
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+
 import iktlib
 from iktlib import stgroup, stgroup_mapping
 from logparser import loglevel, loglevel_to_name
@@ -1301,7 +1306,7 @@ class UIProps:
 
 	def update_sorted_list(self):
 		sortkey1, sortkey2 = self.get_sortkeys()
-		self.sorted_list = sorted(self.info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse)
+		self.sorted_list = natsorted(self.info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse)
 
 	def update_info(self, info):
 		self.info = info
@@ -2023,7 +2028,7 @@ class UIProps:
 		# next (existing) letter when sorted by name
 		# next status when sorted by status
 		# next node when sorted by node
-		for entry in sorted(info, key = attrgetter(sortkey1, sortkey2)):
+		for entry in natsorted(info, key = attrgetter(sortkey1, sortkey2)):
 			# OK, from here we want to go to next entry
 			if y == pos:
 				if sortkey == "age" or self.sortkey1 == "seen":
@@ -2064,7 +2069,7 @@ class UIProps:
 		# prev (existing) letter when sorted by name
 		# prev status when sorted by status
 		# prev node when sorted by node
-		for entry in sorted(info, key = attrgetter(sortkey1, sortkey2)):
+		for entry in natsorted(info, key = attrgetter(sortkey1, sortkey2)):
 			if current is None:
 				if sortkey == "age" or self.sortkey1 == "seen":
 					current = iktlib.seconds_to_age(getattr(entry, sortkey))
@@ -2099,7 +2104,7 @@ class UIProps:
 		offset = 0
 
 		# Search within sort category
-		sorted_list = sorted(info, key = attrgetter(self.sortkey1, self.sortkey2), reverse = self.sortorder_reverse)
+		sorted_list = natsorted(info, key = attrgetter(self.sortkey1, self.sortkey2), reverse = self.sortorder_reverse)
 		match = False
 		for y in range(pos, len(sorted_list)):
 			tmp2 = getattr(sorted_list[y], self.sortcolumn)
@@ -2128,7 +2133,7 @@ class UIProps:
 		offset = 0
 
 		# Search within sort category
-		sorted_list = sorted(info, key = attrgetter(self.sortkey1, self.sortkey2), reverse = self.sortorder_reverse)
+		sorted_list = natsorted(info, key = attrgetter(self.sortkey1, self.sortkey2), reverse = self.sortorder_reverse)
 		match = False
 		for y in reversed(range(0, pos)):
 			tmp2 = getattr(sorted_list[y], self.sortcolumn)
@@ -2160,7 +2165,7 @@ class UIProps:
 			return None
 
 		# Search within sort category
-		sorted_list = sorted(self.info, key = attrgetter(self.sortkey1, self.sortkey2))
+		sorted_list = natsorted(self.info, key = attrgetter(self.sortkey1, self.sortkey2))
 		first_match = None
 		unique_match = None
 		match_count = 0

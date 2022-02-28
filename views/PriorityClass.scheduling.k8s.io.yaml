@@ -6,4 +6,15 @@ command:
 listview:
   name: Priority Classes
   group: Scheduling
-  fields: [name, priority, global_default, age]
+  field_indexes:
+    Normal: [name, priority, global_default, age]
+  fields:
+    priority:
+      header: "Value:"
+      path: value
+      type: int
+    global_default:
+      header: "Global Default:"
+      path: globalDefault
+      default: false
+      type: bool

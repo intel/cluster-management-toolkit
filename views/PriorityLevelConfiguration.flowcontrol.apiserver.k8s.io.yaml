@@ -7,4 +7,30 @@ command:
 listview:
   name: Priority Level Configurations
   group: Scheduling
-  fields: [name, priority_type, assured_concurrency_shares, queues, hand_size, queue_length_limit, age]
+  field_indexes:
+    Normal: [name, priority_type, assured_concurrency_shares, queues, hand_size, queue_length_limit, age]
+  fields:
+    priority_type:
+      header: "Priority Type:"
+      path: "spec#type"
+      type: str
+    assured_concurrency_shares:
+      header: "Assured Concurrency Shares:"
+      path: "spec#limited#assuredConcurrencyShares"
+      type: raw
+      align: right
+    queues:
+      header: "Queues:"
+      path: "spec#limited#limitResponse#queuing#queues"
+      type: raw
+      align: right
+    hand_size:
+      header: "Hand Size:"
+      path: "spec#limited#limitResponse#queuing#handSize"
+      type: raw
+      align: right
+    queue_length_limit:
+      header: "Queue Length List:"
+      path: "spec#limited#limitResponse#queuing#queueLengthLimit"
+      type: raw
+      align: right

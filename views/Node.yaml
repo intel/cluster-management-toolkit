@@ -5,8 +5,9 @@ command:
 listview:
   name: Nodes
   group: Core
-  fields: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, cpu, mem, taints]
-  fields_wide: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel, container_runtime, cpu, mem, taints]
+  field_indexes:
+    Wide: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel, container_runtime, cpu, mem, taints]
+    Normal: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, cpu, mem, taints]
   actions:
     playbooklist:
       context: node

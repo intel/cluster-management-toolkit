@@ -6,7 +6,8 @@ command:
 listview:
   name: Daemon Sets
   group: Workloads
-  fields: [namespace, name, desired_replicas_ds, current_replicas_ds, ready_replicas_ds, uptodate_replicas_ds, available_replicas_ds, misscheduled_replicas, age]
+  field_indexes:
+    Normal: [namespace, name, desired_replicas_ds, current_replicas_ds, ready_replicas_ds, uptodate_replicas_ds, available_replicas_ds, misscheduled_replicas, age]
   sortcolumn: namespace
   actions:
     actionlist:

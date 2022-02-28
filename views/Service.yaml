@@ -6,5 +6,21 @@ command:
 listview:
   name: Services
   group: Core
-  fields: [namespace, name, svc_type, cluster_ip, external_ip, ports_svc, age]
+  field_indexes:
+    Normal: [namespace, name, svc_type, cluster_ip, external_ips, ports_svc, age]
+  fields:
+    svc_type:
+      header: "Type:"
+      path: "spec#type"
+      type: str
+    cluster_ip:
+      header: "Cluster-IP:"
+      path: "spec#clusterIP"
+      type: str
+    external_ips:
+      header: "External-IPs:"
+      paths:
+      - path: "spec#externalIPs"
+        pathtype: list
+      formatter: list
   sortcolumn: namespace

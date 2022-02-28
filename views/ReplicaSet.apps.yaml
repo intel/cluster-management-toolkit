@@ -6,7 +6,8 @@ command:
 listview:
   name: Replica Sets
   group: Workloads
-  fields: [namespace, name, ready_replicas, current_replicas, desired_replicas, max_replicas, age]
+  field_indexes:
+    Normal: [namespace, name, ready_replicas, current_replicas, desired_replicas, age]
   actions:
     actionlist:
       "Rescale resource":

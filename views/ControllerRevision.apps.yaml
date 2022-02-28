@@ -7,5 +7,12 @@ command:
 listview:
   name: Controller Revisions
   group: API & Extendability
-  fields: [namespace, name, controller, revision, age]
+  field_indexes:
+    Normal: [namespace, name, controller, revision, age]
+  fields:
+    revision:
+      header: "Revision:"
+      path: revision
+      type: int
+      align: right
   sortcolumn: namespace

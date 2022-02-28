@@ -6,29 +6,31 @@ command:
 listview:
   name: Pod Metrics
   group: Monitoring
+  field_indexes:
+    Normal: [namespace, name, cpu_total, mem_total, container_count, timestamp, window]
   fields:
-  - namespace
-  - name
-  - name: cpu_total
-    header: "CPU (millicores):"
-    paths:
-    - path: containers
-      pathtype: items
-      subpath: "usage#cpu"
-      action: sum
-      type: cpu_usage
-    align: right
-    formatter: float
-  - name: mem_total
-    header: "Memory:"
-    paths:
-    - path: containers
-      pathtype: items
-      subpath: "usage#memory"
-      action: sum
-      type: mem_usage
-    align: right
-    formatter: mem
-  - container_count
-  - timestamp
-  - window
+    cpu_total:
+      header: "CPU (millicores):"
+      paths:
+      - path: containers
+        pathtype: items
+        subpath: "usage#cpu"
+        action: sum
+        type: cpu_usage
+      align: right
+      formatter: float
+    mem_total:
+      header: "Memory:"
+      paths:
+      - path: containers
+        pathtype: items
+        subpath: "usage#memory"
+        action: sum
+        type: mem_usage
+        align: right
+        formatter: mem
+    window:
+      header: "Duration:"
+      path: "window"
+      align: right
+      type: str

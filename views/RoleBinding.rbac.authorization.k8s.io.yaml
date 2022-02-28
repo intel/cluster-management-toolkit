@@ -6,34 +6,24 @@ command:
 listview:
   name: Role Bindings
   group: "Authorization & Access Control"
-  fields_wide:
-  - namespace
-  - name
-  - name: role
-    header: "Role:"
-    paths:
-    - path: "roleRef#name"
-  - name: subjects
-    header: "Subjects:"
-    paths:
-    - path: subjects
-      pathtype: items
-      subpaths:
-      - kind
-      - name
-    formatting:
-      field_colors:
-      - type: kind
-      - type: generic
-    formatter: list
-  - age
+  field_indexes:
+    Wide: [namespace, name, role, subjects, age]
+    Normal: [namespace, name, subjects, age]
   fields:
-  - namespace
-  - name
-  - name: subjects
-    header: "# of Subjects:"
-    paths:
-    - path: subjects
-      type: len
-    align: right
-  - age
+    role:
+      header: "Role:"
+      paths:
+      - path: "roleRef#name"
+    subjects:
+      header: "Subjects:"
+      paths:
+      - path: subjects
+        pathtype: items
+        subpaths:
+        - kind
+        - name
+      formatting:
+        field_colors:
+        - type: kind
+        - type: generic
+      formatter: list

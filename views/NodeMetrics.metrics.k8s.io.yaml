@@ -6,20 +6,25 @@ command:
 listview:
   name: Node Metrics
   group: Monitoring
+  field_indexes:
+    Normal: [name, cpu_usage, memory_usage, window]
   fields:
-  - name
-  - name: cpu_usage
-    header: "CPU (millicores):"
-    paths:
-    - path: "usage#cpu"
-      type: cpu_usage
-    align: right
-    formatter: float
-  - name: memory_usage
-    header: "Memory:"
-    paths:
-    - path: "usage#memory"
-      type: mem_usage
-    formatter: mem
-    align: right
-  - window
+    cpu_usage:
+      header: "CPU (millicores):"
+      paths:
+      - path: "usage#cpu"
+        type: cpu_usage
+      align: right
+      formatter: float
+    memory_usage:
+      header: "Memory:"
+      paths:
+      - path: "usage#memory"
+        type: mem_usage
+      formatter: mem
+      align: right
+    window:
+      header: "Duration:"
+      path: "window"
+      align: right
+      type: str

@@ -926,44 +926,44 @@ default_processor = {
 	generator_total: processor_total,
 }
 
-def update_field_widths(field_list, objects):
+def update_field_widths(field_dict, field_names, objects):
 	linelen = 0
 	pos = 0
 
-	for field in field_list:
-		field_list[field]["pos"] = pos
-		field_list[field]["fieldlen"] = 0
+	for field_name in field_names:
+		field_dict[field_name]["pos"] = pos
+		field_dict[field_name]["fieldlen"] = 0
 
 		# These are necessary to calculate width of list items
-		item_separator = field_list[field].get("item_separator", ("separators", "list"))
-		field_separators = field_list[field].get("field_separators", [("separators", "field")])
-		ellipsise = field_list[field].get("ellipsise", -1)
-		ellipsis = field_list[field].get("ellipsis", ("separators", "ellipsis"))
-		field_prefixes = field_list[field].get("field_prefixes", None)
-		field_suffixes = field_list[field].get("field_suffixes", None)
+		item_separator = field_dict[field_name].get("item_separator", ("separators", "list"))
+		field_separators = field_dict[field_name].get("field_separators", [("separators", "field")])
+		ellipsise = field_dict[field_name].get("ellipsise", -1)
+		ellipsis = field_dict[field_name].get("ellipsis", ("separators", "ellipsis"))
+		field_prefixes = field_dict[field_name].get("field_prefixes", None)
+		field_suffixes = field_dict[field_name].get("field_suffixes", None)
 
 		for obj in objects:
-			generator = field_list[field].get("generator")
-			processor = field_list[field].get("processor")
+			generator = field_dict[field_name].get("generator")
+			processor = field_dict[field_name].get("processor")
 
 			if processor is None:
 				processor = default_processor.get(generator)
 
 			if processor is not None:
 				if processor in [processor_list, processor_list_with_status]:
-					tmp = processor(obj, field, item_separator = item_separator, field_separators = field_separators, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
+					tmp = processor(obj, field_name, item_separator = item_separator, field_separators = field_separators, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
 				else:
-					tmp = processor(obj, field)
+					tmp = processor(obj, field_name)
 			else:
-				tmp = str(getattr(obj, field))
+				tmp = str(getattr(obj, field_name))
 
-			tmplen = max(field_list[field].get("fieldlen", 0), len(str(tmp)))
+			tmplen = max(field_dict[field_name].get("fieldlen", 0), len(str(tmp)))
 
-			field_list[field]["fieldlen"] = max(len(str(tmp)), field_list[field]["fieldlen"])
+			field_dict[field_name]["fieldlen"] = max(len(str(tmp)), field_dict[field_name]["fieldlen"])
 
-		field_list[field]["fieldlen"] = max(field_list[field]["fieldlen"], len(field_list[field]["header"]))
+		field_dict[field_name]["fieldlen"] = max(field_dict[field_name]["fieldlen"], len(field_dict[field_name]["header"]))
 
-		linelen += field_list[field].get("fieldlen") + len(themearray_extract_string("pad", context = "separators"))
+		linelen += field_dict[field_name].get("fieldlen") + len(themearray_extract_string("pad", context = "separators"))
 		pos = linelen
 
 	# The last element shouldn't be padded
@@ -1191,6 +1191,7 @@ def get_pod_containers_list(**kwargs):
 					"name": name,
 					"container": container_name,
 					"status": reason,
+					"status_group": status_group,
 					"node_name": node_name,
 					"image_id": image_id,
 				})
@@ -1537,6 +1538,14 @@ def datagetter_pod_status(obj, path, default):
 
 	return status, {"status_group": status_group}
 
+def datagetter_container_status(obj, path, default):
+	if obj is None:
+		return default
+	status = deep_get(obj, "status")
+	status_group = deep_get(obj, "status_group")
+
+	return status, {"status_group": status_group}
+
 def datagetter_pv_status(obj, path, default):
 	if obj is None:
 		return default
@@ -1812,8 +1821,8 @@ def get_default(generator):
 
 latest_info = None
 
-def process_value(field_name, value, vtype, view, fields_name, action, formatter, replace_quotes, _regex):
-	override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{fields_name}", f"{view}#kind_format"], "mixed")
+def process_value(field_name, value, vtype, view, field_index, action, formatter, replace_quotes, _regex):
+	override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format"], "mixed")
 
 	if vtype == "str":
 		# We don't want any newlines, and extra trailing whitespace
@@ -1896,7 +1905,7 @@ def process_value(field_name, value, vtype, view, fields_name, action, formatter
 		if type(value) not in [list, tuple]:
 			raise Exception(f"Field {field_name}: type is {vtype}; for type {vtype} pathtype must be a multi-element type")
 		_values = []
-		override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{fields_name}", f"{view}#kind_format"], "mixed")
+		override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format"], "mixed")
 		for i in range(0, len(value)):
 			if i < len(vtype):
 				_vtype = vtype[i]
@@ -1921,7 +1930,7 @@ def process_value(field_name, value, vtype, view, fields_name, action, formatter
 			elif _vtype in ["skip"]:
 				_values.append("")
 			else:
-				raise Exception(f"Field {name}: type[{i}] ({vtype}) is unknown")
+				raise Exception(f"Field {field_name}: type[{i}] ({vtype}) is unknown")
 		if type(value) == list:
 			value = _values
 		elif type(value) == tuple:
@@ -1946,8 +1955,12 @@ def generic_infogetter(**kwargs):
 	if vlist == []:
 		return []
 
-	fields = deep_get(kwargs, "_fields", [])
-	fields_name = deep_get(kwargs, "_fields_name", "normal")
+	field_dict = deep_get(kwargs, "_field_dict", {})
+	field_names = deep_get(kwargs, "_field_names", [])
+	field_index = deep_get(kwargs, "_field_index", "normal")
+
+	if len(field_dict) == 0 or len(field_names) == 0:
+		sys.exit(f"generic_infogetter() received empty field_dict {field_dict} or field_names {field_names}; this is a programming error")
 
 	# If we know the view we can use it to get overrides from ikt.yaml
 	view = deep_get(kwargs, "_view", "")
@@ -1956,25 +1969,31 @@ def generic_infogetter(**kwargs):
 		d = {}
 		d["ref"] = obj
 		# fields both specify formatting and where to get the data from; here we're only concerned with the data
-		for field in fields:
-			if type(field) == dict:
-				name = deep_get(field, "name")
-				path = deep_get(field, "path")
-				paths = deep_get(field, "paths", [])
-				converters = deep_get(field, "converters", [])
-				default = deep_get(field, "default", "")
-				formatter = deep_get(field, "formatter")
-				action = None
-				replace_quotes = None
+		for field_name in field_names:
+			name = field_name
+			field = field_dict[name]
+			path = deep_get(field, "path")
+			paths = deep_get(field, "paths", [])
+			datagetter = deep_get(field, "datagetter")
+			converters = deep_get(field, "converters", [])
+			default = deep_get(field, "default", "")
+			formatter = deep_get(field, "formatter")
+			action = None
+			replace_quotes = None
 
-				if path is None and len(paths) == 0 or path is not None and len(paths) > 0:
-					raise Exception("Field {name}: exactly one of path and paths must be non-empty")
+			if (path is None and len(paths) == 0 or path is not None and len(paths) > 0) and datagetter is None:
+				raise Exception(f"Field {name}: exactly one of path and paths must be non-empty unless a datagetter is specified\npath={path}\npaths={paths}\ndatagetter={datagetter}")
 
+			if datagetter is not None:
+				d[name], extradata = datagetter(obj, path, default)
+				for key, value in extradata.items():
+					d[key] = value
+			else:
 				_values = []
 
 				if path is not None:
 					if deep_get(field, "type") is None:
-						raise Exception("Field {name}: the path field has no default type; type must always be specified")
+						raise Exception(f"Field {name}: the path field has no default type; type must always be specified")
 					_values.append((deep_get(obj, path, default), deep_get(field, "type")))
 
 				_path = None
@@ -1983,7 +2002,7 @@ def generic_infogetter(**kwargs):
 					path = deep_get(_path, "path")
 					mpaths = deep_get(_path, "paths")
 					if path is not None and mpaths is not None or path is None and mpaths is None:
-						raise Exception("Field {name}: exactly one of path & paths must be used in a 'paths:' block")
+						raise Exception(f"Field {name}: exactly one of path & paths must be used in a 'paths:' block\npath={path}\npaths={paths}")
 
 					if mpaths is None:
 						if type(path) == str:
@@ -2126,36 +2145,15 @@ def generic_infogetter(**kwargs):
 					if type(value) == list and type(_vtype) == list:
 						tmp = []
 						for _value in value:
-							tmp.append(process_value(name, _value, _vtype, view, fields_name, action, formatter, replace_quotes, _regex))
+							tmp.append(process_value(name, _value, _vtype, view, field_index, action, formatter, replace_quotes, _regex))
 					else:
-						tmp = process_value(name, value, _vtype, view, fields_name, action, formatter, replace_quotes, _regex)
+						tmp = process_value(name, value, _vtype, view, field_index, action, formatter, replace_quotes, _regex)
 					values.append(tmp)
 
 				if len(values) == 1:
 					d[name] = values[0]
 				else:
 					d[name] = values
-				continue
-			else:
-				generator = deep_get(field_templates, f"{field}#generator", generator_basic)
-				datagetter = deep_get(field_templates, f"{field}#datagetter", None)
-				path = deep_get(field_templates, f"{field}#path", "")
-				default = deep_get(field_templates, f"{field}#default", get_default(generator))
-
-			if datagetter is None:
-				if type(default) is not tuple:
-					extradata = {}
-				else:
-					default, extradata = default
-				tmp = deep_get(obj, path, default)
-				if type(tmp) == str:
-					tmp = tmp.rstrip()
-				d[field] = tmp
-			else:
-				# path can be empty for some datagetters
-				d[field], extradata = datagetter(obj, path, default)
-				for key, value in extradata.items():
-					d[key] = value
 
 		# We've got all the information we can get now; time to apply filters
 		filters = deep_get(kwargs, "_filters", {})
@@ -4006,32 +4004,6 @@ def get_resource_info_by_last_applied_configuration(configuration, resources = [
 
 	return resource_info, status
 
-def get_resource_info_by_namespace(namespace, resources):
-	resource_info = []
-	status = None
-
-	for resource in resources:
-		items, _status = kh.get_list_by_kind_namespace(resource, namespace)
-		# This should ensure that we always get a status set (if we're passed resources)
-		# and that we return 200 if there's at least one match, and otherwise the first error
-		if _status != 200:
-			if status is None:
-				status = _status
-			continue
-		status = 200
-
-		for item in items:
-			ref = item
-			kind = resource
-			rtype = resource_kind_to_rtype(resource)
-			status = "N/A"
-			status_group = stgroup.OK # FIXME
-			name = deep_get(item, "metadata#name")
-			resource_tuple = ("", name)
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
-
-	return resource_info, status
-
 def get_resource_info(**kwargs):
 	obj = deep_get(kwargs, "_obj")
 
@@ -5003,7 +4975,7 @@ def get_image_list(obj, **kwargs):
 			continue
 		size = disksize_to_human(deep_get(image, "sizeBytes", 0))
 		vlist.append([name, size])
-	return sorted(vlist)
+	return natsorted(vlist)
 
 def get_resources(obj, **kwargs):
 	resources = []
@@ -5267,10 +5239,10 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 builtin_fields = {
 	"age": {
 		"header": "Age:",
-		"paths": {
+		"paths": [{
 			"path": ["metadata#creationTimestamp"],
 			"type": "timestamp",
-		},
+		}],
 		"formatter": "age",
 		"default": -1,
 		"align": "right",
@@ -5284,6 +5256,11 @@ builtin_fields = {
 		"header": "Namespace:",
 		"path": "metadata#namespace",
 		"type": "str",
+	},
+	"pod_status": {
+		"header": "Status:",
+		"datagetter": datagetter_pod_status,
+		"generator": generator_status,
 	},
 }
 
@@ -5327,11 +5304,6 @@ field_templates = {
 		"generator": generator_numerical,
 		"ralign": True,
 	},
-	"allow_volume_expansion": {
-		"header": "Allow Volume Expansion:",
-		"path": "allowVolumeExpansion",
-		"default": False,
-	},
 	"ansible_groups": {
 		# [group, ...]
 		"header": "Ansible Groups:",
@@ -5356,18 +5328,9 @@ field_templates = {
 		"path": "status_message",
 		"datagetter": datagetter_api_service,
 	},
-	"assured_concurrency_shares": {
-		"header": "Assured Concurrency Shares:",
-		"path": "spec#limited#assuredConcurrencyShares",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"attach_required": {
 		"header": "Attach Required:",
 		"path": "spec#attachRequired",
-	},
-	"authinfo": {
-		"header": "Authinfo:",
 	},
 	"available": {
 		"header": "Available:",
@@ -5378,12 +5341,14 @@ field_templates = {
 	"available_replicas": {
 		"header": "Available:",
 		"path": "status#availableReplicas",
+		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
 	},
 	"available_replicas_ds": {
 		"header": "Available:",
 		"path": "status#numberAvailable",
+		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
 	},
@@ -5428,13 +5393,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "namespace"), ("types", "generic")],
 		"field_separators": [("separators", "namespace")],
-	},
-	"cluster": {
-		"header": "Cluster:",
-	},
-	"cluster_ip": {
-		"header": "Cluster-IP:",
-		"path": "spec#clusterIP",
 	},
 	"completions": {
 		"header": "Completions:",
@@ -5485,6 +5443,7 @@ field_templates = {
 	"container_runtime": {
 		"header": "Container-Runtime:",
 		"path": "status#nodeInfo#containerRuntimeVersion",
+		"type": "str",
 	},
 	"container_count": {
 		"header": "# of Containers:",
@@ -5560,18 +5519,17 @@ field_templates = {
 		"header": "Conditions:",
 		"generator": generator_list,
 	},
-	"current": {
-		"header": "Current:",
-	},
 	"current_replicas": {
 		"header": "Current:",
 		"path": "status#replicas",
+		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
 	},
 	"current_replicas_ds": {
 		"header": "Current:",
 		"path": "status#currentNumberScheduled",
+		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
 	},
@@ -5599,19 +5557,6 @@ field_templates = {
 	"default_limit": {
 		"header": "Default Limit:",
 	},
-	"deprecated_api": {
-		"header": "Deprecated API:",
-		"path": [["resource", "group", "version"], "tuple"],
-		"datagetter": datagetter_deprecated_api,
-		"generator": generator_list,
-		"field_colors": [("types", "kind"), ("types", "api_group")],
-		"field_separators": [("separators", "kind_apigroup"), ("separators", "kind")],
-	},
-	"deprecated_removed_release": {
-		"header": "Planned Removal:",
-		"path": [["removed_release"], "str"],
-		"datagetter": datagetter_metrics,
-	},
 	"description": {
 		"header": "Description:",
 		"path": "spec#descriptor#description",
@@ -5620,12 +5565,14 @@ field_templates = {
 	"desired_replicas": {
 		"header": "Desired:",
 		"path": "spec#replicas",
+		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
 	},
 	"desired_replicas_ds": {
 		"header": "Desired:",
 		"path": "status#desiredNumberScheduled",
+		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
 	},
@@ -5636,24 +5583,9 @@ field_templates = {
 		"field_colors": [("types", "host"), ("types", "subset"), ("types", "port")],
 		"field_separators": [("separators", "list_start"), ("separators", "list_end_colon")],
 	},
-	"device": {
-		"header": "Device:",
-		"path": "device",
-	},
-	"disk_usage_partition": {
-		"header": "Disk Usage:",
-		"path": ["partition_size_used", "partition_size_total"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_list,
-		"ralign": True,
-	},
 	"display_name": {
 		"header": "Display Name:",
 		"path": "spec#displayName",
-	},
-	"distinguisher_method": {
-		"header": "Distinguisher Method:",
-		"path": "spec#distinguisherMethod#type",
 	},
 	"docker_reference": {
 		"header": "Docker Reference:",
@@ -5709,10 +5641,6 @@ field_templates = {
 		"datagetter": datagetter_event_status,
 		"generator": generator_status,
 	},
-	"external_ip": {
-		"header": "External-IPs:",
-		"generator": generator_list,
-	},
 	"fail_count": {
 		"header": "Fail:",
 		"path": "report#summary#failCount",
@@ -5756,10 +5684,6 @@ field_templates = {
 		"header": "FS Group:",
 		"path": "spec#fsGroup#rule",
 	},
-	"fstype": {
-		"header": "Filesystem:",
-		"path": "fstype",
-	},
 	"ftype": {
 		"header": "Type:",
 	},
@@ -5782,21 +5706,6 @@ field_templates = {
 		"path": "groups",
 		"generator": generator_list,
 	},
-	"global_default": {
-		"header": "Global Default:",
-		"path": "globalDefault",
-		"default": "False",
-	},
-	"handler": {
-		"header": "Handler:",
-		"path": "handler",
-	},
-	"hand_size": {
-		"header": "Hand Size:",
-		"path": "spec#limited#limitResponse#queuing#handSize",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"hard": {
 		"header": "Hard:",
 	},
@@ -5812,10 +5721,6 @@ field_templates = {
 		"generator": generator_numerical_range,
 		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_high"))],
 		"ralign": True,
-	},
-	"holder": {
-		"header": "Holder:",
-		"path": "spec#holderIdentity",
 	},
 	"honor_labels": {
 		"header": "Honor Labels:",
@@ -5930,6 +5835,7 @@ field_templates = {
 	"kernel": {
 		"header": "Kernel-Version:",
 		"path": "status#nodeInfo#kernelVersion",
+		"type": "str",
 	},
 	"key": {
 		"header": "Key:",
@@ -5945,6 +5851,7 @@ field_templates = {
 	"kubelet_version": {
 		"header": "Version:",
 		"path": "status#nodeInfo#kubeletVersion",
+		"type": "str",
 	},
 	"kubernetes_roles": {
 		# [role, ...]
@@ -6008,12 +5915,6 @@ field_templates = {
 		"field_colors": [("types", "key"), ("types", "value")],
 		"field_separators": [("separators", "keyvalue")],
 	},
-	"matching_precedence": {
-		"header": "Matching Precedence:",
-		"path": "spec#matchingPrecedence",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"max_lr_ratio": {
 		"header": "Max Limit/Request Ratio:",
 	},
@@ -6066,17 +5967,10 @@ field_templates = {
 	"misscheduled_replicas": {
 		"header": "Misscheduled:",
 		"path": "status#numberMisscheduled",
+		"type": "raw",
 		"generator": generator_numerical_range,
 		"ranges": [(0, 1, ("types", "generic")), (1, sys.maxsize, ("types", "watermark_high"))],
 		"ralign": True,
-	},
-	"model": {
-		"header": "Model:",
-		"path": "model",
-	},
-	"mountpoint": {
-		"header": "Mountpoint:",
-		"path": "mountpoint",
 	},
 	"name": {
 		"header": "Name:",
@@ -6158,11 +6052,7 @@ field_templates = {
 	"os": {
 		"header": "OS-Image:",
 		"path": "status#nodeInfo#osImage",
-	},
-	"options": {
-		"header": "Options:",
-		"path": "options",
-		"generator": generator_list,
+		"type": "str",
 	},
 	"overhead": {
 		"header": "Overhead:",
@@ -6261,19 +6151,11 @@ field_templates = {
 		"path": "spec#priority",
 		"generator": generator_numerical,
 	},
-	"priority": {
-		"header": "Value:",
-		"path": "value",
-		"generator": generator_numerical,
-	},
 	"priority_level": {
 		"header": "Priority Level:",
 		"path": "spec#priorityLevelConfiguration#name",
 		"generator": generator_priority_level,
-	},
-	"priority_type": {
-		"header": "Priority Type:",
-		"path": "spec#type",
+		"type": "str",
 	},
 	"privileged": {
 		"header": "Privileged:",
@@ -6291,10 +6173,6 @@ field_templates = {
 	"providerusername": {
 		"header": "Provider User Name:",
 		"path": "providerUserName",
-	},
-	"provisioner": {
-		"header": "Provisioner:",
-		"path": "provisioner",
 	},
 	"proxy_url": {
 		"header": "Proxy URL:",
@@ -6326,18 +6204,6 @@ field_templates = {
 	"repository": {
 		"header": "Repository:",
 		"path": "report#artifact#repository",
-	},
-	"queues": {
-		"header": "Queues:",
-		"path": "spec#limited#limitResponse#queuing#queues",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"queue_length_limit": {
-		"header": "Queue Length List:",
-		"path": "spec#limited#limitResponse#queuing#queueLengthLimit",
-		"generator": generator_numerical,
-		"ralign": True,
 	},
 	"ready": {
 		"header": "Ready:",
@@ -6443,11 +6309,6 @@ field_templates = {
 		"path": "restarts",
 		"datagetter": datagetter_pod_restarts,
 		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"revision": {
-		"header": "Revision:",
-		"path": "revision",
 		"ralign": True,
 	},
 	"role": {
@@ -6584,10 +6445,6 @@ field_templates = {
 		"header": "Suspend:",
 		"path": "spec#suspend",
 	},
-	"svc_type": {
-		"header": "Type:",
-		"path": "spec#type",
-	},
 	"tag": {
 		"header": "Tag:",
 		"path": "report#artifact#tag",
@@ -6663,12 +6520,14 @@ field_templates = {
 	"uptodate_replicas": {
 		"header": "Up to Date:",
 		"path": "status#updatedReplicas",
+		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
 	},
 	"uptodate_replicas_ds": {
 		"header": "Up to Date:",
 		"path": "status#updatedNumberScheduled",
+		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
 	},
@@ -6691,9 +6550,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "generic")],
 	},
-	"value": {
-		"header": "Value:",
-	},
 	"decoded_value": {
 		"header": "Value:",
 	},
@@ -6712,11 +6568,6 @@ field_templates = {
 	"volume": {
 		"header": "Volume:",
 		"path": "spec#volumeName",
-	},
-	"volume_binding_mode": {
-		"header": "Volume Binding Mode:",
-		"path": "volumeBindingMode",
-		"default": "VolumeBindingImmediate",
 	},
 	"volume_mode": {
 		"header": "Volume Mode:",
@@ -6750,11 +6601,6 @@ field_templates = {
 		"path": "report#summary#warningCount",
 		"generator": generator_numerical_range,
 		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_medium"))],
-		"ralign": True,
-	},
-	"window": {
-		"header": "Duration:",
-		"path": "window",
 		"ralign": True,
 	},
 }
@@ -6795,28 +6641,16 @@ def get_formatting(field, formatting, default):
 	return result
 
 
-def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
+def fieldgenerator(view, field_index, field_indexes, fields = {}, sortcolumn = None, denylist = []):
 	global namespace
+
+	if field_indexes is None or len(field_indexes) == 0:
+		return None, None, None
 
 	if namespace != "" and "namespace" not in denylist:
 		denylist.append("namespace")
 
-	if fields is None:
-		if deep_get(views, f"{view}#fields") is None:
-			return None, None
-
-		fields = []
-		if "custom_fields" in views[view]:
-			fields += views[view]["custom_fields"]
-		else:
-			fields += views[view]["fields"]
-
-	field_names = []
-	for field in fields:
-		if type(field) == str:
-			field_names.append(field)
-		elif type(field) == dict:
-			field_names.append(field["name"])
+	field_names = field_indexes[field_index]
 
 	# delete all denylisted fields
 	for field in denylist:
@@ -6825,146 +6659,104 @@ def fieldgenerator(view, fields = None, sortcolumn = None, denylist = []):
 		except ValueError:
 			pass
 
-	# OK, we've pruned all unwanted fields; now we need to check that the sort column
-	# is still valid, and if not pick another one
-	if sortcolumn is not None and sortcolumn not in fields:
+	# OK, we've pruned the denylisted fields; now we need to check
+	# whether the sort column still applies, and if not try to pick
+	# another sortcolumn
+	if sortcolumn is None or sortcolumn not in field_names:
 		if "name" in field_names:
 			sortcolumn = "name"
 		elif "namespace" in field_names:
 			sortcolumn = "namespace"
 		else:
-			if type(fields[0]) == str:
-				sortcolumn = fields[0]
-			elif type(fields[0]) == dict:
-				sortcolumn = fields[0]["name"]
-	elif sortcolumn is None:
-		sortcolumn = deep_get(iktconfig, f"{view}#sortcolumn", "")
-		if sortcolumn not in field_names:
-			sortcolumn = deep_get(views, f"{view}#sortcolumn", "")
-		if sortcolumn not in field_names:
-			sortcolumn = "name"
+			sortcolumn = field_names[0]
 
-	tmp_field = OrderedDict()
+	# XXX: Remove compat when fully converted
+	field_dict = {}
+	for field in field_names:
+		if type(fields) == dict and field in fields and type(deep_get(fields, f"{field}")) == dict:
+			field_dict[field] = deep_get(fields, field, {})
+		elif field in builtin_fields:
+			field_dict[field] = deep_get(builtin_fields, field, {})
+		elif field in field_templates:
+			field_dict[field] = deep_get(field_templates, field, {})
+		else:
+			sys.exit(f"View {view}: field \"{field}\" cannot be found in view, builtin_fields, or field_templates\nView fields: {fields}\nfield_names: {field_names}")
 
-	for field in fields:
-		if type(field) == str:
-			name = field
-		elif type(field) == dict:
-			name = field["name"]
+	tmp_fields = OrderedDict()
 
-		# Only fields left in field_names should be included
-		if name not in field_names:
-			continue
+	for field_name in field_dict:
+		field = deep_get(field_dict, field_name)
+		# This is a custom field, so we need to construct one that's usable here
+		tmp_fields[field_name] = copy.deepcopy(field_dict[field_name])
 
-		header = ""
+		formatter = deep_get(field, "formatter")
+		generator = deep_get(field, "generator", generator_basic)
+		processor = deep_get(field, "processor")
+		if formatter is None:
+			pass
+		elif formatter == "mem":
+			generator = generator_mem_single
+			processor = None
+		elif formatter in ["float"]:
+			# The generator is the same, but the name is unfortunate
+			generator = generator_mem_single
+			processor = None
+		elif formatter in ["list"]:
+			generator = generator_list
+			processor = processor_list
+		elif formatter in "numerical":
+			generator = generator_numerical
+			processor = None
+		elif formatter == "timestamp":
+			generator = generator_timestamp
+			processor = processor_timestamp
+		elif formatter == "age":
+			generator = generator_age
+			processor = processor_age
+		elif formatter == "value_mapper":
+			generator = generator_value_mapper
+			processor = None
+		else:
+			raise Exception(f"Unknown formatter {formatter}")
 
-		if type(field) == dict:
-			# This is a custom field, so we need to construct one that's usable here
-			name = deep_get(field, "name")
-			header = deep_get(field, "header")
-			formatter = deep_get(field, "formatter")
-			if formatter is None:
-				generator = generator_basic
-				processor = None
-				pass
-			elif formatter == "mem":
-				generator = generator_mem_single
-				processor = None
-			elif formatter in ["float"]:
-				# The generator is the same, but the name is unfortunate
-				generator = generator_mem_single
-				processor = None
-			elif formatter in ["list"]:
-				generator = generator_list
-				processor = processor_list
-			elif formatter in "numerical":
-				generator = generator_numerical
-				processor = None
-			elif formatter == "timestamp":
-				generator = generator_timestamp
-				processor = processor_timestamp
-			elif formatter == "age":
-				generator = generator_age
-				processor = processor_age
-			elif formatter == "value_mapper":
-				generator = generator_value_mapper
-				processor = None
-			else:
-				raise Exception(f"Unknown formatter {formatter}")
+		sortkey1 = field_name
+		# If sortkey1 == sortcolumn this "fails", but it's good enough
+		sortkey2 = sortcolumn
 
-			align = deep_get(field, "align", "left")
-			ralign = align == "right"
-			sortkey1 = name
-			# If sortkey1 == sortcolumn this "fails", but it's good enough
-			sortkey2 = sortcolumn
-
-			theme = get_theme_ref()
-			if deep_get(field, "formatting#field_colors") is None:
-				if "type" in field and field["type"] and field["type"] in theme["types"]:
-					field_colors = [("types", deep_get(field, "type"))]
-				else:
-					field_colors = get_formatting(field, "field_colors", [("types", "field")])
+		theme = get_theme_ref()
+		if deep_get(field, "formatting#field_colors") is None:
+			if "type" in field and field["type"] in theme["types"]:
+				field_colors = [("types", deep_get(field, "type"))]
 			else:
 				field_colors = get_formatting(field, "field_colors", [("types", "field")])
-			field_prefixes = get_formatting(field, "field_prefixes", [])
-			field_suffixes = get_formatting(field, "field_suffixes", [])
-			field_separators = get_formatting(field, "field_separators", [("separators", "field")])
-			ellipsise = deep_get(field, "formatting#ellipsise", -1)
-			ellipsis = get_formatting(field, "ellipsis", ("separators", "ellipsis"))
-			item_separator = get_formatting(field, "item_separator", ("separators", "list"))
-			mapping = deep_get(field, "formatting#mapping", {})
 		else:
-			if field not in field_templates:
-				raise Exception(f"Programming error! Field “{field}“ not defined in field_templates")
+			field_colors = get_formatting(field, "field_colors", [("types", "field")])
+		field_prefixes = get_formatting(field, "field_prefixes", [])
+		field_suffixes = get_formatting(field, "field_suffixes", [])
+		field_separators = get_formatting(field, "field_separators", [("separators", "field")])
+		ellipsise = deep_get(field, "formatting#ellipsise", -1)
+		ellipsis = get_formatting(field, "ellipsis", ("separators", "ellipsis"))
+		item_separator = get_formatting(field, "item_separator", ("separators", "list"))
+		mapping = deep_get(field, "formatting#mapping", {})
 
-			if "header" not in deep_get(field_templates, field):
-				raise Exception(f"Programming error! Field “{field}“ lacks mandatory field “header“")
+		tmp_fields[field_name]["generator"] = generator
+		tmp_fields[field_name]["processor"] = processor
+		# Fix all of these to use the new format
+		tmp_fields[field_name]["field_colors"] = field_colors
+		tmp_fields[field_name]["field_prefixes"] = field_prefixes
+		tmp_fields[field_name]["field_suffixes"] = field_suffixes
+		tmp_fields[field_name]["field_separators"] = field_separators
+		tmp_fields[field_name]["ellipsise"] = ellipsise
+		tmp_fields[field_name]["ellipsis"] = ellipsis
+		tmp_fields[field_name]["item_separator"] = item_separator
+		tmp_fields[field_name]["mapping"] = mapping
+		tmp_fields[field_name]["sortkey1"] = sortkey1
+		tmp_fields[field_name]["sortkey2"] = sortkey2
+		if "align" in field:
+			align = deep_get(field, "align", "left")
+			tmp_fields[field_name]["ralign"] = align == "right"
 
-			name = field
-
-			if len(header) == 0:
-				header = deep_get(field_templates, f"{field}#header")
-
-			generator = deep_get(field_templates, f"{field}#generator", generator_basic)
-			processor = deep_get(field_templates, f"{field}#processor", None)
-			if processor is None:
-				processor = default_processor.get(generator)
-			ralign = deep_get(field_templates, f"{field}#ralign", False)
-			field_colors = deep_get(field_templates, f"{field}#field_colors", [("types", "field")])
-			field_prefixes = deep_get(field_templates, f"{field}#field_prefixes", None)
-			field_suffixes = deep_get(field_templates, f"{field}#field_suffixes", None)
-			field_separators = deep_get(field_templates, f"{field}#field_separators", [("separators", "field")])
-			ellipsise = deep_get(field_templates, f"{field}#ellipsise", -1)
-			ellipsis = deep_get(field_templates, f"{field}#ellipsis", ("separators", "ellipsis"))
-			item_separator = deep_get(field_templates, f"{field}#item_separator", ("separators", "list"))
-			mapping = {}
-			sortkey1 = field
-			# If sortkey1 == sortcolumn this "fails", but it's good enough
-			sortkey2 = sortcolumn
-			# Special case:
-			if field == "status":
-				sortkey2 = "status"
-			if sortkey1 == sortkey2 and "status" in fields:
-				sortkey2 = "status_group"
-
-		tmp_field[name] = {
-			"header": header,
-			"generator": generator,
-			"processor": processor,
-			"ralign": ralign,
-			"field_colors": field_colors,
-			"field_prefixes": field_prefixes,
-			"field_suffixes": field_suffixes,
-			"field_separators": field_separators,
-			"ellipsise": ellipsise,
-			"ellipsis": ellipsis,
-			"item_separator": item_separator,
-			"mapping": mapping,
-			"sortkey1": sortkey1,
-			"sortkey2": sortkey2,
-		}
-
-	return tmp_field, sortcolumn
+	return tmp_fields, field_names, sortcolumn
 
 def genericlistloop(stdscr, view):
 	global namespace
@@ -6972,22 +6764,19 @@ def genericlistloop(stdscr, view):
 	global initial_namespace
 	global latest_info
 	denylist = deep_get(views, f"{view}#field_denylist", [])
-	fields_custom = deep_get_with_fallback(views, [f"{view}#fields_custom", f"{view}#custom_fields"], [])
-	fields_narrow = deep_get(views, f"{view}#fields", [])
-	fields_wide = deep_get(views, f"{view}#fields_wide", [])
+	field_indexes = deep_get(views, f"{view}#field_indexes", {})
 
-	fields_types = [{"name": "Normal", "fields": fields_narrow}]
-	fields_index = 0
-	if len(fields_wide) > 0:
-		fields_types.append({"name": "Wide", "fields": fields_wide})
-		fields_index = len(fields_types) - 1
-	if len(fields_custom) > 0:
-		fields_types.append({"name": "Custom", "fields": fields_custom})
-		fields_index = len(fields_types) - 1
-	fields = deep_get(fields_types[fields_index], "fields")
-	fields_name = deep_get(fields_types[fields_index], "name")
+	if len(field_indexes) == 0:
+		sys.exit(f"FIXME: field_indexes for view {view} is empty")
 
-	field_list, sortcolumn = fieldgenerator(view, fields = fields, denylist = denylist)
+	if "Custom" in field_indexes:
+		field_index = "Custom"
+	elif "Wide" in field_indexes:
+		field_index = "Wide"
+	else:
+		field_index = list(field_indexes.keys())[0]
+
+	field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, f"{view}#fields"), sortcolumn = deep_get(views, f"{view}#sortcolumn"), denylist = denylist)
 	uip = UIProps(stdscr)
 
 	windowheader = view
@@ -7013,7 +6802,7 @@ def genericlistloop(stdscr, view):
 	is_taggable = deep_get(viewref, "is_taggable", True) and "actions" in viewref
 	extra_vars = deep_get(viewref, "extra_vars", {})
 
-	uip.init_window(field_list, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun)
+	uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun)
 
 	# For the status bar; position is always at the bottom of the screen and the entire width of the screen
 	statusbar = uip.init_statusbar()
@@ -7041,7 +6830,9 @@ def genericlistloop(stdscr, view):
 
 			infogetter = deep_get(viewref, "infogetter", generic_infogetter)
 			infogetter_extra_vars = deep_get(viewref, "extra_vars#infogetter", { "_view": view.strip("*") })
-			infogetter_extra_vars["_fields_name"] = fields_name.lower()
+			infogetter_extra_vars["_field_index"] = field_index.lower()
+			infogetter_extra_vars["_field_names"] = field_names
+			infogetter_extra_vars["_field_dict"] = field_dict
 			if "filters" in listview_args:
 				infogetter_extra_vars["_filters"] = deep_get(listview_args, "filters")
 
@@ -7058,7 +6849,6 @@ def genericlistloop(stdscr, view):
 					else:
 						vlist, status = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
 				infogetter_extra_vars["_vlist"] = vlist
-				infogetter_extra_vars["_fields"] = fields
 			else:
 				status = "OK"
 			info = infogetter(**infogetter_extra_vars)
@@ -7070,7 +6860,7 @@ def genericlistloop(stdscr, view):
 
 			latest_info = view
 			listlen = uip.update_info(info)
-			linelen = update_field_widths(field_list, uip.info)
+			linelen = update_field_widths(field_dict, field_names, uip.info)
 			if is_taggable == True:
 				linelen += len("✓ ")
 			uip.resize_listpad(listlen, linelen)
@@ -7087,7 +6877,7 @@ def genericlistloop(stdscr, view):
 				interval = "Manual"
 
 			statusarray1 = [
-				("Fields: ", ("statusbar", "infoheader")), (deep_get(fields_types[fields_index], "name"), ("statusbar", "highlight"))
+				("Fields: ", ("statusbar", "infoheader")), (field_index, ("statusbar", "highlight"))
 			]
 			if len(label_selector) > 0:
 				if len(statusarray1) > 0:
@@ -7097,7 +6887,7 @@ def genericlistloop(stdscr, view):
 				]
 			statusarray2 = [
 			]
-			if view != "Contexts" and ("namespace" in denylist or "namespace" in fields):
+			if view != "Contexts" and ("namespace" in denylist or "namespace" in field_names):
 				statusarray2 += [("Namespace: ", ("statusbar", "infoheader")), (f"{namespace if len(namespace) > 0 else '<All>'}", ("statusbar", "highlight"))]
 
 			if len(statusarray2) > 0:
@@ -7123,11 +6913,11 @@ def genericlistloop(stdscr, view):
 		y = 0
 
 		uip.update_sorted_list()
-		generate_listheader(uip, headerpad, field_list, is_taggable = is_taggable)
+		generate_listheader(uip, headerpad, field_dict, is_taggable = is_taggable)
 		for item in uip.sorted_list:
 			uip.select_if_y(y, item)
 			is_tagged = item in tagged_items
-			generate_list(uip, listpad, item, field_list, y, uip.is_selected(item), is_taggable = is_taggable, is_tagged = is_tagged)
+			generate_list(uip, listpad, item, field_dict, y, uip.is_selected(item), is_taggable = is_taggable, is_tagged = is_tagged)
 			y += 1
 
 		uip.refresh_window()
@@ -7173,17 +6963,16 @@ def genericlistloop(stdscr, view):
 			uip.refresh_all()
 			uip.force_update()
 		elif c == ord("W"):
-			if len(fields_wide) == 0 and len(fields_custom) == 0:
+			if len(field_indexes) == 0:
 				continue
 
+			_list = list(field_indexes.keys())
+			_index = _list.index(field_index)
+			field_index = _list[(_index + 1) % len(field_indexes)]
+
 			# Toggle field width
-			fields_index += 1
-			if fields_index > len(fields_types) - 1:
-				fields_index = 0
-			fields = deep_get(fields_types[fields_index], "fields")
-			fields_name = deep_get(fields_types[fields_index], "name")
-			field_list, sortcolumn = fieldgenerator(view, fields = fields, denylist = denylist)
-			uip.reinit_window(field_list, sortcolumn = sortcolumn)
+			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, f"{view}#fields"), sortcolumn = deep_get(views, f"{view}#sortcolumn"), denylist = denylist)
+			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
 			uip.resize_listpad(height = -1, width = -1)
 			uip.refresh_all()
 			uip.force_update()
@@ -7340,8 +7129,8 @@ def genericlistloop(stdscr, view):
 					namespace = ""
 				else:
 					namespace = selection
-			field_list, sortcolumn = fieldgenerator(view, denylist = [])
-			uip.init_window(field_list, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun)
+			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, f"{view}#fields"), sortcolumn = deep_get(views, f"{view}#sortcolumn"), denylist = denylist)
+			uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun)
 			headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = 1, xpos = 1)
 
 			# For the status bar; position is always at the bottom of the screen and the entire width of the screen
@@ -7425,7 +7214,7 @@ def genericlistloop(stdscr, view):
 						labels.append((key, labelref[key]))
 			if len(labels) == 0:
 				continue
-			for key, value in sorted(labels):
+			for key, value in natsorted(labels):
 				labellist.append((widgetlineattrs.NORMAL, [(f"{key}", ("windowwidget", "default"))], [(f"{value}", ("windowwidget", "default"))]))
 			label_headers = ["Label:", "Value:"]
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, labellist, headers = label_headers, title = "Labels", cursor = False)
@@ -7800,7 +7589,8 @@ def genericlistloop(stdscr, view):
 				uip.force_update()
 
 def clusteroverviewloop(stdscr, view):
-	field_list, sortcolumn = fieldgenerator(view)
+	#field_list, sortcolumn = fieldgenerator(view)
+	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
 	windowheader = view
@@ -8452,7 +8242,8 @@ def check_cni_updates(cni, current_version):
 
 # FIXME
 def networkinfoloop(stdscr, view):
-	field_list, sortcolumn = fieldgenerator(view)
+	#field_list, sortcolumn = fieldgenerator(view)
+	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
 	windowheader = view
@@ -8460,7 +8251,7 @@ def networkinfoloop(stdscr, view):
 	activatedfun = views[view]["activatedfun"]
 	update_delay = views[view].get("update_delay", -1)
 
-	uip.init_window(field_list, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, helptext = helptext, activatedfun = activatedfun)
+	uip.init_window(None, windowheader = windowheader, update_delay = update_delay, sortcolumn = None, helptext = helptext, activatedfun = activatedfun)
 
 	# For generic information
 	infopad = uip.init_infopad(height = 9, width = -1, ypos = 1, xpos = 1)
@@ -9969,10 +9760,13 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		if obj is None or len(obj) == 0:
 			return curses_helper.retval.NOMATCH
 
-	fields = deep_get_with_fallback(viewref, ["custom_fields", "fields"])
+	# XXX: For now we don't support custom fields for the lists on the info pages
+	field_indexes = deep_get(viewref, "field_indexes", {})
+	field_index = "Normal"
+
 	sortcolumn = deep_get(viewref, "sortcolumn")
 	field_denylist = deep_get(viewref, "field_denylist", [])
-	field_list, sortcolumn = fieldgenerator(None, fields = fields, sortcolumn = sortcolumn, denylist = field_denylist)
+	field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, "fields"), sortcolumn = sortcolumn, denylist = field_denylist)
 
 	# If no window header has been specified that overrides the default, just use the view name with " Info" tacked on at the end
 	if "title" in kwargs:
@@ -10106,7 +9900,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 	helptext = generate_helptext(view, "infoview", additional_helptexts, shortcuts = shortcuts)
 
-	uip.init_window(field_list, windowheader = windowheader, view = viewoverride, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, reversible = reversible, helptext = helptext, activatedfun = activatedfun, extraref = extraref, data = obj)
+	uip.init_window(field_dict, windowheader = windowheader, view = viewoverride, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, reversible = reversible, helptext = helptext, activatedfun = activatedfun, extraref = extraref, data = obj)
 
 	# For generic information
 	if infopadheight > 0:
@@ -10190,11 +9984,14 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				infogetter_args.pop("_vlist", None)
 				infogetter_args["_vlist"] = vlist
 
-				infogetter_args.pop("_fields", None)
-				infogetter_args["_fields"] = fields
+				infogetter_args.pop("_field_index", None)
+				infogetter_args["_field_index"] = field_index
 
-				infogetter_args.pop("_fields_name", None)
-				infogetter_args["_fields_name"] = "normal"
+				infogetter_args.pop("_field_names", None)
+				infogetter_args["_field_names"] = field_names
+
+				infogetter_args.pop("_field_dict", None)
+				infogetter_args["_field_dict"] = field_dict
 
 				infogetter_args.pop("_filters", None)
 				infogetter_args["_filters"] = filters
@@ -10205,7 +10002,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				info = infogetter(**infogetter_args)
 
 				listlen = uip.update_info(info)
-				linelen = update_field_widths(field_list, uip.info)
+				linelen = update_field_widths(field_dict, field_names, uip.info)
 				uip.resize_listpad(listlen, linelen)
 			elif logpad is not None:
 				infogetter = deep_get(viewref, "logpad#infogetter")
@@ -10279,10 +10076,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			y = 0
 
 			uip.update_sorted_list()
-			generate_listheader(uip, headerpad, field_list)
+			generate_listheader(uip, headerpad, field_dict)
 			for item in uip.sorted_list:
 				uip.select_if_y(y, item)
-				generate_list(uip, listpad, item, field_list, y, uip.is_selected(item))
+				generate_list(uip, listpad, item, field_dict, y, uip.is_selected(item))
 				y += 1
 
 		# Output logpad if we have one
@@ -11613,11 +11410,28 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 	else:
 		return None
 
-def get_all_namespaced_resources(**kwargs):
-	obj = deep_get(kwargs, "_obj")
+def listgetter_namespaced_resources(obj, **kwargs):
+	vlist = []
+	status = 200
+
+	namespaced_resources = deep_get(kwargs, "resources", kh.get_list_of_namespaced_resources())
+
+	kind = ("Namespace", "")
 	namespace = deep_get(obj, "metadata#name")
-	info, status = get_resource_info_by_namespace(namespace, kh.get_list_of_namespaced_resources())
-	return info
+
+	for kind in namespaced_resources:
+		_vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
+		if _status != 200:
+			status = _status
+			continue
+		if len(_vlist) == 0:
+			continue
+		# We're (potentially) listing a lot of different types of resources,
+		# and they don't contain kind/apiVersion, so it'll be tricky to tell them apart...
+		for obj in _vlist:
+			obj["__kind_tuple"] = kind
+		vlist += _vlist
+	return vlist, status
 
 # Iterate over the list of items and execute command on all of them
 def executecommand_multiple(stdscr, msg, command, items, waitforkeypress):
@@ -12418,7 +12232,7 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 		order.append((description, category, name))
 
 	currentcategory = ""
-	for item in sorted(order, key = itemgetter(1, 0)):
+	for item in natsorted(order, key = itemgetter(1, 0)):
 		action = item[0]
 		category = item[1]
 		allowoncontrolplane = deep_get(action_list, f"{item[2]}#allow_on_controlplane", True)
@@ -12597,7 +12411,7 @@ def populate_playbooklist(context = None, actions = [], action_list = {}, contro
 			order.append((description, category, name))
 
 		currentcategory = ""
-		for item in sorted(order, key = itemgetter(1, 0)):
+		for item in natsorted(order, key = itemgetter(1, 0)):
 			action = item[0]
 			category = item[1]
 			allowoncontrolplane = action_list[item[2]].get("allow_on_control_plane", True)
@@ -12710,7 +12524,7 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 		order.append((item, group, api_group))
 
 	currentgroup = ""
-	for item in sorted(order, key = itemgetter(sortkey1, sortkey2)):
+	for item in natsorted(order, key = itemgetter(sortkey1, sortkey2)):
 		view = item[0]
 		viewref = views[view]
 
@@ -12749,9 +12563,10 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 		return curses_helper.retval.NOMATCH
 
 def selectorloop(stdscr, view):
+	#field_list, sortcolumn = fieldgenerator(view)
+	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
-	field_list, sortcolumn = fieldgenerator(view)
 	windowheader = views[view].get("windowheader", view)
 
 	uip.init_window(field_list = field_list, windowheader = windowheader, sortcolumn = sortcolumn)
@@ -13105,7 +12920,9 @@ infoviews = {
 		},
 	},
 	("Application", "app.k8s.io"): {
-		"fields": ["name", "status", "link"],
+		"field_indexes": {
+			"Normal": ["name", "status", "link"],
+		},
 		"sortcolumn": "status",
 		"infopad": {
 			"Add ownerRef:": {
@@ -13145,7 +12962,9 @@ infoviews = {
 	},
 	("AuthorizationPolicy", "security.istio.io"): {
 		"windowheader": "Authorization Policy Info",
-		"fields": ["source", "operation", "condition"],
+		"field_indexes": {
+			"Normal": ["source", "operation", "condition"],
+		},
 		"sortcolumn": "source",
 		"infopad": {
 			"Workload Selector:": {
@@ -13352,6 +13171,53 @@ infoviews = {
 			},
 		},
 	},
+	("CiliumNode", "cilium.io"): {
+		"windowheader": "Cilium Node Info",
+		"infopad": {
+			"Node:": {
+				"fieldname": [("N", ("main", "infoheader_shortcut")), ("ode:", ("main", "infoheader"))],
+				"processor": field_processor_owr_node,
+			},
+			"Health (IPv4):": {
+				"path": "spec#health#ipv4",
+			},
+			"IPAM:": {
+				"processor": None,
+			},
+			"  Pod CIDRs:": {
+				"extra_paths": "spec#ipam#podCIDRs",
+				"processor": field_processor_list,
+			},
+		},
+		"shortcuts": {
+			"Addresses": {
+				"shortcut": ord("A"),
+				"helptext": ("[Shift] + A", "Show addresses"),
+				"widget": "windowwidget",
+				"title": "Maintainers:",
+				"headers": ["IP:", "Type:"],
+				"itemgetter": get_list_fields,
+				"itemgetter_args": {
+					"path": "spec#addresses",
+					"fields": [
+						"ip",
+						"type",
+					],
+				},
+				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
+				# This isn't supported for now
+				"sortcolumn": "ip",
+			},
+			"Node": {
+				"shortcut": ord("N"),
+				"helptext": ("[Shift] + N", "Open info page for node"),
+				"call": resourceinfodispatch,
+				"owner_references_path": "metadata#ownerReferences",
+				# Note: This cannot be (kind, api_group)
+				"owner_references_kind": "Node",
+			},
+		},
+	},
 	("ClusterInformation", "crd.projectcalico.org"): {
 		"windowheader": "Cluster Information Info",
 		"infopad": {
@@ -13402,7 +13268,9 @@ infoviews = {
 	},
 	("ClusterRole", "rbac.authorization.k8s.io"): {
 		"windowheader": "Cluster Role Info",
-		"fields": ["resource", "api_group", "non_resource_urls", "resource_names", "verbs"],
+		"field_indexes": {
+			"Normal": ["resource", "api_group", "non_resource_urls", "resource_names", "verbs"],
+		},
 		"sortcolumn": "api_group",
 		"infopad": {},
 		"listpad": {
@@ -13411,7 +13279,9 @@ infoviews = {
 	},
 	("ClusterRoleBinding", "rbac.authorization.k8s.io"): {
 		"windowheader": "Cluster Role Binding Info",
-		"fields": ["namespace", "name", "kind"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "kind"],
+		},
 		"sortcolumn": "rtype",
 		"activatedfun": resourceinfodispatch,
 		"extraref": "kind",
@@ -13538,7 +13408,9 @@ infoviews = {
 		"windowheader": "Container Info",
 		"name_path": "name",
 		"creation_timestamp_path": None,
-		"fields": ["namespace", "name", "status", "node", "pod_ip", "age", "restarts"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "restarts"],
+		},
 		"sortcolumn": "status",
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
@@ -13565,7 +13437,9 @@ infoviews = {
 	},
 	("ConfigMap", ""): {
 		"windowheader": "Config Map Info",
-		"fields": ["configmap", "rtype"],
+		"field_indexes": {
+			"Normal": ["configmap", "rtype"],
+		},
 		"sortcolumn": "configmap",
 		"activatedfun": cmdataloop,
 		"infopad": {},
@@ -13641,7 +13515,9 @@ infoviews = {
 	},
 	("CSINode", "storage.k8s.io"): {
 		"windowheader": "CSI Node Info",
-		"fields": ["name", "node_id", "topology_keys", "allocatable_count"],
+		"field_indexes": {
+			"Normal": ["name", "node_id", "topology_keys", "allocatable_count"],
+		},
 		"sortcolumn": "name",
 		"activatedfun": csi_driver_dispatch,
 		"viewoverride": ("CSIDriver", "storage.k8s.io"),
@@ -13707,7 +13583,9 @@ infoviews = {
 	},
 	("DaemonSet", "apps"): {
 		"windowheader": "Daemon Set Info",
-		"fields": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		},
 		"sortcolumn": "status",
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
@@ -13837,7 +13715,9 @@ infoviews = {
 		},
 	},
 	("Deployment", "apps"): {
-		"fields": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		},
 		"sortcolumn": "status",
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
@@ -13904,7 +13784,26 @@ infoviews = {
 	},
 	("__Deprecation", ""): {
 		"windowheader": "Deprecation Info",
-		"fields": ["kind", "namespace", "name"],
+		"field_indexes": {
+			"Normal": ["kind", "namespace", "name"],
+		},
+		"fields": {
+			"kind": {
+				"header": "Kind:",
+				"path": "kind",
+				"type": "raw",
+				"formatting": {
+					"field_colors": [
+						{ "type": "kind", },
+						{ "type": "kind", },
+					],
+					"field_separators": [
+						{ "type": "kind_apigroup", },
+					],
+				},
+				"formatter": "list",
+			},
+		},
 		"sortcolumn": "namespace",
 		"extraref": "kind",
 		"activatedfun": resourceinfodispatch,
@@ -14091,7 +13990,9 @@ infoviews = {
 		#listpad: { SUBSETS }
 	},
 	("Endpoints", ""): {
-		"fields": ["addresses", "ports_ep", "status"],
+		"field_indexes": {
+			"Normal": ["addresses", "ports_ep", "status"],
+		},
 		"sortcolumn": "status",
 		"infopad": {},
 		"listpad": {
@@ -14100,7 +14001,9 @@ infoviews = {
 	},
 	("EndpointSlice", "discovery.k8s.io"): {
 		"windowheader": "Endpoint Slice Info",
-		"fields": ["addresstype", "addresses", "ports_eps", "status", "target_ref", "topology"],
+		"field_indexes": {
+			"Normal": ["addresstype", "addresses", "ports_eps", "status", "target_ref", "topology"],
+		},
 		"sortcolumn": "addresses",
 		"infopad": {
 			"Controller:": {
@@ -14131,9 +14034,11 @@ infoviews = {
 	},
 	("EnvoyFilter", "networking.istio.io"): {
 		"windowheader": "Envoy Filter Info",
-		"fields": [
-			{
-				"name": "apply_to",
+		"field_indexes": {
+			"Normal": ["apply_to", "context", "patch_operation"],
+		},
+		"fields": {
+			"apply_to": {
 				"header": "Apply To:",
 				"paths": [
 					{
@@ -14142,8 +14047,7 @@ infoviews = {
 					},
 				],
 			},
-			{
-				"name": "context",
+			"context": {
 				"header": "Context:",
 				"paths": [
 					{
@@ -14152,8 +14056,7 @@ infoviews = {
 					},
 				],
 			},
-			{
-				"name": "patch_operation",
+			"patch_operation": {
 				"header": "Patch Operation:",
 				"paths": [
 					{
@@ -14162,7 +14065,7 @@ infoviews = {
 					},
 				],
 			},
-		],
+		},
 		"sortcolumn": "apply_to",
 		"infopad": {
 			"Workload Selector:": {
@@ -14222,7 +14125,9 @@ infoviews = {
 		},
 	},
 	("Gateway", "networking.istio.io"): {
-		"fields": ["hosts", "port"],
+		"field_indexes": {
+			"Normal": ["hosts", "port"],
+		},
 		"sortcolumn": "hosts",
 		"infopad": {
 			"Selector:": {
@@ -14348,7 +14253,9 @@ infoviews = {
 		},
 	},
 	("Ingress", "networking.k8s.io"): {
-		"fields": ["host", "path", "backends"],
+		"field_indexes": {
+			"Normal": ["host", "path", "backends"],
+		},
 		"sortcolumn": "host",
 		"infopad": {
 			"Backend:": {
@@ -14375,7 +14282,49 @@ infoviews = {
 	},
 	("__Inventory", ""): {
 		"windowheader": "Inventory Info",
-		"fields": ["mountpoint", "device", "fstype", "model", "disk_usage_partition", "options"],
+		"field_indexes": {
+			"Normal": ["mountpoint", "device", "fstype", "model", "disk_usage_partition", "options"],
+		},
+		"fields": {
+			"mountpoint": {
+				"header": "Mountpoint:",
+				"path": "mountpoint",
+				"type": "str",
+			},
+			"device": {
+				"header": "Device:",
+				"path": "device",
+				"type": "str",
+			},
+			"fstype": {
+				"header": "Filesystem:",
+				"path": "fstype",
+				"type": "str",
+			},
+			"model": {
+				"header": "Model:",
+				"path": "model",
+				"type": "str",
+			},
+			"disk_usage_partition": {
+				"header": "Disk Usage:",
+				"path": ["partition_size_used", "partition_size_total"],
+				"datagetter": datagetter_pathlist_to_tuple,
+				"generator": generator_list,
+				"ralign": True,
+				"type": "raw",
+			},
+			"options": {
+				"header": "Options:",
+				"paths": [
+					{
+						"path": "options",
+						"pathtype": "list",
+					},
+				],
+				"formatter": "list",
+			},
+		},
 		"sortcolumn": "mountpoint",
 		"objgetter": objgetter_ansible_facts,
 		"name_path": "ansible_hostname",
@@ -14537,7 +14486,9 @@ infoviews = {
 		},
 	},
 	("Job", "batch"): {
-		"fields": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		},
 		"sortcolumn": "name",
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
@@ -14636,7 +14587,9 @@ infoviews = {
 	},
 	("LimitRange", ""): {
 		"windowheader": "Limit Range Info",
-		"fields": ["ltype", "name", "lmin", "lmax", "default_request", "default_limit", "max_lr_ratio"],
+		"field_indexes": {
+			"Normal": ["ltype", "name", "lmin", "lmax", "default_request", "default_limit", "max_lr_ratio"],
+		},
 		"sortcolumn": "name",
 		"infopad": {},
 		"listpad": {
@@ -14645,9 +14598,11 @@ infoviews = {
 	},
 	("__Log", ""): {
 		"windowheader": "Playbook Log Info",
-		"fields": [
-			{
-				"name": "index",
+		"field_indexes": {
+			"Normal": ["index", "name", "host", "start_time", "completion_time", "retval"],
+		},
+		"fields": {
+			"index": {
 				"header": "Index:",
 				"paths": [
 					{
@@ -14657,8 +14612,7 @@ infoviews = {
 				],
 				"align": "right",
 			},
-			{
-				"name": "name",
+			"name": {
 				"header": "Task:",
 				"paths": [
 					{
@@ -14667,8 +14621,7 @@ infoviews = {
 					},
 				],
 			},
-			{
-				"name": "host",
+			"host": {
 				"header": "Host:",
 				"paths": [
 					{
@@ -14677,8 +14630,7 @@ infoviews = {
 					},
 				],
 			},
-			{
-				"name": "start_time",
+			"start_time": {
 				"header": "Started At:",
 				"paths": [
 					{
@@ -14689,8 +14641,7 @@ infoviews = {
 				],
 				"formatter": "timestamp",
 			},
-			{
-				"name": "completion_time",
+			"completion_time": {
 				"header": "Finished At:",
 				"paths": [
 					{
@@ -14701,8 +14652,7 @@ infoviews = {
 				],
 				"formatter": "timestamp",
 			},
-			{
-				"name": "retval",
+			"retval": {
 				"header": "Return Value:",
 				"paths": [
 					{
@@ -14713,7 +14663,7 @@ infoviews = {
 				],
 				"align": "right",
 			},
-		],
+		},
 		"sortcolumn": "index",
 		# We're not getting the information the normal way
 		"objgetter": objgetter_ansible_log,
@@ -14796,7 +14746,9 @@ infoviews = {
 	},
 	("MutatingWebhookConfiguration", "admissionregistration.k8s.io"): {
 		"windowheader": "Mutating Webhook Configuration Info",
-		"fields": ["name"],
+		"field_indexes": {
+			"Normal": ["name"],
+		},
 		"sortcolumn": "name",
 		"infopad": {},
 		"listpad": {
@@ -14804,7 +14756,31 @@ infoviews = {
 		},
 	},
 	("Namespace", ""): {
-		"fields": ["resource_tuple", "kind"],
+		"field_indexes": {
+			"Normal": ["resource", "kind"],
+		},
+		"fields": {
+			"resource": {
+				"header": "Resource:",
+				"path": "metadata#name",
+				"type": "raw",
+			},
+			"kind": {
+				"header": "Kind:",
+				"path": "__kind_tuple",
+				"type": "raw",
+				"formatting": {
+					"field_colors": [
+						{ "type": "kind", },
+						{ "type": "kind", },
+					],
+					"field_separators": [
+						{ "type": "kind_apigroup", },
+					],
+				},
+				"formatter": "list",
+			},
+		},
 		"sortcolumn": "kind",
 		"activatedfun": resourceinfodispatch,
 		"extraref": "kind",
@@ -14815,12 +14791,15 @@ infoviews = {
 			}
 		},
 		"listpad": {
-			"infogetter": get_all_namespaced_resources,
+			"listgetter": listgetter_namespaced_resources,
+			"infogetter": generic_infogetter,
 		},
 	},
 	("NetworkPolicy", "networking.k8s.io"): {
 		"windowheader": "Network Policy Info",
-		"fields": ["policy_type", "ports", "ipblock", "ipblock_exceptions", "pod_selector", "namespace_selector"],
+		"field_indexes": {
+			"Normal": ["policy_type", "ports", "ipblock", "ipblock_exceptions", "pod_selector", "namespace_selector"],
+		},
 		"sortcolumn": "policy_type",
 		"infopad": {
 			"Pod Selector:": {
@@ -14837,7 +14816,9 @@ infoviews = {
 		},
 	},
 	("Node", ""): {
-		"fields": ["namespace", "name", "controller", "status", "pod_ip", "age", "containers", "restarts"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "controller", "status", "pod_ip", "age", "containers", "restarts"],
+		},
 		"sortcolumn": "name",
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
@@ -14995,7 +14976,9 @@ infoviews = {
 	},
 	("PersistentVolume", ""): {
 		"windowheader": "Persistent Volume Info",
-		"fields": ["namespace", "name"],
+		"field_indexes": {
+			"Normal": ["namespace", "name"],
+		},
 		"sortcolumn": "name",
 		"activatedfun": genericinfoloop,
 		"viewoverride": ("Pod", ""),
@@ -15127,7 +15110,9 @@ infoviews = {
 		},
 	},
 	("Pod", ""): {
-		"fields": ["resource_tuple", "rtype", "status", "restarts", "age", "message"],
+		"field_indexes": {
+			"Normal": ["resource_tuple", "rtype", "status", "restarts", "age", "message"],
+		},
 		"sortcolumn": "rtype",
 		"extraref": "kind",
 		"data": True,
@@ -15263,9 +15248,11 @@ infoviews = {
 	},
 	("PodMetrics", "metrics.k8s.io"): {
 		"windowheader": "Pod Metrics Info",
-		"fields": [
-			{
-				"name": "name",
+		"field_indexes": {
+			"Normal": ["name", "cpu_millicores", "mem_bytes"],
+		},
+		"fields": {
+			"name": {
 				"header": "Container:",
 				"paths": [
 					{
@@ -15274,9 +15261,7 @@ infoviews = {
 					}
 				],
 			},
-			"cpu_millicores",
-			"mem_bytes"
-		],
+		},
 		"infopad": {
 			"Window:": {
 				"path": "window",
@@ -15386,7 +15371,9 @@ infoviews = {
 	},
 	("PriorityClass", "scheduling.k8s.io"): {
 		"windowheader": "Priority Class Info",
-		"fields": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		},
 		"sortcolumn": "status",
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
@@ -15532,7 +15519,9 @@ infoviews = {
 	("PrometheusRule", "monitoring.coreos.com"): {
 		"windowheader": "Prometheus Rule Info",
 		"annotations": None,
-		"fields": ["group", "rtype", "alertrecord", "duration"],
+		"fields_indexes": {
+			"Normal": ["group", "rtype", "alertrecord", "duration"],
+		},
 		"sortcolumn": "rtype",
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("__PrometheusRuleData", "monitoring.coreos.com"),
@@ -15601,7 +15590,9 @@ infoviews = {
 	},
 	("ReplicaSet", "apps"): {
 		"windowheader": "Replica Set Info",
-		"fields": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		},
 		"sortcolumn": "status",
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
@@ -15649,7 +15640,9 @@ infoviews = {
 	},
 	("ReplicationController", ""): {
 		"windowheader": "Replication Controller Info",
-		"fields": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		},
 		"sortcolumn": "status",
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
@@ -15669,7 +15662,9 @@ infoviews = {
 	},
 	("ResourceQuota", ""): {
 		"windowheader": "Resource Quota Info",
-		"fields": ["resource", "used", "hard"],
+		"field_indexes": {
+			"Normal": ["resource", "used", "hard"],
+		},
 		"sortcolumn": "resource",
 		"infopad": {
 		},
@@ -15691,7 +15686,9 @@ infoviews = {
 		}
 	},
 	("Role", "rbac.authorization.k8s.io"): {
-		"fields": ["resource", "api_group", "non_resource_urls", "resource_names", "verbs"],
+		"field_indexes": {
+			"Normal": ["resource", "api_group", "non_resource_urls", "resource_names", "verbs"],
+		},
 		"sortcolumn": "api_group",
 		"infopad": {},
 		"listpad": {
@@ -15700,7 +15697,9 @@ infoviews = {
 	},
 	("RoleBinding", "rbac.authorization.k8s.io"): {
 		"windowheader": "Role Binding Info",
-		"fields": ["namespace", "name", "kind"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "kind"],
+		},
 		"sortcolumn": "rtype",
 		"activatedfun": resourceinfodispatch,
 		"extraref": "kind",
@@ -15741,7 +15740,9 @@ infoviews = {
 	},
 	("RuntimeClass", "node.k8s.io"): {
 		"windowheader": "Runtime Class Info",
-		"fields": ["resource", "overhead"],
+		"field_indexes": {
+			"Normal": ["resource", "overhead"],
+		},
 		"sortcolumn": "resource",
 		"infopad": {
 			"Handler:": {
@@ -15768,7 +15769,9 @@ infoviews = {
 		},
 	},
 	("Secret", ""): {
-		"fields": ["key", "vtype", "vlen", "decoded_value"],
+		"field_indexes": {
+			"Normal": ["key", "vtype", "vlen", "decoded_value"],
+		},
 		"sortcolumn": "key",
 		"infopad": {
 			"Type:": {
@@ -15793,7 +15796,9 @@ infoviews = {
 		},
 	},
 	("Service", ""): {
-		"fields": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		},
 		"sortcolumn": "name",
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
@@ -15889,7 +15894,9 @@ infoviews = {
 	},
 	("ServiceAccount", ""): {
 		"windowheader": "Service Account Info",
-		"fields": ["stype", "namespace", "name"],
+		"field_indexes": {
+			"Normal": ["stype", "namespace", "name"],
+		},
 		"sortcolumn": "stype",
 		"activatedfun": genericinfoloop,
 		"viewoverride": ("Secret", ""),
@@ -15918,7 +15925,9 @@ infoviews = {
 	},
 	("ServiceMonitor", "monitoring.coreos.com"): {
 		"windowheader": "Service Monitor Info",
-		"fields": ["bearer_token_file", "port", "target_port", "interval", "scheme", "path", "honor_labels", "proxy_url"],
+		"field_indexes": {
+			"Normal": ["bearer_token_file", "port", "target_port", "interval", "scheme", "path", "honor_labels", "proxy_url"],
+		},
 		"sortcolumn": "bearer_token_file",
 		"infopad": {
 			"Job Label:": {
@@ -15938,7 +15947,9 @@ infoviews = {
 		},
 	},
 	("Sidecar", "networking.istio.io"): {
-		"fields": ["traffic_type", "port", "bind", "capture_mode", "default_endpoint", "hosts"],
+		"field_indexes": {
+			"Normal": ["traffic_type", "port", "bind", "capture_mode", "default_endpoint", "hosts"],
+		},
 		"sortcolumn": "traffic_type",
 		"infopad": {
 			"Workload Selector:": {
@@ -15956,7 +15967,9 @@ infoviews = {
 	},
 	("StatefulSet", "apps"): {
 		"windowheader": "Stateful Set Info",
-		"fields": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
+		},
 		"sortcolumn": "name",
 		"activatedfun": resourceinfodispatch,
 		"viewoverride": ("Pod", ""),
@@ -16100,7 +16113,9 @@ infoviews = {
 	},
 	("TASPolicy", "telemetry.intel.com"): {
 		"windowheader": "Telemetry Aware Scheduling Policy Info",
-		"fields": ["strategy", "name", "operator", "target"],
+		"field_indexes": {
+			"Normal": ["strategy", "name", "operator", "target"],
+		},
 		"sortcolumn": "strategy",
 		"reversible": False,
 		"infopad": {},
@@ -16139,7 +16154,9 @@ infoviews = {
 	},
 	("ValidatingWebhookConfiguration", "admissionregistration.k8s.io"): {
 		"windowheader": "Validating Webhook Configuration Info",
-		"fields": ["name"],
+		"field_indexes": {
+			"Normal": ["name"],
+		},
 		"sortcolumn": "name",
 		"infopad": {},
 		"listpad": {
@@ -16154,7 +16171,9 @@ infoviews = {
 	#},
 	("VirtualService", "networking.istio.io"): {
 		"windowheader": "Virtual Service Info",
-		"fields": ["rule_type", "destinations"],
+		"field_indexes": {
+			"Normal": ["rule_type", "destinations"],
+		},
 		"sortcolumn": "rule_type",
 		"infopad": {
 			"Gateways:": {
@@ -16248,31 +16267,23 @@ views_special = {
 		"is_taggable": False,
 		"check_availability": is_cluster_reachable,
 	},
-	# Requires Kubernetes v1.19 or newer
-	"Deprecations": {
-		"commandline": ["deprecations"],
-		"group": "Debugging",
-		"fields": ["deprecated_api", "deprecated_removed_release"],
-		"kind": ("__Deprecation", ""),
-		"sortcolumn": "deprecated_api",
-		"listgetter": "get_metrics_list",
-		"extra_vars": {
-			"listgetter": {
-				"filter": "apiserver_requested_deprecated_apis",
-			},
-		},
-		"shortcuts": {
-			# Override:
-			"Edit resource": {},
-			"View YAML dump": {},
-		},
-		"is_taggable": False,
-		"check_availability": is_cluster_reachable,
-	},
 	"Contexts": {
 		"commandline": ["contexts", "context", "ctx"],
 		"group": "Administration",
-		"fields": ["current", "name", "cluster", "authinfo", "namespace"],
+		"field_indexes": {
+			"Normal": ["current", "name", "cluster", "authinfo", "namespace"],
+		},
+		"fields": {
+			"current": {
+				"header": "Current:",
+			},
+			"cluster": {
+				"header": "Cluster:",
+			},
+			"authinfo": {
+				"header": "Authinfo:",
+			},
+		},
 		"kind": None,
 		"activatedfun": None,
 		"listgetter": None,
@@ -16295,10 +16306,50 @@ views_special = {
 		},
 		"is_taggable": False,
 	},
+	# Requires Kubernetes v1.19 or newer
+	"Deprecations": {
+		"commandline": ["deprecations"],
+		"group": "Debugging",
+		"field_indexes": {
+			"Normal": ["deprecated_api", "deprecated_removed_release"],
+		},
+		"fields": {
+			"deprecated_api": {
+				"header": "Deprecated API:",
+				"path": [["resource", "group", "version"], "tuple"],
+				"datagetter": datagetter_deprecated_api,
+				"generator": generator_list,
+				"field_colors": [("types", "kind"), ("types", "api_group")],
+				"field_separators": [("separators", "kind_apigroup"), ("separators", "kind")],
+			},
+			"deprecated_removed_release": {
+				"header": "Planned Removal:",
+				"path": [["removed_release"], "str"],
+				"datagetter": datagetter_metrics,
+			},
+		},
+		"kind": ("__Deprecation", ""),
+		"sortcolumn": "deprecated_api",
+		"listgetter": "get_metrics_list",
+		"extra_vars": {
+			"listgetter": {
+				"filter": "apiserver_requested_deprecated_apis",
+			},
+		},
+		"shortcuts": {
+			# Override:
+			"Edit resource": {},
+			"View YAML dump": {},
+		},
+		"is_taggable": False,
+		"check_availability": is_cluster_reachable,
+	},
 	"Inventory": {
 		"commandline": ["hosts", "machines", "mach", "inventory", "inv", "hosts", "baremetal"],
 		"group": "Administration",
-		"fields": ["name", "ips", "kubernetes_roles", "ansible_groups", "status"],
+		"field_indexes": {
+			"Normal": ["name", "ips", "kubernetes_roles", "ansible_groups", "status"],
+		},
 		"sortcolumn": "kubernetes_roles",
 		"sortorder_reverse": True,
 		"helptext": helptexts.inventorylist,
@@ -16329,46 +16380,42 @@ views_special = {
 	"Pod Log Viewer": {
 		"commandline": ["podlogviewer", "podlog"],
 		"group": "Administration",
-		"fields": [
-			{
-				"name": "namespace",
+		"field_indexes": {
+			"Normal": ["namespace", "name", "container", "status", "node_name", "image_id"],
+		},
+		"fields": {
+			"namespace": {
 				"header": "Pod Namespace:",
 				"path": "namespace",
 				"type": "namespace",
 			},
-			{
-				"name": "name",
+			"name": {
 				"header": "Pod Name:",
 				"path": "name",
 				"type": "str",
 			},
-			{
-				"name": "container",
+			"container": {
 				"header": "Container:",
 				"path": "container",
 				"type": "str",
 			},
-			{
-				"name": "_status",
+			"status": {
 				"header": "Status:",
-				"path": "status",
-				# FIXME; should have formatting with mapping
-				"type": "str",
+				"datagetter": datagetter_container_status,
+				"generator": generator_status,
 			},
-			{
-				"name": "node_name",
+			"node_name": {
 				"header": "Node:",
 				"path": "node_name",
 				"type": "host",
 				"default": "<none>",
 			},
-			{
-				"name": "image_id",
+			"image_id": {
 				"header": "Image:",
 				"path": "image_id",
 				"type": "str",
 			},
-		],
+		},
 		"actions": {
 			"actionlist": {
 				"View Logs": {
@@ -16391,7 +16438,7 @@ views_special = {
 			"Edit resource": {},
 			"View YAML dump": {},
 		},
-		"sortcolumn": "namespace",
+		"sortcolumn": "status",
 		"kind": ("__PodLogMonitor", ""),
 		"labels": False,
 		"listgetter": "get_pod_containers_list",
@@ -16399,7 +16446,9 @@ views_special = {
 	"Logs": {
 		"commandline": ["logs", "log"],
 		"group": "Administration",
-		"fields": ["name", "action", "created_at", "log_type"],
+		"field_indexes": {
+			"Normal": ["name", "action", "created_at", "log_type"],
+		},
 		"sortcolumn": "created_at",
 		"sortorder_reverse": True,
 		"kind": ("__Log", ""),
@@ -16442,42 +16491,54 @@ views_builtin = {
 	"Addons": {
 		"commandline": ["addons", "addon"],
 		"group": "API & Extendability",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("Addon", "k3s.cattle.io"),
 	},
 	# monitoring.coreos.com
 	"Alertmanagers": {
 		"commandline": ["alertmanagers", "alertmanager", "alm"],
 		"group": "Monitoring",
-		"fields": ["namespace", "name", "version", "replicas", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "version", "replicas", "age"],
+		},
 		"kind": ("Alertmanager", "monitoring.coreos.com"),
 	},
 	# crd.antrea.io
 	"Antrea Agent Infos": {
 		"commandline": ["antreaagentinfos", "antreaagentinfo", "aai"],
 		"group": "CNI",
-		"fields": ["name", "healthy_antrea", "last_heartbeat_antrea"],
+		"field_indexes": {
+			"Normal": ["name", "healthy_antrea", "last_heartbeat_antrea"],
+		},
 		"kind": ("AntreaAgentInfo", "crd.antrea.io"),
 	},
 	# crd.antrea.io
 	"Antrea Controller Infos (Cluster)": {
 		"commandline": ["antreacontrollerinfos", "antreacontrollerinfo", "aci"],
 		"group": "CNI",
-		"fields": ["name", "healthy_antrea", "last_heartbeat_antrea"],
+		"field_indexes": {
+			"Normal": ["name", "healthy_antrea", "last_heartbeat_antrea"],
+		},
 		"kind": ("AntreaControllerInfo", "crd.antrea.io"),
 	},
 	# system.antrea.io
 	"Antrea Controller Infos (System)": {
 		"commandline": ["antreasystemcontrollerinfos", "antreasystemcontrollerinfo"],
 		"group": "CNI",
-		"fields": ["name", "healthy_antrea", "last_heartbeat_antrea"],
+		"field_indexes": {
+			"Normal": ["name", "healthy_antrea", "last_heartbeat_antrea"],
+		},
 		"kind": ("ControllerInfo", "system.antrea.io"),
 	},
 	# app.k8s.io
 	"Applications": {
 		"commandline": ["applications", "application", "apps", "app"],
 		"group": "API & Extendability",
-		"fields": ["namespace", "name", "age", "description"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age", "description"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("Application", "app.k8s.io"),
 	},
@@ -16485,7 +16546,9 @@ views_builtin = {
 	"App Repositories": {
 		"commandline": ["apprepositories", "apprepository", "apprepos", "apprepo"],
 		"group": "API & Extendability",
-		"fields": ["namespace", "name", "repo_type", "repo_url"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "repo_type", "repo_url"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("AppRepository", "kubeapps.com"),
 	},
@@ -16493,7 +16556,9 @@ views_builtin = {
 	"Authorization Policies": {
 		"commandline": ["authorizationpolicies", "authorizationpolicy", "authpols", "authpol"],
 		"group": "Istio",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("AuthorizationPolicy", "security.istio.io"),
 	},
@@ -16501,21 +16566,27 @@ views_builtin = {
 	"BGP Configurations": {
 		"commandline": ["bgpconfigurations", "bgpconfiguration"],
 		"group": "CNI",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("BGPConfiguration", "crd.projectcalico.org"),
 	},
 	# crd.projectcalico.org
 	"BGP Peers": {
 		"commandline": ["bgppeers", "bgppeer"],
 		"group": "CNI",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("BGPPeer", "crd.projectcalico.org"),
 	},
 	# operators.coreos.com
 	"Catalog Sources": {
 		"commandline": ["catalogsources", "catalogsource", "catsrcs", "catsrc"],
 		"group": "API & Extendability",
-		"fields": ["namespace", "name", "display_name", "source_type", "publisher", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "display_name", "source_type", "publisher", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind":	("CatalogSource", "operators.coreos.com"),
 	},
@@ -16523,79 +16594,99 @@ views_builtin = {
 	"Certificates": {
 		"commandline": ["certificates", "certificate", "certs", "cert"],
 		"group": "Certificate Management",
-		"fields": ["namespace", "name", "condition_ready", "secret", "issuer", "status_message", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "condition_ready", "secret", "issuer", "status_message", "age"],
+		},
 		"kind": ("Certificate", "cert-manager.io"),
 	},
 	# cert-manager.io <= rename from: certmanager.k8s.io
 	"Certificate Requests": {
 		"commandline": ["certificaterequests", "certificaterequest", "certreqs", "certreq"],
 		"group": "Certificate Management",
-		"fields": ["namespace", "name", "condition_ready", "issuer", "status_message", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "condition_ready", "issuer", "status_message", "age"],
+		},
 		"kind": ("CertificateRequest", "cert-manager.io"),
 	},
 	# certificates.k8s.io
 	"Certificate Signing Requests": {
 		"commandline": ["certificatesigningrequests", "certificatesigningrequest", "certsignreqs", "certsignreq", "csrs", "csr"],
 		"group": "Certificate Management",
-		"fields": ["name", "signername", "requestor", "csr_conditions", "age"],
+		"field_indexes": {
+			"Normal": ["name", "signername", "requestor", "csr_conditions", "age"],
+		},
 		"kind": ("CertificateSigningRequest", "certificates.k8s.io"),
 	},
 	# cilium.io
 	#"Cilium Clusterwide Network Policies": {
 	#	"commandline": ["ciliumclusterwidenetworkpolicies", "ciliumclusterwidenetworkpolicy", "ccnps", "ccnp"],
 	#	"group": "CNI",
-	#	"fields": [FIXME],
+	#	"field_indexes": {
+	#		"Normal": [FIXME],
+	#	},
 	#	"kind": ("CiliumClusterwideNetworkPolicy", "cilium.io"),
 	#},
 	# cilium.io
 	#"Cilium External Workloads": {
 	#	"commandline": ["ciliumexternalworkloads", "ciliumexternalworkload", "cews", "cew"],
 	#	"group": "CNI",
-	#	"fields": [FIXME],
+	#	"field_indexes": {
+	#		"Normal": [FIXME],
+	#	},
 	#	"kind": ("CiliumExternalWorkload", "cilium.io"),
 	#},
 	# cilium.io
 	#"Cilium Local Redirect Policies": {
 	#	"commandline": ["ciliumlocalredirectpolicies", "ciliumlocalredirectpolicy", "clrps", "clrp"],
 	#	"group": "CNI",
-	#	"fields": [FIXME],
+	#	"field_indexes": {
+	#		"Normal": [FIXME],
+	#	},
 	#	"kind": ("CiliumLocalRedirectPolicy", "cilium.io"),
 	#},
 	# cilium.io
 	#"Cilium Network Policies": {
 	#	"commandline": ["ciliumnetworkpolicies", "ciliumnetworkpolicy", "ciliumnps", "ciliumnp", "cnps", "cnp"],
 	#	"group": "CNI",
-	#	"fields": [FIXME],
+	#	"field_indexes": {
+	#		"Normal": [FIXME],
+	#	},
 	#	"kind": ("CiliumNetworkPolicy", "cilium.io"),
 	#},
 	# aquasecurity.github.io
 	"CIS Kube-Bench Reports": {
 		"commandline": ["ciskubebenchreports", "ciskubebenchreport", "kubebench"],
 		"group": "Security",
-		"fields": ["name", "fail_count", "warn_count", "info_count", "pass_count", "age"],
+		"field_indexes": {
+			"Normal": ["name", "fail_count", "warn_count", "info_count", "pass_count", "age"],
+		},
 		"kind": ("CISKubeBenchReport", "aquasecurity.github.io"),
 	},
 	# cert-manager.io <= rename from: certmanager.k8s.io
 	"Cluster Issuers": {
 		"commandline": ["clusterissuers", "clusterissuer"],
 		"group": "Certificate Management",
-		"fields": ["name", "condition_ready", "age"],
+		"field_indexes": {
+			"Normal": ["name", "condition_ready", "age"],
+		},
 		"kind": ("ClusterIssuer", "cert-manager.io"),
 	},
 	# nvidia.com
 	"Cluster Policies": {
 		"commandline": ["clusterpolicies", "clusterpolicy", "clrpols", "clrpol"],
 		"group": "API & Extendability",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("ClusterPolicy", "nvidia.com"),
 	},
 	# operators.coreos.com
 	"Cluster Service Versions": {
 		"commandline": ["clusterserviceversions", "clusterserviceversion", "csvs", "csv"],
 		"group": "API & Extendability",
-		# Not sure where replaces is supposed to be taken from
-		#"fields": ["namespace", "name", "display_name", "version", "replaces", "phase", "age"],
-		"fields": ["namespace", "name", "display_name", "version", "phase", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "display_name", "version", "phase", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("ClusterServiceVersion", "operators.coreos.com"),
 	},
@@ -16603,21 +16694,27 @@ views_builtin = {
 	"Composite Controllers": {
 		"commandline": ["compositecontrollers", "compositecontroller", "cctl", "cc"],
 		"group": "API & Extendability",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("CompositeController", "metacontroller.k8s.io"),
 	},
 	# aquasecurity.github.io
 	"Config Audit Reports": {
 		"commandline": ["configauditreports", "configauditreport", "configaudits", "configaudit", "cfgaudits", "cfgaudit"],
 		"group": "Security",
-		"fields": ["namespace", "name", "danger_count", "warning_count", "scanner", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "danger_count", "warning_count", "scanner", "age"],
+		},
 		"kind": ("ConfigAuditReport", "aquasecurity.github.io"),
 	},
 	# core API
 	"Containers": {
 		"commandline": ["containers", "container"],
 		"group": "Core",
-		"fields": ["name", "container_type", "image_version", "instances", "image_id", "pods"],
+		"field_indexes": {
+			"Normal": ["name", "container_type", "image_version", "instances", "image_id", "pods"],
+		},
 		"kind": ("__Container", ""),
 		"listgetter": None,
 		"infogetter": get_container_info,
@@ -16628,7 +16725,9 @@ views_builtin = {
 	"Cron Jobs": {
 		"commandline": ["cronjobs", "cronjob", "cj"],
 		"group": "Workloads",
-		"fields": ["namespace", "name", "schedule", "suspend", "active", "concurrency_policy", "last_schedule", "age", "containers_jobtemplate"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "schedule", "suspend", "active", "concurrency_policy", "last_schedule", "age", "containers_jobtemplate"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("CronJob", "batch"),
 	},
@@ -16636,17 +16735,18 @@ views_builtin = {
 	"CSI Drivers": {
 		"commandline": ["csidrivers", "csidriver", "csidrvs", "csidrv"],
 		"group": "Storage & Backups",
-		"fields": ["name", "attach_required", "pod_info_on_mount", "volume_lifecycle_modes", "age"],
+		"field_indexes": {
+			"Normal": ["name", "attach_required", "pod_info_on_mount", "volume_lifecycle_modes", "age"],
+		},
 		"kind": ("CSIDriver", "storage.k8s.io"),
 	},
 	# apps.openshift.io
 	"Deployment Configurations": {
 		"commandline": ["deploymentconfigs", "deploymentconfig", "dc"],
 		"group": "Workloads",
-		# Not sure where to get "revision" or what it does; is it status#latestVersion?
-		# Not sure where to get "triggered_by" or what it does; is it status#details#causes?
-		#"fields": ["namespace", "name", "revision", "desired_replicas", "current_replicas", "triggered_by", "age"],
-		"fields": ["namespace", "name", "desired_replicas", "current_replicas", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "desired_replicas", "current_replicas", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("DeploymentConfig", "apps.openshift.io"),
 	},
@@ -16654,7 +16754,9 @@ views_builtin = {
 	"Destination Rules": {
 		"commandline": ["destinationrules", "destinationrule", "destrules", "destrule", "dstrules", "dstrule"],
 		"group": "Istio",
-		"fields": ["namespace", "name", "host", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "host", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("DestinationRule", "networking.istio.io"),
 	},
@@ -16662,7 +16764,9 @@ views_builtin = {
 	#"Etcd Cluster": {
 	#	"commandline": ["etcdclusters", "etcdcluster", "etcds", "etcd"],
 	#	"group": "Etcd",
-	#	"fields": [FIXME],
+	#	"field_indexes": {
+	#		"Normal": [FIXME],
+	#	},
 	#	"kind": ("EtcdCluster", "etcd.database.coreos.com"),
 	#},
 	# core API
@@ -16670,105 +16774,135 @@ views_builtin = {
 	"Felix Configurations": {
 		"commandline": ["felixconfigurations", "felixconfiguration", "felixconfs", "felixconf"],
 		"group": "CNI",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("FelixConfiguration", "crd.projectcalico.org"),
 	},
 	# networking.istio.io
 	"Gateways": {
 		"commandline": ["gateways", "gateway", "gws", "gw"],
 		"group": "Istio",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("Gateway", "networking.istio.io"),
 	},
 	# crd.projectcalico.org
 	"Global Network Policies": {
 		"commandline": ["globalnetworkpolicies", "globalnetworkpolicy", "globalnetpols", "globalnetpol"],
 		"group": "CNI",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("GlobalNetworkPolicy", "crd.projectcalico.org"),
 	},
 	# crd.projectcalico.org
 	"Global Network Sets": {
 		"commandline": ["globalnetworksets", "globalnetworkset", "globalnetsets", "globalnetset"],
 		"group": "CNI",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("GlobalNetworkSet", "crd.projectcalico.org"),
 	},
 	# deviceplugin.intel.com
 	"GPU Device Plugins": {
 		"commandline": ["gpudeviceplugins", "gpudeviceplugin", "gpudevplugins", "gpudevplugin"],
 		"group": "Accelerators",
-		"fields": ["name", "ready_scheduled_plugins", "node_selector", "age"],
+		"field_indexes": {
+			"Normal": ["name", "ready_scheduled_plugins", "node_selector", "age"],
+		},
 		"kind": ("GpuDevicePlugin", "deviceplugin.intel.com"),
 	},
 	# integreatly.org
 	"Grafanas": {
 		"commandline": ["grafanas", "grafana"],
 		"group": "Monitoring",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("Grafana", "integreatly.org"),
 	},
 	# integreatly.org
 	"Grafana Dashboards": {
 		"commandline": ["grafanadashboards", "grafanadashboard", "grafanadbs", "grafanadb"],
 		"group": "Monitoring",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("GrafanaDashboard", "integreatly.org"),
 	},
 	# integreatly.org
 	"Grafana Data Sources": {
 		"commandline": ["grafanadatasources", "grafanadatasource", "grafanadatasrcs", "grafanadatasrc", "grafanadss", "grafanads"],
 		"group": "Monitoring",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("GrafanaDataSource", "integreatly.org"),
 	},
 	# user.openshift.io
 	"Groups": {
 		"commandline": ["groups", "group"],
 		"group": "Users and Groups",
-		"fields": ["name", "users", "age"],
+		"field_indexes": {
+			"Normal": ["name", "users", "age"],
+		},
 		"kind": ("Group", "user.openshift.io"),
 	},
 	# helm.cattle.io
 	"Helmcharts": {
 		"commandline": ["helmcharts", "helmchart"],
 		"group": "API & Extendability",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("HelmChart", "helm.cattle.io"),
 	},
 	# helm.cattle.io
 	"Helmchart Configs": {
 		"commandline": ["helmchartconfigs", "helmchartconfig"],
 		"group": "API & Extendability",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("HelmChartConfig", "helm.cattle.io"),
 	},
 	# autoscaling
 	"Horizontal Pod Autoscalers": {
 		"commandline": ["horizontalpodautoscalers", "hpa"],
 		"group": "Autoscaling",
-		"fields": ["namespace", "name", "reference", "targets", "minpods", "maxpods", "current_replicas_tuple", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "reference", "targets", "minpods", "maxpods", "current_replicas_tuple", "age"],
+		},
 		"kind": ("HorizontalPodAutoscaler", "autoscaling"),
 	},
 	# crd.projectcalico.org
 	"Host Endpoints": {
 		"commandline": ["hostendpoints", "hostendpoint", "hostep"],
 		"group": "CNI",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("HostEndpoint", "crd.projectcalico.org"),
 	},
 	# user.openshift.io
 	"Identities": {
 		"commandline": ["identities", "identity"],
 		"group": "Users and Groups",
-		"fields": ["name", "provider", "providerusername", "user_uid_tuple", "age"],
+		"field_indexes": {
+			"Normal": ["name", "provider", "providerusername", "user_uid_tuple", "age"],
+		},
 		"kind": ("Identity", "user.openshift.io"),
 	},
 	# caching.internal.knative.dev
 	"Images": {
 		"commandline": ["images", "image"],
 		"group": "Caching",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("Image", "caching.internal.knative.dev"),
 	},
@@ -16776,14 +16910,18 @@ views_builtin = {
 	"Images (OpenShift)": {
 		"commandline": ["images.image.openshift.io", "image.image.openshift.io", "osimages", "osimage"],
 		"group": "Caching",
-		"fields": ["name", "docker_reference", "age"],
+		"field_indexes": {
+			"Normal": ["name", "docker_reference", "age"],
+		},
 		"kind": ("Image", "image.openshift.io"),
 	},
 	# image.openshift.io
 	"Image Streams": {
 		"commandline": ["imagestreams", "imagestream", "is"],
 		"group": "Caching",
-		"fields": ["namespace", "name", "docker_repo", "tags", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "docker_repo", "tags", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("ImageStream", "image.openshift.io"),
 	},
@@ -16791,7 +16929,9 @@ views_builtin = {
 	"Image Stream Tags": {
 		"commandline": ["imagestreamtags", "imagestreamtag", "istags", "istag"],
 		"group": "Caching",
-		"fields": ["namespace", "name_version", "docker_reference_image", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name_version", "docker_reference_image", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("ImageStreamTag", "image.openshift.io"),
 	},
@@ -16799,7 +16939,9 @@ views_builtin = {
 	"Ingresses": {
 		"commandline": ["ingresses", "ingress", "ing"],
 		"group": "Network",
-		"fields": ["namespace", "name", "ingress_hosts", "ingress_address", "ingress_ports", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "ingress_hosts", "ingress_address", "ingress_ports", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("Ingress", "networking.k8s.io"),
 	},
@@ -16807,7 +16949,9 @@ views_builtin = {
 	"Ingress Routes": {
 		"commandline": ["ingressroutes", "ingressroute", "ingroutes", "ingroute"],
 		"group": "Network",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("IngressRoute", "traefik.containo.us"),
 	},
@@ -16815,7 +16959,9 @@ views_builtin = {
 	"Ingress Route TCPs": {
 		"commandline": ["ingressroutetcps", "ingressroutetcp", "ingroutetcps", "ingroutetcp"],
 		"group": "Network",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("IngressRouteTCP", "traefik.containo.us"),
 	},
@@ -16823,7 +16969,9 @@ views_builtin = {
 	"Ingress Route UDPs": {
 		"commandline": ["ingressrouteudps", "ingressrouteudp", "ingrouteudps", "ingrouteudp"],
 		"group": "Network",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("IngressRouteUDP", "traefik.containo.us"),
 	},
@@ -16831,34 +16979,44 @@ views_builtin = {
 	"IPAM Blocks": {
 		"commandline": ["ipamblocks", "ipamblock", "ipamblks", "ipamblk"],
 		"group": "CNI",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("IPAMBlock", "crd.projectcalico.org"),
 	},
 	# crd.projectcalico.org
 	"IPAM Configs": {
 		"commandline": ["ipamconfigs", "ipamconfig"],
 		"group": "CNI",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("IPAMConfig", "crd.projectcalico.org"),
 	},
 	# crd.projectcalico.org
 	"IPAM Handles": {
 		"commandline": ["ipamhandles", "ipamhandle"],
 		"group": "CNI",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("IPAMHandle", "crd.projectcalico.org"),
 	},
 	# crd.projectcalico.org
 	"IP Pools": {
 		"commandline": ["ippools", "ippool"],
 		"group": "CNI",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("IPPool", "crd.projectcalico.org"),
 	},
 	#"Install Plans": {
 	#	"commandline": ["installplans", "installplan", "ip"],
 	#	"group": "API & Extendability",
-	#	"fields": FIXME,
+	#	"field_indexes": {
+	#		"fields": FIXME,
+	#	},
 	#	"sortcolumn": "namespace",
 	#	"kind": ("InstallPlan", "operators.coreos.com"),
 	#},
@@ -16866,7 +17024,9 @@ views_builtin = {
 	"Issuers": {
 		"commandline": ["issuers", "issuer"],
 		"group": "Certificate Management",
-		"fields": ["namespace", "name", "condition_ready", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "condition_ready", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("Issuer", "cert-manager.io"),
 	},
@@ -16874,7 +17034,9 @@ views_builtin = {
 	"Istio Operators": {
 		"commandline": ["istiooperators", "istiooperator", "iop", "io"],
 		"group": "Istio",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("IstioOperator", "install.istio.io"),
 	},
@@ -16882,8 +17044,10 @@ views_builtin = {
 	"Jaegers": {
 		"commandline": ["jaegers", "jaeger"],
 		"group": "Monitoring",
-		#"fields": ["namespace", "name", "status", "version", "strategy", "storage", "age"],
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			#"Normal": ["namespace", "name", "status", "version", "strategy", "storage", "age"],
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("Jaeger", "jaegertracing.io"),
 	},
@@ -16891,29 +17055,28 @@ views_builtin = {
 	"Jobs": {
 		"commandline": ["jobs", "job"],
 		"group": "Workloads",
-		"fields": ["namespace", "name", "controller", "completions", "duration", "job_state", "age", "completion_time", "containers_template"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "controller", "completions", "duration", "job_state", "age", "completion_time", "containers_template"],
+		},
 		"sortcolumn": "state",
 		"kind": ("Job", "batch"),
-	},
-	# crd.projectcalico.org
-	"Kube Controllers Configurations": {
-		"commandline": ["kubecontrollersconfigurations", "kubecontrollersconfiguration", "kubectlconfs", "kubectlconf"],
-		"group": "CNI",
-		"fields": ["name", "age"],
-		"kind": ("KubeControllersConfiguration", "crd.projectcalico.org"),
 	},
 	# aquasecurity.github.io
 	"Kube-Hunter Reports": {
 		"commandline": ["kubehunterreports", "kubehunterreport", "kubehunter"],
 		"group": "Security",
-		"fields": ["name", "scanner", "high_severity", "medium_severity", "low_severity", "unknown_severity", "age"],
+		"field_indexes": {
+			"Normal": ["name", "scanner", "high_severity", "medium_severity", "low_severity", "unknown_severity", "age"],
+		},
 		"kind": ("KubeHunterReport", "aquasecurity.github.io"),
 	},
 	# kubevirt.io
 	"KubeVirts": {
 		"commandline": ["kubevirts", "kubevirt", "kvs", "kv"],
 		"group": "Virtualization",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("KubeVirt", "kubevirt.io"),
 	},
@@ -16921,14 +17084,18 @@ views_builtin = {
 	"Limit Ranges": {
 		"commandline": ["limitranges", "limitrange", "limits", "lr"],
 		"group": "Policy",
-		"fields": ["namespace", "name", "created_at"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "created_at"],
+		},
 		"kind": ("LimitRange", ""),
 	},
 	# traefik.containo.us
 	"Middlewares": {
 		"commandline": ["middlewares", "middleware"],
 		"group": "Network",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("Middleware", "traefik.containo.us"),
 	},
@@ -16936,7 +17103,9 @@ views_builtin = {
 	"Middleware TCPs": {
 		"commandline": ["middlewaretcps", "middlewaretcp"],
 		"group": "Network",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("MiddlewareTCP", "traefik.containo.us"),
 	},
@@ -16945,7 +17114,9 @@ views_builtin = {
 		"commandline": ["mpijobs", "mpijob", "mpij", "mj"],
 		# "group": "Workloads",
 		"group": "Kubeflow",
-		"fields": ["namespace", "name", "age", "status_latest_condition", "status_message_mpi_jobs"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age", "status_latest_condition", "status_message_mpi_jobs"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("MPIJob", "kubeflow.org"),
 	},
@@ -16953,7 +17124,9 @@ views_builtin = {
 	"Namespaces": {
 		"commandline": ["namespaces", "namespace", "ns"],
 		"group": "Core",
-		"fields": ["name", "phase_namespace", "age"],
+		"field_indexes": {
+			"Normal": ["name", "phase_namespace", "age"],
+		},
 		"kind": ("Namespace", ""),
 		"shortcuts": {
 			"Create namespace": {
@@ -16976,7 +17149,9 @@ views_builtin = {
 	"Network Policies": {
 		"commandline": ["networkpolicies", "networkpolicy", "netpols", "netpol"],
 		"group": "Network",
-		"fields": ["namespace", "name", "pod_selector", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "pod_selector", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("NetworkPolicy", "networking.k8s.io"),
 	},
@@ -16984,22 +17159,28 @@ views_builtin = {
 	"OpenTelemetry Collectors": {
 		"commandline": ["opentelemetrycollectors", "opentelemetrycollectors", "otelcols", "otelcol"],
 		"group": "Monitoring",
-		#"fields": ["namespace", "name", "mode", "version", "age"],
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			#"Normal": ["namespace", "name", "mode", "version", "age"],
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("OpenTelemetryCollector", "opentelemetry.io"),
 	},
 	# operators.coreos.com
 	#"Operators": {
 	#	"commandline": ["operators", "operator"],
 	#	"group": "API & Extendability",
-	#	"fields": FIXME,
+	#	"field_indexes": {
+	#		"Normal": FIXME,
+	#	},
 	#	"kind": ("Operator", "operators.coreos.com"),
 	#},
 	# operators.coreos.com
 	"Operator Groups": {
 		"commandline": ["operatorgroups", "operatorgroup", "og"],
 		"group": "API & Extendability",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("OperatorGroup", "operators.coreos.com"),
 	},
@@ -17007,49 +17188,63 @@ views_builtin = {
 	"Package Manifests": {
 		"commandline": ["packagemanifests", "packagemanifest", "pkgmanifests", "pkgmanifest"],
 		"group": "API & Extendability",
-		"fields": ["namespace", "name", "catalogue", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "catalogue", "age"],
+		},
 		"kind": ("PackageManifest", "packages.operators.coreos.com"),
 	},
 	# kilo.squat.ai
 	"Peers": {
 		"commandline": ["peers", "peer"],
 		"group": "CNI",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("Peer", "kilo.squat.ai"),
 	},
 	# core API
 	"Persistent Volumes": {
 		"commandline": ["persistentvolumes", "persistentvolume", "pv"],
 		"group": "Storage & Backups",
-		"fields": ["name", "pv_status", "capacity", "age", "access_modes", "storage_class", "claim", "reclaim_policy", "volume_mode", "reason"],
+		"field_indexes": {
+			"Normal": ["name", "pv_status", "capacity", "age", "access_modes", "storage_class", "claim", "reclaim_policy", "volume_mode", "reason"],
+		},
 		"kind": ("PersistentVolume", ""),
 	},
 	# core API
 	"Persistent Volume Claims": {
 		"commandline": ["persistentvolumeclaims", "persistentvolumeclaim", "pvc"],
 		"group": "Storage & Backups",
-		"fields": ["namespace", "name", "pvc_status", "volume", "capacity", "access_modes", "storage_class", "age", "volume_mode"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "pvc_status", "volume", "capacity", "access_modes", "storage_class", "age", "volume_mode"],
+		},
 		"kind": ("PersistentVolumeClaim", ""),
 	},
 	# monitoring.coreos.com
 	#"Pod Monitors": {
 	#	"commandline": ["podmonitors", "podmonitor", "podmons", "podmon"],
 	#	"group": "Monitoring",
-	#	"fields": [FIXME],
+	#	"field_indexes": {
+	#		"Normal": [FIXME],
+	#	},
 	#	"kind": ("PodMonitor", "monitoring.coreos.com"),
 	#},
 	# policy
 	"Pod Security Policies": {
 		"commandline": ["podsecuritypolicies", "podsecuritypolicy", "psp"],
 		"group": "Policy",
-		"fields": ["name", "privileged", "capabilities", "selinux", "runasuser", "fsgroup", "supgroups", "readonlyrootfs", "volumes", "age"],
+		"field_indexes": {
+			"Normal": ["name", "privileged", "capabilities", "selinux", "runasuser", "fsgroup", "supgroups", "readonlyrootfs", "volumes", "age"],
+		},
 		"kind": ("PodSecurityPolicy", "policy"),
 	},
 	# core API
 	#"Pod Templates": {
 	#	"commandline": ["podtemplates", "podtemplate"],
 	#	"group": "Core",
-	#	"fields": [FIXME],
+	#	"field_indexes": {
+	#		"Normal": [FIXME],
+	#	},
 	#	"sortcolumn": "namespace",
 	#	"kind": ("PodTemplate", ""),
 	#},
@@ -17057,49 +17252,63 @@ views_builtin = {
 	"Profiles": {
 		"commandline": ["profiles", "profile"],
 		"group": "Kubeflow",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("Profile", "kubeflow.org"),
 	},
 	# monitoring.coreos.com
 	"Prometheuses": {
 		"commandline": ["prometheuses", "prometheus", "proms", "prom"],
 		"group": "Monitoring",
-		"fields": ["namespace", "name", "version", "replicas", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "version", "replicas", "age"],
+		},
 		"kind": ("Prometheus", "monitoring.coreos.com"),
 	},
 	# monitoring.coreos.com
 	"Prometheus Rules": {
 		"commandline": ["prometheusrules", "prometheusrule", "promrules", "promrule"],
 		"group": "Monitoring",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("PrometheusRule", "monitoring.coreos.com"),
 	},
 	# reaper.cassandra-reaper.io
 	"Cassandra Data Centers": {
 		"commandline": ["cassandradatacenters", "cassandradatacenter", "cassdcs", "cassdc"],
 		"group": "Storage & Backups",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("CassandraDatacenter", "cassandra.datastax.com"),
 	},
 	# reaper.cassandra-reaper.io
 	"Reapers": {
 		"commandline": ["reapers", "reaper"],
 		"group": "Storage & Backups",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("Reaper", "reaper.cassandra-reaper.io"),
 	},
 	# core API
 	"Resource Quotas": {
 		"commandline": ["resourcequotas", "resourcequota", "quotas", "quota", "rq"],
 		"group": "Policy",
-		"fields": ["namespace", "name", "age", "request", "limit"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age", "request", "limit"],
+		},
 		"kind": ("ResourceQuota", ""),
 	},
 	# policy.linkerd.io
 	"Server Authorizations": {
 		"commandline": ["serverauthorizations", "serverauthorization", "saz"],
 		"group": "Network",
-		"fields": ["namespace", "name", "server"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "server"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("ServerAuthorization", "policy.linkerd.io"),
 	},
@@ -17107,7 +17316,9 @@ views_builtin = {
 	"Servers": {
 		"commandline": ["servers", "server", "srv"],
 		"group": "Network",
-		"fields": ["namespace", "name", "port_linkerd", "protocol"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "port_linkerd", "protocol"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("Server", "policy.linkerd.io"),
 	},
@@ -17115,7 +17326,9 @@ views_builtin = {
 	"Servers Transports": {
 		"commandline": ["serverstransports", "serverstransport"],
 		"group": "Network",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("ServersTransport", "traefik.containo.us"),
 	},
@@ -17123,28 +17336,36 @@ views_builtin = {
 	"Service Cert Signer Operator Configs": {
 		"commandline": ["servicecertsigneroperatorconfigs", "servicecertsigneroperatorconfig", "svccertsigneropconfs", "svccertsigneropconf"],
 		"group": "Authorization & Access Control",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("ServiceCertSignerOperatorConfig", "servicecertsigner.config.openshift.io"),
 	},
 	# networking.istio.io
 	"Service Entries": {
 		"commandline": ["serviceentries", "serviceentry", "svcentries", "svcentry"],
 		"group": "Istio",
-		"fields": ["namespace", "name", "age", "hosts", "ports_svc", "location", "resolution"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age", "hosts", "ports_svc", "location", "resolution"],
+		},
 		"kind": ("ServiceEntry", "networking.istio.io"),
 	},
 	# monitoring.coreos.com
 	"Service Monitors": {
 		"commandline": ["servicemonitors", "servicemonitor", "svcmons", "svcmon"],
 		"group": "Monitoring",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("ServiceMonitor", "monitoring.coreos.com"),
 	},
 	# linkerd.io
 	"Service Profiles": {
 		"commandline": ["serviceprofiles", "serviceprofile", "sp"],
 		"group": "Network",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("ServiceProfile", "linkerd.io"),
 	},
@@ -17152,21 +17373,27 @@ views_builtin = {
 	"Sidecars": {
 		"commandline": ["sidecars", "sidecar"],
 		"group": "Istio",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("Sidecar", "networking.istio.io"),
 	},
 	# dex.coreos.com
 	"Signing Keys": {
 		"commandline": ["signingkeies", "signingkeys", "signingkey", "sigkeys", "sigkey"],
 		"group": "Dex",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"kind": ("SigningKey", "dex.coreos.com"),
 	},
 	# operators.coreos.com
 	#"Subscriptions": {
 	#	"commandline": ["subscriptions", "subscription", "subs", "sub"],
 	#	"group": "API & Extendability",
-	#	"fields": ["namespace", "name", "catalogsource"],
+	#	"field_indexes": {
+	#		"Normal": ["namespace", "name", "catalogsource"],
+	#	},
 	#	"sortcolumn": "namespace",
 	#	"kind": ("Subscription", "operators.coreos.com"),
 	#},
@@ -17174,7 +17401,9 @@ views_builtin = {
 	"Telemetry Aware Scheduling Policies": {
 		"commandline": ["taspolicies", "taspolicy", "tas"],
 		"group": "Scheduling",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("TASPolicy", "telemetry.intel.com"),
 	},
@@ -17182,7 +17411,9 @@ views_builtin = {
 	#"Thanos Rulers": {
 	#	"commandline": ["thanosrulers", "thanosruler", "thrules", "thrule"],
 	#	"group": "Monitoring",
-	#	"fields": [FIXME],
+	#	"field_indexes": {
+	#		"Normal": [FIXME],
+	#	},
 	#	"sortcolumn": "namespace",
 	#	"kind": ("ThanosRuler", "monitoring.coreos.com"),
 	#},
@@ -17190,14 +17421,18 @@ views_builtin = {
 	"Tiers": {
 		"commandline": ["tiers", "tr"],
 		"group": "CNI",
-		"fields": ["name", "priority_tier", "age"],
+		"field_indexes": {
+			"Normal": ["name", "priority_tier", "age"],
+		},
 		"kind": ("Tier", "crd.antrea.io"),
 	},
 	# traefik.containo.us
 	"TLS Options": {
 		"commandline": ["tlsoptions", "tlsoption"],
 		"group": "Network",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("TLSOption", "traefik.containo.us"),
 	},
@@ -17205,7 +17440,9 @@ views_builtin = {
 	"TLS Stores": {
 		"commandline": ["tlsstores", "tlsstore"],
 		"group": "Network",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("TLSStore", "traefik.containo.us"),
 	},
@@ -17213,7 +17450,9 @@ views_builtin = {
 	"Traefik Services": {
 		"commandline": ["traefikservices", "traefikservice"],
 		"group": "Network",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("TraefikService", "traefik.containo.us"),
 	},
@@ -17221,56 +17460,72 @@ views_builtin = {
 	"Virtual Services": {
 		"commandline": ["virtualservices",  "virtualservice", "virtsvcs", "virtsvc"],
 		"group": "Istio",
-		"fields": ["namespace", "name", "gateways", "hosts", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "gateways", "hosts", "age"],
+		},
 		"kind": ("VirtualService", "networking.istio.io"),
 	},
 	# storage.k8s.io
 	#"Volume Attachments": {
 	#	"commandline": ["volumeattachments", "volumeattachment", "volattachments", "volattachment"],
 	#	"group": "Storage & Backups",
-	#	"fields": [FIXME],
+	#	"field_indexes": {
+	#		"Normal": [FIXME],
+	#	},
 	#	"kind": ("VolumeAttachment", "storage.k8s.io"),
 	#},
 	# snapshot.storage.k8s.io
 	#"VolumeSnapshot": {
 	#	"commandline": ["volumesnapshots", "volumesnapshot", "volsnaps", "volsnap"],
 	#	"group": "Storage & Backups",
-	#	"fields": [FIXME],
+	#	"field_indexes": {
+	#		"Normal": [FIXME],
+	#	},
 	#	"kind": ("VolumeSnapshot", "snapshot.storage.k8s.io"),
 	#},
 	# snapshot.storage.k8s.io
 	"Volume Snapshot Classes": {
 		"commandline": ["volumesnapshotclasses", "volumesnapshotclass", "volsnapclasses", "volsnapclass"],
 		"group": "Storage & Backups",
-		"fields": ["name", "age"],
+		"field_indexes": {
+			"Normal": ["name", "age"],
+		},
 		"kind": ("VolumeSnapshotClass", "snapshot.storage.k8s.io"),
 	},
 	# snapshot.storage.k8s.io
 	#"Volume Snapshot Contents": {
 	#	"commandline": ["volumesnapshotcontents", "volumesnapshotcontent", "volsnapcontents", "volsnapcontent"],
 	#	"group": "Storage & Backups",
-	#	"fields": [FIXME],
+	#	"field_indexes": {
+	#		"Normal": [FIXME],
+	#	},
 	#	"kind": ("VolumeSnapshotContent", "snapshot.storage.k8s.io"),
 	#},
 	# aquasecurity.github.io
 	"Vulnerability Reports": {
 		"commandline": ["vulnerabilityreports", "vulnerabilityreport", "vulns", "vuln"],
 		"group": "Security",
-		"fields": ["namespace", "name", "repository", "tag", "scanner", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "repository", "tag", "scanner", "age"],
+		},
 		"kind": ("VulnerabilityReport", "aquasecurity.github.io"),
 	},
 	# user.openshift.io
 	"Users": {
 		"commandline": ["users", "user"],
 		"group": "Users and Groups",
-		"fields": ["name", "fullname", "uid", "identities", "age"],
+		"field_indexes": {
+			"Normal": ["name", "fullname", "uid", "identities", "age"],
+		},
 		"kind": ("User", "user.openshift.io"),
 	},
 	# argoproj.io
 	"Workflows": {
 		"commandline": ["workflows", "workflow", "wf"],
 		"group": "Workflows",
-		"fields": ["namespace", "name", "age"],
+		"field_indexes": {
+			"Normal": ["namespace", "name", "age"],
+		},
 		"sortcolumn": "namespace",
 		"kind": ("Workflow", "argoproj.io"),
 	},
@@ -17361,21 +17616,40 @@ def populate_views():
 				group = deep_get(d, "listview#group")
 				sortcolumn = deep_get(d, "listview#sortcolumn")
 				fields = deep_get(d, "listview#fields", "<missing>")
-				fields_wide = deep_get(d, "listview#fields_wide")
+				fields_wide = deep_get(d, "listview#fields_wide", [])
 
-				if name is None or group is None or fields is None or len(fields) == 0 or "<missing>" in [name, group, fields]:
+				# Backwards compatibility until all views have field_indexes
+				field_indexes = deep_get(d, "listview#field_indexes", {})
+				if len(field_indexes) == 0:
+					_fields = []
+					for field in fields:
+						if type(field) == str:
+							_fields.append(field)
+						elif type(field) == dict:
+							_fields.append(deep_get(field, "name"))
+					field_indexes["Normal"] = _fields
+					if len(fields_wide) > 0:
+						_fields = []
+						for field in fields_wide:
+							if type(field) == str:
+								_fields.append(field)
+							elif type(field) == dict:
+								_fields.append(deep_get(field, "name"))
+						field_indexes["Wide"] =  _fields
+						fields = fields_wide
+
+				if name is None or group is None or len(fields) == 0 or "<missing>" in [name, group]:
 					sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing, empty or None:\n"
 						  "listview:\n"
 						 f"  name: {name}\n"
 						 f"  group: {group}\n"
-						 f"  fields: {fields}\n"
 						  "Aborting.")
 				listview_entry = {
 					"kind": (kind, api_family),
 					"commandline": command,
 					"group": group,
+					"field_indexes": field_indexes,
 					"fields": fields,
-					"fields_wide": fields_wide,
 					"activatedfun": deep_get(d, "listview#activatedfun", genericinfoloop),
 					"listview_args": deep_get(d, "listview#listview_args", {}),
 					"statusmsg": deep_get(d, "listview#statusmsg", {}),
@@ -17510,8 +17784,8 @@ def list_views():
 
 		fields = []
 		for field in viewref["fields"]:
-			if type(field) == tuple:
-				fieldname = field[0]
+			if type(field) == dict:
+				fieldname = deep_get(field, "name")
 			else:
 				fieldname = field
 			if "sortcolumn" in viewref and viewref["sortcolumn"] == fieldname:
@@ -17559,7 +17833,7 @@ def usage(progname):
 	helptext += [("Valid views: ", "description")]
 
 	first = True
-	for view in sorted(views):
+	for view in natsorted(views):
 		if views[view].get("skip", False):
 			continue
 		if first:

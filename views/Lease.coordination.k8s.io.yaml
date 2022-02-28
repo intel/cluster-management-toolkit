@@ -4,5 +4,11 @@ default_command: leases
 listview:
   name: Leases
   group: Coordination
-  fields: [namespace, name, holder, age]
+  field_indexes:
+    Normal: [namespace, name, holder, age]
+  fields:
+    holder:
+      header: "Holder:"
+      path: "spec#holderIdentity"
+      type: "str"
   sortcolumn: namespace

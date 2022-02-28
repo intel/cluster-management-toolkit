@@ -7,13 +7,13 @@ command:
 listview:
   name: Custom Resource Definitions
   group: API & Extendability
+  field_indexes:
+    Normal: [name, api_group_crd, created_at]
   fields:
-  - name
-  - name: api_group_crd
-    header: "API-Group:"
-    paths:
-    - path: "spec#group"
-  - created_at
+    api_group_crd:
+      header: "API-Group:"
+      paths:
+      - path: "spec#group"
   sortcolumn: api_group_crd
   shortcuts:
     "Show Resource List":

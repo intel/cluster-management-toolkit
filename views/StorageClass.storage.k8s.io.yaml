@@ -7,4 +7,20 @@ command:
 listview:
   name: Storage Classes
   group: Storage & Backups
-  fields: [name, provisioner, reclaim_policy, volume_binding_mode, allow_volume_expansion, age]
+  field_indexes:
+    Normal: [name, provisioner, reclaim_policy, volume_binding_mode, allow_volume_expansion, age]
+  fields:
+    provisioner:
+      header: "Provisioner:"
+      path: provisioner
+      type: str
+    volume_binding_mode:
+      header: "Volume Binding Mode:"
+      path: volumeBindingMode
+      default: VolumeBindingImmediate
+      type: str
+    allow_volume_expansion:
+      header: "Allow Volume Expansion:"
+      path: allowVolumeExpansion
+      default: false
+      type: bool

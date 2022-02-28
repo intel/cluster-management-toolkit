@@ -5,20 +5,19 @@ command:
 listview:
   name: Config Maps
   group: Core
+  field_indexes:
+    Normal: [namespace, name, data, immutable, age]
   fields:
-  - namespace
-  - name
-  - name: data
-    header: "# of Data:"
-    paths:
-    - path: "data"
-      type: len
-    align: right
-  - name: immutable
-    header: "Immutable:"
-    paths:
-    - path: "immutable"
-      pathtype: value
-      type: bool
-  - age
+    data:
+      header: "# of Data:"
+      paths:
+      - path: "data"
+        type: len
+      align: right
+    immutable:
+      header: "Immutable:"
+      paths:
+      - path: "immutable"
+        pathtype: value
+        type: bool
   sortcolumn: namespace

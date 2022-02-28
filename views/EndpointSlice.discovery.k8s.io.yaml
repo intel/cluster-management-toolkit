@@ -6,5 +6,11 @@ command:
 listview:
   name: Endpoint Slices
   group: Core
-  fields: [namespace, name, addresstype, ports_eps, endpoints_eps, age]
+  field_indexes:
+    Normal: [namespace, name, addresstype, ports_eps, endpoints_eps, age]
+  fields:
+    addresstype:
+      header: "Type:"
+      path: addressType
+      type: str
   sortcolumn: namespace
