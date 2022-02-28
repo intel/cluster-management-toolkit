@@ -11643,6 +11643,8 @@ def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None, **kwa
 
 def view_yaml(stdscr, **kwargs):
 	obj = deep_get(kwargs, "obj")
+	if obj is None:
+		return
 	title = deep_get(kwargs, "title")
 	themearrays = iktlib.format_yaml([obj])
 	return resourceinfodispatch(stdscr, themearrays, ("__ResourceView", ""), title = title)
