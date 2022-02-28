@@ -5364,35 +5364,12 @@ field_templates = {
 	"bind": {
 		"header": "Bind:",
 	},
-	"capabilities": {
-		# [capability, ...]
-		"header": "Capabilities:",
-		"path": "spec#allowedCapabilities",
-		"generator": generator_list,
-	},
-	"capacity": {
-		"header": "Capacity:",
-		# This should get either PV capacity or PVC capacity
-		"path": ["spec#capacity#storage", "status#capacity#storage"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_list,
-		"ralign": True,
-	},
 	"capture_mode": {
 		"header": "Capture Mode:",
 	},
 	"catalogue": {
 		"header": "Catalogue",
 		"path": "status#catalogSourceDisplayName",
-	},
-	"claim": {
-		# (namespace, name)
-		"header": "Claim:",
-		"path": [("spec#claimRef#namespace", ""), ("spec#claimRef#name", "")],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_list,
-		"field_colors": [("types", "namespace"), ("types", "generic")],
-		"field_separators": [("separators", "namespace")],
 	},
 	"completions": {
 		"header": "Completions:",
@@ -5679,10 +5656,6 @@ field_templates = {
 		"field_separators": [("separators", "logical_and")],
 		# Logical or
 		"item_separator": ("separators", "logical_or"),
-	},
-	"fsgroup": {
-		"header": "FS Group:",
-		"path": "spec#fsGroup#rule",
 	},
 	"ftype": {
 		"header": "Type:",
@@ -6144,11 +6117,6 @@ field_templates = {
 		"generator": generator_priority_level,
 		"type": "str",
 	},
-	"privileged": {
-		"header": "Privileged:",
-		"path": "spec#privileged",
-		"default": "False",
-	},
 	"protocol": {
 		"header": "Protocol:",
 		"path": "spec#proxyProtocol",
@@ -6182,11 +6150,6 @@ field_templates = {
 		"header": "Status:",
 		"datagetter": datagetter_pvc_status,
 		"generator": generator_status,
-	},
-	"readonlyrootfs": {
-		"header": "R/O Root FS:",
-		"path": "spec#readOnlyRootFilesystem",
-		"default": "False",
 	},
 	"repository": {
 		"header": "Repository:",
@@ -6230,16 +6193,6 @@ field_templates = {
 		"ranges": [(-1, -1, ("types", "numerical")), (0, 1, ("types", "watermark_high")), (1, -1, ("types", "watermark_medium"))],
 		"ralign": True,
 	},
-	"reason": {
-		"header": "Reason:",
-		"path": "status#reason",
-	},
-	"reclaim_policy": {
-		"header": "Reclaim Policy:",
-		"path": ["reclaimPolicy", "spec#persistentVolumeReclaimPolicy"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_list,
-	},
 	"reference": {
 		# (kind, name)
 		"header": "Reference:",
@@ -6247,12 +6200,6 @@ field_templates = {
 		"datagetter": datagetter_pathlist_to_tuple,
 		"generator": generator_list,
 		"field_colors": [("types", "kind"), ("types", "generic")],
-	},
-	"replicas": {
-		"header": "Replicas:",
-		"generator": generator_numerical,
-		"path": "spec#replicas",
-		"ralign": True,
 	},
 	"repo_type": {
 		"header": "Type:",
@@ -6308,10 +6255,6 @@ field_templates = {
 	"rule_type": {
 		"header": "Rule Type:",
 	},
-	"runasuser": {
-		"header": "Run as User:",
-		"path": "spec#runAsUser#rule",
-	},
 	"scanner": {
 		"header": "Scanner:",
 		"path": "report#scanner#name",
@@ -6322,10 +6265,6 @@ field_templates = {
 	},
 	"scheme": {
 		"header": "Scheme:",
-	},
-	"selinux": {
-		"header": "SELinux:",
-		"path": "spec#seLinux#rule",
 	},
 	"server": {
 		"header": "Server:",
@@ -6401,10 +6340,6 @@ field_templates = {
 		"header": "Message:",
 		"datagetter": datagetter_condition_ready,
 	},
-	"storage_class": {
-		"header": "Storage Class:",
-		"path": "spec#storageClassName",
-	},
 	"strategy": {
 		"header": "Strategy:",
 	},
@@ -6417,12 +6352,6 @@ field_templates = {
 		"datagetter": datagetter_count,
 		"generator": generator_numerical,
 		"ralign": True,
-	},
-	"supgroups": {
-		# [group, ...]
-		"header": "Supplemental Groups:",
-		"path": "spec#supplementalGroups#rule",
-		"generator": generator_list,
 	},
 	"suspend": {
 		"header": "Suspend:",
@@ -6548,21 +6477,6 @@ field_templates = {
 	"vlen": {
 		"header": "Length:",
 		"ralign": True,
-	},
-	"volume": {
-		"header": "Volume:",
-		"path": "spec#volumeName",
-	},
-	"volume_mode": {
-		"header": "Volume Mode:",
-		"path": "spec#volumeMode",
-	},
-	"volumes": {
-		# [volume, ...]
-		"header": "Volumes:",
-		"path": "spec#volumes",
-		"generator": generator_list,
-		"default": ["<none>"],
 	},
 	"volume_lifecycle_modes": {
 		# [mode, ...]
@@ -8498,6 +8412,7 @@ def __field_processor_list(values, formatting = None):
 	prefix = deep_get(formatting, "prefix", [])
 	field_colors = deep_get(formatting, "field_colors", [("types", "field")])
 	item_separators = deep_get(formatting, "item_separators", [("separators", "list")])
+	repeat_last_item_separator = deep_get(formatting, "repeat_last_item_separator", True)
 	suffix = deep_get(formatting, "suffix")
 	conditionals = deep_get(formatting, "conditionals", {})
 	field = prefix
@@ -8551,8 +8466,11 @@ def __field_processor_list(values, formatting = None):
 		item_separator = None
 		if i == len(values) - 1:
 			item_separator = suffix
-		elif i < len(item_separators) and noseparator == False:
-			item_separator = item_separators[i]
+		elif noseparator == False:
+			if i < len(item_separators):
+				item_separator = item_separators[i]
+			elif repeat_last_item_separator == True:
+				item_separator = item_separators[len(item_separators) - 1]
 		i += 1
 		# Inserting an item_separator of None
 		# means that these two items shouldn't be separated
@@ -15510,7 +15428,7 @@ infoviews = {
 	("PrometheusRule", "monitoring.coreos.com"): {
 		"windowheader": "Prometheus Rule Info",
 		"annotations": None,
-		"fields_indexes": {
+		"field_indexes": {
 			"Normal": ["group", "rtype", "alertrecord", "duration"],
 		},
 		"sortcolumn": "rtype",
@@ -16899,16 +16817,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("ImageStreamTag", "image.openshift.io"),
 	},
-	# networking.k8s.io
-	"Ingresses": {
-		"commandline": ["ingresses", "ingress", "ing"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "ingress_hosts", "ingress_address", "ingress_ports", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("Ingress", "networking.k8s.io"),
-	},
 	# traefik.containo.us
 	"Ingress Routes": {
 		"commandline": ["ingressroutes", "ingressroute", "ingroutes", "ingroute"],
@@ -17166,24 +17074,6 @@ views_builtin = {
 		},
 		"kind": ("Peer", "kilo.squat.ai"),
 	},
-	# core API
-	"Persistent Volumes": {
-		"commandline": ["persistentvolumes", "persistentvolume", "pv"],
-		"group": "Storage & Backups",
-		"field_indexes": {
-			"Normal": ["name", "pv_status", "capacity", "age", "access_modes", "storage_class", "claim", "reclaim_policy", "volume_mode", "reason"],
-		},
-		"kind": ("PersistentVolume", ""),
-	},
-	# core API
-	"Persistent Volume Claims": {
-		"commandline": ["persistentvolumeclaims", "persistentvolumeclaim", "pvc"],
-		"group": "Storage & Backups",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "pvc_status", "volume", "capacity", "access_modes", "storage_class", "age", "volume_mode"],
-		},
-		"kind": ("PersistentVolumeClaim", ""),
-	},
 	# monitoring.coreos.com
 	#"Pod Monitors": {
 	#	"commandline": ["podmonitors", "podmonitor", "podmons", "podmon"],
@@ -17193,15 +17083,6 @@ views_builtin = {
 	#	},
 	#	"kind": ("PodMonitor", "monitoring.coreos.com"),
 	#},
-	# policy
-	"Pod Security Policies": {
-		"commandline": ["podsecuritypolicies", "podsecuritypolicy", "psp"],
-		"group": "Policy",
-		"field_indexes": {
-			"Normal": ["name", "privileged", "capabilities", "selinux", "runasuser", "fsgroup", "supgroups", "readonlyrootfs", "volumes", "age"],
-		},
-		"kind": ("PodSecurityPolicy", "policy"),
-	},
 	# core API
 	#"Pod Templates": {
 	#	"commandline": ["podtemplates", "podtemplate"],
@@ -17220,24 +17101,6 @@ views_builtin = {
 			"Normal": ["name", "age"],
 		},
 		"kind": ("Profile", "kubeflow.org"),
-	},
-	# monitoring.coreos.com
-	"Prometheuses": {
-		"commandline": ["prometheuses", "prometheus", "proms", "prom"],
-		"group": "Monitoring",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "version", "replicas", "age"],
-		},
-		"kind": ("Prometheus", "monitoring.coreos.com"),
-	},
-	# monitoring.coreos.com
-	"Prometheus Rules": {
-		"commandline": ["prometheusrules", "prometheusrule", "promrules", "promrule"],
-		"group": "Monitoring",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("PrometheusRule", "monitoring.coreos.com"),
 	},
 	# reaper.cassandra-reaper.io
 	"Cassandra Data Centers": {
@@ -17313,15 +17176,6 @@ views_builtin = {
 			"Normal": ["namespace", "name", "age", "hosts", "ports_svc", "location", "resolution"],
 		},
 		"kind": ("ServiceEntry", "networking.istio.io"),
-	},
-	# monitoring.coreos.com
-	"Service Monitors": {
-		"commandline": ["servicemonitors", "servicemonitor", "svcmons", "svcmon"],
-		"group": "Monitoring",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("ServiceMonitor", "monitoring.coreos.com"),
 	},
 	# linkerd.io
 	"Service Profiles": {

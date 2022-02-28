@@ -10,17 +10,21 @@ listview:
   field_indexes:
     Normal: [name, provisioner, reclaim_policy, volume_binding_mode, allow_volume_expansion, age]
   fields:
+    allow_volume_expansion:
+      header: "Allow Volume Expansion:"
+      path: allowVolumeExpansion
+      default: false
+      type: bool
     provisioner:
       header: "Provisioner:"
       path: provisioner
+      type: str
+    reclaim_policy:
+      header: "Reclaim Policy:"
+      path: "reclaimPolicy"
       type: str
     volume_binding_mode:
       header: "Volume Binding Mode:"
       path: volumeBindingMode
       default: VolumeBindingImmediate
       type: str
-    allow_volume_expansion:
-      header: "Allow Volume Expansion:"
-      path: allowVolumeExpansion
-      default: false
-      type: bool

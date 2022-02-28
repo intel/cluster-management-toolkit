@@ -1,0 +1,44 @@
+kind: PersistentVolume
+default_command: persistentvolumes
+command:
+- pv
+listview:
+  name: Persistent Volumes
+  group: "Storage & Backups"
+  field_indexes:
+    Normal: [name, pv_status, capacity, age, access_modes, storage_class, claim, reclaim_policy, volume_mode, reason]
+  fields:
+    capacity:
+      header: "Capacity:"
+      path: "spec#capacity#storage"
+      type: raw
+      align: right
+    claim:
+      header: "Claim:"
+      paths:
+      - path: [["spec#claimRef#namespace"], ["spec#claimRef#name"]]
+        pathtype: tuple
+        type: [name, name]
+      formatting:
+        field_colors:
+        - type: namespace
+        - type: generic
+        field_separators:
+        - type: namespace
+      formatter: list
+    reason:
+      header: "Reason:"
+      path: "status#reason"
+      type: str
+    reclaim_policy:
+      header: "Reclaim Policy:"
+      path: "spec#persistentVolumeReclaimPolicy"
+      type: str
+    storage_class:
+      header: "Storage Class:"
+      path: "spec#storageClassName"
+      type: str
+    volume_mode:
+      header: "Volume Mode:"
+      path: "spec#volumeMode"
+      type: str

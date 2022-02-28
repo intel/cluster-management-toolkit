@@ -1,0 +1,11 @@
+kind: Ingress
+api_family: networking.k8s.io
+default_command: ingresses
+command:
+- ing
+listview:
+  name: Ingresses
+  group: Network
+  field_indexes:
+    Normal: [namespace, name, ingress_hosts, ingress_address, ingress_ports, age]
+  sortcolumn: namespace

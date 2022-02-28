@@ -1,0 +1,21 @@
+kind: Prometheus
+api_family: monitoring.coreos.com
+default_command: prometheuses
+command:
+- proms
+- prom
+listview:
+  name: Prometheuses
+  group: Monitoring
+  field_indexes:
+    Normal: [namespace, name, version, replicas, age]
+  fields:
+    replicas:
+      header: "Replicas:"
+      path: "spec#replicas"
+      type: int
+      align: right
+    version:
+      header: "Version:"
+      path: "spec#version"
+      type: version

@@ -1,0 +1,49 @@
+kind: PodSecurityPolicy 
+api_family: policy
+default_command: podsecuritypolicies
+command:
+- psp
+listview:
+  name: Pod Security Policies
+  group: Policy
+  field_indexes:
+    Normal: [name, privileged, capabilities, selinux, runasuser, fsgroup, supgroups, readonlyrootfs, volumes, age]
+  fields:
+    capabilities:
+      header: "Capabilities:"
+      path: "spec#allowedCapabilities"
+      type: raw
+      formatter: list
+    fsgroup:
+      header: "FS Group:"
+      path: "spec#fsGroup#rule"
+      type: str
+    privileged:
+      header: "Privileged:"
+      path: "spec#privileged"
+      default: false
+      type: bool
+    readonlyrootfs:
+      header: "R/O Root FS:"
+      path: "spec#readOnlyRootFilesystem"
+      type: bool
+      default: false
+    runasuser:
+      header: "Run as User:"
+      path: "spec#runAsUser#rule"
+      type: str
+    selinux:
+      header: "SELinux:"
+      path: "spec#seLinux#rule"
+      type: str
+    supgroups:
+      header: "Supplemental Groups:"
+      path: "spec#supplementalGroups#rule"
+      type: raw
+      formatter: list
+    volumes:
+      header: "Volumes:"
+      path: "spec#volumes"
+      default: ["<none>"]
+      type: raw
+      formatter: list
