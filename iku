@@ -11037,7 +11037,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					else:
 						msgstrarray.append(("".ljust(len(f"{_severity}")), color_log_severity(severity, False)))
 
-				if len(facility_prefix) > 0:
+				if facility_prefix is not None and len(facility_prefix) > 0:
 					msgstrarray += facility_prefix
 
 				if facility != "":
