@@ -6783,6 +6783,7 @@ def genericlistloop(stdscr, view):
 	viewref = views[view]
 
 	kind = viewref["kind"]
+	is_namespaced = kh.is_kind_namespaced(kind)
 
 	if "helptext" in views[view]:
 		helptext = viewref["helptext"]
@@ -7104,7 +7105,7 @@ def genericlistloop(stdscr, view):
 				continue
 			tagged_items.clear()
 		elif c == ord("N"):
-			if "namespace" not in fields:
+			if is_namespaced == False:
 				continue
 
 			all_ns = "<All>"

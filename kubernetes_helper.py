@@ -2100,6 +2100,9 @@ class KubernetesHelper:
 		},
 	}
 
+	def is_kind_namespaced(self, kind):
+		return deep_get(self.kubernetes_resources[kind], "namespaced", True)
+
 	def kind_api_version_to_kind(self, kind, api_version):
 		# The API group is anything before /, or the empty string if there's no "/"
 		if api_version is not None and "/" in api_version:
