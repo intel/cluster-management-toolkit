@@ -1,0 +1,38 @@
+kind: Namespace
+default_command: namespaces
+command:
+- ns
+listview:
+  name: Namespaces
+  group: Core
+  field_indexes:
+    Normal: [name, phase, age]
+  fields:
+    phase:
+      header: "Status:"
+      path: "status#phase"
+      type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            Active:
+              field_colors:
+              - context: main
+                type: status_ok
+            Terminating:
+              field_colors:
+              - context: main
+                type: status_pending
+  shortcuts:
+    "Create namespace":
+      key: c
+      modifier: shift
+      helptext: Create a new namespace
+      action: call
+      action_call: create_namespace
+      action_args:
+        _pass_selection_vars: true
+      query: New namespace
+      queryval: namespace
+      queryfunc: string

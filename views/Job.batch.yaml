@@ -1,0 +1,27 @@
+kind: Job
+api_family: batch
+default_command: jobs
+listview:
+  name: Jobs
+  group: Workloads
+  field_indexes:
+    Normal: [namespace, name, controller, completions, duration, job_state, age, completion_time, containers_template]
+  fields:
+    completion_time:
+      header: "Completion Time:"
+      path: "status#completionTime"
+      type: timestamp
+      formatter: timestamp
+    containers_template:
+      header: "Containers:"
+      paths:
+      - paths:
+        - "spec#template#spec#initContainers"
+        - "spec#template#spec#containers"
+        pathtype: items
+        subpaths:
+        - name
+        - subpath: image
+        type: raw
+      formatter: list
+  sortcolumn: state

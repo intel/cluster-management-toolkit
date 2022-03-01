@@ -152,9 +152,18 @@ def age_to_seconds(age):
 
 	return seconds
 
-def seconds_to_age(seconds):
+def seconds_to_age(seconds, negative_is_skew = False):
 	age = ""
 	fields = 0
+	if seconds < -1:
+		sign = "-"
+	else:
+		sign = ""
+
+	if seconds < -1 and negative_is_skew == True:
+		return "<clock skew detected>"
+
+	seconds = abs(seconds)
 
 	if seconds == 0:
 		return "<unset>"
@@ -163,14 +172,14 @@ def seconds_to_age(seconds):
 		seconds -= days * 24 * 60 * 60
 		age += f"{days}d"
 		if days >= 7:
-			return age
+			return f"{sign}{age}"
 		fields += 1
 	if seconds >= 60 * 60:
 		hours = seconds // (60 * 60)
 		seconds -= hours * 60 * 60
 		age += f"{hours}h"
 		if hours >= 12:
-			return age
+			return f"{sign}{age}"
 		fields += 1
 	if seconds >= 60 and fields < 2:
 		minutes = seconds // 60
@@ -180,7 +189,7 @@ def seconds_to_age(seconds):
 	if seconds > 0 and fields < 2:
 		age += f"{seconds}s"
 
-	return age
+	return f"{sign}{age}"
 
 def get_since(timestamp):
 	if timestamp is None:
@@ -205,7 +214,7 @@ def datetime_to_timestamp(timestamp):
 
 # Will take a timestamp and convert it to datetime
 def timestamp_to_datetime(timestamp, default = none_timestamp()):
-	if timestamp is None or timestamp == "None":
+	if timestamp is None or type(timestamp) == int and timestamp == 0 or type(timestamp) == str and timestamp in ["", "None"]:
 		return default
 
 	if timestamp == -1:

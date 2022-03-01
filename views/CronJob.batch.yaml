@@ -1,0 +1,53 @@
+kind: CronJob
+api_family: batch
+default_command: cronjobs
+command:
+- cj
+listview:
+  name: Cron Jobs
+  group: Workloads
+  field_indexes:
+    Normal: [namespace, name, schedule, suspend, active, concurrency_policy, last_scheduled, last_successful, age, containers_jobtemplate]
+  fields:
+    active:
+      header: "Active:"
+      path: "status#active"
+      type: len
+      align: right
+    concurrency_policy:
+      header: "Concurrency:"
+      path: "spec#concurrencyPolicy"
+      type: raw
+    containers_jobtemplate:
+      header: "Containers:"
+      paths:
+      - paths:
+        - "spec#jobTemplate#spec#template#spec#initContainers"
+        - "spec#jobTemplate#spec#template#spec#containers"
+        pathtype: items
+        subpaths:
+        - name
+        - subpath: image
+        type: raw
+      formatter: list
+    last_scheduled:
+      header: "Last Scheduled:"
+      path: "status#lastScheduleTime"
+      type: timestamp
+      formatter: age
+      align: right
+    last_successful:
+      header: "Last Successful:"
+      path: "status#lastSuccessfulTime"
+      type: timestamp
+      formatter: age
+      align: right
+    schedule:
+      header: "Schedule:"
+      path: "spec#schedule"
+      type: raw
+    suspend:
+      header: "Suspend:"
+      path: "spec#suspend"
+      type: bool
+  sortcolumn: namespace

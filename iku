@@ -592,10 +592,13 @@ def generator_age(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	if value == -1:
 		string = ""
 	else:
-		string = iktlib.seconds_to_age(value)
+		string = iktlib.seconds_to_age(value, negative_is_skew = True)
 
 	if string in ["<none>", "<unset>", "<unknown>"]:
 		formatting = ("types", "none", selected)
+		array = [(string, formatting, selected)]
+	elif string in ["<clock skew detected>"]:
+		formatting = ("main", "status_not_ok", selected)
 		array = [(string, formatting, selected)]
 	else:
 		array = format_numerical_with_units(string, "age", selected)
@@ -901,7 +904,7 @@ def processor_list_with_status(obj, field, item_separator = ("separators", "list
 
 def processor_age(obj, field):
 	seconds = getattr(obj, field)
-	return iktlib.seconds_to_age(seconds)
+	return iktlib.seconds_to_age(seconds, negative_is_skew = True)
 
 def processor_mem(obj, field):
 	free, total = getattr(obj, field)
@@ -2096,7 +2099,7 @@ def generic_infogetter(**kwargs):
 									_subpath = deep_get(subpaths[i], "subpath")
 									if type(_subpath) == str:
 										_subpath = [_subpath]
-									_regexes = deep_get(subpaths[i], "regex")
+									_regexes = deep_get(subpaths[i], "regex", [])
 									if type(_regexes) == str:
 										_regexes = [_regexes]
 									_raw = deep_get_with_fallback(item, _subpath, _default)
@@ -5274,12 +5277,6 @@ field_templates = {
 	"action": {
 		"header": "Action:",
 	},
-	"active": {
-		"header": "Active:",
-		"datagetter": datagetter_list_len,
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"addresses": {
 		# [address, ...]
 		"header": "Addresses:",
@@ -5385,10 +5382,6 @@ field_templates = {
 		"datagetter": datagetter_start_completion_duration,
 		"generator": generator_timestamp,
 	},
-	"concurrency_policy": {
-		"header": "Concurrency:",
-		"path": "spec#concurrencyPolicy",
-	},
 	"condition": {
 		"header": "Condition:",
 		"generator": generator_list,
@@ -5433,24 +5426,6 @@ field_templates = {
 		# [(name, version), ...]
 		"header": "Containers:",
 		"path": [("spec#initContainers", "status#initContainerStatuses"), ("spec#containers", "status#containerStatuses")],
-		"datagetter": datagetter_containers,
-		"generator": generator_list,
-		"field_colors": [("types", "generic"), ("types", "version")],
-		"field_separators": [("separators", "version")],
-	},
-	"containers_jobtemplate": {
-		# [(name, version), ...]
-		"header": "Containers:",
-		"path": [("spec#jobTemplate#spec#template#initContainers", "spec#jobTemplate#spec#template#spec#initContainers"), ("spec#jobTemplate#spec#template#spec#containers", "spec#jobTemplate#spec#template#spec#containers")],
-		"datagetter": datagetter_containers,
-		"generator": generator_list,
-		"field_colors": [("types", "generic"), ("types", "version")],
-		"field_separators": [("separators", "version")],
-	},
-	"containers_template": {
-		# [(name, version), ...]
-		"header": "Containers:",
-		"path": [("spec#template#spec#initContainers", "spec#template#spec#initContainers"), ("spec#template#spec#containers", "spec#template#spec#containers")],
 		"datagetter": datagetter_containers,
 		"generator": generator_list,
 		"field_colors": [("types", "generic"), ("types", "version")],
@@ -5836,13 +5811,6 @@ field_templates = {
 		"generator": generator_age,
 		"ralign": True,
 	},
-	"last_schedule": {
-		"header": "Last Schedule:",
-		"path": "status#lastScheduleTime",
-		"datagetter": datagetter_age,
-		"generator": generator_age,
-		"ralign": True,
-	},
 	"limit": {
 		"header": "Limit:",
 		# FIXME datagetter
@@ -6032,12 +6000,6 @@ field_templates = {
 	},
 	"phase": {
 		"header": "Phase:",
-		"path": "status#phase",
-		"datagetter": datagetter_phase,
-		"generator": generator_status,
-	},
-	"phase_namespace": {
-		"header": "Status:",
 		"path": "status#phase",
 		"datagetter": datagetter_phase,
 		"generator": generator_status,
@@ -6259,10 +6221,6 @@ field_templates = {
 		"header": "Scanner:",
 		"path": "report#scanner#name",
 	},
-	"schedule": {
-		"header": "Schedule:",
-		"path": "spec#schedule",
-	},
 	"scheme": {
 		"header": "Scheme:",
 	},
@@ -6352,10 +6310,6 @@ field_templates = {
 		"datagetter": datagetter_count,
 		"generator": generator_numerical,
 		"ralign": True,
-	},
-	"suspend": {
-		"header": "Suspend:",
-		"path": "spec#suspend",
 	},
 	"tag": {
 		"header": "Tag:",
@@ -7225,11 +7179,13 @@ def genericlistloop(stdscr, view):
 		elif c == ord(";") and is_taggable == True and listlen > 0:
 			cluster_available = True
 			items = []
+			autoitem = False
 			control_plane = False
 
 			if len(tagged_items) == 0:
 				selected = uip.get_selected()
 				tagged_items.add(selected)
+				autoitem = True
 
 			for item in tagged_items:
 				# XXX once all infogetters have been fixed we don't need to check for <none>
@@ -7266,12 +7222,15 @@ def genericlistloop(stdscr, view):
 			# Populate the list of actions
 			action_context = deep_get(viewref, "actions#actionlist#context", None)
 			actions, actionlist = populate_actionlist(context = action_context, action_list = action_src_list, control_plane_selected = control_plane, single_item = (len(items) == 1), cluster_available = cluster_available)
+
 			# If there are playbook actions, add those too
 			if len(deep_get(viewref, "actions#playbooklist", {})) > 0:
 				playbook_context = deep_get(viewref, "actions#playbooklist#context", None)
 				actions, actionlist = populate_playbooklist(context = playbook_context, actions = [], action_list = actionlist, control_plane_selected = control_plane, single_item = (len(items) == 1), cluster_available = cluster_available)
 
 			if len(actions) == 0:
+				if autoitem == True:
+					tagged_items.clear()
 				continue
 
 			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, actions, title = action_title)
@@ -7455,7 +7414,6 @@ def genericlistloop(stdscr, view):
 					querydefault = False
 					if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = "%s?" % query, default = querydefault) == False:
 						continue
-
 			if deep_get(value, "confirm") == True:
 				title = deep_get(value, "title", "")
 
@@ -16176,6 +16134,18 @@ views_special = {
 		"is_taggable": False,
 		"check_availability": is_cluster_reachable,
 	},
+	"Containers": {
+		"commandline": ["containers", "container"],
+		"group": "Core",
+		"field_indexes": {
+			"Normal": ["name", "container_type", "image_version", "instances", "image_id", "pods"],
+		},
+		"kind": ("__Container", ""),
+		"listgetter": None,
+		"infogetter": get_container_info,
+		"is_taggable": False,
+		"check_availability": is_cluster_reachable,
+	},
 	"Contexts": {
 		"commandline": ["contexts", "context", "ctx"],
 		"group": "Administration",
@@ -16599,29 +16569,6 @@ views_builtin = {
 		},
 		"kind": ("ConfigAuditReport", "aquasecurity.github.io"),
 	},
-	# core API
-	"Containers": {
-		"commandline": ["containers", "container"],
-		"group": "Core",
-		"field_indexes": {
-			"Normal": ["name", "container_type", "image_version", "instances", "image_id", "pods"],
-		},
-		"kind": ("__Container", ""),
-		"listgetter": None,
-		"infogetter": get_container_info,
-		"is_taggable": False,
-		"check_availability": is_cluster_reachable,
-	},
-	# batch
-	"Cron Jobs": {
-		"commandline": ["cronjobs", "cronjob", "cj"],
-		"group": "Workloads",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "schedule", "suspend", "active", "concurrency_policy", "last_schedule", "age", "containers_jobtemplate"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("CronJob", "batch"),
-	},
 	# storage.k8s.io
 	"CSI Drivers": {
 		"commandline": ["csidrivers", "csidriver", "csidrvs", "csidrv"],
@@ -16661,15 +16608,6 @@ views_builtin = {
 	#	"kind": ("EtcdCluster", "etcd.database.coreos.com"),
 	#},
 	# core API
-	# crd.projectcalico.org
-	"Felix Configurations": {
-		"commandline": ["felixconfigurations", "felixconfiguration", "felixconfs", "felixconf"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("FelixConfiguration", "crd.projectcalico.org"),
-	},
 	# networking.istio.io
 	"Gateways": {
 		"commandline": ["gateways", "gateway", "gws", "gw"],
@@ -16847,42 +16785,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("IngressRouteUDP", "traefik.containo.us"),
 	},
-	# crd.projectcalico.org
-	"IPAM Blocks": {
-		"commandline": ["ipamblocks", "ipamblock", "ipamblks", "ipamblk"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("IPAMBlock", "crd.projectcalico.org"),
-	},
-	# crd.projectcalico.org
-	"IPAM Configs": {
-		"commandline": ["ipamconfigs", "ipamconfig"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("IPAMConfig", "crd.projectcalico.org"),
-	},
-	# crd.projectcalico.org
-	"IPAM Handles": {
-		"commandline": ["ipamhandles", "ipamhandle"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("IPAMHandle", "crd.projectcalico.org"),
-	},
-	# crd.projectcalico.org
-	"IP Pools": {
-		"commandline": ["ippools", "ippool"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("IPPool", "crd.projectcalico.org"),
-	},
 	#"Install Plans": {
 	#	"commandline": ["installplans", "installplan", "ip"],
 	#	"group": "API & Extendability",
@@ -16902,16 +16804,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("Issuer", "cert-manager.io"),
 	},
-	# install.istio.io
-	"Istio Operators": {
-		"commandline": ["istiooperators", "istiooperator", "iop", "io"],
-		"group": "Istio",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("IstioOperator", "install.istio.io"),
-	},
 	# jaegertracing.io
 	"Jaegers": {
 		"commandline": ["jaegers", "jaeger"],
@@ -16922,16 +16814,6 @@ views_builtin = {
 		},
 		"sortcolumn": "namespace",
 		"kind": ("Jaeger", "jaegertracing.io"),
-	},
-	# batch
-	"Jobs": {
-		"commandline": ["jobs", "job"],
-		"group": "Workloads",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "controller", "completions", "duration", "job_state", "age", "completion_time", "containers_template"],
-		},
-		"sortcolumn": "state",
-		"kind": ("Job", "batch"),
 	},
 	# aquasecurity.github.io
 	"Kube-Hunter Reports": {
@@ -16991,31 +16873,6 @@ views_builtin = {
 		},
 		"sortcolumn": "namespace",
 		"kind": ("MPIJob", "kubeflow.org"),
-	},
-	# core API
-	"Namespaces": {
-		"commandline": ["namespaces", "namespace", "ns"],
-		"group": "Core",
-		"field_indexes": {
-			"Normal": ["name", "phase_namespace", "age"],
-		},
-		"kind": ("Namespace", ""),
-		"shortcuts": {
-			"Create namespace": {
-				"shortcut": [ ord("C") ],
-				"helptext": ("[Shift] + C", "Create a new namespace"),
-				"confirm": True,
-				"title": "Create namespace",
-				"action": "call",
-				"action_call": create_namespace,
-				"action_args": {
-					"_pass_selection_vars": True,
-				},
-				"query": "New namespace",
-				"queryval": "namespace",
-				"queryfunc": "string",
-			},
-		},
 	},
 	# networking.k8s.io
 	"Network Policies": {
@@ -17493,7 +17350,11 @@ def populate_views():
 					helptext = deep_get(_shortcuts[shortcut], "helptext", "<missing>")
 					action = deep_get(_shortcuts[shortcut], "action", "<missing>")
 					action_args = deep_get(_shortcuts[shortcut], "action_args", {})
-					action_call = deep_get(_shortcuts[shortcut], "action_call", None)
+					action_call = deep_get(_shortcuts[shortcut], "action_call")
+					queryfunc = deep_get(_shortcuts[shortcut], "queryfunc")
+					queryval = deep_get(_shortcuts[shortcut], "queryval")
+					query = deep_get(_shortcuts[shortcut], "query")
+
 					if key is None or helptext is None or action is None or "<missing>" in [key, helptext, action]:
 						sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
 							 f"key: {key}\n"
@@ -17539,6 +17400,9 @@ def populate_views():
 						"action": action,
 						"action_args": action_args,
 						"action_call": action_args,
+						"queryfunc": queryfunc,
+						"queryval": queryval,
+						"query": query,
 					}
 					if action == "call":
 						action_call = eval(action_call)

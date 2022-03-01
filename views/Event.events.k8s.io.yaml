@@ -14,14 +14,14 @@ listview:
     seen:
       header: "Last Seen:"
       paths:
-      - path: ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
+      - path: [series#lastObservedTime, deprecatedLastTimestamp, lastTimestamp, eventTime, deprecatedFirstTimestamp, firstTimestamp]
         pathtype: value
         type: timestamp
       formatter: age
       align: right
     type:
       header: "Type:"
-      path: "type"
+      path: type
       type: str
       formatter: value_mapper
       formatting:
@@ -71,7 +71,7 @@ listview:
     first_seen:
       header: "First Seen:"
       paths:
-      - path: ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
+      - path: [eventTime, deprecatedFirstTimestamp, firstTimestamp]
         pathtype: value
         type: timestamp
       formatter: age
@@ -88,7 +88,7 @@ listview:
     message:
       header: "Message:"
       paths:
-      - path: "message"
+      - path: message
         pathtype: value
         type: str
         replace_quotes: same
