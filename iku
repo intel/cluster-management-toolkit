@@ -16460,15 +16460,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind":	("CatalogSource", "operators.coreos.com"),
 	},
-	# cert-manager.io <= rename from: certmanager.k8s.io
-	"Certificate Requests": {
-		"commandline": ["certificaterequests", "certificaterequest", "certreqs", "certreq"],
-		"group": "Certificate Management",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "condition_ready", "issuer", "status_message", "age"],
-		},
-		"kind": ("CertificateRequest", "cert-manager.io"),
-	},
 	# certificates.k8s.io
 	"Certificate Signing Requests": {
 		"commandline": ["certificatesigningrequests", "certificatesigningrequest", "certsignreqs", "certsignreq", "csrs", "csr"],
@@ -16522,15 +16513,6 @@ views_builtin = {
 			"Normal": ["name", "fail_count", "warn_count", "info_count", "pass_count", "age"],
 		},
 		"kind": ("CISKubeBenchReport", "aquasecurity.github.io"),
-	},
-	# cert-manager.io <= rename from: certmanager.k8s.io
-	"Cluster Issuers": {
-		"commandline": ["clusterissuers", "clusterissuer"],
-		"group": "Certificate Management",
-		"field_indexes": {
-			"Normal": ["name", "condition_ready", "age"],
-		},
-		"kind": ("ClusterIssuer", "cert-manager.io"),
 	},
 	# nvidia.com
 	"Cluster Policies": {
@@ -16794,16 +16776,6 @@ views_builtin = {
 	#	"sortcolumn": "namespace",
 	#	"kind": ("InstallPlan", "operators.coreos.com"),
 	#},
-	# cert-manager.io <= rename from: certmanager.k8s.io
-	"Issuers": {
-		"commandline": ["issuers", "issuer"],
-		"group": "Certificate Management",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "condition_ready", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("Issuer", "cert-manager.io"),
-	},
 	# jaegertracing.io
 	"Jaegers": {
 		"commandline": ["jaegers", "jaeger"],
@@ -17072,16 +17044,6 @@ views_builtin = {
 	#	"sortcolumn": "namespace",
 	#	"kind": ("Subscription", "operators.coreos.com"),
 	#},
-	# telemetry.intel.com
-	"Telemetry Aware Scheduling Policies": {
-		"commandline": ["taspolicies", "taspolicy", "tas"],
-		"group": "Scheduling",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("TASPolicy", "telemetry.intel.com"),
-	},
 	# monitoring.coreos.com
 	#"Thanos Rulers": {
 	#	"commandline": ["thanosrulers", "thanosruler", "thrules", "thrule"],
