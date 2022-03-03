@@ -1,0 +1,13 @@
+kind: OperatorCondition
+api_family: operators.coreos.com
+default_command: operatorconditions
+# Not sure OperatorCondition deserves something as generic as "condition"
+# even if the CRD thinks so
+#command:
+#- conditions
+listview:
+  name: Operator Conditions
+  group: API & Extendability
+  field_indexes:
+    Normal: [namespace, name, age]
+  sortcolumn: namespace

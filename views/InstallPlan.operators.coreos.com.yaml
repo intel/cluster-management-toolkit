@@ -1,0 +1,30 @@
+kind: InstallPlan
+api_family: operators.coreos.com
+default_command: installplans
+# Not sure InstallPlan deserves a 2-letter abbreviation,
+# even if the CRD thinks so
+# command:
+# - ip
+listview:
+  name: Install Plans
+  group: API & Extendability
+  field_indexes:
+    Normal: [namespace, name, csv, approval, approved, age]
+  fields:
+    approval:
+      header: "Approval:"
+      path: "spec#approval"
+      type: str
+    approved:
+      header: "Approved:"
+      path: "spec#approved"
+      type: bool
+    csv:
+      header: "CSV:"
+      paths:
+      - path: "spec#clusterServiceVersionNames"
+        pathtype: list
+        # We only want the first version in the list
+        limit: 1
+      formatter: list
+  sortcolumn: namespace
