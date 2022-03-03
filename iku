@@ -2102,14 +2102,19 @@ def generic_infogetter(**kwargs):
 						mpaths = [path]
 
 					ptype = deep_get(_path, "pathtype", "list")
+					limit = deep_get(_path, "limit")
 					action = deep_get(_path, "action")
 					subpath = deep_get(_path, "subpath", "")
 					subpaths = deep_get(_path, "subpaths", [])
 					fallback_on_empty = deep_get(_path, "fallback_on_empty", False)
 					replace_quotes = deep_get(_path, "replace_quotes", "no")
 					if ptype == "list":
-						# Just return the list
-						value = deep_get_with_fallback(obj, path, default = default, fallback_on_empty = fallback_on_empty)
+						tmp = deep_get_with_fallback(obj, path, default = default, fallback_on_empty = fallback_on_empty)
+						# Just return the list, unless a subset has been requested
+						if limit is not None:
+							value = tmp[0:limit]
+						else:
+							value = tmp
 					elif ptype == "key_value":
 						value = []
 						for _key, _value in deep_get_with_fallback(obj, path, {}).items():
