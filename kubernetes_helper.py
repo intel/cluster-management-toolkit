@@ -823,7 +823,6 @@ class KubernetesHelper:
 		("DeploymentConfig", "apps.openshift.io"): {
 			"api_family": ["apis/apps.openshift.io/v1/"],
 			"api": "deploymentconfigs",
-			"aliases": ["dc"],
 		},
 		# argoproj.io
 		("ClusterWorkflowTemplate", "argoproj.io"): {
@@ -884,12 +883,10 @@ class KubernetesHelper:
 			"api_family": ["apis/autoscaling.openshift.io/v1/"],
 			"api": "clusterautoscalers",
 			"namespaced": False,
-			"aliases": ["ca"],
 		},
 		("MachineAutoscaler", "autoscaling.openshift.io"): {
 			"api_family": ["apis/autoscaling.openshift.io/v1beta1/"],
 			"api": "machineautoscalers",
-			"aliases": ["ma"],
 		},
 		# autoscaling.internal.knative.dev
 		("Metric", "autoscaling.internal.knative.dev"): {
@@ -914,7 +911,6 @@ class KubernetesHelper:
 		("BuildConfig", "build.openshift.io"): {
 			"api_family": ["apis/build.openshift.io/v1/"],
 			"api": "buildconfigs",
-			"aliases": ["bc"],
 		},
 		("Build", "build.openshift.io"): {
 			"api_family": ["apis/build.openshift.io/v1/"],
@@ -929,18 +925,15 @@ class KubernetesHelper:
 		("CassandraDatacenter", "cassandra.datastax.com"): {
 			"api_family": ["apis/cassandra.datastax.com/v1beta1/"],
 			"api": "cassandradatacenters",
-			"aliases": ["cassandradatacenter", "cassdcs", "cassdc"],
 		},
 		# cassandra.k8ssandra.io
 		("CassandraBackup", "cassandra.k8ssandra.io"): {
 			"api_family": ["apis/cassandra.k8ssandra.io/v1alpha1/"],
 			"api": "cassandrabackups",
-			"aliases": ["cassandrabackup"],
 		},
 		("CassandraRestore", "cassandra.k8ssandra.io"): {
 			"api_family": ["apis/cassandra.k8ssandra.io/v1alpha1/"],
 			"api": "cassandrarestores",
-			"aliases": ["cassandrarestore"],
 		},
 		# cert-manager.io <= rename from: certmanager.k8s.io
 		("Certificate", "cert-manager.io"): {
@@ -964,40 +957,33 @@ class KubernetesHelper:
 		("CiliumClusterwideNetworkPolicy", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumclusterwidenetworkpolicies",
-			"aliases": ["ccnp"],
 			"namespaced": False,
 		},
 		("CiliumEndpoint", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumendpoints",
-			"aliases": ["ciliumep", "cep"],
 		},
 		("CiliumExternalWorkload", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumexternalworkloads",
-			"aliases": ["cew"],
 			"namespaced": False,
 		},
 		("CiliumIdentity", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumidentities",
-			"aliases": ["ciliumid"],
 			"namespaced": False,
 		},
 		("CiliumLocalRedirectPolicy", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumlocalredirectpolicies",
-			"aliases": ["clrp"],
 		},
 		("CiliumNetworkPolicy", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumnetworkpolicies",
-			"aliases": ["ciliumnp", "cnp"],
 		},
 		("CiliumNode", "cilium.io"): {
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumnodes",
-			"aliases": ["ciliumn", "cn"],
 			"namespaced": False,
 		},
 		# config.kio.kasten.io
@@ -1104,25 +1090,21 @@ class KubernetesHelper:
 		("AddressGroup", "controlplane.antrea.io"): {
 			"api_family": ["apis/controlplane.antrea.io/v1beta2/"],
 			"api": "addressgroups",
-			"aliases": ["addressgroup"],
 			"namespaced": False,
 		},
 		("AppliedToGroup", "controlplane.antrea.io"): {
 			"api_family": ["apis/controlplane.antrea.io/v1beta2/"],
 			"api": "appliedtogroups",
-			"aliases": ["appliedtogroup"],
 			"namespaced": False,
 		},
 		("EgressGroup", "controlplane.antrea.io"): {
 			"api_family": ["apis/controlplane.antrea.io/v1beta2/"],
 			"api": "egressgroups",
-			"aliases": ["egressgroup"],
 			"namespaced": False,
 		},
 		("NetworkPolicy", "controlplane.antrea.io"): {
 			"api_family": ["apis/controlplane.antrea.io/v1beta2/"],
 			"api": "networkpolicies",
-			"aliases": ["networkpolicy"],
 			"namespaced": False,
 		},
 		# cr.kanister.io
@@ -1142,65 +1124,54 @@ class KubernetesHelper:
 		("AntreaAgentInfo", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1beta1/"],
 			"api": "antreaagentinfos",
-			"aliases": ["antreaagentinfo", "aai"],
 			"namespaced": False,
 		},
 		("AntreaControllerInfo", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1beta1/"],
 			"api": "antreacontrollerinfos",
-			"aliases": ["antreacontrollerinfo", "aci"],
 			"namespaced": False,
 		},
 		("ClusterGroup", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1alpha3/", "apis/crd.antrea.io/v1alpha2/"],
 			"api": "clustergroups",
-			"aliases": ["clustergroup", "cg"],
 			"namespaced": False,
 		},
 		("ClusterNetworkPolicy", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1alpha1/"],
 			"api": "clusternetworkpolicies",
-			"aliases": ["clusternetpolicy"],
 			"namespaced": False,
 		},
 		("Egress", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1alpha2/"],
 			"api": "egresses",
-			"aliases": ["egress", "eg"],
 			"namespaced": False,
 		},
 		("ExternalEntity", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1alpha2/"],
 			"api": "externalentities",
-			"aliases": ["externalentity", "ee"],
 		},
 		("ExternalIPPool", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1alpha2/"],
 			"api": "externalippools",
-			"aliases": ["externalippool", "eip"],
 			"namespaced": False,
 		},
 		("IPPool", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1alpha2/"],
 			"api": "ippools",
-			"aliases": ["ippool", "ipp"],
 			"namespaced": False,
 		},
 		("NetworkPolicy", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1alpha1/"],
 			"api": "networkpolicies",
-			"aliases": ["networkpolicy", "anp"],
 		},
 		("Tier", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1alpha1/"],
 			"api": "tiers",
-			"aliases": ["tier", "tr"],
 			"namespaced": False,
 		},
 		("TraceFlow", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1alpha1/"],
 			"api": "traceflows",
-			"aliases": ["traceflow", "tf"],
 			"namespaced": False,
 		},
 		# crd.projectcalico.org
@@ -1390,12 +1361,10 @@ class KubernetesHelper:
 		("AcceleratorFunction", "fpga.intel.com"): {
 			"api_family": ["apis/fpga.intel.com/v2/"],
 			"api": "acceleratorfunctions",
-			"aliases": ["af"],
 		},
 		("FpgaRegion", "fpga.intel.com"): {
 			"api_family": ["apis/fpga.intel.com/v2/"],
 			"api": "fpgaregions",
-			"aliases": ["fpga"],
 		},
 		# helm.cattle.io
 		("HelmChartConfig", "helm.cattle.io"): {
@@ -1415,18 +1384,15 @@ class KubernetesHelper:
 		("ImageStream", "image.openshift.io"): {
 			"api_family": ["apis/image.openshift.io/v1/"],
 			"api": "imagestreams",
-			"aliases": ["is"],
 		},
 		("ImageStreamTag", "image.openshift.io"): {
 			"api_family": ["apis/image.openshift.io/v1/"],
 			"api": "imagestreamtags",
-			"aliases": ["istag"],
 		},
 		# install.istio.io
 		("IstioOperator", "install.istio.io"): {
 			"api_family": ["apis/install.istio.io/v1alpha1/"],
 			"api": "istiooperators",
-			"aliases": ["iop", "io"],
 		},
 		# integreatly.org
 		("Grafana", "integreatly.org"): {
@@ -1455,22 +1421,18 @@ class KubernetesHelper:
 		("ClusterTriggerAuthentication", "keda.sh"): {
 			"api_family": ["apis/keda.sh/v1alpha1/"],
 			"api": "clustertriggerauthentications",
-			"aliases": ["cta", "clustertriggerauth"],
 		},
 		("ScaledJob", "keda.sh"): {
 			"api_family": ["apis/keda.sh/v1alpha1/"],
 			"api": "scaledjobs",
-			"aliases": ["sj"],
 		},
 		("ScaledObject", "keda.sh"): {
 			"api_family": ["apis/keda.sh/v1alpha1/"],
 			"api": "scaledobjects",
-			"aliases": ["so"],
 		},
 		("TriggerAuthentication", "keda.sh"): {
 			"api_family": ["apis/keda.sh/v1alpha1/"],
 			"api": "triggerauthentications",
-			"aliases": ["ta", "triggerauth"],
 		},
 		# kilo.squat.ai
 		("Peer", "kilo.squat.ai"): {
@@ -1482,7 +1444,6 @@ class KubernetesHelper:
 		("AppRepository", "kubeapps.com"): {
 			"api_family": ["apis/kubeapps.com/v1alpha1/"],
 			"api": "apprepositories",
-			"aliases": ["apprepos"],
 		},
 		# kubeflow.org
 		("Experiment", "kubeflow.org"): {
@@ -1538,7 +1499,6 @@ class KubernetesHelper:
 		("KubeVirt", "kubevirt.io"): {
 			"api_family": ["apis/kubevirt.io/v1/"],
 			"api": "kubevirts",
-			"aliases": ["kvs", "kv"],
 		},
 		("VirtualMachineInstanceMigration", "kubevirt.io"): {
 			"api_family": ["apis/kubevirt.io/v1alpha3/"],
@@ -1626,13 +1586,11 @@ class KubernetesHelper:
 		("ClusterNetwork", "network.openshift.io"): {
 			"api_family": ["apis/network.openshift.io/v1/"],
 			"api": "clusternetworks",
-			"aliases": ["clusternets"],
 			"namespaced": False,
 		},
 		("EgressNetworkPolicy", "network.openshift.io"): {
 			"api_family": ["apis/network.openshift.io/v1/"],
 			"api": "egressnetworkpolicies",
-			"aliases": ["egressnetpols", "egressnetpol"],
 		},
 		("HostSubnet", "network.openshift.io"): {
 			"api_family": ["apis/network.openshift.io/v1/"],
@@ -1648,19 +1606,16 @@ class KubernetesHelper:
 		("AddressGroup", "networking.antrea.tanzu.vmware.com"): {
 			"api_family": ["apis/networking.antrea.tanzu.vmware.com/v1beta1/"],
 			"api": "addressgroups",
-			"aliases": ["addressgroup"],
 			"namespaced": False,
 		},
 		("AppliedToGroup", "networking.antrea.tanzu.vmware.com"): {
 			"api_family": ["apis/networking.antrea.tanzu.vmware.com/v1beta1/"],
 			"api": "appliedtogroups",
-			"aliases": ["appliedtogroup"],
 			"namespaced": False,
 		},
 		("NetworkPolicy", "networking.antrea.tanzu.vmware.com"): {
 			"api_family": ["apis/networking.antrea.tanzu.vmware.com/v1beta1/"],
 			"api": "networkpolicies",
-			"aliases": ["networkpolicy", "netpols", "netpol"],
 			"namespaced": False,
 		},
 		# networking.internal.knative.dev
@@ -1680,7 +1635,6 @@ class KubernetesHelper:
 		("DestinationRule", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
 			"api": "destinationrules",
-			"aliases": ["dr"],
 		},
 		("EnvoyFilter", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
@@ -1689,12 +1643,10 @@ class KubernetesHelper:
 		("Gateway", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
 			"api": "gateways",
-			"aliases": ["gw"],
 		},
 		("ServiceEntry", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
 			"api": "serviceentries",
-			"aliases": ["se"],
 		},
 		("Sidecar", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
@@ -1703,17 +1655,14 @@ class KubernetesHelper:
 		("VirtualService", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
 			"api": "virtualservices",
-			"aliases": ["vs"],
 		},
 		("WorkloadEntry", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/"],
 			"api": "workloadentries",
-			"aliases": ["we"],
 		},
 		("WorkloadGroup", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1alpha3/"],
 			"api": "workloadgroups",
-			"aliases": ["wg"],
 		},
 		# nodeinfo.volcano.sh
 		("Numatopology", "nodeinfo.volcano.sh"): {
@@ -1756,63 +1705,61 @@ class KubernetesHelper:
 		("CatalogSource", "operators.coreos.com"): {
 			"api_family": ["apis/operators.coreos.com/v1alpha1/"],
 			"api": "catalogsources",
-			"aliases": ["catalogsource", "catsrcs", "catsrc"],
 		},
 		("ClusterServiceVersion", "operators.coreos.com"): {
 			"api_family": ["apis/operators.coreos.com/v1alpha1/"],
 			"api": "clusterserviceversions",
-			"aliases": ["clusterserviceversion", "csvs", "csv"],
 		},
 		("InstallPlan", "operators.coreos.com"): {
 			"api_family": ["apis/operators.coreos.com/v1alpha1/"],
 			"api": "installplans",
-			"aliases": ["installplan", "ip"],
+		},
+		("OLMConfig", "operators.coreos.com"): {
+			"api_family": ["apis/operators.coreos.com/v1/"],
+			"api": "olmconfigs",
+			"namespaced": False,
 		},
 		("OperatorGroup", "operators.coreos.com"): {
 			"api_family": ["apis/operators.coreos.com/v1/"],
 			"api": "operatorgroups",
-			"aliases": ["operatorgroup", "og"],
 		},
 		("Operator", "operators.coreos.com"): {
 			"api_family": ["apis/operators.coreos.com/v1/"],
 			"api": "operators",
-			"aliases": ["operator"],
 			"namespaced": False,
+		},
+		("OperatorCondition", "operators.coreos.com"): {
+			"api_family": ["apis/operators.coreos.com/v2/"],
+			"api": "operatorconditions",
 		},
 		("Subscription", "operators.coreos.com"): {
 			"api_family": ["apis/operators.coreos.com/v1alpha1/"],
 			"api": "subscriptions",
-			"aliases": ["subscription", "subs", "sub"],
 		},
 		# ops.antrea.tanzu.vmware.com
 		("Traceflow", "ops.antrea.tanzu.vmware.com"): {
 			"api_family": ["apis/ops.antrea.tanzu.vmware.com/v1alpha1/"],
 			"api": "traceflows",
-			"aliases": ["traceflow", "tf"],
 			"namespaced": False,
 		},
 		# packages.operators.coreos.com
 		("PackageManifest", "packages.operators.coreos.com"): {
 			"api_family": ["apis/packages.operators.coreos.com/v1/"],
 			"api": "packagemanifests",
-			"aliases": ["pkgmanifests"],
 		},
 		# policy.linkerd.io
 		("ServerAuthorization", "policy.linkerd.io"): {
 			"api_family": ["apis/policy.linkerd.io/v1beta1/"],
 			"api": "serverauthorizations",
-			"aliases": ["saz"],
 		},
 		("Server", "policy.linkerd.io"): {
 			"api_family": ["apis/policy.linkerd.io/v1beta1/"],
 			"api": "servers",
-			"aliases": ["srv"],
 		},
 		# project.openshift.io
 		("ProjectRequest", "project.openshift.io"): {
 			"api_family": ["apis/project.openshift.io/v1/"],
 			"api": "projectrequests",
-			"aliases": ["projectreqs"],
 			"namespaced": False,
 		},
 		("Project", "project.openshift.io"): {
@@ -1824,19 +1771,16 @@ class KubernetesHelper:
 		("AppliedClusterResourceQuota", "quota.openshift.io"): {
 			"api_family": ["apis/quota.openshift.io/v1/"],
 			"api": "appliedclusterresourcequota",
-			"aliases": ["projectreqs"],
 		},
 		("ClusterResourceQuota", "quota.openshift.io"): {
 			"api_family": ["apis/quota.openshift.io/v1/"],
 			"api": "clusterresourcequota",
-			"aliases": ["clusterquota"],
 			"namespaced": False,
 		},
 		# reaper.cassandra-reaper.io
 		("Reaper", "reaper.cassandra-reaper.io"): {
 			"api_family": ["apis/reaper.cassandra-reaper.io/v1alpha1/"],
 			"api": "reapers",
-			"aliases": ["reaper"],
 		},
 		# reporting.kio.kasten.io
 		("Report", "reporting.kio.kasten.io"): {
@@ -1856,24 +1800,20 @@ class KubernetesHelper:
 		("PeerAuthentication", "security.istio.io"): {
 			"api_family": ["apis/security.istio.io/v1beta1/"],
 			"api": "peerauthentications",
-			"aliases": ["pa"],
 		},
 		("RequestAuthentication", "security.istio.io"): {
 			"api_family": ["apis/security.istio.io/v1beta1/"],
 			"api": "requestauthentications",
-			"aliases": ["ra"],
 		},
 		# security.openshift.io
 		("RangeAllocation", "security.openshift.io"): {
 			"api_family": ["apis/security.openshift.io/v1/"],
 			"api": "rangeallocations",
-			"aliases": ["scc"],
 			"namespaced": False,
 		},
 		("SecurityContextConstraint", "security.openshift.io"): {
 			"api_family": ["apis/security.openshift.io/v1/"],
 			"api": "securitycontextconstraints",
-			"aliases": ["scc"],
 			"namespaced": False,
 		},
 		# servicecertsigner.config.openshift.io
@@ -1960,24 +1900,20 @@ class KubernetesHelper:
 		("AntreaClusterNetworkPolicyStats", "stats.antrea.io"): {
 			"api_family": ["apis/stats.antrea.io/v1alpha1/"],
 			"api": "antreaclusternetworkpolicystats",
-			"aliases": ["antreaclusternetpolstats"],
 			"namespaced": False,
 		},
 		("AntreaNetworkPolicyStats", "stats.antrea.io"): {
 			"api_family": ["apis/stats.antrea.io/v1alpha1/"],
 			"api": "antreanetworkpolicystats",
-			"aliases": ["antreanetpolstats"],
 		},
 		("NetworkPolicyStats", "stats.antrea.io"): {
 			"api_family": ["apis/stats.antrea.io/v1alpha1/"],
 			"api": "networkpolicystats",
-			"aliases": ["netpolstats"],
 		},
 		# system.antrea.io
 		("ControllerInfo", "system.antrea.io"): {
 			"api_family": ["apis/system.antrea.io/v1beta1/"],
 			"api": "controllerinfos",
-			"aliases": ["controllerinfo"],
 			"namespaced": False,
 		},
 		# telemetry.intel.com
@@ -1989,7 +1925,6 @@ class KubernetesHelper:
 		("Telemetry", "telemetry.intel.com"): {
 			"api_family": ["apis/telemetry.istio.io/v1alpha1/"],
 			"api": "telemetries",
-			"aliases": ["telemetry"],
 		},
 		# template.openshift.io
 		("BrokerTemplateInstance", "servicecertsigner.config.openshift.io"): {
