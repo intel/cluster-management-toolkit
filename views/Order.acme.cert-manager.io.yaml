@@ -1,0 +1,22 @@
+kind: Order
+api_family: acme.cert-manager.io
+default_command: orders
+listview:
+  name: Orders
+  group: Certificate Management
+  field_indexes:
+    Normal: [namespace, name, state, issuer, reason, age]
+  sortcolumn: namespace
+  fields:
+    issuer: 
+      header: "Issuer:"
+      path: "spec#issuerRef#name"
+      type: str
+    reason:
+      header: "Reason:"
+      path: "status#reason"
+      type: str
+    state:
+      header: "State:"
+      path: "status#state"
+      type: str
