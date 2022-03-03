@@ -1,0 +1,25 @@
+kind: NetworkPolicy
+api_family: networking.k8s.io
+default_command: networkpolicies
+command:
+- netpols
+- netpol
+listview:
+  name: Network Policies
+  group: Network
+  field_indexes:
+    Normal: [namespace, name, pod_selector, age]
+  fields:
+    pod_selector:
+      header: "Pod Selector:"
+      paths:
+      - path: ["spec#podSelector#matchLabels"]
+        pathtype: key_value
+      formatter: list
+      formatting:
+        field_colors:
+        - type: key
+        - type: value
+        field_separators:
+        - type: selector
+  sortcolumn: namespace

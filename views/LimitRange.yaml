@@ -1,0 +1,18 @@
+kind: LimitRange
+default_command: limitranges
+command:
+- limits
+- lr
+listview:
+  name: Limit Ranges
+  group: Policy
+  field_indexes:
+    Normal: [namespace, name, created_at]
+  fields:
+    created_at:
+      header: "Created At:"
+      paths:
+      - path: ["metadata#creationTimestamp"]
+        type: timestamp
+      formatter: timestamp
+      default: -1

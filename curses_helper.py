@@ -1058,7 +1058,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			while True:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1, wraparound = True)
 				lineattributes = items[yoffset + curypos][0]
-				tmp_char = items[yoffset + curypos][1][0][0].lstrip("*")[0]
+				tmp_char = items[yoffset + curypos][1][0][0].lstrip("*•◉")[0]
 				if tmp_char.lower() == chr(c).lower() and lineattributes & widgetlineattrs.DISABLED == 0:
 					break
 				if (curypos + yoffset) == (oldcurypos + oldyoffset):
@@ -1072,7 +1072,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			while True:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1, wraparound = True)
 				lineattributes = items[yoffset + curypos][0]
-				tmp_char = items[yoffset + curypos][1][0][0].lstrip("*")[0]
+				tmp_char = items[yoffset + curypos][1][0][0].lstrip("*•◉")[0]
 				if tmp_char.lower() == chr(c).lower() and lineattributes & widgetlineattrs.DISABLED == 0:
 					break
 				if (curypos + yoffset) == (oldcurypos + oldyoffset):

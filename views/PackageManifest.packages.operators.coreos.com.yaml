@@ -1,0 +1,17 @@
+kind: PackageManifest
+api_family: packages.operators.coreos.com
+default_command: packagemanifests
+command:
+- pkgmanifests
+- pkgmanifest
+listview:
+  name: Package Manifests
+  group: API & Extendability
+  field_indexes:
+    Normal: [namespace, name, catalog, age]
+  fields:
+    catalog:
+      header: "Catalog:"
+      path: "status#catalogSourceDisplayName"
+      type: str
+  sortcolumn: namespace

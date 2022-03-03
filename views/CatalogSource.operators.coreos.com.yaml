@@ -1,0 +1,25 @@
+kind: CatalogSource
+api_family: operators.coreos.com
+default_command: catalogsources
+command:
+- catsrcs
+- catsrc
+listview:
+  name: Catalog Sources
+  group: API & Extendability
+  field_indexes:
+    Normal: [namespace, name, display_name, source_type, publisher, age]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "spec#displayName"
+      type: str
+    source_type:
+      header: "Source Type:"
+      path: "spec#sourceType"
+      type: str
+    publisher:
+      header: "Publisher:"
+      path: "spec#publisher"
+      type: str
+  sortcolumn: namespace

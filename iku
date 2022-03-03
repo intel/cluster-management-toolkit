@@ -1906,7 +1906,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 			value = get_since(value)
 	elif type(vtype) == list:
 		if type(value) not in [list, tuple]:
-			raise Exception(f"Field {field_name}: type is {vtype}; for type {vtype} pathtype must be a multi-element type")
+			raise Exception(f"Field {field_name}: type(value) is {vtype}; for type {vtype} pathtype must be a multi-element type")
 		_values = []
 		override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format"], "mixed")
 		for i in range(0, len(value)):
@@ -1948,6 +1948,95 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 		if vtype not in theme["types"]:
 			raise Exception(f"Unknown value type {vtype}; the view file is probably invalid")
 	return value
+
+def when_filter(when_path, item, key = None, value = None):
+	# These apply the key
+	if key is None:
+		key = deep_get(when_path, "when#key")
+	else:
+		# These don't make sense when using when#key, since we already know the key
+		when_key_eq = deep_get(when_path, "when#key_eq")
+		when_key_ne = deep_get(when_path, "when#key_ne")
+		when_key_in = deep_get(when_path, "when#key_in")
+		when_key_notin = deep_get(when_path, "when#key_notin")
+		when_key_startswith = deep_get(when_path, "when#key_startswith")
+		when_key_notstartswith = deep_get(when_path, "when#key_notstartswith")
+		when_key_endswith = deep_get(when_path, "when#key_endswith")
+		when_key_notendswith = deep_get(when_path, "when#key_notendswith")
+		if when_key_eq is not None and when_key_eq != key:
+			return False
+		if when_key_ne is not None and when_key_eq == key:
+			return False
+		if when_key_in is not None and key not in when_key_in:
+			return False
+		if when_key_notin is not None and key in when_key_in:
+			return False
+		if when_key_startswith is not None and not key.startswith(when_key_startswith):
+			return False
+		if when_key_notstartswith is not None and key.startswith(when_key_notstartswith):
+			return False
+		if when_key_endswith is not None and not key.endswith(when_key_endswith):
+			return False
+		if when_key_notendswith is not None and key.endswith(when_key_notendswith):
+			return False
+
+	# Check for none
+	if value is None:
+		value = deep_get(item, key)
+
+	# These check whether the key has a value
+	when_none = deep_get(when_path, "when#none")
+	when_notnone = deep_get(when_path, "when#notnone")
+
+	# All these check the value
+	when_eq = deep_get(when_path, "when#eq")
+	when_ne = deep_get(when_path, "when#ne")
+	when_lt = deep_get(when_path, "when#lt")
+	when_lte = deep_get(when_path, "when#lte")
+	when_gt = deep_get(when_path, "when#gt")
+	when_gte = deep_get(when_path, "when#gte")
+	when_in = deep_get(when_path, "when#in")
+	when_notin = deep_get(when_path, "when#notin")
+	when_missing = deep_get(when_path, "when#missing")
+	when_notmissing = deep_get(when_path, "when#notmissing")
+	when_startswith = deep_get(when_path, "when#startswith")
+	when_notstartswith = deep_get(when_path, "when#notstartswith")
+	when_endswith = deep_get(when_path, "when#endswith")
+	when_notendswith = deep_get(when_path, "when#notendswith")
+
+	# Check for existance
+	if when_missing is not None and when_missing in item:
+		return False
+	if when_notmissing is not None and when_notmissing not in item:
+		return False
+
+	if when_notnone is not None and value is None:
+		return False
+	if when_none is not None and value is not None:
+		return False
+
+	# Set-based checks
+	if when_in is not None and value not in when_in:
+		return False
+	if when_notin is not None and value in when_notin:
+		return False
+
+	# Check for equality
+	if when_eq is not None and (value is None or value != type(value)(when_eq)):
+		return False
+	if when_ne is not None and (value is None or value == type(value)(when_ne)):
+		return False
+
+	if when_lt is not None and not value < type(value)(when_lt):
+		return False
+	if when_lte is not None and not value <= type(value)(when_lte):
+		return False
+	if when_gt is not None and not value > type(value)(when_gt):
+		return False
+	if when_gte is not None and value >= type(value)(when_gte):
+		return False
+
+	return True
 
 def generic_infogetter(**kwargs):
 	info = []
@@ -2021,6 +2110,14 @@ def generic_infogetter(**kwargs):
 					if ptype == "list":
 						# Just return the list
 						value = deep_get_with_fallback(obj, path, default = default, fallback_on_empty = fallback_on_empty)
+					elif ptype == "key_value":
+						value = []
+						for _key, _value in deep_get_with_fallback(obj, path, {}).items():
+							if when_filter(_path, item = None, key = _key, value = _value) == False:
+								continue
+							value.append((_key, _value))
+						if len(value) == 0:
+							value = default
 					elif ptype == "items":
 						if len(subpath) > 0:
 							if len(subpaths) > 0:
@@ -2028,19 +2125,6 @@ def generic_infogetter(**kwargs):
 							else:
 								subpaths = [subpath]
 						value = []
-						when_key = deep_get(_path, "when#key")
-						when_eq = deep_get(_path, "when#eq")
-						when_ne = deep_get(_path, "when#ne")
-						when_lt = deep_get(_path, "when#lt")
-						when_lte = deep_get(_path, "when#lte")
-						when_gt = deep_get(_path, "when#gt")
-						when_gte = deep_get(_path, "when#gte")
-						when_in = deep_get(_path, "when#in")
-						when_notin = deep_get(_path, "when#notin")
-						when_missing = deep_get(_path, "when#missing")
-						when_notmissing = deep_get(_path, "when#notmissing")
-						when_none = deep_get(_path, "when#none")
-						when_notnone = deep_get(_path, "when#notnone")
 						items = []
 						for mpath in mpaths:
 							if type(mpath) == str:
@@ -2048,38 +2132,7 @@ def generic_infogetter(**kwargs):
 							items += deep_get_with_fallback(obj, mpath, [], fallback_on_empty = fallback_on_empty)
 
 						for item in items:
-							# Check for existance
-							if when_missing is not None and when_missing in item:
-								continue
-							if when_notmissing is not None and when_notmissing not in item:
-								continue
-
-							# Check for none
-							_val = deep_get(item, when_key)
-							if when_notnone is not None and _val is None:
-								continue
-							if when_none is not None and _val is not None:
-								continue
-
-							# Set-based checks
-							if when_in is not None and _val not in when_in:
-								continue
-							if when_notin is not None and _val in when_notin:
-								continue
-
-							# Check for equality
-							if when_eq is not None and (_val is None or _val != type(_val)(when_eq)):
-								continue
-							if when_ne is not None and (_val is None or _val == type(_val)(when_ne)):
-								continue
-
-							if when_lt is not None and not _val < type(_val)(when_lt):
-								continue
-							if when_lte is not None and not _val <= type(_val)(when_lte):
-								continue
-							if when_gt is not None and not _val > type(_val)(when_gt):
-								continue
-							if when_gte is not None and _val >= type(_val)(when_gte):
+							if when_filter(_path, item) == False:
 								continue
 
 							tmp = []
@@ -2145,6 +2198,9 @@ def generic_infogetter(**kwargs):
 
 				for value, _vtype in _values:
 					_regex = deep_get(_path, "regex")
+					if type(_vtype) == list:
+						if len(value) == 0:
+							value = []
 					if type(value) == list and type(_vtype) == list:
 						tmp = []
 						for _value in value:
@@ -3794,14 +3850,16 @@ def make_set_expression(expression_list):
 				operator = "> "
 			elif operator == "Lt":
 				operator = "< "
-			key = deep_get(expression, "key", "")
+			key = deep_get_with_fallback(expression, ["key", "scopeName"], "")
 
 			tmp = deep_get(expression, "values", [])
 			values = ",".join(tmp)
+			if len(values) > 0 and operator not in ["Gt", "Lt"]:
+				values = f"[{values}]"
 
 			expressions.append(f"{key} {operator}{values}")
 
-	return ",".join(expressions)
+	return ", ".join(expressions)
 
 def get_pv_status(pv):
 	phase = deep_get(pv, "status#phase")
@@ -5325,10 +5383,6 @@ field_templates = {
 		"path": "status_message",
 		"datagetter": datagetter_api_service,
 	},
-	"attach_required": {
-		"header": "Attach Required:",
-		"path": "spec#attachRequired",
-	},
 	"available": {
 		"header": "Available:",
 		"path": "available",
@@ -5363,10 +5417,6 @@ field_templates = {
 	},
 	"capture_mode": {
 		"header": "Capture Mode:",
-	},
-	"catalogue": {
-		"header": "Catalogue",
-		"path": "status#catalogSourceDisplayName",
 	},
 	"completions": {
 		"header": "Completions:",
@@ -5534,10 +5584,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "host"), ("types", "subset"), ("types", "port")],
 		"field_separators": [("separators", "list_start"), ("separators", "list_end_colon")],
-	},
-	"display_name": {
-		"header": "Display Name:",
-		"path": "spec#displayName",
 	},
 	"docker_reference": {
 		"header": "Docker Reference:",
@@ -6011,10 +6057,6 @@ field_templates = {
 		"field_colors": [("types", "namespace"), ("types", "generic")],
 		"field_separators": [("separators", "namespace")],
 	},
-	"pod_info_on_mount": {
-		"header": "Pod Info on Mount:",
-		"path": "spec#podInfoOnMount",
-	},
 	"pod_ip": {
 		"header": "Pod IP:",
 		"path": "status#podIP",
@@ -6093,10 +6135,6 @@ field_templates = {
 	},
 	"proxy_url": {
 		"header": "Proxy URL:",
-	},
-	"publisher": {
-		"header": "Publisher:",
-		"path": "spec#publisher",
 	},
 	"pod_status": {
 		"header": "Status:",
@@ -6256,10 +6294,6 @@ field_templates = {
 	},
 	"source_port": {
 		"header": "Source Port:",
-	},
-	"source_type": {
-		"header": "Source Type:",
-		"path": "spec#sourceType",
 	},
 	"start_time": {
 		"header": "Start Time:",
@@ -6431,12 +6465,6 @@ field_templates = {
 	"vlen": {
 		"header": "Length:",
 		"ralign": True,
-	},
-	"volume_lifecycle_modes": {
-		# [mode, ...]
-		"header": "Modes:",
-		"path": "spec#volumeLifecycleModes",
-		"generator": generator_list,
 	},
 	"vtype": {
 		"header": "Type:",
@@ -11961,6 +11989,7 @@ def delete_logs(uip, items = [], action = {}, values = {}, kind = None, title = 
 		ansible_delete_log(item)
 
 def command_hosts(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+	values.pop("_tagged_items", None)
 	hosts = iktlib.join_tuple_list(items, _tuple = "hostname", separator = (", ", "separator"))
 	msg = [("Executing playbook “", "action"), (action.get("description"), "argument"), ("“ on the following hosts: ", "action")] + hosts + [("\n", "action")]
 
@@ -13374,6 +13403,15 @@ infoviews = {
 			"Pod Info on Mount:": {
 				"path": "spec#podInfoOnMount",
 			},
+			"FS Group Policy:": {
+				"path": "spec#fsGroupPolicy",
+			},
+			"Requires Republish": {
+				"path": "spec#requiresRepublish",
+			},
+			"Storage Capacity": {
+				"path": "spec#storageCapacity",
+			},
 			"Volume Lifecycle Modes:": {
 				"extra_paths": "spec#volumeLifecycleModes",
 				"processor": field_processor_list,
@@ -14667,6 +14705,30 @@ infoviews = {
 		"field_indexes": {
 			"Normal": ["policy_type", "ports", "ipblock", "ipblock_exceptions", "pod_selector", "namespace_selector"],
 		},
+		"fields": {
+			"ports": {
+				"header": "Ports:",
+				"path": "ports",
+				"type": "list",
+				"formatter": "list",
+				"formatting": {
+					"field_colors": [
+						{
+							"type": "port",
+						},
+						{
+							"type": "protocol",
+						},
+					],
+					"field_separators": [
+						{
+							"type": "service",
+						},
+					],
+				},
+
+			},
+		},
 		"sortcolumn": "policy_type",
 		"infopad": {
 			"Pod Selector:": {
@@ -15125,7 +15187,7 @@ infoviews = {
 					{
 						"path": "name",
 						"pathtype": "value",
-					}
+					},
 				],
 			},
 		},
@@ -15534,6 +15596,10 @@ infoviews = {
 		},
 		"sortcolumn": "resource",
 		"infopad": {
+			"Scope Selector:": {
+				"path": "spec#scopeSelector#matchExpressions",
+				"processor": field_processor_match_expressions,
+			},
 		},
 		"listpad": {
 			"infogetter": get_rq_item_info,
@@ -16422,44 +16488,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("AppRepository", "kubeapps.com"),
 	},
-	# security.istio.io
-	"Authorization Policies": {
-		"commandline": ["authorizationpolicies", "authorizationpolicy", "authpols", "authpol"],
-		"group": "Istio",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("AuthorizationPolicy", "security.istio.io"),
-	},
-	# crd.projectcalico.org
-	"BGP Configurations": {
-		"commandline": ["bgpconfigurations", "bgpconfiguration"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("BGPConfiguration", "crd.projectcalico.org"),
-	},
-	# crd.projectcalico.org
-	"BGP Peers": {
-		"commandline": ["bgppeers", "bgppeer"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("BGPPeer", "crd.projectcalico.org"),
-	},
-	# operators.coreos.com
-	"Catalog Sources": {
-		"commandline": ["catalogsources", "catalogsource", "catsrcs", "catsrc"],
-		"group": "API & Extendability",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "display_name", "source_type", "publisher", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind":	("CatalogSource", "operators.coreos.com"),
-	},
 	# certificates.k8s.io
 	"Certificate Signing Requests": {
 		"commandline": ["certificatesigningrequests", "certificatesigningrequest", "certsignreqs", "certsignreq", "csrs", "csr"],
@@ -16523,16 +16551,6 @@ views_builtin = {
 		},
 		"kind": ("ClusterPolicy", "nvidia.com"),
 	},
-	# operators.coreos.com
-	"Cluster Service Versions": {
-		"commandline": ["clusterserviceversions", "clusterserviceversion", "csvs", "csv"],
-		"group": "API & Extendability",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "display_name", "version", "phase", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("ClusterServiceVersion", "operators.coreos.com"),
-	},
 	# metacontroller.k8s.io
 	"Composite Controllers": {
 		"commandline": ["compositecontrollers", "compositecontroller", "cctl", "cc"],
@@ -16551,15 +16569,6 @@ views_builtin = {
 		},
 		"kind": ("ConfigAuditReport", "aquasecurity.github.io"),
 	},
-	# storage.k8s.io
-	"CSI Drivers": {
-		"commandline": ["csidrivers", "csidriver", "csidrvs", "csidrv"],
-		"group": "Storage & Backups",
-		"field_indexes": {
-			"Normal": ["name", "attach_required", "pod_info_on_mount", "volume_lifecycle_modes", "age"],
-		},
-		"kind": ("CSIDriver", "storage.k8s.io"),
-	},
 	# apps.openshift.io
 	"Deployment Configurations": {
 		"commandline": ["deploymentconfigs", "deploymentconfig", "dc"],
@@ -16570,16 +16579,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("DeploymentConfig", "apps.openshift.io"),
 	},
-	# networking.istio.io
-	"Destination Rules": {
-		"commandline": ["destinationrules", "destinationrule", "destrules", "destrule", "dstrules", "dstrule"],
-		"group": "Istio",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "host", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("DestinationRule", "networking.istio.io"),
-	},
 	# etcd.database.coreos.com
 	#"Etcd Cluster": {
 	#	"commandline": ["etcdclusters", "etcdcluster", "etcds", "etcd"],
@@ -16589,34 +16588,6 @@ views_builtin = {
 	#	},
 	#	"kind": ("EtcdCluster", "etcd.database.coreos.com"),
 	#},
-	# core API
-	# networking.istio.io
-	"Gateways": {
-		"commandline": ["gateways", "gateway", "gws", "gw"],
-		"group": "Istio",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("Gateway", "networking.istio.io"),
-	},
-	# crd.projectcalico.org
-	"Global Network Policies": {
-		"commandline": ["globalnetworkpolicies", "globalnetworkpolicy", "globalnetpols", "globalnetpol"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("GlobalNetworkPolicy", "crd.projectcalico.org"),
-	},
-	# crd.projectcalico.org
-	"Global Network Sets": {
-		"commandline": ["globalnetworksets", "globalnetworkset", "globalnetsets", "globalnetset"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("GlobalNetworkSet", "crd.projectcalico.org"),
-	},
 	# integreatly.org
 	"Grafanas": {
 		"commandline": ["grafanas", "grafana"],
@@ -16679,15 +16650,6 @@ views_builtin = {
 			"Normal": ["namespace", "name", "reference", "targets", "minpods", "maxpods", "current_replicas_tuple", "age"],
 		},
 		"kind": ("HorizontalPodAutoscaler", "autoscaling"),
-	},
-	# crd.projectcalico.org
-	"Host Endpoints": {
-		"commandline": ["hostendpoints", "hostendpoint", "hostep"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("HostEndpoint", "crd.projectcalico.org"),
 	},
 	# user.openshift.io
 	"Identities": {
@@ -16806,15 +16768,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("KubeVirt", "kubevirt.io"),
 	},
-	# core API
-	"Limit Ranges": {
-		"commandline": ["limitranges", "limitrange", "limits", "lr"],
-		"group": "Policy",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "created_at"],
-		},
-		"kind": ("LimitRange", ""),
-	},
 	# traefik.containo.us
 	"Middlewares": {
 		"commandline": ["middlewares", "middleware"],
@@ -16846,16 +16799,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("MPIJob", "kubeflow.org"),
 	},
-	# networking.k8s.io
-	"Network Policies": {
-		"commandline": ["networkpolicies", "networkpolicy", "netpols", "netpol"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "pod_selector", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("NetworkPolicy", "networking.k8s.io"),
-	},
 	# opentelemetry.io
 	"OpenTelemetry Collectors": {
 		"commandline": ["opentelemetrycollectors", "opentelemetrycollectors", "otelcols", "otelcol"],
@@ -16875,25 +16818,6 @@ views_builtin = {
 	#	},
 	#	"kind": ("Operator", "operators.coreos.com"),
 	#},
-	# operators.coreos.com
-	"Operator Groups": {
-		"commandline": ["operatorgroups", "operatorgroup", "og"],
-		"group": "API & Extendability",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("OperatorGroup", "operators.coreos.com"),
-	},
-	# packages.operators.coreos.com
-	"Package Manifests": {
-		"commandline": ["packagemanifests", "packagemanifest", "pkgmanifests", "pkgmanifest"],
-		"group": "API & Extendability",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "catalogue", "age"],
-		},
-		"kind": ("PackageManifest", "packages.operators.coreos.com"),
-	},
 	# kilo.squat.ai
 	"Peers": {
 		"commandline": ["peers", "peer"],
@@ -16939,15 +16863,6 @@ views_builtin = {
 			"Normal": ["namespace", "name", "age"],
 		},
 		"kind": ("Reaper", "reaper.cassandra-reaper.io"),
-	},
-	# core API
-	"Resource Quotas": {
-		"commandline": ["resourcequotas", "resourcequota", "quotas", "quota", "rq"],
-		"group": "Policy",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age", "request", "limit"],
-		},
-		"kind": ("ResourceQuota", ""),
 	},
 	# policy.linkerd.io
 	"Server Authorizations": {
@@ -17006,15 +16921,6 @@ views_builtin = {
 		},
 		"sortcolumn": "namespace",
 		"kind": ("ServiceProfile", "linkerd.io"),
-	},
-	# networking.istio.io
-	"Sidecars": {
-		"commandline": ["sidecars", "sidecar"],
-		"group": "Istio",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("Sidecar", "networking.istio.io"),
 	},
 	# dex.coreos.com
 	"Signing Keys": {
@@ -17166,7 +17072,7 @@ views = {**views_special, **views_builtin}
 def populate_views():
 	global views
 
-	prefix_internal = deep_get(iktconfig, "Internal#prefix_internal", False)
+	prefix_view_files = deep_get(iktconfig, "Internal#prefix_view_files", False)
 
 	viewdir = os.path.join(IKTDIR, VIEW_DIRNAME)
 	if not os.path.isdir(viewdir):
@@ -17367,7 +17273,7 @@ def populate_views():
 				# Replace existing listviews with the same name
 				views.pop(name, None)
 
-				if prefix_internal == True:
+				if prefix_view_files == True:
 					name = f"*{name}"
 
 				# Add the new view

@@ -14,6 +14,13 @@ listview:
       header: "API-Group:"
       paths:
       - path: "spec#group"
+    created_at:
+      header: "Created At:"
+      paths:
+      - path: ["metadata#creationTimestamp"]
+        type: timestamp
+      formatter: timestamp
+      default: -1
   sortcolumn: api_group_crd
   shortcuts:
     "Show Resource List":

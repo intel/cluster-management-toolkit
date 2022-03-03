@@ -1,0 +1,29 @@
+kind: ResourceQuota
+default_command: resourcequotas
+command:
+- quotas
+- quota
+- rq
+listview:
+  name: Resource Quotas
+  group: Policy
+  field_indexes:
+    Normal: [namespace, name, age, request, limit]
+  fields:
+    request:
+      header: "Request:"
+      paths:
+      - path: "spec#hard"
+        pathtype: key_value
+        when: 
+          key_notstartswith: "limits."
+      formatter: list
+    limit:
+      header: "Limit:"
+      paths:
+      - path: "spec#hard"
+        pathtype: key_value
+        when: 
+          key_startswith: "limits."
+      formatter: list
+  sortcolumn: namespace

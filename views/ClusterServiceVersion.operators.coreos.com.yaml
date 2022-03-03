@@ -1,0 +1,25 @@
+kind: ClusterServiceVersion
+api_family: operators.coreos.com
+default_command: clusterserviceversions
+command:
+- csvs
+- csv
+listview:
+  name: Cluster Service Versions
+  group: API & Extendability
+  field_indexes:
+    Normal: [namespace, name, display_name, version, phase, age]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "spec#displayName"
+      type: str
+    version:
+      header: "Version:"
+      path: "spec#version"
+      type: version
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: str
+  sortcolumn: namespace

@@ -1,0 +1,23 @@
+kind: CSIDriver
+api_family: storage.k8s.io
+default_command: csidrivers
+listview:
+  name: CSI Drivers
+  group: Storage & Backups
+  field_indexes:
+    Normal: [name, attach_required, pod_info_on_mount, volume_lifecycle_modes, age]
+  fields:
+    attach_required:
+      header: "Attach Required:"
+      path: "spec#attachRequired"
+      type: bool
+    pod_info_on_mount:
+      header: "Pod Info on Mount:"
+      path: "spec#podInfoOnMount"
+      type: bool
+    volume_lifecycle_modes:
+      header: "Modes:"
+      paths:
+      - path: "spec#volumeLifecycleModes"
+        pathtype: list
+      formatter: list
