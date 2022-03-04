@@ -1,0 +1,12 @@
+kind: PodMonitor
+api_family: monitoring.coreos.com
+default_command: podmonitors 
+command:
+- podmons
+- podmon
+listview:
+  name: Pod Monitors
+  group: Monitoring
+  field_indexes:
+    Normal: [namespace, name, age]
+  sortcolumn: namespace

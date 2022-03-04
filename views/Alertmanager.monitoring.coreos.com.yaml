@@ -7,8 +7,13 @@ listview:
   name: Alertmanagers
   group: Monitoring
   field_indexes:
-    Normal: [namespace, name, version] #, replicas, age]
+    Normal: [namespace, name, version, replicas, age]
   fields:
+    replicas:
+      header: "Replicas:"
+      path: "spec#replicas"
+      type: int
+      align: right
     version:
       header: "Version:"
       path: "spec#version"

@@ -13476,6 +13476,10 @@ infoviews = {
 			"Scope:": {
 				"path": "spec#scope",
 			},
+			"Stored Versions:": {
+				"extra_paths": "status#storedVersions",
+				"processor": field_processor_list,
+			},
 		},
 		"shortcuts": {
 			"Custom Resource List View": {
@@ -16734,15 +16738,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("IngressRouteUDP", "traefik.containo.us"),
 	},
-	#"Install Plans": {
-	#	"commandline": ["installplans", "installplan", "ip"],
-	#	"group": "API & Extendability",
-	#	"field_indexes": {
-	#		"fields": FIXME,
-	#	},
-	#	"sortcolumn": "namespace",
-	#	"kind": ("InstallPlan", "operators.coreos.com"),
-	#},
 	# jaegertracing.io
 	"Jaegers": {
 		"commandline": ["jaegers", "jaeger"],
@@ -16814,15 +16809,6 @@ views_builtin = {
 		},
 		"kind": ("OpenTelemetryCollector", "opentelemetry.io"),
 	},
-	# operators.coreos.com
-	#"Operators": {
-	#	"commandline": ["operators", "operator"],
-	#	"group": "API & Extendability",
-	#	"field_indexes": {
-	#		"Normal": FIXME,
-	#	},
-	#	"kind": ("Operator", "operators.coreos.com"),
-	#},
 	# kilo.squat.ai
 	"Peers": {
 		"commandline": ["peers", "peer"],
@@ -16918,25 +16904,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("ServiceProfile", "linkerd.io"),
 	},
-	# dex.coreos.com
-	"Signing Keys": {
-		"commandline": ["signingkeies", "signingkeys", "signingkey", "sigkeys", "sigkey"],
-		"group": "Dex",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("SigningKey", "dex.coreos.com"),
-	},
-	# operators.coreos.com
-	#"Subscriptions": {
-	#	"commandline": ["subscriptions", "subscription", "subs", "sub"],
-	#	"group": "API & Extendability",
-	#	"field_indexes": {
-	#		"Normal": ["namespace", "name", "catalogsource"],
-	#	},
-	#	"sortcolumn": "namespace",
-	#	"kind": ("Subscription", "operators.coreos.com"),
-	#},
 	# crd.antrea.io
 	"Tiers": {
 		"commandline": ["tiers", "tr"],

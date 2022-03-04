@@ -764,6 +764,15 @@ class KubernetesHelper:
 			"api": "priorityclasses",
 			"namespaced": False,
 		},
+		# scheduling.sigs.k8s.io
+		("ElasticQuota", "scheduling.sigs.k8s.io"): {
+			"api_family": ["apis/scheduling.sigs.k8s.io/v1alpha1/"],
+			"api": "elasticquotas",
+		},
+		("PodGroup", "scheduling.sigs.k8s.io"): {
+			"api_family": ["apis/scheduling.sigs.k8s.io/v1alpha1/"],
+			"api": "podgroups",
+		},
 		# snapshot.storage.k8s.io
 		("VolumeSnapshot", "snapshot.storage.k8s.io"): {
 			"api_family": ["apis/snapshot.storage.k8s.io/v1beta1/"],
@@ -1558,6 +1567,10 @@ class KubernetesHelper:
 			"api_family": ["apis/monitoring.coreos.com/v1/"],
 			"api": "alertmanagers",
 		},
+		("AlertmanagerConfig", "monitoring.coreos.com"): {
+			"api_family": ["apis/monitoring.coreos.com/v1alpha1/"],
+			"api": "alertmanagerconfigs",
+		},
 		("PodMonitor", "monitoring.coreos.com"): {
 			"api_family": ["apis/monitoring.coreos.com/v1/"],
 			"api": "podmonitors",
@@ -1792,6 +1805,16 @@ class KubernetesHelper:
 			"api_family": ["apis/route.openshift.io/v1/"],
 			"api": "routes",
 		},
+		# scheduling.volcano.sh
+		("PodGroup", "scheduling.volcano.sh"): {
+			"api_family": ["apis/scheduling.volcano.sh/v1beta1/"],
+			"api": "podgroups",
+		},
+		("Queue", "scheduling.volcano.sh"): {
+			"api_family": ["apis/scheduling.volcano.sh/v1beta1/"],
+			"api": "queues",
+			"namespaced": False,
+		},
 		# security.istio.io
 		("AuthorizationPolicy", "security.istio.io"): {
 			"api_family": ["apis/security.istio.io/v1beta1/"],
@@ -2012,21 +2035,16 @@ class KubernetesHelper:
 		#	"api": "useridentitymappings",
 		#	"namespaced": False,
 		#},
-		# scheduling.volcano.sh
-		("PodGroup", "scheduling.volcano.sh"): {
-			"api_family": ["apis/scheduling.volcano.sh/v1beta1/"],
-			"api": "podgroups",
-		},
-		("Queue", "scheduling.volcano.sh"): {
-			"api_family": ["apis/scheduling.volcano.sh/v1beta1/"],
-			"api": "queues",
-			"namespaced": False,
-		},
 		# webconsole.openshift.io
 		("OpenShiftWebConsoleConfig", "webconsole.openshift.io"): {
 			"api_family": ["apis/webconsole.openshift.io/v1/"],
 			"api": "openshiftwebconsoleconfigs",
 			"namespaced": False,
+		},
+		# topology.node.k8s.io
+		("NodeResourceTopology", "topology.node.k8s.io"): {
+			"api_family": ["apis/topology.node.k8s.io/v1alpha1/"],
+			"api": "noderesourcetopologies",
 		},
 		# xgboostjob.kubeflow.org
 		("XGBoostJob", "xgboostjob.kubeflow.org"): {
