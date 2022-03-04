@@ -335,6 +335,11 @@ def format_yaml(objects, override_formatting = {}):
 			split_dump[0] = split_dump[0][1:-1]
 
 		for line in split_dump:
+			truncated = False
+
+			if len(line) >= 16384 - len(" [...] (Truncated)") - 1:
+				line = line[0:16384 - len(" [...] (Truncated)") - 1]
+				truncated = True
 			# This allows us to use the yaml formatter for json too
 			if first == True:
 				first = False
@@ -344,6 +349,8 @@ def format_yaml(objects, override_formatting = {}):
 				continue
 
 			tmpline = format_yaml_line(line, override_formatting = override_formatting)
+			if truncated == True:
+				tmpline += [(" [...] (Truncated)", ("types", "yaml_key_error"))]
 			dumps.append(tmpline)
 
 		if i < len(objects) - 1:
