@@ -22,4 +22,20 @@ listview:
       header: "Phase:"
       path: "status#phase"
       type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            Failed:
+              field_colors:
+              - context: main
+                type: status_not_ok
+            Pending:
+              field_colors:
+              - context: main
+                type: status_pending
+            Succeeded:
+              field_colors:
+              - context: main
+                type: status_ok
   sortcolumn: namespace
