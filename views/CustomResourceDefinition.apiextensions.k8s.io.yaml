@@ -8,12 +8,13 @@ listview:
   name: Custom Resource Definitions
   group: API & Extendability
   field_indexes:
+    Wide: [name, kind, api_group_crd, scope, created_at]
     Normal: [name, api_group_crd, created_at]
   fields:
     api_group_crd:
       header: "API-Group:"
-      paths:
-      - path: "spec#group"
+      path: "spec#group"
+      type: str
     created_at:
       header: "Created At:"
       paths:
@@ -21,6 +22,14 @@ listview:
         type: timestamp
       formatter: timestamp
       default: -1
+    kind:
+      header: "Kind:"
+      path: "spec#names#kind"
+      type: str
+    scope:
+      header: "Scope:"
+      path: "spec#scope"
+      type: str
   sortcolumn: api_group_crd
   shortcuts:
     "Show Resource List":

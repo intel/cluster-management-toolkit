@@ -1,0 +1,19 @@
+kind: CiliumExternalWorkload
+api_family: cilium.io
+default_command: ciliumexternalworkloads
+command:
+- cew
+listview:
+  name: Cilium External Workloads
+  group: CNI
+  field_indexes:
+    Normal: [name, cilium_id, ip, age]
+  fields:
+    cilium_id:
+      header: "Cilium ID:"
+      path: "status#id"
+      type: int
+    ip:
+      header: "IP:"
+      path: "status#ip"
+      type: str
