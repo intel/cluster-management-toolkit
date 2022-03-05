@@ -1679,6 +1679,9 @@ class UIProps:
 	#
 	# Pass -1 as width to use logpadminwidth
 	def init_logpad(self, width, ypos, xpos, timestamps = True):
+		self.match_index = None
+		self.search_matches = set()
+
 		self.logpadheight = self.maxy - ypos - 2
 		self.recalculate_logpad_xpos(tspadxpos = xpos, timestamps = timestamps)
 		if timestamps == True:
@@ -1934,46 +1937,42 @@ class UIProps:
 		self.curypos = newcurypos
 		self.yoffset = newyoffset
 
-	# Find the next line that matches the search criteria
-	def find_next_line_by_searchkey(self, messages, searchkey):
-		y = 0
-		newoffset = self.yoffset
+	def find_all_matches_by_searchkey(self, messages, searchkey):
+		self.match_index = None
+		self.search_matches.clear()
 
-		if searchkey == "":
+		if len(searchkey) == 0:
 			return
 
-		for message in messages:
+		for y in range(0, len(messages)):
 			# The messages can either be raw strings,
 			# or themearrays, so we need to flatten them to just text first
-			message = themearray_get_string(message)
-			# We're only searching forward
-			if y > self.yoffset and searchkey in message:
-				newoffset = y
-				break
-			y += 1
-
-		self.yoffset = min(newoffset, self.maxyoffset)
-
-	# Find the prev line that matches the search criteria
-	def find_prev_line_by_searchkey(self, messages, searchkey):
-		y = 0
-		newoffset = self.yoffset
-
-		if searchkey == "":
-			return
-
-		for message in messages:
-			# The messages can either be raw strings,
-			# or themearrays, so we need to flatten them to just text first
-			message = themearray_get_string(message)
-			# We're only searching backward
-			if y == self.yoffset:
-				break
+			message = themearray_get_string(messages[y])
 			if searchkey in message:
-				newoffset = y
-			y += 1
+				self.search_matches.add(y)
 
-		self.yoffset = min(newoffset, self.maxyoffset)
+	def find_next_match(self):
+		start = self.match_index
+		if start is None:
+			start = self.yoffset
+		for y in range(start, self.loglen):
+			if y in self.search_matches:
+				if self.match_index is None or self.match_index != y:
+					self.match_index = y
+					self.yoffset = min(y, self.maxyoffset)
+					break
+
+	def find_prev_match(self):
+		end = self.match_index
+		if end is None:
+			end = self.yoffset
+		for y in reversed(range(0, end)):
+			if y in self.search_matches:
+				# We don't want to return the same match over and over...
+				if self.match_index is None or self.match_index != y:
+					self.match_index = y
+					self.yoffset = min(y, self.maxyoffset)
+					break
 
 	# Find the next line that has severity > NOTICE
 	def next_line_by_severity(self, severities):
@@ -2547,13 +2546,16 @@ class UIProps:
 				self.refresh = True
 				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, "Find: ")
 				if searchkey is None or searchkey == "":
+					self.match_index = None
+					self.search_matches.clear()
 					return retval.MATCH
 
-				self.find_next_line_by_searchkey(self.messages, searchkey)
-				# For use when searching for next match
-				self.searchkey = searchkey
+				self.find_all_matches_by_searchkey(self.messages, searchkey)
+				self.find_next_match()
 			return retval.MATCH
 		elif c == ord("?"):
+			self.search_matches.clear()
+
 			if self.listpad is not None:
 				if self.listpadheight < 2:
 					return retval.MATCH
@@ -2571,11 +2573,12 @@ class UIProps:
 				self.refresh = True
 				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, "Find: ")
 				if searchkey is None or searchkey == "":
+					self.match_index = None
+					self.search_matches.clear()
 					return retval.MATCH
 
-				self.find_prev_line_by_searchkey(self.messages, searchkey)
-				# For use when searching for next match
-				self.searchkey = searchkey
+				self.find_all_matches_by_searchkey(self.messages, searchkey)
+				self.find_next_match()
 			return retval.MATCH
 		elif c == ord("n"):
 			if self.listpad is not None:
@@ -2587,14 +2590,11 @@ class UIProps:
 
 				self.find_next_by_sortkey(self.info, self.searchkey)
 			elif self.logpad is not None:
-				if self.maxyoffset == 0 or self.continuous_log:
+				if self.maxyoffset == 0 or self.continuous_log == True or len(self.search_matches) == 0:
 					return retval.MATCH
 
 				self.refresh = True
-				if self.searchkey is None or self.searchkey == "":
-					return retval.MATCH
-
-				self.find_next_line_by_searchkey(self.messages, self.searchkey)
+				self.find_next_match()
 			return retval.MATCH
 		elif c == ord("p"):
 			if self.listpad is not None:
@@ -2606,14 +2606,11 @@ class UIProps:
 
 				self.find_prev_by_sortkey(self.info, self.searchkey)
 			elif self.logpad is not None:
-				if self.maxyoffset == 0 or self.continuous_log:
+				if self.maxyoffset == 0 or self.continuous_log == True or len(self.search_matches) == 0:
 					return retval.MATCH
 
 				self.refresh = True
-				if self.searchkey is None or self.searchkey == "":
-					return retval.MATCH
-
-				self.find_prev_line_by_searchkey(self.messages, self.searchkey)
+				self.find_prev_match()
 			return retval.MATCH
 		elif c == ord("a"):
 			if self.annotations is not None:

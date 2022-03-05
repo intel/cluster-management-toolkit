@@ -9651,6 +9651,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 	viewref = infoviews[view]
 
+	searchmatch = []
+
 	objgetter = deep_get(viewref, "objgetter")
 	if objgetter is not None:
 		obj = objgetter(obj)
@@ -9984,7 +9986,17 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			uip.logpad.erase()
 			maxx = 0
 			for y in range(0, min(uip.logpadheight, len(messages))):
-				ypos, xpos = uip.addthemearray(logpad, messages[uip.yoffset + y], y = y, x = 0)
+				message = messages[uip.yoffset + y]
+				current_match = False
+				if len(uip.search_matches) > 0:
+					line_match = uip.yoffset + y in uip.search_matches
+					match_prefix = [("separators", "matchbullet")]
+					if line_match == False:
+						match_prefix = [("".ljust(len(curses_helper.themearray_get_string(match_prefix))), ("types", "generic"))]
+					if uip.match_index is not None and uip.yoffset + y == uip.match_index:
+						current_match = True
+					message = match_prefix + message
+				ypos, xpos = uip.addthemearray(logpad, message, y = y, x = 0, selected = current_match)
 				maxx = max(maxx, xpos)
 			uip.resize_logpad(uip.maxy - uip.logpadypos - 2, maxx)
 
@@ -12357,6 +12369,7 @@ def populate_playbooklist(context = None, actions = [], action_list = {}, contro
 available_api_families = []
 
 def selectwindow(stdscr, uip, refresh_apis = False):
+	global views
 	global available_api_families
 	global defaultview
 	hide_unavailable = deep_get_with_fallback(iktconfig, ["Selector#hide_unavailable_apis", "Global#hide_unavailable_apis"], True)
@@ -12382,6 +12395,9 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 
 	if len(available_api_families) == 0 or refresh_apis == True:
 		notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Refreshing list of available APIs")
+		# First repopulate the list of views, on the off change that a view file has been added
+		views = {**views_special, **views_builtin}
+		populate_views()
 		available_api_families, status = kh.get_available_api_families()
 		del notice
 		curses.doupdate()

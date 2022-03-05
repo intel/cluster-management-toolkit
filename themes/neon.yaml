@@ -97,6 +97,7 @@ color_pairs_curses:
   widgetbright: [[white, bright], [blue, normal]]
   widgetnotice: [[yellow, normal], [blue, normal]]
   widgetbullet: [[yellow, normal], [blue, normal]]
+  matchbullet: [[magenta, normal], [black, normal]]
   widgetdefault:
     unselected: [[white, normal], [blue, normal]]
     selected: [[blue, bright], [white, normal]]
@@ -447,8 +448,12 @@ color_pairs_curses:
     selected: [[black, bright], [white, normal]]
   separator_ini_key_separator: [[white, bright], [black, normal]]
   separator_toml_key_separator: [[white, bright], [black, normal]]
-  separator_yaml_list: [[white, bright], [black, normal]]
-  separator_yaml_key_separator: [[white, bright], [black, normal]]
+  separator_yaml_list:
+    unselected: [[white, bright], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  separator_yaml_key_separator:
+    unselected: [[white, bright], [black, normal]]
+    selected: [[black, normal], [white, normal]]
   separator_pad:
     unselected: [[white, normal], [black, normal]]
     selected: [[black, normal], [white, normal]]
@@ -467,13 +472,21 @@ color_pairs_curses:
   type_toml_table: [[cyan, bright], [black, normal]]
   type_toml_key: [[blue, bright], [black, normal]]
   type_toml_value: [[white, normal], [black, normal]]
-  type_yaml_comment: [[black, bright], [black, normal]]
-  type_yaml_key: [[cyan, bright], [black, normal]]
+  type_yaml_comment:
+    unselected: [[black, bright], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_yaml_key:
+    unselected: [[cyan, bright], [black, normal]]
+    selected: [[cyan, normal], [white, normal]]
   type_yaml_key_error:
     unselected: [[red, normal], [black, normal]]
     selected: [[red, normal], [white, normal]]
-  type_yaml_value: [[white, normal], [black, normal]]
-  type_yaml_reference: [[magenta, normal], [black, normal]]
+  type_yaml_value:
+    unselected: [[white, normal], [black, normal]]
+    selected: [[black, normal], [white, normal]]
+  type_yaml_reference:
+    unselected: [[magenta, normal], [black, normal]]
+    selected: [[magenta, normal], [white, normal]]
   type_xml_comment: [[cyan, normal], [black, normal]]
   type_xml_tag: [[cyan, bright], [black, normal]]
   type_xml_declaration: [[cyan, bright], [black, normal]]
@@ -840,6 +853,7 @@ separators:
   ipblocks: [["IPBlocks", separator_ipblocks]]
   secret_type: [["/", separator_secret_type]]
   widgetbullet: [["• ", [widgetbullet, bold]]]
+  matchbullet: [["◉ ", matchbullet]]
   logbullet: [["• ", [severity_debug, bold]]]
   statusbar: [[" ┃ ", [statusbar_default, dim]]]
   statusbar_compact: [["┃", [statusbar_default, dim]]]
