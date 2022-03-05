@@ -5023,7 +5023,16 @@ def get_list_fields(obj, **kwargs):
 					raise Exception(f"Unhandled type {type(_value)} for {field}={value}")
 				tmp.append(value)
 			vlist.append(tmp)
+	return vlist
 
+def get_strings_from_string(obj, **kwargs):
+	vlist = []
+	if "path" in kwargs:
+		path = deep_get(kwargs, "path")
+		tmp = deep_get(obj, path, [])
+		if tmp is not None and len(tmp) > 0:
+			for line in split_msg(tmp):
+				vlist.append([line])
 	return vlist
 
 def get_image_list(obj, **kwargs):
@@ -13243,9 +13252,9 @@ infoviews = {
 			"Display Name:": {
 				"path": "spec#displayName",
 			},
-			"Description:": {
-				"path": "spec#description",
-			},
+			#"Description:": {
+			#	"path": "spec#description",
+			#},
 			"Keywords:": {
 				"extra_paths": "spec#keywords",
 				"processor": field_processor_list,
@@ -13261,6 +13270,17 @@ infoviews = {
 			},
 		},
 		"shortcuts": {
+			"Description": {
+				"shortcut": ord("D"),
+				"helptext": ("[Shift] + D", "Show description"),
+				"widget": "windowwidget",
+				"title": "Description:",
+				"itemgetter": get_strings_from_string,
+				"itemgetter_args": {
+					"path": "spec#description",
+				},
+				"formatting": [("windowwidget", "default")],
+			},
 			"Maintainers": {
 				"shortcut": ord("m"),
 				"helptext": ("M", "Show maintainers"),
