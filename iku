@@ -17254,7 +17254,11 @@ def setupui(stdscr):
 	# Disable CTRL+C, CTRL+Z, etc.
 	curses.raw()
 	# Enable mouse support
-	curses_helper.set_mousemask(-1)
+	enable_mouse = deep_get(iktconfig, "Mouse#enable", True)
+	if enable_mouse == True:
+		curses_helper.set_mousemask(-1)
+	else:
+		curses_helper.set_mousemask(0)
 	curses_helper.init_curses()
 
 	while True:
