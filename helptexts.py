@@ -43,6 +43,8 @@ listviewheader = [
 	("[F2]", "Switch main view"),
 	("[F3]", "Switch main view (recheck available API resources)"),
 	("[F5]", "Refresh list"),
+	("[F7]", "Perform Cluster-wide actions"),
+	("[F12]", "Show information about the program"),
 	("", ""),
 ]
 
@@ -73,15 +75,20 @@ infoviewheader = [
 	("[F2]", "Switch main view"),
 	("[F3]", "Switch main view (recheck available API resources)"),
 	("[F5]", "Refresh information"),
+	("[F12]", "Show information about the program"),
 ]
 
 irreversiblelistmovement = [
+	("[Left]", "Scroll left"),
+	("[Right]", "Scroll right"),
 	("[Down]", "Move to next row"),
 	("[Up]", "Move to previous row"),
 	("[Shift] + [Left]", "Change sortcolumn"),
 	("[Shift] + [Right]", "Change sortcolumn"),
 	("[Tab]", "Jump to next group in sortcolumn"),
 	("[Shift] + [Tab]", "Jump to previous group in sortcolumn"),
+	("§", "Jump to next sortcolumn"),
+	("½", "Jump to previous sortcolumn"),
 	("/", "Search forwards within column"),
 	("N", "Search forwards for next match within column"),
 	("?", "Search backwards within column"),
@@ -147,10 +154,6 @@ clusteroverview = [
 	("[Shift] + [End]", "Jump to last row of resource map"),
 ]
 
-# XXX: Until the generator is used by the list view too just use this
-genericlist = listviewheader + [
-] + spacer + listmovement
-
 configmapdata = infoviewheader + spacer + [
 	("[Shift] + R", "Toggle syntax highlighting (default: On)"),
 ] + spacer + logmovement
@@ -177,6 +180,7 @@ containerinfo = [
 	("", "  Note: when tracking the log all manual movement is disabled."),
 	("[F5]", "Refresh log"),
 	("[F8]", "Load full log (Potentially very slow) (Default: limited)"),
+	("[F12]", "Show information about the program"),
 	("", ""),
 	("[Shift] + I", "Open info page for container image"),
 	("[Shift] + R", "Toggle log parsing (default: On)"),

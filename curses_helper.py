@@ -721,7 +721,13 @@ def themearray_to_strarray(key, context = "main", selected = False):
 def strarray_extract_string(strarray):
 	string = ""
 	for _string, _attr in strarray:
-		string += _string
+		if type(_string) == str and type(_attr) == str:
+			tmp = theme[_string][_attr][0]
+			if type(tmp) == list:
+				tmp = tmp[0]
+			string += tmp
+		else:
+			string += _string
 	return string
 
 def strarray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
@@ -1258,6 +1264,8 @@ class UIProps:
 		self.headerpadheight = 0
 		self.headerpadwidth = 0
 		self.headerpad = None
+		# This is a list of the xoffset for all headers in listviews
+		self.tabstops = []
 		self.listpadypos = 0
 		self.listpadxpos = 0
 		self.listpadheight = 0
@@ -2527,6 +2535,31 @@ class UIProps:
 				self.prev_by_sortkey(self.info)
 			elif self.logpad is not None and self.continuous_log == False:
 				self.prev_line_by_severity(self.severities)
+			return retval.MATCH
+		elif c == ord("§"):
+			# For listpads this jumps to the next column
+			if self.listpad is not None:
+				# In case the list empty for some reason
+				tabstop = 0
+				curxoffset = self.xoffset
+				# Find next tabstop
+				for tabstop in self.tabstops:
+					if curxoffset < tabstop:
+						if tabstop <= self.maxxoffset:
+							self.move_xoffset_abs(tabstop)
+						break
+			return retval.MATCH
+		elif c == ord("½"):
+			# For listpads this jumps to the previous column
+			if self.listpad is not None:
+				# In case the list empty for some reason
+				tabstop = 0
+				curxoffset = self.xoffset
+				# Find previous tabstop
+				for tabstop in reversed(self.tabstops):
+					if curxoffset > tabstop:
+						self.move_xoffset_abs(tabstop)
+						break
 			return retval.MATCH
 		elif c == ord("") or c == ord("/"):
 			if self.listpad is not None:

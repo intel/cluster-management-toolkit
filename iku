@@ -5335,14 +5335,22 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 	headerarray = []
 	first = True
 
+	tabstops = []
+
+	tabstop = 0
+
 	# Is the list taggable?
 	if is_taggable:
+		tabstops.append(tabstop)
 		headerarray.append(("separators", "tag"))
+		tabstop = len(strarray_extract_string(headerarray))
 
 	for field in field_list:
 		generator = field_list[field].get("generator")
 		if generator is None:
 			continue
+
+		tabstops.append(tabstop)
 
 		theme = get_theme_ref()
 		if uip.get_sortcolumn() == field:
@@ -5363,6 +5371,8 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 		if first == False:
 			headerarray.append(("".ljust(len(themearray_extract_string("pad", context = "separators")) - len(sort_direction_char)), curses.A_NORMAL))
 
+		tabstop = len(strarray_extract_string(headerarray))
+
 		# This tells the length of the alignment of the header
 		fieldlen = deep_get(field_list, f"{field}#fieldlen")
 		header = deep_get(field_list, f"{field}#header")
@@ -5379,8 +5389,13 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 			headerarray.append(("".ljust(fieldlen - len(header)), curses.A_NORMAL))
 		first = False
 
+	# We've got to account for the last entry
+	if len(field_list) > 0:
+		tabstops.append(tabstop)
+
 	# We've processed all fields, time to output the header
 	uip.addthemearray(headerpad, headerarray, y = 0, x = 0)
+	uip.tabstops = tabstops
 
 def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable = False, is_tagged = False):
 	first = True
