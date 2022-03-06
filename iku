@@ -335,7 +335,7 @@ def format_timestamp(timestamp, localtimezone = False):
 
 	return stringarray
 
-def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separators", "list"), field_separators = [("separators", "field")], field_colors = [("types", "generic")], ellipsise = -1, ellipsis = ("separators", "ellipsis"), field_prefixes = None, field_suffixes = None):
+def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separators", "list"), field_separators = [("separators", "field")], field_colors = [("types", "generic")], ellipsise = -1, ellipsis = ("separators", "ellipsis"), field_prefixes = None, field_suffixes = None, mapping = {}):
 	array = []
 	totallen = 0
 
@@ -383,11 +383,13 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 
 			if string == "<none>":
 				formatting = ("types", "none", selected)
+				formatted_string = (string, formatting)
 			elif string == "<not ready>":
 				formatting = color_status_group(stgroup.NOT_OK, selected)
+				formatted_string = (string, formatting)
 			else:
 				context, attr_ref = field_colors[min(i, len(field_colors) - 1)]
-				formatting = (context, attr_ref, selected)
+				formatted_string, __string = map_value(string, selected = selected, default_field_color = (context, attr_ref), mapping = mapping)
 
 			# OK, we know now that we'll be appending the field, so do the prefix
 			if field_prefixes is not None and i < len(field_prefixes):
@@ -395,7 +397,7 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 					_context, _key = prefix
 					totallen += len(themearray_extract_string(_key, context = _context))
 					array.append((prefix, selected))
-			array.append((string, formatting))
+			array.append(formatted_string)
 			totallen += len(string)
 			# And now the suffix
 			if field_suffixes is not None and i < len(field_suffixes):
@@ -430,7 +432,10 @@ def generator_list(obj, field, fieldlen, pad, ralign, selected, **formatting):
 
 	field_prefixes = deep_get(formatting, "field_prefixes")
 	field_suffixes = deep_get(formatting, "field_prefixes")
-	return format_list(items, fieldlen, pad, ralign, selected, item_separator = item_separator, field_separators = field_separators, field_colors = field_colors, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
+
+	mapping = deep_get(formatting, "mapping", {})
+
+	return format_list(items, fieldlen, pad, ralign, selected, item_separator = item_separator, field_separators = field_separators, field_colors = field_colors, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes, mapping = mapping)
 
 def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	items = getattr(obj, field)
@@ -693,11 +698,18 @@ def generator_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
 
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
-def generator_value_mapper(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	value = getattr(obj, field)
-	ranges = deep_get(formatting, "mapping#ranges", [])
-	mapping = deep_get(formatting, "mapping#mappings", {})
-	match_case = deep_get(formatting, "mapping#match_case", True)
+# references is unused for now, but will eventually be used to compare against
+# reference values (such as using other paths to get the range, instead of getting
+# it static from formatting#mapping)
+def map_value(value, references = None, selected = False, default_field_color = ("types", "generic"), mapping = {}):
+	# If we lack a mapping, use the default color for this field
+	if len(mapping) == 0:
+		context, attr_ref = default_field_color
+		return (value, (context, attr_ref, selected)), value
+
+	ranges = deep_get(mapping, "ranges", [])
+	match_case = deep_get(mapping, "match_case", True)
+	_mapping = deep_get(mapping, "mappings", {})
 
 	field_colors = None
 
@@ -721,12 +733,12 @@ def generator_value_mapper(obj, field, fieldlen, pad, ralign, selected, **format
 		string = str(value)
 		_string = string
 		if match_case is False:
-			if string in mapping and string.lower() in mapping and string != string.lower():
-				raise Exception("Field {field}: when using match_case = False the mapping cannot contain keys that only differ in case")
-			for key in mapping:
+			if string in _mapping and string.lower() in _mapping and string != string.lower():
+				raise Exception("Field {field}: when using match_case == False the mapping cannot contain keys that only differ in case")
+			for key in _mapping:
 				if key.lower() == string.lower():
 					_string = key
-		field_colors = deep_get(mapping, f"{_string}#field_colors")
+		field_colors = deep_get(_mapping, f"{_string}#field_colors")
 	else:
 		raise Exception("Unknown type {type(value)} for mapping/range")
 
@@ -737,8 +749,16 @@ def generator_value_mapper(obj, field, fieldlen, pad, ralign, selected, **format
 	if attr_ref is None:
 		context, attr_ref = ("types", "generic")
 	formatting = (context, attr_ref, selected)
+	return (string, formatting), string
+
+def generator_value_mapper(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	value = getattr(obj, field)
+
+	default_field_color = deep_get(formatting, "field_colors", [("types", "generic")])[0]
+
+	formatted_string, string = map_value(value, selected = selected, default_field_color = default_field_color, mapping = deep_get(formatting, "mapping", {}))
 	array = [
-		(string, formatting)
+		formatted_string
 	]
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
@@ -1927,7 +1947,11 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 					else:
 						_values += groups
 		value = _values
+		if len(value) == 1:
+			value = value[0]
 	elif vtype == "len":
+		if value is None:
+			value = []
 		value = str(len(value))
 	elif vtype == "timestamp":
 		if action in ["earliest", "latest"] and type(value) in [list, tuple]:
@@ -2002,19 +2026,28 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 	return value
 
 def when_filter(when_path, item, key = None, value = None):
-	# These apply the key
-	if key is None:
-		key = deep_get(when_path, "when#key")
+	if type(deep_get(when_path, "when", [])) == dict:
+		when_conditions = [deep_get(when_path, "when", {})]
 	else:
+		when_conditions = deep_get(when_path, "when", [])
+
+	_key = key
+	_value = value
+
+	for when_condition in when_conditions:
+		# These apply to the key
+		if _key is None:
+			key = deep_get(when_condition, "key")
+
 		# These don't make sense when using when#key, since we already know the key
-		when_key_eq = deep_get(when_path, "when#key_eq")
-		when_key_ne = deep_get(when_path, "when#key_ne")
-		when_key_in = deep_get(when_path, "when#key_in")
-		when_key_notin = deep_get(when_path, "when#key_notin")
-		when_key_startswith = deep_get(when_path, "when#key_startswith")
-		when_key_notstartswith = deep_get(when_path, "when#key_notstartswith")
-		when_key_endswith = deep_get(when_path, "when#key_endswith")
-		when_key_notendswith = deep_get(when_path, "when#key_notendswith")
+		when_key_eq = deep_get(when_condition, "key_eq")
+		when_key_ne = deep_get(when_condition, "key_ne")
+		when_key_in = deep_get(when_condition, "key_in")
+		when_key_notin = deep_get(when_condition, "key_notin")
+		when_key_startswith = deep_get(when_condition, "key_startswith")
+		when_key_notstartswith = deep_get(when_condition, "key_notstartswith")
+		when_key_endswith = deep_get(when_condition, "key_endswith")
+		when_key_notendswith = deep_get(when_condition, "key_notendswith")
 		if when_key_eq is not None and when_key_eq != key:
 			return False
 		if when_key_ne is not None and when_key_eq == key:
@@ -2032,61 +2065,61 @@ def when_filter(when_path, item, key = None, value = None):
 		if when_key_notendswith is not None and key.endswith(when_key_notendswith):
 			return False
 
-	# Check for none
-	if value is None:
-		value = deep_get(item, key)
+		# Check for none
+		if _value is None:
+			value = deep_get(item, key)
 
-	# These check whether the key has a value
-	when_none = deep_get(when_path, "when#none")
-	when_notnone = deep_get(when_path, "when#notnone")
+		# These check whether the key has a value
+		when_none = deep_get(when_condition, "none")
+		when_notnone = deep_get(when_condition, "notnone")
 
-	# All these check the value
-	when_eq = deep_get(when_path, "when#eq")
-	when_ne = deep_get(when_path, "when#ne")
-	when_lt = deep_get(when_path, "when#lt")
-	when_lte = deep_get(when_path, "when#lte")
-	when_gt = deep_get(when_path, "when#gt")
-	when_gte = deep_get(when_path, "when#gte")
-	when_in = deep_get(when_path, "when#in")
-	when_notin = deep_get(when_path, "when#notin")
-	when_missing = deep_get(when_path, "when#missing")
-	when_notmissing = deep_get(when_path, "when#notmissing")
-	when_startswith = deep_get(when_path, "when#startswith")
-	when_notstartswith = deep_get(when_path, "when#notstartswith")
-	when_endswith = deep_get(when_path, "when#endswith")
-	when_notendswith = deep_get(when_path, "when#notendswith")
+		# All these check the value
+		when_eq = deep_get(when_condition, "eq")
+		when_ne = deep_get(when_condition, "ne")
+		when_lt = deep_get(when_condition, "lt")
+		when_lte = deep_get(when_condition, "lte")
+		when_gt = deep_get(when_condition, "gt")
+		when_gte = deep_get(when_condition, "gte")
+		when_in = deep_get(when_condition, "in")
+		when_notin = deep_get(when_condition, "notin")
+		when_missing = deep_get(when_condition, "missing")
+		when_notmissing = deep_get(when_condition, "notmissing")
+		when_startswith = deep_get(when_condition, "startswith")
+		when_notstartswith = deep_get(when_condition, "notstartswith")
+		when_endswith = deep_get(when_condition, "endswith")
+		when_notendswith = deep_get(when_condition, "notendswith")
 
-	# Check for existance
-	if when_missing is not None and when_missing in item:
-		return False
-	if when_notmissing is not None and when_notmissing not in item:
-		return False
+		# Check for existance
+		if when_missing is not None and when_missing in item:
+			return False
+		if when_notmissing is not None and when_notmissing not in item:
+			return False
 
-	if when_notnone is not None and value is None:
-		return False
-	if when_none is not None and value is not None:
-		return False
+		if when_notnone is not None and value is None:
+			return False
+		if when_none is not None and value is not None:
+			return False
 
-	# Set-based checks
-	if when_in is not None and value not in when_in:
-		return False
-	if when_notin is not None and value in when_notin:
-		return False
+		# Set-based checks
+		if when_in is not None and value not in when_in:
+			return False
+		if when_notin is not None and value in when_notin:
+			return False
 
-	# Check for equality
-	if when_eq is not None and (value is None or value != type(value)(when_eq)):
-		return False
-	if when_ne is not None and (value is None or value == type(value)(when_ne)):
-		return False
+		# Check for equality
+		if when_eq is not None and (value is None or value != type(value)(when_eq)):
+			return False
+		if when_ne is not None and (value is None or value == type(value)(when_ne)):
+			return False
 
-	if when_lt is not None and not value < type(value)(when_lt):
-		return False
-	if when_lte is not None and not value <= type(value)(when_lte):
-		return False
-	if when_gt is not None and not value > type(value)(when_gt):
-		return False
-	if when_gte is not None and value >= type(value)(when_gte):
-		return False
+		if when_lt is not None and not value < type(value)(when_lt):
+			return False
+		if when_lte is not None and not value <= type(value)(when_lte):
+			return False
+		if when_gt is not None and not value > type(value)(when_gt):
+			return False
+		if when_gte is not None and value >= type(value)(when_gte):
+			return False
 
 	return True
 
@@ -2120,7 +2153,11 @@ def generic_infogetter(**kwargs):
 			paths = deep_get(field, "paths", [])
 			datagetter = deep_get(field, "datagetter")
 			converters = deep_get(field, "converters", [])
-			default = deep_get(field, "default", "")
+			if "default" not in field:
+				default = ""
+			else:
+				default = deep_get(field, "default")
+			global_default = default
 			formatter = deep_get(field, "formatter")
 			action = None
 			replace_quotes = None
@@ -2138,10 +2175,11 @@ def generic_infogetter(**kwargs):
 				if path is not None:
 					if deep_get(field, "type") is None:
 						raise Exception(f"Field {name}: the path field has no default type; type must always be specified")
-					_values.append((deep_get(obj, path, default), deep_get(field, "type")))
+					_values.append((deep_get(obj, path, global_default), deep_get(field, "type")))
 
 				_path = None
 				for _path in paths:
+					default = deep_get(_path, "default")
 					vtype = deep_get(_path, "type", "raw")
 					path = deep_get(_path, "path")
 					mpaths = deep_get(_path, "paths")
@@ -2167,6 +2205,7 @@ def generic_infogetter(**kwargs):
 							value = tmp[0:limit]
 						else:
 							value = tmp
+						_values.append((value, vtype))
 					elif ptype == "key_value":
 						value = []
 						for _key, _value in deep_get_with_fallback(obj, path, {}).items():
@@ -2175,6 +2214,26 @@ def generic_infogetter(**kwargs):
 							value.append((_key, _value))
 						if len(value) == 0:
 							value = default
+						_values.append((value, vtype))
+					elif ptype == "substitution":
+						value = []
+						substitute = deep_get(_path, "substitute", "")
+						tmp = deep_get_with_fallback(obj, path)
+						if tmp is None:
+							tmp = []
+						if type(tmp) == dict:
+							tmp = [tmp]
+						for _tmp in tmp:
+							if when_filter(_path, item = _tmp) == False:
+								continue
+							value.append(substitute)
+						if len(value) == 0:
+							if default == None:
+								continue
+							else:
+								value.append(default)
+						for tmp in value:
+							_values.append((tmp, vtype))
 					elif ptype == "items":
 						if len(subpath) > 0:
 							if len(subpaths) > 0:
@@ -2231,6 +2290,9 @@ def generic_infogetter(**kwargs):
 								value.append(tuple(tmp))
 						if len(value) == 0:
 							value = default
+						if value is not None:
+							for tmp in value:
+								_values.append((tmp, vtype))
 					elif ptype == "tuple":
 						value = []
 						for i in range(0, len(path)):
@@ -2254,16 +2316,17 @@ def generic_infogetter(**kwargs):
 								vtype = "kind"
 							value.append(tmp)
 						value = tuple(value)
+						_values.append((value, vtype))
 					else:
 						value = deep_get_with_fallback(obj, path, default)
-					_values.append((value, vtype))
+						_values.append((value, vtype))
 
 				values = []
 
 				for value, _vtype in _values:
 					_regex = deep_get(_path, "regex")
 					if type(_vtype) == list:
-						if len(value) == 0:
+						if value is None or len(value) == 0:
 							value = []
 					if type(value) == list and type(_vtype) == list:
 						tmp = []
@@ -2273,7 +2336,10 @@ def generic_infogetter(**kwargs):
 						tmp = process_value(name, value, _vtype, view, field_index, action, formatter, replace_quotes, _regex)
 					values.append(tmp)
 
-				if len(values) == 1:
+				if len(values) == 0:
+					values = global_default
+
+				if type(values) == list and len(values) == 1 and formatter != "list":
 					d[name] = values[0]
 				else:
 					d[name] = values
@@ -5432,11 +5498,6 @@ field_templates = {
 		"generator": generator_numerical,
 		"ralign": True,
 	},
-	"ansible_groups": {
-		# [group, ...]
-		"header": "Ansible Groups:",
-		"generator": generator_list,
-	},
 	"api_group": {
 		"header": "API-Group:",
 	},
@@ -5447,9 +5508,28 @@ field_templates = {
 		# the API service that's requested; status_message, service, or available
 		"path": "service",
 		"datagetter": datagetter_api_service,
-		"generator": generator_list,
-		"field_colors": [("types", "namespace"), ("types", "generic"), ("types", "port")],
-		"field_separators": [("separators", "namespace"), ("separators", "port")],
+		"formatter": "list",
+		"formatting": {
+			"field_colors": [
+				{
+					"type": "namespace",
+				},
+				{
+					"type": "generic",
+				},
+				{
+					"type": "port",
+				},
+			],
+			"field_separators": [
+				{
+					"type": "namespace",
+				},
+				{
+					"type": "port",
+				},
+			],
+		},
 	},
 	"api_service_status_message": {
 		"header": "Status:",
@@ -5554,9 +5634,6 @@ field_templates = {
 		"field_colors": [("types", "generic"), ("types", "version")],
 		"field_separators": [("separators", "version")],
 	},
-	"container_type": {
-		"header": "Type:",
-	},
 	"controller": {
 		# (kind, name)
 		"header": "Controller:",
@@ -5588,11 +5665,6 @@ field_templates = {
 		"path": "metadata#creationTimestamp",
 		"datagetter": datagetter_timestamp,
 		"generator": generator_timestamp,
-	},
-	"csr_conditions": {
-		# [condition, ...]
-		"header": "Conditions:",
-		"generator": generator_list,
 	},
 	"current_replicas": {
 		"header": "Current:",
@@ -5815,15 +5887,8 @@ field_templates = {
 		"path": "identities",
 		"generator": generator_list,
 	},
-	"image_id": {
-		"header": "Image ID:",
-	},
 	"image_reference": {
 		"header": "Image ID:",
-	},
-	"image_version": {
-		"header": "Version:",
-		"type": "version",
 	},
 	"index": {
 		"header": "Index:",
@@ -5858,11 +5923,6 @@ field_templates = {
 		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
 		"field_separators": [("separators", "port"), ("separators", "service")],
 	},
-	"instances": {
-		"header": "Instances:",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"internal_ips": {
 		# [ip, ...]
 		"header": "Internal-IPs:",
@@ -5880,12 +5940,6 @@ field_templates = {
 	"ipblock_exceptions": {
 		"header": "IP Block Exceptions:",
 		"generator": generator_list,
-	},
-	"ips": {
-		# [ip, ...]
-		"header": "IPs:",
-		"generator": generator_list,
-		"ellipsise": 3,
 	},
 	"issuer": {
 		# (kind, name)
@@ -5910,12 +5964,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "kind"), ("types", "api_group")],
 		"field_separators": [("separators", "kind_api_group")],
-	},
-	"kubernetes_roles": {
-		# [role, ...]
-		"header": "Roles:",
-		"datagetter": datagetter_node_roles,
-		"generator": generator_list,
 	},
 	"last_heartbeat_antrea": {
 		"header": "Last Heartbeat:",
@@ -6111,13 +6159,6 @@ field_templates = {
 		"datagetter": datagetter_phase,
 		"generator": generator_status,
 	},
-	"pods": {
-		"header": "Pods:",
-		# [(namespace, name), ...]
-		"generator": generator_list,
-		"field_colors": [("types", "namespace"), ("types", "generic")],
-		"field_separators": [("separators", "namespace")],
-	},
 	"pod_ip": {
 		"header": "Pod IP:",
 		"path": "status#podIP",
@@ -6150,26 +6191,83 @@ field_templates = {
 		"header": "Ports:",
 		"path": "subsets",
 		"datagetter": datagetter_ep_ports,
-		"generator": generator_list,
-		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
-		"field_separators": [("separators", "port"), ("separators", "service")],
+		"formatter": "list",
+		"formatting": {
+			"field_colors": [
+				{
+					"type": "service",
+				},
+				{
+					"type": "port",
+				},
+				{
+					"type": "protocol",
+				},
+			],
+			"field_separators": [
+				{
+					"type": "port",
+				},
+				{
+					"type": "service",
+				},
+			],
+		},
 	},
 	"ports_eps": {
 		# (name, port, protocol)
 		"header": "Ports:",
 		"path": "ports",
 		"datagetter": datagetter_eps_ports,
-		"generator": generator_list,
-		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
-		"field_separators": [("separators", "port"), ("separators", "service")],
+		"formatter": "list",
+		"formatting": {
+			"field_colors": [
+				{
+					"type": "service",
+				},
+				{
+					"type": "port",
+				},
+				{
+					"type": "protocol",
+				},
+			],
+			"field_separators": [
+				{
+					"type": "port",
+				},
+				{
+					"type": "service",
+				},
+			],
+		},
 	},
 	"ports_svc": {
 		# (name, port, protocol)
 		"header": "Ports:",
 		"datagetter": datagetter_svc_ports,
-		"generator": generator_list,
-		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
-		"field_separators": [("separators", "port"), ("separators", "service")],
+		"formatter": "list",
+		"formatting": {
+			"field_colors": [
+				{
+					"type": "service",
+				},
+				{
+					"type": "port",
+				},
+				{
+					"type": "protocol",
+				},
+			],
+			"field_separators": [
+				{
+					"type": "port",
+				},
+				{
+					"type": "service",
+				},
+			],
+		},
 	},
 	"priority_tier": {
 		"header": "Priority:",
@@ -6270,10 +6368,6 @@ field_templates = {
 		"field_colors": [("types", "resource"), ("types", "numerical"), ("types", "numerical")],
 		"field_separators": [("separators", "resource"), ("separators", "fraction")],
 	},
-	"requestor": {
-		"header": "Requesting User:",
-		"path": "spec#username",
-	},
 	"resolution": {
 		"header": "Resolution:",
 		"path": "spec#resolution",
@@ -6333,10 +6427,6 @@ field_templates = {
 	"services": {
 		"header": "Services:",
 		"generator": generator_list,
-	},
-	"signername": {
-		"header": "Signer:",
-		"path": "spec#signerName",
 	},
 	"source": {
 		# (component, host)
@@ -16422,6 +16512,44 @@ views_special = {
 		"field_indexes": {
 			"Normal": ["name", "container_type", "image_version", "instances", "image_id", "pods"],
 		},
+		"fields": {
+			"container_type": {
+				"header": "Type:",
+			},
+			"image_id": {
+				"header": "Image ID:",
+			},
+			"image_version": {
+				"header": "Version:",
+				"type": "version",
+			},
+			"instances": {
+				"header": "Instances:",
+				"generator": generator_numerical,
+				"align": "right",
+			},
+			"pods": {
+				"header": "Pods:",
+				"formatter": "list",
+				"field_colors": [("types", "namespace"), ("types", "generic")],
+				"field_separators": [("separators", "namespace")],
+				"formatting": {
+					"field_colors": [
+						{
+							"type": "namespace",
+						},
+						{
+							"type": "generic",
+						},
+					],
+					"field_separators": [
+						{
+							"type": "namespace",
+						},
+					],
+				},
+			},
+		},
 		"kind": ("__Container", ""),
 		"listgetter": None,
 		"infogetter": get_container_info,
@@ -16479,14 +16607,40 @@ views_special = {
 				"header": "Deprecated API:",
 				"path": [["resource", "group", "version"], "tuple"],
 				"datagetter": datagetter_deprecated_api,
-				"generator": generator_list,
-				"field_colors": [("types", "kind"), ("types", "api_group")],
-				"field_separators": [("separators", "kind_api_group"), ("separators", "kind")],
+				"formatter": "list",
+				"formatting": {
+					"field_colors": [
+						{
+							"type": "kind",
+						},
+						{
+							"type": "api_group",
+						},
+						{
+							"type": "version",
+						},
+					],
+					"field_separators": [
+						{
+							"type": "kind_api_group",
+						},
+						{
+							"type": "kind",
+						},
+					],
+				},
 			},
 			"deprecated_removed_release": {
 				"header": "Planned Removal:",
 				"path": [["removed_release"], "str"],
 				"datagetter": datagetter_metrics,
+				"formatting": {
+					"field_colors": [
+						{
+							"type": "version",
+						},
+					],
+				},
 			},
 		},
 		"kind": ("__Deprecation", ""),
@@ -16510,6 +16664,85 @@ views_special = {
 		"group": "Administration",
 		"field_indexes": {
 			"Normal": ["name", "ips", "kubernetes_roles", "ansible_groups", "status"],
+		},
+		"fields": {
+			"ansible_groups": {
+				# [group, ...]
+				"header": "Ansible Groups:",
+				"formatter": "list",
+			},
+			"ips": {
+				# [ip, ...]
+				"header": "IPs:",
+				"formatter": "list",
+				"formatting": {
+					"ellipsise": 3,
+				},
+			},
+			"kubernetes_roles": {
+				# [role, ...]
+				"header": "Roles:",
+				"datagetter": datagetter_node_roles,
+				"formatter": "list",
+			},
+			"status": {
+				"header": "Status:",
+				"formatter": "value_mapper",
+				"formatting": {
+					"mapping": {
+						"mappings": {
+							"COULD NOT RESOLVE": {
+								"field_colors": [
+									{
+										"context": "main",
+										"type": "status_critical",
+									},
+								],
+							},
+							"FAILED!": {
+								"field_colors": [
+									{
+										"context": "main",
+										"type": "status_warning",
+									},
+								],
+							},
+							"MISSING INTERPRETER?": {
+								"field_colors": [
+									{
+										"context": "main",
+										"type": "status_warning",
+									},
+								],
+							},
+							"SUCCESS": {
+								"field_colors": [
+									{
+										"context": "main",
+										"type": "status_ok",
+									},
+								],
+							},
+							"UNKNOWN": {
+								"field_colors": [
+									{
+										"context": "main",
+										"type": "status_unknown",
+									},
+								],
+							},
+							"UNREACHABLE!": {
+								"field_colors": [
+									{
+										"context": "main",
+										"type": "status_not_ok",
+									},
+								],
+							},
+						},
+					},
+				},
+			},
 		},
 		"sortcolumn": "kubernetes_roles",
 		"sortorder_reverse": True,
@@ -16703,15 +16936,6 @@ views_builtin = {
 		},
 		"sortcolumn": "namespace",
 		"kind": ("AppRepository", "kubeapps.com"),
-	},
-	# certificates.k8s.io
-	"Certificate Signing Requests": {
-		"commandline": ["certificatesigningrequests", "certificatesigningrequest", "certsignreqs", "certsignreq", "csrs", "csr"],
-		"group": "Certificate Management",
-		"field_indexes": {
-			"Normal": ["name", "signername", "requestor", "csr_conditions", "age"],
-		},
-		"kind": ("CertificateSigningRequest", "certificates.k8s.io"),
 	},
 	# cilium.io
 	#"Cilium Clusterwide Network Policies": {

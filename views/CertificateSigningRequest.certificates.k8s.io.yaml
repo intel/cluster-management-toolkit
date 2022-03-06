@@ -1,0 +1,84 @@
+kind: CertificateSigningRequest
+api_family: certificates.k8s.io
+default_command: certificatesigningrequests
+command:
+- certsignreqs
+- certsignreq
+- csrs
+- csr
+listview:
+  name: Certificate Signing Requests
+  group: API & Extendability
+  group: Certificate Management
+  field_indexes:
+    Normal: [name, signername, requestor, requested_duration, age, csr_condition]
+  fields:
+    csr_condition:
+      header: "Condition:"
+      paths:
+      - path: "status#conditions"
+        pathtype: substitution
+        subpath:
+        - type
+        when:
+        - key: type
+          eq: Denied
+        - key: status
+          eq: "True"
+        substitute: "Denied"
+        default: ~
+      - path: "status#conditions"
+        pathtype: substitution
+        subpath:
+        - type
+        when:
+        - key: type
+          eq: Approved
+        - key: status
+          eq: "True"
+        substitute: "Approved"
+        default: ~
+      - path: "status"
+        pathtype: substitution
+        when:
+          key: "certificate"
+          notmissing: "certificate"
+        substitute: "Issued"
+        default: ~
+      default: [Pending]
+      formatter: list
+      formatting:
+        field_separators:
+        - type: list
+        mapping:
+          mappings:
+            Approved:
+              field_colors:
+              - context: main
+                type: status_ok
+            Issued:
+              field_colors:
+              - context: main
+                type: status_ok
+            Pending:
+              field_colors:
+              - context: main
+                type: status_pending
+            Denied:
+              field_colors:
+              - context: main
+                type: status_not_ok
+    requested_duration:
+      header: "Requested Duration:"
+      path: "spec#expirationSeconds"
+      type: age
+      formatter: age
+      align: right
+    requestor:
+      header: "Requesting User:"
+      path: "spec#username"
+      type: str
+    signername:
+      header: "Signer:"
+      path: "spec#signerName"
+      type: str
