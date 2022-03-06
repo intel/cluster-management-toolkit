@@ -975,6 +975,55 @@ def update_field_widths(field_dict, field_names, objects):
 
 	return linelen
 
+def get_hpa_metrics(obj, **kwargs):
+	vlist = []
+	status = 200
+
+	for metric in deep_get(obj, "spec#metrics", []):
+		if "type" not in metric:
+			continue
+		metric_type = deep_get(metric, "type")
+		metric_name = metric_type[0].lower() + metric_type[1:]
+		target_type = deep_get(metric, f"{metric_name}#target#type", "")
+		if target_type == "Utilization":
+			target_type = "AverageUtilization"
+		target_type_name = target_type[0].lower() + target_type[1:]
+
+		described_object = None
+		kind = ""
+		api_version = ""
+		object_name = ""
+
+		if metric_name in ["resource", "containerResource"]:
+			name = deep_get(metric, f"{metric_name}#name")
+		elif metric_name in ["pods", "object", "external"]:
+			name = deep_get(metric, f"{metric_name}#metric#name")
+			if metric_type == "Object":
+				kind = deep_get(metric, f"{metric_name}#describedObject#kind")
+				api_version = deep_get(metric, f"{metric_name}#describedObject#apiVersion")
+				object_name = deep_get(metric, f"{metric_name}#describedObject#name")
+			api_group = api_version.split("/")[0]
+		else:
+			metric_type += " (Unsupported)"
+
+		target_value = deep_get(metric, f"{metric_name}#target#{target_type_name}", "")
+		selector = deep_get(metric, f"{metric_name}#selector#matchLabels", {})
+
+		d = {
+			"metric_type": metric_type,
+			"name": name,
+			"target_type": target_type,
+			"described_object_kind": kind,
+			"described_object_api_group": api_group,
+			# The autoscaler shares namespace with the described object
+			"described_object_namespace": deep_get(obj, "metadata#namespace", ""),
+			"described_object_name": object_name,
+			"selector": selector,
+			"target_value": target_value,
+		}
+		vlist.append(d)
+	return vlist, status
+
 def get_metrics_list(extra_vars = {filter: None}):
 	vlist = []
 
@@ -1921,13 +1970,16 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 					_values.append("")
 				else:
 					_values.append(value[i])
-			elif _vtype == "api_version":
-				if override_kind != "mixed":
+			elif _vtype == "api_group":
+				if override_kind == "skip":
 					_values.append("")
 					continue
 
 				if "/" in value[i]:
-					_values.append(value[i].split("/")[0])
+					if override_kind == "full" or override_kind == "mixed" and "." in value[i]:
+						_values.append(value[i].split("/")[0])
+					else:
+						_values.append("")
 				else:
 					_values.append("")
 			elif _vtype in ["skip"]:
@@ -2193,7 +2245,14 @@ def generic_infogetter(**kwargs):
 							if vtype in ["int", "float"] and type(default) not in [int, float]:
 								_default = 0
 
-							value.append(deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty))
+							tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
+
+							if vtype == "api_group":
+								override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format"], "mixed")
+								if override_kind == "skip" or override_kind == "mixed" and "." not in tmp:
+									tmp = ""
+								vtype = "kind"
+							value.append(tmp)
 						value = tuple(value)
 					else:
 						value = deep_get_with_fallback(obj, path, default)
@@ -5850,7 +5909,7 @@ field_templates = {
 		"path": "kind",
 		"generator": generator_list,
 		"field_colors": [("types", "kind"), ("types", "api_group")],
-		"field_separators": [("separators", "kind_apigroup")],
+		"field_separators": [("separators", "kind_api_group")],
 	},
 	"kubernetes_roles": {
 		# [role, ...]
@@ -5910,12 +5969,6 @@ field_templates = {
 	"max_lr_ratio": {
 		"header": "Max Limit/Request Ratio:",
 	},
-	"maxpods": {
-		"header": "Max Pods:",
-		"path": "spec#maxReplicas",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"max_replicas": {
 		"header": "Max:",
 		"generator": generator_numerical,
@@ -5949,12 +6002,6 @@ field_templates = {
 	"methods": {
 		"header": "Methods:",
 		"generator": generator_list,
-	},
-	"minpods": {
-		"header": "Min Pods:",
-		"path": "spec#minReplicas",
-		"generator": generator_numerical,
-		"ralign": True,
 	},
 	"misscheduled_replicas": {
 		"header": "Misscheduled:",
@@ -6207,14 +6254,6 @@ field_templates = {
 		"ranges": [(-1, -1, ("types", "numerical")), (0, 1, ("types", "watermark_high")), (1, -1, ("types", "watermark_medium"))],
 		"ralign": True,
 	},
-	"reference": {
-		# (kind, name)
-		"header": "Reference:",
-		"path": ["spec#scaleTargetRef#kind", "spec#scaleTargetRef#name"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_list,
-		"field_colors": [("types", "kind"), ("types", "generic")],
-	},
 	"repo_type": {
 		"header": "Type:",
 		"path": "spec#type",
@@ -6391,16 +6430,6 @@ field_templates = {
 		"header": "Target:",
 		"generator": generator_numerical,
 		"ralign": True,
-	},
-	"targets": {
-		# [(current, target), ...]
-		"header": "Targets:",
-		"path": [("target#currentCPUUtilizationPercentage", "<unknown>"), "spec#targetCPUUtilizationPercentage"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_list,
-		"field_colors": [("types", "numerical"), ("types", "numerical")],
-		"field_separators": [("separators", "fraction")],
-		"field_suffix": [("", ("types", "generic")), ("separators", "percentage")],
 	},
 	"timestamp": {
 		"header": "Start Time:",
@@ -8995,7 +9024,7 @@ def field_processor_component_kinds(obj, path = None, extra_paths = None, fallba
 	if len(kinds) == 0:
 		field = [("strings", "none")]
 	else:
-		field = format_list(kinds, 0, 0, False, False, field_colors = [("types", "kind"), ("types", "api_group")], field_separators = [("separators", "kind_apigroup")])
+		field = format_list(kinds, 0, 0, False, False, field_colors = [("types", "kind"), ("types", "api_group")], field_separators = [("separators", "kind_api_group")])
 	return field
 
 # fallback will be ignored
@@ -10204,10 +10233,15 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if retval is not None and retval == curses_helper.retval.RETURNFULL:
 						return retval
 			elif "action" in value:
+				selected = uip.get_selected()
 				action = deep_get(value, "action", "")
 				action_args = deep_get(value, "action_args", {})
 				if "_pass_obj" in action_args:
 					action_args["obj"] = obj
+				if "_pass_selected" in action_args and selected is not None:
+					action_args["selected"] = selected
+				if "_pass_selected_obj" in action_args and selected is not None:
+					action_args["selected_obj"] = getattr(selected, "ref", None)
 				action_call = deep_get(value, "action_call")
 				if action == "call" and action_call is not None:
 					retval = action_call(uip.stdscr, **action_args)
@@ -11328,6 +11362,46 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 		return containerinfoloop(stdscr, obj, kind, info)
 	else:
 		return None
+
+# Do not pass both direct and _path versions at the same time
+def resourceinfodispatch_with_lookup(stdscr, **kwargs):
+	obj = deep_get(kwargs, "obj")
+	if obj is None:
+		obj = deep_get(kwargs, "selected_obj")
+
+	if obj is None:
+		return None
+
+	kind_path = deep_get(kwargs, "kind_path")
+	api_group_path = deep_get(kwargs, "api_group_path")
+	name_path = deep_get(kwargs, "name_path")
+	namespace_path = deep_get(kwargs, "namespace_path")
+
+	kind = deep_get(kwargs, "kind")
+	api_group = deep_get(kwargs, "api_group")
+	name = deep_get(kwargs, "name")
+	namespace = deep_get(kwargs, "namespace", "")
+
+	kind = deep_get(obj, kind_path, kind)
+	if kind is None or len(kind) == 0:
+		return None
+
+	api_group = deep_get(obj, api_group_path, api_group)
+
+	if type(kind) != tuple:
+		if api_group is None:
+			api_group = ""
+		kind = (kind, api_group)
+
+	name = deep_get(obj, name_path, name)
+
+	if name is None:
+		return None
+
+	namespace = deep_get(obj, namespace_path, namespace)
+
+	obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
+	return resourceinfodispatch(stdscr, obj, kind)
 
 def listgetter_namespaced_resources(obj, **kwargs):
 	vlist = []
@@ -13224,7 +13298,7 @@ infoviews = {
 				"processor": field_processor_kind,
 				"formatting": {
 					"field_colors": [("types", "kind"), ("types", "api_group")],
-					"item_separators": [("separators", "kind_apigroup")],
+					"item_separators": [("separators", "kind_api_group")],
 				},
 			},
 			"  Exists:": {
@@ -13748,7 +13822,7 @@ infoviews = {
 						{ "type": "kind", },
 					],
 					"field_separators": [
-						{ "type": "kind_apigroup", },
+						{ "type": "kind_api_group", },
 					],
 				},
 				"formatter": "list",
@@ -13766,7 +13840,7 @@ infoviews = {
 				"processor": field_processor_kind,
 				"formatting": {
 					"field_colors": [("types", "kind"), ("types", "api_group")],
-					"item_separators": [("separators", "kind_apigroup")],
+					"item_separators": [("separators", "kind_api_group")],
 				},
 			},
 			"Deprecated Version:": {
@@ -14129,16 +14203,96 @@ infoviews = {
 	},
 	("HorizontalPodAutoscaler", "autoscaling"): {
 		"windowheader": "Horizontal Pod Autoscaler Info",
+		"field_indexes": {
+			"Normal": ["metric_type", "name", "described_object", "target_type", "target_value", "selector"],
+		},
+		"fields": {
+			"metric_type": {
+				"header": "Type:",
+				"path": "metric_type",
+				"type": "str",
+			},
+			"name": {
+				"header": "Name:",
+				"path": "name",
+				"type": "str",
+			},
+			"described_object": {
+				"header": "Described Object:",
+				"type": "str",
+      				"paths": [
+					{
+						"path": [["described_object_kind"], ["described_object_api_group"], ["described_object_name"]],
+						"pathtype": "tuple",
+						"type": ["kind", "api_group", "name"],
+					}
+				],
+				"formatting": {
+					"field_colors": [
+						{
+							"type": "kind",
+						},
+						{
+							"type": "api_group",
+						},
+						{
+							"type": "generic",
+						},
+					],
+					"field_separators": [
+						{
+							"type": "kind_api_group",
+						},
+						{
+							"type": "kind",
+						},
+					]
+				},
+				"formatter": "list",
+			},
+			"selector": {
+				"header": "Selector:",
+				"paths": [
+					{
+						"path": "selector",
+						"pathtype": "key_value",
+					},
+				],
+				"formatting": {
+					"field_colors": [
+						{
+							"type": "key",
+						},
+						{
+							"type": "value",
+						},
+					],
+					"field_separators": [
+						{
+							"type": "selector",
+						},
+					]
+				},
+				"formatter": "list",
+			},
+			"target_type": {
+				"header": "Target Type:",
+				"path": "target_type",
+				"type": "str",
+			},
+			"target_value": {
+				"header": "Target Value:",
+				"path": "target_value",
+				"type": "raw",
+				"align": "right",
+			},
+		},
 		"infopad": {
 			"Min Replicas:": {
 				"path": "spec#minReplicas",
 			},
 			"Max Replicas:": {
 				"path": "spec#maxReplicas",
-			},
-			"Target CPU Utilization:": {
-				"path": "spec#targetCPUUtilizationPercentage",
-				"processor": field_processor_percentage,
 			},
 			"Scale Target Reference:": {
 				"fieldname": [("S", ("main", "infoheader_shortcut")), ("cale Target Reference:", ("main", "infoheader"))],
@@ -14155,6 +14309,10 @@ infoviews = {
 				"processor": field_processor_replica_status,
 			},
 		},
+		"listpad": {
+			"listgetter": get_hpa_metrics,
+			"infogetter": generic_infogetter,
+		},
 		"shortcuts": {
 			"Scale Target Reference": {
 				"shortcut": ord("S"),
@@ -14163,6 +14321,19 @@ infoviews = {
 				"kind_path": "spec#scaleTargetRef#kind",
 				"name_path": "spec#scaleTargetRef#name",
 				"namespace_path": "metadata#namespace",
+			},
+			"Open Described Object": {
+				"shortcut": [ curses.KEY_ENTER, 10, 13 ],
+				"helptext": ("[Enter]", "Open info page for described object"),
+				"action": "call",
+				"action_call": resourceinfodispatch_with_lookup,
+				"action_args": {
+					"_pass_selected_obj": True,
+					"kind_path": "described_object_kind",
+					"api_group_path": "described_object_api_group",
+					"name_path": "described_object_name",
+					"namespace_path": "described_object_namespace",
+				},
 			},
 		},
 	},
@@ -14725,7 +14896,7 @@ infoviews = {
 						{ "type": "kind", },
 					],
 					"field_separators": [
-						{ "type": "kind_apigroup", },
+						{ "type": "kind_api_group", },
 					],
 				},
 				"formatter": "list",
@@ -15694,7 +15865,7 @@ infoviews = {
 				"processor": field_processor_kind,
 				"formatting": {
 					"field_colors": [("types", "kind"), ("types", "api_group")],
-					"item_separators": [("separators", "kind_apigroup")],
+					"item_separators": [("separators", "kind_api_group")],
 				},
 			},
 			"  Exists:": {
@@ -16310,7 +16481,7 @@ views_special = {
 				"datagetter": datagetter_deprecated_api,
 				"generator": generator_list,
 				"field_colors": [("types", "kind"), ("types", "api_group")],
-				"field_separators": [("separators", "kind_apigroup"), ("separators", "kind")],
+				"field_separators": [("separators", "kind_api_group"), ("separators", "kind")],
 			},
 			"deprecated_removed_release": {
 				"header": "Planned Removal:",
@@ -16686,15 +16857,6 @@ views_builtin = {
 			"Normal": ["namespace", "name", "age"],
 		},
 		"kind": ("HelmChartConfig", "helm.cattle.io"),
-	},
-	# autoscaling
-	"Horizontal Pod Autoscalers": {
-		"commandline": ["horizontalpodautoscalers", "hpa"],
-		"group": "Autoscaling",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "reference", "targets", "minpods", "maxpods", "current_replicas_tuple", "age"],
-		},
-		"kind": ("HorizontalPodAutoscaler", "autoscaling"),
 	},
 	# user.openshift.io
 	"Identities": {

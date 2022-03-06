@@ -1,0 +1,41 @@
+kind: HorizontalPodAutoscaler
+api_family: autoscaling
+default_command: horizontalpodautoscalers
+command:
+- hpa
+listview:
+  name: Horizontal Pod Autoscalers
+  group: Scheduling
+  field_indexes:
+    Normal: [namespace, name, reference, minpods, maxpods, replicas, age]
+  fields:
+    maxpods:
+      header: "Max Pods:"
+      path: "spec#maxReplicas"
+      type: int
+      align: right
+    minpods:
+      header: "Min Pods:"
+      path: "spec#minReplicas"
+      type: int
+      align: right
+    reference:
+      header: "Reference:"
+      paths:
+      - path: [["spec#scaleTargetRef#kind"], ["spec#scaleTargetRef#apiVersion"], ["spec#scaleTargetRef#name"]]
+        pathtype: tuple
+        type: [kind, api_group, name]
+      formatting:
+        field_colors:
+        - type: kind
+        - type: api_group
+        - type: generic
+        field_separators:
+        - type: kind_api_group
+        - type: kind
+      formatter: list
+    replicas:
+      header: "Replicas:"
+      path: "status#currentReplicas"
+      type: int
+      align: right

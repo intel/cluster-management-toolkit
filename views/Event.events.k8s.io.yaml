@@ -44,14 +44,14 @@ listview:
       paths:
       - path: [["regarding#kind", "involvedObject#kind"], ["regarding#apiVersion", "involvedObject#apiVersion"], ["regarding#name", "involvedObject#name"]]
         pathtype: tuple
-        type: [kind, api_version, name]
+        type: [kind, api_group, name]
       formatting:
         field_colors:
         - type: kind
-        - type: kind
+        - type: api_group
         - type: generic
         field_separators:
-        - type: kind_apigroup
+        - type: kind_api_group
         - type: kind
       formatter: list
     reporter:
