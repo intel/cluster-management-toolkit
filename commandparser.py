@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+import errno
 import sys
 
 import about
@@ -229,14 +230,14 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 				if command is None:
 					iktprint([(f"{programname}", "programname"), (": unrecognised command “", "default"), (f"{argv[i]}", "command"), ("“.", "default")], stderr = True)
 					iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-					sys.exit(2)
+					sys.exit(errno.EINVAL)
 		# OK, we have a command, time to check for options
 		elif argv[i].startswith("-"):
 			if len(args) > 0:
 				# I came here to have an argument, but this is an option!
 				iktprint([(f"{programname}", "programname"), (": option “", "default"), (f"{argv[i]}", "option"), ("“ found after arguments.", "default")], stderr = True)
 				iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-				sys.exit(2)
+				sys.exit(errno.EINVAL)
 			else:
 				# Is this option valid for this command?
 				match = None
@@ -248,7 +249,7 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 				if match is None:
 					iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{commandname}", "command"), ("“ does not support option “", "default"), (f"{argv[i]}", "option"), ("“.", "default")], stderr = True)
 					iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-					sys.exit(2)
+					sys.exit(errno.EINVAL)
 				else:
 					arg = None
 					option = match
@@ -260,7 +261,7 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 						if i >= len(argv):
 							iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{option}", "option"), ("“ requires an argument.", "default")], stderr = True)
 							iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-							sys.exit(2)
+							sys.exit(errno.EINVAL)
 						arg = argv[i]
 
 					options.append((option, arg))
@@ -274,25 +275,25 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 	if max_args == 0 and len(args) > 0:
 		iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{commandname}", "command"), ("“ does not accept arguments.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 	elif len(args) < min_args and min_args != max_args:
 		iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{commandname}", "command"), (f"“ requires at least {min_args} arguments.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 	elif len(args) != min_args and min_args == max_args:
 		iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{commandname}", "command"), (f"“ requires exactly {min_args} arguments.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 	elif len(args) > max_args:
 		iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{commandname}", "command"), (f"“ requires at most {max_args} arguments.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	# The command was called without any command and no default was defined; this is an error
 	if command is None:
 		iktprint([(f"{programname}", "programname"), (": missing operand.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 	else:
 		# Are there implicit options?
 		implicit_options = commandline[key].get("implicit_options")

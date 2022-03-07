@@ -6,6 +6,7 @@
 
 import base64
 from collections import OrderedDict
+import errno
 from functools import partial, reduce
 from getpass import getuser
 from glob import glob
@@ -249,13 +250,13 @@ def rebuild_installation_info(state = None):
 	if controlplanes is None or len(controlplanes) == 0:
 		iktprint([("", "default")])
 		iktprint([("Critical:", "critical"), (" No control plane defined in inventory; cannot rebuild installation info. Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 
 	deb_versions = check_deb_versions(["kubeadm"])
 	if len(deb_versions) == 0 or deb_versions[0][1] == "<none>":
 		iktprint([("", "default")])
 		iktprint([("Critical:", "critical"), (" Failed to identify cluster; are you sure there's one installed? Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 	else:
 		version = deb_versions[0][1]
 		distro = "kubeadm"
@@ -335,7 +336,7 @@ def check_and_print_status(retval):
 		iktprint([("OK", "ok")])
 	else:
 		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 def weave_urlgetter():
 	args = ["kubectl", "version"]
@@ -393,7 +394,7 @@ cni_data = {
 def setup_cni(cni, pod_network_cidr):
 	if cni not in cni_data:
 		iktprint([("Error: ", "error"), (f"{cni}", "argument"), (" is not a valid/supported CNI; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	url = deep_get(cni_data, f"{cni}#url")
 	if url is None:
@@ -525,7 +526,7 @@ def __task_check_and_create_ssh_key(installation_info):
 		retval = iktinput([("Warning: ", "warning"), ("No ssh key found in ", "default"), (f"{HOMEDIR}/.ssh", "path"), ("; create one now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ["y", "yes"]:
 			iktprint([("\nAborting:", "error"), (" No ssh key available.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.ENOENT)
 		else:
 			check_and_print_status(create_ssh_key())
 
@@ -559,7 +560,7 @@ def __task_add_ssh_keys_to_inventory(installation_info):
 
 	if found_key == False:
 		iktprint([("Error: ", "error"), ("Could not find a valid public key in ", "default"), (f"{HOMEDIR}/.ssh", "path"), ("; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 
 	__vars["authorized_keys"] = __authorized_keys
 	ansible_set_vars(ANSIBLE_INVENTORY, "all", __vars)
@@ -932,7 +933,7 @@ def __task_request_ansible_password(installation_info):
 		ansible_password = iktinput_password([("\nPassword: ", "default")])
 		if len(ansible_password) == 0:
 			iktprint([("\nError: ", "Error"), ("Empty password; aborting.")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.EINVAL)
 		else:
 			ansible_configuration.ansible_password = ansible_password
 
@@ -1220,7 +1221,7 @@ def __task_verify_that_cluster_has_no_nodes(installation_info):
 		for node in node_statuses:
 			if "control-plane" not in node["roles"]:
 				iktprint([("\nPlease delete all nodes (except the ", "warning"), ("control plane", "emphasis"), (") from the cluster before attempting a teardown.", "warning")])
-				sys.exit(2)
+				sys.exit(errno.EAGAIN)
 
 	iktprint([("OK", "ok")])
 
@@ -1310,7 +1311,7 @@ def __validate_task_index(tasks, task):
 
 	if task >= len(tasks):
 		iktprint([("Error: ", "error"), ("TASK", "argument"), (f" needs to be in the range [0, {len(tasks)}]. Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ERANGE)
 	return task
 
 def __list_phases(phases):
@@ -1429,14 +1430,14 @@ def __find_requested_version(distro, version = None):
 
 		if requested_version is None:
 			iktprint([("Error: ", "error"), ("Could not find a matching kubeadm package for version ", "default"), (version, "version"), ("; aborting.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.ENOENT)
 	else:
 		raise Exception("No support for other distros implemented")
 
 	major, minor, patchrev = requested_version.split(".")
 	if int(minor) < 11:
 		iktprint([("Error: ", "error"), ("Kubernetes versions older than ", "default"), ("1.11", "version"), (" are not supported by ", "default"), (f"{about.program_suite_name}", "programname"), ("; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(erro.EINVAL)
 	elif int(minor) < 18:
 		iktprint([("Warning: ", "warning"), ("Kubernetes versions older than ", "default"), ("1.18", "version"), (" are not fully supported by ", "default"), (f"{about.program_suite_name}", "programname"), (". Some features may be missing or completely broken.", "default")], stderr = True)
 
@@ -1452,7 +1453,7 @@ def prepare_installation(options = [], args = None):
 	elif len(args) == 0:
 		iktprint([(f"{about.admin_program_name}", "programname"), (": “", "default"), ("prepare", "command"), ("“ requires at least 1 arguments.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{about.admin_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	# Always require the user to specify the name of the cluster to operate against, even when resuming prepare;
 	# this avoids a lot of hairy corner-cases and attempts to figure out what cluster the user intended to operate against
@@ -1468,7 +1469,7 @@ def prepare_installation(options = [], args = None):
 
 	if state is not None and state not in ["<none>", "preparing", "prepared"]:
 		iktprint([("Error: ", "error"), ("Invalid installation state; the system cannot be in a configured or semi-configured state when running prepare; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	if phase == "<none>":
 		phase = 0
@@ -1488,7 +1489,7 @@ def prepare_installation(options = [], args = None):
 		retval = iktinput([("\nWarning: ", "warning"), ("No control plane defined in the inventory; do you want to add ", "default"), (f"{hostname}", "hostname"), (" as control plane? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ["y", "yes"]:
 			iktprint([("\nAborting: ", "error"), ("No available control plane in inventory.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.ENOENT)
 		else:
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = "controlplane", skip_all = False)
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = cluster_name, skip_all = True)
@@ -1525,7 +1526,7 @@ def prepare_installation(options = [], args = None):
 		if retval.lower() not in ["y", "yes"]:
 			iktprint([("\nAborting: ", "error"), ("User stopped control plane preparation.", "default")], stderr = True)
 			os.remove(IKT_INSTALLATION_INFO)
-			sys.exit(2)
+			sys.exit(errno.EINTR)
 
 	iktprint([(f"\n[Preparing localhost and control plane(s)]", "phase")])
 
@@ -1585,7 +1586,7 @@ def import_cluster(options = [], args = None):
 		for cluster in available_clusters:
 			iktprint([("• ", "separator"), (cluster, "hostname")])
 		iktprint([("\nAborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 
 	iktprint([("Cluster:", "header"), ("".ljust(pad + 2 - len("Cluster:")), "default"), ("Context:", "header")])
 	for cluster_name, context in clusters:
@@ -1598,7 +1599,7 @@ def import_cluster(options = [], args = None):
 
 		if retval.lower() not in ["y", "yes"]:
 			iktprint([("\nAborting: ", "error"), ("User stopped cluster import.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.EINTR)
 
 	iktprint([(f"\n[Importing cluster(s)]", "phase")])
 
@@ -1632,14 +1633,14 @@ def import_cluster(options = [], args = None):
 			iktprint([("Error: ", "error"), ("Could not find a control plane for the cluster ", "default"), (cluster_name, "hostname"), ("; aborting.", "default")], stderr = True)
 			# Remember to restore current-context
 			kh.set_context(current_context)
-			sys.exit(2)
+			sys.exit(errno.ENOENT)
 
 		iktprint([("Attention: ", "warning"), ("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
 		iktprint([("Since the system will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing when importing systems.", "default")])
 		ansible_password = iktinput_password([("\nPassword (for ", "default"), (controlplane, "hostname"), ("): ", "default")])
 		if len(ansible_password) == 0:
 			iktprint([("\nError: ", "Error"), ("Empty password; aborting.")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.EINVAL)
 
 		extra_values = {
 			"ansible_become_pass": ansible_password,
@@ -1797,10 +1798,10 @@ def setup_control_plane(options = [], args = None):
 
 	if state is not None and state in ["installed", "upgrading", "tearing_down", "torn_down", "purging"]:
 		iktprint([("Error: ", "error"), ("Invalid installation state; there is a partial or full installation already; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 	elif state is None or state == "preparing":
 		iktprint([("Error: ", "error"), ("The system is not prepared for installation yet; run ", "default"), (f"{about.admin_program_name}", "programname"), (" prepare", "command"), (" before continuing. Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	if state == "prepared":
 		phase = 0
@@ -1846,7 +1847,7 @@ def setup_control_plane(options = [], args = None):
 		retval = iktinput([("\nStart installation? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ["y", "yes"]:
 			iktprint([("\nAborting: ", "error"), ("User stopped installation.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.EINTR)
 
 	iktprint([("\n[Setting up control plane]", "phase")])
 
@@ -1888,7 +1889,7 @@ def __get_node_info(kh = None):
 		return None, None
 	elif status != 200:
 		iktprint([("Error: ", "error"), ("API-server returned ", "default"), (status, "errorvalue"), ("; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	retval = False
 
@@ -1913,10 +1914,10 @@ def get_control_planes(fail_on_empty = True):
 	controlplanes = []
 	if len(__controlplanes) == 0 and fail_on_empty == True:
 		iktprint([("Error: ", "error"), ("No control plane(s) defined in the inventory; rebuilding the inventory using “", "default"), (f"{about.inventory_program_name} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 	if len(__clusterhosts) == 0 and fail_on_empty == True:
 		iktprint([("Error: ", "error"), ("The cluster ", "default"), (f"{cluster_name}", "hostname"), (" has no hosts in the inventory; rebuilding the inventory using “", "default"), (f"{about.inventory_program_name} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 
 	for controlplane in __controlplanes:
 		# Only include control planes belonging to this cluster
@@ -1936,7 +1937,7 @@ def teardown_control_plane(options = [], args = None):
 
 	if not os.path.exists(IKT_INSTALLATION_INFO):
 		iktprint([("Error: ", "error"), ("Could not find reliable installation information. Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
@@ -1947,14 +1948,14 @@ def teardown_control_plane(options = [], args = None):
 
 	if distro is None or distro == "<none>":
 		iktprint([("Error: ", "error"), ("Could not find reliable installation information. Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	if state is None:
 		iktprint([("Error: ", "error"), ("Cannot determine installation state; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 	elif state in ["preparing", "prepared", "torn_down"]:
 		iktprint([("Error: ", "error"), ("The system has no installed cluster; try ", "default"), (f"{about.admin_program_name}", "programname"), (" purge-control-plane", "command"), ("; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 
 	for opt, optarg in options:
 		if opt == "--start-at-task":
@@ -1983,7 +1984,7 @@ def teardown_control_plane(options = [], args = None):
 		retval = iktinput([("\nStart teardown? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ["y", "yes"]:
 			iktprint([("\nAborting: ", "error"), ("User stopped teardown.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.EINTR)
 
 	iktprint([("\n[Tearing down cluster]", "phase")])
 
@@ -2002,7 +2003,7 @@ def purge_control_plane(options = [], args = None):
 
 	if not os.path.exists(IKT_INSTALLATION_INFO):
 		iktprint([("Error: ", "error"), ("Could not find reliable installation information. Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
@@ -2013,7 +2014,7 @@ def purge_control_plane(options = [], args = None):
 
 	if state is None or state in ["preparing", "installing", "upgrading"]:
 		iktprint([("Error: ", "error"), ("Invalid installation state; there's no fully installed cluster; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	if len(options) == 0:
 		phase = 0
@@ -2050,7 +2051,7 @@ def purge_control_plane(options = [], args = None):
 			retval = iktinput([("\nStart purge? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 			if retval.lower() not in ["y", "yes"]:
 				iktprint([("\nAborting: ", "error"), ("User stopped purge.", "default")], stderr = True)
-				sys.exit(2)
+				sys.exit(errno.EINTR)
 
 	iktprint([("\n\n[Purging cluster configuration and software]", "phase")])
 
@@ -2099,11 +2100,11 @@ def upgrade_control_plane(options = [], args = None):
 
 	if state is None or state in ["<none>"]:
 		iktprint([("Error: ", "error"), ("Unknown installation state; if you believe this is OK (such as when upgrading a cluster not installed using ", "default"), (f"{about.admin_program_name}", "programname"), (" you can try using the “", "default"), ("--override", "argument"), ("“ argument; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	if state is None or state in ["<none>", "preparing", "prepared", "installing", "tearing_down", "torn_down", "purging"]:
 		iktprint([("Error: ", "error"), ("Invalid installation state; Kubernetes does not seems to be fully installed; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	if state in ["installed", "upgraded"]:
 		phase = 0
@@ -2145,7 +2146,7 @@ def upgrade_control_plane(options = [], args = None):
 
 	if node_status is None:
 		iktprint([("Error: ", "error"), ("No ", "default"), (f"{HOMEDIR}/.kube/config", "path"), (" available; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 
 	if update_cache == True:
 		iktprint([("\n• ", "separator"), ("Updating APT cache", "action")])
@@ -2158,14 +2159,14 @@ def upgrade_control_plane(options = [], args = None):
 	if requested_version is not None:
 		if requested_version not in deb_versions[0][3]:
 			iktprint([("Error: ", "error"), ("The requested version ", "default"), (f"{requested_version}", "version"), (" is not available; aborting.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.ENOENT)
 		elif requested_version == deb_versions[0][1]:
 			if allow_reinstall == False:
 				iktprint([("Error: ", "error"), ("The requested version ", "default"), (f"{requested_version}", "version"), (" is already installed; to reinstall use the option “", "default"), ("--reinstall", "option"), ("“.", "default")], stderr = True)
-				sys.exit(2)
+				sys.exit(errno.EINVAL)
 		elif deb_compare_versions(deb_versions[0][1], requested_version) == True:
 			iktprint([("Error: ", "error"), ("The requested version ", "default"), (f"{requested_version}", "version"), (" is older than than the installed version ", "default"), (f"{deb_versions[0][1]}", "version"), (". Downgrades are not supported; aborting.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.EINVAL)
 	else:
 		requested_version = deb_versions[0][2]
 		if len(requested_version) == 0 or requested_version == "<none>":
@@ -2180,7 +2181,7 @@ def upgrade_control_plane(options = [], args = None):
 
 	if installed_version_tuple[0] != requested_version_tuple[0]:
 		print([("Error: ", "error"), ("Upgrades between ", "default"), ("MAJOR", "emphasis"), (" versions is currently not supported (installed version: ", "default"), (f"{deb_versions[0][1]}", "version"), (", requested version: ", "default"), (f"{requested_version}", "version"), ("; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOTSUP)
 	elif installed_version_tuple[1] != requested_version_tuple[1]:
 		installed_major_minor = f"{installed_version_tuple[0]}.{installed_version_tuple[1]}"
 		if int(requested_version_tuple[1]) - int(installed_version_tuple[1]) > 1:
@@ -2193,7 +2194,7 @@ def upgrade_control_plane(options = [], args = None):
 					minor_versions[major_minor] = version_tuple[2]
 			for version in minor_versions:
 				iktprint([("• ", "separator"), (f"{about.admin_program_name}", "programname"), (" upgrade-control-plane", "command"), (f" {version}.{minor_versions[version]}", "version")])
-			sys.exit(2)
+			sys.exit(errno.EINVAL)
 		else:
 			upgrade_type = "minor"
 	else:
@@ -2218,7 +2219,7 @@ def upgrade_control_plane(options = [], args = None):
 
 		if schedulable_count > 0:
 			iktprint([("\nThis can be achieved with: “", "default"), ("kubectl ", "programname"), ("drain ", "command"), ("--ignore-daemonsets --delete-emptydir-data ", "option"), (f"{nodes_to_drain}", "url"), ("“", "default")])
-			sys.exit(2)
+			sys.exit(errno.EBUSY)
 
 	installation_info = update_installation_info(state = "upgrading", requested_version = requested_version, phase = 0)
 
@@ -2235,7 +2236,7 @@ def upgrade_control_plane(options = [], args = None):
 		retval = iktinput([("\nStart upgrade? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ["y", "yes"]:
 			iktprint([("\nAborting: ", "error"), ("User stopped upgrade.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.EINTR)
 
 	iktprint([("\n[Upgrading control plane]", "phase")])
 
@@ -2257,7 +2258,7 @@ def taint_control_plane(options = [], args = None):
 
 	if node_statuses is None:
 		iktprint([("Critical: ", "critical"), ("Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENXIO)
 
 	first = True
 
@@ -2277,18 +2278,18 @@ def taint_control_plane(options = [], args = None):
 				continue
 			elif response.startswith("error: "):
 				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.")], stderr = True)
-				sys.exit(2)
+				sys.exit(errno.EINVAL)
 
 	if first == True:
 		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 
 def untaint_control_plane(options = [], args = None):
 	node_statuses, kh = __get_node_info()
 
 	if node_statuses is None:
 		iktprint([("Critical:", "critical"), (" Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENXIO)
 
 	first = True
 
@@ -2308,11 +2309,11 @@ def untaint_control_plane(options = [], args = None):
 				continue
 			elif response.startswith("error: "):
 				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.")], stderr = True)
-				sys.exit(2)
+				sys.exit(errno.EINVAL)
 
 	if first == True:
 		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 
 def troubleshoot(options = [], args = None):
 	error = 0
@@ -2342,7 +2343,7 @@ def troubleshoot(options = [], args = None):
 
 	if server_major != 1:
 		iktprint([("Critical:", "critical"), (f" {about.program_suite_name}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOTSUP)
 
 	if kubectl_minor > server_minor and kubectl_minor == server_minor + 1:
 		iktprint([("Note: ", "note"), ("The ", "default"), ("kubectl", "programname"), (f" version is one minor version newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
@@ -2433,7 +2434,7 @@ def troubleshoot(options = [], args = None):
 	if critical == True:
 		print()
 		iktprint([("Critical errors detected; aborting.", "emphasis")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	print()
 

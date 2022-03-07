@@ -5,6 +5,7 @@
 # Requires: python3-openssl
 
 from functools import reduce
+import errno
 import os
 from pathlib import Path
 import re
@@ -59,7 +60,7 @@ def set_host_vars(options = [], args = None):
 			iktprint([(f"Error: ", "error"), ("Setting a variable requires a ", "default"), ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
 			print()
 			iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.EINVAL)
 		hostvars.append((key, value))
 
 	# Set vars
@@ -87,7 +88,7 @@ def set_group_vars(options = [], args = None):
 			iktprint([(f"Error: ", "error"), ("Setting a variable requires a ", "default"), ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
 			print()
 			iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.EINVAL)
 		groupvars.append((key, value))
 
 	# Set vars
@@ -204,7 +205,7 @@ def add_hosts(options = [], args = None):
 				iktprint([("Error: ", "error"), ("Invalid option; “", "default"), (f"{opt}", "option"), ("“ cannot be used with ", "default"), ("HOST", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("... ", "argument"), ("syntax.", "default")], stderr = True)
 				print()
 				iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-				sys.exit(2)
+				sys.exit(errno.EINVAL)
 			groups = optarg.split(",")
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
@@ -266,7 +267,7 @@ def remove_groups(options = [], args = None):
 		iktprint([("Error: ", "error"), ("The group “", "default"), ("all", "argument"), ("“ cannot be removed.", "default")], stderr = True)
 		print()
 		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	for group in groups:
 		grouphosts = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, group)
@@ -283,7 +284,7 @@ def remove_groups(options = [], args = None):
 		iktprint([("Removing groups that still contain hosts requires specifying “", "default"), ("--force", "option"), ("“.", "default")], stderr = True)
 		print()
 		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	retval = ansible_remove_groups(inventory = ANSIBLE_INVENTORY, groups = groups, force = force)
 
@@ -326,7 +327,7 @@ def rebuild_inventory(options = [], args = None):
 		iktprint([("Error: ", "error"), ("Overwriting an existing inventory requires specifying “", "default"), ("--force", "option"), ("“.", "default")], stderr = True)
 		print()
 		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	from kubernetes_helper import KubernetesHelper
 
@@ -361,7 +362,7 @@ def rebuild_inventory(options = [], args = None):
 
 	if pubkey == None:
 		iktprint([("Error: ", "error"), ("Failed to read ", "default"), (f"{HOMEDIR}/.ssh/id_ed25519.pub", "path"), ("; aborting.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 
 	values = {
 		"authorized_keys": [pubkey],
@@ -416,7 +417,7 @@ def remove_hosts(options = [], args = None):
 		iktprint([(f"unless “", "default"), ("all", "argument"), ("“ is the only group or the hosts are not members of other groups.", "default")], stderr = True)
 		print()
 		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	retval = True
 
@@ -752,7 +753,7 @@ def main():
 		iktprint([(f"{about.inventory_program_name} ", "programname"), ("requires Ansible for some of its functionality,", "default")], stderr = True)
 		iktprint([("and its sole purpose is to act as ikt's way to manipulate its ansible inventory.", "default")], stderr = True)
 		iktprint([("Please install Ansible.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.ENOSYS)
 
 	iktconfig = iktlib.read_iktconfig()
 	# Used by the ansible module

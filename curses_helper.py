@@ -3,6 +3,7 @@
 
 import curses
 from datetime import datetime
+import errno
 from operator import attrgetter
 import os
 import sys
@@ -110,7 +111,7 @@ def read_theme(configthemefile, defaultthemefile):
 
 	if themefile is None:
 		print(f"{os.path.basename(sys.argv[0])}: couldn't load theme “{themefile}”; exiting.", file = sys.stderr)
-		sys.exit(2)
+		sys.exit(errno.ENOENT)
 
 	with open(themefile) as f:
 		theme = yaml.safe_load(f)
