@@ -13,6 +13,7 @@ import curses
 from curses import wrapper
 import curses.textpad
 from datetime import datetime, timezone
+import errno
 from functools import reduce
 from getpass import getuser
 import http.client
@@ -7435,9 +7436,15 @@ def genericlistloop(stdscr, view):
 					for metadata in tmpmetadata:
 						tmpdescription += metadata[0]
 					if tmpdescription == selection:
-						actionfunc = deep_get(actionlist, f"{action}#actionfunc", command_hosts)
-						if type(actionfunc) == str:
-							actionfunc = eval(actionfunc)
+						actiontype = deep_get(actionlist, f"{action}#action")
+						if actiontype is not None:
+							if actiontype == "execute":
+								actionfunc = execute_command
+						else:
+							actionfunc = deep_get(actionlist, f"{action}#actionfunc", command_hosts)
+							if type(actionfunc) == str:
+								actionfunc = eval(actionfunc)
+						action_args = deep_get(actionlist, f"{action}#action_args", {})
 						# These are only relevant for node and inventory view
 						allowoncontrolplane = deep_get(actionlist, f"{action}#allow-on-control-plane", True)
 						singleoncontrolplane = deep_get(actionlist, f"{action}#single-on-control-plane", False)
@@ -7519,6 +7526,7 @@ def genericlistloop(stdscr, view):
 						continue
 
 				selection_vars["_tagged_items"] = list(tagged_items)
+				selection_vars["action_args"] = action_args
 				retval = actionfunc(uip, items, actionlist[action], values = selection_vars, kind = kind, title = title)
 				if retval is not None and retval == curses_helper.retval.RETURNFULL:
 					return retval
@@ -11362,7 +11370,6 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 		obj_namespace = deep_get(obj, "metadata#namespace")
 		# This is a request to create a new ephemeral container
 		if command == ["<ephemeral>"]:
-			# Should we perhaps use subprocess.run here?
 			ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
 			args = ["kubectl", "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image, "--attach=false"]
 			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
@@ -12192,6 +12199,41 @@ def stop_resource_rescale(uip, items = [], action = {}, values = {}, kind = None
 def delete_logs(uip, items = [], action = {}, values = {}, kind = None, title = ""):
 	for item in items:
 		ansible_delete_log(item)
+
+def execute_command(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+	tmpargs = deep_get(values, "action_args#command", [])
+	if len(tmpargs) == 0:
+		return
+
+	msg = [("Executing “", "action"), (action.get("description"), "argument"), ("“\n", "action")]
+
+	curses.endwin()
+	os.system("clear")
+
+	iktprint(msg)
+
+	args = []
+
+	for arg in tmpargs:
+		if arg == "<<<items>>>":
+			args += items
+		elif arg.startswith("<<<items:"):
+			separator = arg[len("<<<items:"):-len(">>>")]
+			args.append(separator.join(items))
+		else:
+			args.append(arg)
+
+	try:
+		result = subprocess.run(args)
+		retval = result.returncode
+	except FileNotFoundError:
+		iktprint([("Error: ", "error"), ("command “", "default"), (f"{args[0]}", "programname"), ("“ not found", "default")])
+		retval = 2
+
+	waitforkeypress = True
+	if waitforkeypress or retval > 0:
+		input("\nPress Enter to continue...")
+	uip.stdscr.refresh()
 
 def command_hosts(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	values.pop("_tagged_items", None)
@@ -17798,7 +17840,7 @@ def set_default_view(view):
 	else:
 		iktprint([(about.ui_program_name, "programname"), (": ", "default"), ("VIEW", "argument"), (" can only be specified once.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 def checkforview(arg):
 	for view in views:
@@ -17836,7 +17878,7 @@ def customise_listviews():
 		for field in fields:
 			if field not in fields:
 				iktprint([("Error: ", "error"), ("“", "default"), (field, "option"), ("“ is not a valid field for the view “", "default"), (view, "argument"), ("“; aborting.", "default")], stderr = True)
-				sys.exit(2)
+				sys.exit(errno.EINVAL)
 			elif field in custom_fields:
 				iktprint([("Warning: ", "warning"), ("“", "default"), (field, "option"), ("“ is specified twice (or more) for the view “", "default"), (view, "argument"), ("“; ignoring.", "default")], stderr = True)
 				continue
@@ -17929,7 +17971,7 @@ def main():
 		elif arg.startswith("--"):
 			print("%s: unrecognised option “%s”" % (os.path.basename(sys.argv[0]), arg), file = sys.stderr)
 			iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.EINVAL)
 		else:
 			# After we've received a view we assume that non-flag arguments
 			# that follow are used as shortcuts to a specific item
@@ -17940,7 +17982,7 @@ def main():
 						print("%s: invalid syntax “%s %s”" % (os.path.basename(sys.argv[0]), os.path.basename(sys.argv[0]), " ".join(sys.argv[1:])), file = sys.stderr)
 						print("Format is either NAMESPACE/NAME or NAME NAMESPACE", file = sys.stderr)
 						iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-						sys.exit(2)
+						sys.exit(errno.EINVAL)
 					else:
 						initial_namespace = tmp[1]
 						initial_name = tmp[2]
@@ -17951,7 +17993,7 @@ def main():
 					print("%s: invalid syntax “%s %s”" % (os.path.basename(sys.argv[0]), os.path.basename(sys.argv[0]), " ".join(sys.argv[1:])), file = sys.stderr)
 					print("Format is either NAMESPACE/NAME or NAME NAMESPACE", file = sys.stderr)
 					iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-					sys.exit(2)
+					sys.exit(errno.EINVAL)
 				else:
 					initial_namespace = arg
 			elif initial_container is None:
@@ -17959,14 +18001,14 @@ def main():
 			else:
 				print("%s: unrecognised option “%s”" % (os.path.basename(sys.argv[0]), arg), file = sys.stderr)
 				iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-				sys.exit(2)
+				sys.exit(errno.EINVAL)
 		y += 1
 
 	if defaultview == "":
 		if initial_name is not None:
 			iktprint([(f"{about.ui_program_name}", "programname"), (": unsupported view “", "default"), (f"{initial_name}", "command"), ("“.", "default")], stderr = True)
 			iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-			sys.exit(2)
+			sys.exit(errno.EINVAL)
 
 		if tmpdefaultview is not None and tmpdefaultview != "":
 			defaultview = tmpdefaultview
@@ -17988,7 +18030,7 @@ def main():
 					iktprint([(f"{about.ui_program_name}", "programname"), (": invalid syntax “", "default"), (f"{about.ui_program_name} ", "programname"), (f"{' '.join(sys.argv[1:])}", "argument"), ("”", "default")], stderr = True)
 					iktprint([("Format is either ", "default"), ("NAMESPACE/NAME:", "argument"), ("{", "separator"), ("CONTAINER", "argument"), (",", "separator"), ("CONFIGMAP", "argument"), ("}", "separator"), (" or ", "default"), ("NAME NAMESPACE ", "argument"), ("{", "separator"), ("CONTAINER", "argument"), (",", "separator"), ("CONFIGMAP", "argument"), ("}", "separator")], stderr = True)
 					iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-					sys.exit(2)
+					sys.exit(errno.EINVAL)
 				else:
 					initial_name = tmp[1]
 					initial_container = tmp[2]
@@ -17998,7 +18040,7 @@ def main():
 		iktprint([(f"{about.ui_program_name}", "programname"), (": invalid syntax “", "default"), (f"{about.ui_program_name} ", "programname"), (f"{' '.join(sys.argv[1:])}", "argument"), ("”", "default")], stderr = True)
 		iktprint([(f"CONTAINER", "argument"), ("/", "separator"), ("CONFIGMAP", "argument"), (" only makes sense in ", "default"), ("pod", "command"), ("/", "separator"), ("configmap", "command"), (" view.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
-		sys.exit(2)
+		sys.exit(errno.EINVAL)
 
 	# We don't need escape sequences, so cut down on the delay to 25ms
 	os.environ.setdefault('ESCDELAY', '25')

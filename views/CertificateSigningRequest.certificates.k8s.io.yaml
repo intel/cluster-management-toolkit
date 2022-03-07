@@ -81,3 +81,17 @@ listview:
       header: "Signer:"
       path: "spec#signerName"
       type: str
+  actions:
+    actionlist:
+      "Approve Request":
+        description: Approve signing request
+        confirm: true
+        action: execute
+        action_args:
+          command: ["kubectl", "certificate", "approve", "<<<items>>>"]
+      "Deny Request":
+        description: Deny signing request
+        confirm: true
+        action: execute
+        action_args:
+          command: ["kubectl", "certificate", "deny", "<<<items>>>"]
