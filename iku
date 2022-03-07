@@ -2292,8 +2292,11 @@ def generic_infogetter(**kwargs):
 						if len(value) == 0:
 							value = default
 						if value is not None:
-							for tmp in value:
-								_values.append((tmp, vtype))
+							if action in ["sum", "latest", "earliest"]:
+								_values.append((value, vtype))
+							else:
+								for tmp in value:
+									_values.append((tmp, vtype))
 					elif ptype == "tuple":
 						value = []
 						for i in range(0, len(path)):
