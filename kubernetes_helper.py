@@ -1769,6 +1769,11 @@ class KubernetesHelper:
 			"api_family": ["apis/policy.linkerd.io/v1beta1/"],
 			"api": "servers",
 		},
+		# pmem-csi.intel.com
+		("PmemCSIDeployment", "pmem-csi.intel.com"): {
+			"api_family": ["apis/pmem-csi.intel.com/v1beta1/"],
+			"api": "pmemcsideployments",
+		},
 		# project.openshift.io
 		("ProjectRequest", "project.openshift.io"): {
 			"api_family": ["apis/project.openshift.io/v1/"],

@@ -1,0 +1,37 @@
+kind: PmemCSIDeployment
+api_family: pmem-csi.intel.com
+default_command: pmemcsideployments
+command:
+- pmemcsideps
+- pmemcsidep
+- pcd
+listview:
+  name: PMEM CSI Deployment
+  group: Storage & Backups
+  field_indexes:
+    Normal: [name, device_mode, node_selector, image, phase, age]
+  fields:
+    device_mode:
+      header: "Device Mode:"
+      path: "spec#deviceMode"
+      type: str
+    node_selector:
+      header: "Node Selector:"
+      paths:
+      - path: ["spec#nodeSelector"]
+        pathtype: key_value
+      formatter: list
+      formatting:
+        field_colors:
+        - type: key
+        - type: value
+        field_separators:
+        - type: selector
+    image:
+      header: "Image:"
+      path: "spec#image"
+      type: str
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: str
