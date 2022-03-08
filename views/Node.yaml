@@ -17,6 +17,38 @@ listview:
       header: "Version:"
       path: "status#nodeInfo#kubeletVersion"
       type: version
+    taints:
+      header: "Taints:"
+      paths:
+      - path: ["spec#taints"]
+        pathtype: items
+        subpaths:
+        - subpath: key
+          transform:
+            "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
+          regex: ["^[^/]*/(.*)"]
+        - effect
+      formatter: list
+      formatting:
+        field_colors:
+        - type: key
+        - type: value
+        field_separators:
+        - type: keyvalue
+        mapping:
+          mappings:
+            NoSchedule:
+              field_colors:
+              - context: main
+                type: status_not_ok
+            PreferNoSchedule:
+              field_colors:
+              - context: main
+                type: status_warning
+            NoExecute:
+              field_colors:
+              - context: main
+                type: status_not_ok
   actions:
     playbooklist:
       context: node

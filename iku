@@ -1663,14 +1663,6 @@ def datagetter_node_status(obj, path, default):
 
 	return status, {"status_group": status_group}
 
-def datagetter_node_taints(obj, path, default):
-	if obj is None:
-		return default
-
-	status, status_group, taints, full_taints = get_node_status(obj)
-
-	return taints, {}
-
 def datagetter_event_status(obj, path, default):
 	if obj is None or path is None or len(path) == 0:
 		return default
@@ -2046,6 +2038,11 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 			raise Exception(f"Unknown value type {vtype}; the view file is probably invalid")
 	return value
 
+def transform_filter(transformations, value):
+	if value in transformations:
+		value = deep_get(transformations, value)
+	return value
+
 def when_filter(when_path, item, key = None, value = None):
 	if type(deep_get(when_path, "when", [])) == dict:
 		when_conditions = [deep_get(when_path, "when", {})]
@@ -2293,10 +2290,12 @@ def generic_infogetter(**kwargs):
 									_subpath = deep_get(subpaths[i], "subpath")
 									if type(_subpath) == str:
 										_subpath = [_subpath]
+									_transform = deep_get(subpaths[i], "transform", {})
 									_regexes = deep_get(subpaths[i], "regex", [])
 									if type(_regexes) == str:
 										_regexes = [_regexes]
 									_raw = deep_get_with_fallback(item, _subpath, _default)
+									_raw = transform_filter(_transform, _raw)
 									for _regex in _regexes:
 										_tmp = re.match(_regex, _raw)
 										if _tmp is not None:
@@ -6537,14 +6536,6 @@ field_templates = {
 		"path": ("status#tags", ["tag"]),
 		"datagetter": datagetter_list_fields,
 		"generator": generator_list,
-	},
-	"taints": {
-		# [(key, value), ...]
-		"header": "Taints:",
-		"datagetter": datagetter_node_taints,
-		"generator": generator_list,
-		"field_colors": [("types", "key"), ("types", "value")],
-		"field_separators": [("separators", "keyvalue")],
 	},
 	"target_port": {
 		"header": "Target Port:",

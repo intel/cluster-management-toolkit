@@ -102,20 +102,20 @@ listview:
       # the name of the filter; this is arbitrary
       evicted:
         # This can be either object or fields;
-	# object operates on the raw data from the LIST request from Kubernetes, while fields operates on the cooked output
+        # object operates on the raw data from the LIST request from Kubernetes, while fields operates on the cooked output
         source: object
-	# This is used to enable/disable the filter; the main usecase is for toggling filters
+        # This is used to enable/disable the filter; the main usecase is for toggling filters
         enabled: true
-	# Block rules will block any object that matches *all* key/values pairs;
-	# so for instance this rule filters out Pods if they are in phase=Failed *and* reason=Evicted
+        # Block rules will block any object that matches *all* key/values pairs;
+        # so for instance this rule filters out Pods if they are in phase=Failed *and* reason=Evicted
         block:
         - key: "status#phase"
           values: [Failed]
         - key: "status#reason"
           values: [Evicted]
-	# Allow filters will block any elements NOT matching *all* key/values pairs;
-	# so for instance this rule would filter out all Pods that are not in phase=Running
-	# allow:
+        # Allow filters will block any elements NOT matching *all* key/values pairs;
+        # so for instance this rule would filter out all Pods that are not in phase=Running
+        # allow:
         #- key: "status#phase"
         #  values: [Running]
   # These are actions that are added to the menu shown when pressing ";"
@@ -127,9 +127,9 @@ listview:
       "Delete resource":
         # The decription of the action; this is displayed in the menu
         description: Delete resource
-	# Does the action ask for confirmation?
+        # Does the action ask for confirmation?
         confirm: true
-	# XXX: The internal function to call (this requires internal knowledge of iku)
+        # XXX: The internal function to call (this requires internal knowledge of iku)
         actionfunc: delete_resource
       "Force delete resource":
         description: Delete resource (No grace period)
