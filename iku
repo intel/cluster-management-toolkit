@@ -441,7 +441,6 @@ def generator_list(obj, field, fieldlen, pad, ralign, selected, **formatting):
 def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	items = getattr(obj, field)
 
-
 	item_separator = deep_get(formatting, "item_separator")
 	if item_separator is None:
 		item_separator = ("separators", "list")
@@ -459,17 +458,31 @@ def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **fo
 	field_prefixes = deep_get(formatting, "field_prefixes")
 	field_suffixes = deep_get(formatting, "field_prefixes")
 
+	# XXX: Well, this works:ish, but it's ugly beyond belief
+	#      it would be solved so much better with a mapping that uses a secondary value
 	newitems = []
+	field_colors = [("main", "status_done"), ("main", "status_ok"), ("main", "status_pending"), ("main", "status_warning"), ("main", "status_admin"), ("main", "status_not_ok"), ("main", "status_unknown"), ("main", "status_crit"), ("types", "generic")]
+	field_separators = [("separators", "no_pad")]
 
-	for item in items:
-		field_colors = []
-		if item[1] == stgroup.OK:
-			field_colors.append(("main", "status_ok"))
-		elif item[1] == stgroup.NOT_OK:
-			field_colors.append(("main", "status_not_ok"))
+	for item, status in items:
+		if status == stgroup.DONE:
+			newitems.append((item))
+		if status == stgroup.OK:
+			newitems.append(("", item))
+		elif status == stgroup.PENDING:
+			newitems.append(("", "", item))
+		elif status == stgroup.WARNING:
+			newitems.append(("", "", "", item))
+		elif status == stgroup.ADMIN:
+			newitems.append(("", "", "", "", item))
+		elif status == stgroup.NOT_OK:
+			newitems.append(("", "", "", "", "", item))
+		elif status == stgroup.UNKNOWN:
+			newitems.append(("", "", "", "", "", "", item))
+		elif status == stgroup.CRIT:
+			newitems.append(("", "", "", "", "", "", "", item))
 		else:
-			field_colors.append(("types", "generic"))
-		newitems.append(item[0])
+			newitems.append(("", "", "", "", "", "", "", "", item))
 
 	return format_list(newitems, fieldlen, pad, ralign, selected, item_separator = item_separator, field_separators = field_separators, field_colors = field_colors, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
 
@@ -1469,7 +1482,7 @@ def datagetter_access_modes(obj, path, default):
 
 def datagetter_endpoint_ips(obj, path, default):
 	subsets = deep_get(obj, path)
-	endpoints = get_endpoint_ips(subsets)
+	endpoints = get_endpoint_endpoints(subsets)
 	return endpoints, {}
 
 def datagetter_controller(obj, path, default):
@@ -2170,6 +2183,8 @@ def generic_infogetter(**kwargs):
 			path = deep_get(field, "path")
 			paths = deep_get(field, "paths", [])
 			datagetter = deep_get(field, "datagetter")
+			if type(datagetter) == str:
+				datagetter = eval(datagetter)
 			converters = deep_get(field, "converters", [])
 			if "default" not in field:
 				default = ""
@@ -3200,7 +3215,25 @@ def get_controller_from_owner_references(owner_references):
 					api_group = ""
 				kind = (deep_get(owr, "kind"), api_group)
 				controller = (kind, deep_get(owr, "name"))
+
 	return controller
+
+def get_endpoint_endpoints(subsets):
+	endpoints = []
+
+	if subsets is None:
+		subsets = []
+
+	for subset in subsets:
+		for address in deep_get(subset, "addresses", []):
+			endpoints.append((deep_get(address, "ip"), stgroup.OK))
+		for address in deep_get(subset, "notReadyAddresses", []):
+			endpoints.append((deep_get(address, "ip"), stgroup.NOT_OK))
+
+	if len(endpoints) == 0:
+		endpoints.append(("<none>", stgroup.UNKNOWN))
+
+	return endpoints
 
 def get_endpoint_ips(subsets):
 	endpoints = []
@@ -5803,20 +5836,6 @@ field_templates = {
 		"generator": generator_age,
 		"ralign": True,
 	},
-	"endpoints": {
-		"header": "Endpoints:",
-		"path": "subsets",
-		"datagetter": datagetter_endpoint_ips,
-		"generator": generator_list,
-		"ellipsise": 3,
-	},
-	"endpoints_eps": {
-		"header": "Endpoints:",
-		"path": "subsets",
-		"datagetter": datagetter_eps_endpoints,
-		"generator": generator_list_with_status,
-		"ellipsise": 3,
-	},
 	"error": {
 		"header": "Error:",
 	},
@@ -6741,14 +6760,17 @@ def fieldgenerator(view, field_index, field_indexes, fields = {}, sortcolumn = N
 		elif formatter == "mem":
 			generator = generator_mem_single
 			processor = None
-		elif formatter in ["float"]:
+		elif formatter == "float":
 			# The generator is the same, but the name is unfortunate
 			generator = generator_mem_single
 			processor = None
-		elif formatter in ["list"]:
+		elif formatter == "list":
 			generator = generator_list
 			processor = processor_list
-		elif formatter in "numerical":
+		elif formatter == "list_with_status":
+			generator = generator_list_with_status
+			processor = processor_list_with_status
+		elif formatter == "numerical":
 			generator = generator_numerical
 			processor = None
 		elif formatter == "timestamp":
