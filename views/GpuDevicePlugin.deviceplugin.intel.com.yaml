@@ -22,5 +22,13 @@ listview:
      align: right
     node_selector:
       header: "Node Selector:"
-      path: "spec#nodeSelector"
-      type: raw
+      paths:
+      - path: ["spec#nodeSelector"]
+        pathtype: key_value
+      formatter: list
+      formatting:
+        field_colors:
+        - type: key
+        - type: value
+        field_separators:
+        - type: selector
