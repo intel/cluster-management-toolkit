@@ -1,0 +1,17 @@
+kind: PeerAuthentication 
+api_family: security.istio.io
+default_command: peerauthentications
+command:
+- peerauths
+- peerauth
+listview:
+  name: Peer Authentications
+  group: Istio
+  field_indexes:
+    Normal: [namespace, name, mode, age]
+  sortcolumn: namespace
+  fields:
+    mode:
+      header: "Mode:"
+      path: "spec#mtls#mode"
+      type: str

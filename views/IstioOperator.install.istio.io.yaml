@@ -8,5 +8,14 @@ listview:
   name: Istio Operators
   group: Istio
   field_indexes:
-    Normal: [namespace, name, age]
+    Normal: [namespace, name, revision, status, age]
   sortcolumn: namespace
+  fields:
+    revision:
+      header: "Revision:"
+      path: "spec#revision"
+      type: version
+    status:
+      header: "Status:"
+      path: "status#status"
+      type: str

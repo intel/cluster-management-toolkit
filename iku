@@ -1390,6 +1390,26 @@ def normalise_mem_bytes_to_str(_mem):
 
 	return f"{mem:0.1f}{suffix}B"
 
+def datagetter_available_views(obj, path, default):
+	if obj is None:
+		return default
+
+	kind = deep_get(obj, "spec#names#kind", "")
+	api_family = deep_get(obj, "spec#group", "")
+
+	available_views = []
+	for view in views:
+		if deep_get(views, f"{view}#kind", ("", "")) == (kind, api_family):
+			available_views.append("List")
+
+	if (kind, api_family) in infoviews:
+		available_views.append("Info")
+
+	if len(available_views) == 0:
+		available_views = default
+
+	return available_views, {}
+
 def datagetter_metrics(obj, path, default):
 	if obj is None or path is None:
 		return default
@@ -5469,6 +5489,11 @@ builtin_fields = {
 		"formatter": "age",
 		"default": -1,
 		"align": "right",
+	},
+	"available_views": {
+		"header": "Available Views:",
+		"datagetter": datagetter_available_views,
+		"formatter": "list",
 	},
 	"name": {
 		"header": "Name:",
