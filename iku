@@ -5849,12 +5849,6 @@ field_templates = {
 		"header": "Full Name:",
 		"path": "fullName",
 	},
-	"gateways": {
-		# [gateway, ...]
-		"header": "Gateways:",
-		"path": "spec#gateways",
-		"generator": generator_list,
-	},
 	"group": {
 		"header": "Group:",
 	},
@@ -6015,10 +6009,6 @@ field_templates = {
 	},
 	"lmin": {
 		"header": "Min:",
-	},
-	"location": {
-		"header": "Location:",
-		"path": "spec#location",
 	},
 	"log_type": {
 		"header": "Log Type:",
@@ -6392,10 +6382,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "resource"), ("types", "numerical"), ("types", "numerical")],
 		"field_separators": [("separators", "resource"), ("separators", "fraction")],
-	},
-	"resolution": {
-		"header": "Resolution:",
-		"path": "spec#resolution",
 	},
 	"resource": {
 		"header": "Resource:",
@@ -7556,6 +7542,7 @@ def genericlistloop(stdscr, view):
 				"action_call": view_yaml,
 				"action_args": {
 					"title": "YAML dump",
+					"_named_title": True,
 					"_pass_obj": True,
 				},
 				"read_only": True,
@@ -7627,6 +7614,8 @@ def genericlistloop(stdscr, view):
 					action_args["selected"] = selected
 				if "_pass_selection_vars" in action_args:
 					action_args["selection_vars"] = selection_vars
+				if "_named_title" in action_args and selected is not None and getattr(selected, "name"):
+					action_args["named_title"] = deep_get(action_args, "title", "") + " (" + getattr(selected, "name") + ")"
 				action_call = deep_get(value, "action_call")
 				if action == "toggle_var":
 					var = deep_get(action_args, "var")
@@ -11770,7 +11759,7 @@ def view_yaml(stdscr, **kwargs):
 	obj = deep_get(kwargs, "obj")
 	if obj is None:
 		return
-	title = deep_get(kwargs, "title")
+	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
 	themearrays = iktlib.format_yaml([obj])
 	return resourceinfodispatch(stdscr, themearrays, ("__ResourceView", ""), title = title)
 
@@ -11811,7 +11800,7 @@ def infoview_view_yaml(uip, kind, obj, **kwargs):
 			_obj = [deep_get(obj, path)]
 	else:
 		_obj = [obj]
-	title = deep_get(kwargs, "title")
+	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
 	themearrays = iktlib.format_yaml(_obj)
 	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
 
@@ -17048,15 +17037,6 @@ views_builtin = {
 		},
 		"kind": ("CISKubeBenchReport", "aquasecurity.github.io"),
 	},
-	# metacontroller.k8s.io
-	"Composite Controllers": {
-		"commandline": ["compositecontrollers", "compositecontroller", "cctl", "cc"],
-		"group": "API & Extendability",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("CompositeController", "metacontroller.k8s.io"),
-	},
 	# aquasecurity.github.io
 	"Config Audit Reports": {
 		"commandline": ["configauditreports", "configauditreport", "configaudits", "configaudit", "cfgaudits", "cfgaudit"],
@@ -17297,16 +17277,6 @@ views_builtin = {
 		},
 		"kind": ("Peer", "kilo.squat.ai"),
 	},
-	# core API
-	#"Pod Templates": {
-	#	"commandline": ["podtemplates", "podtemplate"],
-	#	"group": "Core",
-	#	"field_indexes": {
-	#		"Normal": [FIXME],
-	#	},
-	#	"sortcolumn": "namespace",
-	#	"kind": ("PodTemplate", ""),
-	#},
 	# reaper.cassandra-reaper.io
 	"Cassandra Data Centers": {
 		"commandline": ["cassandradatacenters", "cassandradatacenter", "cassdcs", "cassdc"],
@@ -17364,15 +17334,6 @@ views_builtin = {
 		},
 		"kind": ("ServiceCertSignerOperatorConfig", "servicecertsigner.config.openshift.io"),
 	},
-	# networking.istio.io
-	"Service Entries": {
-		"commandline": ["serviceentries", "serviceentry", "svcentries", "svcentry"],
-		"group": "Istio",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age", "hosts", "ports_svc", "location", "resolution"],
-		},
-		"kind": ("ServiceEntry", "networking.istio.io"),
-	},
 	# linkerd.io
 	"Service Profiles": {
 		"commandline": ["serviceprofiles", "serviceprofile", "sp"],
@@ -17421,15 +17382,6 @@ views_builtin = {
 		},
 		"sortcolumn": "namespace",
 		"kind": ("TraefikService", "traefik.containo.us"),
-	},
-	# networking.istio.io
-	"Virtual Services": {
-		"commandline": ["virtualservices",  "virtualservice", "virtsvcs", "virtsvc"],
-		"group": "Istio",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "gateways", "hosts", "age"],
-		},
-		"kind": ("VirtualService", "networking.istio.io"),
 	},
 	# storage.k8s.io
 	#"Volume Attachments": {

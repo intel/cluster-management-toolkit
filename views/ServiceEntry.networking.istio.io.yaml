@@ -1,0 +1,27 @@
+kind: ServiceEntry
+api_family: networking.istio.io
+default_command: serviceentries
+command:
+- svcentries
+- svcentry
+listview:
+  name: Service Entries
+  group: Istio
+  field_indexes:
+    Normal: [namespace, name, age, hosts, ports_svc, location, resolution]
+  sortcolumn: namespace
+  fields:
+    hosts:
+      header: "Hosts:"
+      path: "spec#hosts"
+      type: raw
+      formatter: list
+    location:
+      header: "Location:"
+      path: "spec#location"
+      type: str
+    resolution:
+      header: "Resolution:"
+      path: "spec#resolution"
+      type: str
+
