@@ -7,6 +7,7 @@ listview:
   group: "Storage & Backups"
   field_indexes:
     Normal: [namespace, name, pvc_status, volume, capacity, access_modes, storage_class, age, volume_mode]
+  sortcolumn: namespace
   fields:
     capacity:
       header: "Capacity:"
@@ -17,11 +18,11 @@ listview:
       header: "Storage Class:"
       path: "spec#storageClassName"
       type: str
-    volume_mode:
-      header: "Volume Mode:"
-      path: "spec#volumeMode"
-      type: str
     volume:
       header: "Volume:"
       path: "spec#volumeName"
+      type: str
+    volume_mode:
+      header: "Volume Mode:"
+      path: "spec#volumeMode"
       type: str

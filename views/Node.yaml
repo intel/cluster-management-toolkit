@@ -9,13 +9,13 @@ listview:
     Wide: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel_version, container_runtime, cpu, mem, taints]
     Normal: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, cpu, mem, taints]
   fields:
-    kubelet_version:
-      header: "Version:"
-      path: "status#nodeInfo#kubeletVersion"
-      type: version
     kernel_version:
       header: "Kernel Version:"
       path: "status#nodeInfo#kernelVersion"
+      type: version
+    kubelet_version:
+      header: "Version:"
+      path: "status#nodeInfo#kubeletVersion"
       type: version
   actions:
     playbooklist:

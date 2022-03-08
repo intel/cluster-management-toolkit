@@ -9,15 +9,12 @@ listview:
   group: API & Extendability
   field_indexes:
     Normal: [namespace, name, display_name, version, phase, age]
+  sortcolumn: namespace
   fields:
     display_name:
       header: "Display Name:"
       path: "spec#displayName"
       type: str
-    version:
-      header: "Version:"
-      path: "spec#version"
-      type: version
     phase:
       header: "Phase:"
       path: "status#phase"
@@ -38,4 +35,7 @@ listview:
               field_colors:
               - context: main
                 type: status_ok
-  sortcolumn: namespace
+    version:
+      header: "Version:"
+      path: "spec#version"
+      type: version

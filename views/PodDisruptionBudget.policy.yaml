@@ -8,21 +8,8 @@ listview:
   group: Policy
   field_indexes:
     Normal: [namespace, name, min_available, max_unavailable, allowed_disruptions, age]
+  sortcolumn: namespace
   fields:
-    min_available:
-      header: "Min Available:"
-      paths:
-      - path: "spec#minAvailable"
-        type: int
-      align: right
-      default: "N/A"
-    max_unavailable:
-      header: "Max Available:"
-      paths:
-      - path: "spec#maxUnavailable"
-        type: int
-      align: right
-      default: "N/A"
     allowed_disruptions:
       header: "Allowed Disruptions:"
       paths:
@@ -30,3 +17,17 @@ listview:
         type: int
       align: right
       default: 0
+    max_unavailable:
+      header: "Max Available:"
+      paths:
+      - path: "spec#maxUnavailable"
+        type: int
+      align: right
+      default: "N/A"
+    min_available:
+      header: "Min Available:"
+      paths:
+      - path: "spec#minAvailable"
+        type: int
+      align: right
+      default: "N/A"

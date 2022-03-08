@@ -12,12 +12,24 @@ listview:
   field_indexes:
     Wide: [namespace, name, endpoint_id, identity_id, ingress_enforcement, egress_enforcement, visibility_policy, endpoint_state, ipv4, ipv6, node, age]
     Normal: [namespace, name, endpoint_state, ipv4, ipv6, node, age]
+  sortcolumn: namespace
   fields:
+    egress_enforcement:
+      header: "Egress Enforcement:"
+      paths:
+      - path: "status#policy#egress#enforcing"
+        pathtype: value
     endpoint_id:
       header: "Endpoint ID:"
       paths:
       - path: "status#id"
         pathtype: value
+    endpoint_state:
+      header: "Endpoint State:"
+      paths:
+      - path: "status#state"
+        pathtype: value
+      default: "<unknown>"
     identity_id:
       header: "Identity ID:"
       paths:
@@ -28,22 +40,6 @@ listview:
       paths:
       - path: "status#policy#ingress#enforcing"
         pathtype: value
-    egress_enforcement:
-      header: "Egress Enforcement:"
-      paths:
-      - path: "status#policy#egress#enforcing"
-        pathtype: value
-    visibility_policy:
-      header: "Visibility Policy:"
-      paths:
-      - path: "status#policy#visibility#enforcing"
-        pathtype: value
-    endpoint_state:
-      header: "Endpoint State:"
-      paths:
-      - path: "status#state"
-        pathtype: value
-      default: "<unknown>"
     ipv4:
       header: "IPv4:"
       paths:
@@ -62,4 +58,9 @@ listview:
       header: "Node:"
       paths:
       - path: "status#networking#node"
+        pathtype: value
+    visibility_policy:
+      header: "Visibility Policy:"
+      paths:
+      - path: "status#policy#visibility#enforcing"
         pathtype: value

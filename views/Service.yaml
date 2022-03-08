@@ -8,11 +8,8 @@ listview:
   group: Core
   field_indexes:
     Normal: [namespace, name, svc_type, cluster_ip, external_ips, ports_svc, age]
+  sortcolumn: namespace
   fields:
-    svc_type:
-      header: "Type:"
-      path: "spec#type"
-      type: str
     cluster_ip:
       header: "Cluster-IP:"
       path: "spec#clusterIP"
@@ -23,4 +20,7 @@ listview:
       - path: "spec#externalIPs"
         pathtype: list
       formatter: list
-  sortcolumn: namespace
+    svc_type:
+      header: "Type:"
+      path: "spec#type"
+      type: str

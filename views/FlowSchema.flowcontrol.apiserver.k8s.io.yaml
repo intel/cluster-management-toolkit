@@ -6,14 +6,14 @@ listview:
   group: Scheduling
   field_indexes:
     Normal: [name, priority_level, matching_precedence, distinguisher_method, age]
+  sortcolumn: matching_precedence
   fields:
+    distinguisher_method:
+      header: "Distinguisher Method:"
+      path: "spec#distinguisherMethod#type"
+      type: str
     matching_precedence:
       header: "Matching Precedence:"
       path: "spec#matchingPrecedence"
       type: raw
       align: right
-    distinguisher_method:
-      header: "Distinguisher Method:"
-      path: "spec#distinguisherMethod#type"
-      type: str
-  sortcolumn: matching_precedence

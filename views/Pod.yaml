@@ -9,7 +9,27 @@ listview:
     Wide: [namespace, name, controller, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
     Normal: [namespace, name, controller, pod_status, node_name, age, restarts, last_restart]
     Compact: [name, pod_status, node_name, age, restarts, last_restart]
+  sortcolumn: pod_status
   fields:
+    containers:
+      header: "Containers:"
+      paths:
+      - paths:
+        - "spec#initContainers"
+        - "spec#containers"
+        pathtype: items
+        subpaths:
+        - name
+        - subpath: image
+          regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+        type: raw
+      formatter: list
+      formatting:
+        field_colors:
+        - type: generic
+        - type: version
+        field_separators:
+        - type: version
     controller:
       header: "Controller:"
       paths:
@@ -32,6 +52,20 @@ listview:
         - type: kind_api_group
         - type: kind
       formatter: list
+    last_restart:
+      header: "Latest Restart:"
+      paths:
+      - path: "status#containerStatuses"
+        pathtype: items
+        subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+        when:
+          key: "restartCount"
+          gt: 0
+        action: latest
+        type: timestamp
+      default: -1
+      formatter: age
+      align: right
     node_name:
       header: "Node:"
       path: "spec#nodeName"
@@ -52,40 +86,6 @@ listview:
         type: int
       align: right
       default: 0
-    last_restart:
-      header: "Latest Restart:"
-      paths:
-      - path: "status#containerStatuses"
-        pathtype: items
-        subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-        when:
-          key: "restartCount"
-          gt: 0
-        action: latest
-        type: timestamp
-      default: -1
-      formatter: age
-      align: right
-    containers:
-      header: "Containers:"
-      paths:
-      - paths:
-        - "spec#initContainers"
-        - "spec#containers"
-        pathtype: items
-        subpaths:
-        - name
-        - subpath: image
-          regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-        type: raw
-      formatter: list
-      formatting:
-        field_colors:
-        - type: generic
-        - type: version
-        field_separators:
-        - type: version
-  sortcolumn: pod_status
   listview_args:
     filters:
       evicted:
