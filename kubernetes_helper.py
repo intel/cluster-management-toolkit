@@ -1950,7 +1950,7 @@ class KubernetesHelper:
 			"api": "taspolicies",
 		},
 		# telemetry.istio.io
-		("Telemetry", "telemetry.intel.com"): {
+		("Telemetry", "telemetry.istio.io"): {
 			"api_family": ["apis/telemetry.istio.io/v1alpha1/"],
 			"api": "telemetries",
 		},
