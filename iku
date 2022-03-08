@@ -2214,8 +2214,12 @@ def generic_infogetter(**kwargs):
 								continue
 							value.append((_key, _value))
 						if len(value) == 0:
-							value = default
-						_values.append((value, vtype))
+							if default is None:
+								value = []
+							else:
+								value = default
+						for tmp in value:
+							_values.append((tmp, vtype))
 					elif ptype == "substitution":
 						value = []
 						substitute = deep_get(_path, "substitute", "")
