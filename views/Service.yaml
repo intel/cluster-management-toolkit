@@ -7,7 +7,8 @@ listview:
   name: Services
   group: Core
   field_indexes:
-    Normal: [namespace, name, svc_type, cluster_ip, external_ips, ports_svc, age]
+    Wide: [namespace, name, svc_type, cluster_ip, external_ips, ports_svc, age]
+    Normal: [namespace, name, svc_type, cluster_ip, external_ips, ports_svc_compact, age]
   sortcolumn: namespace
   fields:
     cluster_ip:
@@ -24,4 +25,38 @@ listview:
       header: "Type:"
       path: "spec#type"
       type: str
-    # Add alternative ports_svc, that doesn't include service name
+    ports_svc:
+      header: "Ports:"
+      paths:
+      - path: "spec#ports"
+        pathtype: items
+        subpaths:
+        - name
+        - port
+        - protocol
+        type: raw
+      formatter: list
+      formatting:
+        field_colors:
+        - type: service
+        - type: port
+        - type: protocol
+        field_separators:
+        - type: port
+        - type: service
+    ports_svc_compact:
+      header: "Ports:"
+      paths:
+      - path: "spec#ports"
+        pathtype: items
+        subpaths:
+        - port
+        - protocol
+        type: raw
+      formatter: list
+      formatting:
+        field_colors:
+        - type: port
+        - type: protocol
+        field_separators:
+        - type: service

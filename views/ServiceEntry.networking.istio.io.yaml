@@ -8,7 +8,8 @@ listview:
   name: Service Entries
   group: Istio
   field_indexes:
-    Normal: [namespace, name, age, hosts, ports_svc, location, resolution]
+    Wide: [namespace, name, age, hosts, ports_svc, location, resolution]
+    Normal: [namespace, name, age, hosts, ports_svc_compact, location, resolution]
   sortcolumn: namespace
   fields:
     hosts:
@@ -20,6 +21,41 @@ listview:
       header: "Location:"
       path: "spec#location"
       type: str
+    ports_svc:
+      header: "Ports:"
+      paths:
+      - path: "spec#ports"
+        pathtype: items
+        subpaths:
+        - name
+        - port
+        - protocol
+        type: raw
+      formatter: list
+      formatting:
+        field_colors:
+        - type: service
+        - type: port
+        - type: protocol
+        field_separators:
+        - type: port
+        - type: service
+    ports_svc_compact:
+      header: "Ports:"
+      paths:
+      - path: "spec#ports"
+        pathtype: items
+        subpaths:
+        - port
+        - protocol
+        type: raw
+      formatter: list
+      formatting:
+        field_colors:
+        - type: port
+        - type: protocol
+        field_separators:
+        - type: service
     resolution:
       header: "Resolution:"
       path: "spec#resolution"
