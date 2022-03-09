@@ -8,4 +8,53 @@ listview:
   name: API Services
   group: API & Extendability
   field_indexes:
-    Normal: [name, api_service, available, age, api_service_status_message]
+    Normal: [name, api_service, available, age, status_message]
+  fields:
+    api_service:
+      header: "Service:"
+      paths:
+      - path: [["spec#service#namespace"], ["spec#service#name"], ["spec#service#port"]]
+        pathtype: tuple
+        type: [name, name, name]
+        default: ["", "Local", ""]
+      formatter: list
+      formatting:
+        field_colors:
+        - type: namespace
+        - type: generic
+        - type: port
+        field_separators:
+        - type: namespace
+        - type: port
+    available:
+      header: "Available:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          eq: Available
+        default: "<unknown>"
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_not_ok
+    status_message:
+      header: "Status:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: message
+        when:
+        - key: type
+          eq: Available
+        default: ""

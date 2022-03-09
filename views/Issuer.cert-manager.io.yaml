@@ -7,3 +7,26 @@ listview:
   field_indexes:
     Normal: [namespace, name, condition_ready, age]
   sortcolumn: namespace
+  fields:
+    condition_ready:
+      header: "Ready:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          eq: Ready
+        default: "<unknown>"
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_not_ok

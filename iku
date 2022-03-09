@@ -1455,20 +1455,6 @@ def datagetter_deprecated_api(obj, path, default):
 	kind = kh.guess_kind((result[0], result[1]))
 	return (kind[0], kind[1], result[2]), extra_vars
 
-def datagetter_api_service(obj, path, default):
-	if obj is None or path is None:
-		return default
-
-	available, service, status_message, status_group = get_as_status_and_service(deep_get(obj, "status#conditions"), deep_get(obj, "spec#service"))
-	if path == "status_message":
-		return status_message, {}
-	elif path == "service":
-		return service, {}
-	elif path == "available":
-		return available, {"status_group": status_group}
-	else:
-		raise Exception(f"Unknown API service data field {path}")
-
 def datagetter_access_modes(obj, path, default):
 	if obj is None or path is None:
 		return default
@@ -2244,6 +2230,46 @@ def generic_infogetter(**kwargs):
 						for _key, _value in deep_get_with_fallback(obj, path, {}).items():
 							if when_filter(_path, item = None, key = _key, value = _value) == False:
 								continue
+							_regexes_key = deep_get(_path, "key#regex", [])
+							_regexes_value = deep_get(_path, "value#regex", [])
+							if type(_regexes_key) == str:
+							       _regexes_key = [_regexes_key]
+							if type(_regexes_value) == str:
+							       _regexes_value = [_regexes_value]
+							_key = transform_filter(deep_get(_path, "key#transform", {}), _key)
+							_value = transform_filter(deep_get(_path, "value#transform", {}), _value)
+							# A regex for key/value is required to capture only one group;
+							# (though conceivably there might be scenario for joining),
+							# thus the first non-None capture group will exit the match;
+							# when using multiple regexes the first matching regex exits
+							match = False
+							for _regex in _regexes_key:
+								_tmp = re.match(_regex, _key)
+								if _tmp is None:
+									continue
+
+								for group in _tmp.groups():
+									if group is not None:
+										_key = group
+										match = True
+								if match == True:
+									break
+							match = False
+							for _regex in _regexes_value:
+								_tmp = re.match(_regex, _value)
+								if _tmp is None:
+									continue
+
+								for group in _tmp.groups():
+									if group is not None:
+										_value = group
+										match = True
+								if match == True:
+									break
+							# A transform might yield multiple identical key/value pairs;
+							# ignore all except the first one
+							if (_key, _value) in value:
+								continue
 							value.append((_key, _value))
 						if len(value) == 0:
 							if default is None:
@@ -2305,12 +2331,11 @@ def generic_infogetter(**kwargs):
 									_subpath = deep_get(subpaths[i], "subpath")
 									if type(_subpath) == str:
 										_subpath = [_subpath]
-									_transform = deep_get(subpaths[i], "transform", {})
 									_regexes = deep_get(subpaths[i], "regex", [])
 									if type(_regexes) == str:
 										_regexes = [_regexes]
 									_raw = deep_get_with_fallback(item, _subpath, _default)
-									_raw = transform_filter(_transform, _raw)
+									_raw = transform_filter(deep_get(subpaths[i], "transform", {}), _raw)
 									for _regex in _regexes:
 										_tmp = re.match(_regex, _raw)
 										if _tmp is not None:
@@ -5581,47 +5606,6 @@ field_templates = {
 	"api_group": {
 		"header": "API-Group:",
 	},
-	"api_service": {
-		# (namespace, name, port)
-		"header": "Service:",
-		# Note: path is always spec#service; this is used to denote the info about
-		# the API service that's requested; status_message, service, or available
-		"path": "service",
-		"datagetter": datagetter_api_service,
-		"formatter": "list",
-		"formatting": {
-			"field_colors": [
-				{
-					"type": "namespace",
-				},
-				{
-					"type": "generic",
-				},
-				{
-					"type": "port",
-				},
-			],
-			"field_separators": [
-				{
-					"type": "namespace",
-				},
-				{
-					"type": "port",
-				},
-			],
-		},
-	},
-	"api_service_status_message": {
-		"header": "Status:",
-		"path": "status_message",
-		"datagetter": datagetter_api_service,
-	},
-	"available": {
-		"header": "Available:",
-		"path": "available",
-		"datagetter": datagetter_api_service,
-		"generator": generator_status,
-	},
 	"available_replicas": {
 		"header": "Available:",
 		"path": "status#availableReplicas",
@@ -5659,12 +5643,6 @@ field_templates = {
 		"field_separators": [("separators", "fraction")],
 		"ralign": True,
 	},
-	"completion_time": {
-		"header": "Completion Time:",
-		"path": ["completion"],
-		"datagetter": datagetter_start_completion_duration,
-		"generator": generator_timestamp,
-	},
 	"condition": {
 		"header": "Condition:",
 		"generator": generator_list,
@@ -5686,17 +5664,8 @@ field_templates = {
 		# Logical or
 		"item_separator": ("separators", "logical_or"),
 	},
-	"condition_ready": {
-		"header": "Ready:",
-		"datagetter": datagetter_condition_ready,
-	},
 	"configmap": {
 		"header": "Data:",
-	},
-	"container_runtime": {
-		"header": "Container-Runtime:",
-		"path": "status#nodeInfo#containerRuntimeVersion",
-		"type": "str",
 	},
 	"container_count": {
 		"header": "# of Containers:",
@@ -5727,18 +5696,6 @@ field_templates = {
 		"path": "controllerConditions",
 		"datagetter": datagetter_status_latest_condition,
 		"generator": generator_status,
-	},
-	"cpu": {
-		"header": "CPUs:",
-		"path": ["status#allocatable#cpu", "status#capacity#cpu"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_total,
-		"ralign": True,
-	},
-	"cpu_millicores": {
-		"header": "CPU (millicores):",
-		"path": "cpu_millicores",
-		"ralign": True,
 	},
 	"created_at": {
 		"header": "Created At:",
@@ -5838,11 +5795,6 @@ field_templates = {
 	},
 	"error": {
 		"header": "Error:",
-	},
-	"event_reason": {
-		"header": "Reason:",
-		"path": "reason",
-		"datagetter": datagetter_substitute_quotationmarks,
 	},
 	"event_status": {
 		"header": "Status:",
@@ -5983,14 +5935,6 @@ field_templates = {
 		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
 		"field_separators": [("separators", "port"), ("separators", "service")],
 	},
-	"internal_ips": {
-		# [ip, ...]
-		"header": "Internal-IPs:",
-		"path": "internal",
-		"datagetter": datagetter_node_addresses,
-		"generator": generator_list,
-		"ellipsise": 3,
-	},
 	"interval": {
 		"header": "Interval:",
 	},
@@ -6000,14 +5944,6 @@ field_templates = {
 	"ipblock_exceptions": {
 		"header": "IP Block Exceptions:",
 		"generator": generator_list,
-	},
-	"issuer": {
-		# (kind, name)
-		"header": "Issuer:",
-		"path": ["spec#issuerRef#kind", "spec#issuerRef#name"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_list,
-		"field_colors": [("types", "kind"), ("types", "generic")],
 	},
 	"job_state": {
 		"header": "State:",
@@ -6024,12 +5960,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "kind"), ("types", "api_group")],
 		"field_separators": [("separators", "kind_api_group")],
-	},
-	"kubernetes_roles": {
-		# [role, ...]
-		"header": "Roles:",
-		"datagetter": datagetter_node_roles,
-		"formatter": "list",
 	},
 	"last_heartbeat_antrea": {
 		"header": "Last Heartbeat:",
@@ -6193,11 +6123,6 @@ field_templates = {
 	},
 	"operator": {
 		"header": "Operator:",
-	},
-	"os": {
-		"header": "OS-Image:",
-		"path": "status#nodeInfo#osImage",
-		"type": "str",
 	},
 	"overhead": {
 		"header": "Overhead:",
@@ -6492,10 +6417,6 @@ field_templates = {
 		"path": "status#conditions",
 		"datagetter": datagetter_status_latest_condition,
 		"generator": generator_status,
-	},
-	"status_message": {
-		"header": "Status:",
-		"datagetter": datagetter_condition_ready,
 	},
 	"status_message_deployment": {
 		"header": "Message:",

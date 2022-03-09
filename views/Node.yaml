@@ -6,9 +6,40 @@ listview:
   name: Nodes
   group: Core
   field_indexes:
-    Wide: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel_version, container_runtime, cpu, mem, taints]
-    Normal: [name, node_status, kubernetes_roles, age, kubelet_version, internal_ips, cpu, mem, taints]
+    Wide: [name, status, roles, age, kubelet_version, internal_ips, os, kernel_version, container_runtime, cpu, mem, taints]
+    Normal: [name, status, roles, age, kubelet_version, internal_ips, cpu, mem, taints]
   fields:
+    container_runtime:
+      header: "Container-Runtime:"
+      path: "status#nodeInfo#containerRuntimeVersion"
+      type: str
+    cpu:
+      header: "CPUs:"
+      paths:
+      - path: [["status#allocatable#cpu"], ["status#capacity#cpu"]]
+        pathtype: tuple
+        type: ["raw", "raw"]
+      formatter: list
+      formatting:
+        field_colors:
+        - type: numerical
+        - type: numerical
+        field_separator:
+        - type: fraction
+      align: right
+    internal_ips:
+      header: "Internal-IPs:"
+      paths:
+      - path: "status#addresses"
+        pathtype: items
+        subpath: address
+        when:
+          key: type
+          eq: InternalIP
+        default: "<unset>"
+      formatter: list
+      formatting:
+        ellipsise: 3
     kernel_version:
       header: "Kernel Version:"
       path: "status#nodeInfo#kernelVersion"
@@ -17,6 +48,47 @@ listview:
       header: "Version:"
       path: "status#nodeInfo#kubeletVersion"
       type: version
+    os:
+      header: "OS-Image:"
+      path: "status#nodeInfo#osImage"
+      type: str
+    roles:
+      header: "Roles:"
+      paths:
+      - path: ["metadata#labels"]
+        pathtype: key_value
+        when:
+        - key_startswith: node-role.kubernetes.io
+        key:
+          transform:
+            "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
+          regex: ["^[^/]*/(.*)"]
+      formatter: list
+    status:
+      header: "Status:"
+      paths:
+      - path: "status#conditions"
+        pathtype: substitution
+        subpath: status
+        when:
+        - key: type
+          eq: Ready
+        - key: status
+          eq: "True"
+        substitute: Ready
+      default: "Not Ready"
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            Ready:
+              field_colors:
+              - context: main
+                type: status_ok
+            Not Ready:
+              field_colors:
+              - context: main
+                type: status_not_ok
     taints:
       header: "Taints:"
       paths:

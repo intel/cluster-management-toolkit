@@ -8,8 +8,8 @@ listview:
   name: Events
   group: Core
   field_indexes:
-    Wide: [namespace, name, seen, type, event_reason, regarding, reporter, first_seen, count, message]
-    Normal: [namespace, name, seen, type, event_reason, regarding, message]
+    Wide: [namespace, name, seen, type, reason, regarding, reporter, first_seen, count, message]
+    Normal: [namespace, name, seen, type, reason, regarding, message]
   sortcolumn: seen
   fields:
     count:
@@ -36,6 +36,10 @@ listview:
         pathtype: value
         type: str
         replace_quotes: same
+    reason:
+      header: "Reason:"
+      path: reason
+      type: str
     regarding:
       header: "Regarding:"
       paths:

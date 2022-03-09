@@ -11,7 +11,52 @@ listview:
     Normal: [namespace, name, condition_ready, secret, issuer, status_message, age]
   sortcolumn: namespace
   fields:
+    condition_ready:
+      header: "Ready:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          eq: Ready
+        default: "<unknown>"
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_not_ok
+    issuer:
+      header: "Issuer:"
+      paths:
+      - path: [["spec#issuerRef#kind"], ["spec#issuerRef#name"]]
+        pathtype: tuple
+        type: [kind, name]
+      formatting:
+        field_colors:
+        - type: kind
+        - type: generic
+        field_separators:
+        - type: kind
+      formatter: list
     secret:
       header: "Secret:"
       path: "spec#secretName"
       type: str
+    status_message:
+      header: "Status:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: message
+        when:
+        - key: type
+          eq: Ready
+        default: ""

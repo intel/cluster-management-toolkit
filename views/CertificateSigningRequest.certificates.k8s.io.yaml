@@ -24,7 +24,7 @@ listview:
           eq: Denied
         - key: status
           eq: "True"
-        substitute: "Denied"
+        substitute: Denied
         default: ~
       - path: "status#conditions"
         pathtype: substitution
@@ -35,14 +35,14 @@ listview:
           eq: Approved
         - key: status
           eq: "True"
-        substitute: "Approved"
+        substitute: Approved
         default: ~
       - path: "status"
         pathtype: substitution
         when:
           key: "certificate"
           notmissing: "certificate"
-        substitute: "Issued"
+        substitute: Issued
         default: ~
       default: [Pending]
       formatter: list

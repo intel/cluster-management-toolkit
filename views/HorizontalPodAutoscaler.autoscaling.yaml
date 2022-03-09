@@ -26,6 +26,7 @@ listview:
       - path: [["spec#scaleTargetRef#kind"], ["spec#scaleTargetRef#apiVersion"], ["spec#scaleTargetRef#name"]]
         pathtype: tuple
         type: [kind, api_group, name]
+      formatter: list
       formatting:
         field_colors:
         - type: kind
@@ -34,7 +35,6 @@ listview:
         field_separators:
         - type: kind_api_group
         - type: kind
-      formatter: list
     replicas:
       header: "Replicas:"
       path: "status#currentReplicas"

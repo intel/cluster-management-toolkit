@@ -11,6 +11,28 @@ listview:
     Normal: [namespace, name, controller, revision, age]
   sortcolumn: namespace
   fields:
+    controller:
+      header: "Controller:"
+      paths:
+      - path: "metadata#ownerReferences"
+        pathtype: items
+        subpaths:
+        - kind
+        - apiVersion
+        - name
+        when:
+          key: controller
+          eq: true
+        type: [kind, api_group, name]
+      formatting:
+        field_colors:
+        - type: kind
+        - type: kind_api_group
+        - type: generic
+        field_separators:
+        - type: kind_api_group
+        - type: kind
+      formatter: list
     revision:
       header: "Revision:"
       path: revision
