@@ -1,0 +1,21 @@
+kind: AppRepository
+api_family: kubeapps.com
+default_command: apprepositories
+command:
+- apprepos
+- apprepo
+listview:
+  name: App Repositories
+  group: API & Extendability
+  field_indexes:
+    Normal: [namespace, name, repo_type, repo_url]
+  sortcolumn: namespace
+  fields:
+    repo_type:
+      header: "Type:"
+      path: "spec#type"
+      type: str
+    repo_url:
+      header: "URL:"
+      path: "spec#url"
+      type: str

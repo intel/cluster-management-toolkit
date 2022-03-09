@@ -6312,14 +6312,6 @@ field_templates = {
 		"ranges": [(-1, -1, ("types", "numerical")), (0, 1, ("types", "watermark_high")), (1, -1, ("types", "watermark_medium"))],
 		"ralign": True,
 	},
-	"repo_type": {
-		"header": "Type:",
-		"path": "spec#type",
-	},
-	"repo_url": {
-		"header": "URL:",
-		"path": "spec#url",
-	},
 	"request": {
 		# [(resource, used, hard), ...]
 		"header": "Request:",
@@ -13030,17 +13022,6 @@ infoviews = {
 			"infogetter": get_app_status_info,
 		},
 	},
-	("AppRepository", "kubeapps.com"): {
-		"windowheader": "App Repository Info",
-		"infopad": {
-			"Type:": {
-				"path": "spec#type",
-			},
-			"URL:": {
-				"path": "spec#url",
-			},
-		},
-	},
 	("AuthorizationPolicy", "security.istio.io"): {
 		"windowheader": "Authorization Policy Info",
 		"field_indexes": {
@@ -17103,36 +17084,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("ImageStreamTag", "image.openshift.io"),
 	},
-	# traefik.containo.us
-	"Ingress Routes": {
-		"commandline": ["ingressroutes", "ingressroute", "ingroutes", "ingroute"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("IngressRoute", "traefik.containo.us"),
-	},
-	# traefik.containo.us
-	"Ingress Route TCPs": {
-		"commandline": ["ingressroutetcps", "ingressroutetcp", "ingroutetcps", "ingroutetcp"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("IngressRouteTCP", "traefik.containo.us"),
-	},
-	# traefik.containo.us
-	"Ingress Route UDPs": {
-		"commandline": ["ingressrouteudps", "ingressrouteudp", "ingrouteudps", "ingrouteudp"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("IngressRouteUDP", "traefik.containo.us"),
-	},
 	# jaegertracing.io
 	"Jaegers": {
 		"commandline": ["jaegers", "jaeger"],
@@ -17162,26 +17113,6 @@ views_builtin = {
 		},
 		"sortcolumn": "namespace",
 		"kind": ("KubeVirt", "kubevirt.io"),
-	},
-	# traefik.containo.us
-	"Middlewares": {
-		"commandline": ["middlewares", "middleware"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("Middleware", "traefik.containo.us"),
-	},
-	# traefik.containo.us
-	"Middleware TCPs": {
-		"commandline": ["middlewaretcps", "middlewaretcp"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("MiddlewareTCP", "traefik.containo.us"),
 	},
 	# kubeflow.org
 	"MPI Jobs": {
@@ -17251,16 +17182,6 @@ views_builtin = {
 		"sortcolumn": "namespace",
 		"kind": ("Server", "policy.linkerd.io"),
 	},
-	# traefik.containo.us
-	"Servers Transports": {
-		"commandline": ["serverstransports", "serverstransport"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("ServersTransport", "traefik.containo.us"),
-	},
 	# servicecertsigner.config.openshift.io
 	"Service Cert Signer Operator Configs": {
 		"commandline": ["servicecertsigneroperatorconfigs", "servicecertsigneroperatorconfig", "svccertsigneropconfs", "svccertsigneropconf"],
@@ -17288,36 +17209,6 @@ views_builtin = {
 			"Normal": ["name", "priority_tier", "age"],
 		},
 		"kind": ("Tier", "crd.antrea.io"),
-	},
-	# traefik.containo.us
-	"TLS Options": {
-		"commandline": ["tlsoptions", "tlsoption"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("TLSOption", "traefik.containo.us"),
-	},
-	# traefik.containo.us
-	"TLS Stores": {
-		"commandline": ["tlsstores", "tlsstore"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("TLSStore", "traefik.containo.us"),
-	},
-	# traefik.containo.us
-	"Traefik Services": {
-		"commandline": ["traefikservices", "traefikservice"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("TraefikService", "traefik.containo.us"),
 	},
 	# storage.k8s.io
 	#"Volume Attachments": {
