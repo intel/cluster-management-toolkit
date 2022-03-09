@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
 from datetime import datetime, timezone, timedelta, date
 from functools import reduce
-from pathlib import Path
 import os
+from pathlib import Path
 import re
 import sys
 import yaml
