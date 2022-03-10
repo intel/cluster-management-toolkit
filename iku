@@ -48,7 +48,7 @@ except ModuleNotFoundError:
 from logparser import logparser, logparser_initialised, loglevel, split_msg, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import deep_get, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp
+from iktlib import deep_get, deep_get_list, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_ram_usage, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_extract_string, strarray_wrap_line, themearray_to_strarray, themearray_extract_string, attr_to_curses_merged
 
 from ansible_helper import ansible_clean_results, ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
@@ -2308,7 +2308,7 @@ def generic_infogetter(**kwargs):
 						for mpath in mpaths:
 							if type(mpath) == str:
 								mpath = [mpath]
-							items += deep_get_with_fallback(obj, mpath, [], fallback_on_empty = fallback_on_empty)
+							items += iktlib.deep_get_list(obj, mpath, default = [], fallback_on_empty = fallback_on_empty)
 
 						for item in items:
 							if when_filter(_path, item) == False:
@@ -2395,7 +2395,10 @@ def generic_infogetter(**kwargs):
 					if type(_vtype) == list:
 						if value is None or len(value) == 0:
 							value = []
-					if type(value) == list and type(_vtype) == list:
+					if type(value) == list and _vtype == "raw":
+						values += value
+						continue
+					elif type(value) == list and type(_vtype) == list:
 						tmp = []
 						for _value in value:
 							tmp.append(process_value(name, _value, _vtype, view, field_index, action, formatter, replace_quotes, _regex))
@@ -15459,6 +15462,34 @@ infoviews = {
 			"Normal": ["name", "cpu_millicores", "mem_bytes"],
 		},
 		"fields": {
+			"cpu_millicores": {
+				"header": "CPU (millicores):",
+				"paths": [
+					{
+						"path": "containers",
+						"pathtype": "items",
+						"subpath": "usage#cpu",
+						"action": "sum",
+						"type": "cpu_usage",
+					},
+				],
+				"align": "right",
+				"formatter": "float",
+			},
+			"mem_bytes": {
+				"header": "Memory:",
+				"paths": [
+					{
+						"path": "containers",
+						"pathtype": "items",
+						"subpath": "usage#memory",
+						"action": "sum",
+						"type": "mem_usage",
+					},
+				],
+				"align": "right",
+				"formatter": "mem",
+			},
 			"name": {
 				"header": "Container:",
 				"paths": [

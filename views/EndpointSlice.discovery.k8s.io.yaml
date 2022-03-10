@@ -7,23 +7,59 @@ listview:
   name: Endpoint Slices
   group: Core
   field_indexes:
-    Wide: [namespace, name, ports_eps, endpoints_eps, addresstype, age]
-    Normal: [namespace, name, ports_eps, endpoints_eps_ellipsise, addresstype, age]
+    Wide: [namespace, name, ports, endpoints, addresstype, age]
+    Normal: [namespace, name, ports_compact, endpoints_ellipsise, addresstype, age]
   sortcolumn: namespace
   fields:
     addresstype:
       header: "Type:"
       path: addressType
       type: str
-    endpoints_eps:
+    endpoints:
       header: "Endpoints:"
       path: "subsets"
       datagetter: datagetter_eps_endpoints
       formatter: list_with_status
-    endpoints_eps_ellipsise:
+    endpoints_ellipsise:
       header: "Endpoints:"
       path: "subsets"
       datagetter: datagetter_eps_endpoints
       formatter: list_with_status
       formatting:
+        ellipsise: 3
+    ports:
+      header: "Ports:"
+      paths:
+      - path: "ports"
+        pathtype: items
+        subpaths:
+        - name
+        - port
+        - protocol
+        type: raw
+      formatter: list
+      formatting:
+        field_colors:
+        - type: service
+        - type: port
+        - type: protocol
+        field_separators:
+        - type: port
+        - type: service
+    ports_compact:
+      header: "Ports:"
+      paths:
+      - path: "ports"
+        pathtype: items
+        subpaths:
+        - port
+        - protocol
+        type: raw
+      formatter: list
+      formatting:
+        field_colors:
+        - type: port
+        - type: protocol
+        field_separators:
+        - type: service
         ellipsise: 3

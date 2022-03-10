@@ -7,11 +7,22 @@ listview:
   name: Pod Metrics
   group: Monitoring
   field_indexes:
-    Normal: [namespace, name, cpu_total, mem_total, container_count, timestamp, window]
+    Wide: [namespace, name, cpu_total, mem_total, container_count, timestamp, window]
+    Normal: [namespace, name, cpu_total_short, mem_total, timestamp, window]
   sortcolumn: namespace
   fields:
     cpu_total:
       header: "CPU (millicores):"
+      paths:
+      - path: containers
+        pathtype: items
+        subpath: "usage#cpu"
+        action: sum
+        type: cpu_usage
+      align: right
+      formatter: float
+    cpu_total_short:
+      header: "CPU:"
       paths:
       - path: containers
         pathtype: items

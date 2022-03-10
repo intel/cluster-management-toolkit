@@ -6,8 +6,8 @@ listview:
   name: Endpoints
   group: Core
   field_indexes:
-    Wide: [namespace, name, ports_ep, endpoints, age]
-    Normal: [namespace, name, ports_ep, endpoints_ellipsise, age]
+    Wide: [namespace, name, ports, endpoints, age]
+    Normal: [namespace, name, ports_compact, endpoints_ellipsise, age]
   fields:
     # Map ready & non-ready endpoints to ok, not ok;
     # we need some special way to handle this
@@ -23,5 +23,40 @@ listview:
       formatter: list_with_status
       formatting:
         ellipsise: 3
-    # Add alternative ports_ep too, that doesn't include service name
+    ports:
+      header: "Ports:"
+      paths:
+      - path: "subsets#ports"
+        pathtype: items
+        subpaths:
+        - name
+        - port
+        - protocol
+        type: raw
+      formatter: list
+      formatting:
+        field_colors:
+        - type: service
+        - type: port
+        - type: protocol
+        field_separators:
+        - type: port
+        - type: service
+    ports_compact:
+      header: "Ports:"
+      paths:
+      - path: "subsets#ports"
+        pathtype: items
+        subpaths:
+        - port
+        - protocol
+        type: raw
+      formatter: list
+      formatting:
+        field_colors:
+        - type: port
+        - type: protocol
+        field_separators:
+        - type: service
+        ellipsise: 3
   sortcolumn: namespace

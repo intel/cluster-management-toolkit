@@ -60,6 +60,7 @@ def deep_set(dictionary, path, value):
 				if ref is None or not isinstance(ref, dict):
 					raise Exception(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
 
+
 def deep_get(dictionary, path, default = None):
 	if dictionary is None:
 		return default
@@ -67,6 +68,33 @@ def deep_get(dictionary, path, default = None):
 		return default
 	result = reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
 	if result is None:
+		result = default
+	return result
+
+def deep_get_recursive(dictionary, path_fragments, result = []):
+	for i in range(0, len(path_fragments)):
+		tmp = deep_get(dictionary, path_fragments[i])
+		if i + 1 == len(path_fragments):
+			if tmp is None:
+				return result
+			else:
+				return tmp
+
+		elif type(tmp) == dict:
+			result = deep_get_recursive(tmp, path_fragments[i + 1:len(path_fragments)], result)
+		elif type(tmp) == list:
+			for tmp2 in tmp:
+				result = deep_get_recursive(tmp2, path_fragments[i + 1:len(path_fragments)], result)
+
+	return result
+
+def deep_get_list(dictionary, paths, default = None, fallback_on_empty = False):
+	for path in paths:
+		result = deep_get_recursive(dictionary, path.split("#"))
+
+		if result is not None and not (type(result) in [list, str, dict] and len(result) == 0 and fallback_on_empty == True):
+			break
+	if result is None or type(result) in [list, str, dict] and len(result) == 0 and fallback_on_empty == True:
 		result = default
 	return result
 
