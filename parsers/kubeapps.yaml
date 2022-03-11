@@ -1,7 +1,8 @@
 - name: kubeapps
   show_in_selector: false
   matchkeys:
-  - pod_name: kubeapps-internal-apprepository-controller
+  - pod_name: kubeapps
+    container_name: controller
   parser_rules:
   - name: glog
   - name: key_value
@@ -15,23 +16,23 @@
   show_in_selector: false
   matchkeys:
   - pod_name: kubeapps
+    container_name: dashboard
+  - pod_name: kubeapps
     container_name: nginx
-  - pod_name: kubeapps-internal-dashboard
   parser_rules:
-  - name: strip_ansicodes
-  - name: ts_8601
-  - name: bracketed_severity
-  - name: facility_hh_mm_ss_ms_severity
+  - name: http
 - name: kubeapps
   show_in_selector: false
   matchkeys:
-  - pod_name: kubeapps-internal-kubeappsapis
+  - pod_name: kubeapps
+    container_name: kubeappsapis
   parser_rules:
   - name: glog
 - name: kubeapps
   show_in_selector: false
   matchkeys:
-  - pod_name: kubeapps-internal-kubeops
+  - pod_name: kubeapps
+    container_name: kubeops
   parser_rules:
   - name: glog
   - name: custom_splitter
@@ -43,10 +44,12 @@
       message:
         field: 2
   - name: ts_8601
+  - name: http
 - name: kubeapps
   show_in_selector: false
   matchkeys:
-  - pod_name: kubeapps-postgresql
+  - pod_name: kubeapps
+    image_name: /bitnami/postgresql
   parser_rules:
   - name: strip_ansicodes
   # FIXME: This should be modified to use custom_splitter instead
@@ -56,6 +59,7 @@
 - name: kubeapps
   show_in_selector: false
   matchkeys:
-  - pod_name: apprepo-kubeapps-sync
+  - pod_name: apprepo
+    container_name: sync
   parser_rules:
   - name: glog

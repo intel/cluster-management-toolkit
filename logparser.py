@@ -158,7 +158,7 @@ def str_4letter_to_severity(string, default = None):
 		"INFO": loglevel.INFO,
 		"DEBU": loglevel.DEBUG,
 	}
-	return severities.get(string, default)
+	return severities.get(string.upper(), default)
 
 def str_to_severity(string, default = None):
 	severities = {
@@ -513,11 +513,13 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, opti
 			"(\s\S*?)"
 			"(\"\s)"
 			"(\d+?)"
-			"(\s\d+?\s\")"
-			"(.*?)"
+			"(\s+\d+?\s\")"
+			"([^\"]*)"
 			"(\"\s\")"
-			"(.*?)"
-			"(\")", message)
+			"([^\"]*)"
+			"(\"$|\"\s\")"
+			"([^\"]*|$)"
+			"(\"$|$)", message)
 
 	if tmp is not None:
 		address1 = tmp[1]
@@ -552,6 +554,8 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, opti
 		separator7 = tmp[18]
 		address5 = tmp[19]
 		separator8 = tmp[20]
+		address6 = tmp[21]
+		separator9 = tmp[22]
 		message = [
 			(address1, ("logview", "hostname")),
 			(separator1, ("logview", "severity_info")),
@@ -567,6 +571,45 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, opti
 			(separator7, ("logview", "severity_info")),
 			(address5, ("logview", "url")),
 			(separator8, ("logview", "severity_info")),
+		]
+		if address6 is not None:
+			message.append((address6, ("logview", "url")))
+			message.append((separator9, ("logview", "severity_info")))
+
+		return message, severity, facility
+
+	# Alternative format
+	tmp = re.match(r"^\|\s+(\d{3})\s+\|\s+([0-9.]+)([^ ]*)\s+\|\s+([^:]*):(\d+?)\s+\|\s+([A-Z]+)\s+(.*)", message)
+
+	if tmp is not None:
+		statuscode = tmp[1]
+		_statuscode = int(statuscode)
+		if _statuscode >= 100 and _statuscode < 300:
+			severity = loglevel.NOTICE
+		if _statuscode >= 300 and _statuscode < 400:
+			severity = loglevel.WARNING
+		if _statuscode >= 400:
+			severity = loglevel.ERR
+		duration = tmp[2]
+		unit = tmp[3]
+		hostname = tmp[4]
+		port = tmp[5]
+		verb = tmp[6]
+		url = tmp[7]
+		message = [
+			("| ", ("logview", "severity_info")),
+			(statuscode, ("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+			(" | ", ("logview", "severity_info")),
+			(duration, ("logview", "severity_info")),
+			(unit, ("types", "unit")),
+			(" | ", ("logview", "severity_info")),
+			(hostname, ("logview", "hostname")),
+			("separators", "port"),
+			(port, ("types", "port")),
+			(" | ", ("logview", "severity_info")),
+			(verb, ("logview", "protocol")),
+			(" ", ("logview", "severity_info")),
+			(url, ("logview", "url")),
 		]
 
 	return message, severity, facility
