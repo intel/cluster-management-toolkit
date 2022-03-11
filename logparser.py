@@ -2737,8 +2737,6 @@ builtin_parsers = [
 	# kubeflow
 	("", "", "gcr.io/arrikto/kubeflow/oidc-authservice", "key_value"),
 
-	("local-path-provisioner", "", "", "kube_parser_1"),
-
 	("metacontroller", "metacontroller", "", "kube_parser_1"),
 	("metadata-db", "db-container", "", "mysql"),
 	("metadata-deployment", "container", "", "kube_parser_1"),

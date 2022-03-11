@@ -136,8 +136,8 @@ color_pairs_curses:
   url: [[cyan, normal], [black, normal]]
   timestamp: [[cyan, normal], [black, normal]]
   facility:
-    unselected: [[black, bright], [black, normal]]
-    selected: [[black, bright], [white, normal]]
+    unselected: [[magenta, normal], [black, normal]]
+    selected: [[magenta, normal], [white, normal]]
   # FIXME: All severities need selected versions
   severity_emergency: [[white, bright], [red, bright]]
   severity_alert: [[black, normal], [red, bright]]
@@ -458,6 +458,10 @@ color_pairs_curses:
     unselected: [[white, normal], [black, normal]]
     selected: [[black, normal], [white, normal]]
   separator_line_break: [[cyan, normal], [black, normal]]
+  separator_facility_extended_prefix: [[black, bright], [black, normal]]
+  separator_facility_extended_suffix: [[black, bright], [black, normal]]
+  separator_facility_prefix: [[black, bright], [black, normal]]
+  separator_facility_suffix: [[black, bright], [black, normal]]
   type_dir_dev: [[yellow, normal], [black, bright]]
   type_dir_sticky: [[black, bright], [green, bright]]
   type_dir_dir: [[blue, bright], [black, normal]]
@@ -503,7 +507,7 @@ color_pairs_curses:
   type_caddyfile_argument: [[green, bright], [black, normal]]
   type_caddyfile_comment: [[cyan, normal], [black, normal]]
   type_caddyfile_directive: [[magenta, normal], [black, normal]]
-  type_facility_prefix: [[yellow, normal], [black, normal]]
+  type_facility_extended: [[yellow, normal], [black, normal]]
   logo_bullet: [[blue, normal], [blue, bright]]
   logo_letter: [[white, bright], [blue, bright]]
   about_text_highlight: [[cyan, bright], [blue, bright]]
@@ -796,7 +800,7 @@ types:
   caddyfile_directive: type_caddyfile_directive
   path: type_path
   lineno: type_lineno
-  facility_prefix: type_facility_prefix
+  facility_extended: type_facility_extended
 
 strings:
   none: [["<none>", [type_none, bold]]]
@@ -861,3 +865,8 @@ separators:
   yaml_key_separator: [[":", separator_yaml_key_separator]]
   pad: [["  ", separator_pad]]
   line_break: [["⏎", separator_line_break]]
+  facility_extended_prefix: [["[", separator_facility_extended_prefix]]
+  facility_extended_suffix: [["]", separator_facility_extended_suffix]]
+  facility_prefix: [["<", separator_facility_prefix]]
+  facility_suffix: [[">", separator_facility_suffix]]
+  facility_padding: [[" ", separator_facility_suffix]]

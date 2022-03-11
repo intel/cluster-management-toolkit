@@ -676,7 +676,11 @@ def __attr_to_curses(attr, selected = False):
 		col = attr
 		attr = curses.A_NORMAL
 
-	return color[col][selected], attr
+	try:
+		key = color[col][selected]
+	except KeyError:
+		sys.exit(f"KeyError: __attr_to_curses: (color: {col}, selected: {selected}) not found")
+	return key, attr
 
 def __attr_to_curses_merged(attr, selected = False):
 	col, attr = __attr_to_curses(attr, selected)

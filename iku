@@ -10380,15 +10380,15 @@ def eventdispatch(stdscr, **kwargs):
 	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	return resourceinfodispatch(stdscr, ref, kind)
 
-def log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, message, facility_prefix):
+def log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, message, facility_extended):
 	if timestamp is not None:
 		timestamps.append(timestamp.astimezone())
 	else:
 		timestamps.append("")
-	if facility_prefix is None:
+	if facility_extended is None:
 		facilities.append(facility)
 	else:
-		facilities.append((facility_prefix, facility))
+		facilities.append((facility_extended, facility))
 	severities.append(severity)
 	messages.append(message)
 
@@ -10401,7 +10401,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 	multilog_containers = deep_get(kwargs, "multilog_containers", [])
 	all_same_namespace = deep_get(kwargs, "all_same_namespace", False)
 	multilog_prefix = ["namespace", "podname", "container"]
-	facility_prefix = None
+	facility_extended = None
 
 	uip = UIProps(stdscr)
 
@@ -10509,39 +10509,39 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				splitmsg = []
 				for namespace, podname, containername, image_id in multilog_containers_full:
 					if len(multilog_containers) == 1:
-						facility_prefix = None
+						facility_extended = None
 					elif multilog_prefix == ["container"]:
-						facility_prefix = [
-							(f"[", color_log_severity(loglevel.DEBUG, False)),
-							(f"{containername}", ("types", "facility_prefix")),
-							(f"] ", color_log_severity(loglevel.DEBUG, False)),
+						facility_extended = [
+							("separators", "facility_extended_prefix"),
+							(f"{containername}", ("types", "facility_extended")),
+							("separators", "facility_extended_suffix"),
 						]
 					elif multilog_prefix == ["podname", "container"] or multilog_prefix == ["namespace", "podname", "container"] and all_same_namespace == True:
-						facility_prefix = [
-							(f"[", color_log_severity(loglevel.DEBUG, False)),
-							(f"{podname}", ("types", "facility_prefix")),
+						facility_extended = [
+							("separators", "facility_extended_prefix"),
+							(f"{podname}", ("types", "facility_extended")),
 							("separators", "container"),
-							(f"{containername}", ("types", "facility_prefix")),
-							(f"] ", color_log_severity(loglevel.DEBUG, False)),
+							(f"{containername}", ("types", "facility_extended")),
+							("separators", "facility_extended_suffix"),
 						]
 					elif multilog_prefix == ["namespace", "podname", "container"]:
-						facility_prefix = [
-							(f"[", color_log_severity(loglevel.DEBUG, False)),
-							(f"{namespace}", ("types", "facility_prefix")),
+						facility_extended = [
+							("separators", "facility_extended_prefix"),
+							(f"{namespace}", ("types", "facility_extended")),
 							("separators", "namespace"),
-							(f"{podname}", ("types", "facility_prefix")),
+							(f"{podname}", ("types", "facility_extended")),
 							("separators", "container"),
-							(f"{containername}", ("types", "facility_prefix")),
-							(f"] ", color_log_severity(loglevel.DEBUG, False)),
+							(f"{containername}", ("types", "facility_extended")),
+							("separators", "facility_extended_suffix"),
 						]
 					rawmsg, internal_error = get_pod_log_by_name_namespace_container(podname, namespace, containername, tail_lines = tail_lines)
 					if internal_error == True:
 						splitmsg = split_msg(rawmsg)
 						break
-					# Now we have one per line; now we need to add (podname, containername, image, facility_prefix) to each line, to allow the logparser
+					# Now we have one per line; now we need to add (podname, containername, image, facility_extended) to each line, to allow the logparser
 					# to function without guessing
 					for line in split_msg(rawmsg):
-						splitmsg.append((line, podname, containername, image_id, facility_prefix))
+						splitmsg.append((line, podname, containername, image_id, facility_extended))
 				splitmsg = natsorted(splitmsg, key = itemgetter(0))
 
 			if uip.continuous_log == False:
@@ -10591,7 +10591,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 							return curses_helper.retval.RETURNDONE
 
 				if type(_line) == tuple:
-					line, podname, containername, image, facility_prefix = _line
+					line, podname, containername, image, facility_extended = _line
 					# We need to identify parser again and again and again for every line
 					_parser = None
 				else:
@@ -10626,10 +10626,10 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						if processor[0] in ["end_block", "end_block_not_processed"]:
 							# OK, we've got a block; start by appending the first line
 							if len(_logentries) > 0:
-								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, _logentries[0][3], facility_prefix)
+								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, _logentries[0][3], facility_extended)
 							if len(_logentries) > 1:
 								for _timestamp, _facility, _severity, _message in _logentries[1:]:
-									timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, _timestamp, "".ljust(len(facility)), severity, _message, facility_prefix)
+									timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, _timestamp, "".ljust(len(facility)), severity, _message, facility_extended)
 								break
 						elif processor[0] == "break":
 							# We got something indicating that this isn't a valid block; abort
@@ -10665,7 +10665,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						continue
 				else:
 					if repeat_count > 0 and merge_repeats:
-						timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity, [("[previous message repeated ", color_log_severity(prev_severity, False)), (f"{repeat_count}", ("logview", "repeat_count")), (" times]", color_log_severity(prev_severity, False))], facility_prefix)
+						timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity, [("[previous message repeated ", color_log_severity(prev_severity, False)), (f"{repeat_count}", ("logview", "repeat_count")), (" times]", color_log_severity(prev_severity, False))], facility_extended)
 					repeat_count = 0
 					prev_timestamp = timestamp
 					prev_facility = facility
@@ -10673,7 +10673,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					prev_message = message
 					prev_remnants = remnants
 
-				timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, message, facility_prefix)
+				timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, message, facility_extended)
 
 				if remnants is not None and len(remnants) > 0:
 					# Remnants are used for unfolding multi-line messages that have been folded into one,
@@ -10689,13 +10689,13 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 						if type(tmpmessages) == list:
 							for message in tmpmessages:
-								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message, facility_prefix)
+								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message, facility_extended)
 						else:
 							for message in tmpmessages.split("\n"):
-								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message, facility_prefix)
+								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message, facility_extended)
 					else:
 						for message, severity in remnants:
-							timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message, facility_prefix)
+							timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message, facility_extended)
 
 			reload = True
 
@@ -10707,7 +10707,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 			# If the last message in the log is a repeat we need to add the repeat signature
 			if repeat_count > 0 and merge_repeats:
-				timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity, [("[previous message repeated ", color_log_severity(prev_severity, False)), (f"{repeat_count}", ("logview", "repeat_count")), (" times]", color_log_severity(prev_severity, False))], facility_prefix)
+				timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity, [("[previous message repeated ", color_log_severity(prev_severity, False)), (f"{repeat_count}", ("logview", "repeat_count")), (" times]", color_log_severity(prev_severity, False))], facility_extended)
 
 			uip.update_log_info(timestamps, facilities, severities, messages)
 			uip.loglen = len(messages)
@@ -10981,16 +10981,18 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				new_date = False
 
 				if show_facility == "None" or uip.yoffset + y >= len(facilities):
-					facility_prefix = ""
+					facility_extended = ""
 					facility = ""
 				elif show_facility == "Short":
 					_facility = facilities[uip.yoffset + y]
 					if type(_facility) == tuple:
-						facility_prefix, _facility = _facility
+						facility_extended, _facility = _facility
+					if _facility is None:
+						_facility = ""
 					tmp = re.match(r"^.*/(.*)", _facility)
 					if tmp is not None:
 						facility = tmp[1]
-						latest_facility_len = len(tmp[1])
+						latest_facility_len = len(facility)
 					elif len(_facility.strip()) != len(_facility) and len(_facility.strip()) == 0:
 						if latest_facility_len == -1:
 							facility = _facility
@@ -11001,7 +11003,9 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				else:
 					facility = facilities[uip.yoffset + y]
 					if type(facility) == tuple:
-						facility_prefix, facility = facility
+						facility_extended, facility = facility
+						if facility is None:
+							facility = ""
 
 				if uip.yoffset + y >= len(severities):
 					severity = loglevel.INFO
@@ -11031,15 +11035,20 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					else:
 						msgstrarray.append(("".ljust(len(f"{_severity}")), color_log_severity(severity, False)))
 
-				if facility_prefix is not None and len(facility_prefix) > 0:
-					msgstrarray += facility_prefix
+				if facility_extended is not None and len(facility_extended) > 0:
+					msgstrarray += facility_extended
 
 				if facility != "":
-					if facility.rstrip() != "":
-						facilitystr = f"<{facility}> "
-					else:
-						facilitystr = f" {facility}  "
-					msgstrarray.append((facilitystr, color_log_severity(loglevel.DEBUG, False)))
+					facilitystr = [
+						("separators", "facility_prefix"),
+						(facility, ("logview", "facility")),
+						("separators", "facility_suffix"),
+						("separators", "facility_padding"),
+					]
+					# We don't actually want any prefix, but we want empty padding of the same length
+					if facility.rstrip() == "":
+						facilitystr = [("".ljust(len(themearray_extract_string(facilitystr))), ("logview", "severity_debug"))]
+					msgstrarray += facilitystr
 
 				msg = messages[uip.yoffset + y]
 				if type(msg) != list:
