@@ -3452,7 +3452,7 @@ def get_as_status_and_service(conditions, service):
 				port = deep_get(service, "port")
 				service = [(namespace, name, port)]
 			available = deep_get(condition, "status")
-			message = deep_get(condition, "message").rstrip()
+			message = deep_get(condition, "message", "").rstrip()
 			if available == "True":
 				status_group = stgroup.OK
 			else:
@@ -4013,18 +4013,18 @@ def get_container_status(src_statuses, container, kind):
 						status_group = stgroup.DONE
 
 					if deep_get(container_status, "state#terminated#message") is not None:
-						message = deep_get(container_status, "state#terminated#message").rstrip()
+						message = deep_get(container_status, "state#terminated#message", "").rstrip()
 				else:
 					reason = deep_get(container_status, "state#waiting#reason", "").rstrip()
 
 					if deep_get(container_status, "state#waiting#message") is not None:
-						message = deep_get(container_status, "state#waiting#message").rstrip()
+						message = deep_get(container_status, "state#waiting#message", "").rstrip()
 			else:
 				if running is None:
 					reason = deep_get(container_status, "state#terminated#reason", "").rstrip()
 
 					if deep_get(container_status, "state#terminated#message") is not None:
-						message = deep_get(container_status, "state#terminated#message").rstrip()
+						message = deep_get(container_status, "state#terminated#message", "").rstrip()
 
 					if deep_get(container_status, "state#terminated#exitCode") == 0:
 						status_group = stgroup.DONE
@@ -4439,7 +4439,7 @@ def get_resource_info(**kwargs):
 				status_group = get_event_status_group(status)
 				tmp = __get_timestamp_with_fallback(event, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"])
 				seen = get_since(tmp)
-				message = deep_get(event, "message").rstrip()
+				message = deep_get(event, "message", "").rstrip()
 				resource_info.append(ResourceInfo(resource_tuple, event, rtype, kind, status, status_group, -1, message, age = seen))
 
 	if "pod_disruption_budget" not in deep_get(iktconfig, "Pods#filter_resources", []):
