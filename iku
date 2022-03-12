@@ -1671,21 +1671,8 @@ def datagetter_event_status(obj, path, default):
 
 	return status, {"status_group": status_group}
 
-def datagetter_external_ips(obj, path, default):
-	if obj is None:
-		return default
-
-	return get_external_ips(obj), {}
-
 def __get_timestamp_with_fallback(obj, paths):
 	return timestamp_to_datetime(deep_get_with_fallback(obj, paths))
-
-def datagetter_timestamp_with_fallback(obj, path, default):
-	if obj is None or path is None or len(path) == 0:
-		return default
-
-	timestamp = __get_timestamp_with_fallback(obj, path)
-	return get_since(timestamp), {}
 
 def datagetter_pathlist_to_tuple(obj, path, default):
 	if obj is None or path is None or len(path) == 0:
@@ -6072,11 +6059,6 @@ field_templates = {
 	"node_id": {
 		"header": "Node ID:",
 	},
-	"node_status": {
-		"header": "Status:",
-		"datagetter": datagetter_node_status,
-		"generator": generator_status,
-	},
 	"non_resource_urls": {
 		"header": "Non-Resource URLs:",
 		"generator": generator_list,
@@ -6448,12 +6430,6 @@ field_templates = {
 		"header": "Target:",
 		"generator": generator_numerical,
 		"ralign": True,
-	},
-	"timestamp": {
-		"header": "Start Time:",
-		"datagetter": datagetter_timestamp,
-		"generator": generator_timestamp,
-		"path": "timestamp",
 	},
 	"topology": {
 		"header": "Topology:",
@@ -14283,7 +14259,7 @@ infoviews = {
 			"described_object": {
 				"header": "Described Object:",
 				"type": "str",
-      				"paths": [
+				"paths": [
 					{
 						"path": [["described_object_kind"], ["described_object_api_group"], ["described_object_name"]],
 						"pathtype": "tuple",
@@ -16912,15 +16888,6 @@ views_special = {
 # These are the "regular" builtin views that will eventually
 # be defined through yaml-files in the views directory
 views_builtin = {
-	# helm.cattle.io
-	"Addons": {
-		"commandline": ["addons", "addon"],
-		"group": "API & Extendability",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("Addon", "k3s.cattle.io"),
-	},
 	# crd.antrea.io
 	"Antrea Agent Infos": {
 		"commandline": ["antreaagentinfos", "antreaagentinfo", "aai"],
@@ -16957,16 +16924,6 @@ views_builtin = {
 		},
 		"sortcolumn": "namespace",
 		"kind": ("Application", "app.k8s.io"),
-	},
-	# kubeapps.com
-	"App Repositories": {
-		"commandline": ["apprepositories", "apprepository", "apprepos", "apprepo"],
-		"group": "API & Extendability",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "repo_type", "repo_url"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("AppRepository", "kubeapps.com"),
 	},
 	# cilium.io
 	#"Cilium Clusterwide Network Policies": {
@@ -17042,15 +16999,6 @@ views_builtin = {
 	#	"kind": ("EtcdCluster", "etcd.database.coreos.com"),
 	#},
 	# integreatly.org
-	"Grafanas": {
-		"commandline": ["grafanas", "grafana"],
-		"group": "Monitoring",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("Grafana", "integreatly.org"),
-	},
-	# integreatly.org
 	"Grafana Dashboards": {
 		"commandline": ["grafanadashboards", "grafanadashboard", "grafanadbs", "grafanadb"],
 		"group": "Monitoring",
@@ -17077,24 +17025,6 @@ views_builtin = {
 		},
 		"kind": ("Group", "user.openshift.io"),
 	},
-	# helm.cattle.io
-	"Helmcharts": {
-		"commandline": ["helmcharts", "helmchart"],
-		"group": "API & Extendability",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("HelmChart", "helm.cattle.io"),
-	},
-	# helm.cattle.io
-	"Helmchart Configs": {
-		"commandline": ["helmchartconfigs", "helmchartconfig"],
-		"group": "API & Extendability",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("HelmChartConfig", "helm.cattle.io"),
-	},
 	# user.openshift.io
 	"Identities": {
 		"commandline": ["identities", "identity"],
@@ -17103,25 +17033,6 @@ views_builtin = {
 			"Normal": ["name", "provider", "providerusername", "user_uid_tuple", "age"],
 		},
 		"kind": ("Identity", "user.openshift.io"),
-	},
-	# caching.internal.knative.dev
-	"Images": {
-		"commandline": ["images", "image"],
-		"group": "Caching",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("Image", "caching.internal.knative.dev"),
-	},
-	# image.openshift.io
-	"Images (OpenShift)": {
-		"commandline": ["images.image.openshift.io", "image.image.openshift.io", "osimages", "osimage"],
-		"group": "Caching",
-		"field_indexes": {
-			"Normal": ["name", "docker_reference", "age"],
-		},
-		"kind": ("Image", "image.openshift.io"),
 	},
 	# image.openshift.io
 	"Image Streams": {
@@ -17163,16 +17074,6 @@ views_builtin = {
 		},
 		"kind": ("KubeHunterReport", "aquasecurity.github.io"),
 	},
-	# kubevirt.io
-	"KubeVirts": {
-		"commandline": ["kubevirts", "kubevirt", "kvs", "kv"],
-		"group": "Virtualization",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("KubeVirt", "kubevirt.io"),
-	},
 	# kubeflow.org
 	"MPI Jobs": {
 		"commandline": ["mpijobs", "mpijob", "mpij", "mj"],
@@ -17183,43 +17084,6 @@ views_builtin = {
 		},
 		"sortcolumn": "namespace",
 		"kind": ("MPIJob", "kubeflow.org"),
-	},
-	# opentelemetry.io
-	"OpenTelemetry Collectors": {
-		"commandline": ["opentelemetrycollectors", "opentelemetrycollectors", "otelcols", "otelcol"],
-		"group": "Monitoring",
-		"field_indexes": {
-			#"Normal": ["namespace", "name", "mode", "version", "age"],
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("OpenTelemetryCollector", "opentelemetry.io"),
-	},
-	# kilo.squat.ai
-	"Peers": {
-		"commandline": ["peers", "peer"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("Peer", "kilo.squat.ai"),
-	},
-	# reaper.cassandra-reaper.io
-	"Cassandra Data Centers": {
-		"commandline": ["cassandradatacenters", "cassandradatacenter", "cassdcs", "cassdc"],
-		"group": "Storage & Backups",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("CassandraDatacenter", "cassandra.datastax.com"),
-	},
-	# reaper.cassandra-reaper.io
-	"Reapers": {
-		"commandline": ["reapers", "reaper"],
-		"group": "Storage & Backups",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("Reaper", "reaper.cassandra-reaper.io"),
 	},
 	# policy.linkerd.io
 	"Server Authorizations": {
@@ -17240,25 +17104,6 @@ views_builtin = {
 		},
 		"sortcolumn": "namespace",
 		"kind": ("Server", "policy.linkerd.io"),
-	},
-	# servicecertsigner.config.openshift.io
-	"Service Cert Signer Operator Configs": {
-		"commandline": ["servicecertsigneroperatorconfigs", "servicecertsigneroperatorconfig", "svccertsigneropconfs", "svccertsigneropconf"],
-		"group": "Authorization & Access Control",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("ServiceCertSignerOperatorConfig", "servicecertsigner.config.openshift.io"),
-	},
-	# linkerd.io
-	"Service Profiles": {
-		"commandline": ["serviceprofiles", "serviceprofile", "sp"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("ServiceProfile", "linkerd.io"),
 	},
 	# crd.antrea.io
 	"Tiers": {
@@ -17322,16 +17167,6 @@ views_builtin = {
 			"Normal": ["name", "fullname", "uid", "identities", "age"],
 		},
 		"kind": ("User", "user.openshift.io"),
-	},
-	# argoproj.io
-	"Workflows": {
-		"commandline": ["workflows", "workflow", "wf"],
-		"group": "Workflows",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("Workflow", "argoproj.io"),
 	},
 }
 

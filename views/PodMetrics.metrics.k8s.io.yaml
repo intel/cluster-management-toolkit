@@ -7,8 +7,8 @@ listview:
   name: Pod Metrics
   group: Monitoring
   field_indexes:
-    Wide: [namespace, name, cpu_total, mem_total, container_count, timestamp, window]
-    Normal: [namespace, name, cpu_total_short, mem_total, timestamp, window]
+    Wide: [namespace, name, cpu_total, mem_total, container_count, start_time, window]
+    Normal: [namespace, name, cpu_total_short, mem_total, start_time, window]
   sortcolumn: namespace
   fields:
     cpu_total:
@@ -41,6 +41,11 @@ listview:
         type: mem_usage
         align: right
         formatter: mem
+    start_time:
+      header: "Start Time:"
+      path: timestamp
+      type: timestamp
+      formatter: timestamp
     window:
       header: "Duration:"
       path: "window"
