@@ -12545,12 +12545,11 @@ def populate_playbooklist(context = None, actions = [], action_list = {}, contro
 
 available_api_families = []
 
-def selectwindow(stdscr, uip, refresh_apis = False):
+def format_selection_list(uip, refresh_apis = False):
 	global views
 	global available_api_families
-	global defaultview
 	hide_unavailable = deep_get_with_fallback(iktconfig, ["Selector#hide_unavailable_apis", "Global#hide_unavailable_apis"], True)
-	categorise = deep_get_with_fallback(iktconfig, ["Selector#categorise"], True)
+	categorise = deep_get(iktconfig, "Selector#categorise", True)
 	sortcolumn = deep_get(iktconfig, "Selector#sortcolumn", "family")
 
 	if sortcolumn == "family":
@@ -12641,13 +12640,31 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 		else:
 			items.append((lineattrs, [(f"{view}", ("windowwidget", "default"))], [(f"<{api_group}>", ("windowwidget", "dim"))]))
 
+	return items
+
+def selectwindow(stdscr, uip, refresh_apis = False):
+	# Ideally we want to return to the same selection
+	global defaultview
+
+	uip.refresh_all()
+	items = format_selection_list(uip, refresh_apis)
+	title = "Choose view"
+
 	selection = None
 
-	# Ideally we want to return to the same selection
 	while selection is None:
-		title = "Choose view"
-		tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items, title = title, preselection = defaultview)
+		extra_args = { "KEY_F6": True }
+		tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items, title = title, preselection = defaultview, **extra_args)
 		if tmpselection is not None:
+			if type(tmpselection) == int and tmpselection < 0:
+				if tmpselection == -curses.KEY_F6:
+					if deep_get(iktconfig, "Selector") == None:
+						deep_set(iktconfig, "Selector", {})
+					categorise = not deep_get(iktconfig, "Selector#categorise", True)
+					deep_set(iktconfig, "Selector#categorise", categorise, create_path = True)
+					items = format_selection_list(uip, refresh_apis)
+					uip.refresh_all()
+					continue
 			selection = tmpselection[1][0][0]
 
 	if selection != "":

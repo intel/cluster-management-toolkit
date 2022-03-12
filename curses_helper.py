@@ -15,7 +15,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 import iktlib
-from iktlib import stgroup, stgroup_mapping
+from iktlib import deep_get, stgroup, stgroup_mapping
 from logparser import loglevel, loglevel_to_name
 
 theme = {}
@@ -821,7 +821,7 @@ def themearray_get_length(themearray):
 # items is a list of tuples, like so:
 # (widgetlineattr, strarray, strarray, ...)
 # A strarray is a list of tuples, where every tuple is of the format (string, attribute)
-def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", preselection = "", cursor = True, taggable = False, confirm = False, confirm_buttons = []):
+def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", preselection = "", cursor = True, taggable = False, confirm = False, confirm_buttons = [], **kwargs):
 	stdscr.refresh()
 	global ignoreinput
 	ignoreinput = False
@@ -1058,6 +1058,10 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			break
 		elif c == ord(""):
 			sys.exit()
+		elif deep_get(kwargs, "KEY_F6", False) == True and c == curses.KEY_F6:
+			# This is used to toggle categorised list on/off
+			selection = -c
+			break
 		elif taggable == True and c == ord(" "):
 			if curypos + yoffset in tagged_items:
 				tagged_items.remove(curypos + yoffset)
