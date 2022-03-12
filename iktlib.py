@@ -44,7 +44,7 @@ stgroup_mapping = {
 def none_timestamp():
 	return (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
 
-def deep_set(dictionary, path, value):
+def deep_set(dictionary, path, value, create_path = False):
 	if dictionary is None or path is None or len(path) == 0:
 		raise Exception(f"deep_set: dictionary {dictionary} or path {path} invalid/unset")
 
@@ -59,7 +59,11 @@ def deep_set(dictionary, path, value):
 				ref = ref.get(pathsplit[i])
 				if ref is None or not isinstance(ref, dict):
 					raise Exception(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
-
+		elif create_path == True:
+			if i == len(pathsplit) - 1:
+				ref[pathsplit[i]] = value
+			else:
+				ref[pathsplit[i]] = {}
 
 def deep_get(dictionary, path, default = None):
 	if dictionary is None:
