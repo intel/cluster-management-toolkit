@@ -2160,11 +2160,11 @@ def upgrade_control_plane(options = [], args = None):
 		if requested_version not in deb_versions[0][3]:
 			iktprint([("Error: ", "error"), ("The requested version ", "default"), (f"{requested_version}", "version"), (" is not available; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
-		elif requested_version == deb_versions[0][1]:
+		elif requested_version == version:
 			if allow_reinstall == False:
 				iktprint([("Error: ", "error"), ("The requested version ", "default"), (f"{requested_version}", "version"), (" is already installed; to reinstall use the option “", "default"), ("--reinstall", "option"), ("“.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
-		elif deb_compare_versions(deb_versions[0][1], requested_version) == True:
+		elif deb_compare_versions(version, requested_version) == True:
 			iktprint([("Error: ", "error"), ("The requested version ", "default"), (f"{requested_version}", "version"), (" is older than than the installed version ", "default"), (f"{deb_versions[0][1]}", "version"), (". Downgrades are not supported; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 	else:
@@ -2174,13 +2174,13 @@ def upgrade_control_plane(options = [], args = None):
 			sys.exit(0)
 
 	# Is this an major, minor, or patchrev upgrade?
-	installed_version_tuple = deb_versions[0][1].split(".")
+	installed_version_tuple = version.split(".")
 	requested_version_tuple = requested_version.split(".")
 
 	upgrade_type = None
 
 	if installed_version_tuple[0] != requested_version_tuple[0]:
-		print([("Error: ", "error"), ("Upgrades between ", "default"), ("MAJOR", "emphasis"), (" versions is currently not supported (installed version: ", "default"), (f"{deb_versions[0][1]}", "version"), (", requested version: ", "default"), (f"{requested_version}", "version"), ("; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error"), ("Upgrades between ", "default"), ("MAJOR", "emphasis"), (" versions is currently not supported (installed version: ", "default"), (f"{deb_versions[0][1]}", "version"), (", requested version: ", "default"), (f"{requested_version}", "version"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOTSUP)
 	elif installed_version_tuple[1] != requested_version_tuple[1]:
 		installed_major_minor = f"{installed_version_tuple[0]}.{installed_version_tuple[1]}"
