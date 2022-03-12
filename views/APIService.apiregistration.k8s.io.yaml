@@ -58,3 +58,16 @@ listview:
         - key: type
           eq: Available
         default: ""
+  shortcuts:
+    "Show Service Info":
+      key: s
+      modifier: shift
+      helptext: "Open service info page"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: "Service"
+        api_family: ""
+        name_path: "spec#service#name"
+        namespace_path: "spec#service#namespace"
