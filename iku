@@ -4318,13 +4318,16 @@ def get_resource_info(**kwargs):
 		if name is not None:
 			ref = kh.get_ref_by_kind_name_namespace(("Node", ""), name, None)
 
-		if ref is not None:
-			# We ignore the taints
-			status, status_group, taints, full_taints = get_node_status(ref)
-			kind = ("Node", "")
-			rtype = resource_kind_to_rtype(kind)
-			resource_tuple = ("", "", name)
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
+		if ref is None:
+			status = "<unset>"
+			status_group = stgroup.NOT_OK
+
+		# We ignore the taints
+		status, status_group, taints, full_taints = get_node_status(ref)
+		kind = ("Node", "")
+		rtype = resource_kind_to_rtype(kind)
+		resource_tuple = ("", "", name)
+		resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
 
 	for owr in deep_get(obj, "metadata#ownerReferences", []):
 		owr_kind = deep_get(owr, "kind", "")
@@ -4351,7 +4354,9 @@ def get_resource_info(**kwargs):
 
 		ref = kh.get_ref_by_kind_name_namespace(owr_kind, owr_name, pod_namespace)
 		if ref is None:
-			continue
+			status = "<missing>"
+			status_group = stgroup.NOT_OK
+
 		resource_tuple = (owr_kind[0], owr_kind[1], owr_name)
 		# XXX: Maybe we should get the ref status here?
 		resource_info.append(ResourceInfo(resource_tuple, ref, rtype, owr_kind, "", stgroup.OK, -1, ""))
@@ -4388,34 +4393,49 @@ def get_resource_info(**kwargs):
 		resource_tuple = ("", "", name)
 		resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
 
-	status = ""
-	status_group = stgroup.UNKNOWN
-
 	for vol in deep_get(obj, "spec#volumes", []):
+		status = ""
+		status_group = stgroup.UNKNOWN
+
 		if deep_get(vol, "secret") is not None and "secret" not in deep_get(iktconfig, "Pods#filter_resources", []):
 			kind = ("Secret", "")
 			rtype = resource_kind_to_rtype(kind)
 			secret_name = deep_get(vol, "secret#secretName")
+			optional = deep_get(vol, "secret#optional", False)
 			resource_tuple = ("", "", secret_name)
 			ref = kh.get_ref_by_kind_name_namespace(kind, secret_name, pod_namespace)
-			if deep_get(vol, "secret#optional") == False:
-				# Warn if a secret is non-optional and missing
-				if ref is None:
-					status = "Missing!"
-			else:
-				# Don't add optional, non-existing secrets
-				if ref is None:
-					continue
+			if ref is None:
+				if optional == False:
+					status = "<missing>"
+					status_group = stgroup.NOT_OK
+				else:
+					status = "<optional>"
+					status_group = stgroup.PENDING
 			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
 		if deep_get(vol, "configMap") is not None and "config_map" not in deep_get(iktconfig, "Pods#filter_resources", []):
 			kind = ("ConfigMap", "")
 			rtype = resource_kind_to_rtype(kind)
 			cm_name = deep_get(vol, "configMap#name")
+			optional = deep_get(vol, "configMap#optional", False)
 			resource_tuple = ("", "", cm_name)
 			ref = kh.get_ref_by_kind_name_namespace(kind, cm_name, pod_namespace)
+			if ref is None:
+				if optional == False:
+					status = "<missing>"
+					status_group = stgroup.NOT_OK
+				else:
+					status = "<optional>"
+					status_group = stgroup.PENDING
+			else:
+				if len(deep_get(ref, "data", [])) == 0:
+					status = "<empty>"
+					status_group = stgroup.PENDING
 			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
 
 	for vol in deep_get(obj, "spec#imagePullSecrets", []):
+		status = ""
+		status_group = stgroup.UNKNOWN
+
 		if "secret" not in deep_get(iktconfig, "Pods#filter_resources", []):
 			kind = ("Secret", "")
 			rtype = "[image_pull_secret]"
@@ -4464,8 +4484,11 @@ def get_resource_info(**kwargs):
 			resource_tuple = ("", "", priority_class_name)
 			rtype = resource_kind_to_rtype(kind)
 			status = ""
-			status_group = stgroup.ADMIN
+			status_group = stgroup.OK
 			ref = kh.get_ref_by_kind_name_namespace(kind, priority_class_name, None)
+			if ref is None:
+				status = "<missing>"
+				status_group = stgroup.NOT_OK
 			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
 
 	if "pod_metrics" not in deep_get(iktconfig, "Pods#filter_resources", []):
@@ -7986,6 +8009,7 @@ def clusteroverviewloop(stdscr, view):
 			headers = ["Package:", "Version:"]
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, package_versions, title = title, headers = headers, cursor = False)
 
+# These are based on attributes of the name of the cmdata
 cmdata_format = [
 	# cm namespace, cm name prefix, cmdata prefix, cmdata suffix, dataformat
 	# To do an exact match on cmdata set both cmdata prefix and cmdata suffix to the same string
@@ -8027,11 +8051,31 @@ cmdata_format = [
 	("", "", "", "", "Text"),
 ]
 
+# These are based on the data itself
+cmdata_header = [
+	("/bin/sh", "Shell Script"),
+	("/bin/bash", "BASH"),
+	("/bin/dash", "Shell Script"),
+	("/bin/zsh", "ZSH"),
+	("python", "Python"),
+	("perl", "Perl"),
+	("perl", "Ruby"),
+]
+
 def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
 	if len(data) > 0:
-		for match_cm_namespace, match_cm_name, match_cmdata_prefix, match_cmdata_suffix, dataformat in cmdata_format:
-			if (len(match_cm_namespace) == 0 or match_cm_namespace == cm_namespace) and cm_name.startswith(match_cm_name) and cmdata_name.startswith(match_cmdata_prefix) and cmdata_name.endswith(match_cmdata_suffix):
-				break
+		splitmsg = split_msg(data)
+		dataformat = ""
+		# We're in luck; there's an interpreter signature
+		if splitmsg[0].startswith("#!"):
+			for match_infix, dataformat in cmdata_header:
+				if match_infix in data:
+					break
+
+		if len(dataformat) == 0:
+			for match_cm_namespace, match_cm_name, match_cmdata_prefix, match_cmdata_suffix, dataformat in cmdata_format:
+				if (len(match_cm_namespace) == 0 or match_cm_namespace == cm_namespace) and cm_name.startswith(match_cm_name) and cmdata_name.startswith(match_cmdata_prefix) and cmdata_name.endswith(match_cmdata_suffix):
+					break
 	else:
 		dataformat = "Empty"
 	return dataformat
