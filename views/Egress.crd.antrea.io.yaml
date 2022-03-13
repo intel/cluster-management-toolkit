@@ -1,0 +1,17 @@
+kind: Egress
+api_family: crd.antrea.io
+default_command: egresses
+listview:
+  name: Antrea Egresses
+  group: CNI
+  field_indexes:
+    Normal: [name, egress_ip, node, age]
+  fields:
+    egress_ip:
+      header: "Egress IP:"
+      path: "spec#egressIP"
+      type: str
+    node:
+      header: "Node:"
+      path: "status#egressNode"
+      type: str

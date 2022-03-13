@@ -1,0 +1,55 @@
+kind: AntreaControllerInfo
+api_family: crd.antrea.io
+default_command: antreacontrollerinfos
+command:
+- aci
+listview:
+  name: Antrea Controller Infos
+  group: CNI
+  field_indexes:
+    Normal: [name, healthy, last_heartbeat, version, node, age]
+  fields:
+    healthy:
+      header: "Healthy:"
+      paths:
+      - path: controllerConditions
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          in: [controllerHealthy, ControllerHealthy]
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_not_ok
+            "Unknown":
+              field_colors:
+              - context: main
+                type: status_unknown
+    last_heartbeat:
+      header: "Last Heartbeat:"
+      paths:
+      - path: controllerConditions
+        pathtype: items
+        subpath: lastHeartbeatTime
+        when:
+        - key: type
+          in: [controllerHealthy, ControllerHealthy]
+        type: timestamp
+      formatter: timestamp
+    node:
+      header: "Node:"
+      path: "nodeRef#name"
+      type: str
+    version:
+      header: "Version:"
+      path: "version"
+      type: str

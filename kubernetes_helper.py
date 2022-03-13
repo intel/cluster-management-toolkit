@@ -1178,7 +1178,7 @@ class KubernetesHelper:
 			"api": "tiers",
 			"namespaced": False,
 		},
-		("TraceFlow", "crd.antrea.io"): {
+		("Traceflow", "crd.antrea.io"): {
 			"api_family": ["apis/crd.antrea.io/v1alpha1/"],
 			"api": "traceflows",
 			"namespaced": False,
@@ -1615,22 +1615,6 @@ class KubernetesHelper:
 			"api": "netnamespaces",
 			"namespaced": False,
 		},
-		# networking.antrea.tanzu.vmware.com
-		("AddressGroup", "networking.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/networking.antrea.tanzu.vmware.com/v1beta1/"],
-			"api": "addressgroups",
-			"namespaced": False,
-		},
-		("AppliedToGroup", "networking.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/networking.antrea.tanzu.vmware.com/v1beta1/"],
-			"api": "appliedtogroups",
-			"namespaced": False,
-		},
-		("NetworkPolicy", "networking.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/networking.antrea.tanzu.vmware.com/v1beta1/"],
-			"api": "networkpolicies",
-			"namespaced": False,
-		},
 		# networking.internal.knative.dev
 		("Certificate", "networking.internal.knative.dev"): {
 			"api_family": ["apis/networking.internal.knative.dev/v1alpha1/"],
@@ -1748,12 +1732,6 @@ class KubernetesHelper:
 		("Subscription", "operators.coreos.com"): {
 			"api_family": ["apis/operators.coreos.com/v1alpha1/"],
 			"api": "subscriptions",
-		},
-		# ops.antrea.tanzu.vmware.com
-		("Traceflow", "ops.antrea.tanzu.vmware.com"): {
-			"api_family": ["apis/ops.antrea.tanzu.vmware.com/v1alpha1/"],
-			"api": "traceflows",
-			"namespaced": False,
 		},
 		# packages.operators.coreos.com
 		("PackageManifest", "packages.operators.coreos.com"): {

@@ -1,0 +1,19 @@
+kind: ExternalIPPool
+api_family: crd.antrea.io
+default_command: externalippools
+command:
+- eip
+listview:
+  name: Antrea External IP Pools
+  group: CNI
+  field_indexes:
+    Normal: [name, total, used, age]
+  fields:
+    total:
+      header: "Total:"
+      path: "status#usage#total"
+      type: int
+    used:
+      header: "Used:"
+      path: "status#usage#used"
+      type: int

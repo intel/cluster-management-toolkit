@@ -4225,9 +4225,9 @@ def resource_kind_to_rtype(resource):
 		("ServiceEntry", ""): "[service_entry]",
 		("StatefulSet", "apps"): "[controller]",
 		("TASPolicy", "telemetry.intel.com"): "[scheduling_policy]",
-		("TFJob", "kubeflow.org"): "[FIXME]",
+		("TFJob", "kubeflow.org"): "[controller]",
 		("ValidatingWebhookConfiguration", "admissionregistration.k8s.io"): "[webhook_configuration]",
-		("Workflow", ""): "[controller]",
+		("Workflow", "argoproj.io"): "[controller]",
 	}
 
 	return rtypes.get(resource, "[unknown]")
@@ -4556,8 +4556,6 @@ def get_resource_info(**kwargs):
 			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = ("", "", pod_name)
 			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, "", stgroup.OK, -1, ""))
-
-	# Lease?
 
 	return resource_info
 
@@ -16944,33 +16942,6 @@ views_special = {
 # These are the "regular" builtin views that will eventually
 # be defined through yaml-files in the views directory
 views_builtin = {
-	# crd.antrea.io
-	"Antrea Agent Infos": {
-		"commandline": ["antreaagentinfos", "antreaagentinfo", "aai"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "healthy_antrea", "last_heartbeat_antrea"],
-		},
-		"kind": ("AntreaAgentInfo", "crd.antrea.io"),
-	},
-	# crd.antrea.io
-	"Antrea Controller Infos (Cluster)": {
-		"commandline": ["antreacontrollerinfos", "antreacontrollerinfo", "aci"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "healthy_antrea", "last_heartbeat_antrea"],
-		},
-		"kind": ("AntreaControllerInfo", "crd.antrea.io"),
-	},
-	# system.antrea.io
-	"Antrea Controller Infos (System)": {
-		"commandline": ["antreasystemcontrollerinfos", "antreasystemcontrollerinfo"],
-		"group": "CNI",
-		"field_indexes": {
-			"Normal": ["name", "healthy_antrea", "last_heartbeat_antrea"],
-		},
-		"kind": ("ControllerInfo", "system.antrea.io"),
-	},
 	# app.k8s.io
 	"Applications": {
 		"commandline": ["applications", "application", "apps", "app"],
@@ -17281,7 +17252,10 @@ def populate_views():
 			# Use a set to avoid duplicates
 			_command = set()
 			if not kind.startswith("__"):
-				_command.add(kind.lower())
+				# If there's a "." in the command it means the plural or singular is not unique without api_family;
+				# don't add the lowercase form of kind automagically
+				if "." not in default_command:
+					_command.add(kind.lower())
 			if len(deep_get(d, "command", [])) > 0:
 				_command = set.union(_command, set(deep_get(d, "command", [])))
 			# OK, we've got all commands we wanted; now we want the preferred form first

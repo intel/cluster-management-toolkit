@@ -1,0 +1,60 @@
+kind: AntreaAgentInfo
+api_family: crd.antrea.io
+default_command: antreaagentinfos
+command:
+- aai
+listview:
+  name: Antrea Agent Infos
+  group: CNI
+  field_indexes:
+    Normal: [name, healthy, last_heartbeat, version, node, subnets, age]
+  fields:
+    healthy:
+      header: "Healthy:"
+      paths:
+      - path: agentConditions
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          eq: AgentHealthy
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_not_ok
+            "Unknown":
+              field_colors:
+              - context: main
+                type: status_unknown
+    last_heartbeat:
+      header: "Last Heartbeat:"
+      paths:
+      - path: agentConditions
+        pathtype: items
+        subpath: lastHeartbeatTime
+        when:
+        - key: type
+          eq: AgentHealthy
+        type: timestamp
+      formatter: timestamp
+    node:
+      header: "Node:"
+      path: "nodeRef#name"
+      type: str
+    subnets:
+      header: "Subnets:"
+      path: "nodeSubnets"
+      type: raw
+      formatter: list
+    version:
+      header: "Version:"
+      path: "version"
+      type: str
