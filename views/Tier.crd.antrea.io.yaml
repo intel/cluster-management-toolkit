@@ -1,0 +1,15 @@
+kind: Tier
+api_family: crd.antrea.io
+default_command: tiers
+listview:
+  name: CNI
+  group: Tiers
+  field_indexes:
+    Normal: [name, priority, age]
+  sortcolumn: namespace
+  fields:
+    priority:
+      header: "Priority:"
+      path: "spec#priority"
+      type: int
+
