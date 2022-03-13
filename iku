@@ -4917,6 +4917,11 @@ def get_pod_restarts_total(pod):
 	return restarts, restarted_at
 
 def get_pod_status(pod):
+	if deep_get(pod, "metadata#deletionTimestamp") is not None:
+		status = "Terminating"
+		status_group = stgroup.PENDING
+		return status, status_group
+
 	phase = deep_get(pod, "status#phase")
 
 	if phase == "Pending":

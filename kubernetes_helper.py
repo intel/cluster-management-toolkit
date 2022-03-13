@@ -1504,6 +1504,47 @@ class KubernetesHelper:
 			"api_family": ["apis/kubeflow.org/v1alpha1/", "apis/kubeflow.org/v1beta1/"],
 			"api": "viewers",
 		},
+		# kubeovn.io
+		("HtbQos", "kubeovn.io"): {
+			"api_family": ["apis/kubeovn.io/v1/"],
+			"api": "htbqoses",
+			"namespaced": False,
+		},
+		("IP", "kubeovn.io"): {
+			"api_family": ["apis/kubeovn.io/v1/"],
+			"api": "ips",
+			"namespaced": False,
+		},
+		("ProviderNetwork", "kubeovn.io"): {
+			"api_family": ["apis/kubeovn.io/v1/"],
+			"api": "provider-networks",
+			"namespaced": False,
+		},
+		("SecurityGroup", "kubeovn.io"): {
+			"api_family": ["apis/kubeovn.io/v1/"],
+			"api": "security-groups",
+			"namespaced": False,
+		},
+		("Subnet", "kubeovn.io"): {
+			"api_family": ["apis/kubeovn.io/v1/"],
+			"api": "subnets",
+			"namespaced": False,
+		},
+		("Vlan", "kubeovn.io"): {
+			"api_family": ["apis/kubeovn.io/v1/"],
+			"api": "vlans",
+			"namespaced": False,
+		},
+		("VpcNatGateway", "kubeovn.io"): {
+			"api_family": ["apis/kubeovn.io/v1/"],
+			"api": "vpc-nat-gateways",
+			"namespaced": False,
+		},
+		("Vpc", "kubeovn.io"): {
+			"api_family": ["apis/kubeovn.io/v1/"],
+			"api": "vpcs",
+			"namespaced": False,
+		},
 		# kubevirt.io
 		("KubeVirt", "kubevirt.io"): {
 			"api_family": ["apis/kubevirt.io/v1/"],

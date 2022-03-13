@@ -1,0 +1,34 @@
+kind: IP
+api_family: kubeovn.io
+default_command: ips.kubeovn.io
+command:
+- kubeovnips
+- kubeovnip
+- koips
+- koip
+listview:
+  name: Kube-OVN IPs
+  group: CNI
+  field_indexes:
+    Normal: [name, ipv4, ipv6, mac, node, subnet, age]
+  fields:
+    ipv4:
+      header: "IPv4:"
+      path: "spec#v4IpAddress"
+      type: str
+    ipv6:
+      header: "IPv6:"
+      path: "spec#v6IpAddress"
+      type: str
+    mac:
+      header: "MAC:"
+      path: "spec#macAddress"
+      type: str
+    node:
+      header: "Node:"
+      path: "spec#nodeName"
+      type: str
+    subnet:
+      header: "Subnet:"
+      path: "spec#subnet"
+      type: str
