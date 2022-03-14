@@ -1,0 +1,24 @@
+kind: VpcNatGateway
+api_family: kubeovn.io
+default_command: vpc-nat-gateways
+command:
+- vpc-nat-gateways
+listview:
+  name: VPC NAT Gateways
+  group: CNI
+  field_indexes:
+    Normal: [name, vpc, subnet, lan_ip, age]
+  sortcolumn: standby
+  fields:
+    lan_ip:
+      header: "LAN IP:"
+      path: "spec#lanIp"
+      type: str
+    subnet:
+      header: "Subnet:"
+      path: "spec#subnet"
+      type: str
+    vpc:
+      header: "VPC:"
+      path: "spec#vpc"
+      type: str

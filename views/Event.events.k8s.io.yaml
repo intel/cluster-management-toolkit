@@ -46,6 +46,7 @@ listview:
       - path: [["regarding#kind", "involvedObject#kind"], ["regarding#apiVersion", "involvedObject#apiVersion"], ["regarding#name", "involvedObject#name"]]
         pathtype: tuple
         type: [kind, api_group, name]
+      formatter: list
       formatting:
         field_colors:
         - type: kind
@@ -54,7 +55,6 @@ listview:
         field_separators:
         - type: kind_api_group
         - type: kind
-      formatter: list
     reporter:
       header: "Reporter:"
       paths:
@@ -64,11 +64,11 @@ listview:
         fallback_on_empty: true
         pathtype: tuple
         type: raw
+      formatter: list
       formatting:
         field_colors:
         - type: generic
         - type: generic
-      formatter: list
     seen:
       header: "Last Seen:"
       paths:

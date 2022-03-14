@@ -1,0 +1,30 @@
+kind: ProviderNetwork
+api_family: kubeovn.io
+default_command: provider-networks
+listview:
+  name: Provider Networks
+  group: CNI
+  field_indexes:
+    Normal: [name, default_interface, ready, age]
+  sortcolumn: ready
+  fields:
+    default_interface:
+      header: "Default Interface:"
+      path: "spec#defaultInterface"
+      type: str
+    ready:
+      header: "Ready:"
+      path: "spec#ready"
+      type: bool
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            true:
+              field_colors:
+              - context: main
+                type: status_ok
+            false:
+              field_colors:
+              - context: main
+                type: status_not_ok

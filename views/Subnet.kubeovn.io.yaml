@@ -1,0 +1,72 @@
+kind: Subnet
+api_family: kubeovn.io
+default_command: subnets
+listview:
+  name: Subnets
+  group: CNI
+  field_indexes:
+    Normal: [name, provider, vpc, protocol, cidr_block, private, nat_outgoing, default, gateway_type, used_ipv4, used_ipv6, excluded_ips, age]
+  fields:
+    cidr_block:
+      header: "CIDR block:"
+      path: "spec#cidrBlock"
+      type: str
+    default:
+      header: "Default:"
+      path: "spec#default"
+      type: bool
+    excluded_ips:
+      header: "Excluded IPs:"
+      path: "spec#excludeIps"
+      type: raw
+      formatter: list
+    gateway_type:
+      header: "Gateway Type:"
+      path: "spec#gatewayType"
+      type: str
+    nat_outgoing:
+      header: "NAT Outgoing:"
+      path: "spec#natOutgoing"
+      type: bool
+    private:
+      header: "Private:"
+      path: "spec#private"
+      type: bool
+    provider:
+      header: "Provider:"
+      path: "spec#provider"
+      type: str
+    protocol:
+      header: "Protocol:"
+      path: "spec#protocol"
+      type: str
+    used_ipv4:
+      header: "Used IPv4:"
+      paths:
+      - path: [["status#v4usingIPs"], ["status#v4availableIPs"]]
+        pathtype: tuple
+      formatter: list
+      formatting:
+        field_colors:
+        - type: numerical
+        - type: numerical
+        field_separators:
+        - type: fraction
+      align: right
+    used_ipv6:
+      header: "Used IPv6:"
+      paths:
+      - path: [["status#v6usingIPs"], ["status#v6availableIPs"]]
+        pathtype: tuple
+      formatter: list
+      formatting:
+        field_colors:
+        - type: numerical
+        - type: numerical
+        field_separators:
+        - type: fraction
+      align: right
+    vpc:
+      header: "VPC:"
+      path: "spec#vpc"
+      type: str

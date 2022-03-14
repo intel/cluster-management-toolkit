@@ -1,0 +1,24 @@
+kind: Vpc
+api_family: kubeovn.io
+default_command: vpcs
+listview:
+  name: VPCs
+  group: CNI
+  field_indexes:
+    Normal: [name, standby, subnets, namespaces, age]
+  sortcolumn: standby
+  fields:
+    namespaces:
+      header: "Namespaces:"
+      path: "spec#namespaces"
+      type: raw
+      formatter: list
+    standby:
+      header: "Standby:"
+      path: "status#standby"
+      type: bool
+    subnets:
+      header: "Subnets:"
+      path: "status#subnets"
+      type: raw
+      formatter: list

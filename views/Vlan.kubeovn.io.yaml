@@ -1,0 +1,17 @@
+kind: Vlan
+api_family: kubeovn.io
+default_command: vlans
+listview:
+  name: VLANs
+  group: CNI
+  field_indexes:
+    Normal: [name, id, provider, age]
+  fields:
+    id:
+      header: "ID:"
+      path: "spec#id"
+      type: string
+    provider:
+      header: "Provider:"
+      path: "spec#provider"
+      type: str
