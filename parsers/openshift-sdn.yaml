@@ -1,24 +1,6 @@
 - name: openshift-sdn
   show_in_selector: false
   matchkeys:
-  - pod_name: ovs
-    container_name: openvswitch
-  parser_rules:
-  - name: ts_8601
-  - name: custom_splitter
-    options:
-      regex: '^\|\d+?\|([a-z]+?)\|([A-Z]{4})\|(.*)'
-      severity:
-        field: 2
-        transform: 4letter
-      facility:
-        fields:
-        - 1
-      message:
-        field: 3
-- name: openshift-sdn
-  show_in_selector: false
-  matchkeys:
   - pod_name: sdn-controller
     container_name: sdn-controller
   - pod_name: sdn

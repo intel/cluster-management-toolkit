@@ -631,7 +631,7 @@ def split_http_style(message, timestamp):
 			else:
 				tmp_timestamp = f"{year}-{month}-{day} {hms}.000+0000"
 			timestamp = datetime.strptime(tmp_timestamp, "%Y-%m-%d %H:%M:%S.%f%z")
-		message = "%s %s" % (tmp[1], tmp[6])
+		message = f"{tmp[1]} {tmp[6]}"
 	return message, timestamp
 
 # log messages of the format:
@@ -648,7 +648,7 @@ def split_glog(message, severity = None, facility = None):
 		loggingerror = message[0:len("ERROR: logging before flag.Parse")]
 		message = message[len("ERROR: logging before flag.Parse: "):]
 
-	tmp = re.match(r"^([A-Z])\d\d\d\d \d\d:\d\d:\d\d\.\d+\s+(\d+)\s(.+?:\d+)\]\s(.*)", message)
+	tmp = re.match(r"^([A-Z])\d\d\d\d \d\d:\d\d:\d\d\.\d+\s+(\d+)\s(.+?:\d+)\](.*)", message)
 	if tmp is not None:
 		severity = letter_to_severity(tmp[1])
 
@@ -656,8 +656,11 @@ def split_glog(message, severity = None, facility = None):
 		# but let's assign it just to document what it is
 		pid = tmp[2]
 
-		facility = "%s" % (tmp[3])
-		message = "%s" % (tmp[4])
+		facility = f"{(tmp[3])}"
+		message = f"{(tmp[4])}"
+		# The first character is always whitespace unless this is an empty line
+		if len(message) > 0:
+			message = message[1:]
 		matched = True
 	else:
 		if severity is None:
@@ -1494,9 +1497,9 @@ def seldon(message, fold_msg = True):
 		extra_message, severity, facility, remnants = split_json_style(tmp[2], severity = severity, facility = facility, fold_msg = fold_msg)
 		if len(extra_message) > 0:
 			if remnants is None or len(remnants) == 0:
-				message = "%s  %s" % (message, extra_message)
+				message = f"{message}  {extra_message}"
 			else:
-				raise Exception("message: %s\nextra_message: %s" % (message, extra_message))
+				raise Exception(f"message: {message}\nextra_message: {extra_message}")
 
 	return facility, severity, message, remnants
 
@@ -1991,7 +1994,7 @@ def modinfo(message, fold_msg = True):
 	severity = loglevel.INFO
 	remnants = []
 
-	tmp = re.match(r"^(.+?):(\s*)(.*)", message)
+	tmp = re.match(r"^([a-z][\S]*?):(\s+)(.+)", message)
 	if tmp is not None:
 		key = tmp[1]
 		whitespace = tmp[2]

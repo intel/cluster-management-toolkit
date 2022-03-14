@@ -1,0 +1,37 @@
+- name: kube-ovn
+  show_in_selector: false
+  matchkeys:
+  - pod_name: ovn-central
+  parser_rules:
+  - name: ts_8601
+  - name: glog
+  - name: custom_splitter
+    options:
+      regex: '^\|\d+?\|([^|]+?)\|([A-Z]{4})\|(.*)'
+      severity:
+        field: 2
+        transform: 4letter
+      facility:
+        fields:
+        - 1
+      message:
+        field: 3
+- name: kube-ovn
+  show_in_selector: false
+  matchkeys:
+  - pod_name: kube-ovn-cni
+  - pod_name: kube-ovn-controller
+  - pod_name: kube-ovn-monitor
+  - pod_name: kube-ovn-pinger
+  parser_rules:
+  - name: glog
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "  Version:"
+      loglevel: notice
+  - name: custom_splitter
+    options:
+      regex: '^(\[\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d:\d\d\] )?(.*)'
+      message:
+        field: 2
