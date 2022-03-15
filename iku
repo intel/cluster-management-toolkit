@@ -11763,10 +11763,11 @@ def infoview_view_last_applied_configuration(uip, kind, obj, **kwargs):
 
 def delete_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	success = True
+	force = deep_get(values, "__force", False)
 
 	for item in items:
 		namespace, name = item
-		message, status = kh.delete_obj_by_kind_name_namespace(kind, name, namespace)
+		message, status = kh.delete_obj_by_kind_name_namespace(kind, name, namespace, force = force)
 		if status != 200:
 			win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = message)
 			success = False
