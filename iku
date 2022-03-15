@@ -732,7 +732,7 @@ def map_value(value, references = None, selected = False, default_field_color = 
 		for i in range(0, len(ranges)):
 			if deep_get(ranges[i], "default", False) == True:
 				if default_index != -1:
-					raise Exception("Field {field}: range cannot contain more than one default")
+					raise Exception(f"Field {field}: range cannot contain more than one default")
 				default_index = i
 				continue
 			_min = deep_get(ranges[i], "min")
@@ -748,13 +748,13 @@ def map_value(value, references = None, selected = False, default_field_color = 
 		_string = string
 		if match_case is False:
 			if string in _mapping and string.lower() in _mapping and string != string.lower():
-				raise Exception("Field {field}: when using match_case == False the mapping cannot contain keys that only differ in case")
+				raise Exception(f"Field {field}: when using match_case == False the mapping cannot contain keys that only differ in case")
 			for key in _mapping:
 				if key.lower() == string.lower():
 					_string = key
 		field_colors = deep_get(_mapping, f"{_string}#field_colors")
 	else:
-		raise Exception("Unknown type {type(value)} for mapping/range")
+		raise Exception(f"Unknown type {type(value)} for mapping/range")
 
 	attr_ref = None
 	if field_colors is not None:
@@ -1333,7 +1333,7 @@ def normalise_cpu_usage_to_millicores(_cpu_usage):
 	cpu_usage = 0
 
 	if _cpu_usage.isnumeric():
-		cpu_usage = _cpu_usage * 1000
+		cpu_usage = int(_cpu_usage) * 1000
 	elif _cpu_usage.endswith("m"):
 		cpu_usage = int(_cpu_usage[0:-1])
 	elif _cpu_usage.endswith("u"):
@@ -2311,7 +2311,7 @@ def generic_infogetter(**kwargs):
 								else:
 									_default = default
 
-								if vtype in ["int", "float"] and type(default) not in [int, float]:
+								if (vtype in ["int", "float"] or action in ["sum"]) and type(default) not in [int, float]:
 									_default = 0
 
 								if type(subpaths[i]) == dict:
@@ -3470,15 +3470,18 @@ class PodMetricsInfo:
 
 def cpu_usage_to_millicores(cpu_usage):
 	if cpu_usage == "0":
-		return cpu_usage
+		return float(cpu_usage)
 	elif cpu_usage.endswith("n"):
 		cpu_usage = f"{float(cpu_usage[:-1]) / 1000000:0.1f}"
+		return cpu_usage
+	elif cpu_usage.endswith("m"):
+		cpu_usage = f"{float(cpu_usage[:-1]) / 1000:0.1f}"
 		return cpu_usage
 	elif cpu_usage.endswith("u"):
 		cpu_usage = f"{float(cpu_usage[:-1]):0.1f}"
 		return cpu_usage
 	else:
-		raise Exception("Unknown cpu usage metrics: {cpu_usage}")
+		raise Exception(f"Unknown cpu usage metrics: {cpu_usage}")
 
 def get_pod_metrics_info(**kwargs):
 	obj = deep_get(kwargs, "_obj")
@@ -15126,6 +15129,13 @@ infoviews = {
 				"shortcut": ord("C"),
 				"helptext": ("[Shift] + C", "Open info page for the corresponding CSI Node"),
 				"kind": ("CSINode", "storage.k8s.io"),
+				"call": resourceinfodispatch,
+				"name_path": "metadata#name",
+			},
+			"Node Metrics": {
+				"shortcut": ord("m"),
+				"helptext": ("M", "Open metrics for the Node"),
+				"kind": ("NodeMetrics", "metrics.k8s.io"),
 				"call": resourceinfodispatch,
 				"name_path": "metadata#name",
 			},
