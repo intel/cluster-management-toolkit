@@ -5,6 +5,11 @@
     container_name: prometheus-adapter
   parser_rules:
   - name: glog
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Trace["
+      loglevel: debug
   - name: key_value_with_leading_message
 - name: prometheus
   show_in_selector: false
