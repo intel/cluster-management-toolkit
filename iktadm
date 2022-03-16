@@ -544,13 +544,13 @@ def __task_add_ssh_keys_to_inventory(installation_info):
 		if not item.endswith(".pub"):
 			continue
 
-		with open(f"{HOMEDIR}/.ssh/{item}.pub", "r") as f:
+		with open(f"{HOMEDIR}/.ssh/{item}", "r") as f:
 			tmp = f.readlines()
 			if tmp is not None and len(tmp) > 0:
 				pubkey = tmp[0]
 
 		if pubkey == None:
-			iktprint([("Warning: ", "warning"), ("Failed to read ", "default"), (f"{HOMEDIR}/.ssh/{item}.pub", "path"), ("; skipping.", "default")], stderr = True)
+			iktprint([("Warning: ", "warning"), ("Failed to read ", "default"), (f"{HOMEDIR}/.ssh/{item}", "path"), ("; skipping.", "default")], stderr = True)
 			continue
 
 		if pubkey not in __authorized_keys:
