@@ -1514,6 +1514,8 @@ def prepare_installation(options = [], args = None):
 
 			else:
 				phase = __validate_task_index(prepare_tasks, phase)
+		elif opt == "--save-ansible-logs":
+			ansible_configuration.save_logs = True
 		elif opt == "-Y":
 			confirm = False
 		else:
@@ -1822,6 +1824,8 @@ def setup_control_plane(options = [], args = None):
 				sys.exit(0)
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
+		elif opt == "--save-ansible-logs":
+			ansible_configuration.save_logs = True
 		elif opt == "-Y":
 			confirm = False
 		else:
@@ -1973,6 +1977,8 @@ def teardown_control_plane(options = [], args = None):
 				sys.exit(0)
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
+		elif opt == "--save-ansible-logs":
+			ansible_configuration.save_logs = True
 		elif opt == "-Y":
 			confirm = False
 		else:
@@ -2035,6 +2041,8 @@ def purge_control_plane(options = [], args = None):
 				sys.exit(0)
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
+		elif opt == "--save-ansible-logs":
+			ansible_configuration.save_logs = True
 		elif opt == "-Y":
 			confirm = False
 		else:
@@ -2136,6 +2144,8 @@ def upgrade_control_plane(options = [], args = None):
 			allow_reinstall = True
 		elif opt in ["--override", "--list-tasks"]:
 			continue
+		elif opt == "--save-ansible-logs":
+			ansible_configuration.save_logs = True
 		elif opt == "-Y":
 			confirm = False
 		else:
@@ -2519,6 +2529,9 @@ commandline = {
 			"--list-tasks": {
 				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
 			},
+			"--save-ansible-logs": {
+				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
+			},
 			"-Y": {
 				"description": [("Do not ask for confirmation before performing actions", "description")],
 			},
@@ -2563,6 +2576,9 @@ commandline = {
 			},
 			"--list-tasks": {
 				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
+			},
+			"--save-ansible-logs": {
+				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
 			},
 			"-Y": {
 				"description": [("Do not ask for confirmation before performing actions", "description")],
@@ -2611,6 +2627,9 @@ commandline = {
 			"--override": {
 				"description": [("Override/rebuild installation info", "description")],
 			},
+			"--save-ansible-logs": {
+				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
+			},
 			"-Y": {
 				"description": [("Do not ask for confirmation before performing actions", "description")],
 			},
@@ -2645,6 +2664,9 @@ commandline = {
 			"--list-tasks": {
 				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
 			},
+			"--save-ansible-logs": {
+				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
+			},
 			"-Y": {
 				"description": [("Do not ask for confirmation before performing actions", "description")],
 			},
@@ -2677,6 +2699,9 @@ commandline = {
 			},
 			"--list-tasks": {
 				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
+			},
+			"--save-ansible-logs": {
+				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
 			},
 			"-Y": {
 				"description": [("Do not ask for confirmation before performing actions", "description")],
