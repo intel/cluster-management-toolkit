@@ -1897,6 +1897,8 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 
 	if vtype == "str":
 		# We don't want any newlines, and extra trailing whitespace
+		if value is None:
+			value = ""
 		value = value.replace("\n", "\\n").rstrip()
 		if replace_quotes == "pretty":
 			value = value.replace("\\\"", "“")
@@ -1998,7 +2000,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 					_values.append("")
 					continue
 
-				if "/" in value[i]:
+				if value[i] is not None and "/" in value[i]:
 					if override_kind == "full" or override_kind == "mixed" and "." in value[i]:
 						_values.append(value[i].split("/")[0])
 					else:
