@@ -644,7 +644,7 @@ def generator_mem(obj, field, fieldlen, pad, ralign, selected, **formatting):
 		(" ", attribute),
 		(("separators", "fraction"), selected),
 		(" ", attribute),
-		(total, attribute),
+		(total, ("types", "numerical"), selected),
 		(unit, ("types", "unit", selected)),
 	]
 
@@ -1583,36 +1583,6 @@ def datagetter_age(obj, path, default):
 	timestamp = timestamp_to_datetime(deep_get(obj, path))
 	return get_since(timestamp), {}
 
-def get_start_completion_duration(obj, start_time_path = "status#startTime", completion_time_path = "status#completionTime"):
-	completion_time = timestamp_to_datetime(deep_get(obj, completion_time_path))
-	if completion_time is None:
-		duration = -1
-		completion_time = datetime.fromtimestamp(0).astimezone()
-		start_time = datetime.fromtimestamp(0).astimezone()
-	else:
-		start_time = timestamp_to_datetime(deep_get(obj, start_time_path))
-		timediff = completion_time - start_time
-		duration = timediff.days * 24 * 60 * 60 + timediff.seconds
-
-	return start_time, completion_time, duration
-
-def datagetter_start_completion_duration(obj, path, default):
-	if obj is None or path is None or len(path) == 0:
-		return default
-
-	if len(path) == 1:
-		start, completion, duration = get_start_completion_duration(obj)
-	else:
-		start, completion, duration = get_start_completion_duration(obj, path[1], path[2])
-	if path[0] == "start":
-		return start, {}
-	elif path[0] == "completion":
-		return completion, {}
-	elif path[0] == "duration":
-		return duration, {}
-	else:
-		raise Exception(f"Unknown start/completion/duration type {path[0]}")
-
 def datagetter_count(obj, path, default):
 	if obj is None or path is None or len(path) == 0:
 		return default
@@ -1893,7 +1863,7 @@ def get_default(generator):
 latest_info = None
 
 def process_value(field_name, value, vtype, view, field_index, action, formatter, replace_quotes, _regex):
-	override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format"], "mixed")
+	override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", f"Global#kind_format"], "mixed")
 
 	if vtype == "str":
 		# We don't want any newlines, and extra trailing whitespace
@@ -1982,7 +1952,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 		if type(value) not in [list, tuple]:
 			raise Exception(f"Field {field_name}: type(value) is {vtype}; for type {vtype} pathtype must be a multi-element type")
 		_values = []
-		override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format"], "mixed")
+		override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", f"Global#kind_format"], "mixed")
 		for i in range(0, len(value)):
 			if i < len(vtype):
 				_vtype = vtype[i]
@@ -2286,10 +2256,21 @@ def generic_infogetter(**kwargs):
 								value.append(default)
 						for tmp in value:
 							_values.append((tmp, vtype))
+					elif ptype == "timediff":
+						if len(mpaths) != 2:
+							raise ValueError(f"Field {name}: when using pathtype: 'timediff' path must be [start_time_path(s), end_time_path(s)]")
+						start_time = iktlib.deep_get_with_fallback(obj, mpaths[0], default = None)
+						end_time = iktlib.deep_get_with_fallback(obj, mpaths[1], default = None)
+						if end_time is None or start_time is None:
+							duration = -1
+						else:
+							timediff = timestamp_to_datetime(end_time) - timestamp_to_datetime(start_time)
+							duration = timediff.days * 24 * 60 * 60 + timediff.seconds
+							_values.append((duration, "raw"))
 					elif ptype == "items":
 						if len(subpath) > 0:
 							if len(subpaths) > 0:
-								raise Exception(f"Field {name}: when using action: 'items' exactly one of subpath and subpaths must be specified")
+								raise ValueError(f"Field {name}: when using action: 'items' exactly one of subpath and subpaths must be specified")
 							else:
 								subpaths = [subpath]
 						value = []
@@ -2366,7 +2347,7 @@ def generic_infogetter(**kwargs):
 							tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
 
 							if vtype == "api_group":
-								override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format"], "mixed")
+								override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", f"Global#kind_format"], "mixed")
 								if override_kind == "skip" or override_kind == "mixed" and "." not in tmp:
 									tmp = ""
 								vtype = "kind"
@@ -3697,7 +3678,7 @@ def get_job_state(obj, completed = False):
 				reason = deep_get(condition, "reason", "").rstrip()
 
 		if reason != "":
-			state = "%s" % reason
+			state = f"{reason}"
 			status_group = stgroup.NOT_OK
 
 	return state, status_group
@@ -5847,13 +5828,6 @@ field_templates = {
 		"path": "spec#drivers",
 		"datagetter": datagetter_count,
 		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"duration": {
-		"header": "Duration:",
-		"path": ["duration"],
-		"datagetter": datagetter_start_completion_duration,
-		"generator": generator_age,
 		"ralign": True,
 	},
 	"error": {

@@ -5,9 +5,25 @@ listview:
   name: Jobs
   group: Workloads
   field_indexes:
-    Normal: [namespace, name, controller, completions, duration, job_state, age, completion_time, containers_template]
+    Normal: [namespace, name, controller, completions, duration, job_state, age, completion_time, completion_mode, containers_template]
   sortcolumn: state
   fields:
+    completion_mode:
+      header: "Completion Mode:"
+      path: "spec#completionMode"
+      type: str
+      default: "NonIndexed"
+    completions:
+      header: "Completions:"
+      paths:
+      - path: [["status#succeeded"], ["spec#completions"]]
+        pathtype: tuple
+        default: [0, 0]
+      formatter: list
+      formatting:
+        field_separators:
+        - type: fraction
+      align: right
     completion_time:
       header: "Completion Time:"
       path: "status#completionTime"
@@ -25,3 +41,32 @@ listview:
         - subpath: image
         type: raw
       formatter: list
+    controller:
+      header: "Controller:"
+      paths:
+      - path: "metadata#ownerReferences"
+        pathtype: items
+        subpaths:
+        - kind
+        - apiVersion
+        - name
+        when:
+          key: controller
+          eq: true
+        type: [kind, api_group, name]
+      formatter: list
+      formatting:
+        field_colors:
+        - type: kind
+        - type: api_group
+        - type: generic
+        field_separators:
+        - type: kind_api_group
+        - type: kind
+    duration:
+      header: "Duration:"
+      paths:
+      - paths: [["status#startTime"], ["status#completionTime"]]
+        pathtype: timediff
+      formatter: age
+      align: right
