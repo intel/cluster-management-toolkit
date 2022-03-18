@@ -3119,6 +3119,9 @@ def get_sas_info(**kwargs):
 	if obj is None:
 		return []
 
+	saname = deep_get(obj, "metadata#name")
+	sanamespace = deep_get(obj, "metadata#namespace")
+
 	for secret in deep_get(obj, "secrets", []):
 		snamespace = deep_get(secret, "namespace", deep_get(obj, "metadata#namespace"))
 		secret_name = deep_get(secret, "name")
@@ -3126,16 +3129,66 @@ def get_sas_info(**kwargs):
 		# Get a reference to the secret
 		ref = kh.get_ref_by_kind_name_namespace(("Secret", ""), secret_name, snamespace)
 
-		info.append(ServiceAccountSecretInfo("Mountable", snamespace, secret_name, ref))
+		info.append(ServiceAccountSecretInfo(("Mountable", ""), snamespace, secret_name, ref))
 
 	for secret in deep_get(obj, "imagePullSecrets", []):
+		deep_set(ref, "kind", "Secret", create_path = True)
+		deep_set(ref, "apiVersion", "", create_path = True)
 		snamespace = deep_get(secret, "namespace", deep_get(obj, "metadata#namespace"))
 		secret_name = deep_get(secret, "name")
 
 		# Get a reference to the secret
 		ref = kh.get_ref_by_kind_name_namespace(("Secret", ""), secret_name, snamespace)
 
-		info.append(ServiceAccountSecretInfo("Image Pull", snamespace, secret_name, ref))
+		info.append(ServiceAccountSecretInfo(("Image Pull", ""), snamespace, secret_name, ref))
+
+	vlist, status = kh.get_list_by_kind_namespace(("RoleBinding", "rbac.authorization.k8s.io"), "")
+
+	# Get all Role Bindings that bind to this ServiceAccount
+	for ref in vlist:
+		deep_set(ref, "kind", "RoleBinding", create_path = True)
+		deep_set(ref, "apiVersion", "rbac.authorization.k8s.io/", create_path = True)
+		for subject in deep_get(ref, "subjects", []):
+			subjectkind = deep_get(subject, "kind", "")
+			subjectname = deep_get(subject, "name", "")
+			subjectnamespace = deep_get(subject, "namespace", "")
+			if subjectkind == "ServiceAccount" and subjectname == saname and subjectnamespace == sanamespace:
+				info.append(ServiceAccountSecretInfo(("RoleBinding", "rbac.authorization.k8s.io"), deep_get(ref, "metadata#namespace"), deep_get(ref, "metadata#name"), ref))
+
+				# Excellent, we have a Role Binding, now add the role it binds to
+				rolerefkind = (deep_get(ref, "roleRef#kind", ""), deep_get(ref, "roleRef#apiGroup"))
+				rolerefname = deep_get(ref, "roleRef#name", "")
+				rolerefnamespace = deep_get(ref, "metadata#namespace", "")
+				roleref = kh.get_ref_by_kind_name_namespace(rolerefkind, rolerefname, rolerefnamespace)
+				if roleref is not None:
+					deep_set(roleref, "kind", rolerefkind[0], create_path = True)
+					deep_set(roleref, "apiVersion", f"{rolerefkind[1]}/", create_path = True)
+				info.append(ServiceAccountSecretInfo(rolerefkind, rolerefnamespace, rolerefname, roleref))
+				break
+
+
+	vlist, status = kh.get_list_by_kind_namespace(("ClusterRoleBinding", "rbac.authorization.k8s.io"), "")
+
+	# Get all Cluster Role Bindings that bind to this ServiceAccount
+	for ref in vlist:
+		deep_set(ref, "kind", "ClusterRoleBinding", create_path = True)
+		deep_set(ref, "apiVersion", "rbac.authorization.k8s.io/", create_path = True)
+		for subject in deep_get(ref, "subjects", []):
+			subjectkind = deep_get(subject, "kind", "")
+			subjectname = deep_get(subject, "name", "")
+			subjectnamespace = deep_get(subject, "namespace", "")
+			if subjectkind == "ServiceAccount" and subjectname == saname and subjectnamespace == sanamespace:
+				info.append(ServiceAccountSecretInfo(("ClusterRoleBinding", "rbac.authorization.k8s.io"), "", deep_get(ref, "metadata#name"), ref))
+
+				# Excellent, we have a Cluster Role Binding, now add the role it binds to
+				rolerefkind = (deep_get(ref, "roleRef#kind", ""), deep_get(ref, "roleRef#apiGroup"))
+				rolerefname = deep_get(ref, "roleRef#name", "")
+				roleref = kh.get_ref_by_kind_name_namespace(rolerefkind, rolerefname, subjectnamespace)
+				if roleref is not None:
+					deep_set(roleref, "kind", rolerefkind[0], create_path = True)
+					deep_set(roleref, "apiVersion", f"{rolerefkind[1]}/", create_path = True)
+				info.append(ServiceAccountSecretInfo(rolerefkind, subjectnamespace, rolerefname, roleref))
+				break
 
 	return info
 
@@ -11414,6 +11467,16 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 	if obj is None:
 		return None
 
+	if kind == ("", ""):
+		kind = deep_get(obj, "kind", "")
+		api_version = deep_get(obj, "apiVersion", "")
+		# Is this a core API?
+		if "/" not in api_version:
+			api_family = ""
+		else:
+			api_family = api_version.split("/")[0]
+		kind = (kind, api_family)
+
 	if kind in infoviews:
 		return genericinfoloop(stdscr, obj, kind, **kwargs)
 	# Exceptions
@@ -16215,9 +16278,30 @@ infoviews = {
 		"field_indexes": {
 			"Normal": ["stype", "namespace", "name"],
 		},
+		"fields": {
+			"stype": {
+				"header": "Type:",
+				"formatter": "list",
+				"formatting": {
+					"field_colors": [
+						{
+							"type": "kind",
+						},
+						{
+							"type": "api_group",
+						},
+					],
+					"field_separators": [
+						{
+							"type": "kind_api_group",
+						},
+					],
+				},
+			}
+		},
 		"sortcolumn": "stype",
-		"activatedfun": genericinfoloop,
-		"viewoverride": ("Secret", ""),
+		"activatedfun": resourceinfodispatch,
+		"viewoverride": ("", ""),
 		"infopad": {},
 		"listpad": {
 			"infogetter": get_sas_info,
