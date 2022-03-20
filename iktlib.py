@@ -187,6 +187,10 @@ def age_to_seconds(age):
 def seconds_to_age(seconds, negative_is_skew = False):
 	age = ""
 	fields = 0
+
+	if type(seconds) != int:
+		return ""
+
 	if seconds < -1:
 		sign = "-"
 	else:
