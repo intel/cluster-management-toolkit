@@ -440,6 +440,8 @@ def generator_list(obj, field, fieldlen, pad, ralign, selected, **formatting):
 
 def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	items = getattr(obj, field)
+	if type(items) == tuple:
+		items = [items]
 
 	item_separator = deep_get(formatting, "item_separator")
 	if item_separator is None:
@@ -481,6 +483,8 @@ def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **fo
 			newitems.append(("", "", "", "", "", "", item))
 		elif status == stgroup.CRIT:
 			newitems.append(("", "", "", "", "", "", "", item))
+		elif status == stgroup.NEUTRAL:
+			newitems.append(("", "", "", "", "", "", "", "", item))
 		else:
 			newitems.append(("", "", "", "", "", "", "", "", item))
 
@@ -2335,6 +2339,28 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						value.append(tmp)
 					value = tuple(value)
 					_values.append((value, vtype))
+				elif ptype == "status_tuple":
+					if "lookup" in _path:
+						lookup_kind = deep_get(_path, "lookup#kind")
+						lookup_api_family = deep_get(_path, "lookup#api_family")
+						lookup_status = deep_get(_path, "lookup#status")
+					else:
+						raise Exception(f"Field {name}: currently status_tuple only supports 'lookup'")
+					path = deep_get(_path, "path")
+					value = deep_get(obj, path)
+					tmp = kh.get_ref_by_kind_name_namespace((lookup_kind, lookup_api_family), value, "")
+					if lookup_status == "highlight":
+						if tmp is None:
+							status_group = stgroup.NOT_OK
+						else:
+							status_group = stgroup.OK
+						value = (value, status_group)
+					elif lookup_status == "message":
+						if tmp is None:
+							value = (deep_get(_path, "lookup#messages#not_ok"), stgroup.NEUTRAL)
+						else:
+							value = (deep_get(_path, "lookup#messages#ok"), stgroup.NEUTRAL)
+					_values.append((value, "raw"))
 				else:
 					value = deep_get_with_fallback(obj, path, default)
 					_values.append((value, vtype))
@@ -11547,14 +11573,14 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 		return None
 
 	kind_path = deep_get(kwargs, "kind_path")
-	api_group_path = deep_get(kwargs, "api_group_path")
+	api_group_path = deep_get_with_fallback(kwargs, ["api_family_path", "api_group_path"])
 	name_path = deep_get(kwargs, "name_path")
 	namespace_path = deep_get(kwargs, "namespace_path")
 	owner_reference_path = deep_get(kwargs, "owner_reference_path")
 	holder_identity_path = deep_get(kwargs, "holder_identity_path")
 
 	kind = deep_get(kwargs, "kind")
-	api_group = deep_get(kwargs, "api_group")
+	api_group = deep_get_with_fallback(kwargs, ["api_family", "api_group"])
 	name = deep_get(kwargs, "name")
 	namespace = deep_get(kwargs, "namespace", "")
 
@@ -13217,23 +13243,6 @@ infoviews_builtin = {
 			"infogetter": get_auth_rule_info,
 		},
 	},
-	("CatalogSource", "operators.coreos.com"): {
-		"windowheader": "Catalog Source Info",
-		"infopad": {
-			"Display Name:": {
-				"path": "spec#displayName",
-			},
-			"Image:": {
-				"path": "spec#image",
-			},
-			"Publisher:": {
-				"path": "spec#publisher",
-			},
-			"Source Type:": {
-				"path": "spec#sourceType",
-			},
-		},
-	},
 	("Certificate", "cert-manager.io"): {
 		"infopad": {
 			"Common Name:": {
@@ -14191,16 +14200,6 @@ infoviews_builtin = {
 		},
 		#listpad: { SUBSETS }
 	},
-	("Endpoints", ""): {
-		"field_indexes": {
-			"Normal": ["addresses", "ports_ep", "status"],
-		},
-		"sortcolumn": "status",
-		"infopad": {},
-		"listpad": {
-			"infogetter": get_subsets_info,
-		},
-	},
 	("EndpointSlice", "discovery.k8s.io"): {
 		"windowheader": "Endpoint Slice Info",
 		"field_indexes": {
@@ -14297,32 +14296,6 @@ infoviews_builtin = {
 			},
 			"VXLAN Enabled:": {
 				"path": "spec#vxlanEnabled",
-			},
-		},
-	},
-	("FlowSchema", "flowcontrol.apiserver.k8s.io"): {
-		"windowheader": "Flow Schema Info",
-		"infopad": {
-			"Priority Level:": {
-				"fieldname": [("P", ("main", "infoheader_shortcut")), ("riority Level:", ("main", "infoheader"))],
-				"path": "spec#priorityLevelConfiguration#name",
-				"processor": field_processor_priority_level,
-			},
-			"Matching Precedence:": {
-				# FIXME: This should be numerical
-				"path": "spec#matchingPrecedence",
-			},
-			"Distinguisher Method:": {
-				"path": "spec#distinguisherMethod#type",
-			},
-		},
-		"shortcuts": {
-			"Priority Level Configuration": {
-				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Open info page for priority level configuration"),
-				"call": resourceinfodispatch,
-				"kind": ("PriorityLevelConfiguration", "flowcontrol.apiserver.k8s.io"),
-				"name_path": "spec#priorityLevelConfiguration#name",
 			},
 		},
 	},

@@ -21,6 +21,7 @@ IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
 iktconfig = {}
 
 class stgroup:
+	NEUTRAL = 8
 	DONE = 7
 	OK = 6
 	PENDING = 5
