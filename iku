@@ -1950,7 +1950,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 			value = get_since(value)
 	elif type(vtype) == list:
 		if type(value) not in [list, tuple]:
-			raise Exception(f"Field {field_name}: type(value) is {vtype}; for type {vtype} pathtype must be a multi-element type")
+			raise Exception(f"Field {field_name}: type({value}) is {vtype}; for type {vtype} pathtype must be a multi-element type")
 		_values = []
 		override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", f"Global#kind_format"], "mixed")
 		for i in range(0, len(value)):
@@ -2099,6 +2099,314 @@ def when_filter(when_path, item, key = None, value = None):
 
 	return True
 
+def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", filters = {}):
+	d = {}
+
+	# fields both specify formatting and where to get the data from; here we're only concerned with the data
+	for field_name in field_names:
+		name = field_name
+		field = field_dict[name]
+		path = deep_get(field, "path")
+		paths = deep_get(field, "paths", [])
+		datagetter = deep_get(field, "datagetter")
+		if type(datagetter) == str:
+			datagetter = eval(datagetter)
+		converters = deep_get(field, "converters", [])
+		if "default" not in field:
+			default = ""
+		else:
+			default = deep_get(field, "default")
+		global_default = default
+		formatter = deep_get(field, "formatter")
+		action = None
+		replace_quotes = None
+
+		if (path is None and len(paths) == 0 or path is not None and len(paths) > 0) and datagetter is None:
+			raise Exception(f"Field {name}: exactly one of path and paths must be non-empty unless a datagetter is specified\npath={path}\npaths={paths}\ndatagetter={datagetter}")
+
+		if datagetter is not None:
+			d[name], extradata = datagetter(obj, path, default)
+			for key, value in extradata.items():
+				d[key] = value
+		else:
+			_values = []
+
+			if path is not None:
+				if deep_get(field, "type") is None:
+					raise Exception(f"Field {name}: the path field has no default type; type must always be specified")
+				_values.append((deep_get(obj, path, global_default), deep_get(field, "type")))
+
+			_path = None
+			for _path in paths:
+				default = deep_get(_path, "default")
+				vtype = deep_get(_path, "type", "raw")
+				path = deep_get(_path, "path")
+				mpaths = deep_get(_path, "paths")
+				if path is not None and mpaths is not None or path is None and mpaths is None:
+					raise Exception(f"Field {name}: exactly one of path & paths must be used in a 'paths:' block\npath={path}\npaths={paths}")
+
+				if mpaths is None:
+					if type(path) == str:
+						path = [path]
+					mpaths = [path]
+
+				ptype = deep_get(_path, "pathtype", "list")
+				limit = deep_get(_path, "limit")
+				action = deep_get(_path, "action")
+				subpath = deep_get(_path, "subpath", "")
+				subpaths = deep_get(_path, "subpaths", [])
+				fallback_on_empty = deep_get(_path, "fallback_on_empty", False)
+				replace_quotes = deep_get(_path, "replace_quotes", "no")
+				if ptype == "list":
+					tmp = deep_get_with_fallback(obj, path, default = default, fallback_on_empty = fallback_on_empty)
+					# Just return the list, unless a subset has been requested
+					if limit is not None:
+						value = tmp[0:limit]
+					else:
+						value = tmp
+					_values.append((value, vtype))
+				elif ptype == "key_value":
+					value = []
+					for _key, _value in deep_get_with_fallback(obj, path, {}).items():
+						if when_filter(_path, item = None, key = _key, value = _value) == False:
+							continue
+						_regexes_key = deep_get(_path, "key#regex", [])
+						_regexes_value = deep_get(_path, "value#regex", [])
+						if type(_regexes_key) == str:
+						       _regexes_key = [_regexes_key]
+						if type(_regexes_value) == str:
+						       _regexes_value = [_regexes_value]
+						_key = transform_filter(deep_get(_path, "key#transform", {}), _key)
+						_value = transform_filter(deep_get(_path, "value#transform", {}), _value)
+						# A regex for key/value is required to capture only one group;
+						# (though conceivably there might be scenario for joining),
+						# thus the first non-None capture group will exit the match;
+						# when using multiple regexes the first matching regex exits
+						match = False
+						for _regex in _regexes_key:
+							_tmp = re.match(_regex, _key)
+							if _tmp is None:
+								continue
+
+							for group in _tmp.groups():
+								if group is not None:
+									_key = group
+									match = True
+							if match == True:
+								break
+						match = False
+						for _regex in _regexes_value:
+							_tmp = re.match(_regex, _value)
+							if _tmp is None:
+								continue
+
+							for group in _tmp.groups():
+								if group is not None:
+									_value = group
+									match = True
+							if match == True:
+								break
+						# A transform might yield multiple identical key/value pairs;
+						# ignore all except the first one
+						if (_key, _value) in value:
+							continue
+						value.append((_key, _value))
+					if len(value) == 0:
+						if default is None:
+							value = []
+						else:
+							value = default
+					for tmp in value:
+						_values.append((tmp, vtype))
+				elif ptype == "substitution":
+					value = []
+					substitute = deep_get(_path, "substitute", "")
+					tmp = deep_get_with_fallback(obj, path)
+					if tmp is None:
+						tmp = []
+					if type(tmp) == dict:
+						tmp = [tmp]
+					for _tmp in tmp:
+						if when_filter(_path, item = _tmp) == False:
+							continue
+						value.append(substitute)
+					if len(value) == 0:
+						if default == None:
+							continue
+						else:
+							value.append(default)
+					for tmp in value:
+						_values.append((tmp, vtype))
+				elif ptype == "timediff":
+					if len(mpaths) != 2:
+						raise ValueError(f"Field {name}: when using pathtype: 'timediff' path must be [start_time_path(s), end_time_path(s)]")
+					start_time = iktlib.deep_get_with_fallback(obj, mpaths[0], default = None)
+					end_time = iktlib.deep_get_with_fallback(obj, mpaths[1], default = None)
+					if end_time is None or start_time is None:
+						duration = -1
+					else:
+						timediff = timestamp_to_datetime(end_time) - timestamp_to_datetime(start_time)
+						duration = timediff.days * 24 * 60 * 60 + timediff.seconds
+						_values.append((duration, "raw"))
+				elif ptype == "items":
+					if len(subpath) > 0:
+						if len(subpaths) > 0:
+							raise ValueError(f"Field {name}: when using action: 'items' exactly one of subpath and subpaths must be specified")
+						else:
+							subpaths = [subpath]
+					value = []
+					items = []
+					for mpath in mpaths:
+						if type(mpath) == str:
+							mpath = [mpath]
+						items += iktlib.deep_get_list(obj, mpath, default = [], fallback_on_empty = fallback_on_empty)
+
+					for item in items:
+						if when_filter(_path, item) == False:
+							continue
+
+						tmp = []
+						for i in range(0, len(subpaths)):
+							if type(default) == list:
+								if i < len(default):
+									_default = default[i]
+								else:
+									_default = None
+							else:
+								_default = default
+
+							if (vtype in ["int", "float"] or action in ["sum"]) and type(default) not in [int, float]:
+								_default = 0
+
+							if type(subpaths[i]) == dict:
+								_subpath = deep_get(subpaths[i], "subpath")
+								if type(_subpath) == str:
+									_subpath = [_subpath]
+								_regexes = deep_get(subpaths[i], "regex", [])
+								if type(_regexes) == str:
+									_regexes = [_regexes]
+								_raw = deep_get_with_fallback(item, _subpath, _default)
+								_raw = transform_filter(deep_get(subpaths[i], "transform", {}), _raw)
+								for _regex in _regexes:
+									_tmp = re.match(_regex, _raw)
+									if _tmp is not None:
+										for group in _tmp.groups():
+											if group is not None:
+												tmp.append(group)
+										break
+							else:
+								_subpath = subpaths[i]
+								if type(_subpath) == str:
+									_subpath = [_subpath]
+								tmp.append(deep_get_with_fallback(item, _subpath, _default))
+						if len(tmp) == 1:
+							value.append(tmp[0])
+						else:
+							value.append(tuple(tmp))
+					if len(value) == 0:
+						value = default
+					if value is not None:
+						if action in ["sum", "latest", "earliest"]:
+							_values.append((value, vtype))
+						else:
+							for tmp in value:
+								_values.append((tmp, vtype))
+				elif ptype == "tuple":
+					value = []
+					for i in range(0, len(path)):
+						if type(default) == list:
+							if i < len(default):
+								_default = default[i]
+							else:
+								_default = None
+						else:
+							_default = default
+
+						if vtype in ["int", "float"] and type(default) not in [int, float]:
+							_default = 0
+
+						tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
+
+						if vtype == "api_group":
+							override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", f"Global#kind_format"], "mixed")
+							if override_kind == "skip" or override_kind == "mixed" and "." not in tmp:
+								tmp = ""
+							vtype = "kind"
+						value.append(tmp)
+					value = tuple(value)
+					_values.append((value, vtype))
+				else:
+					value = deep_get_with_fallback(obj, path, default)
+					_values.append((value, vtype))
+
+			values = []
+
+			for value, _vtype in _values:
+				_regex = deep_get(_path, "regex")
+				if type(_vtype) == list:
+					if value is None or len(value) == 0:
+						value = []
+				if type(value) == list and _vtype == "raw":
+					values += value
+					continue
+				elif type(value) == list and type(_vtype) == list:
+					tmp = []
+					for _value in value:
+						tmp.append(process_value(name, _value, _vtype, view, field_index, action, formatter, replace_quotes, _regex))
+				else:
+					tmp = process_value(name, value, _vtype, view, field_index, action, formatter, replace_quotes, _regex)
+				values.append(tmp)
+
+			if len(values) == 0:
+				values = global_default
+
+			if type(values) == list and len(values) == 1 and formatter != "list":
+				d[name] = values[0]
+			else:
+				d[name] = values
+
+	# We've got all the information we can get now; time to apply filters
+	skip = False
+	for f in filters:
+		if deep_get(filters[f], "enabled", True) == False:
+			continue
+
+		# If len(allow) > 0, we only allow fields that match
+		allow = deep_get(filters[f], "allow", [])
+		# If len(block) > 0, we skip fields that match
+		block = deep_get(filters[f], "block", [])
+		source = deep_get(filters[f], "source", "")
+		if source == "object":
+			src = obj
+		else:
+			src = d
+		if len(allow) > 0:
+			# If all field + value pairs match we allow
+			for rule in allow:
+				key = deep_get(rule, "key", "")
+				values = deep_get(rule, "values", "")
+
+				if deep_get(src, key, "").rstrip() not in values:
+					skip = True
+					break
+		if len(block) > 0:
+			# If all field + value pairs match we block
+			for rule in block:
+				key = deep_get(rule, "key", "")
+				values = deep_get(rule, "values", "")
+				if deep_get(src, key, "").rstrip() in values:
+					skip = True
+					break
+		if skip == True:
+			break
+	if skip == True:
+		entry = None
+	else:
+		d["ref"] = obj
+		entry = type("InfoClass", (), d)
+
+	return entry
+
 def generic_infogetter(**kwargs):
 	info = []
 
@@ -2111,319 +2419,20 @@ def generic_infogetter(**kwargs):
 	field_dict = deep_get(kwargs, "_field_dict", {})
 	field_names = deep_get(kwargs, "_field_names", [])
 	field_index = deep_get(kwargs, "_field_index", "normal")
+	filters = deep_get(kwargs, "_filters", {})
 
 	if len(field_dict) == 0 or len(field_names) == 0:
 		sys.exit(f"generic_infogetter() received empty field_dict {field_dict} or field_names {field_names}; this is a programming error")
 
 	# If we know the view we can use it to get overrides from ikt.yaml
 	view = deep_get(kwargs, "_view", "")
-
 	for obj in vlist:
-		d = {}
-		d["ref"] = obj
-		# fields both specify formatting and where to get the data from; here we're only concerned with the data
-		for field_name in field_names:
-			name = field_name
-			field = field_dict[name]
-			path = deep_get(field, "path")
-			paths = deep_get(field, "paths", [])
-			datagetter = deep_get(field, "datagetter")
-			if type(datagetter) == str:
-				datagetter = eval(datagetter)
-			converters = deep_get(field, "converters", [])
-			if "default" not in field:
-				default = ""
-			else:
-				default = deep_get(field, "default")
-			global_default = default
-			formatter = deep_get(field, "formatter")
-			action = None
-			replace_quotes = None
-
-			if (path is None and len(paths) == 0 or path is not None and len(paths) > 0) and datagetter is None:
-				raise Exception(f"Field {name}: exactly one of path and paths must be non-empty unless a datagetter is specified\npath={path}\npaths={paths}\ndatagetter={datagetter}")
-
-			if datagetter is not None:
-				d[name], extradata = datagetter(obj, path, default)
-				for key, value in extradata.items():
-					d[key] = value
-			else:
-				_values = []
-
-				if path is not None:
-					if deep_get(field, "type") is None:
-						raise Exception(f"Field {name}: the path field has no default type; type must always be specified")
-					_values.append((deep_get(obj, path, global_default), deep_get(field, "type")))
-
-				_path = None
-				for _path in paths:
-					default = deep_get(_path, "default")
-					vtype = deep_get(_path, "type", "raw")
-					path = deep_get(_path, "path")
-					mpaths = deep_get(_path, "paths")
-					if path is not None and mpaths is not None or path is None and mpaths is None:
-						raise Exception(f"Field {name}: exactly one of path & paths must be used in a 'paths:' block\npath={path}\npaths={paths}")
-
-					if mpaths is None:
-						if type(path) == str:
-							path = [path]
-						mpaths = [path]
-
-					ptype = deep_get(_path, "pathtype", "list")
-					limit = deep_get(_path, "limit")
-					action = deep_get(_path, "action")
-					subpath = deep_get(_path, "subpath", "")
-					subpaths = deep_get(_path, "subpaths", [])
-					fallback_on_empty = deep_get(_path, "fallback_on_empty", False)
-					replace_quotes = deep_get(_path, "replace_quotes", "no")
-					if ptype == "list":
-						tmp = deep_get_with_fallback(obj, path, default = default, fallback_on_empty = fallback_on_empty)
-						# Just return the list, unless a subset has been requested
-						if limit is not None:
-							value = tmp[0:limit]
-						else:
-							value = tmp
-						_values.append((value, vtype))
-					elif ptype == "key_value":
-						value = []
-						for _key, _value in deep_get_with_fallback(obj, path, {}).items():
-							if when_filter(_path, item = None, key = _key, value = _value) == False:
-								continue
-							_regexes_key = deep_get(_path, "key#regex", [])
-							_regexes_value = deep_get(_path, "value#regex", [])
-							if type(_regexes_key) == str:
-							       _regexes_key = [_regexes_key]
-							if type(_regexes_value) == str:
-							       _regexes_value = [_regexes_value]
-							_key = transform_filter(deep_get(_path, "key#transform", {}), _key)
-							_value = transform_filter(deep_get(_path, "value#transform", {}), _value)
-							# A regex for key/value is required to capture only one group;
-							# (though conceivably there might be scenario for joining),
-							# thus the first non-None capture group will exit the match;
-							# when using multiple regexes the first matching regex exits
-							match = False
-							for _regex in _regexes_key:
-								_tmp = re.match(_regex, _key)
-								if _tmp is None:
-									continue
-
-								for group in _tmp.groups():
-									if group is not None:
-										_key = group
-										match = True
-								if match == True:
-									break
-							match = False
-							for _regex in _regexes_value:
-								_tmp = re.match(_regex, _value)
-								if _tmp is None:
-									continue
-
-								for group in _tmp.groups():
-									if group is not None:
-										_value = group
-										match = True
-								if match == True:
-									break
-							# A transform might yield multiple identical key/value pairs;
-							# ignore all except the first one
-							if (_key, _value) in value:
-								continue
-							value.append((_key, _value))
-						if len(value) == 0:
-							if default is None:
-								value = []
-							else:
-								value = default
-						for tmp in value:
-							_values.append((tmp, vtype))
-					elif ptype == "substitution":
-						value = []
-						substitute = deep_get(_path, "substitute", "")
-						tmp = deep_get_with_fallback(obj, path)
-						if tmp is None:
-							tmp = []
-						if type(tmp) == dict:
-							tmp = [tmp]
-						for _tmp in tmp:
-							if when_filter(_path, item = _tmp) == False:
-								continue
-							value.append(substitute)
-						if len(value) == 0:
-							if default == None:
-								continue
-							else:
-								value.append(default)
-						for tmp in value:
-							_values.append((tmp, vtype))
-					elif ptype == "timediff":
-						if len(mpaths) != 2:
-							raise ValueError(f"Field {name}: when using pathtype: 'timediff' path must be [start_time_path(s), end_time_path(s)]")
-						start_time = iktlib.deep_get_with_fallback(obj, mpaths[0], default = None)
-						end_time = iktlib.deep_get_with_fallback(obj, mpaths[1], default = None)
-						if end_time is None or start_time is None:
-							duration = -1
-						else:
-							timediff = timestamp_to_datetime(end_time) - timestamp_to_datetime(start_time)
-							duration = timediff.days * 24 * 60 * 60 + timediff.seconds
-							_values.append((duration, "raw"))
-					elif ptype == "items":
-						if len(subpath) > 0:
-							if len(subpaths) > 0:
-								raise ValueError(f"Field {name}: when using action: 'items' exactly one of subpath and subpaths must be specified")
-							else:
-								subpaths = [subpath]
-						value = []
-						items = []
-						for mpath in mpaths:
-							if type(mpath) == str:
-								mpath = [mpath]
-							items += iktlib.deep_get_list(obj, mpath, default = [], fallback_on_empty = fallback_on_empty)
-
-						for item in items:
-							if when_filter(_path, item) == False:
-								continue
-
-							tmp = []
-							for i in range(0, len(subpaths)):
-								if type(default) == list:
-									if i < len(default):
-										_default = default[i]
-									else:
-										_default = None
-								else:
-									_default = default
-
-								if (vtype in ["int", "float"] or action in ["sum"]) and type(default) not in [int, float]:
-									_default = 0
-
-								if type(subpaths[i]) == dict:
-									_subpath = deep_get(subpaths[i], "subpath")
-									if type(_subpath) == str:
-										_subpath = [_subpath]
-									_regexes = deep_get(subpaths[i], "regex", [])
-									if type(_regexes) == str:
-										_regexes = [_regexes]
-									_raw = deep_get_with_fallback(item, _subpath, _default)
-									_raw = transform_filter(deep_get(subpaths[i], "transform", {}), _raw)
-									for _regex in _regexes:
-										_tmp = re.match(_regex, _raw)
-										if _tmp is not None:
-											for group in _tmp.groups():
-												if group is not None:
-													tmp.append(group)
-											break
-								else:
-									_subpath = subpaths[i]
-									if type(_subpath) == str:
-										_subpath = [_subpath]
-									tmp.append(deep_get_with_fallback(item, _subpath, _default))
-							if len(tmp) == 1:
-								value.append(tmp[0])
-							else:
-								value.append(tuple(tmp))
-						if len(value) == 0:
-							value = default
-						if value is not None:
-							if action in ["sum", "latest", "earliest"]:
-								_values.append((value, vtype))
-							else:
-								for tmp in value:
-									_values.append((tmp, vtype))
-					elif ptype == "tuple":
-						value = []
-						for i in range(0, len(path)):
-							if type(default) == list:
-								if i < len(default):
-									_default = default[i]
-								else:
-									_default = None
-							else:
-								_default = default
-
-							if vtype in ["int", "float"] and type(default) not in [int, float]:
-								_default = 0
-
-							tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
-
-							if vtype == "api_group":
-								override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", f"Global#kind_format"], "mixed")
-								if override_kind == "skip" or override_kind == "mixed" and "." not in tmp:
-									tmp = ""
-								vtype = "kind"
-							value.append(tmp)
-						value = tuple(value)
-						_values.append((value, vtype))
-					else:
-						value = deep_get_with_fallback(obj, path, default)
-						_values.append((value, vtype))
-
-				values = []
-
-				for value, _vtype in _values:
-					_regex = deep_get(_path, "regex")
-					if type(_vtype) == list:
-						if value is None or len(value) == 0:
-							value = []
-					if type(value) == list and _vtype == "raw":
-						values += value
-						continue
-					elif type(value) == list and type(_vtype) == list:
-						tmp = []
-						for _value in value:
-							tmp.append(process_value(name, _value, _vtype, view, field_index, action, formatter, replace_quotes, _regex))
-					else:
-						tmp = process_value(name, value, _vtype, view, field_index, action, formatter, replace_quotes, _regex)
-					values.append(tmp)
-
-				if len(values) == 0:
-					values = global_default
-
-				if type(values) == list and len(values) == 1 and formatter != "list":
-					d[name] = values[0]
-				else:
-					d[name] = values
-
-		# We've got all the information we can get now; time to apply filters
-		filters = deep_get(kwargs, "_filters", {})
-
-		skip = False
-		for f in filters:
-			if deep_get(filters[f], "enabled", True) == False:
-				continue
-
-			# If len(allow) > 0, we only allow fields that match
-			allow = deep_get(filters[f], "allow", [])
-			# If len(block) > 0, we skip fields that match
-			block = deep_get(filters[f], "block", [])
-			source = deep_get(filters[f], "source", "")
-			if source == "object":
-				src = obj
-			else:
-				src = d
-			if len(allow) > 0:
-				# If all field + value pairs match we allow
-				for rule in allow:
-					key = deep_get(rule, "key", "")
-					values = deep_get(rule, "values", "")
-
-					if deep_get(src, key, "").rstrip() not in values:
-						skip = True
-						break
-			if len(block) > 0:
-				# If all field + value pairs match we block
-				for rule in block:
-					key = deep_get(rule, "key", "")
-					values = deep_get(rule, "values", "")
-					if deep_get(src, key, "").rstrip() in values:
-						skip = True
-						break
-			if skip == True:
-				break
-		if skip == True:
+		tmp = get_obj(obj, field_dict = field_dict, field_names = field_names, field_index = field_index, view = view, filters = filters)
+		if tmp is None:
 			continue
 
-		info.append(type("InfoClass", (), d))
+		info.append(tmp)
+
 	return info
 
 def disksize_to_human(size):
@@ -5526,6 +5535,23 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 	uip.addthemearray(headerpad, headerarray, y = 0, x = 0)
 	uip.tabstops = tabstops
 
+def generate_item(uip, data, generator, fieldlen = 0, ralign = False, fpad = 0, is_selected = False):
+	if generator is None:
+		return None
+
+	formatting = {
+		"item_separator": field_list[field].get("item_separator", ("separators", "list")),
+		"field_separators": field_list[field].get("field_separators", [("separators", "field")]),
+		"field_colors": field_list[field].get("field_colors", [("types", "field")]),
+		"ellipsise": field_list[field].get("ellipsise", -1),
+		"ellipsis": field_list[field].get("ellipsis", ("separators", "ellipsis")),
+		"field_prefixes": field_list[field].get("field_prefixes", None),
+		"field_suffixes": field_list[field].get("field_suffixes", None),
+		"mapping": field_list[field].get("mapping", {}),
+	}
+
+	return generator(data, field, fieldlen, fpad, ralign, is_selected, **formatting)
+
 def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable = False, is_tagged = False):
 	first = True
 
@@ -6610,6 +6636,90 @@ def get_formatting(field, formatting, default):
 
 	return result
 
+# This generates old-style fields from new-style fields
+def get_formatter(field):
+	tmp_field = {}
+
+	formatter = deep_get(field, "formatter")
+	generator = deep_get(field, "generator", generator_basic)
+	processor = deep_get(field, "processor")
+
+	if formatter is None:
+		pass
+	elif formatter == "mem":
+		generator = generator_mem_single
+		processor = None
+	elif formatter == "float":
+		# The generator is the same, but the name is unfortunate
+		generator = generator_mem_single
+		processor = None
+	elif formatter == "list":
+		generator = generator_list
+		processor = processor_list
+	elif formatter == "list_with_status":
+		generator = generator_list_with_status
+		processor = processor_list_with_status
+	elif formatter == "numerical":
+		generator = generator_numerical
+		processor = None
+	elif formatter == "timestamp":
+		generator = generator_timestamp
+		processor = processor_timestamp
+	elif formatter == "age":
+		generator = generator_age
+		processor = processor_age
+	elif formatter == "value_mapper":
+		generator = generator_value_mapper
+		processor = None
+	else:
+		raise Exception(f"Unknown formatter {formatter}")
+
+	theme = get_theme_ref()
+	if deep_get(field, "formatting#field_colors") is None:
+		if "type" in field and field["type"] in theme["types"]:
+			field_colors = [("types", deep_get(field, "type"))]
+		else:
+			field_colors = get_formatting(field, "field_colors", [("types", "field")])
+	else:
+		field_colors = get_formatting(field, "field_colors", [("types", "field")])
+
+	field_prefixes = get_formatting(field, "field_prefixes", [])
+	field_suffixes = get_formatting(field, "field_suffixes", [])
+	field_separators = get_formatting(field, "field_separators", [("separators", "field")])
+	ellipsise = deep_get(field, "formatting#ellipsise", -1)
+	ellipsis = get_formatting(field, "ellipsis", ("separators", "ellipsis"))
+	item_separator = get_formatting(field, "item_separator", ("separators", "list"))
+	mapping = deep_get(field, "formatting#mapping", {})
+
+	tmp_field["generator"] = generator
+	tmp_field["processor"] = processor
+	# Fix all of these to use the new format
+	tmp_field["field_colors"] = field_colors
+	tmp_field["field_prefixes"] = field_prefixes
+	tmp_field["field_suffixes"] = field_suffixes
+	tmp_field["field_separators"] = field_separators
+	tmp_field["ellipsise"] = ellipsise
+	tmp_field["ellipsis"] = ellipsis
+	tmp_field["item_separator"] = item_separator
+	tmp_field["mapping"] = mapping
+	if "align" in field:
+		align = deep_get(field, "align", "left")
+		tmp_field["ralign"] = align == "right"
+
+	formatting = {
+		"item_separator": item_separator,
+		"field_separators": field_separators,
+		"field_colors": field_colors,
+		"ellipsise": ellipsise,
+		"ellipsis": ellipsis,
+		"field_prefixes": field_prefixes,
+		"field_suffixes": field_suffixes,
+		"mapping": mapping,
+	}
+
+	tmp_field["formatting"] = formatting
+
+	return tmp_field
 
 def fieldgenerator(view, field_index, field_indexes, fields = {}, sortcolumn = None, denylist = []):
 	global namespace
@@ -6656,78 +6766,20 @@ def fieldgenerator(view, field_index, field_indexes, fields = {}, sortcolumn = N
 
 	for field_name in field_dict:
 		field = deep_get(field_dict, field_name)
+
 		# This is a custom field, so we need to construct one that's usable here
 		tmp_fields[field_name] = copy.deepcopy(field_dict[field_name])
 
-		formatter = deep_get(field, "formatter")
-		generator = deep_get(field, "generator", generator_basic)
-		processor = deep_get(field, "processor")
-		if formatter is None:
-			pass
-		elif formatter == "mem":
-			generator = generator_mem_single
-			processor = None
-		elif formatter == "float":
-			# The generator is the same, but the name is unfortunate
-			generator = generator_mem_single
-			processor = None
-		elif formatter == "list":
-			generator = generator_list
-			processor = processor_list
-		elif formatter == "list_with_status":
-			generator = generator_list_with_status
-			processor = processor_list_with_status
-		elif formatter == "numerical":
-			generator = generator_numerical
-			processor = None
-		elif formatter == "timestamp":
-			generator = generator_timestamp
-			processor = processor_timestamp
-		elif formatter == "age":
-			generator = generator_age
-			processor = processor_age
-		elif formatter == "value_mapper":
-			generator = generator_value_mapper
-			processor = None
-		else:
-			raise Exception(f"Unknown formatter {formatter}")
+		tmp_field = get_formatter(field)
+		if tmp_field is None:
+			continue
 
-		sortkey1 = field_name
+		for key, value in tmp_field.items():
+			tmp_fields[field_name][key] = value
+		tmp_fields[field_name]["sortkey1"] = field_name
 		# If sortkey1 == sortcolumn this "fails", but it's good enough
-		sortkey2 = sortcolumn
+		tmp_fields[field_name]["sortkey2"] = sortcolumn
 
-		theme = get_theme_ref()
-		if deep_get(field, "formatting#field_colors") is None:
-			if "type" in field and field["type"] in theme["types"]:
-				field_colors = [("types", deep_get(field, "type"))]
-			else:
-				field_colors = get_formatting(field, "field_colors", [("types", "field")])
-		else:
-			field_colors = get_formatting(field, "field_colors", [("types", "field")])
-		field_prefixes = get_formatting(field, "field_prefixes", [])
-		field_suffixes = get_formatting(field, "field_suffixes", [])
-		field_separators = get_formatting(field, "field_separators", [("separators", "field")])
-		ellipsise = deep_get(field, "formatting#ellipsise", -1)
-		ellipsis = get_formatting(field, "ellipsis", ("separators", "ellipsis"))
-		item_separator = get_formatting(field, "item_separator", ("separators", "list"))
-		mapping = deep_get(field, "formatting#mapping", {})
-
-		tmp_fields[field_name]["generator"] = generator
-		tmp_fields[field_name]["processor"] = processor
-		# Fix all of these to use the new format
-		tmp_fields[field_name]["field_colors"] = field_colors
-		tmp_fields[field_name]["field_prefixes"] = field_prefixes
-		tmp_fields[field_name]["field_suffixes"] = field_suffixes
-		tmp_fields[field_name]["field_separators"] = field_separators
-		tmp_fields[field_name]["ellipsise"] = ellipsise
-		tmp_fields[field_name]["ellipsis"] = ellipsis
-		tmp_fields[field_name]["item_separator"] = item_separator
-		tmp_fields[field_name]["mapping"] = mapping
-		tmp_fields[field_name]["sortkey1"] = sortkey1
-		tmp_fields[field_name]["sortkey2"] = sortkey2
-		if "align" in field:
-			align = deep_get(field, "align", "left")
-			tmp_fields[field_name]["ralign"] = align == "right"
 
 	return tmp_fields, field_names, sortcolumn
 
@@ -9932,7 +9984,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	# For lists
 	headerpad = None
 	listpad = None
-	if deep_get(viewref, "listpad") is not None:
+	if len(deep_get(viewref, "listpad", {})) > 0:
 		if infopadheight == 0:
 			headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = 1, xpos = 1)
 		else:
@@ -10038,6 +10090,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					]
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 					y += 1
+
 				if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, namespace_path) is not None:
 					fieldarray = [
 						("N", ("main", "infoheader_shortcut")), ("amespace:", ("main", "infoheader")),
@@ -10047,6 +10100,28 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					y += 1
 
 				for key, value in deep_get(viewref, "infopad", {}).items():
+					# If there's a header field, this is from a view file; otherwise it's an old-style field
+					fieldarray = []
+					header = deep_get(value, "header")
+
+					if header is not None:
+						fieldarray += header
+						# Only add stuff if there's a path
+						if "path" in value or "paths" in value:
+							# Use generic_infogetter for this
+							data = get_obj(obj = obj, field_dict = {key: value}, field_names = [key])
+							formatter = {key: get_formatter(value)}
+							generator = deep_get(formatter, f"{key}#generator")
+							if generator is not None:
+								ralign = deep_get(formatter, f"{key}#ralign")
+								formatting = deep_get(formatter, f"{key}#formatting")
+								fieldarray += [(" ", ("types", "generic"))]
+								fieldarray += generator(data, key, fieldlen = 0, pad = 0, ralign = ralign, selected = False, **formatting)
+						uip.addthemearray(infopad, fieldarray, y = y, x = 0)
+
+						y += 1
+						continue
+
 					fieldarray = deep_get(value, "fieldname", [(key, ("main", "infoheader"))])
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 
@@ -11475,6 +11550,8 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	api_group_path = deep_get(kwargs, "api_group_path")
 	name_path = deep_get(kwargs, "name_path")
 	namespace_path = deep_get(kwargs, "namespace_path")
+	owner_reference_path = deep_get(kwargs, "owner_reference_path")
+	holder_identity_path = deep_get(kwargs, "holder_identity_path")
 
 	kind = deep_get(kwargs, "kind")
 	api_group = deep_get(kwargs, "api_group")
@@ -11492,7 +11569,36 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 			api_group = ""
 		kind = (kind, api_group)
 
+	controller = None
+	non_controller = None
+
+	if owner_reference_path is not None:
+		# Search for a controller, or the first reference that matches the kind if specified
+		for ref in deep_get(obj, owner_reference_path, []):
+			ref_kind = deep_get(ref, "kind")
+			ref_api_version = deep_get(ref, "apiVersion")
+			ref_name = deep_get(ref, "name")
+			if "/" in ref_api_version:
+				ref_api_family = ref_api_version.split("/")[0]
+			else:
+				ref_api_family = ""
+			ref_kind = (ref_kind, ref_api_family)
+			if deep_get(ref, "controller", False) == True:
+				controller = (ref_kind, ref_name)
+			elif kind is not None and kind == ref_kind:
+				if non_controller is None:
+					non_controller = (ref_kind, ref_name)
+
+	if holder_identity_path is not None:
+		raise Exception("support for holder_identity not implemented yet")
+
 	name = deep_get(obj, name_path, name)
+
+	if name is None:
+		if controller is not None:
+			kind, name = controller
+		elif non_controller is not None:
+			kind, name = non_controller
 
 	if name is None:
 		return None
@@ -12830,17 +12936,7 @@ listviewactions = {
 #
 # The most versatile, but also complex, processor is field_processor_list();
 # it can provide formatting, substitutions, and (limited) flow control
-infoviews = {
-	("Addon", "k3s.cattle.io"): {
-		"infopad": {
-			"Source:": {
-				"path": "spec#source",
-			},
-			"Checksum": {
-				"path": "spec#checksum",
-			},
-		},
-	},
+infoviews_builtin = {
 	("Alertmanager", "monitoring.coreos.com"): {
 		"infopad": {
 			"Image:": {
@@ -13556,37 +13652,6 @@ infoviews = {
 			},
 		},
 	},
-	("__Container", ""): {
-		"windowheader": "Container Info",
-		"name_path": "name",
-		"creation_timestamp_path": None,
-		"field_indexes": {
-			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "restarts"],
-		},
-		"sortcolumn": "status",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("Pod", ""),
-		"infopad": {
-			"Type:": {
-				"path": "container_type",
-			},
-			"Version:": {
-				"path": "image_version",
-			},
-			"Image ID:": {
-				"path": "image_id",
-			},
-		},
-		"listpad": {
-			"listref": "pod_references",
-			"infogetter": get_pod_info,
-		},
-		"shortcuts": {
-			# Inventory have no last applied configuration
-			"Show Events": {},
-			"Last Applied Configuration": {},
-		},
-	},
 	("ConfigMap", ""): {
 		"windowheader": "Config Map Info",
 		"field_indexes": {
@@ -13671,34 +13736,6 @@ infoviews = {
 			"Volume Lifecycle Modes:": {
 				"extra_paths": "spec#volumeLifecycleModes",
 				"processor": field_processor_list,
-			},
-		},
-	},
-	("CSINode", "storage.k8s.io"): {
-		"windowheader": "CSI Node Info",
-		"field_indexes": {
-			"Normal": ["name", "node_id", "topology_keys", "allocatable_count"],
-		},
-		"sortcolumn": "name",
-		"activatedfun": csi_driver_dispatch,
-		"viewoverride": ("CSIDriver", "storage.k8s.io"),
-		"infopad": {
-			"Node:": {
-				"fieldname": [("N", ("main", "infoheader_shortcut")), ("ode:", ("main", "infoheader"))],
-				"processor": field_processor_owr_node,
-			},
-		},
-		"listpad": {
-			"infogetter": get_csi_node_driver_info,
-		},
-		"shortcuts": {
-			"Node": {
-				"shortcut": ord("N"),
-				"helptext": ("[Shift] + N", "Open info page for node"),
-				"call": resourceinfodispatch,
-				"owner_references_path": "metadata#ownerReferences",
-				# Note: This cannot be (kind, api_group)
-				"owner_references_kind": "Node",
 			},
 		},
 	},
@@ -16612,6 +16649,8 @@ infoviews = {
 	},
 }
 
+infoviews = {**infoviews_builtin}
+
 def is_cluster_reachable():
 	reachable = False
 
@@ -16640,56 +16679,6 @@ views_special = {
 		"activatedfun": None,
 		"listgetter": None,
 		"infogetter": None,
-		"is_taggable": False,
-		"check_availability": is_cluster_reachable,
-	},
-	"Containers": {
-		"commandline": ["containers", "container"],
-		"group": "Core",
-		"field_indexes": {
-			"Normal": ["name", "container_type", "image_version", "instances", "image_id", "pods"],
-		},
-		"fields": {
-			"container_type": {
-				"header": "Type:",
-			},
-			"image_id": {
-				"header": "Image ID:",
-			},
-			"image_version": {
-				"header": "Version:",
-				"type": "version",
-			},
-			"instances": {
-				"header": "Instances:",
-				"generator": generator_numerical,
-				"align": "right",
-			},
-			"pods": {
-				"header": "Pods:",
-				"formatter": "list",
-				"field_colors": [("types", "namespace"), ("types", "generic")],
-				"field_separators": [("separators", "namespace")],
-				"formatting": {
-					"field_colors": [
-						{
-							"type": "namespace",
-						},
-						{
-							"type": "generic",
-						},
-					],
-					"field_separators": [
-						{
-							"type": "namespace",
-						},
-					],
-				},
-			},
-		},
-		"kind": ("__Container", ""),
-		"listgetter": None,
-		"infogetter": get_container_info,
 		"is_taggable": False,
 		"check_availability": is_cluster_reachable,
 	},
@@ -17343,6 +17332,8 @@ def populate_views():
 				for item in _command:
 					command.append(f"{item}.{api_family}")
 
+			listview_entry = None
+
 			if "listview" in d:
 				# Do we need to override kind?
 				if deep_get(d, "listview#kind") is not None:
@@ -17350,29 +17341,18 @@ def populate_views():
 					api_family = deep_get(d, "listview#api_family", "")
 				name = deep_get(d, "listview#name", "<missing>")
 				group = deep_get(d, "listview#group")
+
+				check_availability = deep_get(d, "check_availability", None)
+				if check_availability is not None:
+					check_availability = eval(check_availability)
+
 				sortcolumn = deep_get(d, "listview#sortcolumn")
 				fields = deep_get(d, "listview#fields", "<missing>")
 				fields_wide = deep_get(d, "listview#fields_wide", [])
 
-				# Backwards compatibility until all views have field_indexes
 				field_indexes = deep_get(d, "listview#field_indexes", {})
 				if len(field_indexes) == 0:
-					_fields = []
-					for field in fields:
-						if type(field) == str:
-							_fields.append(field)
-						elif type(field) == dict:
-							_fields.append(deep_get(field, "name"))
-					field_indexes["Normal"] = _fields
-					if len(fields_wide) > 0:
-						_fields = []
-						for field in fields_wide:
-							if type(field) == str:
-								_fields.append(field)
-							elif type(field) == dict:
-								_fields.append(deep_get(field, "name"))
-						field_indexes["Wide"] =  _fields
-						fields = fields_wide
+					sys.exit(f"View-file {view_file} is invalid: field_indexes is either missing or empty for the list view. Aborting.")
 
 				if name is None or group is None or len(fields) == 0 or "<missing>" in [name, group]:
 					sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing, empty or None:\n"
@@ -17380,17 +17360,36 @@ def populate_views():
 						 f"  name: {name}\n"
 						 f"  group: {group}\n"
 						  "Aborting.")
+
+				infogetter = generic_infogetter
+				if "infogetter" in deep_get(d, "listview"):
+					infogetter = deep_get(d, "listview#infogetter")
+					if infogetter is not None:
+						infogetter = eval(infogetter)
+
+				listgetter = generic_listgetter
+				if "listgetter" in deep_get(d, "listview"):
+					listgetter = deep_get(d, "listview#listgetter")
+					if listgetter is not None:
+						listgetter = eval(listgetter)
+
+				activatedfun = deep_get(d, "listview#activatedfun", genericinfoloop)
+				if type(activatedfun) == str:
+					activatedfun = eval(activatedfun)
+
 				listview_entry = {
 					"kind": (kind, api_family),
 					"commandline": command,
 					"group": group,
+					"check_availability": check_availability,
 					"field_indexes": field_indexes,
 					"fields": fields,
-					"activatedfun": deep_get(d, "listview#activatedfun", genericinfoloop),
+					"activatedfun": activatedfun,
 					"listview_args": deep_get(d, "listview#listview_args", {}),
 					"statusmsg": deep_get(d, "listview#statusmsg", {}),
-					"listgetter": generic_listgetter,
-					"infogetter": generic_infogetter,
+					"is_taggable": deep_get(d, "listview#is_taggable", True),
+					"listgetter": listgetter,
+					"infogetter": infogetter,
 					"infogetter_args": deep_get(d, "listview#infogetter_args", {}),
 					"actions": deep_get(d, "listview#actions", {}),
 				}
@@ -17480,6 +17479,164 @@ def populate_views():
 
 				# Add the new view
 				views[name] = listview_entry
+
+			infoview_entry = None
+
+			if "infoview" in d:
+				# Default kind and api_family unless overriden
+				kind = deep_get(d, "kind", "<missing>")
+				api_family = deep_get(d, "api_family", "")
+
+				# Do we need to override kind?
+				if deep_get(d, "infoview#kind") is not None:
+					kind = deep_get(d, "infoview#kind")
+					api_family = deep_get(d, "infoview#api_family", "")
+				name = deep_get(d, "infoview#name", "<missing>")
+				infopad = deep_get(d, "infoview#infopad", {})
+				# Eventually we should handle this the same way as in genericlistloop,
+				# with the row_indexes used on the fly, but let's change a bit at a time
+				rows = deep_get(infopad, "row_indexes#Normal", {})
+				row_fields = {}
+
+				for row in rows:
+					row_fields[row] = deep_get(infopad, f"rows#{row}", {})
+					# We need to reformat the header
+					_header = deep_get(infopad, f"rows#{row}#header", [["<unset>", ["types", "unset"]]])
+					header = []
+					for string, formatting in _header:
+						header.append((string, tuple(formatting)))
+					row_fields[row]["header"] = header
+
+				name_path = deep_get(d, "infoview#infopad#name_path")
+				namespace_path = deep_get(d, "infoview#infopad#namespace_path", "")
+				creation_timestamp_path = deep_get(d, "infoview#infopad#creation_timestamp_path", "")
+
+				listpad = deep_get(d, "infoview#listpad", {})
+
+				activatedfun = deep_get(listpad, "on_activation#call")
+				if type(activatedfun) == str:
+					activatedfun = eval(activatedfun)
+				override_kind = deep_get(listpad, "on_activation#kind")
+				override_api_family = deep_get(listpad, "on_activation#api_family", "")
+				if override_kind is None:
+					viewoverride = (kind, api_family)
+				else:
+					viewoverride = (override_kind, override_api_family)
+
+				infoview_entry = {
+					"windowheader": name,
+					"field_indexes": deep_get(listpad, "field_indexes"),
+					"fields": deep_get(listpad, "fields"),
+					"activatedfun": activatedfun,
+					"viewoverride": viewoverride,
+					"infopad": row_fields,
+					"listpad": {},
+					"shortcuts": shortcuts,
+				}
+				sortcolumn = deep_get(listpad, "sortcolumn")
+				if sortcolumn is not None:
+					infoview_entry["sortcolumn"] = sortcolumn
+
+				if name_path is not None:
+					infoview_entry["name_path"] = name_path
+				if namespace_path is None or len(namespace_path) > 0:
+					infoview_entry["namespace_path"] = namespace_path
+				if creation_timestamp_path is None or len(creation_timestamp_path) > 0:
+					infoview_entry["creation_timestamp_path"] = creation_timestamp_path
+
+				list_listgetter = deep_get(listpad, "listgetter")
+				list_path = deep_get(listpad, "path")
+				list_infogetter = deep_get(listpad, "infogetter")
+				if list_infogetter is None:
+					if len(listpad) > 0:
+						raise Exception("View-file {view_file} is invalid: listpad specified, but no infogetter is provided")
+				else:
+					infoview_entry["listpad"]["infogetter"] = eval(list_infogetter)
+				if list_listgetter is not None:
+					infoview_entry["listpad"]["listgetter"] = eval(list_listgetter)
+				if list_path is not None:
+					infoview_entry["listpad"]["listref"] = list_path
+
+				shortcuts = {}
+
+				_shortcuts = deep_get(d, "infoview#shortcuts", {})
+				for shortcut in _shortcuts:
+					# If the shortcut is empty we're disabling a default shortcut
+					if _shortcuts[shortcut] is None or len(_shortcuts[shortcut]) == 0:
+						shortcuts[shortcut] = {}
+						continue
+
+					key = deep_get(_shortcuts[shortcut], "key", "<missing>")
+					modifier = deep_get(_shortcuts[shortcut], "modifier", "")
+					helptext = deep_get(_shortcuts[shortcut], "helptext", "<missing>")
+					action = deep_get(_shortcuts[shortcut], "action", "<missing>")
+					action_args = deep_get(_shortcuts[shortcut], "action_args", {})
+					action_call = deep_get(_shortcuts[shortcut], "action_call")
+					queryfunc = deep_get(_shortcuts[shortcut], "queryfunc")
+					queryval = deep_get(_shortcuts[shortcut], "queryval")
+					query = deep_get(_shortcuts[shortcut], "query")
+
+					if key is None or helptext is None or action is None or "<missing>" in [key, helptext, action]:
+						sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
+							 f"key: {key}\n"
+							 f"helptext: {helptext}\n"
+							 f"action: {action}\n"
+							  "Aborting.")
+
+					key = key.lower()
+					modifier = modifier.lower()
+
+					if len(modifier) > 0 and modifier not in ["ctrl", "shift"]:
+						sys.exit(f"View-file {view_file} is invalid: unknown modifier {modifier}; valid modifiers are shift, ctrl; aborting")
+
+					if key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and len(modifier) == 0:
+						shortcut_key = eval(f"curses.KEY_{key.upper()}")
+						help_key = key.upper()
+					elif key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and modifier == "shift":
+						num = int(key[1:]) + 12
+						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
+						help_key = f"[Shift] + {key.upper()} / {key[0]}{num}"
+					elif key in ["f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24"] and len(modifier) == 0:
+						num = int(key[1:]) - 12
+						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
+						help_key = f"[Shift] + {key[0]}{num} / {key.upper()}"
+					elif key in ["enter", "return"]:
+						if modifier is not None:
+							help_key = "[Enter]"
+							shortcut_key = [curses.KEY_ENTER, 10, 13]
+					elif modifier is not None:
+						if modifier == "shift":
+							help_key = f"[Shift] + {key.upper()}"
+							shortcut_key = ord(key.upper())
+						elif modifier == "ctrl":
+							help_key = f"[Ctrl] + {key.upper()}"
+							shortcut_key = ord(key) - 96
+					else:
+						help_key = f"{key.upper()}"
+						shortcut_key = ord(key)
+
+					shortcuts[shortcut] = {
+						"shortcut": shortcut_key,
+						"helptext": (help_key, helptext),
+						"action": action,
+						"action_args": action_args,
+						"action_call": action_args,
+						"queryfunc": queryfunc,
+						"queryval": queryval,
+						"query": query,
+					}
+					if action == "call":
+						action_call = eval(action_call)
+						shortcuts[shortcut]["action_call"] = action_call
+
+				if len(shortcuts) > 0:
+					infoview_entry["shortcuts"] = shortcuts
+
+				# Replace existing listviews with the same name
+				infoviews.pop((kind, api_family), None)
+
+				# Add the new view
+				infoviews[(kind, api_family)] = infoview_entry
 
 def setupui(stdscr):
 	# Hide the cursor

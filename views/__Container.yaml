@@ -1,0 +1,85 @@
+kind: __Container
+default_command: containers
+command:
+- container
+listview:
+  name: Containers
+  group: Core
+  check_availability: is_cluster_reachable
+  field_indexes:
+    Wide: [name, container_type, image_version, instances, image_id, pods]
+    Normal: [name, container_type, image_version, instances, pods]
+  listgetter:
+  infogetter: get_container_info
+  is_taggable: false
+  fields:
+    container_type:
+      header: "Type:"
+      path: container_type
+      type: str
+    image_id:
+      header: "Image ID:"
+      path: image_id
+      type: str
+    image_version:
+      header: "Version:"
+      path: image_version
+      type: version
+    instances:
+      header: "Instances:"
+      type: int
+      formatter: numerical
+      align: right
+    pods:
+      header: "Pods:"
+      formatter: list
+      formatting:
+        field_colors:
+        - type: namespace
+        - type: generic
+        field_separators:
+        - type: namespace
+infoview:
+  name: Container Info
+  infopad:
+    name_path: name
+    creation_timestamp_path: None
+    row_indexes:
+      Normal: [type, version, image_id]
+    rows:
+      type:
+        header: [["Type:", [main, infoheader]]]
+        path: container_type
+        type: str
+      version:
+        header: [["Version:", [main, infoheader]]]
+        path: image_version
+        type: version
+      image_id:
+        header: [["Image ID:", [main, infoheader]]]
+        path: image_id
+        type: str
+  listpad:
+    on_activation:
+      call: resourceinfodispatch
+      kind: Pod
+    field_indexes:
+      Normal: [namespace, name, status, node, pod_ip, age, restarts]
+    fields:
+      node:
+        header: "Node:"
+        path: node
+        type: host
+        default: "<none>"
+      pod_ip:
+        header: "Pod IP:"
+        path: pod_ip
+        default: "<unset>"
+        type: ipaddress
+    sortcolumn: status
+    path: pod_references
+    infogetter: get_pod_info
+  shortcuts:
+    # Containers have no last applied configuration or events
+    Show Events: {}
+    Last Applied Configuration: {}
