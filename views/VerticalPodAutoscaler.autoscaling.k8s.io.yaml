@@ -1,0 +1,27 @@
+kind: VerticalPodAutoscaler
+api_family: autoscaling.k8s.io
+default_command: verticalpodautoscalers
+command:
+- vpa
+listview:
+  name: Vertical Pod Autoscalers
+  group: Scheduling & Scaling
+  field_indexes:
+    Normal: [namespace, name, update_mode, provided, age]
+  sortcolumn: namespace
+  fields:
+    provided:
+      header: "Provided:"
+      paths:
+      - path: "status#conditions"
+        subpath: status
+        when:
+          key: type
+          eq: RecommendationProvided
+        pathtype: items
+        default: "Unknown"
+      type: str
+    update_mode:
+      header: "Update Mode:"
+      path: "spec#updatePolicy#updateMode"
+      type: str

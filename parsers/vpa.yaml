@@ -1,0 +1,13 @@
+- name: vpa
+  show_in_selector: false
+  matchkeys:
+  - pod_name: vpa-admission-controller
+  - pod_name: vpa-recommender
+  - pod_name: vpa-updater
+  parser_rules:
+  - name: glog
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Vertical Pod Autoscaler "
+      loglevel: notice
