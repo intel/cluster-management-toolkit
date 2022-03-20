@@ -655,6 +655,15 @@ class KubernetesHelper:
 			"api_family": ["apis/autoscaling/v2/", "apis/autoscaling/v2beta2/", "apis/autoscaling/v1/"],
 			"api": "horizontalpodautoscalers",
 		},
+		# autoscaling.k8s.io
+		("VerticalPodAutoscaler", "autoscaling.k8s.io"): {
+			"api_family": ["apis/autoscaling.k8s.io/v1/"],
+			"api": "verticalpodautoscalers",
+		},
+		("VerticalPodAutoscalerCheckpoint", "autoscaling.k8s.io"): {
+			"api_family": ["apis/autoscaling.k8s.io/v1/"],
+			"api": "verticalpodautoscalercheckpoints",
+		},
 		# batch
 		("CronJob", "batch"): {
 			"api_family": ["apis/batch/v1/", "apis/batch/v1beta1/"],
