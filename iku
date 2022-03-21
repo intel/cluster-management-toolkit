@@ -5273,6 +5273,28 @@ def get_list_as_list(obj, **kwargs):
 		items = deep_get(obj, path, [])
 		for item in items:
 			vlist.append([item])
+	elif "paths" in kwargs:
+		# lists that run out of elements will return ""
+		# strings will be treated as constants and thus returned for every row
+		paths = deep_get(kwargs, "paths", [])
+		maxlen = 0
+		for column in paths:
+			tmp = deep_get(obj, column)
+			if type(tmp) == list:
+				maxlen = max(len(tmp), maxlen)
+		for i in range(0, maxlen):
+			item = []
+			for column in paths:
+				tmp = deep_get(obj, column)
+				if type(tmp) == str:
+					item.append(tmp)
+				elif type(tmp) == list:
+					if len(tmp) > i:
+						item.append(tmp[i])
+					else:
+						item.append(" ")
+			vlist.append(item)
+
 	return vlist
 
 def get_list_fields(obj, **kwargs):
@@ -10310,6 +10332,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			widget = deep_get(value, "widget")
 			force_update = deep_get(value, "force_update", True)
 			changed = False
+			tmpselection = None
 			if widget is not None:
 				if widget == "windowwidget":
 					w_title = deep_get(value, "title", "")
@@ -10340,10 +10363,12 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if w_items is not None and len(w_items) > 0:
 						w_sortcolumn = deep_get(value, "sortcolumn")
 						tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items = w_items, headers = w_headers, title = w_title, cursor = w_selectable)
-						if w_selectable is True and w_callout is not None and tmpselection != (0, [("", None)]):
-							retval = w_callout(uip, w_kind, obj, selection = tmpselection)
-							if retval is not None and retval == curses_helper.retval.RETURNFULL:
-								return retval
+						if w_selectable is True and tmpselection != (0, [("", None)]):
+							# If callout is None we might still have an action later
+							if w_callout is not None:
+								retval = w_callout(uip, w_kind, obj, selection = tmpselection)
+								if retval is not None and retval == curses_helper.retval.RETURNFULL:
+									return retval
 						changed = True
 				elif widget == "inputbox":
 					selected = uip.get_selected()
@@ -10414,7 +10439,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					retval = w_callout(uip, w_kind, obj, selected = selected, title = w_title, headers = w_headers, itemgetter = w_itemgetter, sortcolumn = w_sortcolumn, **w_callout_args)
 					if retval is not None and retval == curses_helper.retval.RETURNFULL:
 						return retval
-			elif "action" in value:
+			if "action" in value:
 				selected = uip.get_selected()
 				action = deep_get(value, "action", "")
 				action_args = deep_get(value, "action_args", {})
@@ -10424,6 +10449,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					action_args["selected"] = selected
 				if "_pass_selected_obj" in action_args and selected is not None:
 					action_args["selected_obj"] = getattr(selected, "ref", None)
+				if tmpselection is not None:
+					action_args["selection"] = tmpselection
 				action_call = deep_get(value, "action_call")
 				if action == "call" and action_call is not None:
 					retval = action_call(uip.stdscr, **action_args)
@@ -11569,26 +11596,32 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	if obj is None:
 		obj = deep_get(kwargs, "selected_obj")
 
-	if obj is None:
-		return None
+	selection = deep_get(kwargs, "selection")
 
-	kind_path = deep_get(kwargs, "kind_path")
-	api_group_path = deep_get_with_fallback(kwargs, ["api_family_path", "api_group_path"])
+	name = deep_get(kwargs, "name")
+	namespace = deep_get(kwargs, "namespace")
+
 	name_path = deep_get(kwargs, "name_path")
-	namespace_path = deep_get(kwargs, "namespace_path")
+	namespace_path = deep_get(kwargs, "namespace_path", "")
+
+	kind = deep_get(kwargs, "kind")
+	kind_path = deep_get(kwargs, "kind_path")
+	api_group = deep_get_with_fallback(kwargs, ["api_family", "api_group"])
+	api_group_path = deep_get_with_fallback(kwargs, ["api_family_path", "api_group_path"])
 	owner_reference_path = deep_get(kwargs, "owner_reference_path")
 	holder_identity_path = deep_get(kwargs, "holder_identity_path")
 
-	kind = deep_get(kwargs, "kind")
-	api_group = deep_get_with_fallback(kwargs, ["api_family", "api_group"])
-	name = deep_get(kwargs, "name")
-	namespace = deep_get(kwargs, "namespace", "")
+	# When name_path or namespace_path are integers they reference
+	# fields in selected
+	if type(name_path) == int and selection is not None:
+		name = selection[name_path + 1][0][0]
+	if type(namespace_path) == int and selection is not None:
+		namespace = selection[namespace_path + 1][0][0]
 
-	kind = deep_get(obj, kind_path, kind)
-	if kind is None or len(kind) == 0:
-		return None
-
-	api_group = deep_get(obj, api_group_path, api_group)
+	if obj is not None:
+		kind = deep_get(obj, kind_path, kind)
+		if kind is not None and len(kind) > 0:
+			api_group = deep_get(obj, api_group_path, api_group)
 
 	if type(kind) != tuple:
 		if api_group is None:
@@ -11598,7 +11631,7 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	controller = None
 	non_controller = None
 
-	if owner_reference_path is not None:
+	if owner_reference_path is not None and obj is not None:
 		# Search for a controller, or the first reference that matches the kind if specified
 		for ref in deep_get(obj, owner_reference_path, []):
 			ref_kind = deep_get(ref, "kind")
@@ -11618,18 +11651,22 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	if holder_identity_path is not None:
 		raise Exception("support for holder_identity not implemented yet")
 
-	name = deep_get(obj, name_path, name)
+	if controller is not None:
+		kind, name = controller
+	elif non_controller is not None:
+		kind, name = non_controller
+	else:
+		if name is None and obj is not None:
+			name = deep_get(obj, name_path)
 
-	if name is None:
-		if controller is not None:
-			kind, name = controller
-		elif non_controller is not None:
-			kind, name = non_controller
+	if kind is None:
+		return None
 
 	if name is None:
 		return None
 
-	namespace = deep_get(obj, namespace_path, namespace)
+	if namespace is None and obj is not None:
+		namespace = deep_get(obj, namespace_path)
 
 	obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	return resourceinfodispatch(stdscr, obj, kind)
@@ -17553,6 +17590,15 @@ def populate_views():
 					queryfunc = deep_get(_shortcuts[shortcut], "queryfunc")
 					queryval = deep_get(_shortcuts[shortcut], "queryval")
 					query = deep_get(_shortcuts[shortcut], "query")
+					widget = deep_get(_shortcuts[shortcut], "widget")
+					w_title = deep_get(_shortcuts[shortcut], "title")
+					w_headers = deep_get(_shortcuts[shortcut], "headers")
+					w_selectable = deep_get(_shortcuts[shortcut], "selectable")
+					w_itemgetter = deep_get(_shortcuts[shortcut], "itemgetter")
+					if w_itemgetter is not None:
+						w_itemgetter = eval(w_itemgetter)
+					w_itemgetter_args = deep_get(_shortcuts[shortcut], "itemgetter_args", {})
+					w_sortcolumn = deep_get(_shortcuts[shortcut], "sortcolumn", {})
 
 					if key is None or helptext is None or action is None or "<missing>" in [key, helptext, action]:
 						sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
@@ -17602,6 +17648,13 @@ def populate_views():
 						"queryfunc": queryfunc,
 						"queryval": queryval,
 						"query": query,
+						"widget": widget,
+						"title": w_title,
+						"headers": w_headers,
+						"itemgetter": w_itemgetter,
+						"itemgetter_args": w_itemgetter_args,
+						"selectable": w_selectable,
+						"sortcolumn": w_sortcolumn,
 					}
 					if action == "call":
 						action_call = eval(action_call)
