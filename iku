@@ -17346,6 +17346,8 @@ def populate_views():
 					if listgetter is not None:
 						listgetter = eval(listgetter)
 
+				listgetter_args = deep_get(d, "listview#listgetter_args", {})
+
 				activatedfun = deep_get(d, "listview#activatedfun", genericinfoloop)
 				if type(activatedfun) == str:
 					activatedfun = eval(activatedfun)
@@ -17362,6 +17364,7 @@ def populate_views():
 					"statusmsg": deep_get(d, "listview#statusmsg", {}),
 					"is_taggable": deep_get(d, "listview#is_taggable", True),
 					"listgetter": listgetter,
+					"listgetter_args": listgetter_args,
 					"infogetter": infogetter,
 					"infogetter_args": deep_get(d, "listview#infogetter_args", {}),
 					"actions": deep_get(d, "listview#actions", {}),
@@ -17518,6 +17521,7 @@ def populate_views():
 					infoview_entry["creation_timestamp_path"] = creation_timestamp_path
 
 				list_listgetter = deep_get(listpad, "listgetter")
+				list_listgetter_args = deep_get(listpad, "listgetter_args", {})
 				list_path = deep_get(listpad, "path")
 				list_infogetter = deep_get(listpad, "infogetter")
 				if list_infogetter is None:
@@ -17527,6 +17531,7 @@ def populate_views():
 					infoview_entry["listpad"]["infogetter"] = eval(list_infogetter)
 				if list_listgetter is not None:
 					infoview_entry["listpad"]["listgetter"] = eval(list_listgetter)
+					infoview_entry["listpad"]["listgetter_args"] = list_listgetter_args
 				if list_path is not None:
 					infoview_entry["listpad"]["listref"] = list_path
 
