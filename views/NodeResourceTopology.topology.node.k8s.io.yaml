@@ -5,7 +5,90 @@ command:
 - noderestopos
 - noderestopo
 listview:
-  name: Node Resource Topology
+  name: Node Resource Topologies
   group: Scheduling & Scaling
   field_indexes:
-    Normal: [name, age]
+    Normal: [name, zones, age]
+  fields:
+    zones:
+      header: "Zones:"
+      path: zones
+      type: len
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+infoview:
+  name: Node Resource Topology Info
+  infopad:
+    row_indexes:
+      Normal: [topology_policies]
+    rows:
+      topology_policies:
+        header: [["Topology Policies:", [main, infoheader]]]
+        paths:
+        - path: "topologyPolicies"
+          pathtype: list
+        formatter: list
+  listpad:
+    field_indexes:
+      Normal: [zone, type, costs, resources]
+    sortcolumn: zone
+    fields:
+      costs:
+        header: "Costs:"
+        paths:
+        - path: costs
+          pathtype: items
+          subpaths:
+          - name
+          - value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: resource
+          - type: numerical
+          field_separators:
+          - type: keyvalue
+      resources:
+        header: "Resources (Allocatable/Available/Capacity):"
+        paths:
+        - path: resources
+          pathtype: items
+          subpaths:
+          - name
+          - allocatable
+          - available
+          - capacity
+        formatter: list
+        formatting:
+          field_colors:
+          - type: resource
+          - type: numerical
+          - type: numerical
+          - type: numerical
+          field_separators:
+          - type: resource
+          - type: fraction
+          - type: fraction
+      type:
+        header: "Type:"
+        path: type
+        type: str
+      zone:
+        header: "Zone:"
+        path: name
+        type: str
+    path: zones
+    infogetter: generic_infogetter
+  shortcuts:
+    Node:
+      key: n
+      modifier: shift
+      helptext: "Open info page for Node"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Node
+        name_path: "metadata#name"
