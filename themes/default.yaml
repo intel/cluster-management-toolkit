@@ -251,7 +251,7 @@ color_pairs_curses:
   type_numerical:
     unselected: [[cyan, normal], [black, normal]]
     selected: [[cyan, normal], [white, normal]]
-  type_ipaddress:
+  type_address:
     unselected: [[white, normal], [black, normal]]
     selected: [[black, normal], [white, normal]]
   type_ipmask:
@@ -333,8 +333,8 @@ color_pairs_curses:
     unselected: [[black, bright], [black, normal]]
     selected: [[black, bright], [white, normal]]
   separator_percentage:
-    unselected: [[cyan, normal], [black, normal]]
-    selected: [[cyan, normal], [white, normal]]
+    unselected: [[magenta, normal], [black, normal]]
+    selected: [[magenta, normal], [white, normal]]
   separator_keyvalue:
     unselected: [[black, bright], [black, normal]]
     selected: [[black, bright], [white, normal]]
@@ -377,10 +377,7 @@ color_pairs_curses:
   separator_field:
     unselected: [[black, bright], [black, normal]]
     selected: [[black, bright], [white, normal]]
-  separator_ipv4address:
-    unselected: [[cyan, normal], [black, normal]]
-    selected: [[cyan, normal], [white, normal]]
-  separator_ipv6address:
+  separator_address:
     unselected: [[cyan, normal], [black, normal]]
     selected: [[cyan, normal], [white, normal]]
   separator_ipmask:
@@ -717,8 +714,10 @@ types:
   watermark_medium: [type_watermark_medium, dim]
   watermark_low: [type_watermark_low, bold]
   numerical: type_numerical
-  ipaddress: type_ipaddress
+  address: type_address
+  address_separator: separator_address
   ipmask: type_ipmask
+  ipmask_separator: separator_ipmask
   age: type_age
   timestamp: type_timestamp
   timestamp_newdate: [type_timestamp, bold]
@@ -813,7 +812,7 @@ separators:
   tag: [["✓ ", [tag, bold]]]
   mainheader_prefix: [[":: ", [mainheader, bold]]]
   mainheader_suffix: [[" ::", [mainheader, bold]]]
-  percentage: [["%", [type_unit, bold]]]
+  percentage: [["%", [separator_percentage, bold]]]
   keyvalue: [[":", separator_keyvalue]]
   keyvalue_log: [["=", separator_keyvalue]]
   selector: [["=", separator_selector]]
@@ -831,8 +830,9 @@ separators:
   selector_list: [[",", separator_list]]
   field: [["/", separator_field]]
   ellipsis: [["...", separator_ellipsis]]
-  ipv4address: [[".", separator_ipv4address]]
-  ipv6address: [[":", separator_ipv6address]]
+  ipv4address: [[".", separator_address]]
+  ipv6address: [[":", separator_address]]
+  macaddress: [[":", separator_address]]
   ipmask: [["/", separator_ipmask]]
   fraction: [["/", separator_fraction]]
   fraction_spaced: [[" / ", separator_fraction]]

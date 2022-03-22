@@ -10,4 +10,21 @@ listview:
     priority:
       header: "Priority:"
       path: "spec#priority"
-      type: str
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+infoview:
+  name: HTB QoS Info
+  infopad:
+    row_indexes:
+      Normal: [priority]
+    rows:
+      priority:
+        header: [["Priority:", [main, infoheader]]]
+        path: "spec#priority"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical

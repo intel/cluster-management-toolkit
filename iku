@@ -570,39 +570,46 @@ def generator_mem_single(obj, field, fieldlen, pad, ralign, selected, **formatti
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def format_numerical_with_units(string, ftype, selected):
+def format_numerical_with_units(string, ftype, selected, non_units = set("0123456789"), separator_lookup = {}):
 	substring = ""
 	array = []
 	numeric = None
 	# This is necessary to be able to use pop
 	string = list(string)
 
+	if "default" not in separator_lookup:
+		separator_lookup["default"] = ("types", "unit")
+
+	non_units = set(non_units)
+
 	while len(string) > 0:
 		char = string.pop(0)
 		if numeric is None:
-			numeric = char.isnumeric()
+			numeric = char in non_units
 			substring += char
 		elif numeric == True:
 			# Do we need to flush?
-			if not char.isnumeric():
-				array.append((substring, ("types", ftype, selected)))
+			if not char in non_units:
+				array.append((substring, ("types", ftype), selected))
 				substring = ""
 				numeric = False
 
 			substring += char
 		else:
 			# Do we need to flush?
-			if char.isnumeric():
-				array.append((substring, ("types", "unit", selected)))
+			if char in non_units:
+				formatting = deep_get_with_fallback(separator_lookup, [substring, "default"])
+				array.append((substring, formatting, selected))
 				substring = ""
 				numeric = True
 			substring += char
 
 		if len(string) == 0:
 			if numeric == True:
-				array.append((substring, ("types", ftype, selected)))
+				array.append((substring, ("types", ftype), selected))
 			else:
-				array.append((substring, ("types", "unit", selected)))
+				formatting = deep_get_with_fallback(separator_lookup, [substring, "default"])
+				array.append((substring, formatting, selected))
 
 	if len(array) == 0:
 		array = [("", ("types", "generic", selected))]
@@ -625,6 +632,22 @@ def generator_age(obj, field, fieldlen, pad, ralign, selected, **formatting):
 		array = [(string, formatting, selected)]
 	else:
 		array = format_numerical_with_units(string, "age", selected)
+
+	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+
+def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	string = getattr(obj, field)
+
+	# Do we have a subnet mask?
+	subnetmask = None
+	if "/" in string:
+		address, subnetmask = string.split("/", 1)
+	else:
+		address = string
+	array = format_numerical_with_units(address, "address", selected, non_units = set("0123456789ABCDEF"), separator_lookup = {".": ("types", "address_separator"), ":": ("types", "address_separator")})
+	if subnetmask is not None:
+		array += [(("separators", "ipmask"), selected)]
+		array += [(subnetmask, ("types", "ipmask"), selected)]
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
@@ -6725,6 +6748,9 @@ def get_formatter(field):
 	elif formatter == "numerical":
 		generator = generator_numerical
 		processor = None
+	elif formatter == "address":
+		generator = generator_address
+		processor = None
 	elif formatter == "timestamp":
 		generator = generator_timestamp
 		processor = processor_timestamp
@@ -8845,12 +8871,12 @@ def field_processor_str_to_list(obj, path = None, extra_paths = None, fallback =
 
 def field_processor_external_ips(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	external_ips, _ = datagetter_node_addresses(obj, "external", [])
-	field = format_list(external_ips, 0, 0, False, False, field_colors = [("types", "ipaddress")])
+	field = format_list(external_ips, 0, 0, False, False, field_colors = [("types", "address")])
 	return field
 
 def field_processor_internal_ips(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	internal_ips, _ = datagetter_node_addresses(obj, "internal", [])
-	field = format_list(internal_ips, 0, 0, False, False, field_colors = [("types", "ipaddress")])
+	field = format_list(internal_ips, 0, 0, False, False, field_colors = [("types", "address")])
 	return field
 
 def field_processor_ipam_block(obj, path = None, extra_paths = None, fallback = None, formatting = None):
@@ -8864,7 +8890,7 @@ def field_processor_ipam_block(obj, path = None, extra_paths = None, fallback = 
 		blocks.append((cidr[0], cidr[1])) #, value))
 
 	# XXX: Once we know what value is used for we might add it here; for now don't do anything
-	field = format_list(blocks, 0, 0, False, False, field_colors = [("types", "ipaddress"), ("types", "ipmask")], field_separators = [(("separators", "ipmask"))])
+	field = format_list(blocks, 0, 0, False, False, field_colors = [("types", "address"), ("types", "ipmask")], field_separators = [(("separators", "ipmask"))])
 	return field
 
 def field_processor_cidr(obj, path = None, extra_paths = None, fallback = None, formatting = None):
@@ -8872,7 +8898,7 @@ def field_processor_cidr(obj, path = None, extra_paths = None, fallback = None, 
 	cidr = (tmp[0], tmp[1])
 
 	# FIXME
-	field = format_list(cidr, 0, 0, False, False, field_colors = [("types", "ipaddress"), ("types", "ipmask")], field_separators = [("separators", "ipmask")])
+	field = format_list(cidr, 0, 0, False, False, field_colors = [("types", "address"), ("types", "ipmask")], field_separators = [("separators", "ipmask")])
 	return field
 
 def field_processor_images(obj, path = None, extra_paths = None, fallback = None, formatting = None):

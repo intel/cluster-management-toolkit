@@ -251,7 +251,7 @@ color_pairs_curses:
   type_numerical:
     unselected: [[cyan, normal], [black, normal]]
     selected: [[cyan, normal], [white, normal]]
-  type_ipaddress:
+  type_address:
     unselected: [[white, normal], [black, normal]]
     selected: [[black, normal], [white, normal]]
   type_ipmask:
@@ -377,10 +377,7 @@ color_pairs_curses:
   separator_field:
     unselected: [[black, bright], [black, normal]]
     selected: [[black, bright], [white, normal]]
-  separator_ipv4address:
-    unselected: [[cyan, normal], [black, normal]]
-    selected: [[cyan, normal], [white, normal]]
-  separator_ipv6address:
+  separator_address:
     unselected: [[cyan, normal], [black, normal]]
     selected: [[cyan, normal], [white, normal]]
   separator_ipmask:
@@ -717,8 +714,10 @@ types:
   watermark_medium: [type_watermark_medium, dim]
   watermark_low: [type_watermark_low, bold]
   numerical: type_numerical
-  ipaddress: type_ipaddress
+  address: type_address
+  address_separator: separator_address
   ipmask: type_ipmask
+  ipmask_separator: separator_ipmask
   age: type_age
   timestamp: type_timestamp
   timestamp_newdate: [type_timestamp, bold]
@@ -800,7 +799,7 @@ types:
   caddyfile_directive: type_caddyfile_directive
   path: type_path
   lineno: type_lineno
-  facility_prefix: type_facility_prefix
+  facility_extended: type_facility_extended
 
 strings:
   none: [["<none>", [type_none, bold]]]
@@ -831,8 +830,9 @@ separators:
   selector_list: [[",", separator_list]]
   field: [["/", separator_field]]
   ellipsis: [["...", separator_ellipsis]]
-  ipv4address: [[".", separator_ipv4address]]
-  ipv6address: [[":", separator_ipv6address]]
+  ipv4address: [[".", separator_address]]
+  ipv6address: [[":", separator_address]]
+  macaddress: [[":", separator_address]]
   ipmask: [["/", separator_ipmask]]
   fraction: [["/", separator_fraction]]
   fraction_spaced: [[" / ", separator_fraction]]
