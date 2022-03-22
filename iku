@@ -4631,6 +4631,21 @@ def get_resource_info(**kwargs):
 			resource_tuple = ("", "", pod_name)
 			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, "", stgroup.OK, -1, ""))
 
+	if "service" not in deep_get(iktconfig, "Pods#filter_resources", []):
+		# Find service(s) that has a selector that points to this pod
+		kind = ("Service", "")
+		rtype = resource_kind_to_rtype(kind)
+		vlist, status = kh.get_list_by_kind_namespace(kind, pod_namespace)
+		svc = []
+		for obj in vlist:
+			selector = deep_get(obj, "spec#selector", {})
+			if len(selector) == 0:
+				continue
+			vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = kh.make_selector(deep_get(obj, "spec#selector")), field_selector = f"metadata.name={pod_name}")
+			if len(vlist2) > 0:
+				resource_tuple = ("", "", deep_get(obj, "metadata#name"))
+				resource_info.append(ResourceInfo(resource_tuple, obj, rtype, kind, "", stgroup.UNKNOWN, -1, ""))
+
 	return resource_info
 
 class InventoryInfo:
