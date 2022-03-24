@@ -11719,9 +11719,9 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 
 	# When name_path or namespace_path are integers they reference
 	# fields in selected
-	if type(name_path) == int and selection is not None:
+	if type(name_path) == int and selection is not None and selection != (0, [("", None)]):
 		name = selection[name_path + 1][0][0]
-	if type(namespace_path) == int and selection is not None:
+	if type(namespace_path) == int and selection is not None and selection != (0, [("", None)]):
 		namespace = selection[namespace_path + 1][0][0]
 
 	if obj is not None:
