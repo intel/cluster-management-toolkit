@@ -14,8 +14,93 @@ listview:
       header: "Replicas:"
       path: "spec#replicas"
       type: int
+      formatting:
+        field_colors:
+        - type: numerical
       align: right
     version:
       header: "Version:"
       path: "spec#version"
       type: version
+infoview:
+  name: Alertmanager Info
+  infopad:
+    row_indexes:
+      Normal: [image, node_selector, replicas, service_account]
+    rows:
+      image:
+        header: [["Image:", [main, infoheader]]]
+        paths:
+        - path: "spec#image"
+          pathtype: regex
+          regex: "^([^:]+):(.*)"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+          - type: version
+          field_separators:
+          - type: version
+      node_selector:
+        header: [["Node Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#nodeSelector"]
+          pathtype: key_value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      replicas:
+        header: [["Replicas:", [main, infoheader]]]
+        path: "spec#replicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      service_account:
+        header: [["S", [main, infoheader_shortcut]], ["ervice Account:", [main, infoheader]]]
+        path: "spec#serviceAccountName"
+        type: str
+  listpad:
+    field_indexes:
+      Normal: [resource, request, limit]
+    sortcolumn: resource
+    fields:
+      limit:
+        header: "Limit:"
+        path: limit
+        type: raw
+      resource:
+        header: "Resource:"
+        path: resource
+        type: str
+      request:
+        header: "Request:"
+        path: request
+        type: raw
+    listgetter: listgetter_join_dicts_to_list
+    listgetter_args:
+      key_paths: ["spec#resources#limits", "spec#resources#requests"]
+      key_name: resource
+      fields:
+      - path: "spec#resources#limits"
+        name: limit
+        default:
+      - path: "spec#resources#requests"
+        name: request
+        default:
+    infogetter: generic_infogetter
+    "Service Account":
+      key: s
+      modified: shift
+      helptext: "Open info page for service account"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: ServiceAccount
+        namespace_path: "metadata#namespace"
+        name_path: "spec#serviceAccountName"

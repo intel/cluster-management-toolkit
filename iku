@@ -2338,6 +2338,21 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						else:
 							for tmp in value:
 								_values.append((tmp, vtype))
+				elif ptype == "regex":
+					value = []
+					_raw = deep_get_with_fallback(obj, path, "")
+					_regexes = deep_get(_path, "regex", [])
+					if type(_regexes) == str:
+						_regexes = [_regexes]
+					for _regex in _regexes:
+						_tmp = re.match(_regex, _raw)
+						if _tmp is not None:
+							for group in _tmp.groups():
+								if group is not None:
+									value.append(group)
+							break
+					value = tuple(value)
+					_values.append((value, "raw"))
 				elif ptype == "tuple":
 					value = []
 					for i in range(0, len(path)):
@@ -5457,6 +5472,56 @@ def generic_listgetter(kind, namespace, **kwargs):
 def listgetter_field(obj, **kwargs):
 	path = deep_get(kwargs, "path")
 	vlist = deep_get(obj, path)
+	return vlist, 200
+
+# key_paths: the dict keys that should be turned into values
+# key_name: name for the key that holds these values
+# fields: paths the fields in the dict that should be added to the list
+#
+# Thus:
+# "a": {
+#     "b": {
+#        "d": 1,
+#        "e": 2
+#     },
+#     "c": {
+#        "d": 2,
+#        "e": 3,
+#     },
+# }
+# key_paths = ["a#b", "a#c"]
+# key_name = "foo"
+# fields = [{"path": "a#b", "name": "bar"}, {"path": "a#c", "name": "baz"}]
+# would generate the list
+# [{"foo": "d", "bar": 1, "baz": 2}, {"foo": "e", "bar": 2, "baz": 3}]
+def listgetter_join_dicts_to_list(obj, **kwargs):
+	vlist = []
+	key_paths = deep_get(kwargs, "key_paths", "")
+	key_name = deep_get(kwargs, "key_name", "")
+	fields = deep_get(kwargs, "fields", [])
+
+	keys = set()
+
+	for key_path in key_paths:
+		for key in deep_get(obj, key_path, {}).keys():
+			keys.add(key)
+
+	for key in keys:
+		d = {
+			key_name: key
+		}
+		for field in fields:
+			path = deep_get(field, "path", "")
+			name = deep_get(field, "name")
+			default = deep_get(field, "default")
+			if name is None:
+				continue
+			value = deep_get(obj, f"{path}#{key}")
+			d[name] = value
+		if len(d) <= 1:
+			continue
+		vlist.append(d)
+
 	return vlist, 200
 
 def get_events_by_kind_name_namespace(kind, name, namespace):
@@ -13041,34 +13106,6 @@ listviewactions = {
 # The most versatile, but also complex, processor is field_processor_list();
 # it can provide formatting, substitutions, and (limited) flow control
 infoviews_builtin = {
-	("Alertmanager", "monitoring.coreos.com"): {
-		"infopad": {
-			"Image:": {
-				"processor": field_processor_images,
-			},
-			"Node Selector:": {
-				"path": "spec#nodeSelector",
-				"processor": field_processor_label_selector,
-			},
-			"Replicas:": {
-				"path": "spec#replicas",
-			},
-			"Service Account Name:": {
-				"fieldname": [("S", ("main", "infoheader_shortcut")), ("ervice Account Name:", ("main", "infoheader"))],
-				"path": "spec#serviceAccountName",
-			},
-		},
-		"shortcuts": {
-			"Service Account": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for service account"),
-				"call": resourceinfodispatch,
-				"kind": ("ServiceAccount", ""),
-				"namespace_path": "metadata#namespace",
-				"name_path": "spec#serviceAccountName",
-			},
-		},
-	},
 	("AntreaAgentInfo", "crd.antrea.io"): {
 		"windowheader": "Antrea Agent Info",
 		"infopad": {
