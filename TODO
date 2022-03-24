@@ -11,6 +11,17 @@ kubernetes_helper:
 	• ...
 
 iku:
+	• Modify generator_list; ideally every list element should be typed;
+	  this way we'd be able to use, for instance:
+          [(kind, api_family), address, address, ...]
+          and have the (kind, api_family) tuple formatter by that kind of parser,
+	  while the addresses are formatter by the address formatter,
+	  without having to special case various types of lists.
+	  We might even want the list of types be possible to generate on the fly;
+	  currently it can only be specified manually.
+	  Note: this would need quite a bit of a rewrite, but it would probably be healthy
+	  and hopefully cut down on the amount of special cases.
+	• Audit and make a list of all necessary types
 	• Show if we're running in read-only mode in the status bar
 	• Error messages are skipped by the ansible handler
 	• config map YAML-parser should handle single-line files (optionally unfolding)
