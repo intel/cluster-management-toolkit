@@ -6,3 +6,24 @@ listview:
   group: API & Extendability
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Operator Info
+  infopad:
+    row_indexes:
+      Normal: [label_selector]
+    rows:
+      label_selector:
+        header: [["Set-based Selector:", [main, infoheader]]]
+        paths:
+        - path: "status#components#labelSelector#matchExpressions"
+          pathtype: match_expression
+          default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: operator
+          - type: value
+          field_separators:
+          - type: space
+          - type: no_pad
