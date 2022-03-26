@@ -1,0 +1,53 @@
+kind: User
+api_family: user.openshift.io
+default_command: users
+listview:
+  name: Users
+  group: Users & Groups
+  field_indexes:
+    Normal: [name, fullname, uid, identities, age]
+  fields:
+    fullname:
+      header: "Full Name:"
+      path: "fullName"
+      type: str
+    identities:
+      header: "Identities:"
+      paths:
+      - path: identities
+        pathtype: list
+      formatter: list
+    uid:
+      header: "UID:"
+      path: "metadata#uid"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+infoview:
+  name: User Info
+  infopad:
+    row_indexes:
+      Normal: [groups, uid, identities]
+    rows:
+      groups:
+        header: [["Groups:", [main, infoheader]]]
+        paths:
+        - path: groups
+          pathtype: list
+        formatter: list
+      # XXX: maybe this should be in fields instead to allow jumping to the identity?
+      identities:
+        header: [["Identities:", [main, infoheader]]]
+        paths:
+        - path: identities
+          pathtype: list
+        formatter: list
+      uid:
+        header: [["UID:", [main, infoheader]]]
+        path: "metadata#uid"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical

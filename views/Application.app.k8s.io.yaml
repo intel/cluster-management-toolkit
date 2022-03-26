@@ -1,0 +1,17 @@
+kind: Application
+api_family: app.k8s.io
+default_command: applications
+command:
+- apps
+- app
+listview:
+  name: Applications
+  group: API & Extendability
+  field_indexes:
+    Normal: [namespace, name, age, description]
+  sortcolumn: namespace
+  fields:
+    description:
+      header: "Description:"
+      path: "spec#description#description"
+      type: str

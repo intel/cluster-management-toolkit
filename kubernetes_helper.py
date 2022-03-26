@@ -871,6 +871,16 @@ class KubernetesHelper:
 			"api": "ciskubebenchreports",
 			"namespaced": False,
 		},
+		("ClusterConfigAuditReport", "aquasecurity.github.io"): {
+			"api_family": ["apis/aquasecurity.github.io/v1alpha1/"],
+			"api": "clusterconfigauditreports",
+			"namespaced": False,
+		},
+		("ClusterVulnerabilityReport", "aquasecurity.github.io"): {
+			"api_family": ["apis/aquasecurity.github.io/v1alpha1/"],
+			"api": "clustervulnerabilityreports",
+			"namespaced": False,
+		},
 		("ConfigAuditReport", "aquasecurity.github.io"): {
 			"api_family": ["apis/aquasecurity.github.io/v1alpha1/"],
 			"api": "configauditreports",
@@ -1426,6 +1436,10 @@ class KubernetesHelper:
 		("GrafanaDataSource", "integreatly.org"): {
 			"api_family": ["apis/integreatly.org/v1alpha1/"],
 			"api": "grafanadatasources",
+		},
+		("GrafanaNotificationChannel", "integreatly.org"): {
+			"api_family": ["apis/integreatly.org/v1alpha1/"],
+			"api": "grafananotificationchannels",
 		},
 		# jaegertracing.io
 		("Jaeger", "jaegertracing.io"): {

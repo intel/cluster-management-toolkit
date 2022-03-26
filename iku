@@ -5972,11 +5972,6 @@ field_templates = {
 	"default_limit": {
 		"header": "Default Limit:",
 	},
-	"description": {
-		"header": "Description:",
-		"path": "spec#descriptor#description",
-		"datagetter": datagetter_substitute_quotationmarks,
-	},
 	"desired_replicas": {
 		"header": "Desired:",
 		"path": "spec#replicas",
@@ -6026,13 +6021,6 @@ field_templates = {
 		"datagetter": datagetter_event_status,
 		"generator": generator_status,
 	},
-	"fail_count": {
-		"header": "Fail:",
-		"path": "report#summary#failCount",
-		"generator": generator_numerical_range,
-		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_high"))],
-		"ralign": True,
-	},
 	"from": {
 		"header": "Source:",
 		"generator": generator_list,
@@ -6068,10 +6056,6 @@ field_templates = {
 	"ftype": {
 		"header": "Type:",
 	},
-	"fullname": {
-		"header": "Full Name:",
-		"path": "fullName",
-	},
 	"group": {
 		"header": "Group:",
 	},
@@ -6089,13 +6073,6 @@ field_templates = {
 		"datagetter": datagetter_condition_field,
 		"generator": generator_status,
 		"path": [("agentConditions", "AgentHealthy", "status"), ("controllerConditions", "ControllerHealthy", "status")],
-	},
-	"high_severity": {
-		"header": "High:",
-		"path": "report#summary#highCount",
-		"generator": generator_numerical_range,
-		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_high"))],
-		"ralign": True,
 	},
 	"honor_labels": {
 		"header": "Honor Labels:",
@@ -6117,24 +6094,11 @@ field_templates = {
 	"identity_id": {
 		"header": "Identity ID:",
 	},
-	"identities": {
-		# [identity, ...]
-		"header": "Identities:",
-		"path": "identities",
-		"generator": generator_list,
-	},
 	"image_reference": {
 		"header": "Image ID:",
 	},
 	"index": {
 		"header": "Index:",
-		"ralign": True,
-	},
-	"info_count": {
-		"header": "Info:",
-		"path": "report#summary#infoCount",
-		"generator": generator_numerical_range,
-		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_medium"))],
 		"ralign": True,
 	},
 	"ingress_address": {
@@ -6214,13 +6178,6 @@ field_templates = {
 	"log_type": {
 		"header": "Log Type:",
 	},
-	"low_severity": {
-		"header": "Low:",
-		"path": "report#summary#lowCount",
-		"generator": generator_numerical_range,
-		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_medium"))],
-		"ralign": True,
-	},
 	"ltype": {
 		"header": "Type:",
 	},
@@ -6236,13 +6193,6 @@ field_templates = {
 	"max_replicas": {
 		"header": "Max:",
 		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"medium_severity": {
-		"header": "Medium:",
-		"path": "report#summary#mediumCount",
-		"generator": generator_numerical_range,
-		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_medium"))],
 		"ralign": True,
 	},
 	"mem": {
@@ -6346,12 +6296,6 @@ field_templates = {
 	"overhead": {
 		"header": "Overhead:",
 	},
-	"pass_count": {
-		"header": "Pass:",
-		"path": "report#summary#infoCount",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"path": {
 		"header": "Path:",
 	},
@@ -6454,18 +6398,6 @@ field_templates = {
 		"generator": generator_priority_level,
 		"type": "str",
 	},
-	"protocol": {
-		"header": "Protocol:",
-		"path": "spec#proxyProtocol",
-	},
-	"provider": {
-		"header": "Provider:",
-		"path": "providerName",
-	},
-	"providerusername": {
-		"header": "Provider User Name:",
-		"path": "providerUserName",
-	},
 	"proxy_url": {
 		"header": "Proxy URL:",
 	},
@@ -6564,16 +6496,8 @@ field_templates = {
 	"rule_type": {
 		"header": "Rule Type:",
 	},
-	"scanner": {
-		"header": "Scanner:",
-		"path": "report#scanner#name",
-	},
 	"scheme": {
 		"header": "Scheme:",
-	},
-	"server": {
-		"header": "Server:",
-		"path": "spec#server#name",
 	},
 	"service": {
 		# (namespace, name, port)
@@ -6683,17 +6607,6 @@ field_templates = {
 	"traffic_type": {
 		"header": "Traffic Type:",
 	},
-	"uid": {
-		"header": "UID:",
-		"path": "metadata#uid",
-	},
-	"unknown_severity": {
-		"header": "Unknown:",
-		"path": "report#summary#unknownCount",
-		"generator": generator_numerical_range,
-		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_high"))],
-		"ralign": True,
-	},
 	"uptodate_replicas": {
 		"header": "Up to Date:",
 		"path": "status#updatedReplicas",
@@ -6720,13 +6633,6 @@ field_templates = {
 		"field_colors": [("types", "user"), ("types", "uid")],
 		"field_separators": [("separators", "user_uid")],
 	},
-	"users": {
-		# [user, ...]
-		"header": "Users:",
-		"path": "users",
-		"generator": generator_list,
-		"field_colors": [("types", "generic")],
-	},
 	"decoded_value": {
 		"header": "Value:",
 	},
@@ -6745,20 +6651,6 @@ field_templates = {
 	},
 	"vtype": {
 		"header": "Type:",
-	},
-	"warn_count": {
-		"header": "Warn:",
-		"path": "report#summary#warnCount",
-		"generator": generator_numerical_range,
-		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_medium"))],
-		"ralign": True,
-	},
-	"warning_count": {
-		"header": "Warning #:",
-		"path": "report#summary#warningCount",
-		"generator": generator_numerical_range,
-		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_medium"))],
-		"ralign": True,
 	},
 }
 
@@ -12898,7 +12790,7 @@ def format_selection_list(uip, refresh_apis = False):
 	if len(available_api_families) == 0 or refresh_apis == True:
 		notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Refreshing list of available APIs")
 		# First repopulate the list of views, on the off change that a view file has been added
-		views = {**views_special, **views_builtin}
+		views = {**views_special}
 		populate_views()
 		available_api_families, status = kh.get_available_api_families()
 		del notice
@@ -13447,7 +13339,6 @@ infoviews_builtin = {
 				"path": "spec#signerName",
 			},
 			"Requesting User:": {
-				#"fieldname": [("R", ("main", "infoheader_shortcut")), ("equesting User:", ("main", "infoheader"))],
 				"path": "spec#username",
 			},
 			"Groups:": {
@@ -13464,15 +13355,6 @@ infoviews_builtin = {
 				"processor": field_processor_list,
 			}
 		},
-		#"shortcuts": {
-		#	"Requesting User": {
-		#		"shortcut": ord("R"),
-		#		"helptext": ("[Shift] + R", "Open info page for requesting user"),
-		#		"call": resourceinfodispatch,
-		#		"kind": ("???", "???"),
-		#		"name_path": "spec#username",
-		#	},
-		#},
 	},
 	("CiliumEndpoint", "cilium.io"): {
 		"windowheader": "Cilium Endpoint Info",
@@ -14464,16 +14346,6 @@ infoviews_builtin = {
 			},
 			"Shared Device Number:": {
 				"path": "spec#sharedDevNum",
-			},
-		},
-	},
-	("Group", "user.openshift.io"): {
-		"infopad": {
-			"Users": {
-				"path": "users",
-				"extra_path": "users",
-				"processor": field_processor_list,
-				"fallback": [("strings", "none")],
 			},
 		},
 	},
@@ -16644,25 +16516,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("User", "user.openshift.io"): {
-		"infopad": {
-			"Groups:": {
-				"path": "groups",
-				"extra_paths": "groups",
-				"processor": field_processor_list,
-				"fallback": [("strings", "none")],
-			},
-			"UID:": {
-				"path": "metadata#uid",
-			},
-			"Identities:": {
-				"path": "identities",
-				"extra_paths": "identities",
-				"processor": field_processor_list,
-				"fallback": [("strings", "none")],
-			},
-		},
-	},
 	("ValidatingWebhookConfiguration", "admissionregistration.k8s.io"): {
 		"windowheader": "Validating Webhook Configuration Info",
 		"field_indexes": {
@@ -17102,256 +16955,7 @@ views_special = {
 	},
 }
 
-# These are the "regular" builtin views that will eventually
-# be defined through yaml-files in the views directory
-views_builtin = {
-	# app.k8s.io
-	"Applications": {
-		"commandline": ["applications", "application", "apps", "app"],
-		"group": "API & Extendability",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age", "description"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("Application", "app.k8s.io"),
-	},
-	# cilium.io
-	#"Cilium Clusterwide Network Policies": {
-	#	"commandline": ["ciliumclusterwidenetworkpolicies", "ciliumclusterwidenetworkpolicy", "ccnps", "ccnp"],
-	#	"group": "CNI",
-	#	"field_indexes": {
-	#		"Normal": [FIXME],
-	#	},
-	#	"kind": ("CiliumClusterwideNetworkPolicy", "cilium.io"),
-	#},
-	# cilium.io
-	#"Cilium External Workloads": {
-	#	"commandline": ["ciliumexternalworkloads", "ciliumexternalworkload", "cews", "cew"],
-	#	"group": "CNI",
-	#	"field_indexes": {
-	#		"Normal": [FIXME],
-	#	},
-	#	"kind": ("CiliumExternalWorkload", "cilium.io"),
-	#},
-	# cilium.io
-	#"Cilium Local Redirect Policies": {
-	#	"commandline": ["ciliumlocalredirectpolicies", "ciliumlocalredirectpolicy", "clrps", "clrp"],
-	#	"group": "CNI",
-	#	"field_indexes": {
-	#		"Normal": [FIXME],
-	#	},
-	#	"kind": ("CiliumLocalRedirectPolicy", "cilium.io"),
-	#},
-	# cilium.io
-	#"Cilium Network Policies": {
-	#	"commandline": ["ciliumnetworkpolicies", "ciliumnetworkpolicy", "ciliumnps", "ciliumnp", "cnps", "cnp"],
-	#	"group": "CNI",
-	#	"field_indexes": {
-	#		"Normal": [FIXME],
-	#	},
-	#	"kind": ("CiliumNetworkPolicy", "cilium.io"),
-	#},
-	# aquasecurity.github.io
-	"CIS Kube-Bench Reports": {
-		"commandline": ["ciskubebenchreports", "ciskubebenchreport", "kubebench"],
-		"group": "Security",
-		"field_indexes": {
-			"Normal": ["name", "fail_count", "warn_count", "info_count", "pass_count", "age"],
-		},
-		"kind": ("CISKubeBenchReport", "aquasecurity.github.io"),
-	},
-	# aquasecurity.github.io
-	"Config Audit Reports": {
-		"commandline": ["configauditreports", "configauditreport", "configaudits", "configaudit", "cfgaudits", "cfgaudit"],
-		"group": "Security",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "danger_count", "warning_count", "scanner", "age"],
-		},
-		"kind": ("ConfigAuditReport", "aquasecurity.github.io"),
-	},
-	# apps.openshift.io
-	"Deployment Configurations": {
-		"commandline": ["deploymentconfigs", "deploymentconfig", "dc"],
-		"group": "Workloads",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "desired_replicas", "current_replicas", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("DeploymentConfig", "apps.openshift.io"),
-	},
-	# etcd.database.coreos.com
-	#"Etcd Cluster": {
-	#	"commandline": ["etcdclusters", "etcdcluster", "etcds", "etcd"],
-	#	"group": "Etcd",
-	#	"field_indexes": {
-	#		"Normal": [FIXME],
-	#	},
-	#	"kind": ("EtcdCluster", "etcd.database.coreos.com"),
-	#},
-	# integreatly.org
-	"Grafana Dashboards": {
-		"commandline": ["grafanadashboards", "grafanadashboard", "grafanadbs", "grafanadb"],
-		"group": "Monitoring",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("GrafanaDashboard", "integreatly.org"),
-	},
-	# integreatly.org
-	"Grafana Data Sources": {
-		"commandline": ["grafanadatasources", "grafanadatasource", "grafanadatasrcs", "grafanadatasrc", "grafanadss", "grafanads"],
-		"group": "Monitoring",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age"],
-		},
-		"kind": ("GrafanaDataSource", "integreatly.org"),
-	},
-	# user.openshift.io
-	"Groups": {
-		"commandline": ["groups", "group"],
-		"group": "Users and Groups",
-		"field_indexes": {
-			"Normal": ["name", "users", "age"],
-		},
-		"kind": ("Group", "user.openshift.io"),
-	},
-	# user.openshift.io
-	"Identities": {
-		"commandline": ["identities", "identity"],
-		"group": "Users and Groups",
-		"field_indexes": {
-			"Normal": ["name", "provider", "providerusername", "user_uid_tuple", "age"],
-		},
-		"kind": ("Identity", "user.openshift.io"),
-	},
-	# image.openshift.io
-	"Image Streams": {
-		"commandline": ["imagestreams", "imagestream", "is"],
-		"group": "Caching",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "docker_repo", "tags", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("ImageStream", "image.openshift.io"),
-	},
-	# image.openshift.io
-	"Image Stream Tags": {
-		"commandline": ["imagestreamtags", "imagestreamtag", "istags", "istag"],
-		"group": "Caching",
-		"field_indexes": {
-			"Normal": ["namespace", "name_version", "docker_reference_image", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("ImageStreamTag", "image.openshift.io"),
-	},
-	# jaegertracing.io
-	"Jaegers": {
-		"commandline": ["jaegers", "jaeger"],
-		"group": "Monitoring",
-		"field_indexes": {
-			#"Normal": ["namespace", "name", "status", "version", "strategy", "storage", "age"],
-			"Normal": ["namespace", "name", "age"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("Jaeger", "jaegertracing.io"),
-	},
-	# aquasecurity.github.io
-	"Kube-Hunter Reports": {
-		"commandline": ["kubehunterreports", "kubehunterreport", "kubehunter"],
-		"group": "Security",
-		"field_indexes": {
-			"Normal": ["name", "scanner", "high_severity", "medium_severity", "low_severity", "unknown_severity", "age"],
-		},
-		"kind": ("KubeHunterReport", "aquasecurity.github.io"),
-	},
-	# kubeflow.org
-	"MPI Jobs": {
-		"commandline": ["mpijobs", "mpijob", "mpij", "mj"],
-		# "group": "Workloads",
-		"group": "Kubeflow",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "age", "status_latest_condition", "status_message_mpi_jobs"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("MPIJob", "kubeflow.org"),
-	},
-	# policy.linkerd.io
-	"Server Authorizations": {
-		"commandline": ["serverauthorizations", "serverauthorization", "saz"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "server"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("ServerAuthorization", "policy.linkerd.io"),
-	},
-	# policy.linkerd.io
-	"Servers": {
-		"commandline": ["servers", "server", "srv"],
-		"group": "Network",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "port_linkerd", "protocol"],
-		},
-		"sortcolumn": "namespace",
-		"kind": ("Server", "policy.linkerd.io"),
-	},
-	# storage.k8s.io
-	#"Volume Attachments": {
-	#	"commandline": ["volumeattachments", "volumeattachment", "volattachments", "volattachment"],
-	#	"group": "Storage & Backups",
-	#	"field_indexes": {
-	#		"Normal": [FIXME],
-	#	},
-	#	"kind": ("VolumeAttachment", "storage.k8s.io"),
-	#},
-	# snapshot.storage.k8s.io
-	#"VolumeSnapshot": {
-	#	"commandline": ["volumesnapshots", "volumesnapshot", "volsnaps", "volsnap"],
-	#	"group": "Storage & Backups",
-	#	"field_indexes": {
-	#		"Normal": [FIXME],
-	#	},
-	#	"kind": ("VolumeSnapshot", "snapshot.storage.k8s.io"),
-	#},
-	# snapshot.storage.k8s.io
-	"Volume Snapshot Classes": {
-		"commandline": ["volumesnapshotclasses", "volumesnapshotclass", "volsnapclasses", "volsnapclass"],
-		"group": "Storage & Backups",
-		"field_indexes": {
-			"Normal": ["name", "age"],
-		},
-		"kind": ("VolumeSnapshotClass", "snapshot.storage.k8s.io"),
-	},
-	# snapshot.storage.k8s.io
-	#"Volume Snapshot Contents": {
-	#	"commandline": ["volumesnapshotcontents", "volumesnapshotcontent", "volsnapcontents", "volsnapcontent"],
-	#	"group": "Storage & Backups",
-	#	"field_indexes": {
-	#		"Normal": [FIXME],
-	#	},
-	#	"kind": ("VolumeSnapshotContent", "snapshot.storage.k8s.io"),
-	#},
-	# aquasecurity.github.io
-	"Vulnerability Reports": {
-		"commandline": ["vulnerabilityreports", "vulnerabilityreport", "vulns", "vuln"],
-		"group": "Security",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "repository", "tag", "scanner", "age"],
-		},
-		"kind": ("VulnerabilityReport", "aquasecurity.github.io"),
-	},
-	# user.openshift.io
-	"Users": {
-		"commandline": ["users", "user"],
-		"group": "Users and Groups",
-		"field_indexes": {
-			"Normal": ["name", "fullname", "uid", "identities", "age"],
-		},
-		"kind": ("User", "user.openshift.io"),
-	},
-}
-
-views = {**views_special, **views_builtin}
+views = {**views_special}
 
 # This function is called before parsing the command-line; it cannot use Kubernetes information,
 # since that would be far too slow, so

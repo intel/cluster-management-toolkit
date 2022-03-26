@@ -1,0 +1,20 @@
+kind: Server
+api_family: policy.linkerd.io
+default_command: servers
+command:
+- srv
+listview:
+  name: Servers
+  group: Network
+  field_indexes:
+    Normal: [namespace, name, port, protocol]
+  sortcolumn: namespace
+  fields:
+    port:
+      header: "Port:"
+      path: "spec#port"
+      type: str
+    protocol:
+      header: "Protocol:"
+      path: "spec#proxyProtocol"
+      type: str

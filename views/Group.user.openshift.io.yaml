@@ -1,0 +1,27 @@
+kind: Group
+api_family: user.openshift.io
+default_command: groups
+listview:
+  name: Groups
+  group: Users & Groups
+  field_indexes:
+    Normal: [name, users, age]
+  fields:
+    users:
+      header: "Users:"
+      paths:
+      - path: users
+        pathtype: list
+      formatter: list
+infoview:
+  name: Group Info
+  infopad:
+    row_indexes:
+      Normal: [users]
+    rows:
+      users:
+        header: [["Users:", [main, infoheader]]]
+        paths:
+        - path: users
+          pathtype: list
+        formatter: list

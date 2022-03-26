@@ -1,0 +1,37 @@
+kind: ConfigAuditReport
+api_family: aquasecurity.github.io
+default_command: configauditreports
+command:
+- configaudits
+- configaudit
+- cfgaudits
+- cfgaudit
+listview:
+  name: Config Audit Reports
+  group: Security
+  field_indexes:
+    Normal: [namespace, name, danger_count, warning_count, scanner, age]
+  sortcolumn: namespace
+  fields:
+    scanner:
+      header: "Scanner:"
+      path: "report#scanner#name"
+      type: str
+    warning_count:
+      header: "Warning:"
+      path: "report#summary#warningCount"
+      type: raw
+      formatter: value_mapper
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: types
+              type: watermark_low
+          - default: true
+            field_colors:
+            - context: types
+              type: watermark_medium
+      align: right

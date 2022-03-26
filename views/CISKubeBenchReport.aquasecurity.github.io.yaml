@@ -1,0 +1,85 @@
+kind: CISKubeBenchReport
+api_family: aquasecurity.github.io
+default_command: ciskubebenchreports
+command:
+- kubebench
+listview:
+  name: CIS Kube-Bench Reports
+  group: Security
+  field_indexes:
+    Normal: [name, scanner, fail_count, warn_count, info_count, pass_count, age]
+  fields:
+    fail_count:
+      header: "Fail:"
+      path: "report#summary#failCount"
+      type: raw
+      formatter: value_mapper
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: types
+              type: watermark_low
+          - default: true
+            field_colors:
+            - context: types
+              type: watermark_high
+      align: right
+    info_count:
+      header: "Info:"
+      path: "report#summary#infoCount"
+      type: raw
+      formatter: value_mapper
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: types
+              type: watermark_low
+          - default: true
+            field_colors:
+            - context: types
+              type: watermark_medium
+      align: right
+    pass_count:
+      header: "Pass:"
+      path: "report#summary#passCount"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      ralign: true
+    scanner:
+      header: "Scanner:"
+      paths:
+      - path: [["report#scanner#name"], ["report#scanner#version"]]
+        pathtype: tuple
+      formatter: list
+      formatting:
+        field_colors:
+        - type: generic
+        - type: version
+        field_separators:
+        - type: version
+    warn_count:
+      header: "Warn:"
+      path: "report#summary#warnCount"
+      type: raw
+      formatter: value_mapper
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: types
+              type: watermark_low
+          - default: true
+            field_colors:
+            - context: types
+              type: watermark_medium
+      align: right

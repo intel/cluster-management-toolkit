@@ -1,0 +1,17 @@
+kind: Identity
+api_family: user.openshift.io
+default_command: identities
+listview:
+  name: Identities
+  group: Users & Groups
+  field_indexes:
+    Normal: [name, provider, providerusername, user_uid_tuple, age]
+  fields:
+    provider:
+      header: "Provider:"
+      path: "providerName"
+      type: str
+    providerusername:
+      header: "Provider User Name:"
+      path: "providerUserName"
+      type: str

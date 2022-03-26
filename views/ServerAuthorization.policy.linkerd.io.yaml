@@ -1,0 +1,17 @@
+kind: ServerAuthorization
+api_family: policy.linkerd.io
+default_command: serverauthorizations
+command:
+- saz
+listview:
+  name: Server Authorizations
+  group: Network
+  field_indexes:
+    Normal: [namespace, name, server]
+  sortcolumn: namespace
+  fields:
+    server:
+      header: "Server:"
+      path: "spec#server#name"
+      type: str
+  # Add shortcut from infoview to server
