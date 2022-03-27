@@ -1,0 +1,15 @@
+kind: TrafficSplit
+api_family: split.smi-spec.io
+default_command: trafficsplits
+command:
+- ts
+listview:
+  name: Traffic Splits
+  group: Networking
+  field_indexes:
+    Normal: [namespace, name, service, age]
+  fields:
+    service:
+      header: "Service:"
+      path: "spec#service"
+      type: str
