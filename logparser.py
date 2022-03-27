@@ -1230,9 +1230,14 @@ def custom_override_severity(message, severity, overrides = []):
 		return severity
 
 	for override in overrides:
-		override_type = override[0]
-		override_pattern = override[1]
-		override_severity = override[2]
+		if type(override) == dict:
+			override_type = override["matchtype"]
+			override_pattern = override["matchkey"]
+			override_severity = name_to_loglevel(override["loglevel"])
+		else:
+			override_type = override[0]
+			override_pattern = override[1]
+			override_severity = override[2]
 
 		if override_type == "startswith":
 			if not message.startswith(override_pattern):
@@ -1637,6 +1642,7 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 	errors = options.get("errors", ["err", "error"])
 	timestamps = options.get("timestamps", ["t", "ts", "time"])
 	severities = options.get("severities", ["level", "lvl"])
+	severity_overrides = deep_get(options, "severity#overrides", [])
 	facilities = options.get("facilities", ["source", "subsys", "caller", "logger", "Topic"])
 	versions = options.get("versions", [])
 
@@ -1709,7 +1715,9 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 						else:
 							d.pop(__fac)
 
+
 		if fold_msg == False and len(d) == 2 and logparser_configuration.merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
+			severity = custom_override_severity(msg, severity, overrides = severity_overrides)
 			message = f"{msg} {version}"
 		elif "err" in d and ("errors occurred:" in d["err"] or "error occurred:" in d["err"]) and fold_msg == False:
 			err = d["err"]
@@ -1776,7 +1784,8 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 					elif item in versions:
 						tmp.append(format_key_value(item, d[item], loglevel.NOTICE, force_severity = True))
 					else:
-						tmp.append(format_key_value(item, d[item], severity))
+						__severity = custom_override_severity(d[item], severity, overrides = severity_overrides)
+						tmp.append(format_key_value(item, d[item], __severity, force_severity = (__severity != severity)))
 				else:
 					tmp.append(f"{item}={d[item]}")
 
@@ -1803,6 +1812,7 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 				remnants = _remnants
 			elif type(remnants) == list:
 				remnants = _remnants + remnants
+
 	return facility, severity, message, remnants
 
 # For messages along the lines of:
@@ -2518,6 +2528,7 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 	regex_pattern = deep_get(options, "regex", None)
 	severity_field = deep_get(options, "severity#field", None)
 	severity_transform = deep_get(options, "severity#transform", None)
+	severity_overrides = deep_get(options, "severity#overrides", [])
 	facility_fields = deep_get_with_fallback(options, ["facility#fields", "facility#field"], None)
 	facility_separators = deep_get_with_fallback(options, ["facility#separators", "facility#separator"], "")
 	message_field = deep_get(options, "message#field", None)
@@ -2532,6 +2543,7 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 
 	tmp = re.match(regex_pattern, message)
 	if tmp is not None:
+		message = tmp[message_field]
 		if severity_field is not None and severity_transform is not None:
 			if severity_transform == "letter":
 				severity = letter_to_severity(tmp[severity_field], severity)
@@ -2543,6 +2555,7 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 				severity = int(tmp[severity_field])
 			else:
 				sys.exit(f"Unknown severity transform rule {severity_transform}; aborting.")
+			severity = custom_override_severity(message, severity, overrides = severity_overrides)
 		if facility_fields is not None and len(facility) == 0:
 			if type(facility_fields) == str:
 				facility_fields = [facility_fields]
@@ -2556,7 +2569,6 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 				if field != 0:
 					facility += tmp[field]
 				i += 1
-		message = tmp[message_field]
 
 	return message, severity, facility
 

@@ -21,4 +21,10 @@
   matchkeys:
   - pod_name: traefik
   parser_rules:
+  - name: glog
   - name: key_value
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Trace["
+      loglevel: debug

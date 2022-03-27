@@ -6,6 +6,12 @@
   - name: glog
   - name: ts_8601
   - name: key_value_with_leading_message
+    options:
+      severity:
+        overrides:
+        - matchtype: startswith
+          matchkey: "\"KEDA Version:"
+          loglevel: notice
   - name: custom_splitter
     options:
       regex: '^([A-Z]) \| (.*)'
@@ -20,14 +26,13 @@
       severity:
         field: 1
         transform: str
+        overrides:
+        - matchtype: startswith
+          matchkey: "KEDA Version:"
+          loglevel: notice
       facility:
         fields:
         - 2
       message:
         field: 3
-  - name: override_severity
-    overrides:
-    - matchtype: startswith
-      matchkey: "KEDA Version:"
-      loglevel: notice
   - name: json_with_leading_message
