@@ -636,20 +636,62 @@ def generator_age(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
 def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	string = getattr(obj, field)
+	items = getattr(obj, field, [])
+	if items is None:
+		items = []
 
-	# Do we have a subnet mask?
-	subnetmask = None
-	if "/" in string:
-		address, subnetmask = string.split("/", 1)
-	else:
-		address = string
-	array = format_numerical_with_units(address, "address", selected, non_units = set("0123456789ABCDEF"), separator_lookup = {".": ("types", "address_separator"), ":": ("types", "address_separator")})
-	if subnetmask is not None:
-		array += [(("separators", "ipmask"), selected)]
-		array += [(subnetmask, ("types", "ipmask"), selected)]
+	if type(items) in [str, tuple]:
+		items = [items]
 
-	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+	separator_lookup = {}
+
+	addresstype = None
+
+	separators = deep_get(formatting, "field_separators")
+	if len(separators) == 0:
+		separators = [("separators", "ipv4address"), ("separators", "ipv6address"), ("separators", "ipmask")]
+
+	for separator in separators:
+		string = themearray_extract_string([separator])
+		separator_lookup[string] = separator
+
+	vlist = []
+	field_colors = []
+	field_separators = []
+
+	subnet = False
+	first = True
+
+	for item in items:
+		_vlist = []
+		tmp = ""
+		for ch in item:
+			if ch in separator_lookup:
+				_vlist.append(tmp)
+				if first == True:
+					if subnet == True:
+						field_colors.append(("types", "ipmask"))
+					else:
+						field_colors.append(("types", "address"))
+					field_separators.append(separator_lookup[ch])
+				tmp = ""
+
+				if ch == "/":
+					subnet = True
+			else:
+				tmp += ch
+
+		if len(tmp) > 0:
+			_vlist.append(tmp)
+			if first == True:
+				if subnet == True:
+					field_colors.append(("types", "ipmask"))
+				else:
+					field_colors.append(("types", "address"))
+		first = False
+		vlist.append(tuple(_vlist))
+
+	return format_list(vlist, fieldlen, pad, ralign, selected, field_separators = field_separators, field_colors = field_colors)
 
 def generator_mem(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	free, total = getattr(obj, field)
@@ -2126,6 +2168,99 @@ def when_filter(when_path, item, key = None, value = None):
 
 	return True
 
+def transform_list(vlist, transform = {}):
+	sort = deep_get(transform, "sorted", False)
+	key_regexes = deep_get(transform, "key#regex", [])
+	key_groups = deep_get(transform, "key#groups", [])
+	key_join = deep_get(transform, "key#join")
+	key_defaults = deep_get(transform, "key#default", [])
+	value_regexes = deep_get(transform, "value#regex", [])
+	value_groups = deep_get(transform, "value#groups", [])
+	value_join = deep_get(transform, "value#join")
+	value_pad_empty = deep_get(transform, "value#pad_empty", "")
+	value_defaults = deep_get(transform, "value#default", [])
+	output = deep_get(transform, "output", ["key", "value"])
+
+	result = []
+
+	# This handles both lists and dicts
+	for key in vlist:
+		if not type(vlist) == dict:
+			value = None
+		else:
+			value = vlist[key]
+
+		key_data = []
+		for _regex in key_regexes:
+			if key is None:
+				continue
+
+			key = str(key)
+
+			_tmp = re.match(_regex, key)
+			if _tmp is not None:
+				for group in key_groups:
+					if group < len(_tmp.groups()):
+						_tmp2 = _tmp.groups()[group]
+						if _tmp2 is None and group < len(key_defaults):
+							key_data.append(key_defaults[group])
+						else:
+							key_data.append(_tmp2)
+			if key_join is not None and len(key_data) > 1:
+				tmp = ""
+				for i in range(0, len(key_data)):
+					tmp += key_data[i]
+					if i < len(key_data) - 1:
+						tmp += key_join[min(i, len(key_join) - 1)]
+				key_data = [tmp]
+
+		value_data = []
+		for _regex in value_regexes:
+			if value is None:
+				continue
+
+			value = str(value)
+
+			_tmp = re.match(_regex, value)
+			if _tmp is not None:
+				for group in value_groups:
+					if group < len(_tmp.groups()):
+						_tmp2 = _tmp.groups()[group]
+						if _tmp2 is None and group < len(value_defaults):
+							value_data.append(value_defaults[group])
+						else:
+							value_data.append(_tmp2)
+			if value_join is not None and len(value_data) > 1:
+				tmp = ""
+				for i in range(0, len(value_data)):
+					tmp += value_data[i]
+					if i < len(value_data) - 1:
+						tmp += value_join[min(i, len(value_join) - 1)]
+				value_data = [tmp]
+
+		tmp = []
+		for _output in output:
+			if _output == "key":
+				if len(key_data) == 1:
+					tmp.append(key_data[0])
+				else:
+					tmp.append(tuple(key_data))
+			elif _output == "value":
+				if len(value_data) == 1:
+					tmp.append(value_data[0])
+				else:
+					tmp.append(tuple(value_data))
+		if len(tmp) == 1:
+			tmp = tmp[0]
+		else:
+			tmp = tuple(tmp)
+		result.append(tmp)
+
+	if sort == True:
+		return natsorted(result)
+	else:
+		return result
+
 def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", filters = {}):
 	d = {}
 
@@ -2186,12 +2321,25 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 				replace_quotes = deep_get(_path, "replace_quotes", "no")
 				if ptype == "list":
 					tmp = deep_get_with_fallback(obj, path, default = default, fallback_on_empty = fallback_on_empty)
+					if deep_get(_path, "sorted", False) == True and tmp is not None:
+						tmp = natsorted(tmp)
+
+					if tmp is not None and tmp == ["None"] and deep_get(_path, "none_str_as_none", False) == True:
+						tmp = default
+
 					# Just return the list, unless a subset has been requested
-					if limit is not None:
+					if limit is not None and tmp is not None:
 						value = tmp[0:limit]
 					else:
 						value = tmp
+
 					_values.append((value, vtype))
+				elif ptype == "dictlist":
+					_raw = deep_get_with_fallback(obj, path, default = default, fallback_on_empty = fallback_on_empty)
+					transform = deep_get(_path, "transform", {})
+					if _raw is not None:
+						for tmp in transform_list(_raw, transform = transform):
+							_values.append((tmp, vtype))
 				elif ptype == "key_value":
 					value = []
 					for _key, _value in deep_get_with_fallback(obj, path, {}).items():
@@ -2342,6 +2490,13 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						else:
 							for tmp in value:
 								_values.append((tmp, vtype))
+				elif ptype == "split":
+					value = []
+					separator = deep_get(_path, "separator", ",")
+					_raw = deep_get_with_fallback(obj, path, "")
+					if _raw is not None:
+						for tmp in _raw.split(separator):
+							_values.append((tmp, vtype))
 				elif ptype == "regex":
 					value = []
 					_raw = deep_get_with_fallback(obj, path, "")
@@ -6697,6 +6852,8 @@ def get_formatter(field):
 	generator = deep_get(field, "generator", generator_basic)
 	processor = deep_get(field, "processor")
 
+	field_separators_default = [("separators", "field")]
+
 	if formatter is None:
 		pass
 	elif formatter == "mem":
@@ -6718,6 +6875,7 @@ def get_formatter(field):
 	elif formatter == "address":
 		generator = generator_address
 		processor = None
+		field_separators_default = []
 	elif formatter == "timestamp":
 		generator = generator_timestamp
 		processor = processor_timestamp
@@ -6741,7 +6899,7 @@ def get_formatter(field):
 
 	field_prefixes = get_formatting(field, "field_prefixes", [])
 	field_suffixes = get_formatting(field, "field_suffixes", [])
-	field_separators = get_formatting(field, "field_separators", [("separators", "field")])
+	field_separators = get_formatting(field, "field_separators", field_separators_default)
 	ellipsise = deep_get(field, "formatting#ellipsise", -1)
 	ellipsis = get_formatting(field, "ellipsis", ("separators", "ellipsis"))
 	item_separator = get_formatting(field, "item_separator", ("separators", "list"))
@@ -8844,20 +9002,6 @@ def field_processor_external_ips(obj, path = None, extra_paths = None, fallback 
 def field_processor_internal_ips(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	internal_ips, _ = datagetter_node_addresses(obj, "internal", [])
 	field = format_list(internal_ips, 0, 0, False, False, field_colors = [("types", "address")])
-	return field
-
-def field_processor_ipam_block(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	blocks = []
-
-	for block, value in deep_get(obj, path, {}).items():
-		# split the block to make the CIDR formatting nice and neat
-		cidr = block.split("/")
-		# XXX: Find out the value from the block is;
-		#      it seems to be meaningless
-		blocks.append((cidr[0], cidr[1])) #, value))
-
-	# XXX: Once we know what value is used for we might add it here; for now don't do anything
-	field = format_list(blocks, 0, 0, False, False, field_colors = [("types", "address"), ("types", "ipmask")], field_separators = [(("separators", "ipmask"))])
 	return field
 
 def field_processor_cidr(obj, path = None, extra_paths = None, fallback = None, formatting = None):
@@ -13471,23 +13615,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("ClusterInformation", "crd.projectcalico.org"): {
-		"windowheader": "Cluster Information Info",
-		"infopad": {
-			"Calico Version:": {
-				"path": "spec#calicoVersion",
-			},
-			"Cluster GUID:": {
-				"path": "spec#clusterGUID",
-			},
-			"Cluster Type:": {
-				"path": "spec#clusterType",
-			},
-			"Datastore Ready:": {
-				"path": "spec#datastoreReady",
-			},
-		},
-	},
 	("ClusterIssuer", "cert-manager.io"): {
 		"windowheader": "Cluster Issuer Info",
 		"infopad": {
@@ -14668,18 +14795,6 @@ infoviews_builtin = {
 			# Inventory have no last applied configuration
 			"Show Events": {},
 			"Last Applied Configuration": {},
-		},
-	},
-	("IPAMHandle", "crd.projectcalico.org"): {
-		"windowheader": "IPAM Handle Info",
-		"infopad": {
-			"Handle ID:": {
-				"path": "spec#handleID",
-			},
-			"Blocks:": {
-				"path": "spec#block",
-				"processor": field_processor_ipam_block,
-			},
 		},
 	},
 	("IPPool", "crd.projectcalico.org"): {

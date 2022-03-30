@@ -6,3 +6,35 @@ listview:
   group: CNI
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: IPAM Handle Info
+  infopad:
+    row_indexes:
+      Normal: [handle_id, deleted, blocks]
+    rows:
+      blocks:
+        header: [["Blocks:", [main, infoheader]]]
+        paths:
+        - path: "spec#block"
+          pathtype: dictlist
+          transform:
+            key:
+              regex: ["^([^/]+)/(.+)"]
+              groups: [0, 1]
+              join: ["/"]
+            output: [key]
+            sorted: true
+        formatter: address
+        formatting:
+          field_separators:
+          - type: ipv4address
+          - type: ipv6address
+          - type: ipmask
+      deleted:
+        header: [["Deleted:", [main, infoheader]]]
+        path: "spec#deleted"
+        type: bool
+      handle_id:
+        header: [["Handle ID:", [main, infoheader]]]
+        path: "spec#handleID"
+        type: str

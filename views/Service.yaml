@@ -7,21 +7,25 @@ listview:
   name: Services
   group: Core
   field_indexes:
-    Wide: [namespace, name, svc_type, cluster_ip, external_ips, ports_svc, age]
-    Normal: [namespace, name, svc_type, cluster_ip, external_ips, ports_svc_compact, age]
+    Wide: [namespace, name, svc_type, cluster_ips, external_ips, ports_svc, age]
+    Normal: [namespace, name, svc_type, cluster_ips, external_ips, ports_svc_compact, age]
   sortcolumn: namespace
   fields:
-    cluster_ip:
-      header: "Cluster-IP:"
-      path: "spec#clusterIP"
-      type: str
+    # => clusterIPs
+    cluster_ips:
+      header: "Cluster-IPs:"
+      paths:
+      - path: ["spec#clusterIPs", "spec#clusterIP"]
+        pathtype: list
+        default: "<none>"
+        none_str_as_none: true
       formatter: address
     external_ips:
       header: "External-IPs:"
       paths:
       - path: "spec#externalIPs"
         pathtype: list
-      formatter: list
+      formatter: address
     svc_type:
       header: "Type:"
       path: "spec#type"

@@ -6,3 +6,28 @@ listview:
   group: CNI
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Cluster Information Info
+  infopad:
+    row_indexes:
+      Normal: [calico_version, cluster_guid, cluster_type, datastore_ready]
+    rows:
+      calico_version:
+        header: [["Calico Version:", [main, infoheader]]]
+        path: "spec#calicoVersion"
+        type: version
+      cluster_guid:
+        header: [["Cluster GUID:", [main, infoheader]]]
+        path: "spec#clusterGUID"
+        type: numerical
+      cluster_type:
+        header: [["Cluster Type:", [main, infoheader]]]
+        paths:
+        - path: "spec#clusterType"
+          pathtype: split
+          type: str
+        formatter: list
+      datastore_ready:
+        header: [["Datastore Ready:", [main, infoheader]]]
+        path: "spec#datastoreReady"
+        type: bool
