@@ -32,3 +32,81 @@ listview:
      path: "status#numberReady"
      type: int
      align: right
+infoview:
+  name: GPU Device Plugin Info
+  infopad:
+    row_indexes:
+      Normal: [image, init_image, node_selector, enable_monitoring, loglevel, replicas, resource_manager, shared_device_number]
+    rows:
+      enable_monitoring:
+        header: [["Enable Monitoring:", [main, infoheader]]]
+        path: "spec#enableMonitoring"
+        type: bool
+      image:
+        header: [["Image:", [main, infoheader]]]
+        paths:
+        - path: "spec#image"
+          pathtype: regex
+          regex: "^([^:]+):(.*)"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+          - type: version
+          field_separators:
+          - type: version
+      init_image:
+        header: [["Init Image:", [main, infoheader]]]
+        paths:
+        - path: "spec#initImage"
+          pathtype: regex
+          regex: "^([^:]+):(.*)"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+          - type: version
+          field_separators:
+          - type: version
+      loglevel:
+        header: [["Loglevel:", [main, infoheader]]]
+        path: "spec#logLevel"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      node_selector:
+        header: [["Node Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#nodeSelector"]
+          pathtype: key_value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      replicas:
+        header: [["Replicas:", [main, infoheader]]]
+        paths:
+        - path: [["status#numberReady"], ["status#desiredNumberScheduled"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: numerical
+          - type: numerical
+          field_separators:
+          - type: fraction
+      resource_manager:
+        header: [["Resource Manager:", [main, infoheader]]]
+        path: "spec#resourceManager"
+        type: bool
+      shared_device_number:
+        header: [["Shared Device Number:", [main, infoheader]]]
+        path: "spec#sharedDevNum"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
