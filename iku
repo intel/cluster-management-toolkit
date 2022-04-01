@@ -13485,51 +13485,6 @@ infoviews_builtin = {
 			"infogetter": get_auth_rule_info,
 		},
 	},
-	("Certificate", "cert-manager.io"): {
-		"infopad": {
-			"Common Name:": {
-				"path": "spec#commonName",
-			},
-			"DNS Names:": {
-				"extra_paths": "spec#dnsNames",
-				"processor": field_processor_list,
-			},
-			"Issuer:": {
-				"fieldname": [("I", ("main", "infoheader_shortcut")), ("ssuer:", ("main", "infoheader"))],
-				"extra_paths": ["spec#issuerRef#kind", "spec#issuerRef#name"],
-				"formatting": {
-					"field_colors": [("types", "kind"), ("types", "generic")],
-					"item_separators": [("separators", "kind")],
-				},
-				"processor": field_processor_list,
-			},
-			"Secret Name:": {
-				"fieldname": [("S", ("main", "infoheader_shortcut")), ("ecret Name:", ("main", "infoheader"))],
-				"path": "spec#secretName",
-			},
-			"Status:": {
-				"processor": field_processor_condition_ready,
-			},
-		},
-		"shortcuts": {
-			"Issuer": {
-				"shortcut": ord("I"),
-				"helptext": ("[Shift] + I", "Open info page for issuer"),
-				"call": resourceinfodispatch,
-				"kind_path": "spec#issuerRef#kind",
-				"name_path": "spec#issuerRef#name",
-				"namespace_path": "metadata#namespace",
-			},
-			"Secret Name": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for secret"),
-				"call": resourceinfodispatch,
-				"kind": ("Secret", ""),
-				"name_path": "spec#secretName",
-				"namespace_path": "metadata#namespace",
-			},
-		},
-	},
 	("CertificateRequest", "cert-manager.io"): {
 		"windowheader": "Certificate Request Info",
 		"infopad": {
@@ -13693,37 +13648,6 @@ infoviews_builtin = {
 				"owner_references_path": "metadata#ownerReferences",
 				# Note: This cannot be (kind, api_group)
 				"owner_references_kind": "Node",
-			},
-		},
-	},
-	("ClusterIssuer", "cert-manager.io"): {
-		"windowheader": "Cluster Issuer Info",
-		"infopad": {
-			"Status:": {
-				"processor": field_processor_condition_ready,
-			},
-			"Type:": {
-				"processor": field_processor_issuer_type,
-			},
-			"CRL Distribution Points:": {
-				"fallback": [("strings", "none")],
-				"processor": field_processor_crl_distribution_points,
-			},
-			"CA Secret Name:": {
-				"fieldname": [("C", ("main", "infoheader_shortcut")), ("A Secret Name:", ("main", "infoheader"))],
-				"fallback": [("strings", "none")],
-				"processor": field_processor_ca_secret_name,
-			},
-		},
-		"shortcuts": {
-			"CA Secret Name": {
-				"shortcut": ord("C"),
-				"helptext": ("[Shift] + C", "Open info page for CA Secret Name"),
-				"call": resourceinfodispatch,
-				"name_path": "spec#ca#secretName",
-				# XXX: This can be reconfigured; how can that be queried?
-				"namespace": "cert-manager",
-				"kind": ("Secret", ""),
 			},
 		},
 	},
