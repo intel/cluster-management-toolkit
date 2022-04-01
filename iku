@@ -570,6 +570,14 @@ def generator_mem_single(obj, field, fieldlen, pad, ralign, selected, **formatti
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
+def generator_hex(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	value = getattr(obj, field)
+	string = str(value)
+
+	array = format_numerical_with_units(string, "field", selected, non_units = set("0123456789abcdefABCDEF"))
+
+	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+
 def format_numerical_with_units(string, ftype, selected, non_units = set("0123456789"), separator_lookup = {}):
 	substring = ""
 	array = []
@@ -6931,6 +6939,9 @@ def get_formatter(field):
 	elif formatter == "list_with_status":
 		generator = generator_list_with_status
 		processor = processor_list_with_status
+	elif formatter == "hex":
+		generator = generator_hex
+		processor = None
 	elif formatter == "numerical":
 		generator = generator_numerical
 		processor = None
@@ -10146,7 +10157,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	if deep_get(shortcuts, "Namespace") is None and deep_get(obj, namespace_path) is not None:
 		shortcuts["Namespace"] = {
 			"shortcut": ord("N"),
-			"helptext": ("[Shift] + N", "Open info page for namespace"),
+			"helptext": ("[Shift] + N", "Open info page for Namespace"),
 			"call": resourceinfodispatch,
 			"kind": ("Namespace", ""),
 			"name_path": "metadata#namespace",
@@ -13364,7 +13375,7 @@ infoviews_builtin = {
 			},
 			"Service": {
 				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for service"),
+				"helptext": ("[Shift] + S", "Open info page for Service"),
 				"call": resourceinfodispatch,
 				"kind": ("Service", ""),
 				# XXX: This feels wrong, but this is the only namespace field
@@ -13427,7 +13438,7 @@ infoviews_builtin = {
 		"shortcuts": {
 			"Service": {
 				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for service"),
+				"helptext": ("[Shift] + S", "Open info page for Service"),
 				"call": resourceinfodispatch,
 				"kind": ("Service", ""),
 				"namespace_path": "spec#service#namespace",
@@ -13483,33 +13494,6 @@ infoviews_builtin = {
 		},
 		"listpad": {
 			"infogetter": get_auth_rule_info,
-		},
-	},
-	("CertificateRequest", "cert-manager.io"): {
-		"windowheader": "Certificate Request Info",
-		"infopad": {
-			"Issuer:": {
-				"fieldname": [("I", ("main", "infoheader_shortcut")), ("ssuer:", ("main", "infoheader"))],
-				"extra_paths": ["spec#issuerRef#kind", "spec#issuerRef#name"],
-				"formatting": {
-					"field_colors": [("types", "kind"), ("types", "generic")],
-					"item_separators": [("separators", "kind")],
-				},
-				"processor": field_processor_list,
-			},
-			"Status:": {
-				"processor": field_processor_condition_ready,
-			},
-		},
-		"shortcuts": {
-			"Issuer": {
-				"shortcut": ord("I"),
-				"helptext": ("[Shift] + I", "Open info page for issuer"),
-				"call": resourceinfodispatch,
-				"kind_path": "spec#issuerRef#kind",
-				"name_path": "spec#issuerRef#name",
-				"namespace_path": "metadata#namespace",
-			},
 		},
 	},
 	("CertificateSigningRequest", "certificates.k8s.io"): {
@@ -13643,7 +13627,7 @@ infoviews_builtin = {
 			},
 			"Node": {
 				"shortcut": ord("N"),
-				"helptext": ("[Shift] + N", "Open info page for node"),
+				"helptext": ("[Shift] + N", "Open info page for Node"),
 				"call": resourceinfodispatch,
 				"owner_references_path": "metadata#ownerReferences",
 				# Note: This cannot be (kind, api_group)
@@ -14049,14 +14033,14 @@ infoviews_builtin = {
 			},
 			"Priority Class": {
 				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Open info page for priority class"),
+				"helptext": ("[Shift] + P", "Open info page for Priority Class"),
 				"call": resourceinfodispatch,
 				"kind": ("PriorityClass", "scheduling.k8s.io"),
 				"name_path": "spec#template#spec#priorityClassName",
 			},
 			"Service Account": {
 				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for service account"),
+				"helptext": ("[Shift] + S", "Open info page for Service Account"),
 				"call": resourceinfodispatch,
 				"kind": ("ServiceAccount", ""),
 				"name_path": "spec#template#spec#serviceAccountName",
@@ -14125,7 +14109,7 @@ infoviews_builtin = {
 		"shortcuts": {
 			"Priority Class": {
 				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Open info page for priority class"),
+				"helptext": ("[Shift] + P", "Open info page for Priority Class"),
 				"call": resourceinfodispatch,
 				"kind": ("PriorityClass", "scheduling.k8s.io"),
 				"name_path": "spec#template#spec#priorityClassName",
@@ -15233,14 +15217,14 @@ infoviews_builtin = {
 		"shortcuts": {
 			"CSI Node": {
 				"shortcut": ord("C"),
-				"helptext": ("[Shift] + C", "Open info page for the corresponding CSI Node"),
+				"helptext": ("[Shift] + C", "Open info page for CSI Node"),
 				"kind": ("CSINode", "storage.k8s.io"),
 				"call": resourceinfodispatch,
 				"name_path": "metadata#name",
 			},
 			"Node Metrics": {
 				"shortcut": ord("m"),
-				"helptext": ("M", "Open metrics for the Node"),
+				"helptext": ("M", "Open info page for Node Metrics"),
 				"kind": ("NodeMetrics", "metrics.k8s.io"),
 				"call": resourceinfodispatch,
 				"name_path": "metadata#name",
@@ -15589,7 +15573,7 @@ infoviews_builtin = {
 			},
 			"Priority Class": {
 				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Open info page for priority class"),
+				"helptext": ("[Shift] + P", "Open info page for Priority Class"),
 				"call": resourceinfodispatch,
 				"kind": ("PriorityClass", "scheduling.k8s.io"),
 				"name_path": "spec#priorityClassName",
@@ -15926,7 +15910,7 @@ infoviews_builtin = {
 			},
 			"Service Account": {
 				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for service account"),
+				"helptext": ("[Shift] + S", "Open info page for Service Account"),
 				"call": resourceinfodispatch,
 				"kind": ("ServiceAccount", ""),
 				"name_path": "spec#serviceAccountName",
@@ -16049,7 +16033,7 @@ infoviews_builtin = {
 			},
 			"Priority Class": {
 				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Open info page for priority class"),
+				"helptext": ("[Shift] + P", "Open info page for Priority Class"),
 				"call": resourceinfodispatch,
 				"kind": ("PriorityClass", "scheduling.k8s.io"),
 				"name_path": "spec#template#spec#priorityClassName",
@@ -16284,7 +16268,7 @@ infoviews_builtin = {
 		"shortcuts": {
 			"Endpoints": {
 				"shortcut": ord("E"),
-				"helptext": ("[Shift] + E", "Open info page for endpoints"),
+				"helptext": ("[Shift] + E", "Open info page for Endpoints"),
 				"call": resourceinfodispatch,
 				"kind": ("Endpoints", ""),
 				"name_path": "metadata#name",
@@ -16650,7 +16634,7 @@ infoviews_builtin = {
 		"shortcuts": {
 			"ServiceAccount": {
 				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for service account"),
+				"helptext": ("[Shift] + S", "Open info page for Service Account"),
 				"call": resourceinfodispatch,
 				"kind": ("ServiceAccount", ""),
 				"namespace_path": "metadata#namespace",

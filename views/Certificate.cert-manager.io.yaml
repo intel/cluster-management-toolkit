@@ -64,12 +64,13 @@ infoview:
   name: Certificate Info
   infopad:
     row_indexes:
-      Normal: [common_name, dns_names, issuer, ca_secret_name, condition_ready]
+      Normal: [common_name, dns_names, issuer, secret_name, condition_ready]
     rows:
       common_name:
         header: [["Common Name:", [main, infoheader]]]
         path: "spec#commonName"
         type: str
+        default: "<none>"
       condition_ready:
         header: [["Ready:", [main, infoheader]]]
         paths:
@@ -97,13 +98,15 @@ infoview:
                 - context: main
                   type: status_unknown
       dns_names:
-        header: [["DNS Names:", [main, api_family]]]
-        path: "spec#dnsNames"
-        type: list
+        header: [["DNS Names:", [main, infoheader]]]
+        paths:
+        - path: ["spec#dnsNames"]
+          pathtype: list
+        formatter: list
       issuer:
         header: [["I", [main, infoheader_shortcut]], ["ssuer:", [main, infoheader]]]
         paths:
-          path: [["spec#issuerRef#kind"], ["spec#issuerRef#name"]]
+        - path: [["spec#issuerRef#kind"], ["spec#issuerRef#name"]]
           pathtype: tuple
         formatter: list
         formatting:
@@ -114,8 +117,9 @@ infoview:
           - type: kind
       secret_name:
         header: [["S", [main, infoheader_shortcut]], ["ecret Name:", [main, infoheader]]]
-        path: "spec#secretName"
-        type: str
+        paths:
+        - path: ["spec#secretName"]
+          pathtype: str
   shortcuts:
     "Issuer":
       key: i
@@ -126,16 +130,17 @@ infoview:
       action_args:
         _pass_obj: true
         kind_path: "spec#issuerRef#kind"
+        api_family: cert-manager.io
         name_path: "spec#issuerRef#name"
         namespace_path: "metadata#namespace"
-    "CA Secret Name":
-      key: c
+    "Secret Name":
+      key: s
       modifier: shift
-      helptext: "Open info page for CA Secret"
+      helptext: "Open info page for Secret"
       action: call
       action_call: resourceinfodispatch_with_lookup
       action_args:
         _pass_obj: true
         kind: Secret
-        name_path: "spec#ca#secretName"
+        name_path: "spec#secretName"
         namespace_path: "metadata#namespace"

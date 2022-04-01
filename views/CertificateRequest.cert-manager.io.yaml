@@ -56,3 +56,107 @@ listview:
         - key: type
           eq: Ready
         default: ""
+infoview:
+  name: Certificate Request Info
+  infopad:
+    row_indexes:
+      Normal: [issuer, certificate, username, uid, groups, condition_ready]
+    rows:
+      certificate:
+        header: [["C", [main, infoheader_shortcut]], ["ertificate:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - name
+          when:
+            key: kind
+            eq: Certificate
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+      condition_ready:
+        header: [["Ready:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: items
+          subpath: status
+          when:
+          - key: type
+            eq: Ready
+          default: "<unknown>"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "False":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "<unknown>":
+                field_colors:
+                - context: main
+                  type: status_unknown
+      groups:
+        header: [["Groups:", [main, infoheader]]]
+        paths:
+        - path: ["spec#groups"]
+          pathtype: list
+        formatter: list
+        formatting:
+          field_colors:
+          - type: group
+      issuer:
+        header: [["I", [main, infoheader_shortcut]], ["ssuer:", [main, infoheader]]]
+        paths:
+        - path: [["spec#issuerRef#kind"], ["spec#issuerRef#name"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: generic
+          item_separators:
+          - type: kind
+      uid:
+        header: [["UID:", [main, infoheader]]]
+        path: "spec#uid"
+        type: str
+        formatter: hex
+      username:
+        header: [["Username:", [main, infoheader]]]
+        path: "spec#username"
+        type: str
+        formatting:
+          field_colors:
+          - type: user
+  shortcuts:
+    "Certificate":
+      key: c
+      modifier: shift
+      helptext: "Open info page for Certificate"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Certificate
+        api_family: cert-manager.io
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Issuer":
+      key: i
+      modifier: shift
+      helptext: "Open info page for Issuer"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#issuerRef#kind"
+        api_family: cert-manager.io
+        name_path: "spec#issuerRef#name"
+        namespace_path: "metadata#namespace"
