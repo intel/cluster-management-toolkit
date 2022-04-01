@@ -9320,55 +9320,6 @@ def field_processor_conditions_certsignreq(obj, path, extra_paths = None, fallba
 
 	return __field_processor_list(conditions, formatting = formatting)
 
-def __get_issuer_info(obj):
-	crl_distribution_points = []
-	ca_secret_name = ""
-	if deep_get(obj, "spec#selfSigned") is not None:
-		itype = "Self-Signed"
-		crl_distribution_points = deep_get(obj, "spec#selfSigned#crlDistributionPoints", [])
-	elif deep_get(obj, "spec#ca") is not None:
-		itype = "CA"
-		ca_secret_name = deep_get(obj, "spec#ca#secretName", "")
-		crl_distribution_points = deep_get(obj, "spec#ca#crlDistributionPoints", [])
-	elif deep_get(obj, "spec#vault") is not None:
-		itype = "Vault"
-	elif deep_get(obj, "spec#venafi") is not None:
-		itype = "Venafi"
-	elif deep_get(obj, "spec#external") is not None:
-		itype = "External"
-	elif deep_get(obj, "spec#acme") is not None:
-		itype = "ACME"
-	else:
-		itype = "Unknown"
-	return itype, crl_distribution_points, ca_secret_name
-
-def field_processor_issuer_type(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	itype, crl_distribution_points, ca_secret_name = __get_issuer_info(obj)
-	field = [(f"{itype}", ("types", "generic"))]
-	return field
-
-def field_processor_crl_distribution_points(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	itype, crl_distribution_points, ca_secret_name = __get_issuer_info(obj)
-	if crl_distribution_points is None or len(crl_distribution_points) == 0:
-		if fallback is None:
-			field = [("strings", "unset")]
-		else:
-			field = fallback
-	else:
-		field = __field_processor_list(crl_distribution_points, formatting)
-	return field
-
-def field_processor_ca_secret_name(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	itype, crl_distribution_points, ca_secret_name = __get_issuer_info(obj)
-	if ca_secret_name is None or len(ca_secret_name) == 0:
-		if fallback is None:
-			field = [("strings", "unset")]
-		else:
-			field = fallback
-	else:
-		field = [(f"{ca_secret_name}", ("types", "generic"))]
-	return field
-
 # All fields except obj will be ignored
 def field_processor_api_service_available(obj, path, extra_paths = None, fallback = None, formatting = None):
 	available, service, status, status_group = get_as_status_and_service(deep_get(obj, "status#conditions"), deep_get(obj, "spec#service"))
