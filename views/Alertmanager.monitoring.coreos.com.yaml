@@ -65,6 +65,18 @@ infoview:
         path: "spec#serviceAccountName"
         type: str
   listpad:
+    listgetter: listgetter_join_dicts_to_list
+    listgetter_args:
+      key_paths: ["spec#resources#limits", "spec#resources#requests"]
+      key_name: resource
+      fields:
+      - path: "spec#resources#limits"
+        name: limit
+        default:
+      - path: "spec#resources#requests"
+        name: request
+        default:
+    infogetter: generic_infogetter
     field_indexes:
       Normal: [resource, request, limit]
     sortcolumn: resource
@@ -81,18 +93,6 @@ infoview:
         header: "Request:"
         path: request
         type: raw
-    listgetter: listgetter_join_dicts_to_list
-    listgetter_args:
-      key_paths: ["spec#resources#limits", "spec#resources#requests"]
-      key_name: resource
-      fields:
-      - path: "spec#resources#limits"
-        name: limit
-        default:
-      - path: "spec#resources#requests"
-        name: request
-        default:
-    infogetter: generic_infogetter
     "Service Account":
       key: s
       modified: shift

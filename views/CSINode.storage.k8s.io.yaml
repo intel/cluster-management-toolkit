@@ -36,6 +36,7 @@ infoview:
           field_colors:
           - type: host
   listpad:
+    infogetter: get_csi_node_driver_info
     on_activation:
       call: csi_driver_dispatch
       kind: CSIDriver
@@ -43,7 +44,6 @@ infoview:
     field_indexes:
       Normal: [name, node_id, topology_keys, allocatable_count]
     sortcolumn: name
-    infogetter: get_csi_node_driver_info
   shortcuts:
     "Open node":
       key: n

@@ -5631,8 +5631,70 @@ def get_pod_info_with_kind(**kwargs):
 	deep_set(kwargs, "extra_vars#show_kind", "mixed")
 	return get_pod_info(**kwargs)
 
+# Returns True if the item should be skipped
+def filter_list_entry(obj, caller_obj, filters = []):
+	skip = False
+	for f in filters:
+		if deep_get(filters[f], "enabled", True) == False:
+			continue
+
+		# If len(allow) > 0, we only allow fields that match
+		allow = deep_get(filters[f], "allow", [])
+		# If len(block) > 0, we skip fields that match
+		block = deep_get(filters[f], "block", [])
+		if len(allow) > 0:
+			# If all field + value pairs match we allow
+			for rule in allow:
+				key = deep_get(rule, "key", "")
+				values = deep_get(rule, "values", [])
+				if type(values) == dict:
+					if deep_get(rule, "values#source", "object") == "caller":
+						src = caller_obj
+					else:
+						src = obj
+					values_path = deep_get(rule, "values#path", "")
+					values = deep_get(src, values_path, [])
+					if type(values) == str:
+						values = [values]
+
+				if deep_get(obj, key, "").rstrip() not in values:
+					skip = True
+					break
+		if len(block) > 0:
+			# If all field + value pairs match we block
+			for rule in block:
+				key = deep_get(rule, "key", "")
+				values = deep_get(rule, "values", [])
+				if type(values) == dict:
+					if deep_get(rule, "values#source", "object") == "caller":
+						src = caller_obj
+					else:
+						src = obj
+					values_path = deep_get(rule, "values#path", "")
+					values = deep_get(src, values_path, [])
+					if type(values) == str:
+						values = [values]
+				if deep_get(obj, key, "").rstrip() in values:
+					skip = True
+					break
+		if skip == True:
+			break
+	return skip
+
 def generic_listgetter(kind, namespace, **kwargs):
-	return kh.get_list_by_kind_namespace(kind, namespace, label_selector = deep_get(kwargs, "label_selector"))
+	filters = deep_get(kwargs, "filters", [])
+	vlist, status = kh.get_list_by_kind_namespace(kind, namespace, label_selector = deep_get(kwargs, "label_selector", ""))
+	if len(vlist) == 0 or status != 200 or len(filters) == 0:
+		return vlist, status
+
+	vlist2 = []
+
+	for item in vlist:
+		if filter_list_entry(item, deep_get(kwargs, "_obj", {}), filters) == True:
+			continue
+		vlist2.append(item)
+
+	return vlist2, status
 
 def listgetter_field(obj, **kwargs):
 	path = deep_get(kwargs, "path")
@@ -10229,6 +10291,23 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				listref = deep_get(viewref, "listpad#listref")
 				listgetter = deep_get(viewref, "listpad#listgetter")
 				listgetter_args = deep_get(viewref, "listpad#listgetter_args", {})
+				_kind = deep_get(listgetter_args, "_kind")
+				_kind_path = deep_get(listgetter_args, "_kind_path")
+				_api_family = deep_get(listgetter_args, "_api_family")
+				_api_family_path = deep_get(listgetter_args, "_api_family_path")
+				if _kind is None:
+					_kind = deep_get(obj, _kind_path, "")
+				if _api_family is None:
+					_api_family = deep_get(obj, _api_family_path, "")
+				_kind = (_kind, _api_family)
+				_namespace = deep_get(listgetter_args, "namespace")
+				_namespace_path = deep_get(listgetter_args, "_namespace_path", "")
+				if _namespace is None:
+					_namespace = deep_get(obj, _namespace_path, "")
+				listgetter_args["kind"] = _kind
+				listgetter_args["namespace"] = _namespace
+				if "_pass_obj" in listgetter_args:
+					listgetter_args["_obj"] = obj
 				infogetter = deep_get(viewref, "listpad#infogetter")
 				infogetter_filters = deep_get(viewref, "listpad#infogetter_filters", None)
 				infogetter_args = deep_get(viewref, "listpad#infogetter_args", {})
@@ -10246,6 +10325,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				elif listgetter is not None:
 					if type(listgetter) == str:
 						vlist, status = eval(listgetter)
+					elif listgetter == generic_listgetter:
+						vlist, status = listgetter(**listgetter_args)
 					else:
 						vlist, status = listgetter(obj, **listgetter_args)
 				else:
@@ -14806,38 +14887,6 @@ infoviews_builtin = {
 				"extra_paths": ["spec#allowedUses"],
 				"processor": field_processor_list,
 				"fallback": [("Workload", ("types", "generic")), ("separators", "list"), ("Tunnel", ("types", "generic")), (" (Default)", ("types", "generic"))],
-			},
-		},
-	},
-	("Issuer", "cert-manager.io"): {
-		"infopad": {
-			"Status:": {
-				"processor": field_processor_condition_ready,
-			},
-			"Type:": {
-				"processor": field_processor_issuer_type,
-			},
-			"CRL Distribution Points:": {
-				"fallback": [("strings", "none")],
-				"processor": field_processor_crl_distribution_points,
-			},
-			"CA Secret Name:": {
-				"fieldname": [("C", ("main", "infoheader_shortcut")), ("A Secret Name:", ("main", "infoheader"))],
-				"fallback": [("strings", "none")],
-				"processor": field_processor_ca_secret_name,
-			},
-		},
-		# XXX: List all certificates issued by this issuer here
-		#listpad: {
-		#},
-		"shortcuts": {
-			"CA Secret Name": {
-				"shortcut": ord("C"),
-				"helptext": ("[Shift] + C", "Open info page for CA Secret"),
-				"call": resourceinfodispatch,
-				"name_path": "spec#ca#secretName",
-				"namespace_path": "metadata#namespace",
-				"kind": ("Secret", ""),
 			},
 		},
 	},

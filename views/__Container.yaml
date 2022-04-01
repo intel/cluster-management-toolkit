@@ -3,14 +3,14 @@ default_command: containers
 command:
 - container
 listview:
+  listgetter:
+  infogetter: get_container_info
   name: Containers
   group: Core
   check_availability: is_cluster_reachable
   field_indexes:
     Wide: [name, container_type, image_version, instances, image_id, pods]
     Normal: [name, container_type, image_version, instances, pods]
-  listgetter:
-  infogetter: get_container_info
   is_taggable: false
   fields:
     container_type:
@@ -62,6 +62,8 @@ infoview:
         path: image_id
         type: str
   listpad:
+    path: pod_references
+    infogetter: get_pod_info
     on_activation:
       call: resourceinfodispatch
       kind: Pod
@@ -79,8 +81,6 @@ infoview:
         default: "<unset>"
         type: address
     sortcolumn: status
-    path: pod_references
-    infogetter: get_pod_info
   shortcuts:
     # Containers have no last applied configuration or events
     Show Events: {}
