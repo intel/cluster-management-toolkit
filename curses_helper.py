@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 # Before calling into this helper you need to call init_colors()
 
+import copy
 import curses
 from datetime import datetime
 import errno
@@ -739,6 +740,8 @@ def strarray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
 	if maxwidth == -1 or len(strarray_extract_string(strarray)) < maxwidth:
 		return [strarray]
 
+	# We don't want to modify the original array
+	_strarray = copy.deepcopy(strarray)
 	strarrays = []
 	i = 0
 	tmpstrarray = []
@@ -750,12 +753,12 @@ def strarray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
 		linebreaklen = 0
 
 	while True:
-		if type(strarray[i]) == tuple and len(strarray[i]) == 2 and type(strarray[i][1]) == str:
-			strarray[i] = themearray_to_strarray(strarray[i][1], strarray[i][0])[0]
-		_string, _attr = strarray[i]
+		if type(_strarray[i]) == tuple and len(_strarray[i]) == 2 and type(_strarray[i][1]) == str:
+			_strarray[i] = themearray_to_strarray(_strarray[i][1], _strarray[i][0])[0]
+		_string, _attr = _strarray[i]
 
 		# If this is the last fragment and it fits, don't add a linebreak marker
-		if tmplen + len(_string) <= maxwidth and i == len(strarray) - 1:
+		if tmplen + len(_string) <= maxwidth and i == len(_strarray) - 1:
 			tmpstrarray.append((_string, _attr))
 			strarrays.append(tmpstrarray)
 			tmpstrarray = []
@@ -774,7 +777,7 @@ def strarray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
 			if wrap_marker == True:
 				tmpstrarray += linebreak
 			strarrays.append(tmpstrarray)
-			strarray[i] = (_string[maxwidth - linebreaklen - tmplen:], _attr)
+			_strarray[i] = (_string[maxwidth - linebreaklen - tmplen:], _attr)
 			tmpstrarray = []
 			tmplen = 0
 

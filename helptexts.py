@@ -103,6 +103,10 @@ listmovement = [
 	("R", "Reverse sortorder"),
 ] + irreversiblelistmovement
 
+linewrap = [
+	("[Shift] + W", "Toggle line wrapping"),
+]
+
 logmovement = [
 	("[Cursor keys]", "Scroll log up / down / left / right"),
 	("/", "Search forwards"),

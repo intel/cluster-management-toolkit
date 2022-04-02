@@ -7183,7 +7183,7 @@ def genericlistloop(stdscr, view):
 
 			tagged_items = set()
 
-		if uip.refresh:
+		if uip.refresh == True:
 			# The data in some fields might become shorter, so we need to trigger a clear
 			uip.statusbar.erase()
 
@@ -8505,13 +8505,13 @@ def cmdataloop(stdscr, obj, view, info = None):
 			uip.loglen = len(messages)
 			uip.update_window()
 
-		if uip.refresh:
+		if uip.refresh == True:
 			# The data in some fields might become shorter, so we need to trigger a clear
 			uip.statusbar.erase()
 
 			# Resize the logpad as needed
 			uip.logpad.erase()
-			#uip.resize_logpad(uip.maxy - uip.logpadypos - 2, maxlen)
+			#uip.resize_logpad(uip.maxy - uip.logpadypos - 1, maxlen)
 
 			maxx = 0
 
@@ -8519,7 +8519,7 @@ def cmdataloop(stdscr, obj, view, info = None):
 			for y in range(0, min(uip.logpadheight, uip.loglen)):
 				ypos, xpos = uip.addthemearray(logpad, messages[uip.yoffset + y], y = y, x = 0)
 				maxx = max(maxx, xpos)
-			uip.resize_logpad(uip.maxy - uip.logpadypos - 2, maxx)
+			uip.resize_logpad(uip.maxy - uip.logpadypos - 1, maxx)
 
 			uip.refresh_window()
 			uip.refresh_infopad()
@@ -10000,6 +10000,7 @@ def generate_helptext(view, viewtype, additional_helptexts = [], shortcuts = [])
 			else:
 				helptext += helptexts.listmovement
 		elif "logpad" in viewref:
+			helptext += helptexts.linewrap
 			helptext += helptexts.spacer
 			helptext += helptexts.logmovement
 	elif viewtype == "listview":
@@ -10226,6 +10227,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		else:
 			tspad, logpad = uip.init_logpad(width = -1, ypos = infopadheight + 2, xpos = 1, timestamps = timestamps)
 
+	wrap_lines = False
+
 	while True:
 		uip.countdown_to_update()
 
@@ -10419,9 +10422,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				y += 1
 
 		# Output logpad if we have one
-		if logpad is not None and uip.refresh:
+		if logpad is not None and uip.refresh == True:
 			uip.logpad.erase()
 			maxx = 0
+			yadd = 0
 			for y in range(0, min(uip.logpadheight, len(messages))):
 				message = messages[uip.yoffset + y]
 				current_match = False
@@ -10433,9 +10437,21 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if uip.match_index is not None and uip.yoffset + y == uip.match_index:
 						current_match = True
 					message = match_prefix + message
-				ypos, xpos = uip.addthemearray(logpad, message, y = y, x = 0, selected = current_match)
-				maxx = max(maxx, xpos)
-			uip.resize_logpad(uip.maxy - uip.logpadypos - 2, maxx)
+				if wrap_lines == True:
+					sideadjust = 0
+					if uip.borders == False:
+						sideadjust = 2
+					maxwidth = uip.logpadminwidth + sideadjust
+				else:
+					maxwidth = -1
+				_lines = strarray_wrap_line(message, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
+				for i in range(0, len(_lines)):
+					if y + yadd + i >= uip.logpadheight:
+						break
+					ypos, xpos = uip.addthemearray(logpad, _lines[i], y = y + yadd + i, x = 0, selected = current_match)
+					maxx = max(maxx, xpos)
+				yadd += i
+			uip.resize_logpad(uip.maxy - uip.logpadypos - 1, maxx)
 
 		uip.refresh_window()
 		uip.refresh_infopad()
@@ -10510,6 +10526,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			uip.refresh_all()
 		elif c == ord("B"):
 			uip.toggle_borders()
+			uip.refresh_all()
+			uip.force_update()
+		elif c == ord("W"):
+			wrap_lines = not wrap_lines
 			uip.refresh_all()
 			uip.force_update()
 
@@ -11169,7 +11189,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 			uip.refresh = True
 
-		if uip.refresh:
+		if uip.refresh == True:
 			# FIXME: the status stuff should be done by curses_helper
 			theme = get_theme_ref()
 			_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
@@ -11296,7 +11316,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			uip.tspad.erase()
 			uip.logpad.erase()
 			# This is needed in case we get a resize event
-			uip.resize_logpad(uip.maxy - uip.logpadypos - 2, 0)
+			uip.resize_logpad(uip.maxy - uip.logpadypos - 1, 0)
 			new_date = False
 			if timestamps is not None and len(timestamps) > 0:
 				current_datestamp = ("%s" % timestamps[0])[0:len("YYYY-MM-DD")]
@@ -11426,8 +11446,8 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					maxwidth = -1
 				msgstrarrays = strarray_wrap_line(msgstrarray, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
 				for i in range(0, len(msgstrarrays)):
-					if y + yadd + i > uip.logpadheight:
-						continue
+					if y + yadd + i >= uip.logpadheight:
+						break
 					if i == 0:
 						uip.addthemearray(tspad, tsthemearray, y = y + yadd, x = 0)
 					cury, curx = uip.addthemearray(logpad, msgstrarrays[i], y = y + yadd + i, x = 0)
