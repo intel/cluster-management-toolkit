@@ -49,7 +49,7 @@ from logparser import logparser, logparser_initialised, loglevel, split_msg, lvl
 import curses_helper
 import iktlib
 from iktlib import deep_get, deep_get_list, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp
-from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_ram_usage, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_extract_string, strarray_wrap_line, themearray_to_strarray, themearray_extract_string, attr_to_curses_merged
+from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
 
 from ansible_helper import ansible_clean_results, ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -323,18 +323,18 @@ def generator_priority_level(obj, field, fieldlen, pad, ralign, selected, **form
 
 # Will take datetime and format it as (YYYY-MM-DD HH:MM:SS, field_colors)
 def format_timestamp(timestamp, localtimezone = False):
-	stringarray = []
+	array = []
 
 	if timestamp is None:
-		stringarray = themearray_to_strarray("none", "strings")
+		array = [("strings", "none")]
 	else:
 		if localtimezone == True:
 			ftimestamp = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 		else:
 			ftimestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S")
-		stringarray = format_numerical_with_units(ftimestamp, "timestamp", False)
+		array = format_numerical_with_units(ftimestamp, "timestamp", False)
 
-	return stringarray
+	return array
 
 def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separators", "list"), field_separators = [("separators", "field")], field_colors = [("types", "generic")], ellipsise = -1, ellipsis = ("separators", "ellipsis"), field_prefixes = None, field_suffixes = None, mapping = {}):
 	array = []
@@ -354,8 +354,7 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 
 	for item in items:
 		if len(array) > 0:
-			_context, _attr = item_separator
-			totallen += len(themearray_extract_string(_attr, context = _context))
+			totallen += themearray_len([item_separator])
 			array.append((item_separator, selected))
 			elcount += 1
 
@@ -378,8 +377,7 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 
 			if i > 0 and skip_separator == False:
 				field_separator = field_separators[min(i - 1, len(field_separators) - 1)]
-				_context, _key = field_separator
-				totallen += len(themearray_extract_string(_key, context = _context))
+				totallen += themearray_len([field_separator])
 				array.append((field_separator, selected))
 
 			if string == "<none>":
@@ -395,16 +393,14 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 			# OK, we know now that we'll be appending the field, so do the prefix
 			if field_prefixes is not None and i < len(field_prefixes):
 				for prefix in field_prefixes[i]:
-					_context, _key = prefix
-					totallen += len(themearray_extract_string(_key, context = _context))
+					totallen += themearray_len([prefix])
 					array.append((prefix, selected))
 			array.append(formatted_string)
 			totallen += len(string)
 			# And now the suffix
 			if field_suffixes is not None and i < len(field_suffixes):
 				for suffix in field_suffixes[i]:
-					_context, _key = suffix
-					totallen += len(themearray_extract_string(_key, context = _context))
+					totallen += themearray_len([suffix])
 					array.append((suffix, selected))
 			skip_separator = False
 
@@ -660,7 +656,7 @@ def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting)
 		separators = [("separators", "ipv4address"), ("separators", "ipv6address"), ("separators", "ipmask")]
 
 	for separator in separators:
-		string = themearray_extract_string([separator])
+		string = themearray_to_string([separator])
 		separator_lookup[string] = separator
 
 	vlist = []
@@ -708,22 +704,27 @@ def generator_mem(obj, field, fieldlen, pad, ralign, selected, **formatting):
 		return generator_basic(obj, field, fieldlen, pad, ralign, selected)
 
 	used = "{:0.1f}".format(100 - (100 * int(free) / int(total)))
-	attribute = color_ram_usage(used, selected)
+
+	if float(used) < 80.0:
+		attribute = ("types", "watermark_low")
+	elif float(used) < 90.0:
+		attribute = ("types", "watermark_medium")
+	else:
+		attribute = ("types", "watermark_high")
 
 	total = "{:0.1f}".format(int(total) / (1024 * 1024))
 	unit = "GiB"
 
-	stringlen = len(used) + len(themearray_extract_string("percentage", "separators")) + len(" ") + len(themearray_extract_string("fraction", "separators")) + len(" ") + len(total) + len(unit)
-
 	array = [
-		(used, attribute),
+		(used, attribute, selected),
 		(("separators", "percentage"), selected),
-		(" ", attribute),
+		(" ", attribute, selected),
 		(("separators", "fraction"), selected),
-		(" ", attribute),
+		(" ", attribute, selected),
 		(total, ("types", "numerical"), selected),
 		(unit, ("types", "unit", selected)),
 	]
+	stringlen = themearray_len(array)
 
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
@@ -744,7 +745,7 @@ def generator_total(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	else:
 		_total = int(total)
 
-	stringlen = len(str(_free)) + len(themearray_extract_string("fraction", "separators")) + len(str(_total))
+	stringlen = len(str(_free)) + themearray_len([("separators", "fraction")]) + len(str(_total))
 
 	ranges = deep_get(field_templates, f"{field}#ranges", [])
 	formatting = ("types", "numerical", selected)
@@ -893,12 +894,6 @@ def processor_total(obj, field):
 # For the list processor to work we need to know the length of all the separators
 def processor_list(obj, field, item_separator = ("separators", "list"), field_separators = [("separators", "field")], ellipsise = -1, ellipsis = ("separators", "ellipsis"), field_prefixes = None, field_suffixes = None):
 	items = getattr(obj, field)
-	totallen = 0
-
-	_context, _attr_ref = item_separator
-	item_separator = themearray_extract_string(_attr_ref, context = _context)
-	_context, _attr_ref = ellipsis
-	ellipsis = themearray_extract_string(_attr_ref, context = _context)
 
 	strings = []
 
@@ -910,7 +905,7 @@ def processor_list(obj, field, item_separator = ("separators", "list"), field_se
 
 	for item in items:
 		if elcount == ellipsise:
-			strings.append(ellipsis)
+			strings.append(themearray_to_string([ellipsis]))
 			break
 
 		if type(item) is not tuple:
@@ -929,37 +924,25 @@ def processor_list(obj, field, item_separator = ("separators", "list"), field_se
 				continue
 
 			if i > 0 and skip_separator == False:
-				_context, _attr_ref = field_separators[min(i - 1, len(field_separators) - 1)]
-				field_separator = themearray_extract_string(_attr_ref, context = _context)
-				string += field_separator
+				string += themearray_to_string([field_separators[min(i - 1, len(field_separators) - 1)]])
 
 			if field_prefixes is not None and i < len(field_prefixes):
-				for _context, _attr_ref in field_prefixes[i]:
-					_str = themearray_extract_string(_attr_ref, context = _context)
-					string += _str
+				string += themearray_to_string([field_prefixes[i]])
 			string += tmp
 			if field_suffixes is not None and i < len(field_suffixes):
-				for _context, _attr_ref in field_suffixes[i]:
-					_str = themearray_extract_string(_attr_ref, context = _context)
-					string += _str
+				string += themearray_to_string([field_suffixes[i]])
 			skip_separator = False
 
 		strings.append(string)
 		elcount += 1
 
-	vstring = item_separator.join(strings)
+	vstring = themearray_to_string([item_separator]).join(strings)
 
 	return vstring
 
 # For the list processor to work we need to know the length of all the separators
 def processor_list_with_status(obj, field, item_separator = ("separators", "list"), field_separators = [("separators", "field")], ellipsise = -1, ellipsis = ("separators", "ellipsis"), field_prefixes = None, field_suffixes = None):
 	items = getattr(obj, field)
-	totallen = 0
-
-	_context, _attr_ref = item_separator
-	item_separator = themearray_extract_string(_attr_ref, context = _context)
-	_context, _attr_ref = ellipsis
-	ellipsis = themearray_extract_string(_attr_ref, context = _context)
 
 	strings = []
 
@@ -972,7 +955,7 @@ def processor_list_with_status(obj, field, item_separator = ("separators", "list
 
 	for item in newitems:
 		if elcount == ellipsise:
-			strings.append(ellipsis)
+			strings.append(themearray_to_string([ellipsis]))
 			break
 
 		if type(item) is not tuple:
@@ -991,25 +974,19 @@ def processor_list_with_status(obj, field, item_separator = ("separators", "list
 				continue
 
 			if i > 0 and skip_separator == False:
-				_context, _attr_ref = field_separators[min(i - 1, len(field_separators) - 1)]
-				field_separator = themearray_extract_string(_attr_ref, context = _context)
-				string += field_separator
+				string += themearray_to_string([field_separators[min(i - 1, len(field_separators) - 1)]])
 
 			if field_prefixes is not None and i < len(field_prefixes):
-				for _context, _attr_ref in field_prefixes[i]:
-					_str = themearray_extract_string(_attr_ref, context = _context)
-					string += _str
+				string += themearray_to_string([field_prefixes[i]])
 			string += tmp
 			if field_suffixes is not None and i < len(field_suffixes):
-				for _context, _attr_ref in field_suffixes[i]:
-					_str = themearray_extract_string(_attr_ref, context = _context)
-					string += _str
+				string += themearray_to_string([field_suffixes[i]])
 			skip_separator = False
 
 		strings.append(string)
 		elcount += 1
 
-	vstring = item_separator.join(strings)
+	vstring = themearray_to_string([item_separator]).join(strings)
 
 	return vstring
 
@@ -1021,9 +998,9 @@ def processor_mem(obj, field):
 	free, total = getattr(obj, field)
 
 	string = "{:0.1f}".format(100 - (100 * int(free) / int(total)))
-	string += themearray_extract_string("percentage", context = "separators")
+	string += themearray_to_string([("separators", "percentage")])
 	string += " "
-	string += themearray_extract_string("fraction", context = "separators")
+	string += themearray_to_string([("separators", "fraction")])
 	string += " "
 	string += "{:0.1f}".format(int(total) / (1024 * 1024))
 	string += "GiB"
@@ -1077,12 +1054,12 @@ def update_field_widths(field_dict, field_names, objects):
 
 		field_dict[field_name]["fieldlen"] = max(field_dict[field_name]["fieldlen"], len(field_dict[field_name]["header"]))
 
-		linelen += field_dict[field_name].get("fieldlen") + len(themearray_extract_string("pad", context = "separators"))
+		linelen += field_dict[field_name].get("fieldlen") + themearray_len([("separators", "pad")])
 		pos = linelen
 
 	# The last element shouldn't be padded
 	if linelen > 0:
-		linelen -= len(themearray_extract_string("pad", context = "separators"))
+		linelen -= themearray_len([("separators", "pad")])
 
 	return linelen
 
@@ -1135,7 +1112,7 @@ def get_hpa_metrics(obj, **kwargs):
 		vlist.append(d)
 	return vlist, status
 
-def get_metrics_list(extra_vars = {filter: None}):
+def get_metrics_list(**kwargs):
 	vlist = []
 
 	metrics, status = kh.get_metrics()
@@ -1148,8 +1125,8 @@ def get_metrics_list(extra_vars = {filter: None}):
 		if tmp is None:
 			continue
 		metric = tmp[1]
-		if deep_get(extra_vars, "filter") is not None:
-			if metric not in deep_get(extra_vars, "filter"):
+		if deep_get(kwargs, "filter") is not None:
+			if metric not in deep_get(kwargs, "filter"):
 				continue
 
 		fields = ['{}'.format(x) for x in next(csv.reader([tmp[2]], delimiter = ",", quotechar = "\""))]
@@ -1187,7 +1164,7 @@ def get_context_info(**kwargs):
 	if len(vlist) == 0:
 		return []
 
-	tag_prefix = themearray_extract_string("tag", context = "separators")
+	tag_prefix = themearray_to_string([("separators", "tag")])
 	for context in vlist:
 		current, name, cluster, authinfo, namespace = context
 		if current == True:
@@ -5867,7 +5844,7 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 	if is_taggable:
 		tabstops.append(tabstop)
 		headerarray.append(("separators", "tag"))
-		tabstop = len(strarray_extract_string(headerarray))
+		tabstop = themearray_len(headerarray)
 
 	for field in field_list:
 		generator = field_list[field].get("generator")
@@ -5893,9 +5870,9 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 		# Note that we need to subtract the width of sort direction char
 		# from the width of pad; this only works if len(pad) > 0
 		if first == False:
-			headerarray.append(("".ljust(len(themearray_extract_string("pad", context = "separators")) - len(sort_direction_char)), curses.A_NORMAL))
+			headerarray.append(("".ljust(themearray_len([("separators", "pad")]) - len(sort_direction_char)), ("types", "generic")))
 
-		tabstop = len(strarray_extract_string(headerarray))
+		tabstop = themearray_len(headerarray)
 
 		# This tells the length of the alignment of the header
 		fieldlen = deep_get(field_list, f"{field}#fieldlen")
@@ -5906,11 +5883,11 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 		# because we want the string and arrow in different colours,
 		# so just prepend/append whitespace instead
 		if ralign == True:
-			headerarray.append(("".ljust(fieldlen - len(header)), curses.A_NORMAL))
+			headerarray.append(("".ljust(fieldlen - len(header)), ("types", "generic")))
 		headerarray.append((header, ("main", "listheader", uip.get_sortcolumn() == field)))
 		headerarray.append((sort_direction_char, ("main", "listheader_arrows")))
 		if ralign == False:
-			headerarray.append(("".ljust(fieldlen - len(header)), curses.A_NORMAL))
+			headerarray.append(("".ljust(fieldlen - len(header)), ("types", "generic")))
 		first = False
 
 	# We've got to account for the last entry
@@ -5949,7 +5926,7 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 		attribute = curses.A_NORMAL
 
 		if is_taggable:
-			tagprefixlen = len(themearray_extract_string("tag", context = "separators"))
+			tagprefixlen = themearray_len([("separators", "tag")])
 
 			if is_tagged:
 				tagprefix = [("separators", "tag")]
@@ -5965,7 +5942,7 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 
 		fieldlen = field_list[field]["fieldlen"]
 		if i < len(field_list):
-			fpad = len(themearray_extract_string("pad", context = "separators"))
+			fpad = themearray_len([("separators", "pad")])
 		else:
 			fpad = 0
 
@@ -7158,10 +7135,11 @@ def genericlistloop(stdscr, view):
 					listgetter_args["label_selector"] = label_selector
 					vlist, status = listgetter(deep_get(viewref, "kind"), namespace, **listgetter_args)
 				else:
-					listgetter = eval(listgetter)
-					listgetter_extra_vars = deep_get(viewref, "extra_vars#listgetter", {})
+					if type(listgetter) == str:
+						listgetter = eval(listgetter)
+					listgetter_args = deep_get(viewref, "listgetter_args", {})
 					if kind[0].startswith("__"):
-						vlist, status = listgetter(extra_vars = listgetter_extra_vars)
+						vlist, status = listgetter(**listgetter_args)
 					else:
 						vlist, status = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
 				infogetter_extra_vars["_vlist"] = vlist
@@ -11429,7 +11407,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					]
 					# We don't actually want any prefix, but we want empty padding of the same length
 					if facility.rstrip() == "":
-						facilitystr = [("".ljust(len(themearray_extract_string(facilitystr))), ("logview", "severity_debug"))]
+						facilitystr = [("".ljust(themearray_len(facilitystr)), ("logview", "severity_debug"))]
 					msgstrarray += facilitystr
 
 				msg = messages[uip.yoffset + y]
@@ -11451,7 +11429,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					if i == 0:
 						uip.addthemearray(tspad, tsthemearray, y = y + yadd, x = 0)
 					cury, curx = uip.addthemearray(logpad, msgstrarrays[i], y = y + yadd + i, x = 0)
-					maxlen = max(maxlen, len(themearray_extract_string(msgstrarrays[i])))
+					maxlen = max(maxlen, themearray_len(msgstrarrays[i]))
 				yadd += i
 			uip.resize_logpad(-1, maxlen)
 
@@ -16738,10 +16716,8 @@ views_special = {
 		"kind": ("__Deprecation", ""),
 		"sortcolumn": "deprecated_api",
 		"listgetter": "get_metrics_list",
-		"extra_vars": {
-			"listgetter": {
-				"filter": "apiserver_requested_deprecated_apis",
-			},
+		"listgetter_args": {
+			"filter": "apiserver_requested_deprecated_apis",
 		},
 		"shortcuts": {
 			# Override:

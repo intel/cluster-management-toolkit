@@ -149,20 +149,10 @@ def init_curses():
 		color[pair] = (unselected_index, selected_index)
 
 def color_log_severity(severity, selected):
-	return attr_to_curses_merged("logview", f"severity_{loglevel_to_name(severity).lower()}", selected)
-
-def color_ram_usage(used, selected):
-	if float(used) < 80.0: # Green
-		attribute = attr_to_curses_merged("types", "watermark_low", selected)
-	elif float(used) < 90.0: # Yellow
-		attribute = attr_to_curses_merged("types", "watermark_medium", selected)
-	else: # Red
-		attribute = attr_to_curses_merged("types", "watermark_high", selected)
-
-	return attribute
+	return ("logview", f"severity_{loglevel_to_name(severity).lower()}", selected)
 
 def color_status_group(status_group, selected = False):
-	return attr_to_curses_merged("main", stgroup_mapping[status_group], selected = selected)
+	return ("main", stgroup_mapping[status_group], selected)
 
 def window_tee_hline(win, y, start, end, attribute = None):
 	_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
@@ -712,6 +702,39 @@ def attr_to_curses_merged(context, attr, selected = False):
 		else:
 			attr = attr["unselected"]
 	return __attr_to_curses_merged(attr, selected)
+
+# XXX: If we ever turn themearray to a proper object reuse this
+# This extracts the string without formatting
+def themearray_to_string(themearray):
+	string = ""
+
+	for fragment in themearray:
+		if type(fragment) != tuple:
+			raise ValueError(f"themearray_to_string() called with an invalid themearray: \"{themearray}\"; element: \"{fragment}\" has invalid type {type(fragment)}; expected tuple")
+		# This is a string lookup
+		if type(fragment[0]) == str and type(fragment[1]) == str and (len(fragment) == 2 or len(fragment) == 3 and type(fragment[2]) == bool):
+			themed_tuple = deep_get(theme, f"{fragment[0]}#{fragment[1]}")
+			if themed_tuple is None:
+				raise KeyError(f"The theme key-pair context: \"{fragment[0]}\", key: \"{fragment[1]}\" does not exist")
+			string += themed_tuple[0][0]
+		elif type(fragment[0]) == tuple and type(fragment[1]) == bool:
+			# This is a string lookup
+			if type(fragment[0][1]) == str:
+				themed_tuple = deep_get(theme, f"{fragment[0][0]}#{fragment[0][1]}")
+				if themed_tuple is None:
+					raise KeyError(f"The theme key-pair context: \"{fragment[0][0]}\", key: \"{fragment[0][1]}\" does not exist")
+				string += themed_tuple[0][0]
+			else:
+				string += fragment[0][0]
+		elif type(fragment[0]) == str and type(fragment[1]) == tuple:
+			string += fragment[0]
+		else:
+			raise ValueError(f"themearray_to_string() called with invalid themearray: \"{themearray}\"; cannot parse element: \"{fragment}\"")
+	return string
+
+# XXX: If we ever turn themearray to a proper object reuse this
+def themearray_len(themearray):
+	return len(themearray_to_string(themearray))
 
 def themearray_to_strarray(key, context = "main", selected = False):
 	array = theme[context][key]
