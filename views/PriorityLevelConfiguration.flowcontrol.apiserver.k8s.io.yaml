@@ -46,3 +46,41 @@ listview:
       formatting:
         field_colors:
         - type: numerical
+infoview:
+  name: "Priority Level Configuration Info"
+  infopad:
+    row_indexes:
+      Normal: [priority_type, assured_concurrency_shares, queues, hand_size, queue_length_limit, queues]
+    rows:
+      assured_concurrency_shares:
+        header: [["Assured Concurrency Shares:", [main, infoheader]]]
+        path: "spec#limited#assuredConcurrencyShares"
+        type: raw
+        formatting:
+          field_colors:
+          - type: numerical
+      hand_size:
+        header: [["Hand Size:", [main, infoheader]]]
+        path: "spec#limited#limitResponse#queuing#handSize"
+        type: raw
+        formatting:
+          field_colors:
+          - type: numerical
+      priority_type:
+        header: [["Priority Type:", [main, infoheader]]]
+        path: "spec#type"
+        type: str
+      queue_length_limit:
+        header: [["Queue Length List:", [main, infoheader]]]
+        path: "spec#limited#limitResponse#queuing#queueLengthLimit"
+        type: raw
+        formatting:
+          field_colors:
+          - type: numerical
+      queues:
+        header: [["Queues:", [main, infoheader]]]
+        path: "spec#limited#limitResponse#queuing#queues"
+        type: raw
+        formatting:
+          field_colors:
+          - type: numerical

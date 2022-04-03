@@ -15651,64 +15651,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("PriorityClass", "scheduling.k8s.io"): {
-		"windowheader": "Priority Class Info",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts"],
-		},
-		"sortcolumn": "status",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("Pod", ""),
-		"infopad": {
-			"Value:": {
-				# FIXME: This should be numerical
-				"path": "value",
-			},
-			"Global Default:": {
-				"path": "globalDefault",
-			},
-			"Preemption Policy:": {
-				"path": "preemptionPolicy",
-			},
-			"Description:": {
-				"path": "globalDefault",
-				"processor": None,
-			},
-			"Description2:": {
-				"fieldname": [(" ", curses.A_NORMAL)],
-				"path": "description",
-			},
-		},
-		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '')",
-			"infogetter": get_pod_info,
-			"infogetter_filters": [("\"spec#priorityClassName\"", "f\"{deep_get(obj, 'metadata#name')}\"")],
-		},
-	},
-	("PriorityLevelConfiguration", "flowcontrol.apiserver.k8s.io"): {
-		"windowheader": "Priority Level Configuration Info",
-		"infopad": {
-			"Priority Type:": {
-				"path": "spec#type",
-			},
-			"Assured Concurrency Shares:": {
-				# FIXME: This should be numerical
-				"path": "spec#limited#assuredConcurrencyShares",
-			},
-			"Queues:": {
-				# FIXME: This should be numerical
-				"path": "spec#limited#limitResponse#queuing#queues",
-			},
-			"Hand Size:": {
-				# FIXME: This should be numerical
-				"path": "spec#limited#limitResponse#queuing#handSize",
-			},
-			"Queue Length Limit:": {
-				# FIXME: This should be numerical
-				"path": "spec#limited#limitResponse#queuing#queueLengthLimit",
-			},
-		},
-	},
 	("Profile", "kubeflow.org"): {
 		"infopad": {
 			"Owner:": {
