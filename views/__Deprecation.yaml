@@ -1,0 +1,121 @@
+# Requires Kubernetes 1.19+
+kind: __Deprecation
+default_command: deprecations
+listview:
+  listgetter: get_metrics_list
+  listgetter_args:
+    filter: apiserver_requested_deprecated_apis
+  name: Deprecations
+  group: Administration
+  check_availability: is_cluster_reachable
+  is_taggable: false
+  field_indexes:
+    Normal: [deprecated_api, deprecated_removed_release]
+  fields:
+    deprecated_api:
+      header: "Deprecated API:"
+      path: [[resource, group, version], tuple]
+      datagetter: datagetter_deprecated_api
+      formatter: list
+      formatting:
+        field_colors:
+        - type: kind
+        - type: api_group
+        - type: version
+        field_separators:
+        - type: kind_api_group
+        - type: kind
+    deprecated_removed_release:
+      header: "Planned Removal:"
+      path: [[removed_release], str]
+      datagetter: datagetter_metrics
+      formatting:
+        field_colors:
+        - type: version
+  shortcuts:
+    "Edit Resource":
+    "View YAML dump":
+infoview:
+  name: Deprecation Info
+  infopad:
+    name_path: ""
+    namespace_path:
+    creation_timestamp_path:
+    row_indexes:
+      Normal: [deprecated_api, deprecated_version, latest_version, planned_removal]
+    rows:
+      deprecated_api:
+        header: [["Deprecated API:", [main, infoheader]]]
+        paths:
+        - path: [["fields#resource", "fields#group"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          field_separators:
+          - type: kind_api_group
+      deprecated_version:
+        header: [["Deprecated Version:", [main, infoheader]]]
+        paths:
+        - path: [["fields#group"], ["fields#version"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: api_group
+          - type: version
+          field_separators:
+          - type: kind
+      latest_version:
+        header: [["Latest Version:", [main, infoheader]]]
+        path: ["fields#resource", "fields#group", "fields#version"]
+        datagetter: datagetter_latest_version
+        formatter: list
+        formatting:
+          field_colors:
+          - type: api_group
+          - type: version
+          - context: main
+            type: status_not_ok
+          field_separators:
+          - type: kind
+          - type: space
+      planned_removal:
+        header: [["Planned Removal:", [main, infoheader]]]
+        path: "fields#removed_release"
+        type: version
+  listpad:
+    listgetter: get_resource_info_by_last_applied_configuration
+    listgetter_args:
+      _kind_path: "fields#resource"
+      _api_family_path: "fields#group"
+      version_path: "fields#version"
+      group_path: "fields#group"
+      match_api_version: true
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch
+      # This causes resourceinfodispatch to get kind from the object
+      kind: ""
+      api_family: ""
+    field_indexes:
+      Normal: [kind, namespace, name]
+    sortcolumn: namespace
+    fields:
+      kind:
+        header: "Kind:"
+        path: "kind"
+        type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          field_separators:
+          - type: kind_api_group
+  shortcuts:
+    "Show Events":
+    "Last Applied Configuration":
+    "YAML":

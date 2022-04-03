@@ -1477,6 +1477,28 @@ def datagetter_available_views(obj, path, default):
 
 	return available_views, {}
 
+def datagetter_latest_version(obj, path, default):
+	if obj is None or path is None:
+		return default
+
+	# path is paths to kind, api_family
+	kind = deep_get(obj, path[0])
+	api_family = deep_get(obj, path[1])
+	old_version = deep_get(obj, path[2])
+	kind = kh.guess_kind((kind, api_family))
+
+	latest_api = kh.get_latest_api(kind)
+	if "/" in latest_api:
+		group, version = latest_api.split("/")
+	else:
+		group = ""
+		version = latest_api
+
+	message = ""
+	if old_version == version:
+		message = "(No newer version available; the API might be deprecated)"
+	return (group, version, f"{message}"), {}
+
 def datagetter_metrics(obj, path, default):
 	if obj is None or path is None:
 		return default
@@ -2710,7 +2732,7 @@ def check_matchlist(item, matchlist):
 	exacts, prefixes, suffixes, ins = split_matchlist(matchlist)
 	return check_matchlists(item, exacts = exacts, prefixes = prefixes, suffixes = suffixes, ins = ins)
 
-def listgetter_ansible_volumes(obj):
+def listgetter_ansible_volumes(obj, **kwargs):
 	info = []
 
 	# Find all mounts
@@ -4433,6 +4455,10 @@ def get_pod_log_by_name_namespace_container(name, namespace, container, tail_lin
 	if status == 200:
 		# Everything is successful
 		internal_error = False
+	elif status == 400:
+		# Not successful; error in rawmsg
+		rawmsg = "%s CRITICAL: %s" % (datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), rawmsg)
+		internal_error = True
 	elif status == 500:
 		# Not successful; error in rawmsg
 		internal_error = True
@@ -4440,7 +4466,7 @@ def get_pod_log_by_name_namespace_container(name, namespace, container, tail_lin
 		rawmsg = "%s CRITICAL: Failed to fetch log for pod (name: %s, namespace: %s, container: %s); Request Status: %s" % (datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), name, namespace, container, status)
 		internal_error = True
 
-	if rawmsg.startswith("Unable to retrieve container logs for"):
+	if rawmsg.startswith("unable to retrieve container logs for"):
 		rawmsg = "%s CRITICAL: %s" % (datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), rawmsg)
 		internal_error = True
 
@@ -4494,41 +4520,49 @@ def resource_kind_to_rtype(resource):
 
 	return rtypes.get(resource, "[unknown]")
 
-def get_resource_info_by_last_applied_configuration(configuration, resources = []):
+def get_resource_info_by_last_applied_configuration(obj, **kwargs):
+	kind = deep_get(kwargs, "kind")
+	if kind is None:
+		return [], 404
+
+	configuration = {
+		"kind": kind[0]
+	}
+
+	if deep_get(kwargs, "match_api_version", False) == True:
+		version_path = deep_get(kwargs, "version_path")
+		group_path = deep_get(kwargs, "group_path")
+		api_version = f"{deep_get(obj, group_path)}/{deep_get(obj, version_path)}"
+		configuration["apiVersion"] = api_version
+
 	resource_info = []
 	status = None
 
-	for resource in resources:
-		items, _status = kh.get_list_by_kind_namespace(resource, "")
-		# This should ensure that we always get a status set (if we're passed resources)
-		# and that we return 200 if there's at least one match, and otherwise the first error
-		if _status != 200:
-			if status is None:
-				status = _status
-			continue
-		status = 200
+	items, _status = kh.get_list_by_kind_namespace(kind, "")
+	if _status != 200:
+		return resource_info, _status
 
-		for item in items:
-			last_applied_configuration = deep_get(item, "metadata#annotations#kubectl.kubernetes.io/last-applied-configuration", {})
-			if last_applied_configuration is None or len(last_applied_configuration) == 0:
-				continue
-			data = json.loads(last_applied_configuration)
-			match = True
-			for key in configuration:
-				if key not in data or configuration[key] != data[key]:
-					match = False
-					break
-			if match == True:
-				name = deep_get(item, "metadata#name")
-				namespace = deep_get(item, "metadata#namespace", "")
-				d = {
-					"kind": kh.guess_kind(resource),
-					"metadata": {
-						"namespace": namespace,
-						"name": name,
-					}
+	for item in items:
+		last_applied_configuration = deep_get(item, "metadata#annotations#kubectl.kubernetes.io/last-applied-configuration", {})
+		if last_applied_configuration is None or len(last_applied_configuration) == 0:
+			continue
+		data = json.loads(last_applied_configuration)
+		match = True
+		for key in configuration:
+			if key not in data or configuration[key] != data[key]:
+				match = False
+				break
+		if match == True:
+			name = deep_get(item, "metadata#name")
+			namespace = deep_get(item, "metadata#namespace", "")
+			d = {
+				"kind": kind,
+				"metadata": {
+					"namespace": namespace,
+					"name": name,
 				}
-				resource_info.append(d)
+			}
+			resource_info.append(d)
 
 	return resource_info, status
 
@@ -8768,38 +8802,6 @@ def field_processor_kind(obj, path, extra_path = None, fallback = None, formatti
 			field = __field_processor_list(tmp)
 	return field
 
-def field_processor_latest_api_version(obj, path, extra_path = None, fallback = None, formatting = None):
-	match = True
-	if path is None or type(path) != list or len(path) != 3 or obj is None:
-		match = False
-	else:
-		resource = deep_get(obj, path[0])
-		group = deep_get(obj, path[1])
-		deprecated_api = deep_get(obj, path[2])
-		if resource is None or len(resource) == 0:
-			match = False
-		else:
-			kind = kh.guess_kind((deep_get(obj, path[0]), deep_get(obj, path[1])))
-			latest_api = kh.get_latest_api(kind)
-
-	if match == False:
-		if fallback is None:
-			field = [("strings", "none")]
-		else:
-			field = fallback
-	else:
-		if latest_api == deprecated_api:
-			value = "No newer API known; the API might be deprecated"
-			formatting = ("main", "status_not_ok")
-			field = [(f"{value}", formatting)]
-		else:
-			group, version = latest_api.split("/")
-			if formatting is not None:
-				field = __field_processor_list([group, version], formatting = formatting)
-			else:
-				field = __field_processor_list([group, version])
-	return field
-
 # All field processors have to return format lists (aka lists of tuples)
 def field_processor_empty(obj, path, extra_paths = None, fallback = None, formatting = None):
 	value = deep_get(obj, path)
@@ -10239,10 +10241,11 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				_api_family = deep_get(listgetter_args, "_api_family")
 				_api_family_path = deep_get(listgetter_args, "_api_family_path")
 				if _kind is None:
-					_kind = deep_get(obj, _kind_path, "")
+					_kind = deep_get(obj, _kind_path)
 				if _api_family is None:
 					_api_family = deep_get(obj, _api_family_path, "")
-				_kind = (_kind, _api_family)
+				if _kind is not None:
+					_kind = kh.guess_kind((_kind, _api_family))
 				_namespace = deep_get(listgetter_args, "namespace")
 				_namespace_path = deep_get(listgetter_args, "_namespace_path", "")
 				if _namespace is None:
@@ -11764,13 +11767,14 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 
 	if kind == ("", ""):
 		kind = deep_get(obj, "kind", "")
-		api_version = deep_get(obj, "apiVersion", "")
-		# Is this a core API?
-		if "/" not in api_version:
-			api_family = ""
-		else:
-			api_family = api_version.split("/")[0]
-		kind = (kind, api_family)
+		if type(kind) == str:
+			api_version = deep_get(obj, "apiVersion", "")
+			# Is this a core API?
+			if "/" not in api_version:
+				api_family = ""
+			else:
+				api_family = api_version.split("/")[0]
+			kind = (kind, api_family)
 
 	if kind in infoviews:
 		return genericinfoloop(stdscr, obj, kind, **kwargs)
@@ -14063,79 +14067,6 @@ infoviews_builtin = {
 				"kind": ("PriorityClass", "scheduling.k8s.io"),
 				"name_path": "spec#template#spec#priorityClassName",
 			},
-		},
-	},
-	("__Deprecation", ""): {
-		"windowheader": "Deprecation Info",
-		"field_indexes": {
-			"Normal": ["kind", "namespace", "name"],
-		},
-		"fields": {
-			"kind": {
-				"header": "Kind:",
-				"path": "kind",
-				"type": "raw",
-				"formatting": {
-					"field_colors": [
-						{ "type": "kind", },
-						{ "type": "kind", },
-					],
-					"field_separators": [
-						{ "type": "kind_api_group", },
-					],
-				},
-				"formatter": "list",
-			},
-		},
-		"sortcolumn": "namespace",
-		"extraref": "kind",
-		"activatedfun": resourceinfodispatch,
-		"name_path": "",
-		"namespace_path": "",
-		"creation_timestamp_path": "",
-		"infopad": {
-			"Deprecated API:": {
-				"path": ["fields#resource", "fields#group"],
-				"processor": field_processor_kind,
-				"formatting": {
-					"field_colors": [("types", "kind"), ("types", "api_group")],
-					"item_separators": [("separators", "kind_api_group")],
-				},
-			},
-			"Deprecated Version:": {
-				"processor": field_processor_list,
-				"formatting": {
-					"field_colors": [("types", "generic"), ("types", "generic")],
-					"item_separators": [("separators", "kind")],
-					"conditionals": {
-						"<<<empty>>>": {
-							"skip": True,
-							"no_separator": True,
-						},
-					},
-				},
-				"extra_paths": ["fields#group", "fields#version"]
-			},
-			"Latest Version:": {
-				"processor": field_processor_latest_api_version,
-				"formatting": {
-					"field_colors": [("types", "generic"), ("types", "generic")],
-					"item_separators": [("separators", "kind")],
-				},
-				"path": ["fields#resource", "fields#group", "fields#version"],
-			},
-			"Planned removal:": {
-				"path": "fields#removed_release",
-			},
-		},
-		"listpad": {
-			"listgetter": "get_resource_info_by_last_applied_configuration(configuration = {'apiVersion': deep_get(obj, 'fields#group') + '/' + deep_get(obj, 'fields#version', ''), 'kind': kh.guess_kind((deep_get(obj, 'fields#resource'), deep_get(obj, 'fields#group', '')))[0]}, resources = [(deep_get(obj, 'fields#resource'), deep_get(obj, 'fields#group', ''))])",
-			"infogetter": generic_infogetter,
-		},
-		"shortcuts": {
-			# Logs have no last applied configuration
-			"Show Events": {},
-			"Last Applied Configuration": {},
 		},
 	},
 	("DestinationRule", "networking.istio.io"): {
@@ -16664,68 +16595,6 @@ views_special = {
 			"View YAML dump": {},
 		},
 		"is_taggable": False,
-	},
-	# Requires Kubernetes v1.19 or newer
-	"Deprecations": {
-		"commandline": ["deprecations"],
-		"group": "Administration",
-		"field_indexes": {
-			"Normal": ["deprecated_api", "deprecated_removed_release"],
-		},
-		"fields": {
-			"deprecated_api": {
-				"header": "Deprecated API:",
-				"path": [["resource", "group", "version"], "tuple"],
-				"datagetter": datagetter_deprecated_api,
-				"formatter": "list",
-				"formatting": {
-					"field_colors": [
-						{
-							"type": "kind",
-						},
-						{
-							"type": "api_group",
-						},
-						{
-							"type": "version",
-						},
-					],
-					"field_separators": [
-						{
-							"type": "kind_api_group",
-						},
-						{
-							"type": "kind",
-						},
-					],
-				},
-			},
-			"deprecated_removed_release": {
-				"header": "Planned Removal:",
-				"path": [["removed_release"], "str"],
-				"datagetter": datagetter_metrics,
-				"formatting": {
-					"field_colors": [
-						{
-							"type": "version",
-						},
-					],
-				},
-			},
-		},
-		"kind": ("__Deprecation", ""),
-		"sortcolumn": "deprecated_api",
-		"listgetter": "get_metrics_list",
-		"listgetter_args": {
-			"filter": "apiserver_requested_deprecated_apis",
-		},
-		"shortcuts": {
-			# Override:
-			"Edit resource": {},
-			"View YAML dump": {},
-		},
-		"is_taggable": False,
-		"check_availability": is_cluster_reachable,
 	},
 	"Inventory": {
 		"commandline": ["hosts", "machines", "mach", "inventory", "inv", "hosts", "baremetal"],

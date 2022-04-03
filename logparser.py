@@ -2698,8 +2698,6 @@ builtin_parsers = [
 	#
 	# One or more of pod, container, image must be specified
 
-	("internal_error", "", "", "basic_8601_colon_severity"),
-
 	("3scale-kourier-gateway", "", "", "istio"),
 
 	("activator", "istio-init_init", "", "basic_8601"),

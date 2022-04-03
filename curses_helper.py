@@ -711,21 +711,28 @@ def themearray_to_string(themearray):
 	for fragment in themearray:
 		if type(fragment) != tuple:
 			raise ValueError(f"themearray_to_string() called with an invalid themearray: \"{themearray}\"; element: \"{fragment}\" has invalid type {type(fragment)}; expected tuple")
-		# This is a string lookup
-		if type(fragment[0]) == str and type(fragment[1]) == str and (len(fragment) == 2 or len(fragment) == 3 and type(fragment[2]) == bool):
+		# (string, attributes)
+		if type(fragment[0]) == str and type(fragment[1]) == int:
+			string += fragment[0]
+		# (context, string)
+		# (context, string, selected)
+		elif type(fragment[0]) == str and type(fragment[1]) == str and (len(fragment) == 2 or len(fragment) == 3 and type(fragment[2]) == bool):
 			themed_tuple = deep_get(theme, f"{fragment[0]}#{fragment[1]}")
 			if themed_tuple is None:
 				raise KeyError(f"The theme key-pair context: \"{fragment[0]}\", key: \"{fragment[1]}\" does not exist")
 			string += themed_tuple[0][0]
+		# ((string, (context, theme)), selected)
 		elif type(fragment[0]) == tuple and type(fragment[1]) == bool:
-			# This is a string lookup
+			# ((context, string), selected)
 			if type(fragment[0][1]) == str:
 				themed_tuple = deep_get(theme, f"{fragment[0][0]}#{fragment[0][1]}")
 				if themed_tuple is None:
 					raise KeyError(f"The theme key-pair context: \"{fragment[0][0]}\", key: \"{fragment[0][1]}\" does not exist")
 				string += themed_tuple[0][0]
+			# ((string, (context, theme)), selected)
 			else:
 				string += fragment[0][0]
+		# (string, (context, theme))
 		elif type(fragment[0]) == str and type(fragment[1]) == tuple:
 			string += fragment[0]
 		else:

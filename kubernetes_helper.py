@@ -2137,6 +2137,9 @@ class KubernetesHelper:
 			if kind in self.kubernetes_resources:
 				return kind
 
+			if kind[0].startswith("__"):
+				return kind
+
 			# We have a tuple, but it didn't have an entry in kubernetes_resources;
 			# it might be api + api_family instead though, but for that we need to scan
 			for _kind in self.kubernetes_resources:
@@ -2289,11 +2292,9 @@ class KubernetesHelper:
 			pass
 		elif status == 400:
 			d = json.loads(result.data)
-			# Bad request; is the feature disabled? If so we ignore the failure
-			message = deep_get(d, "message", "")
-			tmp = re.match(r"feature.*disabled", message)
-			if tmp is None:
-				raise Exception(f"400: Bad Request; method {method} URL {url} header_params: {header_params}; result.data: {result.data}")
+			# Bad request
+			# The feature might be disabled, or the pod is waiting to start/terminated
+			message = f"400: Bad Request; " + deep_get(d, "message", "")
 		elif status == 401:
 			# Unauthorized
 			message = f"401: Unauthorized; method {method} URL {url} header_params: {header_params}"
