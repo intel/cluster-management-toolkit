@@ -17152,11 +17152,14 @@ def populate_views():
 					w_itemgetter_args = deep_get(_shortcuts[shortcut], "itemgetter_args", {})
 					w_sortcolumn = deep_get(_shortcuts[shortcut], "sortcolumn", {})
 
-					if key is None or helptext is None or action is None or "<missing>" in [key, helptext, action]:
+					if key is None or helptext is None or action is None or "<missing>" in [key, helptext]:
 						sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
 							 f"key: {key}\n"
 							 f"helptext: {helptext}\n"
-							 f"action: {action}\n"
+							  "Aborting.")
+
+					if widget is None and "<missing>" in [action]:
+						sys.exit(f"View-file {view_file} is invalid: at least one of [widget, action] needs to be specified.\n"
 							  "Aborting.")
 
 					key = key.lower()
