@@ -3807,33 +3807,31 @@ def get_app_status_info(**kwargs):
 
 	return info
 
-class ConfigMapDataInfo:
-	def __init__(self, configmap, cm_name, cm_namespace, rtype, data):
-		self.configmap = configmap
-		self.cm_name = cm_name
-		self.cm_namespace = cm_namespace
-		self.ref = self if data is not None else None
-		self.rtype = rtype
-		self.data = data
-	def __repr__(self):
-		return repr((self.configmap, self.cm_name, self.cm_namespace, self.rtype, self.data))
-
-def get_cm_data_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	data = []
-
-	if obj is None:
-		return []
+def listgetter_configmap_data(obj, **kwargs):
+	vlist = []
 
 	cm_name = deep_get(obj, "metadata#name")
-	cm_namespace = deep_get(obj, "metadata#namespace")
+	cm_namespace = deep_get(obj, "metadata#namespace", "")
+
 	for key, value in deep_get(obj, "binary_data", {}).items():
-		data.append(ConfigMapDataInfo(key, cm_name, cm_namespace, "Binary", value))
+		vlist.append({
+			"cm_name": cm_name,
+			"cm_namespace": cm_namespace,
+			"configmap": key,
+			"type": "Binary",
+			"data": value,
+		})
 
 	for key, value in deep_get(obj, "data", {}).items():
-		data.append(ConfigMapDataInfo(key, cm_name, cm_namespace, identify_cmdata(key, cm_name, cm_namespace, value), value))
+		vlist.append({
+			"cm_name": cm_name,
+			"cm_namespace": cm_namespace,
+			"configmap": key,
+			"type": identify_cmdata(key, cm_name, cm_namespace, value),
+			"data": value,
+		})
 
-	return data
+	return vlist, 200
 
 class StrategyInfo:
 	def __init__(self, strategy, name, operator, target):
@@ -8474,7 +8472,7 @@ def cmdataloop(stdscr, obj, view, info = None):
 
 	dataarray = [
 		("Data: ", ("main", "infoheader")),
-		(f"{obj.configmap}", ("types", "generic"))
+		(deep_get(obj, "configmap"), ("types", "generic"))
 	]
 	uip.addthemearray(infopad, dataarray, y = 0, x = 0)
 
@@ -8489,29 +8487,29 @@ def cmdataloop(stdscr, obj, view, info = None):
 			messages = []
 
 			# We cannot reliably detect yaml
-			dataformat = identify_cmdata(obj.configmap, obj.cm_name, obj.cm_namespace, obj.data)
+			dataformat = identify_cmdata(deep_get(obj, "configmap"), deep_get(obj, "cm_name"), deep_get(obj, "cm_namespace"), deep_get(obj, "data"))
 			if raw_output == True:
 				dataformat = "__Raw"
 
 			if dataformat in ["YAML", "JSON"]:
-				messages = iktlib.format_yaml([obj.data])
+				messages = iktlib.format_yaml([deep_get(obj, "data")])
 			elif dataformat == "TOML":
-				messages = iktlib.format_toml(split_msg(obj.data))
+				messages = iktlib.format_toml(split_msg(deep_get(obj, "data")))
 			elif dataformat == "CRT":
-				messages = iktlib.format_crt(split_msg(obj.data))
+				messages = iktlib.format_crt(split_msg(deep_get(obj, "data")))
 			elif dataformat == "XML":
-				messages = iktlib.format_xml(split_msg(obj.data))
+				messages = iktlib.format_xml(split_msg(deep_get(obj, "data")))
 			elif dataformat == "INI":
-				messages = iktlib.format_ini(split_msg(obj.data))
+				messages = iktlib.format_ini(split_msg(deep_get(obj, "data")))
 			elif dataformat == "FluentBit":
-				messages = iktlib.format_fluentbit(split_msg(obj.data))
+				messages = iktlib.format_fluentbit(split_msg(deep_get(obj, "data")))
 			elif dataformat == "CaddyFile":
-				messages = iktlib.format_caddyfile(split_msg(obj.data))
+				messages = iktlib.format_caddyfile(split_msg(deep_get(obj, "data")))
 			elif dataformat == "NGINX":
-				messages = iktlib.format_nginx(split_msg(obj.data))
+				messages = iktlib.format_nginx(split_msg(deep_get(obj, "data")))
 			else:
 				messages = []
-				for line in split_msg(obj.data):
+				for line in split_msg(deep_get(obj, "data")):
 					messages.append([(line, ("types", "generic"))])
 			uip.update_log_info(None, None, None, messages)
 			uip.loglen = len(messages)
@@ -13735,18 +13733,6 @@ infoviews_builtin = {
 					"include_final_path": True,
 				},
 			},
-		},
-	},
-	("ConfigMap", ""): {
-		"windowheader": "Config Map Info",
-		"field_indexes": {
-			"Normal": ["configmap", "rtype"],
-		},
-		"sortcolumn": "configmap",
-		"activatedfun": cmdataloop,
-		"infopad": {},
-		"listpad": {
-			"infogetter": get_cm_data_info,
 		},
 	},
 	("ControllerRevision", "apps"): {

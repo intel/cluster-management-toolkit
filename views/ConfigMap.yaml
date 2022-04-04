@@ -24,3 +24,22 @@ listview:
         pathtype: value
         type: bool
         default: ""
+infoview:
+  name: Config Map Info
+  listpad:
+    on_activation:
+      call: cmdataloop
+    listgetter: listgetter_configmap_data
+    infogetter: generic_infogetter
+    field_indexes:
+      Normal: [data, type]
+    sortcolumn: configmap
+    fields:
+      data:
+        header: "Data:"
+        path: configmap
+        type: str
+      type:
+        header: "Type:"
+        path: type
+        type: str
