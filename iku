@@ -2894,17 +2894,21 @@ def get_netpol_rule_info(**kwargs):
 			ports.append((deep_get(port, "port", "*"), deep_get(port, "protocol", "TCP")))
 		if len(ports) == 0:
 			ports = [("*", "TCP")]
-		for item in deep_get(rule, "to"):
-			ipblock = deep_get(item, "ipBlock#cidr", "")
-			ipblock_exceptions = deep_get(item, "ipBlock#except", [])
-			pod_selector = []
-			for key, value in deep_get(item, "podSelector#matchLabels", {}).items():
-				pod_selector.append((key, value))
-			namespace_selector = []
-			for key, value in deep_get(item, "namespaceSelector#matchLabels", {}).items():
-				namespace_selector.append((key, value))
+		to_rules = deep_get(rule, "to", [])
+		if len(to_rules) > 0:
+			for item in to_rules:
+				ipblock = deep_get(item, "ipBlock#cidr", "")
+				ipblock_exceptions = deep_get(item, "ipBlock#except", [])
+				pod_selector = []
+				for key, value in deep_get(item, "podSelector#matchLabels", {}).items():
+					pod_selector.append((key, value))
+				namespace_selector = []
+				for key, value in deep_get(item, "namespaceSelector#matchLabels", {}).items():
+					namespace_selector.append((key, value))
 
-			info.append(NetworkPolicyRuleInfo(policy_type, ports, ipblock, ipblock_exceptions, pod_selector, namespace_selector))
+				info.append(NetworkPolicyRuleInfo(policy_type, ports, ipblock, ipblock_exceptions, pod_selector, namespace_selector))
+		else:
+			info.append(NetworkPolicyRuleInfo(policy_type, ports, "", [], [], []))
 
 	policy_type = "Ingress"
 
@@ -2914,17 +2918,23 @@ def get_netpol_rule_info(**kwargs):
 			ports.append((deep_get(port, "port", "*"), deep_get(port, "protocol", "TCP")))
 		if len(ports) == 0:
 			ports = [("*", "TCP")]
-		for item in deep_get(rule, "from"):
-			ipblock = deep_get(item, "ipBlock#cidr", "")
-			ipblock_exceptions = deep_get(item, "ipBlock#except", [])
-			pod_selector = []
-			for key, value in deep_get(item, "podSelector#matchLabels", {}).items():
-				pod_selector.append((key, value))
-			namespace_selector = []
-			for key, value in deep_get(item, "namespaceSelector#matchLabels", {}).items():
-				namespace_selector.append((key, value))
+		from_rules = deep_get(rule, "from", [])
 
-			info.append(NetworkPolicyRuleInfo(policy_type, ports, ipblock, ipblock_exceptions, pod_selector, namespace_selector))
+		from_rules = deep_get(rule, "from", [])
+		if len(from_rules) > 0:
+			for item in from_rules:
+				ipblock = deep_get(item, "ipBlock#cidr", "")
+				ipblock_exceptions = deep_get(item, "ipBlock#except", [])
+				pod_selector = []
+				for key, value in deep_get(item, "podSelector#matchLabels", {}).items():
+					pod_selector.append((key, value))
+				namespace_selector = []
+				for key, value in deep_get(item, "namespaceSelector#matchLabels", {}).items():
+					namespace_selector.append((key, value))
+
+				info.append(NetworkPolicyRuleInfo(policy_type, ports, ipblock, ipblock_exceptions, pod_selector, namespace_selector))
+		else:
+			info.append(NetworkPolicyRuleInfo(policy_type, ports, "", [], [], []))
 
 	return info
 
