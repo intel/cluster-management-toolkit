@@ -1365,6 +1365,11 @@ class KubernetesHelper:
 			"api_family": ["apis/etcd.database.coreos.com/v1beta2/"],
 			"api": "etcdclusters",
 		},
+		# extensions.istio.io
+		("WasmPlugin", "extensions.istio.io"): {
+			"api_family": ["apis/install.istio.io/v1alpha1/"],
+			"api": "wasmplugins",
+		},
 		# eventing.knative.dev
 		("Broker", "eventing.knative.dev"): {
 			"api_family": ["apis/eventing.knative.dev/v1/", "apis/eventing.knative.dev/v1beta1/"],
@@ -1706,6 +1711,10 @@ class KubernetesHelper:
 		("Gateway", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
 			"api": "gateways",
+		},
+		("ProxyConfig", "networking.istio.io"): {
+			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
+			"api": "proxyconfigs",
 		},
 		("ServiceEntry", "networking.istio.io"): {
 			"api_family": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
