@@ -14,8 +14,15 @@
       loglevel: notice
 - name: calico
   matchkeys:
+  - container_name: calico-apiserver
+  parser_rules:
+  - name: glog
+  - name: key_value
+- name: calico
+  matchkeys:
   - container_name: calico-node
   - container_name: calico-kube-controllers
+  - container_name: calico-typha
   - container_name: upgrade-ipam
     container_type: init_container
     image_name: /calico/cni
@@ -38,6 +45,9 @@
         field: 4
   - name: override_severity
     overrides:
+    - matchtype: startswith
+      matchkey: "Typha starting up"
+      loglevel: notice
     - matchtype: regex
       matchkey: 'Starting node .* with version'
       loglevel: notice
