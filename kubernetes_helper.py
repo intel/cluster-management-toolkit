@@ -1456,6 +1456,11 @@ class KubernetesHelper:
 			"api_family": ["apis/k3s.cattle.io/v1/"],
 			"api": "addons",
 		},
+        # k8s.cni.cncf.io
+		("NetworkAttachmentDefinition", "k8s.cni.cncf.io"): {
+			"api_family": ["apis/k8s.cni.cncf.io/v1/"],
+			"api": "network-attachment-definitions",
+		},
 		# keda.sh
 		("ClusterTriggerAuthentication", "keda.sh"): {
 			"api_family": ["apis/keda.sh/v1alpha1/"],
