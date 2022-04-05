@@ -1079,13 +1079,14 @@ def get_hpa_metrics(obj, **kwargs):
 
 		described_object = None
 		kind = ""
-		api_version = ""
+		api_group = ""
 		object_name = ""
 
 		if metric_name in ["resource", "containerResource"]:
 			name = deep_get(metric, f"{metric_name}#name")
 		elif metric_name in ["pods", "object", "external"]:
 			name = deep_get(metric, f"{metric_name}#metric#name")
+			api_version = ""
 			if metric_type == "Object":
 				kind = deep_get(metric, f"{metric_name}#describedObject#kind")
 				api_version = deep_get(metric, f"{metric_name}#describedObject#apiVersion")
