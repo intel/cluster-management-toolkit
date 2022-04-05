@@ -1,0 +1,28 @@
+kind: APIServer
+api_family: operator.tigera.io
+default_command: apiservers
+command:
+- apisrvs
+- apisrv
+listview:
+  name: API Servers
+  group: Istio
+  field_indexes:
+    Normal: [name, status, age]
+  fields:
+    status:
+      header: "Status:"
+      path: "status#state"
+      type: str
+      formatter: value_mapper
+      formatting:
+          mapping:
+            mappings:
+              Ready:
+                field_colors:
+                - context: main
+                  type: status_ok
+              __default:
+                field_colors:
+                - context: main
+                  type: status_unknown

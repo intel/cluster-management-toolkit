@@ -1799,6 +1799,27 @@ class KubernetesHelper:
 			"api_family": ["apis/operators.coreos.com/v1alpha1/"],
 			"api": "subscriptions",
 		},
+		# operator.tigera.io
+		("APIServer", "operator.tigera.io"): {
+			"api_family": ["apis/operator.tigera.io/v1/"],
+			"api": "apiservers",
+			"namespaced": False,
+		},
+		("ImageSet", "operator.tigera.io"): {
+			"api_family": ["apis/operator.tigera.io/v1/"],
+			"api": "imagesets",
+			"namespaced": False,
+		},
+		("Installation", "operator.tigera.io"): {
+			"api_family": ["apis/operator.tigera.io/v1/"],
+			"api": "installations",
+			"namespaced": False,
+		},
+		("TigeraStatus", "operator.tigera.io"): {
+			"api_family": ["apis/operator.tigera.io/v1/"],
+			"api": "tigerastatuses",
+			"namespaced": False,
+		},
 		# packages.operators.coreos.com
 		("PackageManifest", "packages.operators.coreos.com"): {
 			"api_family": ["apis/packages.operators.coreos.com/v1/"],

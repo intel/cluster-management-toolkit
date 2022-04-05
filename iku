@@ -825,11 +825,17 @@ def map_value(value, references = None, selected = False, default_field_color = 
 		string = str(value)
 		_string = string
 		if match_case is False:
+			matched = False
 			if string in _mapping and string.lower() in _mapping and string != string.lower():
 				raise Exception(f"Field {field}: when using match_case == False the mapping cannot contain keys that only differ in case")
 			for key in _mapping:
 				if key.lower() == string.lower():
 					_string = key
+				matched = True
+			if matched == False and "__default" in _mapping:
+				_string = "__default"
+		elif _string not in _mapping and "__default" in _mapping:
+			_string = "__default"
 		field_colors = deep_get(_mapping, f"{_string}#field_colors")
 	else:
 		raise Exception(f"Unknown type {type(value)} for mapping/range")
