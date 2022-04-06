@@ -45,10 +45,10 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
-from logparser import logparser, logparser_initialised, loglevel, split_msg, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
+from logparser import logparser, logparser_initialised, loglevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import deep_get, deep_get_list, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp
+from iktlib import split_msg, deep_get, deep_get_list, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
 
 from ansible_helper import ansible_clean_results, ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
@@ -3836,15 +3836,18 @@ def listgetter_configmap_data(obj, **kwargs):
 			"cm_namespace": cm_namespace,
 			"configmap": key,
 			"type": "Binary",
+			"formatter": None,
 			"data": value,
 		})
 
 	for key, value in deep_get(obj, "data", {}).items():
+		data_type, formatter = identify_cmdata(key, cm_name, cm_namespace, value)
 		vlist.append({
 			"cm_name": cm_name,
 			"cm_namespace": cm_namespace,
 			"configmap": key,
-			"type": identify_cmdata(key, cm_name, cm_namespace, value),
+			"type": data_type,
+			"formatter": formatter,
 			"data": value,
 		})
 
@@ -7131,20 +7134,17 @@ def genericlistloop(stdscr, view):
 	else:
 		helptext = generate_helptext(view, "listview", [])
 	if "activatedfun" in viewref:
-		_activatedfun = viewref["activatedfun"]
-		if type(_activatedfun) == str:
-			activatedfun = eval(_activatedfun)
-		else:
-			activatedfun = _activatedfun
+		activatedfun = viewref["activatedfun"]
 	else:
 		activatedfun = genericinfoloop
+	on_activation = deep_get(viewref, "on_activation", {})
 	update_delay = deep_get(viewref, "update_delay", -1)
 
 	sortorder_reverse = deep_get(viewref, "sortorder_reverse", False)
 	is_taggable = deep_get(viewref, "is_taggable", True) and "actions" in viewref
 	extra_vars = deep_get(viewref, "extra_vars", {})
 
-	uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun)
+	uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
 
 	# For the status bar; position is always at the bottom of the screen and the entire width of the screen
 	statusbar = uip.init_statusbar()
@@ -7473,7 +7473,7 @@ def genericlistloop(stdscr, view):
 				else:
 					namespace = selection
 			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, f"{view}#fields"), sortcolumn = deep_get(views, f"{view}#sortcolumn"), denylist = denylist)
-			uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun)
+			uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
 			headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = 1, xpos = 1)
 
 			# For the status bar; position is always at the bottom of the screen and the entire width of the screen
@@ -7953,11 +7953,12 @@ def clusteroverviewloop(stdscr, view):
 	windowheader = view
 	helptext = views[view]["helptext"]
 	activatedfun = views[view]["activatedfun"]
+	on_activation = deep_get(views[view], "on_activation", {})
 	update_delay = views[view].get("update_delay", -1)
 
 	sortorder_reverse = views[view].get("sortorder_reverse", False)
 
-	uip.init_window(field_list, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun)
+	uip.init_window(field_list, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
 
 	infopadheight = 9
 
@@ -8474,117 +8475,45 @@ def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
 					break
 	else:
 		dataformat = "Empty"
-	return dataformat
 
-def cmdataloop(stdscr, obj, view, info = None):
-	uip = UIProps(stdscr)
+	if dataformat in ["YAML", "JSON"]:
+		formatter = iktlib.format_yaml
+	elif dataformat == "TOML":
+		formatter = iktlib.format_toml
+	elif dataformat == "CRT":
+		formatter = iktlib.format_crt
+	elif dataformat == "XML":
+		formatter = iktlib.format_xml
+	elif dataformat == "INI":
+		formatter = iktlib.format_ini
+	elif dataformat == "FluentBit":
+		formatter = iktlib.format_fluentbit
+	elif dataformat == "CaddyFile":
+		formatter = iktlib.format_caddyfile
+	elif dataformat == "NGINX":
+		formatter = iktlib.format_nginx
+	else:
+		formatter = iktlib.format_none
 
-	uip.init_window(field_list = None, windowheader = "Config Map Data", helptext = helptexts.configmapdata)
+	return dataformat, formatter
 
-	# For generic information
-	infopad = uip.init_infopad(height = 1, width = -1, ypos = 1, xpos = 1)
+def identify_formatter(dataformat, kind = None, obj = None, path = None):
+	formatter = iktlib.format_none
 
-	# For the status bar; position is always at the bottom of the screen and the entire width of the screen
-	statusbar = uip.init_statusbar()
-
-	dataarray = [
-		("Data: ", ("main", "infoheader")),
-		(deep_get(obj, "configmap"), ("types", "generic"))
-	]
-	uip.addthemearray(infopad, dataarray, y = 0, x = 0)
-
-	# For the configmap data
-	tspad, logpad = uip.init_logpad(width = -1, ypos = 3, xpos = 1, timestamps = False)
-	raw_output = False
-
-	while True:
-		uip.countdown_to_update()
-
-		if uip.is_update_triggered():
-			messages = []
-
-			# We cannot reliably detect yaml
-			dataformat = identify_cmdata(deep_get(obj, "configmap"), deep_get(obj, "cm_name"), deep_get(obj, "cm_namespace"), deep_get(obj, "data"))
-			if raw_output == True:
-				dataformat = "__Raw"
-
-			if dataformat in ["YAML", "JSON"]:
-				messages = iktlib.format_yaml([deep_get(obj, "data")])
-			elif dataformat == "TOML":
-				messages = iktlib.format_toml(split_msg(deep_get(obj, "data")))
-			elif dataformat == "CRT":
-				messages = iktlib.format_crt(split_msg(deep_get(obj, "data")))
-			elif dataformat == "XML":
-				messages = iktlib.format_xml(split_msg(deep_get(obj, "data")))
-			elif dataformat == "INI":
-				messages = iktlib.format_ini(split_msg(deep_get(obj, "data")))
-			elif dataformat == "FluentBit":
-				messages = iktlib.format_fluentbit(split_msg(deep_get(obj, "data")))
-			elif dataformat == "CaddyFile":
-				messages = iktlib.format_caddyfile(split_msg(deep_get(obj, "data")))
-			elif dataformat == "NGINX":
-				messages = iktlib.format_nginx(split_msg(deep_get(obj, "data")))
+	if dataformat is None:
+		if kind is not None and obj is not None and path is not None:
+			if kind == ("ConfigMap", ""):
+				cmdata_name = path
+				cm_name = deep_get(obj, "metadata#name")
+				cm_namespace = deep_get(obj, "metadata#namespace")
+				data = deep_get(obj, f"data#{path}")
+				dataformat, formatter = identify_cmdata(cmdata_name, cm_name, cm_namespace, data)
 			else:
-				messages = []
-				for line in split_msg(deep_get(obj, "data")):
-					messages.append([(line, ("types", "generic"))])
-			uip.update_log_info(None, None, None, messages)
-			uip.loglen = len(messages)
-			uip.update_window()
+				raise ValueError(f"We do not know how to auto-identify data for kind {kind}")
+		else:
+			raise ValueError(f"identify_formatter was called without dataformat and kind, obj, or path=None")
 
-		if uip.refresh == True:
-			# The data in some fields might become shorter, so we need to trigger a clear
-			uip.statusbar.erase()
-
-			# Resize the logpad as needed
-			uip.logpad.erase()
-			#uip.resize_logpad(uip.maxy - uip.logpadypos - 1, maxlen)
-
-			maxx = 0
-
-			# Populate the logpad
-			for y in range(0, min(uip.logpadheight, uip.loglen)):
-				ypos, xpos = uip.addthemearray(logpad, messages[uip.yoffset + y], y = y, x = 0)
-				maxx = max(maxx, xpos)
-			uip.resize_logpad(uip.maxy - uip.logpadypos - 1, maxx)
-
-			uip.refresh_window()
-			uip.refresh_infopad()
-			uip.refresh_logpad()
-			uip.refresh_statusbar()
-			curses.doupdate()
-			uip.refresh = False
-
-		uip.stdscr.timeout(100)
-		c = uip.stdscr.getch()
-		retval = uip.generic_keycheck(c)
-
-		if retval == curses_helper.retval.MATCH:
-			continue
-		elif retval == curses_helper.retval.RETURNONE:
-			return curses_helper.retval.RETURNDONE
-		elif retval == curses_helper.retval.RETURNFULL:
-			return retval
-
-		if c == curses.KEY_F2:
-			retval = selectwindow(stdscr, uip)
-			if retval == curses_helper.retval.RETURNFULL:
-				return retval
-			uip.refresh_all()
-		elif c == curses.KEY_F3:
-			retval = selectwindow(stdscr, uip, refresh_apis = True)
-			if retval == curses_helper.retval.RETURNFULL:
-				return retval
-			uip.refresh_all()
-		elif c == ord("B"):
-			uip.toggle_borders()
-			uip.refresh_all()
-			uip.force_update()
-		elif c == ord("R"):
-			raw_output = not raw_output
-			uip.yoffset = 0
-			uip.xoffset = 0
-			uip.force_update()
+	return formatter
 
 def check_cni_updates(cni, current_version):
 	new_version = None
@@ -8627,9 +8556,10 @@ def networkinfoloop(stdscr, view):
 	windowheader = view
 	helptext = views[view]["helptext"]
 	activatedfun = views[view]["activatedfun"]
+	on_activation = deep_get(views[view], "on_activation", {})
 	update_delay = views[view].get("update_delay", -1)
 
-	uip.init_window(None, windowheader = windowheader, update_delay = update_delay, sortcolumn = None, helptext = helptext, activatedfun = activatedfun)
+	uip.init_window(None, windowheader = windowheader, update_delay = update_delay, sortcolumn = None, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
 
 	# For generic information
 	infopad = uip.init_infopad(height = 9, width = -1, ypos = 1, xpos = 1)
@@ -9996,6 +9926,7 @@ def generate_helptext(view, viewtype, additional_helptexts = [], shortcuts = [])
 				helptext += helptexts.listmovement
 		elif "logpad" in viewref:
 			helptext += helptexts.linewrap
+			helptext += helptexts.toggleformatter
 			helptext += helptexts.spacer
 			helptext += helptexts.logmovement
 	elif viewtype == "listview":
@@ -10035,6 +9966,23 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	else:
 		objparams = None
 
+	# If we're using the logpad this can be used to format the data
+	formatter_path = deep_get(kwargs, "formatter_path")
+	# formatter_path has precedence over formatter, to allow ConfigMaps to work properly
+	formatter = deep_get(kwargs, "formatter")
+	if formatter_path is not None:
+		formatter = deep_get(obj, formatter_path)
+	elif formatter is not None:
+		if type(formatter) == str:
+			formatter = eval(formatter)
+	obj_path = deep_get(kwargs, "obj_path")
+	title = None
+	if obj_path is not None:
+		title_path = deep_get(kwargs, "title_path")
+		if title_path is not None:
+			title = deep_get(obj, title_path)
+		obj = deep_get(obj, obj_path)
+
 	uip = UIProps(stdscr)
 
 	if view not in infoviews:
@@ -10059,13 +10007,19 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, "fields"), sortcolumn = sortcolumn, denylist = field_denylist)
 
 	# If no window header has been specified that overrides the default, just use the view name with " Info" tacked on at the end
-	if "title" in kwargs:
+	# XXX: The fallback should be removed once we use view files for all info views, since the title is mandatory there
+	windowheader = deep_get(viewref, "windowheader", f"{view[0]} Info")
+	if title is not None:
+		windowheader = title
+	elif "title" in kwargs:
 		windowheader = deep_get(kwargs, "title")
-	else:
-		windowheader = deep_get(viewref, "windowheader", f"{view[0]} Info")
+	elif "title_path" in kwargs:
+		windowheader = deep_get(obj, title_path, windowheader)
+
 	sortorder_reverse = deep_get(viewref, "sortorder_reverse", False)
 	reversible = deep_get(viewref, "reversible", True)
 	activatedfun = deep_get(viewref, "activatedfun")
+	on_activation = deep_get(viewref, "listpad#on_activation", {})
 	labels = deep_get(viewref, "labels", "metadata#labels")
 	annotations = deep_get(viewref, "annotations", "metadata#annotations")
 	extraref = deep_get(viewref, "extraref")
@@ -10093,7 +10047,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			maxyx = stdscr.getmaxyx()
 			infopadheight = max(infopadheight, maxyx[0] - 3)
 
-	shortcuts = deep_get(viewref, "shortcuts", {})
+	shortcuts = copy.deepcopy(deep_get(viewref, "shortcuts", {}))
 
 	# Shortcuts
 	# Always include the shortcut for namespaces, unless overriden
@@ -10190,7 +10144,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 	helptext = generate_helptext(view, "infoview", additional_helptexts, shortcuts = shortcuts)
 
-	uip.init_window(field_dict, windowheader = windowheader, view = viewoverride, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, reversible = reversible, helptext = helptext, activatedfun = activatedfun, extraref = extraref, data = obj)
+	uip.init_window(field_dict, windowheader = windowheader, view = viewoverride, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, reversible = reversible, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation, extraref = extraref, data = obj)
 
 	# For generic information
 	if infopadheight > 0:
@@ -10223,6 +10177,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			tspad, logpad = uip.init_logpad(width = -1, ypos = infopadheight + 2, xpos = 1, timestamps = timestamps)
 
 	wrap_lines = False
+	raw_output = False
 
 	while True:
 		uip.countdown_to_update()
@@ -10317,9 +10272,14 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				linelen = update_field_widths(field_dict, field_names, uip.info)
 				uip.resize_listpad(listlen, linelen)
 			elif logpad is not None:
+				if formatter is not None:
+					formatted_obj = formatter(obj, raw = raw_output)
+				else:
+					formatted_obj = obj
+
 				infogetter = deep_get(viewref, "logpad#infogetter")
 				if infogetter is not None:
-					messages = infogetter(obj)
+					messages = infogetter(formatted_obj)
 					uip.update_log_info(None, None, None, messages)
 					uip.loglen = len(messages)
 
@@ -10458,27 +10418,38 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		uip.refresh = False
 
 		# XXX: Handle initial containers and configmaps
+		#      This should be done by the same code path as a regular activation; this solution is too ugly for words
 		if initial_container is not None:
 			match = None
 
 			if len(uip.info) > 0:
 				match_count = 0
 
+				obj_path = deep_get(viewref, "listpad#on_activation#obj_path")
 				for item in uip.info:
-					# If we're dealing with a config map we're interested in rtype == "Text",
+					# If we're dealing with a config map we're interested in non-binary types
 					# If we're dealing with a pod we're interested in containers
 					if hasattr(item, "kind") and item.kind in [("Container", ""), ("InitContainer", "")]:
 						name = item.ref["name"]
 						ikind = item.kind
-					elif hasattr(item, "rtype") and item.rtype in [rtype[4] for rtype in cmdata_format]:
-						name = item.configmap
-						ikind = ("ConfigMap", "")
+					elif view == ("ConfigMap", "") and item.type in [rtype[4] for rtype in cmdata_format]:
+						name = item.data
+						ikind = deep_get(viewref, "listpad#on_activation#kind", "")
+						if type(ikind) == str:
+							iapi_family = deep_get(viewref, "listpad#on_activation#api_family", "")
+							ikind = kh.guess_kind((ikind, iapi_family))
 					else:
 						continue
 
+					# If name isn't set we skip
+					if name is None:
+						continue
 					# If we have an exact match we don't care about partial matches
-					if name == initial_container:
-						match = item.ref
+					elif name == initial_container:
+						if view == ("ConfigMap", ""):
+							match = item.data
+						else:
+							match = item.ref
 						match_count = 1
 						break
 					elif name.startswith(initial_container):
@@ -10486,13 +10457,29 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						# on partial matches; instead just save the match and continue searching.
 						# If we get more than one partial match we ignore the partial matches.
 						if match_count == 0:
-							match = item.ref
+							if view == ("ConfigMap", ""):
+								match = item.data
+							else:
+								match = item.ref
 						match_count += 1
 
 				initial_container = None
 
 				if match is not None and match_count == 1:
-					retval = uip.activatedfun(uip.stdscr, match, ikind, info = obj)
+					on_activation_args = {}
+					formatter_path = deep_get(viewref, "listpad#on_activation#formatter_path")
+					if deep_get(viewref, "listpad#on_activation#formatter", "") == "identify":
+						formatter = identify_formatter(None, kind = view, obj = obj, path = match)
+						on_activation_args["formatter"] = formatter
+					else:
+						formatter = deep_get(viewref, "listpad#on_activation#formatter")
+						formatter_path = deep_get(viewref, "listpad#on_activation#formatter_path")
+						on_activation_args["formatter"] = formatter
+						on_activation_args["formatter_path"] = formatter_path
+					if view == ("ConfigMap", ""):
+						retval = uip.activatedfun(uip.stdscr, deep_get(obj, f"data#{match}", ""), ikind, info = None, title = name, **on_activation_args)
+					else:
+						retval = uip.activatedfun(uip.stdscr, match, ikind, info = obj, **on_activation_args)
 					if retval == curses_helper.retval.RETURNFULL:
 						return retval
 					uip.force_update()
@@ -10522,6 +10509,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			uip.refresh_all()
 		elif c == ord("B"):
 			uip.toggle_borders()
+			uip.refresh_all()
+			uip.force_update()
+		elif c == ord("R") and logpad is not None:
+			raw_output = not raw_output
 			uip.refresh_all()
 			uip.force_update()
 		elif c == ord("W"):
@@ -12110,7 +12101,6 @@ def run_playbook(playbook, nodes, values = None):
 	return __run_playbook(playbook.get("playbook"), nodes, values = values)
 
 def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
-	title = deep_get(kwargs, "title")
 	objects = []
 
 	for item in items:
@@ -12122,16 +12112,19 @@ def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None, **kwa
 		obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 		objects.append(obj)
 
-	themearrays = iktlib.format_yaml(objects)
-	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
+	title = deep_get(kwargs, "title")
+	#themearrays = iktlib.format_yaml(objects)
+	formatter = iktlib.format_yaml
+	return resourceinfodispatch(uip.stdscr, objects, ("__ResourceView", ""), title = title, formatter = formatter)
 
 def view_yaml(stdscr, **kwargs):
 	obj = deep_get(kwargs, "obj")
 	if obj is None:
 		return
 	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
-	themearrays = iktlib.format_yaml([obj])
-	return resourceinfodispatch(stdscr, themearrays, ("__ResourceView", ""), title = title)
+	# themearrays = iktlib.format_yaml([obj])
+	formatter = iktlib.format_yaml
+	return resourceinfodispatch(stdscr, [obj], ("__ResourceView", ""), title = title, formatter = formatter)
 
 def view_pod_logs(stdscr, **kwargs):
 	containers = []
@@ -12171,18 +12164,21 @@ def infoview_view_yaml(uip, kind, obj, **kwargs):
 	else:
 		_obj = [obj]
 	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
-	themearrays = iktlib.format_yaml(_obj)
-	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
+	# themearrays = iktlib.format_yaml(_obj)
+	formatter = iktlib.format_yaml
+	# return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
+	return resourceinfodispatch(uip.stdscr, _obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
 def infoview_view_last_applied_configuration(uip, kind, obj, **kwargs):
-	title = deep_get(kwargs, "title")
 	last_applied_configuration = deep_get(obj, "metadata#annotations#kubectl.kubernetes.io/last-applied-configuration", {})
 	if last_applied_configuration is not None and len(last_applied_configuration) > 0:
 		data = json.loads(last_applied_configuration)
 	else:
 		return
-	themearrays = iktlib.format_yaml([data])
-	return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
+	title = deep_get(kwargs, "title")
+	# themearrays = iktlib.format_yaml([data])
+	formatter = iktlib.format_yaml
+	return resourceinfodispatch(uip.stdscr, [data], ("__ResourceView", ""), title = title, formatter = formatter)
 
 def delete_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	success = True
@@ -17023,15 +17019,18 @@ def populate_views():
 
 				listpad = deep_get(d, "infoview#listpad", {})
 
-				activatedfun = deep_get(listpad, "on_activation#call")
+				on_activation = deep_get(listpad, "on_activation")
+				activatedfun = deep_get(on_activation, "call")
 				if type(activatedfun) == str:
 					activatedfun = eval(activatedfun)
-				override_kind = deep_get(listpad, "on_activation#kind")
-				override_api_family = deep_get(listpad, "on_activation#api_family", "")
+				override_kind = deep_get(on_activation, "kind")
+				override_api_family = deep_get(on_activation, "api_family", "")
 				if override_kind is None:
 					viewoverride = (kind, api_family)
 				else:
 					viewoverride = (override_kind, override_api_family)
+					on_activation["kind"] = viewoverride
+					on_activation.pop("api_family", "")
 
 				infoview_entry = {
 					"windowheader": name,
@@ -17043,6 +17042,9 @@ def populate_views():
 					"listpad": {},
 					"shortcuts": shortcuts,
 				}
+				if len(listpad) > 0:
+					infoview_entry["listpad"]["on_activation"] = on_activation
+
 				sortcolumn = deep_get(listpad, "sortcolumn")
 				if sortcolumn is not None:
 					infoview_entry["sortcolumn"] = sortcolumn

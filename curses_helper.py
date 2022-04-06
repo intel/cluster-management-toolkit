@@ -1338,6 +1338,7 @@ class UIProps:
 
 		# Function handler for <enter> / <double-click>
 		self.activatedfun = None
+		self.on_activation = {}
 		self.extraref = None
 		self.data = None
 
@@ -1408,7 +1409,7 @@ class UIProps:
 
 	# Default behaviour:
 	# timestamps enabled, no automatic updates, default sortcolumn = "status"
-	def init_window(self, field_list, view = None, windowheader = "", timestamp = True, update_delay = -1, sortcolumn = "status", sortorder_reverse = False, reversible = True, helptext = None, activatedfun = None, extraref = None, data = None):
+	def init_window(self, field_list, view = None, windowheader = "", timestamp = True, update_delay = -1, sortcolumn = "status", sortorder_reverse = False, reversible = True, helptext = None, activatedfun = None, on_activation = {}, extraref = None, data = None):
 		self.field_list = field_list
 		self.searchkey = ""
 		self.sortcolumn = sortcolumn
@@ -1431,6 +1432,7 @@ class UIProps:
 		self.helptext = helptext
 
 		self.activatedfun = activatedfun
+		self.on_activation = on_activation
 		self.extraref = extraref
 		self.data = data
 
@@ -2335,12 +2337,18 @@ class UIProps:
 					if extraref is not None:
 						view = getattr(selected, extraref, self.view)
 
+						on_activation = copy.deepcopy(self.on_activation)
+						kind = deep_get(on_activation, "kind", view)
+						on_activation.pop("kind", None)
 						if data is not None:
-							retval = activatedfun(self.stdscr, selected.ref, view, info = data)
+							retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
 						else:
-							retval = activatedfun(self.stdscr, selected.ref, view)
+							retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 					else:
-						retval = activatedfun(self.stdscr, selected.ref, self.view)
+						on_activation = copy.deepcopy(self.on_activation)
+						kind = deep_get(on_activation, "kind", self.view)
+						on_activation.pop("kind", None)
+						retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 					if retval != None:
 						self.force_update()
 					return retval
@@ -2361,12 +2369,18 @@ class UIProps:
 						if extraref is not None:
 							view = getattr(selected, extraref, self.view)
 
+							on_activation = copy.deepcopy(self.on_activation)
+							kind = deep_get(on_activation, "kind", view)
+							on_activation.pop("kind", None)
 							if data is not None:
-								retval = activatedfun(self.stdscr, selected.ref, view, info = data)
+								retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
 							else:
-								retval = activatedfun(self.stdscr, selected.ref, view)
+								retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 						else:
-							retval = activatedfun(self.stdscr, selected.ref, self.view)
+							on_activation = copy.deepcopy(self.on_activation)
+							kind = deep_get(on_activation, "kind", self.view)
+							on_activation.pop("kind", None)
+							retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 						if retval != None:
 							self.force_update()
 						return retval
@@ -2435,12 +2449,18 @@ class UIProps:
 			if extraref is not None:
 				view = getattr(selected, extraref, self.view)
 
+				on_activation = copy.deepcopy(self.on_activation)
+				kind = deep_get(on_activation, "kind", view)
+				on_activation.pop("kind", None)
 				if data is not None:
-					retval = activatedfun(self.stdscr, selected.ref, view, info = data)
+					retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
 				else:
-					retval = activatedfun(self.stdscr, selected.ref, view)
+					retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 			else:
-				retval = activatedfun(self.stdscr, selected.ref, self.view)
+				on_activation = copy.deepcopy(self.on_activation)
+				kind = deep_get(on_activation, "kind", self.view)
+				on_activation.pop("kind", None)
+				retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 			if retval != None:
 				self.force_update()
 			return retval

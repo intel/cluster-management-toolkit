@@ -45,6 +45,11 @@ stgroup_mapping = {
 def none_timestamp():
 	return (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
 
+def split_msg(rawmsg):
+	# We only want "\n" to represent newlines
+	tmp = rawmsg.replace("\r\n", "\n")
+	return list(map(str.rstrip, tmp.splitlines()))
+
 def deep_set(dictionary, path, value, create_path = False):
 	if dictionary is None or path is None or len(path) == 0:
 		raise Exception(f"deep_set: dictionary {dictionary} or path {path} invalid/unset")
@@ -278,6 +283,16 @@ def __str_representer(dumper, data):
 		return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
 	return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
+def format_none(lines, **kwargs):
+	dumps = []
+
+	if type(lines) == str:
+		lines = split_msg(lines)
+
+	for line in lines:
+		dumps.append([(line, ("types", "generic"))])
+	return dumps
+
 def format_yaml_line(line, override_formatting = {}):
 	if type(override_formatting) == dict:
 		generic_format = ("types", "generic")
@@ -355,9 +370,17 @@ def format_yaml_line(line, override_formatting = {}):
 	return tmpline
 
 # Takes a list of yaml dictionaries and returns a single list of themearray
-def format_yaml(objects, override_formatting = {}):
+def format_yaml(objects, override_formatting = {}, **kwargs):
 	dumps = []
 	indent = deep_get(iktconfig, "Global#indent", 4)
+
+	if type(objects) == str:
+		objects = [objects]
+
+	generic_format = ("types", "generic")
+
+	if deep_get(kwargs, "raw", False) == True:
+		override_formatting = generic_format
 
 	yaml.add_representer(str, __str_representer)
 
@@ -398,10 +421,16 @@ def format_yaml(objects, override_formatting = {}):
 	return dumps
 
 # Take a certificate and highlight the markup
-def format_crt(cert):
+def format_crt(lines, **kwargs):
 	dumps = []
 
-	for line in cert:
+	if deep_get(kwargs, "raw", False) == True:
+		return format_none(lines)
+
+	if type(lines) == str:
+		lines = split_msg(lines)
+
+	for line in lines:
 		if line in ["-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----"]:
 			dumps.append([(line, ("types", "separator"))])
 		else:
@@ -409,8 +438,14 @@ def format_crt(cert):
 	return dumps
 
 # Take a CaddyFile and highlight the markup
-def format_caddyfile(lines):
+def format_caddyfile(lines, **kwargs):
 	dumps = []
+
+	if deep_get(kwargs, "raw", False) == True:
+		return format_none(lines)
+
+	if type(lines) == str:
+		lines = split_msg(lines)
 
 	i = 0
 
@@ -540,8 +575,14 @@ def format_caddyfile(lines):
 	return dumps
 
 # Take an NGINX file and apply syntax highlighting
-def format_nginx(lines):
+def format_nginx(lines, **kwargs):
 	dumps = []
+
+	if deep_get(kwargs, "raw", False) == True:
+		return format_none(lines)
+
+	if type(lines) == str:
+		lines = split_msg(lines)
 
 	for line in lines:
 		dump = []
@@ -590,11 +631,17 @@ def format_nginx(lines):
 	return dumps
 
 # Take an XML file and highlight the markup
-def format_xml(lines):
+def format_xml(lines, **kwargs):
 	dumps = []
 	tag_open = False
 	tag_named = False
 	comment = False
+
+	if deep_get(kwargs, "raw", False) == True:
+		return format_none(lines)
+
+	if type(lines) == str:
+		lines = split_msg(lines)
 
 	i = 0
 	for line in lines:
@@ -745,7 +792,7 @@ def format_xml(lines):
 	return dumps
 
 # Takes a TOML file and returns a single list of themearray
-def format_toml(lines):
+def format_toml(lines, **kwargs):
 	# FIXME: necessary improvements:
 	# * Instead of only checking for lines that end with a comment for key = value,
 	#   and for full comment lines, check for lines that end with a comment
@@ -756,6 +803,12 @@ def format_toml(lines):
 	dumps = []
 	multiline_basic = False
 	multiline_literal = False
+
+	if deep_get(kwargs, "raw", False) == True:
+		return format_none(lines)
+
+	if type(lines) == str:
+		lines = split_msg(lines)
 
 	for line in lines:
 		if len(line) == 0:
@@ -821,8 +874,14 @@ def format_toml(lines):
 			# dumps.append([(line, ("types", "generic"))])
 	return dumps
 
-def format_fluentbit(lines):
+def format_fluentbit(lines, **kwargs):
 	dumps = []
+
+	if deep_get(kwargs, "raw", False) == True:
+		return format_none(lines)
+
+	if type(lines) == str:
+		lines = split_msg(lines)
 
 	for line in lines:
 		if line.lstrip().startswith("#"):
@@ -855,8 +914,14 @@ def format_fluentbit(lines):
 	return dumps
 
 # Takes an INI file and returns a single list of themearray
-def format_ini(lines):
+def format_ini(lines, **kwargs):
 	dumps = []
+
+	if deep_get(kwargs, "raw", False) == True:
+		return format_none(lines)
+
+	if type(lines) == str:
+		lines = split_msg(lines)
 
 	for line in lines:
 		tmpline = []

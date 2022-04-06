@@ -974,11 +974,6 @@ def split_colon_facility(message, facility = ""):
 		message = tmp[2]
 	return message, facility
 
-def split_msg(rawmsg):
-	# We only want "\n" to represent newlines
-	tmp = rawmsg.replace("\r\n", "\n")
-	return list(map(str.rstrip, tmp.splitlines()))
-
 def replace_tabs(message):
 	if type(message) is str:
 		message = message.replace("\t", " ")

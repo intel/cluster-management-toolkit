@@ -107,6 +107,10 @@ linewrap = [
 	("[Shift] + W", "Toggle line wrapping"),
 ]
 
+toggleformatter = [
+	("[Shift] + R", "Toggle syntax highlighting"),
+]
+
 logmovement = [
 	("[Cursor keys]", "Scroll log up / down / left / right"),
 	("/", "Search forwards"),
