@@ -11001,7 +11001,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					_block_state = "none"
 					for j in range(i, len(splitmsg)):
 						processor, _logentry = processor[1](splitmsg[j], fold_msg = fold_msg, options = options)
-						block_state = processor[0]
+						_block_state = processor[0]
 						if _block_state != "end_block_not_processed":
 							_logentries.append(_logentry)
 
