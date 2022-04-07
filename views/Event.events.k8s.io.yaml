@@ -8,8 +8,8 @@ listview:
   name: Events
   group: Core
   field_indexes:
-    Wide: [namespace, name, seen, type, reason, regarding, reporter, first_seen, count, message]
-    Normal: [namespace, name, seen, type, reason, regarding, message]
+    Wide: [namespace, name, seen, type, reason, involved_obj, reporter, first_seen, count, message]
+    Normal: [namespace, name, seen, type, reason, involved_obj, message]
   sortcolumn: seen
   fields:
     count:
@@ -31,18 +31,7 @@ listview:
         type: timestamp
       formatter: age
       align: right
-    message:
-      header: "Message:"
-      paths:
-      - path: message
-        pathtype: value
-        type: str
-        replace_quotes: same
-    reason:
-      header: "Reason:"
-      path: reason
-      type: str
-    regarding:
+    involved_obj:
       header: "Regarding:"
       paths:
       - path: [["regarding#kind", "involvedObject#kind"], ["regarding#apiVersion", "involvedObject#apiVersion"], ["regarding#name", "involvedObject#name"]]
@@ -57,6 +46,17 @@ listview:
         field_separators:
         - type: kind_api_group
         - type: kind
+    message:
+      header: "Message:"
+      paths:
+      - path: message
+        pathtype: value
+        type: str
+        replace_quotes: same
+    reason:
+      header: "Reason:"
+      path: reason
+      type: str
     reporter:
       header: "Reporter:"
       paths:
@@ -111,4 +111,110 @@ listview:
         kind_path: ["regarding#kind", "involvedObject#kind"]
         name_path: ["regarding#kind", "involvedObject#name"]
         namespace_path: ["regarding#kind", "involvedObject#namespace"]
+        api_version_path: ["regarding#apiVersion", "involvedObject#apiVersion"]
+infoview:
+  name: Event Info
+  infopad:
+    row_indexes:
+      Normal: [involved_obj, reporter, message, reason, type, seen, first_seen, count]
+    rows:
+      count:
+        header: [["Count:", [main, infoheader]]]
+        paths:
+        - path: ["series#count", "deprecatedCount", "count"]
+          pathtype: value
+          type: raw
+        default: -1
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+      first_seen:
+        header: [["First Seen:", [main, infoheader]]]
+        paths:
+        - path: [eventTime, deprecatedFirstTimestamp, firstTimestamp]
+          pathtype: value
+          type: timestamp
+        formatter: age
+        align: right
+      involved_obj:
+        header: [["I", [main, infoheader_shortcut]], ["nvolved Object:", [main, infoheader]]]
+        paths:
+        - path: [["regarding#kind", "involvedObject#kind"], ["regarding#apiVersion", "involvedObject#apiVersion"], ["regarding#name", "involvedObject#name"]]
+          pathtype: tuple
+          type: [kind, api_group, name]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      message:
+        header: [["Message:", [main, infoheader]]]
+        paths:
+        - path: message
+          pathtype: value
+          type: str
+          replace_quotes: same
+      reason:
+        header: [["Reason:", [main, infoheader]]]
+        path: reason
+        type: str
+      reporter:
+        header: [["Reporter:", [main, infoheader]]]
+        paths:
+        - path: [["reportingController", "deprecatedSource#component", "source#component"], ["reportingInstance", "deprecatedSource#host", "source#host"]]
+          default: ["", ""]
+          # This is needed, because the old Events API can return the new fields empty
+          fallback_on_empty: true
+          pathtype: tuple
+          type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+          - type: generic
+      seen:
+        header: [["Last Seen:", [main, infoheader]]]
+        paths:
+        - path: [series#lastObservedTime, deprecatedLastTimestamp, lastTimestamp, eventTime, deprecatedFirstTimestamp, firstTimestamp]
+          pathtype: value
+          type: timestamp
+        formatter: age
+        align: right
+      type:
+        header: [["Type:", [main, infoheader]]]
+        path: type
+        type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              Error:
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              Warning:
+                field_colors:
+                - context: main
+                  type: status_admin
+              Normal:
+                field_colors:
+                - context: main
+                  type: status_ok
+  shortcuts:
+    "Open involved object":
+      key: i
+      modifier: shift
+      helptext: "Open info page for involved object"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        name_path: ["regarding#name", "involvedObject#name"]
+        namespace_path: "metadata#namespace"
+        kind_path: ["regarding#kind", "involvedObject#kind"]
         api_version_path: ["regarding#apiVersion", "involvedObject#apiVersion"]

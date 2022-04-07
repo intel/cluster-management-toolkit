@@ -4505,6 +4505,7 @@ def resource_kind_to_rtype(resource):
 		("Endpoints", ""): "[endpoints]",
 		("EndpointSlice", "discovery.k8s.io"): "[endpoint_slice]",
 		("EphemeralContainer", ""): "[ephemeral_container]",
+		("Event", ""): "[event]",
 		("Event", "events.k8s.io"): "[event]",
 		("HorizontalPodAutoscaler", "autoscaling"): "[pod_autoscaler]",
 		("Ingress", "networking.k8s.io"): "[ingress]",
@@ -4759,7 +4760,8 @@ def get_resource_info(**kwargs):
 			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
 
 	if "event" not in deep_get(iktconfig, "Pods#filter_resources", []):
-		kind = ("Event", "events.k8s.io")
+		#kind = ("Event", "events.k8s.io")
+		kind = ("Event", "")
 		rtype = resource_kind_to_rtype(kind)
 
 		vlist, status = kh.get_list_by_kind_namespace(kind, "")
@@ -10095,6 +10097,14 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			"shortcut": ord("e"),
 			"helptext": ("E", "Show events"),
 			"widget": "windowwidget",
+			"selectable": True,
+			"action": "call",
+			"action_call": resourceinfodispatch_with_lookup,
+			"action_args": {
+				"kind": "Event",
+				"namespace_path": 0,
+				"name_path": 1,
+			},
 			"title": "Events:",
 			"headers": ["Namespace:", "Name:", "Last Seen:", "Status:", "Reason:", "Source:", "First Seen:", "Count:", "Message:"],
 			"itemgetter": __get_events,
@@ -11805,12 +11815,26 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	namespace = deep_get(kwargs, "namespace")
 
 	name_path = deep_get(kwargs, "name_path")
+	if name_path is not None and type(name_path) == str:
+		name_path = [name_path]
 	namespace_path = deep_get(kwargs, "namespace_path", "")
+	if namespace_path is not None and type(namespace_path) == str:
+		namespace_path = [namespace_path]
 
 	kind = deep_get(kwargs, "kind")
 	kind_path = deep_get(kwargs, "kind_path")
+	if kind_path is not None and type(kind_path) == str:
+		kind_path = [kind_path]
+
 	api_group = deep_get_with_fallback(kwargs, ["api_family", "api_group"])
 	api_group_path = deep_get_with_fallback(kwargs, ["api_family_path", "api_group_path"])
+	if api_group_path is not None and type(api_group_path) == str:
+		api_group_path = [api_group_path]
+
+	api_version_path = deep_get(kwargs, "api_version_path")
+	if api_version_path is not None and type(api_version_path) == str:
+		api_version_path = [api_version_path]
+
 	owner_reference_path = deep_get(kwargs, "owner_reference_path")
 	holder_identity_path = deep_get(kwargs, "holder_identity_path")
 
@@ -11822,9 +11846,15 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 		namespace = selection[namespace_path + 1][0][0]
 
 	if obj is not None:
-		kind = deep_get(obj, kind_path, kind)
+		kind = deep_get_with_fallback(obj, kind_path, kind)
 		if kind is not None and len(kind) > 0:
-			api_group = deep_get(obj, api_group_path, api_group)
+			api_version = deep_get_with_fallback(obj, api_version_path)
+			if api_version is not None:
+				if "/" in api_version:
+					api_group = api_version.split("/")[0]
+				else:
+					api_group = ""
+			api_group = deep_get_with_fallback(obj, api_group_path, api_group)
 
 	if type(kind) != tuple:
 		if api_group is None:
@@ -11860,7 +11890,7 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 		kind, name = non_controller
 	else:
 		if name is None and obj is not None:
-			name = deep_get(obj, name_path)
+			name = deep_get_with_fallback(obj, name_path)
 
 	if kind is None:
 		return None
@@ -11869,7 +11899,7 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 		return None
 
 	if namespace is None and obj is not None:
-		namespace = deep_get(obj, namespace_path)
+		namespace = deep_get_with_fallback(obj, namespace_path)
 
 	obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	return resourceinfodispatch(stdscr, obj, kind)

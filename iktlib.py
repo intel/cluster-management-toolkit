@@ -109,6 +109,9 @@ def deep_get_list(dictionary, paths, default = None, fallback_on_empty = False):
 	return result
 
 def deep_get_with_fallback(obj, paths, default = None, fallback_on_empty = False):
+	if paths is None:
+		return default
+
 	result = None
 	for path in paths:
 		result = deep_get(obj, path)
