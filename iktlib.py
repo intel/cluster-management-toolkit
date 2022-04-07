@@ -298,6 +298,10 @@ def format_none(lines, **kwargs):
 
 def format_yaml_line(line, override_formatting = {}):
 	if type(override_formatting) == dict:
+		# Since we don't necessarily override all
+		# formatting we need to set defaults;
+		# doing it here instead of in the code makes
+		# it easier to change the defaults of necessary
 		generic_format = ("types", "generic")
 		comment_format = ("types", "yaml_comment")
 		key_format = ("types", "yaml_key")

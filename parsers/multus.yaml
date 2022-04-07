@@ -1,0 +1,36 @@
+- name: multus
+  show_in_selector: false
+  matchkeys:
+  - pod_name: kube-multus-ds
+    container_name: kube-multus
+  parser_rules:
+  - name: ts_8601
+  - name: custom_splitter
+    options:
+      regex: '^(\[verbose\] )?(.*)'
+      message:
+        field: 2
+- name: multus
+  show_in_selector: false
+  matchkeys:
+  - pod_name: kube-multus-ds
+    container_name: generate-kubeconfig
+    container_type: init_container
+  parser_rules:
+  - name: custom_splitter
+    options:
+      regex: '^\d{4}/\d\d/\d\d\s\d\d:\d\d:\d\d\s(INFO):\s(.*)'
+      severity:
+        field: 2
+        transform: 4letter
+      message:
+        field: 2
+  - name: yaml_line
+    options:
+      block_start:
+      - matchtype: startswith
+        matchkey: "# Kubeconfig file for "
+        matchline: any
+        format_block_start: true
+      block_end:
+      - matchtype: empty

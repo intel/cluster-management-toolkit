@@ -14,6 +14,14 @@
 - name: prometheus
   show_in_selector: false
   matchkeys:
+  - pod_name: blackbox-exporter
+    container_name: module-configmap-reloader
+  - container_name: prometheus-server-configmap-reload
+  parser_rules:
+  - name: ts_8601
+- name: prometheus
+  show_in_selector: false
+  matchkeys:
   - pod_name: prometheus
     container_name: prometheus
   - pod_name: prometheus
@@ -37,10 +45,3 @@
     - matchtype: startswith
       matchkey: "Starting prometheus-config-reloader"
       loglevel: notice
-- name: prometheus
-  show_in_selector: false
-  matchkeys:
-  - pod_name: blackbox-exporter
-    container_name: module-configmap-reloader
-  parser_rules:
-  - name: ts_8601

@@ -8413,6 +8413,7 @@ cmdata_format = [
 	# cm namespace, cm name prefix, cmdata prefix, cmdata suffix, dataformat
 	# To do an exact match on cmdata set both cmdata prefix and cmdata suffix to the same string
 	# (this will work unless you have a string that contains the same substring twice)
+	("", "", "caBundle", "caBundle", "CRT"),
 	("", "", "", ".crt", "CRT"),
 	("", "", "", ".pem", "CRT"),
 	("", "", "", "client-ca-file", "CRT"),
@@ -10997,12 +10998,14 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					options = {}
 					if len(processor) == 3:
 						options = processor[2]
+					_block_state = "none"
 					for j in range(i, len(splitmsg)):
 						processor, _logentry = processor[1](splitmsg[j], fold_msg = fold_msg, options = options)
-						if processor[0] != "end_block_not_processed":
+						block_state = processor[0]
+						if _block_state != "end_block_not_processed":
 							_logentries.append(_logentry)
 
-						if processor[0] in ["end_block", "end_block_not_processed"]:
+						if _block_state in ["end_block", "end_block_not_processed"]:
 							# OK, we've got a block; start by appending the first line
 							if len(_logentries) > 0:
 								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, _logentries[0][3], facility_extended)
@@ -11010,20 +11013,29 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 								for _timestamp, _facility, _severity, _message in _logentries[1:]:
 									timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, _timestamp, "".ljust(len(facility)), severity, _message, facility_extended)
 								break
-						elif processor[0] == "break":
+						elif _block_state == "break":
 							# We got something indicating that this isn't a valid block; abort
 							break
-					if processor[0] == "end_block":
+					else:
+						if len(_logentries) > 0 and deep_get(options, "eof", "break") == "end_block":
+							for _timestamp, _facility, _severity, _message in _logentries:
+								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, _timestamp, "".ljust(len(facility)), severity, _message, facility_extended)
+							_block_state = "end_block"
+						else:
+							_block_state = "break"
+
+					if _block_state == "end_block":
 						# We've got a block and it's been appended, so go on
 						i = j + 1
 						continue
-					elif processor[0] == "end_block_not_processed":
+					elif _block_state == "end_block_not_processed":
 						# We've got a block and it's been appended, but the last line needs processing again
 						i = j
 						continue
 					else:
 						message = remnants
 						remnants = None
+					#sys.exit(f"{len(_logentries)=}\n{timestamps=}\n{facilities=}\n{severities=}\n{messages=}")
 
 				# If this is a (themestr, severity) tuple, ignore the severity;
 				# it's only necessary for remnants since the severity is passed separarely
@@ -11383,8 +11395,8 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					facility = facilities[uip.yoffset + y]
 					if type(facility) == tuple:
 						facility_extended, facility = facility
-						if facility is None:
-							facility = ""
+					if facility is None:
+						facility = ""
 
 				if uip.yoffset + y >= len(severities):
 					severity = loglevel.INFO

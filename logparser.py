@@ -148,6 +148,15 @@ def letter_to_severity(letter, default = None):
 
 	return severities.get(letter, default)
 
+# Used by Kialo; anything else?
+def str_3letter_to_severity(string, default = None):
+	severities = {
+		"ERR": loglevel.ERR,
+		"WRN": loglevel.WARNING,
+		"INF": loglevel.INFO,
+	}
+	return severities.get(string.upper(), default)
+
 def str_4letter_to_severity(string, default = None):
 	severities = {
 		"CRIT": loglevel.CRIT,
@@ -2449,8 +2458,8 @@ def yaml_line_scanner(message, fold_msg = True, options = {}):
 	process_block_end = True
 
 	for _be in block_end:
-		matchtype = _be["matchtype"]
-		matchkey = _be["matchkey"]
+		matchtype = deep_get(_be, "matchtype")
+		matchkey = deep_get(_be, "matchkey")
 		format_block_end = deep_get(_be, "format_block_end", False)
 		process_block_end = deep_get(_be, "process_block_end", True)
 		if matchtype == "empty":
@@ -2493,6 +2502,8 @@ def yaml_line(message, fold_msg = True, options = {}):
 		"format_block_start": False,
 	}])
 	line = deep_get(options, "__line", 0)
+	if deep_get(options, "eof") is None:
+		options["eof"] = "end_block"
 
 	for _bs in block_start:
 		matchtype = _bs["matchtype"]
@@ -2542,6 +2553,8 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 		if severity_field is not None and severity_transform is not None:
 			if severity_transform == "letter":
 				severity = letter_to_severity(tmp[severity_field], severity)
+			elif severity_transform == "3letter":
+				severity = str_3letter_to_severity(tmp[severity_field], severity)
 			elif severity_transform == "4letter":
 				severity = str_4letter_to_severity(tmp[severity_field], severity)
 			elif severity_transform == "str":
@@ -2695,7 +2708,6 @@ builtin_parsers = [
 
 	("3scale-kourier-gateway", "", "", "istio"),
 
-	("activator", "istio-init_init", "", "basic_8601"),
 	("admission-webhook-bootstrap-stateful-set", "bootstrap", "", "basic_8601"),
 	("admission-webhook-bootstrap", "", "", "basic_8601"),
 	("admission-webhook-deployment", "admission-webhook", "", "kube_parser_1"),
@@ -2703,7 +2715,6 @@ builtin_parsers = [
 	("application-controller-stateful-set", "manager", "", "kube_parser_1"),
 	("argo-ui", "argo-ui", "", "basic_8601_colon_severity"),
 	("autoscaler-hpa", "autoscaler-hpa", "", "kube_parser_1"),
-	("autoscaler", "istio-init_init", "", "basic_8601"),
 
 	("blackbox-exporter", "", "", "kube_parser_structured_glog"),
 
@@ -2722,22 +2733,10 @@ builtin_parsers = [
 
 	("helm-", "", "", "kube_parser_1"),
 
-	("istio-citadel", "citadel", "", "istio"),
-	("istio-cleanup-secrets", "kubectl", "", "istio"),
-	("istio-galley", "galley", "", "istio"),
-	("", "", "docker.io/istio/proxyv2", "istio_pilot"),
-	("", "", "docker.io/istio/pilot", "istio_pilot"),
-	("istio-pilot", "", "", "istio"),
-	("istio-policy", "", "", "istio"),
-	("istio-sidecar-injector", "sidecar-injector-webhook", "", "istio"),
-	("istio-telemetry", "mixer", "", "kube_parser_json"),
-	("istio-telemetry", "", "", "istio"),
-
 	("katib-controller", "", "", "kube_parser_json_glog"),
 	("katib-db-manager", "", "", "kube_parser_1"),
 	("katib-ui", "", "", "kube_parser_1"),
 	("kfserving-controller-manager", "", "", "kube_parser_1"),
-	("kiali", "", "", "kube_parser_1"),
 	("kilo", "", "", "kube_parser_json_glog"),
 	("", "", "gcr.io/knative", "kube_parser_1"),
 	("k8s-mlperf-image-classification-training", "", "", "kube_parser_1"),
@@ -2763,7 +2762,6 @@ builtin_parsers = [
 	("mysql", "mysql", "", "mysql"),
 	("", "", "docker.io/library/mysql", "mysql"),
 
-	("networking-istio", "networking-istio", "", "kube_parser_1"),
 	("node-exporter", "", "", "key_value"),
 	("nodelocaldns", "", "", "kube_parser_1"),
 	("notebook-controller-deployment", "manager", "", "seldon"),

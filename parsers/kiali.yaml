@@ -1,0 +1,22 @@
+- name: kiali
+  show_in_selector: false
+  matchkeys:
+  - container_name: kiali
+  parser_rules:
+  - name: ts_8601
+  - name: custom_splitter
+    options:
+      regex: '^([A-Z]{3}) ?(.*)'
+      severity:
+        field: 1
+        transform: 3letter
+      message:
+        field: 2
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Kiali: Version: "
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "Kiali: Console version: "
+      loglevel: notice
