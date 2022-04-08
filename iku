@@ -799,11 +799,15 @@ def map_value(value, references = None, selected = False, default_field_color = 
 		context, attr_ref = default_field_color
 		return (value, (context, attr_ref, selected)), value
 
+	substitutions = deep_get(mapping, "substitutions", {})
 	ranges = deep_get(mapping, "ranges", [])
 	match_case = deep_get(mapping, "match_case", True)
 	_mapping = deep_get(mapping, "mappings", {})
 
 	field_colors = None
+
+	if value in substitutions:
+		value = substitutions[value]
 
 	if type(value) in [int, float] and len(ranges) > 0:
 		default_index = -1
@@ -14326,23 +14330,6 @@ infoviews_builtin = {
 			"infogetter": generic_infogetter,
 		},
 	},
-	("FelixConfiguration", "crd.projectcalico.org"): {
-		"windowheader": "Felix Configuration",
-		"infopad": {
-			"BPF Log Level:": {
-				"path": "spec#bpfLogLevel",
-			},
-			"Log Severity Screen:": {
-				"path": "spec#logSeverityScreen",
-			},
-			"Reporting Interval:": {
-				"path": "spec#reportingInterval",
-			},
-			"VXLAN Enabled:": {
-				"path": "spec#vxlanEnabled",
-			},
-		},
-	},
 	("Gateway", "networking.istio.io"): {
 		"field_indexes": {
 			"Normal": ["hosts", "port"],
@@ -14677,46 +14664,6 @@ infoviews_builtin = {
 			# Inventory have no last applied configuration
 			"Show Events": {},
 			"Last Applied Configuration": {},
-		},
-	},
-	("IPPool", "crd.projectcalico.org"): {
-		"windowheader": "IP Pool Info",
-		"infopad": {
-			# XXX: This is *NOT* a Kubernetes style nodeSelector;
-			# for now we just show it as a string, but we should probably create a field processor for it
-			"Node Selector:": {
-				"path": "spec#nodeSelector",
-			},
-			"Disabled:": {
-				"path": "spec#disabled",
-				"fallback": [("False", ("types", "generic"))],
-			},
-			"Block Size:": {
-				"path": "spec#blockSize",
-			},
-			"CIDR:": {
-				"path": "spec#cidr",
-				"processor": field_processor_cidr,
-			},
-			"IPIP Mode:": {
-				"path": "spec#ipipMode",
-			},
-			"NAT Outgoing:": {
-				"path": "spec#natOutgoing",
-			},
-			"VXLAN Mode:": {
-				"path": "spec#vxlanMode",
-			},
-			"Disable BGP Export:": {
-				"path": "spec#disableBGPExport",
-				"fallback": [("False", ("types", "generic")), (" (Default)", ("types", "generic"))],
-			},
-			"allowedUses:": {
-				"path": "spec#allowedUses",
-				"extra_paths": ["spec#allowedUses"],
-				"processor": field_processor_list,
-				"fallback": [("Workload", ("types", "generic")), ("separators", "list"), ("Tunnel", ("types", "generic")), (" (Default)", ("types", "generic"))],
-			},
 		},
 	},
 	("Job", "batch"): {
@@ -17139,6 +17086,12 @@ def populate_views():
 					if w_itemgetter is not None:
 						w_itemgetter = eval(w_itemgetter)
 					w_itemgetter_args = deep_get(_shortcuts[shortcut], "itemgetter_args", {})
+					_w_formatting = deep_get(_shortcuts[shortcut], "formatting")
+					w_formatting = None
+					if _w_formatting is not None:
+						w_formatting = []
+						for context, attr in _w_formatting:
+							w_formatting.append((context, attr))
 					w_sortcolumn = deep_get(_shortcuts[shortcut], "sortcolumn", {})
 
 					if key is None or helptext is None or action is None or "<missing>" in [key, helptext]:
@@ -17198,6 +17151,7 @@ def populate_views():
 						"itemgetter": w_itemgetter,
 						"itemgetter_args": w_itemgetter_args,
 						"selectable": w_selectable,
+						"formatting": w_formatting,
 						"sortcolumn": w_sortcolumn,
 					}
 					if action == "call":

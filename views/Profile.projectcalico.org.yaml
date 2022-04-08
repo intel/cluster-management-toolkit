@@ -1,0 +1,43 @@
+kind: Profile
+api_family: projectcalico.org
+default_command: calicoprofiles
+command:
+- calicoprofile
+listview:
+  name: Profiles (Calico)
+  group: CNI
+  field_indexes:
+    Normal: [name, age]
+infoview:
+  name: Profile Info (Calico)
+  infopad:
+    row_indexes:
+      Normal: [labels_to_apply]
+    rows:
+      labels_to_apply:
+        header: [["L", [main, infoheader_shortcut]], ["abels to Apply:", [main, infoheader]]]
+        paths:
+        - path: ["spec#labelsToApply"]
+          pathtype: key_value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+          ellipsise: 3
+  shortcuts:
+    "List Labels to Apply":
+      key: l
+      modifier: shift
+      helptext: "List Labels to Apply"
+      widget: windowwidget
+      title: "Labels to Apply:"
+      headers: ["Key:", "Value:"]
+      itemgetter: get_key_value
+      itemgetter_args:
+        path: "spec#labelsToApply"
+      formatting: [[windowwidget, default], [windowwidget, highlight]]
+      # Not supported for now
+      sortcolumn: key

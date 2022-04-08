@@ -9,3 +9,39 @@ listview:
   group: CNI
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Felix Configuration Info
+  infopad:
+    row_indexes:
+      Normal: [bpf_log_level, log_severity_screen, reporting_interval, ipip_enabled, vxlan_enabled]
+    rows:
+      bpf_log_level:
+        header: [["BPF Log Level:", [main, infoheader]]]
+        path: "spec#bpfLogLevel"
+        type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            substitutions:
+              "": "Off"
+      log_severity_screen:
+        header: [["Log Severity Screen:", [main, infoheader]]]
+        path: "spec#logSeverityScreen"
+        type: str
+      ipip_enabled:
+        header: [["IPIP Enabled:", [main, infoheader]]]
+        path: "spec#ipipEnabled"
+        default: false 
+        type: bool
+      reporting_interval:
+        header: [["Reporting Interval:", [main, infoheader]]]
+        path: "spec#reportingInterval"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      vxlan_enabled:
+        header: [["VXLAN Enabled:", [main, infoheader]]]
+        path: "spec#vxlanEnabled"
+        default: false 
+        type: bool

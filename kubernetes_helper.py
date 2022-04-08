@@ -1853,6 +1853,12 @@ class KubernetesHelper:
 			"api_family": ["apis/pmem-csi.intel.com/v1beta1/"],
 			"api": "pmemcsideployments",
 		},
+		# projectcalico.org
+		("Profile", "projectcalico.org"): {
+			"api_family": ["apis/projectcalico.org/v3/"],
+			"api": "profiles",
+			"namespaced": False,
+		},
 		# project.openshift.io
 		("ProjectRequest", "project.openshift.io"): {
 			"api_family": ["apis/project.openshift.io/v1/"],
@@ -2138,6 +2144,8 @@ class KubernetesHelper:
 	}
 
 	def is_kind_namespaced(self, kind):
+		if kind not in self.kubernetes_resources:
+			raise ValueError(f"Kind {kind} not known; this is likely a programming error (possibly a typo)")
 		return deep_get(self.kubernetes_resources[kind], "namespaced", True)
 
 	def kind_api_version_to_kind(self, kind, api_version):
