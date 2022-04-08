@@ -62,7 +62,107 @@ listview:
     "Show Service Info":
       key: s
       modifier: shift
-      helptext: "Open service info page"
+      helptext: "Open info page for Service"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: "Service"
+        api_family: ""
+        name_path: "spec#service#name"
+        namespace_path: "spec#service#namespace"
+infoview:
+  name: API Service Info
+  infopad:
+    row_indexes:
+      Normal: [version, group, api_version_priority, group_priority_minimum, insecure_skip_tls_verify, service, available, status_message]
+    rows:
+      api_version_priority:
+        header: [["API Version Priority:", [main, infoheader]]]
+        path: "spec#versionPriority"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      available:
+        header: [["Available:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: items
+          subpath: status
+          when:
+          - key: type
+            eq: Available
+          default: "<unknown>"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "False":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+      group:
+        header: [["Group:", [main, infoheader]]]
+        path: "spec#group"
+        type: str
+        formatting:
+          field_colors:
+          - type: api_group
+      group_priority_minimum:
+        header: [["Group Priority Minimum:", [main, infoheader]]]
+        path: "spec#groupPriorityMinimum"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      insecure_skip_tls_verify:
+        header: [["Insecure Skip TLS Verify:", [main, infoheader]]]
+        path: "spec#insecureSkipTLSVerify"
+        default: false
+        type: bool
+      service:
+        header: [["S", [main, infoheader_shortcut]], ["ervice:", [main, infoheader]]]
+        paths:
+        - path: [["spec#service#namespace"], ["spec#service#name"], ["spec#service#port"]]
+          pathtype: tuple
+          type: [name, name, name]
+          default: ["", "Local", ""]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: namespace
+          - type: generic
+          - type: port
+          field_separators:
+          - type: namespace
+          - type: port
+      status_message:
+        header: [["Status:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: items
+          subpath: message
+          when:
+          - key: type
+            eq: Available
+          default: ""
+      version:
+        header: [["Version:", [main, infoheader]]]
+        path: "spec#version"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+  shortcuts:
+    "Open Service":
+      key: s
+      modifier: shift
+      helptext: "Open info page for Service"
       action: call
       action_call: resourceinfodispatch_with_lookup
       action_args:

@@ -9252,11 +9252,6 @@ def field_processor_conditions_certsignreq(obj, path, extra_paths = None, fallba
 
 	return __field_processor_list(conditions, formatting = formatting)
 
-# All fields except obj will be ignored
-def field_processor_api_service_available(obj, path, extra_paths = None, fallback = None, formatting = None):
-	available, service, status, status_group = get_as_status_and_service(deep_get(obj, "status#conditions"), deep_get(obj, "spec#service"))
-	return [(available, ("types", "generic"))]
-
 # All fields except obj and path will be ignored
 def field_processor_namespace_status(obj, path, extra_paths = None, fallback = None, formatting = None):
 	status = deep_get(obj, path)
@@ -9266,11 +9261,6 @@ def field_processor_namespace_status(obj, path, extra_paths = None, fallback = N
 		status_group = stgroup.PENDING
 	else:
 		status_group = stgroup.UNKNOWN
-	return [(status, color_status_group(status_group, False))]
-
-# All fields except obj will be ignored
-def field_processor_api_service_status(obj, path, extra_paths = None, fallback = None, formatting = None):
-	available, service, status, status_group = get_as_status_and_service(deep_get(obj, "status#conditions"), deep_get(obj, "spec#service"))
 	return [(status, color_status_group(status_group, False))]
 
 # All fields except obj will be ignored
@@ -13408,51 +13398,6 @@ infoviews_builtin = {
 					],
 					"override_types": ["", "", "timestamp"]
 				}
-			},
-		},
-	},
-	("APIService", "apiregistration.k8s.io"): {
-		"windowheader": "API Service Info",
-		"infopad": {
-			"Group:": {
-				"path": "spec#group",
-			},
-			"API Version Priority:": {
-				"path": "spec#versionPriority",
-			},
-			"Group Priority Minimum:": {
-				"path": "spec#groupPriorityMinimum",
-			},
-			"Insecure Skip TLS Verify:": {
-				"path": "spec#insecureSkipTLSVerify",
-				"fallback": [("False", ("types", "generic"))],
-			},
-			"Service:": {
-				"path": "spec#service",
-				"fieldname": [("S", ("main", "infoheader_shortcut")), ("ervice:", ("main", "infoheader"))],
-				"extra_paths": ["spec#service#namespace", "spec#service#name"],
-				"formatting": {
-					"field_colors": [("types", "namespace"), ("types", "generic")],
-					"item_separators": [("separators", "namespace")],
-				},
-				"fallback": [("Local", ("types", "generic"))],
-				"processor": field_processor_list,
-			},
-			"Available:": {
-				"processor": field_processor_api_service_available,
-			},
-			"Status:": {
-				"processor": field_processor_api_service_status,
-			},
-		},
-		"shortcuts": {
-			"Service": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for Service"),
-				"call": resourceinfodispatch,
-				"kind": ("Service", ""),
-				"namespace_path": "spec#service#namespace",
-				"name_path": "spec#service#name",
 			},
 		},
 	},
