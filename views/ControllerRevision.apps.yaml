@@ -41,3 +41,49 @@ listview:
         field_colors:
         - type: numerical
       align: right
+infoview:
+  name: Controller Revision Info
+  infopad:
+    row_indexes:
+      Normal: [controller, revision]
+    rows:
+      controller:
+        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - kind
+          - apiVersion
+          - name
+          when:
+            key: controller
+            eq: true
+          type: [kind, api_group, name]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      revision:
+        header: [["Revision:", [main, infoheader]]]
+        path: revision
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+  shortcuts:
+    "Open controller":
+      key: c
+      modifier: shift
+      helptext: "Open info page for controller"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        namespace_path: "metadata#namespace"
