@@ -10169,7 +10169,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		else:
 			headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = infopadheight + 2, xpos = 1)
 
-	# For log pads; we cannot have both a logpad and a listpad simultaneously
+	# For log pads; we cannot have both a logpad and a listpad simultaneously;
+	# at least not with the current implementation
 	logpad = deep_get(viewref, "logpad")
 	if logpad is not None:
 		if listpad is not None:
@@ -10385,6 +10386,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		# Output logpad if we have one
 		if logpad is not None and uip.refresh == True:
 			uip.logpad.erase()
+			# This is needed in case we get a resize event or toggle borders
+			uip.resize_logpad(uip.maxy - uip.logpadypos - 2, 0)
 			maxx = 0
 			yadd = 0
 			for y in range(0, min(uip.logpadheight, len(messages))):
@@ -10412,7 +10415,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					ypos, xpos = uip.addthemearray(logpad, _lines[i], y = y + yadd + i, x = 0, selected = current_match)
 					maxx = max(maxx, xpos)
 				yadd += i
-			uip.resize_logpad(uip.maxy - uip.logpadypos - 1, maxx)
+			uip.resize_logpad(-1, maxx)
 
 		uip.refresh_window()
 		uip.refresh_infopad()
@@ -11318,8 +11321,8 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 			uip.tspad.erase()
 			uip.logpad.erase()
-			# This is needed in case we get a resize event
-			uip.resize_logpad(uip.maxy - uip.logpadypos - 1, 0)
+			# This is needed in case we get a resize event or toggle borders
+			uip.resize_logpad(uip.maxy - uip.logpadypos - 2, 0)
 			new_date = False
 			if timestamps is not None and len(timestamps) > 0:
 				current_datestamp = ("%s" % timestamps[0])[0:len("YYYY-MM-DD")]
