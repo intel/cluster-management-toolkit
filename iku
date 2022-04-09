@@ -11032,7 +11032,6 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					else:
 						message = remnants
 						remnants = None
-					#sys.exit(f"{len(_logentries)=}\n{timestamps=}\n{facilities=}\n{severities=}\n{messages=}")
 
 				# If this is a (themestr, severity) tuple, ignore the severity;
 				# it's only necessary for remnants since the severity is passed separarely
@@ -12160,6 +12159,9 @@ def view_yaml(stdscr, **kwargs):
 	obj = deep_get(kwargs, "obj")
 	if obj is None:
 		return
+	path = deep_get(kwargs, "path")
+	if path is not None:
+		obj = deep_get(obj, path)
 	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
 	# themearrays = iktlib.format_yaml([obj])
 	formatter = iktlib.format_yaml
@@ -13477,6 +13479,7 @@ infoviews_builtin = {
 				"processor": field_processor_list,
 			}
 		},
+		# TODO: Add shortcuts for approving/denying
 	},
 	("CiliumEndpoint", "cilium.io"): {
 		"windowheader": "Cilium Endpoint Info",
@@ -13739,39 +13742,6 @@ infoviews_builtin = {
 					"path": "spec#customresourcedefinitions",
 					"include_final_path": True,
 				},
-			},
-		},
-	},
-	("CronJob", "batch"): {
-		"windowheader": "Cron Job Info",
-		"infopad": {
-			"Concurrency Policy:": {
-				"path": "spec#concurrencyPolicy",
-			},
-			"Parallelism:": {
-				"path": "spec#jobTemplate#spec#parallelism",
-			},
-			"Completions:": {
-				"path": "spec#jobTemplate#spec#completions",
-			},
-			"Starting Deadline:": {
-				"extra_paths": ["spe#startingDeadlines"],
-				"formatting": {
-					"field_colors": [("types", "numerical")],
-					"conditionals": {
-						"<<<none>>>": {
-							"substitute": "0",
-						},
-					},
-					"suffix": ("s", ("types", "generic")),
-				},
-				"processor": field_processor_list,
-			},
-			"Suspend:": {
-				"path": "spec#suspend",
-			},
-			"Schedule:": {
-				"path": "spec#schedule",
 			},
 		},
 	},

@@ -37,12 +37,14 @@ listview:
     last_scheduled:
       header: "Last Scheduled:"
       path: "status#lastScheduleTime"
+      default: -1
       type: timestamp
       formatter: age
       align: right
     last_successful:
       header: "Last Successful:"
       path: "status#lastSuccessfulTime"
+      default: -1
       type: timestamp
       formatter: age
       align: right
@@ -54,3 +56,86 @@ listview:
       header: "Suspend:"
       path: "spec#suspend"
       type: bool
+infoview:
+  name: Cron Job Info
+  infopad:
+    row_indexes:
+      Normal: [concurrency_policy, restart_policy, selector, parallelism, completions, starting_deadline, suspend, schedule, active]
+    rows:
+      active:
+        header: [["Active:", [main, infoheader]]]
+        path: "status#active"
+        type: len
+        formatting:
+          field_colors:
+          - type: numerical
+      completions:
+        header: [["Completions:", [main, infoheader]]]
+        path: "spec#jobTemplate#spec#completions"
+        default: 0
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      concurrency_policy:
+        header: [["Concurrency Policy:", [main, infoheader]]]
+        path: "spec#concurrencyPolicy"
+        type: raw
+      last_scheduled:
+        header: "Last Scheduled:"
+        path: "status#lastScheduleTime"
+        default: -1
+        type: timestamp
+        formatter: age
+      last_successful:
+        header: "Last Successful:"
+        path: "status#lastSuccessfulTime"
+        default: -1
+        type: timestamp
+        formatter: age
+      parallelism:
+        header: [["Parallelism:", [main, infoheader]]]
+        path: "spec#jobTemplate#spec#parallelism"
+        type: str
+        default: "<unset>"
+      restart_policy:
+        header: [["Restart Policy:", [main, infoheader]]]
+        path: "spec#jobTemplate#spec#template#spec#restartPolicy"
+        type: str
+      schedule:
+        header: [["Schedule:", [main, infoheader]]]
+        path: "spec#schedule"
+        type: str
+      selector:
+        header: [["Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#selector"]
+          pathtype: key_value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      starting_deadline:
+        header: [["Starting Deadline:", [main, infoheader]]]
+        path: "spec#startingDeadlineSeconds"
+        type: int
+        default: "<unset>"
+      suspend:
+        header: [["Suspend:", [main, infoheader]]]
+        path: "spec#suspend"
+        type: bool
+  shortcuts:
+    "View Pod Template":
+      key: T
+      modifier: shift
+      helptext: "Show Pod Template"
+      action: call
+      action_call: view_yaml
+      action_args:
+        title: Pod Template
+        _named_title: true
+        _pass_obj: true
+        path: "spec#jobTemplate"
