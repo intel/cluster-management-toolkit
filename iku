@@ -13769,50 +13769,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("CustomResourceDefinition", "apiextensions.k8s.io"): {
-		"windowheader": "Custom Resource Definition Info",
-		"infopad": {
-			"Kind:": {
-				"path": "spec#names#kind",
-			},
-			"List Kind:": {
-				"path": "spec#names#listKind",
-			},
-			"API-Group:": {
-				"path": "spec#group",
-			},
-			"Singular:": {
-				"path": "spec#names#singular",
-			},
-			"Plural:": {
-				"path": "spec#names#plural",
-			},
-			"Short Names:": {
-				"extra_paths": "spec#names#shortNames",
-				"processor": field_processor_list,
-			},
-			"Scope:": {
-				"path": "spec#scope",
-			},
-			"Stored Versions:": {
-				"extra_paths": "status#storedVersions",
-				"processor": field_processor_list,
-			},
-		},
-		"shortcuts": {
-			"Custom Resource List View": {
-				"shortcut": ord("R"),
-				"helptext": ("[Shift] + R", "Open custom resource list view"),
-				"action": "call",
-				"action_call": listviewdispatch,
-				"action_args": {
-					"_pass_obj": True,
-					"kind_path": "spec#names#kind",
-					"api_family_path": "spec#group",
-				}
-			},
-		},
-	},
 	("DaemonSet", "apps"): {
 		"windowheader": "Daemon Set Info",
 		"field_indexes": {

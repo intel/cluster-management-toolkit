@@ -32,10 +32,70 @@ listview:
       path: "spec#scope"
       type: str
   shortcuts:
-    "Show Resource List":
-      key: r
+    "Open list view for kind":
+      key: k
       modifier: shift
-      helptext: "Open custom resource list view"
+      helptext: "Open list view for kind"
+      action: call
+      action_call: listviewdispatch
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#names#kind"
+        api_family_path: "spec#group"
+infoview:
+  name: "Custom Resource Definition Info"
+  infopad:
+    row_indexes:
+      Normal: [kind, list_kind, api_group, singular, plural, short_names, scope, stored_versions]
+    rows:
+      api_group:
+        header: [["API-Group:", [main, infoheader]]]
+        path: "spec#group"
+        type: str
+        formatting:
+          field_colors:
+          - type: api_group
+      kind:
+        header: [["K", [main, infoheader_shortcut]], ["ind:", [main, infoheader]]]
+        path: "spec#names#kind"
+        type: str
+        formatting:
+          field_colors:
+          - type: kind
+      list_kind:
+        header: [["List Kind:", [main, infoheader]]]
+        path: "spec#names#listKind"
+        type: str
+      plural:
+        header: [["Plural:", [main, infoheader]]]
+        path: "spec#names#plural"
+        type: str
+      scope:
+        header: [["Scope:", [main, infoheader]]]
+        path: "spec#scope"
+        type: str
+      short_names:
+        header: [["Short Names:", [main, infoheader]]]
+        path: "spec#names#shortNames"
+        type: raw
+        formatter: list
+      singular:
+        header: [["Singular:", [main, infoheader]]]
+        path: "spec#names#singular"
+        type: str
+      stored_versions:
+        header: [["Stored Versions:", [main, infoheader]]]
+        path: "status#storedVersions"
+        type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: version
+  shortcuts:
+    "Open list view for kind":
+      key: k
+      modifier: shift
+      helptext: "Open list view for kind"
       action: call
       action_call: listviewdispatch
       action_args:
