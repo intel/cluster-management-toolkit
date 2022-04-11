@@ -839,6 +839,15 @@ class KubernetesHelper:
 			"api_family": ["apis/acme.cert-manager.io/v1/", "apis/acme.cert-manager.k8s.io/v1alpha2/", "certmanager.k8s.io/v1alpha1/"],
 			"api": "orders",
 		},
+		# addons.cluster.x-k8s.io
+		("ClusterResourceSetBinding", "addons.cluster.x-k8s.io"): {
+			"api_family": ["apis/addons.cluster.x-k8s.io/v1beta1/"],
+			"api": "clusterresourcesetbindings",
+		},
+		("ClusterResourceSet", "addons.cluster.x-k8s.io"): {
+			"api_family": ["apis/addons.cluster.x-k8s.io/v1beta1/"],
+			"api": "clusterresourcesets",
+		},
 		# apps.openshift.io
 		("DeploymentConfig", "apps.openshift.io"): {
 			"api_family": ["apis/apps.openshift.io/v1/"],
@@ -932,6 +941,15 @@ class KubernetesHelper:
 			"api_family": ["apis/batch.volcano.sh/v1alpha1/"],
 			"api": "jobs",
 		},
+		# bootstrap.cluster.x-k8s.io
+		("KubeadmConfig", "bootstrap.cluster.x-k8s.io"): {
+			"api_family": ["apis/bootstrap.cluster.x-k8s.io/v1beta1/"],
+			"api": "kubeadmconfigs",
+		},
+		("KubeadmConfigTemplate", "bootstrap.cluster.x-k8s.io"): {
+			"api_family": ["apis/bootstrap.cluster.x-k8s.io/v1beta1/"],
+			"api": "kubeadmconfigtemplates",
+		},
 		# bus.volcano.sh
 		("Command", "bus.volcano.sh"): {
 			"api_family": ["apis/bus.volcano.sh/v1alpha1/"],
@@ -1015,6 +1033,40 @@ class KubernetesHelper:
 			"api_family": ["apis/cilium.io/v2/"],
 			"api": "ciliumnodes",
 			"namespaced": False,
+		},
+		# cluster.x-k8s.io
+		("ClusterClass", "cluster.x-k8s.io"): {
+			"api_family": ["apis/cluster.x-k8s.io/v1beta1/"],
+			"api": "clusterclasses",
+		},
+		("Cluster", "cluster.x-k8s.io"): {
+			"api_family": ["apis/cluster.x-k8s.io/v1beta1/"],
+			"api": "clusters",
+		},
+		("MachineDeployment", "cluster.x-k8s.io"): {
+			"api_family": ["apis/cluster.x-k8s.io/v1beta1/"],
+			"api": "machinedeployments",
+		},
+		("MachineHealthCheck", "cluster.x-k8s.io"): {
+			"api_family": ["apis/cluster.x-k8s.io/v1beta1/"],
+			"api": "machinehealthchecks",
+		},
+		("MachinePool", "cluster.x-k8s.io"): {
+			"api_family": ["apis/cluster.x-k8s.io/v1beta1/"],
+			"api": "machinepools",
+		},
+		("Machine", "cluster.x-k8s.io"): {
+			"api_family": ["apis/cluster.x-k8s.io/v1beta1/"],
+			"api": "machines",
+		},
+		("MachineSet", "cluster.x-k8s.io"): {
+			"api_family": ["apis/cluster.x-k8s.io/v1beta1/"],
+			"api": "machinesets",
+		},
+		# clusterctl.cluster.x-k8s.io
+		("Provider", "clusterctl.cluster.x-k8s.io"): {
+			"api_family": ["apis/clusterctl.cluster.x-k8s.io/v1alpha3/"],
+			"api": "providers",
 		},
 		# config.kio.kasten.io
 		("Policy", "config.kio.kasten.io"): {
@@ -1136,6 +1188,15 @@ class KubernetesHelper:
 			"api_family": ["apis/controlplane.antrea.io/v1beta2/"],
 			"api": "networkpolicies",
 			"namespaced": False,
+		},
+		# controlplane.cluster.x-k8s.io
+		("KubeadmControlPlane", "controlplane.cluster.x-k8s.io"): {
+			"api_family": ["apis/controlplane.cluster.x-k8s.io/v1beta1/"],
+			"api": "kubeadmcontrolplanes",
+		},
+		("KubeadmControlPlaneTemplate", "controlplane.cluster.x-k8s.io"): {
+			"api_family": ["apis/controlplane.cluster.x-k8s.io/v1beta1/"],
+			"api": "kubeadmcontrolplanetemplates",
 		},
 		# cr.kanister.io
 		("ActionSet", "cr.kanister.io"): {
@@ -1423,6 +1484,23 @@ class KubernetesHelper:
 		("ImageStreamTag", "image.openshift.io"): {
 			"api_family": ["apis/image.openshift.io/v1/"],
 			"api": "imagestreamtags",
+		},
+		# infrastructure.cluster.x-k8s.io
+		("OpenStackCluster", "infrastructure.cluster.x-k8s.io"): {
+			"api_family": ["apis/infrastructure.cluster.x-k8s.io/v1alpha4/"],
+			"api": "openstackclusters",
+		},
+		("OpenStackClusterTemplate", "infrastructure.cluster.x-k8s.io"): {
+			"api_family": ["apis/infrastructure.cluster.x-k8s.io/v1alpha4/"],
+			"api": "openstackclustertemplates",
+		},
+		("OpenStackMachine", "infrastructure.cluster.x-k8s.io"): {
+			"api_family": ["apis/infrastructure.cluster.x-k8s.io/v1alpha4/"],
+			"api": "openstackmachines",
+		},
+		("OpenStackMachineTemplate", "infrastructure.cluster.x-k8s.io"): {
+			"api_family": ["apis/infrastructure.cluster.x-k8s.io/v1alpha4/"],
+			"api": "openstackmachinetemplates",
 		},
 		# install.istio.io
 		("IstioOperator", "install.istio.io"): {
