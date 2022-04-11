@@ -1,0 +1,17 @@
+kind: KubeadmConfig
+api_family: bootstrap.cluster.x-k8s.io
+default_command: kubeadmconfigs
+command:
+- kubeadmcfgs
+- kubeadmcfg
+listview:
+  name: Kubeadm Configs
+  group: Cluster Configuration
+  field_indexes:
+    Normal: [namespace, name, cluster, age]
+  sortcolumn: namespace
+  fields:
+    cluster:
+      header: "Cluster:"
+      path: "metadata#labels#cluster.x-k8s.io/cluster-name"
+      type: str

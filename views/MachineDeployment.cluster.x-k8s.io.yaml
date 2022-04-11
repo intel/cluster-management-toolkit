@@ -1,0 +1,87 @@
+kind: MachineDeployment
+api_family: cluster.x-k8s.io
+default_command: machinedeployments
+command:
+- machinedeploys
+- machinedeploy
+- machinedeps
+- machinedep
+- md
+listview:
+  name: Machine Deployments
+  group: Cluster Configuration
+  field_indexes:
+    Normal: [namespace, name, cluster, replicas, ready, updated, unavailable, phase, age, version]
+  sortcolumn: namespace
+  fields:
+    cluster:
+      header: "Cluster:"
+      path: "spec#clusterName"
+      type: str
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            ScalingDown:
+              field_colors:
+              - context: main
+                type: status_pending
+            ScalingUp:
+              field_colors:
+              - context: main
+                type: status_pending
+            Running:
+              field_colors:
+              - context: main
+                type: status_ok
+            Failed:
+              field_colors:
+              - context: main
+                type: status_not_ok
+            Unknown:
+              field_colors:
+              - context: main
+                type: status_unknown
+    ready:
+      header: "Ready:"
+      path: "status#readyReplicas"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    replicas:
+      header: "Replicas:"
+      path: "status#replicas"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    unavailable:
+      header: "Unavailable:"
+      path: "status#unavailableReplicas"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    updated:
+      header: "Updated:"
+      path: "status#updatedReplicas"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    version:
+      header: "Version:"
+      path: "spec#template#spec#version"
+      type: str
+      formatting:
+        field_colors:
+        - type: version

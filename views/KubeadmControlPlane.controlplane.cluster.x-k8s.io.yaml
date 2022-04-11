@@ -1,0 +1,95 @@
+kind: KubeadmControlPlane
+api_family: controlplane.cluster.x-k8s.io
+default_command: kubeadmcontrolplanes
+command:
+- kcps
+- kcp
+listview:
+  name: Kubeadm Control Planes
+  group: Cluster Configuration
+  field_indexes:
+    Normal: [namespace, name, cluster, initialized, api_server_available, replicas, ready, updated, unavailable, age, version]
+  sortcolumn: namespace
+  fields:
+    api_server_available:
+      header: "API-server Available:"
+      path: "status#ready"
+      type: bool
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_not_ok
+    cluster:
+      header: "Cluster:"
+      paths:
+      - path: "metadata#ownerReferences"
+        pathtype: items
+        subpaths:
+        - name
+        when:
+          key: kind
+          eq: Cluster
+      formatter: list
+    initialized:
+      header: "Initialized:"
+      path: "status#initialized"
+      type: bool
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_pending
+    ready:
+      header: "Ready:"
+      path: "status#readyReplicas"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    replicas:
+      header: "Replicas:"
+      path: "status#replicas"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    unavailable:
+      header: "Unavailable:"
+      path: "status#unavailableReplicas"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    updated:
+      header: "Updated:"
+      path: "status#updatedReplicas"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    version:
+      header: "Version:"
+      path: "spec#version"
+      type: str
+      formatting:
+        field_colors:
+        - type: version

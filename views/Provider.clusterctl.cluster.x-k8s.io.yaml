@@ -1,0 +1,25 @@
+kind: Provider
+api_family: clusterctl.cluster.x-k8s.io
+default_command: providers
+listview:
+  name: Providers
+  group: Cluster Configuration
+  field_indexes:
+    Normal: [namespace, name, type, provider, age, version]
+  sortcolumn: namespace
+  fields:
+    provider:
+      header: "Provider:"
+      path: "providerName"
+      type: str
+    type:
+      header: "Type:"
+      path: "type"
+      type: str
+    version:
+      header: "Version:"
+      path: "version"
+      type: str
+      formatting:
+        field_colors:
+        - type: version

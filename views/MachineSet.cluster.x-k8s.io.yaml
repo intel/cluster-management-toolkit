@@ -1,0 +1,47 @@
+kind: MachineSet
+api_family: cluster.x-k8s.io
+default_command: machinesets
+command:
+- ms
+listview:
+  name: Machine Sets
+  group: Cluster Configuration
+  field_indexes:
+    Normal: [namespace, name, cluster, replicas, ready, available, age, version]
+  sortcolumn: namespace
+  fields:
+    available:
+      header: "Available:"
+      path: "status#availableReplicas"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    cluster:
+      header: "Cluster:"
+      path: "spec#clusterName"
+      type: str
+    ready:
+      header: "Ready:"
+      path: "status#readyReplicas"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    replicas:
+      header: "Replicas:"
+      path: "status#replicas"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    version:
+      header: "Version:"
+      path: "spec#template#spec#version"
+      type: str
+      formatting:
+        field_colors:
+        - type: version

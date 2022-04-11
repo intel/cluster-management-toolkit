@@ -1,0 +1,58 @@
+kind: Machine
+api_family: cluster.x-k8s.io
+default_command: machines
+command:
+- ma
+listview:
+  name: Machines
+  group: Cluster Configuration
+  field_indexes:
+    Normal: [namespace, name, cluster, node_name, provider_id, phase, age, version]
+  sortcolumn: namespace
+  fields:
+    cluster:
+      header: "Cluster:"
+      path: "spec#clusterName"
+      type: str
+    node_name:
+      header: "Node Name:"
+      path: "status#nodeRef#name"
+      type: str
+      formatting:
+        field_colors:
+        - type: hostname
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            Pending:
+              field_colors:
+              - context: main
+                type: status_pending
+            Terminating:
+              field_colors:
+              - context: main
+                type: status_pending
+            Running:
+              field_colors:
+              - context: main
+                type: status_ok
+            Failed:
+              field_colors:
+              - context: main
+                type: status_not_ok
+    provider_id:
+      header: "Provider ID:"
+      path: "spec#providerID"
+      type: str
+    version:
+      header: "Version:"
+      path: "spec#version"
+      type: str
+      formatting:
+        field_colors:
+        - type: version
