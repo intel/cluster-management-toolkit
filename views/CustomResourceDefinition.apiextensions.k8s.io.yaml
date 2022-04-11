@@ -8,7 +8,7 @@ listview:
   name: Custom Resource Definitions
   group: API & Extendability
   field_indexes:
-    Wide: [name, kind, api_group_crd, scope, created_at, available_views]
+    Wide: [name, kind, api_group_crd, stored_versions, scope, created_at, available_views]
     Normal: [name, api_group_crd, created_at, available_views]
   sortcolumn: api_group_crd
   fields:
@@ -31,6 +31,14 @@ listview:
       header: "Scope:"
       path: "spec#scope"
       type: str
+    stored_versions:
+      header: "Versions:"
+      path: "status#storedVersions"
+      type: raw
+      formatter: list
+      formatting:
+        field_colors:
+        - type: version
   shortcuts:
     "Open list view for kind":
       key: k
