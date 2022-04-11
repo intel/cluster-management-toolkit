@@ -131,7 +131,9 @@ color_pairs_curses:
   statusbar_infoheader: [[yellow, normal], [blue, normal]]
   statusbar_default: [[white, normal], [blue, normal]]
   statusbar_highlight: [[white, bright], [blue, normal]]
-  hostname: [[white, bright], [black, normal]]
+  hostname:
+    unselected: [[white, bright], [black, normal]]
+    selected: [[black, bright], [white, normal]]
   http_protocol: [[green, normal], [black, normal]]
   url: [[cyan, normal], [black, normal]]
   timestamp: [[cyan, normal], [black, normal]]
@@ -718,6 +720,7 @@ types:
   user: type_user
   uid: type_uid
   group: type_group
+  hostname: hostname
   watermark_high: type_watermark_high
   watermark_medium: [type_watermark_medium, dim]
   watermark_low: [type_watermark_low, bold]
