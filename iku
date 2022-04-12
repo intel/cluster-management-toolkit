@@ -16405,7 +16405,7 @@ views_special = {
 		"is_taggable": False,
 	},
 	"Inventory": {
-		"commandline": ["hosts", "machines", "mach", "inventory", "inv", "hosts", "baremetal"],
+		"commandline": ["inventory", "inv"],
 		"group": "Administration",
 		"field_indexes": {
 			"Normal": ["name", "ips", "kubernetes_roles", "ansible_groups", "status"],
@@ -16813,10 +16813,10 @@ def populate_views():
 						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
 						help_key = f"[Shift] + {key[0]}{num} / {key.upper()}"
 					elif key in ["enter", "return"]:
-						if modifier is not None:
+						if len(modifier) > 0:
 							help_key = "[Enter]"
 							shortcut_key = [curses.KEY_ENTER, 10, 13]
-					elif modifier is not None:
+					elif len(modifier) > 0:
 						if modifier == "shift":
 							help_key = f"[Shift] + {key.upper()}"
 							shortcut_key = ord(key.upper())
@@ -17000,10 +17000,10 @@ def populate_views():
 						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
 						help_key = f"[Shift] + {key[0]}{num} / {key.upper()}"
 					elif key in ["enter", "return"]:
-						if modifier is not None:
+						if len(modifier) > 0:
 							help_key = "[Enter]"
 							shortcut_key = [curses.KEY_ENTER, 10, 13]
-					elif modifier is not None:
+					elif len(modifier) > 0:
 						if modifier == "shift":
 							help_key = f"[Shift] + {key.upper()}"
 							shortcut_key = ord(key.upper())

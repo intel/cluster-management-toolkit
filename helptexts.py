@@ -34,10 +34,15 @@ about = [
 	(0, [("", ("main", "about_text"))]),
 ]
 
+toggleborders = [
+	("[Shift] + B", "Toggle borders"),
+]
+
 listviewheader = [
 	("[Ctrl] + X", "Exit program"),
 	("[Shift] + M", "Toggle mouse on/off"),
 	("[Shift] + W", "Toggle custom/normal/wide fields (when available)"),
+] + toggleborders + [
 	("", ""),
 	("[F1] / [Shift] + H", "Show this helptext"),
 	("[F2]", "Switch main view"),
@@ -70,6 +75,7 @@ infoviewheader = [
 	("[ESC]", "Return to previous screen"),
 	("[Ctrl] + X", "Exit program"),
 	("[Shift] + M", "Toggle mouse on/off"),
+] + toggleborders + [
 	("", ""),
 	("[F1] / [Shift] + H", "Show this helptext"),
 	("[F2]", "Switch main view"),
@@ -142,7 +148,7 @@ spacer = [
 clusteroverview = [
 	("[Ctrl] + X", "Exit program"),
 	("[Shift] + M", "Toggle mouse on/off"),
-] + spacer + [
+] + toggleborders + spacer + [
 	("[F1] / [Shift] + H", "Show this helptext"),
 	("[F2]", "Switch main view"),
 	("[F3]", "Switch main view (recheck available API resources)"),
@@ -194,7 +200,7 @@ containerinfo = [
 	("[Shift] + R", "Toggle log parsing (default: On)"),
 	("[Shift] + T", "Toggle timestamps (default: On)"),
 	("[Shift] + D", "Toggle merging of duplicate messages"),
-	("[Shift] + W", "Toggle line wrapping"),
+] + linewrap + toggleborders + [
 	("[Shift] + P", "Override logparser"),
 	("", "  This allows for manually choosing the parser used; please report"),
 	("", "  if a different parser than the default seems to be more appropriate"),
