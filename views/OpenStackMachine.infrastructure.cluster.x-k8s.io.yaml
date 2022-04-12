@@ -1,0 +1,54 @@
+kind: OpenStackMachine
+api_family: infrastructure.cluster.x-k8s.io
+default_command: openstackmachines
+command:
+- osm
+listview:
+  name: OpenStack Machines
+  group: Cluster Configuration
+  field_indexes:
+    Normal: [namespace, name, cluster, instance_state, ready, provider_id, machine, age]
+  sortcolumn: namespace
+  fields:
+    cluster:
+      header: "Cluster:"
+      path: "metadata#labels#cluster.x-k8s.io/cluster-name"
+      type: str
+    instance_state:
+      header: "Instance State:"
+      path: "status#instanceState"
+      type: str
+    machine:
+      header: "Machine:"
+      paths:
+      - path: "metadata#ownerReferences"
+        pathtype: items
+        subpaths:
+        - name
+        when:
+          key: kind
+          eq: Machine
+      formatter: list
+      formatting:
+        field_colors:
+        - type: hostname
+    provider_id:
+      header: "Provider ID:"
+      path: "spec#providerID"
+      type: str
+    ready:
+      header: "Ready:"
+      path: "status#ready"
+      type: bool
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_not_ok

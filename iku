@@ -558,6 +558,18 @@ def generator_numerical(obj, field, fieldlen, pad, ralign, selected, **formattin
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
+def generator_numerical_with_units(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	value = getattr(obj, field)
+
+	if value == -1 and deep_get(formatting, "allow_signed") == False:
+		string = ""
+	else:
+		string = str(value)
+
+	array = format_numerical_with_units(string, "numerical", selected)
+
+	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+
 def generator_mem_single(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 	string = str(value)
@@ -6033,9 +6045,9 @@ builtin_fields = {
 		"paths": [{
 			"path": ["metadata#creationTimestamp"],
 			"type": "timestamp",
+			"default": -1,
 		}],
 		"formatter": "age",
-		"default": -1,
 		"align": "right",
 	},
 	"available_views": {
@@ -6986,6 +6998,9 @@ def get_formatter(field):
 		processor = None
 	elif formatter == "numerical":
 		generator = generator_numerical
+		processor = None
+	elif formatter == "numerical_with_units":
+		generator = generator_numerical_with_units
 		processor = None
 	elif formatter == "address":
 		generator = generator_address

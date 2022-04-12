@@ -1,0 +1,50 @@
+kind: OpenStackCluster
+api_family: infrastructure.cluster.x-k8s.io
+default_command: openstackclusters
+command:
+- osc
+listview:
+  name: OpenStack Clusters
+  group: Cluster Configuration
+  field_indexes:
+    Normal: [namespace, name, cluster, ready, network, subnet, endpoint, age, bastion_ip]
+  sortcolumn: namespace
+  fields:
+    bastion_ip:
+      header: "Bastion IP:"
+      path: "status#bastion#floatingIP"
+      type: str
+      formatter: address
+    cluster:
+      header: "Cluster:"
+      path: "metadata#labels#cluster.x-k8s.io/cluster-name"
+      type: str
+    endpoint:
+      header: "Endpoint:"
+      path: "spec#controlPlaneEndpoint#host"
+      type: str
+      formatter: address
+    network:
+      header: "Network:"
+      path: "status#network#id"
+      type: str
+    ready:
+      header: "Ready:"
+      path: "status#ready"
+      type: bool
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_not_ok
+    subnet:
+      header: "Subnet:"
+      path: "status#network#subnet#id"
+      type: str
