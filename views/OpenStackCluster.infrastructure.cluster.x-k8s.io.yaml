@@ -13,6 +13,7 @@ listview:
     bastion_ip:
       header: "Bastion IP:"
       path: "status#bastion#floatingIP"
+      default: "<unset>"
       type: str
       formatter: address
     cluster:
@@ -48,3 +49,130 @@ listview:
       header: "Subnet:"
       path: "status#network#subnet#id"
       type: str
+infoview:
+  name: OpenStack Cluster Info
+  infopad:
+    row_indexes:
+      Normal: [cluster, cloud_name, ready, identity, network_header, network_id, network_name, router_header, router_id, router_name, subnet_header, subnet_id, subnet_name, subnet_cidr, control_plane_endpoint, dns_nameservers, bastion_ip]
+    rows:
+      bastion_ip:
+        header: [["Bastion IP:", [main, infoheader]]]
+        path: "status#bastion#floatingIP"
+        default: "<unset>"
+        type: str
+        formatter: address
+      cloud_name:
+        header: [["Cloud Name:", [main, infoheader]]]
+        path: "spec#cloudName"
+        type: str
+      cluster:
+        header: [["C", [main, infoheader_shortcut]], ["luster:", [main, infoheader]]]
+        path: "metadata#labels#cluster.x-k8s.io/cluster-name"
+        type: str
+      control_plane_endpoint:
+        header: [["Control Plane Endpoint:", [main, infoheader]]]
+        paths:
+        - path: [["spec#controlPlaneEndpoint#host"], ["spec#controlPlaneEndpoint#port"]]
+          pathtype: tuple
+          type: [name, name]
+        # FIXME: The formatter needs to be improved to handle lists that contain addresses, etc.
+        formatter: list
+        formatting:
+          field_colors:
+          - type: address
+          - type: port
+          field_separators:
+          - type: port
+      dns_nameservers:
+        header: [["DNS Nameservers:", [main, infoheader]]]
+        path: "spec#dnsNameservers"
+        type: raw
+        formatter: address
+      identity:
+        header: [["I", [main, infoheader_shortcut]], ["dentity:", [main, infoheader]]]
+        paths:
+        - path: [["spec#identityRef#kind"], ["spec#identityRef#name"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: generic
+          field_separators:
+          - type: kind
+      network_header:
+        header: [["Network:", [main, infoheader]]]
+      network_id:
+        header: [["  ID:", [main, infoheader]]]
+        path: "status#network#id"
+        type: str
+      network_name:
+        header: [["  Name:", [main, infoheader]]]
+        path: "status#network#name"
+        type: str
+      ready:
+        header: [["Ready:", [main, infoheader]]]
+        path: "status#ready"
+        type: bool
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "False":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+      router_header:
+        header: [["Router:", [main, infoheader]]]
+      router_id:
+        header: [["  ID:", [main, infoheader]]]
+        path: "status#network#router#id"
+        type: str
+      router_name:
+        header: [["  Name:", [main, infoheader]]]
+        path: "status#network#router#name"
+        type: str
+      subnet_cidr:
+        header: [["  CIDR:", [main, infoheader]]]
+        path: "status#network#subnet#cidr"
+        type: str
+        formatter: address
+      subnet_header:
+        header: [["Subnet:", [main, infoheader]]]
+      subnet_name:
+        header: [["  Name:", [main, infoheader]]]
+        path: "status#network#subnet#name"
+        type: str
+      subnet_id:
+        header: [["  ID:", [main, infoheader]]]
+        path: "status#network#subnet#id"
+        type: str
+  shortcuts:
+    "Open Cluster":
+      key: c
+      modifier: shift
+      helptext: "Open info page for Cluster"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Cluster
+        api_family: cluster.x-k8s.io
+        owner_reference_path: "metadata#ownerReferences"
+        namespace_path: "metadata#namespace"
+    "Open identity":
+      key: i
+      modifier: shift
+      helptext: "Open info page for identity"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#identityRef#kind"
+        api_version_path: "spec#identityRef#apiVersion"
+        name_path: "spec#identityRef#name"
+        namespace_path: "metadata#namespace"

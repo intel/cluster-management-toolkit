@@ -93,3 +93,91 @@ listview:
       formatting:
         field_colors:
         - type: version
+infoview:
+  name: Kubeadm Control Plane Info
+  infopad:
+    row_indexes:
+      Normal: [cluster, initialized, api_server_available, selector, replicas, ready, updated, unavailable, version]
+    rows:
+      api_server_available:
+        header: [["API-server Available:", [main, infoheader]]]
+        path: "status#ready"
+        type: bool
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "False":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+      cluster:
+        header: [["Cluster:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - name
+          when:
+            key: kind
+            eq: Cluster
+        formatter: list
+      initialized:
+        header: [["Initialized:", [main, infoheader]]]
+        path: "status#initialized"
+        type: bool
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "False":
+                field_colors:
+                - context: main
+                  type: status_pending
+      ready:
+        header: [["Ready:", [main, infoheader]]]
+        path: "status#readyReplicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      replicas:
+        header: [["Replicas:", [main, infoheader]]]
+        path: "status#replicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      selector:
+        header: [["Selector:", [main, infoheader]]]
+        path: "status#selector"
+        type: str
+      unavailable:
+        header: [["Unavailable:", [main, infoheader]]]
+        path: "status#unavailableReplicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      updated:
+        header: [["Updated:", [main, infoheader]]]
+        path: "status#updatedReplicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      version:
+        header: [["Version:", [main, infoheader]]]
+        path: "spec#version"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
