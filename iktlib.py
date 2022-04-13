@@ -379,7 +379,7 @@ def format_yaml_line(line, override_formatting = {}):
 # Takes a list of yaml dictionaries and returns a single list of themearray
 def format_yaml(objects, override_formatting = {}, **kwargs):
 	dumps = []
-	indent = deep_get(iktconfig, "Global#indent", 4)
+	indent = deep_get(iktconfig, "Global#indent", 2)
 
 	if type(objects) == str:
 		objects = [objects]

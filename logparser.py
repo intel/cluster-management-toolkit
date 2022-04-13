@@ -102,7 +102,7 @@ class logparser_configuration:
 	merge_starting_version = True
 
 def json_dumps(obj):
-	indent = 8
+	indent = 2
 	if json_is_ujson:
 		string = json.dumps(obj, indent = indent, escape_forward_slashes = False)
 	else:
@@ -1302,7 +1302,7 @@ def expand_event(message, severity, remnants = None, fold_msg = True):
 
 	remnants = []
 	message = raw_message[0:eventstart]
-	indent = 8
+	indent = 2
 	remnants.append(([(" ".ljust(indent) + raw_message[eventstart:refstart], ("types", "yaml_reference"))], severity))
 	for key_value in raw_message[refstart:refend].split(", "):
 		key, value = key_value.split(":", 1)
