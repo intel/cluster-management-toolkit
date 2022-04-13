@@ -656,6 +656,9 @@ def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting)
 	if items is None:
 		items = []
 
+	if type(items) == str and items in ["<unset>", "<none>"]:
+		return [(items, ("types", "none", selected))]
+
 	if type(items) in [str, tuple]:
 		items = [items]
 
