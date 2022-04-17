@@ -12,4 +12,18 @@ listview:
   name: Images (OpenShift)
   group: Caching
   field_indexes:
-    Normal: [name, age]
+    Wide: [label_name, name, image_reference, age]
+    Normal: [label_name, image_reference, age]
+  sortcolumn: label_name
+  fields:
+    image_reference:
+      header: "Reference:"
+      path: "dockerImageReference"
+      type: str
+    label_name:
+      header: "Label Name:"
+      paths:
+      - path: ["dockerImageMetadata#Config#Labels#name", "dockerImageMetadata#Config#Labels#Name"]
+        pathtype: value
+        default: "<unset>"
+      type: str
