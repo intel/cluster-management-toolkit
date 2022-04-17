@@ -4,8 +4,19 @@
   - pod_name: router-default
     container_name: router
   parser_rules:
+  - name: ts_8601
   - name: glog
   - name: key_value_with_leading_message
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Trace["
+      loglevel: debug
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "http: TLS handshake error"
+      loglevel: error
 - name: openshift-ingress
   show_in_selector: false
   matchkeys:

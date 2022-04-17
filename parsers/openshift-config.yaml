@@ -6,3 +6,8 @@
   parser_rules:
   - name: glog
   - name: expand_event
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "config-operator version "
+      loglevel: notice

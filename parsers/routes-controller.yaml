@@ -1,15 +1,12 @@
-- name: openshift-network
+- name: routes-controller
   show_in_selector: false
   matchkeys:
-  - pod_name: network-operator
-    container_name: network-operator
+  - pod_name: routes-controller
   parser_rules:
   - name: glog
+  - name: key_value
   - name: override_severity
     overrides:
-    - matchtype: startswith
-      matchkey: "network-operator version"
-      loglevel: notice
     - matchtype: startswith
       matchkey: "Trace["
       loglevel: debug

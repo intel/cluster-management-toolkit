@@ -5,3 +5,8 @@
     container_name: cluster-version-operator
   parser_rules:
   - name: glog
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "ClusterVersionOperator "
+      loglevel: notice

@@ -2644,7 +2644,7 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 				message, severity, facility = http(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "json":
 				_parser_options = _filter[1]
-				if message.startswith("{\""):
+				if message.startswith(("{\"", "{ \"")):
 					message, severity, facility, remnants = split_json_style(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "json_with_leading_message":
 				_parser_options = _filter[1]

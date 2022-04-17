@@ -1,0 +1,20 @@
+- name: machine-config-controller
+  show_in_selector: false
+  matchkeys:
+  - container_name: machine-config-
+  - container_name: oauth-proxy
+  parser_rules:
+  - name: glog
+  - name: custom_splitter
+    options:
+      regex: '^\d{4}/\d\d/\d\d \d\d:\d\d:\d\d ([^:]+:[^:]+): (.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Version: "
+      loglevel: notice

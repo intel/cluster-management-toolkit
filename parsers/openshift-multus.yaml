@@ -6,6 +6,14 @@
   parser_rules:
   - name: ts_8601
   - name: json
+    options:
+      versions:
+      - cniVersion
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "WARN: "
+      loglevel: warning
 - name: openshift-multus
   show_in_selector: false
   matchkeys:
@@ -15,4 +23,10 @@
     container_name: network-metrics-daemon
     image_name: /openshift
   parser_rules:
+  - name: ts_8601
   - name: glog
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "http: TLS handshake error"
+      loglevel: error

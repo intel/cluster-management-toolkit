@@ -10,3 +10,11 @@
   parser_rules:
   - name: glog
   - name: expand_event
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "openshift-apiserver-operator version"
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "check-endpoints version"
+      loglevel: notice

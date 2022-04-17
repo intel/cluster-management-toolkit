@@ -10,5 +10,11 @@
     container_name: download-server
     image_name: /openshift
   parser_rules:
+  - name: ts_8601
   - name: glog
   - name: expand_event
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "http: TLS handshake error"
+      loglevel: error
