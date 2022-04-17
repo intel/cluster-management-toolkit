@@ -1710,22 +1710,6 @@ def datagetter_container_status(obj, path, default):
 
 	return status, {"status_group": status_group}
 
-def datagetter_pv_status(obj, path, default):
-	if obj is None:
-		return default
-
-	status, status_group = get_pv_status(obj)
-
-	return status, {"status_group": status_group}
-
-def datagetter_pvc_status(obj, path, default):
-	if obj is None:
-		return default
-
-	status, status_group = get_pvc_status(obj)
-
-	return status, {"status_group": status_group}
-
 def datagetter_node_status(obj, path, default):
 	if obj is None:
 		return default
@@ -2430,6 +2414,27 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 					tmp = deep_get_with_fallback(obj, path)
 					value = make_set_expression_list(tmp)
 					_values.append((value, "raw"))
+				elif ptype == "remap":
+					value = []
+					substitutions = deep_get(_path, "substitutions", "")
+					tmp = deep_get_with_fallback(obj, path)
+					if tmp is None:
+						tmp = []
+					# We only support remapping lists for now at least
+					for _tmp in tmp:
+						if _tmp in substitutions:
+							value.append(substitutions.get(_tmp))
+						elif "__default" in substitutions:
+							value.append(substitutions.get("__default"))
+						else:
+							value.append(_tmp)
+					if len(value) == 0:
+						if default == None:
+							continue
+						else:
+							value.append(default)
+					for tmp in value:
+						_values.append((tmp, vtype))
 				elif ptype == "substitution":
 					value = []
 					substitute = deep_get(_path, "substitute", "")
@@ -4387,31 +4392,6 @@ def make_set_expression(expression_list):
 		xlist.append(f"{key} {operator}{values}")
 	return ", ".join(xlist)
 
-def get_pv_status(pv):
-	phase = deep_get(pv, "status#phase")
-
-	if phase in ["Bound", "Available"]:
-		reason = phase
-		status_group = stgroup.OK
-	elif phase in ["Released", "Pending"]:
-		reason = phase
-		status_group = stgroup.PENDING
-	else:
-		reason = deep_get(pv, "status#reason", "").strip()
-		status_group = stgroup.NOT_OK
-	return reason, status_group
-
-def get_pvc_status(pvc):
-	phase = deep_get(pvc, "status#phase", "")
-
-	if phase in ["Bound", "Available"]:
-		status_group = stgroup.OK
-	elif phase in ["Released", "Pending"]:
-		status_group = stgroup.PENDING
-	else:
-		status_group = stgroup.NOT_OK
-	return phase, status_group
-
 def get_pv_from_pvc_name(pvc_name):
 	pv = None
 	pv_name = None
@@ -4429,36 +4409,19 @@ def get_pv_from_pvc_name(pvc_name):
 
 	return pv, pv_name
 
-def get_pods_by_pvc(pvc):
-	pods = []
+def get_pv_status(pv):
+	phase = deep_get(pv, "status#phase")
 
-	pvc_name = deep_get(pvc, "metadata#name")
-	pvc_namespace = deep_get(pvc, "metadata#namespace")
-	vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), pvc_namespace)
-	if status == 200:
-		for pod in vlist:
-			for volume in deep_get(pod, "spec#volumes", []):
-				if deep_get(volume, "persistentVolumeClaim") is None:
-					continue
-				if deep_get(volume, "persistentVolumeClaim#claimName") == pvc_name:
-					pods.append(pod)
-	return pods, status
-
-def get_pods_by_pv(pv):
-	claim_ref = deep_get(pv, "spec#claimRef")
-
-	if claim_ref is None:
-		return [], 200
-
-	# PV<=>PVC is a 1:1 mapping, but multiple pods can share the same PVC
-	name = deep_get(claim_ref, "name")
-	namespace = deep_get(claim_ref, "namespace")
-	pvc = kh.get_ref_by_kind_name_namespace(("PersistentVolumeClaim", ""), name, namespace)
-
-	if pvc is None:
-		return []
-
-	return get_pods_by_pvc(pvc)
+	if phase in ["Bound", "Available"]:
+		reason = phase
+		status_group = stgroup.OK
+	elif phase in ["Released", "Pending"]:
+		reason = phase
+		status_group = stgroup.PENDING
+	else:
+		reason = deep_get(pv, "status#reason", "").strip()
+		status_group = stgroup.NOT_OK
+	return reason, status_group
 
 def get_pods_by_node(node):
 	pods = []
@@ -5715,7 +5678,16 @@ def filter_list_entry(obj, caller_obj, filters = []):
 					if type(values) == str:
 						values = [values]
 
-				if deep_get(obj, key, "").rstrip() not in values:
+				_listref = deep_get(rule, "list")
+				if _listref is not None:
+					_list = deep_get(obj, _listref, [])
+					for _item in _list:
+						if deep_get(_item, key, "").rstrip() in values:
+							break
+					else:
+						skip = True
+						break
+				elif deep_get(obj, key, "").rstrip() not in values:
 					skip = True
 					break
 		if len(block) > 0:
@@ -6686,16 +6658,6 @@ field_templates = {
 	"pod_status": {
 		"header": "Status:",
 		"datagetter": datagetter_pod_status,
-		"generator": generator_status,
-	},
-	"pv_status": {
-		"header": "Status:",
-		"datagetter": datagetter_pv_status,
-		"generator": generator_status,
-	},
-	"pvc_status": {
-		"header": "Status:",
-		"datagetter": datagetter_pvc_status,
 		"generator": generator_status,
 	},
 	"repository": {
@@ -8443,6 +8405,7 @@ cmdata_format = [
 	# To do an exact match on cmdata set both cmdata prefix and cmdata suffix to the same string
 	# (this will work unless you have a string that contains the same substring twice)
 	("", "", "caBundle", "caBundle", "CRT"),
+	("", "image-registry-certificates", "", "", "CRT"),
 	("", "", "", ".crt", "CRT"),
 	("", "", "", ".pem", "CRT"),
 	("", "", "", "client-ca-file", "CRT"),
@@ -9627,16 +9590,6 @@ def field_processor_pv_type(obj, path = None, extra_paths = None, fallback = Non
 		pvtype = "<unknown>"
 
 	return [(f"{pvtype}", ("types", "generic"))]
-
-# All fields except obj will be ignored
-def field_processor_pv_status(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	status, status_group = get_pv_status(obj)
-	return [(f"{status}", color_status_group(status_group, False))]
-
-# All fields except obj will be ignored
-def field_processor_pvc_status(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	status, status_group = get_pvc_status(obj)
-	return [(f"{status}", color_status_group(status_group, False))]
 
 # All fields except obj will be ignored
 def field_processor_pod_status(obj, path = None, extra_paths = None, fallback = None, formatting = None):
@@ -15064,141 +15017,6 @@ infoviews_builtin = {
 				"itemgetter": get_allowed_ips,
 				# This isn't supported for now
 				"sortcolumn": "key",
-			},
-		},
-	},
-	("PersistentVolume", ""): {
-		"windowheader": "Persistent Volume Info",
-		"field_indexes": {
-			"Normal": ["namespace", "name"],
-		},
-		"sortcolumn": "name",
-		"activatedfun": genericinfoloop,
-		"viewoverride": ("Pod", ""),
-		"infopad": {
-			"Status:": {
-				"processor": field_processor_pv_status,
-			},
-			"Storage Class:": {
-				"path": "spec#storageClassName",
-			},
-			"Persistent Volume Claim:": {
-				"fieldname": [("P", ("main", "infoheader_shortcut")), ("ersistent Volume Claim:", ("main", "infoheader"))],
-				"path": "spec#claimRef",
-				"extra_paths": ["spec#claimRef#namespace", "spec#claimRef#name"],
-				"formatting": {
-					"field_colors": [("types", "namespace"), ("types", "generic")],
-					"item_separators": [("separators", "namespace")],
-				},
-				"processor": field_processor_list,
-				"fallback": [("strings", "none")],
-			},
-			"Reclaim Policy:": {
-				"path": "spec#persistentVolumeReclaimPolicy",
-			},
-			"Access Modes:": {
-				"path": "spec#accessModes",
-				"processor": field_processor_access_modes,
-			},
-			"Volume Mode:": {
-				"path": "spec#volumeMode",
-				"fallback": [("Filesystem", ("types", "generic"))],
-			},
-			"Volume Node Affinity:": {
-				"path": "spec#volumeNodeAffinity",
-				"processor": field_processor_label_selector,
-			},
-			"Capacity:": {
-				"path": "spec#capacity#storage",
-				# FIXME: maybe a processor here to allow for unit highlighting
-				"fallback": [("", ("types", "generic"))],
-			},
-			"Source:": {
-				"fieldname": [("S", ("main", "infoheader_shortcut")), ("ource:", ("main", "infoheader"))],
-				"processor": None,
-			},
-			"  Type:": {
-				"processor": field_processor_pv_type,
-			}
-		},
-		"listpad": {
-			"listgetter": get_pods_by_pv,
-			"infogetter": get_pod_info,
-		},
-		"shortcuts": {
-			"Mount Options": {
-				"shortcut": ord("m"),
-				"helptext": ("M", "Show mount options"),
-				"widget": "windowwidget",
-				"title": "Mount options:",
-				"itemgetter": get_list_as_list,
-				"itemgetter_args": {
-					"path": "spec#mountOptions",
-				},
-			},
-			"Persistent Volume Claim": {
-				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Open info page for Persistent Volume Claim"),
-				"call": resourceinfodispatch,
-				"kind": ("PersistentVolumeClaim", ""),
-				"name_path": "spec#claimRef#name",
-				"namespace_path": "spec#claimRef#namespace",
-			},
-			"Source": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Show properties for volume source"),
-				"widget": "windowwidget",
-				"title": "Properties:",
-				"itemgetter": get_volume_properties,
-				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
-				# This isn't supported for now
-				"sortcolumn": "key",
-			},
-		},
-	},
-	("PersistentVolumeClaim", ""): {
-		"windowheader": "Persistent Volume Claim Info",
-		"infopad": {
-			"Status:": {
-				"processor": field_processor_pvc_status,
-			},
-			"Persistent Volume:": {
-				"fieldname": [("P", ("main", "infoheader_shortcut")), ("ersistent Volume:", ("main", "infoheader"))],
-				"path": "spec#volumeName",
-			},
-			"Data Source:": {
-				"fieldname": [("D", ("main", "infoheader_shortcut")), ("ata Source:", ("main", "infoheader"))],
-				"path": "spec#dataSource",
-				"extra_paths": ["spec#dataSource#kind", "spec#dataSource#name"],
-				"fallback": [("strings", "none")],
-				"formatting": {
-					"item_separators": [("separators", "kind")],
-				},
-				"processor": field_processor_list,
-			},
-			"Storage Class:": {
-				"path": "spec#storageClassName",
-			},
-			"Access Modes:": {
-				"path": "status#accessModes",
-				"processor": field_processor_access_modes,
-			},
-			"Volume Mode:": {
-				"path": "spec#volumeMode",
-				"fallback": [("Filesystem", curses.A_NORMAL)],
-			},
-			"Capacity:": {
-				"path": "status#capacity#storage",
-				"fallback": [("", curses.A_NORMAL)],
-			},
-		},
-		"shortcuts": {
-			"Persistent Volume": {
-				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Open info page for Persistent Volume"),
-				"call": resourceinfodispatch,
-				"kind": ("PersistentVolume", ""),
-				"name_path": "spec#volumeName",
 			},
 		},
 	},
