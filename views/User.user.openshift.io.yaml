@@ -24,7 +24,6 @@ listview:
       formatting:
         field_colors:
         - type: numerical
-      align: right
 infoview:
   name: User Info
   infopad:
@@ -37,9 +36,8 @@ infoview:
         - path: groups
           pathtype: list
         formatter: list
-      # XXX: maybe this should be in fields instead to allow jumping to the identity?
       identities:
-        header: [["Identities:", [main, infoheader]]]
+        header: [["I", [main, infoheader_shortcut]], ["dentities:", [main, infoheader]]]
         paths:
         - path: identities
           pathtype: list
@@ -51,3 +49,22 @@ infoview:
         formatting:
           field_colors:
           - type: numerical
+  shortcuts:
+    "Show Identity list":
+      key: i
+      modifier: shift
+      helptext: "List Identitites"
+      widget: windowwidget
+      title: "Identities:"
+      selectable: true
+      itemgetter: get_list_as_list
+      itemgetter_args:
+        paths: ["identities"]
+      # Not supported for now
+      sortcolumn: identities
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        kind: Identity
+        api_family: user.openshift.io
+        name_path: 0
