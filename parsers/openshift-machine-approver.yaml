@@ -5,3 +5,8 @@
     container_name: machine-approver-controller
   parser_rules:
   - name: glog
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Trace["
+      loglevel: debug

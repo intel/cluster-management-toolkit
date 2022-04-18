@@ -1,0 +1,27 @@
+- name: machine-api
+  show_in_selector: false
+  matchkeys:
+  - pod_name: machine-api
+    container_name: machineset-controller
+  - pod_name: machine-api
+    container_name: machine-controller
+  - pod_name: machine-api
+    container_name: nodelink-controller
+  - pod_name: machine-api
+    container_name: machine-healthcheck-controller
+  - pod_name: machine-api
+    container_name: machine-api-operator
+  parser_rules:
+  - name: ts_8601
+  - name: glog
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Version:"
+      loglevel: notice
+    - matchtype: startswith
+      matchkey: "Trace["
+      loglevel: debug
+    - matchtype: startswith
+      matchkey: "http: TLS handshake error"
+      loglevel: error

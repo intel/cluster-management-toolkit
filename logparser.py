@@ -646,6 +646,9 @@ def split_http_style(message, timestamp):
 # log messages of the format:
 # E0514 09:01:55.108028382       1 server_chttp2.cc:40]
 # I0511 14:31:10.500543       1 start.go:76]
+# XXX: Messages like these have been observed;
+# I0417 09:32:43.32022-04-17T09:32:43.343052189Z 41605       1 tlsconfig.go:178]
+# they indicate a race condition; hack around them to make the log pretty
 def split_glog(message, severity = None, facility = None):
 	matched = False
 	loggingerror = None
@@ -656,6 +659,10 @@ def split_glog(message, severity = None, facility = None):
 	if message.startswith("ERROR: logging before flag.Parse: "):
 		loggingerror = message[0:len("ERROR: logging before flag.Parse")]
 		message = message[len("ERROR: logging before flag.Parse: "):]
+
+	tmp = re.match(r"^([A-Z]\d{4} \d\d:\d\d:\d\d\.\d)\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{9}Z (.*)", message)
+	if tmp is not None:
+		message = f"{tmp[1]}{tmp[2]}"
 
 	tmp = re.match(r"^([A-Z])\d\d\d\d \d\d:\d\d:\d\d\.\d+\s+(\d+)\s(.+?:\d+)\](.*)", message)
 	if tmp is not None:
@@ -1263,7 +1270,7 @@ def custom_override_severity(message, severity, overrides = []):
 
 def expand_event(message, severity, remnants = None, fold_msg = True):
 	if fold_msg == True or (remnants is not None and len(remnants) > 0):
-		return message, remnants
+		return severity, message, remnants
 
 	raw_message = message
 	parendepth = 0
@@ -1303,14 +1310,23 @@ def expand_event(message, severity, remnants = None, fold_msg = True):
 	remnants = []
 	message = raw_message[0:eventstart]
 	indent = 2
+	# Try to extract an embedded severity; use it if higher than severity
+	tmp = re.match(r".*type: '([A-Z][a-z]+)' reason:.*", raw_message)
+	if tmp is not None:
+		if tmp[1] == "Normal":
+			_severity = loglevel.INFO
+		elif tmp[1] == "Warning":
+			_severity = loglevel.WARNING
+		if _severity < severity:
+			severity = _severity
 	remnants.append(([(" ".ljust(indent) + raw_message[eventstart:refstart], ("types", "yaml_reference"))], severity))
 	for key_value in raw_message[refstart:refend].split(", "):
 		key, value = key_value.split(":", 1)
 		remnants.append(([(" ".ljust(indent * 2) + key, ("types", "yaml_key")), ("separators", "yaml_key_separator"), (f" {value}", ("types", "yaml_value"))], severity))
 	remnants.append(([(" ".ljust(indent * 1) + raw_message[refend:eventend], ("types", "yaml_reference"))], severity))
-	remnants.append(([(raw_message[eventend:eventend + 3], ("types", "generic")), (raw_message[eventend + 3:len(raw_message)], ("types", "generic"))], severity))
+	remnants.append(([(raw_message[eventend:eventend + 3], ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (raw_message[eventend + 3:len(raw_message)], ("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 
-	return message, remnants
+	return severity, message, remnants
 
 def expand_header_key_value(message, severity, remnants = None, fold_msg = True):
 	if fold_msg == True or (remnants is not None and len(remnants) > 0):
@@ -1431,7 +1447,7 @@ def kube_parser_1(message, fold_msg = True):
 	if match == True and remnants is not None:
 		# Event(v1.ObjectReference{.*}):
 		if message.startswith("Event(v1.ObjectReference{"):
-			message, remnants = expand_event(message, severity, remnants = remnants, fold_msg = fold_msg)
+			severity, message, remnants = expand_event(message, severity, remnants = remnants, fold_msg = fold_msg)
 		elif message.startswith("\"Event occurred\""):
 			message, remnants = expand_header_key_value(message, severity, remnants = remnants, fold_msg = fold_msg)
 
@@ -2602,7 +2618,7 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 				facility, severity, message, remnants = facility_hh_mm_ss_ms_severity(message, severity = severity, fold_msg = fold_msg)
 			elif _filter == "expand_event":
 				if message.startswith("Event(v1.ObjectReference{"):
-					message, remnants = expand_event(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
+					severity, message, remnants = expand_event(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
 			elif _filter == "modinfo":
 				facility, severity, message, remnants = modinfo(message, fold_msg = fold_msg)
 			# Timestamp formats

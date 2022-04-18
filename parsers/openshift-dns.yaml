@@ -20,4 +20,8 @@
   parser_rules:
   - name: glog
   - name: key_value
-  # Maybe we should do a diff of "updated DNS default status: old: [...] new: [...]"?
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "Trace["
+      loglevel: debug

@@ -16,5 +16,11 @@
   - name: override_severity
     overrides:
     - matchtype: startswith
-      matchkey: "Version: "
+      matchkey: "Version:"
       loglevel: notice
+    - matchtype: startswith
+      matchkey: "Trace["
+      loglevel: debug
+    - matchtype: startswith
+      matchkey: "Error syncing "
+      loglevel: error
