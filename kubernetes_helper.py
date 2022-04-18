@@ -2133,6 +2133,11 @@ class KubernetesHelper:
 			"api_family": ["apis/tensorboard.kubeflow.org/v1alpha1/"],
 			"api": "tensorboards",
 		},
+		# topology.node.k8s.io
+		("NodeResourceTopology", "topology.node.k8s.io"): {
+			"api_family": ["apis/topology.node.k8s.io/v1alpha1/"],
+			"api": "noderesourcetopologies",
+		},
 		# traefik.containo.us
 		("IngressRoute", "traefik.containo.us"): {
 			"api_family": ["apis/traefik.containo.us/v1alpha1/"],
@@ -2206,10 +2211,14 @@ class KubernetesHelper:
 			"api": "openshiftwebconsoleconfigs",
 			"namespaced": False,
 		},
-		# topology.node.k8s.io
-		("NodeResourceTopology", "topology.node.k8s.io"): {
-			"api_family": ["apis/topology.node.k8s.io/v1alpha1/"],
-			"api": "noderesourcetopologies",
+		# whereabouts.cni.cncf.io
+		("IPPool", "whereabouts.cni.cncf.io"): {
+			"api_family": ["apis/whereabouts.cni.cncf.io/v1alpha1/"],
+			"api": "ippools",
+		},
+		("OverlappingRangeIPReservation", "whereabouts.cni.cncf.io"): {
+			"api_family": ["apis/whereabouts.cni.cncf.io/v1alpha1/"],
+			"api": "overlappingrangeipreservations",
 		},
 		# xgboostjob.kubeflow.org
 		("XGBoostJob", "xgboostjob.kubeflow.org"): {

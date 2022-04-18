@@ -1483,7 +1483,7 @@ def normalise_mem_bytes_to_str(_mem):
 
 	return f"{mem:0.1f}{suffix}B"
 
-def datagetter_available_views(obj, path, default):
+def datagetter_api_support(obj, path, default):
 	if obj is None:
 		return default
 
@@ -1491,6 +1491,13 @@ def datagetter_available_views(obj, path, default):
 	api_family = deep_get(obj, "spec#group", "")
 
 	available_views = []
+
+	try:
+		_kind, _api_group = kh.guess_kind((kind, api_family))
+		available_views.append("Known")
+	except:
+		pass
+
 	for view in views:
 		if deep_get(views, f"{view}#kind", ("", "")) == (kind, api_family):
 			available_views.append("List")
@@ -6025,9 +6032,9 @@ builtin_fields = {
 		"formatter": "age",
 		"align": "right",
 	},
-	"available_views": {
-		"header": "Available Views:",
-		"datagetter": datagetter_available_views,
+	"api_support": {
+		"header": "API Support:",
+		"datagetter": datagetter_api_support,
 		"formatter": "list",
 	},
 	"name": {
