@@ -1503,7 +1503,10 @@ def datagetter_api_support(obj, path, default):
 			available_views.append("List")
 
 	if (kind, api_family) in infoviews:
-		available_views.append("Info")
+		if (kind, api_family) in infoviews_builtin:
+			available_views.append("Info")
+		else:
+			available_views.append("*Info")
 
 	if len(available_views) == 0:
 		available_views = default

@@ -1,0 +1,60 @@
+kind: APIRequestCount
+api_family: apiserver.openshift.io
+default_command: apirequestcounts
+command:
+- apireqcounts
+- apireqcount
+listview:
+  name: API Request Counts
+  group: Administration
+  field_indexes:
+    Normal: [name, requests_last_hour, requests_last_24h, planned_removal]
+  fields:
+    planned_removal:
+      header: "Planned Removal:"
+      path: "status#removedInRelease"
+      type: version
+    requests_last_hour:
+      header: "Requests (Last Hour):"
+      path: "status#currentHour#requestCount"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+      default: 0
+    requests_last_24h:
+      header: "Requests (Last 24h):"
+      path: "status#requestCount"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+      default: 0
+infoview:
+  name: API Request Info
+  infopad:
+    row_indexes:
+      Normal: [planned_removal, requests_last_hour, requests_last_24h]
+    rows:
+      planned_removal:
+        header: [["Planned Removal:", [main, infoheader]]]
+        path: "status#removedInRelease"
+        type: version
+      requests_last_hour:
+        header: [["Requests (Last Hour):", [main, infoheader]]]
+        path: "status#currentHour#requestCount"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        default: 0
+      requests_last_24h:
+        header: [["Requests (Last 24h):", [main, infoheader]]]
+        path: "status#requestCount"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        default: 0

@@ -845,6 +845,12 @@ class KubernetesHelper:
 			"api_family": ["apis/addons.cluster.x-k8s.io/v1beta1/"],
 			"api": "clusterresourcesets",
 		},
+		# apiserver.openshift.io
+		("APIRequestCount", "apiserver.openshift.io"): {
+			"api_family": ["apis/apiserver.openshift.io/v1/"],
+			"api": "apirequestcounts",
+			"namespaced": False,
+		},
 		# apps.openshift.io
 		("DeploymentConfig", "apps.openshift.io"): {
 			"api_family": ["apis/apps.openshift.io/v1/"],
@@ -1031,6 +1037,11 @@ class KubernetesHelper:
 			"api": "ciliumnodes",
 			"namespaced": False,
 		},
+		# cloudcredential.openshift.io
+		("CredentialsRequest", "cloudcredential.openshift.io"): {
+			"api_family": ["apis/cloudcredential.openshift.io/v1/"],
+			"api": "credentialsrequests",
+		},
 		# cluster.x-k8s.io
 		("ClusterClass", "cluster.x-k8s.io"): {
 			"api_family": ["apis/cluster.x-k8s.io/v1beta1/"],
@@ -1123,6 +1134,11 @@ class KubernetesHelper:
 		("Image", "config.openshift.io"): {
 			"api_family": ["apis/config.openshift.io/v1/"],
 			"api": "images",
+			"namespaced": False,
+		},
+		("ImageContentPolicy", "config.openshift.io"): {
+			"api_family": ["apis/config.openshift.io/v1/"],
+			"api": "imagecontentpolicies",
 			"namespaced": False,
 		},
 		("Infrastructure", "config.openshift.io"): {
