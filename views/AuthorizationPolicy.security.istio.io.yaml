@@ -10,3 +10,176 @@ listview:
   field_indexes:
     Normal: [namespace, name, age]
   sortcolumn: namespace
+infoview:
+  name: Authorization Policy Info
+  infopad:
+    row_indexes:
+      Normal: [workload_selector, action]
+    rows:
+      action:
+        header: [["Action:", [main, infoheader]]]
+        path: "spec#action"
+        type: str
+        default: "ALLOW"
+      workload_selector:
+        header: [["Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: key_value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+  listpad:
+    infogetter: get_auth_rule_info
+    field_indexes:
+      Normal: [source, operation, condition]
+    sortcolumn: source
+    fields:
+      condition:
+        header: "Condition:"
+        path: "condition"
+        type: raw
+        formatter: list
+        formatting:
+          # equals, logical and, not equals
+          # key=[...] ∧ key≠[...], ...
+          field_separators:
+          - type: equals
+          - type: logical_and
+          - type: not_equals
+          item_separator:
+            type: logical_or
+          field_prefixes:
+          -
+            - type: no_pad
+          -
+            - type: set_start
+          -
+            - type: no_pad
+          -
+            - type: set_start
+          field_suffixes:
+          -
+            - type: no_pad
+          -
+            - type: set_end
+          -
+            - type: no_pad
+          -
+            - type: set_end
+      operation:
+        header: "Operation:"
+        path: "operation"
+        type: raw
+        formatter: list
+        formatting:
+          field_separators:
+          - type: logical_and
+          item_separator:
+            type: logical_or
+          field_prefixes:
+          -
+            - type: hosts
+            - type: list_start
+          -
+            - type: not
+            - type: hosts
+            - type: list_start
+          -
+            - type: ports
+            - type: list_start
+          -
+            - type: not
+            - type: ports
+            - type: list_start
+          -
+            - type: methods
+            - type: list_start
+          -
+            - type: not
+            - type: methods
+            - type: list_start
+          -
+            - type: paths
+            - type: list_start
+          -
+            - type: not
+            - type: paths
+            - type: list_start
+          field_suffixes:
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end
+      source:
+        header: "Source:"
+        path: "source"
+        type: raw
+        formatter: list
+        formatting:
+          field_separators:
+          - type: logical_and
+          item_separator:
+            type: logical_or
+          field_prefixes:
+          -
+            - type: principals
+            - type: list_start
+          -
+            - type: not
+            - type: principals
+            - type: list_start
+          -
+            - type: request_principals
+            - type: list_start
+          -
+            - type: not
+            - type: request_principals
+            - type: list_start
+          -
+            - type: namespaces
+            - type: list_start
+          -
+            - type: not
+            - type: namespaces
+            - type: list_start
+          -
+            - type: ip_blocks
+            - type: list_start
+          -
+            - type: not
+            - type: ip_blocks
+            - type: list_start
+          field_suffixes:
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end
+          -
+            - type: list_end

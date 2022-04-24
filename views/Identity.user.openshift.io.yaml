@@ -15,3 +15,53 @@ listview:
       header: "Provider User Name:"
       path: "providerUserName"
       type: str
+    user_uid_tuple:
+      header: "User:"
+      paths:
+      - path: [["user#name"], ["user#uid"]]
+        pathtype: tuple
+      formatter: list
+      formatting:
+        field_colors:
+        - type: user
+        - type: uid
+        field_separator:
+        - type: user_uid
+infoview:
+  name: Identity Info
+  infopad:
+    row_indexes:
+      Normal: [provider, provider_user_name, user_uid_tuple]
+    rows:
+      provider:
+        header: [["Provider:", [main, infoheader]]]
+        path: "providerName"
+        type: str
+      provider_user_name:
+        header: [["Provider User Name:", [main, infoheader]]]
+        path: "providerUserName"
+        type: str
+      user_uid_tuple:
+        header: [["U", [main, infoheader_shortcut]], ["ser:", [main, infoheader]]]
+        paths:
+        - path: [["user#name"], ["user#uid"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: user
+          - type: uid
+          field_separator:
+          - type: user_uid
+  shortcuts:
+    "User":
+      key: u
+      modifier: shift
+      helptext: "Open info page for User"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: User
+        api_family: user.openshift.io
+        name_path: "user#name"

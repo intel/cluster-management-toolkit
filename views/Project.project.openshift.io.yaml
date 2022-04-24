@@ -1,0 +1,58 @@
+kind: Project
+api_family: project.openshift.io
+default_command: projects
+command:
+- projects.project.openshift.io
+- projects
+- project
+listview:
+  name: Projects
+  group: OpenShift
+  field_indexes:
+    Normal: [name, phase, age]
+  fields:
+    phase:
+      header: "Status:"
+      path: "status#phase"
+      type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            Active:
+              field_colors:
+              - context: main
+                type: status_ok
+            Terminating:
+              field_colors:
+              - context: main
+                type: status_pending
+infoview:
+  name: Project Info
+  infopad:
+    row_indexes:
+      Normal: [cluster_version]
+    rows:
+      cluster_version:
+        header: [["C", [main, infoheader_shortcut]], ["luster Version:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - name
+          when:
+            key: kind
+            eq: ClusterVersion
+        default: "<none>"
+  shortcuts:
+    "Cluster Version":
+      key: c
+      modifier: shift
+      helptext: "Open info page for Cluster Version"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: ClusterVersion
+        api_family: config.openshift.io

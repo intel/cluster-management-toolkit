@@ -392,16 +392,25 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 
 			# OK, we know now that we'll be appending the field, so do the prefix
 			if field_prefixes is not None and i < len(field_prefixes):
-				for prefix in field_prefixes[i]:
-					totallen += themearray_len([prefix])
-					array.append((prefix, selected))
+				if type(field_prefixes[i]) == tuple:
+					totallen += themearray_len([field_prefixes[i]])
+					array.append(field_prefixes[i])
+				else:
+					for prefix in field_prefixes[i]:
+						totallen += themearray_len([prefix])
+						array.append((prefix, selected))
 			array.append(formatted_string)
 			totallen += len(string)
 			# And now the suffix
 			if field_suffixes is not None and i < len(field_suffixes):
-				for suffix in field_suffixes[i]:
-					totallen += themearray_len([suffix])
-					array.append((suffix, selected))
+				if type(field_suffixes[i]) == tuple:
+					totallen += themearray_len([field_suffixes[i]])
+					array.append(field_suffixes[i])
+				else:
+					for suffix in field_suffixes[i]:
+						totallen += themearray_len([suffix])
+						array.append((suffix, selected))
+				# RequestPrincipals[*@example.com]
 			skip_separator = False
 
 	return align_and_pad(array, pad, fieldlen, totallen, ralign, selected)
@@ -428,7 +437,7 @@ def generator_list(obj, field, fieldlen, pad, ralign, selected, **formatting):
 		ellipsis = ("separators", "ellipsis")
 
 	field_prefixes = deep_get(formatting, "field_prefixes")
-	field_suffixes = deep_get(formatting, "field_prefixes")
+	field_suffixes = deep_get(formatting, "field_suffixes")
 
 	mapping = deep_get(formatting, "mapping", {})
 
@@ -952,10 +961,18 @@ def processor_list(obj, field, item_separator = ("separators", "list"), field_se
 				string += themearray_to_string([field_separators[min(i - 1, len(field_separators) - 1)]])
 
 			if field_prefixes is not None and i < len(field_prefixes):
-				string += themearray_to_string([field_prefixes[i]])
+				if type(field_prefixes[i]) == tuple:
+					string += themearray_to_string([field_prefixes[i]])
+				else:
+					for _item in field_prefixes[i]:
+						string += themearray_to_string([_item])
 			string += tmp
 			if field_suffixes is not None and i < len(field_suffixes):
-				string += themearray_to_string([field_suffixes[i]])
+				if type(field_suffixes[i]) == tuple:
+					string += themearray_to_string([field_suffixes[i]])
+				else:
+					for _item in field_suffixes[i]:
+						string += themearray_to_string([_item])
 			skip_separator = False
 
 		strings.append(string)
@@ -6138,27 +6155,6 @@ field_templates = {
 		"field_separators": [("separators", "fraction")],
 		"ralign": True,
 	},
-	"condition": {
-		"header": "Condition:",
-		"generator": generator_list,
-		"field_prefixes": [
-			[("separators", "no_pad")],
-			[("separators", "set_start")],
-			[("separators", "no_pad")],
-			[("separators", "set_start")],
-		],
-		"field_suffixes": [
-			[("separators", "no_pad")],
-			[("separators", "set_end")],
-			[("separators", "no_pad")],
-			[("separators", "set_end")],
-		],
-		# equals, logical and, not equals
-		# key=[...] ∧ key≠[...], ...
-		"field_separators": [("separators", "equals"), ("separators", "logical_and"), ("separators", "not_equals")],
-		# Logical or
-		"item_separator": ("separators", "logical_or"),
-	},
 	"configmap": {
 		"header": "Data:",
 	},
@@ -6284,38 +6280,6 @@ field_templates = {
 		"path": "type",
 		"datagetter": datagetter_event_status,
 		"generator": generator_status,
-	},
-	"from": {
-		"header": "Source:",
-		"generator": generator_list,
-		"field_prefixes": [
-			[("separators", "principals"), ("separators", "list_start")],
-			[("separators", "not"),
-			 ("separators", "principals"), ("separators", "list_start")],
-			[("separators", "request_principals"), ("separators", "list_start")],
-			[("separators", "not"),
-			 ("separators", "request_principals"), ("separators", "list_start")],
-			[("separators", "namespaces"), ("separators", "list_start")],
-			[("separators", "not"),
-			 ("separators", "namespaces"), ("separators", "list_start")],
-			[("separators", "ipblocks"), ("separators", "list_start")],
-			[("separators", "not"),
-			 ("separators", "ipblocks"), ("separators", "list_start")],
-		],
-		"field_suffixes": [
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-		],
-		# Logical and
-		"field_separators": [("separators", "logical_and")],
-		# Logical or
-		"item_separator": ("separators", "logical_or"),
 	},
 	"ftype": {
 		"header": "Type:",
@@ -6521,38 +6485,6 @@ field_templates = {
 	"non_resource_urls": {
 		"header": "Non-Resource URLs:",
 		"generator": generator_list,
-	},
-	"operation": {
-		"header": "Operation:",
-		"generator": generator_list,
-		"field_prefixes": [
-			[("separators", "hosts"), ("separators", "list_start")],
-			[("separators", "not"),
-			 ("separators", "hosts"), ("separators", "list_start")],
-			[("separators", "ports"), ("separators", "list_start")],
-			[("separators", "not"),
-			 ("separators", "ports"), ("separators", "list_start")],
-			[("separators", "methods"), ("separators", "list_start")],
-			[("separators", "not"),
-			 ("separators", "methods"), ("separators", "list_start")],
-			[("separators", "paths"), ("separators", "list_start")],
-			[("separators", "not"),
-			 ("separators", "paths"), ("separators", "list_start")],
-		],
-		"field_suffixes": [
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-			[("separators", "list_end")],
-		],
-		# Logical and
-		"field_separators": [("separators", "logical_and")],
-		# Logical or
-		"item_separator": ("separators", "logical_or"),
 	},
 	"operator": {
 		"header": "Operator:",
@@ -6922,19 +6854,31 @@ def get_formatting(field, formatting, default):
 	if type(default) == tuple:
 		items = [items]
 
+	if len(items) < 1:
+		raise Exception(f"field {field}, formatting {formatting}: format list item is empty; this is likely an error in the view file")
+
 	for item in items:
 		context = None
 		if formatting in ["item_separator", "field_separators", "ellipsis", "field_prefixes", "field_suffixes"]:
 			context = "separators"
 		elif formatting == "field_colors":
 			context = "types"
-		context = deep_get(item, "context", context)
-		ftype = deep_get(item, "type")
-		if len(items) < 1:
-			raise Exception(f"field {field}, formatting {formatting}: format list item is empty; this is likely an error in the view file")
-		if ftype is None or context is None:
-			raise Exception(f"field {field}, formatting {formatting}: context={context} type={ftype}; list type or context missing/formatting has no implicit context; this is likely an error in the view file")
-		result.append((context, ftype))
+		# field_prefixes/suffixes can be either a list of a list of lists
+		if type(item) == tuple or formatting not in ["field_prefixes", "field_suffixes"]:
+			context = deep_get(item, "context", context)
+			ftype = deep_get(item, "type")
+			if ftype is None or context is None:
+				raise Exception(f"field {field}, formatting {formatting}: context={context} type={ftype}; list type or context missing/formatting has no implicit context; this is likely an error in the view file")
+			result.append((context, ftype))
+		else:
+			_result = []
+			for _item in item:
+				_context = deep_get(_item, "context", context)
+				ftype = deep_get(_item, "type")
+				if ftype is None or context is None:
+					raise Exception(f"field {field}, formatting {formatting}: context={context} type={ftype}; list type or context missing/formatting has no implicit context; this is likely an error in the view file")
+				_result.append((_context, ftype))
+			result.append(_result)
 
 	if type(default) == tuple:
 		if len(result) > 1:
@@ -11900,6 +11844,13 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	return resourceinfodispatch(stdscr, obj, kind)
 
+def resourceinfodispatch_with_lookup_on_activation(stdscr, obj, kind, **kwargs):
+	if "obj" not in kwargs:
+		kwargs["obj"] = obj
+	if kind not in kwargs:
+		kwargs["kind"] = kind
+	return resourceinfodispatch_with_lookup(stdscr, **kwargs)
+
 def listgetter_namespaced_resources(obj, **kwargs):
 	vlist = []
 	status = 200
@@ -13424,26 +13375,6 @@ infoviews_builtin = {
 			"infogetter": get_app_status_info,
 		},
 	},
-	("AuthorizationPolicy", "security.istio.io"): {
-		"windowheader": "Authorization Policy Info",
-		"field_indexes": {
-			"Normal": ["source", "operation", "condition"],
-		},
-		"sortcolumn": "source",
-		"infopad": {
-			"Workload Selector:": {
-				"path": "spec#selector#labels",
-				"processor": field_processor_label_selector,
-			},
-			"Action:": {
-				"path": "spec#action",
-				"fallback": [("ALLOW", ("types", "generic"))],
-			},
-		},
-		"listpad": {
-			"infogetter": get_auth_rule_info,
-		},
-	},
 	("CertificateSigningRequest", "certificates.k8s.io"): {
 		"windowheader": "Certificate Signing Request Info",
 		"infopad": {
@@ -14322,42 +14253,6 @@ infoviews_builtin = {
 					"name_path": "described_object_name",
 					"namespace_path": "described_object_namespace",
 				},
-			},
-		},
-	},
-	("Identity", "user.openshift.io"): {
-		"infopad": {
-			"Provider:": {
-				"path": "providerName",
-			},
-			"Provider User Name:": {
-				"path": "providerUserName",
-			},
-			"User:": {
-				"fieldname": [("U", ("main", "infoheader_shortcut")), ("ser:", ("main", "infoheader"))],
-				"path": "user",
-				"extra_paths": ["user#name", "user#uid"],
-				"formatting": {
-					"field_colors": [("types", "user"), ("types", "uid")],
-					"item_separators": [("separators", "user_uid")],
-				},
-				"processor": field_processor_list,
-			},
-		},
-		"shortcuts": {
-			"User": {
-				"shortcut": ord("U"),
-				"helptext": ("[Shift] + U", "Open info page for User"),
-				"call": resourceinfodispatch,
-				"kind": ("User", "user.openshift.io"),
-				"name_path": "user#name",
-			},
-		},
-	},
-	("Image", "caching.internal.knative.dev"): {
-		"infopad": {
-			"Image:": {
-				"path": "spec#image",
 			},
 		},
 	},
