@@ -9,3 +9,31 @@ listview:
   field_indexes:
     Normal: [namespace, name, age]
   sortcolumn: namespace
+infoview:
+  name: Operator Group Info
+  infopad:
+    row_indexes:
+      Normal: [target_namespaces, namespaces, last_updated]
+    rows:
+      last_updated:
+        header: [["Last Updated:", [main, infoheader]]]
+        path: "status#lastUpdated"
+        default: -1
+        type: timestamp
+        formatter: timestamp
+      namespaces:
+        header: [["Namespaces:", [main, infoheader]]]
+        path: "status#namespaces"
+        type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: namespace
+      target_namespaces:
+        header: [["Target Namespaces:", [main, infoheader]]]
+        path: "spec#targetNamespaces"
+        type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: namespace

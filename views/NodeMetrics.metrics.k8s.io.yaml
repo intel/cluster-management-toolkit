@@ -24,8 +24,31 @@ listview:
       formatter: mem
       align: right
     window:
-      header: "Duration:"
+      header: "Window:"
       path: "window"
       align: right
       type: str
       formatter: float
+infoview:
+  name: Node Metric Info
+  infopad:
+    row_indexes:
+      Normal: [cpu_usage, memory_usage, window]
+    rows:
+      cpu_usage:
+        header: [["CPU (millicores):", [main, infoheader]]]
+        paths:
+        - path: "usage#cpu"
+          type: cpu_usage
+        formatter: float
+      memory_usage:
+        header: [["Memory:", [main, infoheader]]]
+        paths:
+        - path: "usage#memory"
+          type: mem_usage
+        formatter: mem
+      window:
+        header: [["Window:", [main, infoheader]]]
+        path: "window"
+        type: str
+        formatter: float

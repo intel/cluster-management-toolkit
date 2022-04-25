@@ -24,3 +24,35 @@ listview:
       - path: "spec#volumeLifecycleModes"
         pathtype: list
       formatter: list
+infoview:
+  name: CSI Driver Info
+  infopad:
+    row_indexes:
+      Normal: [attach_required, pod_info_on_mount, fs_group_policy, requires_republish, storage_capacity, volume_lifecycle_modes]
+    rows:
+      attach_required:
+        header: [["Attach Required:", [main, infoheader]]]
+        path: "spec#attachRequired"
+        type: bool
+      fs_group_policy:
+        header: [["FS Group Policy:", [main, infoheader]]]
+        path: "spec#fsGroupPolicy"
+        type: str
+      pod_info_on_mount:
+        header: [["Pod Info on Mount:", [main, infoheader]]]
+        path: "spec#podInfoOnMount"
+        type: bool
+      requires_republish:
+        header: [["Requires Republish:", [main, infoheader]]]
+        path: "spec#requiresRepublish"
+        type: bool
+      storage_capacity:
+        header: [["Storage Capacity:", [main, infoheader]]]
+        path: "spec#storageCapacity"
+        type: bool
+      volume_lifecycle_modes:
+        header: [["Modes:", [main, infoheader]]]
+        paths:
+        - path: "spec#volumeLifecycleModes"
+          pathtype: list
+        formatter: list

@@ -12,3 +12,20 @@ listview:
       header: "Priority:"
       path: "spec#priority"
       type: int
+infoview:
+  name: Antrea Tier Info
+  infopad:
+    row_indexes:
+      Normal: [description, priority]
+    rows:
+      description:
+        header: [["Description:", [main, infoheader]]]
+        path: "spec#description"
+        type: str
+      priority:
+        header: [["Priority:", [main, infoheader]]]
+        path: "spec#priority"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical

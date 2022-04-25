@@ -6,3 +6,44 @@ listview:
   group: CNI
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Peer Info
+  infopad:
+    row_indexes:
+      Normal: [persistent_keepalive, peer_endpoint, allowed_ips]
+    rows:
+      allowed_ips:
+        header: [["Allowed ", [main, infoheader]], ["I", [main, infoheader_shortcut]], ["Ps:", [main, infoheader]]]
+        path: "spec#allowedIPs"
+        type: raw
+        formatter: list
+      peer_endpoint:
+        header: [["Peer Endpoint:", [main, infoheader]]]
+        paths:
+        - path: [["spec#endpoint#dnsOrIP#ip", "spec#endpoint#dnsOrIP#dns"], ["spec#endpoint#port"]]
+          pathtype: tuple
+        # FIXME: The formatter needs to be improved to handle lists that contain addresses, etc.
+        formatter: list
+        formatting:
+          field_color:
+          - type: address
+          - type: port
+          field_separators:
+          - type: port
+      persistent_keepalive:
+        header: [["Persistent Keepalive:", [main, infoheader]]]
+        path: "spec#persistentKeepalive"
+        type: int
+        formatting:
+          field_color:
+          - type: numerical
+  shortcuts:
+    "Allowed IPs":
+      key: i
+      modifier: shift
+      helptext: "Show list of allowed IPs"
+      widget: windowwidget
+      title: "Allowed IPs:"
+      itemgetter: get_allowed_ips
+      # This isn't supported for now
+      sortcolumn: "key"

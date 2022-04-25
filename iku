@@ -3151,30 +3151,6 @@ def get_svcmon_endpoints_info(**kwargs):
 
 	return info
 
-class GatewayServerInfo:
-	def __init__(self, hosts, ref, port):
-		self.hosts = hosts
-		# The reference to the "true" resource object
-		self.ref = ref
-		self.port = port
-	def __repr__(self):
-		return repr((self.hosts, self.ref, self.port))
-
-def get_gw_server_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	info = []
-
-	if obj is None:
-		return []
-
-	for item in deep_get(obj, "spec#servers"):
-		hosts = deep_get(item, "hosts")
-		ref = item
-		port = get_port(deep_get(item, "port"))
-		info.append(GatewayServerInfo(hosts, ref, port))
-
-	return info
-
 class LimitInfo:
 	def __init__(self, ltype, name, ref, lmin, lmax, default_request, default_limit, max_lr_ratio):
 		self.ltype = ltype
@@ -9733,16 +9709,6 @@ def field_processor_exists(obj, path = None, extra_paths = None, fallback = None
 	else:
 		return [("Yes", ("main", "status_ok"))]
 
-def field_processor_cpu(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	tmp = deep_get(obj, path)
-	value = f"{normalise_cpu_usage_to_millicores(tmp):0.1f}"
-	return format_numerical_with_units(value, "field", False)
-
-def field_processor_mem(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	tmp = deep_get(obj, path)
-	value = normalise_mem_to_bytes(tmp)
-	return format_numerical_with_units(normalise_mem_bytes_to_str(value), "field", False)
-
 def export_data(filename, value):
 	vtype, value = decode_value(value)
 
@@ -12077,11 +12043,15 @@ def view_yaml(stdscr, **kwargs):
 		return
 	path = deep_get(kwargs, "path")
 	if path is not None:
-		obj = deep_get(obj, path)
+		if deep_get(kwargs, "include_root", False) == True:
+			obj = [{f"{path.rsplit('#')[-1]}": deep_get(obj, path)}]
+		else:
+			obj = [deep_get(obj, path)]
+	else:
+		obj = [obj]
 	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
-	# themearrays = iktlib.format_yaml([obj])
 	formatter = iktlib.format_yaml
-	return resourceinfodispatch(stdscr, [obj], ("__ResourceView", ""), title = title, formatter = formatter)
+	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
 def view_pod_logs(stdscr, **kwargs):
 	containers = []
@@ -13546,125 +13516,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("ClusterServiceVersion", "operators.coreos.com"): {
-		"windowheader": "Cluster Service Version Info",
-		"infopad": {
-			"Display Name:": {
-				"path": "spec#displayName",
-			},
-			#"Description:": {
-			#	"path": "spec#description",
-			#},
-			"Keywords:": {
-				"extra_paths": "spec#keywords",
-				"processor": field_processor_list,
-			},
-			"Maturity:": {
-				"path": "spec#maturity",
-			},
-			"Version:": {
-				"path": "spec#version",
-			},
-			"Minimum Kubernetes Version:": {
-				"path": "spec#minKubeVersion",
-			},
-		},
-		"shortcuts": {
-			"Description": {
-				"shortcut": ord("D"),
-				"helptext": ("[Shift] + D", "Show description"),
-				"widget": "windowwidget",
-				"title": "Description:",
-				"itemgetter": get_strings_from_string,
-				"itemgetter_args": {
-					"path": "spec#description",
-				},
-				"formatting": [("windowwidget", "default")],
-			},
-			"Maintainers": {
-				"shortcut": ord("m"),
-				"helptext": ("M", "Show maintainers"),
-				"widget": "windowwidget",
-				"title": "Maintainers:",
-				"headers": ["Name:", "E-mail:"],
-				"itemgetter": get_list_fields,
-				"itemgetter_args": {
-					"path": "spec#maintainers",
-					"fields": [
-						"name",
-						"email",
-					],
-				},
-				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
-				# This isn't supported for now
-				"sortcolumn": "name",
-			},
-			"Installation Spec": {
-				"shortcut": ord("i"),
-				"helptext": ("I", "Show installation specification"),
-				"widget": "callout",
-				"title": "Installation specification",
-				"callout": infoview_view_yaml,
-				"callout_args": {
-					"path": "spec#install",
-					"include_final_path": True,
-				},
-			},
-			"Supported Installation Modes": {
-				"shortcut": ord("I"),
-				"helptext": ("[Shift] + I", "Show supported installation modes"),
-				"widget": "windowwidget",
-				"title": "Supported Installation Modes:",
-				"headers": ["Mode:", "Supported:"],
-				"itemgetter": get_list_fields,
-				"itemgetter_args": {
-					"path": "spec#installModes",
-					"fields": [
-						"type",
-						"supported",
-					],
-				},
-				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
-				# This isn't supported for now
-				"sortcolumn": "type",
-			},
-			"Custom Resource Definitions": {
-				"shortcut": ord("C"),
-				"helptext": ("[Shift] + C", "Show custom resource definitions"),
-				"widget": "callout",
-				"title": "Custom Resource Definitions",
-				"callout": infoview_view_yaml,
-				"callout_args": {
-					"path": "spec#customresourcedefinitions",
-					"include_final_path": True,
-				},
-			},
-		},
-	},
-	("CSIDriver", "storage.k8s.io"): {
-		"windowheader": "CSI Driver Info",
-		"infopad": {
-			"Attach Required:": {
-				"path": "spec#attachRequired",
-			},
-			"Pod Info on Mount:": {
-				"path": "spec#podInfoOnMount",
-			},
-			"FS Group Policy:": {
-				"path": "spec#fsGroupPolicy",
-			},
-			"Requires Republish": {
-				"path": "spec#requiresRepublish",
-			},
-			"Storage Capacity": {
-				"path": "spec#storageCapacity",
-			},
-			"Volume Lifecycle Modes:": {
-				"extra_paths": "spec#volumeLifecycleModes",
-				"processor": field_processor_list,
-			},
-		},
-	},
 	("DaemonSet", "apps"): {
 		"windowheader": "Daemon Set Info",
 		"field_indexes": {
@@ -14031,70 +13882,6 @@ infoviews_builtin = {
 				"call_kind_name_namespace_selection_path": "target_ref",
 				"call_kind_name_namespace_selection_order": (0, 2, 1),
 			},
-		},
-	},
-	("EnvoyFilter", "networking.istio.io"): {
-		"windowheader": "Envoy Filter Info",
-		"field_indexes": {
-			"Normal": ["apply_to", "context", "patch_operation"],
-		},
-		"fields": {
-			"apply_to": {
-				"header": "Apply To:",
-				"paths": [
-					{
-						"path": "applyTo",
-						"pathtype": "value",
-					},
-				],
-			},
-			"context": {
-				"header": "Context:",
-				"paths": [
-					{
-						"path": "match#context",
-						"pathtype": "value",
-					},
-				],
-			},
-			"patch_operation": {
-				"header": "Patch Operation:",
-				"paths": [
-					{
-						"path": "patch#operation",
-						"pathtype": "value",
-					},
-				],
-			},
-		},
-		"sortcolumn": "apply_to",
-		"infopad": {
-			"Workload Selector:": {
-				"path": "spec#workloadSelector",
-				"processor": field_processor_label_selector,
-			},
-		},
-		"listpad": {
-			"listgetter": listgetter_field,
-			"listgetter_args": {
-				"path": "spec#configPatches",
-			},
-			"infogetter": generic_infogetter,
-		},
-	},
-	("Gateway", "networking.istio.io"): {
-		"field_indexes": {
-			"Normal": ["hosts", "port"],
-		},
-		"sortcolumn": "hosts",
-		"infopad": {
-			"Selector:": {
-				"path": "spec#selector",
-				"processor": field_processor_label_selector,
-			},
-		},
-		"listpad": {
-			"infogetter": get_gw_server_info,
 		},
 	},
 	("Ingress", "networking.k8s.io"): {
@@ -14667,62 +14454,6 @@ infoviews_builtin = {
 				"helptext": ("[Shift] + V", "Show package versions"),
 				"widget": "callout",
 				"callout": callout_show_package_versions,
-			},
-		},
-	},
-	("NodeMetrics", "metrics.k8s.io"): {
-		"windowheader": "Node Metrics Info",
-		"infopad": {
-			"CPU (millicores):": {
-				"path": "usage#cpu",
-				"processor": field_processor_cpu,
-			},
-			"Memory:": {
-				"path": "usage#memory",
-				"processor": field_processor_mem,
-			},
-			"Window:": {
-				"path": "window",
-			},
-		},
-	},
-	("OperatorGroup", "operators.coreos.com"): {
-		"windowheader": "Operator Group Info",
-		"infopad": {
-			"Target Namespaces:": {
-				"extra_paths": "spec#targetNamespaces",
-				"processor": field_processor_list,
-			},
-			"Namespaces:": {
-				"extra_paths": "status#namespaces",
-				"processor": field_processor_list,
-			},
-			"Last Updated:": {
-				"path": "status#lastUpdated",
-				"processor": field_processor_timestamp,
-			},
-		},
-	},
-	("Peer", "kilo.squat.ai"): {
-		"infopad": {
-			"Persistent Keepalive:": {
-				"path": "spec#persistentKeepalive",
-			},
-			"Allowed IPs:": {
-				"fieldname": [("Allowed ", ("main", "infoheader")), ("I", ("main", "infoheader_shortcut")), ("Ps:", ("main", "infoheader"))],
-				"extra_paths": "spec#allowedIPs",
-				"processor": field_processor_list,
-			},
-		},
-		"shortcuts": {
-			"Allowed IPs": {
-				"shortcut": ord("I"),
-				"helptext": ("[Shift] + I", "Show list of allowed IPs"),
-				"widget": "windowwidget",
-				"title": "Allowed IPs:",
-				"itemgetter": get_allowed_ips,
-				# This isn't supported for now
-				"sortcolumn": "key",
 			},
 		},
 	},
@@ -15444,24 +15175,6 @@ infoviews_builtin = {
 			"infogetter": get_sas_info,
 		},
 	},
-	("ServiceEntry", "networking.istio.io"): {
-		"windowheader": "Service Entry Info",
-		"infopad": {
-			"Hosts:": {
-				"extra_paths": "spec#hosts",
-				"processor": field_processor_list,
-			},
-			"Ports:": {
-				"processor": field_processor_svc_ports,
-			},
-			"Location:": {
-				"path": "spec#location",
-			},
-			"Resolution:": {
-				"path": "spec#resolution",
-			},
-		},
-	},
 	("Sidecar", "networking.istio.io"): {
 		"field_indexes": {
 			"Normal": ["traffic_type", "port", "bind", "capture_mode", "default_endpoint", "hosts"],
@@ -15626,16 +15339,6 @@ infoviews_builtin = {
 				"sortcolumn": "parameter",
 			},
 		}
-	},
-	("Tier", "crd.antrea.io"): {
-		"infopad": {
-			"Description:": {
-				"path": "spec#description",
-			},
-			"Priority:": {
-				"path": "spec#priority",
-			},
-		},
 	},
 	("ValidatingWebhookConfiguration", "admissionregistration.k8s.io"): {
 		"windowheader": "Validating Webhook Configuration Info",

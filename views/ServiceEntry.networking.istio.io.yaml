@@ -60,3 +60,41 @@ listview:
       header: "Resolution:"
       path: "spec#resolution"
       type: str
+infoview:
+  name: Service Entry Info
+  infopad:
+    row_indexes:
+      Normal: [hosts, ports_svc, location, resolution]
+    rows:
+      hosts:
+        header: [["Hosts:", [main, infoheader]]]
+        path: "spec#hosts"
+        type: raw
+        formatter: list
+      location:
+        header: [["Location:", [main, infoheader]]]
+        path: "spec#location"
+        type: str
+      ports_svc:
+        header: [["Ports:", [main, infoheader]]]
+        paths:
+        - path: "spec#ports"
+          pathtype: items
+          subpaths:
+          - name
+          - port
+          - protocol
+          type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: service
+          - type: port
+          - type: protocol
+          field_separators:
+          - type: port
+          - type: service
+      resolution:
+        header: [["Resolution:", [main, infoheader]]]
+        path: "spec#resolution"
+        type: str
