@@ -3146,7 +3146,7 @@ def get_svcmon_endpoints_info(**kwargs):
 		scheme = deep_get(item, "scheme", "")
 		path = deep_get(item, "path", "")
 		honor_labels = deep_get(item, "honorLabels", "")
-		proxy_url = deep_get(item, "proxyURL", "")
+		proxy_url = deep_get(item, "proxyUrl", "")
 		info.append(SVCMonEndpointsInfo(bearer_token_file, ref, port, target_port, interval, scheme, path, honor_labels, proxy_url))
 
 	return info
@@ -6138,9 +6138,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_separators": [("separators", "port")],
 	},
-	"bearer_token_file": {
-		"header": "Bearer Token File:",
-	},
 	"bind": {
 		"header": "Bind:",
 	},
@@ -6302,9 +6299,6 @@ field_templates = {
 		"generator": generator_status,
 		"path": [("agentConditions", "AgentHealthy", "status"), ("controllerConditions", "ControllerHealthy", "status")],
 	},
-	"honor_labels": {
-		"header": "Honor Labels:",
-	},
 	"host": {
 		"header": "Host:",
 		"path": "spec#host",
@@ -6350,9 +6344,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
 		"field_separators": [("separators", "port"), ("separators", "service")],
-	},
-	"interval": {
-		"header": "Interval:",
 	},
 	"ipblock": {
 		"header": "IP Block:",
@@ -6594,9 +6585,6 @@ field_templates = {
 		"generator": generator_priority_level,
 		"type": "str",
 	},
-	"proxy_url": {
-		"header": "Proxy URL:",
-	},
 	"pod_status": {
 		"header": "Status:",
 		"datagetter": datagetter_pod_status,
@@ -6682,9 +6670,6 @@ field_templates = {
 	"rule_type": {
 		"header": "Rule Type:",
 	},
-	"scheme": {
-		"header": "Scheme:",
-	},
 	"service": {
 		# (namespace, name, port)
 		"header": "Service:",
@@ -6765,9 +6750,6 @@ field_templates = {
 		"path": ("status#tags", ["tag"]),
 		"datagetter": datagetter_list_fields,
 		"generator": generator_list,
-	},
-	"target_port": {
-		"header": "Target Port:",
 	},
 	"target_ref": {
 		# (kind, namespace, name)
@@ -11830,7 +11812,13 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	if namespace is None and obj is not None:
 		namespace = deep_get_with_fallback(obj, namespace_path)
 
-	obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
+        # If the kind is unknown we'll get NameError;
+	# in this case we probably don't want to crash
+	try:
+		obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
+	except NameError:
+		obj = None
+
 	return resourceinfodispatch(stdscr, obj, kind)
 
 def resourceinfodispatch_with_lookup_on_activation(stdscr, obj, kind, **kwargs):
@@ -15056,109 +15044,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("Profile", "kubeflow.org"): {
-		"infopad": {
-			"Owner:": {
-				"processor": None,
-			},
-			"  Kind:": {
-				"path": "spec#owner#kind",
-			},
-			"  Name:": {
-				"path": "spec#owner#name",
-			},
-		},
-		"shortcuts": {
-			"Resource Quota": {
-				"shortcut": ord("Q"),
-				"helptext": ("[Shift] + Q", "Show Resource Quotas"),
-				"widget": "windowwidget",
-				"title": "Resource Quotas:",
-				"itemgetter": get_key_value,
-				"itemgetter_args": {
-					"path": "spec#resourceQuotaSpec#hard",
-				},
-				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
-			},
-		},
-	},
-	("Prometheus", "monitoring.coreos.com"): {
-		"infopad": {
-			"Image:": {
-				"processor": field_processor_images,
-			},
-			"Node Selector:": {
-				"path": "spec#nodeSelector",
-				"processor": field_processor_label_selector,
-			},
-			"Rule Selector:": {
-				"path": "spec#ruleSelector#matchLabels",
-				"processor": field_processor_label_selector,
-			},
-			"Replicas:": {
-				"path": "spec#replicas",
-			},
-			"Service Account:": {
-				"fieldname": [("S", ("main", "infoheader_shortcut")), ("ervice Account:", ("main", "infoheader"))],
-				"path": "spec#serviceAccountName",
-			}
-		},
-		"shortcuts": {
-			"Alertmanager Endpoints": {
-				"shortcut": ord("A"),
-				"helptext": ("[Shift] + A", "Show alertmanager endpoint information"),
-				"widget": "windowwidget",
-				"title": "Alertmanager Endpoints:",
-				"headers": ["Namespace:", "Name:", "Port:"],
-				"selectable": True,
-				"callout": callout_obj,
-				"callout_args": {
-					"namespace_field": 1,
-					"name_field": 2,
-				},
-				"kind": ("Endpoints", ""),
-				"itemgetter": get_list_fields,
-				"itemgetter_args": {
-					"path": "spec#alerting#alertmanagers",
-					"fields": [
-						"namespace",
-						"name",
-						"port",
-					],
-				},
-			},
-			"Resources": {
-				"shortcut": ord("r"),
-				"helptext": ("R", "Show resource information"),
-				"widget": "windowwidget",
-				"title": "Resources:",
-				"headers": ["Resource:", "Type:", "Value:"],
-				"itemgetter": get_resources,
-			},
-			"Service Account": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for Service Account"),
-				"call": resourceinfodispatch,
-				"kind": ("ServiceAccount", ""),
-				"name_path": "spec#serviceAccountName",
-				"namespace_path": "metadata#namespace",
-			},
-		},
-	},
-	("PrometheusRule", "monitoring.coreos.com"): {
-		"windowheader": "Prometheus Rule Info",
-		"annotations": None,
-		"field_indexes": {
-			"Normal": ["group", "rtype", "alertrecord", "duration"],
-		},
-		"sortcolumn": "rtype",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("__PrometheusRuleData", "monitoring.coreos.com"),
-		"infopad": {},
-		"listpad": {
-			"infogetter": get_promrules_info,
-		},
-	},
 	("__PrometheusRuleData", "monitoring.coreos.com"): {
 		"windowheader": "Prometheus Rule Data",
 		"labels": None,
@@ -15577,29 +15462,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("ServiceMonitor", "monitoring.coreos.com"): {
-		"windowheader": "Service Monitor Info",
-		"field_indexes": {
-			"Normal": ["bearer_token_file", "port", "target_port", "interval", "scheme", "path", "honor_labels", "proxy_url"],
-		},
-		"sortcolumn": "bearer_token_file",
-		"infopad": {
-			"Job Label:": {
-				"path": "spec#jobLabel",
-			},
-			"Selector:": {
-				"path": "spec#selector#matchLabels",
-				"processor": field_processor_label_selector,
-			},
-			"Namespace Selector:": {
-				"extra_paths": "spec#namespaceSelector#matchNames",
-				"processor": field_processor_list,
-			},
-		},
-		"listpad": {
-			"infogetter": get_svcmon_endpoints_info,
-		},
-	},
 	("Sidecar", "networking.istio.io"): {
 		"field_indexes": {
 			"Normal": ["traffic_type", "port", "bind", "capture_mode", "default_endpoint", "hosts"],
@@ -15764,18 +15626,6 @@ infoviews_builtin = {
 				"sortcolumn": "parameter",
 			},
 		}
-	},
-	("TASPolicy", "telemetry.intel.com"): {
-		"windowheader": "Telemetry Aware Scheduling Policy Info",
-		"field_indexes": {
-			"Normal": ["strategy", "name", "operator", "target"],
-		},
-		"sortcolumn": "strategy",
-		"reversible": False,
-		"infopad": {},
-		"listpad": {
-			"infogetter": get_strategy_info,
-		},
 	},
 	("Tier", "crd.antrea.io"): {
 		"infopad": {
@@ -16256,6 +16106,7 @@ def populate_views():
 					check_availability = eval(check_availability)
 
 				sortcolumn = deep_get(d, "listview#sortcolumn")
+				reversible = deep_get(d, "listview#reversible", True)
 				fields = deep_get(d, "listview#fields", "<missing>")
 				fields_wide = deep_get(d, "listview#fields_wide", [])
 
@@ -16301,6 +16152,7 @@ def populate_views():
 					"is_taggable": deep_get(d, "listview#is_taggable", True),
 					"listgetter": listgetter,
 					"listgetter_args": listgetter_args,
+					"reversible": reversible,
 					"infogetter": infogetter,
 					"infogetter_args": deep_get(d, "listview#infogetter_args", {}),
 					"actions": deep_get(d, "listview#actions", {}),
@@ -16438,6 +16290,11 @@ def populate_views():
 					on_activation["kind"] = viewoverride
 					on_activation.pop("api_family", "")
 
+				annotations = deep_get(d, "infoview#annotations")
+
+				sortcolumn = deep_get(listpad, "sortcolumn")
+				reversible = deep_get(listpad, "reversible", True)
+
 				infoview_entry = {
 					"windowheader": name,
 					"field_indexes": deep_get(listpad, "field_indexes"),
@@ -16446,12 +16303,13 @@ def populate_views():
 					"viewoverride": viewoverride,
 					"infopad": row_fields,
 					"listpad": {},
+					"reversible": reversible,
+					"annotations": annotations,
 					"shortcuts": {},
 				}
 				if len(listpad) > 0:
 					infoview_entry["listpad"]["on_activation"] = on_activation
 
-				sortcolumn = deep_get(listpad, "sortcolumn")
 				if sortcolumn is not None:
 					infoview_entry["sortcolumn"] = sortcolumn
 

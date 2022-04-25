@@ -9,3 +9,32 @@ listview:
   field_indexes:
     Normal: [namespace, name, age]
   sortcolumn: namespace
+infoview:
+  name: "Telemetry Aware Scheduling Policy Info"
+  infopad:
+  listpad:
+    infogetter: get_strategy_info
+    field_indexes:
+      Normal: [strategy, name, operator, target]
+    sortcolumn: strategy
+    reversible: false
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: str
+      operator:
+        header: "Operator:"
+        path: "operator"
+        type: str
+      strategy:
+        header: "Strategy:"
+        path: "strategy"
+        type: str
+      target:
+        header: "Target:"
+        path: "target"
+        type: integer
+        formatting:
+          field_colors:
+          - type: numerical

@@ -10,3 +10,58 @@ listview:
   group: Kubeflow
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Profile Info (KubeFlow)
+  infopad:
+    row_indexes:
+      Normal: [owner, kind, namespace, name]
+    rows:
+      owner:
+        header: [["O", [main, infoheader_shortcut]], ["wner:", [main, infoheader]]]
+      kind:
+        header: [["  Kind:", [main, infoheader]]]
+        paths:
+        - path: [["spec#owner#kind"], ["spec#owner#apiGroup"]]
+          pathtype: tuple
+          type: [kind, api_group]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          field_separators:
+          - type: kind_api_group
+      namespace:
+        header: [["  Namespace:", [main, infoheader]]]
+        path: "spec#owner#namespace"
+        type: str
+        formatting:
+          field_colors:
+          - type: namespace
+      name:
+        header: [["  Name:", [main, infoheader]]]
+        path: "spec#owner#name"
+        type: str
+  shortcuts:
+    "Owner":
+      key: o
+      modifier: shift
+      helptext: "Open info view for owner"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#owner#kind"
+        api_family_path: "spec#owner#apiGroup"
+        name_path: "spec#owner#name"
+        namespace_path: "spec#owner#namespace"
+    "Resource Quotas":
+      key: q
+      modifier: shift
+      helptext: "Show Resource Quotas"
+      widget: windowwidget
+      title: "Resource Quotas:"
+      itemgetter: get_key_value
+      itemgetter_args:
+        path: "spec#resourceQuotaSpec#hard"
+      formatting: [[windowwidget, default], [windowwidget, highlight]]

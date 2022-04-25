@@ -10,3 +10,39 @@ listview:
   field_indexes:
     Normal: [namespace, name, age]
   sortcolumn: namespace
+infoview:
+  name: Prometheus Rule Info
+  # PrometheusRule annotations contains the entire rule set;
+  # this is way too much to handle for the annotations widget
+  annotations: ""
+  infopad:
+  listpad:
+    infogetter: get_promrules_info
+    on_activation:
+      call: resourceinfodispatch
+      kind: "__PrometheusRuleData"
+      api_family: "monitoring.coreos.com"
+    field_indexes:
+      Normal: [group, rtype, alertrecord, duration]
+    sortcolumn: rtype
+    fields:
+      alertrecord:
+        header: "Group:"
+        path: "alertheader"
+        type: str
+      duration:
+        header: "Duration:"
+        path: "duration"
+        type: raw
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+      group:
+        header: "Group:"
+        path: "group"
+        type: str
+      rtype:
+        header: "Type:"
+        path: "rtype"
+        type: str

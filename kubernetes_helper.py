@@ -2297,7 +2297,7 @@ class KubernetesHelper:
 			if kind == _kind:
 				return _kind, _api_group
 
-		raise Exception(f"Couldn't guess kubernetes resource for kind: {kind}")
+		raise NameError(f"Couldn't guess kubernetes resource for kind: {kind}")
 
 	def get_available_api_families(self):
 		if self.cluster_unreachable == True:
