@@ -36,3 +36,52 @@ listview:
       query: New namespace
       queryval: namespace
       queryfunc: string
+infoview:
+  name: Namespace Info
+  infopad:
+    row_indexes:
+      Normal: [status]
+    rows:
+      status:
+        header: [["Status:", [main, infoheader]]]
+        path: "status#phase"
+        type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              Active:
+                field_colors:
+                - context: main
+                  type: status_ok
+              Terminating:
+                field_colors:
+                - context: main
+                  type: status_pending
+  listpad:
+    listgetter: listgetter_namespaced_resources
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch_with_lookup_on_activation
+      kind_path: __kind_tuple
+      name_path: "metadata#name"
+      namespace_path: "metadata#namespace"
+    field_indexes:
+      Normal: [resource, kind]
+    sortcolumn: kind
+    fields:
+      kind:
+        header: "Kind:"
+        path: "__kind_tuple"
+        type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          field_separators:
+          - type: kind_api_group
+      resource:
+        header: "Resource:"
+        path: "metadata#name"
+        type: raw

@@ -1138,7 +1138,7 @@ def get_hpa_metrics(obj, **kwargs):
 			metric_type += " (Unsupported)"
 
 		target_value = deep_get(metric, f"{metric_name}#target#{target_type_name}", "")
-		selector = deep_get(metric, f"{metric_name}#selector#matchLabels", {})
+		selector = deep_get(metric, f"{metric_name}#metric#selector#matchLabels", {})
 
 		d = {
 			"metric_type": metric_type,
@@ -9194,17 +9194,6 @@ def field_processor_conditions_certsignreq(obj, path, extra_paths = None, fallba
 
 	return __field_processor_list(conditions, formatting = formatting)
 
-# All fields except obj and path will be ignored
-def field_processor_namespace_status(obj, path, extra_paths = None, fallback = None, formatting = None):
-	status = deep_get(obj, path)
-	if status == "Active":
-		status_group = stgroup.OK
-	elif status == "Terminating":
-		status_group = stgroup.PENDING
-	else:
-		status_group = stgroup.UNKNOWN
-	return [(status, color_status_group(status_group, False))]
-
 # All fields except obj will be ignored
 def field_processor_node_status(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	status, status_group, taints, full_taints = get_node_status(obj)
@@ -14120,142 +14109,6 @@ infoviews_builtin = {
 			"infogetter": get_gw_server_info,
 		},
 	},
-	("HorizontalPodAutoscaler", "autoscaling"): {
-		"windowheader": "Horizontal Pod Autoscaler Info",
-		"field_indexes": {
-			"Normal": ["metric_type", "name", "described_object", "target_type", "target_value", "selector"],
-		},
-		"fields": {
-			"metric_type": {
-				"header": "Type:",
-				"path": "metric_type",
-				"type": "str",
-			},
-			"name": {
-				"header": "Name:",
-				"path": "name",
-				"type": "str",
-			},
-			"described_object": {
-				"header": "Described Object:",
-				"type": "str",
-				"paths": [
-					{
-						"path": [["described_object_kind"], ["described_object_api_group"], ["described_object_name"]],
-						"pathtype": "tuple",
-						"type": ["kind", "api_group", "name"],
-					}
-				],
-				"formatting": {
-					"field_colors": [
-						{
-							"type": "kind",
-						},
-						{
-							"type": "api_group",
-						},
-						{
-							"type": "generic",
-						},
-					],
-					"field_separators": [
-						{
-							"type": "kind_api_group",
-						},
-						{
-							"type": "kind",
-						},
-					]
-				},
-				"formatter": "list",
-			},
-			"selector": {
-				"header": "Selector:",
-				"paths": [
-					{
-						"path": "selector",
-						"pathtype": "key_value",
-					},
-				],
-				"formatting": {
-					"field_colors": [
-						{
-							"type": "key",
-						},
-						{
-							"type": "value",
-						},
-					],
-					"field_separators": [
-						{
-							"type": "selector",
-						},
-					]
-				},
-				"formatter": "list",
-			},
-			"target_type": {
-				"header": "Target Type:",
-				"path": "target_type",
-				"type": "str",
-			},
-			"target_value": {
-				"header": "Target Value:",
-				"path": "target_value",
-				"type": "raw",
-				"align": "right",
-			},
-		},
-		"infopad": {
-			"Min Replicas:": {
-				"path": "spec#minReplicas",
-			},
-			"Max Replicas:": {
-				"path": "spec#maxReplicas",
-			},
-			"Scale Target Reference:": {
-				"fieldname": [("S", ("main", "infoheader_shortcut")), ("cale Target Reference:", ("main", "infoheader"))],
-				"extra_paths": ["spec#scaleTargetRef#kind", "spec#scaleTargetRef#name"],
-				"formatting": {
-					"field_colors": [("types", "kind"), ("types", "generic")],
-					"item_separators": [("separators", "kind")],
-				},
-				"processor": field_processor_list,
-			},
-			"Status:": {
-				"path": "metadata#name",
-				"extra_paths": [ "status#currentReplicas", "status#desiredReplicas" ],
-				"processor": field_processor_replica_status,
-			},
-		},
-		"listpad": {
-			"listgetter": get_hpa_metrics,
-			"infogetter": generic_infogetter,
-		},
-		"shortcuts": {
-			"Scale Target Reference": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for scale target reference"),
-				"call": resourceinfodispatch,
-				"kind_path": "spec#scaleTargetRef#kind",
-				"name_path": "spec#scaleTargetRef#name",
-				"namespace_path": "metadata#namespace",
-			},
-			"Open Described Object": {
-				"shortcut": [ curses.KEY_ENTER, 10, 13 ],
-				"helptext": ("[Enter]", "Open info page for described object"),
-				"action": "call",
-				"action_call": resourceinfodispatch_with_lookup,
-				"action_args": {
-					"_pass_selected_obj": True,
-					"kind_path": "described_object_kind",
-					"api_group_path": "described_object_api_group",
-					"name_path": "described_object_name",
-					"namespace_path": "described_object_namespace",
-				},
-			},
-		},
-	},
 	("Ingress", "networking.k8s.io"): {
 		"field_indexes": {
 			"Normal": ["host", "path", "backends"],
@@ -14673,46 +14526,6 @@ infoviews_builtin = {
 		"infopad": {},
 		"listpad": {
 			"infogetter": get_webhook_info,
-		},
-	},
-	("Namespace", ""): {
-		"field_indexes": {
-			"Normal": ["resource", "kind"],
-		},
-		"fields": {
-			"resource": {
-				"header": "Resource:",
-				"path": "metadata#name",
-				"type": "raw",
-			},
-			"kind": {
-				"header": "Kind:",
-				"path": "__kind_tuple",
-				"type": "raw",
-				"formatting": {
-					"field_colors": [
-						{ "type": "kind", },
-						{ "type": "kind", },
-					],
-					"field_separators": [
-						{ "type": "kind_api_group", },
-					],
-				},
-				"formatter": "list",
-			},
-		},
-		"sortcolumn": "kind",
-		"activatedfun": resourceinfodispatch,
-		"extraref": "kind",
-		"infopad": {
-			"Status:": {
-				"path": "status#phase",
-				"processor": field_processor_namespace_status,
-			}
-		},
-		"listpad": {
-			"listgetter": listgetter_namespaced_resources,
-			"infogetter": generic_infogetter,
 		},
 	},
 	("NetworkPolicy", "networking.k8s.io"): {
