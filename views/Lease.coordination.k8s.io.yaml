@@ -12,3 +12,45 @@ listview:
       header: "Holder:"
       path: "spec#holderIdentity"
       type: str
+infoview:
+  name: Lease Info
+  infopad:
+    row_indexes:
+      Normal: [holder_identity, lease_duration, lease_transitions, acquire_time, renew_time]
+    rows:
+      acquire_time:
+        header: [["Acquire Time:", [main, infoheader]]]
+        path: "spec#acquireTime"
+        type: timestamp
+        formatter: timestamp
+      holder_identity:
+        header: [["Holder ", [main, infoheader]], ["I", [main, infoheader_shortcut]], ["dentity:", [main, infoheader]]]
+        path: "spec#holderIdentity"
+        type: str
+      lease_duration:
+        header: [["Lease Duration:", [main, infoheader]]]
+        path: "spec#leaseDurationSeconds"
+        type: raw
+        formatter: age
+      lease_transitions:
+        header: [["Lease Transitions:", [main, infoheader]]]
+        path: "spec#leaseTransitions"
+        type: int
+        formatter: numerical_with_units
+      renew_time:
+        header: [["Renew Time:", [main, infoheader]]]
+        path: "spec#renewTime"
+        type: timestamp
+        formatter: timestamp
+  shortcuts:
+    "Holder":
+      key: i
+      modifier: shift
+      helptext: "Open info page for lease holder"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        holder_identity_path: "spec#holderIdentity"
+        owner_reference_path: "metadata#ownerReferences"

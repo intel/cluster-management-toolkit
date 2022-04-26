@@ -5013,35 +5013,6 @@ def get_inventory_info(**kwargs):
 
 	return info
 
-class CSINodeDriverInfo:
-	def __init__(self, name, ref, node_id, topology_keys, allocatable_count):
-		self.name = name
-		# The reference to the "true" resource object
-		self.ref = ref
-		self.node_id = node_id
-		self.topology_keys = topology_keys
-		self.allocatable_count = allocatable_count
-	def __repr__(self):
-		return repr((self.name, self.ref, self.node_id, self.topology_keys, self.allocatable_count))
-
-def get_csi_node_driver_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	info = []
-
-	if obj is None:
-		return []
-
-	for item in deep_get(obj, "spec#drivers", []):
-		name = deep_get(item, "name")
-		ref = item
-		node_id = deep_get(item, "nodeID")
-		topology_keys = deep_get(item, "topologyKeys", [])
-		allocatable_count = str(deep_get(item, "allocatable#count", "<unbounded>"))
-
-		info.append(CSINodeDriverInfo(name, ref, node_id, topology_keys, allocatable_count))
-
-	return info
-
 class NodeInfo:
 	def __init__(self, name, ref, status, status_group, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel, container_runtime, cpu, mem, taints):
 		self.name = name
@@ -11648,10 +11619,6 @@ def listviewdispatch(stdscr, **kwargs):
 
 	return curses_helper.retval.RETURNDONE
 
-def csi_driver_dispatch(stdscr, obj, kind):
-	ref = kh.get_ref_by_kind_name_namespace(kind, deep_get(obj, "name"), "")
-	return resourceinfodispatch(stdscr, ref, kind)
-
 # This dispatches to info views; as soon as one is added this function will
 # dispatch to that view.
 def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
@@ -11741,12 +11708,22 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	controller = None
 	non_controller = None
 
+	holder_identity = None
+	if holder_identity_path is not None:
+		holder_identity = deep_get(obj, holder_identity_path)
+
 	if owner_reference_path is not None and obj is not None:
 		# Search for a controller, or the first reference that matches the kind if specified
 		for ref in deep_get(obj, owner_reference_path, []):
+			ref_name = deep_get(ref, "name")
+
+			# We only want to dispatch if there's an owner reference
+			# that matches the holder identity
+			if holder_identity is not None and ref_name != holder_identity:
+				continue
+
 			ref_kind = deep_get(ref, "kind")
 			ref_api_version = deep_get(ref, "apiVersion")
-			ref_name = deep_get(ref, "name")
 			if "/" in ref_api_version:
 				ref_api_family = ref_api_version.split("/")[0]
 			else:
@@ -11754,12 +11731,9 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 			ref_kind = (ref_kind, ref_api_family)
 			if deep_get(ref, "controller", False) == True:
 				controller = (ref_kind, ref_name)
-			elif kind is not None and kind == ref_kind:
+			elif kind is not None and kind == ref_kind or holder_identity is not None:
 				if non_controller is None:
 					non_controller = (ref_kind, ref_name)
-
-	if holder_identity_path is not None:
-		raise Exception("support for holder_identity not implemented yet")
 
 	if controller is not None:
 		kind, name = controller
@@ -14100,39 +14074,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("Lease", "coordination.k8s.io"): {
-		"infopad": {
-			"Holder Identity:": {
-				"fieldname": [("Holder ", ("main", "infoheader")), ("I", ("main", "infoheader_shortcut")), ("dentity:", ("main", "infoheader"))],
-				"processor": field_processor_holder,
-			},
-			"Acquire Time:": {
-				"path": "spec#acquireTime",
-				"processor": field_processor_timestamp,
-			},
-			"Lease Duration:": {
-				"path": "spec#leaseDurationSeconds",
-				"processor": field_processor_age,
-			},
-			"Lease Transitions:": {
-				"path": "spec#leaseTransitions",
-			},
-			"Renew Time:": {
-				"path": "spec#renewTime",
-				"processor": field_processor_timestamp,
-			},
-		},
-		"shortcuts": {
-			"Holder": {
-				"shortcut": ord("I"),
-				"helptext": ("[Shift] + I", "Open info page for lease holder"),
-				"call": resourceinfodispatch,
-				"namespace_path": "metadata#namespace",
-				"holder_identity_path": "spec#holderIdentity",
-				"owner_references_path": "metadata#ownerReferences",
-			},
-		},
-	},
 	("LimitRange", ""): {
 		"windowheader": "Limit Range Info",
 		"field_indexes": {
@@ -14589,38 +14530,6 @@ infoviews_builtin = {
 				"call_kind_name_namespace_selection_path": "resource_tuple",
 				"call_kind_name_namespace_selection_order": (-1, 1, -1),
 				"kind_filter": [("Node", "")],
-			},
-		},
-	},
-	("PodDisruptionBudget", "policy"): {
-		"windowheader": "Pod Disruption Budget Info",
-		"infopad": {
-			"Min Available:": {
-				"path": "spec#minAvailable",
-				"fallback": [("N/A", curses.A_NORMAL)],
-			},
-			"Label Selector:": {
-				"path": "spec#selector#matchLabels",
-				"processor": field_processor_label_selector,
-			},
-			"Set-based Selector:": {
-				"path": "spec#selector#matchExpressions",
-				"processor": field_processor_match_expressions,
-			},
-			"Status:": {
-				"processor": None,
-			},
-			" Allowed Disruptions:": {
-				"path": "status#disruptionsAllowed",
-			},
-			"     Current Healthy:": {
-				"path": "status#currentHealthy",
-			},
-			"     Desired Healthy:": {
-				"path": "status#desiredHealthy",
-			},
-			"               Total:": {
-				"path": "status#expectedPods",
 			},
 		},
 	},

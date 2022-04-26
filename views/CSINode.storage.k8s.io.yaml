@@ -36,14 +36,36 @@ infoview:
           field_colors:
           - type: host
   listpad:
-    infogetter: get_csi_node_driver_info
+    path: "spec#drivers"
+    infogetter: generic_infogetter
     on_activation:
-      call: csi_driver_dispatch
+      call: resourceinfodispatch_with_lookup_on_activation
       kind: CSIDriver
       api_family: storage.k8s.io
     field_indexes:
       Normal: [name, node_id, topology_keys, allocatable_count]
     sortcolumn: name
+    fields:
+      allocatable_count:
+        header: "Allocatable (Count)"
+        path: "allocatable#count"
+        default: "<unbounded>"
+        type: raw
+        formatter: numerical_with_units
+        align: right
+      name:
+        header: "Name:"
+        path: name
+        type: str
+      node_id:
+        header: "Node ID:"
+        path: "nodeID"
+        type: str
+      topology_keys:
+        header: "Topology Keys:"
+        path: "topologyKeys"
+        type: raw
+        formatter: list
   shortcuts:
     "Open Node":
       key: n

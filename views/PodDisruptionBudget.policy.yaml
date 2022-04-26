@@ -17,17 +17,105 @@ listview:
         type: int
       align: right
       default: 0
+      formatting:
+        field_colors:
+        - type: numerical
     max_unavailable:
-      header: "Max Available:"
+      header: "Max Unavailable:"
       paths:
       - path: "spec#maxUnavailable"
         type: int
       align: right
-      default: "N/A"
+      default: "<unset>"
+      formatting:
+        field_colors:
+        - type: numerical
     min_available:
       header: "Min Available:"
       paths:
       - path: "spec#minAvailable"
         type: int
       align: right
-      default: "N/A"
+      default: "<unset>"
+      formatting:
+        field_colors:
+        - type: numerical
+infoview:
+  name: Pod Disruption Budget Info
+  infopad:
+    row_indexes:
+      Normal: [min_available, max_unavailable, label_selector, set_based_selector, status_header, expected_pods, current_healthy, desired_healthy, disruptions_allowed]
+    rows:
+      current_healthy:
+        header: [["  Current Healthy:", [main, infoheader]]]
+        path: "status#currentHealthy"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      desired_healthy:
+        header: [["  Desired Healthy:", [main, infoheader]]]
+        path: "status#desiredHealthy"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      disruptions_allowed:
+        header: [["  Disruptions Allowed:", [main, infoheader]]]
+        path: "status#disruptionsAllowed"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      expected_pods:
+        header: [["  Expected Pods:", [main, infoheader]]]
+        path: "status#expectedPods"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      max_unavailable:
+        header: [["Max Unavailable:", [main, infoheader]]]
+        path: "spec#maxUnavailable"
+        default: "<unset>"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      min_available:
+        header: [["Min Available:", [main, infoheader]]]
+        path: "spec#minAvailable"
+        default: "<unset>"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      label_selector:
+        header: [["Label Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: key_value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      set_based_selector:
+        header: [["Set-based Selector:", [main, infoheader]]]
+        paths:
+        - path: "status#components#labelSelector#matchExpressions"
+          pathtype: match_expression
+          default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: operator
+          - type: value
+          field_separators:
+          - type: space
+          - type: no_pad
+      status_header:
+        header: [["Status:", [main, infoheader]]]
