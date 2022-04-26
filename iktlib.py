@@ -241,6 +241,9 @@ def get_since(timestamp):
 		since = 0
 	elif timestamp == -1:
 		since = -1
+	# If the timestamp is an integer we assume it to already be in seconds
+	elif type(timestamp) == int:
+		since = timestamp
 	else:
 		timediff = datetime.now(timezone.utc) - timestamp
 		since = timediff.days * 24 * 60 * 60 + timediff.seconds
