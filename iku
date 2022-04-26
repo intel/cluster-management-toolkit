@@ -8880,31 +8880,6 @@ def field_processor_internal_ips(obj, path = None, extra_paths = None, fallback 
 	field = format_list(internal_ips, 0, 0, False, False, field_colors = [("types", "address")])
 	return field
 
-def field_processor_cidr(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	tmp = deep_get(obj, path, "").split("/")
-	cidr = (tmp[0], tmp[1])
-
-	# FIXME
-	field = format_list(cidr, 0, 0, False, False, field_colors = [("types", "address"), ("types", "ipmask")], field_separators = [("separators", "ipmask")])
-	return field
-
-def field_processor_images(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	# This is to handle Prometheus
-	if path is None:
-		path = "spec#image"
-	base_image = deep_get(obj, "spec#baseImage")
-	image = deep_get(obj, path, base_image)
-
-	if image is not None:
-		name, version = get_image_tuple(image)
-		if version == "<undefined>":
-			field = format_list((name, version), 0, 0, False, False, field_colors = [("types", "generic"), ("types", "undefined")], field_separators = [("separators", "version")])
-		else:
-			field = format_list((name, version), 0, 0, False, False, field_colors = [("types", "generic"), ("types", "version")], field_separators = [("separators", "version")])
-	else:
-		field = [("strings", "none")]
-	return field
-
 def field_processor_percentage(obj, path, extra_paths = None, fallback = None, formatting = None):
 	value = deep_get(obj, path)
 
@@ -8923,28 +8898,6 @@ def field_processor_percentage(obj, path, extra_paths = None, fallback = None, f
 
 	return field
 
-def field_processor_priority_level(obj, path, extra_paths = None, fallback = None, formatting = None):
-	value = deep_get(obj, path)
-
-	if value is None or value == "":
-		if fallback is None:
-			field = [("strings", "none")]
-		else:
-			field = fallback
-	else:
-		obj = kh.get_ref_by_kind_name_namespace(("PriorityLevelConfiguration", "flowcontrol.apiserver.k8s.io"), value, "")
-		if obj is None:
-			field = [
-				(f"{value}", ("main", "status_not_ok")),
-				(" (Referenced PriorityLevelConfiguration object does not exist)", ("types", "generic")),
-			]
-		else:
-			if formatting is None:
-				formatting = ("types", "generic")
-			field = [(f"{value}", formatting)]
-
-	return field
-
 def field_processor_timestamp(obj, path, extra_paths = None, fallback = None, formatting = None):
 	timestamp = deep_get(obj, path)
 
@@ -8955,33 +8908,6 @@ def field_processor_timestamp(obj, path, extra_paths = None, fallback = None, fo
 	else:
 		timestamp = timestamp_to_datetime(timestamp)
 		field = format_timestamp(timestamp, localtimezone = True)
-
-	return field
-
-def field_processor_age(obj, path, extra_paths = None, fallback = None, formatting = None):
-	timestamp = deep_get(obj, path)
-
-	if timestamp is None:
-		field = [("strings", "unset")]
-	else:
-		# XXX: this should highlight units
-		duration = iktlib.seconds_to_age(timestamp)
-		field = format_numerical_with_units(duration, "age", False)
-
-	return field
-
-def field_processor_default_storage_class(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	default = "false"
-
-	annotations = deep_get(obj, "metadata#annotations")
-
-	if annotations is not None:
-		default = deep_get(annotations, "storageclass.kubernetes.io/is-default-class", "false")
-
-	if default == "false":
-		field = [("False", ("types", "generic"))]
-	else:
-		field = [("True", ("types", "generic"))]
 
 	return field
 
@@ -9098,13 +9024,6 @@ def field_processor_conditions(obj, path, extra_paths = None, fallback = None, f
 
 	return field
 
-def field_processor_condition_ready(obj, path, extra_paths = None, fallback = None, formatting = None):
-	ready, message, status_group = get_condition_ready(obj)
-
-	if message is not None and len(message) > 0:
-		message = f" ({message})"
-	return [(ready, color_status_group(status_group, False)), (message, ("types", "generic"))]
-
 def field_processor_conditions_certsignreq(obj, path, extra_paths = None, fallback = None, formatting = None):
 	conditions = get_certsignreq_conditions(deep_get(obj, path))
 	formatting = {
@@ -9127,18 +9046,6 @@ def field_processor_conditions_certsignreq(obj, path, extra_paths = None, fallba
 def field_processor_node_status(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	status, status_group, taints, full_taints = get_node_status(obj)
 	return [(f"{status}", color_status_group(status_group, False))]
-
-def field_processor_key_value(obj, path, extra_paths = None, fallback = None, formatting = None):
-	items = deep_get(obj, path, {})
-
-	if len(items) == 0:
-		field = [("strings", "none")]
-	else:
-		key_value = []
-		for item in items:
-			key_value.append((item, items[item]))
-		field = format_list(key_value, 0, 0, False, False, field_colors = [("types", "key"), ("types", "value")], field_separators = [(("separators", "keyvalue"))])
-	return field
 
 def field_processor_taints(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	status, status_group, taints, full_taints = get_node_status(obj)
@@ -9164,19 +9071,6 @@ def field_processor_component_kinds(obj, path = None, extra_paths = None, fallba
 		field = [("strings", "none")]
 	else:
 		field = format_list(kinds, 0, 0, False, False, field_colors = [("types", "kind"), ("types", "api_group")], field_separators = [("separators", "kind_api_group")])
-	return field
-
-# fallback will be ignored
-def field_processor_holder(obj, owr_path = None, holder_path = None, fallback = None, formatting = None):
-	if owr_path is None:
-		owr_path = "metadata#ownerReferences"
-	if holder_path is None:
-		holder_path = "spec#holderIdentity"
-
-	holder_name = deep_get(obj, holder_path)
-	owner_references = deep_get(obj, owr_path)
-	holder_kind = get_holder_kind_from_owner_references(obj)
-	field = format_list((holder_kind, holder_name), 0, 0, False, False, field_colors = [("types", "kind"), ("types", "generic")], field_separators = [("separators", "kind")])
 	return field
 
 # All fields except obj and owr_path will be ignored
@@ -9452,18 +9346,6 @@ def get_pv_type(obj):
 	return None
 
 # All fields except obj will be ignored
-def field_processor_pv_type(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	pvtype = "<unknown>"
-
-	pvtype = get_pv_type(obj)
-	if pvtype is not None:
-		pvtype = known_pv_types[pvtype]["type"]
-	else:
-		pvtype = "<unknown>"
-
-	return [(f"{pvtype}", ("types", "generic"))]
-
-# All fields except obj will be ignored
 def field_processor_pod_status(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	status, status_group = get_pod_status(obj)
 	msg = deep_get(obj, "status#message", "").rstrip()
@@ -9480,38 +9362,6 @@ def field_processor_dep_condition(obj, path, extra_paths = None, fallback = None
 		(f"{status}", color_status_group(status_group, False)),
 		(f" ({reason})", ("types", "generic"))
 	]
-	return field
-
-# extra_paths will be ignored
-def field_processor_access_modes(obj, path, extra_paths = None, fallback = None, formatting = None):
-	access_modes = []
-	for mode in deep_get(obj, path, []):
-		access_modes.append(abbreviate_access_mode(mode))
-
-	if len(access_modes) == 0:
-		if fallback is None:
-			field = [("strings", "none")]
-		else:
-			field = fallback
-	else:
-		field = format_list(access_modes, 0, 0, False, False)
-	return field
-
-def field_processor_replica_status(obj, path, extra_paths, fallback = None, formatting = None):
-	path1 = extra_paths[0]
-	path2 = extra_paths[1]
-
-	value1 = deep_get(obj, path1)
-	value2 = deep_get(obj, path2)
-
-	field = [
-		(f"{value1}", ("types", "numerical")),
-		(" Current ", ("types", "generic")),
-		(("separators", "fraction")),
-		(f" {value2}", ("types", "numerical")),
-		(" Desired", ("types", "generic")),
-	]
-
 	return field
 
 def field_processor_replication_controller_status(obj, path, extra_paths, fallback = None, formatting = None):
@@ -15200,54 +15050,6 @@ infoviews_builtin = {
 				"owner_references_path": "metadata#ownerReferences",
 			},
 		},
-	},
-	("StorageClass", "storage.k8s.io"): {
-		"windowheader": "Storage Class Info",
-		"infopad": {
-			"Is Default Class:": {
-				"processor": field_processor_default_storage_class,
-			},
-			"Provisioner:": {
-				"path": "provisioner",
-			},
-			"Parameters:": {
-				"path": "parameters",
-				"processor": field_processor_key_value,
-			},
-			"Allow Volume Expansion:": {
-				"path": "allowVolumeExpansion",
-				"fallback": [("False", ("types", "generic"))],
-			},
-			"Mount Options:": {
-				"path": "mountOptions",
-				"extra_paths": "mountOptions",
-				"processor": field_processor_list,
-				"fallback": [("strings", "none")],
-			},
-			"Reclaim Policy:": {
-				"path": "reclaimPolicy",
-			},
-			"Volume Binding Mode:": {
-				"path": "volumeBindingMode",
-				"fallback": [("Immediate", ("types", "generic"))],
-			},
-		},
-		"shortcuts": {
-			"Parameters": {
-				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Show storage class parameters"),
-				"widget": "windowwidget",
-				"title": "Parameters:",
-				"headers": ["Parameter:", "Value:"],
-				"itemgetter": get_key_value,
-				"itemgetter_args": {
-					"path": "parameters",
-				},
-				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
-				# This isn't supported for now
-				"sortcolumn": "parameter",
-			},
-		}
 	},
 	("ValidatingWebhookConfiguration", "admissionregistration.k8s.io"): {
 		"windowheader": "Validating Webhook Configuration Info",
