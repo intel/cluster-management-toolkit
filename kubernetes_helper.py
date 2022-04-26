@@ -1211,6 +1211,11 @@ class KubernetesHelper:
 			"api_family": ["apis/controlplane.cluster.x-k8s.io/v1beta1/"],
 			"api": "kubeadmcontrolplanetemplates",
 		},
+		# criresmgr.intel.com
+		("Adjustment", "criresmgr.intel.com"): {
+			"api_family": ["apis/criresmgr.intel.com/v1alpha1/"],
+			"api": "adjustments",
+		},
 		# cr.kanister.io
 		("ActionSet", "cr.kanister.io"): {
 			"api_family": ["apis/cr.kanister.io/v1alpha1/"],
