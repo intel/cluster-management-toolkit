@@ -8,4 +8,127 @@ listview:
   name: IPAM Blocks
   group: CNI
   field_indexes:
-    Normal: [name, age]
+    Normal: [name, cidr, allocations, strict_affinity, deleted, age]
+  fields:
+    allocations:
+      header: "Allocations:"
+      paths:
+      - path:  ["spec#allocations"]
+        pathtype: ranges
+      formatter: list
+      formatting:
+        field_colors:
+        - type: numerical
+        - type: numerical
+        - type: generic
+        field_separators:
+        - type: range
+        - type: no_pad
+        ellipsise: 5
+    cidr:
+      header: "CIDR:"
+      path: "spec#cidr"
+      type: address
+      formatter: address
+    deleted:
+      header: "Deleted:"
+      path: "spec#deleted"
+      type: bool
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+                - context: main
+                  type: status_not_ok
+            "False":
+              field_colors:
+                - context: main
+                  type: status_ok
+    strict_affinity:
+      header: "Strict Affinity:"
+      path: "spec#strictAffinity"
+      type: bool
+infoview:
+  name: IPAM Block Info
+  infopad:
+    row_indexes:
+      Normal: [cidr, allocations, strict_affinity, deleted]
+    rows:
+      allocations:
+        header: [["Allocations:", [main, infoheader]]]
+        paths:
+        - path:  ["spec#allocations"]
+          pathtype: ranges
+        formatter: list
+        formatting:
+          field_colors:
+          - type: numerical
+          - type: numerical
+          - type: generic
+          field_separators:
+          - type: range
+          - type: no_pad
+      cidr:
+        header: [["CIDR:", [main, infoheader]]]
+        path: "spec#cidr"
+        type: address
+        formatter: address
+      deleted:
+        header: [["Deleted:", [main, infoheader]]]
+        path: "spec#deleted"
+        type: bool
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                  - context: main
+                    type: status_not_ok
+              "False":
+                field_colors:
+                  - context: main
+                    type: status_ok
+      strict_affinity:
+        header: [["Strict Affinity:", [main, infoheader]]]
+        path: "spec#strictAffinity"
+        type: bool
+  listpad:
+    on_activation:
+      call: resourceinfodispatch_with_lookup_on_activation
+      kind: Pod
+      namespace_path: "secondary#namespace"
+      name_path: "secondary#pod"
+    path: "spec#attributes"
+    infogetter: generic_infogetter
+    field_indexes:
+      Normal: [namespace, node, type, pod, timestamp, handle_id]
+    sortcolumn: handle_id
+    fields:
+      handle_id:
+        header: "Handle ID:"
+        path: "handle_id"
+        type: str
+      namespace:
+        header: "Namespace:"
+        path: "secondary#namespace"
+        type: str
+      node:
+        header: "Node:"
+        path: "secondary#node"
+        type: str
+      pod:
+        header: "Pod:"
+        path: "secondary#pod"
+        type: str
+      type:
+        header: "Type:"
+        path: "secondary#type"
+        type: str
+      timestamp:
+        header: "Timestamp:"
+        path: "secondary#timestamp"
+        type: timestamp
+        formatter: timestamp
