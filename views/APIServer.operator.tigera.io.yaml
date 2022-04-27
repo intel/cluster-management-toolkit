@@ -26,3 +26,25 @@ listview:
                 field_colors:
                 - context: main
                   type: status_unknown
+infoview:
+  name: API Server Info
+  infopad:
+    row_indexes:
+      Normal: [status]
+    rows:
+      status:
+        header: [["Status:", [main, infoheader]]]
+        path: "status#state"
+        type: str
+        formatter: value_mapper
+        formatting:
+            mapping:
+              mappings:
+                Ready:
+                  field_colors:
+                  - context: main
+                    type: status_ok
+                __default:
+                  field_colors:
+                  - context: main
+                    type: status_unknown
