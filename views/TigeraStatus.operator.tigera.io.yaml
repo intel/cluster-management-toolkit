@@ -18,6 +18,18 @@ listview:
           eq: Available
         default: "Unknown"
       type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_not_ok
     degraded:
       header: "Degraded:"
       paths:
@@ -29,6 +41,18 @@ listview:
           eq: Degraded
         default: "Unknown"
       type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_not_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_ok
     progressing:
       header: "Progressing:"
       paths:
@@ -40,6 +64,18 @@ listview:
           eq: Progressing
         default: "Unknown"
       type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_pending
+            "False":
+              field_colors:
+              - context: main
+                type: default
     since:
       header: "Since:"
       paths:
@@ -53,3 +89,90 @@ listview:
       default: -1
       formatter: age
       align: right
+infoview:
+  name: Tiger Status Info
+  infopad:
+    row_indexes:
+      Normal: [available, progressing, degraded, since]
+    rows:
+      available:
+        header: [["Available:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: items
+          subpath: status
+          when:
+            key: type
+            eq: Available
+          default: "Unknown"
+        type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "False":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+      degraded:
+        header: [["Degraded:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: items
+          subpath: status
+          when:
+            key: type
+            eq: Degraded
+          default: "Unknown"
+        type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "False":
+                field_colors:
+                - context: main
+                  type: status_ok
+      progressing:
+        header: [["Progressing:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: items
+          subpath: status
+          when:
+            key: type
+            eq: Progressing
+          default: "Unknown"
+        type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_pending
+              "False":
+                field_colors:
+                - context: main
+                  type: default
+      since:
+        header: [["Since:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: items
+          subpath: lastTransitionTime
+          when:
+            key: type
+            eq: Available
+          type: timestamp
+        default: -1
+        formatter: age
