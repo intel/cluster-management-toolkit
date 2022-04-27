@@ -272,17 +272,31 @@ def timestamp_to_datetime(timestamp, default = none_timestamp()):
 	if timestamp.endswith("Z"):
 		timestamp = timestamp[:-1]
 
-	# For timestamp without timezone add one; all timestamps are assumed to be UTC
-	timestamp += "+0000"
+	rtimestamp = timestamp
+
+	# Some timestamps are weird
+	tmp = re.match(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6})\d* ([+-]\d{4}) [A-Z]{3}$", timestamp)
+	if tmp is not None:
+		timestamp = f"{tmp[1]}{tmp[2]}"
+
+	tmp = re.match(r"^(.+?) ?([+-]\d{4})$", timestamp)
+	if tmp is not None:
+		timestamp = f"{tmp[1]}{tmp[2]}"
+	else:
+		# For timestamp without timezone add one; all timestamps are assumed to be UTC
+		timestamp += "+0000"
 
 	dt = None
 
-	for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%d %H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d %H:%M:%S%z"):
+	for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z",
+	            "%Y-%m-%d %H:%M:%S.%f%z",
+		    "%Y-%m-%dT%H:%M:%S%z",
+		    "%Y-%m-%d %H:%M:%S%z"):
 		try:
 			return datetime.strptime(timestamp, fmt)
 		except ValueError:
 			pass
-	raise ValueError(f"Could not parse date: {timestamp}")
+	raise ValueError(f"Could not parse timestamp: {rtimestamp=}")
 
 def __str_representer(dumper, data):
 	if "\n" in data:
