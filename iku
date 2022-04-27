@@ -2384,6 +2384,51 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 					if _raw is not None:
 						for tmp in transform_list(_raw, transform = transform):
 							_values.append((tmp, vtype))
+				# This takes a list of paths as indata, and--for all numerical entries in the list,
+				# builds ranges; all non-numerical entries are included as is
+				elif ptype == "ranges":
+					rawvals = []
+					for p in path:
+						tmp = deep_get(obj, p)
+						if tmp is not None:
+							rawvals += tmp
+					rangevals = []
+					if tmp is not None:
+						firstnum = None
+						lastnum = None
+						sortedvals = natsorted(tmp)
+						for i in range(0, len(sortedvals)):
+							# The range is sorted; this means that we add everything as is except None
+							# until we reach the first numerical, create ranges for the numericals,
+							# then add everything as is except None until the end
+							if sortedvals[i] is None:
+								continue
+							elif type(sortedvals[i]) == int:
+								if firstnum is None:
+									firstnum = sortedvals[i]
+								else:
+									if lastnum is None or sortedvals[i] == lastnum + 1:
+										lastnum = sortedvals[i]
+									else:
+										# Flush and start a new range
+										rangevals.append((f"{firstnum}", f"{lastnum}", ""))
+										firstnum = sortedvals[i]
+										lastnum = None
+							else:
+								if firstnum is not None:
+									if lastnum is None:
+										rangevals.append((f"{firstnum}", "", ""))
+									else:
+										rangevals.append((f"{firstnum}", f"{lastnum}", ""))
+										lastnum = None
+									firstnum = None
+								rangevals.append(("", "", sortedvals[i]))
+						if firstnum is not None:
+							if lastnum is None:
+								rangevals.append((f"{firstnum}", "", ""))
+							else:
+								rangevals.append((f"{firstnum}", f"{lastnum}", ""))
+					_values.append((rangevals, "raw"))
 				elif ptype == "key_value":
 					value = []
 					for _key, _value in deep_get_with_fallback(obj, path, {}).items():
