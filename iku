@@ -2484,8 +2484,11 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						_values.append((tmp, vtype))
 				elif ptype == "match_expression":
 					tmp = deep_get_with_fallback(obj, path)
-					value = make_set_expression_list(tmp)
-					_values.append((value, "raw"))
+					if tmp is not None:
+						value = make_set_expression_list(tmp)
+						_values.append((value, "raw"))
+					else:
+						_values.append((default, "raw"))
 				elif ptype == "remap":
 					value = []
 					substitutions = deep_get(_path, "substitutions", "")
@@ -2624,6 +2627,8 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 					_values.append((value, "raw"))
 				elif ptype == "tuple":
 					value = []
+					if when_filter(_path, item = obj) == False:
+						continue
 					for i in range(0, len(path)):
 						if type(default) == list:
 							if i < len(default):
@@ -2636,7 +2641,11 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						if vtype in ["int", "float"] and type(default) not in [int, float]:
 							_default = 0
 
-						tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
+						# This is a literal string, not a path
+						if type(path[i]) == str:
+							tmp = path[i]
+						else:
+							tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
 
 						if vtype == "api_group":
 							override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", f"Global#kind_format"], "mixed")
@@ -5731,8 +5740,9 @@ def filter_list_entry(obj, caller_obj, filters = []):
 	return skip
 
 def generic_listgetter(kind, namespace, **kwargs):
+	label_selector = deep_get(kwargs, "label_selector", "")
 	filters = deep_get(kwargs, "filters", [])
-	vlist, status = kh.get_list_by_kind_namespace(kind, namespace, label_selector = deep_get(kwargs, "label_selector", ""))
+	vlist, status = kh.get_list_by_kind_namespace(kind, namespace, label_selector = label_selector)
 	if len(vlist) == 0 or status != 200 or len(filters) == 0:
 		return vlist, status
 
@@ -9951,6 +9961,9 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				_kind_path = deep_get(listgetter_args, "_kind_path")
 				_api_family = deep_get(listgetter_args, "_api_family")
 				_api_family_path = deep_get(listgetter_args, "_api_family_path")
+				_label_selector_path = deep_get(listgetter_args, "_label_selector_path")
+				if _label_selector_path is not None:
+					listgetter_args["label_selector"] = kh.make_selector(deep_get(obj, _label_selector_path))
 				if _kind is None:
 					_kind = deep_get(obj, _kind_path)
 				if _api_family is None:
