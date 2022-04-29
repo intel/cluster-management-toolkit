@@ -18,3 +18,191 @@ listview:
         query: New scale
         queryval: scale
         queryfunc: string
+infoview:
+  name: Replica Set Info
+  infopad:
+    row_indexes:
+      Normal: [controller, label_selector, set_based_selector, priority_class, minimum_ready_seconds, replicas]
+    rows:
+      controller:
+        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - kind
+          - apiVersion
+          - name
+          when:
+            key: controller
+            eq: true
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      label_selector:
+        header: [["Label Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      minimum_ready_seconds:
+        header: [["Minimum Ready Seconds:", [main, infoheader]]]
+        path: "spec#minReadySeconds"
+        default: 0
+        type: int
+        formatter: numerical
+      priority_class:
+        header: [["P", [main, infoheader_shortcut]], ["riority Class:", [main, infoheader]]]
+        path: "spec#template#spec#priorityClassName"
+        type: str
+      replicas:
+        header: [["Replicas:", [main, infoheader]]]
+        paths:
+        - path: [["spec#replicas"], " Desired", ["status#replicas"], " Current", ["status#readyReplicas"], " Ready"]
+          pathtype: tuple
+          default: [0, "", 0, "", 0, "", 0, ""]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: numerical
+          - type: generic
+          - type: numerical
+          - type: generic
+          - type: numerical
+          - type: generic
+          - type: numerical
+          - type: generic
+          field_separators:
+          - type: no_pad
+          - type: fraction_spaced
+          - type: no_pad
+          - type: fraction_spaced
+          - type: no_pad
+          - type: fraction_spaced
+          - type: no_pad
+      set_based_selector:
+        header: [["Set-based Selector:", [main, infoheader]]]
+        paths:
+        - path: "spec#selector#matchExpressions"
+          pathtype: match_expression
+          default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: operator
+          - type: value
+          field_separators:
+          - type: space
+          - type: no_pad
+  listpad:
+    listgetter: generic_listgetter
+    listgetter_args:
+      _kind: Pod
+      _label_selector_path: "spec#selector#matchLabels"
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch
+      kind: Pod
+      namespace_path: 0
+      name_path: 1
+    field_indexes:
+      Wide: [namespace, name, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
+      Normal: [namespace, name, pod_status, node_name, age, restarts, last_restart]
+      Compact: [namespace, name, pod_status, age, restarts, last_restart]
+    sortcolumn: pod_status
+    fields:
+      containers:
+        header: "Containers:"
+        paths:
+        - paths:
+          - "spec#initContainers"
+          - "spec#containers"
+          pathtype: items
+          subpaths:
+          - name
+          - subpath: image
+            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+          type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+          - type: version
+          field_separators:
+          - type: version
+      last_restart:
+        header: "Latest Restart:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: items
+          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+          when:
+            key: "restartCount"
+            gt: 0
+          action: latest
+          type: timestamp
+        default: -1
+        formatter: age
+        align: right
+      node_name:
+        header: "Node:"
+        path: "spec#nodeName"
+        type: host
+        default: "<none>"
+      pod_ip:
+        header: "Pod IP:"
+        path: "status#podIP"
+        default: "<unset>"
+        type: address
+        formatter: address
+      restarts:
+        header: "Restarts:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: items
+          subpath: "restartCount"
+          action: sum
+          type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+        default: 0
+  shortcuts:
+    "Open controller":
+      key: c
+      modifier: shift
+      helptext: "Open info page for controller"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Priority Class":
+      key: p
+      modifier: shift
+      helptext: "Open info page for Priority Class"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: PriorityClass
+        api_family: scheduling.k8s.io
+        name_path: "spec#template#spec#priorityClassName"

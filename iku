@@ -9409,16 +9409,6 @@ def field_processor_pod_status(obj, path = None, extra_paths = None, fallback = 
 		field.append((f" ({msg})", color_status_group(status_group, False)))
 	return field
 
-# All fields except obj and path will be ignored
-def field_processor_dep_condition(obj, path, extra_paths = None, fallback = None, formatting = None):
-	conditions = deep_get(obj, path)
-	status, status_group, reason = get_dep_status(conditions)
-	field = [
-		(f"{status}", color_status_group(status_group, False)),
-		(f" ({reason})", ("types", "generic"))
-	]
-	return field
-
 def field_processor_replication_controller_status(obj, path, extra_paths, fallback = None, formatting = None):
 	current_replicas = deep_get(obj, "status#replicas")
 	ready_replicas = deep_get(obj, "status#readyReplicas")
@@ -9432,21 +9422,6 @@ def field_processor_replication_controller_status(obj, path, extra_paths, fallba
 		(("separators", "fraction")),
 		(f" {desired_replicas}", ("types", "numerical")),
 		(f" Desired", ("types", "generic")),
-	]
-	return field
-
-def field_processor_replica_set_status(obj, path, extra_paths, fallback = None, formatting = None):
-	current_replicas = deep_get(obj, "status#replicas")
-	desired_replicas, max_replicas = get_desired_replicas(obj)
-	field = [
-		(f"{current_replicas}", ("types", "numerical")),
-		(f" Current ", ("types", "generic")),
-		(("separators", "fraction")),
-		(f" {desired_replicas}", ("types", "numerical")),
-		(f" Desired ", ("types", "generic")),
-		(("separators", "fraction")),
-		(f" {max_replicas}", ("types", "numerical")),
-		(f" Max", ("types", "generic")),
 	]
 	return field
 
@@ -13398,139 +13373,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("DaemonSet", "apps"): {
-		"windowheader": "Daemon Set Info",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
-		},
-		"sortcolumn": "status",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("Pod", ""),
-		"infopad": {
-			"Controller:": {
-				"fieldname": [("C", ("main", "infoheader_shortcut")), ("ontroller:", ("main", "infoheader"))],
-				"processor": field_processor_controller,
-				"fallback": [("strings", "none")],
-			},
-			"Label Selector:": {
-				"path": "spec#selector#matchLabels",
-				"processor": field_processor_label_selector,
-			},
-			"Set-based Selector:": {
-				"path": "spec#selector#matchExpressions",
-				"processor": field_processor_match_expressions,
-			},
-			"Priority Class:": {
-				"fieldname": [("P", ("main", "infoheader_shortcut")), ("riority Class:", ("main", "infoheader"))],
-				"path": "spec#template#spec#priorityClassName",
-			},
-			"Scheduler:": {
-				"path": "spec#template#spec#schedulerName",
-			},
-			"DNS Policy:": {
-				"path": "spec#template#spec#dnsPolicy",
-			},
-			"Restart Policy:": {
-				"path": "spec#template#spec#restartPolicy",
-			},
-			"Host IPC:": {
-				"path": "spec#template#spec#hostIPC",
-				"fallback": [("False", ("types", "none"))],
-			},
-			"Host PID:": {
-				"path": "spec#template#spec#hostPID",
-				"fallback": [("False", ("types", "none"))],
-			},
-			"Host Network:": {
-				"path": "spec#template#spec#hostNetwork",
-				"fallback": [("False", ("types", "none"))],
-			},
-			"Nodes:": {
-				"extra_paths": ["status#currentNumberScheduled", "", "status#desiredNumberScheduled", "", "status#updatedNumberScheduled", "", "status#numberAvailable", "", "status#numberMisscheduled"],
-				"formatting": {
-					"field_colors": [("types", "numerical")],
-					"item_separators": [
-						(" Current", ("types", "generic")),
-						("separators", "fraction_spaced"),
-						(" Desired", ("types", "generic")),
-						("separators", "fraction_spaced"),
-						(" Up to Date", ("types", "generic")),
-						("separators", "fraction_spaced"),
-						(" Available", ("types", "generic")),
-						("separators", "fraction_spaced"),
-					],
-					"suffix": (" Misscheduled", ("types", "generic")),
-					"conditionals": {
-						"<<<none>>>": {
-							"substitute": "0",
-						},
-					},
-				},
-				"processor": field_processor_list,
-			},
-			"Node Selector:": {
-				"path": "spec#template#spec#nodeSelector",
-				"processor": field_processor_label_selector,
-			},
-			"Service Account:": {
-				"fieldname": [("S", ("main", "infoheader_shortcut")), ("ervice Account:", ("main", "infoheader"))],
-				"path": "spec#template#spec#serviceAccountName",
-			},
-			"Update Strategy:": {
-				"extra_paths": ["spec#updateStrategy#type", "", "spec#updateStrategy#rollingUpdate#maxSurge", "", "spec#updateStrategy#rollingUpdate#maxUnavailable", ""],
-				"formatting": {
-					"field_colors": [("types", "generic"), ("types", "numerical"), ("types", "numerical")],
-					"item_separators": [
-						(" (", ("types", "generic")),
-						("Max Surge: ", ("main", "infoheader")),
-						("separators", "list"),
-						("Max Unavailable: ", ("main", "infoheader")),
-						(")", ("types", "generic")),
-					],
-					"conditionals": {
-						"RollingUpdate:<<<0>>>": {
-							"substitute": "Rolling Update",
-						},
-						"<<<none>>>:<<<0>>>": {
-							"substitute": "Rolling Update",
-						},
-						"Recreate": {
-							"stop": True,
-						},
-					},
-				},
-				"processor": field_processor_list,
-			},
-		},
-		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
-			"infogetter": get_pod_info,
-		},
-		"shortcuts": {
-			"Controller": {
-				"shortcut": ord("C"),
-				"helptext": ("[Shift] + C", "Open info page for controller"),
-				"call": resourceinfodispatch,
-				"namespace_path": "metadata#namespace",
-				"owner_references_path": "metadata#ownerReferences",
-			},
-			"Priority Class": {
-				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Open info page for Priority Class"),
-				"call": resourceinfodispatch,
-				"kind": ("PriorityClass", "scheduling.k8s.io"),
-				"name_path": "spec#template#spec#priorityClassName",
-			},
-			"Service Account": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for Service Account"),
-				"call": resourceinfodispatch,
-				"kind": ("ServiceAccount", ""),
-				"name_path": "spec#template#spec#serviceAccountName",
-				"namespace_path": "metadata#namespace",
-			},
-		},
-	},
 	("DestinationRule", "networking.istio.io"): {
 		"windowheader": "Destination Rule Info",
 		"infopad": {
@@ -14582,56 +14424,6 @@ infoviews_builtin = {
 			"infogetter": get_promrule_expr,
 		}
 	},
-	("ReplicaSet", "apps"): {
-		"windowheader": "Replica Set Info",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
-		},
-		"sortcolumn": "status",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("Pod", ""),
-		"infopad": {
-			"Controller:": {
-				"fieldname": [("C", ("main", "infoheader_shortcut")), ("ontroller:", ("main", "infoheader"))],
-				"processor": field_processor_controller,
-			},
-			"Label Selector:": {
-				"path": "spec#selector#matchLabels",
-				"processor": field_processor_label_selector,
-			},
-			"Set-based Selector:": {
-				"path": "spec#selector#matchExpressions",
-				"processor": field_processor_match_expressions,
-			},
-			"Priority Class:": {
-				"fieldname": [("P", ("main", "infoheader_shortcut")), ("riority Class:", ("main", "infoheader"))],
-				"path": "spec#template#spec#priorityClassName",
-			},
-			"Replicas:": {
-				"processor": field_processor_replica_set_status,
-			},
-		},
-		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
-			"infogetter": get_pod_info,
-		},
-		"shortcuts": {
-			"Controller": {
-				"shortcut": ord("C"),
-				"helptext": ("[Shift] + C", "Open info page for controller"),
-				"call": resourceinfodispatch,
-				"namespace_path": "metadata#namespace",
-				"owner_references_path": "metadata#ownerReferences",
-			},
-			"Priority Class": {
-				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Open info page for Priority Class"),
-				"call": resourceinfodispatch,
-				"kind": ("PriorityClass", "scheduling.k8s.io"),
-				"name_path": "spec#template#spec#priorityClassName",
-			},
-		},
-	},
 	("ReplicationController", ""): {
 		"windowheader": "Replication Controller Info",
 		"field_indexes": {
@@ -14941,104 +14733,6 @@ infoviews_builtin = {
 		},
 		"listpad": {
 			"infogetter": get_sidecar_info,
-		},
-	},
-	("StatefulSet", "apps"): {
-		"windowheader": "Stateful Set Info",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
-		},
-		"sortcolumn": "name",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("Pod", ""),
-		"infopad": {
-			"Controller:": {
-				"fieldname": [("C", ("main", "infoheader_shortcut")), ("ontroller:", ("main", "infoheader"))],
-				"processor": field_processor_controller,
-			},
-			"Label Selector:": {
-				"path": "spec#selector#matchLabels",
-				"processor": field_processor_label_selector,
-			},
-			"Set-based Selector:": {
-				"path": "spec#selector#matchExpressions",
-				"processor": field_processor_match_expressions,
-			},
-			"Pod Management Policy:": {
-				"extra_paths": ["spec#podManagementPolicy"],
-				"formatting": {
-					"conditionals": {
-						"<<<none>>>": {
-							"substitute": "Ordered Ready",
-						},
-						"OrderedReady": {
-							"substitute": "Ordered Ready",
-						},
-					},
-				},
-				"processor": field_processor_list,
-			},
-			"Replicas:": {
-				# Desired
-				"extra_paths": ["spec#replicas", "", "status#currentReplicas", "", "status#readyReplicas", "", "status#updatedReplicas", "" ],
-				"formatting": {
-					"field_colors": [("types", "numerical")],
-					"item_separators": [
-						(" Desired ", ("types", "generic")),
-						("separators", "fraction_spaced"),
-						(" Current", ("types", "generic")),
-						("separators", "fraction_spaced"),
-						(" Ready", ("types", "generic")),
-						("separators", "fraction_spaced"),
-						(" Updated", ("types", "generic")),
-					],
-					"conditionals": {
-						"<<<none>>>": {
-							"substitute": "0",
-						},
-					},
-				},
-				"processor": field_processor_list,
-			},
-			"Update Strategy:": {
-				"extra_paths": ["spec#updateStrategy#type", "", "spec#strategy#rollingUpdate#partition", ""],
-				"formatting": {
-					"field_colors": [("types", "generic"), ("types", "numerical")],
-					"item_separators": [
-						(" (", ("types", "generic")),
-						("Partition: ", ("types", "generic")),
-						(")", ("types", "generic")),
-					],
-					"conditionals": {
-						"RollingUpdate:<<<0>>>": {
-							"substitute": "Rolling Update",
-						},
-						"<<<matchany>>>": {
-							"stop": True,
-						},
-						"<<<none>>>:<<<0>>>": {
-							"substitute": "Rolling Update",
-						},
-						"<<<none>>>:<<<2>>>": {
-							"substitute": "1",
-						},
-					},
-				},
-				"processor": field_processor_list,
-			},
-		},
-		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector#matchLabels')))",
-			"infogetter": get_pod_info,
-		},
-		"shortcuts": {
-			"Controller": {
-				"shortcut": ord("C"),
-				"helptext": ("[Shift] + C", "Open info page for controller"),
-				"call": resourceinfodispatch,
-				"namespace_path": "metadata#namespace",
-				"owner_references_path": "metadata#ownerReferences",
-			},
 		},
 	},
 	("ValidatingWebhookConfiguration", "admissionregistration.k8s.io"): {

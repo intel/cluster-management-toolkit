@@ -21,3 +21,284 @@ listview:
         metadata: [["Strategy: Rollout", ["windowwidget", "description"]]]
         confirm: true
         actionfunc: restart_resource_rollout
+infoview:
+  name: Daemon Set Info
+  infopad:
+    row_indexes:
+      Normal: [controller, label_selector, set_based_selector, priority_class, scheduler, dns_policy, restart_policy, host_ipc, host_pid, host_network, nodes, node_selector, service_account, update_strategy]
+    rows:
+      controller:
+        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - kind
+          - apiVersion
+          - name
+          when:
+            key: controller
+            eq: true
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      dns_policy:
+        header: [["DNS Policy:", [main, infoheader]]]
+        path: "spec#template#spec#dnsPolicy"
+        type: str
+      host_ipc:
+        header: [["Host IPC:", [main, infoheader]]]
+        path: "spec#template#spec#hostIPC"
+        default: false
+        type: bool
+      host_network:
+        header: [["Host Network:", [main, infoheader]]]
+        path: "spec#template#spec#hostPID"
+        default: false
+        type: bool
+      host_pid:
+        header: [["Host PID:", [main, infoheader]]]
+        path: "spec#template#spec#hostPID"
+        default: false
+        type: bool
+      label_selector:
+        header: [["Label Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      minimum_ready_seconds:
+        header: [["Minimum Ready Seconds:", [main, infoheader]]]
+        path: "spec#minReadySeconds"
+        default: 0
+        type: int
+        formatter: numerical
+      nodes:
+        header: [["Nodes:", [main, infoheader]]]
+        paths:
+        - path: [["status#currentNumberScheduled"], " Current", ["status#desiredNumberScheduled"], " Desired", ["status#updatedNumberScheduled"], " Up to Date", ["status#numberAvailable"], " Available", ["status#numberMisscheduled"], " Misscheduled"]
+          pathtype: tuple
+          default: [0, "", 0, "", 0, "", 0, "", 0, ""]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: numerical
+          - type: generic
+          - type: numerical
+          - type: generic
+          - type: numerical
+          - type: generic
+          - type: numerical
+          - type: generic
+          - type: numerical
+          - type: generic
+          field_separators:
+          - type: no_pad
+          - type: fraction_spaced
+          - type: no_pad
+          - type: fraction_spaced
+          - type: no_pad
+          - type: fraction_spaced
+          - type: no_pad
+          - type: fraction_spaced
+          - type: no_pad
+      node_selector:
+        header: [["Node Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#template#spec#nodeSelector"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      priority_class:
+        header: [["P", [main, infoheader_shortcut]], ["riority Class:", [main, infoheader]]]
+        path: "spec#template#spec#priorityClassName"
+        type: str
+      restart_policy:
+        header: [["Restart Policy:", [main, infoheader]]]
+        path: "spec#template#spec#restartPolicy"
+        type: str
+      scheduler:
+        header: [["Scheduler:", [main, infoheader]]]
+        path: "spec#template#spec#schedulerName"
+        type: str
+      service_account:
+        header: [["S", [main, infoheader_shortcut]], ["ervice Account:", [main, infoheader]]]
+        path: "spec#template#spec#serviceAccountName"
+        type: str
+      set_based_selector:
+        header: [["Set-based Selector:", [main, infoheader]]]
+        paths:
+        - path: "spec#selector#matchExpressions"
+          pathtype: match_expression
+          default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: operator
+          - type: value
+          field_separators:
+          - type: space
+          - type: no_pad
+      update_strategy:
+        header: [["Update Strategy:", [main, infoheader]]]
+        paths:
+        - path: [["spec#updateStrategy#type"], " (", "Max Surge: ", ["spec#updateStrategy#rollingUpdate#maxSurge"], "Max Unavailable: ", ["spec#updateStrategy#rollingUpdate#maxUnavailable"], ")"]
+          pathtype: tuple
+          when:
+            key: "spec#updateStrategy#type"
+            eq: "RollingUpdate"
+        - path: [["spec#updateStrategy#type"]]
+          pathtype: tuple
+          when:
+            key: "spec#updateStrategy#type"
+            eq: "Recreate"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+          - type: generic
+          - context: main
+            type: infoheader
+          # Ideally we want to achieve numerical with unit here
+          - type: numerical
+          - context: main
+            type: infoheader
+          # Ideally we want to achieve numerical with unit here
+          - type: numerical
+          - type: generic
+          field_separators:
+          - type: no_pad
+          - type: no_pad
+          - type: no_pad
+          - type: list
+          - type: no_pad
+          - type: no_pad
+  listpad:
+    listgetter: generic_listgetter
+    listgetter_args:
+      _kind: Pod
+      _label_selector_path: "spec#selector#matchLabels"
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch
+      kind: Pod
+      namespace_path: 0
+      name_path: 1
+    field_indexes:
+      Wide: [namespace, name, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
+      Normal: [namespace, name, pod_status, node_name, age, restarts, last_restart]
+      Compact: [namespace, name, pod_status, age, restarts, last_restart]
+    sortcolumn: pod_status
+    fields:
+      containers:
+        header: "Containers:"
+        paths:
+        - paths:
+          - "spec#initContainers"
+          - "spec#containers"
+          pathtype: items
+          subpaths:
+          - name
+          - subpath: image
+            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+          type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+          - type: version
+          field_separators:
+          - type: version
+      last_restart:
+        header: "Latest Restart:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: items
+          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+          when:
+            key: "restartCount"
+            gt: 0
+          action: latest
+          type: timestamp
+        default: -1
+        formatter: age
+        align: right
+      node_name:
+        header: "Node:"
+        path: "spec#nodeName"
+        type: host
+        default: "<none>"
+      pod_ip:
+        header: "Pod IP:"
+        path: "status#podIP"
+        default: "<unset>"
+        type: address
+        formatter: address
+      restarts:
+        header: "Restarts:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: items
+          subpath: "restartCount"
+          action: sum
+          type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+        default: 0
+  shortcuts:
+    "Open controller":
+      key: c
+      modifier: shift
+      helptext: "Open info page for controller"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Priority Class":
+      key: p
+      modifier: shift
+      helptext: "Open info page for Priority Class"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: PriorityClass
+        api_family: scheduling.k8s.io
+        name_path: "spec#template#spec#priorityClassName"
+    "Service Account":
+      key: s
+      modifier: shift
+      helptext: "Open info page for Service Account"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: ServiceAccount
+        name_path: "spec#template#spec#serviceAccountName"
+        namespace_path: "metadata#namespace"
