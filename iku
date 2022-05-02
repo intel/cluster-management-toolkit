@@ -9409,22 +9409,6 @@ def field_processor_pod_status(obj, path = None, extra_paths = None, fallback = 
 		field.append((f" ({msg})", color_status_group(status_group, False)))
 	return field
 
-def field_processor_replication_controller_status(obj, path, extra_paths, fallback = None, formatting = None):
-	current_replicas = deep_get(obj, "status#replicas")
-	ready_replicas = deep_get(obj, "status#readyReplicas")
-	desired_replicas = deep_get(obj, "spec#replicas")
-	field = [
-		(f"{current_replicas}", ("types", "numerical")),
-		(f" Current ", ("types", "generic")),
-		(("separators", "fraction")),
-		(f" {ready_replicas}", ("types", "numerical")),
-		(f" Ready ", ("types", "generic")),
-		(("separators", "fraction")),
-		(f" {desired_replicas}", ("types", "numerical")),
-		(f" Desired", ("types", "generic")),
-	]
-	return field
-
 # All fields except obj and path are ignored
 def field_processor_secret_type(obj, path, extra_paths, fallback = None, formatting = None):
 	secret_type = deep_get(obj, "type", "")
@@ -14423,28 +14407,6 @@ infoviews_builtin = {
 		"logpad": {
 			"infogetter": get_promrule_expr,
 		}
-	},
-	("ReplicationController", ""): {
-		"windowheader": "Replication Controller Info",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
-		},
-		"sortcolumn": "status",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("Pod", ""),
-		"infopad": {
-			"Label Selector:": {
-				"path": "spec#selector",
-				"processor": field_processor_label_selector,
-			},
-			"Replicas:": {
-				"processor": field_processor_replication_controller_status,
-			},
-		},
-		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector')))",
-			"infogetter": get_pod_info,
-		},
 	},
 	("ResourceQuota", ""): {
 		"windowheader": "Resource Quota Info",

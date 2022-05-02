@@ -18,3 +18,121 @@ listview:
         query: New scale
         queryval: scale
         queryfunc: string
+infoview:
+  name: Replication Controller Info
+  infopad:
+    row_indexes:
+      Normal: [label_selector, replicas]
+    rows:
+      label_selector:
+        header: [["Label Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#selector"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      replicas:
+        header: [["Replicas:", [main, infoheader]]]
+        paths:
+        - path: [["spec#replicas"], " Desired", ["status#replicas"], " Current", ["status#readyReplicas"], " Ready"]
+          pathtype: tuple
+          default: [0, "", 0, "", 0, "", 0, ""]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: numerical
+          - type: generic
+          - type: numerical
+          - type: generic
+          - type: numerical
+          - type: generic
+          - type: numerical
+          - type: generic
+          field_separators:
+          - type: no_pad
+          - type: fraction_spaced
+          - type: no_pad
+          - type: fraction_spaced
+          - type: no_pad
+          - type: fraction_spaced
+          - type: no_pad
+  listpad:
+    listgetter: generic_listgetter
+    listgetter_args:
+      _kind: Pod
+      _label_selector_path: "spec#selector"
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch
+      kind: Pod
+      namespace_path: 0
+      name_path: 1
+    field_indexes:
+      Wide: [namespace, name, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
+      Normal: [namespace, name, pod_status, node_name, age, restarts, last_restart]
+      Compact: [namespace, name, pod_status, age, restarts, last_restart]
+    sortcolumn: pod_status
+    fields:
+      containers:
+        header: "Containers:"
+        paths:
+        - paths:
+          - "spec#initContainers"
+          - "spec#containers"
+          pathtype: items
+          subpaths:
+          - name
+          - subpath: image
+            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+          type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+          - type: version
+          field_separators:
+          - type: version
+      last_restart:
+        header: "Latest Restart:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: items
+          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+          when:
+            key: "restartCount"
+            gt: 0
+          action: latest
+          type: timestamp
+        default: -1
+        formatter: age
+        align: right
+      node_name:
+        header: "Node:"
+        path: "spec#nodeName"
+        type: host
+        default: "<none>"
+      pod_ip:
+        header: "Pod IP:"
+        path: "status#podIP"
+        default: "<unset>"
+        type: address
+        formatter: address
+      restarts:
+        header: "Restarts:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: items
+          subpath: "restartCount"
+          action: sum
+          type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+        default: 0
