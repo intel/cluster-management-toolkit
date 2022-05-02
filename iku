@@ -281,6 +281,54 @@ def generator_timestamp(obj, field, fieldlen, pad, ralign, selected, **formattin
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
+def generator_timestamp_with_age(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	values = getattr(obj, field)
+
+	if len(values) > 2 and len(deep_get(formatting, "field_colors", [])) < 2:
+		raise ValueError(f"Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
+	elif len(values) == 2:
+		if values[0] == None:
+			array = [
+				("<none>", ("types", "none", selected))
+			]
+		else:
+			timestamp_string = datetime_to_timestamp(values[0])
+			array = format_numerical_with_units(string, "timestamp", selected)
+			array += [
+				(" (", ("types", "generic", selected))
+			]
+			array += _generator_age(values[1], selected)
+			array += [
+				(")", ("types", "generic", selected))
+			]
+	else:
+		array = []
+
+		for i in range(0, len(values)):
+			# If there's no formatting for this field we assume that
+			# it's a generic string
+			if len(deep_get(formatting, "field_colors", [])) <= i:
+				formatting = ("types", "generic", selected)
+				array += [values[i], formatting]
+			elif formatting["field_colors"][i] == ("types", "timestamp"):
+				if values[i] is None:
+					array += [
+						("<unset>", ("types", "none"), selected)
+					]
+					break
+				else:
+					timestamp = timestamp_to_datetime(values[i])
+					timestamp_string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+					array += format_numerical_with_units(timestamp_string, "timestamp", selected)
+			elif formatting["field_colors"][i] == ("types", "age"):
+				array += _generator_age(values[i], selected)
+			else:
+				array += [
+					(values[i], formatting["field_colors"][i], selected)
+				]
+
+	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
+
 def generator_yesno(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 
@@ -641,9 +689,7 @@ def format_numerical_with_units(string, ftype, selected, non_units = set("012345
 
 	return array
 
-def generator_age(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	value = getattr(obj, field)
-
+def _generator_age(value, selected):
 	if value == -1:
 		string = ""
 	else:
@@ -658,7 +704,14 @@ def generator_age(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	else:
 		array = format_numerical_with_units(string, "age", selected)
 
-	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+	return array
+
+def generator_age(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	value = getattr(obj, field)
+
+	array = _generator_age(value, selected)
+
+	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
 
 def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	items = getattr(obj, field, [])
@@ -910,6 +963,52 @@ def processor_timestamp(obj, field):
 
 	string = value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 	return string
+
+def processor_timestamp_with_age(obj, field):
+	values = getattr(obj, field)
+
+	if len(values) > 2 and len(deep_get(formatting, "field_colors", [])) < 2:
+		raise ValueError(f"Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
+	elif len(values) == 2:
+		if values[0] == None:
+			array = [
+				("<none>", ("types", "none", selected))
+			]
+		else:
+			timestamp_string = datetime_to_timestamp(values[0])
+			array = format_numerical_with_units(string, "timestamp", selected)
+			array += [
+				(" (", ("types", "generic", selected))
+			]
+			array += _generator_age(values[1], selected)
+			array += [
+				(")", ("types", "generic", selected))
+			]
+	else:
+		array = []
+
+		for i in range(0, len(values)):
+			# If there's no formatting for this field we assume that
+			# it's a generic string
+			if len(deep_get(formatting, "field_colors", [])) <= i:
+				formatting = ("types", "generic", selected)
+				array += [values[i], formatting]
+			elif formatting["field_colors"][i] == "timestamp":
+				if values[i] is None:
+					array += [
+						("<none>", ("types", "none"), selected)
+					]
+				else:
+					timestamp_string = datetime_to_timestamp(values[0])
+					array += format_numerical_with_units(string, "timestamp", selected)
+			elif formatting["field_colors"][i] == "age":
+				array += _generator_age(values[i], selected)
+			else:
+				array += [
+					(values[i], formatting["field_colors"][i], selected)
+				]
+
+	return themearray_to_string(array)
 
 def processor_total(obj, field):
 	free, total = getattr(obj, field)
@@ -1863,15 +1962,6 @@ def datagetter_timestamp(obj, path, default):
 
 	return timestamp_to_datetime(deep_get(obj, path)), {}
 
-def datagetter_job_state(obj, path, default):
-	if obj is None:
-		return default
-
-	completion_time = deep_get(obj, "status#completionTime")
-	state, status_group = get_job_state(obj, (completion_time is not None))
-
-	return state, { "status_group": status_group }
-
 def datagetter_phase(obj, path, default):
 	if obj is None:
 		return default
@@ -2540,6 +2630,35 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						timediff = timestamp_to_datetime(end_time) - timestamp_to_datetime(start_time)
 						duration = timediff.days * 24 * 60 * 60 + timediff.seconds
 						_values.append((duration, "raw"))
+				elif ptype == "timestamp_with_age":
+					# The first array is assumed to be the start time, the second array the end time
+					start_time = None
+					end_time = None
+					start_time_index = -1
+					end_time_index = -1
+					for i in range(0, len(mpaths)):
+						if type(mpaths[i]) == list:
+							if start_time_index == -1:
+								start_time_index = i
+								start_time = iktlib.deep_get_with_fallback(obj, mpaths[i], default = None)
+							elif end_time_index == -1:
+								end_time_index = i
+								end_time = iktlib.deep_get_with_fallback(obj, mpaths[i], default = None)
+					if end_time is None or start_time is None:
+						end_time = None
+						duration = -1
+					else:
+						timediff = timestamp_to_datetime(end_time) - timestamp_to_datetime(start_time)
+						duration = timediff.days * 24 * 60 * 60 + timediff.seconds
+					__values = []
+					for i in range(0, len(mpaths)):
+						if i == start_time_index:
+							__values.append(end_time)
+						elif i == end_time_index:
+							__values.append(duration)
+						else:
+							__values.append(mpaths[i])
+					_values.append((tuple(__values), "raw"))
 				elif ptype == "items":
 					if len(subpath) > 0:
 						if len(subpaths) > 0:
@@ -3992,34 +4111,6 @@ def get_strategy_info(**kwargs):
 		info.append(StrategyInfo(strategy, name, operator, target))
 
 	return info
-
-def get_job_state(obj, completed = False):
-	state = "Unknown"
-	status_group = stgroup.UNKNOWN
-
-	if deep_get(obj, "status#active") == 1:
-		state = "Running"
-		status_group = stgroup.PENDING
-	elif completed == True:
-		if deep_get(obj, "status#failed") is not None:
-			state = "Failed"
-			status_group = stgroup.NOT_OK
-		else:
-			state = "Completed"
-			status_group = stgroup.OK
-	else:
-		# Try to figure out why we neither completed nor are running
-		reason = ""
-
-		for condition in deep_get(obj, "status#conditions", []):
-			if deep_get(condition, "type") != "Complete":
-				reason = deep_get(condition, "reason", "").rstrip()
-
-		if reason != "":
-			state = f"{reason}"
-			status_group = stgroup.NOT_OK
-
-	return state, status_group
 
 # Returns a list of tuples with their latest status
 def get_conditions(conditions):
@@ -6354,11 +6445,6 @@ field_templates = {
 		"header": "IP Block Exceptions:",
 		"generator": generator_list,
 	},
-	"job_state": {
-		"header": "State:",
-		"datagetter": datagetter_job_state,
-		"generator": generator_status,
-	},
 	"key": {
 		"header": "Key:",
 	},
@@ -6912,6 +6998,9 @@ def get_formatter(field):
 	elif formatter == "timestamp":
 		generator = generator_timestamp
 		processor = processor_timestamp
+	elif formatter == "timestamp_with_age":
+		generator = generator_timestamp_with_age
+		processor = processor_timestamp_with_age
 	elif formatter == "age":
 		generator = generator_age
 		processor = processor_age
@@ -9482,19 +9571,6 @@ def field_processor_tls(obj, path, extra_paths = None, fallback = None, formatti
 
 	return field
 
-def field_processor_job_completion(obj, path, extra_paths = None, fallback = None, formatting = None):
-	start_time = timestamp_to_datetime(deep_get(obj, "status#startTime"))
-	completion_time = timestamp_to_datetime(deep_get(obj, "status#completionTime"))
-
-	if completion_time is None:
-		state, status_group = get_job_state(obj)
-		field = [(state, color_status_group(status_group, False))]
-	else:
-		timediff = completion_time - start_time
-		duration = timediff.days * 24 * 60 * 60 + timediff.seconds
-		field = [("%s (Duration: %s)" % (completion_time.strftime("%Y-%m-%d %H:%M:%S"), iktlib.seconds_to_age(duration)), ("types", "generic"))]
-	return field
-
 def field_processor_svc_ports(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	ports = get_svc_ports(obj)
 	field = format_list(ports, 0, 0, False, False, field_colors = [("types", "service"), ("types", "port"), ("types", "protocol")], field_separators = [("separators", "port"), ("separators", "service")])
@@ -9921,8 +9997,17 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				_api_family = deep_get(listgetter_args, "_api_family")
 				_api_family_path = deep_get(listgetter_args, "_api_family_path")
 				_label_selector_path = deep_get(listgetter_args, "_label_selector_path")
+				_label_selector_key_values = deep_get(listgetter_args, "_label_selector_key_values")
 				if _label_selector_path is not None:
 					listgetter_args["label_selector"] = kh.make_selector(deep_get(obj, _label_selector_path))
+				elif _label_selector_key_values is not None:
+					label_selectors = {}
+					for label_key, label_value in _label_selector_key_values:
+						if type(label_value) == str:
+							label_selectors[label_key] = label_value
+						elif type(label_value) == list:
+							label_selectors[label_key] = deep_get_with_fallback(obj, label_value)
+					listgetter_args["label_selector"] = kh.make_selector(label_selectors)
 				if _kind is None:
 					_kind = deep_get(obj, _kind_path)
 				if _api_family is None:
@@ -13671,50 +13756,6 @@ infoviews_builtin = {
 			# Inventory have no last applied configuration
 			"Show Events": {},
 			"Last Applied Configuration": {},
-		},
-	},
-	("Job", "batch"): {
-		"field_indexes": {
-			"Normal": ["namespace", "name", "status", "node", "pod_ip", "age", "containers", "restarts"],
-		},
-		"sortcolumn": "name",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("Pod", ""),
-		"infopad": {
-			"Controller:": {
-				"fieldname": [("C", ("main", "infoheader_shortcut")), ("ontroller:", ("main", "infoheader"))],
-				"processor": field_processor_controller,
-			},
-			"Completions:": {
-				"extra_paths": ["spec#completions"],
-				"formatting": {
-					"field_colors": [("types", "numerical")],
-				},
-				"processor": field_processor_list,
-			},
-			"Parallelism:": {
-				"extra_paths": ["spec#parallelism"],
-				"formatting": {
-					"field_colors": [("types", "numerical")],
-				},
-				"processor": field_processor_list,
-			},
-			"Completed:": {
-				"processor": field_processor_job_completion,
-			}
-		},
-		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = 'job-name=%s' % deep_get(obj, 'spec#template#metadata#labels')['job-name'])",
-			"infogetter": get_pod_info,
-		},
-		"shortcuts": {
-			"Controller": {
-				"shortcut": ord("C"),
-				"helptext": ("[Shift] + C", "Open info page for controller"),
-				"call": resourceinfodispatch,
-				"namespace_path": "metadata#namespace",
-				"owner_references_path": "metadata#ownerReferences",
-			},
 		},
 	},
 	("KubeVirt", "kubevirt.io"): {
