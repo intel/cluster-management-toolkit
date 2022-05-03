@@ -7,7 +7,7 @@ listview:
   name: Pod Security Policies
   group: Policy
   field_indexes:
-    Normal: [name, privileged, capabilities, selinux, runasuser, fsgroup, supgroups, readonlyrootfs, volumes, age]
+    Normal: [name, privileged, capabilities, selinux, runasuser, fsgroup, supgroups, readonly_rootfs, volumes, age]
   fields:
     capabilities:
       header: "Capabilities:"
@@ -23,7 +23,7 @@ listview:
       path: "spec#privileged"
       default: false
       type: bool
-    readonlyrootfs:
+    readonly_rootfs:
       header: "R/O Root FS:"
       path: "spec#readOnlyRootFilesystem"
       type: bool
@@ -47,3 +47,329 @@ listview:
       default: ["<none>"]
       type: raw
       formatter: list
+infoview:
+  name: Pod Security Policy Info
+  infopad:
+    row_indexes:
+      Normal:
+      - allow_privilege_escalation
+      - capabilities_header
+      - capabilities_allowed
+      - capabilities_default_add
+      - capabilities_required_drop
+      - host_resources_header
+      - host_resources_allowed_paths
+      - host_resources_allow_network_use
+      - host_resources_permitted_network_ports
+      - host_resources_allow_host_ipc
+      - host_resources_allow_host_pid
+      - sysctls_header
+      - sysctls_allowed_unsafe
+      - sysctls_forbidden
+      - selinux_header
+      - selinux_rule
+      - selinux_level
+      - selinux_role
+      - selinux_type
+      - selinux_user
+      - run_as_user_header
+      - run_as_user_rule
+      - run_as_user_ranges
+      - run_as_group_header
+      - run_as_group_rule
+      - run_as_group_ranges
+      - fsgroup_header
+      - fsgroup_rule
+      - fsgroup_ranges
+      - supplemental_groups_header
+      - supplemental_groups_rule
+      - supplemental_groups_ranges
+      - readonly_rootfs
+      - volumes
+      - runtime_class_header
+      - runtime_class_allowed
+      - runtime_class_default
+    rows:
+      allow_privilege_escalation:
+        header: [["Allow Privilege Escalation:", [main, infoheader]]]
+        path: "spec#allowPrivilegeEscalation"
+        type: bool
+      capabilities_allowed:
+        header: [["  Allowed:", [main, infoheader]]]
+        path: "spec#allowedCapabilities"
+        default: ["<none>"]
+        type: raw
+        formatter: list
+      capabilities_default_add:
+        header: [["  Default Add:", [main, infoheader]]]
+        path: "spec#defaultAddCapabilities"
+        default: ["<none>"]
+        type: raw
+        formatter: list
+      capabilities_header:
+        header: [["Capabilities:", [main, infoheader]]]
+      capabilities_required_drop:
+        header: [["  Required Drop:", [main, infoheader]]]
+        path: "spec#requiredDropCapabilities"
+        default: ["<none>"]
+        type: raw
+        formatter: list
+      fsgroup_header:
+        header: [["FS Group:", [main, infoheader]]]
+      fsgroup_ranges:
+        header: [["  Ranges:", [main, infoheader]]]
+        paths:
+        - path: "spec#fsGroup#ranges"
+          pathtype: items
+          subpaths:
+          - min
+          - max
+          default: ["<unset>"]
+        formatter: list
+        formatting:
+          field_separators:
+          - type: range
+          mapping:
+            mappings:
+              "<unset>":
+                field_colors:
+                - context: types
+                  type: unset
+              "__default":
+                field_colors:
+                - context: types
+                  type: numerical
+      fsgroup_rule:
+        header: [["  Rule:", [main, infoheader]]]
+        path: "spec#fsGroup#rule"
+        default: "<unset>"
+        type: str
+      host_resources_allowed_paths:
+        header: [["  Allowed Paths:", [main, infoheader]]]
+        paths:
+        - path: "spec#allowedHostPaths"
+          pathtype: items
+          subpath: pathPrefix
+          when:
+            key: readOnly
+            eq: true
+          suffix:
+          - " [Read Only]"
+        - path: "spec#allowedHostPaths"
+          pathtype: items
+          subpath: pathPrefix
+          when:
+            key: readOnly
+            ne: true
+          suffix:
+          - ""
+        default: "All"
+        type: raw
+        formatter: list
+      host_resources_allow_host_ipc:
+        header: [["  Allow Host IPC:", [main, infoheader]]]
+        path: "spec#hostIpc"
+        default: "<unset>"
+        type: bool
+      host_resources_allow_host_pid:
+        header: [["  Allow Host PID:", [main, infoheader]]]
+        path: "spec#hostPid"
+        default: "<unset>"
+        type: bool
+      host_resources_allow_network_use:
+        header: [["  Allow Network Use:", [main, infoheader]]]
+        path: "spec#hostNetwork"
+        type: bool
+      host_resources_header:
+        header: [["Host Resources:", [main, infoheader]]]
+      host_resources_permitted_network_ports:
+        header: [["  Permitted Network Port Ranges:", [main, infoheader]]]
+        paths:
+        - path: "spec#hostPorts"
+          pathtype: items
+          subpaths:
+          - min
+          - max
+        formatter: list
+        formatting:
+          field_colors:
+          - type: numerical
+          - type: numerical
+          field_separators:
+          - type: range
+      readonly_rootfs:
+        header: [["Read Only Root FS:", [main, infoheader]]]
+        path: "spec#readOnlyRootFilesystem"
+        type: bool
+        default: false
+      run_as_group_header:
+        header: [["Run as Group:", [main, infoheader]]]
+      run_as_group_ranges:
+        header: [["  Ranges:", [main, infoheader]]]
+        paths:
+        - path: "spec#runAsGroup#ranges"
+          pathtype: items
+          subpaths:
+          - min
+          - max
+          default: ["<unset>"]
+        formatter: list
+        formatting:
+          field_separators:
+          - type: range
+          mapping:
+            mappings:
+              "<unset>":
+                field_colors:
+                - context: types
+                  type: unset
+              "__default":
+                field_colors:
+                - context: types
+                  type: numerical
+      run_as_group_rule:
+        header: [["  Rule:", [main, infoheader]]]
+        path: "spec#runAsGroup#rule"
+        default: "<unset>"
+        type: str
+      run_as_user_header:
+        header: [["Run as User:", [main, infoheader]]]
+      run_as_user_ranges:
+        header: [["  Ranges:", [main, infoheader]]]
+        paths:
+        - path: "spec#runAsUser#ranges"
+          pathtype: items
+          subpaths:
+          - min
+          - max
+          default: ["<unset>"]
+        formatter: list
+        formatting:
+          field_separators:
+          - type: range
+          mapping:
+            mappings:
+              "<unset>":
+                field_colors:
+                - context: types
+                  type: unset
+              "__default":
+                field_colors:
+                - context: types
+                  type: numerical
+      run_as_user_rule:
+        header: [["  Rule:", [main, infoheader]]]
+        path: "spec#runAsUser#rule"
+        default: "<unset>"
+        type: str
+      runtime_class_allowed:
+        header: [["  Allowed Runtime Classes:", [main, infoheader]]]
+        path: "spec#runtimeClass#allowedRuntimeClassNames"
+        type: raw
+        default: "<unset>"
+        formatter: list
+        formatting:
+          mapping:
+            mappings:
+              "<unset>":
+                field_colors:
+                - context: types
+                  type: unset
+      runtime_class_default:
+        header: [["  Default Runtime Class:", [main, infoheader]]]
+        path: "spec#runtimeClass#defaultRuntimeClassName"
+        default: "<unset>"
+        type: str
+      runtime_class_header:
+        header: [["Runtime Class:", [main, infoheader]]]
+      selinux_header:
+        header: [["SELinux:", [main, infoheader]]]
+      selinux_level:
+        header: [["  Level:", [main, infoheader]]]
+        path: "spec#seLinux#seLinuxOptions#level"
+        default: "<unset>"
+        type: str
+      selinux_role:
+        header: [["  Role:", [main, infoheader]]]
+        path: "spec#seLinux#seLinuxOptions#role"
+        default: "<unset>"
+        type: str
+      selinux_rule:
+        header: [["  Rule:", [main, infoheader]]]
+        path: "spec#seLinux#rule"
+        default: "<unset>"
+        type: str
+      selinux_type:
+        header: [["  Type:", [main, infoheader]]]
+        path: "spec#seLinux#seLinuxOptions#type"
+        default: "<unset>"
+        type: str
+      selinux_user:
+        header: [["  User:", [main, infoheader]]]
+        path: "spec#seLinux#seLinuxOptions#user"
+        default: "<unset>"
+        type: str
+      supplemental_groups_header:
+        header: [["Supplemental Groups:", [main, infoheader]]]
+      supplemental_groups_ranges:
+        header: [["  Ranges:", [main, infoheader]]]
+        paths:
+        - path: "spec#supplementalGroups#ranges"
+          pathtype: items
+          subpaths:
+          - min
+          - max
+          default: ["<unset>"]
+        formatter: list
+        formatting:
+          field_separators:
+          - type: range
+          mapping:
+            mappings:
+              "<unset>":
+                field_colors:
+                - context: types
+                  type: unset
+              "__default":
+                field_colors:
+                - context: types
+                  type: numerical
+      supplemental_groups_rule:
+        header: [["  Rule:", [main, infoheader]]]
+        path: "spec#supplementalGroups#rule"
+        default: "<unset>"
+        type: str
+      sysctls_allowed_unsafe:
+        header: [["  Allowed Unsafe:", [main, infoheader]]]
+        path: "spec#allowedUnsafeSysctls"
+        type: raw
+        default: "<unset>"
+        formatter: list
+        formatting:
+          mapping:
+            mappings:
+              "<unset>":
+                field_colors:
+                - context: types
+                  type: unset
+      sysctls_forbidden:
+        header: [["  Forbidden:", [main, infoheader]]]
+        path: "spec#forbiddenSysctls"
+        type: raw
+        default: "<unset>"
+        formatter: list
+        formatting:
+          mapping:
+            mappings:
+              "<unset>":
+                field_colors:
+                - context: types
+                  type: unset
+      sysctls_header:
+        header: [["sysctls:", [main, infoheader]]]
+      volumes:
+        header: [["Volumes:", [main, infoheader]]]
+        path: "spec#volumes"
+        type: raw
+        default: "<none>"
+        formatter: list
