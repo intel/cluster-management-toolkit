@@ -2706,10 +2706,14 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 												tmp.append(group)
 										break
 							else:
+								prefix = deep_get(_path, "prefix", [])
+								suffix = deep_get(_path, "suffix", [])
+								tmp += prefix
 								_subpath = subpaths[i]
 								if type(_subpath) == str:
 									_subpath = [_subpath]
 								tmp.append(deep_get_with_fallback(item, _subpath, _default))
+								tmp += suffix
 						if len(tmp) == 1:
 							value.append(tmp[0])
 						else:

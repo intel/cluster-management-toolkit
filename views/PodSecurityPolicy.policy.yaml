@@ -154,18 +154,28 @@ infoview:
             key: readOnly
             eq: true
           suffix:
-          - " [Read Only]"
+          - " (Read Only)"
         - path: "spec#allowedHostPaths"
           pathtype: items
           subpath: pathPrefix
           when:
             key: readOnly
             ne: true
-          suffix:
-          - ""
+        - path: "spec#allowedHostPaths"
+          pathtype: items
+          subpath: pathPrefix
+          when:
+            key: readOnly
+            none: true
         default: "All"
         type: raw
         formatter: list
+        formatting:
+          field_colors:
+          - type: path
+          - type: none
+          field_separators:
+          - type: no_pad
       host_resources_allow_host_ipc:
         header: [["  Allow Host IPC:", [main, infoheader]]]
         path: "spec#hostIpc"
