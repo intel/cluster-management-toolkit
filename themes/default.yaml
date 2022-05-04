@@ -205,6 +205,12 @@ color_pairs_curses:
   log_format_raw: [[black, normal], [yellow, normal]]
   log_status: [[yellow, normal], [blue, normal]]
   log_status_highlight: [[white, normal], [blue, normal]]
+  type_positive_check:
+    unselected: [[green, bright], [black, normal]]
+    selected: [[green, bright], [white, normal]]
+  type_negative_check:
+    unselected: [[red, bright], [black, normal]]
+    selected: [[red, bright], [white, normal]]
   type_path:
     unselected: [[cyan, normal], [black, normal]]
     selected: [[cyan, normal], [white, normal]]
@@ -820,6 +826,8 @@ strings:
   undefined: [["<undefined>", [type_undefined, bold]]]
   unset: [["<unset>", [type_unset, bold]]]
   fixme: [["<FIXME>", [type_fixme, bold]]]
+  positive_check: [["✓", [type_positive_check, bold]]]
+  negative_ballot: [["✗", [type_negative_check, bold]]]
 
 separators:
   no_pad: [["", type_generic]]

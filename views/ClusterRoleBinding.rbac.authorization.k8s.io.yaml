@@ -27,3 +27,126 @@ listview:
         field_colors:
         - type: kind
         - type: generic
+infoview:
+  name: Cluster Role Binding
+  infopad:
+    row_indexes:
+      Normal: [role_ref_header, role_ref_name, role_ref_kind, role_ref_exists]
+    rows:
+      role_ref_exists:
+        header: [["  Exists:", [main, infoheader]]]
+        paths:
+        - path: [["roleRef#kind"], ["roleRef#apiGroup"], ["metadata#namespace"], ["roleRef#name"], []]
+          pathtype: lookup
+          when:
+          - key: "metadata#name"
+            notnone: true
+          substitute: "True"
+          unknown: "Unknown"
+        default: "False"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Unknown":
+                field_colors:
+                - context: main
+                  type: status_unknown
+              "False":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+      role_ref_header:
+        header: [["R", [main, infoheader_shortcut]], ["ole Reference:", [main, infoheader]]]
+      role_ref_kind:
+        header: [["  Kind:", [main, infoheader]]]
+        paths:
+        - path: [["roleRef#kind"], ["roleRef#apiGroup"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          field_separators:
+          - type: kind_api_group
+      role_ref_name:
+        header: [["  Name:", [main, infoheader]]]
+        path: "roleRef#name"
+        type: str
+  listpad:
+    path: "subjects"
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch_with_lookup_on_activation
+      kind_path: "kind"
+      namespace_path: "namespace"
+      name_path: "name"
+    field_indexes:
+      Normal: [namespace, name, kind, exists]
+    sortcolumn: kind
+    fields:
+      exists:
+        header: "Exists:"
+        paths:
+        - path: [["kind"], ["apiGroup"], ["namespace"], ["name"], []]
+          pathtype: lookup
+          when:
+          - key: "metadata#name"
+            notnone: true
+          substitute: "True"
+          unknown: "Unknown"
+        default: "False"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Unknown":
+                field_colors:
+                - context: main
+                  type: status_unknown
+              "False":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+      name:
+        header: "Name:"
+        path: "name"
+        type: str
+      namespace:
+        header: "Namespace:"
+        path: "namespace"
+        type: str
+      kind:
+        header: "Kind:"
+        paths:
+        - path: [["kind"], ["apiGroup"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          field_separators:
+          - type: kind_api_group
+  shortcuts:
+    "Role Reference":
+      key: r
+      modifier: shift
+      helptext: "Open info page for role reference"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        name_path: "roleRef#name"
+        namespace_path: "metadata#namespace"
+        kind_path: "roleRef#kind"
+        api_family_path: "roleRef#apiGroup"

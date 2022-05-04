@@ -7,3 +7,186 @@ listview:
   field_indexes:
     Normal: [namespace, name, age]
   sortcolumn: namespace
+infoview:
+  name: Role Info
+  infopad:
+  listpad:
+    listgetter: listgetter_policy_rules
+    infogetter: generic_infogetter
+    field_indexes:
+      Wide: [resource, api_group, non_resource_urls, resource_names, verbs_all, verbs_get, verbs_list, verbs_watch, verbs_create, verbs_update, verbs_patch, verbs_delete, verbs_misc]
+      Normal: [resource, api_group, non_resource_urls, resource_names, verbs]
+    sortcolumn: api_group
+    fields:
+      api_group:
+        header: "API-Group:"
+        path: "api_group"
+        type: str
+      non_resource_urls:
+        header: "Non-Resource URLs:"
+        path: "non_resource_urls"
+        type: raw
+        formatter: list
+      resource:
+        header: "Resource:"
+        path: "resource"
+        type: str
+      resource_names:
+        header: "Resource Names:"
+        path: "resource_names"
+        type: raw
+        formatter: list
+      verbs:
+        header: "Verbs:"
+        path: "verbs"
+        type: raw
+        formatter: list
+      verbs_all:
+        header: "All:"
+        paths:
+        - path: "verbs_all"
+          pathtype: remap
+          substitutions:
+            true: "y"
+            false: "n"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            substitutions:
+              "y":
+                context: strings
+                type: positive_check
+              "n":
+                context: strings
+                type: negative_ballot
+      verbs_create:
+        header: "Create:"
+        paths:
+        - path: "verbs_create"
+          pathtype: remap
+          substitutions:
+            true: "y"
+            false: "n"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            substitutions:
+              "y":
+                context: strings
+                type: positive_check
+              "n":
+                context: strings
+                type: negative_ballot
+      verbs_delete:
+        header: "Delete:"
+        paths:
+        - path: "verbs_delete"
+          pathtype: remap
+          substitutions:
+            true: "y"
+            false: "n"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            substitutions:
+              "y":
+                context: strings
+                type: positive_check
+              "n":
+                context: strings
+                type: negative_ballot
+      verbs_get:
+        header: "Get:"
+        paths:
+        - path: "verbs_get"
+          pathtype: remap
+          substitutions:
+            true: "y"
+            false: "n"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            substitutions:
+              "y":
+                context: strings
+                type: positive_check
+              "n":
+                context: strings
+                type: negative_ballot
+      verbs_list:
+        header: "List:"
+        paths:
+        - path: "verbs_list"
+          pathtype: remap
+          substitutions:
+            true: "y"
+            false: "n"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            substitutions:
+              "y":
+                context: strings
+                type: positive_check
+              "n":
+                context: strings
+                type: negative_ballot
+      verbs_misc:
+        header: "Other:"
+        path: "verbs_misc"
+        type: raw
+        formatter: list
+      verbs_patch:
+        header: "Patch:"
+        paths:
+        - path: "verbs_patch"
+          pathtype: remap
+          substitutions:
+            true: "y"
+            false: "n"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            substitutions:
+              "y":
+                context: strings
+                type: positive_check
+              "n":
+                context: strings
+                type: negative_ballot
+      verbs_update:
+        header: "Update:"
+        paths:
+        - path: "verbs_update"
+          pathtype: remap
+          substitutions:
+            true: "y"
+            false: "n"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            substitutions:
+              "y":
+                context: strings
+                type: positive_check
+              "n":
+                context: strings
+                type: negative_ballot
+      verbs_watch:
+        header: "Watch:"
+        paths:
+        - path: "verbs_watch"
+          pathtype: remap
+          substitutions:
+            true: "y"
+            false: "n"
+        formatter: value_mapper
+        formatting:
+          mapping:
+            substitutions:
+              "y":
+                context: strings
+                type: positive_check
+              "n":
+                context: strings
+                type: negative_ballot

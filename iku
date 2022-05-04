@@ -719,7 +719,7 @@ def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting)
 		items = []
 
 	if type(items) == str and items in ["<unset>", "<none>"]:
-		return [(items, ("types", "none", selected))]
+		return format_list([items], fieldlen, pad, ralign, selected)
 
 	if type(items) in [str, tuple]:
 		items = [items]
@@ -885,6 +885,11 @@ def map_value(value, references = None, selected = False, default_field_color = 
 
 	if value in substitutions:
 		value = substitutions[value]
+		# If the substitution is a dict it's a themearray; typically either a separator or a string
+		if type(value) == dict:
+			context = deep_get(value, "context", "main")
+			attr_ref = deep_get(value, "type")
+			return ((context, attr_ref), selected), themearray_to_string([(context, attr_ref)])
 
 	if type(value) in [int, float] and len(ranges) > 0:
 		default_index = -1
@@ -1950,12 +1955,6 @@ def datagetter_eps_endpoints(obj, path, default):
 
 	return get_endpointslices_endpoints(obj), {}
 
-def datagetter_svc_ports(obj, path, default):
-	if obj is None:
-		return default
-
-	return get_svc_ports(obj), {}
-
 def datagetter_timestamp(obj, path, default):
 	if obj is None or path is None or len(path) == 0:
 		return default
@@ -2458,7 +2457,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 					if deep_get(_path, "sorted", False) == True and tmp is not None:
 						tmp = natsorted(tmp)
 
-					if tmp is not None and tmp == ["None"] and deep_get(_path, "none_str_as_none", False) == True:
+					if tmp is not None and tmp in ["None", ["None"]] and deep_get(_path, "none_str_as_none", False) == True:
 						tmp = default
 
 					# Just return the list, unless a subset has been requested
@@ -2579,20 +2578,81 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						_values.append((value, "raw"))
 					else:
 						_values.append((default, "raw"))
+				elif ptype == "lookup":
+					lookup_kind, lookup_api_group, lookup_namespace, lookup_name, tmp_lookup_selector = path
+					if type(lookup_kind) == list:
+						lookup_kind = deep_get_with_fallback(obj, lookup_kind, "")
+					if type(lookup_api_group) == list:
+						lookup_api_group = deep_get_with_fallback(obj, lookup_api_group, "")
+					if type(lookup_namespace) == list:
+						lookup_namespace = deep_get_with_fallback(obj, lookup_namespace, "")
+					if type(lookup_name) == list:
+						lookup_name = deep_get_with_fallback(obj, lookup_name, "")
+					if len(tmp_lookup_selector) == 0:
+						lookup_selector = ""
+					else:
+						_lookup_selector = {}
+						for ls in tmp_lookup_selector:
+							ls_key = ls[0]
+							ls_value = ls[1]
+							if type(ls_value) == list:
+								ls_value = deep_get_with_fallback(obj, ls_value)
+							_lookup_selector[ls_key] = ls_value
+						lookup_selector = kh.make_selector(_lookup_selector)
+
+					try:
+						if len(lookup_name) == 0:
+							lookup_obj, status = kh.get_list_by_kind_namespace((lookup_kind, lookup_api_group), lookup_namespace, label_selector = lookup_selector)
+						else:
+							lookup_obj = kh.get_ref_by_kind_name_namespace((lookup_kind, lookup_api_group), lookup_name, lookup_namespace)
+					except NameError:
+						unknown = deep_get(_path, "unknown", "Unknown Kind")
+						_values.append((unknown, "raw"))
+						continue
+					if type(lookup_obj) == dict and when_filter(_path, item = lookup_obj) == False:
+						continue
+					subpaths = deep_get(_path, "subpaths", [])
+					value = []
+					if len(subpaths) > 0:
+						tmp = []
+						if type(lookup_obj) == dict:
+							lookup_obj = [lookup_obj]
+
+						for _lookup_obj in lookup_obj:
+							for i in range(0, len(subpaths)):
+								tmp.append(deep_get(_lookup_obj, subpaths[i]))
+						if len(tmp) == 1:
+							value.append(tmp[0])
+						else:
+							value.append(tuple(tmp))
+
+					if len(value) == 0:
+						value = default
+
+					substitute = deep_get(_path, "substitute")
+					if substitute is not None:
+						value = substitute
+					_values.append((value, "raw"))
 				elif ptype == "remap":
 					value = []
 					substitutions = deep_get(_path, "substitutions", "")
 					tmp = deep_get_with_fallback(obj, path)
 					if tmp is None:
 						tmp = []
-					# We only support remapping lists for now at least
-					for _tmp in tmp:
-						if _tmp in substitutions:
-							value.append(substitutions.get(_tmp))
-						elif "__default" in substitutions:
-							value.append(substitutions.get("__default"))
-						else:
-							value.append(_tmp)
+
+					if type(tmp) in [bool, int, str]:
+						tmp = [tmp]
+
+					if type(tmp) in [list]:
+						for _tmp in tmp:
+							if _tmp in substitutions:
+								value.append(substitutions.get(_tmp))
+							elif "__default" in substitutions:
+								value.append(substitutions.get("__default"))
+							else:
+								value.append(_tmp)
+					else:
+						raise Exception(f"remap is not supported yet for type {type(tmp)}")
 					if len(value) == 0:
 						if default == None:
 							continue
@@ -2885,6 +2945,7 @@ def generic_infogetter(**kwargs):
 	field_names = deep_get(kwargs, "_field_names", [])
 	field_index = deep_get(kwargs, "_field_index", "normal")
 	filters = deep_get(kwargs, "_filters", {})
+	extra_data = deep_get(kwargs, "extra_data", {})
 
 	if len(field_dict) == 0 or len(field_names) == 0:
 		sys.exit(f"generic_infogetter() received empty field_dict {field_dict} or field_names {field_names}; this is a programming error")
@@ -2892,6 +2953,8 @@ def generic_infogetter(**kwargs):
 	# If we know the view we can use it to get overrides from ikt.yaml
 	view = deep_get(kwargs, "_view", "")
 	for obj in vlist:
+		if len(extra_data) > 0:
+			obj["_extra_data"] = extra_data
 		tmp = get_obj(obj, field_dict = field_dict, field_names = field_names, field_index = field_index, view = view, filters = filters)
 		if tmp is None:
 			continue
@@ -3430,19 +3493,8 @@ def get_auth_rule_info(**kwargs):
 
 	return info
 
-class PolicyRuleInfo:
-	def __init__(self, resource, api_group, non_resource_urls, resource_names, verbs):
-		self.resource = resource
-		self.api_group = api_group
-		self.non_resource_urls = non_resource_urls
-		self.resource_names = resource_names
-		self.verbs = verbs
-	def __repr__(self):
-		return repr((self.resource, self.api_group, self.non_resource_urls, self.resource_names, self.verbs))
-
-def get_policy_rule_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	info = []
+def listgetter_policy_rules(obj, **kwargs):
+	vlist = []
 
 	if obj is None:
 		return []
@@ -3486,9 +3538,48 @@ def get_policy_rule_info(**kwargs):
 		non_resource_urls = list(deep_get(data, "non_resource_urls", {}))
 		resource_names = list(deep_get(data, "resource_names", {}))
 		verbs = list(deep_get(data, "verbs", {}))
-		info.append(PolicyRuleInfo(resource, api_group, non_resource_urls, resource_names, verbs))
+		verbs_all = "*" in verbs
+		# "*" includes all other verbs
+		if verbs_all == True:
+			verbs_get = True
+			verbs_list = True
+			verbs_watch = True
+			verbs_create = True
+			verbs_update = True
+			verbs_patch = True
+			verbs_delete = True
+			verbs_misc = ["*"]
+		else:
+			verbs_get = "get" in verbs
+			verbs_list = "list" in verbs
+			verbs_watch = "watch" in verbs
+			verbs_create = "create" in verbs
+			verbs_update = "update" in verbs
+			verbs_patch = "patch" in verbs
+			verbs_delete = "delete" in verbs
+			verbs_misc = []
+			for verb in verbs:
+				if verb not in ["*", "get", "list", "watch", "create", "update", "patch", "delete"]:
+					verbs_misc.append(verb)
 
-	return info
+		vlist.append({
+			"resource": resource,
+			"api_group": api_group,
+			"non_resource_urls": non_resource_urls,
+			"resource_names": resource_names,
+			"verbs": verbs,
+			"verbs_all": verbs_all,
+			"verbs_get": verbs_get,
+			"verbs_list": verbs_list,
+			"verbs_watch": verbs_watch,
+			"verbs_create": verbs_create,
+			"verbs_update": verbs_update,
+			"verbs_patch": verbs_patch,
+			"verbs_delete": verbs_delete,
+			"verbs_misc": natsorted(verbs_misc)
+		})
+
+	return vlist, 200
 
 def get_ingress_hosts(obj):
 	hosts = []
@@ -3543,14 +3634,15 @@ def get_ingress_rule_info(**kwargs):
 	return ingress_rules
 
 class ServiceAccountSecretInfo:
-	def __init__(self, stype, namespace, name, ref):
-		self.stype = stype
+	def __init__(self, kind, stype, namespace, name, ref):
+		self.kind = kind
+		self.type = stype
 		self.namespace = namespace
 		self.name = name
 		# The reference to the "true" resource object
 		self.ref = ref
 	def __repr__(self):
-		return repr((self.stype, self.namespace, self.name, self.ref))
+		return repr((self.kind, self.type, self.namespace, self.name, self.ref))
 
 def get_sas_info(**kwargs):
 	obj = deep_get(kwargs, "_obj")
@@ -3570,7 +3662,7 @@ def get_sas_info(**kwargs):
 		# Get a reference to the secret
 		ref = kh.get_ref_by_kind_name_namespace(("Secret", ""), secret_name, snamespace)
 
-		info.append(ServiceAccountSecretInfo(("Mountable", ""), snamespace, secret_name, ref))
+		info.append(ServiceAccountSecretInfo(("Secret", ""), "Mountable", snamespace, secret_name, ref))
 
 	for secret in deep_get(obj, "imagePullSecrets", []):
 		deep_set(ref, "kind", "Secret", create_path = True)
@@ -3581,7 +3673,7 @@ def get_sas_info(**kwargs):
 		# Get a reference to the secret
 		ref = kh.get_ref_by_kind_name_namespace(("Secret", ""), secret_name, snamespace)
 
-		info.append(ServiceAccountSecretInfo(("Image Pull", ""), snamespace, secret_name, ref))
+		info.append(ServiceAccountSecretInfo(("Secret", ""), "Image Pull", snamespace, secret_name, ref))
 
 	vlist, status = kh.get_list_by_kind_namespace(("RoleBinding", "rbac.authorization.k8s.io"), "")
 
@@ -3594,7 +3686,7 @@ def get_sas_info(**kwargs):
 			subjectname = deep_get(subject, "name", "")
 			subjectnamespace = deep_get(subject, "namespace", "")
 			if subjectkind == "ServiceAccount" and subjectname == saname and subjectnamespace == sanamespace:
-				info.append(ServiceAccountSecretInfo(("RoleBinding", "rbac.authorization.k8s.io"), deep_get(ref, "metadata#namespace"), deep_get(ref, "metadata#name"), ref))
+				info.append(ServiceAccountSecretInfo(("RoleBinding", "rbac.authorization.k8s.io"), "", deep_get(ref, "metadata#namespace"), deep_get(ref, "metadata#name"), ref))
 
 				# Excellent, we have a Role Binding, now add the role it binds to
 				rolerefkind = (deep_get(ref, "roleRef#kind", ""), deep_get(ref, "roleRef#apiGroup"))
@@ -3604,9 +3696,8 @@ def get_sas_info(**kwargs):
 				if roleref is not None:
 					deep_set(roleref, "kind", rolerefkind[0], create_path = True)
 					deep_set(roleref, "apiVersion", f"{rolerefkind[1]}/", create_path = True)
-				info.append(ServiceAccountSecretInfo(rolerefkind, rolerefnamespace, rolerefname, roleref))
+				info.append(ServiceAccountSecretInfo(rolerefkind, "", rolerefnamespace, rolerefname, roleref))
 				break
-
 
 	vlist, status = kh.get_list_by_kind_namespace(("ClusterRoleBinding", "rbac.authorization.k8s.io"), "")
 
@@ -3619,7 +3710,7 @@ def get_sas_info(**kwargs):
 			subjectname = deep_get(subject, "name", "")
 			subjectnamespace = deep_get(subject, "namespace", "")
 			if subjectkind == "ServiceAccount" and subjectname == saname and subjectnamespace == sanamespace:
-				info.append(ServiceAccountSecretInfo(("ClusterRoleBinding", "rbac.authorization.k8s.io"), "", deep_get(ref, "metadata#name"), ref))
+				info.append(ServiceAccountSecretInfo(("ClusterRoleBinding", "rbac.authorization.k8s.io"), "", "", deep_get(ref, "metadata#name"), ref))
 
 				# Excellent, we have a Cluster Role Binding, now add the role it binds to
 				rolerefkind = (deep_get(ref, "roleRef#kind", ""), deep_get(ref, "roleRef#apiGroup"))
@@ -3628,53 +3719,10 @@ def get_sas_info(**kwargs):
 				if roleref is not None:
 					deep_set(roleref, "kind", rolerefkind[0], create_path = True)
 					deep_set(roleref, "apiVersion", f"{rolerefkind[1]}/", create_path = True)
-				info.append(ServiceAccountSecretInfo(rolerefkind, subjectnamespace, rolerefname, roleref))
+				info.append(ServiceAccountSecretInfo(rolerefkind, "", subjectnamespace, rolerefname, roleref))
 				break
 
 	return info
-
-class SubjectInfo:
-	def __init__(self, namespace, name, ref, kind):
-		self.namespace = namespace
-		self.name = name
-		# The reference to the "true" resource object
-		self.ref = ref
-		self.kind = kind
-	def __repr__(self):
-		return repr((self.namespace, self.name, self.ref, self.kind))
-
-def get_subject_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	subject_info = []
-
-	if obj is None:
-		return subject_info
-
-	# This works for both RoleBinding and ClusterRoleBinding since
-	# ClusterRoleBinding doesn't have a namespace field
-	rolebinding_namespace = deep_get(obj, "metadata#namespace", "")
-
-	for subject in deep_get(obj, "subjects", []):
-		kind = deep_get(subject, "kind")
-		name = deep_get(subject, "name")
-		api_group = deep_get(subject, "apiGroup", "")
-		ref = None
-		if kind == "ServiceAccount":
-			namespace = deep_get(subject, "namespace", rolebinding_namespace)
-			try:
-				ref = kh.get_ref_by_kind_name_namespace((kind, api_group), name, namespace)
-			except:
-				kind = f"*{kind}"
-			if ref is None:
-				kind = f"*{kind}"
-		elif kind in ["User", "Group"]:
-			namespace = ""
-			kind = f"*{kind}"
-		else:
-			raise Exception(f"Unknown subject type; kind: {kind}, api_group: {api_group}")
-		subject_info.append(SubjectInfo(namespace, name, ref, (kind, api_group)))
-
-	return subject_info
 
 def get_name_by_kind_from_owner_references(owner_references = [], kind = ""):
 	for owr in owner_references:
@@ -3979,27 +4027,6 @@ def cpu_usage_to_millicores(cpu_usage):
 	else:
 		raise Exception(f"Unknown cpu usage metrics: {cpu_usage}")
 
-def get_pod_metrics_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	info = []
-
-	if obj is None:
-		return info
-
-	for item in deep_get(obj, "containers", []):
-		name = deep_get(item, "name")
-		cpu_usage = str(deep_get(item, "usage#cpu", "0"))
-		cpu_millicores = cpu_usage_to_millicores(cpu_usage)
-		mem_bytes = deep_get(item, "usage#memory")
-		if mem_bytes.startswith("0"):
-			mem_bytes = "0"
-		else:
-			mem_bytes += "B"
-		info.append(PodMetricsInfo(name, cpu_millicores, mem_bytes))
-
-	return info
-
-
 class AppStatusInfo:
 	def __init__(self, name, status, status_group, link):
 		self.name = name
@@ -4245,21 +4272,6 @@ def get_desired_replicas(rs):
 			max_replicas = value
 	return desired, max_replicas
 
-def get_webhook_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	info = []
-
-	if obj is None:
-		return []
-
-	for wh in deep_get(obj, "webhooks", []):
-		d = {
-			"name": wh["name"]
-		}
-		info.append(type("InfoClass", (), d))
-
-	return info
-
 class RQItemInfo:
 	def __init__(self, resource, used, hard):
 		self.resource = resource
@@ -4342,10 +4354,13 @@ def decode_value(value):
 	return vtype, value
 
 def get_key_value_info(**kwargs):
-	vlist = deep_get(kwargs, "_vlist")
 	info = []
 
-	for key, value in vlist:
+	vlist = deep_get(kwargs, "_vlist")
+	if vlist is None:
+		return info
+
+	for key, value in vlist.items():
 		decoded_value = ""
 
 		vtype, value = decode_value(value)
@@ -4388,16 +4403,6 @@ def get_port(obj):
 		port = (name, pport, protocol)
 
 	return port
-
-def get_svc_ports(svc):
-	ports = []
-
-	for port in deep_get(svc, "spec#ports", []):
-		ports.append(get_port(port))
-
-	if ports == []:
-		ports = [("", "", "")]
-	return ports
 
 def get_svc_port_target_endpoints(obj, **kwargs):
 	svcname = deep_get(obj, "metadata#name")
@@ -6212,9 +6217,6 @@ field_templates = {
 		"generator": generator_numerical,
 		"ralign": True,
 	},
-	"api_group": {
-		"header": "API-Group:",
-	},
 	"available_replicas": {
 		"header": "Available:",
 		"path": "status#availableReplicas",
@@ -6449,9 +6451,6 @@ field_templates = {
 		"header": "IP Block Exceptions:",
 		"generator": generator_list,
 	},
-	"key": {
-		"header": "Key:",
-	},
 	"kind": {
 		# (kind, api_group)
 		"header": "Kind:",
@@ -6564,10 +6563,6 @@ field_templates = {
 	},
 	"node_id": {
 		"header": "Node ID:",
-	},
-	"non_resource_urls": {
-		"header": "Non-Resource URLs:",
-		"generator": generator_list,
 	},
 	"operator": {
 		"header": "Operator:",
@@ -6741,10 +6736,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "kind"), ("types", "generic")],
 	},
-	"resource_names": {
-		"header": "Resource Names:",
-		"generator": generator_list,
-	},
 	"restarts": {
 		"header": "Restarts:",
 		"path": "restarts",
@@ -6884,33 +6875,10 @@ field_templates = {
 	"used": {
 		"header": "Used:",
 	},
-	"user_uid_tuple": {
-		# user:uid
-		"header": "User:",
-		"path": ["user#name", "user#uid"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_list,
-		"field_colors": [("types", "user"), ("types", "uid")],
-		"field_separators": [("separators", "user_uid")],
-	},
-	"decoded_value": {
-		"header": "Value:",
-	},
-	"verbs": {
-		"header": "Verbs:",
-		"generator": generator_list,
-	},
 	"version": {
 		"header": "Version:",
 		"path": "spec#version",
 		"type": "str",
-	},
-	"vlen": {
-		"header": "Length:",
-		"ralign": True,
-	},
-	"vtype": {
-		"header": "Type:",
 	},
 }
 
@@ -9546,67 +9514,48 @@ def field_processor_tls(obj, path, extra_paths = None, fallback = None, formatti
 
 	return field
 
-def field_processor_svc_ports(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	ports = get_svc_ports(obj)
-	field = format_list(ports, 0, 0, False, False, field_colors = [("types", "service"), ("types", "port"), ("types", "protocol")], field_separators = [("separators", "port"), ("separators", "service")])
-	return field
+def decode_and_view_data(stdscr, **kwargs):
+	if "selected" not in kwargs:
+		return
 
-def field_processor_endpoints(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	svcname = deep_get(obj, "metadata#name")
-	svcnamespace = deep_get(obj, "metadata#namespace")
-	ref = kh.get_ref_by_kind_name_namespace(("Endpoints", ""), svcname, svcnamespace)
-	endpointsnamespace = deep_get(ref, "metadata#namespace")
-	endpointsname = deep_get(ref, "metadata#name")
-	field = [
-		(f"{endpointsnamespace}", ("types", "namespace")),
-		("separators", "namespace"),
-		(f"{endpointsname}", ("types", "generic"))
-	]
-	return field
+	bvalue = kwargs["selected"].value
+	title = kwargs["selected"].key
+	bvtype = kwargs["selected"].vtype
+	vtype, value = decode_value(bvalue)
+	if bvalue == value:
+		vtype = bvtype
 
-def field_processor_endpoint_slices(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	tmp = get_endpoint_slices(obj)
-
-	field = []
-	for item in tmp:
-		field += [
-			(item[0], ("types", "namespace")),
-			("separators", "namespace"),
-			(item[1], ("types", "generic")),
-			("separators", "list")
-		]
-	# Remove the trailing comma
-	if len(field) > 0:
-		field.pop(len(field) - 1)
-
-	return field
-
-# Returns True if the object exists, False if not
-def field_processor_exists(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	# If the has len(4) it's [resource_path, api_group_path, name, namespace]
-	# otherwise it's [kind, name, namespace]
-	if len(path) == 4:
-		kind = (deep_get(obj, path[0]), deep_get(obj, path[1], ""))
-		name = deep_get(obj, path[2])
-		namespace = deep_get(obj, path[3], "")
-	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
-	if ref is None:
-		return [("No", ("main", "status_not_ok"))]
+	if vtype.startswith("string"):
+		obj = value
+	elif vtype.startswith("base64-utf-8"):
+		obj = base64.b64decode(value).decode("utf-8")
+	elif vtype.startswith("base64-binary") or vtype.startswith("gzip"):
+		return
 	else:
-		return [("Yes", ("main", "status_ok"))]
+		raise Exception(f"Trying to export unknown vtype: {vtype}")
+	if title.endswith((".crt", "tls.key", ".pem", "CAKey")):
+		formatter = iktlib.format_crt
+	else:
+		formatter = iktlib.format_none
+	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
-def export_data(filename, value):
+def export_data(stdscr, **kwargs):
+	if "selected" not in kwargs:
+		return
+
+	value = kwargs["selected"].value
+	filename = deep_get(kwargs, "result")
 	vtype, value = decode_value(value)
 
 	if vtype.startswith("string"):
 		f = open(filename, "w")
 		f.write(value)
-	elif vtype.startswith("base64-binary") or vtype.startswith("gzip"):
-		f = open(filename, "wb")
-		f.write(base64.b64decode(value))
 	elif vtype.startswith("base64-utf-8"):
 		f = open(filename, "w")
 		f.write(base64.b64decode(value).decode("utf-8"))
+	elif vtype.startswith("base64-binary") or vtype.startswith("gzip"):
+		f = open(filename, "wb")
+		f.write(base64.b64decode(value))
 	else:
 		raise Exception(f"Trying to export unknown vtype: {vtype}")
 	f.close()
@@ -10039,6 +9988,14 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				infogetter_args.pop("_obj", None)
 				infogetter_args["_obj"] = obj
 
+				extra_data = {}
+				for key, value in deep_get(infogetter_args, "_extra_data", {}).items():
+					if type(value) == list:
+						tmp = deep_get_with_fallback(obj, value)
+						extra_data[key] = tmp
+					else:
+						extra_data[key] = value
+				infogetter_args["extra_data"] = extra_data
 				info = infogetter(**infogetter_args)
 
 				listlen = uip.update_info(info)
@@ -10366,8 +10323,6 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						w_confirmtitle = deep_get(value, "confirmtitle")
 						if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = w_confirmtitle, default = False) == False:
 							continue
-					w_call = deep_get(value, "call")
-					w_call(w_result, selected.value)
 				elif widget == "executecommand":
 					selected = uip.get_selected()
 					w_kinds = deep_get(value, "kinds")
@@ -10422,6 +10377,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				action_args = deep_get(value, "action_args", {})
 				if "_pass_obj" in action_args:
 					action_args["obj"] = obj
+				if "_pass_result" in action_args and selected is not None:
+					action_args["result"] = w_result
 				if "_pass_selected" in action_args and selected is not None:
 					action_args["selected"] = selected
 				if "_pass_selected_obj" in action_args and selected is not None:
@@ -13363,60 +13320,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("ClusterRole", "rbac.authorization.k8s.io"): {
-		"windowheader": "Cluster Role Info",
-		"field_indexes": {
-			"Normal": ["resource", "api_group", "non_resource_urls", "resource_names", "verbs"],
-		},
-		"sortcolumn": "api_group",
-		"infopad": {},
-		"listpad": {
-			"infogetter": get_policy_rule_info,
-		},
-	},
-	("ClusterRoleBinding", "rbac.authorization.k8s.io"): {
-		"windowheader": "Cluster Role Binding Info",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "kind"],
-		},
-		"sortcolumn": "rtype",
-		"activatedfun": resourceinfodispatch,
-		"extraref": "kind",
-		"infopad": {
-			"Cluster Role:": {
-				"fieldname": [("Cluster ", ("main", "infoheader")), ("R", ("main", "infoheader_shortcut")), ("ole:", ("main", "infoheader"))],
-				"processor": None,
-			},
-			"  Name:": {
-				"path": "roleRef#name",
-			},
-			"  Kind:": {
-				"path": ["roleRef#kind", "roleRef#apiGroup"],
-				"processor": field_processor_kind,
-				"formatting": {
-					"field_colors": [("types", "kind"), ("types", "api_group")],
-					"item_separators": [("separators", "kind_api_group")],
-				},
-			},
-			"  Exists:": {
-				"path": ["roleRef#kind", "roleRef#apiGroup", "roleRef#name", "metadata#namespace"],
-				"processor": field_processor_exists,
-			},
-		},
-		"listpad": {
-			"infogetter": get_subject_info,
-		},
-		"shortcuts": {
-			"Role Reference": {
-				"shortcut": ord("R"),
-				"helptext": ("[Shift] + R", "Open info page for Cluster Role"),
-				"call": resourceinfodispatch,
-				"name_path": "roleRef#name",
-				"namespace_path": "metadata#namespace",
-				"kind_path": ("roleRef#kind", "roleRef#apiGroup"),
-			},
-		},
-	},
 	("DestinationRule", "networking.istio.io"): {
 		"windowheader": "Destination Rule Info",
 		"infopad": {
@@ -13733,29 +13636,6 @@ infoviews_builtin = {
 			"Last Applied Configuration": {},
 		},
 	},
-	("KubeVirt", "kubevirt.io"): {
-		"infopad": {
-			"Image Pull Policy:": {
-				"path": "spec#imagePullPolicy",
-			},
-			"Observed KubeVirt Registry:": {
-				"path": "status#observedKubeVirtRegistry",
-			},
-			"Observed Kubevirt Version:": {
-				"path": "status#observedKubeVirtVersion",
-			},
-			"Target KubeVirt Registry:": {
-				"path": "status#targetKubeVirtRegistry",
-			},
-			"Target Kubevirt Version:": {
-				"path": "status#targetKubeVirtVersion",
-			},
-			"Conditions:": {
-				"path": "status#conditions",
-				"processor": field_processor_conditions,
-			},
-		},
-	},
 	("LimitRange", ""): {
 		"windowheader": "Limit Range Info",
 		"field_indexes": {
@@ -13884,46 +13764,6 @@ infoviews_builtin = {
 		},
 		"logpad": {
 			"infogetter": get_task_log,
-		},
-	},
-	("MPIJob", "kubeflow.org"): {
-		"windowheader": "MPI Job Info",
-		"infopad": {
-			"Status:": {
-				"path": "spec#cleanPodPolicy",
-			},
-			"Clean Pod Policy:": {
-				"path": "spec#cleanPodPolicy",
-			},
-			"Slots per Worker:": {
-				"path": "spec#slotsPerWorker",
-			},
-			"Launcher:": {
-				"processor": None,
-			},
-			"Launcher Replicas:": {
-				"fieldname": [("  Replicas:", ("main", "infoheader"))],
-				"path": "spec#mpiReplicaSpecs#Launcher#replicas",
-			},
-			"Worker:": {
-				"processor": None,
-			},
-			"Worker Replicas:": {
-				"fieldname": [("  Replicas:", ("main", "infoheader"))],
-				"path": "spec#mpiReplicaSpecs#Worker#replicas",
-			},
-		},
-		# FIXME: Add the containers here, maybe?
-	},
-	("MutatingWebhookConfiguration", "admissionregistration.k8s.io"): {
-		"windowheader": "Mutating Webhook Configuration Info",
-		"field_indexes": {
-			"Normal": ["name"],
-		},
-		"sortcolumn": "name",
-		"infopad": {},
-		"listpad": {
-			"infogetter": get_webhook_info,
 		},
 	},
 	("NetworkPolicy", "networking.k8s.io"): {
@@ -14215,59 +14055,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("PodMetrics", "metrics.k8s.io"): {
-		"windowheader": "Pod Metrics Info",
-		"field_indexes": {
-			"Normal": ["name", "cpu_millicores", "mem_bytes"],
-		},
-		"fields": {
-			"cpu_millicores": {
-				"header": "CPU (millicores):",
-				"paths": [
-					{
-						"path": "containers",
-						"pathtype": "items",
-						"subpath": "usage#cpu",
-						"action": "sum",
-						"type": "cpu_usage",
-					},
-				],
-				"align": "right",
-				"formatter": "float",
-			},
-			"mem_bytes": {
-				"header": "Memory:",
-				"paths": [
-					{
-						"path": "containers",
-						"pathtype": "items",
-						"subpath": "usage#memory",
-						"action": "sum",
-						"type": "mem_usage",
-					},
-				],
-				"align": "right",
-				"formatter": "mem",
-			},
-			"name": {
-				"header": "Container:",
-				"paths": [
-					{
-						"path": "name",
-						"pathtype": "value",
-					},
-				],
-			},
-		},
-		"infopad": {
-			"Window:": {
-				"path": "window",
-			},
-		},
-		"listpad": {
-			"infogetter": get_pod_metrics_info,
-		},
-	},
 	("__PrometheusRuleData", "monitoring.coreos.com"): {
 		"windowheader": "Prometheus Rule Data",
 		"labels": None,
@@ -14355,59 +14142,6 @@ infoviews_builtin = {
 			"YAML": {},
 		}
 	},
-	("Role", "rbac.authorization.k8s.io"): {
-		"field_indexes": {
-			"Normal": ["resource", "api_group", "non_resource_urls", "resource_names", "verbs"],
-		},
-		"sortcolumn": "api_group",
-		"infopad": {},
-		"listpad": {
-			"infogetter": get_policy_rule_info,
-		},
-	},
-	("RoleBinding", "rbac.authorization.k8s.io"): {
-		"windowheader": "Role Binding Info",
-		"field_indexes": {
-			"Normal": ["namespace", "name", "kind"],
-		},
-		"sortcolumn": "rtype",
-		"activatedfun": resourceinfodispatch,
-		"extraref": "kind",
-		"infopad": {
-			"Role:": {
-				"fieldname": [("R", ("main", "infoheader_shortcut")), ("ole:", ("main", "infoheader"))],
-				"processor": None,
-			},
-			"  Name:": {
-				"path": "roleRef#name",
-			},
-			"  Kind:": {
-				"path": ["roleRef#kind", "roleRef#apiGroup"],
-				"processor": field_processor_kind,
-				"formatting": {
-					"field_colors": [("types", "kind"), ("types", "api_group")],
-					"item_separators": [("separators", "kind_api_group")],
-				},
-			},
-			"  Exists:": {
-				"path": ["roleRef#kind", "roleRef#apiGroup", "roleRef#name", "metadata#namespace"],
-				"processor": field_processor_exists,
-			},
-		},
-		"listpad": {
-			"infogetter": get_subject_info,
-		},
-		"shortcuts": {
-			"Role Reference": {
-				"shortcut": ord("R"),
-				"helptext": ("[Shift] + R", "Open info page for Cluster Role"),
-				"call": resourceinfodispatch,
-				"name_path": "roleRef#name",
-				"namespace_path": "metadata#namespace",
-				"kind_path": ("roleRef#kind", "roleRef#apiGroup"),
-			},
-		},
-	},
 	("RuntimeClass", "node.k8s.io"): {
 		"windowheader": "Runtime Class Info",
 		"field_indexes": {
@@ -14438,164 +14172,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("Secret", ""): {
-		"field_indexes": {
-			"Normal": ["key", "vtype", "vlen", "decoded_value"],
-		},
-		"sortcolumn": "key",
-		"infopad": {
-			"Type:": {
-				"path": "type",
-				"processor": field_processor_secret_type,
-			},
-		},
-		"listpad": {
-			"listgetter": "deep_get(obj, 'data', {}).items(), 200",
-			"infogetter": get_key_value_info,
-		},
-		"shortcuts": {
-			"Export": {
-				"shortcut": ord("E"),
-				"helptext": ("[Shift] + E", "Export selected value to a file"),
-				"widget": "inputbox",
-				"inputtitle": "Export to file:",
-				"confirm": "os.path.exists(w_result)",
-				"confirmtitle": "File already exists; overwrite?:",
-				"call": export_data,
-			},
-		},
-	},
-	("Service", ""): {
-		"field_indexes": {
-			"Normal": ["namespace", "name", "controller", "status", "node", "pod_ip", "age", "containers", "restarts"],
-		},
-		"sortcolumn": "name",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("Pod", ""),
-		"infopad": {
-			"Selector:": {
-				"path": "spec#selector",
-				"processor": field_processor_label_selector,
-			},
-			"Endpoints:": {
-				"fieldname": [("E", ("main", "infoheader_shortcut")), ("ndpoints:", ("main", "infoheader"))],
-				"processor": field_processor_endpoints,
-			},
-			"Endpoint Slices:": {
-				"fieldname": [("Endpoint ", ("main", "infoheader")), ("S", ("main", "infoheader_shortcut")), ("lices:", ("main", "infoheader"))],
-				"processor": field_processor_endpoint_slices,
-			},
-			"Type:": {
-				"path": "spec#type",
-			},
-			"Cluster IPs:": {
-				"path": ("spec#clusterIPs", "spec#clusterIP"),
-				"extra_paths": "spec#clusterIPs",
-				"processor": field_processor_list,
-			},
-			"Internal Traffic Policy:": {
-				"path": "spec#internalTrafficPolicy",
-			},
-			"IP Families:": {
-				"path": "spec#ipFamilies",
-				"extra_paths": "spec#ipFamilies",
-				"processor": field_processor_list,
-			},
-			"IP Family Policy:": {
-				"path": "spec#ipFamilyPolicy",
-			},
-			"External-IP(s):": {
-				"path": "spec#externalIPs",
-				"extra_paths": "spec#externalIPs",
-				"fallback": [("strings", "none")],
-				"processor": field_processor_list,
-			},
-			"Port(s):": {
-				"fieldname": [("P", ("main", "infoheader_shortcut")), ("orts:", ("main", "infoheader"))],
-				"extra_paths": "spec#externalIPs",
-				"processor": field_processor_svc_ports,
-			},
-			"Topology Keys:": {
-				"path": "spec#topologyKeys",
-				"extra_paths": "spec#topologyKeys",
-				"fallback": [("strings", "unset")],
-				"processor": field_processor_list,
-			},
-			"Session Affinity:": {
-				"path": "spec#sessionAffinity",
-			},
-		},
-		"listpad": {
-			"listgetter": "kh.get_list_by_kind_namespace(('Pod', ''), '', label_selector = kh.make_selector(deep_get(obj, 'spec#selector')))",
-			"infogetter": get_pod_info_with_kind,
-		},
-		"shortcuts": {
-			"Endpoints": {
-				"shortcut": ord("E"),
-				"helptext": ("[Shift] + E", "Open info page for Endpoints"),
-				"call": resourceinfodispatch,
-				"kind": ("Endpoints", ""),
-				"name_path": "metadata#name",
-				"namespace_path": "metadata#namespace",
-			},
-			"Endpoint Slices": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "List endpoint slices"),
-				"widget": "windowwidget",
-				"title": "Endpoint Slices:",
-				"headers": ["Namespace:", "Name:"],
-				"selectable": True,
-				"callout": callout_obj,
-				"kind": ("EndpointSlice", "discovery.k8s.io"),
-				"itemgetter": get_endpoint_slices,
-				# This isn't supported for now
-				"sortcolumn": "namespace",
-			},
-			"Ports": {
-				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Show port mappings"),
-				"widget": "windowwidget",
-				"headers": ["Port:", "Node-Port:", "Target-Port:", "Endpoints:"],
-				"itemgetter": get_svc_port_target_endpoints,
-				# This isn't supported for now
-				"sortcolumn": "port",
-			},
-		},
-	},
-	("ServiceAccount", ""): {
-		"windowheader": "Service Account Info",
-		"field_indexes": {
-			"Normal": ["stype", "namespace", "name"],
-		},
-		"fields": {
-			"stype": {
-				"header": "Type:",
-				"formatter": "list",
-				"formatting": {
-					"field_colors": [
-						{
-							"type": "kind",
-						},
-						{
-							"type": "api_group",
-						},
-					],
-					"field_separators": [
-						{
-							"type": "kind_api_group",
-						},
-					],
-				},
-			}
-		},
-		"sortcolumn": "stype",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("", ""),
-		"infopad": {},
-		"listpad": {
-			"infogetter": get_sas_info,
-		},
-	},
 	("Sidecar", "networking.istio.io"): {
 		"field_indexes": {
 			"Normal": ["traffic_type", "port", "bind", "capture_mode", "default_endpoint", "hosts"],
@@ -14615,23 +14191,6 @@ infoviews_builtin = {
 			"infogetter": get_sidecar_info,
 		},
 	},
-	("ValidatingWebhookConfiguration", "admissionregistration.k8s.io"): {
-		"windowheader": "Validating Webhook Configuration Info",
-		"field_indexes": {
-			"Normal": ["name"],
-		},
-		"sortcolumn": "name",
-		"infopad": {},
-		"listpad": {
-			"infogetter": get_webhook_info,
-		},
-	},
-	#("VolumeSnapshot", "snapshot.storage.k8s.io"): {
-	#	"windowheader": "Volume Snapshot Info",
-	#	"infopad": {
-	#		# FIXME
-	#	},
-	#},
 	("VirtualService", "networking.istio.io"): {
 		"windowheader": "Virtual Service Info",
 		"field_indexes": {
@@ -14670,31 +14229,6 @@ infoviews_builtin = {
 		},
 		"listpad": {
 			"infogetter": get_virtsvc_rule_info,
-		},
-	},
-	("Workflow", "argoproj.io"): {
-		"infopad": {
-			"Entrypoint:": {
-				"path": "spec#entrypoint",
-			},
-			"Service Account:": {
-				"fieldname": [("S", ("main", "infoheader_shortcut")), ("ervice Account:", ("main", "infoheader"))],
-				"path": "spec#serviceAccountName",
-			},
-			"Status:": {
-				"path": "status#phase",
-				"processor": field_processor_phase_status,
-			},
-		},
-		"shortcuts": {
-			"ServiceAccount": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Open info page for Service Account"),
-				"call": resourceinfodispatch,
-				"kind": ("ServiceAccount", ""),
-				"namespace_path": "metadata#namespace",
-				"name_path": "spec#serviceAccountName",
-			},
 		},
 	},
 }
@@ -15302,11 +14836,13 @@ def populate_views():
 				list_listgetter_args = deep_get(listpad, "listgetter_args", {})
 				list_path = deep_get(listpad, "path")
 				list_infogetter = deep_get(listpad, "infogetter")
+				list_infogetter_args = deep_get(listpad, "infogetter_args")
 				if list_infogetter is None:
 					if len(listpad) > 0:
 						raise Exception("View-file {view_file} is invalid: listpad specified, but no infogetter is provided")
 				else:
 					infoview_entry["listpad"]["infogetter"] = eval(list_infogetter)
+					infoview_entry["listpad"]["infogetter_args"] = list_infogetter_args
 				if list_listgetter is not None:
 					infoview_entry["listpad"]["listgetter"] = eval(list_listgetter)
 					infoview_entry["listpad"]["listgetter_args"] = list_listgetter_args
@@ -15332,6 +14868,9 @@ def populate_views():
 					queryval = deep_get(_shortcuts[shortcut], "queryval")
 					query = deep_get(_shortcuts[shortcut], "query")
 					widget = deep_get(_shortcuts[shortcut], "widget")
+					inputtitle = deep_get(_shortcuts[shortcut], "inputtitle")
+					confirm = deep_get(_shortcuts[shortcut], "confirm")
+					confirmtitle = deep_get(_shortcuts[shortcut], "confirmtitle")
 					w_title = deep_get(_shortcuts[shortcut], "title")
 					w_headers = deep_get(_shortcuts[shortcut], "headers")
 					w_selectable = deep_get(_shortcuts[shortcut], "selectable")
@@ -15399,6 +14938,9 @@ def populate_views():
 						"queryval": queryval,
 						"query": query,
 						"widget": widget,
+						"inputtitle": inputtitle,
+						"confirm": confirm,
+						"confirmtitle": confirmtitle,
 						"title": w_title,
 						"headers": w_headers,
 						"itemgetter": w_itemgetter,

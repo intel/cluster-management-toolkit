@@ -52,3 +52,14 @@ infoview:
         path: "window"
         type: str
         formatter: float
+  shortcuts:
+    "Open Node":
+      key: n
+      modifier: shift
+      helptext: "Open Node"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Node
+        name_path: "metadata#name"

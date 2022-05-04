@@ -11,7 +11,6 @@ listview:
     Normal: [namespace, name, svc_type, cluster_ips, external_ips, ports_svc_compact, age]
   sortcolumn: namespace
   fields:
-    # => clusterIPs
     cluster_ips:
       header: "Cluster-IPs:"
       paths:
@@ -66,3 +65,230 @@ listview:
         field_separators:
         - type: service
         ellipsise: 3
+infoview:
+  name: Service Info
+  infopad:
+    row_indexes:
+      Normal: [selector, endpoints, endpoint_slices, type, cluster_ips, internal_traffic_policy, ip_families, ip_family_policy, external_ips, ports, topology_keys, session_affinity]
+    rows:
+      cluster_ips:
+        header: [["Cluster IPs:", [main, infoheader]]]
+        paths:
+        - path: ["spec#clusterIPs", "spec#clusterIP"]
+          pathtype: list
+          default: "<none>"
+          none_str_as_none: true
+        formatter: address
+      endpoints:
+        header: [["E", [main, infoheader_shortcut]], ["ndpoints:", [main, infoheader]]]
+        paths:
+        - path: [["metadata#namespace"], ["metadata#name"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: namespace
+          - type: generic
+          field_separators:
+          - type: namespace
+      endpoint_slices:
+        header: [["Endpoint ", [main, infoheader]], ["S", [main, infoheader_shortcut]], ["lices:", [main, infoheader]]]
+        paths:
+        - path: ["EndpointSlice", "discovery.k8s.io", ["metadata#namespace"], "", [["kubernetes.io/service-name=", ["metadata#name"]]]]
+          pathtype: lookup
+          subpaths:
+          - "metadata#namespace"
+          - "metadata#name"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: namespace
+          - type: generic
+          field_separators:
+          - type: namespace
+      external_ips:
+        header: [["External IPs:", [main, infoheader]]]
+        path: "spec#externalIPs"
+        type: raw
+        default: "<none>"
+        formatter: address
+      internal_traffic_policy:
+        header: [["Internal Traffic Policy:", [main, infoheader]]]
+        path: "spec#internalTrafficPolicy"
+        type: str
+      ip_families:
+        header: [["IP Families:", [main, infoheader]]]
+        path: "spec#ipFamilies"
+        type: raw
+        formatter: list
+      ip_family_policy:
+        header: [["IP Family Policy:", [main, infoheader]]]
+        path: "spec#ipFamilyPolicy"
+        type: str
+      ports:
+        header: [["P", [main, infoheader_shortcut]], ["orts:", [main, infoheader]]]
+        paths:
+        - path: "spec#ports"
+          pathtype: items
+          subpaths:
+          - name
+          - port
+          - protocol
+          type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: service
+          - type: port
+          - type: protocol
+          field_separators:
+          - type: port
+          - type: service
+      selector:
+        header: [["Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#selector"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      session_affinity:
+        header: [["Session Affinity:", [main, infoheader]]]
+        path: "spec#sessionAffinity"
+        type: str
+      topology_keys:
+        header: [["Topology Keys:", [main, infoheader]]]
+        path: "spec#topologyKeys"
+        type: raw
+        default: "<unset>"
+        formatter: list
+        formatting:
+          mapping:
+            mappings:
+              "<unset>":
+                field_colors:
+                - context: types
+                  type: unset
+                "__default":
+                - context: types
+                  type: generic
+      type:
+        header: [["Type:", [main, infoheader]]]
+        path: "spec#type"
+        type: str
+  listpad:
+    listgetter: generic_listgetter
+    listgetter_args:
+      _kind: Pod
+      _label_selector_path: "spec#selector"
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch
+      kind: Pod
+    field_indexes:
+      Wide: [namespace, name, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
+      Normal: [namespace, name, pod_status, node_name, age, restarts, last_restart]
+      Compact: [namespace, name, pod_status, age, restarts, last_restart]
+    sortcolumn: pod_status
+    fields:
+      containers:
+        header: "Containers:"
+        paths:
+        - paths:
+          - "spec#initContainers"
+          - "spec#containers"
+          pathtype: items
+          subpaths:
+          - name
+          - subpath: image
+            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+          type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+          - type: version
+          field_separators:
+          - type: version
+      last_restart:
+        header: "Latest Restart:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: items
+          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+          when:
+            key: "restartCount"
+            gt: 0
+          action: latest
+          type: timestamp
+        default: -1
+        formatter: age
+        align: right
+      node_name:
+        header: "Node:"
+        path: "spec#nodeName"
+        type: host
+        default: "<none>"
+      pod_ip:
+        header: "Pod IP:"
+        path: "status#podIP"
+        default: "<unset>"
+        type: address
+        formatter: address
+      restarts:
+        header: "Restarts:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: items
+          subpath: "restartCount"
+          action: sum
+          type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+        default: 0
+  shortcuts:
+    "Endpoints":
+      key: e
+      modifier: shift
+      helptext: "Open info page for Endpoints"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Endpoints
+        name_path: "metadata#name"
+        namespace_path: "metadata#namespace"
+    "Endpoint Slices":
+      key: s
+      modifier: shift
+      helptext: "List Endpoint Slices"
+      widget: windowwidget
+      title: "Endpoint Slices:"
+      headers: ["Namespace:", "Name:"]
+      itemgetter: get_endpoint_slices
+      selectable: true
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        kind: EndpointSlice
+        api_family: discovery.k8s.io
+        name_path: 1
+        namespace_path: 0
+      # This isn't supported for now
+      sortcolumn: namespace
+    "Ports":
+      key: p
+      modifier: shift
+      helptext: "Show port mappings"
+      widget: windowwidget
+      headers: ["Port:", "Node-Port:", "Target-Port:", "Endpoints:"]
+      itemgetter: get_svc_port_target_endpoints
+      # This isn't supported for now
+      sortcolumn: port

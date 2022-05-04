@@ -7,3 +7,35 @@ listview:
   field_indexes:
     Normal: [namespace, name, age]
   sortcolumn: namespace
+infoview:
+  name: KubeVirt Info
+  infopad:
+    row_indexes:
+      Normal: [image_pull_policy, observed_kubevirt_registry, observed_kubevirt_version, target_kubevirt_registry, target_kubevirt_version]
+    rows:
+      image_pull_policy:
+        header: [["Image Pull Policy:", [main, infoheader]]]
+        path: "spec#imagePullPolicy"
+        type: str
+      observed_kubevirt_registry:
+        header: [["Observed KubVirt Policy:", [main, infoheader]]]
+        path: "status#observedKubeVirtRegistry"
+        type: str
+      observed_kubevirt_version:
+        header: [["Observed KubVirt Version:", [main, infoheader]]]
+        path: "status#observedKubeVirtVersion"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+      target_kubevirt_registry:
+        header: [["Target KubVirt Policy:", [main, infoheader]]]
+        path: "status#targetKubeVirtRegistry"
+        type: str
+      target_kubevirt_version:
+        header: [["Target KubVirt Version:", [main, infoheader]]]
+        path: "status#targetKubeVirtVersion"
+        type: str
+        formatting:
+          field_colors:
+          - type: version

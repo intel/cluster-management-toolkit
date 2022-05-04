@@ -7,3 +7,29 @@ listview:
   field_indexes:
     Normal: [namespace, name, age]
   sortcolumn: namespace
+infoview:
+  name: Workflow Info
+  infopad:
+    row_indexes:
+      Normal: [entrypoint, service_account, status]
+    rows:
+      entrypoint:
+        header: [["Entrypoint:", [main, infoheader]]]
+        path: "spec#entrypoint"
+        type: str
+      service_account:
+        fieldname: [["S", [main, infoheader_shortcut]], ["ervice Account:", [main, infoheader]]]
+        path: "spec#serviceAccountName"
+        type: str
+  shortcuts:
+    "Service Account":
+      key: s
+      modifier: shift
+      helptext: "Open info page for Service Account"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: ServiceAccount
+        name_path: "spec#serviceAccountName"
+        namespace_path: "metadata#namespace"
