@@ -1462,6 +1462,16 @@ class KubernetesHelper:
 			"api_family": ["apis/eventing.knative.dev/v1/", "apis/eventing.knative.dev/v1beta1/"],
 			"api": "triggers",
 		},
+		# flavor.kubevirt.io
+		("VirtualMachineClusterFlavor", "flavor.kubevirt.io"): {
+			"api_family": ["apis/flavor.kubevirt.io/v1alpha1/"],
+			"api": "virtualmachineclusterflavors",
+			"namespaced": False,
+		},
+		("VirtualMachineFlavor", "flavor.kubevirt.io"): {
+			"api_family": ["apis/flavor.kubevirt.io/v1alpha1/"],
+			"api": "virtualmachineflavors",
+		},
 		# flows.knative.dev
 		("Parallel", "flow.knative.dev"): {
 			"api_family": ["apis/flows.knative.dev/v1/"],
@@ -1682,23 +1692,23 @@ class KubernetesHelper:
 			"api": "kubevirts",
 		},
 		("VirtualMachineInstanceMigration", "kubevirt.io"): {
-			"api_family": ["apis/kubevirt.io/v1alpha3/"],
+			"api_family": ["apis/kubevirt.io/v1/"],
 			"api": "virtualmachineinstancemigrations",
 		},
 		("VirtualMachineInstancePreset", "kubevirt.io"): {
-			"api_family": ["apis/kubevirt.io/v1alpha3/"],
+			"api_family": ["apis/kubevirt.io/v1/"],
 			"api": "virtualmachineinstancepresets",
 		},
 		("VirtualMachineInstanceReplicaSet", "kubevirt.io"): {
-			"api_family": ["apis/kubevirt.io/v1alpha3/"],
+			"api_family": ["apis/kubevirt.io/v1/"],
 			"api": "virtualmachineinstancereplicasets",
 		},
 		("VirtualMachineInstance", "kubevirt.io"): {
-			"api_family": ["apis/kubevirt.io/v1alpha3/"],
+			"api_family": ["apis/kubevirt.io/v1/"],
 			"api": "virtualmachineinstances",
 		},
 		("VirtualMachine", "kubevirt.io"): {
-			"api_family": ["apis/kubevirt.io/v1alpha3/"],
+			"api_family": ["apis/kubevirt.io/v1/"],
 			"api": "virtualmachines",
 		},
 		# linkerd.io
@@ -1733,6 +1743,12 @@ class KubernetesHelper:
 		("PodMetrics", "metrics.k8s.io"): {
 			"api_family": ["apis/metrics.k8s.io/v1beta1/"],
 			"api": "pods",
+		},
+		# migrations.kubevirt.io
+		("MigrationPolicy", "migrations.kubevirt.io"): {
+			"api_family": ["apis/migrations.kubevirt.io/v1alpha1/"],
+			"api": "migrationpolicies",
+			"namespaced": False,
 		},
 		# monitoring.coreos.com
 		("Alertmanager", "monitoring.coreos.com"): {
@@ -1943,6 +1959,11 @@ class KubernetesHelper:
 		("Server", "policy.linkerd.io"): {
 			"api_family": ["apis/policy.linkerd.io/v1beta1/"],
 			"api": "servers",
+		},
+		# pool.kubevirt.io
+		("VirtualMachinePool", "pool.kubevirt.io"): {
+			"api_family": ["apis/kubevirt.io/v1alpha1/"],
+			"api": "virtualmachinepools",
 		},
 		# pmem-csi.intel.com
 		("PmemCSIDeployment", "pmem-csi.intel.com"): {
