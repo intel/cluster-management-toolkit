@@ -17,3 +17,44 @@ listview:
         type: timestamp
       formatter: timestamp
       default: -1
+infoview:
+  name: Limit Range Info
+  infopad:
+  listpad:
+    infogetter: get_limit_info
+    field_indexes:
+      Normal: [ltype, name, lmin, lmax, default_request, default_limit, max_lr_ratio]
+    fields:
+      default_limit:
+        header: "Default Limit:"
+        path: default_limit
+        type: raw
+        formatter: numerical_with_units
+      default_request:
+        header: "Default Request:"
+        path: default_request
+        type: raw
+        formatter: numerical_with_units
+      lmax:
+        header: "Max:"
+        path: lmax
+        type: raw
+        formatter: numerical_with_units
+      lmin:
+        header: "Min:"
+        path: lmin
+        type: raw
+        formatter: numerical_with_units
+      ltype:
+        header: "Type:"
+        path: ltype
+        type: str
+      max_lr_ratio:
+        header: "Max Limit/Request Ratio:"
+        path: max_lr_ratio
+        type: raw
+        formatter: numerical_with_units
+      name:
+        header: "Name:"
+        path: name
+        type: str

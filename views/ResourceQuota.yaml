@@ -19,6 +19,13 @@ listview:
         when:
           key_startswith: "limits."
       formatter: list
+      formatting:
+        field_colors:
+        - type: key
+        # Ideally we'd use numerical_with_units
+        - type: numerical
+        field_separators:
+        - type: keyvalue
     request:
       header: "Request:"
       paths:
@@ -27,3 +34,50 @@ listview:
         when:
           key_notstartswith: "limits."
       formatter: list
+      formatting:
+        field_colors:
+        - type: key
+        # Ideally we'd use numerical_with_units
+        - type: numerical
+        field_separators:
+        - type: keyvalue
+infoview:
+  name: Resource Quota Info
+  infopad:
+    row_indexes:
+      Normal: [scope_selector]
+    rows:
+      scope_selector:
+        header: [["Scope Selector:", [main, infoheader]]]
+        paths:
+        - path: "spec#scopeSelector#matchExpressions"
+          pathtype: match_expression
+          default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: operator
+          - type: value
+          field_separators:
+          - type: space
+          - type: no_pad
+  listpad:
+    infogetter: get_rq_item_info
+    field_indexes:
+      Normal: [resource, used, hard]
+    fields:
+      hard:
+        header: "Hard:"
+        path: hard
+        type: raw
+        formatter: numerical_with_units
+      resource:
+        header: "Resource:"
+        path: resource
+        type: str
+      used:
+        header: "Used:"
+        path: used
+        type: raw
+        formatter: numerical_with_units

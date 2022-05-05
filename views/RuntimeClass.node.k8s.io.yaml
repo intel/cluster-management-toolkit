@@ -11,3 +11,54 @@ listview:
       header: "Handler:"
       path: handler
       type: str
+infoview:
+  name: Runtime Class Info
+  infopad:
+    row_indexes:
+      Normal: [handler, node_selector]
+    rows:
+      handler:
+        header: [["Handler:", [main, infoheader]]]
+        path: "handler"
+        type: str
+      node_selector:
+        header: [["Node Selector:", [main, infoheader]]]
+        paths:
+        - path: ["scheduling#nodeSelector"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+  listpad:
+    listgetter: listgetter_dict_list
+    listgetter_args:
+      path: "overhead#podFixed"
+    infogetter: generic_infogetter
+    field_indexes:
+      Normal: [resource, overhead]
+    sortcolumn: resource
+    fields:
+      resource:
+        header: "Resource:"
+        path: key
+        type: str
+      overhead:
+        header: "Overhead:"
+        path: value
+        type: raw
+        formatter: numerical_with_units
+        align: right
+  shortcuts:
+    "Show tolerations":
+      key: t
+      helptext: "Show tolerations"
+      widget: windowwidget
+      headers: ["Key:", "Operator:", "Value:", "Effect:", "Timeout:"]
+      # This isn't supported for now
+      sortcolumn: key
+      itemgetter: get_pod_tolerations

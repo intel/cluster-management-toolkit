@@ -1943,12 +1943,6 @@ def datagetter_ep_ports(obj, path, default):
 
 	return get_endpoint_ports(subsets), {}
 
-def datagetter_eps_ports(obj, path, default):
-	if obj is None:
-		return default
-
-	return get_endpointslices_ports(obj), {}
-
 def datagetter_eps_endpoints(obj, path, default):
 	if obj is None:
 		return default
@@ -3431,11 +3425,11 @@ def get_limit_info(**kwargs):
 
 		for item in resources:
 			name = item
-			lmin = deep_get(limit, "min#%s" % item, "-")
-			lmax = deep_get(limit, "max#%s" % item, "-")
-			default_request = deep_get(limit, "defaultRequest#%s" % item, "-")
-			default_limit = deep_get(limit, "default#%s" % item, "-")
-			max_lr_ratio = deep_get(limit, "maxLimitRequestRatio#%s" % item, "-")
+			lmin = deep_get(limit, f"min#{item}", "-")
+			lmax = deep_get(limit, f"max#{item}", "-")
+			default_request = deep_get(limit, f"defaultRequest#{item}", "-")
+			default_limit = deep_get(limit, f"default#{item}", "-")
+			max_lr_ratio = deep_get(limit, f"maxLimitRequestRatio#{item}", "-")
 			info.append(LimitInfo(ltype, name, ref, lmin, lmax, default_request, default_limit, max_lr_ratio))
 
 	return info
@@ -3963,7 +3957,7 @@ def get_eps_subsets_info(**kwargs):
 				ready_addresses.append(address)
 			else:
 				not_ready_addresses.append(address)
-		target_ref = (deep_get(endpoint, "targetRef#kind", ""), deep_get(endpoint, "targetRef#namespace", ""), deep_get(endpoint, "targetRef#name", ""))
+		target_ref = (deep_get(endpoint, "targetRef#kind", ""), deep_get(endpoint, "targetRef#apiVersion", ""), deep_get(endpoint, "targetRef#namespace", ""), deep_get(endpoint, "targetRef#name", ""))
 		topology = []
 		# If nodeName is available this is the new API where topology is replaced by nodeName and zone
 		if "nodeName" in endpoint:
@@ -4292,25 +4286,6 @@ def get_rq_item_info(**kwargs):
 		hard = deep_get(obj, f"spec#hard#{resource}", [])
 
 		info.append(RQItemInfo(resource, used, hard))
-
-	return info
-
-class RuntimeClassOverheadInfo:
-	def __init__(self, resource, overhead):
-		self.resource = resource
-		self.overhead = overhead
-	def __repr__(self):
-		return repr((self.resource, self.overhead))
-
-def get_runtime_class_overhead_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	info = []
-
-	if obj is None:
-		return []
-
-	for resource, overhead in deep_get(obj, "overhead", []):
-		info.append(RuntimeClassOverheadInfo(resource, overhead))
 
 	return info
 
@@ -4664,6 +4639,7 @@ def resource_kind_to_rtype(resource):
 		("ReplicationController", ""): "[controller]",
 		("Role", "rbac.authorization.k8s.io"): "[role]",
 		("RoleBinding", "rbac.authorization.k8s.io"): "[role_binding]",
+		("RuntimeClass", "node.k8s.io"): "[runtime_class]",
 		("Scheduler", ""): "[scheduler]",
 		("Secret", ""): "[secret]",
 		("Service", ""): "[service]",
@@ -5017,15 +4993,22 @@ def get_resource_info(**kwargs):
 		kind = ("Service", "")
 		rtype = resource_kind_to_rtype(kind)
 		vlist, status = kh.get_list_by_kind_namespace(kind, pod_namespace)
-		svc = []
-		for obj in vlist:
-			selector = deep_get(obj, "spec#selector", {})
+		for item in vlist:
+			selector = deep_get(item, "spec#selector", {})
 			if len(selector) == 0:
 				continue
-			vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = kh.make_selector(deep_get(obj, "spec#selector")), field_selector = f"metadata.name={pod_name}")
+			vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = kh.make_selector(selector), field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}")
 			if len(vlist2) > 0:
-				resource_tuple = ("", "", deep_get(obj, "metadata#name"))
-				resource_info.append(ResourceInfo(resource_tuple, obj, rtype, kind, "", stgroup.UNKNOWN, -1, ""))
+				resource_info.append(ResourceInfo(resource_tuple, item, rtype, kind, "", stgroup.UNKNOWN, -1, ""))
+
+	if "runtimeclass" not in deep_get(iktconfig, "Pods#filter_resources", []):
+		kind = ("RuntimeClass", "node.k8s.io")
+		name = deep_get(obj, "spec#runtimeClassName")
+		ref = kh.get_ref_by_kind_name_namespace(kind, name, "")
+		if ref is not None:
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = ("", "", name)
+			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, "", stgroup.UNKNOWN, -1, ""))
 
 	return resource_info
 
@@ -5486,7 +5469,7 @@ def get_pod_affinity(obj, **kwargs):
 def get_pod_tolerations(obj, **kwargs):
 	tolerations = []
 
-	for toleration in deep_get(obj, "spec#tolerations", []):
+	for toleration in deep_get_with_fallback(obj, ["spec#tolerations", "scheduling#tolerations"], []):
 		status_group = stgroup.OK
 
 		effect = deep_get(toleration, "effect", "All")
@@ -5860,6 +5843,16 @@ def listgetter_field(obj, **kwargs):
 	vlist = deep_get(obj, path)
 	return vlist, 200
 
+# Return all items of a dict as a list of dicts
+# with the key and the value in the fields
+# "key" and "value", respectively
+def listgetter_dict_list(obj, **kwargs):
+	path = deep_get(kwargs, "path")
+	vlist = []
+	for key, value in deep_get(obj, path, {}).items():
+		vlist.append({"key": key, "value": value})
+	return vlist, 200
+
 # key_paths: the dict keys that should be turned into values
 # key_name: name for the key that holds these values
 # fields: paths the fields in the dict that should be added to the list
@@ -6198,10 +6191,6 @@ field_templates = {
 		"header": "Addresses:",
 		"generator": generator_list,
 	},
-	"addresstype": {
-		"header": "Type:",
-		"path": "addressType",
-	},
 	"age": {
 		"header": "Age:",
 		"path": "metadata#creationTimestamp",
@@ -6322,12 +6311,6 @@ field_templates = {
 	"default_endpoint": {
 		"header": "Default Endpoint:",
 	},
-	"default_request": {
-		"header": "Default Request:",
-	},
-	"default_limit": {
-		"header": "Default Limit:",
-	},
 	"desired_replicas": {
 		"header": "Desired:",
 		"path": "spec#replicas",
@@ -6388,9 +6371,6 @@ field_templates = {
 		"header": "Groups:",
 		"path": "groups",
 		"generator": generator_list,
-	},
-	"hard": {
-		"header": "Hard:",
 	},
 	"healthy_antrea": {
 		"header": "Healthy:",
@@ -6479,26 +6459,14 @@ field_templates = {
 	"link": {
 		"header": "Link:",
 	},
-	"lmax": {
-		"header": "Max:",
-	},
-	"lmin": {
-		"header": "Min:",
-	},
 	"log_type": {
 		"header": "Log Type:",
-	},
-	"ltype": {
-		"header": "Type:",
 	},
 	"match": {
 		"header": "Match:",
 		"generator": generator_list,
 		"field_colors": [("types", "key"), ("types", "value")],
 		"field_separators": [("separators", "keyvalue")],
-	},
-	"max_lr_ratio": {
-		"header": "Max Limit/Request Ratio:",
 	},
 	"max_replicas": {
 		"header": "Max:",
@@ -6638,34 +6606,6 @@ field_templates = {
 			],
 		},
 	},
-	"ports_eps": {
-		# (name, port, protocol)
-		"header": "Ports:",
-		"path": "ports",
-		"datagetter": datagetter_eps_ports,
-		"formatter": "list",
-		"formatting": {
-			"field_colors": [
-				{
-					"type": "service",
-				},
-				{
-					"type": "port",
-				},
-				{
-					"type": "protocol",
-				},
-			],
-			"field_separators": [
-				{
-					"type": "port",
-				},
-				{
-					"type": "service",
-				},
-			],
-		},
-	},
 	"priority_level": {
 		"header": "Priority Level:",
 		"path": "spec#priorityLevelConfiguration#name",
@@ -6726,9 +6666,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "resource"), ("types", "numerical"), ("types", "numerical")],
 		"field_separators": [("separators", "resource"), ("separators", "fraction")],
-	},
-	"resource": {
-		"header": "Resource:",
 	},
 	"resource_tuple": {
 		# (kind, name)
@@ -6834,22 +6771,10 @@ field_templates = {
 		"datagetter": datagetter_list_fields,
 		"generator": generator_list,
 	},
-	"target_ref": {
-		# (kind, namespace, name)
-		"header": "Target Reference:",
-		"generator": generator_list,
-		"field_colors": [("types", "kind"), ("types", "namespace"), ("types", "generic")],
-		"field_separators": [("separators", "kind"), ("separators", "namespace")],
-	},
 	"target": {
 		"header": "Target:",
 		"generator": generator_numerical,
 		"ralign": True,
-	},
-	"topology": {
-		"header": "Topology:",
-		"generator": generator_list,
-		"field_separators": [("separators", "equals")],
 	},
 	"topology_keys": {
 		"header": "Topology Keys:",
@@ -6871,9 +6796,6 @@ field_templates = {
 		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
-	},
-	"used": {
-		"header": "Used:",
 	},
 	"version": {
 		"header": "Version:",
@@ -9158,24 +9080,6 @@ def field_processor_component_kinds(obj, path = None, extra_paths = None, fallba
 		field = [("strings", "none")]
 	else:
 		field = format_list(kinds, 0, 0, False, False, field_colors = [("types", "kind"), ("types", "api_group")], field_separators = [("separators", "kind_api_group")])
-	return field
-
-# All fields except obj and owr_path will be ignored
-def field_processor_controller(obj, owr_path = None, extra_paths = None, fallback = None, formatting = None):
-	if owr_path is None:
-		owr_path = "metadata#ownerReferences"
-
-	owr = deep_get(obj, owr_path)
-	show_kind = deep_get(formatting, "show_kind", "mixed")
-	controller = get_controller_from_owner_references(owr)
-	if controller is None or controller == (("", ""), ""):
-		if fallback is not None:
-			field = fallback
-		else:
-			field = [("strings", "none")]
-	else:
-		controller = format_controller(controller, show_kind)
-		field = format_list(controller, 0, 0, False, False, field_colors = [("types", "kind"), ("types", "generic")], field_separators = [("separators", "kind")])
 	return field
 
 # All fields except obj and owr_path will be ignored
@@ -11535,7 +11439,23 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	obj = deep_get(kwargs, "obj")
 	if obj is None:
-		obj = deep_get(kwargs, "selected_obj")
+		if "selected_obj" in kwargs:
+			obj = deep_get(kwargs, "selected_obj")
+		elif "selected" in kwargs:
+			selected = deep_get(kwargs, "selected")
+			if "_selected_objs" in kwargs:
+				obj = {}
+				for key, attribute in deep_get(kwargs, "_selected_objs", []).items():
+					if type(attribute) == list:
+						tmp = getattr(selected, attribute[0])
+						if tmp is not None:
+							obj[key] = tmp[attribute[1]]
+						else:
+							obj[key] = None
+					else:
+						obj[key] = getattr(selected, attribute)
+			else:
+				obj = selected
 
 	selection = deep_get(kwargs, "selection")
 
@@ -13454,39 +13374,6 @@ infoviews_builtin = {
 		},
 		#listpad: { SUBSETS }
 	},
-	("EndpointSlice", "discovery.k8s.io"): {
-		"windowheader": "Endpoint Slice Info",
-		"field_indexes": {
-			"Normal": ["addresstype", "addresses", "ports_eps", "status", "target_ref", "topology"],
-		},
-		"sortcolumn": "addresses",
-		"infopad": {
-			"Controller:": {
-				"fieldname": [("C", ("main", "infoheader_shortcut")), ("ontroller:", ("main", "infoheader"))],
-				"processor": field_processor_controller,
-				"formatting": {"show_kind": "mixed"},
-			},
-		},
-		"listpad": {
-			"infogetter": get_eps_subsets_info,
-		},
-		"shortcuts": {
-			"Controller": {
-				"shortcut": ord("C"),
-				"helptext": ("[Shift] + C", "Open info page for controller"),
-				"call": resourceinfodispatch,
-				"namespace_path": "metadata#namespace",
-				"owner_references_path": "metadata#ownerReferences",
-			},
-			"Target Reference": {
-				"shortcut": [ curses.KEY_ENTER, 10, 13 ],
-				"helptext": ("[Enter]", "Open info page for target reference"),
-				"call": resourceinfodispatch,
-				"call_kind_name_namespace_selection_path": "target_ref",
-				"call_kind_name_namespace_selection_order": (0, 2, 1),
-			},
-		},
-	},
 	("Ingress", "networking.k8s.io"): {
 		"field_indexes": {
 			"Normal": ["host", "path", "backends"],
@@ -13634,17 +13521,6 @@ infoviews_builtin = {
 			# Inventory have no last applied configuration
 			"Show Events": {},
 			"Last Applied Configuration": {},
-		},
-	},
-	("LimitRange", ""): {
-		"windowheader": "Limit Range Info",
-		"field_indexes": {
-			"Normal": ["ltype", "name", "lmin", "lmax", "default_request", "default_limit", "max_lr_ratio"],
-		},
-		"sortcolumn": "name",
-		"infopad": {},
-		"listpad": {
-			"infogetter": get_limit_info,
 		},
 	},
 	("__Log", ""): {
@@ -14113,22 +13989,6 @@ infoviews_builtin = {
 			"infogetter": get_promrule_expr,
 		}
 	},
-	("ResourceQuota", ""): {
-		"windowheader": "Resource Quota Info",
-		"field_indexes": {
-			"Normal": ["resource", "used", "hard"],
-		},
-		"sortcolumn": "resource",
-		"infopad": {
-			"Scope Selector:": {
-				"path": "spec#scopeSelector#matchExpressions",
-				"processor": field_processor_match_expressions,
-			},
-		},
-		"listpad": {
-			"infogetter": get_rq_item_info,
-		},
-	},
 	("__ResourceView", ""): {
 		"windowheader": "Resource Viewer",
 		"timestamps": False,
@@ -14141,36 +14001,6 @@ infoviews_builtin = {
 			"Last Applied Configuration": {},
 			"YAML": {},
 		}
-	},
-	("RuntimeClass", "node.k8s.io"): {
-		"windowheader": "Runtime Class Info",
-		"field_indexes": {
-			"Normal": ["resource", "overhead"],
-		},
-		"sortcolumn": "resource",
-		"infopad": {
-			"Handler:": {
-				"path": "handler",
-			},
-			"Node Selector:": {
-				"path": "scheduling#nodeSelector",
-				"processor": field_processor_label_selector,
-			},
-		},
-		"listpad": {
-			"infogetter": get_runtime_class_overhead_info,
-		},
-		"shortcuts": {
-			"Show tolerations": {
-				"shortcut": ord("t"),
-				"helptext": ("T", "Show tolerations"),
-				"widget": "windowwidget",
-				"headers": ["Key:", "Operator:", "Value:", "Effect:", "Timeout:"],
-				"itemgetter": get_pod_tolerations,
-				# This isn't supported for now
-				"sortcolumn": "key",
-			},
-		},
 	},
 	("Sidecar", "networking.istio.io"): {
 		"field_indexes": {
@@ -14914,9 +14744,11 @@ def populate_views():
 						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
 						help_key = f"[Shift] + {key[0]}{num} / {key.upper()}"
 					elif key in ["enter", "return"]:
-						if len(modifier) > 0:
+						if len(modifier) > 0 or on_activation is None or len(on_activation) == 0:
 							help_key = "[Enter]"
 							shortcut_key = [curses.KEY_ENTER, 10, 13]
+						else:
+							sys.exit(f"View-file “{view_file}“ is invalid: the shortcut “{shortcut}“ uses “enter“ as key; this conflicts with built-in shortcut for “on_activation“.")
 					elif len(modifier) > 0:
 						if modifier == "shift":
 							help_key = f"[Shift] + {key.upper()}"

@@ -2476,7 +2476,7 @@ class UIProps:
 			return retval.RETURNONE
 		elif c == curses.KEY_MOUSE:
 			return self.handle_mouse_events(self.listpad, self.sorted_list, self.activatedfun, self.extraref, self.data)
-		elif c == curses.KEY_ENTER or c == 10 or c == 13:
+		elif (c == curses.KEY_ENTER or c == 10 or c == 13) and self.activatedfun is not None:
 			return self.enter_handler(self.activatedfun, self.extraref, self.data)
 		elif c == ord("M"):
 			# Toggle mouse support on/off to allow for copy'n'paste
