@@ -5013,16 +5013,15 @@ def get_resource_info(**kwargs):
 	return resource_info
 
 class InventoryInfo:
-	def __init__(self, name, ips, kubernetes_roles, ansible_groups, status, status_group):
+	def __init__(self, name, ips, kubernetes_roles, ansible_groups, status):
 		self.name = name
 		self.ref = name
 		self.ips = ips
 		self.kubernetes_roles = kubernetes_roles
 		self.ansible_groups = ansible_groups
 		self.status = status
-		self.status_group = status_group
 	def __repr__(self):
-		return repr((self.name, self.ips, self.kubernetes_roles, self.ansible_groups, self.status, self.status_group))
+		return repr((self.name, self.ips, self.kubernetes_roles, self.ansible_groups, self.status))
 
 def get_inventory_info(**kwargs):
 	global latest_info
@@ -5055,12 +5054,11 @@ def get_inventory_info(**kwargs):
 		if deep_get(inventory, "all#hosts#%s" % host) is None:
 			inventory["all"]["hosts"][host] = {}
 		inventory["all"]["hosts"][host]["status"] = "UNKNOWN"
-		inventory["all"]["hosts"][host]["status_group"] = stgroup.PENDING
 
 	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", "Lazy")
 
 	# FIXME
-	if ping_hosts == "Always" or (ping_hosts == "Lazy" and latest_info == "Inventory"):
+	if ping_hosts == "Always" or (ping_hosts == "Lazy" and latest_info in ["Inventory", "*Inventory"]):
 		# ping all nodes and update their status accordingly
 		retval, output = ansible_ping(ANSIBLE_INVENTORY)
 
@@ -5070,23 +5068,11 @@ def get_inventory_info(**kwargs):
 		# This needs to be improved; if there's a message we need to tell the difference
 		# between "Permission denied" and "No route to host"
 		for (host, status) in output:
-			status_group = stgroup.UNKNOWN
-			if status == "SUCCESS":
-				status_group = stgroup.OK
-			elif status == "FAILED!":
-				status_group = stgroup.WARNING
-			elif status == "UNREACHABLE!":
-				status_group = stgroup.NOT_OK
-			elif status == "COULD NOT RESOLVE":
-				status_group = stgroup.CRIT
-			elif status == "MISSING INTERPRETER?":
-				status_group = stgroup.WARNING
 			if host in deep_get(inventory, "all#hosts"):
 				# We don't want to risk overwriting hostvars
 				if deep_get(inventory, "all#hosts#%s" % host) is None:
 					inventory["all"]["hosts"][host] = {}
 				inventory["all"]["hosts"][host]["status"] = status
-				inventory["all"]["hosts"][host]["status_group"] = status_group
 
 	for host in deep_get(inventory, "all#hosts", []):
 		# There's no point in trying gethostbyname() on hosts that cannot be resolved
@@ -5143,10 +5129,9 @@ def get_inventory_info(**kwargs):
 						kubernetes_roles.append(role)
 		ansible_groups = ansible_get_groups_by_host(inventory, host)
 		status = deep_get(inventory, f"all#hosts#{name}#status", "UNKNOWN")
-		status_group = deep_get(inventory, f"all#hosts#{name}#status_group", stgroup.UNKNOWN)
 		if control_plane_name == "":
 			kubernetes_roles = ["<unknown>"]
-		info.append(InventoryInfo(name, ips, kubernetes_roles, ansible_groups, status, status_group))
+		info.append(InventoryInfo(name, ips, kubernetes_roles, ansible_groups, status))
 
 	return info
 
@@ -13402,127 +13387,6 @@ infoviews_builtin = {
 			"infogetter": get_ingress_rule_info,
 		},
 	},
-	("__Inventory", ""): {
-		"windowheader": "Inventory Info",
-		"field_indexes": {
-			"Normal": ["mountpoint", "device", "fstype", "model", "disk_usage_partition", "options"],
-		},
-		"fields": {
-			"mountpoint": {
-				"header": "Mountpoint:",
-				"path": "mountpoint",
-				"type": "str",
-			},
-			"device": {
-				"header": "Device:",
-				"path": "device",
-				"type": "str",
-			},
-			"fstype": {
-				"header": "Filesystem:",
-				"path": "fstype",
-				"type": "str",
-			},
-			"model": {
-				"header": "Model:",
-				"path": "model",
-				"type": "str",
-			},
-			"disk_usage_partition": {
-				"header": "Disk Usage:",
-				"path": ["partition_size_used", "partition_size_total"],
-				"datagetter": datagetter_pathlist_to_tuple,
-				"generator": generator_list,
-				"ralign": True,
-				"type": "raw",
-			},
-			"options": {
-				"header": "Options:",
-				"paths": [
-					{
-						"path": "options",
-						"pathtype": "list",
-					},
-				],
-				"formatter": "list",
-			},
-		},
-		"sortcolumn": "mountpoint",
-		"objgetter": objgetter_ansible_facts,
-		"name_path": "ansible_hostname",
-		"creation_timestamp_path": None,
-		"infopad": {
-			"Kernel Version:": {
-				"extra_paths": ["ansible_kernel", "ansible_kernel_version"],
-				"processor": field_processor_ansible_facts,
-				"formatting": {
-					"item_separators": [(" ", ("types", "generic"))],
-				},
-			},
-			"Product Name:": {
-				"extra_paths": ["ansible_product_name", "ansible_board_name"],
-				"processor": field_processor_ansible_facts,
-				"formatting": {
-					"item_separators": [("", curses.A_NORMAL)],
-					"conditionals": {
-						"NA": {
-							"substitute": "",
-						},
-						"<<<matchany>>>": {
-							"stop": True,
-						},
-					},
-				},
-			},
-			"BIOS version:": {
-				"extra_paths": ["ansible_bios_version"],
-				"processor": field_processor_ansible_facts,
-			},
-			"BIOS date:": {
-				"extra_paths": ["ansible_bios_date"],
-				"processor": field_processor_ansible_facts,
-			},
-			"Processor:": {
-				"processor": field_processor_ansible_processor,
-			},
-			"Cores:": {
-				"extra_paths": ["ansible_processor_cores"],
-				"processor": field_processor_ansible_facts,
-			},
-			"Threads per Core:": {
-				"extra_paths": ["ansible_processor_threads_per_core"],
-				"processor": field_processor_ansible_facts,
-			},
-			"Processors:": {
-				"extra_paths": ["ansible_processor_count"],
-				"processor": field_processor_ansible_facts,
-			},
-			"RAM:": {
-				"extra_paths": ["ansible_memtotal_mb"],
-				"processor": field_processor_ansible_facts,
-				"formatting": {
-					"suffix": ("MB", ("types", "unit")),
-				},
-			},
-			"Default IPv4 Address:": {
-				"extra_paths": ["ansible_default_ipv4#address"],
-				"processor": field_processor_ansible_facts,
-			},
-			"Default IPv6 Address:": {
-				"extra_paths": ["ansible_default_ipv6#address"],
-				"processor": field_processor_ansible_facts,
-			},
-		},
-		"listpad": {
-			"listgetter": listgetter_ansible_volumes,
-			"infogetter": generic_infogetter,
-		},
-		"shortcuts": {
-			# Inventory have no last applied configuration
-			"Show Events": {},
-			"Last Applied Configuration": {},
-		},
-	},
 	("__Log", ""): {
 		"windowheader": "Playbook Log Info",
 		"field_indexes": {
@@ -14135,118 +13999,6 @@ views_special = {
 		},
 		"is_taggable": False,
 	},
-	"Inventory": {
-		"commandline": ["inventory", "inv"],
-		"group": "Administration",
-		"field_indexes": {
-			"Normal": ["name", "ips", "kubernetes_roles", "ansible_groups", "status"],
-		},
-		"fields": {
-			"ansible_groups": {
-				# [group, ...]
-				"header": "Ansible Groups:",
-				"formatter": "list",
-			},
-			"ips": {
-				# [ip, ...]
-				"header": "IPs:",
-				"formatter": "list",
-				"formatting": {
-					"ellipsise": 3,
-				},
-			},
-			"kubernetes_roles": {
-				# [role, ...]
-				"header": "Roles:",
-				"datagetter": datagetter_node_roles,
-				"formatter": "list",
-			},
-			"status": {
-				"header": "Status:",
-				"formatter": "value_mapper",
-				"formatting": {
-					"mapping": {
-						"mappings": {
-							"COULD NOT RESOLVE": {
-								"field_colors": [
-									{
-										"context": "main",
-										"type": "status_critical",
-									},
-								],
-							},
-							"FAILED!": {
-								"field_colors": [
-									{
-										"context": "main",
-										"type": "status_warning",
-									},
-								],
-							},
-							"MISSING INTERPRETER?": {
-								"field_colors": [
-									{
-										"context": "main",
-										"type": "status_warning",
-									},
-								],
-							},
-							"SUCCESS": {
-								"field_colors": [
-									{
-										"context": "main",
-										"type": "status_ok",
-									},
-								],
-							},
-							"UNKNOWN": {
-								"field_colors": [
-									{
-										"context": "main",
-										"type": "status_unknown",
-									},
-								],
-							},
-							"UNREACHABLE!": {
-								"field_colors": [
-									{
-										"context": "main",
-										"type": "status_not_ok",
-									},
-								],
-							},
-						},
-					},
-				},
-			},
-		},
-		"sortcolumn": "kubernetes_roles",
-		"sortorder_reverse": True,
-		"helptext": helptexts.inventorylist,
-		"kind": ("__Inventory", ""),
-		"labels": False,
-		"listgetter": None,
-		"infogetter": get_inventory_info,
-		"actions": {
-			"playbooklist": {
-				"context": "inventory",
-			},
-		},
-		"shortcuts": {
-			"SSH to Host": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "SSH to host"),
-				"action": "call",
-				"action_call": ssh_to_host,
-				"action_args": {
-					"_pass_selected": True,
-				},
-			},
-			# Override:
-			"Edit resource": {},
-			"View YAML dump": {},
-		},
-	},
 	"Pod Log Viewer": {
 		"commandline": ["podlogviewer", "podlog"],
 		"group": "Administration",
@@ -14649,6 +14401,10 @@ def populate_views():
 					"annotations": annotations,
 					"shortcuts": {},
 				}
+				objgetter = deep_get(d, "infoview#infopad#objgetter")
+				if objgetter is not None:
+					infoview_entry["objgetter"] = eval(objgetter)
+
 				if len(listpad) > 0:
 					infoview_entry["listpad"]["on_activation"] = on_activation
 
@@ -14976,8 +14732,11 @@ def customise_listviews():
 	# As a special case, the configuration option "Inventory#ping_hosts"
 	# modifies the denylist, but *only* if the field denylist is unset
 	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", "Lazy")
-	if ping_hosts == "Never" and "field_denylist" not in views["Inventory"]:
-		views["Inventory"]["field_denylist"] = ["status"]
+	inv_name = "Inventory"
+	if inv_name not in views:
+		inv_name = "*Inventory"
+	if ping_hosts == "Never" and "field_denylist" not in views[inv_name]:
+		views[inv_name]["field_denylist"] = ["status"]
 
 def main():
 	defaultthemefile = f"{THEMEDIR}/{DEFAULT_THEME}"
