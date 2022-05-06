@@ -273,10 +273,10 @@ def get_installation_info(cluster_name = None):
 	except FileNotFoundError:
 		pass
 
-	if info is None or info.get("installation_target") is None:
-		if cluster_name is None:
-			raise Exception("cluster_name cannot be None when the installation_info file is empty")
+	if info is None and cluster_name is None:
+		raise Exception("cluster_name cannot be None when the installation_info file is empty")
 
+	if info is None or info.get("installation_target") is None or (info.get("installation_target") is not None and cluster_name is not None and cluster_name not in info) :
 		info = {
 			"installation_target": cluster_name,
 			cluster_name: {
@@ -361,7 +361,7 @@ def patch_cni_flannel(cni_path, pod_network_cidr):
 
 cni_data = {
 	"antrea": {
-		"url": "https://raw.githubusercontent.com/vmware-tanzu/antrea/main/build/yamls/antrea.yml",
+		"url": "https://raw.githubusercontent.com/antrea-io/antrea/main/build/yamls/antrea.yml",
 		"filename": "antrea.yaml",
 	},
 	"calico": {
@@ -449,10 +449,10 @@ def scan_and_add_ssh_keys():
 		try:
 			transport = paramiko.Transport(host)
 		except socket.gaierror as e:
-			if str(e) == "[Errno -3] Temporary failure in name resolution":
+			if str(e) in ["[Errno -3] Temporary failure in name resolution", "[Errno -2] Name or service not known"]:
 				continue
 			else:
-				raise e
+				raise socket.gaierror(f"{str(e)}\nhost: {host}")
 		transport.connect()
 		key = transport.get_remote_server_key()
 		transport.close()
