@@ -2278,6 +2278,16 @@ def taint_control_plane(options = [], args = None):
 				iktprint([("Tainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
+			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/control-plane:NoSchedule"]
+			response = execute_command_with_response(args).strip("\n")
+			if "with same effect(s) and --overwrite is false" in response:
+				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
+				continue
+			elif response.endswith("tainted"):
+				iktprint([("  Tainted", "success")])
+			elif response.startswith("error: "):
+				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.")], stderr = True)
+				sys.exit(errno.EINVAL)
 			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master:NoSchedule"]
 			response = execute_command_with_response(args).strip("\n")
 			if "with same effect(s) and --overwrite is false" in response:
@@ -2309,6 +2319,16 @@ def untaint_control_plane(options = [], args = None):
 				iktprint([("Untainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
+			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/control-plane-"]
+			response = execute_command_with_response(args).strip("\n")
+			if "error: taint \"node-role.kubernetes.io/control-plane\" not found" in response:
+				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
+			elif response.endswith("untainted"):
+				iktprint([("  Untainted", "success")])
+			elif response.startswith("error: "):
+				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
+
 			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master-"]
 			response = execute_command_with_response(args).strip("\n")
 			if "error: taint \"node-role.kubernetes.io/master\" not found" in response:
@@ -2318,7 +2338,7 @@ def untaint_control_plane(options = [], args = None):
 				iktprint([("  Untainted", "success")])
 				continue
 			elif response.startswith("error: "):
-				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.")], stderr = True)
+				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
 	if first == True:
