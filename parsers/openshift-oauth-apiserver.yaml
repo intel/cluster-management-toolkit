@@ -5,3 +5,8 @@
     container_name: oauth-apiserver
   parser_rules:
   - name: glog
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "http2: server: error"
+      loglevel: error

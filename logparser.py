@@ -498,94 +498,171 @@ def split_wd_mmm_dd_hh_mm_ss_yyyy_timestamp(message, timestamp):
 	return message, timestamp
 
 # http:
+# ::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -
 # 10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"
 # 10.244.0.1 - - [29/Jan/2022:10:33:50 +0000] "GET /v0/healthz/ HTTP/1.1" 200 3 "http://10.244.0.123:8000/v0/healthz" "kube-probe/1.23"
 def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
 	remnants = []
 	reformat_timestamps = deep_get(options, "reformat_timestamps", False)
 
-	tmp = re.match(r"^(\d+\.\d+\.\d+\.\d+)"
-			"( - - )"
-			"(\[)"
-			"(\d\d)"
-			"/"
-			"([A-Z][a-z][a-z])"
-			"/"
-			"(\d{4})"
-			":"
-			"(\d\d:\d\d:\d\d)"
-			"(\s\+\d{4}|\s-\d{4})"
-			"(\])"
-			"(\s\")"
-			"([A-Z]*?\s)"
-			"(\S*?)"
-			"(\s\S*?)"
-			"(\"\s)"
-			"(\d+?)"
-			"(\s+\d+?\s\")"
-			"([^\"]*)"
-			"(\"\s\")"
-			"([^\"]*)"
-			"(\"$|\"\s\")"
-			"([^\"]*|$)"
-			"(\"$|$)", message)
+	ipaddress = None
 
+	# First match the IP-address; it's either IPv4 or IPv6
+	tmp = re.match(r"^(([a-f0-9:]+:+)+[a-f0-9.]+?[a-f0-9])( - - .*)", message)
 	if tmp is not None:
-		address1 = tmp[1]
-		separator1 = tmp[2]
-		separator2 = tmp[3]
-		day = tmp[4]
-		_month = tmp[5]
-		month = month_to_numerical(_month)
-		year = tmp[6]
-		hms = tmp[7]
-		tz = tmp[8]
-		if reformat_timestamps == True:
-			ts = f"{year}-{month}-{day} {hms}{tz}"
-		else:
-			ts = f"{day}/{_month}/{year}:{hms}{tz}"
-		separator3 = tmp[9]
-		separator4 = tmp[10]
-		verb = tmp[11]
-		address3 = tmp[12]
-		protocol = tmp[13]
-		separator5 = tmp[14]
-		statuscode = tmp[15]
-		_statuscode = int(statuscode)
-		if _statuscode >= 100 and _statuscode < 300:
-			severity = loglevel.NOTICE
-		if _statuscode >= 300 and _statuscode < 400:
-			severity = loglevel.WARNING
-		if _statuscode >= 400:
-			severity = loglevel.ERR
-		separator6 = tmp[16]
-		address4 = tmp[17]
-		separator7 = tmp[18]
-		address5 = tmp[19]
-		separator8 = tmp[20]
-		address6 = tmp[21]
-		separator9 = tmp[22]
-		message = [
-			(address1, ("logview", "hostname")),
-			(separator1, ("logview", "severity_info")),
-			(f"{separator2}{ts}{separator3}", ("logview", "timestamp")),
-			(separator4, ("logview", "severity_info")),
-			(verb, ("logview", "protocol")),
-			(address3, ("logview", "url")),
-			(protocol, ("logview", "protocol")),
-			(separator5, ("logview", "severity_info")),
-			(statuscode, ("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-			(separator6, ("logview", "severity_info")),
-			(address4, ("logview", "url")),
-			(separator7, ("logview", "severity_info")),
-			(address5, ("logview", "url")),
-			(separator8, ("logview", "severity_info")),
-		]
-		if address6 is not None:
-			message.append((address6, ("logview", "url")))
-			message.append((separator9, ("logview", "severity_info")))
+		ipaddress = tmp[1]
+		message = message[len(ipaddress):]
+	else:
+		tmp = re.match(r"^(\d+\.\d+\.\d+\.\d+)( - - .*)", message)
+		if tmp is not None:
+			ipaddress = tmp[1]
+			message = tmp[2]
+		
+	# Short format
+	if ipaddress is not None:
+		tmp = re.match(r"( - - )"
+				"(\[)"
+				"(\d\d)"
+				"/"
+				"([A-Z][a-z][a-z])"
+				"/"
+				"(\d{4})"
+				" "
+				"(\d\d:\d\d:\d\d)"
+				"(\])"
+				"(\s\")"
+				"([A-Z]*?\s)"
+				"(\S*?)"
+				"(\s\S*?)"
+				"(\"\s)"
+				"(\d+?)"
+				"(\s+[\d-]+?$)", message)
 
-		return message, severity, facility
+		if tmp is not None:
+			address1 = ipaddress
+			separator1 = tmp[1]
+			separator2 = tmp[2]
+			day = tmp[3]
+			_month = tmp[4]
+			month = month_to_numerical(_month)
+			year = tmp[5]
+			hms = tmp[6]
+			if reformat_timestamps == True:
+				ts = f"{year}-{month}-{day} {hms}"
+			else:
+				ts = f"{day}/{_month}/{year}:{hms}"
+			separator3 = tmp[7]
+			separator4 = tmp[8]
+			verb = tmp[9]
+			address3 = tmp[10]
+			protocol = tmp[11]
+			separator5 = tmp[12]
+			statuscode = tmp[13]
+			_statuscode = int(statuscode)
+			if _statuscode >= 100 and _statuscode < 300:
+				severity = loglevel.NOTICE
+			if _statuscode >= 300 and _statuscode < 400:
+				severity = loglevel.WARNING
+			if _statuscode >= 400:
+				severity = loglevel.ERR
+			separator6 = tmp[14]
+			message = [
+				(address1, ("logview", "hostname")),
+				(separator1, ("logview", "severity_info")),
+				(f"{separator2}{ts}{separator3}", ("logview", "timestamp")),
+				(separator4, ("logview", "severity_info")),
+				(verb, ("logview", "protocol")),
+				(address3, ("logview", "url")),
+				(protocol, ("logview", "protocol")),
+				(separator5, ("logview", "severity_info")),
+				(statuscode, ("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+				(separator6, ("logview", "severity_info")),
+			]
+
+			return message, severity, facility
+
+	if ipaddress is not None:
+		tmp = re.match(r"( - - )"
+				"(\[)"
+				"(\d\d)"
+				"/"
+				"([A-Z][a-z][a-z])"
+				"/"
+				"(\d{4})"
+				":"
+				"(\d\d:\d\d:\d\d)"
+				"(\s\+\d{4}|\s-\d{4})"
+				"(\])"
+				"(\s\")"
+				"([A-Z]*?\s)"
+				"(\S*?)"
+				"(\s\S*?)"
+				"(\"\s)"
+				"(\d+?)"
+				"(\s+\d+?\s\")"
+				"([^\"]*)"
+				"(\"\s\")"
+				"([^\"]*)"
+				"(\"$|\"\s\")"
+				"([^\"]*|$)"
+				"(\"$|$)", message)
+
+		if tmp is not None:
+			address1 = ipaddress
+			separator1 = tmp[1]
+			separator2 = tmp[2]
+			day = tmp[3]
+			_month = tmp[4]
+			month = month_to_numerical(_month)
+			year = tmp[5]
+			hms = tmp[6]
+			tz = tmp[7]
+			if reformat_timestamps == True:
+				ts = f"{year}-{month}-{day} {hms}{tz}"
+			else:
+				ts = f"{day}/{_month}/{year}:{hms}{tz}"
+			separator3 = tmp[8]
+			separator4 = tmp[9]
+			verb = tmp[10]
+			address3 = tmp[11]
+			protocol = tmp[12]
+			separator5 = tmp[13]
+			statuscode = tmp[14]
+			_statuscode = int(statuscode)
+			if _statuscode >= 100 and _statuscode < 300:
+				severity = loglevel.NOTICE
+			if _statuscode >= 300 and _statuscode < 400:
+				severity = loglevel.WARNING
+			if _statuscode >= 400:
+				severity = loglevel.ERR
+			separator6 = tmp[15]
+			address4 = tmp[16]
+			separator7 = tmp[17]
+			address5 = tmp[18]
+			separator8 = tmp[19]
+			address6 = tmp[20]
+			separator9 = tmp[21]
+			message = [
+				(address1, ("logview", "hostname")),
+				(separator1, ("logview", "severity_info")),
+				(f"{separator2}{ts}{separator3}", ("logview", "timestamp")),
+				(separator4, ("logview", "severity_info")),
+				(verb, ("logview", "protocol")),
+				(address3, ("logview", "url")),
+				(protocol, ("logview", "protocol")),
+				(separator5, ("logview", "severity_info")),
+				(statuscode, ("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+				(separator6, ("logview", "severity_info")),
+				(address4, ("logview", "url")),
+				(separator7, ("logview", "severity_info")),
+				(address5, ("logview", "url")),
+				(separator8, ("logview", "severity_info")),
+			]
+			if address6 is not None:
+				message.append((address6, ("logview", "url")))
+				message.append((separator9, ("logview", "severity_info")))
+
+			return message, severity, facility
 
 	# Alternative format
 	tmp = re.match(r"^\|\s+(\d{3})\s+\|\s+([0-9.]+)([^ ]*)\s+\|\s+([^:]*):(\d+?)\s+\|\s+([A-Z]+)\s+(.*)", message)
@@ -620,8 +697,9 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, opti
 			(" ", ("logview", "severity_info")),
 			(url, ("logview", "url")),
 		]
+		return message, severity, facility
 
-	return message, severity, facility
+	return f"{ipaddress}{message}", severity, facility
 
 # Will split messages of the format into ISO-8601 timestamp + message
 # 10.32.0.1 - - [22/Feb/2020:16:34:30 +0000] "GET / HTTP/1.1" 200 6 " [...]

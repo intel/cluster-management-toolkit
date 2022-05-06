@@ -4890,7 +4890,8 @@ def get_resource_info(**kwargs):
 				status_group = get_event_status_group(status)
 				tmp = __get_timestamp_with_fallback(event, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"])
 				seen = get_since(tmp)
-				message = deep_get(event, "message", "").rstrip()
+				message = deep_get(event, "message", "")
+				message = message.replace("\n", "\\n").rstrip()
 				resource_info.append(ResourceInfo(resource_tuple, event, rtype, kind, status, status_group, -1, message, age = seen))
 
 	if "pod_disruption_budget" not in deep_get(iktconfig, "Pods#filter_resources", []):
@@ -8358,6 +8359,7 @@ cmdata_header = [
 	("python", "Python"),
 	("perl", "Perl"),
 	("perl", "Ruby"),
+	("-----BEGIN CERTIFICATE-----", "CRT"),
 ]
 
 def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
@@ -8365,7 +8367,8 @@ def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
 		splitmsg = split_msg(data)
 		dataformat = ""
 		# We're in luck; there's an interpreter signature
-		if splitmsg[0].startswith("#!"):
+		# or other type of signature to help
+		if splitmsg[0].startswith(("#!", "-----")):
 			for match_infix, dataformat in cmdata_header:
 				if match_infix in data:
 					break
