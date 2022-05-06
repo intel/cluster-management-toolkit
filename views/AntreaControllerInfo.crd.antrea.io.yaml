@@ -53,3 +53,98 @@ listview:
       header: "Version:"
       path: "version"
       type: str
+      formatting:
+        field_colors:
+        - type: version
+infoview:
+  name: Antrea Controller Info
+  infopad:
+    row_indexes:
+      Normal: [node, pod, service, version]
+    rows:
+      node:
+        header: [["N", [main, infoheader_shortcut]], ["ode:", [main, infoheader]]]
+        path: "nodeRef#name"
+        type: str
+      pod:
+        header: [["P", [main, infoheader_shortcut]], ["od:", [main, infoheader]]]
+        paths:
+        - path: [["podRef#namespace"], ["podRef#name"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: namespace
+          - type: generic
+          field_separators:
+          - type: namespace
+      service:
+        header: [["S", [main, infoheader_shortcut]], ["ervice:", [main, infoheader]]]
+        path: "serviceRef#name"
+        type: str
+      version:
+        header: [["Version:", [main, infoheader]]]
+        path: "version"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+  shortcuts:
+    "Network Policy Controller":
+      key: c
+      modifier: shift
+      helptext: "View network policy controller info"
+      action: call
+      action_call: view_yaml
+      action_args:
+        _pass_obj: true
+        title: "Network Policy Controller Info"
+        path: "networkPolicyControllerInfo"
+    "Node":
+      key: n
+      modifier: shift
+      helptext: "Open info page for Node"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind_path: "nodeRef#kind"
+        name_path: "nodeRef#name"
+    "Pod":
+      key: p
+      modifier: shift
+      helptext: "Open info page for Pod"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind_path: "podRef#kind"
+        name_path: "podRef#name"
+        namespace_path: "podRef#namespace"
+    "Service":
+      key: s
+      modifier: shift
+      helptext: "Open info page for Service"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        # XXX: This feels wrong, but this is the only namespace field;
+        # besides, the service is always in the same namespace as the pod
+        kind_path: "serviceRef#kind"
+        namespace_path: "podRef#namespace"
+        name_path: "serviceRef#name"
+    "Show Resource Conditions":
+      key: c
+      helptext: "Show resource conditions"
+      widget: windowwidget
+      title: "Conditions:"
+      headers: ["Type:", "Status:", "Last Heartbeat:"]
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: controllerConditions
+        fields:
+        - type
+        - status
+        - lastHeartbeatTime
+        override_types: ["", "", timestamp]

@@ -53,8 +53,98 @@ listview:
       header: "Subnets:"
       path: "nodeSubnets"
       type: raw
-      formatter: list
+      formatter: address
     version:
       header: "Version:"
       path: "version"
       type: str
+infoview:
+  name: Antrea Agent Info
+  infopad:
+    row_indexes:
+      Normal: [node, pod, node_subnets, version]
+    rows:
+      node:
+        header: [["N", [main, infoheader_shortcut]], ["ode:", [main, infoheader]]]
+        path: "nodeRef#name"
+        type: str
+      node_subnets:
+        header: [["Node Subnets:", [main, infoheader]]]
+        path: "nodeSubnets"
+        type: raw
+        formatter: address
+      pod:
+        header: [["P", [main, infoheader_shortcut]], ["od:", [main, infoheader]]]
+        paths:
+        - path: [["podRef#namespace"], ["podRef#name"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: namespace
+          - type: generic
+          field_separators:
+          - type: namespace
+      version:
+        header: [["Version:", [main, infoheader]]]
+        path: "version"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+  shortcuts:
+    "Network Policy Controller":
+      key: c
+      modifier: shift
+      helptext: "View network policy controller info"
+      action: call
+      action_call: view_yaml
+      action_args:
+        _pass_obj: true
+        title: "Network Policy Controller Info"
+        path: "networkPolicyControllerInfo"
+    "Node":
+      key: n
+      modifier: shift
+      helptext: "Open info page for Node"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind_path: "nodeRef#kind"
+        name_path: "nodeRef#name"
+    "Pod":
+      key: p
+      modifier: shift
+      helptext: "Open info page for Pod"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind_path: "podRef#kind"
+        name_path: "podRef#name"
+        namespace_path: "podRef#namespace"
+    "View Open vSwitch Info":
+      key: o
+      modifier: shift
+      helptext: "View Open vSwitch info"
+      action: call
+      action_call: view_yaml
+      action_args:
+        _pass_obj: true
+        title: "Open vSwitch Info"
+        path: "ovsInfo"
+    "Show Resource Conditions":
+      key: c
+      helptext: "Show resource conditions"
+      widget: windowwidget
+      title: "Conditions:"
+      headers: ["Type:", "Status:", "Last Heartbeat:"]
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: agentConditions
+        fields:
+        - type
+        - status
+        - lastHeartbeatTime
+        override_types: ["", "", timestamp]
