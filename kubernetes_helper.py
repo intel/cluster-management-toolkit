@@ -732,7 +732,7 @@ class KubernetesHelper:
 		},
 		("IngressClass", "networking.k8s.io"): {
 			"api_family": ["apis/networking.k8s.io/v1/", "apis/networking.k8s.io/v1beta1/"],
-			"api": "ingressesclasses",
+			"api": "ingressclasses",
 			"namespaced": False,
 		},
 		("NetworkPolicy", "networking.k8s.io"): {
