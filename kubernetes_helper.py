@@ -715,6 +715,16 @@ class KubernetesHelper:
 			"api": "decoratorcontrollers",
 			"namespaced": False,
 		},
+		# metrics.k8s.io
+		("NodeMetrics", "metrics.k8s.io"): {
+			"api_family": ["apis/metrics.k8s.io/v1beta1/"],
+			"api": "nodes",
+			"namespaced": False,
+		},
+		("PodMetrics", "metrics.k8s.io"): {
+			"api_family": ["apis/metrics.k8s.io/v1beta1/"],
+			"api": "pods",
+		},
 		# networking.k8s.io
 		("Ingress", "networking.k8s.io"): {
 			"api_family": ["apis/networking.k8s.io/v1/", "apis/networking.k8s.io/v1beta1/"],
@@ -1181,6 +1191,42 @@ class KubernetesHelper:
 			"api": "schedulers",
 			"namespaced": False,
 		},
+		# console.openshift.io
+		("ConsoleCLIDownload", "console.openshift.io"): {
+			"api_family": ["apis/console.openshift.io/v1/"],
+			"api": "consoleclidownloads",
+			"namespaced": False,
+		},
+		("ConsoleExternalLogLink", "console.openshift.io"): {
+			"api_family": ["apis/console.openshift.io/v1/"],
+			"api": "consoleexternalloglinks",
+			"namespaced": False,
+		},
+		("ConsoleLink", "console.openshift.io"): {
+			"api_family": ["apis/console.openshift.io/v1/"],
+			"api": "consolelinks",
+			"namespaced": False,
+		},
+		("ConsoleNotification", "console.openshift.io"): {
+			"api_family": ["apis/console.openshift.io/v1/"],
+			"api": "consolenotifications",
+			"namespaced": False,
+		},
+		("ConsolePlugin", "console.openshift.io"): {
+			"api_family": ["apis/console.openshift.io/v1alpha1/"],
+			"api": "consoleplugins",
+			"namespaced": False,
+		},
+		("ConsoleQuickStart", "console.openshift.io"): {
+			"api_family": ["apis/console.openshift.io/v1/"],
+			"api": "consolequickstarts",
+			"namespaced": False,
+		},
+		("ConsoleYAMLSample", "console.openshift.io"): {
+			"api_family": ["apis/console.openshift.io/v1/"],
+			"api": "consoleyamlsamples",
+			"namespaced": False,
+		},
 		# controlplane.antrea.io
 		("AddressGroup", "controlplane.antrea.io"): {
 			"api_family": ["apis/controlplane.antrea.io/v1beta2/"],
@@ -1210,6 +1256,11 @@ class KubernetesHelper:
 		("KubeadmControlPlaneTemplate", "controlplane.cluster.x-k8s.io"): {
 			"api_family": ["apis/controlplane.cluster.x-k8s.io/v1beta1/"],
 			"api": "kubeadmcontrolplanetemplates",
+		},
+		# controlplane.operator.openshift.io
+		("PodNetworkConnectivityCheck", "controlplane.operator.openshift.io"): {
+			"api_family": ["apis/controlplane.operator.openshift.io/v1alpha1/"],
+			"api": "podnetworkconnectivitychecks",
 		},
 		# criresmgr.intel.com
 		("Adjustment", "criresmgr.intel.com"): {
@@ -1499,6 +1550,12 @@ class KubernetesHelper:
 			"api_family": ["apis/helm.cattle.io/v1/"],
 			"api": "helmcharts",
 		},
+		# helm.openshift.io
+		("HelmChartRepository", "helm.openshift.io"): {
+			"api_family": ["apis/helm.openshift.io/v1beta1/"],
+			"api": "helmchartrepositories",
+			"namespaced": False,
+		},
 		# image.openshift.io
 		("Image", "image.openshift.io"): {
 			"api_family": ["apis/image.openshift.io/v1/"],
@@ -1512,6 +1569,17 @@ class KubernetesHelper:
 		("ImageStreamTag", "image.openshift.io"): {
 			"api_family": ["apis/image.openshift.io/v1/"],
 			"api": "imagestreamtags",
+		},
+		# imageregistry.operator.openshift.io
+		("Config", "imageregistry.operator.openshift.io"): {
+			"api_family": ["apis/imageregistry.operator.openshift.io/v1/"],
+			"api": "configs",
+			"namespaced": False,
+		},
+		("ImagePruner", "imageregistry.operator.openshift.io"): {
+			"api_family": ["apis/imageregistry.operator.openshift.io/v1/"],
+			"api": "imagepruners",
+			"namespaced": False,
 		},
 		# infrastructure.cluster.x-k8s.io
 		("OpenStackCluster", "infrastructure.cluster.x-k8s.io"): {
@@ -1529,6 +1597,11 @@ class KubernetesHelper:
 		("OpenStackMachineTemplate", "infrastructure.cluster.x-k8s.io"): {
 			"api_family": ["apis/infrastructure.cluster.x-k8s.io/v1alpha4/"],
 			"api": "openstackmachinetemplates",
+		},
+		# ingress.operator.openshift.io
+		("DNSRecord", "ingress.operator.openshift.io"): {
+			"api_family": ["apis/ingress.operator.openshift.io/v1/"],
+			"api": "dnsrecords",
 		},
 		# install.istio.io
 		("IstioOperator", "install.istio.io"): {
@@ -1716,6 +1789,45 @@ class KubernetesHelper:
 			"api_family": ["apis/linkerd.io/v1alpha2/"],
 			"api": "serviceprofiles",
 		},
+		# machine.openshift.io
+		("MachineHealthCheck", "machine.openshift.io"): {
+			"api_family": ["apis/machine.openshift.io/v1beta1/"],
+			"api": "machinehealthchecks",
+		},
+		("Machine", "machine.openshift.io"): {
+			"api_family": ["apis/machine.openshift.io/v1beta1/"],
+			"api": "machines",
+		},
+		("MachineSet", "machine.openshift.io"): {
+			"api_family": ["apis/machine.openshift.io/v1beta1/"],
+			"api": "machinesets",
+		},
+		# machineconfiguration.openshift.io
+		("ContainerRuntimeConfig", "machineconfiguration.openshift.io"): {
+			"api_family": ["apis/machineconfiguration.openshift.io/v1/"],
+			"api": "containerruntimeconfigs",
+			"namespaced": False,
+		},
+		("ControllerConfig", "machineconfiguration.openshift.io"): {
+			"api_family": ["apis/machineconfiguration.openshift.io/v1/"],
+			"api": "controllerconfigs",
+			"namespaced": False,
+		},
+		("KubeletConfig", "machineconfiguration.openshift.io"): {
+			"api_family": ["apis/machineconfiguration.openshift.io/v1/"],
+			"api": "kubeletconfigs",
+			"namespaced": False,
+		},
+		("MachineConfigPool", "machineconfiguration.openshift.io"): {
+			"api_family": ["apis/machineconfiguration.openshift.io/v1/"],
+			"api": "machineconfigpools",
+			"namespaced": False,
+		},
+		("MachineConfig", "machineconfiguration.openshift.io"): {
+			"api_family": ["apis/machineconfiguration.openshift.io/v1/"],
+			"api": "machineconfigs",
+			"namespaced": False,
+		},
 		# machinelearning.seldon.io
 		("SeldonDeployment", "machinelearning.seldon.io"): {
 			"api_family": ["apis/machinelearning.seldon.io/v1/", "apis/machinelearning.seldon.io/v1alpha3/", "apis/machinelearning.seldon.io/v1alpha2/"],
@@ -1734,15 +1846,42 @@ class KubernetesHelper:
 			"api_family": ["apis/messaging.knative.dev/v1/"],
 			"api": "subscriptions",
 		},
-		# metrics.k8s.io
-		("NodeMetrics", "metrics.k8s.io"): {
-			"api_family": ["apis/metrics.k8s.io/v1beta1/"],
-			"api": "nodes",
+		# metal3.io
+		("BareMetalHost", "metal3.io"): {
+			"api_family": ["apis/metal3.io/v1alpha1/"],
+			"api": "baremetalhosts",
+		},
+		("BMCEventSubscription", "metal3.io"): {
+			"api_family": ["apis/metal3.io/v1alpha1/"],
+			"api": "bmceventsubscriptions",
+		},
+		("FirmwareSchema", "metal3.io"): {
+			"api_family": ["apis/metal3.io/v1alpha1/"],
+			"api": "firmwareschemas",
+		},
+		("HostFirmwareSettings", "metal3.io"): {
+			"api_family": ["apis/metal3.io/v1alpha1/"],
+			"api": "hostfirmwaresettings",
+		},
+		("PreprovisioningImage", "metal3.io"): {
+			"api_family": ["apis/metal3.io/v1alpha1/"],
+			"api": "preprovisioningimages",
+		},
+		("Provisioning", "metal3.io"): {
+			"api_family": ["apis/metal3.io/v1alpha1/"],
+			"api": "provisionings",
 			"namespaced": False,
 		},
-		("PodMetrics", "metrics.k8s.io"): {
-			"api_family": ["apis/metrics.k8s.io/v1beta1/"],
-			"api": "pods",
+		# migration.k8s.io
+		("StorageState", "migration.k8s.io"): {
+			"api_family": ["apis/migration.k8s.io/v1alpha1/"],
+			"api": "storagestates",
+			"namespaced": False,
+		},
+		("StorageVersionMigration", "migration.k8s.io"): {
+			"api_family": ["apis/migration.k8s.io/v1alpha1/"],
+			"api": "storageversionmigrations",
+			"namespaced": False,
 		},
 		# migrations.kubevirt.io
 		("MigrationPolicy", "migrations.kubevirt.io"): {
@@ -1802,6 +1941,15 @@ class KubernetesHelper:
 			"api_family": ["apis/network.openshift.io/v1/"],
 			"api": "netnamespaces",
 			"namespaced": False,
+		},
+		# network.operator.openshift.io
+		("EgressRouter", "network.operator.openshift.io"): {
+			"api_family": ["apis/network.operator.openshift.io/v1/"],
+			"api": "egressrouters",
+		},
+		("OperatorPKI", "network.operator.openshift.io"): {
+			"api_family": ["apis/network.operator.openshift.io/v1/"],
+			"api": "operatorpkis",
 		},
 		# networking.internal.knative.dev
 		("Certificate", "networking.internal.knative.dev"): {
@@ -1889,6 +2037,101 @@ class KubernetesHelper:
 		("OpenTelemetryCollector", "opentelemetry.io"): {
 			"api_family": ["apis/opentelemetry.io/v1alpha1/"],
 			"api": "opentelemetrycollectors",
+		},
+		# operator.openshift.io
+		("Authentication", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "authentications",
+			"namespaced": False,
+		},
+		("CloudCredential", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "cloudcredentials",
+			"namespaced": False,
+		},
+		("ClusterCSIDriver", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "clustercsidrivers",
+			"namespaced": False,
+		},
+		("Config", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "configs",
+			"namespaced": False,
+		},
+		("Console", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "consoles",
+			"namespaced": False,
+		},
+		("CSISnapshotController", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "csisnapshotcontrollers",
+			"namespaced": False,
+		},
+		("DNS", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "dnses",
+			"namespaced": False,
+		},
+		("Etcd", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "etcds",
+			"namespaced": False,
+		},
+		("ImageContentSourcePolicy", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1alpha1/"],
+			"api": "imagecontentsourcepolicies",
+			"namespaced": False,
+		},
+		("IngressController", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "ingresscontrollers",
+		},
+		("KubeAPIServer", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "kubeapiservers",
+			"namespaced": False,
+		},
+		("KubeControllerManager", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "kubecontrollermanagers",
+			"namespaced": False,
+		},
+		("KubeScheduler", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "kubeschedulers",
+			"namespaced": False,
+		},
+		("KubeStorageVersionMigrator", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "kubestorageversionmigrators",
+			"namespaced": False,
+		},
+		("Network", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "networks",
+			"namespaced": False,
+		},
+		("OpenShiftAPIServer", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "openshiftapiservers",
+			"namespaced": False,
+		},
+		("OpenShiftControllerManager", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "openshiftcontrollermanagers",
+			"namespaced": False,
+		},
+		("ServiceCA", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "servicecas",
+			"namespaced": False,
+		},
+		("Storage", "operator.openshift.io"): {
+			"api_family": ["apis/operator.openshift.io/v1/"],
+			"api": "storages",
+			"namespaced": False,
 		},
 		# operators.coreos.com
 		("CatalogSource", "operators.coreos.com"): {
@@ -2012,6 +2255,11 @@ class KubernetesHelper:
 			"api_family": ["apis/route.openshift.io/v1/"],
 			"api": "routes",
 		},
+		# samples.operator.openshift.io
+		("Config", "samples.operator.openshift.io"): {
+			"api_family": ["apis/samples.operator.openshift.io/v1/"],
+			"api": "configs",
+		},
 		# scheduling.volcano.sh
 		("PodGroup", "scheduling.volcano.sh"): {
 			"api_family": ["apis/scheduling.volcano.sh/v1beta1/"],
@@ -2035,13 +2283,14 @@ class KubernetesHelper:
 			"api_family": ["apis/security.istio.io/v1beta1/"],
 			"api": "requestauthentications",
 		},
-		# security.openshift.io
-		("RangeAllocation", "security.openshift.io"): {
-			"api_family": ["apis/security.openshift.io/v1/"],
+		# security.internal.openshift.io
+		("RangeAllocation", "security.internal.openshift.io"): {
+			"api_family": ["apis/security.internal.openshift.io/v1/"],
 			"api": "rangeallocations",
 			"namespaced": False,
 		},
-		("SecurityContextConstraint", "security.openshift.io"): {
+		# security.openshift.io
+		("SecurityContextConstraints", "security.openshift.io"): {
 			"api_family": ["apis/security.openshift.io/v1/"],
 			"api": "securitycontextconstraints",
 			"namespaced": False,
