@@ -14061,6 +14061,10 @@ def populate_views():
 						 f"  group: {group}\n"
 						  "Aborting.")
 
+				if name in views:
+					conflicting_kind = deep_get(views, f"{name}#kind")
+					sys.exit(f"Error when processing view-vile {view_file} for kind: {(kind, api_family)}; a view named {name} already exists (for the kind: {conflicting_kind=}")
+
 				infogetter = generic_infogetter
 				if "infogetter" in deep_get(d, "listview"):
 					infogetter = deep_get(d, "listview#infogetter")
