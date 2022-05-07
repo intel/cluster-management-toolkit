@@ -1,0 +1,85 @@
+kind: HelmChartRepository
+api_family: helm.openshift.io
+default_command: helmchartrepositories
+listview:
+  name: Helm Chart Repositories
+  group: OpenShift
+  field_indexes:
+    Normal: [name, age]
+infoview:
+  name: Helm Chart Repository Info
+  infopad:
+    row_indexes:
+      Normal: [description, disabled, connection_config_header, connection_config_url, connection_config_tls_client_config, connection_config_ca, cluster_version]
+    rows:
+      cluster_version:
+        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - name
+          when:
+            key: kind
+            eq: ClusterVersion
+        default: "<none>"
+      connection_config_header:
+        header: [["Connection Config:", [main, infoheader]]]
+      connection_config_url:
+        header: [["  URL:", [main, infoheader]]]
+        path: "spec#connectionConfig#url"
+        type: str
+      connection_config_tls_client_config:
+        header: [["  ", [main, infoheader]], ["T", [main, infoheader_shortcut]], ["LS Client Config:", [main, infoheader]]]
+        path: "spec#connectionConfig#tlsClientConfig#name"
+        default: "<none>"
+        type: str
+      connection_config_ca:
+        header: [["  ", [main, infoheader]], ["C", [main, infoheader_shortcut]], ["A:", [main, infoheader]]]
+        path: "spec#connectionConfig#ca#name"
+        default: "<none>"
+        type: str
+      description:
+        header: [["Description:", [main, infoheader]]]
+        path: "spec#description"
+        default: "<none>"
+        type: str
+      disabled:
+        header: [["Disabled:", [main, infoheader]]]
+        path: "spec#disabled"
+        default: false
+        type: bool
+  shortcuts:
+    "Cluster Version":
+      key: v
+      modifier: shift
+      helptext: "Open info page for Cluster Version"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: ClusterVersion
+        api_family: config.openshift.io
+    "Open CA-bindle ConfigMap":
+      key: c
+      modifier: shift
+      helptext: "Open info page for CA-bundle ConfigMap"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: ConfigMap
+        namespace: openshift-config
+        name_path: "spec#connectionConfig#ca#name"
+    "Open TLS client configuration Secret":
+      key: t
+      modifier: shift
+      helptext: "Open info page for TLS client configuration Secret"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Secret
+        namespace: openshift-config
+        name_path: "spec#connectionConfig#tlsClientConfig#name"

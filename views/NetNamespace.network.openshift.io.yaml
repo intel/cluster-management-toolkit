@@ -1,0 +1,45 @@
+kind: NetNamespace
+api_family: network.openshift.io
+default_command: netnamespaces
+listview:
+  name: Net Namespaces
+  group: OpenShift
+  field_indexes:
+    Normal: [name, netid, egress_ips, age]
+  sortcolumn: netid
+  fields:
+    netid:
+      header: "Net ID:"
+      path: "netid"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    egress_ips:
+      header: "Egress IPs:"
+      paths:
+      - path: "egressIPs"
+        pathtype: list
+        default: "<none>"
+      formatter: address
+infoview:
+  name: Net Namespace Info
+  infopad:
+    row_indexes:
+      Normal: [netid, egress_ips]
+    rows:
+      netid:
+        header: [["Net ID:", [main, infoheader]]]
+        path: "netid"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      egress_ips:
+        header: [["Egress IPs:", [main, infoheader]]]
+        paths:
+        - path: "egressIPs"
+          pathtype: list
+          default: "<none>"
+        formatter: address

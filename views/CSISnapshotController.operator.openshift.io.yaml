@@ -1,37 +1,16 @@
-kind: Project
-api_family: project.openshift.io
-default_command: projects
-command:
-- projects.project.openshift.io
-- projects
-- project
+kind: CSISnapshotController
+api_family: operator.openshift.io
+default_command: csisnapshotcontrollers.operator.openshift.io
 listview:
-  name: Projects
+  name: CSI Snapshot Controllers
   group: OpenShift
   field_indexes:
-    Normal: [name, phase, age]
-  fields:
-    phase:
-      header: "Status:"
-      path: "status#phase"
-      type: str
-      formatter: value_mapper
-      formatting:
-        mapping:
-          mappings:
-            Active:
-              field_colors:
-              - context: main
-                type: status_ok
-            Terminating:
-              field_colors:
-              - context: main
-                type: status_pending
+    Normal: [name, age]
 infoview:
-  name: Project Info
+  name: CSI Snapshot Controller Info
   infopad:
     row_indexes:
-      Normal: [cluster_version]
+      Normal: [loglevel, operator_loglevel, management_state, cluster_version]
     rows:
       cluster_version:
         header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
@@ -44,6 +23,18 @@ infoview:
             key: kind
             eq: ClusterVersion
         default: "<none>"
+      loglevel:
+        header: [["Loglevel:", [main, infoheader]]]
+        path: "spec#logLevel"
+        type: str
+      management_state:
+        header: [["Management State:", [main, infoheader]]]
+        path: "spec#managementState"
+        type: str
+      operator_loglevel:
+        header: [["Operator Loglevel:", [main, infoheader]]]
+        path: "spec#operatorLogLevel"
+        type: str
   shortcuts:
     "Cluster Version":
       key: v
