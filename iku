@@ -7829,7 +7829,7 @@ def genericlistloop(stdscr, view):
 					action_args["selected"] = selected
 				if "_pass_selection_vars" in action_args:
 					action_args["selection_vars"] = selection_vars
-				if "_named_title" in action_args and selected is not None and getattr(selected, "name"):
+				if "_named_title" in action_args and selected is not None and getattr(selected, "name", None):
 					action_args["named_title"] = deep_get(action_args, "title", "") + " (" + getattr(selected, "name") + ")"
 				action_call = deep_get(value, "action_call")
 				if action == "toggle_var":
