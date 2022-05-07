@@ -10,6 +10,7 @@ listview:
   field_indexes:
     Wide: [name, kind, api_group_crd, stored_versions, scope, created_at, api_support]
     Normal: [name, api_group_crd, created_at, api_support]
+    Development: [plural, kind, api_group_crd, stored_versions, scope, api_support]
   sortcolumn: api_group_crd
   fields:
     api_group_crd:
@@ -26,6 +27,10 @@ listview:
     kind:
       header: "Kind:"
       path: "spec#names#kind"
+      type: str
+    plural:
+      header: "Plural:"
+      path: "spec#names#plural"
       type: str
     scope:
       header: "Scope:"
