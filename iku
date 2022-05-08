@@ -11544,6 +11544,8 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	if namespace is None and obj is not None:
 		namespace = deep_get_with_fallback(obj, namespace_path)
 
+	kind = kh.guess_kind(kind)
+
         # If the kind is unknown we'll get NameError;
 	# in this case we probably don't want to crash
 	try:
@@ -14032,6 +14034,9 @@ def populate_views():
 					command.append(f"{item}.{api_family}")
 
 			listview_entry = None
+
+			if "listview" not in d and "infoview" not in d:
+				sys.exit(f"View-file {view_file} lacks both listview and infoview; there might be typo somewhere")
 
 			if "listview" in d:
 				# Do we need to override kind?
