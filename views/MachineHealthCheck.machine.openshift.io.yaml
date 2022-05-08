@@ -1,0 +1,140 @@
+kind: MachineHealthCheck
+api_family: machine.openshift.io
+default_command: machinehealthchecks.machine.openshift.io
+command:
+- os-mhcs
+- os-mhc
+listview:
+  name: Machine Health Checks (OpenShift)
+  group: OpenShift
+  field_indexes:
+    Normal: [namespace, name, max_unhealthy, expected_machines, current_healthy, age]
+  sortcolumn: namespace
+  fields:
+    current_healthy:
+      header: "Current Healthy:"
+      path: "status#currentHealthy"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    expected_machines:
+      header: "Expected Machines:"
+      path: "status#expectedMachines"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    max_unhealthy:
+      header: "Max Unhealthy:"
+      path: "spec#maxUnhealthy"
+      type: raw
+      formatter: numerical_with_units
+      align: right
+infoview:
+  name: Machine Health Check Info (OpenShift)
+  infopad:
+    row_indexes:
+      Normal: [label_selector, set_based_selector, max_unhealthy, expected_machines, current_healthy, remediations_allowed, node_startup_timeout, cluster_version]
+    rows:
+      cluster_version:
+        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - name
+          when:
+            key: kind
+            eq: ClusterVersion
+        default: "<none>"
+      current_healthy:
+        header: [["Current Healthy:", [main, infoheader]]]
+        path: "status#currentHealthy"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      expected_machines:
+        header: [["Expected Machines:", [main, infoheader]]]
+        path: "status#expectedMachines"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      label_selector:
+        header: [["Label Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      max_unhealthy:
+        header: [["Max Unhealthy:", [main, infoheader]]]
+        path: "spec#maxUnhealthy"
+        type: raw
+        formatter: numerical_with_units
+      node_startup_timeout:
+        header: [["Node Startup Timeout:", [main, infoheader]]]
+        path: "spec#nodeStartupTimeout"
+        type: raw
+        formatter: numerical_with_units
+      remediations_allowed:
+        header: [["Remediations Allowed:", [main, infoheader]]]
+        path: "status#remediationsAllowed"
+        default: "<unset>"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      set_based_selector:
+        header: [["Set-based Selector:", [main, infoheader]]]
+        paths:
+        - path: "spec#selector#matchExpressions"
+          pathtype: match_expression
+          default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: operator
+          - type: value
+          field_separators:
+          - type: space
+          - type: no_pad
+  shortcuts:
+    "Cluster Version":
+      key: v
+      modifier: shift
+      helptext: "Open info page for Cluster Version"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: ClusterVersion
+        api_family: config.openshift.io
+    "Unhealthy Conditions":
+      key: u
+      modifier: shift
+      helptext: "List unhealthy conditions"
+      widget: windowwidget
+      title: "Unhealthy Conditions:"
+      headers: ["Type:", "Status:", "Timeout:"]
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: "spec#unhealthyConditions"
+        fields:
+        - type
+        - status
+        - timeout
+      # Not supported for now
+      sortcolumn: type

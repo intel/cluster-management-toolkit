@@ -1,0 +1,14 @@
+kind: BMCEventSubscription
+api_family: metal3.io
+default_command: bmceventsubscriptions
+listview:
+  name: BMC Event Subscriptions
+  group: Provisioning
+  field_indexes:
+    Normal: [namespace, name, error, age]
+  sortcolumn: namespace
+  fields:
+    error:
+      header: "Error:"
+      path: "status#error"
+      type: str

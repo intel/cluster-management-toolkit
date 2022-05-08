@@ -1,0 +1,42 @@
+kind: PreprovisioningImage
+api_family: metal3.io
+default_command: preprovisioningimages
+listview:
+  name: Preprovisioning Image
+  group: Provisioning
+  field_indexes:
+    Normal: [namespace, name, ready, age, reason]
+  sortcolumn: namespace
+  fields:
+    ready:
+      header: "Ready:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          eq: Ready
+      type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_not_ok
+    reason:
+      header: "Reason:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: reason
+        when:
+        - key: type
+          eq: Ready
+      type: str

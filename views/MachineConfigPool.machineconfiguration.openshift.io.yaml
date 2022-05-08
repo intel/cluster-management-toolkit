@@ -1,0 +1,98 @@
+kind: MachineConfigPool
+api_family: machineconfiguration.openshift.io
+default_command: machineconfigpools
+listview:
+  name: Machine Config Pools
+  group: OpenShift
+  field_indexes:
+    Normal: [name, config, updated, updating, degraded, machine_count, ready_machine_count, updated_machine_count, degraded_machine_count, age]
+  fields:
+    config:
+      header: "Config:"
+      path: "status#configuration#name"
+      type: str
+    degraded:
+      header: "Degraded:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpaths:
+        - status
+        when:
+        - key: type
+          eq: Degraded
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_not_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_ok
+      type: str
+    degraded_machine_count:
+      header: "Degraded Machine Count:"
+      path: "status#degradedMachineCount"
+      type: raw
+      formatter: value_mapper
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: types
+              type: watermark_low
+          - default: true
+            field_colors:
+            - context: types
+              type: watermark_high
+      align: right
+    machine_count:
+      header: "Machine Count:"
+      path: "status#machineCount"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    ready_machine_count:
+      header: "Ready Machine Count:"
+      path: "status#readyMachineCount"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    updated:
+      header: "Updated:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          eq: Updated
+      type: str
+    updated_machine_count:
+      header: "Updated Machine Count:"
+      path: "status#updatedMachineCount"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+    updating:
+      header: "Updating:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          eq: Updating
+      type: str

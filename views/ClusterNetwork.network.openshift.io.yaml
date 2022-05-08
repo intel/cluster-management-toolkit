@@ -1,0 +1,91 @@
+kind: ClusterNetwork
+api_family: network.openshift.io
+default_command: clusternetworks
+listview:
+  name: Cluster Networks
+  group: OpenShift
+  field_indexes:
+    Normal: [name, cluster_network, service_network, plugin_name, age]
+  fields:
+    cluster_network:
+      header: "Cluster Network:"
+      path: network
+      type: str
+      formatter: address
+    plugin_name:
+      header: "Plugin Name:"
+      path: pluginName
+      type: str
+    service_network:
+      header: "Service Network:"
+      path: serviceNetwork
+      type: str
+      formatter: address
+infoview:
+  name: Cluster Network Info
+  infopad:
+    row_indexes:
+      Normal: [controller, cluster_network, service_network, vxlan_port, mtu, plugin_name]
+    rows:
+      cluster_network:
+        header: [["Cluster Network:", [main, infoheader]]]
+        path: network
+        type: str
+        formatter: address
+      controller:
+        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - kind
+          - apiVersion
+          - name
+          when:
+            key: controller
+            eq: true
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      mtu:
+        header: [["MTU:", [main, infoheader]]]
+        path: mtu
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      plugin_name:
+        header: [["Plugin Name:", [main, infoheader]]]
+        path: pluginName
+        type: str
+      service_network:
+        header: [["Service Network:", [main, infoheader]]]
+        path: serviceNetwork
+        type: str
+        formatter: address
+      vxlan_port:
+        header: [["VXLAN Port:", [main, infoheader]]]
+        path: vxlanPort
+        type: int
+        formatting:
+          field_colors:
+          - type: port
+  shortcuts:
+    "Open controller":
+      key: c
+      modifier: shift
+      helptext: "Open info page for controller"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

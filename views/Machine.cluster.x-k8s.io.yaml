@@ -1,21 +1,22 @@
 kind: Machine
 api_family: cluster.x-k8s.io
-default_command: machines
+default_command: machines.cluster.x-k8s.io
 command:
-- ma
+- x-machines
+- x-machine
 listview:
-  name: Machines
+  name: Machines (X-K8s)
   group: Cluster Configuration
   field_indexes:
-    Normal: [namespace, name, cluster, node_name, provider_id, phase, age, version]
+    Normal: [namespace, name, cluster, node_ref, provider_id, phase, age, version]
   sortcolumn: namespace
   fields:
     cluster:
       header: "Cluster:"
       path: "spec#clusterName"
       type: str
-    node_name:
-      header: "Node Name:"
+    node_ref:
+      header: "Node Ref:"
       path: "status#nodeRef#name"
       type: str
       formatting:
@@ -61,7 +62,7 @@ listview:
         field_colors:
         - type: version
 infoview:
-  name: Machine Info
+  name: Machine Info (X-k8s)
   infopad:
     row_indexes:
       Normal: [node_name, cluster, controller, bootstrap, bootstrap_ready, infrastructure, infrastructure_ready, provider_id, phase, version]

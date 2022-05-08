@@ -1,0 +1,108 @@
+kind: Route
+api_family: route.openshift.io
+default_command: routes
+listview:
+  name: Routes
+  group: OpenShift
+  field_indexes:
+    Normal: [namespace, name, host, target, port, termination, target_weight, wildcard, age]
+  sortcolumn: namespace
+  fields:
+    host:
+      header: "Host:"
+      path: "spec#host"
+      type: str
+    port:
+      header: "Port:"
+      path: "spec#port#targetPort"
+      type: raw
+      formatting:
+        field_colors:
+        - type: port
+    target:
+      header: "Target:"
+      paths:
+      - path: [["spec#to#kind"], ["spec#to#name"]]
+        pathtype: tuple
+      formatter: list
+      formatting:
+        field_colors:
+        - type: kind
+        - type: generic
+        field_separators:
+        - type: kind
+    target_weight:
+      header: "Weight:"
+      path: "spec#to#weight"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+    termination:
+      header: "Termination:"
+      paths:
+      - path: [["spec#tls#termination"], ["spec#tls#insecureEdgeTerminationPolicy"]]
+        pathtype: tuple
+      formatter: list
+    wildcard:
+      header: "Wildcard:"
+      path: "spec#wildcardPolicy"
+      type: str
+infoview:
+  name: Route Info
+  infopad:
+    row_indexes:
+      Normal: [host, target, port, termination, target_weight, wildcard]
+    rows:
+      host:
+        header: [["Host:", [main, infoheader]]]
+        path: "spec#host"
+        type: str
+      port:
+        header: [["Port:", [main, infoheader]]]
+        path: "spec#port#targetPort"
+        type: raw
+        formatting:
+          field_colors:
+          - type: port
+      target:
+        header: [["T", [main, infoheader_shortcut]], ["arget:", [main, infoheader]]]
+        paths:
+        - path: [["spec#to#kind"], ["spec#to#name"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: generic
+          field_separators:
+          - type: kind
+      target_weight:
+        header: [["Weight:", [main, infoheader]]]
+        path: "spec#to#weight"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      termination:
+        header: [["Termination:", [main, infoheader]]]
+        paths:
+        - path: [["spec#tls#termination"], ["spec#tls#insecureEdgeTerminationPolicy"]]
+          pathtype: tuple
+        formatter: list
+      wildcard:
+        header: [["Wildcard:", [main, infoheader]]]
+        path: "spec#wildcardPolicy"
+        type: str
+  shortcuts:
+    "Open Target":
+      key: t
+      modifier: shift
+      helptext: "Open info page for target"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#to#kind"
+        name_path: "spec#to#name"
+        namespace_path: "metadata#namespace"

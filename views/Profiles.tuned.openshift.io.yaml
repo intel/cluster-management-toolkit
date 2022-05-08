@@ -1,0 +1,104 @@
+kind: Profile
+api_family: tuned.openshift.io
+default_command: profiles.tuned.openshift.io
+listview:
+  name: Profiles (OpenShift)
+  group: OpenShift
+  field_indexes:
+    Normal: [namespace, name, tuned, applied, degraded, age]
+  sortcolumn: namespace
+  fields:
+    applied:
+      header: "Applied:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpaths:
+        - status
+        when:
+        - key: type
+          eq: Applied
+      type: str
+    degraded:
+      header: "Degraded:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpaths:
+        - status
+        when:
+        - key: type
+          eq: Degraded
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_not_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_ok
+      type: str
+    tuned:
+      header: "Tuned:"
+      path: "spec#config#tunedProfile"
+      type: str
+infoview:
+  name: Profile Info (OpenShift)
+  infopad:
+    row_indexes:
+      Normal: [tuned, commandline, debug, stalld, applied, degraded]
+    rows:
+      applied:
+        header: [["Applied:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: items
+          subpaths:
+          - status
+          when:
+          - key: type
+            eq: Applied
+        type: str
+      commandline:
+        header: [["Boot Commandline:", [main, infoheader]]]
+        path: "status#bootcmdline"
+        type: bool
+      debug:
+        header: [["Debug:", [main, infoheader]]]
+        path: "spec#debug"
+        type: bool
+      degraded:
+        header: [["Degraded:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: items
+          subpaths:
+          - status
+          when:
+          - key: type
+            eq: Degraded
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "False":
+                field_colors:
+                - context: main
+                  type: status_ok
+        type: str
+      stalld:
+        header: [["stalld:", [main, infoheader]]]
+        path: "status#stalld"
+        type: bool
+      tuned:
+        header: [["Tuned:", [main, infoheader]]]
+        path: "spec#config#tunedProfile"
+        type: str
