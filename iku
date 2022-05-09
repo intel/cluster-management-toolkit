@@ -11280,6 +11280,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 				else:
 					sys.exit(f"executecommand failed to parse output; {output}; aborting.")
 
+				# We need to wait for the container to start; we should do this in a better way than sleeping
 				time.sleep(5)
 				# Attach to the image
 				# Should we perhaps use subprocess.run here?
@@ -11305,7 +11306,8 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 				else:
 					sys.exit(f"executecommand failed to parse output; {output}; aborting.")
 
-				time.sleep(2)
+				# We need to wait for the container to start; we should do this in a better way than sleeping
+				time.sleep(5)
 				# Attach to the image
 				# Should we perhaps use subprocess.run here?
 				args = ["kubectl", "attach", pod_name, "-c", container_name, "-it", "--pod-running-timeout=1m0s"]
@@ -12320,7 +12322,7 @@ def ssh_to_host(stdscr, **kwargs):
 	elif "obj" in kwargs:
 		obj = deep_get(kwargs, "obj")
 		name_path = deep_get(kwargs, "name_path")
-		name = deep_get_with_fallback(obj, name_path)
+		name = deep_get(obj, name_path)
 		host = deep_get(kwargs, "name", name)
 
 	if host is None:
