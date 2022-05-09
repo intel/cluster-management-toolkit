@@ -133,3 +133,294 @@ listview:
       action_call: ssh_to_host
       action_args:
         _pass_selected: true
+infoview:
+  name: Node Info
+  infopad:
+    row_indexes:
+      Normal: [csi_node, status, internal_ips, external_ips, architecture, kernel_version, kube_proxy_version, kubelet_version, kubelet_endpoint, pod_cidrs, allocatable_pods, taints]
+    rows:
+      allocatable_pods:
+        header: [["Allocatable Pods:", [main, infoheader]]]
+        path: "status#allocatable#pods"
+        type: str
+        formatting:
+          field_colors:
+          - type: numerical
+      architecture:
+        header: [["Architecture:", [main, infoheader]]]
+        path: "status#nodeInfo#architecture"
+        type: str
+      csi_node:
+        header: [["C", [main, infoheader_shortcut]], ["SI Node:", [main, infoheader]]]
+        paths:
+        - path: ["CSINode", "storage.k8s.io", "", ["metadata#name"], ""]
+          pathtype: lookup
+          subpaths:
+          - "metadata#name"
+          default: "<unset>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+      external_ips:
+        header: [["External-IPs:", [main, infoheader]]]
+        paths:
+        - path: "status#addresses"
+          pathtype: items
+          subpaths:
+          - address
+          when:
+            key: type
+            eq: ExternalIP
+          default: ["<none>"]
+        formatter: address
+      internal_ips:
+        header: [["internal-IPs:", [main, infoheader]]]
+        paths:
+        - path: "status#addresses"
+          pathtype: items
+          subpaths:
+          - address
+          when:
+            key: type
+            eq: InternalIP
+        formatter: address
+      kernel_version:
+        header: [["Kernel Version:", [main, infoheader]]]
+        path: "status#nodeInfo#kernelVersion"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+      kubelet_endpoint:
+        header: [["kubelet Endpoint:", [main, infoheader]]]
+        path: "status#daemonEndpoints#kubeletEndpoint#Port"
+        type: raw
+        formatting:
+          field_colors:
+          - type: port
+      kubelet_version:
+        header: [["kubelet Version:", [main, infoheader]]]
+        path: "status#nodeInfo#kubeletVersion"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+      kube_proxy_version:
+        header: [["kube-proxy Version:", [main, infoheader]]]
+        path: "status#nodeInfo#kubeProxyVersion"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+      pod_cidrs:
+        header: [["Pod CIDRs:", [main, infoheader]]]
+        paths:
+        - path: ["spec#podCIDRs", "spec#podCIDR"]
+          default: "<none>"
+        formatter: address
+      status:
+        header: [["Status:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: substitution
+          subpath: status
+          when:
+          - key: type
+            eq: Ready
+          - key: status
+            eq: "True"
+          substitute: Ready
+          else: ""
+          default: null
+        - path: "status#conditions"
+          pathtype: substitution
+          subpath: status
+          when:
+          - key: type
+            eq: Ready
+          - key: status
+            eq: "False"
+          substitute: NotReady
+          else: ""
+          default: null
+        - path: "status#conditions"
+          pathtype: substitution
+          subpath: status
+          when:
+          - key: type
+            eq: Ready
+          - key: status
+            eq: "Unknown"
+          substitute: Unreachable
+          else: ""
+          default: null
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "NotReady":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "Ready":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Unreachable":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+      taints:
+        header: [["Taints:", [main, infoheader]]]
+        paths:
+        - path: "spec#taints"
+          pathtype: items
+          subpaths:
+          - key
+          - value
+          - effect
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          - type: generic
+          field_separators:
+          - type: keyvalue
+          - type: field
+  listpad:
+    listgetter: generic_listgetter
+    listgetter_args:
+      _kind: Pod
+      _field_selector:
+        "spec.nodeName": ["metadata#name"]
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch
+      kind: Pod
+    field_indexes:
+      Wide: [namespace, name, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
+      Normal: [namespace, name, pod_status, node_name, age, restarts, last_restart]
+      Compact: [namespace, name, pod_status, age, restarts, last_restart]
+    sortcolumn: pod_status
+    fields:
+      containers:
+        header: "Containers:"
+        paths:
+        - paths:
+          - "spec#initContainers"
+          - "spec#containers"
+          pathtype: items
+          subpaths:
+          - name
+          - subpath: image
+            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+          type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+          - type: version
+          field_separators:
+          - type: version
+      last_restart:
+        header: "Latest Restart:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: items
+          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+          when:
+            key: "restartCount"
+            gt: 0
+          action: latest
+          type: timestamp
+        default: -1
+        formatter: age
+        align: right
+      node_name:
+        header: "Node:"
+        path: "spec#nodeName"
+        type: host
+        default: "<none>"
+      pod_ip:
+        header: "Pod IP:"
+        path: "status#podIP"
+        default: "<unset>"
+        type: address
+        formatter: address
+      restarts:
+        header: "Restarts:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: items
+          subpath: "restartCount"
+          action: sum
+          type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+        default: 0
+  shortcuts:
+    "CSI Node":
+      key: c
+      modifier: shift
+      helptext: "Open info page for CSI Node"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: CSINode
+        api_family: storage.k8s.io
+        name_path: "metadata#name"
+    "Node Metrics":
+      key: m
+      helptext: "Open info page for Node Metrics"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: NodeMetrics
+        api_family: metrics.k8s.io
+        name_path: "metadata#name"
+    "SSH to Node":
+      key: s
+      modifier: shift
+      helptext: "SSH to node"
+      action: call
+      action_call: ssh_to_host
+      action_args:
+        _pass_obj: true
+        name_path: "metadata#name"
+    "Container Images":
+      key: i
+      modifier: shift
+      helptext: "List container images on Node"
+      widget: windowwidget
+      title: "Container images:"
+      headers: ["Name:", "Size:"]
+      itemgetter: get_image_list
+      itemgetter_args:
+        path: "status#images"
+      formatting: [[windowwidget, default], [windowwidget, highlight]]
+    "Open dnsutils Pod on Node":
+      key: n
+      modifier: ctrl
+      helptext: "Open a dnsutils Pod on Node"
+      widget: executecommand
+      widget_args:
+        kinds: ["<native>"]
+        command: ["<dnsutils>"]
+    "Show package versions":
+      key: v
+      modifier: shift
+      helptext: "Show package versions"
+      widget: windowwidget
+      title: "Package versions:"
+      itemgetter: get_package_version_list
+      itemgetter_args:
+        _slow_task_msg: "Fetching package versions..."
+        name_path: "metadata#name"
+      headers: ["Package:", "Version:"]
+      formatting: [[windowwidget, default], [windowwidget, highlight]]

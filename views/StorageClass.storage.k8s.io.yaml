@@ -44,16 +44,14 @@ infoview:
         paths:
         - path: "metadata#annotations"
           pathtype: substitution
-          subpath:
-          - "storageclass.kubernetes.io/is-default-class"
+          subpath: "storageclass.kubernetes.io/is-default-class"
           when:
           - key: "storageclass.kubernetes.io/is-default-class"
             eq: "true"
           substitute: true
         - path: "metadata#annotations"
           pathtype: substitution
-          subpath:
-          - "storageclass.kubernetes.io/is-default-class"
+          subpath: "storageclass.kubernetes.io/is-default-class"
           when:
           - key: "storageclass.kubernetes.io/is-default-class"
             eq: "false"

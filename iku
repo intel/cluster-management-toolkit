@@ -149,17 +149,17 @@ def get_playbook_path(playbook):
 		path = f"{ANSIBLE_PLAYBOOK_DIR}/{playbook}"
 	return path
 
-def get_package_versions(host_name):
+def get_package_versions(hostname):
 	if ansible_support == False or not os.path.isdir(ANSIBLE_PLAYBOOK_DIR):
 		return []
 
 	control_plane_k8s_version = ""
 
 	get_versions_path = get_playbook_path("get_versions.yaml")
-	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [host_name])
+	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [hostname])
 
 	if len(ansible_results) == 0:
-		raise Exception(f"Error: Failed to get package versions from {host_name} (retval: {retval}); aborting.")
+		raise Exception(f"Error: Failed to get package versions from {hostname} (retval: {retval}); aborting.")
 
 	for host in ansible_results:
 		data = ansible_results[host]
@@ -169,7 +169,7 @@ def get_package_versions(host_name):
 				tmp = str(data[task].get("msg", "")).split("\n")
 
 	if len(tmp) == 0:
-		raise Exception(f"Error: Failed to get package versions from {host_name} (retval: {retval}); aborting.")
+		raise Exception(f"Error: Failed to get package versions from {hostname} (retval: {retval}); aborting.")
 
 	package_versions = []
 
@@ -287,7 +287,7 @@ def generator_timestamp_with_age(obj, field, fieldlen, pad, ralign, selected, **
 	if len(values) > 2 and len(deep_get(formatting, "field_colors", [])) < 2:
 		raise ValueError(f"Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
 	elif len(values) == 2:
-		if values[0] == None:
+		if values[0] is None:
 			array = [
 				("<none>", ("types", "none", selected))
 			]
@@ -975,7 +975,7 @@ def processor_timestamp_with_age(obj, field):
 	if len(values) > 2 and len(deep_get(formatting, "field_colors", [])) < 2:
 		raise ValueError(f"Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
 	elif len(values) == 2:
-		if values[0] == None:
+		if values[0] is None:
 			array = [
 				("<none>", ("types", "none", selected))
 			]
@@ -2648,7 +2648,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 					else:
 						raise Exception(f"remap is not supported yet for type {type(tmp)}")
 					if len(value) == 0:
-						if default == None:
+						if default is None:
 							continue
 						else:
 							value.append(default)
@@ -2666,8 +2666,12 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						if when_filter(_path, item = _tmp) == False:
 							continue
 						value.append(substitute)
+						break
+					else:
+						if "else" in _path:
+							value = deep_get(_path, "else")
 					if len(value) == 0:
-						if default == None:
+						if default is None:
 							continue
 						else:
 							value.append(default)
@@ -5682,6 +5686,16 @@ def get_strings_from_string(obj, **kwargs):
 				vlist.append([line])
 	return vlist
 
+def get_package_version_list(obj, **kwargs):
+	name_path = deep_get(kwargs, "name_path", "")
+	hostname = deep_get(obj, name_path)
+	hostname = deep_get(kwargs, "name", hostname)
+	try:
+		package_versions = get_package_versions(hostname)
+	except:
+		package_versions = None
+	return package_versions
+
 def get_image_list(obj, **kwargs):
 	vlist = []
 	path = deep_get(kwargs, "path", "")
@@ -5810,8 +5824,9 @@ def filter_list_entry(obj, caller_obj, filters = []):
 
 def generic_listgetter(kind, namespace, **kwargs):
 	label_selector = deep_get(kwargs, "label_selector", "")
+	field_selector = deep_get(kwargs, "field_selector", "")
 	filters = deep_get(kwargs, "filters", [])
-	vlist, status = kh.get_list_by_kind_namespace(kind, namespace, label_selector = label_selector)
+	vlist, status = kh.get_list_by_kind_namespace(kind, namespace, label_selector = label_selector, field_selector = field_selector)
 	if len(vlist) == 0 or status != 200 or len(filters) == 0:
 		return vlist, status
 
@@ -8896,16 +8911,6 @@ def field_processor_str_to_list(obj, path = None, extra_paths = None, fallback =
 
 	return __field_processor_list(values, formatting)
 
-def field_processor_external_ips(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	external_ips, _ = datagetter_node_addresses(obj, "external", [])
-	field = format_list(external_ips, 0, 0, False, False, field_colors = [("types", "address")])
-	return field
-
-def field_processor_internal_ips(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	internal_ips, _ = datagetter_node_addresses(obj, "internal", [])
-	field = format_list(internal_ips, 0, 0, False, False, field_colors = [("types", "address")])
-	return field
-
 def field_processor_percentage(obj, path, extra_paths = None, fallback = None, formatting = None):
 	value = deep_get(obj, path)
 
@@ -8934,19 +8939,6 @@ def field_processor_timestamp(obj, path, extra_paths = None, fallback = None, fo
 	else:
 		timestamp = timestamp_to_datetime(timestamp)
 		field = format_timestamp(timestamp, localtimezone = True)
-
-	return field
-
-def field_processor_csi_node(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	ref = kh.get_ref_by_kind_name_namespace(("CSINode", "storage.k8s.io"), deep_get(obj, "metadata#name"), "")
-	csinodename = deep_get(ref, "metadata#name")
-	if csinodename is None:
-		if fallback is None:
-			return [("strings", "unset")]
-		else:
-			field = fallback
-	else:
-		field = [(f"{csinodename}", ("types", "generic"))]
 
 	return field
 
@@ -9038,23 +9030,6 @@ def field_processor_conditions_certsignreq(obj, path, extra_paths = None, fallba
 	}
 
 	return __field_processor_list(conditions, formatting = formatting)
-
-# All fields except obj will be ignored
-def field_processor_node_status(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	status, status_group, taints, full_taints = get_node_status(obj)
-	return [(f"{status}", color_status_group(status_group, False))]
-
-def field_processor_taints(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	status, status_group, taints, full_taints = get_node_status(obj)
-	if len(full_taints) == 0:
-		if fallback is None:
-			field = [("strings", "none")]
-		else:
-			field = fallback
-	else:
-		# FIXME
-		field = format_list(full_taints, 0, 0, False, False, field_colors = [("types", "key"), ("types", "value")], field_separators = [(("separators", "keyvalue"))])
-	return field
 
 def field_processor_component_kinds(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	kinds = []
@@ -9452,37 +9427,6 @@ def export_data(stdscr, **kwargs):
 		raise Exception(f"Trying to export unknown vtype: {vtype}")
 	f.close()
 
-def callout_obj(uip, kind, obj, **kwargs):
-	if "selection" in kwargs:
-		namespace_field = deep_get(kwargs, "namespace_field", 1)
-		name_field = deep_get(kwargs, "name_field", 2)
-		kind_field = deep_get(kwargs, "kind_field")
-		selection = deep_get(kwargs, "selection")
-		namespace = curses_helper.themearray_get_string(selection[namespace_field][0])
-		name = curses_helper.themearray_get_string(selection[name_field][0])
-		if kind_field is not None:
-			kind = curses_helper.themearray_get_string(selection[kind_field][0])
-		obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
-		return resourceinfodispatch(uip.stdscr, obj, kind, **kwargs)
-	# Add other ways to override obj here later on
-	else:
-		return resourceinfodispatch(uip.stdscr, obj, kind, **kwargs)
-
-def callout_show_package_versions(uip, kind, obj, **kwargs):
-	win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = "Fetching package versions...")
-	host_name = deep_get(obj, "metadata#name")
-	package_versions = get_package_versions(host_name)
-	uip.refresh_window()
-	uip.refresh_infopad()
-	uip.refresh_listpad()
-	uip.refresh_statusbar()
-	curses.doupdate()
-	if len(package_versions) == 0:
-		return
-	title = "Package Versions:"
-	headers = ["Package:", "Version:"]
-	curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, package_versions, title = title, headers = headers, cursor = False)
-
 def generate_helptext(view, viewtype, additional_helptexts = [], shortcuts = []):
 	helptext = []
 
@@ -9824,6 +9768,15 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						elif type(label_value) == list:
 							label_selectors[label_key] = deep_get_with_fallback(obj, label_value)
 					listgetter_args["label_selector"] = kh.make_selector(label_selectors)
+				_field_selector = deep_get(listgetter_args, "_field_selector", {})
+				if len(_field_selector) > 0:
+					field_selectors = {}
+					for field_key, field_value in _field_selector.items():
+						if type(field_value) == list:
+							field_selectors[field_key] = deep_get_with_fallback(obj, field_value)
+						else:
+							field_selectors[field_key] = field_value
+					listgetter_args["field_selector"] = kh.make_selector(field_selectors)
 				if _kind is None:
 					_kind = deep_get(obj, _kind_path)
 				if _api_family is None:
@@ -10168,6 +10121,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					w_selectable = deep_get(value, "selectable", False)
 					w_callout = deep_get(value, "callout", None)
 					w_kind = deep_get(value, "kind", view)
+					if "_slow_task_msg" in w_itemgetter_args:
+						w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = deep_get(w_itemgetter_args, "_slow_task_msg"))
 					w_items = w_itemgetter(obj, **w_itemgetter_args)
 
 					# If the first element is an integer we assume that we've been provided
@@ -10217,22 +10172,22 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							continue
 				elif widget == "executecommand":
 					selected = uip.get_selected()
-					w_kinds = deep_get(value, "kinds")
+					w_kinds = deep_get_with_fallback(value, ["widget_args#kinds", "kinds"])
 					if (w_kinds is None):
 						continue
 					if w_kinds != ["<native>"] and (selected is None or not selected.kind in w_kinds) and w_kinds != [("", "")]:
 						continue
 
-					w_inputtitle = deep_get(value, "inputtitle")
+					w_inputtitle = deep_get_with_fallback(value, ["widget_args#inputtitle", "inputtitle"])
 					if w_inputtitle is not None:
 						w_input = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, title = w_inputtitle)
 						w_command = w_input.split()
 					else:
-						w_command = deep_get(value, "command", [])
+						w_command = deep_get_with_fallback(value, ["widget_args#command", "command"], [])
 					if len(w_command) == 0:
 						continue
 
-					w_waitforkeypress = deep_get(value, "waitforkeypress", False)
+					w_waitforkeypress = deep_get_with_fallback(value, ["widget_args#waitforkeypress", "waitforkeypress"], False)
 					if type(selected) == ResourceInfo:
 						# This needs to be generalised somehow; so does the message
 						containername = selected.ref["name"]
@@ -12354,13 +12309,19 @@ nodeplaybooks = {
 }
 
 def ssh_to_host(stdscr, **kwargs):
-	selected = deep_get(kwargs, "selected")
-	if type(selected) == tuple:
-		host = selected[0]
-	elif type(selected) == str:
-		host = selected
-	else:
-		host = selected.name
+	if "selected" in kwargs:
+		selected = deep_get(kwargs, "selected")
+		if type(selected) == tuple:
+			host = selected[0]
+		elif type(selected) == str:
+			host = selected
+		else:
+			host = selected.name
+	elif "obj" in kwargs:
+		obj = deep_get(kwargs, "obj")
+		name_path = deep_get(kwargs, "name_path")
+		name = deep_get_with_fallback(obj, name_path)
+		host = deep_get(kwargs, "name", name)
 
 	if host is None:
 		return
@@ -12771,7 +12732,7 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 		if tmpselection is not None:
 			if type(tmpselection) == int and tmpselection < 0:
 				if tmpselection == -curses.KEY_F6:
-					if deep_get(iktconfig, "Selector") == None:
+					if deep_get(iktconfig, "Selector") is None:
 						deep_set(iktconfig, "Selector", {})
 					categorise = not deep_get(iktconfig, "Selector#categorise", True)
 					deep_set(iktconfig, "Selector#categorise", categorise, create_path = True)
@@ -13396,116 +13357,6 @@ infoviews_builtin = {
 		},
 		"listpad": {
 			"infogetter": get_netpol_rule_info,
-		},
-	},
-	("Node", ""): {
-		"field_indexes": {
-			"Normal": ["namespace", "name", "controller", "status", "pod_ip", "age", "containers", "restarts"],
-		},
-		"sortcolumn": "name",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("Pod", ""),
-		"infopad": {
-			"CSI Node:": {
-				"fieldname": [("C", ("main", "infoheader_shortcut")), ("SI Node:", ("main", "infoheader"))],
-				"processor": field_processor_csi_node,
-				"fallback": [("strings", "unset")],
-			},
-			"Status:": {
-				"processor": field_processor_node_status,
-			},
-			"Conditions:": {
-				"path": "status#conditions",
-				"processor": field_processor_conditions,
-			},
-			"Internal IPs:": {
-				#"fieldname": [("I", ("main", "infoheader_shortcut")), ("nternal IPs:", ("main", "infoheader"))],
-				# XXX: maybe we should ellipsise?
-				"processor": field_processor_internal_ips,
-			},
-			"External IPs:": {
-				#"fieldname": [("E", ("main", "infoheader_shortcut")), ("xternal IPs:", ("main", "infoheader"))],
-				# XXX: maybe we should ellipsise?
-				"processor": field_processor_external_ips,
-			},
-			"Architecture:": {
-				"path": "status#nodeInfo#architecture",
-			},
-			"Kernel Version:": {
-				"path": "status#nodeInfo#kernelVersion",
-			},
-			"kube-proxy Version:": {
-				"path": "status#nodeInfo#kubeProxyVersion",
-			},
-			"kubelet Version:": {
-				"path": "status#nodeInfo#kubeletVersion",
-			},
-			"Kubelet Endpoint:": {
-				"path": "status#daemonEndpoints#kubeletEndpoint#Port",
-			},
-			"Pod CIDRs:": {
-				"path": ("spec#podCIDR", "spec#podCIDR"),
-				"extra_paths": "status#podCIDRs",
-				"processor": field_processor_list,
-				"fallback": [("N/A", ("types", "none"))],
-			},
-			"Allocatable Pods:": {
-				"path": "status#allocatable#pods",
-			},
-			"Taints:": {
-				"processor": field_processor_taints,
-			},
-		},
-		"listpad": {
-			"listgetter": "get_pods_by_node(deep_get(obj, 'metadata#name'))",
-			"infogetter": get_pod_info_with_kind,
-		},
-		"shortcuts": {
-			"CSI Node": {
-				"shortcut": ord("C"),
-				"helptext": ("[Shift] + C", "Open info page for CSI Node"),
-				"kind": ("CSINode", "storage.k8s.io"),
-				"call": resourceinfodispatch,
-				"name_path": "metadata#name",
-			},
-			"Node Metrics": {
-				"shortcut": ord("m"),
-				"helptext": ("M", "Open info page for Node Metrics"),
-				"kind": ("NodeMetrics", "metrics.k8s.io"),
-				"call": resourceinfodispatch,
-				"name_path": "metadata#name",
-			},
-			"SSH to Node": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "SSH to node"),
-				"call": ssh_to_host,
-				"name_path": "metadata#name",
-			},
-			"Container Images": {
-				"shortcut": ord("I"),
-				"helptext": ("[Shift] + I", "List container images on node"),
-				"widget": "windowwidget",
-				"title": "Container images",
-				"headers": ["Name:", "Size:"],
-				"itemgetter": get_image_list,
-				"itemgetter_args": {
-					"path": "status#images",
-				},
-				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
-			},
-			"Open dnsutils pod on Node": {
-				"shortcut": ord(""),
-				"helptext": ("[Ctrl] + N", "Open a dnsutils pod on Node"),
-				"widget": "executecommand",
-				"command": ["<dnsutils>"],
-				"kinds": ["<native>"],
-			},
-			"Show Package Versions": {
-				"shortcut": ord("V"),
-				"helptext": ("[Shift] + V", "Show package versions"),
-				"widget": "callout",
-				"callout": callout_show_package_versions,
-			},
 		},
 	},
 	("Pod", ""): {
@@ -14309,6 +14160,7 @@ def populate_views():
 					queryval = deep_get(_shortcuts[shortcut], "queryval")
 					query = deep_get(_shortcuts[shortcut], "query")
 					widget = deep_get(_shortcuts[shortcut], "widget")
+					widget_args = deep_get(_shortcuts[shortcut], "widget_args")
 					inputtitle = deep_get(_shortcuts[shortcut], "inputtitle")
 					confirm = deep_get(_shortcuts[shortcut], "confirm")
 					confirmtitle = deep_get(_shortcuts[shortcut], "confirmtitle")
@@ -14381,6 +14233,7 @@ def populate_views():
 						"queryval": queryval,
 						"query": query,
 						"widget": widget,
+						"widget_args": widget_args,
 						"inputtitle": inputtitle,
 						"confirm": confirm,
 						"confirmtitle": confirmtitle,
