@@ -2,6 +2,8 @@ kind: MachineSet
 api_family: cluster.x-k8s.io
 default_command: machinesets.cluster.x-k8s.io
 command:
+- x-machinesets
+- x-machineset
 - x-ms
 listview:
   name: Machine Sets (X-K8s)
@@ -45,3 +47,171 @@ listview:
       formatting:
         field_colors:
         - type: version
+infoview:
+  name: Machine Info (X-K8s)
+  infopad:
+    row_indexes:
+      Normal: [controller, cluster, label_selector, delete_policy, replicas, ready, available, template_header, template_cluster_name, template_failure_domain, template_bootstrap, template_infrastructure, template_version]
+    rows:
+      available:
+        header: [["Available:", [main, infoheader]]]
+        path: "status#availableReplicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+      cluster:
+        header: [["Cl", [main, infoheader]], ["u", [main, infoheader_shortcut]], ["ster:", [main, infoheader]]]
+        path: "spec#clusterName"
+        type: str
+      controller:
+        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - kind
+          - apiVersion
+          - name
+          when:
+            key: controller
+            eq: true
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      delete_policy:
+        header: [["Delete Policy:", [main, infoheader]]]
+        path: "spec#deletePolicy"
+        type: str
+      label_selector:
+        header: [["Label Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      ready:
+        header: [["Ready:", [main, infoheader]]]
+        path: "status#readyReplicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+      replicas:
+        header: [["Replicas:", [main, infoheader]]]
+        path: "status#replicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+      template_bootstrap:
+        header: [["  B", [main, infoheader]], ["o", [main, infoheader_shortcut]], ["otstrap:", [main, infoheader]]]
+        paths:
+        - path: [["spec#template#spec#bootstrap#configRef#kind"], ["spec#template#spec#bootstrap#configRef#apiVersion"], ["spec#template#spec#bootstrap#configRef#name"]]
+          pathtype: tuple
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      template_cluster_name:
+        header: [["  Cluster Name:", [main, infoheader]]]
+        path: "spec#template#spec#clusterName"
+        type: str
+      template_failure_domain:
+        header: [["  Failure Domain:", [main, infoheader]]]
+        path: "spec#template#spec#failureDomain"
+        type: str
+      template_header:
+        header: [["Template:", [main, infoheader]]]
+      template_infrastructure:
+        header: [["  ", [main, infoheader]], ["I", [main, infoheader_shortcut]], ["nfrastructure:", [main, infoheader]]]
+        paths:
+        - path: [["spec#template#spec#infrastructureRef#kind"], ["spec#template#spec#infrastructureRef#apiVersion"], ["spec#template#spec#infrastructureRef#name"]]
+          pathtype: tuple
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      template_version:
+        header: [["  Version:", [main, infoheader]]]
+        path: "spec#template#spec#version"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+  shortcuts:
+    "Open controller":
+      key: c
+      modifier: shift
+      helptext: "Open info page for controller"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open Cluster":
+      key: u
+      helptext: "Open info page for Cluster"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Cluster
+        api_family: cluster.x-k8s.io
+        namespace_path: "metadata#namespace"
+        name_path: "spec#clusterName"
+    "Open bootstrap":
+      key: o
+      helptext: "Open info page for bootstrap"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        api_version_path: "spec#template#spec#bootstrap#configRef#apiVersion"
+        kind_path: "spec#template#spec#bootstrap#configRef#kind"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#template#spec#bootstrap#configRef#name"
+    "Open infrastructure":
+      key: i
+      modifier: shift
+      helptext: "Open info page for infrastructure"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        api_version_path: "spec#template#spec#infrastructureRef#apiVersion"
+        kind_path: "spec#template#spec#infrastructureRef#kind"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#template#spec#infrastructureRef#name"

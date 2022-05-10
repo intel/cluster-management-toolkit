@@ -181,3 +181,15 @@ infoview:
         formatting:
           field_colors:
           - type: version
+  shortcuts:
+    "Open Cluster":
+      key: u
+      helptext: "Open info page for Cluster"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Cluster
+        api_family: cluster.x-k8s.io
+        owner_reference_path: "metadata#ownerReferences"
+        namespace_path: "metadata#namespace"

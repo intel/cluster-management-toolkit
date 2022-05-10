@@ -6,7 +6,7 @@ command:
 - machinedeploy
 - machinedeps
 - machinedep
-- md
+- x-md
 listview:
   name: Machine Deployments
   group: Cluster Configuration
@@ -85,3 +85,244 @@ listview:
       formatting:
         field_colors:
         - type: version
+infoview:
+  name: Machine Deployment Info
+  infopad:
+    row_indexes:
+      Normal: [cluster, label_selector, min_ready, progress_deadline, revision_history_limit, replicas, ready, updated, unavailable, update_strategy, phase, template_header, template_cluster_name, template_labels, template_failure_domain, template_bootstrap, template_infrastructure, template_version]
+    rows:
+      cluster:
+        header: [["Cl", [main, infoheader]], ["u", [main, infoheader_shortcut]], ["ster:", [main, infoheader]]]
+        path: "spec#clusterName"
+        type: str
+      label_selector:
+        header: [["Label Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      min_ready:
+        header: [["Min Ready:", [main, infoheader]]]
+        paths:
+        - path: [["spec#minReadySeconds"], "s"]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: numerical
+          - type: unit
+          field_separators:
+          - type: no_pad
+      phase:
+        header: [["Phase:", [main, infoheader]]]
+        path: "status#phase"
+        type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              ScalingDown:
+                field_colors:
+                - context: main
+                  type: status_pending
+              ScalingUp:
+                field_colors:
+                - context: main
+                  type: status_pending
+              Running:
+                field_colors:
+                - context: main
+                  type: status_ok
+              Failed:
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              Unknown:
+                field_colors:
+                - context: main
+                  type: status_unknown
+      progress_deadline:
+        header: [["Progress Deadline:", [main, infoheader]]]
+        paths:
+        - path: [["spec#progressDeadlineSeconds"], "s"]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: numerical
+          - type: unit
+          field_separators:
+          - type: no_pad
+      ready:
+        header: [["Ready:", [main, infoheader]]]
+        path: "status#readyReplicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      revision_history_limit:
+        header: [["Revision History Limit:", [main, infoheader]]]
+        path: "spec#revisionHistoryLimit"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      replicas:
+        header: [["Replicas:", [main, infoheader]]]
+        path: "status#replicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      template_bootstrap:
+        header: [["  B", [main, infoheader]], ["o", [main, infoheader_shortcut]], ["otstrap:", [main, infoheader]]]
+        paths:
+        - path: [["spec#template#spec#bootstrap#configRef#kind"], ["spec#template#spec#bootstrap#configRef#apiVersion"], ["spec#template#spec#bootstrap#configRef#name"]]
+          pathtype: tuple
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      template_cluster_name:
+        header: [["  Cluster Name:", [main, infoheader]]]
+        path: "spec#template#spec#clusterName"
+        type: str
+      template_failure_domain:
+        header: [["  Failure Domain:", [main, infoheader]]]
+        path: "spec#template#spec#failureDomain"
+        type: str
+      template_header:
+        header: [["Template:", [main, infoheader]]]
+      template_infrastructure:
+        header: [["  ", [main, infoheader]], ["I", [main, infoheader_shortcut]], ["nfrastructure:", [main, infoheader]]]
+        paths:
+        - path: [["spec#template#spec#infrastructureRef#kind"], ["spec#template#spec#infrastructureRef#apiVersion"], ["spec#template#spec#infrastructureRef#name"]]
+          pathtype: tuple
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      template_labels:
+        header: [["  Labels:", [main, infoheader]]]
+        paths:
+        - path: ["spec#template#metadata#labels"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: keyvalue
+      template_version:
+        header: [["  Version:", [main, infoheader]]]
+        path: "spec#template#spec#version"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+      unavailable:
+        header: [["Unavailable:", [main, infoheader]]]
+        path: "status#unavailableReplicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      updated:
+        header: [["Updated:", [main, infoheader]]]
+        path: "status#updatedReplicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      update_strategy:
+        header: [["Update Strategy:", [main, infoheader]]]
+        paths:
+        - path: [["spec#strategy#type"], " (", "Max Surge: ", ["spec#strategy#rollingUpdate#maxSurge"], "Max Unavailable: ", ["spec#strategy#rollingUpdate#maxUnavailable"], ")"]
+          pathtype: tuple
+          when:
+            key: "spec#strategy#type"
+            eq: "RollingUpdate"
+        - path: [["spec#strategy#type"]]
+          pathtype: tuple
+          when:
+            key: "spec#strategy#type"
+            eq: "Recreate"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: generic
+          - type: generic
+          - context: main
+            type: infoheader
+          # Ideally we want to achieve numerical with unit here
+          - type: numerical
+          - context: main
+            type: infoheader
+          # Ideally we want to achieve numerical with unit here
+          - type: numerical
+          - type: generic
+          field_separators:
+          - type: no_pad
+          - type: no_pad
+          - type: no_pad
+          - type: list
+          - type: no_pad
+          - type: no_pad
+  shortcuts:
+    "Open Cluster":
+      key: u
+      helptext: "Open info page for Cluster"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Cluster
+        api_family: cluster.x-k8s.io
+        namespace_path: "metadata#namespace"
+        name_path: "spec#clusterName"
+    "Open bootstrap":
+      key: o
+      helptext: "Open info page for bootstrap"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        api_version_path: "spec#template#spec#bootstrap#configRef#apiVersion"
+        kind_path: "spec#template#spec#bootstrap#configRef#kind"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#template#spec#bootstrap#configRef#name"
+    "Open infrastructure":
+      key: i
+      modifier: shift
+      helptext: "Open info page for infrastructure"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        api_version_path: "spec#template#spec#infrastructureRef#apiVersion"
+        kind_path: "spec#template#spec#infrastructureRef#kind"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#template#spec#infrastructureRef#name"

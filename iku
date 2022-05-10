@@ -9406,6 +9406,55 @@ def decode_and_view_data(stdscr, **kwargs):
 		formatter = iktlib.format_none
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
+def decode_and_view_file_templates(stdscr, **kwargs):
+	selection = deep_get(kwargs, "selection", {})
+	if len(selection) == 0:
+		return
+	obj = deep_get(kwargs, "obj", {})
+	if len(obj) == 0:
+		return
+	name_path = deep_get(kwargs, "name_path")
+	name = selection[1][name_path][0]
+	file_path = deep_get(kwargs, "file_path")
+	files = deep_get(obj, file_path)
+	for file in files:
+		if deep_get(file, "path", "") == name:
+			break
+			sys.exit(f"{file=}")
+	else:
+		return
+	encoding = deep_get(file, "encoding", "")
+	content = deep_get(file, "content")
+	title = name
+	if encoding == "":
+		if title.endswith((".yml", ".yaml", ".json")):
+			formatter = iktlib.format_yaml
+		elif title.endswith((".toml")):
+			formatter = iktlib.format_toml
+		elif title.endswith((".crt", "tls.key", ".pem", "CAKey")):
+			formatter = iktlib.format_crt
+		elif title.endswith((".xml")):
+			formatter = iktlib.format_xml
+		elif title.endswith((".ini")):
+			formatter = iktlib.format_ini
+		else:
+			formatter = iktlib.format_none
+		return resourceinfodispatch(stdscr, content, ("__ResourceView", ""), title = title, formatter = formatter)
+	else:
+		vtype, value = decode_value(content)
+		if vtype.startswith("string"):
+			obj = value
+		elif vtype.startswith("base64-utf-8"):
+			obj = base64.b64decode(value).decode("utf-8")
+		elif vtype.startswith("base64-binary") or vtype.startswith("gzip"):
+			return
+		if title.endswith((".crt", "tls.key", ".pem", "CAKey")):
+			formatter = iktlib.format_crt
+		else:
+			formatter = iktlib.format_none
+		return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
+	return
+
 def export_data(stdscr, **kwargs):
 	if "selected" not in kwargs:
 		return
