@@ -8,7 +8,7 @@ listview:
   name: Kubeadm Control Planes
   group: Cluster Configuration
   field_indexes:
-    Normal: [namespace, name, cluster, initialized, api_server_available, replicas, ready, updated, unavailable, age, version]
+    Normal: [namespace, name, controller, initialized, api_server_available, replicas, ready, updated, unavailable, age, version]
   sortcolumn: namespace
   fields:
     api_server_available:
@@ -27,17 +27,29 @@ listview:
               field_colors:
               - context: main
                 type: status_not_ok
-    cluster:
-      header: "Cluster:"
+    controller:
+      header: "Controller:"
       paths:
       - path: "metadata#ownerReferences"
         pathtype: items
         subpaths:
+        - kind
+        - apiVersion
         - name
         when:
-          key: kind
-          eq: Cluster
+          key: controller
+          eq: true
+        type: [kind, api_group, name]
+      default: "<none>"
       formatter: list
+      formatting:
+        field_colors:
+        - type: kind
+        - type: api_group
+        - type: generic
+        field_separators:
+        - type: kind_api_group
+        - type: kind
     initialized:
       header: "Initialized:"
       path: "status#initialized"
@@ -97,7 +109,7 @@ infoview:
   name: Kubeadm Control Plane Info
   infopad:
     row_indexes:
-      Normal: [cluster, initialized, api_server_available, selector, replicas, ready, updated, unavailable, version]
+      Normal: [controller, initialized, api_server_available, selector, replicas, ready, updated, unavailable, template_header, template_infrastructure, version]
     rows:
       api_server_available:
         header: [["API-server Available:", [main, infoheader]]]
@@ -115,17 +127,29 @@ infoview:
                 field_colors:
                 - context: main
                   type: status_not_ok
-      cluster:
-        header: [["Cluster:", [main, infoheader]]]
+      controller:
+        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
         paths:
         - path: "metadata#ownerReferences"
           pathtype: items
           subpaths:
+          - kind
+          - apiVersion
           - name
           when:
-            key: kind
-            eq: Cluster
+            key: controller
+            eq: true
+          type: [kind, api_group, name]
+        default: "<none>"
         formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
       initialized:
         header: [["Initialized:", [main, infoheader]]]
         path: "status#initialized"
@@ -160,6 +184,24 @@ infoview:
         header: [["Selector:", [main, infoheader]]]
         path: "status#selector"
         type: str
+      template_header:
+        header: [["Machine Template:", [main, infoheader]]]
+      template_infrastructure:
+        header: [["  ", [main, infoheader]], ["I", [main, infoheader_shortcut]], ["nfrastructure:", [main, infoheader]]]
+        paths:
+        - path: [["spec#machineTemplate#infrastructureRef#kind"], ["spec#machineTemplate#infrastructureRef#apiVersion"], ["spec#machineTemplate#infrastructureRef#name"]]
+          pathtype: tuple
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
       unavailable:
         header: [["Unavailable:", [main, infoheader]]]
         path: "status#unavailableReplicas"
@@ -182,14 +224,75 @@ infoview:
           field_colors:
           - type: version
   shortcuts:
-    "Open Cluster":
-      key: u
-      helptext: "Open info page for Cluster"
+    "Open controller":
+      key: c
+      modifier: shift
+      helptext: "Open info page for controller"
       action: call
       action_call: resourceinfodispatch_with_lookup
       action_args:
         _pass_obj: true
-        kind: Cluster
-        api_family: cluster.x-k8s.io
-        owner_reference_path: "metadata#ownerReferences"
         namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open infrastructure":
+      key: i
+      modifier: shift
+      helptext: "Open info page for infrastructure"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        api_version_path: "spec#machineTemplate#infrastructureRef#apiVersion"
+        kind_path: "spec#machineTemplate#infrastructureRef#kind"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#machineTemplate#infrastructureRef#name"
+    "View cluster configuration":
+      key: o
+      modifier: shift
+      helptext: "Show cluster configuration"
+      action: call
+      action_call: view_yaml
+      action_args:
+        title: Cluster Configuration
+        _pass_obj: true
+        path: "spec#kubeadmConfigSpec#clusterConfiguration"
+    "List files":
+      key: f
+      modifier: shift
+      helptext: "List files"
+      widget: windowwidget
+      title: "Files:"
+      selectable: true
+      headers: ["Path:", "Owner:", "Permissions:"]
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: "spec#kubeadmConfigSpec#files"
+        fields:
+        - path
+        - owner
+        - permissions
+      action: call
+      action_call: decode_and_view_file_templates
+      action_args:
+        _pass_obj: true
+        _pass_selected: true
+        name_path: 0
+        file_path: "spec#kubeadmConfigSpec#files"
+    "View init configuration":
+      key: i
+      helptext: "Show init configuration"
+      action: call
+      action_call: view_yaml
+      action_args:
+        title: Init Configuration
+        _pass_obj: true
+        path: "spec#kubeadmConfigSpec#initConfiguration"
+    "View join configuration":
+      key: j
+      helptext: "Show join configuration"
+      action: call
+      action_call: view_yaml
+      action_args:
+        title: Join Configuration
+        _pass_obj: true
+        path: "spec#kubeadmConfigSpec#joinConfiguration"
