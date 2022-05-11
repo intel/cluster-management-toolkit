@@ -618,6 +618,11 @@ def generator_numerical(obj, field, fieldlen, pad, ralign, selected, **formattin
 def generator_numerical_with_units(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 
+	if value in ["<none>", "<unset>", "<unknown>"]:
+		formatting = ("types", "none", selected)
+		array = [(value, formatting, selected)]
+		return align_and_pad(array, pad, fieldlen, len(value), ralign, selected)
+
 	if value == -1 and deep_get(formatting, "allow_signed") == False:
 		string = ""
 	else:
@@ -3312,7 +3317,6 @@ def get_promrules_info(**kwargs):
 	for group in deep_get(obj, "spec#groups", []):
 		for rule in deep_get(group, "rules"):
 			name = deep_get(group, "name")
-			ref = (rule, [name])
 			alert = deep_get(rule, "alert", "")
 			record = deep_get(rule, "record", "")
 			if len(alert) > 0 and len(record) > 0:
@@ -3325,6 +3329,14 @@ def get_promrules_info(**kwargs):
 				alertrecord = record
 			else:
 				sys.exit("We need a better way to handle PrometheusRule; this one has neither alert nor record")
+			_extra_data = {
+				"name": alertrecord,
+				"group": name,
+				"rtype": rtype,
+			}
+			if "_extra_data" not in rule:
+				rule["_extra_data"] = _extra_data
+			ref = rule
 			age = deep_get(rule, "for", "")
 			duration = iktlib.age_to_seconds(age)
 			info.append(PromRulesInfo(name, ref, rtype, alertrecord, duration))
@@ -9745,7 +9757,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		if listpad is not None:
 			raise Exception("We cannot have listpad and logpad simultaneously")
 
-		timestamps = deep_get(viewref, "timestamps", True)
+		timestamps = deep_get_with_fallback(viewref, ["logpad#timestamps", "timestamps"], True)
 		if infopadheight == 0:
 			tspad, logpad = uip.init_logpad(width = -1, ypos = 1, xpos = 1, timestamps = timestamps)
 		else:
@@ -9916,13 +9928,13 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						if "path" in value or "paths" in value:
 							# Use generic_infogetter for this
 							data = get_obj(obj = obj, field_dict = {key: value}, field_names = [key])
-							formatter = {key: get_formatter(value)}
-							generator = deep_get(formatter, f"{key}#generator")
-							if generator is not None:
-								ralign = deep_get(formatter, f"{key}#ralign")
-								formatting = deep_get(formatter, f"{key}#formatting")
+							_formatter = {key: get_formatter(value)}
+							_generator = deep_get(_formatter, f"{key}#generator")
+							if _generator is not None:
+								ralign = deep_get(_formatter, f"{key}#ralign")
+								formatting = deep_get(_formatter, f"{key}#formatting")
 								fieldarray += [(" ", ("types", "generic"))]
-								fieldarray += generator(data, key, fieldlen = 0, pad = 0, ralign = ralign, selected = False, **formatting)
+								fieldarray += _generator(data, key, fieldlen = 0, pad = 0, ralign = ralign, selected = False, **formatting)
 						uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 
 						y += 1
@@ -13481,64 +13493,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("__PrometheusRuleData", "monitoring.coreos.com"): {
-		"windowheader": "Prometheus Rule Data",
-		"labels": None,
-		"annotations": None,
-		"name_path": None,
-		"creation_timestamp_path": None,
-		"timestamps": False,
-		"infopad": {
-			"Name:": {
-				"extra_paths": ["alert", "record"],
-				"processor": field_processor_list,
-				"formatting": {
-					"item_separators": [("", curses.A_NORMAL)],
-					"field_separators": [("", curses.A_NORMAL)],
-					"field_colors": [("types", "generic")],
-					"conditionals": {
-						"<<<none>>>": {
-							"substitute": "",
-						},
-					},
-				},
-			},
-			"Rule Type:": {
-				"extra_paths": ["alert", "record"],
-				"processor": field_processor_list,
-				"formatting": {
-					"item_separators": [("", curses.A_NORMAL)],
-					"field_separators": [("", curses.A_NORMAL)],
-					"field_colors": [("types", "generic")],
-					"conditionals": {
-						"<<<none>>>:<<<0>>>": {
-							"substitute": "Record",
-						},
-						"<<<matchany>>>:<<<0>>>": {
-							"substitute": "",
-						},
-						"<<<none>>>:<<<1>>>": {
-							"substitute": "Alert",
-						},
-						"<<<matchany>>>:<<<1>>>": {
-							"substitute": "",
-						},
-					}
-				},
-			},
-			"Group:": {
-				"objparam": 0,
-				"processor": field_processor_empty,
-			},
-			"Duration:": {
-				"path": "for",
-				"fallback": [("strings", "unset")],
-			},
-		},
-		"logpad": {
-			"infogetter": get_promrule_expr,
-		}
-	},
 	("__ResourceView", ""): {
 		"windowheader": "Resource Viewer",
 		"timestamps": False,
@@ -14235,6 +14189,22 @@ def populate_views():
 					if action == "call":
 						action_call = eval(action_call)
 						shortcuts[shortcut]["action_call"] = action_call
+
+				logpad = deep_get(d, "infoview#logpad", {})
+
+				if len(logpad) > 0:
+					if len(deep_get(infoview_entry, "listpad", {})) > 0:
+						sys.exit(f"View-file “{view_file}“ is invalid: listpad and logpad cannot be used concurrently.")
+
+					log_infogetter = deep_get(logpad, "infogetter")
+					if log_infogetter is None:
+						if len(logpad) > 0:
+							raise Exception("View-file {view_file} is invalid: logpad specified, but no infogetter is provided")
+					logpad["infogetter"] = eval(log_infogetter)
+					infoview_entry["logpad"] = copy.deepcopy(logpad)
+
+				if len(infoview_entry["listpad"]) == 0:
+					infoview_entry.pop("listpad")
 
 				if len(shortcuts) > 0:
 					infoview_entry["shortcuts"] = shortcuts
