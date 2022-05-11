@@ -8,11 +8,34 @@ listview:
   name: Network Policies
   group: Network
   field_indexes:
-    Normal: [namespace, name, pod_selector, age]
+    Normal: [namespace, name, controller, pod_label_selector, age]
   sortcolumn: namespace
   fields:
-    pod_selector:
-      header: "Pod Selector:"
+    controller:
+      header: "Controller:"
+      paths:
+      - path: "metadata#ownerReferences"
+        pathtype: items
+        subpaths:
+        - kind
+        - apiVersion
+        - name
+        when:
+          key: controller
+          eq: true
+        type: [kind, api_group, name]
+      default: "<none>"
+      formatter: list
+      formatting:
+        field_colors:
+        - type: kind
+        - type: api_group
+        - type: generic
+        field_separators:
+        - type: kind_api_group
+        - type: kind
+    pod_label_selector:
+      header: "Pod Label Selector:"
       paths:
       - path: ["spec#podSelector#matchLabels"]
         pathtype: key_value
@@ -23,3 +46,119 @@ listview:
         - type: value
         field_separators:
         - type: selector
+infoview:
+  name: Network Policy Info
+  infopad:
+    row_indexes:
+      Normal: [controller, pod_label_selector, policy_types]
+    rows:
+      controller:
+        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - kind
+          - apiVersion
+          - name
+          when:
+            key: controller
+            eq: true
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      pod_label_selector:
+        header: [["Pod Label Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#podSelector#matchLabels"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      policy_types:
+        header: [["Policy Types:", [main, infoheader]]]
+        path: "spec#policyTypes"
+        type: raw
+        formatter: list
+  listpad:
+    listgetter: get_netpol_rule_list
+    infogetter: generic_infogetter
+    field_indexes:
+      Normal: [policy_type, ports, ipblock, ipblock_exceptions, pod_label_selector, namespace_label_selector]
+    sortcolumn: policy_type
+    fields:
+      ipblock:
+        header: "IP-Block:"
+        path: ipblock
+        type: str
+        formatter: address
+      ipblock_exceptions:
+        header: "IP-Block Exceptions:"
+        path: ipblock_exceptions
+        type: raw
+        formatter: address
+      namespace_label_selector:
+        header: "Namespace Label Selector:"
+        paths:
+        - path: [namespace_label_selector]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      pod_label_selector:
+        header: "Pod Label Selector:"
+        paths:
+        - path: [pod_label_selector]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      policy_type:
+        header: "Policy Type:"
+        path: policy_type
+        type: str
+      ports:
+        header: "Ports:"
+        path: ports
+        type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: port
+          - type: protocol
+          field_separators:
+          - type: service
+  shortcuts:
+    "Open controller":
+      key: c
+      modifier: shift
+      helptext: "Open info page for controller"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

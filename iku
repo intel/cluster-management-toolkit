@@ -3163,75 +3163,65 @@ def get_task_log(obj):
 def get_themearrays(obj):
 	return obj
 
-class NetworkPolicyRuleInfo:
-	def __init__(self, policy_type, ports, ipblock, ipblock_exceptions, pod_selector, namespace_selector):
-		self.policy_type = policy_type
-		self.ports = ports
-		self.ipblock = ipblock
-		self.ipblock_exceptions = ipblock_exceptions
-		self.pod_selector = pod_selector
-		self.namespace_selector = namespace_selector
-	def __repr__(self):
-		return repr((self.policy_type, self.ports, self.ipblock, self.ipblock_exceptions, self.pod_selector, self.namespace_selector))
-
-def get_netpol_rule_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	info = []
-
-	if obj is None:
-		return []
-
-	policy_type = "Egress"
-
-	for rule in deep_get(obj, "spec#egress", []):
+def get_netpol_rule_list(obj, **kwargs):
+	vlist = []
+	for item in deep_get(obj, "spec#ingress", []):
+		policy_type = "ingress"
 		ports = []
-		for port in deep_get(rule, "ports", []):
-			ports.append((deep_get(port, "port", "*"), deep_get(port, "protocol", "TCP")))
-		if len(ports) == 0:
-			ports = [("*", "TCP")]
-		to_rules = deep_get(rule, "to", [])
-		if len(to_rules) > 0:
-			for item in to_rules:
-				ipblock = deep_get(item, "ipBlock#cidr", "")
-				ipblock_exceptions = deep_get(item, "ipBlock#except", [])
-				pod_selector = []
-				for key, value in deep_get(item, "podSelector#matchLabels", {}).items():
-					pod_selector.append((key, value))
-				namespace_selector = []
-				for key, value in deep_get(item, "namespaceSelector#matchLabels", {}).items():
-					namespace_selector.append((key, value))
-
-				info.append(NetworkPolicyRuleInfo(policy_type, ports, ipblock, ipblock_exceptions, pod_selector, namespace_selector))
+		for port in deep_get(item, "ports", []):
+			ports.append((deep_get(port, "port", ""), deep_get(port, "protocol", "")))
+		pod_label_selector = deep_get(item, "podSelector#matchLabels", {})
+		namespace_label_selector = deep_get(item, "namespaceSelector#matchLabels", {})
+		for source in deep_get(item, "from", []):
+			ipblock = deep_get(source, "cidr")
+			ipblock_exceptions = deep_get(source, "except")
+			vlist.append({
+				"policy_type": policy_type,
+				"ipblock": ipblock,
+				"ipblock_exceptions": ipblock_exceptions,
+				"ports": ports,
+				"pod_label_selector": pod_label_selector,
+				"namespace_label_selector": namespace_label_selector,
+			})
 		else:
-			info.append(NetworkPolicyRuleInfo(policy_type, ports, "", [], [], []))
+			vlist.append({
+				"policy_type": policy_type,
+				"ipblock": "",
+				"ipblock_exceptions": [],
+				"ports": ports,
+				"pod_label_selector": pod_label_selector,
+				"namespace_label_selector": namespace_label_selector,
+			})
 
-	policy_type = "Ingress"
-
-	for rule in deep_get(obj, "spec#ingress", []):
+	for item in deep_get(obj, "spec#egress", []):
+		policy_type = "egress"
 		ports = []
-		for port in deep_get(rule, "ports", []):
-			ports.append((deep_get(port, "port", "*"), deep_get(port, "protocol", "TCP")))
-		if len(ports) == 0:
-			ports = [("*", "TCP")]
-		from_rules = deep_get(rule, "from", [])
-
-		from_rules = deep_get(rule, "from", [])
-		if len(from_rules) > 0:
-			for item in from_rules:
-				ipblock = deep_get(item, "ipBlock#cidr", "")
-				ipblock_exceptions = deep_get(item, "ipBlock#except", [])
-				pod_selector = []
-				for key, value in deep_get(item, "podSelector#matchLabels", {}).items():
-					pod_selector.append((key, value))
-				namespace_selector = []
-				for key, value in deep_get(item, "namespaceSelector#matchLabels", {}).items():
-					namespace_selector.append((key, value))
-
-				info.append(NetworkPolicyRuleInfo(policy_type, ports, ipblock, ipblock_exceptions, pod_selector, namespace_selector))
+		for port in deep_get(item, "ports", []):
+			ports.append((deep_get(port, "port", ""), deep_get(port, "protocol", "")))
+		pod_label_selector = deep_get(item, "podSelector#matchLabels", {})
+		namespace_label_selector = deep_get(item, "namespaceSelector#matchLabels", {})
+		for source in deep_get(item, "to", []):
+			ipblock = deep_get(source, "cidr")
+			ipblock_exceptions = deep_get(source, "except")
+			vlist.append({
+				"policy_type": policy_type,
+				"ipblock": ipblock,
+				"ipblock_exceptions": ipblock_exceptions,
+				"ports": ports,
+				"pod_label_selector": pod_label_selector,
+				"namespace_label_selector": namespace_label_selector,
+			})
 		else:
-			info.append(NetworkPolicyRuleInfo(policy_type, ports, "", [], [], []))
+			vlist.append({
+				"policy_type": policy_type,
+				"ipblock": "",
+				"ipblock_exceptions": [],
+				"ports": ports,
+				"pod_label_selector": pod_label_selector,
+				"namespace_label_selector": namespace_label_selector,
+			})
 
-	return info
+	return vlist, 200
 
 class VirtSVCRuleInfo:
 	def __init__(self, rule_type, ref, destinations):
@@ -6425,13 +6415,6 @@ field_templates = {
 		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
 		"field_separators": [("separators", "port"), ("separators", "service")],
 	},
-	"ipblock": {
-		"header": "IP Block:",
-	},
-	"ipblock_exceptions": {
-		"header": "IP Block Exceptions:",
-		"generator": generator_list,
-	},
 	"kind": {
 		# (kind, api_group)
 		"header": "Kind:",
@@ -6564,9 +6547,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_colors": [("types", "generic"), ("types", "generic")],
 		"field_separators": [("separators", "selector")],
-	},
-	"policy_type": {
-		"header": "Policy Type:",
 	},
 	"port": {
 		# (name, port, protocol)
@@ -13364,50 +13344,6 @@ infoviews_builtin = {
 		},
 		"logpad": {
 			"infogetter": get_task_log,
-		},
-	},
-	("NetworkPolicy", "networking.k8s.io"): {
-		"windowheader": "Network Policy Info",
-		"field_indexes": {
-			"Normal": ["policy_type", "ports", "ipblock", "ipblock_exceptions", "pod_selector", "namespace_selector"],
-		},
-		"fields": {
-			"ports": {
-				"header": "Ports:",
-				"path": "ports",
-				"type": "list",
-				"formatter": "list",
-				"formatting": {
-					"field_colors": [
-						{
-							"type": "port",
-						},
-						{
-							"type": "protocol",
-						},
-					],
-					"field_separators": [
-						{
-							"type": "service",
-						},
-					],
-				},
-
-			},
-		},
-		"sortcolumn": "policy_type",
-		"infopad": {
-			"Pod Selector:": {
-				"path": "spec#podSelector#matchLabels",
-				"processor": field_processor_label_selector,
-			},
-			"Policy Types:": {
-				"extra_paths": "spec#policyTypes",
-				"processor": field_processor_list,
-			},
-		},
-		"listpad": {
-			"infogetter": get_netpol_rule_info,
 		},
 	},
 	("Pod", ""): {
