@@ -189,19 +189,19 @@ infoview:
       template_infrastructure:
         header: [["  ", [main, infoheader]], ["I", [main, infoheader_shortcut]], ["nfrastructure:", [main, infoheader]]]
         paths:
-        - path: [["spec#machineTemplate#infrastructureRef#kind"], ["spec#machineTemplate#infrastructureRef#apiVersion"], ["spec#machineTemplate#infrastructureRef#name"]]
+        - path: [["spec#machineTemplate#infrastructureRef#kind"], ["metadata#namespace"], ["spec#machineTemplate#infrastructureRef#name"]]
           pathtype: tuple
-          type: [kind, api_group, name]
+          type: [kind, name, name]
         default: "<none>"
         formatter: list
         formatting:
           field_colors:
           - type: kind
-          - type: api_group
+          - type: namespace
           - type: generic
           field_separators:
-          - type: kind_api_group
           - type: kind
+          - type: namespace
       unavailable:
         header: [["Unavailable:", [main, infoheader]]]
         path: "status#unavailableReplicas"

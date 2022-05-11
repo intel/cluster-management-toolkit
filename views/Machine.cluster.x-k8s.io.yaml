@@ -68,17 +68,19 @@ infoview:
       Normal: [node_name, cluster, controller, bootstrap, bootstrap_ready, infrastructure, infrastructure_ready, provider_id, phase, version]
     rows:
       bootstrap:
-        header: [["Bootstrap:", [main, infoheader]]]
+        header: [["B", [main, infoheader]], ["o", [main, infoheader_shortcut]], ["otstrap:", [main, infoheader]]]
         paths:
-        - path: [["spec#bootstrap#configRef#namespace"], ["spec#bootstrap#configRef#name"]]
+        - path: [["spec#bootstrap#configRef#kind"], ["spec#bootstrap#configRef#namespace"], ["spec#bootstrap#configRef#name"]]
           pathtype: tuple
-          type: [name, name]
+          type: [kind, name, name]
         formatter: list
         formatting:
           field_colors:
+          - type: kind
           - type: namespace
           - type: generic
           field_separators:
+          - type: kind
           - type: namespace
       bootstrap_ready:
         header: [["Bootstrap Ready:", [main, infoheader]]]
@@ -97,11 +99,11 @@ infoview:
                 - context: main
                   type: status_pending
       cluster:
-        header: [["C", [main, infoheader_shortcut]], ["luster:", [main, infoheader]]]
+        header: [["Cl", [main, infoheader]], ["u", [main, infoheader_shortcut]], ["ster:", [main, infoheader]]]
         path: "spec#clusterName"
         type: str
       controller:
-        header: [["C", [main, infoheader]], ["o", [main, infoheader_shortcut]], ["ntroller:", [main, infoheader]]]
+        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
         paths:
         - path: "metadata#ownerReferences"
           pathtype: items
@@ -197,7 +199,7 @@ infoview:
           - type: version
   shortcuts:
     "Open bootstrap":
-      key: b
+      key: o
       helptext: "Open info page for bootstrap"
       action: call
       action_call: resourceinfodispatch_with_lookup
@@ -208,8 +210,7 @@ infoview:
         name_path: "spec#bootstrap#configRef#name"
         namespace_path: "spec#bootstrap#configRef#namespace"
     "Open Cluster":
-      key: c
-      modifier: shift
+      key: u
       helptext: "Open info page for Cluster"
       action: call
       action_call: resourceinfodispatch_with_lookup
@@ -220,7 +221,8 @@ infoview:
         name_path: "spec#clusterName"
         namespace_path: "metadata#namespace"
     "Open controller":
-      key: o
+      key: c
+      modifier: shift
       helptext: "Open info page for controller"
       action: call
       action_call: resourceinfodispatch_with_lookup
@@ -237,7 +239,7 @@ infoview:
       action_call: resourceinfodispatch_with_lookup
       action_args:
         _pass_obj: true
-        kind_path: "spec#infrastructure#kind"
-        api_version_path: "spec#infrastructure#apiVersion"
-        name_path: "spec#infrastructure#name"
-        namespace_path: "spec#infrastructure#namespace"
+        kind_path: "spec#infrastructureRef#kind"
+        api_version_path: "spec#infrastructureRef#apiVersion"
+        name_path: "spec#infrastructureRef#name"
+        namespace_path: "spec#infrastructureRef#namespace"

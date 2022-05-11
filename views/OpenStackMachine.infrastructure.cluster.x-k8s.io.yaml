@@ -52,3 +52,160 @@ listview:
               field_colors:
               - context: main
                 type: status_not_ok
+infoview:
+  name: OpenStack Machine Info
+  infopad:
+    row_indexes:
+      Normal: [controller, cluster, instance_state, ready, instance_id, provider_id, cloud_name, flavor, identity, image,  security_groups, ssh_key_name, internal_ips, external_ips]
+    rows:
+      cloud_name:
+        header: [["Cloud Name:", [main, infoheader]]]
+        path: "spec#cloudName"
+        type: str
+      cluster:
+        header: [["Cl", [main, infoheader]], ["u", [main, infoheader_shortcut]], ["ster:", [main, infoheader]]]
+        path: "metadata#labels#cluster.x-k8s.io/cluster-name"
+        type: str
+      controller:
+        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - kind
+          - apiVersion
+          - name
+          when:
+            key: controller
+            eq: true
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      external_ips:
+        header: [["External-IPs:", [main, infoheader]]]
+        paths:
+        - path: "status#addresses"
+          pathtype: items
+          subpaths:
+          - address
+          when:
+            key: type
+            eq: ExternalIP
+          default: ["<none>"]
+        formatter: address
+      flavor:
+        header: [["Flavor:", [main, infoheader]]]
+        path: "spec#flavor"
+        type: str
+      header:
+        header: [["T", [main, infoheader_shortcut]], ["emplate:", [main, infoheader]]]
+      identity:
+        header: [["", [main, infoheader]], ["I", [main, infoheader_shortcut]], ["dentity:", [main, infoheader]]]
+        paths:
+        - path: [["spec#identityRef#kind"], ["spec#identityRef#name"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: generic
+          field_separators:
+          - type: kind
+      image:
+        header: [["Image:", [main, infoheader]]]
+        path: "spec#image"
+        type: str
+      instance_id:
+        header: [["Instance ID:", [main, infoheader]]]
+        path: "spec#instanceID"
+        type: str
+      instance_state:
+        header: [["Instance State:", [main, infoheader]]]
+        path: "status#instanceState"
+        type: str
+      internal_ips:
+        header: [["Internal-IPs:", [main, infoheader]]]
+        paths:
+        - path: "status#addresses"
+          pathtype: items
+          subpaths:
+          - address
+          when:
+            key: type
+            eq: InternalIP
+        formatter: address
+      provider_id:
+        header: [["Provider ID:", [main, infoheader]]]
+        path: "spec#providerID"
+        type: str
+      ready:
+        header: [["Ready:", [main, infoheader]]]
+        path: "status#ready"
+        type: bool
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "False":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+      security_groups:
+        header: [["Security Groups:", [main, infoheader]]]
+        paths:
+        - path: "spec#securityGroups"
+          pathtype: items
+          subpaths:
+          - name
+        type: raw
+        formatter: list
+      ssh_key_name:
+        header: [["SSH Key Name:", [main, infoheader]]]
+        path: "spec#sshKeyName"
+        type: str
+  shortcuts:
+    "Open Cluster":
+      key: u
+      helptext: "Open info page for Cluster"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Cluster
+        api_family: cluster.x-k8s.io
+        name_path: "metadata#labels#cluster.x-k8s.io/cluster-name"
+        namespace_path: "metadata#namespace"
+    "Open controller":
+      key: c
+      modifier: shift
+      helptext: "Open info page for controller"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        namespace_path: "metadata#namespace"
+    "Open identity":
+      key: i
+      modifier: shift
+      helptext: "Open info page for identity"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#identityRef#kind"
+        api_version_path: "spec#identityRef#apiVersion"
+        name_path: "spec#identityRef#name"
+        namespace_path: "metadata#namespace"
