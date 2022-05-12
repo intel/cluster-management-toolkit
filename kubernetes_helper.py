@@ -1524,11 +1524,11 @@ class KubernetesHelper:
 			"api": "virtualmachineflavors",
 		},
 		# flows.knative.dev
-		("Parallel", "flow.knative.dev"): {
+		("Parallel", "flows.knative.dev"): {
 			"api_family": ["apis/flows.knative.dev/v1/"],
 			"api": "parallels",
 		},
-		("Sequence", "flow.knative.dev"): {
+		("Sequence", "flows.knative.dev"): {
 			"api_family": ["apis/flows.knative.dev/v1/"],
 			"api": "sequences",
 		},
@@ -1956,6 +1956,10 @@ class KubernetesHelper:
 			"api_family": ["apis/networking.internal.knative.dev/v1alpha1/"],
 			"api": "certificates",
 		},
+		("ClusterDomainClaim", "networking.internal.knative.dev"): {
+			"api_family": ["apis/networking.internal.knative.dev/v1alpha1/"],
+			"api": "clusterdomainclaims",
+		},
 		("Ingress", "networking.internal.knative.dev"): {
 			"api_family": ["apis/networking.internal.knative.dev/v1alpha1/"],
 			"api": "certificates",
@@ -2305,6 +2309,10 @@ class KubernetesHelper:
 		("Configuration", "serving.knative.dev"): {
 			"api_family": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/", "apis/serving.knative.dev/v1alpha2/", "apis/serving.knative.dev/v1alpha1/"],
 			"api": "configations",
+		},
+		("DomainMapping", "serving.knative.dev"): {
+			"api_family": ["apis/serving.knative.dev/v1alpha1/"],
+			"api": "domainmappings",
 		},
 		("Revision", "serving.knative.dev"): {
 			"api_family": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/", "apis/serving.knative.dev/v1alpha2/", "apis/serving.knative.dev/v1alpha1/"],
