@@ -2552,11 +2552,23 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						_values.append((tmp, vtype))
 				elif ptype == "match_expression":
 					tmp = deep_get_with_fallback(obj, path)
-					if tmp is not None:
-						value = make_set_expression_list(tmp)
-						_values.append((value, "raw"))
+					if type(tmp) == list:
+						value = []
+						subpath = deep_get(_path, "subpath")
+						for _tmp in tmp:
+							__tmp = deep_get(_tmp, subpath)
+							value.append(make_set_expression_list(__tmp))
+						if len(value) == 1:
+							_values.append((value[0], "raw"))
+						else:
+							for tmp in value:
+								_values.append((tmp, "raw"))
 					else:
-						_values.append((default, "raw"))
+						if tmp is not None:
+							value = make_set_expression_list(tmp)
+							_values.append((value, "raw"))
+						else:
+							_values.append((default, "raw"))
 				elif ptype == "lookup":
 					lookup_kind, lookup_api_group, lookup_namespace, lookup_name, tmp_lookup_selector = path
 					if type(lookup_kind) == list:
@@ -3170,6 +3182,17 @@ def get_task_log(obj):
 def get_themearrays(obj):
 	return obj
 
+def logpad_msg_getter(obj, **kwargs):
+	messages = []
+
+	path = deep_get(kwargs, "path")
+	tmp = deep_get(obj, path, "")
+
+	for line in split_msg(tmp):
+		messages.append([(f"{line}", curses.A_NORMAL)])
+		
+	return messages
+
 def get_netpol_rule_list(obj, **kwargs):
 	vlist = []
 	for item in deep_get(obj, "spec#ingress", []):
@@ -3344,18 +3367,6 @@ def get_promrules_info(**kwargs):
 			info.append(PromRulesInfo(name, ref, rtype, alertrecord, duration))
 
 	return info
-
-def get_promrule_expr(obj):
-	field = []
-
-	expr = deep_get(obj, "expr")
-
-	tmp = split_msg(expr)
-
-	for line in tmp:
-		field.append([(f"{line}", curses.A_NORMAL)])
-
-	return field
 
 class SVCMonEndpointsInfo:
 	def __init__(self, bearer_token_file, ref, port, target_port, interval, scheme, path, honor_labels, proxy_url):
@@ -9912,8 +9923,9 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					formatted_obj = obj
 
 				infogetter = deep_get(viewref, "logpad#infogetter")
+				infogetter_args = deep_get(viewref, "logpad#infogetter_args", {})
 				if infogetter is not None:
-					messages = infogetter(formatted_obj)
+					messages = infogetter(formatted_obj, **infogetter_args)
 					uip.update_log_info(None, None, None, messages)
 					uip.loglen = len(messages)
 

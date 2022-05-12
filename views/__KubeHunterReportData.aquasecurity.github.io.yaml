@@ -1,0 +1,63 @@
+kind: __KubeHunterReportData
+api_family: aquasecurity.github.io
+default_command: __
+infoview:
+  name: Kube Hunter Report Data
+  infopad:
+    name_path: vulnerability
+    creation_timestamp_path: null
+    row_indexes:
+      Normal: [severity, vid, location, evidence, category, avd_reference]
+    rows:
+      avd_reference:
+        header: [["AVD Reference:", [main, infoheader]]]
+        path: avd_reference
+        type: str
+      category:
+        header: [["Category:", [main, infoheader]]]
+        path: category
+        type: str
+      evidence:
+        header: [["Evidence:", [main, infoheader]]]
+        path: evidence
+        type: str
+      location:
+        header: [["Location:", [main, infoheader]]]
+        path: location
+        type: str
+      severity:
+        header: [["Severity:", [main, infoheader]]]
+        path: severity
+        type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              high:
+                field_colors:
+                - context: types
+                  type: watermark_high
+              medium:
+                field_colors:
+                - context: types
+                  type: watermark_medium
+              low:
+                field_colors:
+                - context: types
+                  type: watermark_low
+              unknown:
+                - context: types
+                  type: watermark_high
+      vid:
+        header: [["Vulnerability ID:", [main, infoheader]]]
+        path: vid
+        type: str
+      vulnerability:
+        header: [["Vulnerability:", [main, infoheader]]]
+        path: vulnerability
+        type: str
+  logpad:
+    infogetter: logpad_msg_getter
+    infogetter_args:
+      path: description
+    timestamps: false

@@ -7,3 +7,76 @@ listview:
   field_indexes:
     Normal: [namespace, name, age]
   sortcolumn: namespace
+infoview:
+  name: Grafana Info
+  infopad:
+    row_indexes:
+      Normal: [dashboard_set_based_selector, auth_header, auth_disable_login_form, auth_disable_signout_menu, auth_enable_anonymous, loglevel, log_mode, admin_user, admin_password, ingress_header, ingress_enabled, ingress_hostname, ingress_path, ingress_pathtype]
+    rows:
+      admin_password:
+        header: [["Admin Password:", [main, infoheader]]]
+        path: "spec#config#security#admin_password"
+        type: str
+      admin_user:
+        header: [["Admin User:", [main, infoheader]]]
+        path: "spec#config#security#admin_user"
+        type: str
+      auth_disable_login_form:
+        header: [["  Disable Login Form:", [main, infoheader]]]
+        path: "spec#config#auth#disable_login_form"
+        type: bool
+      auth_disable_signout_menu:
+        header: [["  Disable Signout Menu:", [main, infoheader]]]
+        path: "spec#config#auth#disable_signout_menu"
+        type: bool
+      auth_enable_anonymous:
+        header: [["  Enable Anonymous:", [main, infoheader]]]
+        path: "spec#config#auth.anonymous#enabled"
+        type: bool
+      auth_header:
+        header: [["Auth:", [main, infoheader]]]
+      dashboard_set_based_selector:
+        header: [["Dashboard Set-based Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#dashboardLabelSelector"]
+          subpath: "matchExpressions"
+          pathtype: match_expression
+          default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: operator
+          - type: value
+          field_separators:
+          - type: space
+          - type: no_pad
+      ingress_enabled:
+        header: [["  Enabled:", [main, infoheader]]]
+        path: "spec#ingress#enabled"
+        type: bool
+      ingress_header:
+        header: [["Ingress:", [main, infoheader]]]
+      ingress_hostname:
+        header: [["  Hostname:", [main, infoheader]]]
+        path: "spec#ingress#hostname"
+        type: str
+        formatting:
+          field_colors:
+          - type: hostname
+      ingress_path:
+        header: [["  Path:", [main, infoheader]]]
+        path: "spec#ingress#path"
+        type: str
+      ingress_pathtype:
+        header: [["  Path-type:", [main, infoheader]]]
+        path: "spec#ingress#pathType"
+        type: str
+      loglevel:
+        header: [["Loglevel:", [main, infoheader]]]
+        path: "spec#config#log#level"
+        type: str
+      log_mode:
+        header: [["Log Mode:", [main, infoheader]]]
+        path: "spec#config#log#mode"
+        type: str
