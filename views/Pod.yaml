@@ -389,6 +389,10 @@ infoview:
                 field_colors:
                 - context: main
                   type: status_done
+              "ContainerCreating":
+                field_colors:
+                - context: main
+                  type: status_pending
               "CrashLoopBackOff":
                 field_colors:
                 - context: main
@@ -401,6 +405,10 @@ infoview:
                 field_colors:
                 - context: types
                   type: none
+              "ErrImagePull":
+                field_colors:
+                - context: main
+                  type: status_not_ok
               "Error":
                 field_colors:
                 - context: main
@@ -409,6 +417,10 @@ infoview:
                 field_colors:
                 - context: main
                   type: status_ok
+              "ImagePullBackOff":
+                field_colors:
+                - context: main
+                  type: status_not_ok
               "<missing>":
                 field_colors:
                 - context: types
@@ -417,11 +429,19 @@ infoview:
                 field_colors:
                 - context: main
                   type: status_ok
+              "NotReady":
+                field_colors:
+                - context: main
+                  type: status_pending
               "<optional>":
                 field_colors:
                 - context: types
                   type: none
               "Pending":
+                field_colors:
+                - context: main
+                  type: status_pending
+              "PodInitializing":
                 field_colors:
                 - context: main
                   type: status_pending
