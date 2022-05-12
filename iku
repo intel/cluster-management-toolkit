@@ -5174,8 +5174,10 @@ def get_pod_resource_list(obj, **kwargs):
 				continue
 			_vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = kh.make_selector(selector), field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}")
 			if len(_vlist2) > 0:
-				name = deep_get(_vlist2[0], "metadata#name")
-				namespace = deep_get(_vlist2[0], "metadata#namespace")
+				ref = item
+				name = deep_get(item, "metadata#name")
+				namespace = deep_get(item, "metadata#namespace")
+				resource_tuple = ("", "", name)
 				vlist.append({
 					"ref": ref,
 					"namespace": namespace,
