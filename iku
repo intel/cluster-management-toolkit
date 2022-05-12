@@ -4975,6 +4975,7 @@ def get_pod_resource_list(obj, **kwargs):
 			event_involved_object_name = deep_get_with_fallback(event, ["regarding#name", "involvedObject#name"])
 			event_involved_object_namespace = deep_get_with_fallback(event, ["regarding#namespace", "involvedObject#namespace"])
 			if event_involved_object_name == pod_name and event_involved_object_namespace == pod_namespace:
+				ref = event
 				# For kind we don't want the api_family
 				event_name = deep_get(event, "metadata#name")
 				resource_tuple = (kind[0], "", event_name)
