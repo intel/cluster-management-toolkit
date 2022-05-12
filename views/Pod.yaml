@@ -6,10 +6,10 @@ listview:
   name: Pods
   group: Workloads
   field_indexes:
-    Wide: [namespace, name, controller, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
-    Normal: [namespace, name, controller, pod_status, node_name, age, restarts, last_restart]
-    Compact: [namespace, name, pod_status, age, restarts, last_restart]
-  sortcolumn: pod_status
+    Wide: [namespace, name, controller, phase, node_name, pod_ip, age, restarts, last_restart, containers]
+    Normal: [namespace, name, controller, phase, node_name, age, restarts, last_restart]
+    Compact: [namespace, name, phase, age, restarts, last_restart]
+  sortcolumn: phase
   fields:
     containers:
       header: "Containers:"
@@ -71,6 +71,44 @@ listview:
       path: "spec#nodeName"
       type: host
       default: "<none>"
+    phase:
+      header: "Phase:"
+      paths:
+      - path: "metadata#deletionTimestamp"
+        pathtype: substitution
+        substitute: Terminating
+        else: ["status#phase"]
+        when:
+          key: "metadata#deletionTimestamp"
+          not_missing: true
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "Failed":
+              field_colors:
+              - context: main
+                type: status_not_ok
+            "Pending":
+              field_colors:
+              - context: main
+                type: status_pending
+            "Running":
+              field_colors:
+              - context: main
+                type: status_ok
+            "Succeeded":
+              field_colors:
+              - context: main
+                type: status_ok
+            "Terminating":
+              field_colors:
+              - context: main
+                type: status_pending
+            "Unknown":
+              field_colors:
+              - context: main
+                type: status_unknown
     pod_ip:
       header: "Pod IP:"
       path: "status#podIP"
@@ -120,3 +158,299 @@ listview:
         var: "filters#evicted#enabled"
   statusmsg:
   - ["Hide evicted pods: ", "filters#evicted#enabled"]
+infoview:
+  name: Pod Info
+  infopad:
+    row_indexes:
+      Normal: [phase, conditions, scheduler, priority, priority_class, qos_class, pod_ips, termination_grace_period, enable_service_links]
+    rows:
+      conditions:
+        header: [["Conditions:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: items
+          subpath: type
+          when:
+          - key: type
+            in: [ContainersReady, Degraded, DiskPressure, Initialized, MemoryPressure, NetworkUnavailable, OutOfDisk, PIDPressure, PodScheduled, Progressing, Ready, PodScheduled]
+          - key: status
+            eq: "True"
+        - path: "status#conditions"
+          pathtype: items
+          subpath: type
+          when:
+          - key: type
+            in: [ContainersReady, Initialized, PodScheduled, Progressing, Ready]
+          - key: status
+            eq: "False"
+          prefix: "!"
+        formatter: list
+        formatting:
+          mapping:
+            mappings:
+              "ContainersReady":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "!ContainersReady":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "Degraded":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "DiskPressure":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "Initialized":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "!Initialized":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "MemoryPressure":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "NetworkUnavailable":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "OutOfDisk":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "PIDPressure":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "PodScheduled":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "!PodScheduled":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "Progressing":
+                field_colors:
+                - context: main
+                  type: status_pending
+              "!Progressing":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "Ready":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "!Ready":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+      enable_service_links:
+        header: [["Enable Service Links:", [main, infoheader]]]
+        path: "spec#enableServiceLinks"
+        type: bool
+      phase:
+        header: [["Phase:", [main, infoheader]]]
+        paths:
+        - path: "metadata#deletionTimestamp"
+          pathtype: substitution
+          substitute: Terminating
+          else: ["status#phase"]
+          when:
+            key: "metadata#deletionTimestamp"
+            not_missing: true
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "Failed":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "Pending":
+                field_colors:
+                - context: main
+                  type: status_pending
+              "Running":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Succeeded":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Terminating":
+                field_colors:
+                - context: main
+                  type: status_pending
+              "Unknown":
+                field_colors:
+                - context: main
+                  type: status_unknown
+      pod_ips:
+        header: [["Pod IPs:", [main, infoheader]]]
+        paths:
+        - path: "status#podIPs"
+          pathtype: items
+          subpath: ip
+        formatter: address
+      priority:
+        header: [["Priority:", [main, infoheader]]]
+        path: "spec#priority"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      priority_class:
+        header: [["P", [main, infoheader_shortcut]], ["riority Class:", [main, infoheader]]]
+        path: "spec#priorityClassName"
+        type: str
+      qos_class:
+        header: [["QoS Class:", [main, infoheader]]]
+        path: "status#qosClass"
+        type: str
+      scheduler:
+        header: [["Scheduler:", [main, infoheader]]]
+        path: "spec#schedulerName"
+        type: str
+      termination_grace_period:
+        header: [["Termination Grace Period:", [main, infoheader]]]
+        paths:
+        - path: [["spec#terminationGracePeriodSeconds"], "s"]
+          pathtype: tuple
+          when:
+            key: "spec#terminationGracePeriodSeconds"
+            gt: 0
+        - path: [["spec#terminationGracePeriodSeconds"]]
+          pathtype: tuple
+          when:
+            key: "spec#terminationGracePeriodSeconds"
+            eq: 0
+          substitute: [Immediately, ""]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: numerical
+          - type: unit
+          field_separators:
+          - type: no_pad
+  listpad:
+    listgetter: get_pod_resource_list
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch_from_pod_resource_list
+      extraref: kind
+      data: true
+    field_indexes:
+      Normal: [resource, type, status, restarts, age, message]
+    sortcolumn: type
+    fields:
+      resource:
+        header: "Resource:"
+        path: resource_tuple
+        type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      type:
+        header: "Type:"
+        path: type
+        type: str
+      status:
+        header: "Status:"
+        path: status
+        type: str
+      restarts:
+        header: "Restarts:"
+        path: restarts
+        type: raw
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+      age:
+        header: "Age:"
+        path: age
+        type: age
+        formatter: age
+      message:
+        header: "Message:"
+        path: message
+        type: str
+  shortcuts:
+    "Show affinities":
+      key: a
+      modifier: shift
+      helptext: "Show affinities"
+      widget: windowwidget
+      headers: ["Type:", "Scheduling:", "Execution:", "Selector:", "Topology:"]
+      itemgetter: get_pod_affinity
+      # This isn't supported for now
+      sortcolumn: type
+    "Execute command in container":
+      key: e
+      modifier: ctrl
+      helptext: "Execute command inside container"
+      widget: executecommand
+      widget_args:
+        kinds: [["Container", ""], ["InitContainer", ""], ["EphemeralContainer", ""]]
+        command: ["/bin/sh"]
+    # This is only supported in Kubernetes v1.23+; do we need to add some sort of conditional support for this?
+    "Open ephemeral shell in container":
+      key: d
+      modifier: ctrl
+      helptext: "Open a debug (ephemeral) shell inside container"
+      widget: executecommand
+      widget_args:
+        kinds: [["Container", ""], ["InitContainer", ""]]
+        command: ["<ephemeral>"]
+    "Open shell in container":
+      key: o
+      modifier: ctrl
+      helptext: "Open a shell inside container"
+      widget: executecommand
+      widget_args:
+        kinds: [["Container", ""], ["InitContainer", ""], ["EphemeralContainer", ""]]
+        command: ["/bin/sh"]
+    "Show tolerations":
+      key: t
+      helptext: "Show tolerations"
+      widget: windowwidget
+      headers: ["Key:", "Operator:", "Value:", "Effect:", "Timeout:"]
+      itemgetter: get_pod_tolerations
+      # This isn't supported for now
+      sortcolumn: key
+    "Priority Class":
+      key: p
+      modifier: shift
+      helptext: "Open info page for Priority Class"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: PriorityClass
+        api_family: scheduling.k8s.io
+        name_path: "spece#priorityClassName"
+    "SSH to Node":
+      key: s
+      modifier: shift
+      helptext: "SSH to selected Node"
+      action: call
+      action_call: ssh_to_host
+      action_args:
+        _pass_selected: true
+      kind_filter:
+        kind: Node

@@ -1905,26 +1905,6 @@ def datagetter_node_roles(obj, path, default):
 
 	return kh.get_node_roles(obj), {}
 
-def datagetter_certsignreq_conditions(obj, path, default):
-	if obj is None:
-		return default
-	return get_certsignreq_conditions(deep_get(obj, "status")), {}
-
-def datagetter_pod_restarts(obj, path, default):
-	if obj is None:
-		return default
-	restarts, restarted_at = get_pod_restarts_total(obj)
-	if path == "restarts":
-		return restarts, {}
-	elif path == "restarted_at":
-		if restarted_at == -1:
-			last_restart = -1
-		else:
-			last_restart = get_since(restarted_at)
-		return last_restart, {}
-	else:
-		raise Exception(f"Invalid data {path} requested")
-
 def datagetter_status_latest_condition(obj, path, default):
 	status, status_group, status_message = get_status_latest_condition(deep_get(obj, path))
 
@@ -2674,7 +2654,11 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						break
 					else:
 						if "else" in _path:
-							value = deep_get(_path, "else")
+							tmp = deep_get(_path, "else")
+							if type(tmp) == list:
+								tmp = deep_get_with_fallback(obj, tmp)
+							if len(tmp) > 0:
+								value.append(tmp)
 					if len(value) == 0:
 						if default is None:
 							continue
@@ -2771,12 +2755,28 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 							else:
 								prefix = deep_get(_path, "prefix", [])
 								suffix = deep_get(_path, "suffix", [])
-								tmp += prefix
 								_subpath = subpaths[i]
 								if type(_subpath) == str:
 									_subpath = [_subpath]
-								tmp.append(deep_get_with_fallback(item, _subpath, _default))
-								tmp += suffix
+								_tmp = deep_get_with_fallback(item, _subpath, _default)
+								if type(prefix) == str:
+									if type(_tmp) == str:
+										_tmp = prefix + _tmp
+									else:
+										_tmp = [prefix] + _tmp
+								else:
+									tmp += prefix
+
+								if type(suffix) == str:
+									if type(_tmp) == str:
+										_tmp += suffix
+									else:
+										_tmp += [suffix]
+
+								tmp.append(_tmp)
+
+								if type(suffix) == list:
+									tmp += suffix
 						if len(tmp) == 1:
 							value.append(tmp[0])
 						else:
@@ -2839,6 +2839,8 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 								tmp = ""
 							vtype = "kind"
 						value.append(tmp)
+					if type(deep_get(_path, "substitute")) == list:
+						value = deep_get(_path, "substitute")
 					value = tuple(value)
 					_values.append((value, vtype))
 				elif ptype == "status_tuple":
@@ -4706,8 +4708,8 @@ def get_resource_info_by_last_applied_configuration(obj, **kwargs):
 
 	return resource_info, status
 
-def get_resource_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
+def get_pod_resource_list(obj, **kwargs):
+	vlist = []
 
 	init_containers = True
 	containers = True
@@ -4719,51 +4721,100 @@ def get_resource_info(**kwargs):
 	pod_namespace = deep_get(obj, "metadata#namespace")
 
 	if init_containers == True:
+		kind = ("InitContainer", "")
+		rtype = resource_kind_to_rtype(kind)
 		for container in deep_get(obj, "spec#initContainers", []):
 			ref = container
-			container_name = deep_get(container, "name")
-			resource_tuple = ("", "", container_name)
-			kind = ("InitContainer", "")
-			rtype = resource_kind_to_rtype(kind)
-			status, status_group, restarts, message = get_container_status(deep_get(obj, "status#initContainerStatuses"), container_name, kind)
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, restarts, message))
+			name = deep_get(container, "name")
+			resource_tuple = ("", "", name)
+			status, status_group, restarts, message = get_container_status(deep_get(obj, "status#initContainerStatuses"), name, kind)
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": restarts,
+				"message": message,
+				"age": -1,
+			})
 
 	if containers == True:
+		kind = ("Container", "")
+		rtype = resource_kind_to_rtype(kind)
 		for container in deep_get(obj, "spec#containers", []):
 			ref = container
-			container_name = deep_get(container, "name")
-			resource_tuple = ("", "", container_name)
-			kind = ("Container", "")
-			rtype = resource_kind_to_rtype(kind)
-			status, status_group, restarts, message = get_container_status(deep_get(obj, "status#containerStatuses"), container_name, kind)
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, restarts, message))
+			name = deep_get(container, "name")
+			resource_tuple = ("", "", name)
+			status, status_group, restarts, message = get_container_status(deep_get(obj, "status#containerStatuses"), name, kind)
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": restarts,
+				"message": message,
+				"age": -1,
+			})
 
 	if ephemeral_containers == True:
+		kind = ("EphemeralContainer", "")
+		rtype = resource_kind_to_rtype(kind)
 		for container in deep_get(obj, "spec#ephemeralContainers", []):
 			ref = container
-			container_name = deep_get(container, "name")
-			resource_tuple = ("", "", container_name)
-			kind = ("EphemeralContainer", "")
-			rtype = resource_kind_to_rtype(kind)
-			status, status_group, restarts, message = get_container_status(deep_get(obj, "status#ephemeralContainerStatuses"), container_name, kind)
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, restarts, message))
+			name = deep_get(container, "name")
+			resource_tuple = ("", "", name)
+			status, status_group, restarts, message = get_container_status(deep_get(obj, "status#ephemeralContainerStatuses"), name, kind)
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": restarts,
+				"message": message,
+				"age": -1,
+			})
 
 	if "node" not in deep_get(iktconfig, "Pods#filter_resources", []):
+		kind = ("Node", "")
+		rtype = resource_kind_to_rtype(kind)
 		name = deep_get(obj, "spec#nodeName")
 		ref = None
 		if name is not None:
 			ref = kh.get_ref_by_kind_name_namespace(("Node", ""), name, None)
-
-		if ref is None:
-			status = "<unset>"
-			status_group = stgroup.NOT_OK
-
-		# We ignore the taints
-		status, status_group, taints, full_taints = get_node_status(ref)
-		kind = ("Node", "")
-		rtype = resource_kind_to_rtype(kind)
+		if name is None:
+			name = "<unset>"
 		resource_tuple = ("", "", name)
-		resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
+
+		if ref is not None:
+			status, status_group, taints, full_taints = get_node_status(ref)
+		else:
+			status = "<unset>"
+
+		vlist.append({
+			"ref": ref,
+			"namespace": pod_namespace,
+			"name": name,
+			"kind": kind[0],
+			"api_group": kind[1],
+			"type": rtype,
+			"resource_tuple": resource_tuple,
+			"status": status,
+			"restarts": "",
+			"message": "",
+			"age": -1,
+		})
 
 	for owr in deep_get(obj, "metadata#ownerReferences", []):
 		owr_kind = deep_get(owr, "kind", "")
@@ -4788,14 +4839,27 @@ def get_resource_info(**kwargs):
 				continue
 			rtype = "[owner_reference]"
 
+		status = ""
+
 		ref = kh.get_ref_by_kind_name_namespace(owr_kind, owr_name, pod_namespace)
+		# XXX: Maybe we should get the ref status here?
 		if ref is None:
 			status = "<missing>"
-			status_group = stgroup.NOT_OK
 
 		resource_tuple = (owr_kind[0], owr_kind[1], owr_name)
-		# XXX: Maybe we should get the ref status here?
-		resource_info.append(ResourceInfo(resource_tuple, ref, rtype, owr_kind, "", stgroup.OK, -1, ""))
+		vlist.append({
+			"ref": ref,
+			"namespace": pod_namespace,
+			"name": owr_name,
+			"kind": owr_kind[0],
+			"api_group": owr_kind[1],
+			"type": rtype,
+			"resource_tuple": resource_tuple,
+			"status": status,
+			"restarts": "",
+			"message": "",
+			"age": -1,
+		})
 
 	if "persistent_volume_claim" not in deep_get(iktconfig, "Pods#filter_resources", []):
 		for volume in deep_get(obj, "spec#volumes", []):
@@ -4813,25 +4877,46 @@ def get_resource_info(**kwargs):
 			else:
 				pv_name = "<INVALID PV>"
 				status = "ERROR"
-				status_group = stgroup.NOT_OK
 			ref = pv
 			resource_tuple = ("", "", pv_name)
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
 
 	if "service_account" not in deep_get(iktconfig, "Pods#filter_resources", []) and deep_get(obj, "spec#serviceAccountName") is not None:
 		kind = ("ServiceAccount", "")
 		rtype = resource_kind_to_rtype(kind)
 		status = ""
-		status_group = stgroup.UNKNOWN
 
 		name = deep_get(obj, "spec#serviceAccountName")
 		ref = kh.get_ref_by_kind_name_namespace(kind, name, pod_namespace)
 		resource_tuple = ("", "", name)
-		resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
+		vlist.append({
+			"ref": ref,
+			"namespace": pod_namespace,
+			"name": name,
+			"kind": kind[0],
+			"api_group": kind[1],
+			"type": rtype,
+			"resource_tuple": resource_tuple,
+			"status": status,
+			"restarts": "",
+			"message": "",
+			"age": -1,
+		})
 
 	for vol in deep_get(obj, "spec#volumes", []):
 		status = ""
-		status_group = stgroup.UNKNOWN
 
 		if deep_get(vol, "secret") is not None and "secret" not in deep_get(iktconfig, "Pods#filter_resources", []):
 			kind = ("Secret", "")
@@ -4843,11 +4928,22 @@ def get_resource_info(**kwargs):
 			if ref is None:
 				if optional == False:
 					status = "<missing>"
-					status_group = stgroup.NOT_OK
 				else:
 					status = "<optional>"
-					status_group = stgroup.PENDING
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": secret_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
+
 		if deep_get(vol, "configMap") is not None and "config_map" not in deep_get(iktconfig, "Pods#filter_resources", []):
 			kind = ("ConfigMap", "")
 			rtype = resource_kind_to_rtype(kind)
@@ -4858,19 +4954,27 @@ def get_resource_info(**kwargs):
 			if ref is None:
 				if optional == False:
 					status = "<missing>"
-					status_group = stgroup.NOT_OK
 				else:
 					status = "<optional>"
-					status_group = stgroup.PENDING
 			else:
 				if len(deep_get(ref, "data", [])) == 0:
 					status = "<empty>"
-					status_group = stgroup.PENDING
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": cm_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
 
 	for vol in deep_get(obj, "spec#imagePullSecrets", []):
 		status = ""
-		status_group = stgroup.UNKNOWN
 
 		if "secret" not in deep_get(iktconfig, "Pods#filter_resources", []):
 			kind = ("Secret", "")
@@ -4878,56 +4982,77 @@ def get_resource_info(**kwargs):
 			secret_name = deep_get(vol, "name")
 			resource_tuple = ("", "", secret_name)
 			ref = kh.get_ref_by_kind_name_namespace(kind, secret_name, pod_namespace)
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": secret_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
 
 	if "event" not in deep_get(iktconfig, "Pods#filter_resources", []):
 		#kind = ("Event", "events.k8s.io")
 		kind = ("Event", "")
 		rtype = resource_kind_to_rtype(kind)
 
-		vlist, status = kh.get_list_by_kind_namespace(kind, "")
-		for event in vlist:
+		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
+		for event in _vlist:
 			event_involved_object_name = deep_get_with_fallback(event, ["regarding#name", "involvedObject#name"])
 			event_involved_object_namespace = deep_get_with_fallback(event, ["regarding#namespace", "involvedObject#namespace"])
 			if event_involved_object_name == pod_name and event_involved_object_namespace == pod_namespace:
 				# For kind we don't want the api_family
-				resource_tuple = (kind[0], "", deep_get(event, "metadata#name"))
+				event_name = deep_get(event, "metadata#name")
+				resource_tuple = (kind[0], "", event_name)
 				status = deep_get(event, "type")
-				status_group = get_event_status_group(status)
 				tmp = __get_timestamp_with_fallback(event, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"])
 				seen = get_since(tmp)
 				message = deep_get(event, "message", "")
 				message = message.replace("\n", "\\n").rstrip()
 				resource_info.append(ResourceInfo(resource_tuple, event, rtype, kind, status, status_group, -1, message, age = seen))
+				vlist.append({
+					"ref": ref,
+					"namespace": pod_namespace,
+					"name": event_name,
+					"kind": kind[0],
+					"api_group": kind[1],
+					"type": rtype,
+					"resource_tuple": resource_tuple,
+					"status": status,
+					"restarts": "",
+					"message": message,
+					"age": seen,
+				})
 
 	if "pod_disruption_budget" not in deep_get(iktconfig, "Pods#filter_resources", []):
 		# XXX: Are there are other means of specifying what pod to apply the PDB to than this?
 		if "app" in deep_get(obj, "metadata#labels", {}):
 			kind = ("PodDisruptionBudget", "policy")
-			vlist, status = kh.get_list_by_kind_namespace(kind, "", label_selector = f"app={deep_get(obj, 'metadata#labels')['app']}")
-			for pdb in vlist:
+			_vlist, status = kh.get_list_by_kind_namespace(kind, "", label_selector = f"app={deep_get(obj, 'metadata#labels')['app']}")
+			for pdb in _vlist:
 				rtype = resource_kind_to_rtype(kind)
 				pdb_name = deep_get(pdb, "metadata#name")
 				pdb_namespace = deep_get(pdb, "metadata#namespace")
 				resource_tuple = ("", "", pdb_name)
-				status = ""
-				status_group = stgroup.ADMIN
 				ref = kh.get_ref_by_kind_name_namespace(kind, pdb_name, pdb_namespace)
-				resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
-
-	if "priority_class" not in deep_get(iktconfig, "Pods#filter_resources", []):
-		priority_class_name = deep_get(obj, "spec#priorityClassName")
-		if priority_class_name is not None:
-			kind = ("PriorityClass", "scheduling.k8s.io")
-			resource_tuple = ("", "", priority_class_name)
-			rtype = resource_kind_to_rtype(kind)
-			status = ""
-			status_group = stgroup.OK
-			ref = kh.get_ref_by_kind_name_namespace(kind, priority_class_name, None)
-			if ref is None:
-				status = "<missing>"
-				status_group = stgroup.NOT_OK
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
+				vlist.append({
+					"ref": ref,
+					"namespace": pdb_namespace,
+					"name": pdb_name,
+					"kind": kind[0],
+					"api_group": kind[1],
+					"type": rtype,
+					"resource_tuple": resource_tuple,
+					"status": "",
+					"restarts": "",
+					"message": "",
+					"age": -1,
+				})
 
 	if "pod_metrics" not in deep_get(iktconfig, "Pods#filter_resources", []):
 		kind = ("PodMetrics", "metrics.k8s.io")
@@ -4936,54 +5061,85 @@ def get_resource_info(**kwargs):
 			ref = podmetrics
 			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = ("", "", pod_name)
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, "", stgroup.OK, -1, ""))
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": pod_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": "",
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
 
 	if "antrea_agent" not in deep_get(iktconfig, "Pods#filter_resources", []) and deep_get(obj, "metadata#labels#component", "") == "antrea-agent":
 		# OK, this pod is an antrea-agent, so we should look for one that matches it
 		kind = ("AntreaAgentInfo", "crd.antrea.io")
-		vlist, status = kh.get_list_by_kind_namespace(kind, "")
-		for item in vlist:
+		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
+		for item in _vlist:
 			if deep_get(item, "podRef#namespace", "") == pod_namespace and deep_get(item, "podRef#name", "") == pod_name:
 				ref = item
 				name = deep_get(item, "metadata#name")
 				status = "Unknown"
-				status_group = stgroup.UNKNOWN
 				for condition in deep_get(item, "agentConditions", {}):
 					if deep_get(condition, "type") == "AgentHealthy":
 						healthy = deep_get(condition, "status", "Unknown")
 						if healthy == "True":
 							status = "Healthy"
-							status_group = stgroup.OK
 						elif healhty == "False":
 							status = "Unhealthy"
-							status_group = stgroup.NOT_OK
 				rtype = resource_kind_to_rtype(kind)
 				resource_tuple = ("", "", name)
 				resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
+				vlist.append({
+					"ref": ref,
+					"namespace": pod_namespace,
+					"name": name,
+					"kind": kind[0],
+					"api_group": kind[1],
+					"type": rtype,
+					"resource_tuple": resource_tuple,
+					"status": status,
+					"restarts": "",
+					"message": "",
+					"age": -1,
+				})
 				break
 
 	if "antrea_controller" not in deep_get(iktconfig, "Pods#filter_resources", []) and deep_get(obj, "metadata#labels#component", "") == "antrea-controller":
 		# OK, this pod is an antrea-agent, so we should look for one that matches it
 		kind = ("AntreaControllerInfo", "crd.antrea.io")
-		vlist, status = kh.get_list_by_kind_namespace(kind, "")
-		for item in vlist:
+		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
+		for item in _vlist:
 			if deep_get(item, "podRef#namespace", "") == pod_namespace and deep_get(item, "podRef#name", "") == pod_name:
 				ref = item
 				name = deep_get(item, "metadata#name")
 				status = "Unknown"
-				status_group = stgroup.UNKNOWN
 				for condition in deep_get(item, "controllerConditions", {}):
 					if deep_get(condition, "type") == "ControllerHealthy":
 						healthy = deep_get(condition, "status", "Unknown")
 						if healthy == "True":
 							status = "Healthy"
-							status_group = stgroup.OK
 						elif healhty == "False":
 							status = "Unhealthy"
-							status_group = stgroup.NOT_OK
 				rtype = resource_kind_to_rtype(kind)
 				resource_tuple = ("", "", name)
-				resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
+				vlist.append({
+					"ref": ref,
+					"namespace": pod_namespace,
+					"name": name,
+					"kind": kind[0],
+					"api_group": kind[1],
+					"type": rtype,
+					"resource_tuple": resource_tuple,
+					"status": status,
+					"restarts": "",
+					"message": "",
+					"age": -1,
+				})
 				break
 
 	if "cilium_endpoint" not in deep_get(iktconfig, "Pods#filter_resources", []):
@@ -4993,20 +5149,46 @@ def get_resource_info(**kwargs):
 		if ref is not None:
 			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = ("", "", pod_name)
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, "", stgroup.OK, -1, ""))
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": pod_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": "",
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
 
 	if "service" not in deep_get(iktconfig, "Pods#filter_resources", []):
 		# Find service(s) that has a selector that points to this pod
 		kind = ("Service", "")
 		rtype = resource_kind_to_rtype(kind)
-		vlist, status = kh.get_list_by_kind_namespace(kind, pod_namespace)
-		for item in vlist:
+		_vlist, status = kh.get_list_by_kind_namespace(kind, pod_namespace)
+		for item in _vlist:
 			selector = deep_get(item, "spec#selector", {})
 			if len(selector) == 0:
 				continue
-			vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = kh.make_selector(selector), field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}")
-			if len(vlist2) > 0:
-				resource_info.append(ResourceInfo(resource_tuple, item, rtype, kind, "", stgroup.UNKNOWN, -1, ""))
+			_vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = kh.make_selector(selector), field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}")
+			if len(_vlist2) > 0:
+				name = deep_get(_vlist2[0], "metadata#name")
+				namespace = deep_get(_vlist2[0], "metadata#namespace")
+				vlist.append({
+					"ref": ref,
+					"namespace": namespace,
+					"name": name,
+					"kind": kind[0],
+					"api_group": kind[1],
+					"type": rtype,
+					"resource_tuple": resource_tuple,
+					"status": "",
+					"restarts": "",
+					"message": "",
+					"age": -1,
+				})
 
 	if "runtimeclass" not in deep_get(iktconfig, "Pods#filter_resources", []):
 		kind = ("RuntimeClass", "node.k8s.io")
@@ -5015,9 +5197,21 @@ def get_resource_info(**kwargs):
 		if ref is not None:
 			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = ("", "", name)
-			resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, "", stgroup.UNKNOWN, -1, ""))
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": "",
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
 
-	return resource_info
+	return vlist, 200
 
 class InventoryInfo:
 	def __init__(self, name, ips, kubernetes_roles, ansible_groups, status):
@@ -6441,13 +6635,6 @@ field_templates = {
 		"generator": generator_str_timestamp,
 		"path": [("agentConditions", "AgentHealthy", "lastHeartbeatTime"), ("controllerConditions", "ControllerHealthy", "lastHeartbeatTime")],
 	},
-	"last_restart": {
-		"header": "Last Restart:",
-		"path": "restarted_at",
-		"datagetter": datagetter_pod_restarts,
-		"generator": generator_age,
-		"ralign": True,
-	},
 	"limit": {
 		"header": "Limit:",
 		# FIXME datagetter
@@ -6660,25 +6847,9 @@ field_templates = {
 		"field_colors": [("types", "resource"), ("types", "numerical"), ("types", "numerical")],
 		"field_separators": [("separators", "resource"), ("separators", "fraction")],
 	},
-	"resource_tuple": {
-		# (kind, name)
-		"header": "Resource:",
-		"generator": generator_list,
-		"field_colors": [("types", "kind"), ("types", "generic")],
-	},
-	"restarts": {
-		"header": "Restarts:",
-		"path": "restarts",
-		"datagetter": datagetter_pod_restarts,
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"role": {
 		"header": "Role:",
 		"path": "roleRef#name",
-	},
-	"rtype": {
-		"header": "Type:",
 	},
 	"rule_type": {
 		"header": "Rule Type:",
@@ -8776,45 +8947,6 @@ def field_processor_ansible_processor(obj, path = None, extra_paths = None, fall
 	field = [(f"{value}", formatting)]
 	return field
 
-# extra_paths is a tuple (path, [key, ...]), that references a list with named keys that should be returned;
-# if there are multiple keys the return value will be a list of tuples, otherwise a list
-# If extra_paths[0] does not exist, path will be used as fallback if defined;
-# if path is also empty, fallback will be used
-def field_processor_list_keys(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	item_separators = deep_get(formatting, "item_separators", [("separators", "list")])
-	field_separators = deep_get(formatting, "field_separators", [("separators", "field")])
-	field_colors = deep_get(formatting, "field_colors", [("types", "field")])
-
-	items = deep_get(obj, extra_paths[0])
-	if items is None:
-		tmp = deep_get(obj, path)
-		if tmp is not None:
-			items = [tmp]
-
-	if items is None:
-		if fallback is None:
-			return [("strings", "unset")]
-		else:
-			return fallback
-
-	keys = extra_paths[1]
-	field = []
-
-	for i in range(0, len(items)):
-		for j in range(0, len(keys)):
-			value = deep_get(items[i], keys[j])
-			if value is None:
-				field.append([("strings", "unset")])
-			elif len(value) == 0:
-				field.append([("strings", "empty")])
-			else:
-				field += [(value, field_colors[min(j, len(field_colors) - 1)])]
-			if j < len(keys) - 1:
-				field.append(field_separators[min(j, len(field_separators) - 1)])
-		if i < len(items) - 1:
-			field.append(item_separators[min(i, len(item_separators) - 1)])
-	return field
-
 def field_processor_ansible_facts(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	values = []
 	for path in extra_paths:
@@ -8945,83 +9077,6 @@ def field_processor_ingress_backend(obj, path = None, extra_paths = None, fallba
 	extra_paths = [f"{path}#serviceName", f"{path}#servicePort"]
 
 	return field_processor_list(obj, path = path, extra_paths = extra_paths, fallback = fallback, formatting = formatting)
-
-def field_processor_grace_period(obj, path, extra_paths = None, fallback = None, formatting = None):
-	grace_period = deep_get(obj, path)
-
-	if grace_period is None:
-		field = [
-			("Default (", ("types", "generic")),
-			("30", ("types", "numerical")),
-			("s", ("types", "unit")),
-			(")", ("types", "generic")),
-		]
-	elif grace_period == 0:
-		field = [("Immediately", ("types", "generic"))]
-	else:
-		field = [
-			(f"{grace_period}", ("types", "numerical")),
-			("s", ("types", "unit")),
-		]
-	return field
-
-def field_processor_conditions(obj, path, extra_paths = None, fallback = None, formatting = None):
-	conditions = get_conditions(deep_get(obj, path))
-	field = []
-
-	completed = False
-
-	for condition, state, reason, message in conditions:
-		# These are inverted; False means that everything is fine, True means things are bad
-		# Showing them when they're causing issues feels wrong
-		if condition in ["NetworkUnavailable", "MemoryPressure", "DiskPressure", "PIDPressure", "Degraded", "OutOfDisk"]:
-			if state == "False":
-				continue
-			elif state == "True":
-				state = "False"
-		# If we're not progressing because we're already done then this condition isn't important
-		elif condition == "Progressing" and state == "False" and reason == "AllComponentsReady":
-			continue
-		elif state == "False":
-			condition = f"!{condition}"
-
-		# If the pod has completed we need no other conditions
-		if reason == "PodCompleted":
-			completed = True
-			break
-
-		if state == "False":
-			status_group = stgroup.NOT_OK
-		elif state == "True":
-			status_group = stgroup.OK
-		elif state == "Unknown":
-			condition = f"?{condition}"
-			status_group = stgroup.UNKNOWN
-
-		field.append((f"{condition} ", color_status_group(status_group)))
-
-	if completed == True:
-		field = [("PodCompleted", color_status_group(stgroup.DONE))]
-
-	return field
-
-def field_processor_conditions_certsignreq(obj, path, extra_paths = None, fallback = None, formatting = None):
-	conditions = get_certsignreq_conditions(deep_get(obj, path))
-	formatting = {
-		"conditionals": {
-			"Approved": {
-				"field_color": ("main", "status_ok"),
-			},
-			"Issued": {
-				"field_color": ("main", "status_ok"),
-			},
-			"Denied": {
-				"field_color": ("main", "status_not_ok"),
-			},
-		},
-	}
-
-	return __field_processor_list(conditions, formatting = formatting)
 
 def field_processor_component_kinds(obj, path = None, extra_paths = None, fallback = None, formatting = None):
 	kinds = []
@@ -9290,15 +9345,6 @@ def get_pv_type(obj):
 		if pv_type in deep_get(obj, "spec", []):
 			return pv_type
 	return None
-
-# All fields except obj will be ignored
-def field_processor_pod_status(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	status, status_group = get_pod_status(obj)
-	msg = deep_get(obj, "status#message", "").rstrip()
-	field = [(f"{status}", color_status_group(status_group, False))]
-	if len(msg) > 0:
-		field.append((f" ({msg})", color_status_group(status_group, False)))
-	return field
 
 # All fields except obj and path are ignored
 def field_processor_secret_type(obj, path, extra_paths, fallback = None, formatting = None):
@@ -10047,9 +10093,9 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				for item in uip.info:
 					# If we're dealing with a config map we're interested in non-binary types
 					# If we're dealing with a pod we're interested in containers
-					if hasattr(item, "kind") and item.kind in [("Container", ""), ("InitContainer", "")]:
+					if hasattr(item, "type") and item.type in ["[container]", "[init_container]"]:
 						name = item.ref["name"]
-						ikind = item.kind
+						ikind = item.type
 					elif view == ("ConfigMap", "") and item.type in [rtype[4] for rtype in cmdata_format]:
 						name = item.data
 						ikind = deep_get(viewref, "listpad#on_activation#kind", "")
@@ -10204,9 +10250,12 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					uip.refresh_logpad()
 					uip.refresh_statusbar()
 					curses.doupdate()
-					# If there's no confirm function we default to False
-					w_confirm = eval(deep_get(value, "confirm", True))
-					if w_confirm is True:
+					w_confirm = deep_get(value, "confirm", False)
+					# Check this condition before confirming
+					w_confirm = deep_get(value, "confirm")
+					if type(w_confirm) == str:
+						w_confirm = eval(w_confirm)
+					if w_confirm == True:
 						curses.doupdate()
 						w_confirmtitle = deep_get(value, "confirmtitle")
 						if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = w_confirmtitle, default = False) == False:
@@ -10278,6 +10327,32 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					retval = action_call(uip.stdscr, **action_args)
 					if retval is not None and retval == curses_helper.retval.RETURNFULL:
 						return retval
+				elif action == "execute":
+					_command = deep_get(action_args, "command", [])
+					# replace paths with data
+					if len(_command) > 0:
+						command = []
+						for _cmd in _command:
+							if type(_cmd) == list:
+								command.append(deep_get_with_fallback(obj, _cmd))
+							else:
+								command.append(_cmd)
+					# Check this condition before confirming
+					w_confirm = deep_get(value, "confirm")
+					if type(w_confirm) == str:
+						w_confirm = eval(w_confirm)
+					if w_confirm == True:
+						curses.doupdate()
+						w_confirmtitle = deep_get(value, "confirmtitle")
+						if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = w_confirmtitle, default = False) == False:
+							continue
+					_values = {}
+					_values = {
+						"action_args": {
+							"command": command
+						}
+					}
+					execute_command(uip, values = _values)
 			else:
 				call = deep_get(value, "call")
 				call_name = None
@@ -11413,13 +11488,19 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 	if kind in infoviews:
 		return genericinfoloop(stdscr, obj, kind, **kwargs)
 	# Exceptions
-	elif kind in [("Container", ""), ("InitContainer", "")]:
+	elif kind in [("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")]:
 		# Do not try to open pending containers
 		if deep_get(info, "status#phase") in ["Pending", "Failed"]:
 			return None
 		return containerinfoloop(stdscr, obj, kind, info)
 	else:
 		return None
+
+def resourceinfodispatch_from_pod_resource_list(stdscr, obj, kind, info = None, **kwargs):
+	kind = deep_get(obj, "kind")
+	api_family = deep_get(obj, "api_group", "")
+	obj = deep_get(obj, "ref")
+	return resourceinfodispatch(stdscr, obj, (kind, api_family), info, **kwargs)
 
 # Do not pass both direct and _path versions at the same time
 def resourceinfodispatch_with_lookup(stdscr, **kwargs):
@@ -12263,13 +12344,6 @@ def execute_command(uip, items = [], action = {}, values = {}, kind = None, **kw
 	if len(tmpargs) == 0:
 		return
 
-	msg = [("Executing “", "action"), (action.get("description"), "argument"), ("“\n", "action")]
-
-	curses.endwin()
-	os.system("clear")
-
-	iktprint(msg)
-
 	args = []
 
 	for arg in tmpargs:
@@ -12280,6 +12354,16 @@ def execute_command(uip, items = [], action = {}, values = {}, kind = None, **kw
 			args.append(separator.join(items))
 		else:
 			args.append(arg)
+
+	description = action.get("description")
+	if description is None:
+		description = " ".join(args)
+	msg = [("Executing “", "action"), (description, "argument"), ("“\n", "action")]
+
+	curses.endwin()
+	os.system("clear")
+
+	iktprint(msg)
 
 	try:
 		result = subprocess.run(args)
@@ -12937,31 +13021,6 @@ infoviews_builtin = {
 			"infogetter": get_app_status_info,
 		},
 	},
-	("CertificateSigningRequest", "certificates.k8s.io"): {
-		"windowheader": "Certificate Signing Request Info",
-		"infopad": {
-			"Signer:": {
-				"path": "spec#signerName",
-			},
-			"Requesting User:": {
-				"path": "spec#username",
-			},
-			"Groups:": {
-				"extra_paths": "spec#groups",
-				"processor": field_processor_list,
-			},
-			"Conditions:": {
-				"path": "status",
-				# Add highlighting for Approved, Denied, Issued
-				"processor": field_processor_conditions_certsignreq,
-			},
-			"Usages:": {
-				"extra_paths": "spec#usages",
-				"processor": field_processor_list,
-			}
-		},
-		# TODO: Add shortcuts for approving/denying
-	},
 	("CiliumEndpoint", "cilium.io"): {
 		"windowheader": "Cilium Endpoint Info",
 		"infopad": {
@@ -13358,141 +13417,6 @@ infoviews_builtin = {
 			"infogetter": get_task_log,
 		},
 	},
-	("Pod", ""): {
-		"field_indexes": {
-			"Normal": ["resource_tuple", "rtype", "status", "restarts", "age", "message"],
-		},
-		"sortcolumn": "rtype",
-		"fields": {
-			"resource_tuple": {
-				"header": "Resource:",
-				"formatter": "list",
-				"formatting": {
-					"field_colors": [
-						{
-							"type": "kind",
-						},
-						{
-							"type": "api_group",
-						},
-						{
-							"type": "generic",
-						},
-					],
-					"field_separators": [
-						{
-							"type": "kind_api_group",
-						},
-						{
-							"type": "kind",
-						},
-					],
-				},
-			},
-		},
-		"extraref": "kind",
-		"data": True,
-		"activatedfun": resourceinfodispatch,
-		"infopad": {
-			"Status:": {
-				"processor": field_processor_pod_status,
-			},
-			"Conditions:": {
-				"path": "status#conditions",
-				"processor": field_processor_conditions,
-			},
-			"Scheduler:": {
-				"path": "spec#schedulerName",
-			},
-			"Priority:": {
-				"extra_paths": ["spec#priority"],
-				"formatting": {
-					"field_colors": [("main", "highlight")],
-				},
-				"processor": field_processor_list
-			},
-			"Priority Class:": {
-				"fieldname": [("P", ("main", "infoheader_shortcut")), ("riority Class:", ("main", "infoheader"))],
-				"path": "spec#priorityClassName",
-			},
-			"QoS Class:": {
-				"path": "status#qosClass",
-			},
-			"Pod IPs:": {
-				"path": "status#podIP",
-				"extra_paths": ["status#podIPs", ["ip"]],
-				"processor": field_processor_list_keys,
-			},
-			"Termination Grace Period:": {
-				"path": "spec#terminationGracePeriodSeconds",
-				"processor": field_processor_grace_period,
-			},
-			"Enable Service Links:": {
-				"path": "spec#enableServiceLinks",
-			},
-		},
-		"listpad": {
-			"infogetter": get_resource_info,
-		},
-		"shortcuts": {
-			"Show affinities": {
-				"shortcut": ord("A"),
-				"helptext": ("[Shift] + A", "Show affinities"),
-				"widget": "windowwidget",
-				"headers": ["Type:", "Scheduling:", "Execution:", "Selector:", "Topology:"],
-				"itemgetter": get_pod_affinity,
-				# This isn't supported for now
-				"sortcolumn": "key",
-			},
-			"Execute command in container": {
-				"shortcut": ord(""),
-				"helptext": ("[Ctrl] + E", "Execute command inside container"),
-				"widget": "executecommand",
-				"kinds": [("Container", ""), ("InitContainer", "")],
-				"inputtitle": "Command to execute:",
-				"waitforkeypress": True,
-			},
-			# This is only supported in Kubernetes v1.23+; do we need to add some sort of conditional support for this?
-			"Open ephemeral shell in container": {
-				"shortcut": ord(""),
-				"helptext": ("[Ctrl] + D", "Open a debug (ephemeral) shell inside container"),
-				"widget": "executecommand",
-				"kinds": [("Container", ""), ("InitContainer", "")],
-				"command": ["<ephemeral>"],
-			},
-			"Open shell in container": {
-				"shortcut": ord(""),
-				"helptext": ("[Ctrl] + O", "Open a shell inside container"),
-				"widget": "executecommand",
-				"kinds": [("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")],
-				"command": [ "/bin/sh" ],
-			},
-			"Show tolerations": {
-				"shortcut": ord("t"),
-				"helptext": ("T", "Show tolerations"),
-				"widget": "windowwidget",
-				"headers": ["Key:", "Operator:", "Value:", "Effect:", "Timeout:"],
-				"itemgetter": get_pod_tolerations,
-				# This isn't supported for now
-				"sortcolumn": "key",
-			},
-			"Priority Class": {
-				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Open info page for Priority Class"),
-				"call": resourceinfodispatch,
-				"kind": ("PriorityClass", "scheduling.k8s.io"),
-				"name_path": "spec#priorityClassName",
-			},
-			"SSH to Node": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "SSH to selected node"),
-				"call": ssh_to_host,
-				"call_kind_name_namespace_selection_path": "resource_tuple",
-				"call_kind_name_namespace_selection_order": (-1, 1, -1),
-				"kind_filter": [("Node", "")],
-			},
-		},
-	},
 	("__ResourceView", ""): {
 		"windowheader": "Resource Viewer",
 		"timestamps": False,
@@ -13753,8 +13677,6 @@ views = {**views_special}
 def populate_views():
 	global views
 
-	prefix_view_files = deep_get(iktconfig, "Internal#prefix_view_files", False)
-
 	viewdir = os.path.join(IKTDIR, VIEW_DIRNAME)
 	if not os.path.isdir(viewdir):
 		sys.exit(f"{viewdir} does not exist; please re-run {about.install_program_name}")
@@ -13979,9 +13901,6 @@ def populate_views():
 				# Replace existing listviews with the same name
 				views.pop(name, None)
 
-				if prefix_view_files == True:
-					name = f"*{name}"
-
 				# Add the new view
 				views[name] = listview_entry
 
@@ -14024,6 +13943,8 @@ def populate_views():
 					activatedfun = eval(activatedfun)
 				override_kind = deep_get(on_activation, "kind")
 				override_api_family = deep_get(on_activation, "api_family", "")
+				on_activation_extraref = deep_get(on_activation, "extraref")
+				on_activation_data = deep_get(on_activation, "data")
 				if override_kind is None:
 					viewoverride = (kind, api_family)
 				else:
@@ -14042,6 +13963,8 @@ def populate_views():
 					"fields": deep_get(listpad, "fields"),
 					"activatedfun": activatedfun,
 					"viewoverride": viewoverride,
+					"extraref": on_activation_extraref,
+					"data": on_activation_data,
 					"infopad": row_fields,
 					"listpad": {},
 					"reversible": reversible,
