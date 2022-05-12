@@ -239,7 +239,7 @@ def seconds_to_age(seconds, negative_is_skew = False):
 def get_since(timestamp):
 	if timestamp is None:
 		since = 0
-	elif timestamp == -1:
+	elif timestamp == -1 or timestamp == none_timestamp():
 		since = -1
 	# If the timestamp is an integer we assume it to already be in seconds
 	elif type(timestamp) == int:

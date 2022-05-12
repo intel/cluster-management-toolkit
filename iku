@@ -4472,7 +4472,8 @@ def get_container_status(src_statuses, container, kind):
 		if deep_get(container_status, "name") == container:
 			restarts = deep_get(container_status, "restartCount")
 			running = deep_get(container_status, "state#running")
-			age = timestamp_to_datetime(deep_get_with_fallback(container_status, ["state#terminated#finishedAt", "lastState#terminated#finishedAt", "state#running#startedAt"], None))
+			ts = deep_get_with_fallback(container_status, ["state#terminated#finishedAt", "lastState#terminated#finishedAt", "state#running#startedAt"], None)
+			age = timestamp_to_datetime(ts)
 
 			if deep_get(container_status, "ready") == False:
 				status_group = stgroup.NOT_OK
