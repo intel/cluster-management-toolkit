@@ -373,10 +373,101 @@ infoview:
         header: "Status:"
         path: status
         type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "Available":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Bound":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Completed":
+                field_colors:
+                - context: main
+                  type: status_done
+              "CrashLoopBackOff":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "CreateContainerConfigError":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "<empty>":
+                field_colors:
+                - context: types
+                  type: none
+              "Error":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "Healthy":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "<missing>":
+                field_colors:
+                - context: types
+                  type: unset
+              "Normal":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "<optional>":
+                field_colors:
+                - context: types
+                  type: none
+              "Pending":
+                field_colors:
+                - context: main
+                  type: status_pending
+              "Ready":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Released":
+                field_colors:
+                - context: main
+                  type: status_pending
+              "Running":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Unhealthy":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "Unknown":
+                field_colors:
+                - context: main
+                  type: status_unknown
+              "UNKNOWN":
+                field_colors:
+                - context: main
+                  type: status_unknown
+              "Unreachable":
+                field_colors:
+                - context: main
+                  type: status_unknown
+              "<unset>":
+                field_colors:
+                - context: types
+                  type: unset
+              "Warning":
+                field_colors:
+                - context: main
+                  type: status_warning
       restarts:
         header: "Restarts:"
-        path: restarts
-        type: raw
+        paths:
+        - path: restarts
+          pathtype: remap
+          substitutions:
+            -1: ""
         formatting:
           field_colors:
           - type: numerical

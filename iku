@@ -1470,7 +1470,7 @@ def get_pod_containers_list(**kwargs):
 			node_name = deep_get(obj, "spec#nodeName")
 			for container in deep_get(obj, "spec#containers"):
 				container_name = deep_get(container, "name")
-				reason, status_group, restarts, message = get_container_status(deep_get(obj, "status#containerStatuses"), container_name, ("Container", ""))
+				reason, status_group, restarts, message, age = get_container_status(deep_get(obj, "status#containerStatuses"), container_name, ("Container", ""))
 				for container_status in deep_get(obj, "status#containerStatuses", []):
 					if deep_get(container_status, "name") == container_name:
 						break
@@ -4455,12 +4455,13 @@ def get_container_status(src_statuses, container, kind):
 	message = ""
 
 	if src_statuses is None:
-		return reason, status_group, -1, message
+		return reason, status_group, -1, message, -1
 
 	for container_status in src_statuses:
 		if deep_get(container_status, "name") == container:
 			restarts = deep_get(container_status, "restartCount")
 			running = deep_get(container_status, "state#running")
+			age = timestamp_to_datetime(deep_get_with_fallback(container_status, ["state#terminated#finishedAt", "lastState#terminated#finishedAt", "state#running#startedAt"], None))
 
 			if deep_get(container_status, "ready") == False:
 				status_group = stgroup.NOT_OK
@@ -4495,7 +4496,7 @@ def get_container_status(src_statuses, container, kind):
 					status_group = stgroup.OK
 			break
 
-	return reason, status_group, restarts, message
+	return reason, status_group, restarts, message, age
 
 def make_set_expression_list(expression_list):
 	expressions = []
@@ -4720,71 +4721,42 @@ def get_pod_resource_list(obj, **kwargs):
 	pod_name = deep_get(obj, "metadata#name")
 	pod_namespace = deep_get(obj, "metadata#namespace")
 
+	container_resources = []
 	if init_containers == True:
 		kind = ("InitContainer", "")
-		rtype = resource_kind_to_rtype(kind)
 		for container in deep_get(obj, "spec#initContainers", []):
-			ref = container
-			name = deep_get(container, "name")
-			resource_tuple = ("", "", name)
-			status, status_group, restarts, message = get_container_status(deep_get(obj, "status#initContainerStatuses"), name, kind)
-			vlist.append({
-				"ref": ref,
-				"namespace": pod_namespace,
-				"name": name,
-				"kind": kind[0],
-				"api_group": kind[1],
-				"type": rtype,
-				"resource_tuple": resource_tuple,
-				"status": status,
-				"restarts": restarts,
-				"message": message,
-				"age": -1,
-			})
-
+			# We need these when iterating containers
+			container_resources.append((kind, container, deep_get(obj, "status#initContainerStatuses")))
 	if containers == True:
 		kind = ("Container", "")
-		rtype = resource_kind_to_rtype(kind)
 		for container in deep_get(obj, "spec#containers", []):
-			ref = container
-			name = deep_get(container, "name")
-			resource_tuple = ("", "", name)
-			status, status_group, restarts, message = get_container_status(deep_get(obj, "status#containerStatuses"), name, kind)
-			vlist.append({
-				"ref": ref,
-				"namespace": pod_namespace,
-				"name": name,
-				"kind": kind[0],
-				"api_group": kind[1],
-				"type": rtype,
-				"resource_tuple": resource_tuple,
-				"status": status,
-				"restarts": restarts,
-				"message": message,
-				"age": -1,
-			})
-
+			# We need these when iterating containers
+			container_resources.append((kind, container, deep_get(obj, "status#containerStatuses")))
 	if ephemeral_containers == True:
 		kind = ("EphemeralContainer", "")
-		rtype = resource_kind_to_rtype(kind)
 		for container in deep_get(obj, "spec#ephemeralContainers", []):
-			ref = container
-			name = deep_get(container, "name")
-			resource_tuple = ("", "", name)
-			status, status_group, restarts, message = get_container_status(deep_get(obj, "status#ephemeralContainerStatuses"), name, kind)
-			vlist.append({
-				"ref": ref,
-				"namespace": pod_namespace,
-				"name": name,
-				"kind": kind[0],
-				"api_group": kind[1],
-				"type": rtype,
-				"resource_tuple": resource_tuple,
-				"status": status,
-				"restarts": restarts,
-				"message": message,
-				"age": -1,
-			})
+			# We need these when iterating containers
+			container_resources.append((kind, container, deep_get(obj, "status#ephemeralContainerStatuses")))
+
+	for kind, container, container_status in container_resources:
+		rtype = resource_kind_to_rtype(kind)
+		ref = container
+		name = deep_get(container, "name")
+		resource_tuple = ("", "", name)
+		status, status_group, restarts, message, age = get_container_status(container_status, name, kind)
+		vlist.append({
+			"ref": ref,
+			"namespace": pod_namespace,
+			"name": name,
+			"kind": kind[0],
+			"api_group": kind[1],
+			"type": rtype,
+			"resource_tuple": resource_tuple,
+			"status": status,
+			"restarts": restarts,
+			"message": message,
+			"age": get_since(age),
+		})
 
 	if "node" not in deep_get(iktconfig, "Pods#filter_resources", []):
 		kind = ("Node", "")
@@ -4876,7 +4848,7 @@ def get_pod_resource_list(obj, **kwargs):
 				status, status_group = get_pv_status(pv)
 			else:
 				pv_name = "<INVALID PV>"
-				status = "ERROR"
+				status = "Error"
 			ref = pv
 			resource_tuple = ("", "", pv_name)
 			vlist.append({
@@ -4896,7 +4868,6 @@ def get_pod_resource_list(obj, **kwargs):
 	if "service_account" not in deep_get(iktconfig, "Pods#filter_resources", []) and deep_get(obj, "spec#serviceAccountName") is not None:
 		kind = ("ServiceAccount", "")
 		rtype = resource_kind_to_rtype(kind)
-		status = ""
 
 		name = deep_get(obj, "spec#serviceAccountName")
 		ref = kh.get_ref_by_kind_name_namespace(kind, name, pod_namespace)
@@ -4909,7 +4880,7 @@ def get_pod_resource_list(obj, **kwargs):
 			"api_group": kind[1],
 			"type": rtype,
 			"resource_tuple": resource_tuple,
-			"status": status,
+			"status": "",
 			"restarts": "",
 			"message": "",
 			"age": -1,
@@ -4974,8 +4945,6 @@ def get_pod_resource_list(obj, **kwargs):
 			})
 
 	for vol in deep_get(obj, "spec#imagePullSecrets", []):
-		status = ""
-
 		if "secret" not in deep_get(iktconfig, "Pods#filter_resources", []):
 			kind = ("Secret", "")
 			rtype = "[image_pull_secret]"
@@ -4990,7 +4959,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"api_group": kind[1],
 				"type": rtype,
 				"resource_tuple": resource_tuple,
-				"status": status,
+				"status": "",
 				"restarts": "",
 				"message": "",
 				"age": -1,
@@ -5591,7 +5560,7 @@ def get_pod_status(pod):
 
 				for container in deep_get(pod, "status#initContainerStatuses", []):
 					kind = "InitContainer"
-					status, status_group, restarts, message = get_container_status(deep_get(pod, "status#initContainerStatuses"), deep_get(container, "name"), kind)
+					status, status_group, restarts, message, age = get_container_status(deep_get(pod, "status#initContainerStatuses"), deep_get(container, "name"), kind)
 					# If we have a failed container,
 					# break here
 					if status_group == stgroup.NOT_OK:
@@ -5599,7 +5568,7 @@ def get_pod_status(pod):
 
 				for container in deep_get(pod, "status#containerStatuses", []):
 					kind = "Container"
-					status, status_group, restarts, message = get_container_status(deep_get(pod, "status#containerStatuses"), deep_get(container, "name"), kind)
+					status, status_group, restarts, message, age = get_container_status(deep_get(pod, "status#containerStatuses"), deep_get(container, "name"), kind)
 					# If we have a failed container,
 					# break here
 					if status_group == stgroup.NOT_OK:
@@ -10803,7 +10772,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					if deep_get(container_status, "name") == containername:
 						break
 
-				status, status_group, restarts, message = get_container_status(src_statuses, containername, kind)
+				status, status_group, restarts, message, age = get_container_status(src_statuses, containername, kind)
 				containerarray = [
 					("Container: ", ("main", "infoheader")),
 					(f"{containername}{containertypearray}", ("types", "generic"))
