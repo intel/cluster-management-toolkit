@@ -2832,7 +2832,6 @@ builtin_parsers = [
 	("katib-ui", "", "", "kube_parser_1"),
 	("kfserving-controller-manager", "", "", "kube_parser_1"),
 	("kilo", "", "", "kube_parser_json_glog"),
-	("", "", "gcr.io/knative", "kube_parser_1"),
 	("k8s-mlperf-image-classification-training", "", "", "kube_parser_1"),
 	("kube-app-manager-controller", "kube-app-manager", "", "kube_app_manager"),
 	# kubeflow
@@ -2964,11 +2963,12 @@ def init_parser_list():
 					pod_name = matchkey.get("pod_name", "")
 					container_name = matchkey.get("container_name", "")
 					image_name = matchkey.get("image_name", "")
+					image_regex = matchkey.get("image_regex", "")
 					container_type = matchkey.get("container_type", "container")
 					# We need at least one way of matching
 					if len(pod_name) == 0 and len(container_name) == 0 and len(image_name) == 0:
 						continue
-					matchrule = (pod_name, container_name, image_name, container_type)
+					matchrule = (pod_name, container_name, image_name, container_type, image_regex)
 					matchrules.append(matchrule)
 
 				if len(matchrules) == 0:
@@ -3036,7 +3036,7 @@ def init_parser_list():
 				else:
 					parser_name = builtin_parser[3]
 					show_in_selector = True
-				matchrules = [(builtin_parser[0], builtin_parser[1], builtin_parser[2], "container")]
+				matchrules = [(builtin_parser[0], builtin_parser[1], builtin_parser[2], "container", "")]
 			# New-style parser definition;
 			elif type(builtin_parser[2]) == list:
 				parser_name = builtin_parser[0]
@@ -3049,9 +3049,9 @@ def init_parser_list():
 			parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = builtin_parser[3]))
 
 	# Fallback entries
-	parsers.append(Parser(parser_name = "basic_8601_raw", show_in_selector = True, match_rules = [("raw", "", "", "container")], parser = "basic_8601_raw"))
+	parsers.append(Parser(parser_name = "basic_8601_raw", show_in_selector = True, match_rules = [("raw", "", "", "container", "")], parser = "basic_8601_raw"))
 	# This should always be last
-	parsers.append(Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("", "", "", "container")], parser = "basic_8601"))
+	parsers.append(Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("", "", "", "container", "")], parser = "basic_8601"))
 
 def get_parser_list():
 	_parsers = set()
@@ -3134,13 +3134,19 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 			container_prefix = matchrule[1]
 			image_prefix = matchrule[2]
 			_container_type = matchrule[3]
+			image_regex = matchrule[4]
 			_image_name = image_name
 			if image_prefix.startswith("/"):
 				tmp = image_name.split("/", 1)
 				if len(tmp) == 2:
 					_image_name = "/" + tmp[1]
 
-			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and _image_name.startswith(image_prefix) and container_type  == _container_type:
+			if len(image_regex) == 0:
+				regex_match = True
+			else:
+				tmp = re.match(image_regex, _image_name)
+				regex_match = tmp is not None
+			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and _image_name.startswith(image_prefix) and container_type  == _container_type and regex_match == True:
 				uparser = parser.parser_name
 				if type(parser.parser) == tuple and parser.parser[0] == "custom":
 					options = {
