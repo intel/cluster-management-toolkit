@@ -21,3 +21,109 @@ listview:
       path: "spec#hosts"
       type: raw
       formatter: list
+infoview:
+  name: Virtual Service Info
+  infopad:
+    row_indexes:
+      Normal: [controller, gateways, hosts, export_to]
+    rows:
+      controller:
+        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - kind
+          - apiVersion
+          - name
+          when:
+            key: controller
+            eq: true
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      export_to:
+        header: [["Export To:", [main, infoheader]]]
+        paths:
+        - path: "spec#exportTo"
+          pathtype: remap
+          substitutions:
+            "*": All
+            ".": Same
+          default: All
+        type: raw
+        formatter: list
+      gateways:
+        header: [["G", [main, infoheader_shortcut]], ["ateways:", [main, infoheader]]]
+        path: "spec#gateways"
+        type: raw
+        formatter: list
+      hosts:
+        header: [["Hosts:", [main, infoheader]]]
+        path: "spec#hosts"
+        type: raw
+        formatter: list
+  listpad:
+    listgetter: get_virtsvc_rule_list
+    infogetter: generic_infogetter
+    field_indexes:
+      Normal: [rule_type, destinations]
+    sortcolumn: rule_type
+    fields:
+      destinations:
+        header: "Destinations:"
+        path: destinations
+        type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: host
+          - type: subset
+          - type: port
+          field_separators:
+          - type: list_start
+          - type: list_end_colon
+      rule_type:
+        header: "Rule Type:"
+        path: rule_type
+        type: str
+  shortcuts:
+    "Gateways":
+      key: g
+      modifier: shift
+      helptext: "List Gateways"
+      widget: windowwidget
+      title: "Gateways:"
+      headers: ["Namespace:", "Name:"]
+      itemgetter: get_list_as_list
+      itemgetter_args:
+        path: "spec#gateways"
+        regex: "^(.*?)/(.*)$"
+      selectable: true
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        kind: Gateway
+        api_family: networking.istio.io
+        name_path: 1
+        namespace_path: 0
+      # This isn't supported for now
+      sortcolumn: namespace
+    "Open controller":
+      key: c
+      modifier: shift
+      helptext: "Open info page for controller"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

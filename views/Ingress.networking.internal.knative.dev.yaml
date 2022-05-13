@@ -1,0 +1,35 @@
+kind: Ingress
+api_family: networking.internal.knative.dev
+default_command: ingresses.networking.internal.knative.dev
+commands:
+- kingresses
+- kingress
+listview:
+  name: Ingresses (KNative)
+  group: KNative
+  field_indexes:
+    Normal: [namespace, name, age]
+  sortcolumn: namespace
+infoview:
+  name: Ingress Info (KNative)
+  infopad:
+  listpad:
+    path: "spec#rules"
+    infogetter: generic_infogetter
+    field_indexes:
+      Normal: [hosts, visibility, http]
+    sortcolumns: hosts
+    fields:
+      hosts:
+        header: "Hosts:"
+        path: hosts
+        type: raw
+        formatter: list
+      http:
+        header: "HTTP:"
+        path: "http"
+        type: raw
+      visibility:
+        header: "Visibility:"
+        path: visibility
+        type: str

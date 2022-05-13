@@ -17,3 +17,276 @@ listview:
       header: "Host:"
       path: "spec#host"
       type: str
+infoview:
+  name: Destination Rule Info
+  infopad:
+    row_indexes:
+      Normal: [host, traffic_policy_header, traffic_policy_load_balancer_header, traffic_policy_load_balancer_type, traffic_policy_load_balancer_name, traffic_policy_load_balancer_path, traffic_policy_load_balancer_ttl, traffic_policy_load_balancer_minimum_ring_size, traffic_policy_tcp_header, traffic_policy_tcp_max_connections, traffic_policy_tcp_max_connection_timeout, traffic_policy_tcp_keepalive_header, traffic_policy_tcp_keepalive_time, traffic_policy_tcp_keepalive_interval, traffic_policy_tcp_keepalive_probes, traffic_policy_http_header, traffic_policy_http_max_http1_pending_requests, traffic_policy_http_max_http2_requests, traffic_policy_http_max_requests_per_connection, traffic_policy_http_max_retries, traffic_policy_http_idle_timeout, traffic_policy_http_upgrade_http1_1_to_http2, traffic_policy_outlier_detection_header, traffic_policy_outlier_detection_consecutive_gateway_errors, traffic_policy_outlier_detection_consecutive_5xx_errors, traffic_policy_outlier_ejection_sweep_interval, traffic_policy_outlier_base_ejection_time, traffic_policy_outlier_max_ejection_percent, traffic_policy_outlier_min_health_percent, traffic_policy_tls_header, traffic_policy_tls_mode, traffic_policy_tls_client_certificate, traffic_policy_tls_private_key, traffic_policy_tls_ca_certificates, traffic_policy_tls_credential_name, traffic_policy_tls_subject_alt_names, traffic_policy_tls_sni, traffic_policy_tls_insecure_skip_verify, export_to]
+    rows:
+      host:
+        header: [["Host:", [main, infoheader]]]
+        path: "spec#host"
+        type: str
+      traffic_policy_header:
+        header: [["Traffic Policy:", [main, infoheader]]]
+      traffic_policy_load_balancer_header:
+        header: [["  Load Balancer:", [main, infoheader]]]
+      traffic_policy_load_balancer_type:
+        header: [["    Type:", [main, infoheader]]]
+        paths:
+        - path: "spec#trafficPolicy#loadBalancer"
+          pathtype: dictfields
+          subpaths:
+          - Simple
+          - [simple]
+          when:
+            key: simple
+            notnone: true
+        - path: "spec#trafficPolicy#loadBalancer"
+          pathtype: dictfields
+          subpaths:
+          - Consistent Hash
+          - HTTP Cookie
+          when:
+            key: consistentHash
+            dicthaskey: httpCookie
+        - path: "spec#trafficPolicy#loadBalancer"
+          pathtype: dictfields
+          subpaths:
+          - Consistent Hash
+          - HTTP Header Name
+          when:
+            key: consistentHash
+            dicthaskey: httpHeaderName
+        - path: "spec#trafficPolicy#loadBalancer"
+          pathtype: dictfields
+          subpaths:
+          - Consistent Hash
+          - Use Source IP
+          when:
+            key: consistentHash
+            dicthaskey: useSourceIp
+        - path: "spec#trafficPolicy#loadBalancer"
+          pathtype: dictfields
+          subpaths:
+          - Consistent Hash
+          - HTTP Query Parameter Name
+          when:
+            key: consistentHash
+            dicthaskey: httpQueryParameterName
+        formatter: list
+      traffic_policy_load_balancer_name:
+        header: [["    Name:", [main, infoheader]]]
+        path: "spec#trafficPolicy#loadBalancer#consistentHash#httpCookie#name"
+        type: str
+      traffic_policy_load_balancer_path:
+        header: [["    Path:", [main, infoheader]]]
+        path: "spec#trafficPolicy#loadBalancer#consistentHash#httpCookie#path"
+        type: str
+      traffic_policy_load_balancer_ttl:
+        header: [["    TTL:", [main, infoheader]]]
+        path: "spec#trafficPolicy#loadBalancer#consistentHash#httpCookie#ttl"
+        type: raw
+        formatter: numerical_with_units
+      traffic_policy_load_balancer_minimum_ring_size:
+        header: [["    Minimum Ring Size:", [main, infoheader]]]
+        path: "spec#trafficPolicy#loadBalancer#consistentHash#minimumRingSize"
+        type: raw
+        formatter: numerical_with_units
+      traffic_policy_tcp_header:
+        header: [["  TCP:", [main, infoheader]]]
+      traffic_policy_tcp_max_connections:
+        header: [["    Max Connections:", [main, infoheader]]]
+        path: "spec#trafficPolicy#connectionPool#tcp#maxConnections"
+        default: "2³¹-1"
+        type: raw
+        formatting:
+          field_colors:
+          - type: numerical
+      traffic_policy_tcp_max_connection_timeout:
+        header: [["    Connection Timeout:", [main, infoheader]]]
+        paths:
+        - path: "spec#trafficPolicy#connectionPool#tcp"
+          pathtype: dictfields
+          subpath:
+          - [connectTimeout]
+          default: 10s
+        formatter: numerical_with_units
+      traffic_policy_tcp_keepalive_header:
+        header: [["    Keepalive:", [main, infoheader]]]
+      traffic_policy_tcp_keepalive_time:
+        header: [["      Time:", [main, infoheader]]]
+        path: "spec#trafficPolicy#connectionPool#tcp#tcpKeepalive#time"
+        type: str
+        formatter: numerical_with_units
+      traffic_policy_tcp_keepalive_interval:
+        header: [["      Interval:", [main, infoheader]]]
+        path: "spec#trafficPolicy#connectionPool#tcp#tcpKeepalive#interval"
+        type: str
+        formatter: numerical_with_units
+      traffic_policy_tcp_keepalive_probes:
+        header: [["      Probes:", [main, infoheader]]]
+        path: "spec#trafficPolicy#connectionPool#tcp#tcpKeepalive#probes"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      traffic_policy_http_header:
+        header: [["  HTTP:", [main, infoheader]]]
+      traffic_policy_http_max_http1_pending_requests:
+        header: [["    Max HTTP1 Pending Requests:", [main, infoheader]]]
+        path: "spec#trafficPolicy#connectionPool#http#http1MaxPendingRequests"
+        default: "2³¹-1"
+        type: raw
+        formatting:
+          field_colors:
+          - type: numerical
+      traffic_policy_http_max_http2_requests:
+        header: [["    Max HTTP2 Requests:", [main, infoheader]]]
+        path: "spec#trafficPolicy#connectionPool#http#http2MaxRequests"
+        default: "2³¹-1"
+        type: raw
+        formatting:
+          field_colors:
+          - type: numerical
+      traffic_policy_http_max_requests_per_connection:
+        header: [["    Max Requests Per Connection:", [main, infoheader]]]
+        path: "spec#trafficPolicy#connectionPool#http#maxRequestsPerConnection"
+        default: "2²⁹"
+        type: raw
+        formatting:
+          field_colors:
+          - type: numerical
+      traffic_policy_http_max_retries:
+        header: [["    Max Retries:", [main, infoheader]]]
+        path: "spec#trafficPolicy#connectionPool#http#maxRetries"
+        default: "2³¹-1"
+        type: raw
+        formatting:
+          field_colors:
+          - type: numerical
+      traffic_policy_http_idle_timeout:
+        header: [["    Idle Timeout:", [main, infoheader]]]
+        path: "spec#trafficPolicy#connectionPool#http#idleTimeout"
+        type: raw
+        default: "1h"
+        formatter: numerical_with_units
+      traffic_policy_http_upgrade_http1_1_to_http2:
+        header: [["    Upgrade HTTP1.1 to HTTP2:", [main, infoheader]]]
+        path: "spec#trafficPolicy#connectionPool#http#h2UpgradePolicy"
+        type: str
+        default: DEFAULT
+      traffic_policy_outlier_detection_header:
+        header: [["  Outlier Detection:", [main, infoheader]]]
+      traffic_policy_outlier_detection_consecutive_gateway_errors:
+        header: [["    Consecutive Gateway Errors:", [main, infoheader]]]
+        path: "spec#trafficPolicy#outlierDetection#consecutiveGatewayErrors"
+        default: Disabled
+        type: raw
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              Disabled:
+                field_colors:
+                - context: types
+                  type: none
+              __default:
+                field_colors:
+                - context: types
+                  type: numerical
+      traffic_policy_outlier_detection_consecutive_5xx_errors:
+        header: [["    Consecutive 5xx Errors:", [main, infoheader]]]
+        path: "spec#trafficPolicy#outlierDetection#consecutive5xxErrors"
+        default: 5
+        type: int
+        formatter: numerical_with_units
+      traffic_policy_outlier_ejection_sweep_interval:
+        header: [["    Ejection Sweep Interval:", [main, infoheader]]]
+        path: "spec#trafficPolicy#outlierDetection#interval"
+        default: "10s"
+        type: str
+        formatter: numerical_with_units
+      traffic_policy_outlier_base_ejection_time:
+        header: [["    Base Ejection Time:", [main, infoheader]]]
+        path: "spec#trafficPolicy#outlierDetection#baseEjectionTime"
+        default: "30s"
+        type: str
+        formatter: numerical_with_units
+      traffic_policy_outlier_max_ejection_percent:
+        header: [["    Max Ejection Percent", [main, infoheader]]]
+        path: "spec#trafficPolicy#outlierDetection#maxEjectionPercent"
+        default: "10%"
+        type: str
+        formatter: numerical_with_units
+      traffic_policy_outlier_min_health_percent:
+        header: [["    Min Health Percent", [main, infoheader]]]
+        path: "spec#trafficPolicy#outlierDetection#minHealthPercent"
+        default: "0%"
+        type: str
+        formatter: numerical_with_units
+      traffic_policy_tls_header:
+        header: [["  TLS:", [main, infoheader]]]
+      traffic_policy_tls_mode:
+        header: [["    Mode:", [main, infoheader]]]
+        path: "spec#trafficPolicy#tls#mode"
+        type: str
+      traffic_policy_tls_client_certificate:
+        header: [["    Client Certificate:", [main, infoheader]]]
+        path: "spec#trafficPolicy#tls#clientCertificate"
+        type: str
+      traffic_policy_tls_private_key:
+        header: [["    Private Key:", [main, infoheader]]]
+        path: "spec#trafficPolicy#tls#privateKey"
+        type: str
+      traffic_policy_tls_ca_certificates:
+        header: [["    CA Certificates:", [main, infoheader]]]
+        path: "spec#trafficPolicy#tls#caCertificates"
+        type: str
+      traffic_policy_tls_credential_name:
+        header: [["    Credential Name:", [main, infoheader]]]
+        path: "spec#trafficPolicy#tls#credentialName"
+        type: str
+      traffic_policy_tls_subject_alt_names:
+        header: [["    Alternate Subject Names:", [main, infoheader]]]
+        path: "spec#trafficPolicy#tls#subjectAltNames"
+        type: raw
+        formatter: list
+      traffic_policy_tls_sni:
+        header: [["    SNI:", [main, infoheader]]]
+        path: "spec#trafficPolicy#tls#sni"
+        type: str
+      traffic_policy_tls_insecure_skip_verify:
+        header: [["    Insecure Skip Verify:", [main, infoheader]]]
+        path: "spec#trafficPolicy#tls#insecureSkipVerify"
+        default: false
+        type: bool
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: main
+                  type: status_warning
+              "False":
+                field_colors:
+                - context: main
+                  type: status_ok
+      export_to:
+        header: [["Export To:", [main, infoheader]]]
+        paths:
+        - path: "spec#exportTo"
+          pathtype: remap
+          substitutions:
+            "*": All
+            ".": Same
+          default: All
+
+        # Subsets essentially have same kind of DestinationRules as their parent (except they cannot have subsets, TTBOMK)
+        # Since we need to list subsets anyway, treat all Traffic Policies for the parent as yet another subset, but
+        # with a different (fake) type
+        #
+        # Show the information in the logpad, not in the infopad, that way it won't cause crash on resize,
+        # especially once we had the remaining information
+        #listpad: { SUBSETS }

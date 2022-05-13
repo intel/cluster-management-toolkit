@@ -1962,7 +1962,7 @@ class KubernetesHelper:
 		},
 		("Ingress", "networking.internal.knative.dev"): {
 			"api_family": ["apis/networking.internal.knative.dev/v1alpha1/"],
-			"api": "certificates",
+			"api": "ingresses",
 		},
 		("ServerlessService", "networking.internal.knative.dev"): {
 			"api_family": ["apis/networking.internal.knative.dev/v1alpha1/"],

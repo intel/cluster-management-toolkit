@@ -296,7 +296,7 @@ def timestamp_to_datetime(timestamp, default = none_timestamp()):
 			return datetime.strptime(timestamp, fmt)
 		except ValueError:
 			pass
-	raise ValueError(f"Could not parse timestamp: {rtimestamp=}")
+	raise ValueError(f"Could not parse timestamp: {rtimestamp}")
 
 def __str_representer(dumper, data):
 	if "\n" in data:

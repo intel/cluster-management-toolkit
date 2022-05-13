@@ -37,16 +37,21 @@ infoview:
     fields:
       hosts:
         header: "Hosts:"
-        path: "hosts"
+        path: hosts
+        type: raw
+        formatter: list
+      port:
+        header: "Port:"
+        paths:
+        - path: [["port#name"], ["port#number"], ["port#protocol"]]
+          pathtype: tuple
         type: raw
         formatter: list
         formatting:
           field_colors:
-          - type: address
-      port:
-        header: "Port:"
-        path: "port"
-        type: str
-        formatting:
-          field_colors:
+          - type: service
           - type: port
+          - type: protocol
+          field_separators:
+          - type: port
+          - type: service

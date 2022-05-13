@@ -1490,50 +1490,33 @@ def get_pod_containers_list(**kwargs):
 
 	return vlist, status
 
-class SidecarInfo:
-	def __init__(self, traffic_type, port, ref, bind, capture_mode, default_endpoint, hosts):
-		self.traffic_type = traffic_type
-		self.port = port
-		self.ref = ref
-		self.bind = bind
-		self.capture_mode = capture_mode
-		self.default_endpoint = default_endpoint
-		self.hosts = hosts
-	def __repr__(self):
-		return repr((self.traffic_type, self.port, self.ref, self.bind, self.capture_mode, self.default_endpoint, self.hosts))
+def get_sidecar_rule_list(obj, **kwargs):
+	vlist = []
 
-def get_sidecar_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	info = []
+	for traffic_type, items in [("Ingress", deep_get(obj, "spec#ingress", [])), ("Egress", deep_get(obj, "spec#egress", []))]:
+		for item in items:
+			pport = deep_get(item, "port#number", "")
+			name = deep_get(item, "port#name", "")
+			protocol = deep_get(item, "port#protocol", "")
+			port = (name, pport, protocol)
+			ref = item
+			bind = deep_get(item, "bind", "")
+			capture_mode = deep_get(item, "captureMode", "NONE")
+			# Required
+			default_endpoint = deep_get(item, "defaultEndpoint", "")
+			# N/A
+			hosts = deep_get(item, "hosts", [])
+			vlist.append({
+				"traffic_type": traffic_type,
+				"port": port,
+				"ref": ref,
+				"bind": bind,
+				"capture_mode": capture_mode,
+				"default_endpoint": default_endpoint,
+				"hosts": hosts,
+			})
 
-	if obj is None:
-		return []
-
-	for item in deep_get(obj, "spec#ingress", []):
-		traffic_type = "Ingress"
-		port = get_port(item)
-		ref = item
-		bind = deep_get(item, "bind", "")
-		capture_mode = deep_get(item, "captureMode", "NONE")
-		# Required
-		default_endpoint = deep_get(item, "defaultEndpoint")
-		# N/A
-		hosts = []
-		info.append(SidecarInfo(traffic_type, port, ref, bind, capture_mode, default_endpoint, hosts))
-
-	for item in deep_get(obj, "spec#engress", []):
-		traffic_type = "Engress"
-		port = get_port(item)
-		ref = item
-		bind = deep_get(item, "bind", "")
-		capture_mode = deep_get(item, "captureMode", "NONE")
-		# N/A
-		default_endpoint = ""
-		# Required
-		hosts = deep_get(item, "hosts")
-		info.append(SidecarInfo(traffic_type, port, ref, bind, capture_mode, default_endpoint, hosts))
-
-	return info
+	return vlist, 200
 
 def normalise_cpu_usage_to_millicores(_cpu_usage):
 	cpu_usage = 0
@@ -2246,6 +2229,12 @@ def when_filter(when_path, item, key = None, value = None):
 		when_endswith = deep_get(when_condition, "endswith")
 		when_notendswith = deep_get(when_condition, "notendswith")
 
+		# These check dict values
+		when_isdict = deep_get(when_condition, "isdict")
+		when_notisdict = deep_get(when_condition, "notisdict")
+		when_dicthaskey = deep_get(when_condition, "dicthaskey")
+		when_notdicthaskey = deep_get(when_condition, "notdicthaskey")
+
 		# Check for existance
 		if when_missing is not None and when_missing in item:
 			return False
@@ -2255,6 +2244,16 @@ def when_filter(when_path, item, key = None, value = None):
 		if when_notnone is not None and value is None:
 			return False
 		if when_none is not None and value is not None:
+			return False
+
+		# dict-based checks
+		if when_isdict is not None and type(value) == dict:
+			return False
+		if when_notisdict is not None and type(value) != dict:
+			return False
+		if when_dicthaskey is not None and (type(value) != dict or when_dicthaskey not in value):
+			return False
+		if when_notdicthaskey is not None and (type(value) != dict or when_notdicthaskey in value):
 			return False
 
 		# Set-based checks
@@ -2500,6 +2499,9 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 				elif ptype == "key_value":
 					value = []
 					for _key, _value in deep_get_with_fallback(obj, path, {}).items():
+						subpaths = deep_get(_path, "subpaths", [])
+						if len(subpaths) > 0:
+							_value = deep_get_with_fallback(_value, subpaths)
 						if when_filter(_path, item = None, key = _key, value = _value) == False:
 							continue
 						_regexes_key = deep_get(_path, "key#regex", [])
@@ -2877,6 +2879,24 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						else:
 							value = (deep_get(_path, "lookup#messages#ok"), stgroup.NEUTRAL)
 					_values.append((value, "raw"))
+				elif ptype == "dictfields":
+					subpaths = deep_get_with_fallback(_path, ["subpaths", "subpath"], [])
+					if type(subpaths) == str:
+						subpaths = [[subpaths]]
+					for mpath in mpaths:
+						tmp = deep_get_with_fallback(obj, mpath)
+						if when_filter(_path, item = tmp) == False:
+							continue
+						value = []
+						for key in subpaths:
+							if type(key) == str:
+								value.append(key)
+							else:
+								value.append(deep_get_with_fallback(tmp, key, default))
+						if len(value) == 1:
+							_values.append((value[0], "raw"))
+						else:
+							_values.append((tuple(value), "raw"))
 				else:
 					value = deep_get_with_fallback(obj, path, default)
 					_values.append((value, vtype))
@@ -3253,23 +3273,8 @@ def get_netpol_rule_list(obj, **kwargs):
 
 	return vlist, 200
 
-class VirtSVCRuleInfo:
-	def __init__(self, rule_type, ref, destinations):
-		self.rule_type = rule_type
-		self.ref = ref
-		self.destinations = destinations
-	def __repr__(self):
-		return repr((self.rule_type, self.ref, self.destinations))
-
-def get_virtsvc_rule_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	info = []
-
-	if obj is None:
-		return []
-
-	# XXX: Currently we have no good value for ref; set it to None
-	ref = None
+def get_virtsvc_rule_list(obj, **kwargs):
+	vlist = []
 
 	for rule_path, rule_type in [("spec#http", "HTTP"), ("spec#tls", "TLS"), ("spec#tcp", "TCP")]:
 		destinations = []
@@ -3284,9 +3289,12 @@ def get_virtsvc_rule_info(**kwargs):
 				destinations.append((host, subset, port))
 
 		if len(destinations) > 0:
-			info.append(VirtSVCRuleInfo(rule_type, ref, destinations))
+			vlist.append({
+				"rule_type": rule_type,
+				"destinations": destinations,
+			})
 
-	return info
+	return vlist, 200
 
 def get_condition_ready(obj):
 	ready = "False"
@@ -5790,9 +5798,14 @@ def get_list_as_list(obj, **kwargs):
 	vlist = []
 	if "path" in kwargs:
 		path = deep_get(kwargs, "path")
+		_regex = deep_get(kwargs, "regex")
 		items = deep_get(obj, path, [])
 		for item in items:
-			vlist.append([item])
+			if _regex is not None:
+				tmp = re.match(_regex, item)
+				vlist.append(tmp.groups())
+			else:
+				vlist.append([item])
 	elif "paths" in kwargs:
 		# lists that run out of elements will return ""
 		# strings will be treated as constants and thus returned for every row
@@ -6407,12 +6420,6 @@ field_templates = {
 		"generator": generator_list,
 		"field_separators": [("separators", "port")],
 	},
-	"bind": {
-		"header": "Bind:",
-	},
-	"capture_mode": {
-		"header": "Capture Mode:",
-	},
 	"completions": {
 		"header": "Completions:",
 		"path": [("status#succeeded", 0), "spec#completions"],
@@ -6489,9 +6496,6 @@ field_templates = {
 		"path": "report#summary#dangerCount",
 		"ralign": True,
 	},
-	"default_endpoint": {
-		"header": "Default Endpoint:",
-	},
 	"desired_replicas": {
 		"header": "Desired:",
 		"path": "spec#replicas",
@@ -6505,13 +6509,6 @@ field_templates = {
 		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
-	},
-	"destinations": {
-		# (host, subset, port)
-		"header": "Destinations:",
-		"generator": generator_list,
-		"field_colors": [("types", "host"), ("types", "subset"), ("types", "port")],
-		"field_separators": [("separators", "list_start"), ("separators", "list_end_colon")],
 	},
 	"docker_reference": {
 		"header": "Docker Reference:",
@@ -6562,12 +6559,6 @@ field_templates = {
 	"host": {
 		"header": "Host:",
 		"path": "spec#host",
-	},
-	"hosts": {
-		# [host, ...]
-		"header": "Hosts:",
-		"path": "spec#hosts",
-		"generator": generator_list,
 	},
 	"identity": {
 		"header": "Identity:",
@@ -6835,9 +6826,6 @@ field_templates = {
 		"header": "Role:",
 		"path": "roleRef#name",
 	},
-	"rule_type": {
-		"header": "Rule Type:",
-	},
 	"service": {
 		# (namespace, name, port)
 		"header": "Service:",
@@ -6927,9 +6915,6 @@ field_templates = {
 	"topology_keys": {
 		"header": "Topology Keys:",
 		"generator": generator_list,
-	},
-	"traffic_type": {
-		"header": "Traffic Type:",
 	},
 	"uptodate_replicas": {
 		"header": "Up to Date:",
@@ -9019,24 +9004,6 @@ def field_processor_str_to_list(obj, path = None, extra_paths = None, fallback =
 
 	return __field_processor_list(values, formatting)
 
-def field_processor_percentage(obj, path, extra_paths = None, fallback = None, formatting = None):
-	value = deep_get(obj, path)
-
-	if value is None or value == "" or value == -1:
-		if fallback is None:
-			field = [("strings", "none")]
-		else:
-			field = fallback
-	else:
-		if formatting is None:
-			formatting = ("types", "generic")
-		field = [
-			(f"{str(value)}", formatting),
-			("separators", "percentage"),
-		]
-
-	return field
-
 def field_processor_timestamp(obj, path, extra_paths = None, fallback = None, formatting = None):
 	timestamp = deep_get(obj, path)
 
@@ -9442,7 +9409,6 @@ def decode_and_view_file_templates(stdscr, **kwargs):
 	for file in files:
 		if deep_get(file, "path", "") == name:
 			break
-			sys.exit(f"{file=}")
 	else:
 		return
 	encoding = deep_get(file, "encoding", "")
@@ -13121,140 +13087,6 @@ infoviews_builtin = {
 			},
 		},
 	},
-	("DestinationRule", "networking.istio.io"): {
-		"windowheader": "Destination Rule Info",
-		"infopad": {
-			"Host:": {
-				"path": "spec#host",
-			},
-			# Subsets essentially have same kind of DestinationRules as their parent (except they cannot have subsets, TTBOMK)
-			# Since we need to list subsets anyway, treat all Traffic Policies for the parent as yet another subset, but
-			# with a different (fake) type
-			#
-			# Show the information in the logpad, not in the infopad, that way it won't cause crash on resize,
-			# especially once we had the remaining information
-			"Traffic Policy:": {
-				"processor": None,
-			},
-			"  Load Balancer:": {
-				"path": "spec#trafficPolicy#loadBalancer",
-				"extra_paths": ["spec#trafficPolicy#loadBalancer#simple", "spec#trafficPolicy#loadBalancer#consistentHash"],
-				"formatting": {
-					# Only one load balancer can be specified at any time;
-					# by substituting None for "" we achieve a one-or-the-other behaviour
-					"field_colors": [("types", "generic"), ("types", "generic")],
-					"item_separators": [("", curses.A_NORMAL)],
-					"conditionals": {
-						"<<<none>>>": {
-							"substitute": "",
-						},
-					},
-					"suffix": ("s", curses.A_NORMAL),
-				},
-				"fallback": [("strings", "none")],
-				"processor": field_processor_list,
-			},
-			"  TCP » Max Connections:": {
-				"path": "spec#trafficPolicy#connectionPool#tcp#maxConnections",
-				"fallback": [("2³¹-1", ("types", "numerical"))],
-				"formatting": ("types", "numerical"),
-			},
-			"      » Connection Timeout:": {
-				"path": "spec#trafficPolicy#connectionPool#tcp#connectionTimeout",
-				"fallback": [("10", ("types", "numerical")), ("s", ("types", "unit"))],
-				"formatting": ("types", "numerical"),
-			},
-			"      » Keepalive:": {
-				"path": "spec#trafficPolicy#connectionPool#tcp#tcpKeepalive",
-				"fallback": [("False", ("types", "none"))],
-				"formatting": ("types", "numerical"),
-			},
-			"  HTTP » Max HTTP1 Pending Requests:": {
-				"path": "spec#trafficPolicy#connectionPool#http#http1MaxPendingRequests",
-				"fallback": [("2³¹-1", ("types", "numerical"))],
-				"formatting": ("types", "numerical"),
-			},
-			"       » Max HTTP2 Requests:": {
-				"path": "spec#trafficPolicy#connectionPool#http#http2MaxRequests",
-				"fallback": [("2³¹-1", ("types", "numerical"))],
-				"formatting": ("types", "numerical"),
-			},
-			"       » Max Requests Per Connection:": {
-				"path": "spec#trafficPolicy#connectionPool#http#maxRequestsPerConnection",
-				"fallback": [("2²⁹", ("types", "numerical"))],
-				"formatting": ("types", "numerical"),
-			},
-			"       » Max Retries:": {
-				"path": "spec#trafficPolicy#connectionPool#http#maxRetries",
-				"fallback": [("2³¹-1", ("types", "numerical"))],
-				"formatting": ("types", "numerical"),
-			},
-			"       » Idle Timeout:": {
-				"path": "spec#trafficPolicy#connectionPool#http#idleTimeout",
-				"fallback": [("1", ("types", "numerical")), ("h", ("types", "unit"))],
-				"formatting": ("types", "numerical"),
-			},
-			"       » Upgrade HTTP1.1 to HTTP2:": {
-				"path": "spec#trafficPolicy#connectionPool#http#h2UpgradePolicy",
-				"fallback": [("Default", ("types", "none"))],
-				"formatting": ("types", "numerical"),
-			},
-			"  Outlier Detection » Consecutive Gateway Errors:": {
-				"path": "spec#trafficPolicy#outlierDetection#consecutiveGatewayErrors",
-				"fallback": [("Disabled", ("types", "none"))],
-				"formatting": ("types", "numerical"),
-			},
-			"                    » Consecutive 5xx Errors:": {
-				"path": "spec#trafficPolicy#outlierDetection#consecutive5xxErrors",
-				"fallback": [("5", ("types", "numerical"))],
-				"formatting": ("types", "numerical"),
-			},
-			"                    » Ejection Sweep Interval:": {
-				"path": "spec#trafficPolicy#outlierDetection#interval",
-				"fallback": [("10", ("types", "numerical")), ("s", ("types", "unit"))],
-				"formatting": ("types", "numerical"),
-			},
-			"                    » Base Ejection Time:": {
-				"path": "spec#trafficPolicy#outlierDetection#baseEjectionTime",
-				"fallback": [("30", ("types", "numerical")), ("s", ("types", "unit"))],
-				"formatting": ("types", "numerical"),
-			},
-			"                    » Max Ejection Percent": {
-				"path": "spec#trafficPolicy#outlierDetection#maxEjectionPercent",
-				"fallback": [("10", ("types", "numerical")), ("%", ("types", "unit"))],
-				"formatting": ("types", "numerical"),
-				"processor": field_processor_percentage,
-			},
-			"                    » Min Health Percent": {
-				"path": "spec#trafficPolicy#outlierDetection#minHealthPercent",
-				"fallback": [("0", ("types", "numerical")), ("%", ("types", "unit"))],
-				"formatting": ("types", "numerical"),
-				"processor": field_processor_percentage,
-			},
-			# XXX: TLS
-			# XXX: PortLevelSettings
-			"Export To:": {
-				"extra_paths": "spec#exportTo",
-				"processor": field_processor_list,
-				"formatting": {
-					"field_colors": [("types", "generic")],
-					"conditionals": {
-						"<<<none>>>": {
-							"substitute": "All",
-						},
-						"*": {
-							"substitute": "All",
-						},
-						".": {
-							"substitute": "Same",
-						},
-					},
-				},
-				"fallback": [("All", ("types", "generic"))],
-			},
-		},
-		#listpad: { SUBSETS }
-	},
 	("Ingress", "networking.k8s.io"): {
 		"field_indexes": {
 			"Normal": ["host", "path", "backends"],
@@ -13414,65 +13246,6 @@ infoviews_builtin = {
 			"Last Applied Configuration": {},
 			"YAML": {},
 		}
-	},
-	("Sidecar", "networking.istio.io"): {
-		"field_indexes": {
-			"Normal": ["traffic_type", "port", "bind", "capture_mode", "default_endpoint", "hosts"],
-		},
-		"sortcolumn": "traffic_type",
-		"infopad": {
-			"Workload Selector:": {
-				"path": "spec#selector#labels",
-				"processor": field_processor_label_selector,
-			},
-			"Outbound Traffic Policy:": {
-				"path": "spec#outboundTrafficPolicy",
-				"fallback": [("Default", curses.A_NORMAL)],
-			},
-		},
-		"listpad": {
-			"infogetter": get_sidecar_info,
-		},
-	},
-	("VirtualService", "networking.istio.io"): {
-		"windowheader": "Virtual Service Info",
-		"field_indexes": {
-			"Normal": ["rule_type", "destinations"],
-		},
-		"sortcolumn": "rule_type",
-		"infopad": {
-			"Gateways:": {
-				"extra_paths": "spec#gateways",
-				"processor": field_processor_list,
-			},
-			"Hosts:": {
-				"extra_paths": "spec#hosts",
-				"processor": field_processor_list,
-			},
-			"Export To:": {
-				"path": "spec#exportTo",
-				"extra_paths": "spec#exportTo",
-				"formatting": {
-					"field_colors": [("types", "generic")],
-					"conditionals": {
-						"<<<none>>>": {
-							"substitute": "All",
-						},
-						"*": {
-							"substitute": "All",
-						},
-						".": {
-							"substitute": "Same",
-						},
-					},
-				},
-				"fallback": [("All", ("types", "generic"))],
-				"processor": field_processor_list,
-			},
-		},
-		"listpad": {
-			"infogetter": get_virtsvc_rule_info,
-		},
 	},
 }
 
@@ -13767,7 +13540,7 @@ def populate_views():
 
 				if name in views:
 					conflicting_kind = deep_get(views, f"{name}#kind")
-					sys.exit(f"Error when processing view-vile {view_file} for kind: {(kind, api_family)}; a view named {name} already exists (for the kind: {conflicting_kind=}")
+					sys.exit(f"Error when processing view-vile {view_file} for kind: {(kind, api_family)}; a view named {name} already exists (for the kind: {conflicting_kind})")
 
 				infogetter = generic_infogetter
 				if "infogetter" in deep_get(d, "listview"):
