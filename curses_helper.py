@@ -2289,9 +2289,6 @@ class UIProps:
 		else:
 			sortkey1 = self.field_list[self.sortcolumn]["sortkey1"]
 			sortkey2 = self.field_list[self.sortcolumn]["sortkey2"]
-			if sortkey1 == "status":
-				sortkey1 = "status_group"
-				sortkey2 = "status"
 			return sortkey1, sortkey2
 
 	def handle_mouse_events(self, win, sorted_list, activatedfun, extraref, data):
