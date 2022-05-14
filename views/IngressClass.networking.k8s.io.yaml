@@ -1,0 +1,77 @@
+kind: IngressClass
+api_family: networking.k8s.io
+default_command: ingressclasses
+command:
+- ingclasses
+- ingclass
+listview:
+  name: Ingress Classes
+  group: Network
+  field_indexes:
+    Normal: [name, ingress_controller, parameters, age]
+  fields:
+    ingress_controller:
+      header: "Controller:"
+      path: "spec#controller"
+      type: str
+    parameters:
+      header: "Parameters:"
+      paths:
+      - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#name"]]
+        pathtype: tuple
+        type: [kind, api_group, name]
+      formatter: list
+      formatting:
+        field_colors:
+        - type: kind
+        - type: api_group
+        - type: generic
+        field_separators:
+        - type: kind_api_group
+        - type: kind
+infoview:
+  name: Ingress Class Info
+  infopad:
+    row_indexes:
+      Normal: [ingress_controller, parameters]
+    rows:
+      ingress_controller:
+        header: [["Ingress Controller:", [main, infoheader]]]
+        path: "spec#controller"
+        type: str
+      parameters:
+        header: [["Parameters:", [main, infoheader]]]
+        paths:
+        - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#name"]]
+          pathtype: tuple
+          type: [kind, api_group, name]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+  listpad:
+    on_activation:
+      call: resourceinfodispatch
+      kind: Ingress
+      api_family: networking.k8s.io
+    listgetter: generic_listgetter
+    listgetter_args:
+      _kind: Ingress
+      _api_family: networking.k8s.io
+      _pass_obj: true
+      filters:
+        ingress_class:
+          enabled: true
+          allow:
+          - key: "spec#ingressClassName"
+            values:
+              source: caller
+              path: "metadata#name"
+    infogetter: generic_infogetter
+    field_indexes:
+      Normal: [namespace, name, age]

@@ -7,5 +7,153 @@ listview:
   name: Ingresses
   group: Network
   field_indexes:
-    Normal: [namespace, name, ingress_hosts, ingress_address, ingress_ports, age]
+    Normal: [namespace, name, class, hosts, address, ports, age]
   sortcolumn: namespace
+  fields:
+    class:
+      header: "Class:"
+      path: "spec#ingressClassName"
+      type: str
+    address:
+      header: "Address:"
+      paths:
+      - path: "status#loadBalancer#ingress"
+        pathtype: items
+        subpaths:
+        - hostname
+        - ip
+      formatter: list
+      formatting:
+        field_colors:
+        - type: address
+        field_separators:
+        - type: no_pad
+    hosts:
+      header: "Hosts:"
+      paths:
+      - path: ["spec#rules"]
+        pathtype: items
+        subpath:
+        - host
+      formatter: list
+    ports:
+      header: "Ports:"
+      paths:
+      - path: ["spec#rules#http#paths#backend#service#port"]
+        pathtype: appenditems
+        subpath:
+        - name
+        - number
+      formatter: list
+      formatting:
+        field_colors:
+        - type: port
+        - type: service
+infoview:
+  name: Ingress Info
+  infopad:
+    row_indexes:
+      Normal: [class, default_backend]
+    rows:
+      class:
+        header: [["C", [main, infoheader_shortcut]], ["lass:", [main, infoheader]]]
+        path: "spec#ingressClassName"
+        type: str
+      default_backend:
+        header: [["D", [main, infoheader_shortcut]], ["efault Backend:", [main, infoheader]]]
+        paths:
+        - path: [["spec#defaultBackend#resource#kind"], ["spec#defaultBackend#resource#apiGroup"], ["spec#defaultBackend#resource#name"]]
+          pathtype: tuple
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+  listpad:
+    listgetter: get_ingress_rule_list
+    infogetter: generic_infogetter
+    field_indexes:
+      Normal: [host, path, path_type, backend_kind, name, port]
+    fields:
+      backend_kind:
+        header: "Backend Kind:"
+        path: backend_kind
+        type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          field_separators:
+          - type: kind_api_group
+      host:
+        header: "Host:"
+        path: host
+        type: str
+      name:
+        header: "Name:"
+        path: name
+        type: str
+      port:
+        header: "Port:"
+        path: port
+        type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: port
+          - type: service
+          field_separators:
+          - type: no_pad
+      path:
+        header: "Path:"
+        path: path
+        type: str
+      path_type:
+        header: "Path Type:"
+        path: path_type
+        type: str
+  shortcuts:
+    "Default Backend":
+      key: d
+      modifier: shift
+      helptext: "Open info page for default backend"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#defaultBackend#resource#kind"
+        api_family_path: "spec#defaultBackend#resource#apiGroup"
+        name_path: "spec#defaultBackend#resource#name"
+        namespace_path: "metadata#namespace"
+    "Ingress Class":
+      key: c
+      modifier: shift
+      helptext: "Open info page for Ingress Class"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: IngressClass
+        api_family: networking.k8s.io
+        name_path: "spec#ingressClassName"
+    "Show TLS Configuration":
+      key: t
+      modifier: shift
+      helptext: "List TLS configuration"
+      widget: windowwidget
+      title: "TLS configuration"
+      headers: ["Terminating Secret:", "Hosts:"]
+      # Not supported for now
+      sortcolumn: secret
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: "spec#tls"
+        fields:
+        - name: secretName
+          default: "<none>"
+        - hosts

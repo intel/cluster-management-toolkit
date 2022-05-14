@@ -1698,23 +1698,6 @@ def datagetter_controller(obj, path, default):
 	controller = get_controller_from_owner_references(owr)
 	return format_controller(controller, show_kind), {}
 
-def datagetter_ingress_address(obj, paths, default):
-	address = []
-
-	for host in deep_get(obj, "status#loadBalancer#ingress", []):
-		address.append((deep_get(host, "hostname", deep_get(host, "ip"))))
-
-	return address, {}
-
-def datagetter_ingress_hosts(obj, path, default):
-	hosts, ports = get_ingress_hosts(obj)
-	if path == "hosts":
-		return hosts, {}
-	elif path == "ports":
-		return ports, {}
-	else:
-		raise Exception("Unknown ingress field")
-
 def datagetter_regex_split_to_tuples(obj, paths, default):
 	if obj is None or paths is None or len(paths) < 2:
 		return default
@@ -2720,7 +2703,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						else:
 							__values.append(mpaths[i])
 					_values.append((tuple(__values), "raw"))
-				elif ptype == "items":
+				elif ptype in ["items", "appenditems"]:
 					if len(subpath) > 0:
 						if len(subpaths) > 0:
 							raise ValueError(f"Field {name}: when using action: 'items' exactly one of subpath and subpaths must be specified")
@@ -2731,7 +2714,14 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 					for mpath in mpaths:
 						if type(mpath) == str:
 							mpath = [mpath]
-						items += iktlib.deep_get_list(obj, mpath, default = [], fallback_on_empty = fallback_on_empty)
+						tmp = iktlib.deep_get_list(obj, mpath, default = [], fallback_on_empty = fallback_on_empty)
+						# XXX: This is to avoid breaking anything
+						# Ideally the "appenditems" behaviour should be the only one,
+						# but requires rewriting a lot of files
+						if ptype == "items":
+							items += tmp
+						else:
+							items.append(tmp)
 
 					for item in items:
 						if when_filter(_path, item) == False:
@@ -3602,57 +3592,40 @@ def listgetter_policy_rules(obj, **kwargs):
 
 	return vlist, 200
 
-def get_ingress_hosts(obj):
-	hosts = []
-	ports = []
+def get_ingress_rule_list(obj, **kwargs):
+	vlist = []
 
-	for rule in deep_get(obj, "spec#rules", []):
-		if deep_get(rule, "host") is not None:
-			hosts.append(deep_get(rule, "host"))
+	for item in deep_get(obj, "spec#rules", []):
+		host = deep_get(item, "host", "*")
 
-		if deep_get(rule, "http") is not None:
-			if "80" not in ports:
-				ports.append("80")
-
-	if deep_get(obj, "spec#tls") is not None:
-		if "443" not in ports:
-			ports.append("443")
-
-	if hosts == []:
-		hosts.append("*")
-
-	return hosts, ports
-
-class IngressRuleInfo:
-	def __init__(self, host, path, backends):
-		self.host = host
-		self.path = path
-		self.backends = backends
-	def __repr__(self):
-		return repr((self.host, self.path, self.backends))
-
-def get_ingress_rule_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	ingress_rules = []
-
-	if obj is None:
-		return []
-
-	for rule in deep_get(obj, "spec#rules", []):
-		host = deep_get(rule, "host", "*")
-
-		if deep_get(rule, "http") is not None:
-			rule_backend = []
-			for path in deep_get(rule, "http#paths", []):
-				rule_path = deep_get(path, "path", "*")
-				if "service" in deep_get(path, "backend"):
-					service_name = deep_get(path, "backend#service#name")
-					service_port = deep_get(path, "backend#service#number")
+		if deep_get(item, "http") is not None:
+			for path in deep_get(item, "http#paths"):
+				rpath = deep_get(path, "path", "")
+				path_type = deep_get(path, "pathType", "")
+				if "service" in deep_get(path, "backend", {}):
+					backend_kind = ("Service", "")
+					name = deep_get(path, "backend#service#name")
+					port = (deep_get(path, "backend#service#port#number", ""), deep_get(path, "backend#service#port#name", ""))
+				elif "resource" in deep_get(path, "backend", {}):
+					backend_kind = (deep_get(path, "backend#resource#kind", ""), deep_get(path, "backend#resource#apiGroup", ""))
+					name = deep_get(path, "backend#resource#name", "")
+					port = ("", "")
+				# Old-style ingress rule
 				else:
-					service_name = deep_get(path, "backend#serviceName")
-					service_port = deep_get(path, "backend#servicePort")
-				ingress_rules.append(IngressRuleInfo(host, rule_path, (service_name, service_port)))
-	return ingress_rules
+					backend_kind = ("Service", "")
+					name = deep_get(path, "backend#serviceName")
+					port = (deep_get(path, "backend#servicePort", ""), "")
+
+				vlist.append({
+					"host": host,
+					"path": rpath,
+					"path_type": path_type,
+					"backend_kind": backend_kind,
+					"name": name,
+					"port": port,
+				})
+
+	return vlist, 200
 
 class ServiceAccountSecretInfo:
 	def __init__(self, kind, stype, namespace, name, ref):
@@ -5822,11 +5795,15 @@ def get_list_fields(obj, **kwargs):
 			tmp = []
 			for i in range(0, len(fields)):
 				field = fields[i]
-				_value = deep_get(item, field, "")
+				default = ""
+				if type(field) == dict:
+					default = deep_get(field, "default", "")
+					field = deep_get(field, "name")
+				_value = deep_get(item, field, default)
 				if type(_value) == list or (i < len(fields) and i < len(override_types) and override_types[i] == "list"):
-					value = ",".join(_value)
+					value = ", ".join(_value)
 				elif type(_value) == dict or (i < len(fields) and i < len(override_types) and override_types[i] == "dict"):
-					value = ",".join(f"{key}:{val}" for (key, val) in _value.items())
+					value = ", ".join(f"{key}:{val}" for (key, val) in _value.items())
 				elif type(_value) in [int, float, bool] or (i < len(fields) and i < len(override_types) and override_types[i] == "str"):
 					value = str(_value)
 				elif type(_value) == str:
@@ -6554,28 +6531,6 @@ field_templates = {
 	"index": {
 		"header": "Index:",
 		"ralign": True,
-	},
-	"ingress_address": {
-		# (hostname, ip) (xor)
-		"header": "Address:",
-		"datagetter": datagetter_ingress_address,
-		"generator": generator_list,
-	},
-	"ingress_hosts": {
-		"header": "Hosts:",
-		# Note: Artificial path
-		"path": "hosts",
-		"datagetter": datagetter_ingress_hosts,
-		"generator": generator_list,
-	},
-	"ingress_ports": {
-		"header": "Ports:",
-		# Note: Artificial path
-		"path": "ports",
-		"datagetter": datagetter_ingress_hosts,
-		"generator": generator_list,
-		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
-		"field_separators": [("separators", "port"), ("separators", "service")],
 	},
 	"kind": {
 		# (kind, api_group)
@@ -8979,18 +8934,6 @@ def field_processor_timestamp(obj, path, extra_paths = None, fallback = None, fo
 		field = format_timestamp(timestamp, localtimezone = True)
 
 	return field
-
-def field_processor_ingress_backend(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	# In ingress v1 backend is called defaultBackend
-	path = "spec#backend"
-
-	# FIXME: defaultBackend can also be a resource (apiGroup, kind, name) instead of (name:port)
-	if "defaultBackend" in deep_get(obj, "spec"):
-		path = "spec#defaultBackend"
-
-	extra_paths = [f"{path}#serviceName", f"{path}#servicePort"]
-
-	return field_processor_list(obj, path = path, extra_paths = extra_paths, fallback = fallback, formatting = formatting)
 
 # All fields except obj and owr_path will be ignored
 def field_processor_owr_node(obj, owr_path = None, extra_paths = None, fallback = None, formatting = None):
@@ -13004,34 +12947,6 @@ infoviews_builtin = {
 				# Note: This cannot be (kind, api_group)
 				"owner_references_kind": "Node",
 			},
-		},
-	},
-	("Ingress", "networking.k8s.io"): {
-		"field_indexes": {
-			"Normal": ["host", "path", "backends"],
-		},
-		"sortcolumn": "host",
-		"infopad": {
-			"Backend:": {
-				# Note: path and extra_paths will be overriden
-				# by field_processor_ingress_backend to handle
-				# networking.k8s.io/v1 renames
-				"path": "spec#backend",
-				"extra_paths": ["spec#backend#serviceName", "spec#backend#servicePort"],
-				"fallback": [("default-http-backend", ("types", "generic")), ("separators", "port"), ("80", ("types", "port"))],
-				"formatting": {
-					"field_colors": [("types", "generic"), ("types", "port")],
-					"item_separators": [("separators", "port")],
-				},
-				"processor": field_processor_ingress_backend,
-			},
-			"TLS:": {
-				"path": "spec#tls",
-				"processor": field_processor_tls,
-			}
-		},
-		"listpad": {
-			"infogetter": get_ingress_rule_info,
 		},
 	},
 	("__Log", ""): {
