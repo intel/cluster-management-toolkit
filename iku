@@ -4057,25 +4057,6 @@ class AppStatusInfo:
 	def __repr__(self):
 		return repr((self.name, self.status, self.status_group, self.link))
 
-def get_app_status_info(**kwargs):
-	obj = deep_get(kwargs, "_obj")
-	info = []
-
-	if obj is None:
-		return []
-
-	for item in deep_get(obj, "status#components", []):
-		name = deep_get(item, "name")
-		status = deep_get(item, "status")
-		if status == "Ready":
-			status_group = stgroup.OK
-		else:
-			status_group = stgroup.NOT_OK
-		link = deep_get(item, "link")
-		info.append(AppStatusInfo(name, status, status_group, link))
-
-	return info
-
 def listgetter_configmap_data(obj, **kwargs):
 	vlist = []
 
@@ -8814,24 +8795,6 @@ def field_processor_empty(obj, path, extra_paths = None, fallback = None, format
 
 	return field
 
-# All field processors have to return format lists (aka lists of tuples)
-def field_processor_description(obj, path, extra_paths = None, fallback = None, formatting = None):
-	value = deep_get(obj, path)
-
-	if value is None or value == "" or value == -1:
-		if fallback is None:
-			field = [("strings", "none")]
-		else:
-			field = fallback
-	else:
-		# We're not OK with newlines, but " is fine
-		value = value.replace("\n", "\\\n").replace("\\\"", "\"")
-		if formatting is None:
-			formatting = ("types", "generic")
-		field = [(f"{value}", formatting)]
-
-	return field
-
 # XXX: Should be rewritten to handle tuple-lists too
 def __field_processor_list(values, formatting = None):
 	prefix = deep_get(formatting, "prefix", [])
@@ -9028,20 +8991,6 @@ def field_processor_ingress_backend(obj, path = None, extra_paths = None, fallba
 	extra_paths = [f"{path}#serviceName", f"{path}#servicePort"]
 
 	return field_processor_list(obj, path = path, extra_paths = extra_paths, fallback = fallback, formatting = formatting)
-
-def field_processor_component_kinds(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	kinds = []
-
-	for item in deep_get(obj, "spec#componentKinds", []):
-		group = deep_get(item, "group", "")
-		kind = deep_get(item, "kind", "")
-		kinds.append((group, kind))
-
-	if len(kinds) == 0:
-		field = [("strings", "none")]
-	else:
-		field = format_list(kinds, 0, 0, False, False, field_colors = [("types", "kind"), ("types", "api_group")], field_separators = [("separators", "kind_api_group")])
-	return field
 
 # All fields except obj and owr_path will be ignored
 def field_processor_owr_node(obj, owr_path = None, extra_paths = None, fallback = None, formatting = None):
@@ -12942,36 +12891,6 @@ listviewactions = {
 # The most versatile, but also complex, processor is field_processor_list();
 # it can provide formatting, substitutions, and (limited) flow control
 infoviews_builtin = {
-	("Application", "app.k8s.io"): {
-		"field_indexes": {
-			"Normal": ["name", "status", "link"],
-		},
-		"sortcolumn": "status",
-		"infopad": {
-			"Add ownerRef:": {
-				"path": "spec#addOwnerRef",
-				"fallback": [("False", ("types", "generic"))],
-			},
-			"Label Selector:": {
-				"path": "spec#selector#matchLabels",
-				"processor": field_processor_label_selector,
-			},
-			"Kinds:": {
-				"processor": field_processor_component_kinds,
-			},
-			"Description:": {
-				"path": "spec#descriptor#description",
-				"processor": field_processor_description,
-			},
-			"Keywords:": {
-				"extra_paths": "spec#descriptor#keywords",
-				"processor": field_processor_list,
-			},
-		},
-		"listpad": {
-			"infogetter": get_app_status_info,
-		},
-	},
 	("CiliumEndpoint", "cilium.io"): {
 		"windowheader": "Cilium Endpoint Info",
 		"infopad": {
