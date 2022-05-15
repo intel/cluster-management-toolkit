@@ -39,3 +39,22 @@ infoview:
         formatting:
           field_colors:
           - type: version
+  shortcuts:
+    "Show Generations":
+      key: g
+      modifier: shift
+      helptext: "List generations"
+      widget: windowwidget
+      title: "Generations:"
+      headers: ["Name:", "Namespace:", "Group:", "Resource:", "Generation:"]
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: "status#generations"
+        fields:
+        - name
+        - namespace
+        - group
+        - resource
+        - lastGeneration
+      # Not supported for now
+      sortcolumn: name
