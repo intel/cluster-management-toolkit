@@ -79,8 +79,7 @@ infoview:
         path: "spec#nodeName"
         type: str
       subnet:
-        #header: [["S", [main, infoheader_shortcut]], ["ubnet:", [main, infoheader]]]
-        header: [["Subnet:", [main, infoheader]]]
+        header: [["S", [main, infoheader_shortcut]], ["ubnet:", [main, infoheader]]]
         path: "spec#subnet"
         type: str
   shortcuts:
@@ -105,14 +104,14 @@ infoview:
         kind: Pod
         name_path: "spec#podName"
         namespace_path: "spec#namespace"
-#   "Subnet":
-#     key: s
-#     modifier: shift
-#     helptext: "Open info page for Subnet"
-#     action: call
-#     action_call: resourceinfodispatch_with_lookup
-#     action_args:
-#       _pass_obj: true
-#       kind: Subnet
-#       api_family: kubeovn.io
-#       name_path: "spec#subnet"
+    "Subnet":
+      key: s
+      modifier: shift
+      helptext: "Open info page for Subnet"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Subnet
+        api_family: kubeovn.io
+        name_path: "spec#subnet"
