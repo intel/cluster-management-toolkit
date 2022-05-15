@@ -697,6 +697,8 @@ def format_numerical_with_units(string, ftype, selected, non_units = set("012345
 def _generator_age(value, selected):
 	if value == -1:
 		string = ""
+	elif type(value) == str:
+		string = value
 	else:
 		string = iktlib.seconds_to_age(value, negative_is_skew = True)
 
@@ -2230,9 +2232,9 @@ def when_filter(when_path, item, key = None, value = None):
 			return False
 
 		# dict-based checks
-		if when_isdict is not None and type(value) == dict:
+		if when_isdict is not None and type(value) != dict:
 			return False
-		if when_notisdict is not None and type(value) != dict:
+		if when_notisdict is not None and type(value) == dict:
 			return False
 		if when_dicthaskey is not None and (type(value) != dict or when_dicthaskey not in value):
 			return False

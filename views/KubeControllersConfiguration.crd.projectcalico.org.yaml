@@ -6,6 +6,357 @@ command:
 - kubectlconf
 listview:
   name: Kube Controllers Configurations
-  group: CNI
+  group: Calico
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Kube Controllers Configuration Info
+  infopad:
+    row_indexes:
+      Normal:
+      - configuration_header
+      - configuration_etcd_v3_compaction_period
+      - configuration_health_checks
+      - configuration_log_severity_screen
+      - configuration_namespace_controller_header
+      - configuration_namespace_controller_enabled
+      - configuration_namespace_controller_reconciler_period
+      - configuration_node_controller_header
+      - configuration_node_controller_enabled
+      - configuration_node_controller_reconciler_period
+      - configuration_node_controller_host_endpoint_enabled
+      - configuration_node_controller_host_endpoint_auto_create
+      - configuration_node_controller_sync_labels
+      - configuration_policy_controller_header
+      - configuration_policy_controller_enabled
+      - configuration_policy_controller_reconciler_period
+      - configuration_service_account_controller_header
+      - configuration_service_account_controller_enabled
+      - configuration_service_account_controller_reconciler_period
+      - configuration_workload_endpoint_controller_header
+      - configuration_workload_endpoint_controller_enabled
+      - configuration_workload_endpoint_controller_reconciler_period
+      - running_configuration_header
+      - running_etcd_v3_compaction_period
+      - running_health_checks
+      - running_log_severity_screen
+      - running_namespace_controller_header
+      - running_namespace_controller_enabled
+      - running_namespace_controller_reconciler_period
+      - running_node_controller_header
+      - running_node_controller_enabled
+      - running_node_controller_reconciler_period
+      - running_node_controller_host_endpoint_enabled
+      - running_node_controller_host_endpoint_auto_create
+      - running_node_controller_sync_labels
+      - running_policy_controller_header
+      - running_policy_controller_enabled
+      - running_policy_controller_reconciler_period
+      - running_service_account_controller_header
+      - running_service_account_controller_enabled
+      - running_service_account_controller_reconciler_period
+      - running_workload_endpoint_controller_header
+      - running_workload_endpoint_controller_enabled
+      - running_workload_endpoint_controller_reconciler_period
+    rows:
+      configuration_header:
+        header: [["Configuration:", [main, infoheader]]]
+      configuration_etcd_v3_compaction_period:
+        header: [["  etcd v3 Compaction Period:", [main, infoheader]]]
+        path: "spec#etcdV3CompactionPeriod"
+        type: raw
+        formatter: age
+      configuration_health_checks:
+        header: [["  Health Checks:", [main, infoheader]]]
+        path: "spec#healthChecks"
+        type: str
+      configuration_log_severity_screen:
+        header: [["  Log Severity Screen:", [main, infoheader]]]
+        path: "spec#logSeverityScreen"
+        type: str
+      configuration_namespace_controller_header:
+        header: [["  Namespace Controller:", [main, infoheader]]]
+      configuration_namespace_controller_enabled:
+        header: [["    Enabled:", [main, infoheader]]]
+        paths:
+        - path: "spec#controllers"
+          pathtype: substitution
+          subpath: namespace
+          when:
+          - key: namespace
+            isdict: true
+          substitute: "True"
+          default: "False"
+        formatter: list
+      configuration_namespace_controller_reconciler_period:
+        header: [["    Reconciler Period:", [main, infoheader]]]
+        path: "spec#controllers#namespace#reconcilerPeriod"
+        default: "5m"
+        type: raw
+        formatter: age
+      configuration_node_controller_header:
+        header: [["  Node Controller:", [main, infoheader]]]
+      configuration_node_controller_enabled:
+        header: [["    Enabled:", [main, infoheader]]]
+        paths:
+        - path: "spec#controllers"
+          pathtype: substitution
+          when:
+          - key: node
+            isdict: true
+          substitute: "True"
+          default: "False"
+      configuration_node_controller_reconciler_period:
+        header: [["    Reconciler Period:", [main, infoheader]]]
+        path: "spec#controllers#node#reconcilerPeriod"
+        default: "5m"
+        type: raw
+        formatter: age
+      configuration_node_controller_host_endpoint_enabled:
+        header: [["    Node to Host Endpoint Synchronisation:", [main, infoheader]]]
+        paths:
+        - path: "spec#controllers#node#hostEndpoint"
+          pathtype: str
+          default: Disabled
+      configuration_node_controller_host_endpoint_auto_create:
+        header: [["      Endpoint Autocreate:", [main, infoheader]]]
+        paths:
+        - path: "spec#controllers#node#hostEndpoint#autoCreate"
+          pathtype: str
+          default: Disabled
+      configuration_node_controller_sync_labels:
+        header: [["    Sync Labels:", [main, infoheader]]]
+        path: "spec#controllers#node#syncLabels"
+        default: Enabled
+        type: raw
+      configuration_policy_controller_header:
+        header: [["  Policy Controller:", [main, infoheader]]]
+      configuration_policy_controller_enabled:
+        header: [["    Enabled:", [main, infoheader]]]
+        paths:
+        - path: "spec#controllers"
+          pathtype: substitution
+          when:
+          - key: policy
+            isdict: true
+          substitute: "True"
+          default: "False"
+      configuration_policy_controller_reconciler_period:
+        header: [["    Reconciler Period:", [main, infoheader]]]
+        path: "spec#controllers#policy#reconcilerPeriod"
+        default: "5m"
+        type: raw
+        formatter: age
+      configuration_service_account_controller_header:
+        header: [["  Service Account Controller:", [main, infoheader]]]
+      configuration_service_account_controller_enabled:
+        header: [["    Enabled:", [main, infoheader]]]
+        paths:
+        - path: "spec#controllers"
+          pathtype: substitution
+          when:
+          - key: serviceAccount
+            isdict: true
+          substitute: "True"
+          default: "False"
+      configuration_service_account_controller_reconciler_period:
+        header: [["    Reconciler Period:", [main, infoheader]]]
+        path: "spec#controllers#serviceAccount#reconcilerPeriod"
+        default: "5m"
+        type: raw
+        formatter: age
+      configuration_workload_endpoint_controller_header:
+        header: [["  Workload Endpoint Controller:", [main, infoheader]]]
+      configuration_workload_endpoint_controller_enabled:
+        header: [["    Enabled:", [main, infoheader]]]
+        paths:
+        - path: "spec#controllers"
+          pathtype: substitution
+          when:
+          - key: workloadEndpoint
+            isdict: true
+          substitute: "True"
+          default: "False"
+      configuration_workload_endpoint_controller_reconciler_period:
+        header: [["    Reconciler Period:", [main, infoheader]]]
+        path: "spec#controllers#workloadEndpoint#reconcilerPeriod"
+        default: "5m"
+        type: raw
+        formatter: age
+      running_configuration_header:
+        header: [["Running Configuration Overrides:", [main, infoheader]]]
+      running_etcd_v3_compaction_period:
+        header: [["  etcd v3 Compaction Period:", [main, infoheader]]]
+        path: "status#runningConfig#etcdV3CompactionPeriod"
+        type: raw
+        formatter: age
+      running_health_checks:
+        header: [["  Health Checks:", [main, infoheader]]]
+        path: "status#runningConfig#healthChecks"
+        type: str
+      running_log_severity_screen:
+        header: [["  Log Severity Screen:", [main, infoheader]]]
+        path: "status#runningConfig#logSeverityScreen"
+        type: str
+      running_namespace_controller_header:
+        header: [["  Namespace Controller:", [main, infoheader]]]
+      running_namespace_controller_enabled:
+        header: [["    Enabled:", [main, infoheader]]]
+        paths:
+        - path: "status#runningConfig#controllers"
+          pathtype: substitution
+          subpath: namespace
+          when:
+          - key: namespace
+            notnone: true
+          substitute: "True"
+        - path: "status#runningConfig#controllers"
+          pathtype: substitution
+          subpath: namespace
+          when:
+          - key: namespace
+            notmissing: true
+          - key: namespace
+            none: true
+          substitute: "False"
+        formatter: list
+      running_namespace_controller_reconciler_period:
+        header: [["    Reconciler Period:", [main, infoheader]]]
+        path: "status#runningConfig#controllers#namespace#reconcilerPeriod"
+        type: raw
+        formatter: age
+      running_node_controller_header:
+        header: [["  Node Controller:", [main, infoheader]]]
+      running_node_controller_enabled:
+        header: [["    Enabled:", [main, infoheader]]]
+        paths:
+        - path: "status#runningConfig#controllers"
+          pathtype: substitution
+          when:
+          - key: node
+            notnone: true
+          substitute: "True"
+        - path: "status#runningConfig#controllers"
+          pathtype: substitution
+          when:
+          - key: node
+            notmissing: true
+          - key: node
+            none: true
+          substitute: "False"
+      running_node_controller_reconciler_period:
+        header: [["    Reconciler Period:", [main, infoheader]]]
+        path: "status#runningConfig#controllers#node#reconcilerPeriod"
+        type: raw
+        formatter: age
+      running_node_controller_host_endpoint_enabled:
+        header: [["    Node to Host Endpoint Synchronisation:", [main, infoheader]]]
+        paths:
+        - path: "status#runningConfig#controllers#node"
+          pathtype: substitution
+          when:
+          - key: hostEndpoint
+            notnone: true
+          substitute: "True"
+        - path: "status#runningConfig#controllers#node"
+          pathtype: substitution
+          when:
+          - key: hostEndpoint
+            notmissing: true
+          - key: hostEndpoint
+            none: true
+          substitute: "False"
+      running_node_controller_host_endpoint_auto_create:
+        header: [["      Endpoint Autocreate:", [main, infoheader]]]
+        paths:
+        - path: "status#runningConfig#controllers#node#hostEndpoint#autoCreate"
+          pathtype: str
+      running_node_controller_sync_labels:
+        header: [["    Sync Labels:", [main, infoheader]]]
+        path: "status#runningConfig#controllers#node#syncLabels"
+        type: raw
+      running_policy_controller_header:
+        header: [["  Policy Controller:", [main, infoheader]]]
+      running_policy_controller_enabled:
+        header: [["    Enabled:", [main, infoheader]]]
+        paths:
+        - path: "status#runningConfig#controllers"
+          pathtype: substitution
+          when:
+          - key: policy
+            notnone: true
+          substitute: "True"
+        - path: "status#runningConfig#controllers"
+          pathtype: substitution
+          when:
+          - key: policy
+            notmissing: true
+          - key: policy
+            none: true
+          substitute: "False"
+      running_policy_controller_reconciler_period:
+        header: [["    Reconciler Period:", [main, infoheader]]]
+        path: "status#runningConfig#controllers#policy#reconcilerPeriod"
+        type: raw
+        formatter: age
+      running_service_account_controller_header:
+        header: [["  Service Account Controller:", [main, infoheader]]]
+      running_service_account_controller_enabled:
+        header: [["    Enabled:", [main, infoheader]]]
+        paths:
+        - path: "status#runningConfig#controllers"
+          pathtype: substitution
+          when:
+          - key: serviceAccount
+            notnone: true
+          substitute: "True"
+        - path: "status#runningConfig#controllers"
+          pathtype: substitution
+          when:
+          - key: serviceAccount
+            notmissing: true
+          - key: serviceAccount
+            none: true
+          substitute: "False"
+      running_service_account_controller_reconciler_period:
+        header: [["    Reconciler Period:", [main, infoheader]]]
+        path: "status#runningConfig#controllers#serviceAccount#reconcilerPeriod"
+        type: raw
+        formatter: age
+      running_workload_endpoint_controller_header:
+        header: [["  Workload Endpoint Controller:", [main, infoheader]]]
+      running_workload_endpoint_controller_enabled:
+        header: [["    Enabled:", [main, infoheader]]]
+        paths:
+        - path: "status#runningConfig#controllers"
+          pathtype: substitution
+          when:
+          - key: workloadEndpoint
+            notnone: true
+          substitute: "True"
+        - path: "status#runningConfig#controllers"
+          pathtype: substitution
+          when:
+          - key: workloadEndpoint
+            notmissing: true
+          - key: workloadEndpoint
+            none: true
+          substitute: "False"
+      running_workload_endpoint_controller_reconciler_period:
+        header: [["    Reconciler Period:", [main, infoheader]]]
+        path: "status#runningConfig#controllers#workloadEndpoint#reconcilerPeriod"
+        type: raw
+        formatter: age
+  shortcuts:
+    "Environment Variables":
+      key: e
+      modifier: shift
+      helptext: "List environment variables"
+      widget: windowwidget
+      title: "Environment Variables:"
+      headers: ["Key:", "Value:"]
+      itemgetter: get_key_value
+      itemgetter_args:
+        path: "status#environmentVars"
+      # Not supported for now
+      sortcolumn: subnet
