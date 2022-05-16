@@ -6,6 +6,21 @@ command:
 - ciliumid
 listview:
   name: Cilium Identities
-  group: CNI
+  group: Cilium
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Cilium Identity Info
+  infopad:
+  shortcuts:
+    "Show Security Labels":
+      key: s
+      modifier: shift
+      helptext: "Show security labels"
+      widget: windowwidget
+      title: "Security Labels:"
+      headers: ["Label:", "Value:"]
+      itemgetter: get_key_value
+      itemgetter_args:
+        path: "security-labels"
+      formatting: [[windowwidget, default], [windowwidget, highlight]]

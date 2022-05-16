@@ -347,28 +347,6 @@ def generator_yesno(obj, field, fieldlen, pad, ralign, selected, **formatting):
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_priority_level(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	value = getattr(obj, field)
-
-	if value is None:
-		string = "<none>"
-		formatting = ("types", "none", selected)
-	else:
-		string = str(value)
-		# We need to check whether the priority level exists or not;
-		# non-existing priority levels should be highlighted
-		obj = kh.get_ref_by_kind_name_namespace(("PriorityLevelConfiguration", "flowcontrol.apiserver.k8s.io"), value, "")
-		if obj is None:
-			formatting = ("main", "status_not_ok")
-		else:
-			formatting = ("types", "generic")
-
-	array = [
-		(string, formatting, selected)
-	]
-
-	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
-
 # Will take datetime and format it as (YYYY-MM-DD HH:MM:SS, field_colors)
 def format_timestamp(timestamp, localtimezone = False):
 	array = []
@@ -1541,7 +1519,7 @@ def normalise_mem_to_bytes(_mem):
 	if _mem.isnumeric():
 		mem = _mem
 	elif _mem.endswith("Ki"):
-		mem = int(_mem[0:-2]) * 1024
+		mem = int(_mem[0:-2]) * 1024 ** 1
 	elif _mem.endswith("Mi"):
 		mem = int(_mem[0:-2]) * 1024 ** 2
 	elif _mem.endswith("Gi"):
@@ -1614,10 +1592,7 @@ def datagetter_api_support(obj, path, default):
 			available_views.append("List")
 
 	if (kind, api_family) in infoviews:
-		if (kind, api_family) in infoviews_builtin:
-			available_views.append("Info")
-		else:
-			available_views.append("*Info")
+		available_views.append("Info")
 
 	if len(available_views) == 0:
 		available_views = default
@@ -1975,7 +1950,7 @@ def datagetter_substitute_quotationmarks(obj, path, default):
 def get_default(generator):
 	if generator is None:
 		default = None, {}
-	elif generator in [generator_basic, generator_priority_level, generator_str_timestamp]:
+	elif generator in [generator_basic, generator_str_timestamp]:
 		# This expects indata to be a string
 		default = "", {}
 	elif generator == generator_status:
@@ -6340,23 +6315,10 @@ field_templates = {
 		"datagetter": datagetter_access_modes,
 		"generator": generator_list,
 	},
-	"action": {
-		"header": "Action:",
-	},
 	"addresses": {
 		# [address, ...]
 		"header": "Addresses:",
 		"generator": generator_list,
-	},
-	"age": {
-		"header": "Age:",
-		"path": "metadata#creationTimestamp",
-		"datagetter": datagetter_age,
-		"generator": generator_age,
-		"ralign": True,
-	},
-	"alertrecord": {
-		"header": "Alert/Record:",
 	},
 	"allocatable_count": {
 		"header": "Allocatable (Count):",
@@ -6391,16 +6353,6 @@ field_templates = {
 		"field_separators": [("separators", "fraction")],
 		"ralign": True,
 	},
-	"configmap": {
-		"header": "Data:",
-	},
-	"container_count": {
-		"header": "# of Containers:",
-		"path": "containers",
-		"datagetter": datagetter_count,
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"containers": {
 		# [(name, version), ...]
 		"header": "Containers:",
@@ -6424,12 +6376,6 @@ field_templates = {
 		"datagetter": datagetter_status_latest_condition,
 		"generator": generator_status,
 	},
-	"created_at": {
-		"header": "Created At:",
-		"path": "metadata#creationTimestamp",
-		"datagetter": datagetter_timestamp,
-		"generator": generator_timestamp,
-	},
 	"current_replicas": {
 		"header": "Current:",
 		"path": "status#replicas",
@@ -6452,13 +6398,6 @@ field_templates = {
 		"generator": generator_total,
 		"ralign": True,
 	},
-	"danger_count": {
-		"header": "Danger #:",
-		"generator": generator_numerical_range,
-		"ranges": [(0, 1, ("types", "watermark_low")), (1, sys.maxsize, ("types", "watermark_high"))],
-		"path": "report#summary#dangerCount",
-		"ralign": True,
-	},
 	"desired_replicas": {
 		"header": "Desired:",
 		"path": "spec#replicas",
@@ -6473,18 +6412,6 @@ field_templates = {
 		"generator": generator_numerical,
 		"ralign": True,
 	},
-	"docker_reference": {
-		"header": "Docker Reference:",
-		"path": "dockerImageReference",
-	},
-	"docker_reference_image": {
-		"header": "Docker Reference:",
-		"path": "image#dockerImageReference",
-	},
-	"docker_repo": {
-		"header": "Docker Repo:",
-		"path": "status#dockerImageRepository",
-	},
 	"drivers": {
 		"header": "Drivers:",
 		"path": "spec#drivers",
@@ -6492,20 +6419,11 @@ field_templates = {
 		"generator": generator_numerical,
 		"ralign": True,
 	},
-	"error": {
-		"header": "Error:",
-	},
 	"event_status": {
 		"header": "Status:",
 		"path": "type",
 		"datagetter": datagetter_event_status,
 		"generator": generator_status,
-	},
-	"ftype": {
-		"header": "Type:",
-	},
-	"group": {
-		"header": "Group:",
 	},
 	"groups": {
 		# [group, ...]
@@ -6550,16 +6468,6 @@ field_templates = {
 		"datagetter": datagetter_condition_field,
 		"generator": generator_str_timestamp,
 		"path": [("agentConditions", "AgentHealthy", "lastHeartbeatTime"), ("controllerConditions", "ControllerHealthy", "lastHeartbeatTime")],
-	},
-	"limit": {
-		"header": "Limit:",
-		# FIXME datagetter
-	},
-	"link": {
-		"header": "Link:",
-	},
-	"log_type": {
-		"header": "Log Type:",
 	},
 	"match": {
 		"header": "Match:",
@@ -6702,20 +6610,10 @@ field_templates = {
 			],
 		},
 	},
-	"priority_level": {
-		"header": "Priority Level:",
-		"path": "spec#priorityLevelConfiguration#name",
-		"generator": generator_priority_level,
-		"type": "str",
-	},
 	"pod_status": {
 		"header": "Status:",
 		"datagetter": datagetter_pod_status,
 		"generator": generator_status,
-	},
-	"repository": {
-		"header": "Repository:",
-		"path": "report#artifact#repository",
 	},
 	"ready": {
 		"header": "Ready:",
@@ -6838,10 +6736,6 @@ field_templates = {
 		"generator": generator_numerical,
 		"ralign": True,
 	},
-	"tag": {
-		"header": "Tag:",
-		"path": "report#artifact#tag",
-	},
 	"tags": {
 		"header": "Tags:",
 		"path": ("status#tags", ["tag"]),
@@ -6852,10 +6746,6 @@ field_templates = {
 		"header": "Target:",
 		"generator": generator_numerical,
 		"ralign": True,
-	},
-	"topology_keys": {
-		"header": "Topology Keys:",
-		"generator": generator_list,
 	},
 	"uptodate_replicas": {
 		"header": "Up to Date:",
@@ -6870,11 +6760,6 @@ field_templates = {
 		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
-	},
-	"version": {
-		"header": "Version:",
-		"path": "spec#version",
-		"type": "str",
 	},
 }
 
@@ -8714,241 +8599,6 @@ def networkinfoloop(stdscr, view):
 			uip.refresh_all()
 		"""
 
-def field_processor_kind(obj, path, extra_path = None, fallback = None, formatting = None):
-	match = True
-	if path is None or type(path) != list or len(path) != 2 or obj is None:
-		match = False
-	else:
-		resource = deep_get(obj, path[0])
-		api_group = deep_get(obj, path[1])
-		kind = kh.guess_kind((deep_get(obj, path[0]), deep_get(obj, path[1])))
-
-	if match == False:
-		if fallback is None:
-			field = [("strings", "none")]
-		else:
-			field = fallback
-	else:
-		resource, api_group = kind
-		tmp = [resource]
-		if len(api_group) > 0:
-			tmp.append(api_group)
-		if formatting is not None:
-			field = __field_processor_list(tmp, formatting = formatting)
-		else:
-			field = __field_processor_list(tmp)
-	return field
-
-# All field processors have to return format lists (aka lists of tuples)
-def field_processor_empty(obj, path, extra_paths = None, fallback = None, formatting = None):
-	value = deep_get(obj, path)
-
-	if value is None or value == "" or value == -1:
-		if fallback is None:
-			field = [("strings", "none")]
-		else:
-			field = fallback
-	else:
-		if formatting is None:
-			formatting = ("types", "generic")
-		field = [(f"{value}", formatting)]
-
-	return field
-
-# XXX: Should be rewritten to handle tuple-lists too
-def __field_processor_list(values, formatting = None):
-	prefix = deep_get(formatting, "prefix", [])
-	field_colors = deep_get(formatting, "field_colors", [("types", "field")])
-	item_separators = deep_get(formatting, "item_separators", [("separators", "list")])
-	repeat_last_item_separator = deep_get(formatting, "repeat_last_item_separator", True)
-	suffix = deep_get(formatting, "suffix")
-	conditionals = deep_get(formatting, "conditionals", {})
-	field = prefix
-
-	i = 0
-
-	for value in values:
-		if i < len(field_colors):
-			field_color = field_colors[i]
-		# An empty value means that we want the separators listed, but no value
-		# unless there's an explicit "<<<empty>>>" conditional
-		if "<<<empty>>>" in conditionals and value == "":
-			value = "<<<empty>>>"
-
-		noseparator = False
-
-		if value != "":
-			conditional = deep_get(conditionals, value)
-			if conditional is None:
-				tmpvalue = f"{value}:<<<{i}>>>"
-				conditional = deep_get(conditionals, tmpvalue)
-				if conditional is not None:
-					value = tmpvalue
-			# If we don't match the conditional, or the conditional doesn't apply to this field
-			if conditional is None:
-				# Check against matchany conditional
-				conditional = deep_get(conditionals, "<<<matchany>>>")
-				if conditional is None:
-					tmpvalue = f"<<<matchany>>>:<<<{i}>>>"
-					conditional = deep_get(conditionals, tmpvalue)
-					if conditional is not None:
-						value = tmpvalue
-
-			if conditional is not None:
-				skip = deep_get(conditional, "skip")
-				substitute = deep_get(conditional, "substitute")
-				stop = deep_get(conditional, "stop")
-				field_color = deep_get(conditional, "field_color", field_color)
-				noseparator = deep_get(conditional, "no_separator", False)
-
-				if substitute is not None:
-					value = substitute
-				if skip is None:
-					field.append((f"{value}", field_color))
-				if stop is not None:
-					break
-			else:
-				field.append((f"{value}", field_color))
-
-		# If this is the last element in the list, append the suffix instead
-		item_separator = None
-		if i == len(values) - 1:
-			item_separator = suffix
-		elif noseparator == False:
-			if i < len(item_separators):
-				item_separator = item_separators[i]
-			elif repeat_last_item_separator == True:
-				item_separator = item_separators[len(item_separators) - 1]
-		i += 1
-		# Inserting an item_separator of None
-		# means that these two items shouldn't be separated
-		if item_separator is None:
-			continue
-		field.append(item_separator)
-	return field
-
-def field_processor_ansible_processor(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	# This assumes symmetrical processors
-	data = deep_get(obj, "ansible_processor", "")
-	if data is not None and len(data) > 0:
-		value = data[2]
-	else:
-		value = "<unavailable>"
-	if formatting is None:
-		formatting = ("types", "generic")
-	field = [(f"{value}", formatting)]
-	return field
-
-def field_processor_ansible_facts(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	values = []
-	for path in extra_paths:
-		values.append(str(deep_get(obj, path, "")))
-
-	return __field_processor_list(values, formatting)
-
-# Items in extra_paths are processed one by one,
-# and printed according to formatting, as follows:
-# [prefix]item1[separator(s)]item2[separator(s)]item...[suffix]
-#
-# path can be used as conditional; if path returns None or len(path) is 0,
-# it will be substituted with fallback.
-# If path is a tuple, the second argument is either a path or a list of paths
-# that should be tried to obtain a value before using the fallback
-def field_processor_list(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	fallback_path = None
-
-	if path is not None:
-		if type(path) is tuple:
-			path, fallback_path = path
-		cpath = deep_get(obj, path)
-		if cpath is None or len(cpath) == 0:
-			if fallback is None:
-				return [("strings", "unset")]
-			else:
-				return fallback
-
-	values = []
-
-	# Create a list of values
-	if type(extra_paths) is str:
-		values = deep_get(obj, extra_paths)
-		if values is None:
-			values = []
-	else:
-		for epath in extra_paths:
-			if epath == "":
-				value = ""
-			else:
-				value = deep_get(obj, epath)
-				value = "<<<none>>>" if value is None else str(value)
-			values.append(value)
-	if len(values) == 0:
-		if fallback_path is not None:
-			if type(fallback_path) is str:
-				fallback_path = [fallback_path]
-			tmp = deep_get_with_fallback(obj, fallback_path, None)
-			if tmp is not None:
-				values = [tmp]
-		else:
-			if fallback is None:
-				return [("strings", "unset")]
-			else:
-				return fallback
-
-	return __field_processor_list(values, formatting)
-
-# The indata is a string that's been formatted as a list;
-# Either
-# "[key:value],[key:value],..."
-# or
-# "value,value,..."
-# Trying to infer the format by parsing might not be reliable,
-# so pass a flag in formatting to decide
-def field_processor_str_to_list(obj, path = None, extra_paths = None, fallback = None, formatting = None):
-	if obj is None or path is None or len(path) == 0:
-		if fallback is None:
-			return [("strings", "unset")]
-		else:
-			return fallback
-
-	iskeyvalue = False
-
-	if formatting is not None:
-		 iskeyvalue = deep_get(formatting, "iskeyvalue", False)
-
-	tmp = deep_get(obj, path, "")
-
-	# Start by splitting the string into substrings
-	values = tmp.split(",")
-
-	# If this is key:value pairs we need to split these strings again
-	if iskeyvalue == True:
-		values = list(s.split(":") for s in values)
-
-	return __field_processor_list(values, formatting)
-
-def field_processor_timestamp(obj, path, extra_paths = None, fallback = None, formatting = None):
-	timestamp = deep_get(obj, path)
-
-	if timestamp is None:
-		field = [("strings", "unset")]
-	elif type(timestamp) == datetime:
-		field = format_timestamp(timestamp)
-	else:
-		timestamp = timestamp_to_datetime(timestamp)
-		field = format_timestamp(timestamp, localtimezone = True)
-
-	return field
-
-# All fields except obj and owr_path will be ignored
-def field_processor_owr_node(obj, owr_path = None, extra_paths = None, fallback = None, formatting = None):
-	if owr_path is None:
-		owr_path = "metadata#ownerReferences"
-
-	owner_references = deep_get(obj, owr_path)
-	field = format_list(get_name_by_kind_from_owner_references(owner_references, "Node"), 0, 0, False, False, field_colors = [("types", "kind"), ("types", "generic")], field_separators = [("separators", "kind")])
-	return field
-
 known_pv_types = {
 	"awsElasticBlockStore": {
 		"type": "AWS Elastic Block Storage",
@@ -8987,7 +8637,7 @@ known_pv_types = {
 		"type": "Ceph",
 		"properties": {
 			"Path:": { "path": "path", "default": "/" },
-			"Monitors:": { "path": "monitors", "processor": field_processor_list },
+#			"Monitors:": { "path": "monitors", "processor": field_processor_list },
 			"Read Only:": { "path": "readOnly", "default": "False" },
 			"Rados User": { "path": "user", "default": "admin" },
 			# Should be a shortcut to a secret; needs formatting
@@ -9025,8 +8675,8 @@ known_pv_types = {
 		"type": "Fibre Channel Volume",
 		"properties": {
 			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-			"WorldWide Identifiers:": { "path": "wwids", "processor": field_processor_list },
-			"Target WorldWide Names:": { "path": "targetWWNs", "processor": field_processor_list },
+#			"WorldWide Identifiers:": { "path": "wwids", "processor": field_processor_list },
+#			"Target WorldWide Names:": { "path": "targetWWNs", "processor": field_processor_list },
 			"Logical Unit Number:": { "path": "lun" },
 			"Read Only:": { "path": "readOnly", "default": "False" },
 		},
@@ -9086,7 +8736,7 @@ known_pv_types = {
 			"iSCSI Qualified Name:": { "path": "iqn" },
 			"Logical Unit Number:": { "path": "lun" },
 			"Target Portal:": { "path": "targetPortal" },
-			"Target Portals:": { "path": "targetPortals", "processor": field_processor_list },
+#			"Target Portals:": { "path": "targetPortals", "processor": field_processor_list },
 			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
 			"Chap Auth Discovery:": { "path": "chapAuthDiscovery" },
 			"Chap Auth Session:": { "path": "chapAuthSession" },
@@ -9127,7 +8777,7 @@ known_pv_types = {
 		"description": "Quobyte mount that lasts the lifetime of a pod",
 		"properties": {
 			"Volume Name:": { "path": "volume" },
-			"Registry:": { "path": "registry", "processor": field_processor_str_to_list, "formatting": { "iskeyvalue": True, "field_separators": [("separators", "host")] } }, # str(host:port, host:port, ...)
+#			"Registry:": { "path": "registry", "processor": field_processor_str_to_list, "formatting": { "iskeyvalue": True, "field_separators": [("separators", "host")] } }, # str(host:port, host:port, ...)
 			"Read Only:": { "path": "readOnly", "default": "False" },
 			"Tenant:": { "path": "tenant" },
 			"User:": { "path": "user", "default": "<service account user>" },
@@ -9141,7 +8791,7 @@ known_pv_types = {
 			"Image:": { "path": "image" },
 			"Pool:": { "path": "pool", "default": "rbd" },
 			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-			"Monitors:": { "path": "monitors", "processor": field_processor_list },
+#			"Monitors:": { "path": "monitors", "processor": field_processor_list },
 			"Read Only:": { "path": "readOnly" },
 			"Rados User": { "path": "user", "default": "admin" },
 			"Keyring:": { "path": "keyring", "default": "/etc/ceph/keyring" },
@@ -9193,79 +8843,6 @@ def get_pv_type(obj):
 		if pv_type in deep_get(obj, "spec", []):
 			return pv_type
 	return None
-
-# All fields except obj and path are ignored
-def field_processor_secret_type(obj, path, extra_paths, fallback = None, formatting = None):
-	secret_type = deep_get(obj, "type", "")
-
-	formatting = {
-		"field_colors": [("types", "secret_type"), ("types", "generic")],
-		"item_separators": [("separators", "secret_type")],
-	}
-
-	tmp = re.match(r"^(.*)/(.*)", secret_type)
-
-	if tmp is not None:
-		secret_type = [tmp[1], tmp[2]]
-		field = __field_processor_list(secret_type, formatting = formatting)
-	elif len(secret_type) > 0:
-		field = [("", ("types", "generic")), (f"{secret_type}", ("types", "generic"))]
-	else:
-		field = [("", ("types", "generic")), ("strings", "unset")]
-	return field
-
-# All fields except obj and path are ignored
-def field_processor_phase_status(obj, path, extra_paths, fallback = None, formatting = None):
-	phase = deep_get(obj, path)
-	if phase == "Error":
-		status_group = stgroup.NOT_OK
-	else:
-		status_group = stgroup.OK
-	field = [(f"{phase}", color_status_group(status_group, False))]
-	return field
-
-def field_processor_label_selector(obj, path, extra_paths, fallback = None, formatting = None):
-	selector = deep_get(obj, path)
-	if selector is not None:
-		field = []
-		selector = kh.make_selector(selector)
-		split_selector = selector.split(",")
-		for i in range(0, len(split_selector)):
-			field.append((split_selector[i], ("types", "generic")))
-			if i < len(split_selector) - 1:
-				field.append(("separators", "selector_list"))
-	else:
-		field = [("strings", "none")]
-	return field
-
-def field_processor_match_expressions(obj, path, extra_paths, fallback = None, formatting = None):
-	match_expressions = deep_get(obj, path)
-	if match_expressions is not None:
-		field = [(make_set_expression(match_expressions), ("types", "generic"))]
-	else:
-		field = [("strings", "none")]
-	return field
-
-# everything except obj and path will be ignored
-def field_processor_tls(obj, path, extra_paths = None, fallback = None, formatting = None):
-	tls = deep_get(obj, path)
-
-	if tls is None:
-		field = [("strings", "none")]
-	else:
-		secretname = deep_get(tls[0], "secretName")
-		hosts = deep_get(tls[0], "hosts")
-
-		if secretname is None or hosts is None:
-			field = [("strings", "fixme")]
-		else:
-			field = [
-				(secretname, ("main", "highlight")),
-				(" terminates ", ("types", "generic")),
-			]
-			field += format_list(hosts, 0, 0, False, False, field_colors = [("types", "host")])
-
-	return field
 
 def decode_and_view_data(stdscr, **kwargs):
 	if "selected" not in kwargs:
@@ -9834,46 +9411,20 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						y += 1
 						continue
 
-					fieldarray = deep_get(value, "fieldname", [(key, ("main", "infoheader"))])
-					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
-
-					path = deep_get(value, "path")
-					extra_paths = deep_get(value, "extra_paths")
-					fallback = deep_get(value, "fallback")
-					if "processor" in value:
-						field_processor = deep_get(value, "processor")
-					else:
-						field_processor = field_processor_empty
-					formatting = deep_get(value, "formatting")
-
-					# objparam will replace fallback; this is too ugly for words
-					if objparams is not None:
-						objparam = deep_get(value, "objparam")
-						if objparam is not None and len(objparams) > objparam:
-							tmp = objparams[objparam]
-							fallback = [(f"{tmp}", ("types", "generic"))]
-
-					# If we neither get a path nor a field processor to use on the object,
-					# we only output the field array; to achieve this pass None as processor.
-					# If processor is omitted field_processor_empty() will be used by default.
-					if field_processor is None and path is None:
-						y += 1
-						continue
-
-					if field_processor is None:
-						val = deep_get(obj, path, "")
-						fieldarray = [(" %s" % val, ("types", "generic"))]
-					else:
-						fieldarray = [(" ", ("types", "generic"))]
-						fieldarray += field_processor(obj, path, extra_paths, fallback, formatting)
-					uip.addthemearray(infopad, fieldarray, y = y)
-					y += 1
-
 				if creation_timestamp_path is not None and len(creation_timestamp_path) > 0 and deep_get(obj, creation_timestamp_path) is not None:
+					timestamp = deep_get(obj, creation_timestamp_path)
+
+					if timestamp is None:
+						field = [("strings", "unset")]
+					elif type(timestamp) == datetime:
+						field = format_timestamp(timestamp)
+					else:
+						timestamp = timestamp_to_datetime(timestamp)
+						field = format_timestamp(timestamp, localtimezone = True)
 					fieldarray = [
 						("Created: ", ("main", "infoheader")),
 					]
-					fieldarray += field_processor_timestamp(obj, creation_timestamp_path)
+					fieldarray += field
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 
 		# Output listpad if we have one
@@ -12795,300 +12346,7 @@ listviewactions = {
 	},
 }
 
-# Default infopad fields:
-#
-# Name		Shortcut	Path				Special
-# ---		---		---				---
-# Name:				metadata#name			Always first
-# Namespace:	[Shift] + N	metadata#namespace		Always second; optional
-# Created:			metadata#creationTimestamp	Always last; uses field_processor_timestamp()
-#
-# Wherever applicable the following shortcuts will be available:
-#
-# Name                               Shortcut
-# ---                                ---
-# Show security context information  X
-# Show resource conditions           C
-# Show events                        E
-# View YAML dump of resource         Y
-# Show last applied configuration    [Shift] + L
-#
-# Brief overview of infopad:
-#
-# "Fieldname:":
-#	{
-#		"fieldname": formatlist		# Overrides "Fieldname:" as field name; this is a format list
-#						# This is mainly intended for highlighting shortcut keys
-#		"path": "path",			# Get the value from this path using deep_get(obj, "path")
-#	        "processor": "processor",	# Use this function to postprocess the value;
-#						# returns a list of (string, (color, attribute)) tuples
-#						# The default processor turns None, "", and -1 into
-#						# [("strings, "none")]
-#						# Example processors:
-#						#	field_processor_timestamp()
-#						#	field_processor_status()
-#						#	field_processor_list()
-#						#	field_processor_empty() (the default)
-#						#	None (use this to only output the fieldname)
-#		"extra_paths": [ "path", ... ]	# Extra paths to pass to the processor
-#		"fallback": formatlist		# Fallback format list
-#       }
-#
-# Note: For complex data it might be easier to write a custom processor and just pass in the object
-#
-# The most versatile, but also complex, processor is field_processor_list();
-# it can provide formatting, substitutions, and (limited) flow control
-infoviews_builtin = {
-	("CiliumEndpoint", "cilium.io"): {
-		"windowheader": "Cilium Endpoint Info",
-		"infopad": {
-			"Cilium Identity:": {
-				"fieldname": [("C", ("main", "infoheader_shortcut")), ("ilium Identity:", ("main", "infoheader"))],
-				"path": "status#identity#id",
-			},
-		},
-		"shortcuts": {
-			"Pod": {
-				"shortcut": ord("P"),
-				"helptext": ("[Shift] + P", "Open info page for Pod"),
-				"call": resourceinfodispatch,
-				"kind": ("Pod", ""),
-				"name_path": "metadata#name",
-				"namespace_path": "metadata#namespace",
-			},
-			"Cilium Identity": {
-				"shortcut": ord("C"),
-				"helptext": ("[Shift] + C", "Open info page for Cilium Identity"),
-				"call": resourceinfodispatch,
-				"kind": "CiliumIdentity",
-				"name_path": "status#identity#id",
-			},
-			"Show Cilium Identity Labels": {
-				"shortcut": ord("I"),
-				"helptext": ("[Shift] + I", "Show Cilium identity labels"),
-				"widget": "windowwidget",
-				"title": "Identity Labels:",
-				"itemgetter": get_list_as_list,
-				"itemgetter_args": {
-					"path": "status#identity#labels",
-				},
-				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
-			},
-			"Show Named Ports": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Show named ports"),
-				"widget": "windowwidget",
-				"title": "Named Ports:",
-				"headers": ["Name:", "Port:", "Protocol:"],
-				"itemgetter": get_list_fields,
-				"itemgetter_args": {
-					"path": "status#named-ports",
-					"fields": ["name", "port", "protocol"],
-				},
-				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
-			},
-		},
-	},
-	("CiliumIdentity", "cilium.io"): {
-		"windowheader": "Cilium Identity Info",
-		"infopad": {},
-		"shortcuts": {
-			"Show Security Labels": {
-				"shortcut": ord("S"),
-				"helptext": ("[Shift] + S", "Show security labels"),
-				"widget": "windowwidget",
-				"title": "Security Labels:",
-				"headers": ["Label:", "Value:"],
-				"itemgetter": get_key_value,
-				"itemgetter_args": {
-					"path": "security-labels",
-				},
-				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
-			},
-		},
-	},
-	("CiliumNode", "cilium.io"): {
-		"windowheader": "Cilium Node Info",
-		"infopad": {
-			"Node:": {
-				"fieldname": [("N", ("main", "infoheader_shortcut")), ("ode:", ("main", "infoheader"))],
-				"processor": field_processor_owr_node,
-			},
-			"Health (IPv4):": {
-				"path": "spec#health#ipv4",
-			},
-			"IPAM:": {
-				"processor": None,
-			},
-			"  Pod CIDRs:": {
-				"extra_paths": "spec#ipam#podCIDRs",
-				"processor": field_processor_list,
-			},
-		},
-		"shortcuts": {
-			"Addresses": {
-				"shortcut": ord("A"),
-				"helptext": ("[Shift] + A", "Show addresses"),
-				"widget": "windowwidget",
-				"title": "Maintainers:",
-				"headers": ["IP:", "Type:"],
-				"itemgetter": get_list_fields,
-				"itemgetter_args": {
-					"path": "spec#addresses",
-					"fields": [
-						"ip",
-						"type",
-					],
-				},
-				"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
-				# This isn't supported for now
-				"sortcolumn": "ip",
-			},
-			"Node": {
-				"shortcut": ord("N"),
-				"helptext": ("[Shift] + N", "Open info page for Node"),
-				"call": resourceinfodispatch,
-				"owner_references_path": "metadata#ownerReferences",
-				# Note: This cannot be (kind, api_group)
-				"owner_references_kind": "Node",
-			},
-		},
-	},
-	("__Log", ""): {
-		"windowheader": "Playbook Log Info",
-		"field_indexes": {
-			"Normal": ["index", "name", "host", "start_time", "completion_time", "retval"],
-		},
-		"fields": {
-			"index": {
-				"header": "Index:",
-				"paths": [
-					{
-						"path": "index",
-						"pathtype": "raw",
-					},
-				],
-				"align": "right",
-			},
-			"name": {
-				"header": "Task:",
-				"paths": [
-					{
-						"path": "log#task",
-						"pathtype": "value",
-					},
-				],
-			},
-			"host": {
-				"header": "Host:",
-				"paths": [
-					{
-						"path": "log#host",
-						"pathtype": "value",
-					},
-				],
-			},
-			"start_time": {
-				"header": "Started At:",
-				"paths": [
-					{
-						"path": "log#start_date",
-						"pathtype": "value",
-						"type": "timestamp",
-					},
-				],
-				"formatter": "timestamp",
-			},
-			"completion_time": {
-				"header": "Finished At:",
-				"paths": [
-					{
-						"path": "log#end_date",
-						"pathtype": "value",
-						"type": "timestamp",
-					},
-				],
-				"formatter": "timestamp",
-			},
-			"retval": {
-				"header": "Return Value:",
-				"paths": [
-					{
-						"path": "log#retval",
-						"pathtype": "value",
-						"type": "int",
-					},
-				],
-				"align": "right",
-			},
-		},
-		"sortcolumn": "index",
-		# We're not getting the information the normal way
-		"objgetter": objgetter_ansible_log,
-		"name_path": "name",
-		"creation_timestamp_path": "created_at",
-		"activatedfun": resourceinfodispatch,
-		"viewoverride": ("__LogView", ""),
-		"infopad": {
-			"Path:": {
-				"path": "playbook_path",
-			},
-			"Category:": {
-				"path": "category",
-			},
-			"Playbook Types:": {
-				"extra_paths": "playbook_types",
-				"processor": field_processor_list,
-			},
-		},
-		"listpad": {
-			"listgetter": listgetter_field,
-			"listgetter_args": {
-				"path": "logs",
-			},
-			"infogetter": generic_infogetter,
-		},
-		"shortcuts": {
-			# Logs have no last applied configuration
-			"Last Applied Configuration": {},
-		},
-	},
-	("__LogView", ""): {
-		"windowheader": "Task Log View",
-		#"objgetter": objgetter_ansible_task_log,
-		# We're not getting the information the normal way
-		"name_path": "log#task",
-		"namespace_path": None,
-		"creation_timestamp_path": None,
-		"timestamps": False,
-		"infopad": {
-			"Host:": {
-				"path": "log#host",
-			},
-			"Return Value:": {
-				"path": "log#retval",
-			},
-		},
-		"logpad": {
-			"infogetter": get_task_log,
-		},
-	},
-	("__ResourceView", ""): {
-		"windowheader": "Resource Viewer",
-		"timestamps": False,
-		"logpad": {
-			"infogetter": get_themearrays,
-		},
-		"shortcuts": {
-			# The viewer cannot view...
-			"Show Events": {},
-			"Last Applied Configuration": {},
-			"YAML": {},
-		}
-	},
-}
-
-infoviews = {**infoviews_builtin}
+infoviews = {}
 
 def is_cluster_reachable():
 	reachable = False
@@ -13225,33 +12483,6 @@ views_special = {
 		"kind": ("__PodLogMonitor", ""),
 		"labels": False,
 		"listgetter": "get_pod_containers_list",
-	},
-	"Logs": {
-		"commandline": ["logs", "log"],
-		"group": "Administration",
-		"field_indexes": {
-			"Normal": ["name", "action", "created_at", "log_type"],
-		},
-		"sortcolumn": "created_at",
-		"sortorder_reverse": True,
-		"kind": ("__Log", ""),
-		"labels": False,
-		"listgetter": None,
-		"infogetter": get_log_info,
-		"actions": {
-			"actionlist": {
-				"Delete log": {
-					"description": "Delete log",
-					"confirm": True,
-					"actionfunc": delete_logs,
-				},
-			},
-		},
-		"shortcuts": {
-			# Override:
-			"Edit resource": {},
-			"View YAML dump": {},
-		},
 	},
 	"Network Info": {
 		"commandline": ["network", "net", "cni"],

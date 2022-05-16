@@ -8,6 +8,201 @@ command:
 - cn
 listview:
   name: Cilium Nodes
-  group: CNI
+  group: Cilium
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Cilium Node Info
+  infopad:
+    row_indexes:
+      Normal: [node, instance_id, cilium_identity, health_header, health_ipv4, health_ipv6, encryption, ipam_header, ipam_pod_cidrs, ipam_max_above_watermark, ipam_min_allocate, ipam_max_allocate, ipam_operator_status, ipam_release_ips, ipam_preallocate]
+    rows:
+      cilium_identity:
+        header: [["C", [main, infoheader_shortcut]], ["ilium Identity:", [main, infoheader]]]
+        path: "spec#nodeidentity"
+        type: str
+      encryption:
+        header: [["encryption:", [main, infoheader]]]
+        path: "spec#encryption#key"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      health_header:
+        header: [["Health:", [main, infoheader]]]
+      health_ipv4:
+        header: [["  IPv4:", [main, infoheader]]]
+        path: "spec#health#ipv4"
+        type: str
+        formatter: address
+      health_ipv6:
+        header: [["  IPv6:", [main, infoheader]]]
+        path: "spec#health#ipv6"
+        type: str
+        formatter: address
+      instance_id:
+        header: [["Instance ID:", [main, infoheader]]]
+        path: "spec#instance-id"
+        type: str
+      ipam_header:
+        header: [["IPAM:", [main, infoheader]]]
+      ipam_max_above_watermark:
+        header: [["  Max Above Watermark:", [main, infoheader]]]
+        path: "spec#ipam#max-above-watermark"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      ipam_max_allocate:
+        header: [["  Max Allocate:", [main, infoheader]]]
+        path: "spec#ipam#max-allocate"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      ipam_min_allocate:
+        header: [["  Min Allocate:", [main, infoheader]]]
+        path: "spec#ipam#max-allocate"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      ipam_pod_cidrs:
+        header: [["  Pod CIDRs:", [main, infoheader]]]
+        path: "spec#ipam#podCIDRs"
+        type: raw
+        formatter: address
+      ipam_preallocate:
+        header: [["  Preallocate:", [main, infoheader]]]
+        path: "spec#ipam#pre-allocate"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      ipam_operator_status:
+        header: [["  Operator Status:", [main, infoheader]]]
+        path: "status#ipam#operator-status#error"
+        type: raw
+      ipam_release_ips:
+        header: [["  Release IPs:", [main, infoheader]]]
+        path: "status#ipam#operator-status"
+        type: raw
+      node:
+        header: [["N", [main, infoheader_shortcut]], ["ode:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - kind
+          - apiVersion
+          - name
+          when:
+            key: kind
+            eq: Node
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+  shortcuts:
+    "Addresses":
+      key: a
+      modifier: shift
+      helptext: "Show addresses"
+      widget: windowwidget
+      title: "Addresses:"
+      header: ["IP:", "Type:"]
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: "spec#addresses"
+        fields:
+        - ip
+        - type
+        formatting: [[windowwidget, default], [windowwidget, highlight]]
+        # This isn't supported for now
+        sortcolumn: ip
+    "Cilium Identity":
+      key: c
+      modifier: shift
+      helptext: "Open info page for Cilium Identity"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: CiliumIdentity
+        api_family: cilium.io
+        name_path: "spec#nodeidentity"
+    "Node":
+      key: n
+      modifier: shift
+      helptext: "Open info page for Node"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: Node
+        owner_reference_path: "metadata#ownerReferences"
+
+    "Alibaba Cloud Configuration":
+      key: i
+      helptext: "Show Alibaba Cloud configuration"
+      widget: windowwidget
+      title: "Alibaba Cloud configuration:"
+      header: ["Parameter:", "Value:"]
+      itemgetter: get_key_value
+      itemgetter_args:
+        path: "spec#alibaba-cloud"
+    "Alibaba Cloud Status":
+      key: i
+      modifier: shift
+      helptext: "Show Alibaba Cloud status"
+      widget: windowwidget
+      title: "Alibaba Cloud status:"
+      header: ["Parameter:", "Value:"]
+      itemgetter: get_key_value
+      itemgetter_args:
+        path: "status#alibaba-cloud#enis"
+    "Azure Configuration":
+      key: z
+      helptext: "Show Azure configuration"
+      widget: windowwidget
+      title: "Azure configuration:"
+      header: ["Parameter:", "Value:"]
+      itemgetter: get_key_value
+      itemgetter_args:
+        path: "spec#azure"
+    "Azure Status":
+      key: z
+      modifier: shift
+      helptext: "Show Azure status"
+      widget: windowwidget
+      title: "Azure status:"
+      header: ["Parameter:", "Value:"]
+      itemgetter: get_key_value
+      itemgetter_args:
+        path: "status#azure#nterfaces"
+    "AWS Configuration":
+      key: s
+      helptext: "Show AWS configuration"
+      widget: windowwidget
+      title: "AWS configuration:"
+      header: ["Parameter:", "Value:"]
+      itemgetter: get_key_value
+      itemgetter_args:
+        path: "spec#eni"
+    "AWS Status":
+      key: s
+      modifier: shift
+      helptext: "Show AWS status"
+      widget: windowwidget
+      title: "AWS status:"
+      header: ["Parameter:", "Value:"]
+      itemgetter: get_key_value
+      itemgetter_args:
+        path: "status#eni#enis"

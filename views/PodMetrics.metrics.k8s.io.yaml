@@ -11,6 +11,14 @@ listview:
     Normal: [namespace, name, cpu_total_short, mem_total, start_time, window]
   sortcolumn: namespace
   fields:
+    container_count:
+      header: "# of Containers:"
+      path: containers
+      type: len
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
     cpu_total:
       header: "CPU (millicores):"
       paths:

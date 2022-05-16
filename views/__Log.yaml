@@ -1,0 +1,107 @@
+kind: __Log
+default_command: logs
+command:
+- log
+listview:
+  name: Logs
+  group: Administration
+  listgetter: null
+  infogetter: get_log_info
+  field_indexes:
+    Normal: [name, action, created_at, log_type]
+  sortcolumn: created_at
+  sortorder_reverse: true
+  labels: false
+  fields:
+    action:
+      header: "Action:"
+      path: action
+      type: str
+    created_at:
+      header: "Created At:"
+      paths:
+      - path: "metadata#creationTimestamp"
+        pathtype: age
+      formatter: timestamp
+    log_type:
+      header: "Log Type:"
+      path: log_type
+      type: str
+  actions:
+    actionlist:
+      "Delete log":
+        description: "Delete log"
+        confirm: true
+        actionfunc: delete_logs
+  shortcuts:
+    "Edit resource": null
+    "View YAML dump": null
+infoview:
+  name: Playbook Log Info
+  infopad:
+    name_path: name
+    creation_timestamp_path: created_at
+    objgetter: objgetter_ansible_log
+    infogetter: generic_infogetter
+    row_indexes:
+      Normal: [path, category, playbook_types]
+    rows:
+      category:
+        header: [["Category:", [main, infoheader]]]
+        path: category
+        type: str
+      path:
+        header: [["Path:", [main, infoheader]]]
+        path: playbook_path
+        type: str
+      playbook_types:
+        header: [["Playbook Types:", [main, infoheader]]]
+        path: playbook_types
+        type: raw
+        formatter: list
+  listpad:
+    listgetter: listgetter_field
+    listgetter_args:
+      path: logs
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch
+      kind: __LogView
+    field_indexes:
+      Normal: [index, name, host, start_time, completion_time, retval]
+    sortcolumn: index
+    fields:
+      completion_time:
+        header: "Finished At:"
+        path: "log#end_date"
+        type: age
+      host:
+        header: "Host:"
+        path: "log#host"
+        type: str
+      index:
+        header: "Index:"
+        path: index
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+      name:
+        header: "Name:"
+        path: "log#task"
+        type: str
+      retval:
+        header: "Return Value:"
+        path: "log#retval"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+      start_time:
+        header: "Started At:"
+        path: "log#start_date"
+        type: age
+  shortcuts:
+    "Last Applied Configuration": null
