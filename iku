@@ -9803,7 +9803,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, namespace_path) is not None:
 					fieldarray = [
 						("N", ("main", "infoheader_shortcut")), ("amespace:", ("main", "infoheader")),
-						(f" {deep_get(obj, namespace_path)}", ("types", "generic"))
+						(f" {deep_get(obj, namespace_path)}", ("types", "namespace"))
 					]
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 					y += 1
