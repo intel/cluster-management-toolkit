@@ -2542,20 +2542,23 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 					if type(tmp) == list:
 						value = []
 						subpath = deep_get(_path, "subpath")
-						for _tmp in tmp:
-							__tmp = deep_get(_tmp, subpath)
-							value.append(make_set_expression_list(__tmp))
+						if subpath is None:
+							value = make_set_expression_list(tmp)
+						else:
+							value = make_set_expression_list(tmp)
+							for _tmp in tmp:
+								__tmp = deep_get(_tmp, subpath, _tmp)
+								value.append(make_set_expression_list(__tmp))
 						if len(value) == 1:
 							_values.append((value[0], "raw"))
 						else:
 							for tmp in value:
 								_values.append((tmp, "raw"))
+					elif type(tmp) == dict:
+						value = make_set_expression_list(tmp)
+						_values.append((value, "raw"))
 					else:
-						if tmp is not None:
-							value = make_set_expression_list(tmp)
-							_values.append((value, "raw"))
-						else:
-							_values.append((default, "raw"))
+						_values.append((default, "raw"))
 				elif ptype == "lookup":
 					lookup_kind, lookup_api_group, lookup_namespace, lookup_name, tmp_lookup_selector = path
 					if type(lookup_kind) == list:
