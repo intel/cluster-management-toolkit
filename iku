@@ -3180,7 +3180,7 @@ def logpad_msg_getter(obj, **kwargs):
 
 	for line in split_msg(tmp):
 		messages.append([(f"{line}", curses.A_NORMAL)])
-		
+
 	return messages
 
 def get_netpol_rule_list(obj, **kwargs):
@@ -11842,7 +11842,19 @@ def ssh_to_host(stdscr, **kwargs):
 		elif type(selected) == str:
 			host = selected
 		else:
-			host = selected.name
+			ref = getattr(selected, "ref")
+			_kind = deep_get(ref, "kind", "")
+			_api_group = deep_get(ref, "api_group", "")
+			try:
+				kind = kh.guess_kind((_kind, _api_group))
+			except:
+				# If we cannot guess the kind we return
+				return
+
+			if kind != ("Node", ""):
+				# If this isn't a Node object, return
+				return
+			host = deep_get(ref, "name", "")
 	elif "obj" in kwargs:
 		obj = deep_get(kwargs, "obj")
 		name_path = deep_get(kwargs, "name_path")
