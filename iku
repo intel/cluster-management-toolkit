@@ -12606,14 +12606,13 @@ def populate_views():
 
 				sortcolumn = deep_get(d, "listview#sortcolumn")
 				reversible = deep_get(d, "listview#reversible", True)
-				fields = deep_get(d, "listview#fields", "<missing>")
-				fields_wide = deep_get(d, "listview#fields_wide", [])
+				fields = deep_get(d, "listview#fields", {})
 
 				field_indexes = deep_get(d, "listview#field_indexes", {})
 				if len(field_indexes) == 0:
 					sys.exit(f"View-file {view_file} is invalid: field_indexes is either missing or empty for the list view. Aborting.")
 
-				if name is None or group is None or len(fields) == 0 or "<missing>" in [name, group]:
+				if name is None or group is None or "<missing>" in [name, group]:
 					sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing, empty or None:\n"
 						  "listview:\n"
 						 f"  name: {name}\n"
@@ -13027,11 +13026,16 @@ def list_views():
 			continue
 
 		fields = []
-		for field in viewref["fields"]:
-			if type(field) == dict:
-				fieldname = deep_get(field, "name")
-			else:
-				fieldname = field
+		fieldset = set()
+		field_indexes_fields = []
+		for field_index in viewref["field_indexes"]:
+			field_indexes_fields += viewref["field_indexes"][field_index]
+
+		for field in field_indexes_fields + list(viewref["fields"].keys()):
+			fieldname = field
+			if fieldname in fieldset:
+				continue
+			fieldset.add(fieldname)
 			if "sortcolumn" in viewref and viewref["sortcolumn"] == fieldname:
 				fields.append((fieldname, "emphasis"))
 			elif "sortcolumn" not in viewref and fieldname == "name":
@@ -13205,6 +13209,8 @@ def main():
 	ansible_configuration.save_logs = deep_get(iktconfig, "Ansible#save_logs", True)
 
 	# Customises the list views
+	iktprint([("Stand by, updating list of supported views...\n", "default")])
+
 	populate_views()
 	customise_listviews()
 
