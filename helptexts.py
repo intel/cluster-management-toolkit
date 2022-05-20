@@ -225,9 +225,9 @@ usage += [("\n", "description")]
 usage += [("UI for managing Kubernetes clusters\n", "description")]
 usage += [("\n", "description")]
 usage += [("VIEW", "command"),
-          ("                     start in the ", "description"), ("VIEW", "command"), (" view\n", "description")]
+          ("                     start in ", "description"), ("VIEW\n", "command")]
 usage += [("VIEW ", "command"), ("NAME ", "argument"), ("[", "separator"), ("NAMESPACE", "argument"), ("]", "separator"),
-          ("    start in ", "description"), ("VIEW", "argument"), (" for the object matching ", "description"), ("NAME", "argument"), (" and, optionally, ", "description"), ("NAMESPACE\n", "argument")]
+          ("    start in ", "description"), ("VIEW", "command"), (" for the object matching ", "description"), ("NAME", "argument"), (" and, optionally, ", "description"), ("NAMESPACE\n", "argument")]
 usage += [("VIEW ", "command"), ("NAMESPACE/NAME", "argument"),
           ("      same as above; alternate syntax\n", "description")]
 usage += [("pod ", "command"), ("NAME NAMESPACE CONTAINER\n", "argument")]
@@ -236,11 +236,11 @@ usage += [("                         start in container info view matching ", "d
 usage += [("                         if ", "description"), ("NAME", "argument"), (" has exactly one container, then ", "description"), ("NAME:", "argument"), (" opens that container\n", "description")]
 usage += [("configmap ", "command"), ("NAME NAMESPACE CONFIGMAP\n", "argument")]
 usage += [("configmap ", "command"), ("[", "separator"), ("NAMESPACE/", "argument"), ("]", "separator"), ("NAME:", "argument"), ("[", "separator"), ("CONFIGMAP", "argument"), ("]\n", "separator")]
-usage += [("                         start in the configmap info view matching ", "description"), ("NAME", "argument"), (", ", "description"),  (" NAMESPACE", "argument"), (", ", "description"),  (" CONFIGMAP", "argument"), (";\n", "description")]
+usage += [("                         start in the configmap info view matching ", "description"), ("NAME", "argument"), (", ", "description"),  ("NAMESPACE", "argument"), (", ", "description"),  ("CONFIGMAP", "argument"), (";\n", "description")]
 usage += [("                         if ", "description"), ("NAME", "argument"), (" has exactly one configmap, then ", "description"), ("NAME:", "argument"), (" opens that configmap\n", "description")]
 usage += [("\n", "description")]
 usage += [("  --read-only ", "option"),
-          ("  disable all commands that modify state", "description")]
+          ("           disable all commands that modify state", "description")]
 usage += [("\n", "description")]
 usage += [("  --namespace ", "option"), ("NAMESPACE", "argument"),
           ("  only show namespace ", "description"), ("NAMESPACE", "argument"), (" (valid for all namespaced views)\n", "description")]
@@ -254,4 +254,3 @@ usage += [("help", "command"), ("|", "separator"), ("--help", "command"),
           ("              display this help and exit\n", "description")]
 usage += [("version", "command"), ("|", "separator"), ("--version", "command"),
           ("        output version information and exit\n", "description")]
-usage += [("\n", "description")]

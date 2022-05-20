@@ -13094,19 +13094,6 @@ def usage(progname):
 	helptext = [(f"{about.ui_program_name} ", "programname")]
 	helptext += helptexts.usage
 
-	helptext += [("Valid views: ", "description")]
-
-	first = True
-	for view in natsorted(views):
-		if views[view].get("skip", False):
-			continue
-		if first:
-			first = False
-		else:
-			helptext += [(", ", "separator")]
-		helptext += [(views[view]["commandline"][0], "emphasis")]
-	helptext += [(".\n", "separator")]
-
 	iktprint(helptext)
 
 def version(progname):
@@ -13224,25 +13211,18 @@ def main():
 	ansible_configuration.disable_strict_host_key_checking = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
 	ansible_configuration.save_logs = deep_get(iktconfig, "Ansible#save_logs", True)
 
-	# Customises the list views
-	iktprint([("Stand by, updating list of supported views...\n", "default")])
-
-	populate_views()
-	customise_listviews()
-
 	y = 1
 
 	while y < len(sys.argv):
 		arg = sys.argv[y]
 
-		tmp = checkforview(arg.lower())
+		if arg == "list-views":
+			# Customises the list views
+			iktprint([("Stand by, updating list of supported views...\n", "default")])
 
-		if tmp is not None and defaultview == "":
-			defaultview = tmp
-			y += 1
-			continue
+			populate_views()
+			customise_listviews()
 
-		elif arg == "list-views":
 			list_views()
 			sys.exit(0)
 		elif arg == "--namespace":
@@ -13264,6 +13244,17 @@ def main():
 			print("%s: unrecognised option “%s”" % (os.path.basename(sys.argv[0]), arg), file = sys.stderr)
 			iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
+		elif len(defaultview) == 0:
+			# Customises the list views
+			iktprint([("Stand by, updating list of supported views...\n", "default")])
+
+			populate_views()
+			customise_listviews()
+
+			tmp = checkforview(arg.lower())
+			defaultview = tmp
+			y += 1
+			continue
 		else:
 			# After we've received a view we assume that non-flag arguments
 			# that follow are used as shortcuts to a specific item
@@ -13336,6 +13327,13 @@ def main():
 
 	# We don't need escape sequences, so cut down on the delay to 25ms
 	os.environ.setdefault('ESCDELAY', '25')
+
+	# Customises the list views
+	iktprint([("Stand by, updating list of supported views...\n", "default")])
+
+	if len(views) == 0:
+		populate_views()
+		customise_listviews()
 	init_kubernetes_client()
 
 	wrapper(setupui)
