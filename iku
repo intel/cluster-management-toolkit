@@ -5985,6 +5985,22 @@ def listgetter_dict_list(obj, **kwargs):
 		vlist.append({"key": key, "value": value})
 	return vlist, 200
 
+def listgetter_join_lists(obj, **kwargs):
+	paths = deep_get(kwargs, "paths")
+	vlist = []
+
+	for path in paths:
+		name_key = deep_get(path, "name_key", "")
+		name_value = deep_get(path, "name_value", "")
+		list_path = deep_get(path, "path", [])
+		d = {}
+		if len(name_key) > 0:
+			d[name_key] = name_value
+		for key, value in deep_get_with_fallback(obj, list_path, []).items():
+			d[key] = value
+		vlist.append(d)
+	return vlist, 200
+
 # key_paths: the dict keys that should be turned into values
 # key_name: name for the key that holds these values
 # fields: paths the fields in the dict that should be added to the list

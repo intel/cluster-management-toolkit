@@ -10,3 +10,107 @@ listview:
   field_indexes:
     Normal: [namespace, name, age]
   sortcolumn: namespace
+infoview:
+  name: Vertical Pod Autoscaler Checkpoint Info
+  infopad:
+    row_indexes:
+      Normal: [container_name, vpa_object_name, first_sample_start, last_sample_start, last_update_time, total_samples_count, version]
+    rows:
+      container_name:
+        header: [["Container:", [main, infoheader]]]
+        path: "spec#containerName"
+        type: str
+      first_sample_start:
+        header: [["First Sample Start:", [main, infoheader]]]
+        paths:
+        - path: "status#firstSampleStart"
+          type: timestamp
+          default: -1
+        formatter: timestamp
+      last_sample_start:
+        header: [["Last Sample Start:", [main, infoheader]]]
+        paths:
+        - path: "status#lastSampleStart"
+          type: timestamp
+          default: -1
+        formatter: timestamp
+      last_update_time:
+        header: [["Last Update Time:", [main, infoheader]]]
+        paths:
+        - path: "status#lastUpdateTime"
+          type: timestamp
+          default: -1
+        formatter: timestamp
+      total_samples_count:
+        header: [["Total Sample Count:", [main, infoheader]]]
+        path: "status#totalSamplesCount"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      version:
+        header: [["Version:", [main, infoheader]]]
+        path: "status#version"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+      vpa_object_name:
+        header: [["V", [main, infoheader_shortcut]], ["PA Object:", [main, infoheader]]]
+        path: "spec#vpaObjectName"
+        type: str
+  listpad:
+    listgetter: listgetter_join_lists
+    listgetter_args:
+      paths:
+      - path: ["status#cpuHistogram"]
+        name_key: name
+        name_value: cpu
+      - path: ["status#memoryHistogram"]
+        name_key: name
+        name_value: memory
+    infogetter: generic_infogetter
+    field_indexes:
+      Normal: [name, bucket_weights, total_weight, reference_timestamp]
+    fields:
+      bucket_weights:
+        header: "Bucket Weights:"
+        paths:
+        - path: bucketWeights
+          pathtype: key_value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: numerical
+          field_separators:
+          - type: keyvalue
+      name:
+        header: "Name:"
+        path: name
+        type: str
+      reference_timestamp:
+        header: "Reference Timestamp:"
+        paths:
+        - path: referenceTimestamp
+          type: timestamp
+          default: -1
+        formatter: timestamp
+      total_weight:
+        header: "Total Weight:"
+        path: totalWeight
+        type: float
+        formatter: numerical_with_units
+  shortcuts:
+    "Open Vertical Pod Autoscaler":
+      key: v
+      modifier: shift
+      helptext: "Open info page for Vertical Pod Autoscaler object"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind: VerticalPodAutoscaler
+        api_family: autoscaling.k8s.io
+        name_path: "spec#vpaObjectName"
+        namespace_path: "metadata#namespace"

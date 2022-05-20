@@ -25,3 +25,113 @@ listview:
       header: "Update Mode:"
       path: "spec#updatePolicy#updateMode"
       type: str
+infoview:
+  name: Vertical Pod Autoscaler Info
+  infopad:
+    row_indexes:
+      Normal: [target_reference]
+    rows:
+      provided:
+        header: [["Provided:", [main, infoheader]]]
+        paths:
+        - path: "status#conditions"
+          subpath: status
+          pathtype: items
+          when:
+            key: type
+            eq: RecommendationProvided
+          default: "Unknown"
+        type: str
+      target_reference:
+        header: [["Target ", [main, infoheader]], ["R", [main, infoheader_shortcut]], ["eference:", [main, infoheader]]]
+        paths:
+        - path: [["spec#targetRef#kind"], ["spec#targetRef#apiVersion"], ["spec#targetRef#name"]]
+          pathtype: tuple
+          type: [kind, api_group, name]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+      update_mode:
+        header: [["Update Mode:", [main, infoheader]]]
+        path: "spec#updatePolicy#updateMode"
+        type: str
+  listpad:
+    path: "spec#resourcePolicy#containerPolicies"
+    infogetter: generic_infogetter
+    field_indexes:
+      Normal: [container_name, controlled_resources, min_allowed, max_allowed]
+    fields:
+      container_name:
+        header: "Name:"
+        path: containerName
+        type: str
+      controlled_resources:
+        header: "Resources:"
+        path: controlledResources
+        type: raw
+        formatter: list
+      max_allowed:
+        header: "Max:"
+        paths:
+        - path: maxAllowed
+          pathtype: key_value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: keyvalue
+      min_allowed:
+        header: "Min:"
+        paths:
+        - path: minAllowed
+          pathtype: key_value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: keyvalue
+  shortcuts:
+    "Container Recommendations":
+      key: c
+      modifier: shift
+      helptext: "List container recommendations"
+      widget: windowwidget
+      title: "Container Recommendations:"
+      headers: ["Name:", "Mem Low:", "Mem High:", "Mem Target:", "Mem Uncapped:", "CPU Low:", "CPU High:", "CPU Target:", "CPU Uncapped:"]
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: "status#recommendation#containerRecommendations"
+        fields:
+        - containerName
+        - lowerBound#memory
+        - upperBound#memory
+        - target#memory
+        - uncappedTarget#memory
+        - lowerBound#cpu
+        - upperBound#cpu
+        - target#cpu
+        - uncappedTarget#cpu
+      # Not supported for now
+      sortcolumn: cidr
+    "Open target reference":
+      key: r
+      modifier: shift
+      helptext: "Open info page for target reference"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#targetRef#kind"
+        api_version_path: "spec#targetRef#apiVersion"
+        name_path: "spec#targetRef#name"
+        namespace_path: "metadata#namespace"
