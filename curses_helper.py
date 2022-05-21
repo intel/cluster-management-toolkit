@@ -854,6 +854,13 @@ def themearray_get_length(themearray):
 # items is a list of tuples, like so:
 # (widgetlineattr, strarray, strarray, ...)
 # A strarray is a list of tuples, where every tuple is of the format (string, attribute)
+# Alternatively items can be a list of dicts
+# on the format:
+# {
+#	"lineattrs": ...,
+#	"columns": strarray, ...,
+#	"retval": the value to return if this items is selected (any type is allowed)
+# }
 def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", preselection = "", cursor = True, taggable = False, confirm = False, confirm_buttons = [], **kwargs):
 	stdscr.refresh()
 	global ignoreinput
@@ -863,13 +870,26 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 	listpadheight = len(items)
 
 	# This is only used by helptexts
-	if type(items[0][0]) != int:
-		tmpitems = []
-		for item in items:
-			tmpitems.append((widgetlineattrs.NORMAL, [(item[0], ("windowwidget", "highlight"))], [(item[1], ("windowwidget", "default"))]))
+	if type(items[0]) != dict:
+		if type(items[0][0]) != int:
+			tmpitems = []
+			for item in items:
+				tmpitems.append({
+					"lineattrs": widgetlineattrs.NORMAL,
+					"columns": [[(item[0], ("windowwidget", "highlight"))], [(item[1], ("windowwidget", "default"))]],
+					"retval": None,
+				})
+		else:
+			tmpitems = []
+			for item in items:
+				tmpitems.append({
+					"lineattrs": item[0],
+					"columns": list(item[1:]),
+					"retval": None,
+				})
 		items = tmpitems
 
-	columns = len(items[0]) - 1
+	columns = len(items[0]["columns"])
 	lengths = [0] * columns
 
 	if headers is not None:
@@ -891,9 +911,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 	# Every item is a line
 	for item in items:
 		for i in range(0, columns):
-			length = 0
-			for string, attribute in item[i + 1]:
-				length += len(string)
+			length = themearray_len(item["columns"][i])
 			lengths[i] = max(lengths[i], length)
 
 	listpadwidth = 0
@@ -994,7 +1012,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 	if type(preselection) == str:
 		if preselection != "":
 			for y in range(0, len(items)):
-				if items[y][1][0][0] == preselection:
+				if items[y]["columns"][0][0][0] == preselection:
 					curypos, yoffset = move_cur_with_offset(0, height, yoffset, maxcurypos, maxyoffset, y)
 					break
 		tagged_items = set()
@@ -1008,7 +1026,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			else:
 				_selected = False
 
-			lineattributes = items[y][0]
+			lineattributes = items[y]["lineattrs"]
 			linearray = []
 
 			if taggable == True:
@@ -1022,7 +1040,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 				length = 0
 				tmpstring = ""
 
-				for string, attribute in items[y][x + 1]:
+				for string, attribute in items[y]["columns"][x]:
 					tmpstring += string
 					length += len(string)
 					if lineattributes & (widgetlineattrs.INVALID) != 0:
@@ -1105,8 +1123,8 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			# stop if oldycurypos + oldyoffset is hit
 			while True:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1, wraparound = True)
-				lineattributes = items[yoffset + curypos][0]
-				tmp_char = items[yoffset + curypos][1][0][0].lstrip("*•◉")[0]
+				lineattributes = items[yoffset + curypos]["lineattrs"]
+				tmp_char = items[yoffset + curypos]["columns"][0][0][0].lstrip("*•◉")[0]
 				if tmp_char.lower() == chr(c).lower() and lineattributes & widgetlineattrs.DISABLED == 0:
 					break
 				if (curypos + yoffset) == (oldcurypos + oldyoffset):
@@ -1119,8 +1137,8 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			# stop if oldycurypos + oldyoffset is hit
 			while True:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1, wraparound = True)
-				lineattributes = items[yoffset + curypos][0]
-				tmp_char = items[yoffset + curypos][1][0][0].lstrip("*•◉")[0]
+				lineattributes = items[yoffset + curypos]["lineattrs"]
+				tmp_char = items[yoffset + curypos]["columns"][0][0][0].lstrip("*•◉")[0]
 				if tmp_char.lower() == chr(c).lower() and lineattributes & widgetlineattrs.DISABLED == 0:
 					break
 				if (curypos + yoffset) == (oldcurypos + oldyoffset):
@@ -1130,28 +1148,28 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 					break
 		elif c == ord("\t") and cursor == True:
 			# Find next group
-			while items[yoffset + curypos][0] & widgetlineattrs.SEPARATOR == 0:
+			while items[yoffset + curypos]["lineattrs"] & widgetlineattrs.SEPARATOR == 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
 				if (curypos + yoffset) == (maxcurypos + maxyoffset):
 					break
 				# OK, we found a group, now find the first not-group
-			while items[yoffset + curypos][0] & widgetlineattrs.SEPARATOR != 0:
+			while items[yoffset + curypos]["lineattrs"] & widgetlineattrs.SEPARATOR != 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
 				if (curypos + yoffset) == (maxcurypos + maxyoffset):
 					break
 		elif c == curses.KEY_BTAB and cursor == True:
 			# Find previous group
-			while items[yoffset + curypos][0] & widgetlineattrs.SEPARATOR == 0:
+			while items[yoffset + curypos]["lineattrs"] & widgetlineattrs.SEPARATOR == 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
 				if (curypos + yoffset) == 0:
 					break
 			# OK, we found a group, now find the previous not-group
-			while items[yoffset + curypos][0] & widgetlineattrs.SEPARATOR != 0:
+			while items[yoffset + curypos]["lineattrs"] & widgetlineattrs.SEPARATOR != 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
 				if (curypos + yoffset) == 0:
 					break
 			# Finally find the first entry in that group
-			while (curypos + yoffset) > 0 and items[yoffset + curypos][0] & widgetlineattrs.SEPARATOR != 0:
+			while (curypos + yoffset) > 0 and items[yoffset + curypos]["lineattrs"] & widgetlineattrs.SEPARATOR != 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
 				if (curypos + yoffset) == 0:
 					break
@@ -1177,8 +1195,11 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -10)
 		elif c == curses.KEY_NPAGE:
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +10)
-		elif (c == curses.KEY_ENTER or c == 10 or c == 13) and items[yoffset + curypos][0] & (widgetlineattrs.UNSELECTABLE) == 0 and confirm == False:
-			selection = items[yoffset + curypos]
+		elif (c == curses.KEY_ENTER or c == 10 or c == 13) and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.UNSELECTABLE) == 0 and confirm == False:
+			if deep_get(items[yoffset + curypos], "retval") is None:
+				selection = items[yoffset + curypos]["columns"]
+			else:
+				selection = items[yoffset + curypos]["retval"]
 			break
 		elif confirm == True and c in confirm_buttons[0]:
 			confirm_press = c
@@ -1188,24 +1209,24 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 		if cursor == True:
 			# Find the last acceptable line
 			if (yoffset + curypos) == (maxcurypos + maxyoffset):
-				while items[yoffset + curypos][0] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				while items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
 					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
 			# We tried moving backwards; do we need to go farther?
 			if (yoffset + curypos) > (oldyoffset + oldcurypos):
-				while (yoffset + curypos) < len(items) and items[yoffset + curypos][0] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				while (yoffset + curypos) < len(items) and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
 					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
-				if (yoffset + curypos) == len(items) and items[yoffset + curypos][0] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				if (yoffset + curypos) == len(items) and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
 					yoffset = oldyoffset
 					curypos = oldcurypos
 			# Find the first acceptable line
 			elif (yoffset + curypos) == 0:
-				while items[yoffset + curypos][0] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				while items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
 					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
 			# We tried moving backwards; do we need to go farther?
 			elif (yoffset + curypos) < (oldyoffset + oldcurypos):
-				while (yoffset + curypos) > 0 and items[yoffset + curypos][0] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				while (yoffset + curypos) > 0 and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
 					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
-				if (yoffset + curypos) == 0 and items[yoffset + curypos][0] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				if (yoffset + curypos) == 0 and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
 					curypos = oldcurypos + oldyoffset
 					yoffset = 0
 

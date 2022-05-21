@@ -4098,20 +4098,6 @@ def get_strategy_info(**kwargs):
 
 	return info
 
-# Returns a list of tuples with their latest status
-def get_conditions(conditions):
-	condition_list = []
-
-	if conditions is not None:
-		for condition in conditions:
-			ctype = deep_get(condition, "type")
-			state = deep_get(condition, "status")
-			reason = deep_get(condition, "reason")
-			message = deep_get(condition, "message")
-			condition_list.append((ctype, state, reason, message))
-
-	return condition_list
-
 # Raw events
 def __get_events(obj, **kwargs):
 	event_list = []
@@ -4125,7 +4111,7 @@ def __get_events(obj, **kwargs):
 	return event_list
 
 # Raw conditions
-def __get_conditions(obj, **kwargs):
+def get_conditions(obj, **kwargs):
 	condition_list = []
 
 	path = deep_get(kwargs, "path", "status#conditions")
@@ -4146,7 +4132,9 @@ def __get_conditions(obj, **kwargs):
 			timestamp = timestamp_to_datetime(last_transition)
 			last_transition = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 		message = deep_get(condition, "message", "")
-		condition_list.append((ctype, status, last_probe, last_transition, message))
+		condition_list.append({
+			"fields": [ctype, status, last_probe, last_transition, message],
+		})
 	return condition_list
 
 def get_status_latest_condition(conditions):
@@ -5770,6 +5758,7 @@ def get_list_fields(obj, **kwargs):
 	if "path" in kwargs and "fields" in kwargs:
 		path = deep_get(kwargs, "path")
 		fields = deep_get(kwargs, "fields", [])
+		pass_ref = deep_get(kwargs, "pass_ref", False)
 		override_types = deep_get(kwargs, "override_types", [])
 		for item in deep_get(obj, path, []):
 			tmp = []
@@ -5804,7 +5793,10 @@ def get_list_fields(obj, **kwargs):
 				else:
 					raise Exception(f"Unhandled type {type(_value)} for {field}={value}")
 				tmp.append(value)
-			vlist.append(tmp)
+			if pass_ref == True:
+				vlist.append({"fields": tmp, "ref": item})
+			else:
+				vlist.append(tmp)
 	return vlist
 
 def get_strings_from_string(obj, **kwargs):
@@ -9150,7 +9142,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			"widget": "windowwidget",
 			"title": "Conditions:",
 			"headers": ["Type:", "Status:", "Last Probe:", "Last Transition:", "Message:"],
-			"itemgetter": __get_conditions,
+			"itemgetter": get_conditions,
 		}
 
 	# Always include the shortcut for events unless overriden
@@ -9630,17 +9622,26 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					# If the first element is an integer we assume that we've been provided
 					# a pre-formatted list. Otherwise we apply formatting if available.
 					# If not available we try to provide some sensible defaults.
-					if w_items is not None and len(w_items) > 0 and type(w_items[0][0]) != int:
+					if w_items is not None and len(w_items) > 0 and (type(w_items[0]) == dict or type(w_items[0]) == list and type(w_items[0][0]) != int):
 						tmp_items = []
 						w_formatting = deep_get(value, "formatting", [("windowwidget", "default")])
+						lineattrs = widgetlineattrs.NORMAL
 						# w_item is a line
 						for w_item in w_items:
-							tmp = [widgetlineattrs.NORMAL]
+							ref = None
+							if type(w_item) == dict:
+								ref = deep_get(w_item, "ref")
+								w_item = deep_get(w_item, "fields")
 							# w_item[i] is a column
+							tmp = []
 							for i in range(0, len(w_item)):
 								tmp.append([(w_item[i], w_formatting[min(i, len(w_formatting) - 1)])])
 
-							tmp_items.append(tuple(tmp))
+							tmp_items.append({
+								"lineattrs": lineattrs,
+								"columns": tmp,
+								"retval": ref,
+							})
 						w_items = tmp_items
 
 					if w_items is not None and len(w_items) > 0:
@@ -10971,9 +10972,9 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	# When name_path or namespace_path are integers they reference
 	# fields in selected
 	if type(name_path) == int and selection is not None and selection != (0, [("", None)]):
-		name = selection[name_path + 1][0][0]
+		name = selection[name_path][0][0]
 	if type(namespace_path) == int and selection is not None and selection != (0, [("", None)]):
-		namespace = selection[namespace_path + 1][0][0]
+		namespace = selection[namespace_path][0][0]
 
 	if obj is not None:
 		kind = deep_get_with_fallback(obj, kind_path, kind)
@@ -11299,8 +11300,39 @@ def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None, **kwa
 	formatter = iktlib.format_yaml
 	return resourceinfodispatch(uip.stdscr, objects, ("__ResourceView", ""), title = title, formatter = formatter)
 
+def view_obj(stdscr, **kwargs):
+	selection = deep_get(kwargs, "selection")
+	if selection is not None:
+		obj = selection
+	else:
+		obj = deep_get(kwargs, "obj")
+	if obj is None:
+		return
+	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
+	title_path = deep_get(kwargs, "title_path")
+	if title_path is not None:
+		title = deep_get(obj, title_path)
+	path = deep_get(kwargs, "path")
+	formatter = deep_get(kwargs, "formatter", iktlib.format_yaml)
+	if path is not None:
+		if deep_get(kwargs, "include_root", False) == True:
+			obj = [{f"{path.rsplit('#')[-1]}": deep_get(obj, path)}]
+		elif formatter == iktlib.format_yaml:
+			obj = [deep_get(obj, path)]
+		else:
+			obj = deep_get(obj, path)
+	else:
+		obj = [obj]
+	if type(formatter) == str:
+		formatter = eval(formatter)
+	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
+
 def view_yaml(stdscr, **kwargs):
-	obj = deep_get(kwargs, "obj")
+	selection = deep_get(kwargs, "selection")
+	if selection is not None:
+		obj = selection
+	else:
+		obj = deep_get(kwargs, "obj")
 	if obj is None:
 		return
 	path = deep_get(kwargs, "path")
@@ -12258,15 +12290,26 @@ def format_selection_list(uip, refresh_apis = False):
 			api_group = ""
 
 		if currentgroup != group and categorise == True:
-			items.append((widgetlineattrs.SEPARATOR, [(f" {group} ", ("windowwidget", "highlight"))], [("", ("windowwidget", "default"))]))
+			items.append({
+				"lineattrs": widgetlineattrs.SEPARATOR,
+				"columns": [[(f" {group} ", ("windowwidget", "highlight"))], [("", ("windowwidget", "default"))]],
+			})
 			currentgroup = group
 		lineattrs = widgetlineattrs.NORMAL
 		if kind is not None and kind != ("", "") and not kind[0].startswith("__") and kind not in available_api_families:
 			lineattrs = widgetlineattrs.UNSELECTABLE
 		if api_group == "":
-			items.append((lineattrs, [(f"{view}", ("windowwidget", "default"))], [(f"", ("windowwidget", "dim"))]))
+			items.append({
+				"lineattrs": lineattrs,
+				"columns": [[(f"{view}", ("windowwidget", "default"))], [(f"", ("windowwidget", "dim"))]],
+				"retval": view,
+			})
 		else:
-			items.append((lineattrs, [(f"{view}", ("windowwidget", "default"))], [(f"<{api_group}>", ("windowwidget", "dim"))]))
+			items.append({
+				"lineattrs": lineattrs,
+				"columns": [[(f"{view}", ("windowwidget", "default"))], [(f"<{api_group}>", ("windowwidget", "dim"))]],
+				"retval": view,
+			})
 
 	return items
 
@@ -12293,7 +12336,7 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 					items = format_selection_list(uip, refresh_apis)
 					uip.refresh_all()
 					continue
-			selection = tmpselection[1][0][0]
+			selection = tmpselection
 
 	if selection != "":
 		defaultview = selection
@@ -13246,7 +13289,7 @@ def main():
 			sys.exit(errno.EINVAL)
 		elif len(defaultview) == 0:
 			# Customises the list views
-			iktprint([("Stand by, updating list of supported views...\n", "default")])
+			iktprint([("Stand by, populating list of supported views...\n", "default")])
 
 			populate_views()
 			customise_listviews()
@@ -13328,10 +13371,9 @@ def main():
 	# We don't need escape sequences, so cut down on the delay to 25ms
 	os.environ.setdefault('ESCDELAY', '25')
 
-	# Customises the list views
-	iktprint([("Stand by, updating list of supported views...\n", "default")])
-
+	# Customises the list views if necessary
 	if len(views) == 0:
+		iktprint([("Stand by, populating list of supported views...\n", "default")])
 		populate_views()
 		customise_listviews()
 	init_kubernetes_client()

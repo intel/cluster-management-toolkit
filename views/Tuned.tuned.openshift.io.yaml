@@ -7,3 +7,111 @@ listview:
   field_indexes:
     Normal: [namespace, name, age]
   sortcolumn: namespace
+infoview:
+  name: Tuned Info
+  infopad:
+    row_indexes:
+      Normal: [controller]
+    rows:
+      controller:
+        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - kind
+          - apiVersion
+          - name
+          when:
+            key: controller
+            eq: true
+          type: [kind, api_group, name]
+        default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: kind
+          - type: api_group
+          - type: generic
+          field_separators:
+          - type: kind_api_group
+          - type: kind
+  listpad:
+    path: "spec#recommend"
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch
+      kind: __TunedProfile
+      api_family: tuned.openshift.io
+    field_indexes:
+      Normal: [profile, priority, operand, machine_config_labels]
+    sortcolumn: priority
+    fields:
+      machine_config_labels:
+        header: "Machine Config Labels:"
+        paths:
+        - path: machineConfigLabels
+          pathtype: key_value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      operand:
+        header: "Operand:"
+        paths:
+        - path: operand
+          pathtype: key_value
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: keyvalue
+      priority:
+        header: "Priority:"
+        path: priority
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+      profile:
+        header: "Profile:"
+        path: profile
+        type: str
+  shortcuts:
+    "Open controller":
+      key: c
+      modifier: shift
+      helptext: "Open info page for controller"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Show Profile list":
+      key: p
+      modifier: shift
+      helptext: "List Tuned profiles"
+      widget: windowwidget
+      title: "Profiles:"
+      selectable: true
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: "spec#profile"
+        fields:
+        - name
+        pass_ref: true
+      # Not supported for now
+      sortcolumn: name
+      action: call
+      action_call: view_obj
+      action_args:
+        path: data
+        title_path: name
+        formatter: iktlib.format_ini
