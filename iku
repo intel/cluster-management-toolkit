@@ -4105,14 +4105,18 @@ def get_strategy_info(**kwargs):
 	return info
 
 # Raw events
-def __get_events(obj, **kwargs):
+def get_events(obj, **kwargs):
 	event_list = []
 
 	kind = deep_get(obj, "kind")
 	api_version = deep_get(obj, "apiVersion", "")
 	name = deep_get(obj, "metadata#name")
 	namespace = deep_get(obj, "metadata#namespace", "")
-	event_list = get_events_by_kind_name_namespace(kh.kind_api_version_to_kind(kind, api_version), name, namespace)
+	tmp = get_events_by_kind_name_namespace(kh.kind_api_version_to_kind(kind, api_version), name, namespace)
+	for event in tmp:
+		event_list.append({
+			"fields": event,
+		})
 
 	return event_list
 
@@ -7296,7 +7300,7 @@ def genericlistloop(stdscr, view):
 									raise Exception(f"Unknown ptype {ptype}")
 								file_list.append((widgetlineattrs.NORMAL, [(f"{filename}", formatting)], [(f"{ptype}", ("windowwidget", "description"))]))
 							tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, file_list, title = query, cursor = True)
-							if tmpselection is None or tmpselection == (0, [("", None)]):
+							if tmpselection is None or tmpselection == "":
 								# This will break out of the loop
 								basedir = None
 								selected_file = None
@@ -7694,7 +7698,7 @@ def genericlistloop(stdscr, view):
 									raise Exception(f"Unknown ptype {ptype}")
 								file_list.append((widgetlineattrs.NORMAL, [(f"{filename}", formatting)], [(f"{ptype}", ("windowwidget", "description"))]))
 							tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, file_list, title = query, cursor = True)
-							if tmpselection is None or tmpselection == (0, [("", None)]):
+							if tmpselection is None or tmpselection == "":
 								# This will break out of the loop
 								basedir = None
 								selected_file = None
@@ -9167,7 +9171,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			},
 			"title": "Events:",
 			"headers": ["Namespace:", "Name:", "Last Seen:", "Status:", "Reason:", "Source:", "First Seen:", "Count:", "Message:"],
-			"itemgetter": __get_events,
+			"itemgetter": get_events,
 		}
 
 	# Always include the shortcut for YAML dump, unless overridden
@@ -9653,7 +9657,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if w_items is not None and len(w_items) > 0:
 						w_sortcolumn = deep_get(value, "sortcolumn")
 						tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items = w_items, headers = w_headers, title = w_title, cursor = w_selectable)
-						if w_selectable is True and tmpselection != (0, [("", None)]):
+						if w_selectable is True and tmpselection != "":
 							# If callout is None we might still have an action later
 							if w_callout is not None:
 								retval = w_callout(uip, w_kind, obj, selection = tmpselection)
@@ -10977,9 +10981,9 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 
 	# When name_path or namespace_path are integers they reference
 	# fields in selected
-	if type(name_path) == int and selection is not None and selection != (0, [("", None)]):
+	if type(name_path) == int and selection is not None and selection != "":
 		name = selection[name_path][0][0]
-	if type(namespace_path) == int and selection is not None and selection != (0, [("", None)]):
+	if type(namespace_path) == int and selection is not None and selection != "":
 		namespace = selection[namespace_path][0][0]
 
 	if obj is not None:
