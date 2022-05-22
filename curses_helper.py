@@ -1104,7 +1104,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 		oldyoffset = yoffset
 		c = stdscr.getch()
 		if c == 27:	# ESCAPE
-			selection = (0, [("", None)])
+			selection = ""
 			confirm_press = c
 			break
 		elif c == ord(""):
