@@ -1346,6 +1346,71 @@ def custom_override_severity(message, severity, overrides = []):
 
 	return severity
 
+def expand_event_objectmeta(message, severity, remnants = None, fold_msg = True):
+	raw_message = message
+	curlydepth = 0
+
+	# This just makes sure that the indentation matches up
+	for i in range(0, len(raw_message)):
+		if message[i] == "{":
+			curlydepth += 1
+		elif message[i] == "}":
+			curlydepth -= 1
+			if curlydepth < 0:
+				# Abort parsing; assume that this message is either malformed
+				# or that the parser is flawed
+				return message, remnants
+
+	message = None
+	remnants = []
+	indent = 2
+	depth = 0
+	escaped = False
+	quoted = False
+	tmp = ""
+
+	for i in range(0, len(raw_message)):
+		if raw_message[i] == "\"" and escaped == False:
+			quoted = True
+		elif raw_message[i] == "\\":
+			if escaped == False:
+				escaped = True
+			else:
+				escaped = False
+		elif raw_message[i] in ["{", ",", "}"]:
+			if raw_message[i] != "}":
+				tmp += raw_message[i]
+			else:
+				if tmp == "":
+					tmp += raw_message[i]
+					depth -= 1
+					if i < len(raw_message) - 1:
+						continue
+			
+			# OK, this isn't an escaped curly brace or comma,
+			# so it's time to flush the buffer
+			if message is None:
+				if ":" in tmp:
+					key, value = tmp.split(":", 1)
+					message = [("".ljust(indent * depth) + key, ("types", "yaml_key")), ("separators", "yaml_key_separator"), (f"{value}", ("types", "yaml_value"))]
+				else:
+					message = [("".ljust(indent * depth) + tmp, ("types", "yaml_value"))]
+			else:
+				if ":" in tmp:
+					key, value = tmp.split(":", 1)
+					remnants.append(([("".ljust(indent * depth) + key, ("types", "yaml_key")), ("separators", "yaml_key_separator"), (f"{value}", ("types", "yaml_value"))], severity))
+				else:
+					remnants.append(([("".ljust(indent * depth) + tmp, ("types", "yaml_value"))], severity))
+			tmp = ""
+			if raw_message[i] == "{":
+				depth += 1
+			elif raw_message[i] == "}":
+				tmp += raw_message[i]
+				depth -= 1
+			continue
+		tmp += raw_message[i]
+	return severity, message, remnants
+
 def expand_event(message, severity, remnants = None, fold_msg = True):
 	if fold_msg == True or (remnants is not None and len(remnants) > 0):
 		return severity, message, remnants
@@ -2695,8 +2760,10 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 			elif _filter == "facility_hh_mm_ss_ms_severity":
 				facility, severity, message, remnants = facility_hh_mm_ss_ms_severity(message, severity = severity, fold_msg = fold_msg)
 			elif _filter == "expand_event":
-				if message.startswith("Event(v1.ObjectReference{"):
+				if message.startswith(("Event(v1.ObjectReference{")):
 					severity, message, remnants = expand_event(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
+				elif message.startswith(("&Event{ObjectMeta:")):
+					severity, message, remnants = expand_event_objectmeta(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
 			elif _filter == "modinfo":
 				facility, severity, message, remnants = modinfo(message, fold_msg = fold_msg)
 			# Timestamp formats
