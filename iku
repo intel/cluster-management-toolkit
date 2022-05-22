@@ -12618,7 +12618,18 @@ def populate_views():
 			if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
 				continue
 
-			view_files.append(os.path.join(view_dir, filename))
+			if len(available_api_families) > 0:
+				tmp = filename.rstrip(".yaml")
+				tmp = tmp.rstrip(".yml")
+				if "." in tmp:
+					kind, api_family = tmp.split(".", 1)
+				else:
+					kind = tmp
+					api_family = ""
+				if (kind, api_family) in available_api_families or kind.startswith("__"):
+					view_files.append(os.path.join(view_dir, filename))
+			else:
+				view_files.append(os.path.join(view_dir, filename))
 
 	for view_file in view_files:
 		with open(view_file, "r") as f:
@@ -13240,6 +13251,7 @@ def main():
 	global read_only_mode
 	global namespace
 	global defaultview
+	global available_api_families
 
 	iktconfig = iktlib.read_iktconfig()
 	themefile = deep_get(iktconfig, "Global#theme")
@@ -13385,12 +13397,15 @@ def main():
 	# We don't need escape sequences, so cut down on the delay to 25ms
 	os.environ.setdefault('ESCDELAY', '25')
 
+	init_kubernetes_client()
+	iktprint([("Checking available Kubernetes APIs\n", "default")])
+	available_api_families, status = kh.get_available_api_families()
+
 	# Customises the list views if necessary
-	if len(views) == 0:
-		iktprint([("Stand by, populating list of supported views...\n", "default")])
+	if len(infoviews) == 0:
+		iktprint([("Populating list of supported views...\n", "default")])
 		populate_views()
 		customise_listviews()
-	init_kubernetes_client()
 
 	wrapper(setupui)
 
