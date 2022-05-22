@@ -1556,6 +1556,10 @@ class KubernetesHelper:
 			"api": "helmchartrepositories",
 			"namespaced": False,
 		},
+		("ProjectHelmChartRepository", "helm.openshift.io"): {
+			"api_family": ["apis/helm.openshift.io/v1beta1/"],
+			"api": "projecthelmchartrepositories",
+		},
 		# image.openshift.io
 		("Image", "image.openshift.io"): {
 			"api_family": ["apis/image.openshift.io/v1/"],
