@@ -246,8 +246,14 @@ def generator_basic(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	if string == "None":
 		string = "<none>"
 
-	if string in ["<none>", "<unset>", "<unknown>"]:
+	if string in ["<none>", "<unknown>"]:
 		formatting = ("types", "none", selected)
+	elif string in ["<default>"]:
+		formatting = ("types", "default", selected)
+	elif string in ["<undefined>"]:
+		formatting = ("types", "undefined", selected)
+	elif string in ["<unset>"]:
+		formatting = ("types", "unset", selected)
 	else:
 		context, attr_ref = field_colors[0]
 		formatting = (context, attr_ref, selected)
@@ -11337,10 +11343,14 @@ def view_yaml(stdscr, **kwargs):
 		return
 	path = deep_get(kwargs, "path")
 	if path is not None:
+		include_root = deep_get(kwargs, "include_root", False)
 		if deep_get(kwargs, "include_root", False) == True:
-			obj = [{f"{path.rsplit('#')[-1]}": deep_get(obj, path)}]
+			obj = {f"{path.rsplit('#')[-1]}": deep_get(obj, path)}
 		else:
-			obj = [deep_get(obj, path)]
+			_obj = deep_get(obj, path)
+		if _obj is None:
+			return
+		obj = [_obj]
 	else:
 		obj = [obj]
 	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
