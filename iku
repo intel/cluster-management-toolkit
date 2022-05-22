@@ -5572,7 +5572,7 @@ def get_pod_affinity(obj, **kwargs):
 					selectors += make_set_expression(deep_get(selector, "preference#matchFields", {}))
 					selectors += make_set_expression(deep_get(selector, "matchExpressions", {}))
 					selectors += make_set_expression(deep_get(selector, "matchFields", {}))
-					affinities.append((atype, f"{scheduling}{weight}", execution, selectors, topology))
+					affinities.append([atype, f"{scheduling}{weight}", execution, selectors, topology])
 
 	return affinities
 
@@ -5607,7 +5607,7 @@ def get_pod_tolerations(obj, **kwargs):
 		if operator == "Exists" and value != "":
 			status_group = stgroup.NOT_OK
 
-		tolerations.append((key, operator, value, effect, timeout))
+		tolerations.append([key, operator, value, effect, timeout])
 
 	return tolerations
 
@@ -5644,7 +5644,7 @@ def get_security_context(obj, **kwargs):
 
 	for policy in tmp:
 		if policy[1] is not None:
-			security_policies.append((policy[0], str(policy[1])))
+			security_policies.append([policy[0], str(policy[1])])
 
 	return security_policies
 
@@ -5655,12 +5655,18 @@ def get_allowed_ips(obj, **kwargs):
 		if "/" in addr:
 			tmp = re.match(r"^(\d+\.\d+\.\d+\.\d+)\/(\d+)", addr)
 			if tmp is None:
-				raise Exception(f"Could not parse {addr} as an address/address mask")
+				raise ValueError(f"Could not parse {addr} as an address/address mask")
 			ip = tmp[1]
 			mask = tmp[2]
-			allowed_ips.append((widgetlineattrs.NORMAL, [(f"{ip}", ("windowwidget", "default")), ("/", ("windowwidget", "dim")), (f"{mask}", ("windowwidget", "default"))]))
+			allowed_ips.append({
+				"lineattrs": widgetlineattrs.NORMAL,
+				"columns": [[(f"{ip}", ("windowwidget", "default")), ("/", ("windowwidget", "dim")), (f"{mask}", ("windowwidget", "default"))]],
+			})
 		else:
-			allowed_ips.append((widgetlineattrs.NORMAL, [(f"{addr}", ("windowwidget", "default"))]))
+			allowed_ips.append({
+				"lineattrs": widgetlineattrs.NORMAL,
+				"columns": [[(f"{addr}", ("windowwidget", "default"))]],
+			})
 
 	return allowed_ips
 
@@ -5687,7 +5693,7 @@ def get_volume_properties(obj, **kwargs):
 			value = value
 		else:
 			raise Exception(f"Unhandled type {type(value)} for {field}={value}")
-		volume_properties.append((volume_property, value))
+		volume_properties.append([volume_property, value])
 
 	return volume_properties
 
@@ -5701,7 +5707,7 @@ def get_endpoint_slices(obj, **kwargs):
 	for item in vlist:
 		epsnamespace = deep_get(item, "metadata#namespace")
 		epsname = deep_get(item, "metadata#name")
-		tmp.append((epsnamespace, epsname))
+		tmp.append([epsnamespace, epsname])
 	return tmp
 
 def get_key_value(obj, **kwargs):
@@ -5722,7 +5728,7 @@ def get_key_value(obj, **kwargs):
 				value = _value
 			else:
 				raise Exception(f"Unhandled type {type(_value)} for {field}={value}")
-			vlist.append((_key, _value))
+			vlist.append([_key, _value])
 
 	return vlist
 
@@ -5883,9 +5889,9 @@ def get_containers(containers = [], container_statuses = []):
 		container_image = deep_get(container, "image")
 		if container_dict[container_name] == "<undefined>":
 			image_version = kh.get_image_version(container_image, "<undefined>")
-			container_list.append((container_name, image_version))
+			container_list.append([container_name, image_version])
 		else:
-			container_list.append((container_name, container_dict[container_name]))
+			container_list.append([container_name, container_dict[container_name]])
 
 	return container_list
 
@@ -7222,9 +7228,9 @@ def genericlistloop(stdscr, view):
 
 			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, actions, title = action_title)
 			selection = None
-			if tmpselection is not None and type(tmpselection[0]) == int:
+			if tmpselection is not None and tmpselection != "":
 				selection = ""
-				for i in range(1, len(tmpselection)):
+				for i in range(0, len(tmpselection)):
 					if len(tmpselection[i]) > 0:
 						selection += tmpselection[i][0][0]
 			uip.refresh_all()
@@ -7298,14 +7304,18 @@ def genericlistloop(stdscr, view):
 									formatting = ("windowwidget", "highlight")
 								else:
 									raise Exception(f"Unknown ptype {ptype}")
-								file_list.append((widgetlineattrs.NORMAL, [(f"{filename}", formatting)], [(f"{ptype}", ("windowwidget", "description"))]))
+								file_list.append({
+									"lineattrs": widgetlineattrs.NORMAL,
+									"columns": [[(f"{filename}", formatting)], [(f"{ptype}", ("windowwidget", "description"))]],
+									"retval": filename,
+								})
 							tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, file_list, title = query, cursor = True)
 							if tmpselection is None or tmpselection == "":
 								# This will break out of the loop
 								basedir = None
 								selected_file = None
 								continue
-							selected_entry = tmpselection[1][0][0]
+							selected_entry = tmpselection
 							# Find entry in tmp_file_list
 							for item in tmp_file_list:
 								realpath, filename, ptype = item
@@ -7346,17 +7356,26 @@ def genericlistloop(stdscr, view):
 				preselection = all_ns
 			else:
 				preselection = namespace
-			namespace_list = [(widgetlineattrs.NORMAL, [(f"{all_ns}", ("windowwidget", "default"))])]
+			namespace_list = [{
+				"lineattrs": widgetlineattrs.NORMAL,
+				"columns": [[(f"{all_ns}", ("windowwidget", "default"))]],
+				"retval": all_ns,
+			}]
+
 
 			tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
 			if status == 200:
 				for ns in [deep_get(item, "metadata#name") for item in tmp]:
-					namespace_list.append((widgetlineattrs.NORMAL, [(f"{ns}", ("windowwidget", "default"))]))
+					namespace_list.append({
+						"lineattrs": widgetlineattrs.NORMAL,
+						"columns": [[(f"{ns}", ("windowwidget", "default"))]],
+						"retval": ns,
+					})
 
 			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, namespace_list, title = "Select Namespace", cursor = True, preselection = preselection)
 			selection = None
 			if tmpselection is not None and type(tmpselection[0]) == int:
-				selection = tmpselection[1][0][0]
+				selection = tmpselection
 			uip.refresh_all()
 			if selection is not None and len(selection) > 0:
 				if selection == all_ns:
@@ -7449,7 +7468,10 @@ def genericlistloop(stdscr, view):
 			if len(labels) == 0:
 				continue
 			for key, value in natsorted(labels):
-				labellist.append((widgetlineattrs.NORMAL, [(f"{key}", ("windowwidget", "default"))], [(f"{value}", ("windowwidget", "default"))]))
+				labellist.append({
+					"lineattrs": widgetlineattrs.NORMAL,
+					"columns": [[(f"{key}", ("windowwidget", "default"))], [(f"{value}", ("windowwidget", "default"))]],
+				})
 			label_headers = ["Label:", "Value:"]
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, labellist, headers = label_headers, title = "Labels", cursor = False)
 			tagged_items.clear()
@@ -7487,7 +7509,10 @@ def genericlistloop(stdscr, view):
 			if len(labels) == 0:
 				continue
 			for key, value in labels:
-				labellist.append((widgetlineattrs.NORMAL, [(f"{key}", ("windowwidget", "default"))], [(f"{value}", ("windowwidget", "default"))]))
+				labellist.append({
+					"lineattrs": widgetlineattrs.NORMAL,
+					"columns": [[(f"{key}", ("windowwidget", "default"))], [(f"{value}", ("windowwidget", "default"))]],
+				})
 			label_headers = ["Label:", "Value:"]
 			tagged_labels = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, labellist, headers = label_headers, title = "Labels", cursor = True, taggable = True)
 			if len(tagged_labels) > 0:
@@ -7513,7 +7538,10 @@ def genericlistloop(stdscr, view):
 			grouplist = []
 			preselection = set()
 			for i in range(0, len(groups)):
-				grouplist.append((widgetlineattrs.NORMAL, [(f"{groups[i]}", ("windowwidget", "default"))]))
+				grouplist.append({
+					"lineattrs": widgetlineattrs.NORMAL,
+					"columns": [[(f"{groups[i]}", ("windowwidget", "default"))]],
+				})
 				if groups[i] in host_groups:
 					preselection.add(i)
 			group_headers = ["Ansible Groups:"]
@@ -7550,7 +7578,10 @@ def genericlistloop(stdscr, view):
 			if len(tagged_items) == 0:
 				continue
 			for item in tagged_items:
-				taggeditemlist.append((widgetlineattrs.NORMAL, [("separators", "widgetbullet"), (f"{item.name}", ("windowwidget", "default"))]))
+				taggeditemlist.append({
+					"lineattrs": widgetlineattrs.NORMAL,
+					"columns": [[("separators", "widgetbullet"), (f"{item.name}", ("windowwidget", "default"))]],
+				})
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, taggeditemlist, title = "Tagged items", cursor = False)
 			uip.refresh_all()
 			curses.doupdate()
@@ -7613,9 +7644,9 @@ def genericlistloop(stdscr, view):
 
 			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, actions, title = action_title)
 			selection = None
-			if tmpselection is not None and type(tmpselection[0]) == int:
+			if tmpselection is not None and tmpselection != "":
 				selection = ""
-				for i in range(1, len(tmpselection)):
+				for i in range(0, len(tmpselection)):
 					if len(tmpselection[i]) > 0:
 						selection += tmpselection[i][0][0]
 			uip.refresh_all()
@@ -7696,14 +7727,18 @@ def genericlistloop(stdscr, view):
 									formatting = ("windowwidget", "highlight")
 								else:
 									raise Exception(f"Unknown ptype {ptype}")
-								file_list.append((widgetlineattrs.NORMAL, [(f"{filename}", formatting)], [(f"{ptype}", ("windowwidget", "description"))]))
+								file_list.append({
+									"lineattrs": widgetlineattrs.NORMAL,
+									"columns": [[(f"{filename}", formatting)], [(f"{ptype}", ("windowwidget", "description"))]],
+									"retval": filename,
+								})
 							tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, file_list, title = query, cursor = True)
 							if tmpselection is None or tmpselection == "":
 								# This will break out of the loop
 								basedir = None
 								selected_file = None
 								continue
-							selected_entry = tmpselection[1][0][0]
+							selected_entry = selection
 							# Find entry in tmp_file_list
 							for item in tmp_file_list:
 								realpath, filename, ptype = item
@@ -8285,7 +8320,10 @@ def clusteroverviewloop(stdscr, view):
 					versionattr = ("windowwidget", "dim")
 				else:
 					versionattr = ("windowwidget", "default")
-				package_versions.append((widgetlineattrs.NORMAL, [(f"{package}", ("windowwidget", "default"))], [(f"{version}", versionattr)]))
+				package_versions.append({
+					"lineattrs": widgetlineattrs.NORMAL,
+					"columns": [[(f"{package}", ("windowwidget", "default"))], [(f"{version}", versionattr)]],
+				})
 			uip.refresh_window()
 			uip.refresh_infopad()
 			uip.refresh_listpad()
@@ -9270,8 +9308,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 				if obj is None:
 					title = "Error!"
-					errormsg = [(0,
-						[("Resource not available; it may have been deleted", ("types", "generic"))])]
+					errormsg = [{
+						"lineattrs": 0,
+						"columns": [[("Resource not available; it may have been deleted", ("types", "generic"))]],
+					}]
 					curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, errormsg, title = title, cursor = False)
 					return curses_helper.retval.RETURNDONE
 
@@ -10667,11 +10707,17 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			uip.xoffset = 0
 			uip.force_update()
 		elif c == ord("P"):
-			parserlist = [
-				(widgetlineattrs.NORMAL, [(f"<autodetect>", ("windowwidget", "default"))]),
-			]
-			for lvl in natsorted(get_parser_list()):
-				parserlist.append((widgetlineattrs.NORMAL, [(f"{lvl}", ("windowwidget", "default"))]))
+			parserlist = [{
+				"lineattrs": widgetlineattrs.NORMAL,
+				"columns": [[(f"<autodetect>", ("windowwidget", "default"))]],
+				"retval": "<autodetect>",
+			}]
+			for parser in natsorted(get_parser_list()):
+				parserlist.append({
+					"lineattrs": widgetlineattrs.NORMAL,
+					"columns": [[(f"{parser}", ("windowwidget", "default"))]],
+					"retval": parser,
+				})
 
 			if override_parser is None:
 				preselection = "<autodetect>"
@@ -10679,8 +10725,8 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				preselection = override_parser
 			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, parserlist, title = "Override Logparser", cursor = True, preselection = preselection)
 			selection = None
-			if tmpselection is not None and type(tmpselection[0]) == int:
-				selection = tmpselection[1][0][0]
+			if tmpselection is not None and tmpselection != "":
+				selection = tmpselection
 			uip.refresh_all()
 			if selection is not None and len(selection) > 0:
 				if selection == "<autodetect>":
@@ -10696,12 +10742,16 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			for lvl in get_loglevel_names():
 				if lvl.startswith("Diff"):
 					continue
-				loglevellist.append((widgetlineattrs.NORMAL, [(f"{lvl}", ("windowwidget", "default"))]))
+				loglevellist.append({
+					"lineattrs": widgetlineattrs.NORMAL,
+					"columns": [[(f"{lvl}", ("windowwidget", "default"))]],
+					"retval": lvl,
+				})
 
 			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, loglevellist, title = "Select Loglevel", cursor = True, preselection = loglevel_to_name(log_level))
 			selection = None
-			if tmpselection is not None and type(tmpselection[0]) == int:
-				selection = tmpselection[1][0][0]
+			if tmpselection is not None and tmpselection != "":
+				selection = tmpselection
 			uip.refresh_all()
 			if selection is not None and len(selection) > 0:
 				log_level = name_to_loglevel(selection)
@@ -10735,15 +10785,25 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			uip.force_update()
 		elif c == ord("V"):
 			facilitylist = [
-				(widgetlineattrs.NORMAL, [("Full", ("windowwidget", "default"))]),
-				(widgetlineattrs.NORMAL, [("Short", ("windowwidget", "default"))]),
-				(widgetlineattrs.NORMAL, [("None", ("windowwidget", "default"))]),
+				{
+					"lineattrs": widgetlineattrs.NORMAL,
+					"columns": [[("Full", ("windowwidget", "default"))]],
+					"retval": "Full",
+				}, {
+					"lineattrs": widgetlineattrs.NORMAL,
+					"columns": [[("Short", ("windowwidget", "default"))]],
+					"retval": "Short",
+				}, {
+					"lineattrs": widgetlineattrs.NORMAL,
+					"columns": [[("None", ("windowwidget", "default"))]],
+					"retval": "None",
+				}
 			]
 
 			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, facilitylist, title = "Select Facility Level", cursor = True, preselection = show_facility)
 			selection = None
-			if tmpselection is not None and type(tmpselection[0]) == int:
-				selection = tmpselection[1][0][0]
+			if tmpselection is not None and tmpselection != "":
+				selection = tmpselection
 			uip.refresh_all()
 			if selection is not None and len(selection) > 0:
 				show_facility = selection
@@ -11579,7 +11639,10 @@ def create_resource_from_file(uip, items = [], action = {}, values = {}, kind = 
 		resources = __summarise_resources(resource_path)
 
 		for kind, namespace, name in resources:
-			resource_list.append((widgetlineattrs.NORMAL, [(namespace, ("windowwidget", "default"))], [(name, ("windowwidget", "default"))], [(kind, ("windowwidget", "default"))]))
+			resource_list.append({
+				"lineattrs": widgetlineattrs.NORMAL,
+				"columns": [[(namespace, ("windowwidget", "default"))], [(name, ("windowwidget", "default"))], [(kind, ("windowwidget", "default"))]],
+			})
 
 		headers = ["Namespace:", "Name:", "Kind:"]
 		title = "The following resources will be created; accept?"
@@ -11639,7 +11702,10 @@ def diff_resource_configuration(uip, items = [], action = {}, values = {}, kind 
 			if tmp is not None and len(tmp[1]) % 2 == 0:
 				line = prefix + "".ljust(int(len(tmp[1]) / 2) * indent) + tmp[2]
 
-		diff.append((widgetlineattrs.NORMAL, [(line, formatting)]))
+		diff.append({
+			"lineattrs": widgetlineattrs.NORMAL,
+			"columns": [[(line, formatting)]],
+		})
 
 	tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, diff, title = "Diff between current and would be configuration:", cursor = False)
 
@@ -12021,9 +12087,17 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 			continue
 
 		if currentcategory != category:
-			actions.append((widgetlineattrs.SEPARATOR, [(f" {category} ", ("windowwidget", "default"))], [("", ("windowwidget", "default"))]))
+			actions.append({
+				"lineattrs": widgetlineattrs.SEPARATOR,
+				"columns": [[(f" {category} ", ("windowwidget", "default"))], [("", ("windowwidget", "default"))]],
+			})
 			currentcategory = category
-		actions.append((widgetlineattrs.NORMAL, [(f"{action}", ("windowwidget", "default"))], metadata))
+		if len(metadata) > 0:
+			sys.exit(f"{metadata=}")
+		actions.append({
+			"lineattrs": widgetlineattrs.NORMAL,
+			"columns": [[(f"{action}", ("windowwidget", "default"))], metadata],
+		})
 
 	return actions, action_list
 
@@ -12205,15 +12279,27 @@ def populate_playbooklist(context = None, actions = [], action_list = {}, contro
 
 			if currentcategory != category:
 				if category == "__INVALID__":
-					actions.append((widgetlineattrs.SEPARATOR, [(f" INVALID ", ("windowwidget", "bright"))], [("", ("windowwidget", "default"))]))
+					actions.append({
+						"lineattrs": widgetlineattrs.SEPARATOR,
+						"columns": [[(f" INVALID ", ("windowwidget", "bright"))], [("", ("windowwidget", "default"))]],
+					})
 					currentcategory = category
 				else:
-					actions.append((widgetlineattrs.SEPARATOR, [(f" {category} ", ("windowwidget", "default"))], [("", ("windowwidget", "default"))]))
+					actions.append({
+						"lineattrs": widgetlineattrs.SEPARATOR,
+						"columns": [[(f" {category} ", ("windowwidget", "default"))], [("", ("windowwidget", "default"))]],
+					})
 					currentcategory = category
 			if currentcategory == "__INVALID__":
-				actions.append((lineattrs, [(f"{action}", ("windowwidget", "alert"))], metadata))
+				actions.append({
+					"lineattrs": lineattrs,
+					"columns": [[(f"{action}", ("windowwidget", "alert"))], metadata],
+				})
 			else:
-				actions.append((lineattrs, [(f"{action}", ("windowwidget", "default"))], metadata))
+				actions.append({
+					"lineattrs": lineattrs,
+					"columns": [[(f"{action}", ("windowwidget", "default"))], metadata],
+				})
 
 	return actions, action_list
 
