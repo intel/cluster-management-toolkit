@@ -13453,9 +13453,6 @@ def main():
 		else:
 			set_default_view("Selector")
 
-	if defaultview not in views:
-		defaultview = f"*{defaultview}"
-
 	if initial_name is not None:
 		# Role, RoleBinding, ClusterRole, and ClusterRoleBinding can contain ":"
 		# Most resources do not allow ":" at all, and for pods we use it to indicate a container name
