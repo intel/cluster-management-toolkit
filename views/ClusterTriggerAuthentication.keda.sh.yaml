@@ -1,0 +1,36 @@
+kind: ClusterTriggerAuthentication
+api_family: keda.sh
+default_command: clustertriggerauthentications
+command:
+- cta
+- clustertriggerauth
+listview:
+  name: Cluster Trigger Authentications
+  group: Scheduling & Scaling
+  field_indexes:
+    Namespace: [name, pod_identity_provider, secret, environment, vault_address, age]
+  fields:
+    environment:
+      header: "Environment:"
+      paths:
+      - path: "spec#env"
+        pathtype: items
+        subpaths:
+        - name
+      formatter: list
+    pod_identity_provider:
+      header: "Pod Identity:"
+      path: "spec#podIdentity#provider"
+      type: str
+    secret:
+      header: "Secret:"
+      paths:
+      - path: "spec#secretTargetRef"
+        pathtype: items
+        subpaths:
+        - name
+      formatter: list
+    vault_address:
+      header: "Vault Address:"
+      path: "spec#hashiCorpVault#address"
+      type: str

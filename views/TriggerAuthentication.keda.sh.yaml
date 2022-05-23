@@ -1,0 +1,37 @@
+kind: TriggerAuthentication
+api_family: keda.sh
+default_command: triggerauthentications
+command:
+- ta
+- triggerauth
+listview:
+  name: Trigger Authentications
+  group: Scheduling & Scaling
+  field_indexes:
+    Namespace: [namespace, name, pod_identity_provider, secret, environment, vault_address, age]
+  sortcolumn: namespace
+  fields:
+    environment:
+      header: "Environment:"
+      paths:
+      - path: "spec#env"
+        pathtype: items
+        subpaths:
+        - name
+      formatter: list
+    pod_identity_provider:
+      header: "Pod Identity:"
+      path: "spec#podIdentity#provider"
+      type: str
+    secret:
+      header: "Secret:"
+      paths:
+      - path: "spec#secretTargetRef"
+        pathtype: items
+        subpaths:
+        - name
+      formatter: list
+    vault_address:
+      header: "Vault Address:"
+      path: "spec#hashiCorpVault#address"
+      type: str

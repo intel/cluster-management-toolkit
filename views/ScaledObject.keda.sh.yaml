@@ -1,13 +1,13 @@
-kind: ScaledJob
+kind: ScaledObject
 api_family: keda.sh
-default_command: scaledjobs
+default_command: scaledobjects
 command:
-- sj
+- so
 listview:
-  name: Scaled Jobs
+  name: Scaled Objects
   group: Scheduling & Scaling
   field_indexes:
-    Namespace: [namespace, name, max_replica_count, triggers, authentication, ready, active, age]
+    Namespace: [namespace, name, scale_target_kind, scale_target_name, min_replica_count, max_replica_count, triggers, authentication, ready, active, fallback, age]
   sortcolumn: namespace
   fields:
     active:
@@ -39,9 +39,26 @@ listview:
         pathtype: items
         subpath: type
       formatter: list
+    fallback:
+      header: "Fallback:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          eq: Fallback
+      type: str
     max_replica_count:
       header: "Max Replica Count:"
       path: "spec#maxReplicaCount"
+      type: int
+      formatting:
+        field_colors:
+        - type: numerical
+    min_replica_count:
+      header: "Min Replica Count:"
+      path: "spec#minReplicaCount"
       type: int
       formatting:
         field_colors:
@@ -68,6 +85,17 @@ listview:
               field_colors:
               - context: main
                 type: status_not_ok
+    scale_target_kind:
+      header: "Scale Target Kind:"
+      path: "status#scaleTargetKind"
+      type: str
+      formatting:
+        field_colors:
+        - type: kind
+    scale_target_name:
+      header: "Scale Target Name:"
+      path: "spec#scaleTargetRef#name"
+      type: str
     triggers:
       header: "Triggers:"
       paths:
