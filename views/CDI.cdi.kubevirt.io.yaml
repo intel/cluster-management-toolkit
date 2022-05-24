@@ -1,0 +1,95 @@
+kind: CDI
+api_family: cdi.kubevirt.io
+default_command: cdis
+listview:
+  name: CDIs
+  group: Storage & Backups
+  field_indexes:
+    Normal: [name, phase, age]
+  fields:
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: str
+infoview:
+  name: CDI Info
+  infopad:
+    row_indexes:
+      Normal: [phase, image_pull_policy, infrastructure_header, infrastructure_node_selector, infrastructure_tolerations, workload_header, workload_node_selector, version_header, version_observed, version_operator, version_target]
+    rows:
+      image_pull_policy:
+        header: [["Image Pull Policy:", [main, infoheader]]]
+        path: "spec#imagePullPolicy"
+        type: str
+      infrastructure_header:
+        header: [["Infrastructure:", [main, infoheader]]]
+      infrastructure_node_selector:
+        header: [["  Node Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#infra#nodeSelector"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector
+      infrastructure_tolerations:
+        header: [["  Tolerations:", [main, infoheader]]]
+        paths:
+        - path: "spec#infra#tolerations"
+          pathtype: match_expression
+          default: "<none>"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: operator
+          - type: value
+          field_separators:
+          - type: space
+          - type: no_pad
+      phase:
+        header: [["Phase:", [main, infoheader]]]
+        path: "status#phase"
+        type: str
+      version_header:
+        header: [["Version:", [main, infoheader]]]
+      version_observed:
+        header: [["  Observed:", [main, infoheader]]]
+        path: "status#observedVersion"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+      version_operator:
+        header: [["  Operator:", [main, infoheader]]]
+        path: "status#operatorVersion"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+      version_target:
+        header: [["  Target:", [main, infoheader]]]
+        path: "status#targetVersion"
+        type: str
+        formatting:
+          field_colors:
+          - type: version
+      workload_header:
+        header: [["Workload:", [main, infoheader]]]
+      workload_node_selector:
+        header: [["  Node Selector:", [main, infoheader]]]
+        paths:
+        - path: ["spec#workload#nodeSelector"]
+          pathtype: key_value
+          default: ["<none>"]
+        formatter: list
+        formatting:
+          field_colors:
+          - type: key
+          - type: value
+          field_separators:
+          - type: selector

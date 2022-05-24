@@ -1,0 +1,70 @@
+kind: VirtualMachineInstance
+api_family: kubevirt.io
+default_command: virtualmachineinstances
+command:
+- vmis
+- vmi
+listview:
+  name: Virtual Machine Instances
+  group: KubeVirt
+  field_indexes:
+    Normal: [name, ipaddresses, node_name, ready, live_migratable, paused, phase, age]
+  sortcolumn: status
+  fields:
+    ipaddresses:
+      header: "IP-addresses:"
+      paths:
+      - path: "status#interfaces"
+        pathtype: items
+        subpath: ipAddress
+      formatter: address
+    live_migratable:
+      header: "Live Migratable:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          eq: LiveMigratable
+      type: str
+    node_name:
+      header: "Node Name:"
+      path: "status#nodeName"
+      type: str
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: str
+    paused:
+      header: "Paused:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          eq: Paused
+      type: str
+    ready:
+      header: "Ready:"
+      paths:
+      - path: "status#conditions"
+        pathtype: items
+        subpath: status
+        when:
+        - key: type
+          eq: Ready
+      type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: main
+                type: status_ok
+            "False":
+              field_colors:
+              - context: main
+                type: status_not_ok

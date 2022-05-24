@@ -996,6 +996,39 @@ class KubernetesHelper:
 			"api_family": ["apis/cassandra.k8ssandra.io/v1alpha1/"],
 			"api": "cassandrarestores",
 		},
+		# cdi.kubevirt.io
+		("CDI", "cdi.kubevirt.io"): {
+			"api_family": ["apis/cdi.kubevirt.io/v1beta1/"],
+			"api": "cdis",
+			"namespaced": False,
+		},
+		("DataVolume", "cdi.kubevirt.io"): {
+			"api_family": ["apis/cdi.kubevirt.io/v1beta1/"],
+			"api": "datavolumes",
+		},
+		("CDIConfig", "cdi.kubevirt.io"): {
+			"api_family": ["apis/cdi.kubevirt.io/v1beta1/"],
+			"api": "cdiconfigs",
+			"namespaced": False,
+		},
+		("StorageProfile", "cdi.kubevirt.io"): {
+			"api_family": ["apis/cdi.kubevirt.io/v1beta1/"],
+			"api": "storageprofiles",
+			"namespaced": False,
+		},
+		("DataSource", "cdi.kubevirt.io"): {
+			"api_family": ["apis/cdi.kubevirt.io/v1beta1/"],
+			"api": "datasources",
+		},
+		("DataImportCron", "cdi.kubevirt.io"): {
+			"api_family": ["apis/cdi.kubevirt.io/v1beta1/"],
+			"api": "dataimportcrons",
+		},
+		("ObjectTransfer", "cdi.kubevirt.io"): {
+			"api_family": ["apis/cdi.kubevirt.io/v1beta1/"],
+			"api": "objecttransfers",
+			"namespaced": False,
+		},
 		# cert-manager.io <= rename from: certmanager.k8s.io
 		("Certificate", "cert-manager.io"): {
 			"api_family": ["apis/cert-manager.io/v1/", "apis/cert-manager.io/v1alpha2/", "apis/certmanager.k8s.io/v1alpha1/"],

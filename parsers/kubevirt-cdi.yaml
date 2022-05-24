@@ -1,17 +1,14 @@
-- name: kubevirt
+- name: kubevirt-cdi
   show_in_selector: false
   matchkeys:
-  - pod_name: virt-api
-  - pod_name: virt-controller
-  - pod_name: virt-handler
-  - pod_name: virt-operator
+  - pod_name: cdi-apiserver
+  - pod_name: cdi-deployment
+  - pod_name: cdi-operator
+  - pod_name: cdi-uploadproxy
   parser_rules:
   - name: ts_8601
   - name: glog
   - name: json
-    options:
-      facilities:
-      - pos
   - name: override_severity
     overrides:
     - matchtype: startswith
@@ -20,6 +17,3 @@
     - matchtype: startswith
       matchkey: "Trace["
       loglevel: debug
-    - matchtype: startswith
-      matchkey: "panic:"
-      loglevel: alert
