@@ -1283,35 +1283,27 @@ def get_metrics_list(**kwargs):
 
 	return vlist, status
 
-class ContextInfo:
-	def __init__(self, current, name, cluster, authinfo, namespace):
-		self.current = current
-		self.name = name
-		self.cluster = cluster
-		self.authinfo = authinfo
-		self.namespace = namespace
-	def __repr__(self):
-		return repr((self.current, self.name, self.cluster, self.authinfo, self.namespace))
+def get_context_list(**kwargs):
+	vlist = []
 
-def get_context_info(**kwargs):
-	info = []
-
-	vlist = kh.list_contexts()
-
-	# If the number of contexts is 0 we don't have a cluster configured
-	if len(vlist) == 0:
-		return []
+	_vlist = kh.list_contexts()
 
 	tag_prefix = themearray_to_string([("separators", "tag")])
-	for context in vlist:
-		current, name, cluster, authinfo, namespace = context
-		if current == True:
+
+	for _current, name, cluster, authinfo, namespace in _vlist:
+		if _current == True:
 			current = tag_prefix
 		else:
 			current = "".ljust(len(tag_prefix))
-		info.append(ContextInfo(current, name, cluster, authinfo, namespace))
+		vlist.append({
+			"current": current,
+			"name": name,
+			"cluster": cluster,
+			"authinfo": authinfo,
+			"namespace": namespace,
+		})
 
-	return info
+	return vlist, "Unknown"
 
 class ContainerInfo:
 	def __init__(self, name, ref, container_type, image_version, instances, image_id, pods, pod_references):
@@ -5614,7 +5606,8 @@ def get_pod_tolerations(obj, **kwargs):
 def set_cluster_context(uip, **kwargs):
 	global available_api_families
 
-	name = deep_get(kwargs, "selected").name
+	selected = deep_get(kwargs, "selected")
+	name = getattr(selected, "name")
 
 	retval = kh.set_context(name = name)
 	# If we actually changed context we need to force an API reload,
@@ -7095,6 +7088,8 @@ def genericlistloop(stdscr, view):
 
 			if status == 42503:
 				serverstatus = "Server Unavailable"
+			elif status == 42504:
+				serverstatus = "Connection Timeout"
 			else:
 				serverstatus = str(status)
 
@@ -7134,6 +7129,7 @@ def genericlistloop(stdscr, view):
 				statusarray2 += [("separators", "statusbar")]
 			statusarray2 += [
 				("API Status: ", ("statusbar", "infoheader")),
+				# Here we should probably highlight when something is bad
 				(f"{serverstatus}", ("statusbar", "default")),
 			]
 
@@ -12092,8 +12088,6 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 				"columns": [[(f" {category} ", ("windowwidget", "default"))], [("", ("windowwidget", "default"))]],
 			})
 			currentcategory = category
-		if len(metadata) > 0:
-			sys.exit(f"{metadata=}")
 		actions.append({
 			"lineattrs": widgetlineattrs.NORMAL,
 			"columns": [[(f"{action}", ("windowwidget", "default"))], metadata],
@@ -12550,45 +12544,6 @@ views_special = {
 		"is_taggable": False,
 		"check_availability": is_cluster_reachable,
 	},
-	"Contexts": {
-		"commandline": ["contexts", "context", "ctx"],
-		"group": "Administration",
-		"field_indexes": {
-			"Normal": ["current", "name", "cluster", "authinfo", "namespace"],
-		},
-		"fields": {
-			"current": {
-				"header": "Current:",
-			},
-			"cluster": {
-				"header": "Cluster:",
-			},
-			"authinfo": {
-				"header": "Authinfo:",
-			},
-		},
-		"kind": None,
-		"activatedfun": None,
-		"listgetter": None,
-		"infogetter": get_context_info,
-		"shortcuts": {
-			"Switch Context": {
-				"shortcut": [ curses.KEY_ENTER, 10, 13 ],
-				"helptext": ("[Enter]", "Switch cluster context"),
-				"confirm": True,
-				"title": "Switch cluster context",
-				"action": "call",
-				"action_call": set_cluster_context,
-				"action_args": {
-					"_pass_selected": True,
-				},
-			},
-			# Override:
-			"Edit resource": {},
-			"View YAML dump": {},
-		},
-		"is_taggable": False,
-	},
 	"Pod Log Viewer": {
 		"commandline": ["podlogviewer", "podlog"],
 		"group": "Administration",
@@ -12654,6 +12609,7 @@ views_special = {
 		"kind": ("__PodLogMonitor", ""),
 		"labels": False,
 		"listgetter": "get_pod_containers_list",
+		"check_availability": is_cluster_reachable,
 	},
 	"Network Info": {
 		"commandline": ["network", "net", "cni"],
@@ -12770,7 +12726,7 @@ def populate_views():
 				name = deep_get(d, "listview#name", "<missing>")
 				group = deep_get(d, "listview#group")
 
-				check_availability = deep_get(d, "check_availability", None)
+				check_availability = deep_get(d, "listview#check_availability", None)
 				if check_availability is not None:
 					check_availability = eval(check_availability)
 
@@ -12807,9 +12763,13 @@ def populate_views():
 
 				listgetter_args = deep_get(d, "listview#listgetter_args", {})
 
-				activatedfun = deep_get(d, "listview#activatedfun", genericinfoloop)
-				if type(activatedfun) == str:
-					activatedfun = eval(activatedfun)
+				on_activation = deep_get(d, "listview#on_activation")
+				if on_activation is None or "call" not in on_activation:
+					activatedfun = genericinfoloop
+				else:
+					activatedfun = deep_get(on_activation, "call")
+					if type(activatedfun) == str:
+						activatedfun = eval(activatedfun)
 
 				listview_entry = {
 					"kind": (kind, api_family),
@@ -12879,6 +12839,11 @@ def populate_views():
 						if len(modifier) > 0:
 							help_key = "[Enter]"
 							shortcut_key = [curses.KEY_ENTER, 10, 13]
+						if len(modifier) > 0 or activatedfun == None:
+							help_key = "[Enter]"
+							shortcut_key = [curses.KEY_ENTER, 10, 13]
+						else:
+							sys.exit(f"View-file “{view_file}“ is invalid: the listview shortcut “{shortcut}“ uses “enter“ as key; this conflicts with built-in shortcut for “on_activation“.")
 					elif len(modifier) > 0:
 						if modifier == "shift":
 							help_key = f"[Shift] + {key.upper()}"
@@ -13084,7 +13049,7 @@ def populate_views():
 							help_key = "[Enter]"
 							shortcut_key = [curses.KEY_ENTER, 10, 13]
 						else:
-							sys.exit(f"View-file “{view_file}“ is invalid: the shortcut “{shortcut}“ uses “enter“ as key; this conflicts with built-in shortcut for “on_activation“.")
+							sys.exit(f"View-file “{view_file}“ is invalid: the infoview shortcut “{shortcut}“ uses “enter“ as key; this conflicts with built-in shortcut for “on_activation“.")
 					elif len(modifier) > 0:
 						if modifier == "shift":
 							help_key = f"[Shift] + {key.upper()}"
@@ -13176,7 +13141,7 @@ def list_namespaces():
 	if status == 200:
 		namespaces = iktlib.join_tuple_list([deep_get(item, "metadata#name") for item in tmp], _tuple = "argument", separator = (", ", "separator"))
 		iktprint([("Valid namespaces: ", "default")] + namespaces + [(".", "separator")])
-	elif status == 42503:
+	elif status in (42503, 42504):
 		iktprint([("Error: ", "error"), ("API-server unavailable", "default")], stderr = True)
 	else:
 		iktprint([("Error: ", "error"), ("API-server returned ", "default"), (status, "errorvalue")], stderr = True)

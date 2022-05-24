@@ -2602,6 +2602,7 @@ class KubernetesHelper:
 		if status == 200:
 			core_apis = json.loads(data)
 		else:
+			self.cluster_unreachable = True
 			# We couldn't get the core APIs; there's no use continuing
 			return [], status
 
@@ -2679,7 +2680,7 @@ class KubernetesHelper:
 				vlist.append(resource)
 		return vlist
 
-	def __rest_helper_generic_json(self, method = None, url = None, query_params = []):
+	def __rest_helper_generic_json(self, method = None, url = None, query_params = [], retries = 3, connect_timeout = 3.0):
 		data = None
 		message = ""
 
@@ -2703,14 +2704,23 @@ class KubernetesHelper:
 		if url is None:
 			raise Exception("REST API called without URL; this is a programming error!")
 
+		if retries == 0:
+			_retries = False
+		else:
+			_retries = urllib3.Retry(retries)
+
 		try:
-			result = self.pool_manager.request(method, url, headers = header_params, fields = query_params)
+			result = self.pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
 			status = result.status
 		except urllib3.exceptions.MaxRetryError as e:
 			# No route to host doesn't have a HTTP response; make one up...
 			# 503 is Service Unavailable; this is generally temporary, but to distinguish it from a real 503
 			# we prefix it...
 			status = 42503
+		except urllib3.exceptions.ConnectTimeoutError as e:
+			# Connection timed out; the API-server might not be available, suffer from too high load, or similar
+			# 504 is Gateway Timeout; using 42504 to indicate connection timeout thus seems reasonable
+			status = 42504
 
 		if status == 200:
 			# YAY, things went fine!
