@@ -13365,13 +13365,21 @@ def main():
 			iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		elif len(defaultview) == 0:
+			init_kubernetes_client()
+			iktprint([("Checking available Kubernetes APIs\n", "default")])
+			available_api_families, status = kh.get_available_api_families()
+
 			# Customises the list views
-			iktprint([("Stand by, populating list of supported views...\n", "default")])
+			iktprint([("Populating list of supported views...\n", "default")])
 
 			populate_views()
 			customise_listviews()
 
 			tmp = checkforview(arg.lower())
+			if tmp is None:
+				iktprint([("Unsupported or unavailable view “", "default"), (f"{arg.lower()}", "command"), ("“;", "default")], stderr = True)
+				iktprint([("Use “", "default"), (f"{about.ui_program_name} ", "programname"), ("list-views", "command"), ("“ to list available views.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
 			defaultview = tmp
 			y += 1
 			continue
@@ -13445,9 +13453,10 @@ def main():
 	# We don't need escape sequences, so cut down on the delay to 25ms
 	os.environ.setdefault('ESCDELAY', '25')
 
-	init_kubernetes_client()
-	iktprint([("Checking available Kubernetes APIs\n", "default")])
-	available_api_families, status = kh.get_available_api_families()
+	if len(available_api_families) == 0:
+		init_kubernetes_client()
+		iktprint([("Checking available Kubernetes APIs\n", "default")])
+		available_api_families, status = kh.get_available_api_families()
 
 	# Customises the list views if necessary
 	if len(infoviews) == 0:
