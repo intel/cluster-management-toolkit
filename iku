@@ -4761,6 +4761,11 @@ def get_pod_resource_list(obj, **kwargs):
 		# XXX: Maybe we should get the ref status here?
 		if ref is None:
 			status = "<missing>"
+		else:
+			conditions = deep_get(ref, "status#conditions", [])
+			for condition in conditions:
+				if deep_get(condition, "type", "") == "Ready":
+					status = deep_get(condition, "reason", "")
 
 		resource_tuple = (owr_kind[0], owr_kind[1], owr_name)
 		vlist.append({
@@ -5909,30 +5914,69 @@ def filter_list_entry(obj, caller_obj, filters = []):
 		if len(allow) > 0:
 			# If all field + value pairs match we allow
 			for rule in allow:
-				key = deep_get(rule, "key", "")
-				values = deep_get(rule, "values", [])
-				if type(values) == dict:
-					if deep_get(rule, "values#source", "object") == "caller":
-						src = caller_obj
-					else:
-						src = obj
-					values_path = deep_get(rule, "values#path", "")
-					values = deep_get(src, values_path, [])
-					if type(values) == str:
-						values = [values]
+				rtype = deep_get(rule, "type", "")
+				if rtype == "":
+					key = deep_get(rule, "key", "")
+					values = deep_get(rule, "values", [])
+					if type(values) == dict:
+						if deep_get(rule, "values#source", "object") == "caller":
+							src = caller_obj
+						else:
+							src = obj
+						values_path = deep_get(rule, "values#path", "")
+						values = deep_get(src, values_path, [])
+						if type(values) == str:
+							values = [values]
 
-				_listref = deep_get(rule, "list")
-				if _listref is not None:
-					_list = deep_get(obj, _listref, [])
-					for _item in _list:
-						if deep_get(_item, key, "").rstrip() in values:
+					_listref = deep_get(rule, "list")
+					if _listref is not None:
+						_list = deep_get(obj, _listref, [])
+						for _item in _list:
+							if deep_get(_item, key, "").rstrip() in values:
+								break
+						else:
+							skip = True
 							break
-					else:
+					elif deep_get(obj, key, "").rstrip() not in values:
 						skip = True
 						break
-				elif deep_get(obj, key, "").rstrip() not in values:
-					skip = True
-					break
+				elif rtype == "dictlist":
+					path = deep_get(rule, "path", "")
+					target_list = deep_get(obj, path, {})
+					key_value_matches = []
+					matched = False
+					for _dict in target_list:
+						for key, value in deep_get(rule, "fields", {}).items():
+							if type(value) == dict:
+								if deep_get(value, "source", "object") == "caller":
+									src = caller_obj
+								else:
+									src = target_dict
+								value_path = deep_get(value, "path", "")
+								if len(value_path) > 0:
+									value = deep_get(src, value_path)
+							if key == "api_family":
+								target_value = deep_get(_dict, "apiVersion")
+								if "/" in target_value:
+									target_value = target_value.split("/", 1)[0]
+								else:
+									target_value = ""
+							else:
+								target_value = deep_get(_dict, key)
+							if type(value) == type(target_value) and value == target_value:
+								matched = True
+							else:
+								# this particular dict didn't fully match
+								matched = False
+								break
+						if matched == True:
+							break
+					if matched == False:
+						skip = True
+						break
+				else:
+					sys.exit(f"filter: unknown rule-type: {rtype}")
+
 		if len(block) > 0:
 			# If all field + value pairs match we block
 			for rule in block:
