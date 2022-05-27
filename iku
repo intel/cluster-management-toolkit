@@ -1018,7 +1018,7 @@ def processor_total(obj, field):
 		_total = int(total.strip("m")) // 1000
 	else:
 		_total = int(total)
-	return "%s/%s" % (str(_free), str(_total))
+	return f"{_free}/{_total}"
 
 # For the list processor to work we need to know the length of all the separators
 def processor_list(obj, field, item_separator = ("separators", "list"), field_separators = [("separators", "field")], ellipsise = -1, ellipsis = ("separators", "ellipsis"), field_prefixes = None, field_suffixes = None):
@@ -5183,7 +5183,7 @@ def get_inventory_info(**kwargs):
 	# Before we ping the hosts their status is unknown
 	for host in deep_get(inventory, "all#hosts", []):
 		# We don't want to risk overwriting hostvars
-		if deep_get(inventory, "all#hosts#%s" % host) is None:
+		if deep_get(inventory, f"all#hosts#{host}") is None:
 			inventory["all"]["hosts"][host] = {}
 		inventory["all"]["hosts"][host]["status"] = "UNKNOWN"
 
@@ -5195,14 +5195,14 @@ def get_inventory_info(**kwargs):
 		retval, output = ansible_ping(ANSIBLE_INVENTORY)
 
 		if output is None or len(output) == 0:
-			sys.exit("Internal error; ansible -m ping failed with: %s" % (retval))
+			sys.exit(f"Internal error; ansible -m ping failed with: {retval}")
 
 		# This needs to be improved; if there's a message we need to tell the difference
 		# between "Permission denied" and "No route to host"
 		for (host, status) in output:
 			if host in deep_get(inventory, "all#hosts"):
 				# We don't want to risk overwriting hostvars
-				if deep_get(inventory, "all#hosts#%s" % host) is None:
+				if deep_get(inventory, f"all#hosts#{host}") is None:
 					inventory["all"]["hosts"][host] = {}
 				inventory["all"]["hosts"][host]["status"] = status
 
@@ -5221,9 +5221,9 @@ def get_inventory_info(**kwargs):
 			elif str(e).endswith("Temporary failure in name resolution"):
 				pass
 			else:
-				sys.exit("gethostbyname failed on %s; %s" % (name, e))
+				sys.exit(f"gethostbyname failed on {name}; {e}")
 		except Exception as e:
-			sys.exit("gethostbyname failed on %s; %s" % (name, e))
+			sys.exit(f"gethostbyname failed on {name}; {e}")
 
 		# This only happens if you run the command on one of the hosts in the inventory
 		if ips != [] and ips[0].startswith("127."):
@@ -7876,14 +7876,14 @@ def genericlistloop(stdscr, view):
 				if queryfunc == "string":
 					# Not supported by inputbox widget
 					# querydefault = ""
-					string = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, "%s: " % query)
+					string = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"{query}: ")
 					if string is None or string == "":
 						continue
 					else:
 						selection_vars = { queryval: string }
 				elif queryfunc == "confirm":
 					querydefault = False
-					if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = "%s?" % query, default = querydefault) == False:
+					if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"{query}?", default = querydefault) == False:
 						continue
 			if deep_get(value, "confirm") == True:
 				title = deep_get(value, "title", "")
@@ -9267,9 +9267,12 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		shortcuts["View YAML dump of resource"] = {
 			"shortcut": ord("y"),
 			"helptext": ("Y", "View YAML dump of resource"),
-			"widget": "callout",
-			"title": "YAML dump",
-			"callout": infoview_view_yaml,
+			"action": "call",
+			"action_call": view_yaml,
+			"action_args": {
+				"title": "YAML dump",
+				"_pass_obj": True,
+			}
 		}
 
 	# Always include the shortcut for last applied configuration, unless overridden
@@ -9277,9 +9280,12 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		shortcuts["Last Applied Configuration"] = {
 			"shortcut": ord("L"),
 			"helptext": ("[Shift] + L", "Show last applied configuration"),
-			"widget": "callout",
-			"title": "Last applied configuration",
-			"callout": infoview_view_last_applied_configuration,
+			"action": "call",
+			"action_call": view_last_applied_configuration,
+			"action_args": {
+				"_pass_obj": True,
+				"title": "Last applied configuration",
+			}
 		}
 
 	if deep_get(iktconfig, "Internal#sanity_check_views", False) == True:
@@ -9713,7 +9719,6 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					w_itemgetter = deep_get(value, "itemgetter")
 					w_itemgetter_args = deep_get(value, "itemgetter_args", {})
 					w_selectable = deep_get(value, "selectable", False)
-					w_callout = deep_get(value, "callout", None)
 					w_kind = deep_get(value, "kind", view)
 					if "_slow_task_msg" in w_itemgetter_args:
 						w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = deep_get(w_itemgetter_args, "_slow_task_msg"))
@@ -9747,12 +9752,6 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if w_items is not None and len(w_items) > 0:
 						w_sortcolumn = deep_get(value, "sortcolumn")
 						tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items = w_items, headers = w_headers, title = w_title, cursor = w_selectable)
-						if w_selectable is True and tmpselection != "":
-							# If callout is None we might still have an action later
-							if w_callout is not None:
-								retval = w_callout(uip, w_kind, obj, selection = tmpselection)
-								if retval is not None and retval == curses_helper.retval.RETURNFULL:
-									return retval
 						changed = True
 				elif widget == "inputbox":
 					selected = uip.get_selected()
@@ -9776,12 +9775,19 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						w_confirmtitle = deep_get(value, "confirmtitle")
 						if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = w_confirmtitle, default = False) == False:
 							continue
+				elif widget == "command":
+					w_args = deep_get(value, "widget_args", {})
+					do_command(uip.stdscr, **w_args)
+					changed = True
 				elif widget == "executecommand":
 					selected = uip.get_selected()
 					w_kinds = deep_get_with_fallback(value, ["widget_args#kinds", "kinds"])
 					if (w_kinds is None):
 						continue
-					if w_kinds != ["<native>"] and (selected is None or not selected.kind in w_kinds) and w_kinds != [("", "")]:
+					w_ref = None
+					if selected is not None:
+						w_ref = getattr(selected, "ref", None)
+					if w_kinds != ["<native>"] and [deep_get(w_ref, "kind", ""), deep_get(w_ref, "api_group", "")] not in w_kinds and w_kinds != [("", "")]:
 						continue
 
 					w_inputtitle = deep_get_with_fallback(value, ["widget_args#inputtitle", "inputtitle"])
@@ -9794,11 +9800,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						continue
 
 					w_waitforkeypress = deep_get_with_fallback(value, ["widget_args#waitforkeypress", "waitforkeypress"], False)
-					if type(selected) == ResourceInfo:
-						# This needs to be generalised somehow; so does the message
-						containername = selected.ref["name"]
-					elif not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
-						sys.exit(f"Cannot handle type {type(selected)} in executecommand();\nw_kinds={w_kinds}\nw_command={w_command}")
+					if not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
+						containername = w_ref["name"]
 					if w_command == [ "<ephemeral>" ]:
 						ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
 						msg = [(f"Creating ephemeral ", "action"), (ephemeral_image, "programname"), (" container sharing process namespace with ", "action"), (f"{containername}", "path")]
@@ -9810,20 +9813,6 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						msg = [(f"Executing ", "action"), (w_command[0], "programname"), (" inside ", "action"), (containername, "path")]
 					executecommand(uip.stdscr, obj, containername, msg, command = w_command, waitforkeypress = w_waitforkeypress)
 					changed = True
-				elif widget == "callout":
-					selected = uip.get_selected()
-					w_title = deep_get(value, "title", "")
-					w_headers = deep_get(value, "headers")
-					w_itemgetter = deep_get(value, "itemgetter")
-					w_sortcolumn = deep_get(value, "sortcolumn")
-					w_callout = deep_get(value, "callout")
-					w_callout_args = deep_get(value, "callout_args", {})
-					w_kind = deep_get(value, "kind", view)
-					# Try to be as generic as we can;
-					# pass all kinds of information and let the handler use whatever information it needs
-					retval = w_callout(uip, w_kind, obj, selected = selected, title = w_title, headers = w_headers, itemgetter = w_itemgetter, sortcolumn = w_sortcolumn, **w_callout_args)
-					if retval is not None and retval == curses_helper.retval.RETURNFULL:
-						return retval
 			if "action" in value:
 				selected = uip.get_selected()
 				action = deep_get(value, "action", "")
@@ -10869,7 +10858,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				rawprefix = "Raw "
 			else:
 				rawprefix = ""
-			filename = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, "Export %slog to file: " % (rawprefix))
+			filename = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"Export {rawprefix}log to file: ")
 			if filename is None or filename == "":
 				continue
 
@@ -10880,7 +10869,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 			if os.path.exists(filename):
 				curses.doupdate()
-				if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = "File '%s' already exists; overwrite?:" % (filename), default = False) == False:
+				if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"File “{filename}“ already exists; overwrite?:", default = False) == False:
 					continue
 
 			f = open(filename, "w")
@@ -10902,10 +10891,36 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					severity = f"{lvl_to_4letter_severity(severities[y])}: "
 
 				if raw_logs:
-					f.write("%s  %s\n" % (timestamp, messages[y]))
+					f.write(f"{timestamp}  {messages[y]}\n")
 				else:
-					f.write("%s  %s%s%s\n" % (timestamp, severity, facility, messages[y]))
+					f.write(f"{timestamp}  {severity}{facility}{messages[y]}\n")
 			f.close()
+
+def do_command(stdscr, **kwargs):
+	args = deep_get(kwargs, "command")
+	if len(args) == 0:
+		return
+
+	waitforkeypress = deep_get(kwargs, "waitforkeypress", False)
+
+	msg = deep_get(kwargs, "msg", "")
+
+	curses.endwin()
+	os.system("clear")
+	if len(msg) > 0:
+		iktprint(msg)
+		print()
+
+	if which(args[0]) is None:
+		iktprint([(f"Error: ", "error"), ("“", "default"), (f"{args[0]}", "programname"), ("“ does not exist.\n", "default")], stderr = True)
+		waitforkeypress = True
+	else:
+		# Should we perhaps use subprocess.run here?
+		subprocess.call(args)
+
+	if waitforkeypress:
+		input("\nPress Enter to continue...")
+	stdscr.refresh()
 
 def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 	# This should probably be done using connect_get_namespaced_pod_exec()
@@ -11499,22 +11514,9 @@ def view_pod_logs(stdscr, **kwargs):
 def action_view_pod_logs(uip, items = [], action = {}, values = {}, kind = None, title = ""):
 	return view_pod_logs(uip.stdscr, **values)
 
-def infoview_view_yaml(uip, kind, obj, **kwargs):
-	if "path" in kwargs:
-		path = deep_get(kwargs, "path")
-		if deep_get(kwargs, "include_final_path", False) == True:
-			_obj = [{f"{path.rsplit('#')[-1]}": deep_get(obj, path)}]
-		else:
-			_obj = [deep_get(obj, path)]
-	else:
-		_obj = [obj]
-	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
-	# themearrays = iktlib.format_yaml(_obj)
-	formatter = iktlib.format_yaml
-	# return resourceinfodispatch(uip.stdscr, themearrays, ("__ResourceView", ""), title = title)
-	return resourceinfodispatch(uip.stdscr, _obj, ("__ResourceView", ""), title = title, formatter = formatter)
+def view_last_applied_configuration(stdscr, **kwargs):
+	obj = deep_get(kwargs, "obj")
 
-def infoview_view_last_applied_configuration(uip, kind, obj, **kwargs):
 	last_applied_configuration = deep_get(obj, "metadata#annotations#kubectl.kubernetes.io/last-applied-configuration", {})
 	if last_applied_configuration is not None and len(last_applied_configuration) > 0:
 		data = json.loads(last_applied_configuration)
@@ -11523,7 +11525,7 @@ def infoview_view_last_applied_configuration(uip, kind, obj, **kwargs):
 	title = deep_get(kwargs, "title")
 	# themearrays = iktlib.format_yaml([data])
 	formatter = iktlib.format_yaml
-	return resourceinfodispatch(uip.stdscr, [data], ("__ResourceView", ""), title = title, formatter = formatter)
+	return resourceinfodispatch(stdscr, [data], ("__ResourceView", ""), title = title, formatter = formatter)
 
 def delete_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	success = True
@@ -12058,10 +12060,10 @@ def ssh_to_host(stdscr, **kwargs):
 	os.system("clear")
 	iktprint(msg)
 
-	args = [ "/usr/bin/ssh" ]
+	args = ["/usr/bin/ssh"]
 
 	if sshuser is not None:
-		host = "%s@%s" % (sshuser, host)
+		host = f"{sshuser}@{host}"
 	args.append(host)
 
 	subprocess.run(args)
@@ -13415,7 +13417,7 @@ def main():
 			version(os.path.basename(sys.argv[0]))
 			sys.exit(0)
 		elif arg.startswith("--"):
-			print("%s: unrecognised option “%s”" % (os.path.basename(sys.argv[0]), arg), file = sys.stderr)
+			iktprint([(f"{about.ui_program_name}", "programname"), (": unrecognised option “", "default"), (f"{arg}", "option"), ("“.", "default")], stderr = True)
 			iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		elif len(defaultview) == 0:
@@ -13464,7 +13466,7 @@ def main():
 			elif initial_container is None:
 				initial_container = arg
 			else:
-				print("%s: unrecognised option “%s”" % (os.path.basename(sys.argv[0]), arg), file = sys.stderr)
+				iktprint([(f"{about.ui_program_name}", "programname"), (": unrecognised option “", "default"), (f"{arg}", "option"), ("“.", "default")], stderr = True)
 				iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 		y += 1
