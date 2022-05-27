@@ -4765,7 +4765,17 @@ def get_pod_resource_list(obj, **kwargs):
 			conditions = deep_get(ref, "status#conditions", [])
 			for condition in conditions:
 				if deep_get(condition, "type", "") == "Ready":
-					status = deep_get(condition, "reason", "")
+					_status = deep_get(condition, "status", "")
+					reason = deep_get(condition, "reason", "")
+					if len(reason) > 0:
+						status = reason
+					else:
+						if _status == "True":
+							status = "Ready"
+						elif _status == "False":
+							status = "NotReady"
+						elif _status == "Unknown":
+							status = "Unknown"
 
 		resource_tuple = (owr_kind[0], owr_kind[1], owr_name)
 		vlist.append({

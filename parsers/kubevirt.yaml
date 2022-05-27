@@ -4,6 +4,7 @@
   - pod_name: virt-api
   - pod_name: virt-controller
   - pod_name: virt-handler
+  - pod_name: virt-launcher
   - pod_name: virt-operator
   parser_rules:
   - name: ts_8601
@@ -14,6 +15,9 @@
       - pos
   - name: override_severity
     overrides:
+    - matchtype: startswith
+      matchkey: "Connecting to libvirt daemon failed: virError"
+      loglevel: error
     - matchtype: startswith
       matchkey: "http: TLS handshake error"
       loglevel: error

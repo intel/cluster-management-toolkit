@@ -789,6 +789,10 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 	facilities = options.get("facilities", ["logger", "caller", "filename"])
 	versions = options.get("versions", [])
 
+	if "\\u0000" in message:
+		tmp = message.split("\\u0000")
+		message = "".join(tmp)
+
 	try:
 		logentry = json.loads(message)
 	except ValueError as e:
@@ -1878,7 +1882,6 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 						else:
 							d.pop(__fac)
 
-
 		if fold_msg == False and len(d) == 2 and logparser_configuration.merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
 			severity = custom_override_severity(msg, severity, overrides = severity_overrides)
 			message = f"{msg} {version}"
@@ -2805,6 +2808,7 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 				message, severity, facility = http(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "json":
 				_parser_options = _filter[1]
+				_message = message
 				if message.startswith(("{\"", "{ \"")):
 					message, severity, facility, remnants = split_json_style(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "json_with_leading_message":

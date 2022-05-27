@@ -5,13 +5,18 @@ listview:
   name: KubeVirts
   group: Virtualization
   field_indexes:
-    Normal: [namespace, name, age]
+    Normal: [namespace, name, phase, age]
   sortcolumn: namespace
+  fields:
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: str
 infoview:
   name: KubeVirt Info
   infopad:
     row_indexes:
-      Normal: [image_pull_policy, observed_kubevirt_registry, observed_kubevirt_version, target_kubevirt_registry, target_kubevirt_version]
+      Normal: [image_pull_policy, observed_kubevirt_registry, observed_kubevirt_version, target_kubevirt_registry, target_kubevirt_version, phase]
     rows:
       image_pull_policy:
         header: [["Image Pull Policy:", [main, infoheader]]]
@@ -28,6 +33,10 @@ infoview:
         formatting:
           field_colors:
           - type: version
+      phase:
+        header: [["Phase:", [main, infoheader]]]
+        path: "status#phase"
+        type: str
       target_kubevirt_registry:
         header: [["Target KubVirt Policy:", [main, infoheader]]]
         path: "status#targetKubeVirtRegistry"

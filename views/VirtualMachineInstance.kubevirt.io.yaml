@@ -250,3 +250,36 @@ infoview:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
+    "Show interfaces":
+      key: i
+      modifier: shift
+      helptext: "Show interfaces"
+      widget: windowwidget
+      title: "Volume Statuses:"
+      headers: ["Name:", "Info Source:", "IP-Addresses:", "MAC:"]
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: "status#interfaces"
+        fields:
+        - name
+        - infoSource
+        - ipAddresses
+        - mac
+      # Not supported for now
+      sortcolumn: name
+    "Show volume status":
+      key: v
+      modifier: shift
+      helptext: "Show volume statuses"
+      widget: windowwidget
+      title: "Volume Statuses:"
+      headers: ["Name:", "Size:", "Target:"]
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: "status#volumeStatus"
+        fields:
+        - name
+        - size
+        - target
+      # Not supported for now
+      sortcolumn: name
