@@ -524,9 +524,11 @@ infoview:
       modifier: ctrl
       helptext: "Execute command inside container"
       widget: executecommand
+      inputtitle: "Command to execute:"
       widget_args:
         kinds: [["Container", ""], ["InitContainer", ""], ["EphemeralContainer", ""]]
         command: ["/bin/sh"]
+        waitforkeypress: true
     # This is only supported in Kubernetes v1.23+; do we need to add some sort of conditional support for this?
     "Open ephemeral shell in container":
       key: d
