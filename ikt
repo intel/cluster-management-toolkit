@@ -578,7 +578,7 @@ def add_nodes(options = [], args = None):
 				f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_create_join_token.yaml",
 			]
 			playbooks = populate_playbooks_from_paths(create_join_token_playbooks)
-			retval = run_playbooks(playbooks = playbooks, hosts = control_planes, extra_values = extra_values)
+			retval = run_playbooks(playbooks = playbooks, hosts = controlplanes, extra_values = extra_values)
 			join_token = kh.get_join_token()
 			if len(join_token) == 0:
 				iktprint([("Critical: ", "critical"), ("failed to create join token; aborting", "default")], stderr = True)
