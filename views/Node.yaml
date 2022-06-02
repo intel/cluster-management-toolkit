@@ -300,8 +300,8 @@ infoview:
       call: resourceinfodispatch
       kind: Pod
     field_indexes:
-      Wide: [namespace, name, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
-      Normal: [namespace, name, pod_status, node_name, age, restarts, last_restart]
+      Wide: [namespace, name, pod_status, pod_ip, age, restarts, last_restart, containers]
+      Normal: [namespace, name, pod_status, age, restarts, last_restart]
       Compact: [namespace, name, pod_status, age, restarts, last_restart]
     sortcolumn: pod_status
     fields:
@@ -338,11 +338,6 @@ infoview:
         default: -1
         formatter: age
         align: right
-      node_name:
-        header: "Node:"
-        path: "spec#nodeName"
-        type: host
-        default: "<none>"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
