@@ -3088,14 +3088,15 @@ def listgetter_ansible_volumes(obj, **kwargs):
 	return info, "OK"
 
 def objgetter_ansible_facts(obj):
+	hostname = deep_get(obj, "name", "")
 	get_facts_path = get_playbook_path("get_facts.yaml")
-	retval, ansible_results = ansible_run_playbook_on_selection(get_facts_path, [obj])
+	retval, ansible_results = ansible_run_playbook_on_selection(get_facts_path, [hostname])
 	if retval != 0:
 		return {}
 
 	ar = ansible_clean_results(ansible_results)
 
-	return deep_get(ar, f"{obj}#TASK: Gathering host facts#ansible_facts", {})
+	return deep_get(ar, f"{hostname}#TASK: Gathering host facts#ansible_facts", {})
 
 def objgetter_ansible_log(obj):
 	tmpobj = {}
@@ -5144,31 +5145,19 @@ def get_pod_resource_list(obj, **kwargs):
 
 	return vlist, 200
 
-class InventoryInfo:
-	def __init__(self, name, ips, kubernetes_roles, ansible_groups, status):
-		self.name = name
-		self.ref = name
-		self.ips = ips
-		self.kubernetes_roles = kubernetes_roles
-		self.ansible_groups = ansible_groups
-		self.status = status
-	def __repr__(self):
-		return repr((self.name, self.ips, self.kubernetes_roles, self.ansible_groups, self.status))
-
-def get_inventory_info(**kwargs):
-	global latest_info
-	info = []
+def get_inventory_list(**kwargs):
+	vlist = []
 	nodes = []
 
 	control_plane_node, control_plane_name = get_control_plane()
 
-	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
-
-	for node in vlist:
+	node_vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+	for node in node_vlist:
 		roles = kh.get_node_roles(node)
 		if "control-plane" in roles:
 			continue
 		nodes.append(deep_get(node, "metadata#name"))
+
 	if len(nodes) > 0:
 		ansible_add_hosts(ANSIBLE_INVENTORY, nodes, group = "nodes")
 
@@ -5176,9 +5165,7 @@ def get_inventory_info(**kwargs):
 	inventory = ansible_get_inventory_dict()
 
 	if deep_get(inventory, "all#hosts") == {}:
-		# name, IP, isnode
-		info.append(InventoryInfo("<none>", "", "", [], "", stgroup.UNKNOWN))
-		return info
+		return vlist, status
 
 	# Before we ping the hosts their status is unknown
 	for host in deep_get(inventory, "all#hosts", []):
@@ -5187,6 +5174,7 @@ def get_inventory_info(**kwargs):
 			inventory["all"]["hosts"][host] = {}
 		inventory["all"]["hosts"][host]["status"] = "UNKNOWN"
 
+	# Do we want to ping the hosts?
 	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", "Lazy")
 
 	# FIXME
@@ -5195,16 +5183,16 @@ def get_inventory_info(**kwargs):
 		retval, output = ansible_ping(ANSIBLE_INVENTORY)
 
 		if output is None or len(output) == 0:
-			sys.exit(f"Internal error; ansible -m ping failed with: {retval}")
+			sys.exit(f"Internal error; ansible_ping() failed with: {retval}")
 
 		# This needs to be improved; if there's a message we need to tell the difference
 		# between "Permission denied" and "No route to host"
-		for (host, status) in output:
+		for (host, _status) in output:
 			if host in deep_get(inventory, "all#hosts"):
 				# We don't want to risk overwriting hostvars
 				if deep_get(inventory, f"all#hosts#{host}") is None:
 					inventory["all"]["hosts"][host] = {}
-				inventory["all"]["hosts"][host]["status"] = status
+				inventory["all"]["hosts"][host]["status"] = _status
 
 	for host in deep_get(inventory, "all#hosts", []):
 		# There's no point in trying gethostbyname() on hosts that cannot be resolved
@@ -5260,12 +5248,19 @@ def get_inventory_info(**kwargs):
 					if len(role) > 0 and role not in ["control-plane", "node"]:
 						kubernetes_roles.append(role)
 		ansible_groups = ansible_get_groups_by_host(inventory, host)
-		status = deep_get(inventory, f"all#hosts#{name}#status", "UNKNOWN")
+		_status = deep_get(inventory, f"all#hosts#{name}#status", "UNKNOWN")
 		if control_plane_name == "":
 			kubernetes_roles = ["<unknown>"]
-		info.append(InventoryInfo(name, ips, kubernetes_roles, ansible_groups, status))
+		vlist.append({
+			"name": name,
+			"ref": name,
+			"ips": ips,
+			"kubernetes_roles": kubernetes_roles,
+			"ansible_groups": ansible_groups,
+			"status": _status,
+		})
 
-	return info
+	return vlist, status
 
 class NodeInfo:
 	def __init__(self, name, ref, status, status_group, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel, container_runtime, cpu, mem, taints):
@@ -5736,7 +5731,7 @@ def get_key_value(obj, **kwargs):
 				value = _value
 			else:
 				raise Exception(f"Unhandled type {type(_value)} for {field}={value}")
-			vlist.append([_key, _value])
+			vlist.append([_key, value])
 
 	return vlist
 

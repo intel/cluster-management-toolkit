@@ -5,13 +5,14 @@ command:
 listview:
   name: Inventory
   group: Administration
-  listgetter:
-  infogetter: get_inventory_info
+  listgetter: get_inventory_list
+  infogetter: generic_infogetter
   helptext: helptexts.inventorylist
   labels: false
   field_indexes:
     Wide: [name, ips, ansible_groups, status]
     Normal: [name, ips_ellipsise, ansible_groups, status]
+  sortcolumn: name
   actions:
     playbooklist:
       context: inventory
@@ -23,22 +24,24 @@ listview:
       formatter: list
     ips:
       header: "IPs:"
-      path: "ips"
+      path: ips
       type: raw
       formatter: list
     ips_ellipsise:
       header: "IPs:"
-      path: "ips"
+      path: ips
       type: raw
       formatter: list
       formatting:
         ellipsise: 3
     name:
       header: "Name:"
-      path: "name"
+      path: name
       type: str
     status:
       header: "Status:"
+      path: status
+      type: str
       formatter: value_mapper
       formatting:
         mapping:
@@ -75,7 +78,8 @@ listview:
       action: call
       action_call: ssh_to_host
       action_args:
-        _pass_selected: true
+        _pass_obj: true
+        name_path: name
     # Overrides:
     "Edit resource": {}
     "View YAML dump": {}
@@ -206,3 +210,24 @@ infoview:
     "Show Events": {}
     # Inventory has no last applied configuration
     "Last Applied Configuration": {}
+    "Boot options":
+      key: b
+      helptext: "Show boot options"
+      widget: windowwidget
+      title: "Boot options:"
+      headers: ["Option:", "Value:"]
+      itemgetter: get_key_value
+      itemgetter_args:
+        path: ansible_cmdline
+      formatting: [[windowwidget, default], [windowwidget, highlight]]
+      # This isn't supported for now
+      sortcolumn: option
+    "SSH to host":
+      key: s
+      modifier: shift
+      helptext: "SSH to host"
+      action: call
+      action_call: ssh_to_host
+      action_args:
+        _pass_obj: true
+        name_path: ansible_nodename

@@ -128,11 +128,12 @@ listview:
     "SSH to host":
       key: s
       modifier: shift
-      helptext: SSH to host
+      helptext: "SSH to host"
       action: call
       action_call: ssh_to_host
       action_args:
-        _pass_selected: true
+        _pass_obj: true
+        name_path: "metadata#name"
 infoview:
   name: Node Info
   infopad:

@@ -899,7 +899,6 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			for i in range(0, columns):
 				lengths[i] = len(headers[i])
 
-
 	tagprefix = themearray_extract_string("tag", context = "separators")
 
 	# Leave room for a tag prefix column if needed
