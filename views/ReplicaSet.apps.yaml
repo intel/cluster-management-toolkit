@@ -9,6 +9,33 @@ listview:
   field_indexes:
     Normal: [namespace, name, ready_replicas, current_replicas, desired_replicas, age]
   sortcolumn: namespace
+  fields:
+    current_replicas:
+      header: "Current:"
+      # paths:
+      # - path: ["status#replicas", "spec#replicas"]
+      #   pathtype: comparison
+      # should yield a tuple: (first path, -1, 0, 1 for lt, eq, gt)
+      path: "status#replicas"
+      default: 0
+      type: int
+      align: right
+    desired_replicas:
+      header: "Desired:"
+      path: "spec#replicas"
+      default: 0
+      type: int
+      align: right
+    ready_replicas:
+      header: "Ready:"
+      # paths:
+      # - path: ["status#readyReplicas", "status#replicas"]
+      #   pathtype: comparison
+      # should yield a tuple: (first path, -1, 0, 1 for lt, eq, gt)
+      path: "status#readyReplicas"
+      default: 0
+      type: int
+      align: right
   actions:
     actionlist:
       "Rescale resource":

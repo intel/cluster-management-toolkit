@@ -6442,13 +6442,6 @@ field_templates = {
 		"datagetter": datagetter_status_latest_condition,
 		"generator": generator_status,
 	},
-	"current_replicas": {
-		"header": "Current:",
-		"path": "status#replicas",
-		"type": "int",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"current_replicas_ds": {
 		"header": "Current:",
 		"path": "status#currentNumberScheduled",
@@ -6462,13 +6455,6 @@ field_templates = {
 		"path": ["status#currentReplicas", "status#desiredReplicas"],
 		"datagetter": datagetter_pathlist_to_tuple,
 		"generator": generator_total,
-		"ralign": True,
-	},
-	"desired_replicas": {
-		"header": "Desired:",
-		"path": "spec#replicas",
-		"type": "int",
-		"generator": generator_numerical,
 		"ralign": True,
 	},
 	"desired_replicas_ds": {
