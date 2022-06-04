@@ -335,24 +335,6 @@ def generator_timestamp_with_age(obj, field, fieldlen, pad, ralign, selected, **
 
 	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
 
-def generator_yesno(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	value = getattr(obj, field)
-
-	if value is None:
-		string = "N/A"
-	elif value == True:
-		string = "Yes"
-	else:
-		string = "No"
-
-	formatting = ("types", "generic", selected)
-
-	array = [
-		(string, formatting)
-	]
-
-	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
-
 # Will take datetime and format it as (YYYY-MM-DD HH:MM:SS, field_colors)
 def format_timestamp(timestamp, localtimezone = False):
 	array = []
@@ -526,62 +508,6 @@ def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **fo
 			newitems.append(("", "", "", "", "", "", "", "", item))
 
 	return format_list(newitems, fieldlen, pad, ralign, selected, item_separator = item_separator, field_separators = field_separators, field_colors = field_colors, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
-
-def generator_secret_data(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	value = getattr(obj, field)
-	string = str(value)
-
-	if len(string) == 0:
-		vtype = "empty"
-	else:
-		vtype = getattr(obj, "vtype", "string")
-
-	if vtype == "empty":
-		string = "[empty]"
-	elif vtype == "string":
-		string = string.ljust(fieldlen)
-	elif vtype == "base64-utf-8":
-		string = "[base64]"
-	else:
-		string = "[base64 (binary)]"
-
-	formatting = ("types", "generic", selected)
-
-	array = [
-		(string, formatting)
-	]
-
-	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
-
-def generator_numerical_range(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	value = getattr(obj, field)
-	if type(value) == int:
-		value = [value]
-
-	i = 0
-	ranges = deep_get(field_templates, f"{field}#ranges")
-	formatting = ("types", "generic", selected)
-	for start, end, formatting in ranges:
-		if type(start) == str and int(start) < len(value):
-			start = value[int(start)]
-		if type(end) == str and int(end) < len(value):
-			end = value[int(end)]
-
-		if value[0] >= start and value[0] < end:
-			context, attr = formatting
-			formatting = (context, attr, selected)
-			break
-
-	if value[0] == -1:
-		string = ""
-	else:
-		string = str(value[0])
-
-	array = [
-		(string, formatting)
-	]
-
-	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
 def generator_numerical(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
@@ -1658,27 +1584,10 @@ def datagetter_deprecated_api(obj, path, default):
 	kind = kh.guess_kind((result[0], result[1]))
 	return (kind[0], kind[1], result[2]), extra_vars
 
-def datagetter_access_modes(obj, path, default):
-	if obj is None or path is None:
-		return default
-
-	access_modes = []
-
-	for mode in deep_get(obj, path, []):
-		access_modes.append(abbreviate_access_mode(mode))
-
-	return access_modes, {}
-
 def datagetter_endpoint_ips(obj, path, default):
 	subsets = deep_get(obj, path)
 	endpoints = get_endpoint_endpoints(subsets)
 	return endpoints, {}
-
-def datagetter_controller(obj, path, default):
-	owr = deep_get(obj, path[0])
-	show_kind = path[1]
-	controller = get_controller_from_owner_references(owr)
-	return format_controller(controller, show_kind), {}
 
 def datagetter_regex_split_to_tuples(obj, paths, default):
 	if obj is None or paths is None or len(paths) < 2:
@@ -1717,67 +1626,6 @@ def datagetter_regex_split_to_tuples(obj, paths, default):
 
 	return list_fields, {}
 
-def datagetter_list_len(obj, path, default):
-	if obj is None or path is None or len(path) == 0:
-		return 0, {}
-
-	return len(deep_get(obj, [])), {}
-
-def datagetter_list_fields(obj, path, default):
-	if obj is None or path is None or len(path) == 0:
-		return default
-
-	list_fields = []
-
-	subpath, fields = path
-
-	for item in deep_get(obj, subpath):
-		tmp = []
-		for field in fields:
-			tmp.append(deep_get(item, f"{field}", ""))
-		list_fields.append(tuple(tmp))
-
-	return list_fields, {}
-
-def datagetter_containers(obj, paths, default):
-	if obj is None or paths is None or len(paths) == 0:
-		return default
-
-	containers = []
-	for path, status_path in paths:
-		containers += get_containers(deep_get(obj, path, []), deep_get(obj, status_path, []))
-
-	return containers, {}
-
-def datagetter_request(obj, path, default):
-	if obj is None or path is None or len(path) == 0:
-		return default
-
-	request = []
-
-	for resource in deep_get(obj, "spec#hard", []):
-		used = deep_get(obj, f"status#used#{resource}", [])
-		hard = deep_get(obj, f"spec#hard#{resource}", [])
-		request.append((resource, used, hard))
-
-	return request, {}
-
-def datagetter_age(obj, path, default):
-	if obj is None or path is None or len(path) == 0:
-		return default
-
-	timestamp = timestamp_to_datetime(deep_get(obj, path))
-	return get_since(timestamp), {}
-
-def datagetter_count(obj, path, default):
-	if obj is None or path is None or len(path) == 0:
-		return default
-
-	tmp = deep_get(obj, path)
-	if tmp is None:
-		tmp = []
-	return len(tmp), {}
-
 def datagetter_pod_status(obj, path, default):
 	if obj is None:
 		return default
@@ -1794,200 +1642,14 @@ def datagetter_container_status(obj, path, default):
 
 	return status, {"status_group": status_group}
 
-def datagetter_node_status(obj, path, default):
-	if obj is None:
-		return default
-
-	status, status_group, taints, full_taints = get_node_status(obj)
-
-	return status, {"status_group": status_group}
-
-def datagetter_event_status(obj, path, default):
-	if obj is None or path is None or len(path) == 0:
-		return default
-
-	status = deep_get(obj, "type")
-	status_group = get_event_status_group(status)
-
-	return status, {"status_group": status_group}
-
 def __get_timestamp_with_fallback(obj, paths):
 	return timestamp_to_datetime(deep_get_with_fallback(obj, paths))
-
-def datagetter_pathlist_to_tuple(obj, path, default):
-	if obj is None or path is None or len(path) == 0:
-		return default
-
-	info = []
-
-	# Path here can have multiple components; it's a list,
-	# not a single path, although the name says otherwise
-	for item in path:
-		default = None
-		if type(item) == tuple:
-			default = item[1]
-			item = item[0]
-		info.append(deep_get(obj, item, default))
-
-	return tuple(info), {}
-
-def datagetter_node_addresses(obj, path, default):
-	if obj is None:
-		return default
-
-	# for now we don't do anything with external IPs; we should
-	name, internal_ips, external_ips = get_node_addresses(deep_get(obj, "metadata#name"), deep_get(obj, "status#addresses"))
-
-	if path == "name":
-		return name, {}
-	elif path == "internal":
-		return internal_ips, {}
-	elif path == "external":
-		return external_ips, {}
-	else:
-		raise Exception(f"Unknown address type {path} requested")
-
-def datagetter_node_roles(obj, path, default):
-	if obj is None:
-		return default
-
-	return kh.get_node_roles(obj), {}
-
-def datagetter_status_latest_condition(obj, path, default):
-	status, status_group, status_message = get_status_latest_condition(deep_get(obj, path))
-
-	return status, {"status_group": status_group, "status_message": status_message}
-
-def datagetter_status_deployment(obj, path, default):
-	status, status_group, status_message = get_dep_status(deep_get(obj, path))
-
-	return status, {"status_group": status_group, "status_message_deployment": status_message}
-
-def datagetter_status_message_deployment(obj, path, default):
-	status, status_group, status_message = get_dep_status(deep_get(obj, path))
-
-	return status_message, {}
-
-def datagetter_ep_ports(obj, path, default):
-	if obj is None:
-		return default
-
-	subsets = deep_get(obj, path)
-
-	return get_endpoint_ports(subsets), {}
 
 def datagetter_eps_endpoints(obj, path, default):
 	if obj is None:
 		return default
 
 	return get_endpointslices_endpoints(obj), {}
-
-def datagetter_timestamp(obj, path, default):
-	if obj is None or path is None or len(path) == 0:
-		return default
-
-	return timestamp_to_datetime(deep_get(obj, path)), {}
-
-def datagetter_phase(obj, path, default):
-	if obj is None:
-		return default
-
-	phase = deep_get(obj, path)
-
-	if phase in ["Active", "Available", "Bound", "Running", "Succeeded"]:
-		# Note: A Running Pod can be failed if any of its containers have failed
-		status_group = stgroup.OK
-	elif phase in ["Pending", "Released", "Terminating"]:
-		status_group = stgroup.PENDING
-	elif phase in ["Error", "Failed"]:
-		status_group = stgroup.NOT_OK
-	# TODO: add remaining phases, if any
-	else:
-		status_group = stgroup.UNKNOWN
-
-	return phase, { "status_group": status_group }
-
-def datagetter_pod_selector(obj, path, default):
-	if obj is None:
-		return default
-
-	pod_selector = []
-	for key, value in deep_get(obj, "spec#podSelector#matchLabels", {}).items():
-		pod_selector.append((key, value))
-	return pod_selector, {}
-
-def datagetter_condition_field(obj, path, default):
-	if obj is None:
-		return default
-
-	field = ""
-	extra_vars = {}
-
-	# path is a list of tuples
-	# each tuple has element 0 as the condition list,
-	# element 1 the condition type,
-	# element 2 the field of the condition to return
-	for conditions in path:
-		for condition in deep_get(obj, conditions[0], []):
-			if deep_get(condition, "type", "") == conditions[1]:
-				field = deep_get(condition, conditions[2], "")
-				if deep_get(condition, "status", "True") == "True":
-					extra_vars = { "status_group": stgroup.OK }
-				else:
-					extra_vars = { "status_group": stgroup.NOT_OK }
-				return field, extra_vars
-
-	return field, extra_vars
-
-def datagetter_condition_ready(obj, path, default):
-	if obj is None:
-		return default
-
-	ready, message, status_group = get_condition_ready(obj)
-	return ready, { "status_message": message, "status_group": status_group }
-
-def datagetter_substitute_quotationmarks(obj, path, default):
-	if obj is None or path is None or len(path) == 0:
-		return default
-
-	return deep_get(obj, path, "").replace("\\\"", "“").replace("\n", "\\n").rstrip(), {}
-
-def get_default(generator):
-	if generator is None:
-		default = None, {}
-	elif generator in [generator_basic, generator_str_timestamp]:
-		# This expects indata to be a string
-		default = "", {}
-	elif generator == generator_status:
-		# This expects indata to be a string
-		default = "", {"status_group": stgroup.NOT_OK, "status_message": ""}
-	elif generator == generator_yesno:
-		# Valid indata is either None, True, or False,
-		# yielding N/A, Yes, or No respectively.
-		# Let's default to N/A
-		default = None, {}
-	elif generator == generator_timestamp:
-		# This expects indata to be a timestamp,
-		# but returns an empty string if None is passed in
-		default = None, {}
-	elif generator in [generator_list, generator_list_with_status]:
-		# Expects a list or a tuple; an empty list yields
-		# no output, which suits us fine
-		default = [], {}
-	elif generator == generator_secret_data:
-		# Expects an extra entry that specifies the type of data;
-		# passing vtype == empty will yield "[empty]" which is good enough
-		default = "", {}
-	elif generator in [generator_numerical, generator_numerical_range, generator_age]:
-		# Yields an empty string from -1
-		default = -1, {}
-	elif generator in [generator_mem, generator_total]:
-		default = (None, None), {}
-	elif generator in [generator_mem_single]:
-		default = "0", {}
-	else:
-		raise Exception(f"No default defined for generator {generator}")
-	return default
 
 latest_info = None
 
@@ -3156,14 +2818,6 @@ def objgetter_ansible_log(obj):
 
 	return tmpobj
 
-def objgetter_ansible_task_log(obj):
-	tmpobj = {}
-
-	with open(f"{obj}", "r") as f:
-		tmpobj = yaml.safe_load(f)
-
-	return tmpobj
-
 def get_task_log(obj):
 	field = []
 
@@ -3290,39 +2944,6 @@ def get_virtsvc_rule_list(obj, **kwargs):
 			})
 
 	return vlist, 200
-
-def get_condition_ready(obj):
-	ready = "False"
-	status_group = stgroup.NOT_OK
-	message = ""
-	for condition in deep_get(obj, "status#conditions"):
-		if len(message) == 0:
-			# If we cannot find another message, then get the first
-			message = deep_get(condition, "message", "")
-
-		if deep_get(condition, "type", "") == "Ready":
-			ready = deep_get(condition, "status", "False")
-
-			if ready == "True":
-				status_group = stgroup.OK
-				message = deep_get(condition, "message", "")
-			break
-	return ready, message, status_group
-
-def get_certsignreq_conditions(status):
-	conditions = []
-	for condition in deep_get(status, "conditions", {}):
-		condition_name = deep_get(condition, "type", "")
-		ready = deep_get(condition, "status", "False")
-		if ready == "True":
-			conditions.append(condition_name)
-
-	certificate = deep_get(status, "certificate")
-
-	if certificate is not None and len(certificate) > 0:
-		conditions.append("Issued")
-
-	return conditions
 
 class PromRulesInfo:
 	def __init__(self, group, ref, rtype, alertrecord, duration):
@@ -3820,16 +3441,6 @@ def get_endpoint_ips(subsets):
 	return endpoints
 
 
-def get_endpointslices_ports(obj):
-	ports = []
-	if deep_get(obj, "ports") is None or deep_get(obj, "ports") == []:
-		ports.append(("", "<none>", ""))
-	else:
-		for port in deep_get(obj, "ports", []):
-			port_name = deep_get(port, "name", "")
-			ports.append((port_name, str(deep_get(port, "port")), deep_get(port, "protocol")))
-	return ports
-
 def get_endpointslices_endpoints(obj):
 	endpoints = []
 
@@ -3845,22 +3456,6 @@ def get_endpointslices_endpoints(obj):
 	else:
 		endpoints.append(("<none>", stgroup.UNKNOWN))
 	return endpoints
-
-def get_endpoint_ports(subsets):
-	ports = []
-
-	if subsets is None:
-		return [("", "<none>", "")]
-
-	for subset in subsets:
-		if deep_get(subset, "addresses") is None or deep_get(subset, "ports") is None:
-			continue
-		else:
-			for port in deep_get(subset, "ports", []):
-				name = deep_get(port, "name", "")
-				ports.append((name, str(deep_get(port, "port")), deep_get(port, "protocol")))
-
-	return ports
 
 class SubsetsInfo:
 	def __init__(self, addresses, ports_ep, status, status_group):
@@ -3980,37 +3575,6 @@ def get_eps_subsets_info(**kwargs):
 
 	return subsets
 
-def get_as_status_and_service(conditions, service):
-	available = "<unset>"
-	message = ""
-	status_group = stgroup.UNKNOWN
-
-	for condition in conditions:
-		if deep_get(condition, "type") == "Available":
-			if deep_get(condition, "reason") == "Local":
-				service = [("", "Local", "")]
-			else:
-				namespace = deep_get(service, "namespace")
-				name = deep_get(service, "name")
-				port = deep_get(service, "port")
-				service = [(namespace, name, port)]
-			available = deep_get(condition, "status")
-			message = deep_get(condition, "message", "").rstrip()
-			if available == "True":
-				status_group = stgroup.OK
-			else:
-				status_group = stgroup.NOT_OK
-
-	return available, service, message, status_group
-
-class PodMetricsInfo:
-	def __init__(self, name, cpu_millicores, mem_bytes):
-		self.name = name
-		self.cpu_millicores = cpu_millicores
-		self.mem_bytes = mem_bytes
-	def __repr__(self):
-		return repr((self.name, self.cpu_millicores, self.mem_bytes))
-
 def cpu_usage_to_millicores(cpu_usage):
 	if cpu_usage == "0":
 		return float(cpu_usage)
@@ -4025,15 +3589,6 @@ def cpu_usage_to_millicores(cpu_usage):
 		return cpu_usage
 	else:
 		raise Exception(f"Unknown cpu usage metrics: {cpu_usage}")
-
-class AppStatusInfo:
-	def __init__(self, name, status, status_group, link):
-		self.name = name
-		self.status = status
-		self.status_group = status_group
-		self.link = link
-	def __repr__(self):
-		return repr((self.name, self.status, self.status_group, self.link))
 
 def listgetter_configmap_data(obj, **kwargs):
 	vlist = []
@@ -4166,84 +3721,6 @@ def get_conditions(obj, **kwargs):
 		})
 	return condition_list
 
-def get_status_latest_condition(conditions):
-	latest_condition = None
-	update_time = None
-
-	if conditions is not None:
-		for condition in conditions:
-			last_heartbeat_time = deep_get(condition, "lastHeartbeatTime")
-			last_transition_time = deep_get(condition, "lastTransitionTime", last_heartbeat_time)
-			last_update_time = deep_get(condition, "lastUpdateTime", last_transition_time)
-
-			if update_time is None or (last_update_time is not None and last_update_time > update_time):
-				update_time = last_update_time
-				latest_condition = condition
-
-	status = "Unknown"
-	status_group = stgroup.UNKNOWN
-	status_message = ""
-
-	if latest_condition is not None:
-		ctype = deep_get(latest_condition, "type")
-		cstatus = deep_get(latest_condition, "status")
-		status_message = deep_get(latest_condition, "message", "")
-
-		if ctype == "Failed" and cstatus == "True":
-			status = ctype
-			status_group = stgroup.NOT_OK
-		elif ctype in ["ControllerHealthy", "Running"] and cstatus == "True":
-			status = ctype
-			status_group = stgroup.OK
-		elif ctype == "Created" and cstatus == "True":
-			status = ctype
-			status_group = stgroup.PENDING
-
-	return status, status_group, status_message
-
-def get_dep_status(conditions):
-	status = "Unknown"
-	message = ""
-	status_group = stgroup.UNKNOWN
-
-	for condition in conditions:
-		ctype = deep_get(condition, "type")
-		message = deep_get(condition, "message", "").rstrip()
-
-		if ctype == "Available":
-			if deep_get(condition, "status") == "True":
-				status = "Available"
-				status_group = stgroup.OK
-				# Available has highest priority
-				break
-			else:
-				status = "Not Available"
-				status_group = stgroup.NOT_OK
-		elif ctype == "Progressing":
-			if deep_get(condition, "status") == "True":
-				status = "Progressing"
-				status_group = stgroup.PENDING
-			else:
-				status = "Not Progressing"
-				status_group = stgroup.NOT_OK
-		elif ctype == "ReplicaFailure":
-				status = "Replica Failure"
-				status_group = stgroup.NOT_OK
-		else:
-			sys.exit(f"Unknown deployment condition: {ctype}, reason: {message}")
-
-	return status, status_group, message
-
-def get_desired_replicas(rs):
-	desired = -1
-	max_replicas = -1
-	for annotation, value in deep_get(rs, "metadata#annotations", {}).items():
-		if annotation == "deployment.kubernetes.io/desired-replicas":
-			desired = value
-		elif annotation == "deployment.kubernetes.io/max-replicas":
-			max_replicas = value
-	return desired, max_replicas
-
 class RQItemInfo:
 	def __init__(self, resource, used, hard):
 		self.resource = resource
@@ -4332,31 +3809,6 @@ def get_key_value_info(**kwargs):
 
 	return info
 
-def get_external_ips(svc):
-	external_ips = []
-
-	for xip in deep_get(svc, "spec#externalIPs", []):
-		external_ips.append(xip)
-
-	if external_ips == []:
-		external_ips.append("<none>")
-
-	return external_ips
-
-def get_port(obj):
-	port = ("", "", "")
-
-	if obj is not None:
-		name = deep_get(obj, "name", "")
-		if "port" in obj:
-			pport = deep_get(obj, "port", "")
-		else:
-			pport = deep_get(obj, "number", "")
-		protocol = deep_get(obj, "protocol", "")
-		port = (name, pport, protocol)
-
-	return port
-
 def get_svc_port_target_endpoints(obj, **kwargs):
 	svcname = deep_get(obj, "metadata#name")
 	svcnamespace = deep_get(obj, "metadata#namespace")
@@ -4389,19 +3841,6 @@ def get_svc_port_target_endpoints(obj, **kwargs):
 		port_target_endpoints = [("<none>", "", "", "")]
 
 	return port_target_endpoints
-
-def get_event_status_group(status):
-	if status == "Error":
-		status_group = stgroup.NOT_OK
-	elif status == "Warning":
-		status_group = stgroup.ADMIN
-	elif status == "Normal":
-		status_group = stgroup.OK
-	else:
-		# FIXME
-		status_group = stgroup.UNKNOWN
-
-	return status_group
 
 class ResourceInfo:
 	def __init__(self, resource_tuple, ref, rtype, kind, status, status_group, restarts, message, age = -1):
@@ -4534,31 +3973,6 @@ def get_pv_status(pv):
 		reason = deep_get(pv, "status#reason", "").strip()
 		status_group = stgroup.NOT_OK
 	return reason, status_group
-
-def get_pods_by_node(node):
-	pods = []
-
-	vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
-	if status == 200:
-		for pod in vlist:
-			if deep_get(pod, "spec#nodeName") == node:
-				pods.append(pod)
-
-	return pods, status
-
-def abbreviate_access_mode(mode):
-	if mode == "ReadWriteOnce":
-		abbr = "RWO "
-	elif mode == "ReadWriteOncePod":
-		abbr = "RWOP"
-	elif mode == "ReadWriteMany":
-		abbr = "RWM "
-	elif mode == "ReadOnlyMany":
-		abbr = "ROX "
-	else:
-		raise Exception(f"Unknown access mode {mode}")
-
-	return abbr
 
 def get_pod_log_by_name_namespace_container(name, namespace, container, tail_lines = default_tail_lines):
 	internal_error = False
@@ -5924,13 +5338,6 @@ def get_containers(containers = [], container_statuses = []):
 
 	return container_list
 
-def get_workload_labels(obj, **kwargs):
-	return curses_helper.get_labels(deep_get(obj, "spec#workloadLabels"))
-
-def get_pod_info_with_kind(**kwargs):
-	deep_set(kwargs, "extra_vars#show_kind", "mixed")
-	return get_pod_info(**kwargs)
-
 # Returns True if the item should be skipped
 def filter_list_entry(obj, caller_obj, filters = []):
 	skip = False
@@ -6289,23 +5696,6 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 	uip.addthemearray(headerpad, headerarray, y = 0, x = 0)
 	uip.tabstops = tabstops
 
-def generate_item(uip, data, generator, fieldlen = 0, ralign = False, fpad = 0, is_selected = False):
-	if generator is None:
-		return None
-
-	formatting = {
-		"item_separator": field_list[field].get("item_separator", ("separators", "list")),
-		"field_separators": field_list[field].get("field_separators", [("separators", "field")]),
-		"field_colors": field_list[field].get("field_colors", [("types", "field")]),
-		"ellipsise": field_list[field].get("ellipsise", -1),
-		"ellipsis": field_list[field].get("ellipsis", ("separators", "ellipsis")),
-		"field_prefixes": field_list[field].get("field_prefixes", None),
-		"field_suffixes": field_list[field].get("field_suffixes", None),
-		"mapping": field_list[field].get("mapping", {}),
-	}
-
-	return generator(data, field, fieldlen, fpad, ralign, is_selected, **formatting)
-
 def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable = False, is_tagged = False):
 	first = True
 
@@ -6376,6 +5766,13 @@ builtin_fields = {
 		"datagetter": datagetter_api_support,
 		"formatter": "list",
 	},
+	"mem": {
+		"header": "Mem% / Total:",
+		"path": (r"^(\d+).*", ["status#allocatable#memory", "status#capacity#memory"]),
+		"datagetter": datagetter_regex_split_to_tuples,
+		"generator": generator_mem,
+		"ralign": True,
+	},
 	"name": {
 		"header": "Name:",
 		"path": "metadata#name",
@@ -6400,339 +5797,7 @@ builtin_fields = {
 	},
 }
 
-field_templates = {
-	"access_modes": {
-		"header": "Access Modes:",
-		"path": "spec#accessModes",
-		"datagetter": datagetter_access_modes,
-		"generator": generator_list,
-	},
-	"addresses": {
-		# [address, ...]
-		"header": "Addresses:",
-		"generator": generator_list,
-	},
-	"allocatable_count": {
-		"header": "Allocatable (Count):",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"backends": {
-		# [(service_name, service_port), ...]
-		"header": "Backends:",
-		"generator": generator_list,
-		"field_separators": [("separators", "port")],
-	},
-	"completions": {
-		"header": "Completions:",
-		"path": [("status#succeeded", 0), "spec#completions"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_list,
-		"field_separators": [("separators", "fraction")],
-		"ralign": True,
-	},
-	"containers": {
-		# [(name, version), ...]
-		"header": "Containers:",
-		"path": [("spec#initContainers", "status#initContainerStatuses"), ("spec#containers", "status#containerStatuses")],
-		"datagetter": datagetter_containers,
-		"generator": generator_list,
-		"field_colors": [("types", "generic"), ("types", "version")],
-		"field_separators": [("separators", "version")],
-	},
-	"controller": {
-		# (kind, name)
-		"header": "Controller:",
-		"path": ("metadata#ownerReferences", "mixed"),
-		"datagetter": datagetter_controller,
-		"generator": generator_list,
-		"field_colors": [("types", "kind"), ("types", "generic")],
-	},
-	"controller_conditions": {
-		"header": "Status:",
-		"path": "controllerConditions",
-		"datagetter": datagetter_status_latest_condition,
-		"generator": generator_status,
-	},
-	"drivers": {
-		"header": "Drivers:",
-		"path": "spec#drivers",
-		"datagetter": datagetter_count,
-		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"event_status": {
-		"header": "Status:",
-		"path": "type",
-		"datagetter": datagetter_event_status,
-		"generator": generator_status,
-	},
-	"groups": {
-		# [group, ...]
-		"header": "Groups:",
-		"path": "groups",
-		"generator": generator_list,
-	},
-	"healthy_antrea": {
-		"header": "Healthy:",
-		"datagetter": datagetter_condition_field,
-		"generator": generator_status,
-		"path": [("agentConditions", "AgentHealthy", "status"), ("controllerConditions", "ControllerHealthy", "status")],
-	},
-	"host": {
-		"header": "Host:",
-		"path": "spec#host",
-	},
-	"identity": {
-		"header": "Identity:",
-		"path": "identity#name",
-	},
-	"identity_id": {
-		"header": "Identity ID:",
-	},
-	"image_reference": {
-		"header": "Image ID:",
-	},
-	"index": {
-		"header": "Index:",
-		"ralign": True,
-	},
-	"kind": {
-		# (kind, api_group)
-		"header": "Kind:",
-		"path": "kind",
-		"generator": generator_list,
-		"field_colors": [("types", "kind"), ("types", "api_group")],
-		"field_separators": [("separators", "kind_api_group")],
-	},
-	"last_heartbeat_antrea": {
-		"header": "Last Heartbeat:",
-		"datagetter": datagetter_condition_field,
-		"generator": generator_str_timestamp,
-		"path": [("agentConditions", "AgentHealthy", "lastHeartbeatTime"), ("controllerConditions", "ControllerHealthy", "lastHeartbeatTime")],
-	},
-	"match": {
-		"header": "Match:",
-		"generator": generator_list,
-		"field_colors": [("types", "key"), ("types", "value")],
-		"field_separators": [("separators", "keyvalue")],
-	},
-	"mem": {
-		"header": "Mem% / Total:",
-		"path": (r"^(\d+).*", ["status#allocatable#memory", "status#capacity#memory"]),
-		"datagetter": datagetter_regex_split_to_tuples,
-		"generator": generator_mem,
-		"ralign": True,
-	},
-	"mem_bytes": {
-		"header": "Memory:",
-		"path": "mem_bytes",
-		"generator": generator_mem_single,
-		"ralign": True,
-	},
-	"message": {
-		"header": "Message:",
-		"path": "message",
-		"datagetter": datagetter_substitute_quotationmarks,
-	},
-	"methods": {
-		"header": "Methods:",
-		"generator": generator_list,
-	},
-	"name_version": {
-		"header": "Name:",
-		"path": (r"^(.*):(.*)", ["metadata#name"]),
-		"datagetter": datagetter_regex_split_to_tuples,
-		"generator": generator_list,
-		"field_colors": [("types", "generic"), ("types", "version")],
-		"field_separators": [("separators", "version")],
-	},
-	"namespace": {
-		"header": "Namespace:",
-		"path": "metadata#namespace",
-	},
-	"namespace_selector": {
-		# [(key, value), ...]
-		"header": "Pod Selector:",
-		"generator": generator_list,
-		"field_colors": [("types", "generic"), ("types", "generic")],
-		"field_separators": [("separators", "selector")],
-	},
-	"node": {
-		"header": "Node:",
-	},
-	"node_id": {
-		"header": "Node ID:",
-	},
-	"operator": {
-		"header": "Operator:",
-	},
-	"overhead": {
-		"header": "Overhead:",
-	},
-	"path": {
-		"header": "Path:",
-	},
-	"paths": {
-		"header": "Paths:",
-		"generator": generator_list,
-	},
-	"phase": {
-		"header": "Phase:",
-		"path": "status#phase",
-		"datagetter": datagetter_phase,
-		"generator": generator_status,
-	},
-	"pod_ip": {
-		"header": "Pod IP:",
-		"path": "status#podIP",
-		"default": "<unset>",
-	},
-	"pod_selector": {
-		# [(key, value), ...]
-		"header": "Pod Selector:",
-		"datagetter": datagetter_pod_selector,
-		"generator": generator_list,
-		"field_colors": [("types", "generic"), ("types", "generic")],
-		"field_separators": [("separators", "selector")],
-	},
-	"port": {
-		# (name, port, protocol)
-		"header": "Port:",
-		"generator": generator_list,
-		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
-		"field_separators": [("separators", "port"), ("separators", "service")],
-	},
-	"ports_ep": {
-		# (name, port, protocol)
-		"header": "Ports:",
-		"path": "subsets",
-		"datagetter": datagetter_ep_ports,
-		"formatter": "list",
-		"formatting": {
-			"field_colors": [
-				{
-					"type": "service",
-				},
-				{
-					"type": "port",
-				},
-				{
-					"type": "protocol",
-				},
-			],
-			"field_separators": [
-				{
-					"type": "port",
-				},
-				{
-					"type": "service",
-				},
-			],
-		},
-	},
-	"pod_status": {
-		"header": "Status:",
-		"datagetter": datagetter_pod_status,
-		"generator": generator_status,
-	},
-	"ready": {
-		"header": "Ready:",
-		"generator": generator_status,
-		"sortkey1": "status_group",
-	},
-	"ready_scheduled_plugins": {
-		"header": "Ready:",
-		"path": [("status#numberReady", 0), ("status#desiredNumberScheduled", 0)],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_total,
-		"ranges": [(-1, -1, ("types", "numerical")), (0, 1, ("types", "watermark_high")), (1, -1, ("types", "watermark_medium"))],
-		"ralign": True,
-	},
-	"request": {
-		# [(resource, used, hard), ...]
-		"header": "Request:",
-		"datagetter": datagetter_request,
-		"generator": generator_list,
-		"field_colors": [("types", "resource"), ("types", "numerical"), ("types", "numerical")],
-		"field_separators": [("separators", "resource"), ("separators", "fraction")],
-	},
-	"role": {
-		"header": "Role:",
-		"path": "roleRef#name",
-	},
-	"service": {
-		# (namespace, name, port)
-		"header": "Service:",
-		"generator": generator_list,
-		"field_colors": [("types", "namespace"), ("types", "generic"), ("types", "port")],
-		"field_separators": [("separators", "namespace"), ("separators", "port")],
-	},
-	"serviceaccounts": {
-		"header": "Service Accounts:",
-		"generator": generator_list,
-	},
-	"services": {
-		"header": "Services:",
-		"generator": generator_list,
-	},
-	"source": {
-		# (component, host)
-		"header": "Source:",
-		"path": ["source#component", "source#host"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_list,
-	},
-	"source_port": {
-		"header": "Source Port:",
-	},
-	"start_time": {
-		"header": "Start Time:",
-		"generator": generator_timestamp,
-	},
-	"state": {
-		"header": "State:",
-		"generator": generator_status,
-	},
-	"status": {
-		"header": "Status:",
-		"generator": generator_status,
-	},
-	"status_latest_condition": {
-		"header": "Status:",
-		"path": "status#conditions",
-		"datagetter": datagetter_status_latest_condition,
-		"generator": generator_status,
-	},
-	"status_message_mpi_jobs": {
-		"header": "Message:",
-		"datagetter": datagetter_condition_ready,
-	},
-	"strategy": {
-		"header": "Strategy:",
-	},
-	"stype": {
-		"header": "Type:",
-	},
-	"subject_count": {
-		"header": "# of Subjects:",
-		"path": "subjects",
-		"datagetter": datagetter_count,
-		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"tags": {
-		"header": "Tags:",
-		"path": ("status#tags", ["tag"]),
-		"datagetter": datagetter_list_fields,
-		"generator": generator_list,
-	},
-	"target": {
-		"header": "Target:",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
-}
+field_templates = {}
 
 # The return type of the formatting will be the same
 # as the type of the default, so default == None is a programming error
@@ -11317,23 +10382,6 @@ def __run_playbook(playbookpath, nodes, values = None):
 
 def run_playbook(playbook, nodes, values = None):
 	return __run_playbook(playbook.get("playbook"), nodes, values = values)
-
-def view_yaml_dump(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
-	objects = []
-
-	for item in items:
-		if type(item) == tuple:
-			namespace, name = item
-		else:
-			name = item
-			namespace = ""
-		obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
-		objects.append(obj)
-
-	title = deep_get(kwargs, "title")
-	#themearrays = iktlib.format_yaml(objects)
-	formatter = iktlib.format_yaml
-	return resourceinfodispatch(uip.stdscr, objects, ("__ResourceView", ""), title = title, formatter = formatter)
 
 def view_obj(stdscr, **kwargs):
 	selection = deep_get(kwargs, "selection")
