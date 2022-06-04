@@ -882,7 +882,14 @@ def map_value(value, references = None, selected = False, default_field_color = 
 			attr_ref = deep_get(value, "type")
 			return ((context, attr_ref), selected), themearray_to_string([(context, attr_ref)])
 
-	if type(value) in [int, float] and len(ranges) > 0:
+	# OK, so we want to output output_value, but compare using reference_value
+	if type(value) == tuple and len(ranges) > 0:
+		output_value, reference_value = value
+	else:
+		output_value = value
+		reference_value = value
+
+	if type(reference_value) in [int, float] and len(ranges) > 0:
 		default_index = -1
 		for i in range(0, len(ranges)):
 			if deep_get(ranges[i], "default", False) == True:
@@ -892,14 +899,14 @@ def map_value(value, references = None, selected = False, default_field_color = 
 				continue
 			_min = deep_get(ranges[i], "min")
 			_max = deep_get(ranges[i], "max")
-			if (_min is None or value >= _min) and (_max is None or value < _max):
+			if (_min is None or reference_value >= _min) and (_max is None or reference_value < _max):
 				field_colors = deep_get(ranges[i], "field_colors")
 				break
 		if field_colors is None and default_index != -1:
 			field_colors = deep_get(ranges[default_index], "field_colors")
-		string = str(value)
-	elif type(value) in [str, bool] or len(ranges) == 0:
-		string = str(value)
+		string = str(output_value)
+	elif type(reference_value) in [str, bool] or len(ranges) == 0:
+		string = str(output_value)
 		_string = string
 		if match_case is False:
 			matched = False
@@ -2652,6 +2659,25 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						timediff = timestamp_to_datetime(end_time) - timestamp_to_datetime(start_time)
 						duration = timediff.days * 24 * 60 * 60 + timediff.seconds
 						_values.append((duration, "raw"))
+				elif ptype == "comparison":
+					# Input is two paths; output is the value of the first path and -2/-1/0/1 (for type mismatch, lt, eq, gt)
+					if type(default) == list and len(default) == 2:
+						_default1 = default[0]
+						_default2 = default[1]
+					else:
+						_default1 = default
+						_default2 = default
+					val1 = deep_get(obj, path[0], _default1)
+					val2 = deep_get(obj, path[1], _default2)
+					if type(val1) != type(val2):
+						res = -2
+					elif val1 == val2:
+						res = 0
+					elif val1 < val2:
+						res = -1
+					else:
+						res = 1
+					_values.append(((val1, res), "raw"))
 				elif ptype == "timestamp_with_age":
 					# The first array is assumed to be the start time, the second array the end time
 					start_time = None
@@ -6391,20 +6417,6 @@ field_templates = {
 		"generator": generator_numerical,
 		"ralign": True,
 	},
-	"available_replicas": {
-		"header": "Available:",
-		"path": "status#availableReplicas",
-		"type": "int",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"available_replicas_ds": {
-		"header": "Available:",
-		"path": "status#numberAvailable",
-		"type": "int",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"backends": {
 		# [(service_name, service_port), ...]
 		"header": "Backends:",
@@ -6441,28 +6453,6 @@ field_templates = {
 		"path": "controllerConditions",
 		"datagetter": datagetter_status_latest_condition,
 		"generator": generator_status,
-	},
-	"current_replicas_ds": {
-		"header": "Current:",
-		"path": "status#currentNumberScheduled",
-		"type": "int",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"current_replicas_tuple": {
-		# (current, desired)
-		"header": "Replicas:",
-		"path": ["status#currentReplicas", "status#desiredReplicas"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_total,
-		"ralign": True,
-	},
-	"desired_replicas_ds": {
-		"header": "Desired:",
-		"path": "status#desiredNumberScheduled",
-		"type": "int",
-		"generator": generator_numerical,
-		"ralign": True,
 	},
 	"drivers": {
 		"header": "Drivers:",
@@ -6527,11 +6517,6 @@ field_templates = {
 		"field_colors": [("types", "key"), ("types", "value")],
 		"field_separators": [("separators", "keyvalue")],
 	},
-	"max_replicas": {
-		"header": "Max:",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
 	"mem": {
 		"header": "Mem% / Total:",
 		"path": (r"^(\d+).*", ["status#allocatable#memory", "status#capacity#memory"]),
@@ -6553,18 +6538,6 @@ field_templates = {
 	"methods": {
 		"header": "Methods:",
 		"generator": generator_list,
-	},
-	"misscheduled_replicas": {
-		"header": "Misscheduled:",
-		"path": "status#numberMisscheduled",
-		"type": "raw",
-		"generator": generator_numerical_range,
-		"ranges": [(0, 1, ("types", "generic")), (1, sys.maxsize, ("types", "watermark_high"))],
-		"ralign": True,
-	},
-	"name": {
-		"header": "Name:",
-		"path": "metadata#name",
 	},
 	"name_version": {
 		"header": "Name:",
@@ -6630,10 +6603,6 @@ field_templates = {
 		"field_colors": [("types", "service"), ("types", "port"), ("types", "protocol")],
 		"field_separators": [("separators", "port"), ("separators", "service")],
 	},
-	"port_linkerd": {
-		"header": "Port:",
-		"path": "spec#port",
-	},
 	"ports_ep": {
 		# (name, port, protocol)
 		"header": "Ports:",
@@ -6675,31 +6644,6 @@ field_templates = {
 	"ready_scheduled_plugins": {
 		"header": "Ready:",
 		"path": [("status#numberReady", 0), ("status#desiredNumberScheduled", 0)],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_total,
-		"ranges": [(-1, -1, ("types", "numerical")), (0, 1, ("types", "watermark_high")), (1, -1, ("types", "watermark_medium"))],
-		"ralign": True,
-	},
-	"ready_replicas": {
-		"header": "Ready:",
-		"path": [("status#readyReplicas", 0), ("status#replicas", 0)],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_numerical_range,
-		"ranges": [(0, "1", ("types", "watermark_high")), ("1", sys.maxsize, ("types", "generic"))],
-		"ralign": True,
-	},
-	"ready_replicas_ds": {
-		"header": "Ready:",
-		"path": ["status#numberReady", "status#currentNumberScheduled"],
-		"datagetter": datagetter_pathlist_to_tuple,
-		"generator": generator_numerical_range,
-		"ranges": [(0, "1", ("types", "watermark_high")), ("1", sys.maxsize, ("types", "generic"))],
-		"ralign": True,
-	},
-	"ready_replicas_tuple": {
-		# (ready, total)
-		"header": "Ready:",
-		"path": [("status#readyReplicas", 0), ("status#replicas", 0)],
 		"datagetter": datagetter_pathlist_to_tuple,
 		"generator": generator_total,
 		"ranges": [(-1, -1, ("types", "numerical")), (0, 1, ("types", "watermark_high")), (1, -1, ("types", "watermark_medium"))],
@@ -6754,22 +6698,11 @@ field_templates = {
 		"header": "Status:",
 		"generator": generator_status,
 	},
-	"status_deployment": {
-		"header": "Status:",
-		"path": "status#conditions",
-		"datagetter": datagetter_status_deployment,
-		"generator": generator_status,
-	},
 	"status_latest_condition": {
 		"header": "Status:",
 		"path": "status#conditions",
 		"datagetter": datagetter_status_latest_condition,
 		"generator": generator_status,
-	},
-	"status_message_deployment": {
-		"header": "Message:",
-		"path": "status#conditions",
-		"datagetter": datagetter_status_message_deployment,
 	},
 	"status_message_mpi_jobs": {
 		"header": "Message:",
@@ -6796,20 +6729,6 @@ field_templates = {
 	},
 	"target": {
 		"header": "Target:",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"uptodate_replicas": {
-		"header": "Up to Date:",
-		"path": "status#updatedReplicas",
-		"type": "int",
-		"generator": generator_numerical,
-		"ralign": True,
-	},
-	"uptodate_replicas_ds": {
-		"header": "Up to Date:",
-		"path": "status#updatedNumberScheduled",
-		"type": "int",
 		"generator": generator_numerical,
 		"ralign": True,
 	},
