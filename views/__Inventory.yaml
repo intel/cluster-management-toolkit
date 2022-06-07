@@ -100,7 +100,10 @@ infoview:
       bios_version:
         header: [["BIOS version:", [main, infoheader]]]
         path: ansible_bios_version
-        type: version
+        type: str
+        formatting:
+          field_colors:
+          - type: version
       cores:
         header: [["Cores:", [main, infoheader]]]
         path: ansible_processor_cores

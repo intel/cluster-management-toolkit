@@ -38,7 +38,10 @@ listview:
     version:
       header: "Version:"
       path: "spec#version"
-      type: version
+      type: str
+      formatting:
+        field_colors:
+        - type: version
 infoview:
   name: "Cluster Service Version Info"
   infopad:
@@ -61,7 +64,10 @@ infoview:
       minimum_kubernetes_version:
         header: [["Minimum Kubernetes Version:", [main, infoheader]]]
         path: "spec#minKubeVersion"
-        type: version
+        type: str
+        formatting:
+          field_colors:
+          - type: version
       phase:
         header: [["Phase:", [main, infoheader]]]
         path: "status#phase"
@@ -85,7 +91,10 @@ infoview:
       version:
         header: [["Version:", [main, infoheader]]]
         path: "spec#version"
-        type: version
+        type: str
+        formatting:
+          field_colors:
+          - type: version
   shortcuts:
     "Description":
       key: d

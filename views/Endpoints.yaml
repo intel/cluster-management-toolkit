@@ -65,5 +65,46 @@ infoview:
   listpad:
     infogetter: get_subsets_info
     field_indexes:
-      Normal: [addresses, ports_ep, status]
+      Normal: [addresses, ports, status]
     sortcolumn: status
+    fields:
+      addresses:
+        header: "Addresses:"
+        path: addresses
+        type: raw
+        formatter: list
+      ports:
+        header: "Ports:"
+        paths:
+        - path: ports
+          pathtype: items
+          subpaths:
+          - name
+          - port
+          - protocol
+          type: raw
+        formatter: list
+        formatting:
+          field_colors:
+          - type: service
+          - type: port
+          - type: protocol
+          field_separators:
+          - type: port
+          - type: service
+      status:
+        header: "Status:"
+        path: status
+        type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "Ready":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Not Ready":
+                field_colors:
+                - context: main
+                  type: status_not_ok

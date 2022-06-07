@@ -43,11 +43,17 @@ listview:
     kernel_version:
       header: "Kernel Version:"
       path: "status#nodeInfo#kernelVersion"
-      type: version
+      type: str
+      formatting:
+        field_colors:
+        - type: version
     kubelet_version:
       header: "Version:"
       path: "status#nodeInfo#kubeletVersion"
-      type: version
+      type: str
+      formatting:
+        field_colors:
+        - type: version
     os:
       header: "OS-Image:"
       path: "status#nodeInfo#osImage"

@@ -546,7 +546,7 @@ def generator_mem_single(obj, field, fieldlen, pad, ralign, selected, **formatti
 	value = getattr(obj, field)
 	string = str(value)
 
-	array = format_numerical_with_units(string, "field", selected)
+	array = format_numerical_with_units(string, "numerical", selected)
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
@@ -3458,13 +3458,13 @@ def get_endpointslices_endpoints(obj):
 	return endpoints
 
 class SubsetsInfo:
-	def __init__(self, addresses, ports_ep, status, status_group):
+	def __init__(self, addresses, ports, status, status_group):
 		self.addresses = addresses
-		self.ports_ep = ports_ep
+		self.ports = ports
 		self.status = status
 		self.status_group = status_group
 	def __repr__(self):
-		return repr((self.addresses, self.ports_ep, self.status, self.status_group))
+		return repr((self.addresses, self.ports, self.status, self.status_group))
 
 def get_subsets_info(**kwargs):
 	obj = deep_get(kwargs, "_obj")
@@ -7934,7 +7934,7 @@ def decode_and_view_data(stdscr, **kwargs):
 		return
 	else:
 		raise Exception(f"Trying to export unknown vtype: {vtype}")
-	if title.endswith((".crt", "tls.key", ".pem", "CAKey")):
+	if title.endswith((".crt", "tls.key", ".pem", "CAKey")) or type(obj) == str and obj.startswith(("-----BEGIN", "-----END")):
 		formatter = iktlib.format_crt
 	else:
 		formatter = iktlib.format_none
