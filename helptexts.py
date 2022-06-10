@@ -38,11 +38,14 @@ toggleborders = [
 	("[Shift] + B", "Toggle borders"),
 ]
 
+togglewidth = [
+	("[Shift] + W", "Toggle custom/narrow/normal/wide fields (when available)"),
+]
+
 listviewheader = [
 	("[Ctrl] + X", "Exit program"),
 	("[Shift] + M", "Toggle mouse on/off"),
-	("[Shift] + W", "Toggle custom/normal/wide fields (when available)"),
-] + toggleborders + [
+] + togglewidth + toggleborders + [
 	("", ""),
 	("[F1] / [Shift] + H", "Show this helptext"),
 	("[F2]", "Switch main view"),
@@ -71,10 +74,12 @@ selectoractions = [
 	("[Shift] + F", "Clear label selector"),
 ]
 
-infoviewheader = [
+infoviewheader_part1 = [
 	("[ESC]", "Return to previous screen"),
 	("[Ctrl] + X", "Exit program"),
 	("[Shift] + M", "Toggle mouse on/off"),
+]
+infoviewheader_part2 = [
 ] + toggleborders + [
 	("", ""),
 	("[F1] / [Shift] + H", "Show this helptext"),
@@ -168,18 +173,11 @@ clusteroverview = [
 	("[Shift] + [End]", "Jump to last row of resource map"),
 ]
 
-configmapdata = infoviewheader + spacer + [
+configmapdata = infoviewheader_part1 + infoviewheader_part2 + spacer + [
 	("[Shift] + R", "Toggle syntax highlighting (default: On)"),
 ] + spacer + logmovement
 
-inventorylist = listviewheader + [
-	("[Enter]", "Open info page for selected host"),
-	("[Shift] + S", "SSH to selected host"),
-] + tagactions + [
-	("[Shift] + A", "Set / unset Ansible groups for tagged items"),
-] + spacer + listmovement
-
-networkinfo = infoviewheader + [
+networkinfo = infoviewheader_part1 + infoviewheader_part2 + [
 	("", ""),
 	("[Shift] + U", "Update CNI network (if a newer candidate is available)"),
 ]

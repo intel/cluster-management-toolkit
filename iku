@@ -7948,9 +7948,10 @@ def generate_helptext(view, viewtype, additional_helptexts = [], shortcuts = [])
 	helptext = []
 
 	if viewtype == "infoview":
-		helptext += helptexts.infoviewheader
+		helptext += helptexts.infoviewheader_part1
 
 		if view not in infoviews:
+			helptext += helptexts.infoviewheader_part2
 			helptext += helptexts.spacer
 			helptext += additional_helptexts
 			return helptext
@@ -7958,6 +7959,8 @@ def generate_helptext(view, viewtype, additional_helptexts = [], shortcuts = [])
 		viewref = infoviews[view]
 
 		if "listpad" in viewref:
+			helptext += helptexts.togglewidth
+			helptext += helptexts.infoviewheader_part2
 			if deep_get(viewref, "activatedfun") is not None:
 				helptext.append(("[Enter]", "Open info page for selected resource"))
 
@@ -8257,6 +8260,11 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			if infopad is not None:
 				uip.infopad.erase()
 			uip.statusbar.erase()
+
+			statusarray1 = [
+				("Fields: ", ("statusbar", "infoheader")), (field_index, ("statusbar", "highlight"))
+			]
+			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
 
 			# Refresh obj whenever we reload, unless this is a special view
 			if not view[0].startswith("__"):
@@ -8586,6 +8594,21 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			uip.refresh_all()
 		elif c == ord("B"):
 			uip.toggle_borders()
+			uip.refresh_all()
+			uip.force_update()
+		elif c == ord("W"):
+			if len(field_indexes) == 0:
+				continue
+
+			_list = list(field_indexes.keys())
+			_index = _list.index(field_index)
+			field_index = _list[(_index + 1) % len(field_indexes)]
+
+			# Toggle field width
+			denylist = []
+			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, "fields"), sortcolumn = deep_get(viewref, "sortcolumn"), denylist = denylist)
+			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
+			uip.resize_listpad(height = -1, width = -1)
 			uip.refresh_all()
 			uip.force_update()
 		elif c == ord("R") and logpad is not None:
