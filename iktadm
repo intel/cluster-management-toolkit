@@ -338,11 +338,11 @@ def check_and_print_status(retval):
 		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-def weave_urlgetter():
+def weave_urlgetter(pod_network_cidr):
 	args = ["kubectl", "version"]
 	kubectl_version = execute_command_with_response(args).encode("ascii")
 	version_base64 = base64.urlsafe_b64encode(kubectl_version).decode("ascii")
-	url = f"https://cloud.weave.works/k8s/net?k8s-version=\"{version_base64}\""
+	url = f"https://cloud.weave.works/k8s/net?k8s-version=\"{version_base64}\"&env.IPALLOC_RANGE={pod_network_cidr}"
 	return url
 
 DEFAULT_POD_NETWORK_CIDR = "10.244.0.0/16"
@@ -401,7 +401,7 @@ def setup_cni(cni, pod_network_cidr):
 		urlgetter = deep_get(cni_data, f"{cni}#urlgetter")
 		if urlgetter is None:
 			raise Exception(f"Both URL and URL getter for {cni} are empty; this is a programming error.")
-		url = urlgetter()
+		url = urlgetter(pod_network_cidr)
 	filename = deep_get(cni_data, f"{cni}#filename")
 	patch_cni = deep_get(cni_data, f"{cni}#patch_cni", None)
 	cni_path = f"{DEPLOYMENTDIR}/cni/{filename}"
