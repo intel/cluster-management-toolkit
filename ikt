@@ -8,6 +8,7 @@
 import errno
 from functools import reduce
 from getpass import getuser
+import hashlib
 import os
 from pathlib import Path
 import re
@@ -499,6 +500,7 @@ def prepare_hosts(options = [], args = None):
 def add_nodes(options = [], args = None):
 	ignore_existing = False
 	ignore_non_existing = False
+	ca_cert_path = ""
 
 	selection = args[0].split(",")
 
@@ -513,6 +515,8 @@ def add_nodes(options = [], args = None):
 			ignore_non_existing = True
 		elif opt == "--save-ansible-logs":
 			ansible_configuration.save_logs = True
+		elif opt == "--ca-cert-path":
+			ca_cert_path = optarg
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -569,7 +573,7 @@ def add_nodes(options = [], args = None):
 
 	join_token = kh.get_join_token()
 	if len(join_token) == 0:
-		iktprint([("Error: ", "error"), ("No join token found; create a one now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")], stderr = True)
+		retval = iktinput([("Error: ", "error"), ("No join token found; create a one now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ["y", "yes"]:
 			iktprint([("\nAborting: ", "error"), ("No join token available.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
@@ -584,7 +588,31 @@ def add_nodes(options = [], args = None):
 				iktprint([("Critical: ", "critical"), ("failed to create join token; aborting", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
-	ca_cert_hash = kh.get_ca_cert_hash()
+	ca_cert_hash = ""
+	if len(ca_cert_path) == 0:
+		ca_cert_hash = kh.get_ca_cert_hash()
+	if len(ca_cert_hash) == 0:
+		if ca_cert_path == 0:
+			ca_cert_path = "/etc/kubernetes/pki/ca.crt"
+		retval = iktinput([("Warning: ", "warning"), ("Could not find ", "default"), ("ca.crt", "path"), (" or a certificate-controller-token secret; try to use ", "default"), (ca_cert_path, "path"), ("? No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting: ", "error"), ("No CA certificate available.", "default")], stderr = True)
+			sys.exit(errno.EINTR)
+		else:
+			ca_cert = ""
+			with open(ca_cert_path) as f:
+				ca_cert = f.read()
+			ca_cert_hash = ""
+			if len(ca_cert) > 0:
+				x509obj = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, ca_cert)
+				pubkey = x509obj.get_pubkey()
+				pubkeyasn1 = OpenSSL.crypto.dump_publickey(OpenSSL.crypto.FILETYPE_ASN1, pubkey)
+				ca_cert_hash = hashlib.sha256(pubkeyasn1).hexdigest()
+
+			if len(ca_cert_hash) == 0:
+				iktprint([("\nAborting: ", "error"), ("No CA certificate available.", "default")], stderr = True)
+				sys.exit(errno.EINTR)
+
 	control_plane_ip, control_plane_port = kh.get_control_plane_address()
 	# Now that we have the IP address of the API-server we can use that to get the package
 	# version for kubeadm
@@ -957,6 +985,11 @@ ikt_commandline = {
 		"max_args": 1,
 		"callback": add_nodes,
 		"options": {
+			"--ca-cert-file": {
+				"values": [("PATH", "argument")],
+				"description": [("Use ", "description"), ("PATH", "argument"), (" as token CA certificate", "description")],
+				"requires_arg": True,
+			},
 			"--ignore-existing": {
 				"description": [("Ignore hosts that are already part of the cluster", "description")],
 			},
