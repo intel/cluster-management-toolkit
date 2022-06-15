@@ -11630,7 +11630,7 @@ def populate_views():
 				else:
 					kind = tmp
 					api_family = ""
-				if (kind, api_family) in available_api_families or kind.startswith("__"):
+				if (kind, api_family) in available_api_families or kind.startswith("__") or (kind == "Event" and (kind, "")) in available_api_families:
 					view_files.append(os.path.join(view_dir, filename))
 			else:
 				view_files.append(os.path.join(view_dir, filename))
