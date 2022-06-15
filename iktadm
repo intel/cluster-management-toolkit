@@ -1151,18 +1151,20 @@ def __task_drain_control_planes(installation_info):
 		return
 
 	# Check kubectl version
-	args = ["kubectl", "version"]
-	response = execute_command_with_response(args).splitlines()
-	tmp = re.match(r"^Client Version: version.Info{Major:\"(.)\", Minor:\"(.+?)\"", response[0])
+	_args = ["kubectl", "version", "-oyaml"]
+	response = execute_command_with_response(_args)
+	version_data = yaml.safe_load(response)
+	major_version = deep_get(version_data, "clientVersion#major")
+	minor_version = deep_get(version_data, "clientVersion#minor")
 
 	# Build the drain command line based on what version of kubectl is installed
 	args = ["kubectl", "drain", "--ignore-daemonsets"]
 	if tmp is not None:
-		if int(tmp[1]) >= 1 and int(tmp[2]) >= 20:
+		if int(major_version) >= 1 and int(minor_version) >= 20:
 			args.append("--delete-emptydir-data")
 		else:
 			args.append("--delete-local-data")
-		if int(tmp[1]) >= 1 and int(tmp[2]) >= 18:
+		if int(major_version) >= 1 and int(minor_version) >= 18:
 			args.append("--disable-eviction")
 
 	for controlplane in controlplanes:

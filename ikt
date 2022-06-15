@@ -330,20 +330,22 @@ def drain_nodes(options = [], args = None):
 	header = True
 
 	# Check kubectl version
-	_args = ["kubectl", "version"]
-	response = execute_command_with_response(_args).splitlines()
-	tmp = re.match(r"^Client Version: version.Info{Major:\"(.)\", Minor:\"(.+?)\"", response[0])
+	_args = ["kubectl", "version", "-oyaml"]
+	response = execute_command_with_response(_args)
+	version_data = yaml.safe_load(response)
+	major_version = deep_get(version_data, "clientVersion#major")
+	minor_version = deep_get(version_data, "clientVersion#minor")
 
 	_args = ["kubectl", "drain"]
 
 	for opt, optarg in options:
 		if opt in ["--delete-emptydir-data", "--delete-local-data"]:
-			if int(tmp[1]) >= 1 and int(tmp[2]) >= 20:
+			if int(major_version) >= 1 and int(minor_version) >= 20:
 				_args.append("--delete-emptydir-data")
 			else:
 				_args.append("--delete-local-data")
 		elif opt == "--disable-eviction":
-			if int(tmp[1]) >= 1 and int(tmp[2]) >= 18:
+			if int(major_version) >= 1 and int(minor_version) >= 18:
 				_args.append(opt)
 		elif opt == "--ignore-daemonsets":
 			_args.append(opt)

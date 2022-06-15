@@ -5,7 +5,7 @@ license = "This is free software; see the source for copying conditions.  There 
 
 program_suite_name = "iKT"
 program_suite_full_name = "Intel Kubernetes Toolkit"
-program_suite_version = "0.1.6"
+program_suite_version = "0.1.7"
 
 ui_program_name = "iku"
 ui_program_version = "0.2.1"
@@ -17,7 +17,7 @@ install_program_name = "ikt-install"
 install_program_version = "0.2"
 
 admin_program_name = "iktadm"
-admin_program_version = "0.1.6"
+admin_program_version = "0.1.7"
 
 inventory_program_name = "iktinv"
 inventory_program_version = "0.1"
