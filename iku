@@ -11623,8 +11623,8 @@ def populate_views():
 				continue
 
 			if len(available_api_families) > 0:
-				tmp = filename.rstrip(".yaml")
-				tmp = tmp.rstrip(".yml")
+				tmp = re.match("^(.*)\.ya?ml$", filename)
+				tmp = tmp[1]
 				if "." in tmp:
 					kind, api_family = tmp.split(".", 1)
 				else:
