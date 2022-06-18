@@ -1,0 +1,31 @@
+kind: Template
+api_family: template.openshift.io
+default_command: templates
+listview:
+  name: Templates
+  group: OpenShift
+  field_indexes:
+    Normal: [namespace, name, parameter_count, object_count, age, description]
+  fields:
+    description:
+      header: "Description:"
+      path: "metadata#annotations#description"
+      type: str
+    object_count:
+      header: "Objects:"
+      paths:
+      - path: objects
+        type: len
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
+    parameter_count:
+      header: "Parameters:"
+      paths:
+      - path: parameters
+        type: len
+        formatting:
+          field_colors:
+          - type: numerical
+        align: right
