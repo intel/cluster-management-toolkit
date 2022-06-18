@@ -10,6 +10,7 @@
   - pod_name: packageserver
     container_name: packageserver
   parser_rules:
+  - name: ts_8601
   - name: glog
   - name: json
   - name: key_value_with_leading_message
@@ -24,6 +25,12 @@
         - 2
       message:
         field: 3
+  - name: override_severity
+    overrides:
+    - matchtype: startswith
+      matchkey: "http: TLS handshake error"
+      loglevel: error
+  - name: expand_event
 - name: olm
   show_in_selector: false
   matchkeys:
