@@ -2451,16 +2451,16 @@ class KubernetesHelper:
 			"api": "telemetries",
 		},
 		# template.openshift.io
-		("BrokerTemplateInstance", "servicecertsigner.config.openshift.io"): {
+		("BrokerTemplateInstance", "template.openshift.io"): {
 			"api_family": ["apis/template.openshift.io/v1/"],
 			"api": "brokertemplateinstances",
 			"namespaced": False,
 		},
-		("TemplateInstance", "servicecertsigner.config.openshift.io"): {
+		("TemplateInstance", "template.openshift.io"): {
 			"api_family": ["apis/template.openshift.io/v1/"],
 			"api": "templateinstances",
 		},
-		("Template", "servicecertsigner.config.openshift.io"): {
+		("Template", "template.openshift.io"): {
 			"api_family": ["apis/template.openshift.io/v1/"],
 			"api": "templates",
 		},
