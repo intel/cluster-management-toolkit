@@ -1,8 +1,95 @@
 kind: Authentication
 api_family: config.openshift.io
 default_command: authentications.config.openshift.io
+command:
+- authentications.config
+- authentication.config
 listview:
   name: Authentications (Config)
   group: OpenShift
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Authentication Info (Config)
+  infopad:
+    row_indexes:
+      Normal: [oauth_metadata, integrated_oauth_metadata, cluster_version, service_account_issuer, webhook_token_authenticator_config, type]
+    rows:
+      cluster_version:
+        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - name
+          when:
+            key: kind
+            eq: ClusterVersion
+        default: "<none>"
+      integrated_oauth_metadata:
+        header: [["I", [main, infoheader_shortcut]], ["ntegrated OAuth Metadata:", [main, infoheader]]]
+        path: "status#integratedOAuthMetadata#name"
+        type: str
+      oauth_metadata:
+        header: [["O", [main, infoheader_shortcut]], ["Auth Metadata:", [main, infoheader]]]
+        path: "spec#oauthMetadata#name"
+        type: str
+      service_account_issuer:
+        header: [["Service Account Issuer:", [main, infoheader]]]
+        path: "spec#serviceAccountIssuer"
+        default: "https://kubernetes.default.svc"
+        type: str
+      type:
+        header: [["Type:", [main, infoheader]]]
+        path: "spec#type"
+        default: "IntegratedOAuth"
+        type: str
+      webhook_token_authenticator_config:
+        header: [["Webhook ", [main, infoheader]], ["T", [main, infoheader_shortcut]], ["oken Authenticator Config:", [main, infoheader]]]
+        path: "spec#webhookTokenAuthenticator#kubeConfig#name"
+        type: str
+  shortcuts:
+    "Cluster Version":
+      key: v
+      modifier: shift
+      helptext: "Open info page for Cluster Version"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: ClusterVersion
+        api_family: config.openshift.io
+    "Open integrated Oauth metadata":
+      key: i
+      modifier: shift
+      helptext: "Open info page for integrated OAuth metadata"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        name_path: "status#integratedOAuthMetadata#name"
+        namespace: openshift-config-managed
+        kind: ConfigMap
+    "Open Oauth metadata":
+      key: o
+      modifier: shift
+      helptext: "Open info page for OAuth metadata"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        name_path: "spec#oauthMetadata#name"
+        namespace: openshift-config
+        kind: ConfigMap
+    "Open webhook token authenticator config":
+      key: t
+      modifier: shift
+      helptext: "Open info page for webhook token authenticator config"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        name_path: "spec#webhookTokenAuthenticator#kubeConfig#name"
+        namespace: openshift-config
+        kind: Secret

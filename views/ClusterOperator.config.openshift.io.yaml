@@ -1,8 +1,11 @@
 kind: ClusterOperator
 api_family: config.openshift.io
 default_command: clusteroperators
+command:
+- clusteroperators.config
+- clusteroperator.config
 listview:
-  name: Cluster Operators
+  name: Cluster Operators (Config)
   group: OpenShift
   field_indexes:
     Normal: [name, version, available, progressing, degraded, age]

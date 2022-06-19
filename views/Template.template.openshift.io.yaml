@@ -13,19 +13,53 @@ listview:
       type: str
     object_count:
       header: "Objects:"
-      paths:
-      - path: objects
-        type: len
-        formatting:
-          field_colors:
-          - type: numerical
-        align: right
+      path: objects
+      type: len
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
     parameter_count:
       header: "Parameters:"
-      paths:
-      - path: parameters
-        type: len
-        formatting:
-          field_colors:
-          - type: numerical
-        align: right
+      path: parameters
+      type: len
+      formatting:
+        field_colors:
+        - type: numerical
+      align: right
+infoview:
+  name: Template Info
+  shortcuts:
+    "Show object list":
+      key: o
+      modifier: shift
+      helptext: "List objects"
+      widget: windowwidget
+      title: "Objects:"
+      headers: ["Kind:", "API-Version:", "Name:"]
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: "objects"
+        fields:
+        - kind
+        - apiVersion
+        - "metadata#name"
+      # Not supported for now
+      sortcolumn: kind
+    "Show parameter list":
+      key: p
+      modifier: shift
+      helptext: "List parameters"
+      widget: windowwidget
+      title: "Parameters:"
+      headers: ["Name:", "Required:", "Value:", "Description:"]
+      itemgetter: get_list_fields
+      itemgetter_args:
+        path: "parameters"
+        fields:
+        - name
+        - required
+        - value
+        - description
+      # Not supported for now
+      sortcolumn: name

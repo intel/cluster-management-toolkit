@@ -1,6 +1,9 @@
 kind: Profile
 api_family: tuned.openshift.io
 default_command: profiles.tuned.openshift.io
+command:
+- profiles.tuned
+- profile.tuned
 listview:
   name: Profiles (OpenShift)
   group: OpenShift
@@ -69,7 +72,7 @@ infoview:
         type: bool
       debug:
         header: [["Debug:", [main, infoheader]]]
-        path: "spec#debug"
+        path: "spec#config#debug"
         type: bool
       degraded:
         header: [["Degraded:", [main, infoheader]]]

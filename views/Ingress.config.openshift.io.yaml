@@ -1,8 +1,66 @@
 kind: Ingress
 api_family: config.openshift.io
 default_command: ingresses.config.openshift.io
+command:
+- ingresses.config
+- ingress.config
 listview:
-  name: Ingresses (OpenShift)
+  name: Ingresses (Config)
   group: OpenShift
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Ingress Info (OpenShift Config)
+  infopad:
+    row_indexes:
+      Normal: [domain, apps_domain]
+    rows:
+      apps_domain:
+        header: [["Apps Domain:", [main, infoheader]]]
+        path: "spec#appsDomain"
+        default: "<unset>"
+        type: str
+      domain:
+        header: [["Domain:", [main, infoheader]]]
+        path: "spec#domain"
+        type: str
+  listpad:
+    path: "status#componentRoutes"
+    infogetter: generic_infogetter
+    on_activation:
+      call: resourceinfodispatch_with_lookup_on_activation
+      name_path: name
+      namespace_path: namespace
+      kind: Route
+      api_family: route.openshift.io
+    field_indexes:
+      Normal: [namespace, name, consuming_users, current_hostnames, default_hostname]
+    fields:
+      consuming_users:
+        header: "Consuming Users:"
+        path: consumingUsers
+        type: raw
+        formatter: list
+      current_hostnames:
+        header: "Current Hostnames:"
+        path: currentHostnames
+        type: raw
+        formatter: list
+      default_hostname:
+        header: "Default Hostname:"
+        path: defaultHostname
+        type: str
+        formatting:
+          field_colors:
+          - type: hostname
+      name:
+        header: "Name:"
+        path: name
+        type: str
+      namespace:
+        header: "Namespace:"
+        path: namespace
+        type: str
+        formatting:
+          field_colors:
+          - type: namespace

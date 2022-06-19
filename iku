@@ -2342,21 +2342,25 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 								_default = 0
 
 							if type(subpaths[i]) == dict:
-								_subpath = deep_get(subpaths[i], "subpath")
-								if type(_subpath) == str:
-									_subpath = [_subpath]
-								_regexes = deep_get(subpaths[i], "regex", [])
-								if type(_regexes) == str:
-									_regexes = [_regexes]
-								_raw = deep_get_with_fallback(item, _subpath, _default)
-								_raw = transform_filter(deep_get(subpaths[i], "transform", {}), _raw)
-								for _regex in _regexes:
-									_tmp = re.match(_regex, _raw)
-									if _tmp is not None:
-										for group in _tmp.groups():
-											if group is not None:
-												tmp.append(group)
-										break
+								_subpath = deep_get(subpaths[i], "str")
+								if _subpath is not None:
+									tmp.append(_subpath)
+								else:
+									_subpath = deep_get(subpaths[i], "subpath")
+									if type(_subpath) == str:
+										_subpath = [_subpath]
+									_regexes = deep_get(subpaths[i], "regex", [])
+									if type(_regexes) == str:
+										_regexes = [_regexes]
+									_raw = deep_get_with_fallback(item, _subpath, _default)
+									_raw = transform_filter(deep_get(subpaths[i], "transform", {}), _raw)
+									for _regex in _regexes:
+										_tmp = re.match(_regex, _raw)
+										if _tmp is not None:
+											for group in _tmp.groups():
+												if group is not None:
+													tmp.append(group)
+											break
 							else:
 								prefix = deep_get(_path, "prefix", [])
 								suffix = deep_get(_path, "suffix", [])
@@ -10091,7 +10095,7 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	if kind is None:
 		return None
 
-	if name is None:
+	if name is None or len(name) == 0:
 		return None
 
 	if namespace is None and obj is not None:

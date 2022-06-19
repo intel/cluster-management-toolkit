@@ -6,3 +6,68 @@ listview:
   group: OpenShift
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: OpenShift API Server Info
+  infopad:
+    row_indexes:
+      Normal: [cluster_version, loglevel, operator_loglevel, management_state, ready_replicas, version]
+    rows:
+      cluster_version:
+        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - name
+          when:
+            key: kind
+            eq: ClusterVersion
+        default: "<none>"
+      loglevel:
+        header: [["Loglevel:", [main, infoheader]]]
+        path: "spec#logLevel"
+        type: str
+      management_state:
+        header: [["Management State:", [main, infoheader]]]
+        path: "spec#managementState"
+        type: str
+      operator_loglevel:
+        header: [["Operator Loglevel:", [main, infoheader]]]
+        path: "spec#operatorLogLevel"
+        type: str
+      ready_replicas:
+        header: [["Ready Replicas:", [main, infoheader]]]
+        path: "status#readyReplicas"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      version:
+        header: [["Version:", [main, infoheader]]]
+        path: "status#version"
+        type: raw
+        formatting:
+          field_colors:
+          - type: version
+  shortcuts:
+    "Cluster Version":
+      key: v
+      modifier: shift
+      helptext: "Open info page for Cluster Version"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: ClusterVersion
+        api_family: config.openshift.io
+    "View observed configuration":
+      key: o
+      modifier: shift
+      helptext: "Show observed configuration"
+      action: call
+      action_call: view_yaml
+      action_args:
+        title: Observed Configuration
+        _pass_obj: true
+        path: "spec#observedConfig"
