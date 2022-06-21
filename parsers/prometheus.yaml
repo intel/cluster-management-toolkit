@@ -26,6 +26,9 @@
     container_name: prometheus
   - pod_name: prometheus
     container_name: config-reloader
+  - pod_name: prometheus
+    container_name: init-config-reloader
+    container_type: init_container
   - pod_name: blackbox-exporter
     container_name: blackbox-exporter
   - pod_name: alertmanager
