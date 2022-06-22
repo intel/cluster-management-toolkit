@@ -96,7 +96,6 @@ packages = [
 	"python3-paramiko",
 	"python3-ujson",
 	"python3-urllib3",
-	"sshpass",
 ]
 
 def install_software(verbose = False):
@@ -105,17 +104,22 @@ def install_software(verbose = False):
 
 def install(options = [], args = None):
 	verbose = False
+	install_dependencies = True
 
 	for opt, optarg in options:
 		if opt == "--verbose":
 			verbose = True
+		elif opt == "--no-dependencies":
+			install_dependencies = False
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
 	create_directories(verbose = verbose)
 	copy_configuration_files(verbose = verbose)
 	create_symlinks(verbose = verbose)
-	install_software(verbose = verbose)
+
+	if install_dependencies == True:
+		install_software(verbose = verbose)
 
 commandline = {
 	# Global option
@@ -126,6 +130,9 @@ commandline = {
 			"--verbose": {
 				"description": [("Be more verbose", "description")],
 			},
+			"--no-dependencies": {
+				"description": [("Do not install dependencies", "description")],
+			},
 		},
 		"min_args": 0,
 		"max_args": 0,
@@ -135,6 +142,11 @@ commandline = {
 	"__default": {
 		"command": ["__default"],
 		"description": [("", "")],
+		"options": {
+			"--no-dependencies": {
+				"description": [("Do not install dependencies", "description")],
+			},
+		},
 		"min_args": 0,
 		"max_args": 0,
 		"callback": install,

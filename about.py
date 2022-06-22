@@ -14,7 +14,7 @@ tool_program_name = "ikt"
 tool_program_version = "0.1.7"
 
 install_program_name = "ikt-install"
-install_program_version = "0.2"
+install_program_version = "0.3"
 
 admin_program_name = "iktadm"
 admin_program_version = "0.1.7"
