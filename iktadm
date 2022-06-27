@@ -1159,13 +1159,12 @@ def __task_drain_control_planes(installation_info):
 
 	# Build the drain command line based on what version of kubectl is installed
 	args = ["kubectl", "drain", "--ignore-daemonsets"]
-	if tmp is not None:
-		if int(major_version) >= 1 and int(minor_version) >= 20:
-			args.append("--delete-emptydir-data")
-		else:
-			args.append("--delete-local-data")
-		if int(major_version) >= 1 and int(minor_version) >= 18:
-			args.append("--disable-eviction")
+	if int(major_version) >= 1 and int(minor_version) >= 20:
+		args.append("--delete-emptydir-data")
+	else:
+		args.append("--delete-local-data")
+	if int(major_version) >= 1 and int(minor_version) >= 18:
+		args.append("--disable-eviction")
 
 	for controlplane in controlplanes:
 		check_and_print_status(execute_command(args + [controlplane]))
