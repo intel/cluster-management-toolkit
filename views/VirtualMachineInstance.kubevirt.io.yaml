@@ -36,6 +36,38 @@ listview:
       header: "Phase:"
       path: "status#phase"
       type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "Failed":
+              field_colors:
+              - context: main
+                type: status_not_ok
+            "Pending":
+              field_colors:
+              - context: main
+                type: status_pending
+            "Running":
+              field_colors:
+              - context: main
+                type: status_ok
+            "Scheduling":
+              field_colors:
+              - context: main
+                type: status_pending
+            "Scheduled":
+              field_colors:
+              - context: main
+                type: status_ok
+            "Succeeded":
+              field_colors:
+              - context: main
+                type: status_done
+            "Unknown":
+              field_colors:
+              - context: main
+                type: status_unknown
     paused:
       header: "Paused:"
       paths:
@@ -122,6 +154,38 @@ infoview:
         header: [["Phase:", [main, infoheader]]]
         path: "status#phase"
         type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "Failed":
+                field_colors:
+                - context: main
+                  type: status_not_ok
+              "Pending":
+                field_colors:
+                - context: main
+                  type: status_pending
+              "Running":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Scheduling":
+                field_colors:
+                - context: main
+                  type: status_pending
+              "Scheduled":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Succeeded":
+                field_colors:
+                - context: main
+                  type: status_done
+              "Unknown":
+                field_colors:
+                - context: main
+                  type: status_unknown
       paused:
         header: [["Paused:", [main, infoheader]]]
         paths:

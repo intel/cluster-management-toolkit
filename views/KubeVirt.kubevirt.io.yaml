@@ -12,6 +12,26 @@ listview:
       header: "Phase:"
       path: "status#phase"
       type: str
+      formatter: value_mapper
+      formatting:
+        mapping:
+          mappings:
+            "Deploying":
+              field_colors:
+              - context: main
+                type: status_pending
+            "Deployed":
+              field_colors:
+              - context: main
+                type: status_ok
+            "Deleting":
+              field_colors:
+              - context: main
+                type: status_pending
+            "Deleted":
+              field_colors:
+              - context: main
+                type: status_done
 infoview:
   name: KubeVirt Info
   infopad:
@@ -37,6 +57,26 @@ infoview:
         header: [["Phase:", [main, infoheader]]]
         path: "status#phase"
         type: str
+        formatter: value_mapper
+        formatting:
+          mapping:
+            mappings:
+              "Deploying":
+                field_colors:
+                - context: main
+                  type: status_pending
+              "Deployed":
+                field_colors:
+                - context: main
+                  type: status_ok
+              "Deleting":
+                field_colors:
+                - context: main
+                  type: status_pending
+              "Deleted":
+                field_colors:
+                - context: main
+                  type: status_done
       target_kubevirt_registry:
         header: [["Target KubVirt Policy:", [main, infoheader]]]
         path: "status#targetKubeVirtRegistry"
