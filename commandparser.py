@@ -135,6 +135,12 @@ def usage(options = [], args = None):
 				if len(indent) > 0:
 					description = [(indent, "default")] + description
 				commands.append((tlen, tmp2, description))
+				if value["options"][option].get("extended_description") is not None:
+					for line in value["options"][option]["extended_description"]:
+						if len(indent) > 0:
+							commands.append((tlen, [("".ljust(tlen), "default")], [(indent, "default")] + line))
+						else:
+							commands.append((tlen, [("".ljust(tlen), "default")], line))
 
 	# cmp[0]: unformatted length of command/option
 	# cmd[1]: formatted cmd/option
