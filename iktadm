@@ -288,6 +288,7 @@ def get_installation_info(cluster_name = None):
 				"phase_skiplist": [],
 				"cni": "<none>",
 				"pod_network_cidr": "<none>",
+				"cri": "<none>",
 			}
 		}
 	elif info.get("installation_target") is None and cluster_name is not None:
@@ -300,7 +301,7 @@ def get_installation_info(cluster_name = None):
 
 	return info
 
-def update_installation_info(cluster_name = None, distro = None, version = None, requested_version = None, state = None, phase = None, phase_skiplist = None, cni = None, pod_network_cidr = None):
+def update_installation_info(cluster_name = None, distro = None, version = None, requested_version = None, state = None, phase = None, phase_skiplist = None, cni = None, pod_network_cidr = None, cri = None):
 	info = get_installation_info(cluster_name = cluster_name)
 
 	if cluster_name is None:
@@ -325,6 +326,8 @@ def update_installation_info(cluster_name = None, distro = None, version = None,
 		info[cluster_name]["cni"] = cni
 	if pod_network_cidr is not None:
 		info[cluster_name]["pod_network_cidr"] = pod_network_cidr
+	if cri is not None:
+		info[cluster_name]["cri"] = cri
 
 	with open(IKT_INSTALLATION_INFO, "w") as f:
 		f.write(yaml.dump(info, default_flow_style = False, sort_keys = False))
@@ -971,11 +974,13 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info):
 	requested_version = installation_info[cluster_name]["requested_version"]
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(prepare_targets[distro]["playbooks"])
+	cri = installation_info[cluster_name]["cri"]
 	extra_values = {
 		"packages": prepare_targets[distro].get("deb_packages", []),
 		"held_packages": prepare_targets[distro].get("deb_packages_held", []),
 		"ansible_become_pass": ansible_configuration.ansible_password,
 		"ansible_ssh_pass": ansible_configuration.ansible_password,
+		"cri": cri,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -1495,6 +1500,8 @@ def prepare_installation(options = [], args = None):
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = "controlplane", skip_all = False)
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = cluster_name, skip_all = True)
 
+	cri = None
+
 	for opt, optarg in options:
 		if opt == "--control-plane":
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = "controlplane", skip_all = False)
@@ -1517,11 +1524,36 @@ def prepare_installation(options = [], args = None):
 				phase = __validate_task_index(prepare_tasks, phase)
 		elif opt == "--save-ansible-logs":
 			ansible_configuration.save_logs = True
+		elif opt == "--cri":
+			if optarg in ["dockershim", "containerd", "manual"]:
+				cri = optarg
+			else:
+				iktprint([("Error: ", "error"), ("Unknown CRI “", "default"), (optarg, "argument"), ("“ specified; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
 		elif opt == "-Y":
 			confirm = False
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
+	if len(args) > 1:
+		_version = args[1].split(".")
+		if len(_version) == 1 or len(_version) >= 2 and int(_version[1]) >= 24:
+			if cri == "dockershim":
+				iktprint([("Error: ", "error"), ("CRI cannot be “", "default"), ("dockershim", "argument"), ("“ for ", "default"), ("Kubernetes ", "programname"), (">= ", "default"), ("1.24", "version"), ("; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
+			elif cri is None:
+				cri = "containerd"
+		else:
+			if cri is None:
+				cri = "dockershim"
+	else:
+		if cri is None:
+			cri = "containerd"
+		elif cri == "dockershim":
+			iktprint([("Error: ", "error"), ("CRI cannot be “", "default"), ("dockershim", "argument"), ("“ for ", "default"), ("Kubernetes ", "programname"), (">= ", "default"), ("1.24", "version"), ("; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+
+	installation_info = update_installation_info(cri = cri)
 	show_configuration()
 
 	if confirm == True:
@@ -1715,7 +1747,6 @@ def check_for_updates(options = [], args = None):
 		"kubernetes-node",
 		"docker.io",
 		"docker-ce",
-		"docker-engine",
 		"python3-natsort",
 		"python3-openssl",
 		"python3-ujson",
@@ -1737,6 +1768,7 @@ def show_configuration():
 	requested_version = installation_info[cluster_name]["requested_version"]
 	cni = installation_info[cluster_name]["cni"]
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
+	cri = installation_info[cluster_name]["cri"]
 
 	controlplanes = get_control_planes()
 
@@ -1770,6 +1802,8 @@ def show_configuration():
 		iktprint([("                 CNI: ", "action"), (f"{cni}", "programname")])
 	if pod_network_cidr is not None and pod_network_cidr != "<none>":
 		iktprint([("    Pod Network CIDR: ", "action"), (f"{pod_network_cidr}", "emphasis")])
+	if cri is not None and cri != "<none>":
+		iktprint([("                 CRI: ", "action"), (f"{cri}", "programname")])
 	iktprint([("          HTTP Proxy: ", "action"), __format_none(http_proxy, "url"), (" (", "default"), (f"{IKT_CONFIG_FILE}", "path"), (")", "default")])
 	iktprint([("          HTTP Proxy: ", "action"), __format_none(http_proxy_env, "url"), (" (Environment)", "default")])
 	iktprint([("         HTTPS Proxy: ", "action"), __format_none(https_proxy, "url"), (" (", "default"), (f"{IKT_CONFIG_FILE}", "path"), (")", "default")])
@@ -1798,6 +1832,7 @@ def setup_control_plane(options = [], args = None):
 	phase = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 	cni = installation_info[cluster_name]["cni"]
+	cri = installation_info[cluster_name]["cri"]
 
 	if state is not None and state in ["installed", "upgrading", "tearing_down", "torn_down", "purging"]:
 		iktprint([("Error: ", "error"), ("Invalid installation state; there is a partial or full installation already; aborting.", "default")], stderr = True)
@@ -2552,6 +2587,23 @@ commandline = {
 			},
 			"--save-ansible-logs": {
 				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
+			},
+			"--cri": {
+				"values": [("CRI", "argument")],
+				"description": [("Use ", "description"), ("CRI", "argument"), (" instead of the default CRI", "description")],
+				"extended_description": [
+					[("Valid options for CRI (Container Runtime Interface) are:", "description")],
+					[
+						("dockershim", "argument"), (" (", "description"), ("Kubernetes", "programname"), (" < ", "description"), (" 1.24", "version"), (")", "description"), (", ", "separator"),
+						("containerd", "argument"), (", ", "separator"),
+					],
+					[
+						("manual", "argument"), (" (do not install a CRI; this requires you to manually install and configure the CRI)", "description"),
+					],
+					[("The default CRI is ", "description"), ("dockershim", "argument"), (" for ", "description"), ("Kubernetes", "programname"), (" < ", "description"), ("1.24", "version")],
+					[("and ", "description"), ("containerd", "argument"), (" for ", "description"), ("Kubernetes", "programname"), (" >= ", "description"), ("1.24", "version")],
+				],
+				"requires_arg": True,
 			},
 			"-Y": {
 				"description": [("Do not ask for confirmation before performing actions", "description")],

@@ -17,7 +17,7 @@ install_program_name = "ikt-install"
 install_program_version = "0.3"
 
 admin_program_name = "iktadm"
-admin_program_version = "0.1.7"
+admin_program_version = "0.1.8"
 
 inventory_program_name = "iktinv"
 inventory_program_version = "0.1"
