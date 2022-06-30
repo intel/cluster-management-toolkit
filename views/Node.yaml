@@ -406,6 +406,8 @@ infoview:
       itemgetter_args:
         path: "status#images"
       formatting: [[windowwidget, default], [windowwidget, highlight]]
+      # Not supported for now
+      sortcolumn: name
     "Open dnsutils Pod on Node":
       key: n
       modifier: ctrl
@@ -426,3 +428,16 @@ infoview:
         name_path: "metadata#name"
       headers: ["Package:", "Version:"]
       formatting: [[windowwidget, default], [windowwidget, highlight]]
+      # Not supported for now
+      sortcolumn: package
+    "Show resources":
+      key: r
+      modifier: shift
+      helptext: "Show resources"
+      widget: windowwidget
+      title: "Resources:"
+      itemgetter: get_resource_list
+      headers: ["Resource:", "Allocatable:", "Capacity:"]
+      formatting: [[windowwidget, default], [windowwidget, highlight], [windowwidget, highlight]]
+      # Not supported for now
+      sortcolumn: resource

@@ -5207,6 +5207,15 @@ def get_strings_from_string(obj, **kwargs):
 				vlist.append([line])
 	return vlist
 
+def get_resource_list(obj, **kwargs):
+	vlist = []
+
+	for res in deep_get(obj, "status#capacity", {}).keys():
+		capacity = deep_get(obj, f"status#capacity#{res}", "")
+		allocatable = deep_get(obj, f"status#allocatable#{res}", "")
+		vlist.append([res, allocatable, capacity])
+	return vlist
+
 def get_package_version_list(obj, **kwargs):
 	name_path = deep_get(kwargs, "name_path", "")
 	hostname = deep_get(obj, name_path)
