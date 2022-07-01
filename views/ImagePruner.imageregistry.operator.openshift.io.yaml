@@ -2,7 +2,50 @@ kind: ImagePruner
 api_family: imageregistry.operator.openshift.io
 default_command: imagepruners
 listview:
-  name: Image Pruners
+  name: Image Pruners (Imageregistry Operator)
   group: OpenShift
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Image Pruner Info (Imageregistry Operator)
+  infopad:
+    row_indexes:
+      Normal: [successful_jobs_history_limit, failed_jobs_history_limit, ignore_invalid_image_references, keep_tag_revisions, loglevel, schedule, suspend]
+    rows:
+      failed_jobs_history_limit:
+        header: [["Failed Jobs History Limit:", [main, infoheader]]]
+        path: "spec#failedJobsHistoryLimit"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      ignore_invalid_image_references:
+        header: [["Ignore Invalid Image References:", [main, infoheader]]]
+        path: "spec#ignoreInvalidImageReferences"
+        type: bool
+      keep_tag_revisions:
+        header: [["Keep Tag Revisions:", [main, infoheader]]]
+        path: "spec#keepTagRevisions"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      loglevel:
+        header: [["Loglevel:", [main, infoheader]]]
+        path: "spec#logLevel"
+        type: str
+      schedule:
+        header: [["Schedule:", [main, infoheader]]]
+        path: "spec#schedule"
+        type: str
+      successful_jobs_history_limit:
+        header: [["Successful Jobs History Limit:", [main, infoheader]]]
+        path: "spec#successfulJobsHistoryLimit"
+        type: int
+        formatting:
+          field_colors:
+          - type: numerical
+      suspend:
+        header: [["Suspend:", [main, infoheader]]]
+        path: "spec#suspend"
+        type: bool

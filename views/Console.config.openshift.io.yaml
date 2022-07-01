@@ -9,3 +9,36 @@ listview:
   group: OpenShift
   field_indexes:
     Normal: [name, age]
+infoview:
+  name: Console Info (Config)
+  infopad:
+    row_indexes:
+      Normal: [cluster_version, console_url]
+    rows:
+      cluster_version:
+        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: items
+          subpaths:
+          - name
+          when:
+            key: kind
+            eq: ClusterVersion
+        default: "<none>"
+      console_url:
+        header: [["Console URL:", [main, infoheader]]]
+        path: "status#consoleURL"
+        type: str
+  shortcuts:
+    "Cluster Version":
+      key: v
+      modifier: shift
+      helptext: "Open info page for Cluster Version"
+      action: call
+      action_call: resourceinfodispatch_with_lookup
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: ClusterVersion
+        api_family: config.openshift.io
