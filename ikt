@@ -594,7 +594,7 @@ def add_nodes(options = [], args = None):
 	if len(ca_cert_path) == 0:
 		ca_cert_hash = kh.get_ca_cert_hash()
 	if len(ca_cert_hash) == 0:
-		if ca_cert_path == 0:
+		if len(ca_cert_path) == 0:
 			ca_cert_path = "/etc/kubernetes/pki/ca.crt"
 		retval = iktinput([("Warning: ", "warning"), ("Could not find ", "default"), ("ca.crt", "path"), (" or a certificate-controller-token secret; try to use ", "default"), (ca_cert_path, "path"), ("? No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ["y", "yes"]:
