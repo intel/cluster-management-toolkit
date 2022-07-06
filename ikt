@@ -712,7 +712,7 @@ def remove_nodes(options = [], args = None):
 	if retval == True:
 		iktprint([("OK", "ok")])
 	elif force == True:
-		iktprint([("NOT OK", "notok"), ("; ignoring since “", "description"), ("--force", "argument"), ("“ was specified.", "default")], stderr = True)
+		iktprint([("NOT OK", "warning"), ("; ignoring since “", "description"), ("--force", "argument"), ("“ was specified.", "default")], stderr = True)
 	else:
 		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
