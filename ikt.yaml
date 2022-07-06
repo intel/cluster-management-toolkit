@@ -50,7 +50,7 @@
 Global:
   # The theme to use; if no suffix is used, the program will
   # try to load THEME.yaml if loading THEME fails
-  # theme: default
+  # theme: "default"
 
   # Default indentation level when dumping YAML
   # indent: 4
@@ -69,7 +69,7 @@ Selector:
   # hide_unavailable_apis: true
   #
   # The primary sort column (valid options: name, family)
-  # sortcolumn: family
+  # sortcolumn: "family"
   #
   # Categorise the views
   # categorise: true
@@ -170,7 +170,7 @@ Pods:
   # kind: "<kind>/<source>"
   # or
   # skip: "<source>"
-  # kind_format: mixed
+  # kind_format: "mixed"
 
   # Filter out successfully completed pods in Pod List
   # filter_succeeded: false
@@ -190,35 +190,35 @@ Pods:
   # without going through the Pod Info page
   #
   # filter_resources:
-  # - antrea_agent
-  # - antrea_controller
-  # - cilium_endpoint
-  # - config_map
-  # - controller
-  # - cronjob
-  # - event
-  # - node
-  # - owner_reference
-  # - persistent_volume_claim
-  # - pod_disruption_budget
-  # - pod_metrics
-  # - priority_class
-  # - secret
-  # - service_account
+  # - "antrea_agent"
+  # - "antrea_controller"
+  # - "cilium_endpoint"
+  # - "config_map"
+  # - "controller"
+  # - "cronjob"
+  # - "event"
+  # - "node"
+  # - "owner_reference"
+  # - "persistent_volume_claim"
+  # - "pod_disruption_budget"
+  # - "pod_metrics"
+  # - "priority_class"
+  # - "secret"
+  # - "service_account"
 
   # The number of container log lines shown by default
   # logsize: 4000
 
   # Default loglevel:
-  # - Emergency
-  # - Alert
-  # - Critical
-  # - Error
-  # - Warning
-  # - Notice
-  # - Info
-  # - Debug
-  # loglevel: Info
+  # - "Emergency"
+  # - "Alert"
+  # - "Critical"
+  # - "Error"
+  # - "Warning"
+  # - "Notice"
+  # - "Info"
+  # - "Debug"
+  # loglevel: "Info"
 
   # Fold log messages by default;
   # choosing false here will (try)
@@ -242,13 +242,13 @@ Pods:
   # The prefix is configured through a list of options (with the empty list to disable)
   # severity_prefix: ["PREFIX", "severity_type", "SUFFIX"]
   # Options for severity_type are:
-  # letter -- A one-letter severity ("W" for warning)
-  # 4letter -- A 4-letter severity ("WARN" for warning)
-  # full -- Full word severity ("WARNING" for warning)
+  # "letter" -- A one-letter severity ("W" for warning)
+  # "4letter" -- A 4-letter severity ("WARN" for warning)
+  # "full" -- Full word severity ("WARNING" for warning)
   # The options are case sensitive:
-  # LETTER yields upper-case severity
-  # Letter yields capitalised severity
-  # letter yields lower-case severity
+  # "LETTER" yields upper-case severity
+  # "Letter" yields capitalised severity
+  # "letter" yields lower-case severity
   # (and no, leTtER or similar will NOT yield random capitalisation)
   #
   # Examples:
@@ -277,22 +277,22 @@ Debug:
   # The image to use when creating ephemeral containers
   # Good choices are, for instance, busybox (simple)
   # or debian (powerful)
-  # ephemeral_image: busybox
+  # ephemeral_image: "busybox"
   #
   # The image to use when debugging networking issues
   # Good choices are, for instance, dnsutils (simple)
   # or debian (powerful)
-  # network_image: gcr.io/kubernetes-e2e-test-images/dnsutils:1.3
+  # network_image: "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3"
 
 Inventory:
   # Mountpoints to skip in the list of mounts for a host;
   # virtual file systems such as /proc, /sys, etc are always skipped.
   # You can use * as a prefix or suffix (but not infix) to do partial matches
   # mountpoint_skiplist:
-  # - /boot/efi
-  # - /var/lib/origin/*
-  # - /run/*
-  # - *@docker*
+  # - "/boot/efi"
+  # - "/var/lib/origin/*"
+  # - "/run/*"
+  # - "*@docker*"
 
   # Devices to skip in the list of mounts for a host; devices that have no
   # corresponding ansible_device are skipped unless they are NFS mounts
@@ -300,14 +300,14 @@ Inventory:
   # You can use * as a prefix or suffix or both to do partial matches,
   # but infix ("a*b") is not supported
   # device_skiplist:
-  # - loop*
+  # - "loop*"
 
   # Pinging the hosts to get their status is done using ansible
   # and can thus be a slow operation (roughly 3 seconds!);
   # configure the ping behaviour using this option:
-  # Never -- Do not ping nodes
-  # Lazy -- Only ping nodes on refresh
-  # Always -- Ping nodes on start and on refresh
+  # "Never" -- Do not ping nodes
+  # "Lazy" -- Only ping nodes on refresh
+  # "Always" -- Ping nodes on start and on refresh
   # ping_hosts: "Lazy"
 
 Endpoints:
@@ -320,11 +320,11 @@ Endpoints:
   #
   # Using this option you can split the subsets into multiple entries.
   # Valid options:
-  # None -- No expansion occurs (default)
-  # Address -- Each address gets its own entry
-  # Port -- Each service gets its own entry
-  # Both -- Each adress/service combination gets its own entry
-  # expand_subsets: None
+  # "None" -- No expansion occurs (default)
+  # "Address" -- Each address gets its own entry
+  # "Port" -- Each service gets its own entry
+  # "Both" -- Each adress/service combination gets its own entry
+  # expand_subsets: "None"
 
 # Use this section to specify preferred versions of packages to install
 # using playbooks; having the information here is preferred over hardcoding
@@ -337,7 +337,7 @@ Endpoints:
 Events:
   # For the "regarding" field this specifies whether the format should be along the lines of
   # mixed: "<kind>.<api_family>/<source>" (for core APIs this is equivalent to "kind") (default)
-  # kind: "<kind>/<source>"
+  # "kind": "<kind>/<source>"
   # or
-  # skip: "<source>"
-  # kind_format: mixed
+  # "skip": "<source>"
+  # kind_format: "mixed"
