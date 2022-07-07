@@ -3801,6 +3801,7 @@ def get_container_status(src_statuses, container, kind):
 	status_group = stgroup.UNKNOWN
 	restarts = 0
 	message = ""
+	age = -1
 
 	if src_statuses is None:
 		return reason, status_group, -1, message, -1
@@ -9870,33 +9871,11 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 		# This is a request to create a new ephemeral container
 		if command == ["<ephemeral>"]:
 			ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
-			args = ["kubectl", "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image, "--attach=false"]
-			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
-			if result.returncode != 0:
-				iktprint([(f"Error: ", "error"), ("Failed to create debug image", "default")], stderr = True)
-			else:
-				output = result.stdout.decode('utf-8')
-				tmp = re.match(r"Creating debugging pod (\S+) with container (\S+) .*", output)
-				if tmp is not None:
-					pod_name = tmp[1]
-					container_name = tmp[2]
-				else:
-					sys.exit(f"executecommand failed to parse output; {output}; aborting.")
-
-				# We need to wait for the container to start; we should do this in a better way than sleeping
-				time.sleep(5)
-				# Attach to the image
-				# Should we perhaps use subprocess.run here?
-				args = ["kubectl", "attach", pod_name, "-c", container_name, "-it", "--pod-running-timeout=1m0s"]
-				subprocess.call(args)
-
-				# Delete the image
-				# Should we perhaps use subprocess.run here?
-				args = ["kubectl", "delete",  "pod", pod_name]
-				subprocess.call(args)
+			args = ["kubectl", "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image]
+			subprocess.call(args)
 		elif command == ["<dnsutils>"]:
 			dnsutils_image = deep_get(iktconfig, "Debug#network_image", "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
-			args = ["kubectl", "debug", f"node/{obj_name}", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
+			args = ["kubectl", "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
 			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 			if result.returncode != 0:
 				iktprint([(f"Error: ", "error"), ("Failed to create debug image", "default")], stderr = True)
@@ -9909,17 +9888,21 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 				else:
 					sys.exit(f"executecommand failed to parse output; {output}; aborting.")
 
-				# We need to wait for the container to start; we should do this in a better way than sleeping
-				time.sleep(5)
-				# Attach to the image
-				# Should we perhaps use subprocess.run here?
-				args = ["kubectl", "attach", pod_name, "-c", container_name, "-it", "--pod-running-timeout=1m0s"]
-				subprocess.call(args)
+				# Wait for the pod to be ready
+				iktprint([("Waiting for debug pod to be ready (timeout: 60s).", "default")])
+				args = ["kubectl", "wait", "--for=condition=ready", "--timeout=60s", "-n", "default", "pod", pod_name]
+				result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+				if result.returncode != 0:
+					iktprint([(f"Error: ", "error"), ("the pod failed to become ready before timeout.", "default")], stderr = True)
+				else:
+					# Attach to the debug container
+					# XXX: Should we perhaps use subprocess.run here?
+					args = ["kubectl", "attach", "-n", "default", pod_name, "-c", container_name, "-i", "-t", "--pod-running-timeout=1m0s"]
+					subprocess.call(args)
 
-				# Delete the image
-				# Should we perhaps use subprocess.run here?
-				args = ["kubectl", "delete",  "pod", pod_name]
-				subprocess.call(args)
+				# Delete the pod
+				iktprint([("Forcibly deleting pod.", "default")])
+				message, status = kh.delete_obj_by_kind_name_namespace(("Pod", ""), pod_name, "default", force = True)
 		else:
 			# Should we perhaps use subprocess.run here?
 			args = ["kubectl", "exec", obj_name, "-n", obj_namespace, "-i", "-t", "--container", container, "--"] + command
