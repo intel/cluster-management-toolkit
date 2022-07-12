@@ -1,200 +1,200 @@
-kind: Service
-default_command: services
+kind: "Service"
+default_command: "services"
 command:
-- svcs
-- svc
+- "svcs"
+- "svc"
 listview:
-  name: Services
-  group: Core
+  name: "Services"
+  group: "Core"
   field_indexes:
-    Wide: [namespace, name, svc_type, cluster_ips, external_ips, ports_svc, age]
-    Normal: [namespace, name, svc_type, cluster_ips, external_ips, ports_svc_compact, age]
-  sortcolumn: namespace
+    Wide: ["namespace", "name", "svc_type", "cluster_ips", "external_ips", "ports_svc", "age"]
+    Normal: ["namespace", "name", "svc_type", "cluster_ips", "external_ips", "ports_svc_compact", "age"]
+  sortcolumn: "namespace"
   fields:
     cluster_ips:
       header: "Cluster-IPs:"
       paths:
       - path: ["spec#clusterIPs", "spec#clusterIP"]
-        pathtype: list
+        pathtype: "list"
         default: "<none>"
         none_str_as_none: true
-      formatter: address
+      formatter: "address"
     external_ips:
       header: "External-IPs:"
       paths:
       - path: "spec#externalIPs"
-        pathtype: list
-      formatter: address
+        pathtype: "list"
+      formatter: "address"
     svc_type:
       header: "Type:"
       path: "spec#type"
-      type: str
+      type: "str"
     ports_svc:
       header: "Ports:"
       paths:
       - path: "spec#ports"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - name
-        - port
-        - protocol
-        type: raw
-      formatter: list
+        - "name"
+        - "port"
+        - "protocol"
+        type: "raw"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: service
-        - type: port
-        - type: protocol
+        - type: "service"
+        - type: "port"
+        - type: "protocol"
         field_separators:
-        - type: port
-        - type: service
+        - type: "port"
+        - type: "service"
     ports_svc_compact:
       header: "Ports:"
       paths:
       - path: "spec#ports"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - port
-        - protocol
-        type: raw
-      formatter: list
+        - "port"
+        - "protocol"
+        type: "raw"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: port
-        - type: protocol
+        - type: "port"
+        - type: "protocol"
         field_separators:
-        - type: service
+        - type: "service"
         ellipsise: 3
 infoview:
-  name: Service Info
+  name: "Service Info"
   infopad:
     row_indexes:
-      Normal: [selector, endpoints, endpoint_slices, type, cluster_ips, internal_traffic_policy, ip_families, ip_family_policy, external_ips, ports, topology_keys, session_affinity]
+      Normal: ["selector", "endpoints", "endpoint_slices", "type", "cluster_ips", "internal_traffic_policy", "ip_families", "ip_family_policy", "external_ips", "ports", "topology_keys", "session_affinity"]
     rows:
       cluster_ips:
-        header: [["Cluster IPs:", [main, infoheader]]]
+        header: [["Cluster IPs:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#clusterIPs", "spec#clusterIP"]
-          pathtype: list
+          pathtype: "list"
           default: "<none>"
           none_str_as_none: true
-        formatter: address
+        formatter: "address"
       endpoints:
-        header: [["E", [main, infoheader_shortcut]], ["ndpoints:", [main, infoheader]]]
+        header: [["E", ["main", "infoheader_shortcut"]], ["ndpoints:", ["main", "infoheader"]]]
         paths:
         - path: [["metadata#namespace"], ["metadata#name"]]
-          pathtype: tuple
-        formatter: list
+          pathtype: "tuple"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: namespace
-          - type: generic
+          - type: "namespace"
+          - type: "generic"
           field_separators:
-          - type: namespace
+          - type: "namespace"
       endpoint_slices:
-        header: [["Endpoint ", [main, infoheader]], ["S", [main, infoheader_shortcut]], ["lices:", [main, infoheader]]]
+        header: [["Endpoint ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["lices:", ["main", "infoheader"]]]
         paths:
         - path: ["EndpointSlice", "discovery.k8s.io", ["metadata#namespace"], "", [["kubernetes.io/service-name=", ["metadata#name"]]]]
-          pathtype: lookup
+          pathtype: "lookup"
           subpaths:
           - "metadata#namespace"
           - "metadata#name"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: namespace
-          - type: generic
+          - type: "namespace"
+          - type: "generic"
           field_separators:
-          - type: namespace
+          - type: "namespace"
       external_ips:
-        header: [["External IPs:", [main, infoheader]]]
+        header: [["External IPs:", ["main", "infoheader"]]]
         path: "spec#externalIPs"
-        type: raw
+        type: "raw"
         default: "<none>"
-        formatter: address
+        formatter: "address"
       internal_traffic_policy:
-        header: [["Internal Traffic Policy:", [main, infoheader]]]
+        header: [["Internal Traffic Policy:", ["main", "infoheader"]]]
         path: "spec#internalTrafficPolicy"
-        type: str
+        type: "str"
       ip_families:
-        header: [["IP Families:", [main, infoheader]]]
+        header: [["IP Families:", ["main", "infoheader"]]]
         path: "spec#ipFamilies"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       ip_family_policy:
-        header: [["IP Family Policy:", [main, infoheader]]]
+        header: [["IP Family Policy:", ["main", "infoheader"]]]
         path: "spec#ipFamilyPolicy"
-        type: str
+        type: "str"
       ports:
-        header: [["P", [main, infoheader_shortcut]], ["orts:", [main, infoheader]]]
+        header: [["P", ["main", "infoheader_shortcut"]], ["orts:", ["main", "infoheader"]]]
         paths:
         - path: "spec#ports"
-          pathtype: items
+          pathtype: "items"
           subpaths:
           - name
           - port
           - protocol
-          type: raw
-        formatter: list
+          type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: service
-          - type: port
-          - type: protocol
+          - type: "service"
+          - type: "port"
+          - type: "protocol"
           field_separators:
-          - type: port
-          - type: service
+          - type: "port"
+          - type: "service"
       selector:
-        header: [["Selector:", [main, infoheader]]]
+        header: [["Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#selector"]
-          pathtype: key_value
+          pathtype: "key_value"
           default: ["<none>"]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       session_affinity:
-        header: [["Session Affinity:", [main, infoheader]]]
+        header: [["Session Affinity:", ["main", "infoheader"]]]
         path: "spec#sessionAffinity"
-        type: str
+        type: "str"
       topology_keys:
-        header: [["Topology Keys:", [main, infoheader]]]
+        header: [["Topology Keys:", ["main", "infoheader"]]]
         path: "spec#topologyKeys"
-        type: raw
+        type: "raw"
         default: "<unset>"
-        formatter: list
+        formatter: "list"
         formatting:
           mapping:
             mappings:
               "<unset>":
                 field_colors:
-                - context: types
-                  type: unset
+                - context: "types"
+                  type: "unset"
                 __default:
-                - context: types
-                  type: generic
+                - context: "types"
+                  type: "generic"
       type:
-        header: [["Type:", [main, infoheader]]]
+        header: [["Type:", ["main", "infoheader"]]]
         path: "spec#type"
-        type: str
+        type: "str"
   listpad:
-    listgetter: generic_listgetter
+    listgetter: "generic_listgetter"
     listgetter_args:
-      _kind: Pod
+      _kind: "Pod"
       _label_selector_path: "spec#selector"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     on_activation:
-      call: resourceinfodispatch
-      kind: Pod
+      call: "resourceinfodispatch"
+      kind: "Pod"
     field_indexes:
-      Wide: [namespace, name, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
-      Normal: [namespace, name, pod_status, node_name, age, restarts, last_restart]
-      Compact: [namespace, name, pod_status, age, restarts, last_restart]
-    sortcolumn: pod_status
+      Wide: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+      Normal: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+      Compact: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+    sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
@@ -202,93 +202,93 @@ infoview:
         - paths:
           - "spec#initContainers"
           - "spec#containers"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
-          - subpath: image
+          - "name"
+          - subpath: "image"
             regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: raw
-        formatter: list
+          type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: generic
-          - type: version
+          - type: "generic"
+          - type: "version"
           field_separators:
-          - type: version
+          - type: "version"
       last_restart:
         header: "Latest Restart:"
         paths:
         - path: "status#containerStatuses"
-          pathtype: items
+          pathtype: "items"
           subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
           when:
             key: "restartCount"
             gt: 0
-          action: latest
-          type: timestamp
+          action: "latest"
+          type: "timestamp"
         default: -1
-        formatter: age
-        align: right
+        formatter: "age"
+        align: "right"
       node_name:
         header: "Node:"
         path: "spec#nodeName"
-        type: host
+        type: "host"
         default: "<none>"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
         default: "<unset>"
-        type: address
-        formatter: address
+        type: "address"
+        formatter: "address"
       restarts:
         header: "Restarts:"
         paths:
         - path: "status#containerStatuses"
-          pathtype: items
+          pathtype: "items"
           subpath: "restartCount"
-          action: sum
-          type: int
+          action: "sum"
+          type: "int"
         formatting:
           field_colors:
-          - type: numerical
-        align: right
+          - type: "numerical"
+        align: "right"
         default: 0
   shortcuts:
     "Endpoints":
-      key: e
-      modifier: shift
+      key: "e"
+      modifier: "shift"
       helptext: "Open info page for Endpoints"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Endpoints
+        kind: "Endpoints"
         name_path: "metadata#name"
         namespace_path: "metadata#namespace"
     "Endpoint Slices":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "List Endpoint Slices"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Endpoint Slices:"
       headers: ["Namespace:", "Name:"]
-      itemgetter: get_endpoint_slices
+      itemgetter: "get_endpoint_slices"
       selectable: true
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
-        kind: EndpointSlice
-        api_family: discovery.k8s.io
+        kind: "EndpointSlice"
+        api_family: "discovery.k8s.io"
         name_path: 1
         namespace_path: 0
       # This isn't supported for now
-      sortcolumn: namespace
+      sortcolumn: "namespace"
     "Ports":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "Show port mappings"
-      widget: windowwidget
+      widget: "windowwidget"
       headers: ["Port:", "Node-Port:", "Target-Port:", "Endpoints:"]
-      itemgetter: get_svc_port_target_endpoints
+      itemgetter: "get_svc_port_target_endpoints"
       # This isn't supported for now
-      sortcolumn: port
+      sortcolumn: "port"

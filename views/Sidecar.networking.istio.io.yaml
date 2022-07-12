@@ -1,75 +1,75 @@
-kind: Sidecar
-api_family: networking.istio.io
-default_command: sidecars
+kind: "Sidecar"
+api_family: "networking.istio.io"
+default_command: "sidecars"
 listview:
-  name: Sidecars
-  group: Istio
+  name: "Sidecars"
+  group: "Istio"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Sidecar Info
+  name: "Sidecar Info"
   infopad:
     row_indexes:
-      Normal: [workload_selector, outbound_traffic_policy]
+      Normal: ["workload_selector", "outbound_traffic_policy"]
     rows:
       outbound_traffic_policy:
-        header: [["Outbound Traffic Policy:", [main, infoheader]]]
+        header: [["Outbound Traffic Policy:", ["main", "infoheader"]]]
         path: "spec#outboundTrafficPolicy"
         default: Default
-        type: str
+        type: "str"
       workload_selector:
-        header: [["Workload Selector:", [main, infoheader]]]
+        header: [["Workload Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#workloadSelector#labels"]
-          pathtype: key_value
+          pathtype: "key_value"
           default: ["<none>"]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
   listpad:
-    listgetter: get_sidecar_rule_list
-    infogetter: generic_infogetter
+    listgetter: "get_sidecar_rule_list"
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [traffic_type, port, bind, capture_mode, default_endpoint, hosts]
-    sortcolumn: traffic_type
+      Normal: ["traffic_type", "port", "bind", "capture_mode", "default_endpoint", "hosts"]
+    sortcolumn: "traffic_type"
     fields:
       bind:
         header: "Bind:"
-        path: bind
-        type: str
-        formatter: address
+        path: "bind"
+        type: "str"
+        formatter: "address"
       capture_mode:
         header: "Capture Mode:"
-        path: capture_mode
-        type: str
+        path: "capture_mode"
+        type: "str"
       default_endpoint:
         header: "Default Endpoint:"
-        path: default_endpoint
-        type: str
+        path: "default_endpoint"
+        type: "str"
       hosts:
         header: "Hosts:"
-        path: hosts
-        type: raw
-        formatter: list
+        path: "hosts"
+        type: "raw"
+        formatter: "list"
       port:
         header: "Port:"
-        path: port
-        type: raw
-        formatter: list
+        path: "port"
+        type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: service
-          - type: port
-          - type: protocol
+          - type: "service"
+          - type: "port"
+          - type: "protocol"
           field_separators:
-          - type: port
-          - type: service
+          - type: "port"
+          - type: "service"
       traffic_type:
         header: "Traffic Type:"
-        path: traffic_type
-        type: str
+        path: "traffic_type"
+        type: "str"

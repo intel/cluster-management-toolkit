@@ -1,58 +1,58 @@
-kind: __TunedProfile
-api_family: tuned.openshift.io
-default_command: __
+kind: "__TunedProfile"
+api_family: "tuned.openshift.io"
+default_command: "__"
 infoview:
-  name: Tuned Profile
+  name: "Tuned Profile"
   infopad:
-    name_path: profile
+    name_path: "profile"
     creation_date_path: null
     row_indexes:
-      Normal: [priority, operand, machine_config_labels]
+      Normal: ["priority", "operand", "machine_config_labels"]
     rows:
       machine_config_labels:
-        header: [["Machine Config Labels:", [main, infoheader]]]
-        path: machineConfigLabels
-        type: raw
-        formatter: list
+        header: [["Machine Config Labels:", ["main", "infoheader"]]]
+        path: "machineConfigLabels"
+        type: "raw"
+        formatter: "list"
       operand:
-        header: [["Operand:", [main, infoheader]]]
+        header: [["Operand:", ["main", "infoheader"]]]
         paths:
-        - path: operand
-          pathtype: key_value
-        formatter: list
+        - path: "operand"
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: keyvalue
+          - type: "keyvalue"
       priority:
-        header: [["Priority:", [main, infoheader]]]
-        path: priority
-        type: int
+        header: [["Priority:", ["main", "infoheader"]]]
+        path: "priority"
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
   listpad:
-    path: match
-    infogetter: generic_infogetter
+    path: "match"
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [type, value, label, match]
+      Normal: ["type", "value", "label", "match"]
     fields:
       label:
         header: "Label:"
-        path: label
-        type: str
+        path: "label"
+        type: "str"
       match:
         header: "Match:"
-        path: match
-        type: raw
+        path: "match"
+        type: "raw"
       type:
         header: "Type:"
-        path: type
-        default: node
-        type: str
+        path: "type"
+        default: "node"
+        type: "str"
       value:
         header: "Value:"
-        path: value
-        type: str
+        path: "value"
+        type: "str"

@@ -1,69 +1,69 @@
-kind: KubeadmConfigTemplate
-api_family: bootstrap.cluster.x-k8s.io
-default_command: kubeadmconfigtemplates
+kind: "KubeadmConfigTemplate"
+api_family: "bootstrap.cluster.x-k8s.io"
+default_command: "kubeadmconfigtemplates"
 listview:
-  name: Kubeadm Config Templates
-  group: Cluster Configuration
+  name: "Kubeadm Config Templates"
+  group: "Cluster Configuration"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Kubeadm Config Template Info
+  name: "Kubeadm Config Template Info"
   infopad:
     row_indexes:
-      Normal: [cluster]
+      Normal: ["cluster"]
     rows:
       cluster:
-        header: [["Cl", [main, infoheader]], ["u", [main, infoheader_shortcut]], ["ster:", [main, infoheader]]]
+        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
+          - "name"
           when:
-            key: kind
-            eq: Cluster
+            key: "kind"
+            eq: "Cluster"
         default: "<none>"
   shortcuts:
     "Open Cluster":
-      key: u
+      key: "u"
       helptext: "Open info page for Cluster"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Cluster
-        api_family: cluster.x-k8s.io
+        kind: "Cluster"
+        api_family: "cluster.x-k8s.io"
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
     "List files":
-      key: f
-      modifier: shift
+      key: "f"
+      modifier: "shift"
       helptext: "List files"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Files:"
       selectable: true
       headers: ["Path:", "Owner:", "Permissions:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#template#spec#files"
         fields:
-        - path
-        - owner
-        - permissions
-      action: call
-      action_call: decode_and_view_file_templates
+        - "path"
+        - "owner"
+        - "permissions"
+      action: "call"
+      action_call: "decode_and_view_file_templates"
       action_args:
         _pass_obj: true
         _pass_selected: true
         name_path: 0
         file_path: "spec#template#spec#files"
     "View join configuration":
-      key: j
+      key: "j"
       helptext: "Show join configuration"
-      action: call
-      action_call: view_yaml
+      action: "call"
+      action_call: "view_yaml"
       action_args:
-        title: Join Configuration
+        title: "Join Configuration"
         _pass_obj: true
         path: "spec#template#spec#joinConfiguration"

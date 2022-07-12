@@ -1,33 +1,33 @@
-kind: MutatingWebhookConfiguration
-api_family: admissionregistration.k8s.io
-default_command: mutatingwebhookconfigurations
+kind: "MutatingWebhookConfiguration"
+api_family: "admissionregistration.k8s.io"
+default_command: "mutatingwebhookconfigurations"
 command:
-- mwhcs
-- mwhc
+- "mwhcs"
+- "mwhc"
 listview:
-  name: Mutating Webhook Configurations
-  group: API & Extendability
+  name: "Mutating Webhook Configurations"
+  group: "API & Extendability"
   field_indexes:
-    Normal: [name, webhook_count, age]
+    Normal: ["name", "webhook_count", "age"]
   fields:
     webhook_count:
       header: "Webhooks:"
-      path: webhooks
-      type: len
+      path: "webhooks"
+      type: "len"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
 infoview:
-  name: Mutating Webhook Configuration Info
+  name: "Mutating Webhook Configuration Info"
   infopad:
   listpad:
-    path: webhooks
-    infogetter: generic_infogetter
+    path: "webhooks"
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [name]
+      Normal: ["name"]
     fields:
       name:
         header: "Name:"
         path: "name"
-        type: str
+        type: "str"

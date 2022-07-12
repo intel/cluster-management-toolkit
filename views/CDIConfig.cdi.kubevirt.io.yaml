@@ -1,60 +1,60 @@
-kind: CDIConfig
-api_family: cdi.kubevirt.io
-default_command: cdiconfigs
+kind: "CDIConfig"
+api_family: "cdi.kubevirt.io"
+default_command: "cdiconfigs"
 listview:
-  name: CDI Configs
-  group: Storage & Backups
+  name: "CDI Configs"
+  group: "Storage & Backups"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: CDI Config Info
+  name: "CDI Config Info"
   infopad:
     row_indexes:
-      Normal: [controller]
+      Normal: ["controller"]
     rows:
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
-          type: [kind, api_group, name]
+          type: ["kind", "api_group", "name"]
         default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
   shortcuts:
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
     "Show proxy settings":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "Show proxy settings"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Proxy settings:"
       headers: ["Protocol:", "URL:"]
-      itemgetter: get_key_value
+      itemgetter: "get_key_value"
       itemgetter_args:
         path: "status#importProxy"
       # Not supported for now
-      sortcolumn: protocol
+      sortcolumn: "protocol"

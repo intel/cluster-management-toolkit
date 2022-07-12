@@ -1,189 +1,189 @@
-kind: PersistentVolume
-default_command: persistentvolumes
+kind: "PersistentVolume"
+default_command: "persistentvolumes"
 command:
-- pv
+- "pv"
 listview:
-  name: Persistent Volumes
-  group: Storage & Backups
+  name: "Persistent Volumes"
+  group: "Storage & Backups"
   field_indexes:
-    Normal: [name, status, capacity, access_modes, storage_class, claim, reclaim_policy, volume_mode, age, reason]
+    Normal: ["name", "status", "capacity", "access_modes", "storage_class", "claim", "reclaim_policy", "volume_mode", "age", "reason"]
   fields:
     access_modes:
       header: "Access Modes:"
       paths:
       - path: "spec#accessModes"
-        pathtype: remap
+        pathtype: "remap"
         substitutions:
           "ReadWriteOnce": "RWO"
           "ReadWriteOncePod": "RWOP"
           "ReadWriteMany": "RWM"
           "ReadOnlyMany": "ROX"
-      type: raw
-      formatter: list
+      type: "raw"
+      formatter: "list"
     capacity:
       header: "Capacity:"
       path: "spec#capacity#storage"
-      type: raw
-      formatter: numerical_with_units
-      align: right
+      type: "raw"
+      formatter: "numerical_with_units"
+      align: "right"
     claim:
       header: "Claim:"
       paths:
       - path: [["spec#claimRef#namespace"], ["spec#claimRef#name"]]
-        pathtype: tuple
+        pathtype: "tuple"
         default: ["", "<none>"]
-        type: [name, name]
-      formatter: list
+        type: ["name", "name"]
+      formatter: "list"
       formatting:
         field_colors:
-        - type: namespace
-        - type: generic
+        - type: "namespace"
+        - type: "generic"
         field_separators:
-        - type: namespace
+        - type: "namespace"
     reason:
       header: "Reason:"
       path: "status#reason"
-      type: str
+      type: "str"
     reclaim_policy:
       header: "Reclaim Policy:"
       path: "spec#persistentVolumeReclaimPolicy"
-      type: str
+      type: "str"
     status:
       header: "Status:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Available:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Bound:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Pending:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Released:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             __default:
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
     storage_class:
       header: "Storage Class:"
       path: "spec#storageClassName"
       default: "<none>"
-      type: str
+      type: "str"
     volume_mode:
       header: "Volume Mode:"
       path: "spec#volumeMode"
-      type: str
+      type: "str"
 infoview:
-  name: Persistent Volume Info
+  name: "Persistent Volume Info"
   infopad:
     row_indexes:
-      Normal: [status, reason, capacity, persistent_volume_claim, access_modes, storage_class, reclaim_policy, volume_mode, volume_node_affinity]
+      Normal: ["status", "reason", "capacity", "persistent_volume_claim", "access_modes", "storage_class", "reclaim_policy", "volume_mode", "volume_node_affinity"]
     rows:
       access_modes:
-        header: [["Access Modes:", [main, infoheader]]]
+        header: [["Access Modes:", ["main", "infoheader"]]]
         paths:
         - path: "spec#accessModes"
-          pathtype: remap
+          pathtype: "remap"
           substitutions:
             "ReadWriteOnce": "RWO"
             "ReadWriteOncePod": "RWOP"
             "ReadWriteMany": "RWM"
             "ReadOnlyMany": "ROX"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       capacity:
-        header: [["Capacity:", [main, infoheader]]]
+        header: [["Capacity:", ["main", "infoheader"]]]
         path: "spec#capacity#storage"
-        type: raw
-        formatter: numerical_with_units
-        align: right
+        type: "raw"
+        formatter: "numerical_with_units"
+        align: "right"
       persistent_volume_claim:
-        header: [["P", [main, infoheader_shortcut]], ["ersistent Volume Claim:", [main, infoheader]]]
+        header: [["P", ["main", "infoheader_shortcut"]], ["ersistent Volume Claim:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#claimRef#namespace"], ["spec#claimRef#name"]]
-          pathtype: tuple
+          pathtype: "tuple"
           default: ["", "<none>"]
-          type: [name, name]
-        formatter: list
+          type: ["name", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: namespace
-          - type: generic
+          - type: "namespace"
+          - type: "generic"
           field_separators:
-          - type: namespace
+          - type: "namespace"
       reason:
-        header: [["Reason:", [main, infoheader]]]
+        header: [["Reason:", ["main", "infoheader"]]]
         path: "status#reason"
-        type: str
+        type: "str"
       reclaim_policy:
-        header: [["Reclaim Policy:", [main, infoheader]]]
+        header: [["Reclaim Policy:", ["main", "infoheader"]]]
         path: "spec#persistentVolumeReclaimPolicy"
-        type: str
+        type: "str"
       status:
-        header: [["Status:", [main, infoheader]]]
+        header: [["Status:", ["main", "infoheader"]]]
         path: "status#phase"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Available:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Bound:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Pending:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Released:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               __default:
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       storage_class:
-        header: [["Storage Class:", [main, infoheader]]]
+        header: [["Storage Class:", ["main", "infoheader"]]]
         path: "spec#storageClassName"
         default: "<none>"
-        type: str
+        type: "str"
       volume_mode:
-        header: [["Volume Mode:", [main, infoheader]]]
+        header: [["Volume Mode:", ["main", "infoheader"]]]
         path: "spec#volumeMode"
-        type: str
+        type: "str"
       volume_node_affinity:
-        header: [["Volume Node Affinity:", [main, infoheader]]]
+        header: [["Volume Node Affinity:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#volumeNodeAffinity"]
-          pathtype: key_value
-        formatter: list
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
   listpad:
-    listgetter: generic_listgetter
+    listgetter: "generic_listgetter"
     listgetter_args:
-      _kind: Pod
+      _kind: "Pod"
       _pass_obj: true
       filters:
         pvc:
@@ -192,21 +192,21 @@ infoview:
           - list: "spec#volumes"
             key: "persistentVolumeClaim#claimName"
             values:
-              source: caller
+              source: "caller"
               path: "spec#claimRef#name"
           - key: "metadata#namespace"
             values:
-              source: caller
+              source: "caller"
               path: "spec#claimRef#namespace"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     on_activation:
-      call: resourceinfodispatch
-      kind: Pod
+      call: "resourceinfodispatch"
+      kind: "Pod"
     field_indexes:
-      Wide: [namespace, name, controller, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
-      Normal: [namespace, name, controller, pod_status, node_name, age, restarts, last_restart]
-      Compact: [namespace, name, pod_status, age, restarts, last_restart]
-    sortcolumn: pod_status
+      Wide: ["namespace", "name", "controller", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+      Normal: ["namespace", "name", "controller", "pod_status", "node_name", "age", "restarts", "last_restart"]
+      Compact: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+    sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
@@ -214,106 +214,106 @@ infoview:
         - paths:
           - "spec#initContainers"
           - "spec#containers"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
-          - subpath: image
+          - "name"
+          - subpath: "image"
             regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: raw
-        formatter: list
+          type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: generic
-          - type: version
+          - type: "generic"
+          - type: "version"
           field_separators:
-          - type: version
+          - type: "version"
       controller:
         header: "Controller:"
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
             key: controller
             eq: true
-          type: [kind, api_group, name]
-        formatter: list
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       last_restart:
         header: "Latest Restart:"
         paths:
         - path: "status#containerStatuses"
-          pathtype: items
+          pathtype: "items"
           subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
           when:
             key: "restartCount"
             gt: 0
-          action: latest
-          type: timestamp
+          action: "latest"
+          type: "timestamp"
         default: -1
-        formatter: age
-        align: right
+        formatter: "age"
+        align: "right"
       node_name:
         header: "Node:"
         path: "spec#nodeName"
-        type: host
+        type: "host"
         default: "<none>"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
         default: "<unset>"
-        type: address
-        formatter: address
+        type: "address"
+        formatter: "address"
       restarts:
         header: "Restarts:"
         paths:
         - path: "status#containerStatuses"
-          pathtype: items
+          pathtype: "items"
           subpath: "restartCount"
-          action: sum
-          type: int
+          action: "sum"
+          type: "int"
         formatting:
           field_colors:
-          - type: numerical
-        align: right
+          - type: "numerical"
+        align: "right"
         default: 0
   shortcuts:
     "Mount Options":
-      key: m
+      key: "m"
       helptext: "Show mount options"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Mount Options:"
-      itemgetter: get_list_as_list
+      itemgetter: "get_list_as_list"
       itemgetter_args:
         path: "spece#mountOptions"
     "Persistent Volume Claim":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "Open info page for Persistent Volume Claim"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: PersistentVolumeClaim
+        kind: "PersistentVolumeClaim"
         name_path: "spec#claimRef#name"
         namespace_path: "spec#claimRef#namespace"
     "Source properties":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "Show properties for volume source"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Source properties:"
-      itemgetter: get_volume_properties
-      formatting: [[windowwidget, default], [windowwidget, highlight]]
+      itemgetter: "get_volume_properties"
+      formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
       # This isn't supported for now
-      sortcolumn: key
+      sortcolumn: "key"

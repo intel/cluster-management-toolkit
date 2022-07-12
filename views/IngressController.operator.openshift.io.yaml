@@ -1,126 +1,126 @@
-kind: IngressController
-api_family: operator.openshift.io
-default_command: ingresscontrollers
+kind: "IngressController"
+api_family: "operator.openshift.io"
+default_command: "ingresscontrollers"
 listview:
-  name: Ingress Controllers
-  group: OpenShift
+  name: "Ingress Controllers"
+  group: "OpenShift"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Ingress Controller Info
+  name: "Ingress Controller Info"
   infopad:
     row_indexes:
-      Wide: [domain, namespace_label_selector, namespace_set_based_selector, client_tls_header, client_tls_ca_name, client_tls_client_certificate_policy, http_empty_requests_policy, endpoint_publishing_strategy, min_tls_version, tls_ciphers, desired_replicas, available_replicas]
-      Normal: [domain, namespace_label_selector, namespace_set_based_selector, client_tls_header, client_tls_ca_name, client_tls_client_certificate_policy, http_empty_requests_policy, endpoint_publishing_strategy, min_tls_version, tls_ciphers_ellipsise, desired_replicas, available_replicas]
+      Wide: ["domain", "namespace_label_selector", "namespace_set_based_selector", "client_tls_header", "client_tls_ca_name", "client_tls_client_certificate_policy", "http_empty_requests_policy", "endpoint_publishing_strategy", "min_tls_version", "tls_ciphers", "desired_replicas", "available_replicas"]
+      Normal: ["domain", "namespace_label_selector", "namespace_set_based_selector", "client_tls_header", "client_tls_ca_name", "client_tls_client_certificate_policy", "http_empty_requests_policy", "endpoint_publishing_strategy", "min_tls_version", "tls_ciphers_ellipsise", "desired_replicas", "available_replicas"]
     rows:
       available_replicas:
-        header: [["Available Replicas:", [main, infoheader]]]
+        header: [["Available Replicas:", ["main", "infoheader"]]]
         path: "status#availableReplicas"
         default: 0
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
-        align: right
+          - type: "numerical"
+        align: "right"
       client_tls_header:
-        header: [["Client TLS:", [main, infoheader]]]
+        header: [["Client TLS:", ["main", "infoheader"]]]
       client_tls_ca_name:
-        header: [["  CA Name:", [main, infoheader]]]
+        header: [["  CA Name:", ["main", "infoheader"]]]
         path: "spec#clientTLS#name"
         default: "<unset>"
-        type: str
+        type: "str"
       client_tls_client_certificate_policy:
-        header: [["  Client Certificate Policy:", [main, infoheader]]]
+        header: [["  Client Certificate Policy:", ["main", "infoheader"]]]
         path: "spec#clientCertificatePolicy"
         default: "<unset>"
-        type: str
+        type: "str"
       desired_replicas:
-        header: [["Desired Replicas:", [main, infoheader]]]
+        header: [["Desired Replicas:", ["main", "infoheader"]]]
         path: "spec#replicas"
         default: 0
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
-        align: right
+          - type: "numerical"
+        align: "right"
       domain:
-        header: [["Domain:", [main, infoheader]]]
+        header: [["Domain:", ["main", "infoheader"]]]
         path: "status#domain"
-        type: str
+        type: "str"
       endpoint_publishing_strategy:
-        header: [["Endpoint Publishing Strategy:", [main, infoheader]]]
+        header: [["Endpoint Publishing Strategy:", ["main", "infoheader"]]]
         path: "status#endpointPublishingStrategy#type"
-        type: str
+        type: "str"
       http_empty_requests_policy:
-        header: [["HTTP Empty Requests Policy:", [main, infoheader]]]
+        header: [["HTTP Empty Requests Policy:", ["main", "infoheader"]]]
         path: "spec#httpEmptyRequestsPolicy"
         default: "<unset>"
-        type: str
+        type: "str"
       min_tls_version:
-        header: [["Min TLS Version:", [main, infoheader]]]
+        header: [["Min TLS Version:", ["main", "infoheader"]]]
         path: "status#tlsProfile#minTLSVersion"
         default: "<unset>"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
       namespace_selector:
-        header: [["Namespace Selector:", [main, infoheader]]]
+        header: [["Namespace Selector:", ["main", "infoheader"]]]
         path: "spec#namespaceSelector#matchNames"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       namespace_label_selector:
-        header: [["Namespace Label Selector:", [main, infoheader]]]
+        header: [["Namespace Label Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#namespaceSelector#matchLabels"]
-          pathtype: key_value
+          pathtype: "key_value"
           default: ["<none>"]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       namespace_set_based_selector:
-        header: [["Namespace Set-based Selector:", [main, infoheader]]]
+        header: [["Namespace Set-based Selector:", ["main", "infoheader"]]]
         paths:
         - path: "spec#namespaceSelector#matchExpressions"
-          pathtype: match_expression
+          pathtype: "match_expression"
           default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: operator
-          - type: value
+          - type: "key"
+          - type: "operator"
+          - type: "value"
           field_separators:
-          - type: space
-          - type: no_pad
+          - type: "space"
+          - type: "no_pad"
       tls_ciphers:
-        header: [["T", [main, infoheader_shortcut]], ["LS Ciphers:", [main, infoheader]]]
+        header: [["T", ["main", "infoheader_shortcut"]], ["LS Ciphers:", ["main", "infoheader"]]]
         path: "status#tlsProfile#ciphers"
         default: "<unset>"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       tls_ciphers_ellipsise:
-        header: [["T", [main, infoheader_shortcut]], ["LS Ciphers:", [main, infoheader]]]
+        header: [["T", ["main", "infoheader_shortcut"]], ["LS Ciphers:", ["main", "infoheader"]]]
         path: "status#tlsProfile#ciphers"
         default: "<unset>"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
         formatting:
           ellipsise: 3
   shortcuts:
     "Show TLS cipher list":
-      key: t
-      modifier: shift
+      key: "t"
+      modifier: "shift"
       helptext: "List TLS ciphers"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "TLS Ciphers:"
-      itemgetter: get_list_as_list
+      itemgetter: "get_list_as_list"
       itemgetter_args:
         paths: ["status#tlsProfile#ciphers"]
       # Not supported for now
-      sortcolumn: cipher
+      sortcolumn: "cipher"

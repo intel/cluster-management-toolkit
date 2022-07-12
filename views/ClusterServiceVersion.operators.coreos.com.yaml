@@ -1,156 +1,156 @@
-kind: ClusterServiceVersion
-api_family: operators.coreos.com
-default_command: clusterserviceversions
+kind: "ClusterServiceVersion"
+api_family: "operators.coreos.com"
+default_command: "clusterserviceversions"
 command:
-- csvs
-- csv
+- "csvs"
+- "csv"
 listview:
-  name: Cluster Service Versions
-  group: API & Extendability
+  name: "Cluster Service Versions"
+  group: "API & Extendability"
   field_indexes:
-    Normal: [namespace, name, display_name, version, phase, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "display_name", "version", "phase", "age"]
+  sortcolumn: "namespace"
   fields:
     display_name:
       header: "Display Name:"
       path: "spec#displayName"
-      type: str
+      type: "str"
     phase:
       header: "Phase:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Failed:
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
             Pending:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Succeeded:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
     version:
       header: "Version:"
       path: "spec#version"
-      type: str
+      type: "str"
       formatting:
         field_colors:
-        - type: version
+        - type: "version"
 infoview:
   name: "Cluster Service Version Info"
   infopad:
     row_indexes:
-      Normal: [display_name, keywords, maturity, version, minimum_kubernetes_version, phase]
+      Normal: ["display_name", "keywords", "maturity", "version", "minimum_kubernetes_version", "phase"]
     rows:
       display_name:
-        header: [["Display Name:", [main, infoheader]]]
+        header: [["Display Name:", ["main", "infoheader"]]]
         path: "spec#displayName"
-        type: str
+        type: "str"
       keywords:
-        header: [["Keywords:", [main, infoheader]]]
+        header: [["Keywords:", ["main", "infoheader"]]]
         path: "spec#keywords"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       maturity:
-        header: [["Maturity:", [main, infoheader]]]
+        header: [["Maturity:", ["main", "infoheader"]]]
         path: "spec#maturity"
-        type: str
+        type: "str"
       minimum_kubernetes_version:
-        header: [["Minimum Kubernetes Version:", [main, infoheader]]]
+        header: [["Minimum Kubernetes Version:", ["main", "infoheader"]]]
         path: "spec#minKubeVersion"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
       phase:
-        header: [["Phase:", [main, infoheader]]]
+        header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Failed:
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               Pending:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Succeeded:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
       version:
-        header: [["Version:", [main, infoheader]]]
+        header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
   shortcuts:
     "Description":
-      key: d
-      modifier: shift
+      key: "d"
+      modifier: "shift"
       helptext: "Show description"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Description:"
-      itemgetter: get_strings_from_string
+      itemgetter: "get_strings_from_string"
       itemgetter_args:
         path: "spec#description"
     "Maintainers":
-      key: m
+      key: "m"
       helptext: "Show maintainers"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Maintainers:"
       headers: ["Name:", "E-mail:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#maintainers"
         fields:
         - name
         - email
     "Installation Spec":
-      key: i
+      key: "i"
       helptext: "Show installation specification"
-      action: call
-      action_call: view_yaml
+      action: "call"
+      action_call: "view_yaml"
       action_args:
-        title: Installation Specification
+        title: "Installation Specification"
         _pass_obj: true
         path: "spec#install"
         include_root: true
     "Supported Installation Modes":
-      key: i
-      modifier: shift
+      key: "i"
+      modifier: "shift"
       helptext: "Show supported installation modes"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Supported installation modes:"
       headers: ["Mode:", "Supported:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#installModes"
         fields:
         - type
         - supported
-      formatting: [[windowwidget, default], [windowwidget, highlight]]
+      formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
       # This isn't supported for now
       "sortcolumn": "type"
     "Custom Resource Definitions":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Show custom resource definitions"
-      action: call
-      action_call: view_yaml
+      action: "call"
+      action_call: "view_yaml"
       action_args:
-        title: Custom Resource Definitions
+        title: "Custom Resource Definitions"
         _pass_obj: true
         path: "spec#customresourcedefinitions"
         include_root: true

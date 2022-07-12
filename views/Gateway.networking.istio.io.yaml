@@ -1,57 +1,57 @@
-kind: Gateway
-api_family: networking.istio.io
-default_command: gateways
+kind: "Gateway"
+api_family: "networking.istio.io"
+default_command: "gateways"
 command:
-- gws
-- gw
+- "gws"
+- "gw"
 listview:
-  name: Gateways
-  group: Istio
+  name: "Gateways"
+  group: "Istio"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Gateway Info
+  name: "Gateway Info"
   infopad:
     row_indexes:
-      Normal: [selector]
+      Normal: ["selector"]
     rows:
       selector:
-        header: [["Selector:", [main, infoheader]]]
+        header: [["Selector:", ["main", "infoheader"]]]
         paths:
         - path: "spec#selector"
-          pathtype: key_value
-        formatter: list
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
   listpad:
     path: "spec#servers"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [hosts, port]
-    sortcolumn: hosts
+      Normal: ["hosts", "port"]
+    sortcolumn: "hosts"
     fields:
       hosts:
         header: "Hosts:"
-        path: hosts
-        type: raw
-        formatter: list
+        path: "hosts"
+        type: "raw"
+        formatter: "list"
       port:
         header: "Port:"
         paths:
         - path: [["port#name"], ["port#number"], ["port#protocol"]]
-          pathtype: tuple
-        type: raw
-        formatter: list
+          pathtype: "tuple"
+        type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: service
-          - type: port
-          - type: protocol
+          - type: "service"
+          - type: "port"
+          - type: "protocol"
           field_separators:
-          - type: port
-          - type: service
+          - type: "port"
+          - type: "service"

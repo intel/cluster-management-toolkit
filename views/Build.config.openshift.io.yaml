@@ -1,40 +1,40 @@
-kind: Build
-api_family: config.openshift.io
-default_command: builds.config.openshift.io
+kind: "Build"
+api_family: "config.openshift.io"
+default_command: "builds.config.openshift.io"
 command:
-- builds.config
-- build.config
+- "builds.config"
+- "build.config"
 listview:
-  name: Builds (Config)
-  group: OpenShift
+  name: "Builds (Config)"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Build Info (Config)
+  name: "Build Info (Config)"
   infopad:
     row_indexes:
-      Normal: [cluster_version]
+      Normal: ["cluster_version"]
     rows:
       cluster_version:
-        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
+          - "name"
           when:
-            key: kind
-            eq: ClusterVersion
+            key: "kind"
+            eq: "ClusterVersion"
         default: "<none>"
   shortcuts:
     "Cluster Version":
-      key: v
-      modifier: shift
+      key: "v"
+      modifier: "shift"
       helptext: "Open info page for Cluster Version"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         owner_reference_path: "metadata#ownerReferences"
-        kind: ClusterVersion
-        api_family: config.openshift.io
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"

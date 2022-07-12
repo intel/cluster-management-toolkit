@@ -1,192 +1,192 @@
-kind: Role
-api_family: rbac.authorization.k8s.io
-default_command: roles
+kind: "Role"
+api_family: "rbac.authorization.k8s.io"
+default_command: "roles"
 listview:
-  name: Roles
-  group: Authorization & Access Control
+  name: "Roles"
+  group: "Authorization & Access Control"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Role Info
+  name: "Role Info"
   infopad:
   listpad:
-    listgetter: listgetter_policy_rules
-    infogetter: generic_infogetter
+    listgetter: "listgetter_policy_rules"
+    infogetter: "generic_infogetter"
     field_indexes:
-      Wide: [resource, api_group, non_resource_urls, resource_names, verbs_all, verbs_get, verbs_list, verbs_watch, verbs_create, verbs_update, verbs_patch, verbs_delete, verbs_misc]
-      Normal: [resource, api_group, non_resource_urls, resource_names, verbs]
-    sortcolumn: api_group
+      Wide: ["resource", "api_group", "non_resource_urls", "resource_names", "verbs_all", "verbs_get", "verbs_list", "verbs_watch", "verbs_create", "verbs_update", "verbs_patch", "verbs_delete", "verbs_misc"]
+      Normal: ["resource", "api_group", "non_resource_urls", "resource_names", "verbs"]
+    sortcolumn: "api_group"
     fields:
       api_group:
         header: "API-Group:"
         path: "api_group"
-        type: str
+        type: "str"
       non_resource_urls:
         header: "Non-Resource URLs:"
         path: "non_resource_urls"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       resource:
         header: "Resource:"
         path: "resource"
-        type: str
+        type: "str"
       resource_names:
         header: "Resource Names:"
         path: "resource_names"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       verbs:
         header: "Verbs:"
         path: "verbs"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       verbs_all:
         header: "All:"
         paths:
         - path: "verbs_all"
-          pathtype: remap
+          pathtype: "remap"
           substitutions:
             true: "y"
             false: "n"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             substitutions:
               "y":
-                context: strings
-                type: positive_check
+                context: "strings"
+                type: "positive_check"
               "n":
-                context: strings
-                type: negative_ballot
+                context: "strings"
+                type: "negative_ballot"
       verbs_create:
         header: "Create:"
         paths:
         - path: "verbs_create"
-          pathtype: remap
+          pathtype: "remap"
           substitutions:
             true: "y"
             false: "n"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             substitutions:
               "y":
-                context: strings
-                type: positive_check
+                context: "strings"
+                type: "positive_check"
               "n":
-                context: strings
-                type: negative_ballot
+                context: "strings"
+                type: "negative_ballot"
       verbs_delete:
         header: "Delete:"
         paths:
         - path: "verbs_delete"
-          pathtype: remap
+          pathtype: "remap"
           substitutions:
             true: "y"
             false: "n"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             substitutions:
               "y":
-                context: strings
-                type: positive_check
+                context: "strings"
+                type: "positive_check"
               "n":
-                context: strings
-                type: negative_ballot
+                context: "strings"
+                type: "negative_ballot"
       verbs_get:
         header: "Get:"
         paths:
         - path: "verbs_get"
-          pathtype: remap
+          pathtype: "remap"
           substitutions:
             true: "y"
             false: "n"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             substitutions:
               "y":
-                context: strings
-                type: positive_check
+                context: "strings"
+                type: "positive_check"
               "n":
-                context: strings
-                type: negative_ballot
+                context: "strings"
+                type: "negative_ballot"
       verbs_list:
         header: "List:"
         paths:
         - path: "verbs_list"
-          pathtype: remap
+          pathtype: "remap"
           substitutions:
             true: "y"
             false: "n"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             substitutions:
               "y":
-                context: strings
-                type: positive_check
+                context: "strings"
+                type: "positive_check"
               "n":
-                context: strings
-                type: negative_ballot
+                context: "strings"
+                type: "negative_ballot"
       verbs_misc:
         header: "Other:"
         path: "verbs_misc"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       verbs_patch:
         header: "Patch:"
         paths:
         - path: "verbs_patch"
-          pathtype: remap
+          pathtype: "remap"
           substitutions:
             true: "y"
             false: "n"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             substitutions:
               "y":
-                context: strings
-                type: positive_check
+                context: "strings"
+                type: "positive_check"
               "n":
-                context: strings
-                type: negative_ballot
+                context: "strings"
+                type: "negative_ballot"
       verbs_update:
         header: "Update:"
         paths:
         - path: "verbs_update"
-          pathtype: remap
+          pathtype: "remap"
           substitutions:
             true: "y"
             false: "n"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             substitutions:
               "y":
-                context: strings
-                type: positive_check
+                context: "strings"
+                type: "positive_check"
               "n":
-                context: strings
-                type: negative_ballot
+                context: "strings"
+                type: "negative_ballot"
       verbs_watch:
         header: "Watch:"
         paths:
         - path: "verbs_watch"
-          pathtype: remap
+          pathtype: "remap"
           substitutions:
             true: "y"
             false: "n"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             substitutions:
               "y":
-                context: strings
-                type: positive_check
+                context: "strings"
+                type: "positive_check"
               "n":
-                context: strings
-                type: negative_ballot
+                context: "strings"
+                type: "negative_ballot"

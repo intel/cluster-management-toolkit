@@ -1,38 +1,38 @@
-kind: __PrometheusRuleData
-api_family: monitoring.coreos.com
-default_command: __
+kind: "__PrometheusRuleData"
+api_family: "monitoring.coreos.com"
+default_command: "__"
 infoview:
-  name: Prometheus Rule Data
+  name: "Prometheus Rule Data"
   annotations: null
   labels: null
   infopad:
     name_path: ""
     creation_timestamp_path: ""
     row_indexes:
-      Normal: [name, group, rule_type, duration]
+      Normal: ["name", "group", "rule_type", "duration"]
     rows:
       duration:
-        header: [["Duration:", [main, infoheader]]]
-        path: for
+        header: [["Duration:", ["main", "infoheader"]]]
+        path: "for"
         default: "<unset>"
-        type: str
-        formatter: numerical_with_units
+        type: "str"
+        formatter: "numerical_with_units"
       group:
-        header: [["Group:", [main, infoheader]]]
+        header: [["Group:", ["main", "infoheader"]]]
         path: "_extra_data#group"
-        type: raw
+        type: "raw"
       name:
-        header: [["Name:", [main, infoheader]]]
+        header: [["Name:", ["main", "infoheader"]]]
         path: "_extra_data#name"
-        type: raw
+        type: "raw"
       rule_type:
-        header: [["Rule Type:", [main, infoheader]]]
+        header: [["Rule Type:", ["main", "infoheader"]]]
         path: "_extra_data#rtype"
-        type: raw
+        type: "raw"
   logpad:
-    infogetter: logpad_msg_getter
+    infogetter: "logpad_msg_getter"
     infogetter_args:
-      path: expr
+      path: "expr"
     timestamps: false
   shortcuts:
     "Last Applied Configuration": {}

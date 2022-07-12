@@ -1,39 +1,39 @@
-kind: ConsoleNotification
-api_family: console.openshift.io
-default_command: consolenotifications.console.openshift.io
+kind: "ConsoleNotification"
+api_family: "console.openshift.io"
+default_command: "consolenotifications.console.openshift.io"
 listview:
-  name: Console Notifications
-  group: OpenShift
+  name: "Console Notifications"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, text, location, age]
+    Normal: ["name", "text", "location", "age"]
   fields:
     location:
       header: "Location:"
       path: "spec#location"
-      type: str
+      type: "str"
     text:
       header: "Text:"
       path: "spec#text"
-      type: str
+      type: "str"
 infoview:
   name: "Console Notification Info"
   infopad:
     row_indexes:
-      Normal: [text, location, bgcolor, color]
+      Normal: ["text", "location", "bgcolor", "color"]
     rows:
       bgcolor:
-        header: [["Background Colour:", [main, infoheader]]]
+        header: [["Background Colour:", ["main", "infoheader"]]]
         path: "spec#backgroundColor"
-        type: str
+        type: "str"
       color:
-        header: [["Colour:", [main, infoheader]]]
+        header: [["Colour:", ["main", "infoheader"]]]
         path: "spec#color"
-        type: str
+        type: "str"
       location:
-        header: [["Location:", [main, infoheader]]]
+        header: [["Location:", ["main", "infoheader"]]]
         path: "spec#location"
-        type: str
+        type: "str"
       text:
-        header: [["Text:", [main, infoheader]]]
+        header: [["Text:", ["main", "infoheader"]]]
         path: "spec#text"
-        type: str
+        type: "str"

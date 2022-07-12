@@ -1,73 +1,73 @@
-kind: OperatorGroup
-api_family: operators.coreos.com
-default_command: operatorgroups
+kind: "OperatorGroup"
+api_family: "operators.coreos.com"
+default_command: "operatorgroups"
 command:
-- og
+- "og"
 listview:
-  name: Operator Groups
-  group: API & Extendability
+  name: "Operator Groups"
+  group: "API & Extendability"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Operator Group Info
+  name: "Operator Group Info"
   infopad:
     row_indexes:
-      Normal: [target_namespaces, namespaces, last_updated]
+      Normal: ["target_namespaces", "namespaces", "last_updated"]
     rows:
       last_updated:
-        header: [["Last Updated:", [main, infoheader]]]
+        header: [["Last Updated:", ["main", "infoheader"]]]
         path: "status#lastUpdated"
         default: -1
-        type: timestamp
-        formatter: timestamp
+        type: "timestamp"
+        formatter: "timestamp"
       namespaces:
-        header: [["Name", [main, infoheader]], ["s", [main, infoheader_shortcut]], ["paces:", [main, infoheader]]]
+        header: [["Name", ["main", "infoheader"]], ["s", ["main", "infoheader_shortcut"]], ["paces:", ["main", "infoheader"]]]
         path: "status#namespaces"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: namespace
+          - type: "namespace"
       target_namespaces:
-        header: [["T", [main, infoheader_shortcut]], ["arget Namespaces:", [main, infoheader]]]
+        header: [["T", ["main", "infoheader_shortcut"]], ["arget Namespaces:", ["main", "infoheader"]]]
         path: "spec#targetNamespaces"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: namespace
+          - type: "namespace"
   shortcuts:
     "Show Namespace list":
-      key: s
+      key: "s"
       helptext: "List Namespaces"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Namespaces:"
       selectable: true
-      itemgetter: get_list_as_list
+      itemgetter: "get_list_as_list"
       itemgetter_args:
         paths: ["status#namespaces"]
       # Not supported for now
-      sortcolumn: namespace
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      sortcolumn: "namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
-        kind: Namespace
+        kind: "Namespace"
         name_path: 0
     "Show target Namespace list":
-      key: t
-      modifier: shift
+      key: "t"
+      modifier: "shift"
       helptext: "List target Namespaces"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Target Namespaces:"
       selectable: true
-      itemgetter: get_list_as_list
+      itemgetter: "get_list_as_list"
       itemgetter_args:
         paths: ["spec#targetNamespaces"]
       # Not supported for now
-      sortcolumn: namespace
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      sortcolumn: "namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
-        kind: Namespace
+        kind: "Namespace"
         name_path: 0

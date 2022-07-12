@@ -1,204 +1,204 @@
-kind: ClusterIssuer
-api_family: cert-manager.io
-default_command: clusterissuers
+kind: "ClusterIssuer"
+api_family: "cert-manager.io"
+default_command: "clusterissuers"
 listview:
-  name: Cluster Issuers
-  group: Certificate Management
+  name: "Cluster Issuers"
+  group: "Certificate Management"
   field_indexes:
-    Normal: [name, condition_ready, age]
+    Normal: ["name", "condition_ready", "age"]
   fields:
     condition_ready:
       header: "Ready:"
       paths:
       - path: "status#conditions"
-        pathtype: items
-        subpath: status
+        pathtype: "items"
+        subpath: "status"
         when:
-        - key: type
-          eq: Ready
+        - key: "type"
+          eq: "Ready"
         default: "<unknown>"
-      formatter: value_mapper
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "False":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
 infoview:
-  name: Cluster Issuer Info
+  name: "Cluster Issuer Info"
   infopad:
     row_indexes:
-      Normal: [condition_ready, type, crl_distribution_points, ca_secret_name]
+      Normal: ["condition_ready", "type", "crl_distribution_points", "ca_secret_name"]
     rows:
       ca_secret_name:
-        header: [["C", [main, infoheader_shortcut]], ["A Secret Name:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["A Secret Name:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#ca#secretName"]
-          pathtype: str
+          pathtype: "str"
       condition_ready:
-        header: [["Ready:", [main, infoheader]]]
+        header: [["Ready:", ["main", "infoheader"]]]
         paths:
         - path: "status#conditions"
-          pathtype: items
-          subpath: status
+          pathtype: "items"
+          subpath: "status"
           when:
-          - key: type
-            eq: Ready
+          - key: "type"
+            eq: "Ready"
           default: "<unknown>"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "<unknown>":
                 field_colors:
-                - context: main
-                  type: status_unknown
+                - context: "main"
+                  type: "status_unknown"
       crl_distribution_points:
-        header: [["CRL Distribution Points:", [main, infoheader]]]
+        header: [["CRL Distribution Points:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#selfSigned#crlDistributionPoints", "spec#ca#crlDistributionPoints"]
-          pathtype: str
+          pathtype: "str"
         default: ""
       type:
-        header: [["Type:", [main, infoheader]]]
+        header: [["Type:", ["main", "infoheader"]]]
         paths:
         - path: "spec"
-          pathtype: substitution
-          subpath: selfSigned
+          pathtype: "substitution"
+          subpath: "selfSigned"
           when:
-          - key: selfSigned
-            notnone: true
+          - key: "selfSigned"
+            notnone: "true"
           substitute: "Self-Signed"
         - path: "spec"
-          pathtype: substitution
-          subpath: ca
+          pathtype: "substitution"
+          subpath: "ca"
           when:
-          - key: ca
+          - key: "ca"
             notnone: true
           substitute: "CA"
         - path: "spec"
-          pathtype: substitution
-          subpath: vault
+          pathtype: "substitution"
+          subpath: "vault"
           when:
-          - key: vault
+          - key: "vault"
             notnone: true
           substitute: "Vault"
         - path: "spec"
-          pathtype: substitution
-          subpath: venafi
+          pathtype: "substitution"
+          subpath: "venafi"
           when:
-          - key: venafi
+          - key: "venafi"
             notnone: true
           substitute: "Venafi"
         - path: "spec"
-          pathtype: substitution
-          subpath: external
+          pathtype: "substitution"
+          subpath: "external"
           when:
-          - key: external
+          - key: "external"
             notnone: true
           substitute: "External"
         - path: "spec"
-          pathtype: substitution
-          subpath: acme
+          pathtype: "substitution"
+          subpath: "acme"
           when:
-          - key: acme
+          - key: "acme"
             notnone: true
           substitute: "ACME"
         default: "<unknown>"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "<unknown>":
                 field_colors:
-                - context: main
-                  type: status_unknown
+                - context: "main"
+                  type: "status_unknown"
   listpad:
     on_activation:
-      call: resourceinfodispatch
-      kind: Certificate
-      api_family: cert-manager.io
-    listgetter: generic_listgetter
+      call: "resourceinfodispatch"
+      kind: "Certificate"
+      api_family: "cert-manager.io"
+    listgetter: "generic_listgetter"
     listgetter_args:
-      _kind: Certificate
-      _api_family: cert-manager.io
+      _kind: "Certificate"
+      _api_family: "cert-manager.io"
       _pass_obj: true
       filters:
         issuer:
           enabled: true
           allow:
           - key: "spec#issuerRef#kind"
-            values: [ClusterIssuer]
+            values: ["ClusterIssuer"]
           - key: "spec#issuerRef#name"
             values:
-              source: caller
+              source: "caller"
               path: "metadata#name"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [name, condition_ready, secret, status_message]
+      Normal: ["name", "condition_ready", "secret", "status_message"]
     fields:
       name:
         header: "Name:"
         path: "metadata#name"
-        type: str
+        type: "str"
       condition_ready:
         header: "Ready:"
         paths:
         - path: "status#conditions"
-          pathtype: items
-          subpath: status
+          pathtype: "items"
+          subpath: "status"
           when:
           - key: type
             eq: Ready
           default: "<unknown>"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       secret:
         header: "Secret:"
         path: "spec#secretName"
-        type: str
+        type: "str"
       status_message:
         header: "Status:"
         paths:
         - path: "status#conditions"
-          pathtype: items
-          subpath: message
+          pathtype: "items"
+          subpath: "message"
           when:
-          - key: type
-            eq: Ready
+          - key: "type"
+            eq: "Ready"
           default: ""
   shortcuts:
     "CA Secret Name":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for CA Secret"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Secret
+        kind: "Secret"
         name_path: "spec#ca#secretName"
         namespace_path: "metadata#namespace"

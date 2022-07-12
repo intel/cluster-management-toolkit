@@ -1,33 +1,33 @@
-kind: Image
-api_family: config.openshift.io
-default_command: images.config.openshift.io
+kind: "Image"
+api_family: "config.openshift.io"
+default_command: "images.config.openshift.io"
 command:
-- image.config.openshift.io
-- images.config
-- image.config
-- osconfimages
-- osconfimage
-- osconfimg
+- "image.config.openshift.io"
+- "images.config"
+- "image.config"
+- "osconfimages"
+- "osconfimage"
+- "osconfimg"
 listview:
-  name: Images (Config)
-  group: OpenShift
+  name: "Images (Config)"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Image Info (Config)
+  name: "Image Info (Config)"
   infopad:
     row_indexes:
-      Normal: [cluster_version, additional_trusted_ca, internal_registry_hostname, external_registry_hostnames]
+      Normal: ["cluster_version", "additional_trusted_ca", "internal_registry_hostname", "external_registry_hostnames"]
     rows:
       additional_trusted_ca:
-        header: [["Additional Trusted CA:", [main, infoheader]]]
+        header: [["Additional Trusted CA:", ["main", "infoheader"]]]
         path: "spec#additionalTrustedCA#name"
-        type: str
+        type: "str"
       cluster_version:
-        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
           - name
           when:
@@ -35,23 +35,23 @@ infoview:
             eq: ClusterVersion
         default: "<none>"
       external_registry_hostnames:
-        header: [["External Registry Hostnames:", [main, infoheader]]]
+        header: [["External Registry Hostnames:", ["main", "infoheader"]]]
         path: "status#externalRegistryHostnames"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       internal_registry_hostname:
-        header: [["Internal Registry Hostname:", [main, infoheader]]]
+        header: [["Internal Registry Hostname:", ["main", "infoheader"]]]
         path: "status#internalRegistryHostname"
-        type: str
+        type: "str"
   shortcuts:
     "Cluster Version":
-      key: v
-      modifier: shift
+      key: "v"
+      modifier: "shift"
       helptext: "Open info page for Cluster Version"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         owner_reference_path: "metadata#ownerReferences"
-        kind: ClusterVersion
-        api_family: config.openshift.io
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"

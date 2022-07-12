@@ -1,172 +1,172 @@
-kind: Cluster
-api_family: cluster.x-k8s.io
-default_command: clusters
+kind: "Cluster"
+api_family: "cluster.x-k8s.io"
+default_command: "clusters"
 command:
-- cl
+- "cl"
 listview:
-  name: Clusters
-  group: Cluster Configuration
+  name: "Clusters"
+  group: "Cluster Configuration"
   field_indexes:
-    Normal: [namespace, name, phase, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "phase", "age"]
+  sortcolumn: "namespace"
   fields:
     phase:
       header: "Phase:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Pending:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Provisioning:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Provisioned:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Deleting:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Failed:
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
 infoview:
-  name: Cluster Info
+  name: "Cluster Info"
   infopad:
     row_indexes:
-      Normal: [cluster_network_header, cluster_network_cidr_blocks, cluster_network_service_domain, control_plane, control_plane_endpoint, control_plane_ready, infrastructure, infrastructure_ready, phase]
+      Normal: ["cluster_network_header", "cluster_network_cidr_blocks", "cluster_network_service_domain", "control_plane", "control_plane_endpoint", "control_plane_ready", "infrastructure", "infrastructure_ready", "phase"]
     rows:
       cluster_network_header:
-        header: [["Cluster Network:", [main, infoheader]]]
+        header: [["Cluster Network:", ["main", "infoheader"]]]
       cluster_network_cidr_blocks:
-        header: [["  Pod CIDR Blocks:", [main, infoheader]]]
+        header: [["  Pod CIDR Blocks:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#clusterNetwork#pods#cidrBlocks"]
-          pathtype: list
-        formatter: address
+          pathtype: "list"
+        formatter: "address"
       cluster_network_service_domain:
-        header: [["  Service Domain:", [main, infoheader]]]
+        header: [["  Service Domain:", ["main", "infoheader"]]]
         path: "spec#clusterNetwork#serviceDomain"
-        type: str
+        type: "str"
       control_plane:
-        header: [["C", [main, infoheader_shortcut]], ["ontrol Plane:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontrol Plane:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#controlPlaneRef#kind"], ["spec#controlPlaneRef#namespace"], ["spec#controlPlaneRef#name"]]
-          pathtype: tuple
-          type: [kind, name, name]
-        formatter: list
+          pathtype: "tuple"
+          type: ["kind", "name", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: namespace
-          - type: generic
+          - type: "kind"
+          - type: "namespace"
+          - type: "generic"
           field_separators:
-          - type: kind
-          - type: namespace
+          - type: "kind"
+          - type: "namespace"
       control_plane_endpoint:
-        header: [["Control Plane Endpoint:", [main, infoheader]]]
+        header: [["Control Plane Endpoint:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#controlPlaneEndpoint#host"], ["spec#controlPlaneEndpoint#port"]]
-          pathtype: tuple
-          type: [name, name]
+          pathtype: "tuple"
+          type: ["name", "name"]
         # FIXME: The formatter needs to be improved to handle lists that contain addresses, etc.
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: address
-          - type: port
+          - type: "address"
+          - type: "port"
           field_separators:
-          - type: port
+          - type: "port"
       control_plane_ready:
-        header: [["Control Plane Ready:", [main, infoheader]]]
+        header: [["Control Plane Ready:", ["main", "infoheader"]]]
         path: "status#controlPlaneReady"
-        type: bool
-        formatter: value_mapper
+        type: "bool"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
       infrastructure:
-        header: [["I", [main, infoheader_shortcut]], ["nfrastructure:", [main, infoheader]]]
+        header: [["I", ["main", "infoheader_shortcut"]], ["nfrastructure:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#infrastructureRef#kind"], ["spec#infrastructureRef#namespace"], ["spec#infrastructureRef#name"]]
-          pathtype: tuple
-          type: [kind, name, name]
-        formatter: list
+          pathtype: "tuple"
+          type: ["kind", "name", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: namespace
-          - type: generic
+          - type: "kind"
+          - type: "namespace"
+          - type: "generic"
           field_separators:
-          - type: kind
-          - type: namespace
+          - type: "kind"
+          - type: "namespace"
       infrastructure_ready:
-        header: [["Infrastructure Ready:", [main, infoheader]]]
+        header: [["Infrastructure Ready:", ["main", "infoheader"]]]
         path: "status#infrastructureReady"
-        type: bool
-        formatter: value_mapper
+        type: "bool"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
       phase:
-        header: [["Phase:", [main, infoheader]]]
+        header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Pending:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Provisioning:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Provisioned:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Deleting:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Failed:
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
   shortcuts:
     "Open Control Plane":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for Cluster Plane"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind_path: "spec#controlPlaneRef#kind"
@@ -174,11 +174,11 @@ infoview:
         name_path: "spec#controlPlaneRef#name"
         namespace_path: "spec#controlPlaneRef#namespace"
     "Open infrastructure":
-      key: i
-      modifier: shift
+      key: "i"
+      modifier: "shift"
       helptext: "Open info page for infrastructure"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind_path: "spec#infrastructureRef#kind"

@@ -1,40 +1,40 @@
-kind: MachineHealthCheck
-api_family: cluster.x-k8s.io
-default_command: machinehealthchecks.cluster.x-k8s.io
+kind: "MachineHealthCheck"
+api_family: "cluster.x-k8s.io"
+default_command: "machinehealthchecks.cluster.x-k8s.io"
 command:
-- x-mhcs
-- x-mhc
+- "x-mhcs"
+- "x-mhc"
 listview:
-  name: Machine Health Checks
-  group: Cluster Configuration
+  name: "Machine Health Checks"
+  group: "Cluster Configuration"
   field_indexes:
-    Normal: [namespace, name, cluster, max_unhealthy, expected_machines, current_healthy, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "cluster", "max_unhealthy", "expected_machines", "current_healthy", "age"]
+  sortcolumn: "namespace"
   fields:
     cluster:
       header: "Cluster:"
       path: "spec#clusterName"
-      type: str
+      type: "str"
     current_healthy:
       header: "Current Healthy:"
       path: "status#currentHealthy"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     expected_machines:
       header: "Expected Machines:"
       path: "status#expectedMachines"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     max_unhealthy:
       header: "Max Unhealthy:"
       paths:
       - path: ["spec#unhealthyRange", "spec#maxUnhealthy"]
-        pathtype: str
-      formatter: numerical_with_units
-      align: right
+        pathtype: "str"
+      formatter: "numerical_with_units"
+      align: "right"

@@ -1,236 +1,236 @@
-kind: __Inventory
-default_command: inventory
+kind: "__Inventory"
+default_command: "inventory"
 command:
-- inv
+- "inv"
 listview:
-  name: Inventory
-  group: Administration
-  listgetter: get_inventory_list
-  infogetter: generic_infogetter
+  name: "Inventory"
+  group: "Administration"
+  listgetter: "get_inventory_list"
+  infogetter: "generic_infogetter"
   helptext: helptexts.inventorylist
   labels: false
   field_indexes:
-    Wide: [name, ips, ansible_groups, status]
-    Normal: [name, ips_ellipsise, ansible_groups, status]
-  sortcolumn: name
+    Wide: ["name", "ips", "ansible_groups", "status"]
+    Normal: ["name", "ips_ellipsise", "ansible_groups", "status"]
+  sortcolumn: "name"
   actions:
     playbooklist:
-      context: inventory
+      context: "inventory"
   fields:
     ansible_groups:
       header: "Ansible Groups:"
-      path: ansible_groups
-      type: raw
-      formatter: list
+      path: "ansible_groups"
+      type: "raw"
+      formatter: "list"
     ips:
       header: "IPs:"
-      path: ips
-      type: raw
-      formatter: list
+      path: "ips"
+      type: "raw"
+      formatter: "list"
     ips_ellipsise:
       header: "IPs:"
-      path: ips
-      type: raw
-      formatter: list
+      path: "ips"
+      type: "raw"
+      formatter: "list"
       formatting:
         ellipsise: 3
     name:
       header: "Name:"
-      path: name
-      type: str
+      path: "name"
+      type: "str"
     status:
       header: "Status:"
-      path: status
-      type: str
-      formatter: value_mapper
+      path: "status"
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "COULD NOT RESOLVE":
               field_colors:
-              - context: main
-                type: status_critical
+              - context: "main"
+                type: "status_critical"
             "FAILED!":
               field_colors:
-              - context: main
-                type: status_warning
+              - context: "main"
+                type: "status_warning"
             "MISSING INTERPRETER?":
               field_colors:
-              - context: main
-                type: status_warning
+              - context: "main"
+                type: "status_warning"
             "SUCCESS":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "UNKNOWN":
               field_colors:
-              - context: main
-                type: status_unknown
+              - context: "main"
+                type: "status_unknown"
             "UNREACHABLE!":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
   shortcuts:
     "SSH to Host:":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "SSH to host"
-      action: call
-      action_call: ssh_to_host
+      action: "call"
+      action_call: "ssh_to_host"
       action_args:
         _pass_obj: true
-        name_path: name
+        name_path: "name"
     # Overrides:
     "Edit resource": {}
     "View YAML dump": {}
 infoview:
-  name: Inventory Info
+  name: "Inventory Info"
   infopad:
     objgetter: objgetter_ansible_facts
-    name_path: ansible_hostname
+    name_path: "ansible_hostname"
     creation_timestamp_path: ""
     row_indexes:
-      Normal: [kernel_version, product_name, bios_version, bios_date, cores, threads_per_core, processors, ram, default_ipv4_address, default_ipv6_address]
+      Normal: ["kernel_version", "product_name", "bios_version", "bios_date", "cores", "threads_per_core", "processors", "ram", "default_ipv4_address", "default_ipv6_address"]
     rows:
       bios_date:
-        header: [["BIOS date:", [main, infoheader]]]
-        path: ansible_bios_date
-        type: str
-        formatter: numerical_with_units
+        header: [["BIOS date:", ["main", "infoheader"]]]
+        path: "ansible_bios_date"
+        type: "str"
+        formatter: "numerical_with_units"
       bios_version:
-        header: [["BIOS version:", [main, infoheader]]]
-        path: ansible_bios_version
-        type: str
+        header: [["BIOS version:", ["main", "infoheader"]]]
+        path: "ansible_bios_version"
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
       cores:
-        header: [["Cores:", [main, infoheader]]]
-        path: ansible_processor_cores
-        type: int
+        header: [["Cores:", ["main", "infoheader"]]]
+        path: "ansible_processor_cores"
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       default_ipv4_address:
-        header: [["Default IPv4 Address:", [main, infoheader]]]
+        header: [["Default IPv4 Address:", ["main", "infoheader"]]]
         path: "ansible_default_ipv4#address"
         default: "<none>"
-        type: raw
-        formatter: address
+        type: "raw"
+        formatter: "address"
       default_ipv6_address:
-        header: [["Default IPv6 Address:", [main, infoheader]]]
+        header: [["Default IPv6 Address:", ["main", "infoheader"]]]
         path: "ansible_default_ipv6#address"
         default: "<none>"
-        type: raw
-        formatter: address
+        type: "raw"
+        formatter: "address"
       kernel_version:
-        header: [["Kernel version:", [main, infoheader]]]
+        header: [["Kernel version:", ["main", "infoheader"]]]
         paths:
-        - path: [[ansible_kernel], [ansible_kernel_version]]
-          pathtype: tuple
-        formatter: list
+        - path: [["ansible_kernel"], ["ansible_kernel_version"]]
+          pathtype: "tuple"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: version
-          - type: version
+          - type: "version"
+          - type: "version"
           field_separators:
-          - type: space
+          - type: "space"
       processors:
-        header: [["Processors:", [main, infoheader]]]
+        header: [["Processors:", ["main", "infoheader"]]]
         path: "ansible_processor_count"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       product_name:
-        header: [["Product Name:", [main, infoheader]]]
+        header: [["Product Name:", ["main", "infoheader"]]]
         paths:
         - path: ["ansible_product_name", "ansible_board_name"]
-          pathtype: value
-        type: str
+          pathtype: "value"
+        type: "str"
       ram:
-        header: [["RAM:", [main, infoheader]]]
+        header: [["RAM:", ["main", "infoheader"]]]
         paths:
-        - path: [[ansible_memtotal_mb], "MB"]
-          pathtype: tuple
-        formatter: list
+        - path: [["ansible_memtotal_mb"], "MB"]
+          pathtype: "tuple"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: numerical
-          - type: unit
+          - type: "numerical"
+          - type: "unit"
           field_separators:
-          - type: no_pad
+          - type: "no_pad"
       threads_per_core:
-        header: [["Threads per Core:", [main, infoheader]]]
-        path: ansible_processor_threads_per_core
-        type: numerical
+        header: [["Threads per Core:", ["main", "infoheader"]]]
+        path: "ansible_processor_threads_per_core"
+        type: "numerical"
   listpad:
-    listgetter: listgetter_ansible_volumes
-    infogetter: generic_infogetter
+    listgetter: "listgetter_ansible_volumes"
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [mountpoint, device, fstype, model, disk_usage_partition, options]
-    sortcolumn: mountpoint
+      Normal: ["mountpoint", "device", "fstype", "model", "disk_usage_partition", "options"]
+    sortcolumn: "mountpoint"
     fields:
       device:
         header: "Device:"
-        path: device
-        type: str
+        path: "device"
+        type: "str"
       disk_usage_partition:
         header: "Disk Usage:"
         paths:
-        - path: [[partition_size_used], [partition_size_total]]
-          pathtype: tuple
-        type: raw
-        formatter: list
+        - path: [["partition_size_used"], ["partition_size_total"]]
+          pathtype: "tuple"
+        type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
           # FIXME: we want numerical_with_units
-          - type: numerical
+          - type: "numerical"
           # FIXME: we want numerical_with_units
-          - type: numerical
+          - type: "numerical"
           field_separator:
-          - type: fraction
-        align: right
+          - type: "fraction"
+        align: "right"
       fstype:
         header: "Filesystem:"
-        path: fstype
-        type: str
+        path: "fstype"
+        type: "str"
       model:
         header: "Model:"
-        path: model
-        type: str
+        path: "model"
+        type: "str"
       mountpoint:
         header: "Mountpoint:"
-        path: mountpoint
-        type: str
+        path: "mountpoint"
+        type: "str"
       options:
         header: "Options:"
-        path: options
-        type: raw
-        formatter: list
+        path: "options"
+        type: "raw"
+        formatter: "list"
   shortcuts:
     # Inventory has no events
     "Show Events": {}
     # Inventory has no last applied configuration
     "Last Applied Configuration": {}
     "Boot options":
-      key: b
+      key: "b"
       helptext: "Show boot options"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Boot options:"
       headers: ["Option:", "Value:"]
-      itemgetter: get_key_value
+      itemgetter: "get_key_value"
       itemgetter_args:
-        path: ansible_cmdline
-      formatting: [[windowwidget, default], [windowwidget, highlight]]
+        path: "ansible_cmdline"
+      formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
       # This isn't supported for now
-      sortcolumn: option
+      sortcolumn: "option"
     "SSH to host":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "SSH to host"
-      action: call
-      action_call: ssh_to_host
+      action: "call"
+      action_call: "ssh_to_host"
       action_args:
         _pass_obj: true
-        name_path: ansible_nodename
+        name_path: "ansible_nodename"

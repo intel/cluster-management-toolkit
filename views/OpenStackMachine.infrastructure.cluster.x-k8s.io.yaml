@@ -1,76 +1,76 @@
-kind: OpenStackMachine
-api_family: infrastructure.cluster.x-k8s.io
-default_command: openstackmachines
+kind: "OpenStackMachine"
+api_family: "infrastructure.cluster.x-k8s.io"
+default_command: "openstackmachines"
 command:
-- osm
+- "osm"
 listview:
-  name: OpenStack Machines
-  group: Cluster Configuration
+  name: "OpenStack Machines"
+  group: "Cluster Configuration"
   field_indexes:
-    Normal: [namespace, name, cluster, instance_state, ready, provider_id, machine, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "cluster", "instance_state", "ready", "provider_id", "machine", "age"]
+  sortcolumn: "namespace"
   fields:
     cluster:
       header: "Cluster:"
       path: "metadata#labels#cluster.x-k8s.io/cluster-name"
-      type: str
+      type: "str"
     instance_state:
       header: "Instance State:"
       path: "status#instanceState"
-      type: str
+      type: "str"
     machine:
       header: "Machine:"
       paths:
       - path: "metadata#ownerReferences"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - name
+        - "name"
         when:
           key: kind
           eq: Machine
-      formatter: list
+      formatter: "list"
       formatting:
         field_colors:
-        - type: hostname
+        - type: "hostname"
     provider_id:
       header: "Provider ID:"
       path: "spec#providerID"
-      type: str
+      type: "str"
     ready:
       header: "Ready:"
       path: "status#ready"
-      type: bool
-      formatter: value_mapper
+      type: "bool"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "False":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
 infoview:
-  name: OpenStack Machine Info
+  name: "OpenStack Machine Info"
   infopad:
     row_indexes:
-      Normal: [controller, cluster, instance_state, ready, instance_id, provider_id, cloud_name, flavor, identity, image, security_groups, ssh_key_name, internal_ips, external_ips]
+      Normal: ["controller", "cluster", "instance_state", "ready", "instance_id", "provider_id", "cloud_name", "flavor", "identity", "image", "security_groups", "ssh_key_name", "internal_ips", "external_ips"]
     rows:
       cloud_name:
-        header: [["Cloud Name:", [main, infoheader]]]
+        header: [["Cloud Name:", ["main", "infoheader"]]]
         path: "spec#cloudName"
-        type: str
+        type: "str"
       cluster:
-        header: [["Cl", [main, infoheader]], ["u", [main, infoheader_shortcut]], ["ster:", [main, infoheader]]]
+        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
         path: "metadata#labels#cluster.x-k8s.io/cluster-name"
-        type: str
+        type: "str"
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
           - kind
           - apiVersion
@@ -78,131 +78,131 @@ infoview:
           when:
             key: controller
             eq: true
-          type: [kind, api_group, name]
+          type: ["kind", "api_group", "name"]
         default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       external_ips:
-        header: [["External-IPs:", [main, infoheader]]]
+        header: [["External-IPs:", ["main", "infoheader"]]]
         paths:
         - path: "status#addresses"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - address
+          - "address"
           when:
-            key: type
-            eq: ExternalIP
+            key: "type"
+            eq: "ExternalIP"
           default: ["<none>"]
-        formatter: address
+        formatter: "address"
       flavor:
-        header: [["Flavor:", [main, infoheader]]]
+        header: [["Flavor:", ["main", "infoheader"]]]
         path: "spec#flavor"
-        type: str
+        type: "str"
       header:
-        header: [["T", [main, infoheader_shortcut]], ["emplate:", [main, infoheader]]]
+        header: [["T", ["main", "infoheader_shortcut"]], ["emplate:", ["main", "infoheader"]]]
       identity:
-        header: [["", [main, infoheader]], ["I", [main, infoheader_shortcut]], ["dentity:", [main, infoheader]]]
+        header: [["", ["main", "infoheader"]], ["I", ["main", "infoheader_shortcut"]], ["dentity:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#identityRef#kind"], ["spec#identityRef#name"]]
-          pathtype: tuple
-        formatter: list
+          pathtype: "tuple"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: generic
+          - type: "kind"
+          - type: "generic"
           field_separators:
-          - type: kind
+          - type: "kind"
       image:
-        header: [["Image:", [main, infoheader]]]
+        header: [["Image:", ["main", "infoheader"]]]
         path: "spec#image"
-        type: str
+        type: "str"
       instance_id:
-        header: [["Instance ID:", [main, infoheader]]]
+        header: [["Instance ID:", ["main", "infoheader"]]]
         path: "spec#instanceID"
-        type: str
+        type: "str"
       instance_state:
-        header: [["Instance State:", [main, infoheader]]]
+        header: [["Instance State:", ["main", "infoheader"]]]
         path: "status#instanceState"
-        type: str
+        type: "str"
       internal_ips:
-        header: [["Internal-IPs:", [main, infoheader]]]
+        header: [["Internal-IPs:", ["main", "infoheader"]]]
         paths:
         - path: "status#addresses"
-          pathtype: items
+          pathtype: "items"
           subpaths:
           - address
           when:
             key: type
             eq: InternalIP
-        formatter: address
+        formatter: "address"
       provider_id:
-        header: [["Provider ID:", [main, infoheader]]]
+        header: [["Provider ID:", ["main", "infoheader"]]]
         path: "spec#providerID"
-        type: str
+        type: "str"
       ready:
-        header: [["Ready:", [main, infoheader]]]
+        header: [["Ready:", ["main", "infoheader"]]]
         path: "status#ready"
-        type: bool
-        formatter: value_mapper
+        type: "bool"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       security_groups:
-        header: [["Security Groups:", [main, infoheader]]]
+        header: [["Security Groups:", ["main", "infoheader"]]]
         paths:
         - path: "spec#securityGroups"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
-        type: raw
-        formatter: list
+          - "name"
+        type: "raw"
+        formatter: "list"
       ssh_key_name:
-        header: [["SSH Key Name:", [main, infoheader]]]
+        header: [["SSH Key Name:", ["main", "infoheader"]]]
         path: "spec#sshKeyName"
-        type: str
+        type: "str"
   shortcuts:
     "Open Cluster":
-      key: u
+      key: "u"
       helptext: "Open info page for Cluster"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Cluster
-        api_family: cluster.x-k8s.io
+        kind: "Cluster"
+        api_family: "cluster.x-k8s.io"
         name_path: "metadata#labels#cluster.x-k8s.io/cluster-name"
         namespace_path: "metadata#namespace"
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         owner_reference_path: "metadata#ownerReferences"
         namespace_path: "metadata#namespace"
     "Open identity":
-      key: i
-      modifier: shift
+      key: "i"
+      modifier: "shift"
       helptext: "Open info page for identity"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind_path: "spec#identityRef#kind"

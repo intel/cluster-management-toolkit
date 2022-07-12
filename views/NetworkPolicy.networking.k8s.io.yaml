@@ -1,163 +1,163 @@
-kind: NetworkPolicy
-api_family: networking.k8s.io
-default_command: networkpolicies
+kind: "NetworkPolicy"
+api_family: "networking.k8s.io"
+default_command: "networkpolicies"
 command:
-- netpols
-- netpol
+- "netpols"
+- "netpol"
 listview:
-  name: Network Policies
-  group: Network
+  name: "Network Policies"
+  group: "Network"
   field_indexes:
-    Normal: [namespace, name, controller, pod_label_selector, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "controller", "pod_label_selector", "age"]
+  sortcolumn: "namespace"
   fields:
     controller:
       header: "Controller:"
       paths:
       - path: "metadata#ownerReferences"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - kind
-        - apiVersion
-        - name
+        - "kind"
+        - "apiVersion"
+        - "name"
         when:
           key: controller
           eq: true
-        type: [kind, api_group, name]
+        type: ["kind", "api_group", "name"]
       default: "<none>"
-      formatter: list
+      formatter: "list"
       formatting:
         field_colors:
-        - type: kind
-        - type: api_group
-        - type: generic
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
         field_separators:
-        - type: kind_api_group
-        - type: kind
+        - type: "kind_api_group"
+        - type: "kind"
     pod_label_selector:
       header: "Pod Label Selector:"
       paths:
       - path: ["spec#podSelector#matchLabels"]
-        pathtype: key_value
-      formatter: list
+        pathtype: "key_value"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: key
-        - type: value
+        - type: "key"
+        - type: "value"
         field_separators:
-        - type: selector
+        - type: "selector"
 infoview:
-  name: Network Policy Info
+  name: "Network Policy Info"
   infopad:
     row_indexes:
-      Normal: [controller, pod_label_selector, policy_types]
+      Normal: ["controller", "pod_label_selector", "policy_types"]
     rows:
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
-          type: [kind, api_group, name]
+          type: ["kind", "api_group", "name"]
         default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       pod_label_selector:
-        header: [["Pod Label Selector:", [main, infoheader]]]
+        header: [["Pod Label Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#podSelector#matchLabels"]
-          pathtype: key_value
+          pathtype: "key_value"
           default: ["<none>"]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       policy_types:
-        header: [["Policy Types:", [main, infoheader]]]
+        header: [["Policy Types:", ["main", "infoheader"]]]
         path: "spec#policyTypes"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
   listpad:
-    listgetter: get_netpol_rule_list
-    infogetter: generic_infogetter
+    listgetter: "get_netpol_rule_list"
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [policy_type, ports, ipblock, ipblock_exceptions, pod_label_selector, namespace_label_selector]
-    sortcolumn: policy_type
+      Normal: ["policy_type", "ports", "ipblock", "ipblock_exceptions", "pod_label_selector", "namespace_label_selector"]
+    sortcolumn: "policy_type"
     fields:
       ipblock:
         header: "IP-Block:"
-        path: ipblock
-        type: str
-        formatter: address
+        path: "ipblock"
+        type: "str"
+        formatter: "address"
       ipblock_exceptions:
         header: "IP-Block Exceptions:"
-        path: ipblock_exceptions
-        type: raw
-        formatter: address
+        path: "ipblock_exceptions"
+        type: "raw"
+        formatter: "address"
       namespace_label_selector:
         header: "Namespace Label Selector:"
         paths:
-        - path: [namespace_label_selector]
-          pathtype: key_value
+        - path: ["namespace_label_selector"]
+          pathtype: "key_value"
           default: ["<none>"]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       pod_label_selector:
         header: "Pod Label Selector:"
         paths:
-        - path: [pod_label_selector]
-          pathtype: key_value
+        - path: ["pod_label_selector"]
+          pathtype: "key_value"
           default: ["<none>"]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       policy_type:
         header: "Policy Type:"
-        path: policy_type
-        type: str
+        path: "policy_type"
+        type: "str"
       ports:
         header: "Ports:"
-        path: ports
-        type: raw
-        formatter: list
+        path: "ports"
+        type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: port
-          - type: protocol
+          - type: "port"
+          - type: "protocol"
           field_separators:
-          - type: service
+          - type: "service"
   shortcuts:
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         namespace_path: "metadata#namespace"

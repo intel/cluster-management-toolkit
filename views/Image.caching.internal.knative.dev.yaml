@@ -1,26 +1,26 @@
-kind: Image
-api_family: caching.internal.knative.dev
-default_command: images.caching.internal.knative.dev
+kind: "Image"
+api_family: "caching.internal.knative.dev"
+default_command: "images.caching.internal.knative.dev"
 command:
-- image.caching.internal.knative.dev
-- images.knative
-- image.knative
-- knimages
-- knimage
-- knimg
+- "image.caching.internal.knative.dev"
+- "images.knative"
+- "image.knative"
+- "knimages"
+- "knimage"
+- "knimg"
 listview:
-  name: Images (Knative)
-  group: Caching
+  name: "Images (Knative)"
+  group: "Caching"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Image Info (Knative)
+  name: "Image Info (Knative)"
   infopad:
     row_indexes:
-      Normal: [image]
+      Normal: ["image"]
     rows:
       image:
-        header: [["Image:", [main, infoheader]]]
+        header: [["Image:", ["main", "infoheader"]]]
         path: "spec#image"
-        type: str
+        type: "str"

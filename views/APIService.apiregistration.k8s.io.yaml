@@ -1,70 +1,70 @@
-kind: APIService
-api_family: apiregistration.k8s.io
-default_command: apiservices
+kind: "APIService"
+api_family: "apiregistration.k8s.io"
+default_command: "apiservices"
 command:
-- apisvcs
-- apisvc
+- "apisvcs"
+- "apisvc"
 listview:
-  name: API Services
-  group: API & Extendability
+  name: "API Services"
+  group: "API & Extendability"
   field_indexes:
-    Normal: [name, api_service, available, age, status_message]
+    Normal: ["name", "api_service", "available", "age", "status_message"]
   fields:
     api_service:
       header: "Service:"
       paths:
       - path: [["spec#service#namespace"], ["spec#service#name"], ["spec#service#port"]]
-        pathtype: tuple
-        type: [name, name, name]
+        pathtype: "tuple"
+        type: ["name", "name", "name"]
         default: ["", "Local", ""]
-      formatter: list
+      formatter: "list"
       formatting:
         field_colors:
-        - type: namespace
-        - type: generic
-        - type: port
+        - type: "namespace"
+        - type: "generic"
+        - type: "port"
         field_separators:
-        - type: namespace
-        - type: port
+        - type: "namespace"
+        - type: "port"
     available:
       header: "Available:"
       paths:
       - path: "status#conditions"
-        pathtype: items
-        subpath: status
+        pathtype: "items"
+        subpath: "status"
         when:
-        - key: type
-          eq: Available
+        - key: "type"
+          eq: "Available"
         default: "<unknown>"
-      formatter: value_mapper
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "False":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
     status_message:
       header: "Status:"
       paths:
       - path: "status#conditions"
-        pathtype: items
-        subpath: message
+        pathtype: "items"
+        subpath: "message"
         when:
-        - key: type
-          eq: Available
+        - key: "type"
+          eq: "Available"
         default: ""
   shortcuts:
     "Show Service Info":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "Open info page for Service"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind: "Service"
@@ -72,99 +72,99 @@ listview:
         name_path: "spec#service#name"
         namespace_path: "spec#service#namespace"
 infoview:
-  name: API Service Info
+  name: "API Service Info"
   infopad:
     row_indexes:
-      Normal: [version, group, api_version_priority, group_priority_minimum, insecure_skip_tls_verify, service, available, status_message]
+      Normal: ["version", "group", "api_version_priority", "group_priority_minimum", "insecure_skip_tls_verify", "service", "available", "status_message"]
     rows:
       api_version_priority:
-        header: [["API Version Priority:", [main, infoheader]]]
+        header: [["API Version Priority:", ["main", "infoheader"]]]
         path: "spec#versionPriority"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       available:
-        header: [["Available:", [main, infoheader]]]
+        header: [["Available:", ["main", "infoheader"]]]
         paths:
         - path: "status#conditions"
-          pathtype: items
-          subpath: status
+          pathtype: "items"
+          subpath: "status"
           when:
-          - key: type
-            eq: Available
+          - key: "type"
+            eq: "Available"
           default: "<unknown>"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       group:
-        header: [["Group:", [main, infoheader]]]
+        header: [["Group:", ["main", "infoheader"]]]
         path: "spec#group"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: api_group
+          - type: "api_group"
       group_priority_minimum:
-        header: [["Group Priority Minimum:", [main, infoheader]]]
+        header: [["Group Priority Minimum:", ["main", "infoheader"]]]
         path: "spec#groupPriorityMinimum"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       insecure_skip_tls_verify:
-        header: [["Insecure Skip TLS Verify:", [main, infoheader]]]
+        header: [["Insecure Skip TLS Verify:", ["main", "infoheader"]]]
         path: "spec#insecureSkipTLSVerify"
         default: false
-        type: bool
+        type: "bool"
       service:
-        header: [["S", [main, infoheader_shortcut]], ["ervice:", [main, infoheader]]]
+        header: [["S", ["main", "infoheader_shortcut"]], ["ervice:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#service#namespace"], ["spec#service#name"], ["spec#service#port"]]
-          pathtype: tuple
-          type: [name, name, name]
+          pathtype: "tuple"
+          type: ["name", "name", "name"]
           default: ["", "Local", ""]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: namespace
-          - type: generic
-          - type: port
+          - type: "namespace"
+          - type: "generic"
+          - type: "port"
           field_separators:
-          - type: namespace
-          - type: port
+          - type: "namespace"
+          - type: "port"
       status_message:
-        header: [["Status:", [main, infoheader]]]
+        header: [["Status:", ["main", "infoheader"]]]
         paths:
         - path: "status#conditions"
-          pathtype: items
-          subpath: message
+          pathtype: "items"
+          subpath: "message"
           when:
-          - key: type
-            eq: Available
+          - key: "type"
+            eq: "Available"
           default: ""
       version:
-        header: [["Version:", [main, infoheader]]]
+        header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
   shortcuts:
     "Open Service":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "Open info page for Service"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind: "Service"

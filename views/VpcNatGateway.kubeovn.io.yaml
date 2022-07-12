@@ -1,27 +1,27 @@
-kind: VpcNatGateway
-api_family: kubeovn.io
-default_command: vpc-nat-gateways
+kind: "VpcNatGateway"
+api_family: "kubeovn.io"
+default_command: "vpc-nat-gateways"
 command:
-- vpcnatgateways
-- vpcnatgws
-- vpcnatgw
-- vpc-nat-gateways
-- vpc-nat-gateway
+- "vpcnatgateways"
+- "vpcnatgws"
+- "vpcnatgw"
+- "vpc-nat-gateways"
+- "vpc-nat-gateway"
 listview:
-  name: VPC NAT Gateways
-  group: Kube-OVN
+  name: "VPC NAT Gateways"
+  group: "Kube-OVN"
   field_indexes:
-    Normal: [name, vpc, subnet, lan_ip, age]
+    Normal: ["name", "vpc", "subnet", "lan_ip", "age"]
   fields:
     lan_ip:
       header: "LAN IP:"
       path: "spec#lanIp"
-      type: str
+      type: "str"
     subnet:
       header: "Subnet:"
       path: "spec#subnet"
-      type: str
+      type: "str"
     vpc:
       header: "VPC:"
       path: "spec#vpc"
-      type: str
+      type: "str"

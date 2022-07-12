@@ -1,197 +1,197 @@
-kind: VirtualMachine
-api_family: kubevirt.io
-default_command: virtualmachines
+kind: "VirtualMachine"
+api_family: "kubevirt.io"
+default_command: "virtualmachines"
 command:
-- vms
-- vm
+- "vms"
+- "vm"
 listview:
-  name: Virtual Machines
-  group: Virtualization
+  name: "Virtual Machines"
+  group: "Virtualization"
   field_indexes:
-    Normal: [name, status, ready, age]
-  sortcolumn: status
+    Normal: ["name", "status", "ready", "age"]
+  sortcolumn: "status"
   fields:
     ready:
       header: "Ready:"
       paths:
       - path: "status#conditions"
-        pathtype: items
-        subpath: status
+        pathtype: "items"
+        subpath: "status"
         when:
-        - key: type
-          eq: Ready
-      type: str
-      formatter: value_mapper
+        - key: "type"
+          eq: "Ready"
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "False":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
     status:
       header: "Status:"
       path: "status#printableStatus"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "ErrorUnschedulable":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
             __default:
               field_colors:
-              - context: types
-                type: generic
+              - context: "types"
+                type: "generic"
 infoview:
-  name: Virtual Machine Info
+  name: "Virtual Machine Info"
   infopad:
     row_indexes:
-      Normal: [status, ready]
+      Normal: ["status", "ready"]
     rows:
       ready:
-        header: [["Ready:", [main, infoheader]]]
+        header: [["Ready:", ["main", "infoheader"]]]
         paths:
         - path: "status#conditions"
-          pathtype: items
-          subpath: status
+          pathtype: "items"
+          subpath: "status"
           when:
-          - key: type
-            eq: Ready
-        type: str
-        formatter: value_mapper
+          - key: "type"
+            eq: "Ready"
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       status:
-        header: [["Status:", [main, infoheader]]]
+        header: [["Status:", ["main", "infoheader"]]]
         path: "status#printableStatus"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "ErrorUnschedulable":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               __default:
                 field_colors:
-                - context: types
-                  type: generic
+                - context: "types"
+                  type: "generic"
   listpad:
-    listgetter: generic_listgetter
+    listgetter: "generic_listgetter"
     listgetter_args:
       _pass_obj: true
-      _kind: VirtualMachineInstance
-      _api_family: kubevirt.io
+      _kind: "VirtualMachineInstance"
+      _api_family: "kubevirt.io"
       filters:
         controller:
           enabled: true
           allow:
-          - type: dictlist
+          - type: "dictlist"
             path: "metadata#ownerReferences"
             fields:
-              kind: VirtualMachine
-              api_family: kubevirt.io
+              kind: "VirtualMachine"
+              api_family: "kubevirt.io"
               name:
-                source: caller
+                source: "caller"
                 path: "metadata#name"
               controller: true
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     on_activation:
-      call: resourceinfodispatch
-      kind: VirtualMachineInstance
-      api_family: kubevirt.io
+      call: "resourceinfodispatch"
+      kind: "VirtualMachineInstance"
+      api_family: "kubevirt.io"
     field_indexes:
-      Normal: [name, ipaddresses, node_name, ready, live_migratable, paused, phase, age]
-    sortcolumn: status
+      Normal: ["name", "ipaddresses", "node_name", "ready", "live_migratable", "paused", "phase", "age"]
+    sortcolumn: "status"
     fields:
       ipaddresses:
         header: "IP-addresses:"
         paths:
         - path: "status#interfaces"
-          pathtype: items
-          subpath: ipAddress
-        formatter: address
+          pathtype: "items"
+          subpath: "ipAddress"
+        formatter: "address"
       live_migratable:
         header: "Live Migratable:"
         paths:
         - path: "status#conditions"
-          pathtype: items
-          subpath: status
+          pathtype: "items"
+          subpath: "status"
           when:
-          - key: type
-            eq: LiveMigratable
-        type: str
+          - key: "type"
+            eq: "LiveMigratable"
+        type: "str"
       node_name:
         header: "Node Name:"
         path: "status#nodeName"
-        type: str
+        type: "str"
       phase:
         header: "Phase:"
         path: "status#phase"
-        type: str
+        type: "str"
       paused:
         header: "Paused:"
         paths:
         - path: "status#conditions"
-          pathtype: items
-          subpath: status
+          pathtype: "items"
+          subpath: "status"
           when:
-          - key: type
-            eq: Paused
-        type: str
+          - key: "type"
+            eq: "Paused"
+        type: "str"
       ready:
         header: "Ready:"
         paths:
         - path: "status#conditions"
-          pathtype: items
-          subpath: status
+          pathtype: "items"
+          subpath: "status"
           when:
-          - key: type
-            eq: Ready
-        type: str
-        formatter: value_mapper
+          - key: "type"
+            eq: "Ready"
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
   shortcuts:
     "Show volume snapshot status":
-      key: v
-      modifier: shift
+      key: "v"
+      modifier: "shift"
       helptext: "Show volume snapshot statuses"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Volume Snapshot Statuses:"
       headers: ["Name:", "Enabled:", "Reason:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "status#volumeSnapshotStatuses"
         fields:
-        - name
-        - enabled
-        - reason
+        - "name"
+        - "enabled"
+        - "reason"
       # Not supported for now
-      sortcolumn: name
+      sortcolumn: "name"

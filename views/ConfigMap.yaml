@@ -1,50 +1,50 @@
-kind: ConfigMap
-default_command: configmaps
+kind: "ConfigMap"
+default_command: "configmaps"
 command:
-- cm
+- "cm"
 listview:
-  name: Config Maps
-  group: Core
+  name: "Config Maps"
+  group: "Core"
   field_indexes:
-    Normal: [namespace, name, data, immutable, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "data", "immutable", "age"]
+  sortcolumn: "namespace"
   fields:
     data:
       header: "# of Data:"
       path: "data"
-      type: len
+      type: "len"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     immutable:
       header: "Immutable:"
       paths:
       - path: "immutable"
-        pathtype: value
-        type: bool
+        pathtype: "value"
+        type: "bool"
         default: ""
 infoview:
-  name: Config Map Info
+  name: "Config Map Info"
   listpad:
     on_activation:
-      call: resourceinfodispatch
-      kind: __ResourceView
-      formatter: identify
+      call: "resourceinfodispatch"
+      kind: "__ResourceView"
+      formatter: "identify"
       formatter_path: formatter
-      obj_path: data
-      title_path: configmap
-    listgetter: listgetter_configmap_data
-    infogetter: generic_infogetter
+      obj_path: "data"
+      title_path: "configmap"
+    listgetter: "listgetter_configmap_data"
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [data, type]
-    sortcolumn: data
+      Normal: ["data", "type"]
+    sortcolumn: "data"
     fields:
       data:
         header: "Data:"
-        path: configmap
-        type: str
+        path: "configmap"
+        type: "str"
       type:
         header: "Type:"
-        path: type
-        type: str
+        path: "type"
+        type: "str"

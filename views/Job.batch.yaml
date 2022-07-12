@@ -1,266 +1,266 @@
-kind: Job
-api_family: batch
-default_command: jobs
+kind: "Job"
+api_family: "batch"
+default_command: "jobs"
 listview:
-  name: Jobs
-  group: Workloads
+  name: "Jobs"
+  group: "Workloads"
   field_indexes:
-    Normal: [namespace, name, controller, completions, duration, state, age, completion_time, completion_mode, containers_template]
-  sortcolumn: state
+    Normal: ["namespace", "name", "controller", "completions", "duration", "state", "age", "completion_time", "completion_mode", "containers_template"]
+  sortcolumn: "state"
   fields:
     completion_mode:
       header: "Completion Mode:"
       path: "spec#completionMode"
-      type: str
+      type: "str"
       default: "NonIndexed"
     completions:
       header: "Completions:"
       paths:
       - path: [["status#succeeded"], ["spec#completions"]]
-        pathtype: tuple
+        pathtype: "tuple"
         default: [0, 0]
-      formatter: list
+      formatter: "list"
       formatting:
         field_colors:
-        - type: numerical
-        - type: numerical
+        - type: "numerical"
+        - type: "numerical"
         field_separators:
-        - type: fraction
-      align: right
+        - type: "fraction"
+      align: "right"
     completion_time:
       header: "Completion Time:"
       path: "status#completionTime"
-      type: timestamp
-      formatter: timestamp
+      type: "timestamp"
+      formatter: "timestamp"
     containers_template:
       header: "Containers:"
       paths:
       - paths:
         - "spec#template#spec#initContainers"
         - "spec#template#spec#containers"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - name
-        - subpath: image
-        type: raw
-      formatter: list
+        - "name"
+        - subpath: "image"
+        type: "raw"
+      formatter: "list"
     controller:
       header: "Controller:"
       paths:
       - path: "metadata#ownerReferences"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - kind
-        - apiVersion
-        - name
+        - "kind"
+        - "apiVersion"
+        - "name"
         when:
-          key: controller
+          key: "controller"
           eq: true
-        type: [kind, api_group, name]
-      formatter: list
+        type: ["kind", "api_group", "name"]
+      formatter: "list"
       formatting:
         field_colors:
-        - type: kind
-        - type: api_group
-        - type: generic
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
         field_separators:
-        - type: kind_api_group
-        - type: kind
+        - type: "kind_api_group"
+        - type: "kind"
     duration:
       header: "Duration:"
       paths:
       - paths: [["status#startTime"], ["status#completionTime"]]
-        pathtype: timediff
-      formatter: age
-      align: right
+        pathtype: "timediff"
+      formatter: "age"
+      align: "right"
     state:
       header: "State:"
       paths:
-      - path: status
-        pathtype: substitution
-        subpath: active
+      - path: "status"
+        pathtype: "substitution"
+        subpath: "active"
         when:
-        - key: active
+        - key: "active"
           notnone: true
-        - key: active
+        - key: "active"
           gt: 0
-        substitute: Running
+        substitute: "Running"
       - path: "status#conditions"
-        pathtype: items
-        subpath: reason
+        pathtype: "items"
+        subpath: "reason"
         when:
-        - key: type
-          eq: Failed
-        - key: status
+        - key: "type"
+          eq: "Failed"
+        - key: "status"
           eq: "True"
       - path: "status#conditions"
-        pathtype: substitution
-        subpath: type
+        pathtype: "substitution"
+        subpath: "type"
         when:
-        - key: status
+        - key: "status"
           eq: "True"
-        - key: type
-          eq: Complete
-        substitute: Completed
-      formatter: value_mapper
+        - key: "type"
+          eq: "Complete"
+        substitute: "Completed"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Active:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Completed:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             __default:
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
 infoview:
-  name: Job Info
+  name: "Job Info"
   infopad:
     row_indexes:
-      Normal: [controller, label_selector, completions, completion_time, completion_mode, parallelism, state]
+      Normal: ["controller", "label_selector", "completions", "completion_time", "completion_mode", "parallelism", "state"]
     rows:
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
-          type: [kind, api_group, name]
+          type: ["kind", "api_group", "name"]
         default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       completions:
-        header: [["Completions:", [main, infoheader]]]
+        header: [["Completions:", ["main", "infoheader"]]]
         paths:
         - path: [["status#succeeded"], ["spec#completions"]]
-          pathtype: tuple
+          pathtype: "tuple"
           default: [0, 0]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: numerical
-          - type: numerical
+          - type: "numerical"
+          - type: "numerical"
           field_separators:
-          - type: fraction
+          - type: "fraction"
       completion_mode:
-        header: [["Completion Mode:", [main, infoheader]]]
+        header: [["Completion Mode:", ["main", "infoheader"]]]
         path: "spec#completionMode"
-        type: str
+        type: "str"
         default: "NonIndexed"
       completion_time:
-        header: [["Completion Time:", [main, infoheader]]]
+        header: [["Completion Time:", ["main", "infoheader"]]]
         paths:
         - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
-          pathtype: timestamp_with_age
-        formatter: timestamp_with_age
+          pathtype: "timestamp_with_age"
+        formatter: "timestamp_with_age"
         formatting:
           field_colors:
           # This is a meta-type, indicating where the timestamp goes
-          - type: timestamp
-          - type: generic
-          - context: main
-            type: infoheader
+          - type: "timestamp"
+          - type: "generic"
+          - context: "main"
+            type: "infoheader"
           # This is a meta-type, indicating where the age goes
-          - type: age
-          - type: generic
+          - type: "age"
+          - type: "generic"
       label_selector:
-        header: [["Label Selector:", [main, infoheader]]]
+        header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#selector#matchLabels"]
-          pathtype: key_value
+          pathtype: "key_value"
           default: ["<none>"]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       parallelism:
-        header: [["Parallelism:", [main, infoheader]]]
+        header: [["Parallelism:", ["main", "infoheader"]]]
         path: "spec#parallelism"
         default: 1
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       state:
-        header: [["State:", [main, infoheader]]]
+        header: [["State:", ["main", "infoheader"]]]
         paths:
-        - path: status
-          pathtype: substitution
-          subpath: active
+        - path: "status"
+          pathtype: "substitution"
+          subpath: "active"
           when:
-          - key: active
+          - key: "active"
             notnone: true
-          - key: active
+          - key: "active"
             gt: 0
-          substitute: Running
+          substitute: "Running"
         - path: "status#conditions"
-          pathtype: items
-          subpath: reason
+          pathtype: "items"
+          subpath: "reason"
           when:
-          - key: type
-            eq: Failed
-          - key: status
+          - key: "type"
+            eq: "Failed"
+          - key: "status"
             eq: "True"
         - path: "status#conditions"
-          pathtype: substitution
-          subpath: type
+          pathtype: "substitution"
+          subpath: "type"
           when:
-          - key: status
+          - key: "status"
             eq: "True"
-          - key: type
-            eq: Complete
-          substitute: Completed
-        formatter: value_mapper
+          - key: "type"
+            eq: "Complete"
+          substitute: "Completed"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Active:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Completed:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               __default:
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
   listpad:
-    listgetter: generic_listgetter
+    listgetter: "generic_listgetter"
     listgetter_args:
-      _kind: Pod
+      _kind: "Pod"
       _label_selector_path: "spec#selector#matchLabels"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     on_activation:
-      call: resourceinfodispatch
-      kind: Pod
+      call: "resourceinfodispatch"
+      kind: "Pod"
     field_indexes:
-      Wide: [namespace, name, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
-      Normal: [namespace, name, pod_status, node_name, age, restarts, last_restart]
-      Compact: [namespace, name, pod_status, age, restarts, last_restart]
-    sortcolumn: pod_status
+      Wide: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+      Normal: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+      Compact: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+    sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
@@ -268,86 +268,86 @@ infoview:
         - paths:
           - "spec#initContainers"
           - "spec#containers"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
-          - subpath: image
+          - "name"
+          - subpath: "image"
             regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: raw
-        formatter: list
+          type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: generic
-          - type: version
+          - type: "generic"
+          - type: "version"
           field_separators:
-          - type: version
+          - type: "version"
       controller:
         header: "Controller:"
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
-          type: [kind, api_group, name]
-        formatter: list
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       last_restart:
         header: "Latest Restart:"
         paths:
         - path: "status#containerStatuses"
-          pathtype: items
+          pathtype: "items"
           subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
           when:
             key: "restartCount"
             gt: 0
-          action: latest
-          type: timestamp
+          action: "latest"
+          type: "timestamp"
         default: -1
-        formatter: age
-        align: right
+        formatter: "age"
+        align: "right"
       node_name:
         header: "Node:"
         path: "spec#nodeName"
-        type: host
+        type: "host"
         default: "<none>"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
         default: "<unset>"
-        type: address
-        formatter: address
+        type: "address"
+        formatter: "address"
       restarts:
         header: "Restarts:"
         paths:
         - path: "status#containerStatuses"
-          pathtype: items
+          pathtype: "items"
           subpath: "restartCount"
-          action: sum
-          type: int
+          action: "sum"
+          type: "int"
         formatting:
           field_colors:
-          - type: numerical
-        align: right
+          - type: "numerical"
+        align: "right"
         default: 0
   shortcuts:
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         namespace_path: "metadata#namespace"

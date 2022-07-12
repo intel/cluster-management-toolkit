@@ -1,21 +1,21 @@
-kind: DNS
-api_family: config.openshift.io
-default_command: dnses.config.openshift.io
+kind: "DNS"
+api_family: "config.openshift.io"
+default_command: "dnses.config.openshift.io"
 command:
-- dnses.config
-- dns.config
+- "dnses.config"
+- "dns.config"
 listview:
-  name: DNSes (Config)
-  group: OpenShift
+  name: "DNSes (Config)"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: DNS Info (Config)
+  name: "DNS Info (Config)"
   infopad:
     row_indexes:
-      Normal: [base_domain]
+      Normal: ["base_domain"]
     rows:
       base_domain:
-        header: [["Base Domain:", [main, infoheader]]]
+        header: [["Base Domain:", ["main", "infoheader"]]]
         path: "spec#baseDomain"
-        type: str
+        type: "str"

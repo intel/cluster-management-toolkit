@@ -1,89 +1,89 @@
-kind: StatefulSet
-api_family: apps
-default_command: statefulsets
+kind: "StatefulSet"
+api_family: "apps"
+default_command: "statefulsets"
 command:
-- sts
+- "sts"
 listview:
-  name: Stateful Sets
-  group: Workloads
+  name: "Stateful Sets"
+  group: "Workloads"
   field_indexes:
-    Normal: [namespace, name, desired_replicas, current_replicas, ready_replicas, uptodate_replicas, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "age"]
+  sortcolumn: "namespace"
   fields:
     current_replicas:
       header: "Current:"
       paths:
       - path: ["status#currentReplicas", "spec#replicas"]
-        pathtype: comparison
+        pathtype: "comparison"
         default: [0, 0]
-      formatter: value_mapper
+      formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
           - min: 0
             max: 1
             field_colors:
-            - context: main
-              type: status_ok
+            - context: "main"
+              type: "status_ok"
           - default: true
             field_colors:
-            - context: main
-              type: status_not_ok
-      align: right
+            - context: "main"
+              type: "status_not_ok"
+      align: "right"
     desired_replicas:
       header: "Desired:"
       path: "spec#replicas"
       default: 0
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     ready_replicas:
       header: "Ready:"
       paths:
       - path: ["status#readyReplicas", "status#currentReplicas"]
-        pathtype: comparison
+        pathtype: "comparison"
         default: [0, 0]
-      formatter: value_mapper
+      formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
           - min: 0
             max: 1
             field_colors:
-            - context: main
-              type: status_ok
+            - context: "main"
+              type: "status_ok"
           - min: -1
             max: 0
             field_colors:
-            - context: main
-              type: status_pending
+            - context: "main"
+              type: "status_pending"
           - default: true
             field_colors:
-            - context: main
-              type: status_not_ok
-      align: right
+            - context: "main"
+              type: "status_not_ok"
+      align: "right"
     uptodate_replicas:
       header: "Up to Date:"
       paths:
       - path: ["status#updatedReplicas", "status#currentReplicas"]
-        pathtype: comparison
+        pathtype: "comparison"
         default: [0, 0]
-      formatter: value_mapper
+      formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
           - min: 0
             max: 1
             field_colors:
-            - context: main
-              type: status_ok
+            - context: "main"
+              type: "status_ok"
           - default: true
             field_colors:
-            - context: main
-              type: status_pending
-      align: right
+            - context: "main"
+              type: "status_pending"
+      align: "right"
   actions:
     actionlist:
       #"Delete resource":
@@ -108,13 +108,13 @@ infoview:
   name: "Stateful Set Info"
   infopad:
     row_indexes:
-      Normal: [controller, label_selector, set_based_selector, pod_management_policy, minimum_ready_seconds, update_strategy, replicas]
+      Normal: ["controller", "label_selector", "set_based_selector", "pod_management_policy", "minimum_ready_seconds", "update_strategy", "replicas"]
     rows:
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
           - kind
           - apiVersion
@@ -122,120 +122,120 @@ infoview:
           when:
             key: controller
             eq: true
-          type: [kind, api_group, name]
+          type: ["kind", "api_group", "name"]
         default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       label_selector:
-        header: [["Label Selector:", [main, infoheader]]]
+        header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#selector#matchLabels"]
-          pathtype: key_value
+          pathtype: "key_value"
           default: ["<none>"]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       minimum_ready_seconds:
-        header: [["Minimum Ready Seconds:", [main, infoheader]]]
+        header: [["Minimum Ready Seconds:", ["main", "infoheader"]]]
         path: "spec#minReadySeconds"
         default: 0
-        type: int
-        formatter: numerical
+        type: "int"
+        formatter: "numerical"
       pod_management_policy:
-        header: [["Pod Management Policy:", [main, infoheader]]]
+        header: [["Pod Management Policy:", ["main", "infoheader"]]]
         path: "spec#podManagementPolicy"
         default: "OrderedReady"
-        type: str
+        type: "str"
       replicas:
-        header: [["Replicas:", [main, infoheader]]]
+        header: [["Replicas:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#replicas"], " Desired", ["status#currentReplicas"], " Current", ["status#readyReplicas"], " Ready", ["status#updatedReplicas"], " Updated"]
-          pathtype: tuple
+          pathtype: "tuple"
           default: [0, "", 0, "", 0, "", 0, ""]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: numerical
-          - type: generic
-          - type: numerical
-          - type: generic
-          - type: numerical
-          - type: generic
-          - type: numerical
-          - type: generic
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
           field_separators:
-          - type: no_pad
-          - type: fraction_spaced
-          - type: no_pad
-          - type: fraction_spaced
-          - type: no_pad
-          - type: fraction_spaced
-          - type: no_pad
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
       set_based_selector:
-        header: [["Set-based Selector:", [main, infoheader]]]
+        header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
         - path: "spec#selector#matchExpressions"
-          pathtype: match_expression
+          pathtype: "match_expression"
           default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: operator
-          - type: value
+          - type: "key"
+          - type: "operator"
+          - type: "value"
           field_separators:
-          - type: space
-          - type: no_pad
+          - type: "space"
+          - type: "no_pad"
       update_strategy:
-        header: [["Update Strategy:", [main, infoheader]]]
+        header: [["Update Strategy:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#updateStrategy#type"], " (", "Partition: ", ["spec#updateStrategy#rollingUpdate#partition"], ")"]
-          pathtype: tuple
+          pathtype: "tuple"
           when:
             key: "spec#updateStrategy#type"
             eq: "RollingUpdate"
           default: ["RollingUpdate", "", "", "1", ""]
         - path: [["spec#strategy#type"]]
-          pathtype: tuple
+          pathtype: "tuple"
           when:
             key: "spec#updateStrategy#type"
             eq: "OnDelete"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: generic
-          - type: generic
-          - context: main
-            type: infoheader
-          - type: numerical
-          - type: generic
+          - type: "generic"
+          - type: "generic"
+          - context: "main"
+            type: "infoheader"
+          - type: "numerical"
+          - type: "generic"
           field_separators:
-          - type: no_pad
+          - type: "no_pad"
   listpad:
-    listgetter: generic_listgetter
+    listgetter: "generic_listgetter"
     listgetter_args:
-      _kind: Pod
+      _kind: "Pod"
       _label_selector_path: "spec#selector#matchLabels"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     on_activation:
-      call: resourceinfodispatch
-      kind: Pod
+      call: "resourceinfodispatch"
+      kind: "Pod"
     field_indexes:
-      Wide: [namespace, name, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
-      Normal: [namespace, name, pod_status, node_name, age, restarts, last_restart]
-      Compact: [namespace, name, pod_status, age, restarts, last_restart]
-    sortcolumn: pod_status
+      Wide: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+      Normal: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+      Compact: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+    sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
@@ -243,64 +243,64 @@ infoview:
         - paths:
           - "spec#initContainers"
           - "spec#containers"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
-          - subpath: image
+          - "name"
+          - subpath: "image"
             regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: raw
-        formatter: list
+          type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: generic
-          - type: version
+          - type: "generic"
+          - type: "version"
           field_separators:
-          - type: version
+          - type: "version"
       last_restart:
         header: "Latest Restart:"
         paths:
         - path: "status#containerStatuses"
-          pathtype: items
+          pathtype: "items"
           subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
           when:
             key: "restartCount"
             gt: 0
-          action: latest
-          type: timestamp
+          action: "latest"
+          type: "timestamp"
         default: -1
-        formatter: age
-        align: right
+        formatter: "age"
+        align: "right"
       node_name:
         header: "Node:"
         path: "spec#nodeName"
-        type: host
+        type: "host"
         default: "<none>"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
         default: "<unset>"
-        type: address
-        formatter: address
+        type: "address"
+        formatter: "address"
       restarts:
         header: "Restarts:"
         paths:
         - path: "status#containerStatuses"
-          pathtype: items
+          pathtype: "items"
           subpath: "restartCount"
-          action: sum
-          type: int
+          action: "sum"
+          type: "int"
         formatting:
           field_colors:
-          - type: numerical
-        align: right
+          - type: "numerical"
+        align: "right"
         default: 0
   shortcuts:
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         namespace_path: "metadata#namespace"

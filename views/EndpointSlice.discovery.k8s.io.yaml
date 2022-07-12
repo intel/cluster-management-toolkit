@@ -1,77 +1,77 @@
-kind: EndpointSlice
-api_family: discovery.k8s.io
-default_command: endpointslices
+kind: "EndpointSlice"
+api_family: "discovery.k8s.io"
+default_command: "endpointslices"
 command:
-- eps
+- "eps"
 listview:
-  name: Endpoint Slices
-  group: Core
+  name: "Endpoint Slices"
+  group: "Core"
   field_indexes:
-    Wide: [namespace, name, ports, endpoints, addresstype, age]
-    Normal: [namespace, name, ports_compact, endpoints_ellipsise, addresstype, age]
-  sortcolumn: namespace
+    Wide: ["namespace", "name", "ports", "endpoints", "addresstype", "age"]
+    Normal: ["namespace", "name", "ports_compact", "endpoints_ellipsise", "addresstype", "age"]
+  sortcolumn: "namespace"
   fields:
     addresstype:
       header: "Type:"
-      path: addressType
-      type: str
+      path: "addressType"
+      type: "str"
     endpoints:
       header: "Endpoints:"
       path: "subsets"
-      datagetter: datagetter_eps_endpoints
-      formatter: list_with_status
+      datagetter: "datagetter_eps_endpoints"
+      formatter: "list_with_status"
     endpoints_ellipsise:
       header: "Endpoints:"
       path: "subsets"
-      datagetter: datagetter_eps_endpoints
-      formatter: list_with_status
+      datagetter: "datagetter_eps_endpoints"
+      formatter: "list_with_status"
       formatting:
         ellipsise: 3
     ports:
       header: "Ports:"
       paths:
       - path: "ports"
-        pathtype: items
+        pathtype: "items"
         subpaths:
         - name
         - port
         - protocol
-        type: raw
-      formatter: list
+        type: "raw"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: service
-        - type: port
-        - type: protocol
+        - type: "service"
+        - type: "port"
+        - type: "protocol"
         field_separators:
-        - type: port
-        - type: service
+        - type: "port"
+        - type: "service"
     ports_compact:
       header: "Ports:"
       paths:
       - path: "ports"
-        pathtype: items
+        pathtype: "items"
         subpaths:
         - port
         - protocol
-        type: raw
-      formatter: list
+        type: "raw"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: port
-        - type: protocol
+        - type: "port"
+        - type: "protocol"
         field_separators:
-        - type: service
+        - type: "service"
         ellipsise: 3
 infoview:
-  name: Endpoint Slice Info
+  name: "Endpoint Slice Info"
   infopad:
     row_indexes:
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
           - kind
           - apiVersion
@@ -79,77 +79,77 @@ infoview:
           when:
             key: controller
             eq: true
-          type: [kind, api_group, name]
+          type: ["kind", "api_group", "name"]
         default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
   listpad:
-    infogetter: get_eps_subsets_info
+    infogetter: "get_eps_subsets_info"
     field_indexes:
-      Normal: [addresstype, addresses, ports_eps, status, target_ref, topology]
+      Normal: ["addresstype", "addresses", "ports_eps", "status", "target_ref", "topology"]
     fields:
       addresses:
         header: "Addresses:"
-        path: addresses
-        type: raw
-        formatter: address
+        path: "addresses"
+        type: "raw"
+        formatter: "address"
       addresstype:
         header: "Type:"
-        path: addresstype
-        type: str
+        path: "addresstype"
+        type: "str"
       ports_eps:
         header: "Ports:"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: service
-          - type: port
-          - type: protocol
+          - type: "service"
+          - type: "port"
+          - type: "protocol"
           field_separators:
-          - type: port
-          - type: service
+          - type: "port"
+          - type: "service"
       status:
         header: "Status:"
       target_ref:
         header: "Target Reference:"
         path: "target_ref"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: namespace
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "namespace"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
-          - type: namespace
+          - type: "kind_api_group"
+          - type: "kind"
+          - type: "namespace"
       topology:
         header: "Topology:"
         path: "topology"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
   shortcuts:
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         namespace_path: "metadata#namespace"
@@ -157,16 +157,16 @@ infoview:
     "Open target reference":
       key: enter
       helptext: "Open info page for selected resource"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_selected: true
         _selected_objs:
-          target_ref_kind: [target_ref, 0]
-          target_ref_api_version: [target_ref, 1]
-          target_ref_name: [target_ref, 3]
-          target_ref_namespace: [target_ref, 2]
-        kind_path: target_ref_kind
-        api_family_path: target_ref_api_version
-        name_path: target_ref_name
-        namespace_path: target_ref_namespace
+          target_ref_kind: ["target_ref", 0]
+          target_ref_api_version: ["target_ref", 1]
+          target_ref_name: ["target_ref", 3]
+          target_ref_namespace: ["target_ref", 2]
+        kind_path: "target_ref_kind"
+        api_family_path: "target_ref_api_version"
+        name_path: "target_ref_name"
+        namespace_path: "target_ref_namespace"

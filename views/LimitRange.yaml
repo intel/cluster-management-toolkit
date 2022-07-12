@@ -1,60 +1,60 @@
-kind: LimitRange
-default_command: limitranges
+kind: "LimitRange"
+default_command: "limitranges"
 command:
-- limits
-- lr
+- "limits"
+- "lr"
 listview:
-  name: Limit Ranges
-  group: Policy
+  name: "Limit Ranges"
+  group: "Policy"
   field_indexes:
-    Normal: [namespace, name, created_at]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "created_at"]
+  sortcolumn: "namespace"
   fields:
     created_at:
       header: "Created At:"
       paths:
       - path: ["metadata#creationTimestamp"]
-        type: timestamp
-      formatter: timestamp
+        type: "timestamp"
+      formatter: "timestamp"
       default: -1
 infoview:
-  name: Limit Range Info
+  name: "Limit Range Info"
   infopad:
   listpad:
-    infogetter: get_limit_info
+    infogetter: "get_limit_info"
     field_indexes:
-      Normal: [ltype, name, lmin, lmax, default_request, default_limit, max_lr_ratio]
+      Normal: ["ltype", "name", "lmin", "lmax", "default_request", "default_limit", "max_lr_ratio"]
     fields:
       default_limit:
         header: "Default Limit:"
-        path: default_limit
-        type: raw
-        formatter: numerical_with_units
+        path: "default_limit"
+        type: "raw"
+        formatter: "numerical_with_units"
       default_request:
         header: "Default Request:"
-        path: default_request
-        type: raw
-        formatter: numerical_with_units
+        path: "default_request"
+        type: "raw"
+        formatter: "numerical_with_units"
       lmax:
         header: "Max:"
-        path: lmax
-        type: raw
-        formatter: numerical_with_units
+        path: "lmax"
+        type: "raw"
+        formatter: "numerical_with_units"
       lmin:
         header: "Min:"
-        path: lmin
-        type: raw
-        formatter: numerical_with_units
+        path: "lmin"
+        type: "raw"
+        formatter: "numerical_with_units"
       ltype:
         header: "Type:"
-        path: ltype
-        type: str
+        path: "ltype"
+        type: "str"
       max_lr_ratio:
         header: "Max Limit/Request Ratio:"
-        path: max_lr_ratio
-        type: raw
-        formatter: numerical_with_units
+        path: "max_lr_ratio"
+        type: "raw"
+        formatter: "numerical_with_units"
       name:
         header: "Name:"
-        path: name
-        type: str
+        path: "name"
+        type: "str"

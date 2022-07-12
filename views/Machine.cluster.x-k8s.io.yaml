@@ -1,208 +1,208 @@
-kind: Machine
-api_family: cluster.x-k8s.io
-default_command: machines.cluster.x-k8s.io
+kind: "Machine"
+api_family: "cluster.x-k8s.io"
+default_command: "machines.cluster.x-k8s.io"
 command:
-- x-machines
-- x-machine
+- "x-machines"
+- "x-machine"
 listview:
-  name: Machines (X-K8s)
-  group: Cluster Configuration
+  name: "Machines (X-K8s)"
+  group: "Cluster Configuration"
   field_indexes:
-    Normal: [namespace, name, cluster, node_ref, provider_id, phase, age, version]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "cluster", "node_ref", "provider_id", "phase", "age", "version"]
+  sortcolumn: "namespace"
   fields:
     cluster:
       header: "Cluster:"
       path: "spec#clusterName"
-      type: str
+      type: "str"
     node_ref:
       header: "Node Ref:"
       path: "status#nodeRef#name"
-      type: str
+      type: "str"
       formatting:
         field_colors:
-        - type: hostname
+        - type: "hostname"
     phase:
       header: "Phase:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Provisioned:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Provisioning:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Running:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Terminating:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Failed:
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
     provider_id:
       header: "Provider ID:"
       path: "spec#providerID"
-      type: str
+      type: "str"
     version:
       header: "Version:"
       path: "spec#version"
-      type: str
+      type: "str"
       formatting:
         field_colors:
-        - type: version
+        - type: "version"
 infoview:
-  name: Machine Info (X-k8s)
+  name: "Machine Info (X-k8s)"
   infopad:
     row_indexes:
-      Normal: [node_name, cluster, controller, bootstrap, bootstrap_ready, infrastructure, infrastructure_ready, provider_id, phase, version]
+      Normal: ["node_name", "cluster", "controller", "bootstrap", "bootstrap_ready", "infrastructure", "infrastructure_ready", "provider_id", "phase", "version"]
     rows:
       bootstrap:
-        header: [["B", [main, infoheader]], ["o", [main, infoheader_shortcut]], ["otstrap:", [main, infoheader]]]
+        header: [["B", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["otstrap:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#bootstrap#configRef#kind"], ["spec#bootstrap#configRef#namespace"], ["spec#bootstrap#configRef#name"]]
-          pathtype: tuple
-          type: [kind, name, name]
-        formatter: list
+          pathtype: "tuple"
+          type: ["kind", "name", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: namespace
-          - type: generic
+          - type: "kind"
+          - type: "namespace"
+          - type: "generic"
           field_separators:
-          - type: kind
-          - type: namespace
+          - type: "kind"
+          - type: "namespace"
       bootstrap_ready:
-        header: [["Bootstrap Ready:", [main, infoheader]]]
+        header: [["Bootstrap Ready:", ["main", "infoheader"]]]
         path: "status#bootstrapReady"
-        type: bool
-        formatter: value_mapper
+        type: "bool"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
       cluster:
-        header: [["Cl", [main, infoheader]], ["u", [main, infoheader_shortcut]], ["ster:", [main, infoheader]]]
+        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
         path: "spec#clusterName"
-        type: str
+        type: "str"
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - name
+          - "kind"
+          - "name"
           when:
             key: controller
             eq: true
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: generic
+          - type: "kind"
+          - type: "generic"
           field_separators:
-          - type: kind
+          - type: "kind"
       infrastructure:
-        header: [["I", [main, infoheader_shortcut]], ["nfrastructure:", [main, infoheader]]]
+        header: [["I", ["main", "infoheader_shortcut"]], ["nfrastructure:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#infrastructureRef#kind"], ["spec#infrastructureRef#namespace"], ["spec#infrastructureRef#name"]]
-          pathtype: tuple
-          type: [kind, name, name]
-        formatter: list
+          pathtype: "tuple"
+          type: ["kind", "name", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: namespace
-          - type: generic
+          - type: "kind"
+          - type: "namespace"
+          - type: "generic"
           field_separators:
-          - type: kind
-          - type: namespace
+          - type: "kind"
+          - type: "namespace"
       infrastructure_ready:
-        header: [["Infrastructure Ready:", [main, infoheader]]]
+        header: [["Infrastructure Ready:", ["main", "infoheader"]]]
         path: "status#infrastructureReady"
-        type: bool
-        formatter: value_mapper
+        type: "bool"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
       node_name:
-        header: [["Node Name:", [main, infoheader]]]
+        header: [["Node Name:", ["main", "infoheader"]]]
         path: "status#nodeRef#name"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: hostname
+          - type: "hostname"
       phase:
-        header: [["Phase:", [main, infoheader]]]
+        header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Provisioned:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Provisioning:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Running:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Terminating:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Failed:
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       provider_id:
-        header: [["Provider ID:", [main, infoheader]]]
+        header: [["Provider ID:", ["main", "infoheader"]]]
         path: "spec#providerID"
-        type: str
+        type: "str"
       version:
-        header: [["Version:", [main, infoheader]]]
+        header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
   shortcuts:
     "Open bootstrap":
-      key: o
+      key: "o"
       helptext: "Open info page for bootstrap"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind_path: "spec#bootstrap#configRef#kind"
@@ -210,33 +210,33 @@ infoview:
         name_path: "spec#bootstrap#configRef#name"
         namespace_path: "spec#bootstrap#configRef#namespace"
     "Open Cluster":
-      key: u
+      key: "u"
       helptext: "Open info page for Cluster"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Cluster
-        api_family: cluster.x-k8s.io
+        kind: "Cluster"
+        api_family: "cluster.x-k8s.io"
         name_path: "spec#clusterName"
         namespace_path: "metadata#namespace"
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         name_path: "spec#clusterName"
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
     "Open infrastructure":
-      key: i
-      modifier: shift
+      key: "i"
+      modifier: "shift"
       helptext: "Open info page for infrastructure"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind_path: "spec#infrastructureRef#kind"

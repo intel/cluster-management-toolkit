@@ -1,46 +1,46 @@
-kind: BlockAffinity
-api_family: crd.projectcalico.org
-default_command: blockaffinities
+kind: "BlockAffinity"
+api_family: "crd.projectcalico.org"
+default_command: "blockaffinities"
 listview:
-  name: Block Affinities
-  group: Calico
+  name: "Block Affinities"
+  group: "Calico"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Block Affinity Info
+  name: "Block Affinity Info"
   infopad:
     row_indexes:
-      Normal: [cidr, deleted, node, state]
+      Normal: ["cidr", "deleted", "node", "state"]
     rows:
       cidr:
-        header: [["CIDR:", [main, infoheader]]]
+        header: [["CIDR:", ["main", "infoheader"]]]
         path: "spec#cidr"
-        type: str
-        formatter: address
+        type: "str"
+        formatter: "address"
       deleted:
-        header: [["Deleted:", [main, infoheader]]]
+        header: [["Deleted:", ["main", "infoheader"]]]
         path: "spec#deleted"
         default: "False"
-        type: str
+        type: "str"
       node:
-        header: [["N", [main, infoheader_shortcut]], ["ode:", [main, infoheader]]]
+        header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]
         path: "spec#node"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: host
+          - type: "host"
       state:
-        header: [["State:", [main, infoheader]]]
+        header: [["State:", ["main", "infoheader"]]]
         path: "spec#state"
-        type: str
+        type: "str"
   shortcuts:
     "Open node":
-      key: n
-      modifier: shift
+      key: "n"
+      modifier: "shift"
       helptext: "Open info page for Node"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Node
+        kind: "Node"
         name_path: "spec#node"

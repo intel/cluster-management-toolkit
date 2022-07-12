@@ -1,116 +1,116 @@
-kind: VerticalPodAutoscalerCheckpoint
-api_family: autoscaling.k8s.io
-default_command: verticalpodautoscalercheckpoints
+kind: "VerticalPodAutoscalerCheckpoint"
+api_family: "autoscaling.k8s.io"
+default_command: "verticalpodautoscalercheckpoints"
 command:
-- vpacheckpoints
-- vpacheckpoint
+- "vpacheckpoints"
+- "vpacheckpoint"
 listview:
-  name: Vertical Pod Autoscaler Checkpoints
-  group: Scheduling & Scaling
+  name: "Vertical Pod Autoscaler Checkpoints"
+  group: "Scheduling & Scaling"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Vertical Pod Autoscaler Checkpoint Info
+  name: "Vertical Pod Autoscaler Checkpoint Info"
   infopad:
     row_indexes:
-      Normal: [container_name, vpa_object_name, first_sample_start, last_sample_start, last_update_time, total_samples_count, version]
+      Normal: ["container_name", "vpa_object_name", "first_sample_start", "last_sample_start", "last_update_time", "total_samples_count", "version"]
     rows:
       container_name:
-        header: [["Container:", [main, infoheader]]]
+        header: [["Container:", ["main", "infoheader"]]]
         path: "spec#containerName"
-        type: str
+        type: "str"
       first_sample_start:
-        header: [["First Sample Start:", [main, infoheader]]]
+        header: [["First Sample Start:", ["main", "infoheader"]]]
         paths:
         - path: "status#firstSampleStart"
-          type: timestamp
+          type: "timestamp"
           default: -1
-        formatter: timestamp
+        formatter: "timestamp"
       last_sample_start:
-        header: [["Last Sample Start:", [main, infoheader]]]
+        header: [["Last Sample Start:", ["main", "infoheader"]]]
         paths:
         - path: "status#lastSampleStart"
-          type: timestamp
+          type: "timestamp"
           default: -1
-        formatter: timestamp
+        formatter: "timestamp"
       last_update_time:
-        header: [["Last Update Time:", [main, infoheader]]]
+        header: [["Last Update Time:", ["main", "infoheader"]]]
         paths:
         - path: "status#lastUpdateTime"
-          type: timestamp
+          type: "timestamp"
           default: -1
-        formatter: timestamp
+        formatter: "timestamp"
       total_samples_count:
-        header: [["Total Sample Count:", [main, infoheader]]]
+        header: [["Total Sample Count:", ["main", "infoheader"]]]
         path: "status#totalSamplesCount"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       version:
-        header: [["Version:", [main, infoheader]]]
+        header: [["Version:", ["main", "infoheader"]]]
         path: "status#version"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
       vpa_object_name:
-        header: [["V", [main, infoheader_shortcut]], ["PA Object:", [main, infoheader]]]
+        header: [["V", ["main", "infoheader_shortcut"]], ["PA Object:", ["main", "infoheader"]]]
         path: "spec#vpaObjectName"
-        type: str
+        type: "str"
   listpad:
-    listgetter: listgetter_join_lists
+    listgetter: "listgetter_join_lists"
     listgetter_args:
       paths:
       - path: ["status#cpuHistogram"]
-        name_key: name
-        name_value: cpu
+        name_key: "name"
+        name_value: "cpu"
       - path: ["status#memoryHistogram"]
-        name_key: name
-        name_value: memory
-    infogetter: generic_infogetter
+        name_key: "name"
+        name_value: "memory"
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [name, bucket_weights, total_weight, reference_timestamp]
+      Normal: ["name", "bucket_weights", "total_weight", "reference_timestamp"]
     fields:
       bucket_weights:
         header: "Bucket Weights:"
         paths:
-        - path: bucketWeights
-          pathtype: key_value
-        formatter: list
+        - path: "bucketWeights"
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: numerical
+          - type: "key"
+          - type: "numerical"
           field_separators:
-          - type: keyvalue
+          - type: "keyvalue"
       name:
         header: "Name:"
-        path: name
-        type: str
+        path: "name"
+        type: "str"
       reference_timestamp:
         header: "Reference Timestamp:"
         paths:
-        - path: referenceTimestamp
-          type: timestamp
+        - path: "referenceTimestamp"
+          type: "timestamp"
           default: -1
-        formatter: timestamp
+        formatter: "timestamp"
       total_weight:
         header: "Total Weight:"
-        path: totalWeight
-        type: float
-        formatter: numerical_with_units
+        path: "totalWeight"
+        type: "float"
+        formatter: "numerical_with_units"
   shortcuts:
     "Open Vertical Pod Autoscaler":
-      key: v
-      modifier: shift
+      key: "v"
+      modifier: "shift"
       helptext: "Open info page for Vertical Pod Autoscaler object"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: VerticalPodAutoscaler
-        api_family: autoscaling.k8s.io
+        kind: "VerticalPodAutoscaler"
+        api_family: "autoscaling.k8s.io"
         name_path: "spec#vpaObjectName"
         namespace_path: "metadata#namespace"

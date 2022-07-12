@@ -1,26 +1,26 @@
-kind: CiliumIdentity
-api_family: cilium.io
-default_command: ciliumidentities
+kind: "CiliumIdentity"
+api_family: "cilium.io"
+default_command: "ciliumidentities"
 command:
-- ciliumids
-- ciliumid
+- "ciliumids"
+- "ciliumid"
 listview:
-  name: Cilium Identities
-  group: Cilium
+  name: "Cilium Identities"
+  group: "Cilium"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Cilium Identity Info
+  name: "Cilium Identity Info"
   infopad:
   shortcuts:
     "Show Security Labels":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "Show security labels"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Security Labels:"
       headers: ["Label:", "Value:"]
-      itemgetter: get_key_value
+      itemgetter: "get_key_value"
       itemgetter_args:
         path: "security-labels"
-      formatting: [[windowwidget, default], [windowwidget, highlight]]
+      formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]

@@ -1,106 +1,106 @@
-kind: StorageClass
-api_family: storage.k8s.io
-default_command: storageclasses
+kind: "StorageClass"
+api_family: "storage.k8s.io"
+default_command: "storageclasses"
 command:
-- scs
-- sc
+- "scs"
+- "sc"
 listview:
-  name: Storage Classes
-  group: Storage & Backups
+  name: "Storage Classes"
+  group: "Storage & Backups"
   field_indexes:
-    Normal: [name, provisioner, reclaim_policy, volume_binding_mode, allow_volume_expansion, age]
+    Normal: ["name", "provisioner", "reclaim_policy", "volume_binding_mode", "allow_volume_expansion", "age"]
   fields:
     allow_volume_expansion:
       header: "Allow Volume Expansion:"
-      path: allowVolumeExpansion
+      path: "allowVolumeExpansion"
       default: false
-      type: bool
+      type: "bool"
     provisioner:
       header: "Provisioner:"
-      path: provisioner
-      type: str
+      path: "provisioner"
+      type: "str"
     reclaim_policy:
       header: "Reclaim Policy:"
       path: "reclaimPolicy"
-      type: str
+      type: "str"
     volume_binding_mode:
       header: "Volume Binding Mode:"
-      path: volumeBindingMode
+      path: "volumeBindingMode"
       default: VolumeBindingImmediate
-      type: str
+      type: "str"
 infoview:
-  name: Storage Class Info
+  name: "Storage Class Info"
   infopad:
     row_indexes:
-      Normal: [is_default_class, provisioner, parameters, allow_volume_expansion, mount_options, reclaim_policy, volume_binding_mode]
+      Normal: ["is_default_class", "provisioner", "parameters", "allow_volume_expansion", "mount_options", "reclaim_policy", "volume_binding_mode"]
     rows:
       allow_volume_expansion:
-        header: [["Allow Volume Expansion:", [main, infoheader]]]
-        path: allowVolumeExpansion
+        header: [["Allow Volume Expansion:", ["main", "infoheader"]]]
+        path: "allowVolumeExpansion"
         default: false
-        type: bool
+        type: "bool"
       is_default_class:
-        header: [["Is Default Class:", [main, infoheader]]]
+        header: [["Is Default Class:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#annotations"
-          pathtype: substitution
+          pathtype: "substitution"
           subpath: "storageclass.kubernetes.io/is-default-class"
           when:
           - key: "storageclass.kubernetes.io/is-default-class"
             eq: "true"
           substitute: true
         - path: "metadata#annotations"
-          pathtype: substitution
+          pathtype: "substitution"
           subpath: "storageclass.kubernetes.io/is-default-class"
           when:
           - key: "storageclass.kubernetes.io/is-default-class"
             eq: "false"
           substitute: false
         default: false
-        type: bool
+        type: "bool"
       mount_options:
-        header: [["Mount Options:", [main, infoheader]]]
+        header: [["Mount Options:", ["main", "infoheader"]]]
         path: "mountOptions"
         extra_paths: "mountOptions"
         default: "<none>"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       parameters:
-        header: [["P", [main, infoheader_shortcut]], ["arameters:", [main, infoheader]]]
+        header: [["P", ["main", "infoheader_shortcut"]], ["arameters:", ["main", "infoheader"]]]
         paths:
         - path: "parameters"
-          pathtype: key_value
-        formatter: list
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: keyvalue
+          - type: "keyvalue"
       provisioner:
-        header: [["Provisioner:", [main, infoheader]]]
-        path: provisioner
-        type: str
+        header: [["Provisioner:", ["main", "infoheader"]]]
+        path: "provisioner"
+        type: "str"
       reclaim_policy:
-        header: [["Reclaim Policy:", [main, infoheader]]]
-        path: reclaimPolicy
-        type: str
+        header: [["Reclaim Policy:", ["main", "infoheader"]]]
+        path: "reclaimPolicy"
+        type: "str"
       volume_binding_mode:
-        header: [["Volume Binding Mode:", [main, infoheader]]]
-        path: volumeBindingMode
+        header: [["Volume Binding Mode:", ["main", "infoheader"]]]
+        path: "volumeBindingMode"
         default: VolumeBindingImmediate
-        type: str
+        type: "str"
   shortcuts:
     "Parameters":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "Show storage class parameters"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Parameters:"
       headers: ["Parameter:", "Value:"]
-      itemgetter: get_key_value
+      itemgetter: "get_key_value"
       itemgetter_args:
         path: "parameters"
-      formatting: [[windowwidget, default], [windowwidget, highlight]]
+      formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
       # This isn't supported for now
-      sortcolumn: parameter
+      sortcolumn: "parameter"

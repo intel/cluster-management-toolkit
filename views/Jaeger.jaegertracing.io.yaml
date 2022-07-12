@@ -1,41 +1,41 @@
-kind: Jaeger
-api_family: jaegertracing.io
-default_command: jaegers
+kind: "Jaeger"
+api_family: "jaegertracing.io"
+default_command: "jaegers"
 listview:
-  name: Jaegers
-  group: Monitoring
+  name: "Jaegers"
+  group: "Monitoring"
   field_indexes:
-    Normal: [namespace, name, status, version, strategy, storage, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "status", "version", "strategy", "storage", "age"]
+  sortcolumn: "namespace"
   fields:
     status:
       header: "Status:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Failed:
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
             Running:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
     storage:
       header: "Storage:"
       path: "spec#storage#type"
-      type: str
+      type: "str"
     strategy:
       header: "Strategy:"
       path: "spec#strategy"
-      type: str
+      type: "str"
     version:
       header: "Version:"
       path: "status#version"
-      type: str
+      type: "str"
       formatting:
         field_colors:
-        - type: version
+        - type: "version"

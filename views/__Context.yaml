@@ -1,50 +1,50 @@
-kind: __Context
-default_command: contexts
+kind: "__Context"
+default_command: "contexts"
 command:
-- context
-- ctx
+- "context"
+- "ctx"
 listview:
-  listgetter: get_context_list
+  listgetter: "get_context_list"
   on_activation:
     call: null
-  name: Contexts
-  group: Administration
+  name: "Contexts"
+  group: "Administration"
   is_taggable: false
   field_indexes:
-    Normal: [current, name, cluster, authinfo, namespace]
-  sortcolumn: cluster
+    Normal: ["current", "name", "cluster", "authinfo", "namespace"]
+  sortcolumn: "cluster"
   fields:
     authinfo:
       header: "Authinfo:"
-      path: authinfo
-      type: str
+      path: "authinfo"
+      type: "str"
     cluster:
       header: "Cluster:"
-      path: cluster
-      type: str
+      path: "cluster"
+      type: "str"
     current:
       header: "Current:"
-      path: current
-      type: str
+      path: "current"
+      type: "str"
     name:
       header: "Name:"
-      path: name
-      type: str
+      path: "name"
+      type: "str"
     namespace:
       header: "Namespace:"
-      path: namespace
-      type: str
+      path: "namespace"
+      type: "str"
       formatting:
         field_colors:
-        - type: namespace
+        - type: "namespace"
   shortcuts:
     "Switch Context":
       key: enter
       helptext: "Switch cluster context"
       confirm: true
       title: "Switch cluster context"
-      action: call
-      action_call: set_cluster_context
+      action: "call"
+      action_call: "set_cluster_context"
       action_args:
         _pass_selected: true
     "Edit Resource":

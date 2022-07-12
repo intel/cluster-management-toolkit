@@ -1,239 +1,239 @@
-kind: KubeHunterReport
-api_family: aquasecurity.github.io
-default_command: kubehunterreports
+kind: "KubeHunterReport"
+api_family: "aquasecurity.github.io"
+default_command: "kubehunterreports"
 command:
-- kubehunter
+- "kubehunter"
 listview:
-  name: Kube-Hunter Reports
-  group: Security
+  name: "Kube-Hunter Reports"
+  group: "Security"
   field_indexes:
-    Normal: [name, scanner, high_severity, medium_severity, low_severity, unknown_severity, age]
+    Normal: ["name", "scanner", "high_severity", "medium_severity", "low_severity", "unknown_severity", "age"]
   fields:
     high_severity:
       header: "High:"
       path: "report#summary#highCount"
-      type: raw
-      formatter: value_mapper
+      type: "raw"
+      formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
           - min: 0
             max: 1
             field_colors:
-            - context: types
-              type: watermark_low
+            - context: "types"
+              type: "watermark_low"
           - default: true
             field_colors:
-            - context: types
-              type: watermark_high
-      align: right
+            - context: "types"
+              type: "watermark_high"
+      align: "right"
     medium_severity:
       header: "Medium:"
       path: "report#summary#mediumCount"
-      type: raw
-      formatter: value_mapper
+      type: "raw"
+      formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
           - min: 0
             max: 1
             field_colors:
-            - context: types
-              type: watermark_low
+            - context: "types"
+              type: "watermark_low"
           - default: true
             field_colors:
-            - context: types
-              type: watermark_medium
-      align: right
+            - context: "types"
+              type: "watermark_medium"
+      align: "right"
     low_severity:
       header: "Low:"
       path: "report#summary#lowCount"
-      type: raw
-      formatter: value_mapper
+      type: "raw"
+      formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
           - min: 0
             max: 1
             field_colors:
-            - context: types
-              type: watermark_low
+            - context: "types"
+              type: "watermark_low"
           - default: true
             field_colors:
-            - context: types
-              type: watermark_medium
-      align: right
+            - context: "types"
+              type: "watermark_medium"
+      align: "right"
     scanner:
       header: "Scanner:"
       paths:
       - path: [["report#scanner#name"], ["report#scanner#version"]]
-        pathtype: tuple
-      formatter: list
+        pathtype: "tuple"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: generic
-        - type: version
+        - type: "generic"
+        - type: "version"
         field_separators:
-        - type: version
+        - type: "version"
     unknown_severity:
       header: "Unknown:"
       path: "report#summary#unknownCount"
-      type: raw
-      formatter: value_mapper
+      type: "raw"
+      formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
           - min: 0
             max: 1
             field_colors:
-            - context: types
-              type: watermark_low
+            - context: "types"
+              type: "watermark_low"
           - default: true
             field_colors:
-            - context: types
-              type: watermark_high
-      align: right
+            - context: "types"
+              type: "watermark_high"
+      align: "right"
 infoview:
-  name: Kube-Hunter Report Info
+  name: "Kube-Hunter Report Info"
   infopad:
     row_indexes:
-      Normal: [scanner, vendor, high_severity, medium_severity, low_severity, unknown_severity]
+      Normal: ["scanner", "vendor", "high_severity", "medium_severity", "low_severity", "unknown_severity"]
     rows:
       high_severity:
-        header: [["High:", [main, infoheader]]]
+        header: [["High:", ["main", "infoheader"]]]
         path: "report#summary#highCount"
-        type: raw
-        formatter: value_mapper
+        type: "raw"
+        formatter: "value_mapper"
         formatting:
           mapping:
             ranges:
             - min: 0
               max: 1
               field_colors:
-              - context: types
-                type: watermark_low
+              - context: "types"
+                type: "watermark_low"
             - default: true
               field_colors:
-              - context: types
-                type: watermark_high
+              - context: "types"
+                type: "watermark_high"
       medium_severity:
-        header: [["Medium:", [main, infoheader]]]
+        header: [["Medium:", ["main", "infoheader"]]]
         path: "report#summary#mediumCount"
-        type: raw
-        formatter: value_mapper
+        type: "raw"
+        formatter: "value_mapper"
         formatting:
           mapping:
             ranges:
             - min: 0
               max: 1
               field_colors:
-              - context: types
-                type: watermark_low
+              - context: "types"
+                type: "watermark_low"
             - default: true
               field_colors:
-              - context: types
-                type: watermark_medium
+              - context: "types"
+                type: "watermark_medium"
       low_severity:
-        header: [["Low:", [main, infoheader]]]
+        header: [["Low:", ["main", "infoheader"]]]
         path: "report#summary#lowCount"
-        type: raw
-        formatter: value_mapper
+        type: "raw"
+        formatter: "value_mapper"
         formatting:
           mapping:
             ranges:
             - min: 0
               max: 1
               field_colors:
-              - context: types
-                type: watermark_low
+              - context: "types"
+                type: "watermark_low"
             - default: true
               field_colors:
-              - context: types
-                type: watermark_medium
+              - context: "types"
+                type: "watermark_medium"
       scanner:
-        header: [["Scanner:", [main, infoheader]]]
+        header: [["Scanner:", ["main", "infoheader"]]]
         paths:
         - path: [["report#scanner#name"], ["report#scanner#version"]]
-          pathtype: tuple
-        formatter: list
+          pathtype: "tuple"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: generic
-          - type: version
+          - type: "generic"
+          - type: "version"
           field_separators:
-          - type: version
+          - type: "version"
       vendor:
-        header: [["Vendor:", [main, infoheader]]]
+        header: [["Vendor:", ["main", "infoheader"]]]
         path: "report#scanner#vendor"
-        type: str
+        type: "str"
       unknown_severity:
-        header: [["Unknown:", [main, infoheader]]]
+        header: [["Unknown:", ["main", "infoheader"]]]
         path: "report#summary#unknownCount"
-        type: raw
-        formatter: value_mapper
+        type: "raw"
+        formatter: "value_mapper"
         formatting:
           mapping:
             ranges:
             - min: 0
               max: 1
               field_colors:
-              - context: types
-                type: watermark_low
+              - context: "types"
+                type: "watermark_low"
             - default: true
               field_colors:
-              - context: types
-                type: watermark_high
+              - context: "types"
+                type: "watermark_high"
   listpad:
     on_activation:
-      call: resourceinfodispatch
-      kind: __KubeHunterReportData
-      api_family: aquasecurity.github.io
+      call: "resourceinfodispatch"
+      kind: "__KubeHunterReportData"
+      api_family: "aquasecurity.github.io"
     path: "report#vulnerabilities"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     field_indexes:
-      Wide: [severity, vulnerability, vid, location, evidence, description]
-      Normal: [severity, vulnerability, vid, description]
+      Wide: ["severity", "vulnerability", "vid", "location", "evidence", "description"]
+      Normal: ["severity", "vulnerability", "vid", "description"]
     fields:
       description:
         header: "Description:"
-        path: description
-        type: str
+        path: "description"
+        type: "str"
       evidence:
         header: "Evidence:"
-        path: evidence
-        type: str
+        path: "evidence"
+        type: "str"
       location:
         header: "Location:"
-        path: location
-        type: str
+        path: "location"
+        type: "str"
       severity:
         header: "Severity:"
-        path: severity
-        type: str
-        formatter: value_mapper
+        path: "severity"
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               high:
                 field_colors:
-                - context: types
-                  type: watermark_high
+                - context: "types"
+                  type: "watermark_high"
               medium:
                 field_colors:
-                - context: types
-                  type: watermark_medium
+                - context: "types"
+                  type: "watermark_medium"
               low:
                 field_colors:
-                - context: types
-                  type: watermark_low
+                - context: "types"
+                  type: "watermark_low"
               unknown:
-                - context: types
-                  type: watermark_high
+                - context: "types"
+                  type: "watermark_high"
       vid:
         header: "VID:"
-        path: vid
-        type: str
+        path: "vid"
+        type: "str"
       vulnerability:
         header: "Vulnerability:"
-        path: vulnerability
-        type: str
+        path: "vulnerability"
+        type: "str"

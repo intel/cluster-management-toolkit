@@ -1,121 +1,121 @@
-kind: Network
-api_family: operator.openshift.io
-default_command: networks.operator.openshift.io
+kind: "Network"
+api_family: "operator.openshift.io"
+default_command: "networks.operator.openshift.io"
 command:
-- networks.operator
-- network.operator
+- "networks.operator"
+- "network.operator"
 listview:
-  name: Networks (Operator)
-  group: OpenShift
+  name: "Networks (Operator)"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Network Info (Operator)
+  name: "Network Info (Operator)"
   infopad:
     row_indexes:
-      Normal: [deploy_kube_proxy, disable_multi_network, use_multi_network_policy, loglevel, operator_loglevel, management_state, ready_replicas, version, disable_network_diagnostics, cluster_network, service_network]
+      Normal: ["deploy_kube_proxy", "disable_multi_network", "use_multi_network_policy", "loglevel", "operator_loglevel", "management_state", "ready_replicas", "version", "disable_network_diagnostics", "cluster_network", "service_network"]
     rows:
       deploy_kube_proxy:
-        header: [["Deploy kube-proxy:", [main, infoheader]]]
+        header: [["Deploy kube-proxy:", ["main", "infoheader"]]]
         path: "spec#deployKubeProxy"
         default: "<unset>"
-        type: bool
+        type: "bool"
       disable_multi_network:
-        header: [["Disable Multiple Pod Network Support:", [main, infoheader]]]
+        header: [["Disable Multiple Pod Network Support:", ["main", "infoheader"]]]
         path: "spec#disableNetworkDiagnostics"
         default: false
-        type: bool
+        type: "bool"
       disable_network_diagnostics:
-        header: [["Disable Network Diagnostics:", [main, infoheader]]]
+        header: [["Disable Network Diagnostics:", ["main", "infoheader"]]]
         path: "spec#disableNetworkDiagnostics"
         default: "<unset>"
-        type: bool
+        type: "bool"
       loglevel:
-        header: [["Loglevel:", [main, infoheader]]]
+        header: [["Loglevel:", ["main", "infoheader"]]]
         path: "spec#logLevel"
-        type: str
+        type: "str"
       management_state:
-        header: [["Management State:", [main, infoheader]]]
+        header: [["Management State:", ["main", "infoheader"]]]
         path: "spec#managementState"
-        type: str
+        type: "str"
       operator_loglevel:
-        header: [["Operator Loglevel:", [main, infoheader]]]
+        header: [["Operator Loglevel:", ["main", "infoheader"]]]
         path: "spec#operatorLogLevel"
-        type: str
+        type: "str"
       ready_replicas:
-        header: [["Ready Replicas:", [main, infoheader]]]
+        header: [["Ready Replicas:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       cluster_network:
-        header: [["Cluster Network:", [main, infoheader]]]
+        header: [["Cluster Network:", ["main", "infoheader"]]]
         paths:
         - path: "spec#clusterNetwork"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - cidr
+          - "cidr"
           - str: "("
           - str: "Host Prefix: "
-          - hostPrefix
+          - "hostPrefix"
           - str: ")"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: address
-          - type: generic
-          - type: generic
-          - type: numerical
-          - type: generic
+          - type: "address"
+          - type: "generic"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
           field_separators:
-          - type: space
-          - type: no_pad
-          - type: no_pad
-          - type: no_pad
+          - type: "space"
+          - type: "no_pad"
+          - type: "no_pad"
+          - type: "no_pad"
       service_network:
-        header: [["Service Network:", [main, infoheader]]]
+        header: [["Service Network:", ["main", "infoheader"]]]
         path: "spec#serviceNetwork"
-        type: raw
-        formatter: address
+        type: "raw"
+        formatter: "address"
       use_multi_network_policy:
-        header: [["Use MultiNetwork Policy:", [main, infoheader]]]
+        header: [["Use MultiNetwork Policy:", ["main", "infoheader"]]]
         path: "spec#useMultiNetworkPolicy"
         default: false
-        type: bool
+        type: "bool"
       version:
-        header: [["Version:", [main, infoheader]]]
+        header: [["Version:", ["main", "infoheader"]]]
         path: "status#version"
-        type: raw
+        type: "raw"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
   shortcuts:
     "Additional networks":
-      key: a
-      modifier: shift
+      key: "a"
+      modifier: "shift"
       helptext: "List additional networks"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Additional networks:"
       headers: ["Namespace:", "Name:", "Type:", "RAW CNI Config:", "Simple MAC VLAN Configuration:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#additionalNetworks"
         fields:
-        - namespace
-        - name
-        - type
-        - rawCNIConfig
-        - simpleMacvlanConfig
+        - "namespace"
+        - "name"
+        - "type"
+        - "rawCNIConfig"
+        - "simpleMacvlanConfig"
       # Not supported for now
-      sortcolumn: namespace
+      sortcolumn: "namespace"
     "View observed configuration":
-      key: o
-      modifier: shift
+      key: "o"
+      modifier: "shift"
       helptext: "Show observed configuration"
-      action: call
-      action_call: view_yaml
+      action: "call"
+      action_call: "view_yaml"
       action_args:
-        title: Observed Configuration
+        title: "Observed Configuration"
         _pass_obj: true
         path: "spec#observedConfig"

@@ -1,124 +1,124 @@
-kind: KubeVirt
-api_family: kubevirt.io
-default_command: kubevirts
+kind: "KubeVirt"
+api_family: "kubevirt.io"
+default_command: "kubevirts"
 listview:
-  name: KubeVirts
-  group: Virtualization
+  name: "KubeVirts"
+  group: "Virtualization"
   field_indexes:
-    Normal: [namespace, name, phase, replicas, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "phase", "replicas", "age"]
+  sortcolumn: "namespace"
   fields:
     phase:
       header: "Phase:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "Deploying":
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             "Deployed":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "Deleting":
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             "Deleted":
               field_colors:
-              - context: main
-                type: status_done
+              - context: "main"
+                type: "status_done"
     replicas:
       header: "Replicas:"
       path: "spec#infra#replicas"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
 infoview:
-  name: KubeVirt Info
+  name: "KubeVirt Info"
   infopad:
     row_indexes:
-      Normal: [image_pull_policy, observed_kubevirt_registry, observed_kubevirt_version, target_kubevirt_registry, target_kubevirt_version, replicas, phase]
+      Normal: ["image_pull_policy", "observed_kubevirt_registry", "observed_kubevirt_version", "target_kubevirt_registry", "target_kubevirt_version", "replicas", "phase"]
     rows:
       image_pull_policy:
-        header: [["Image Pull Policy:", [main, infoheader]]]
+        header: [["Image Pull Policy:", ["main", "infoheader"]]]
         path: "spec#imagePullPolicy"
-        type: str
+        type: "str"
       observed_kubevirt_registry:
-        header: [["Observed KubVirt Policy:", [main, infoheader]]]
+        header: [["Observed KubVirt Policy:", ["main", "infoheader"]]]
         path: "status#observedKubeVirtRegistry"
-        type: str
+        type: "str"
       observed_kubevirt_version:
-        header: [["Observed KubVirt Version:", [main, infoheader]]]
+        header: [["Observed KubVirt Version:", ["main", "infoheader"]]]
         path: "status#observedKubeVirtVersion"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
       phase:
-        header: [["Phase:", [main, infoheader]]]
+        header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "Deploying":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               "Deployed":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "Deleting":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               "Deleted":
                 field_colors:
-                - context: main
-                  type: status_done
+                - context: "main"
+                  type: "status_done"
       replicas:
-        header: [["Replicas:", [main, infoheader]]]
+        header: [["Replicas:", ["main", "infoheader"]]]
         path: "spec#infra#replicas"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       target_kubevirt_registry:
-        header: [["Target KubVirt Policy:", [main, infoheader]]]
+        header: [["Target KubVirt Policy:", ["main", "infoheader"]]]
         path: "status#targetKubeVirtRegistry"
-        type: str
+        type: "str"
       target_kubevirt_version:
-        header: [["Target KubVirt Version:", [main, infoheader]]]
+        header: [["Target KubVirt Version:", ["main", "infoheader"]]]
         path: "status#targetKubeVirtVersion"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
   shortcuts:
     "Show Generations":
-      key: g
-      modifier: shift
+      key: "g"
+      modifier: "shift"
       helptext: "List generations"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Generations:"
       headers: ["Name:", "Namespace:", "Resource:", "Group:", "Generation:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "status#generations"
         fields:
-        - name
-        - namespace
-        - resource
-        - group
-        - lastGeneration
+        - "name"
+        - "namespace"
+        - "resource"
+        - "group"
+        - "lastGeneration"
       # Not supported for now
-      sortcolumn: name
+      sortcolumn: "name"

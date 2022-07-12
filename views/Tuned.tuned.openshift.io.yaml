@@ -1,117 +1,117 @@
-kind: Tuned
-api_family: tuned.openshift.io
-default_command: tuneds
+kind: "Tuned"
+api_family: "tuned.openshift.io"
+default_command: "tuneds"
 listview:
-  name: Tuneds
-  group: OpenShift
+  name: "Tuneds"
+  group: "OpenShift"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Tuned Info
+  name: "Tuned Info"
   infopad:
     row_indexes:
-      Normal: [controller]
+      Normal: ["controller"]
     rows:
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
             key: controller
             eq: true
-          type: [kind, api_group, name]
+          type: ["kind", "api_group", "name"]
         default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
   listpad:
     path: "spec#recommend"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     on_activation:
-      call: resourceinfodispatch
-      kind: __TunedProfile
-      api_family: tuned.openshift.io
+      call: "resourceinfodispatch"
+      kind: "__TunedProfile"
+      api_family: "tuned.openshift.io"
     field_indexes:
-      Normal: [profile, priority, operand, machine_config_labels]
-    sortcolumn: priority
+      Normal: ["profile", "priority", "operand", "machine_config_labels"]
+    sortcolumn: "priority"
     fields:
       machine_config_labels:
         header: "Machine Config Labels:"
         paths:
-        - path: machineConfigLabels
-          pathtype: key_value
-        formatter: list
+        - path: "machineConfigLabels"
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       operand:
         header: "Operand:"
         paths:
-        - path: operand
-          pathtype: key_value
-        formatter: list
+        - path: "operand"
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: keyvalue
+          - type: "keyvalue"
       priority:
         header: "Priority:"
-        path: priority
-        type: int
+        path: "priority"
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
-        align: right
+          - type: "numerical"
+        align: "right"
       profile:
         header: "Profile:"
-        path: profile
-        type: str
+        path: "profile"
+        type: "str"
   shortcuts:
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
     "Show Profile list":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "List Tuned profiles"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Profiles:"
       selectable: true
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#profile"
         fields:
-        - name
+        - "name"
         pass_ref: true
       # Not supported for now
-      sortcolumn: name
-      action: call
-      action_call: view_obj
+      sortcolumn: "name"
+      action: "call"
+      action_call: "view_obj"
       action_args:
-        path: data
-        title_path: name
-        formatter: iktlib.format_ini
+        path: "data"
+        title_path: "name"
+        formatter: "iktlib.format_ini"

@@ -1,40 +1,40 @@
-kind: TASPolicy
-api_family: telemetry.intel.com
-default_command: taspolicies
+kind: "TASPolicy"
+api_family: "telemetry.intel.com"
+default_command: "taspolicies"
 command:
-- tas
+- "tas"
 listview:
-  name: Telemetry Aware Scheduling Policies
-  group: Scheduling & Scaling
+  name: "Telemetry Aware Scheduling Policies"
+  group: "Scheduling & Scaling"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
   name: "Telemetry Aware Scheduling Policy Info"
   infopad:
   listpad:
-    infogetter: get_strategy_info
+    infogetter: "get_strategy_info"
     field_indexes:
-      Normal: [strategy, name, operator, target]
-    sortcolumn: strategy
+      Normal: ["strategy", "name", "operator", "target"]
+    sortcolumn: "strategy"
     reversible: false
     fields:
       name:
         header: "Name:"
         path: "name"
-        type: str
+        type: "str"
       operator:
         header: "Operator:"
         path: "operator"
-        type: str
+        type: "str"
       strategy:
         header: "Strategy:"
         path: "strategy"
-        type: str
+        type: "str"
       target:
         header: "Target:"
         path: "target"
-        type: integer
+        type: "integer"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"

@@ -1,33 +1,33 @@
-kind: ValidatingWebhookConfiguration
-api_family: admissionregistration.k8s.io
-default_command: validatingwebhookconfigurations
+kind: "ValidatingWebhookConfiguration"
+api_family: "admissionregistration.k8s.io"
+default_command: "validatingwebhookconfigurations"
 command:
-- vwhcs
-- vwhc
+- "vwhcs"
+- "vwhc"
 listview:
-  name: Validating Webhook Configurations
-  group: API & Extendability
+  name: "Validating Webhook Configurations"
+  group: "API & Extendability"
   field_indexes:
-    Normal: [name, webhook_count, age]
+    Normal: ["name", "webhook_count", "age"]
   fields:
     webhook_count:
       header: "Webhooks:"
-      path: webhooks
-      type: len
+      path: "webhooks"
+      type: "len"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
 infoview:
-  name: Validating Webhook Configuration Info
+  name: "Validating Webhook Configuration Info"
   infopad:
   listpad:
-    path: webhooks
-    infogetter: generic_infogetter
+    path: "webhooks"
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [name]
+      Normal: ["name"]
     fields:
       name:
         header: "Name:"
         path: "name"
-        type: str
+        type: "str"

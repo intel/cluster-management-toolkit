@@ -1,86 +1,86 @@
-kind: PriorityLevelConfiguration
-api_family: flowcontrol.apiserver.k8s.io
-default_command: prioritylevelconfigurations
+kind: "PriorityLevelConfiguration"
+api_family: "flowcontrol.apiserver.k8s.io"
+default_command: "prioritylevelconfigurations"
 command:
-- priolevelconfs
-- priolevelconf
+- "priolevelconfs"
+- "priolevelconf"
 listview:
-  name: Priority Level Configurations
-  group: Scheduling & Scaling
+  name: "Priority Level Configurations"
+  group: "Scheduling & Scaling"
   field_indexes:
-    Normal: [name, priority_type, assured_concurrency_shares, queues, hand_size, queue_length_limit, age]
+    Normal: ["name", "priority_type", "assured_concurrency_shares", "queues", "hand_size", "queue_length_limit", "age"]
   fields:
     assured_concurrency_shares:
       header: "Assured Concurrency Shares:"
       path: "spec#limited#assuredConcurrencyShares"
-      type: raw
-      align: right
+      type: "raw"
+      align: "right"
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
     hand_size:
       header: "Hand Size:"
       path: "spec#limited#limitResponse#queuing#handSize"
-      type: raw
-      align: right
+      type: "raw"
+      align: "right"
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
     priority_type:
       header: "Priority Type:"
       path: "spec#type"
-      type: str
+      type: "str"
     queue_length_limit:
       header: "Queue Length List:"
       path: "spec#limited#limitResponse#queuing#queueLengthLimit"
-      type: raw
-      align: right
+      type: "raw"
+      align: "right"
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
     queues:
       header: "Queues:"
       path: "spec#limited#limitResponse#queuing#queues"
-      type: raw
-      align: right
+      type: "raw"
+      align: "right"
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
 infoview:
   name: "Priority Level Configuration Info"
   infopad:
     row_indexes:
-      Normal: [priority_type, assured_concurrency_shares, queues, hand_size, queue_length_limit, queues]
+      Normal: ["priority_type", "assured_concurrency_shares", "queues", "hand_size", "queue_length_limit", "queues"]
     rows:
       assured_concurrency_shares:
-        header: [["Assured Concurrency Shares:", [main, infoheader]]]
+        header: [["Assured Concurrency Shares:", ["main", "infoheader"]]]
         path: "spec#limited#assuredConcurrencyShares"
-        type: raw
+        type: "raw"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       hand_size:
-        header: [["Hand Size:", [main, infoheader]]]
+        header: [["Hand Size:", ["main", "infoheader"]]]
         path: "spec#limited#limitResponse#queuing#handSize"
-        type: raw
+        type: "raw"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       priority_type:
-        header: [["Priority Type:", [main, infoheader]]]
+        header: [["Priority Type:", ["main", "infoheader"]]]
         path: "spec#type"
-        type: str
+        type: "str"
       queue_length_limit:
-        header: [["Queue Length List:", [main, infoheader]]]
+        header: [["Queue Length List:", ["main", "infoheader"]]]
         path: "spec#limited#limitResponse#queuing#queueLengthLimit"
-        type: raw
+        type: "raw"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       queues:
-        header: [["Queues:", [main, infoheader]]]
+        header: [["Queues:", ["main", "infoheader"]]]
         path: "spec#limited#limitResponse#queuing#queues"
-        type: raw
+        type: "raw"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"

@@ -1,121 +1,121 @@
-kind: Prometheus
-api_family: monitoring.coreos.com
-default_command: prometheuses
+kind: "Prometheus"
+api_family: "monitoring.coreos.com"
+default_command: "prometheuses"
 command:
-- proms
-- prom
+- "proms"
+- "prom"
 listview:
-  name: Prometheuses
-  group: Monitoring
+  name: "Prometheuses"
+  group: "Monitoring"
   field_indexes:
-    Normal: [namespace, name, version, replicas, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "version", "replicas", "age"]
+  sortcolumn: "namespace"
   fields:
     replicas:
       header: "Replicas:"
       path: "spec#replicas"
-      type: int
-      align: right
+      type: "int"
+      align: "right"
     version:
       header: "Version:"
       path: "spec#version"
-      type: str
+      type: "str"
       formatting:
         field_colors:
-        - type: version
+        - type: "version"
 infoview:
-  name: Prometheus Info
+  name: "Prometheus Info"
   infopad:
     row_indexes:
-      Normal: [image, node_selector, rule_selector, replicas, service_account]
+      Normal: ["image", "node_selector", "rule_selector", "replicas", "service_account"]
     rows:
       image:
-        header: [["Image:", [main, infoheader]]]
+        header: [["Image:", ["main", "infoheader"]]]
         paths:
         - path: "spec#image"
-          pathtype: regex
+          pathtype: "regex"
           regex: "^([^:]+):(.*)"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: generic
-          - type: version
+          - type: "generic"
+          - type: "version"
           field_separators:
-          - type: version
+          - type: "version"
       node_selector:
-        header: [["Node Selector:", [main, infoheader]]]
+        header: [["Node Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#nodeSelector"]
-          pathtype: key_value
-        formatter: list
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       replicas:
-        header: [["Replicas:", [main, infoheader]]]
+        header: [["Replicas:", ["main", "infoheader"]]]
         path: "spec#replicas"
-        type: raw
+        type: "raw"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       rule_selector:
-        header: [["Rule Selector:", [main, infoheader]]]
+        header: [["Rule Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#ruleSelector#matchLabels"]
-          pathtype: key_value
-        formatter: list
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       service_account:
-        header: [["S", [main, infoheader_shortcut]], ["ervice Account:", [main, infoheader]]]
+        header: [["S", ["main", "infoheader_shortcut"]], ["ervice Account:", ["main", "infoheader"]]]
         path: "spec#serviceAccountName"
-        type: str
+        type: "str"
   shortcuts:
     "Alertmanager Endpoints":
-      key: a
-      modifier: shift
+      key: "a"
+      modifier: "shift"
       helptext: "Show Alertmanager Endpoints information"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Alertmanager Endpoints:"
       selectable: true
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#alerting#alertmanagers"
         fields:
-        - namespace
-        - name
-        - port
+        - "namespace"
+        - "name"
+        - "port"
       headers: ["Namespace:", "Name:", "Port:"]
       # Not supported for now
-      sortcolumn: namespace
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      sortcolumn: "namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
-        kind: Endpoints
+        kind: "Endpoints"
         namespace_path: 0
         name_path: 1
     "Resources":
-      key: r
+      key: "r"
       helptext: "Show resource information"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Resources:"
-      itemgetter: get_resources
+      itemgetter: "get_resources"
       headers: ["Resource:", "Type:", "Value:"]
     "Service Account":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "Open info page for Service Account"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: ServiceAccount
+        kind: "ServiceAccount"
         name_path: "spec#serviceAccountName"
         namespace_path: "metadata#namespace"

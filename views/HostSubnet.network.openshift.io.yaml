@@ -1,78 +1,78 @@
-kind: HostSubnet
-api_family: network.openshift.io
-default_command: hostsubnets
+kind: "HostSubnet"
+api_family: "network.openshift.io"
+default_command: "hostsubnets"
 listview:
-  name: Host Subnets
-  group: OpenShift
+  name: "Host Subnets"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, host, host_ip, subnet, egress_cidrs, egress_ips, age]
+    Normal: ["name", "host", "host_ip", "subnet", "egress_cidrs", "egress_ips", "age"]
   fields:
     host:
       header: "Host:"
-      path: host
-      type: str
+      path: "host"
+      type: "str"
     egress_cidrs:
       header: "Egress CIDRs:"
-      path: egressCIDRs
+      path: "egressCIDRs"
       default: "<none>"
-      type: raw
-      formatter: address
+      type: "raw"
+      formatter: "address"
     egress_ips:
       header: "Egress IPs:"
-      path: egressIPs
+      path: "egressIPs"
       default: "<none>"
-      type: raw
-      formatter: address
+      type: "raw"
+      formatter: "address"
     host_ip:
       header: "Host IP:"
-      path: hostIP
-      type: str
-      formatter: address
+      path: "hostIP"
+      type: "str"
+      formatter: "address"
     subnet:
       header: "Subnet:"
-      path: subnet
-      type: str
-      formatter: address
+      path: "subnet"
+      type: "str"
+      formatter: "address"
 infoview:
-  name: Host Subnet Info
+  name: "Host Subnet Info"
   infopad:
     row_indexes:
-      Normal: [host, host_ip, subnet, egress_cidrs, egress_ips]
+      Normal: ["host", "host_ip", "subnet", "egress_cidrs", "egress_ips"]
     rows:
       host:
-        header: [["N", [main, infoheader_shortcut]], ["ode:", [main, infoheader]]]
-        path: host
-        type: str
+        header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]
+        path: "host"
+        type: "str"
       egress_cidrs:
-        header: [["Egress CIDRs:", [main, infoheader]]]
-        path: egressCIDRs
+        header: [["Egress CIDRs:", ["main", "infoheader"]]]
+        path: "egressCIDRs"
         default: "<none>"
-        type: raw
-        formatter: address
+        type: "raw"
+        formatter: "address"
       egress_ips:
-        header: [["Egress IPs:", [main, infoheader]]]
-        path: egressIPs
+        header: [["Egress IPs:", ["main", "infoheader"]]]
+        path: "egressIPs"
         default: "<none>"
-        type: raw
-        formatter: address
+        type: "raw"
+        formatter: "address"
       host_ip:
-        header: [["Host IP:", [main, infoheader]]]
-        path: hostIP
-        type: str
-        formatter: address
+        header: [["Host IP:", ["main", "infoheader"]]]
+        path: "hostIP"
+        type: "str"
+        formatter: "address"
       subnet:
-        header: [["Subnet:", [main, infoheader]]]
-        path: subnet
-        type: str
-        formatter: address
+        header: [["Subnet:", ["main", "infoheader"]]]
+        path: "subnet"
+        type: "str"
+        formatter: "address"
   shortcuts:
     "Open Node":
-      key: n
-      modifier: shift
+      key: "n"
+      modifier: "shift"
       helptext: "Open info page for Node"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Node
-        name_path: host
+        kind: "Node"
+        name_path: "host"

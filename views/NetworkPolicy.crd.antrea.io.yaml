@@ -1,33 +1,33 @@
-kind: NetworkPolicy
-api_family: crd.antrea.io
-default_command: networkpolicies.crd.antrea.io
+kind: "NetworkPolicy"
+api_family: "crd.antrea.io"
+default_command: "networkpolicies.crd.antrea.io"
 command:
-- networkpolicy.crd.antrea.io
-- networkpolicies.antrea
-- networkpolicy.antrea
-- anetpols
-- anetpol
-- anp
+- "networkpolicy.crd.antrea.io"
+- "networkpolicies.antrea"
+- "networkpolicy.antrea"
+- "anetpols"
+- "anetpol"
+- "anp"
 listview:
-  name: Antrea Network Policies
-  group: Antrea
+  name: "Antrea Network Policies"
+  group: "Antrea"
   field_indexes:
-    Normal: [namespace, name, tier, priority, desired_nodes, current_nodes, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "tier", "priority", "desired_nodes", "current_nodes", "age"]
+  sortcolumn: "namespace"
   fields:
     current_nodes:
       header: "Current Nodes:"
       path: "spec#currentNodesRealized"
-      type: int
+      type: "int"
     desired_nodes:
       header: "Desired Nodes:"
       path: "spec#desiredNodesRealized"
-      type: int
+      type: "int"
     priority:
       header: "Priority:"
       path: "spec#priority"
-      type: float
+      type: "float"
     tier:
       header: "Tier:"
       path: "spec#tier"
-      type: str
+      type: "str"

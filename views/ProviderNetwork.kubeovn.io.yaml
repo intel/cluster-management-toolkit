@@ -1,33 +1,33 @@
-kind: ProviderNetwork
-api_family: kubeovn.io
-default_command: provider-networks
+kind: "ProviderNetwork"
+api_family: "kubeovn.io"
+default_command: "provider-networks"
 command:
-- providernetworks
-- provider-network
+- "providernetworks"
+- "provider-network"
 listview:
-  name: Provider Networks
-  group: Kube-OVN
+  name: "Provider Networks"
+  group: "Kube-OVN"
   field_indexes:
-    Normal: [name, default_interface, ready, age]
-  sortcolumn: ready
+    Normal: ["name", "default_interface", "ready", "age"]
+  sortcolumn: "ready"
   fields:
     default_interface:
       header: "Default Interface:"
       path: "spec#defaultInterface"
-      type: str
+      type: "str"
     ready:
       header: "Ready:"
       path: "spec#ready"
-      type: bool
-      formatter: value_mapper
+      type: "bool"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             true:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             false:
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"

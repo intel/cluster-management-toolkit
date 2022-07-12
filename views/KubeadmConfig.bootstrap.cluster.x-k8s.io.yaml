@@ -1,195 +1,195 @@
-kind: KubeadmConfig
-api_family: bootstrap.cluster.x-k8s.io
-default_command: kubeadmconfigs
+kind: "KubeadmConfig"
+api_family: "bootstrap.cluster.x-k8s.io"
+default_command: "kubeadmconfigs"
 command:
-- kubeadmcfgs
-- kubeadmcfg
+- "kubeadmcfgs"
+- "kubeadmcfg"
 listview:
-  name: Kubeadm Configs
-  group: Cluster Configuration
+  name: "Kubeadm Configs"
+  group: "Cluster Configuration"
   field_indexes:
-    Normal: [namespace, name, cluster, ready, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "cluster", "ready", "age"]
+  sortcolumn: "namespace"
   fields:
     cluster:
       header: "Cluster:"
       path: "metadata#labels#cluster.x-k8s.io/cluster-name"
-      type: str
+      type: "str"
     ready:
       header: "Ready:"
       path: "status#ready"
-      type: bool
-      formatter: value_mapper
+      type: "bool"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "False":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
 infoview:
-  name: Kubeadm Config Info
+  name: "Kubeadm Config Info"
   infopad:
     row_indexes:
-      Normal: [cluster, controller, control_plane, ready, data_secret_name]
+      Normal: ["cluster", "controller", "control_plane", "ready", "data_secret_name"]
     rows:
       cluster:
-        header: [["Cl", [main, infoheader]], ["u", [main, infoheader_shortcut]], ["ster:", [main, infoheader]]]
+        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
         path: "metadata#labels#cluster.x-k8s.io/cluster-name"
-        type: str
+        type: "str"
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
             key: controller
             eq: true
-          type: [kind, api_group, name]
+          type: ["kind", "api_group", "name"]
         default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       control_plane:
-        header: [["Control ", [main, infoheader]], ["P", [main, infoheader_shortcut]], ["lane:", [main, infoheader]]]
+        header: [["Control ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["lane:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
             key: kind
             eq: KubeadmControlPlane
-          type: [kind, api_group, name]
+          type: ["kind", "api_group", "name"]
         default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       ready:
-        header: [["Ready:", [main, infoheader]]]
+        header: [["Ready:", ["main", "infoheader"]]]
         path: "status#ready"
-        type: bool
-        formatter: value_mapper
+        type: "bool"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       data_secret_name:
-        header: [["Data ", [main, infoheader]], ["S", [main, infoheader_shortcut]], ["ecret Name:", [main, infoheader]]]
+        header: [["Data ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ecret Name:", ["main", "infoheader"]]]
         path: "status#dataSecretName"
-        type: str
+        type: "str"
   shortcuts:
     "Open Cluster":
-      key: u
+      key: "u"
       helptext: "Open info page for Cluster"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Cluster
-        api_family: cluster.x-k8s.io
+        kind: "Cluster"
+        api_family: "cluster.x-k8s.io"
         namespace_path: "metadata#namespace"
         name_path: "metadata#labels#cluster.x-k8s.io/cluster-name"
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
     "Open Kubeadm Control Plane":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "Open info page for Kubeadm Control Plane"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: KubeadmControlPlane
-        api_family: controlplane.cluster.x-k8s.io
+        kind: "KubeadmControlPlane"
+        api_family: "controlplane.cluster.x-k8s.io"
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
     "Open Secret":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "Open info page for Secret"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Secret
+        kind: "Secret"
         namespace_path: "metadata#namespace"
         name_path: "status#dataSecretName"
     "View cluster configuration":
-      key: o
-      modifier: shift
+      key: "o"
+      modifier: "shift"
       helptext: "Show cluster configuration"
-      action: call
-      action_call: view_yaml
+      action: "call"
+      action_call: "view_yaml"
       action_args:
-        title: Cluster Configuration
+        title: "Cluster Configuration"
         _pass_obj: true
         path: "spec#clusterConfiguration"
     "List files":
-      key: f
-      modifier: shift
+      key: "f"
+      modifier: "shift"
       helptext: "List files"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Files:"
       selectable: true
       headers: ["Path:", "Owner:", "Permissions:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#files"
         fields:
-        - path
-        - owner
-        - permissions
-      action: call
-      action_call: decode_and_view_file_templates
+        - "path"
+        - "owner"
+        - "permissions"
+      action: "call"
+      action_call: "decode_and_view_file_templates"
       action_args:
         _pass_obj: true
         _pass_selected: true
         name_path: 0
         file_path: "spec#files"
     "View init configuration":
-      key: i
+      key: "i"
       helptext: "Show init configuration"
-      action: call
-      action_call: view_yaml
+      action: "call"
+      action_call: "view_yaml"
       action_args:
-        title: Init Configuration
+        title: "Init Configuration"
         _pass_obj: true
         path: "spec#initConfiguration"

@@ -1,54 +1,54 @@
-kind: SecurityContextConstraints
-api_family: security.openshift.io
-default_command: securitycontextconstraints
+kind: "SecurityContextConstraints"
+api_family: "security.openshift.io"
+default_command: "securitycontextconstraints"
 listview:
-  name: Security Context Constraints
-  group: OpenShift
+  name: "Security Context Constraints"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, privileged, capabilities, selinux, runasuser, fsgroup, supgroups, priority, readonly_rootfs, volumes, age]
+    Normal: ["name", "privileged", "capabilities", "selinux", "runasuser", "fsgroup", "supgroups", "priority", "readonly_rootfs", "volumes", "age"]
   fields:
     capabilities:
       header: "Capabilities:"
       path: "allowedCapabilities"
-      type: raw
-      formatter: list
+      type: "raw"
+      formatter: "list"
     fsgroup:
       header: "FS Group:"
       path: "fsGroup#type"
-      type: str
+      type: "str"
     priority:
       header: "Priority:"
       path: "priority"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
     privileged:
       header: "Privileged:"
       path: "allowPrivilegedContainer"
       default: false
-      type: bool
+      type: "bool"
     readonly_rootfs:
       header: "R/O Root FS:"
       path: "readOnlyRootFilesystem"
-      type: bool
       default: false
+      type: "bool"
     runasuser:
       header: "Run as User:"
       path: "runAsUser#type"
-      type: str
+      type: "str"
     selinux:
       header: "SELinux:"
       path: "seLinuxContext#type"
-      type: str
+      type: "str"
     supgroups:
       header: "Supplemental Groups:"
       path: "supplementalGroups#type"
-      type: raw
-      formatter: list
+      type: "raw"
+      formatter: "list"
     volumes:
       header: "Volumes:"
       path: "volumes"
       default: ["<none>"]
-      type: raw
-      formatter: list
+      type: "raw"
+      formatter: "list"

@@ -1,23 +1,23 @@
-kind: Addon
-api_family: k3s.cattle.io
-default_command: addons
+kind: "Addon"
+api_family: "k3s.cattle.io"
+default_command: "addons"
 listview:
-  name: Addons
-  group: API & Extendability
+  name: "Addons"
+  group: "API & Extendability"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Addon
+  name: "Addon"
   infopad:
     row_indexes:
-      Normal: [source, checksum]
+      Normal: ["source", "checksum"]
     fields:
       source:
-        header: [["Source:", [main, infoheader]]]
+        header: [["Source:", ["main", "infoheader"]]]
         path: "spec#source"
-        type: str
+        type: "str"
       checksum:
-        header: [["Checksum:", [main, infoheader]]]
+        header: [["Checksum:", ["main", "infoheader"]]]
         path: "spec#checksum"
-        type: str
+        type: "str"

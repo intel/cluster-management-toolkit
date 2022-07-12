@@ -1,83 +1,83 @@
-kind: ResourceQuota
-default_command: resourcequotas
+kind: "ResourceQuota"
+default_command: "resourcequotas"
 command:
-- quotas
-- quota
-- rq
+- "quotas"
+- "quota"
+- "rq"
 listview:
-  name: Resource Quotas
-  group: Policy
+  name: "Resource Quotas"
+  group: "Policy"
   field_indexes:
-    Normal: [namespace, name, age, request, limit]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age", "request", "limit"]
+  sortcolumn: "namespace"
   fields:
     limit:
       header: "Limit:"
       paths:
       - path: "spec#hard"
-        pathtype: key_value
+        pathtype: "key_value"
         when:
           key_startswith: "limits."
-      formatter: list
+      formatter: "list"
       formatting:
         field_colors:
-        - type: key
+        - type: "key"
         # Ideally we'd use numerical_with_units
-        - type: numerical
+        - type: "numerical"
         field_separators:
-        - type: keyvalue
+        - type: "keyvalue"
     request:
       header: "Request:"
       paths:
       - path: "spec#hard"
-        pathtype: key_value
+        pathtype: "key_value"
         when:
           key_notstartswith: "limits."
-      formatter: list
+      formatter: "list"
       formatting:
         field_colors:
-        - type: key
+        - type: "key"
         # Ideally we'd use numerical_with_units
-        - type: numerical
+        - type: "numerical"
         field_separators:
-        - type: keyvalue
+        - type: "keyvalue"
 infoview:
-  name: Resource Quota Info
+  name: "Resource Quota Info"
   infopad:
     row_indexes:
-      Normal: [scope_selector]
+      Normal: ["scope_selector"]
     rows:
       scope_selector:
-        header: [["Scope Selector:", [main, infoheader]]]
+        header: [["Scope Selector:", ["main", "infoheader"]]]
         paths:
         - path: "spec#scopeSelector#matchExpressions"
-          pathtype: match_expression
+          pathtype: "match_expression"
           default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: operator
-          - type: value
+          - type: "key"
+          - type: "operator"
+          - type: "value"
           field_separators:
-          - type: space
-          - type: no_pad
+          - type: "space"
+          - type: "no_pad"
   listpad:
-    infogetter: get_rq_item_info
+    infogetter: "get_rq_item_info"
     field_indexes:
-      Normal: [resource, used, hard]
+      Normal: ["resource", "used", "hard"]
     fields:
       hard:
         header: "Hard:"
-        path: hard
-        type: raw
-        formatter: numerical_with_units
+        path: "hard"
+        type: "raw"
+        formatter: "numerical_with_units"
       resource:
         header: "Resource:"
-        path: resource
-        type: str
+        path: "resource"
+        type: "str"
       used:
         header: "Used:"
-        path: used
-        type: raw
-        formatter: numerical_with_units
+        path: "used"
+        type: "raw"
+        formatter: "numerical_with_units"

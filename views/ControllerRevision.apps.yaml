@@ -1,88 +1,88 @@
-kind: ControllerRevision
-api_family: apps
-default_command: controllerrevisions
+kind: "ControllerRevision"
+api_family: "apps"
+default_command: "controllerrevisions"
 command:
-- crevs
-- crev
+- "crevs"
+- "crev"
 listview:
-  name: Controller Revisions
-  group: API & Extendability
+  name: "Controller Revisions"
+  group: "API & Extendability"
   field_indexes:
-    Normal: [namespace, name, controller, revision, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "controller", "revision", "age"]
+  sortcolumn: "namespace"
   fields:
     controller:
       header: "Controller:"
       paths:
       - path: "metadata#ownerReferences"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - kind
-        - apiVersion
-        - name
+        - "kind"
+        - "apiVersion"
+        - "name"
         when:
           key: controller
           eq: true
-        type: [kind, api_group, name]
-      formatter: list
+        type: ["kind", "api_group", "name"]
+      formatter: "list"
       formatting:
         field_colors:
-        - type: kind
-        - type: api_group
-        - type: generic
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
         field_separators:
-        - type: kind_api_group
-        - type: kind
+        - type: "kind_api_group"
+        - type: "kind"
     revision:
       header: "Revision:"
-      path: revision
-      type: int
+      path: "revision"
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
 infoview:
-  name: Controller Revision Info
+  name: "Controller Revision Info"
   infopad:
     row_indexes:
-      Normal: [controller, revision]
+      Normal: ["controller", "revision"]
     rows:
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
-          type: [kind, api_group, name]
-        formatter: list
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       revision:
-        header: [["Revision:", [main, infoheader]]]
-        path: revision
-        type: int
+        header: [["Revision:", ["main", "infoheader"]]]
+        path: "revision"
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
   shortcuts:
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         owner_reference_path: "metadata#ownerReferences"

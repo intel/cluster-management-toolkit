@@ -1,27 +1,27 @@
-kind: ClusterNetworkPolicy
-api_family: crd.antrea.io
-default_command: clusternetworkpolicies
+kind: "ClusterNetworkPolicy"
+api_family: "crd.antrea.io"
+default_command: "clusternetworkpolicies"
 command:
-- acnp
+- "acnp"
 listview:
-  name: Antrea Cluster Network Policies
-  group: Antrea
+  name: "Antrea Cluster Network Policies"
+  group: "Antrea"
   field_indexes:
-    Normal: [name, tier, priority, desired_nodes, current_nodes, age]
+    Normal: ["name", "tier", "priority", "desired_nodes", "current_nodes", "age"]
   fields:
     current_nodes:
       header: "Current Nodes:"
       path: "spec#currentNodesRealized"
-      type: int
+      type: "int"
     desired_nodes:
       header: "Desired Nodes:"
       path: "spec#desiredNodesRealized"
-      type: int
+      type: "int"
     priority:
       header: "Priority:"
       path: "spec#priority"
-      type: float
+      type: "float"
     tier:
       header: "Tier:"
       path: "spec#tier"
-      type: str
+      type: "str"

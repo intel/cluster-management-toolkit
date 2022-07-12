@@ -1,58 +1,58 @@
-kind: CSIDriver
-api_family: storage.k8s.io
-default_command: csidrivers
+kind: "CSIDriver"
+api_family: "storage.k8s.io"
+default_command: "csidrivers"
 command:
-- csidrvs
-- csidrv
+- "csidrvs"
+- "csidrv"
 listview:
-  name: CSI Drivers
-  group: Storage & Backups
+  name: "CSI Drivers"
+  group: "Storage & Backups"
   field_indexes:
-    Normal: [name, attach_required, pod_info_on_mount, volume_lifecycle_modes, age]
+    Normal: ["name", "attach_required", "pod_info_on_mount", "volume_lifecycle_modes", "age"]
   fields:
     attach_required:
       header: "Attach Required:"
       path: "spec#attachRequired"
-      type: bool
+      type: "bool"
     pod_info_on_mount:
       header: "Pod Info on Mount:"
       path: "spec#podInfoOnMount"
-      type: bool
+      type: "bool"
     volume_lifecycle_modes:
       header: "Modes:"
       paths:
       - path: "spec#volumeLifecycleModes"
-        pathtype: list
-      formatter: list
+        pathtype: "list"
+      formatter: "list"
 infoview:
-  name: CSI Driver Info
+  name: "CSI Driver Info"
   infopad:
     row_indexes:
-      Normal: [attach_required, pod_info_on_mount, fs_group_policy, requires_republish, storage_capacity, volume_lifecycle_modes]
+      Normal: ["attach_required", "pod_info_on_mount", "fs_group_policy", "requires_republish", "storage_capacity", "volume_lifecycle_modes"]
     rows:
       attach_required:
-        header: [["Attach Required:", [main, infoheader]]]
+        header: [["Attach Required:", ["main", "infoheader"]]]
         path: "spec#attachRequired"
-        type: bool
+        type: "bool"
       fs_group_policy:
-        header: [["FS Group Policy:", [main, infoheader]]]
+        header: [["FS Group Policy:", ["main", "infoheader"]]]
         path: "spec#fsGroupPolicy"
-        type: str
+        type: "str"
       pod_info_on_mount:
-        header: [["Pod Info on Mount:", [main, infoheader]]]
+        header: [["Pod Info on Mount:", ["main", "infoheader"]]]
         path: "spec#podInfoOnMount"
-        type: bool
+        type: "bool"
       requires_republish:
-        header: [["Requires Republish:", [main, infoheader]]]
+        header: [["Requires Republish:", ["main", "infoheader"]]]
         path: "spec#requiresRepublish"
-        type: bool
+        type: "bool"
       storage_capacity:
-        header: [["Storage Capacity:", [main, infoheader]]]
+        header: [["Storage Capacity:", ["main", "infoheader"]]]
         path: "spec#storageCapacity"
-        type: bool
+        type: "bool"
       volume_lifecycle_modes:
-        header: [["Modes:", [main, infoheader]]]
+        header: [["Modes:", ["main", "infoheader"]]]
         paths:
         - path: "spec#volumeLifecycleModes"
-          pathtype: list
-        formatter: list
+          pathtype: "list"
+        formatter: "list"

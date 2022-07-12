@@ -1,158 +1,158 @@
-kind: ClusterOperator
-api_family: config.openshift.io
-default_command: clusteroperators
+kind: "ClusterOperator"
+api_family: "config.openshift.io"
+default_command: "clusteroperators"
 command:
-- clusteroperators.config
-- clusteroperator.config
+- "clusteroperators.config"
+- "clusteroperator.config"
 listview:
-  name: Cluster Operators (Config)
-  group: OpenShift
+  name: "Cluster Operators (Config)"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, version, available, progressing, degraded, age]
+    Normal: ["name", "version", "available", "progressing", "degraded", "age"]
   fields:
     available:
       header: "Available:"
       paths:
       - path: "status#conditions"
-        pathtype: items
-        subpath: status
+        pathtype: "items"
+        subpath: "status"
         when:
-          key: type
-          eq: Available
-      type: str
-      formatter: value_mapper
+          key: "type"
+          eq: "Available"
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "False":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
     degraded:
       header: "Degraded:"
       paths:
       - path: "status#conditions"
-        pathtype: items
-        subpath: status
+        pathtype: "items"
+        subpath: "status"
         when:
-          key: type
-          eq: Degraded
-      type: str
-      formatter: value_mapper
+          key: "type"
+          eq: "Degraded"
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
             "False":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
     progressing:
       header: "Progressing:"
       paths:
       - path: "status#conditions"
-        pathtype: items
-        subpath: status
+        pathtype: "items"
+        subpath: "status"
         when:
-          key: type
-          eq: Progressing
-      type: str
+          key: "type"
+          eq: "Progressing"
+      type: "str"
     version:
       header: "Version:"
       paths:
       - path: "status#versions"
-        pathtype: items
-        subpath: version
+        pathtype: "items"
+        subpath: "version"
         when:
-          key: name
-          eq: operator
+          key: "name"
+          eq: "operator"
         default: ["<unset>"]
-      type: str
+      type: "str"
       formatting:
         field_colors:
-        - type: version
+        - type: "version"
 infoview:
-  name: Cluster Operator Info
+  name: "Cluster Operator Info"
   infopad:
     row_indexes:
-      Normal: [operator_versions, cluster_version]
+      Normal: ["operator_versions", "cluster_version"]
     rows:
       cluster_version:
-        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
+          - "name"
           when:
-            key: kind
-            eq: ClusterVersion
+            key: "kind"
+            eq: "ClusterVersion"
         default: "<none>"
       operator_versions:
-        header: [["Operator Versions:", [main, infoheader]]]
+        header: [["Operator Versions:", ["main", "infoheader"]]]
         paths:
         - path: "status#versions"
-          pathtype: items
+          pathtype: "items"
           subpaths:
           - name
           - version
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: generic
-          - type: version
+          - type: "generic"
+          - type: "version"
           field_separators:
-          - type: version
+          - type: "version"
   listpad:
     on_activation:
-      call: resourceinfodispatch_with_lookup_on_activation
-      kind_path: resource
-      api_family_path: group
-      name_path: name
-      namespace_path: namespace
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind_path: "resource"
+      api_family_path: "group"
+      name_path: "name"
+      namespace_path: "namespace"
     path: "status#relatedObjects"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [resource, api_group, namespace, name]
+      Normal: ["resource", "api_group", "namespace", "name"]
     fields:
       api_group:
         header: "API-Group:"
-        path: group
-        type: str
+        path: "group"
+        type: "str"
         formatting:
           field_colors:
-          - type: api_group
+          - type: "api_group"
       name:
         header: "Name:"
-        path: name
-        type: str
+        path: "name"
+        type: "str"
       namespace:
         header: "Namespace:"
-        path: namespace
-        type: str
+        path: "namespace"
+        type: "str"
         formatting:
           field_colors:
-          - type: namespace
+          - type: "namespace"
       resource:
         header: "Resource:"
-        path: resource
-        type: str
+        path: "resource"
+        type: "str"
   shortcuts:
     "Cluster Version":
-      key: v
-      modifier: shift
+      key: "v"
+      modifier: "shift"
       helptext: "Open info page for Cluster Version"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         owner_reference_path: "metadata#ownerReferences"
-        kind: ClusterVersion
-        api_family: config.openshift.io
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"

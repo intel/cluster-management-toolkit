@@ -1,29 +1,29 @@
-kind: Image
-api_family: image.openshift.io
-default_command: images.image.openshift.io
+kind: "Image"
+api_family: "image.openshift.io"
+default_command: "images.image.openshift.io"
 command:
-- image.image.openshift.io
-- images.openshift
-- image.openshift
-- osimages
-- osimage
-- osimg
+- "image.image.openshift.io"
+- "images.openshift"
+- "image.openshift"
+- "osimages"
+- "osimage"
+- "osimg"
 listview:
-  name: Images
-  group: OpenShift
+  name: "Images"
+  group: "OpenShift"
   field_indexes:
-    Wide: [label_name, name, image_reference, age]
-    Normal: [label_name, image_reference, age]
-  sortcolumn: label_name
+    Wide: ["label_name", "name", "image_reference", "age"]
+    Normal: ["label_name", "image_reference", "age"]
+  sortcolumn: "label_name"
   fields:
     image_reference:
       header: "Reference:"
       path: "dockerImageReference"
-      type: str
+      type: "str"
     label_name:
       header: "Label Name:"
       paths:
       - path: ["dockerImageMetadata#Config#Labels#name", "dockerImageMetadata#Config#Labels#Name"]
-        pathtype: value
+        pathtype: "value"
         default: "<unset>"
-      type: str
+      type: "str"

@@ -1,60 +1,60 @@
-kind: PriorityClass
-api_family: scheduling.k8s.io
-default_command: priorityclasses
+kind: "PriorityClass"
+api_family: "scheduling.k8s.io"
+default_command: "priorityclasses"
 command:
-- pc
+- "pc"
 listview:
-  name: Priority Classes
-  group: Scheduling & Scaling
+  name: "Priority Classes"
+  group: "Scheduling & Scaling"
   field_indexes:
-    Normal: [name, priority, global_default, age]
+    Normal: ["name", "priority", "global_default", "age"]
   fields:
     global_default:
       header: "Global Default:"
-      path: globalDefault
+      path: "globalDefault"
       default: false
-      type: bool
+      type: "bool"
     priority:
       header: "Value:"
-      path: value
-      type: int
+      path: "value"
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
 infoview:
-  name: Priority Class Info
+  name: "Priority Class Info"
   infopad:
     row_indexes:
-      Normal: [value, global_default, preemption_policy, description, description2]
+      Normal: ["value", "global_default", "preemption_policy", "description", "description2"]
     rows:
       global_default:
-        header: [["Global Default:", [main, infoheader]]]
+        header: [["Global Default:", ["main", "infoheader"]]]
         path: "globalDefault"
         default: false
-        type: bool
+        type: "bool"
       preemption_policy:
-        header: [["Preemption Policy:", [main, infoheader]]]
+        header: [["Preemption Policy:", ["main", "infoheader"]]]
         path: "preemptionPolicy"
-        type: str
+        type: "str"
       value:
-        header: [["Value:", [main, infoheader]]]
+        header: [["Value:", ["main", "infoheader"]]]
         path: "value"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       description:
-        header: [["Description:", [main, infoheader]]]
+        header: [["Description:", ["main", "infoheader"]]]
         path: ""
-        type: str
+        type: "str"
       description2:
-        header: [[" ", [main, infoheader]]]
+        header: [[" ", ["main", "infoheader"]]]
         path: "description"
-        type: str
+        type: "str"
   listpad:
-    listgetter: generic_listgetter
+    listgetter: "generic_listgetter"
     listgetter_args:
-      _kind: Pod
+      _kind: "Pod"
       _pass_obj: true
       filters:
         priority_class:
@@ -62,17 +62,17 @@ infoview:
           allow:
           - key: "spec#priorityClassName"
             values:
-              source: caller
+              source: "caller"
               path: "metadata#name"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     on_activation:
-      call: resourceinfodispatch
-      kind: Pod
+      call: "resourceinfodispatch"
+      kind: "Pod"
     field_indexes:
-      Wide: [namespace, name, controller, pod_status, node_name, pod_ip, age, restarts, last_restart, containers]
-      Normal: [namespace, name, controller, pod_status, node_name, age, restarts, last_restart]
-      Compact: [namespace, name, pod_status, age, restarts, last_restart]
-    sortcolumn: pod_status
+      Wide: ["namespace", "name", "controller", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+      Normal: ["namespace", "name", "controller", "pod_status", "node_name", "age", "restarts", "last_restart"]
+      Compact: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+    sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
@@ -80,76 +80,76 @@ infoview:
         - paths:
           - "spec#initContainers"
           - "spec#containers"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
-          - subpath: image
+          - "name"
+          - subpath: "image"
             regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: raw
-        formatter: list
+          type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: generic
-          - type: version
+          - type: "generic"
+          - type: "version"
           field_separators:
-          - type: version
+          - type: "version"
       controller:
         header: "Controller:"
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
-          type: [kind, api_group, name]
-        formatter: list
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       last_restart:
         header: "Latest Restart:"
         paths:
         - path: "status#containerStatuses"
-          pathtype: items
+          pathtype: "items"
           subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
           when:
             key: "restartCount"
             gt: 0
-          action: latest
-          type: timestamp
+          action: "latest"
+          type: "timestamp"
         default: -1
-        formatter: age
-        align: right
+        formatter: "age"
+        align: "right"
       node_name:
         header: "Node:"
         path: "spec#nodeName"
-        type: host
+        type: "host"
         default: "<none>"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
         default: "<unset>"
-        type: address
-        formatter: address
+        type: "address"
+        formatter: "address"
       restarts:
         header: "Restarts:"
         paths:
         - path: "status#containerStatuses"
-          pathtype: items
+          pathtype: "items"
           subpath: "restartCount"
-          action: sum
-          type: int
+          action: "sum"
+          type: "int"
         formatting:
           field_colors:
-          - type: numerical
-        align: right
+          - type: "numerical"
+        align: "right"
         default: 0

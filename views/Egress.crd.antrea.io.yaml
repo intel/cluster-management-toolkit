@@ -1,17 +1,17 @@
-kind: Egress
-api_family: crd.antrea.io
-default_command: egresses
+kind: "Egress"
+api_family: "crd.antrea.io"
+default_command: "egresses"
 listview:
-  name: Antrea Egresses
-  group: Antrea
+  name: "Antrea Egresses"
+  group: "Antrea"
   field_indexes:
-    Normal: [name, egress_ip, node, age]
+    Normal: ["name", "egress_ip", "node", "age"]
   fields:
     egress_ip:
       header: "Egress IP:"
       path: "spec#egressIP"
-      type: str
+      type: "str"
     node:
       header: "Node:"
       path: "status#egressNode"
-      type: str
+      type: "str"

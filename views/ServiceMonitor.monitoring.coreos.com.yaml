@@ -1,47 +1,47 @@
-kind: ServiceMonitor
-api_family: monitoring.coreos.com
-default_command: servicemonitors
+kind: "ServiceMonitor"
+api_family: "monitoring.coreos.com"
+default_command: "servicemonitors"
 command:
-- svcmons
-- svcmon
+- "svcmons"
+- "svcmon"
 listview:
-  name: Service Monitors
-  group: Monitoring
+  name: "Service Monitors"
+  group: "Monitoring"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Service Monitor Info
+  name: "Service Monitor Info"
   infopad:
     row_indexes:
-      Normal: [job_label, selector, namespace_selector]
+      Normal: ["job_label", "selector", "namespace_selector"]
     rows:
       job_label:
-        header: [["Job Label:", [main, infoheader]]]
+        header: [["Job Label:", ["main", "infoheader"]]]
         path: "spec#jobLabel"
-        type: str
+        type: "str"
       namespace_selector:
-        header: [["Namespace Selector:", [main, infoheader]]]
+        header: [["Namespace Selector:", ["main", "infoheader"]]]
         path: "spec#namespaceSelector#matchNames"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       selector:
-        header: [["Selector:", [main, infoheader]]]
+        header: [["Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#selector#matchLabels"]
-          pathtype: key_value
-        formatter: list
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
   listpad:
-    infogetter: get_svcmon_endpoints_info
+    infogetter: "get_svcmon_endpoints_info"
     field_indexes:
-      Normal: [bearer_token_file, port, target_port, interval, scheme, path, honor_labels, proxy_url]
-    sortcolumn: bearer_token_file
+      Normal: ["bearer_token_file", "port", "target_port", "interval", "scheme", "path", "honor_labels", "proxy_url"]
+    sortcolumn: "bearer_token_file"
     fields:
       bearer_token_file:
         header: "Bearer Token File:"
@@ -49,8 +49,8 @@ infoview:
         header: "Honor Labels:"
       interval:
         header: "Interval:"
-        formatter: numerical_with_units
-        align: right
+        formatter: "numerical_with_units"
+        align: "right"
       path:
         header: "Path:"
       port:

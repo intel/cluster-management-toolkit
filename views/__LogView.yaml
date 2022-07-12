@@ -1,25 +1,25 @@
-kind: __LogView
-default_command: __
+kind: "__LogView"
+default_command: "__"
 infoview:
-  name: Task Log View
+  name: "Task Log View"
   infopad:
     name_path: "log#task"
     namespace_path: null
     creation_timestamp_path: null
     row_indexes:
-      Normal: [host, return_value]
+      Normal: ["host", "return_value"]
     rows:
       host:
-        header: [["Host:", [main, infoheader]]]
+        header: [["Host:", ["main", "infoheader"]]]
         path: "log#host"
-        type: str
+        type: "str"
       return_value:
-        header: [["Return Value:", [main, infoheader]]]
+        header: [["Return Value:", ["main", "infoheader"]]]
         path: "log#retval"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
   logpad:
-    infogetter: get_task_log
+    infogetter: "get_task_log"
     timestamps: false

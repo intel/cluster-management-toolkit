@@ -1,142 +1,142 @@
-kind: PersistentVolumeClaim
-default_command: persistentvolumeclaims
+kind: "PersistentVolumeClaim"
+default_command: "persistentvolumeclaims"
 command:
-- pvc
+- "pvc"
 listview:
-  name: Persistent Volume Claims
-  group: Storage & Backups
+  name: "Persistent Volume Claims"
+  group: "Storage & Backups"
   field_indexes:
-    Normal: [namespace, name, status, volume, capacity, access_modes, storage_class, age, volume_mode]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "status", "volume", "capacity", "access_modes", "storage_class", "age", "volume_mode"]
+  sortcolumn: "namespace"
   fields:
     access_modes:
       header: "Access Modes:"
       paths:
       - path: "status#accessModes"
-        pathtype: remap
+        pathtype: "remap"
         substitutions:
           "ReadWriteOnce": "RWO"
           "ReadWriteOncePod": "RWOP"
           "ReadWriteMany": "RWM"
           "ReadOnlyMany": "ROX"
-      type: raw
-      formatter: list
+      type: "raw"
+      formatter: "list"
     capacity:
       header: "Capacity:"
       path: "status#capacity#storage"
-      type: raw
-      formatter: numerical_with_units
-      align: right
+      type: "raw"
+      formatter: "numerical_with_units"
+      align: "right"
     status:
       header: "Status:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Available:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Bound:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Pending:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Released:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             __default:
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
     storage_class:
       header: "Storage Class:"
       path: "spec#storageClassName"
-      type: str
+      type: "str"
     volume:
       header: "Volume:"
       path: "spec#volumeName"
-      type: str
+      type: "str"
     volume_mode:
       header: "Volume Mode:"
       path: "spec#volumeMode"
-      type: str
+      type: "str"
 infoview:
-  name: Persistent Volume Claim Info
+  name: "Persistent Volume Claim Info"
   infopad:
     row_indexes:
-      Normal: [status, volume, capacity, access_modes, storage_class, volume_mode]
+      Normal: ["status", "volume", "capacity", "access_modes", "storage_class", "volume_mode"]
     rows:
       access_modes:
-        header: [["Access Modes:", [main, infoheader]]]
+        header: [["Access Modes:", ["main", "infoheader"]]]
         paths:
         - path: "status#accessModes"
-          pathtype: remap
+          pathtype: "remap"
           substitutions:
             "ReadWriteOnce": "RWO"
             "ReadWriteOncePod": "RWOP"
             "ReadWriteMany": "RWM"
             "ReadOnlyMany": "ROX"
-        formatter: list
+        formatter: "list"
       capacity:
-        header: [["Capacity:", [main, infoheader]]]
+        header: [["Capacity:", ["main", "infoheader"]]]
         path: "status#capacity#storage"
-        type: raw
-        formatter: numerical_with_units
+        type: "raw"
+        formatter: "numerical_with_units"
       status:
-        header: [["Status:", [main, infoheader]]]
+        header: [["Status:", ["main", "infoheader"]]]
         path: "status#phase"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Available:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Bound:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Pending:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Released:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               __default:
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       storage_class:
-        header: [["Storage Class:", [main, infoheader]]]
+        header: [["Storage Class:", ["main", "infoheader"]]]
         path: "spec#storageClassName"
-        type: str
+        type: "str"
       volume:
-        header: [["P", [main, infoheader_shortcut]], ["ersistent Volume:", [main, infoheader]]]
+        header: [["P", ["main", "infoheader_shortcut"]], ["ersistent Volume:", ["main", "infoheader"]]]
         path: "spec#volumeName"
-        type: str
+        type: "str"
       volume_mode:
-        header: [["Volume Mode:", [main, infoheader]]]
+        header: [["Volume Mode:", ["main", "infoheader"]]]
         path: "spec#volumeMode"
-        type: str
+        type: "str"
   shortcuts:
     "Persistent Volume":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "Open info page for Persistent Volume"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: PersistentVolume
+        kind: "PersistentVolume"
         name_path: "spec#volumeName"

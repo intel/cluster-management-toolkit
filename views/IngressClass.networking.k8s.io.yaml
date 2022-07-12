@@ -1,70 +1,70 @@
-kind: IngressClass
-api_family: networking.k8s.io
-default_command: ingressclasses
+kind: "IngressClass"
+api_family: "networking.k8s.io"
+default_command: "ingressclasses"
 command:
-- ingclasses
-- ingclass
+- "ingclasses"
+- "ingclass"
 listview:
-  name: Ingress Classes
-  group: Network
+  name: "Ingress Classes"
+  group: "Network"
   field_indexes:
-    Normal: [name, ingress_controller, parameters, age]
+    Normal: ["name", "ingress_controller", "parameters", "age"]
   fields:
     ingress_controller:
       header: "Controller:"
       path: "spec#controller"
-      type: str
+      type: "str"
     parameters:
       header: "Parameters:"
       paths:
       - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#namespace"], ["spec#parameters#name"]]
-        pathtype: tuple
-        type: [kind, api_group, name, name]
-      formatter: list
+        pathtype: "tuple"
+        type: ["kind", "api_group", "name", "name"]
+      formatter: "list"
       formatting:
         field_colors:
-        - type: kind
-        - type: api_group
-        - type: namespace
-        - type: generic
+        - type: "kind"
+        - type: "api_group"
+        - type: "namespace"
+        - type: "generic"
         field_separators:
-        - type: kind_api_group
-        - type: kind
-        - type: namespace
+        - type: "kind_api_group"
+        - type: "kind"
+        - type: "namespace"
 infoview:
-  name: Ingress Class Info
+  name: "Ingress Class Info"
   infopad:
     row_indexes:
-      Normal: [ingress_controller, parameters]
+      Normal: ["ingress_controller", "parameters"]
     rows:
       ingress_controller:
-        header: [["Ingress Controller:", [main, infoheader]]]
+        header: [["Ingress Controller:", ["main", "infoheader"]]]
         path: "spec#controller"
-        type: str
+        type: "str"
       parameters:
-        header: [["P", [main, infoheader_shortcut]], ["arameters Reference:", [main, infoheader]]]
+        header: [["P", ["main", "infoheader_shortcut"]], ["arameters Reference:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#name"]]
-          pathtype: tuple
-          type: [kind, api_group, name]
-        formatter: list
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
   listpad:
     on_activation:
-      call: resourceinfodispatch
-      kind: Ingress
-      api_family: networking.k8s.io
-    listgetter: generic_listgetter
+      call: "resourceinfodispatch"
+      kind: "Ingress"
+      api_family: "networking.k8s.io"
+    listgetter: "generic_listgetter"
     listgetter_args:
-      _kind: Ingress
-      _api_family: networking.k8s.io
+      _kind: "Ingress"
+      _api_family: "networking.k8s.io"
       _pass_obj: true
       ers:
         ingress_class:
@@ -72,18 +72,18 @@ infoview:
           allow:
           - key: "spec#ingressClassName"
             values:
-              source: caller
+              source: "caller"
               path: "metadata#name"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [namespace, name, age]
+      Normal: ["namespace", "name", "age"]
   shortcuts:
     "Open parameters reference":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "Open info page for parameters reference"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         name_path: "spec#parameters#name"

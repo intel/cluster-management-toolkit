@@ -1,100 +1,100 @@
-kind: ServiceEntry
-api_family: networking.istio.io
-default_command: serviceentries
+kind: "ServiceEntry"
+api_family: "networking.istio.io"
+default_command: "serviceentries"
 command:
-- svcentries
-- svcentry
+- "svcentries"
+- "svcentry"
 listview:
-  name: Service Entries
-  group: Istio
+  name: "Service Entries"
+  group: "Istio"
   field_indexes:
-    Wide: [namespace, name, age, hosts, ports_svc, location, resolution]
-    Normal: [namespace, name, age, hosts, ports_svc_compact, location, resolution]
-  sortcolumn: namespace
+    Wide: ["namespace", "name", "age", "hosts", "ports_svc", "location", "resolution"]
+    Normal: ["namespace", "name", "age", "hosts", "ports_svc_compact", "location", "resolution"]
+  sortcolumn: "namespace"
   fields:
     hosts:
       header: "Hosts:"
       path: "spec#hosts"
-      type: raw
-      formatter: list
+      type: "raw"
+      formatter: "list"
     location:
       header: "Location:"
       path: "spec#location"
-      type: str
+      type: "str"
     ports_svc:
       header: "Ports:"
       paths:
       - path: "spec#ports"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - name
-        - port
-        - protocol
-        type: raw
-      formatter: list
+        - "name"
+        - "port"
+        - "protocol"
+        type: "raw"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: service
-        - type: port
-        - type: protocol
+        - type: "service"
+        - type: "port"
+        - type: "protocol"
         field_separators:
-        - type: port
-        - type: service
+        - type: "port"
+        - type: "service"
     ports_svc_compact:
       header: "Ports:"
       paths:
       - path: "spec#ports"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - port
-        - protocol
-        type: raw
-      formatter: list
+        - "port"
+        - "protocol"
+        type: "raw"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: port
-        - type: protocol
+        - type: "port"
+        - type: "protocol"
         field_separators:
-        - type: service
+        - type: "service"
     resolution:
       header: "Resolution:"
       path: "spec#resolution"
-      type: str
+      type: "str"
 infoview:
-  name: Service Entry Info
+  name: "Service Entry Info"
   infopad:
     row_indexes:
-      Normal: [hosts, ports_svc, location, resolution]
+      Normal: ["hosts", "ports_svc", "location", "resolution"]
     rows:
       hosts:
-        header: [["Hosts:", [main, infoheader]]]
+        header: [["Hosts:", ["main", "infoheader"]]]
         path: "spec#hosts"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       location:
-        header: [["Location:", [main, infoheader]]]
+        header: [["Location:", ["main", "infoheader"]]]
         path: "spec#location"
-        type: str
+        type: "str"
       ports_svc:
-        header: [["Ports:", [main, infoheader]]]
+        header: [["Ports:", ["main", "infoheader"]]]
         paths:
         - path: "spec#ports"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
-          - port
-          - protocol
-          type: raw
-        formatter: list
+          - "name"
+          - "port"
+          - "protocol"
+          type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: service
-          - type: port
-          - type: protocol
+          - type: "service"
+          - type: "port"
+          - type: "protocol"
           field_separators:
-          - type: port
-          - type: service
+          - type: "port"
+          - type: "service"
       resolution:
-        header: [["Resolution:", [main, infoheader]]]
+        header: [["Resolution:", ["main", "infoheader"]]]
         path: "spec#resolution"
-        type: str
+        type: "str"

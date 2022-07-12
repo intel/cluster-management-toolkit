@@ -1,61 +1,61 @@
-kind: IPPool
-api_family: crd.projectcalico.org
-default_command: ippools
+kind: "IPPool"
+api_family: "crd.projectcalico.org"
+default_command: "ippools"
 command:
-- calicoippools
-- calicoippool
-- cipp
+- "calicoippools"
+- "calicoippool"
+- "cipp"
 listview:
-  name: IP Pools (Calico)
-  group: Calico
+  name: "IP Pools (Calico)"
+  group: "Calico"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: IP Pool Info (Calico)
+  name: "IP Pool Info (Calico)"
   infopad:
     row_indexes:
-      Normal: [node_selector, disabled, block_size, cidr, ipip_mode, nat_outgoing, vxlan_mode, disable_bgp_export, allowed_uses]
+      Normal: ["node_selector", "disabled", "block_size", "cidr", "ipip_mode", "nat_outgoing", "vxlan_mode", "disable_bgp_export", "allowed_uses"]
     rows:
       allowed_uses:
-        header: [["Allowed Uses:", [main, infoheader]]]
+        header: [["Allowed Uses:", ["main", "infoheader"]]]
         path: "spec#allowedUses"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       block_size:
-        header: [["Block Size:", [main, infoheader]]]
+        header: [["Block Size:", ["main", "infoheader"]]]
         path: "spec#blockSize"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       cidr:
-        header: [["CIDR:", [main, infoheader]]]
+        header: [["CIDR:", ["main", "infoheader"]]]
         path: "spec#cidr"
-        type: str
-        formatter: address
+        type: "str"
+        formatter: "address"
       disable_bgp_export:
-        header: [["Disable BGP Export:", [main, infoheader]]]
+        header: [["Disable BGP Export:", ["main", "infoheader"]]]
         path: "spec#disableBGPExport"
         default: false
-        type: bool
+        type: "bool"
       disabled:
-        header: [["Disabled:", [main, infoheader]]]
+        header: [["Disabled:", ["main", "infoheader"]]]
         path: "spec#disabled"
         default: false
-        type: bool
+        type: "bool"
       ipip_mode:
-        header: [["IPIP Mode:", [main, infoheader]]]
+        header: [["IPIP Mode:", ["main", "infoheader"]]]
         path: "spec#ipipMode"
-        type: str
+        type: "str"
       nat_outgoing:
-        header: [["NAT Outgoing:", [main, infoheader]]]
+        header: [["NAT Outgoing:", ["main", "infoheader"]]]
         path: "spec#natOutgoing"
-        type: bool
+        type: "bool"
       node_selector:
-        header: [["Node Selector:", [main, infoheader]]]
+        header: [["Node Selector:", ["main", "infoheader"]]]
         path: "spec#nodeSelector"
-        type: str
+        type: "str"
       vxlan_mode:
-        header: [["VXLAN Mode:", [main, infoheader]]]
+        header: [["VXLAN Mode:", ["main", "infoheader"]]]
         path: "spec#vxlanMode"
-        type: str
+        type: "str"

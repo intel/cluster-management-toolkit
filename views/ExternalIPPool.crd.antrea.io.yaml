@@ -1,19 +1,19 @@
-kind: ExternalIPPool
-api_family: crd.antrea.io
-default_command: externalippools
+kind: "ExternalIPPool"
+api_family: "crd.antrea.io"
+default_command: "externalippools"
 command:
-- eip
+- "eip"
 listview:
-  name: Antrea External IP Pools
-  group: Antrea
+  name: "Antrea External IP Pools"
+  group: "Antrea"
   field_indexes:
-    Normal: [name, total, used, age]
+    Normal: ["name", "total", "used", "age"]
   fields:
     total:
       header: "Total:"
       path: "status#usage#total"
-      type: int
+      type: "int"
     used:
       header: "Used:"
       path: "status#usage#used"
-      type: int
+      type: "int"

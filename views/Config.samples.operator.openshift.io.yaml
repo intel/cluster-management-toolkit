@@ -1,70 +1,70 @@
-kind: Config
-api_family: samples.operator.openshift.io
-default_command: configs.samples.operator.openshift.io
+kind: "Config"
+api_family: "samples.operator.openshift.io"
+default_command: "configs.samples.operator.openshift.io"
 command:
-- config.samples
+- "config.samples"
 listview:
-  name: Configs (Samples Operator)
-  group: OpenShift
+  name: "Configs (Samples Operator)"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Config Info (Samples Operator)
+  name: "Config Info (Samples Operator)"
   infopad:
     row_indexes:
-      Normal: [configuration_header, configuration_architectures, configuration_management_state, configuration_samples_registry, configuration_skipped_image_streams, configuration_skipped_templates, status_header, status_architectures, status_management_state, status_samples_registry, status_skipped_image_streams, status_skipped_templates, status_version]
+      Normal: ["configuration_header", "configuration_architectures", "configuration_management_state", "configuration_samples_registry", "configuration_skipped_image_streams", "configuration_skipped_templates", "status_header", "status_architectures", "status_management_state", "status_samples_registry", "status_skipped_image_streams", "status_skipped_templates", "status_version"]
     rows:
       configuration_architectures:
-        header: [["  Architecture:", [main, infoheader]]]
+        header: [["  Architecture:", ["main", "infoheader"]]]
         path: "spec#architectures"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       configuration_header:
-        header: [["Configuration:", [main, infoheader]]]
+        header: [["Configuration:", ["main", "infoheader"]]]
       configuration_management_state:
-        header: [["  Management State:", [main, infoheader]]]
+        header: [["  Management State:", ["main", "infoheader"]]]
         path: "spec#managementState"
-        type: str
+        type: "str"
       configuration_samples_registry:
-        header: [["  Samples Registry:", [main, infoheader]]]
+        header: [["  Samples Registry:", ["main", "infoheader"]]]
         path: "spec#samplesRegistry"
-        type: str
+        type: "str"
       configuration_skipped_image_streams:
-        header: [["  Skipped Image Streams:", [main, infoheader]]]
+        header: [["  Skipped Image Streams:", ["main", "infoheader"]]]
         path: "spec#skippedImagestreams"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       configuration_skipped_templates:
-        header: [["  Skipped Templates:", [main, infoheader]]]
+        header: [["  Skipped Templates:", ["main", "infoheader"]]]
         path: "spec#skippedTemplates"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       status_architectures:
-        header: [["  Architecture:", [main, infoheader]]]
+        header: [["  Architecture:", ["main", "infoheader"]]]
         path: "status#architectures"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       status_header:
-        header: [["Status:", [main, infoheader]]]
+        header: [["Status:", ["main", "infoheader"]]]
       status_management_state:
-        header: [["  Management State:", [main, infoheader]]]
+        header: [["  Management State:", ["main", "infoheader"]]]
         path: "status#managementState"
-        type: str
+        type: "str"
       status_samples_registry:
-        header: [["  Samples Registry:", [main, infoheader]]]
+        header: [["  Samples Registry:", ["main", "infoheader"]]]
         path: "status#samplesRegistry"
-        type: str
+        type: "str"
       status_skipped_image_streams:
-        header: [["  Skipped Image Streams:", [main, infoheader]]]
+        header: [["  Skipped Image Streams:", ["main", "infoheader"]]]
         path: "status#skippedImagestreams"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       status_skipped_templates:
-        header: [["  Skipped Templates:", [main, infoheader]]]
+        header: [["  Skipped Templates:", ["main", "infoheader"]]]
         path: "status#skippedTemplates"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       status_version:
-        header: [["  Version:", [main, infoheader]]]
+        header: [["  Version:", ["main", "infoheader"]]]
         path: "status#version"
-        type: str
+        type: "str"

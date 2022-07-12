@@ -1,48 +1,48 @@
-kind: EnvoyFilter
-api_family: networking.istio.io
-default_command: envoyfilters
+kind: "EnvoyFilter"
+api_family: "networking.istio.io"
+default_command: "envoyfilters"
 listview:
-  name: Envoy Filters
-  group: Istio
+  name: "Envoy Filters"
+  group: "Istio"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Envoy Filter Info
+  name: "Envoy Filter Info"
   infopad:
     row_indexes:
-      Normal: [workload_selector]
+      Normal: ["workload_selector"]
     rows:
       workload_selector:
-        header: [["Workload Selector:", [main, infoheader]]]
+        header: [["Workload Selector:", ["main", "infoheader"]]]
         paths:
         - path: "spec#workloadSelector"
-          pathtype: key_value
-        formatter: list
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
   listpad:
-    listgetter: listgetter_field
+    listgetter: "listgetter_field"
     listgetter_args:
       path: "spec#configPatches"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [apply_to, context, patch_operation]
-    sortcolumn: apply_to
+      Normal: ["apply_to", "context", "patch_operation"]
+    sortcolumn: "apply_to"
     fields:
       apply_to:
         header: "Apply To:"
         path: "applyTo"
-        type: str
+        type: "str"
       context:
         header: "Context:"
         path: "match#context"
-        type: str
+        type: "str"
       patch_operation:
         header: "Patch Operation:"
         path: "patch#operation"
-        type: str
+        type: "str"

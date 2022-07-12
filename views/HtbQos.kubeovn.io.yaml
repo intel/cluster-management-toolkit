@@ -1,30 +1,30 @@
-kind: HtbQos
-api_family: kubeovn.io
-default_command: htbqoses
+kind: "HtbQos"
+api_family: "kubeovn.io"
+default_command: "htbqoses"
 listview:
-  name: HTB QoSes
-  group: Kube-OVN
+  name: "HTB QoSes"
+  group: "Kube-OVN"
   field_indexes:
-    Normal: [name, priority, age]
+    Normal: ["name", "priority", "age"]
   fields:
     priority:
       header: "Priority:"
       path: "spec#priority"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
 infoview:
-  name: HTB QoS Info
+  name: "HTB QoS Info"
   infopad:
     row_indexes:
-      Normal: [priority]
+      Normal: ["priority"]
     rows:
       priority:
-        header: [["Priority:", [main, infoheader]]]
+        header: [["Priority:", ["main", "infoheader"]]]
         path: "spec#priority"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"

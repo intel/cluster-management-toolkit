@@ -1,107 +1,107 @@
-kind: FlowSchema
-api_family: flowcontrol.apiserver.k8s.io
-default_command: flowschemas
+kind: "FlowSchema"
+api_family: "flowcontrol.apiserver.k8s.io"
+default_command: "flowschemas"
 listview:
-  name: Flow Schemas
-  group: Scheduling & Scaling
+  name: "Flow Schemas"
+  group: "Scheduling & Scaling"
   field_indexes:
-    Wide: [name, priority_level, matching_precedence, distinguisher_method, age]
+    Wide: ["name", "priority_level", "matching_precedence", "distinguisher_method", "age"]
     # Until we can specify different sortcolumn for each set of field_indexes,
     # don't use this
-    # Normal: [name, priority_level, matching_precedence_abbrev, distinguisher_method_abbrev, age]
-  sortcolumn: matching_precedence
+    # Normal: ["name", "priority_level", "matching_precedence_abbrev", "distinguisher_method_abbrev", "age"]
+  sortcolumn: "matching_precedence"
   fields:
     distinguisher_method:
       header: "Distinguisher Method:"
       path: "spec#distinguisherMethod#type"
-      type: str
+      type: "str"
     distinguisher_method_abbrev:
       header: "Distinguisher:"
       path: "spec#distinguisherMethod#type"
-      type: str
+      type: "str"
     matching_precedence:
       header: "Matching Precedence:"
       path: "spec#matchingPrecedence"
-      type: raw
-      align: right
+      type: "raw"
+      align: "right"
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
     matching_precedence_abbrev:
       header: "Precedence:"
       path: "spec#matchingPrecedence"
-      type: raw
-      align: right
+      type: "raw"
+      align: "right"
     priority_level:
       header: "Priority Level:"
       paths:
       - path: "spec#priorityLevelConfiguration#name"
-        pathtype: status_tuple
+        pathtype: "status_tuple"
         lookup:
-          kind: PriorityLevelConfiguration
-          api_family: flowcontrol.apiserver.k8s.io
+          kind: "PriorityLevelConfiguration"
+          api_family: "flowcontrol.apiserver.k8s.io"
           status: highlight
       - path: "spec#priorityLevelConfiguration#name"
-        pathtype: status_tuple
+        pathtype: "status_tuple"
         lookup:
-          kind: PriorityLevelConfiguration
-          api_family: flowcontrol.apiserver.k8s.io
+          kind: "PriorityLevelConfiguration"
+          api_family: "flowcontrol.apiserver.k8s.io"
           status: message
           messages:
             ok: ""
             not_ok: "(Referenced PriorityLevelConfiguration object does not exist)"
-      formatter: list_with_status
+      formatter: "list_with_status"
       formatting:
         item_separator:
-          type: space
+          type: "space"
 infoview:
-  name: Flow Schema Info
+  name: "Flow Schema Info"
   infopad:
     row_indexes:
-      Normal: [priority_level, matching_precedence, distinguisher_method]
+      Normal: ["priority_level", "matching_precedence", "distinguisher_method"]
     rows:
       priority_level:
-        header: [["P", [main, infoheader_shortcut]], ["riority Level:", [main, infoheader]]]
+        header: [["P", ["main", "infoheader_shortcut"]], ["riority Level:", ["main", "infoheader"]]]
         paths:
         - path: "spec#priorityLevelConfiguration#name"
-          pathtype: status_tuple
+          pathtype: "status_tuple"
           lookup:
-            kind: PriorityLevelConfiguration
-            api_family: flowcontrol.apiserver.k8s.io
+            kind: "PriorityLevelConfiguration"
+            api_family: "flowcontrol.apiserver.k8s.io"
             status: highlight
         - path: "spec#priorityLevelConfiguration#name"
-          pathtype: status_tuple
+          pathtype: "status_tuple"
           lookup:
-            kind: PriorityLevelConfiguration
-            api_family: flowcontrol.apiserver.k8s.io
+            kind: "PriorityLevelConfiguration"
+            api_family: "flowcontrol.apiserver.k8s.io"
             status: message
             messages:
               ok: ""
               not_ok: "(Referenced PriorityLevelConfiguration object does not exist)"
-        formatter: list_with_status
+        formatter: "list_with_status"
         formatting:
           item_separator:
-            type: space
+            type: "space"
       matching_precedence:
-        header: [["Matching Precedence:", [main, infoheader]]]
+        header: [["Matching Precedence:", ["main", "infoheader"]]]
         path: "spec#matchingPrecedence"
-        type: raw
+        type: "raw"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       distinguisher_method:
-        header: [["Distinguisher Method:", [main, infoheader]]]
+        header: [["Distinguisher Method:", ["main", "infoheader"]]]
         path: "spec#distinguisherMethod#type"
-        type: str
+        type: "str"
   shortcuts:
     Priority Level Configuration:
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "Open info page for Priority Level Configuration"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: PriorityLevelConfiguration
-        api_family: flowcontrol.apiserver.k8s.io
+        kind: "PriorityLevelConfiguration"
+        api_family: "flowcontrol.apiserver.k8s.io"
         name_path: "spec#priorityLevelConfiguration#name"

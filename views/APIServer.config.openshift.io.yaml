@@ -1,92 +1,92 @@
-kind: APIServer
-api_family: config.openshift.io
-default_command: apiservers.config.openshift.io
+kind: "APIServer"
+api_family: "config.openshift.io"
+default_command: "apiservers.config.openshift.io"
 command:
-- apiservers.config
-- apiserver.config
+- "apiservers.config"
+- "apiserver.config"
 listview:
-  name: API Servers (Config)
-  group: OpenShift
+  name: "API Servers (Config)"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: API Server Info
+  name: "API Server Info"
   infopad:
     row_indexes:
-      Normal: [client_ca, cluster_version, audit_profile, encryption_type, tls_security_profile]
+      Normal: ["client_ca", "cluster_version", "audit_profile", "encryption_type", "tls_security_profile"]
     rows:
       audit_profile:
-        header: [["Audit Profile:", [main, infoheader]]]
+        header: [["Audit Profile:", ["main", "infoheader"]]]
         path: "spec#audit#profile"
-        type: str
+        type: "str"
       client_ca:
-        header: [["C", [main, infoheader_shortcut]], ["lient CA:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["lient CA:", ["main", "infoheader"]]]
         path: "spec#clientCA#name"
         default: "<none>"
-        type: str
+        type: "str"
       cluster_version:
-        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
+          - "name"
           when:
             key: kind
             eq: ClusterVersion
         default: "<none>"
       encryption_type:
-        header: [["Encryption Type:", [main, infoheader]]]
+        header: [["Encryption Type:", ["main", "infoheader"]]]
         path: "spec#encryption#type"
         default: "<default>"
-        type: str
+        type: "str"
       tls_security_profile:
-        header: [["TLS Security Profile:", [main, infoheader]]]
+        header: [["TLS Security Profile:", ["main", "infoheader"]]]
         path: "spec#tlsSecurityProfile#type"
         default: "<default>"
-        type: str
+        type: "str"
   shortcuts:
     "Additional CORS Allowed Origins":
-      key: o
-      modifier: shift
+      key: "o"
+      modifier: "shift"
       helptext: "List additional CORS allowed origins"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "CORS allowed origins:"
       selectable: true
-      itemgetter: get_list_as_list
+      itemgetter: "get_list_as_list"
       itemgetter_args:
         paths: ["spec#additionalCORSAllowedOrigins"]
       # Not supported for now
-      sortcolumn: origin
+      sortcolumn: "origin"
     "Client CA":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for client CA"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         namespace: openshift-config
         name_path: "spec#clientCA#name"
-        kind: ConfigMap
+        kind: "ConfigMap"
     "Cluster Version":
-      key: v
-      modifier: shift
+      key: "v"
+      modifier: "shift"
       helptext: "Open info page for Cluster Version"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         owner_reference_path: "metadata#ownerReferences"
-        kind: ClusterVersion
-        api_family: config.openshift.io
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"
     "View serving certs":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "View serving TLS certificates"
-      action: call
-      action_call: view_yaml
+      action: "call"
+      action_call: "view_yaml"
       action_args:
-        title: Service TLS certificates
+        title: "Service TLS certificates"
         _pass_obj: true
         path: "spec#servingCerts"

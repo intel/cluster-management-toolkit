@@ -1,110 +1,110 @@
-kind: Endpoints
-default_command: endpoints
+kind: "Endpoints"
+default_command: "endpoints"
 command:
-- ep
+- "ep"
 listview:
-  name: Endpoints
-  group: Core
+  name: "Endpoints"
+  group: "Core"
   field_indexes:
-    Wide: [namespace, name, ports, endpoints, age]
-    Normal: [namespace, name, ports_compact, endpoints_ellipsise, age]
-  sortcolumn: namespace
+    Wide: ["namespace", "name", "ports", "endpoints", "age"]
+    Normal: ["namespace", "name", "ports_compact", "endpoints_ellipsise", "age"]
+  sortcolumn: "namespace"
   fields:
     # Map ready & non-ready endpoints to ok, not ok;
     # we need some special way to handle this
     endpoints:
       header: "Endpoints:"
-      path: subsets
-      datagetter: datagetter_endpoint_ips
-      formatter: list_with_status
+      path: "subsets"
+      datagetter: "datagetter_endpoint_ips"
+      formatter: "list_with_status"
     endpoints_ellipsise:
       header: "Endpoints:"
-      path: subsets
-      datagetter: datagetter_endpoint_ips
-      formatter: list_with_status
+      path: "subsets"
+      datagetter: "datagetter_endpoint_ips"
+      formatter: "list_with_status"
       formatting:
         ellipsise: 3
     ports:
       header: "Ports:"
       paths:
       - path: "subsets#ports"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - name
-        - port
-        - protocol
-        type: raw
-      formatter: list
+        - "name"
+        - "port"
+        - "protocol"
+        type: "raw"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: service
-        - type: port
-        - type: protocol
+        - type: "service"
+        - type: "port"
+        - type: "protocol"
         field_separators:
-        - type: port
-        - type: service
+        - type: "port"
+        - type: "service"
     ports_compact:
       header: "Ports:"
       paths:
       - path: "subsets#ports"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - port
-        - protocol
-        type: raw
-      formatter: list
+        - "port"
+        - "protocol"
+        type: "raw"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: port
-        - type: protocol
+        - type: "port"
+        - type: "protocol"
         field_separators:
-        - type: service
+        - type: "service"
         ellipsise: 3
 infoview:
-  name: Endpoints Info
+  name: "Endpoints Info"
   listpad:
-    infogetter: get_subsets_info
+    infogetter: "get_subsets_info"
     field_indexes:
-      Normal: [addresses, ports, status]
-    sortcolumn: status
+      Normal: ["addresses", "ports", "status"]
+    sortcolumn: "status"
     fields:
       addresses:
         header: "Addresses:"
-        path: addresses
-        type: raw
-        formatter: list
+        path: "addresses"
+        type: "raw"
+        formatter: "list"
       ports:
         header: "Ports:"
         paths:
-        - path: ports
-          pathtype: items
+        - path: "ports"
+          pathtype: "items"
           subpaths:
-          - name
-          - port
-          - protocol
-          type: raw
-        formatter: list
+          - "name"
+          - "port"
+          - "protocol"
+          type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: service
-          - type: port
-          - type: protocol
+          - type: "service"
+          - type: "port"
+          - type: "protocol"
           field_separators:
-          - type: port
-          - type: service
+          - type: "port"
+          - type: "service"
       status:
         header: "Status:"
-        path: status
-        type: str
-        formatter: value_mapper
+        path: "status"
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "Ready":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "Not Ready":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"

@@ -1,146 +1,146 @@
-kind: Certificate
-api_family: cert-manager.io
-default_command: certificates
+kind: "Certificate"
+api_family: "cert-manager.io"
+default_command: "certificates"
 command:
-- certs
-- cert
+- "certs"
+- "cert"
 listview:
-  name: Certificates
-  group: Certificate Management
+  name: "Certificates"
+  group: "Certificate Management"
   field_indexes:
-    Normal: [namespace, name, condition_ready, secret, issuer, status_message, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "condition_ready", "secret", "issuer", "status_message", "age"]
+  sortcolumn: "namespace"
   fields:
     condition_ready:
       header: "Ready:"
       paths:
       - path: "status#conditions"
-        pathtype: items
-        subpath: status
+        pathtype: "items"
+        subpath: "status"
         when:
         - key: type
           eq: Ready
         default: "<unknown>"
-      formatter: value_mapper
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "False":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
     issuer:
       header: "Issuer:"
       paths:
       - path: [["spec#issuerRef#kind"], ["spec#issuerRef#name"]]
-        pathtype: tuple
-        type: [kind, name]
-      formatter: list
+        pathtype: "tuple"
+        type: ["kind", "name"]
+      formatter: "list"
       formatting:
         field_colors:
-        - type: kind
-        - type: generic
+        - type: "kind"
+        - type: "generic"
         field_separators:
-        - type: kind
+        - type: "kind"
     secret:
       header: "Secret:"
       path: "spec#secretName"
-      type: str
+      type: "str"
     status_message:
       header: "Status:"
       paths:
       - path: "status#conditions"
-        pathtype: items
-        subpath: message
+        pathtype: "items"
+        subpath: "message"
         when:
         - key: type
           eq: Ready
         default: ""
 infoview:
-  name: Certificate Info
+  name: "Certificate Info"
   infopad:
     row_indexes:
-      Normal: [common_name, dns_names, issuer, secret_name, condition_ready]
+      Normal: ["common_name", "dns_names", "issuer", "secret_name", "condition_ready"]
     rows:
       common_name:
-        header: [["Common Name:", [main, infoheader]]]
+        header: [["Common Name:", ["main", "infoheader"]]]
         path: "spec#commonName"
-        type: str
+        type: "str"
         default: "<none>"
       condition_ready:
-        header: [["Ready:", [main, infoheader]]]
+        header: [["Ready:", ["main", "infoheader"]]]
         paths:
         - path: "status#conditions"
-          pathtype: items
-          subpath: status
+          pathtype: "items"
+          subpath: "status"
           when:
           - key: type
             eq: Ready
           default: "<unknown>"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "<unknown>":
                 field_colors:
-                - context: main
-                  type: status_unknown
+                - context: "main"
+                  type: "status_unknown"
       dns_names:
-        header: [["DNS Names:", [main, infoheader]]]
+        header: [["DNS Names:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#dnsNames"]
-          pathtype: list
-        formatter: list
+          pathtype: "list"
+        formatter: "list"
       issuer:
-        header: [["I", [main, infoheader_shortcut]], ["ssuer:", [main, infoheader]]]
+        header: [["I", ["main", "infoheader_shortcut"]], ["ssuer:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#issuerRef#kind"], ["spec#issuerRef#name"]]
-          pathtype: tuple
-        formatter: list
+          pathtype: "tuple"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: generic
+          - type: "kind"
+          - type: "generic"
           item_separators:
-          - type: kind
+          - type: "kind"
       secret_name:
-        header: [["S", [main, infoheader_shortcut]], ["ecret Name:", [main, infoheader]]]
+        header: [["S", ["main", "infoheader_shortcut"]], ["ecret Name:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#secretName"]
-          pathtype: str
+          pathtype: "str"
   shortcuts:
     "Issuer":
-      key: i
-      modifier: shift
+      key: "i"
+      modifier: "shift"
       helptext: "Open info page for Issuer"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind_path: "spec#issuerRef#kind"
-        api_family: cert-manager.io
+        api_family: "cert-manager.io"
         name_path: "spec#issuerRef#name"
         namespace_path: "metadata#namespace"
     "Secret Name":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "Open info page for Secret"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Secret
+        kind: "Secret"
         name_path: "spec#secretName"
         namespace_path: "metadata#namespace"

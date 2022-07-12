@@ -1,25 +1,25 @@
-kind: RangeAllocation
-api_family: security.internal.openshift.io
-default_command: rangeallocations
+kind: "RangeAllocation"
+api_family: "security.internal.openshift.io"
+default_command: "rangeallocations"
 listview:
-  name: Range Allocations
-  group: OpenShift
+  name: "Range Allocations"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, range, age]
+    Normal: ["name", "range", "age"]
   fields:
     range:
       header: "Range:"
       path: "range"
-      type: raw
-      formatter: numerical_with_units
+      type: "raw"
+      formatter: "numerical_with_units"
 infoview:
-  name: Range Allocation Info
+  name: "Range Allocation Info"
   infopad:
     row_indexes:
-      Normal: [range]
+      Normal: ["range"]
     rows:
       range:
-        header: [["Range:", [main, infoheader]]]
+        header: [["Range:", ["main", "infoheader"]]]
         path: "range"
-        type: raw
-        formatter: numerical_with_units
+        type: "raw"
+        formatter: "numerical_with_units"

@@ -1,65 +1,65 @@
-kind: NodeMetrics
-api_family: metrics.k8s.io
-default_command: nodemetrics
+kind: "NodeMetrics"
+api_family: "metrics.k8s.io"
+default_command: "nodemetrics"
 command:
-- nodemetric
+- "nodemetric"
 listview:
-  name: Node Metrics
-  group: Monitoring
+  name: "Node Metrics"
+  group: "Monitoring"
   field_indexes:
-    Normal: [name, cpu_usage, memory_usage, window]
+    Normal: ["name", "cpu_usage", "memory_usage", "window"]
   fields:
     cpu_usage:
       header: "CPU (millicores):"
       paths:
       - path: "usage#cpu"
-        type: cpu_usage
-      align: right
-      formatter: float
+        type: "cpu_usage"
+      align: "right"
+      formatter: "float"
     memory_usage:
       header: "Memory:"
       paths:
       - path: "usage#memory"
-        type: mem_usage
-      formatter: mem
-      align: right
+        type: "mem_usage"
+      formatter: "mem"
+      align: "right"
     window:
       header: "Window:"
       path: "window"
-      align: right
-      type: str
-      formatter: float
+      align: "right"
+      type: "str"
+      formatter: "float"
 infoview:
-  name: Node Metric Info
+  name: "Node Metric Info"
   infopad:
     row_indexes:
-      Normal: [cpu_usage, memory_usage, window]
+      Normal: ["cpu_usage", "memory_usage", "window"]
     rows:
       cpu_usage:
-        header: [["CPU (millicores):", [main, infoheader]]]
+        header: [["CPU (millicores):", ["main", "infoheader"]]]
         paths:
         - path: "usage#cpu"
-          type: cpu_usage
-        formatter: float
+          type: "cpu_usage"
+        formatter: "float"
       memory_usage:
-        header: [["Memory:", [main, infoheader]]]
+        header: [["Memory:", ["main", "infoheader"]]]
         paths:
         - path: "usage#memory"
-          type: mem_usage
-        formatter: mem
+          type: "mem_usage"
+        formatter: "mem"
       window:
-        header: [["Window:", [main, infoheader]]]
+        header: [["Window:", ["main", "infoheader"]]]
         path: "window"
-        type: str
-        formatter: float
+        type: "str"
+        formatter: "float"
   shortcuts:
     "Open Node":
-      key: n
-      modifier: shift
+      key: "n"
+      modifier: "shift"
       helptext: "Open Node"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Node
+        kind: "Node"
         name_path: "metadata#name"

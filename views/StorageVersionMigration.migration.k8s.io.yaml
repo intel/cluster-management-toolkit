@@ -1,32 +1,32 @@
-kind: StorageVersionMigration
-api_family: migration.k8s.io
-default_command: storageversionmigrations
+kind: "StorageVersionMigration"
+api_family: "migration.k8s.io"
+default_command: "storageversionmigrations"
 listview:
-  name: Storage Version Migrations
-  group: Storage & Backups
+  name: "Storage Version Migrations"
+  group: "Storage & Backups"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Storage Version Migration Info
+  name: "Storage Version Migration Info"
   infopad:
     row_indexes:
-      Normal: [resource, api_group, version]
+      Normal: ["resource", "api_group", "version"]
     rows:
       api_group:
-        header: [["API-Group:", [main, infoheader]]]
+        header: [["API-Group:", ["main", "infoheader"]]]
         path: "spec#resource#group"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: api_group
+          - type: "api_group"
       resource:
-        header: [["Resource:", [main, infoheader]]]
+        header: [["Resource:", ["main", "infoheader"]]]
         path: "spec#resource#resource"
-        type: str
+        type: "str"
       version:
-        header: [["Version:", [main, infoheader]]]
+        header: [["Version:", ["main", "infoheader"]]]
         path: "spec#resource#version"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"

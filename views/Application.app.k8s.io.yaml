@@ -1,184 +1,184 @@
-kind: Application
-api_family: app.k8s.io
-default_command: applications
+kind: "Application"
+api_family: "app.k8s.io"
+default_command: "applications"
 command:
-- apps
-- app
+- "apps"
+- "app"
 listview:
-  name: Applications
-  group: API & Extendability
+  name: "Applications"
+  group: "API & Extendability"
   field_indexes:
-    Normal: [namespace, name, type, version, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "type", "version", "age"]
+  sortcolumn: "namespace"
   fields:
     type:
       header: "Type:"
       path: "spec#descriptor#type"
-      type: str
+      type: "str"
     version:
       header: "Version:"
       path: "spec#descriptor#version"
-      type: str
+      type: "str"
       formatting:
         field_colors:
-        - type: version
+        - type: "version"
 infoview:
-  name: Application Info
+  name: "Application Info"
   infopad:
     row_indexes:
-      Normal: [add_ownerref, label_selector, kinds, keywords, type, version]
+      Normal: ["add_ownerref", "label_selector", "kinds", "keywords", "type", "version"]
     rows:
       add_ownerref:
-        header: [["Add ownerRef:", [main, infoheader]]]
+        header: [["Add ownerRef:", ["main", "infoheader"]]]
         path: "spec#addOwnerRef"
         default: false
-        type: bool
+        type: "bool"
       keywords:
-        header: [["Keywords:", [main, infoheader]]]
+        header: [["Keywords:", ["main", "infoheader"]]]
         path: "spec#descriptor#keywords"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       kinds:
-        header: [["Kinds:", [main, infoheader]]]
+        header: [["Kinds:", ["main", "infoheader"]]]
         paths:
         - path: "spec#componentKinds"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - group
-          type: [kind, api_group]
-        formatter: list
+          - "kind"
+          - "group"
+          type: ["kind", "api_group"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
+          - type: "kind"
+          - type: "api_group"
           field_separator:
-          - type: kind_api_group
+          - type: "kind_api_group"
 
       label_selector:
-        header: [["Label Selector:", [main, infoheader]]]
+        header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#selector#matchLabels"]
-          pathtype: key_value
+          pathtype: "key_value"
           default: ["<none>"]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       type:
-        header: [["Type:", [main, infoheader]]]
+        header: [["Type:", ["main", "infoheader"]]]
         path: "spec#descriptor#type"
-        type: str
+        type: "str"
       version:
-        header: [["Version:", [main, infoheader]]]
+        header: [["Version:", ["main", "infoheader"]]]
         path: "spec#descriptor#version"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
   listpad:
     on_activation:
-      call: resourceinfodispatch_with_lookup_on_activation
-      kind_path: kind
-      api_family_path: group
-      name_path: name
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind_path: "kind"
+      api_family_path: "group"
+      name_path: "name"
       namespace_path: "_extra_data#namespace"
     path: "status#components"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     infogetter_args:
       _extra_data:
         namespace: ["metadata#namespace"]
     field_indexes:
-      Normal: [kind, name, status, link]
-    sortcolumn: kind
+      Normal: ["kind", "name", "status", "link"]
+    sortcolumn: "kind"
     fields:
       kind:
         header: "Kind:"
         paths:
-        - path: [[kind], [group]]
-          pathtype: tuple
-          type: [kind, api_group]
-        formatter: list
+        - path: [["kind"], ["group"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
+          - type: "kind"
+          - type: "api_group"
           field_separator:
-          - type: kind_api_group
+          - type: "kind_api_group"
       link:
         header: "Link:"
-        path: link
-        type: str
+        path: "link"
+        type: "str"
       name:
         header: "Name:"
-        path: name
-        type: str
+        path: "name"
+        type: "str"
       status:
         header: "Status:"
-        path: status
-        type: str
-        formatter: value_mapper
+        path: "status"
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "Ready":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "InProgress":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               "__default":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
   shortcuts:
     "Description":
-      key: d
-      modifier: shift
+      key: "d"
+      modifier: "shift"
       helptext: "Show description"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Description:"
-      itemgetter: get_strings_from_string
+      itemgetter: "get_strings_from_string"
       itemgetter_args:
         path: "spec#descriptor#description"
     "Links":
-      key: k
+      key: "k"
       helptext: "Show links"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Links:"
       headers: ["Description:", "URL:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#descriptor#links"
         fields:
-        - description
-        - url
+        - "description"
+        - "url"
     "Maintainers":
-      key: m
+      key: "m"
       helptext: "Show maintainers"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Maintainers:"
       headers: ["Name:", "E-mail:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#descriptor#maintainers"
         fields:
-        - name
-        - email
+        - "name"
+        - "email"
     "Owners":
-      key: o
+      key: "o"
       helptext: "Show owners"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Owners:"
       headers: ["Name:", "E-mail:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#descriptor#owners"
         fields:
-        - name
-        - email
+        - "name"
+        - "email"

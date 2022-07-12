@@ -1,29 +1,29 @@
-kind: Operator
-api_family: operators.coreos.com
-default_command: operators
+kind: "Operator"
+api_family: "operators.coreos.com"
+default_command: "operators"
 listview:
-  name: Operators
-  group: API & Extendability
+  name: "Operators"
+  group: "API & Extendability"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Operator Info
+  name: "Operator Info"
   infopad:
     row_indexes:
-      Normal: [label_selector]
+      Normal: ["label_selector"]
     rows:
       label_selector:
-        header: [["Set-based Selector:", [main, infoheader]]]
+        header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
         - path: "status#components#labelSelector#matchExpressions"
-          pathtype: match_expression
+          pathtype: "match_expression"
           default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: operator
-          - type: value
+          - type: "key"
+          - type: "operator"
+          - type: "value"
           field_separators:
-          - type: space
-          - type: no_pad
+          - type: "space"
+          - type: "no_pad"

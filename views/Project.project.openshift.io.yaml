@@ -1,76 +1,76 @@
-kind: Project
-api_family: project.openshift.io
-default_command: projects
+kind: "Project"
+api_family: "project.openshift.io"
+default_command: "projects"
 command:
-- projects.project.openshift.io
-- projects.project
-- project.project
-- projects
-- project
+- "projects.project.openshift.io"
+- "projects.project"
+- "project.project"
+- "projects"
+- "project"
 listview:
-  name: Projects
-  group: OpenShift
+  name: "Projects"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, phase, age]
+    Normal: ["name", "phase", "age"]
   fields:
     phase:
       header: "Status:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Active:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Terminating:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
 infoview:
-  name: Project Info
+  name: "Project Info"
   infopad:
     row_indexes:
-      Normal: [cluster_version, phase]
+      Normal: ["cluster_version", "phase"]
     rows:
       cluster_version:
-        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
+          - "name"
           when:
-            key: kind
-            eq: ClusterVersion
+            key: "kind"
+            eq: "ClusterVersion"
         default: "<none>"
       phase:
-        header: [["Status:", [main, infoheader]]]
+        header: [["Status:", ["main", "infoheader"]]]
         path: "status#phase"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Active:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Terminating:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
   shortcuts:
     "Cluster Version":
-      key: v
-      modifier: shift
+      key: "v"
+      modifier: "shift"
       helptext: "Open info page for Cluster Version"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         owner_reference_path: "metadata#ownerReferences"
-        kind: ClusterVersion
-        api_family: config.openshift.io
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"

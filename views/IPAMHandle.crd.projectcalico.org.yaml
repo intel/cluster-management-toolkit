@@ -1,40 +1,40 @@
-kind: IPAMHandle
-api_family: crd.projectcalico.org
-default_command: ipamhandles
+kind: "IPAMHandle"
+api_family: "crd.projectcalico.org"
+default_command: "ipamhandles"
 listview:
-  name: IPAM Handles
-  group: Calico
+  name: "IPAM Handles"
+  group: "Calico"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: IPAM Handle Info
+  name: "IPAM Handle Info"
   infopad:
     row_indexes:
-      Normal: [handle_id, deleted, blocks]
+      Normal: ["handle_id", "deleted", "blocks"]
     rows:
       blocks:
-        header: [["Blocks:", [main, infoheader]]]
+        header: [["Blocks:", ["main", "infoheader"]]]
         paths:
         - path: "spec#block"
-          pathtype: dictlist
+          pathtype: "dictlist"
           transform:
             key:
               regex: ["^([^/]+)/(.+)"]
               groups: [0, 1]
               join: ["/"]
-            output: [key]
+            output: ["key"]
             sorted: true
-        formatter: address
+        formatter: "address"
         formatting:
           field_separators:
-          - type: ipv4address
-          - type: ipv6address
-          - type: ipmask
+          - type: "ipv4address"
+          - type: "ipv6address"
+          - type: "ipmask"
       deleted:
-        header: [["Deleted:", [main, infoheader]]]
+        header: [["Deleted:", ["main", "infoheader"]]]
         path: "spec#deleted"
-        type: bool
+        type: "bool"
       handle_id:
-        header: [["Handle ID:", [main, infoheader]]]
+        header: [["Handle ID:", ["main", "infoheader"]]]
         path: "spec#handleID"
-        type: str
+        type: "str"

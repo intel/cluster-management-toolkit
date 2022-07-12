@@ -1,17 +1,17 @@
-kind: WorkloadEntry
-api_family: networking.istio.io
-default_command: workloadentries
+kind: "WorkloadEntry"
+api_family: "networking.istio.io"
+default_command: "workloadentries"
 command:
-- wlentries
-- wlentry
+- "wlentries"
+- "wlentry"
 listview:
-  name: Workload Entries
-  group: Istio
+  name: "Workload Entries"
+  group: "Istio"
   field_indexes:
-    Normal: [namespace, name, address, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "address", "age"]
+  sortcolumn: "namespace"
   fields:
     address:
       header: "Address:"
       path: "spec#address"
-      type: str
+      type: "str"

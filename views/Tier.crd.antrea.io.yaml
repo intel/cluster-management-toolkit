@@ -1,30 +1,30 @@
-kind: Tier
-api_family: crd.antrea.io
-default_command: tiers
+kind: "Tier"
+api_family: "crd.antrea.io"
+default_command: "tiers"
 listview:
-  name: Antrea Tiers
-  group: Antrea
+  name: "Antrea Tiers"
+  group: "Antrea"
   field_indexes:
-    Normal: [name, priority, age]
+    Normal: ["name", "priority", "age"]
   fields:
     priority:
       header: "Priority:"
       path: "spec#priority"
-      type: int
+      type: "int"
 infoview:
-  name: Antrea Tier Info
+  name: "Antrea Tier Info"
   infopad:
     row_indexes:
-      Normal: [description, priority]
+      Normal: ["description", "priority"]
     rows:
       description:
-        header: [["Description:", [main, infoheader]]]
+        header: [["Description:", ["main", "infoheader"]]]
         path: "spec#description"
-        type: str
+        type: "str"
       priority:
-        header: [["Priority:", [main, infoheader]]]
+        header: [["Priority:", ["main", "infoheader"]]]
         path: "spec#priority"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"

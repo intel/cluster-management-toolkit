@@ -1,25 +1,25 @@
-kind: FeatureGate
-api_family: config.openshift.io
-default_command: featuregates.config.openshift.io
+kind: "FeatureGate"
+api_family: "config.openshift.io"
+default_command: "featuregates.config.openshift.io"
 command:
-- featuregates.config
-- featuregate.config
+- "featuregates.config"
+- "featuregate.config"
 listview:
-  name: Feature Gates (Config)
-  group: OpenShift
+  name: "Feature Gates (Config)"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Feature Gate Info (Config)
+  name: "Feature Gate Info (Config)"
   infopad:
     row_indexes:
-      Normal: [cluster_version]
+      Normal: ["cluster_version"]
     rows:
       cluster_version:
-        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
           - name
           when:
@@ -28,13 +28,13 @@ infoview:
         default: "<none>"
   shortcuts:
     "Cluster Version":
-      key: v
-      modifier: shift
+      key: "v"
+      modifier: "shift"
       helptext: "Open info page for Cluster Version"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         owner_reference_path: "metadata#ownerReferences"
-        kind: ClusterVersion
-        api_family: config.openshift.io
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"

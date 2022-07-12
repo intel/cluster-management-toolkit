@@ -1,43 +1,43 @@
-kind: Profile
-api_family: projectcalico.org
-default_command: calicoprofiles
+kind: "Profile"
+api_family: "projectcalico.org"
+default_command: "calicoprofiles"
 command:
-- calicoprofile
+- "calicoprofile"
 listview:
-  name: Profiles (Calico)
-  group: Calico
+  name: "Profiles (Calico)"
+  group: "Calico"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Profile Info (Calico)
+  name: "Profile Info (Calico)"
   infopad:
     row_indexes:
-      Normal: [labels_to_apply]
+      Normal: ["labels_to_apply"]
     rows:
       labels_to_apply:
-        header: [["L", [main, infoheader_shortcut]], ["abels to Apply:", [main, infoheader]]]
+        header: [["L", ["main", "infoheader_shortcut"]], ["abels to Apply:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#labelsToApply"]
-          pathtype: key_value
-        formatter: list
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
           ellipsise: 3
   shortcuts:
     "List labels to apply":
-      key: l
-      modifier: shift
+      key: "l"
+      modifier: "shift"
       helptext: "List labels to apply"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Labels to apply:"
       headers: ["Key:", "Value:"]
-      itemgetter: get_key_value
+      itemgetter: "get_key_value"
       itemgetter_args:
         path: "spec#labelsToApply"
-      formatting: [[windowwidget, default], [windowwidget, highlight]]
+      formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
       # Not supported for now
-      sortcolumn: key
+      sortcolumn: "key"

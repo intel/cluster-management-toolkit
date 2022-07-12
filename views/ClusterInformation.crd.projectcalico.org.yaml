@@ -1,36 +1,36 @@
-kind: ClusterInformation
-api_family: crd.projectcalico.org
-default_command: clusterinformations
+kind: "ClusterInformation"
+api_family: "crd.projectcalico.org"
+default_command: "clusterinformations"
 listview:
-  name: Cluster Informations
-  group: Calico
+  name: "Cluster Informations"
+  group: "Calico"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Cluster Information Info
+  name: "Cluster Information Info"
   infopad:
     row_indexes:
-      Normal: [calico_version, cluster_guid, cluster_type, datastore_ready]
+      Normal: ["calico_version", "cluster_guid", "cluster_type", "datastore_ready"]
     rows:
       calico_version:
-        header: [["Calico Version:", [main, infoheader]]]
+        header: [["Calico Version:", ["main", "infoheader"]]]
         path: "spec#calicoVersion"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
       cluster_guid:
-        header: [["Cluster GUID:", [main, infoheader]]]
+        header: [["Cluster GUID:", ["main", "infoheader"]]]
         path: "spec#clusterGUID"
-        type: numerical
+        type: "numerical"
       cluster_type:
-        header: [["Cluster Type:", [main, infoheader]]]
+        header: [["Cluster Type:", ["main", "infoheader"]]]
         paths:
         - path: "spec#clusterType"
-          pathtype: split
-          type: str
-        formatter: list
+          pathtype: "split"
+          type: "str"
+        formatter: "list"
       datastore_ready:
-        header: [["Datastore Ready:", [main, infoheader]]]
+        header: [["Datastore Ready:", ["main", "infoheader"]]]
         path: "spec#datastoreReady"
-        type: bool
+        type: "bool"

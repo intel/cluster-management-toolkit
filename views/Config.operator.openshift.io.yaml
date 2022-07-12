@@ -1,59 +1,59 @@
-kind: Config
-api_family: operator.openshift.io
-default_command: configs.operator.openshift.io
+kind: "Config"
+api_family: "operator.openshift.io"
+default_command: "configs.operator.openshift.io"
 command:
-- configs.operator
-- config.operator
+- "configs.operator"
+- "config.operator"
 listview:
-  name: Configs (Operator)
-  group: OpenShift
+  name: "Configs (Operator)"
+  group: "OpenShift"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Config Info (Operator)
+  name: "Config Info (Operator)"
   infopad:
     row_indexes:
-      Normal: [cluster_version, loglevel, operator_loglevel, management_state, ready_replicas]
+      Normal: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "ready_replicas"]
     rows:
       cluster_version:
-        header: [["Cluster ", [main, infoheader]], ["V", [main, infoheader_shortcut]], ["ersion:", [main, infoheader]]]
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - name
+          - "name"
           when:
             key: kind
             eq: ClusterVersion
         default: "<none>"
       loglevel:
-        header: [["Loglevel:", [main, infoheader]]]
+        header: [["Loglevel:", ["main", "infoheader"]]]
         path: "spec#logLevel"
-        type: str
+        type: "str"
       management_state:
-        header: [["Management State:", [main, infoheader]]]
+        header: [["Management State:", ["main", "infoheader"]]]
         path: "spec#managementState"
-        type: str
+        type: "str"
       operator_loglevel:
-        header: [["Operator Loglevel:", [main, infoheader]]]
+        header: [["Operator Loglevel:", ["main", "infoheader"]]]
         path: "spec#operatorLogLevel"
-        type: str
+        type: "str"
       ready_replicas:
-        header: [["Ready Replicas:", [main, infoheader]]]
+        header: [["Ready Replicas:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
   shortcuts:
     "Cluster Version":
-      key: v
-      modifier: shift
+      key: "v"
+      modifier: "shift"
       helptext: "Open info page for Cluster Version"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         owner_reference_path: "metadata#ownerReferences"
-        kind: ClusterVersion
-        api_family: config.openshift.io
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"

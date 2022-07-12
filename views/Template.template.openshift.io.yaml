@@ -1,65 +1,65 @@
-kind: Template
-api_family: template.openshift.io
-default_command: templates
+kind: "Template"
+api_family: "template.openshift.io"
+default_command: "templates"
 listview:
-  name: Templates
-  group: OpenShift
+  name: "Templates"
+  group: "OpenShift"
   field_indexes:
-    Normal: [namespace, name, parameter_count, object_count, age, description]
+    Normal: ["namespace", "name", "parameter_count", "object_count", "age", "description"]
   fields:
     description:
       header: "Description:"
       path: "metadata#annotations#description"
-      type: str
+      type: "str"
     object_count:
       header: "Objects:"
-      path: objects
-      type: len
+      path: "objects"
+      type: "len"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     parameter_count:
       header: "Parameters:"
-      path: parameters
-      type: len
+      path: "parameters"
+      type: "len"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
 infoview:
-  name: Template Info
+  name: "Template Info"
   shortcuts:
     "Show object list":
-      key: o
-      modifier: shift
+      key: "o"
+      modifier: "shift"
       helptext: "List objects"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Objects:"
       headers: ["Kind:", "API-Version:", "Name:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "objects"
         fields:
-        - kind
-        - apiVersion
+        - "kind"
+        - "apiVersion"
         - "metadata#name"
       # Not supported for now
-      sortcolumn: kind
+      sortcolumn: "kind"
     "Show parameter list":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "List parameters"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Parameters:"
       headers: ["Name:", "Required:", "Value:", "Description:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "parameters"
         fields:
-        - name
-        - required
-        - value
-        - description
+        - "name"
+        - "required"
+        - "value"
+        - "description"
       # Not supported for now
-      sortcolumn: name
+      sortcolumn: "name"

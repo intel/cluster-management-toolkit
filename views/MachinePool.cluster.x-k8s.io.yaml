@@ -1,55 +1,55 @@
-kind: MachinePool
-api_family: cluster.x-k8s.io
-default_command: machinepools
+kind: "MachinePool"
+api_family: "cluster.x-k8s.io"
+default_command: "machinepools"
 command:
-- mp
+- "mp"
 listview:
-  name: Machine Pools
-  group: Cluster Configuration
+  name: "Machine Pools"
+  group: "Cluster Configuration"
   field_indexes:
-    Normal: [namespace, name, phase, replicas, age, version]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "phase", "replicas", "age", "version"]
+  sortcolumn: "namespace"
   fields:
     phase:
       header: "Phase:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Pending:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Terminating:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Provisioning:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Running:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Failed:
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
     replicas:
       header: "Replicas:"
       path: "status#replicas"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     version:
       header: "Version:"
       path: "spec#template#spec#version"
-      type: str
+      type: "str"
       formatting:
         field_colors:
-        - type: version
+        - type: "version"

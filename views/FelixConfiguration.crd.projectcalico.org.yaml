@@ -1,47 +1,47 @@
-kind: FelixConfiguration
-api_family: crd.projectcalico.org
-default_command: felixconfigurations
+kind: "FelixConfiguration"
+api_family: "crd.projectcalico.org"
+default_command: "felixconfigurations"
 command:
-- felixconfs
-- felixconf
+- "felixconfs"
+- "felixconf"
 listview:
-  name: Felix Configurations
-  group: Calico
+  name: "Felix Configurations"
+  group: "Calico"
   field_indexes:
-    Normal: [name, age]
+    Normal: ["name", "age"]
 infoview:
-  name: Felix Configuration Info
+  name: "Felix Configuration Info"
   infopad:
     row_indexes:
-      Normal: [bpf_log_level, log_severity_screen, reporting_interval, ipip_enabled, vxlan_enabled]
+      Normal: ["bpf_log_level", "log_severity_screen", "reporting_interval", "ipip_enabled", "vxlan_enabled"]
     rows:
       bpf_log_level:
-        header: [["BPF Log Level:", [main, infoheader]]]
+        header: [["BPF Log Level:", ["main", "infoheader"]]]
         path: "spec#bpfLogLevel"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             substitutions:
               "": "Off"
       log_severity_screen:
-        header: [["Log Severity Screen:", [main, infoheader]]]
+        header: [["Log Severity Screen:", ["main", "infoheader"]]]
         path: "spec#logSeverityScreen"
-        type: str
+        type: "str"
       ipip_enabled:
-        header: [["IPIP Enabled:", [main, infoheader]]]
+        header: [["IPIP Enabled:", ["main", "infoheader"]]]
         path: "spec#ipipEnabled"
         default: false
-        type: bool
+        type: "bool"
       reporting_interval:
-        header: [["Reporting Interval:", [main, infoheader]]]
+        header: [["Reporting Interval:", ["main", "infoheader"]]]
         path: "spec#reportingInterval"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       vxlan_enabled:
-        header: [["VXLAN Enabled:", [main, infoheader]]]
+        header: [["VXLAN Enabled:", ["main", "infoheader"]]]
         path: "spec#vxlanEnabled"
         default: false
-        type: bool
+        type: "bool"

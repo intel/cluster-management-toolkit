@@ -1,19 +1,19 @@
-kind: CiliumExternalWorkload
-api_family: cilium.io
-default_command: ciliumexternalworkloads
+kind: "CiliumExternalWorkload"
+api_family: "cilium.io"
+default_command: "ciliumexternalworkloads"
 command:
-- cew
+- "cew"
 listview:
-  name: Cilium External Workloads
-  group: Cilium
+  name: "Cilium External Workloads"
+  group: "Cilium"
   field_indexes:
-    Normal: [name, cilium_id, ip, age]
+    Normal: ["name", "cilium_id", "ip", "age"]
   fields:
     cilium_id:
       header: "Cilium ID:"
       path: "status#id"
-      type: int
+      type: "int"
     ip:
       header: "IP:"
       path: "status#ip"
-      type: str
+      type: "str"

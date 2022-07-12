@@ -1,151 +1,151 @@
-kind: HorizontalPodAutoscaler
-api_family: autoscaling
-default_command: horizontalpodautoscalers
+kind: "HorizontalPodAutoscaler"
+api_family: "autoscaling"
+default_command: "horizontalpodautoscalers"
 command:
-- hpa
+- "hpa"
 listview:
-  name: Horizontal Pod Autoscalers
-  group: Scheduling & Scaling
+  name: "Horizontal Pod Autoscalers"
+  group: "Scheduling & Scaling"
   field_indexes:
-    Normal: [namespace, name, reference, minpods, maxpods, replicas, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "reference", "minpods", "maxpods", "replicas", "age"]
+  sortcolumn: "namespace"
   fields:
     maxpods:
       header: "Max Pods:"
       path: "spec#maxReplicas"
-      type: int
-      align: right
+      type: "int"
+      align: "right"
     minpods:
       header: "Min Pods:"
       path: "spec#minReplicas"
-      type: int
-      align: right
+      type: "int"
+      align: "right"
     reference:
       header: "Reference:"
       paths:
       - path: [["spec#scaleTargetRef#kind"], ["spec#scaleTargetRef#apiVersion"], ["spec#scaleTargetRef#name"]]
-        pathtype: tuple
-        type: [kind, api_group, name]
-      formatter: list
+        pathtype: "tuple"
+        type: ["kind", "api_group", "name"]
+      formatter: "list"
       formatting:
         field_colors:
-        - type: kind
-        - type: api_group
-        - type: generic
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
         field_separators:
-        - type: kind_api_group
-        - type: kind
+        - type: "kind_api_group"
+        - type: "kind"
     replicas:
       header: "Replicas:"
       path: "status#currentReplicas"
-      type: int
-      align: right
+      type: "int"
+      align: "right"
 infoview:
-  name: Horizontal Pod Autoscaler Info
+  name: "Horizontal Pod Autoscaler Info"
   infopad:
     row_indexes:
-      Normal: [min_replicas, max_replicas, scale_target_reference, status]
+      Normal: ["min_replicas", "max_replicas", "scale_target_reference", "status"]
     rows:
       max_replicas:
-        header: [["Max Replicas:", [main, infoheader]]]
+        header: [["Max Replicas:", ["main", "infoheader"]]]
         path: "spec#maxReplicas"
-        type: raw
+        type: "raw"
       min_replicas:
-        header: [["Min Replicas:", [main, infoheader]]]
+        header: [["Min Replicas:", ["main", "infoheader"]]]
         path: "spec#minReplicas"
-        type: raw
+        type: "raw"
       scale_target_reference:
-        header: [["S", [main, infoheader_shortcut]], ["cale Target Reference:", [main, infoheader]]]
+        header: [["S", ["main", "infoheader_shortcut"]], ["cale Target Reference:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#scaleTargetRef#kind"], ["spec#scaleTargetRef#apiVersion"], ["spec#scaleTargetRef#name"]]
-          pathtype: tuple
-          type: [kind, api_group, name]
-        formatter: list
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       status:
-        header: [["Status:", [main, infoheader]]]
+        header: [["Status:", ["main", "infoheader"]]]
         paths:
         - path: [["status#currentReplicas"], ["status#desiredReplicas"]]
-          pathtype: tuple
+          pathtype: "tuple"
           default: [0, 0]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: numerical
-          - type: numerical
+          - type: "numerical"
+          - type: "numerical"
           separators:
-          - type: fraction
+          - type: "fraction"
   listpad:
-    listgetter: get_hpa_metrics
-    infogetter: generic_infogetter
+    listgetter: "get_hpa_metrics"
+    infogetter: "generic_infogetter"
     on_activation:
-      call: resourceinfodispatch_with_lookup_on_activation
-      kind_path: described_object_kind
-      api_version_path: described_object_api_group
-      name_path: described_object_name
-      namespace_path: described_object_namespace
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind_path: "described_object_kind"
+      api_version_path: "described_object_api_group"
+      name_path: "described_object_name"
+      namespace_path: "described_object_namespace"
     field_indexes:
-      Normal: [metrics_type, name, described_object, target_type, target_value, selector]
-    sortcolumn: name
+      Normal: ["metrics_type", "name", "described_object", "target_type", "target_value", "selector"]
+    sortcolumn: "name"
     fields:
       described_object:
         header: "Described Object:"
         paths:
         - path: [["described_object_kind"], ["described_object_api_group"], ["described_object_name"]]
-          pathtype: tuple
-          type: [kind, api_group, name]
-        formatter: list
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       metrics_type:
         header: "Type:"
         path: "metric_type"
-        type: str
+        type: "str"
       name:
         header: "Name:"
         path: "name"
-        type: str
+        type: "str"
       selector:
         header: "Selector:"
         paths:
         - path: "selector"
-          pathtype: key_value
-        formatter: list
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       target_type:
         header: "Target Type:"
         path: "target_type"
-        type: str
+        type: "str"
       target_value:
         header: "Target Value:"
         path: "target_value"
-        type: raw
-        align: right
+        type: "raw"
+        align: "right"
   shortcuts:
     "Scale Target Reference":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "Open info page for scale target reference"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind_path: "spec#scaleTargetRef#kind"

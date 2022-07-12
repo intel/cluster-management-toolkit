@@ -1,119 +1,119 @@
-kind: Route
-api_family: route.openshift.io
-default_command: routes
+kind: "Route"
+api_family: "route.openshift.io"
+default_command: "routes"
 listview:
-  name: Routes
-  group: OpenShift
+  name: "Routes"
+  group: "OpenShift"
   field_indexes:
-    Normal: [namespace, name, host, target, port, termination, target_weight, wildcard, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "host", "target", "port", "termination", "target_weight", "wildcard", "age"]
+  sortcolumn: "namespace"
   fields:
     host:
       header: "Host:"
       path: "spec#host"
-      type: str
+      type: "str"
     port:
       header: "Port:"
       path: "spec#port#targetPort"
-      type: raw
+      type: "raw"
       formatting:
         field_colors:
-        - type: port
+        - type: "port"
     target:
       header: "Target:"
       paths:
       - path: [["spec#to#kind"], ["spec#to#name"]]
-        pathtype: tuple
-      formatter: list
+        pathtype: "tuple"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: kind
-        - type: generic
+        - type: "kind"
+        - type: "generic"
         field_separators:
-        - type: kind
+        - type: "kind"
     target_weight:
       header: "Weight:"
       path: "spec#to#weight"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
     termination:
       header: "Termination:"
       paths:
       - path: [["spec#tls#termination"], ["spec#tls#insecureEdgeTerminationPolicy"]]
-        pathtype: tuple
-      formatter: list
+        pathtype: "tuple"
+      formatter: "list"
     wildcard:
       header: "Wildcard:"
       path: "spec#wildcardPolicy"
-      type: str
+      type: "str"
 infoview:
-  name: Route Info
+  name: "Route Info"
   infopad:
     row_indexes:
-      Normal: [host, target, port, termination, target_weight, wildcard]
+      Normal: ["host", "target", "port", "termination", "target_weight", "wildcard"]
     rows:
       host:
-        header: [["Host:", [main, infoheader]]]
+        header: [["Host:", ["main", "infoheader"]]]
         path: "spec#host"
-        type: str
+        type: "str"
       port:
-        header: [["Port:", [main, infoheader]]]
+        header: [["Port:", ["main", "infoheader"]]]
         path: "spec#port#targetPort"
-        type: raw
+        type: "raw"
         formatting:
           field_colors:
-          - type: port
+          - type: "port"
       target:
-        header: [["T", [main, infoheader_shortcut]], ["arget:", [main, infoheader]]]
+        header: [["T", ["main", "infoheader_shortcut"]], ["arget:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#to#kind"], ["spec#to#name"]]
-          pathtype: tuple
-        formatter: list
+          pathtype: "tuple"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: generic
+          - type: "kind"
+          - type: "generic"
           field_separators:
-          - type: kind
+          - type: "kind"
       target_weight:
-        header: [["Weight:", [main, infoheader]]]
+        header: [["Weight:", ["main", "infoheader"]]]
         path: "spec#to#weight"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       termination:
-        header: [["Termination:", [main, infoheader]]]
+        header: [["Termination:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#tls#termination"], ["spec#tls#insecureEdgeTerminationPolicy"]]
-          pathtype: tuple
-        formatter: list
+          pathtype: "tuple"
+        formatter: "list"
       wildcard:
-        header: [["Wildcard:", [main, infoheader]]]
+        header: [["Wildcard:", ["main", "infoheader"]]]
         path: "spec#wildcardPolicy"
-        type: str
+        type: "str"
   shortcuts:
     "Open Target":
-      key: t
-      modifier: shift
+      key: "t"
+      modifier: "shift"
       helptext: "Open info page for target"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind_path: "spec#to#kind"
         name_path: "spec#to#name"
         namespace_path: "metadata#namespace"
     "Show ingress points":
-      key: i
-      modifier: shift
+      key: "i"
+      modifier: "shift"
       helptext: "List ingress points"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Ingress Points:"
       headers: ["Host:", "Router Canonical Hostname:", "Router Name:", "Wildcard Policy:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "status#ingress"
         fields:
@@ -122,4 +122,4 @@ infoview:
         - routerName
         - wildcardPolicy
       # Not supported for now
-      sortcolumn: host
+      sortcolumn: "host"

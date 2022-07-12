@@ -1,37 +1,37 @@
-kind: KubeadmControlPlane
-api_family: controlplane.cluster.x-k8s.io
-default_command: kubeadmcontrolplanes
+kind: "KubeadmControlPlane"
+api_family: "controlplane.cluster.x-k8s.io"
+default_command: "kubeadmcontrolplanes"
 command:
-- kcps
-- kcp
+- "kcps"
+- "kcp"
 listview:
-  name: Kubeadm Control Planes
-  group: Cluster Configuration
+  name: "Kubeadm Control Planes"
+  group: "Cluster Configuration"
   field_indexes:
-    Normal: [namespace, name, controller, initialized, api_server_available, replicas, ready, updated, unavailable, age, version]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "controller", "initialized", "api_server_available", "replicas", "ready", "updated", "unavailable", "age", "version"]
+  sortcolumn: "namespace"
   fields:
     api_server_available:
       header: "API-server Available:"
       path: "status#ready"
-      type: bool
-      formatter: value_mapper
+      type: "bool"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "False":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
     controller:
       header: "Controller:"
       paths:
       - path: "metadata#ownerReferences"
-        pathtype: items
+        pathtype: "items"
         subpaths:
         - kind
         - apiVersion
@@ -39,207 +39,207 @@ listview:
         when:
           key: controller
           eq: true
-        type: [kind, api_group, name]
+        type: ["kind", "api_group", "name"]
       default: "<none>"
-      formatter: list
+      formatter: "list"
       formatting:
         field_colors:
-        - type: kind
-        - type: api_group
-        - type: generic
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
         field_separators:
-        - type: kind_api_group
-        - type: kind
+        - type: "kind_api_group"
+        - type: "kind"
     initialized:
       header: "Initialized:"
       path: "status#initialized"
-      type: bool
-      formatter: value_mapper
+      type: "bool"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "False":
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
     ready:
       header: "Ready:"
       path: "status#readyReplicas"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     replicas:
       header: "Replicas:"
       path: "status#replicas"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     unavailable:
       header: "Unavailable:"
       path: "status#unavailableReplicas"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     updated:
       header: "Updated:"
       path: "status#updatedReplicas"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     version:
       header: "Version:"
       path: "spec#version"
-      type: str
+      type: "str"
       formatting:
         field_colors:
-        - type: version
+        - type: "version"
 infoview:
-  name: Kubeadm Control Plane Info
+  name: "Kubeadm Control Plane Info"
   infopad:
     row_indexes:
-      Normal: [controller, initialized, api_server_available, selector, replicas, ready, updated, unavailable, template_header, template_infrastructure, version]
+      Normal: ["controller", "initialized", "api_server_available", "selector", "replicas", "ready", "updated", "unavailable", "template_header", "template_infrastructure", "version"]
     rows:
       api_server_available:
-        header: [["API-server Available:", [main, infoheader]]]
+        header: [["API-server Available:", ["main", "infoheader"]]]
         path: "status#ready"
-        type: bool
-        formatter: value_mapper
+        type: "bool"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
             key: controller
             eq: true
-          type: [kind, api_group, name]
+          type: ["kind", "api_group", "name"]
         default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       initialized:
-        header: [["Initialized:", [main, infoheader]]]
+        header: [["Initialized:", ["main", "infoheader"]]]
         path: "status#initialized"
-        type: bool
-        formatter: value_mapper
+        type: "bool"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "False":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
       ready:
-        header: [["Ready:", [main, infoheader]]]
+        header: [["Ready:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       replicas:
-        header: [["Replicas:", [main, infoheader]]]
+        header: [["Replicas:", ["main", "infoheader"]]]
         path: "status#replicas"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       selector:
-        header: [["Selector:", [main, infoheader]]]
+        header: [["Selector:", ["main", "infoheader"]]]
         path: "status#selector"
-        type: str
+        type: "str"
       template_header:
-        header: [["Machine Template:", [main, infoheader]]]
+        header: [["Machine Template:", ["main", "infoheader"]]]
       template_infrastructure:
-        header: [["  ", [main, infoheader]], ["I", [main, infoheader_shortcut]], ["nfrastructure:", [main, infoheader]]]
+        header: [["  ", ["main", "infoheader"]], ["I", ["main", "infoheader_shortcut"]], ["nfrastructure:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#machineTemplate#infrastructureRef#kind"], ["metadata#namespace"], ["spec#machineTemplate#infrastructureRef#name"]]
-          pathtype: tuple
-          type: [kind, name, name]
+          pathtype: "tuple"
+          type: ["kind", "name", "name"]
         default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: namespace
-          - type: generic
+          - type: "kind"
+          - type: "namespace"
+          - type: "generic"
           field_separators:
-          - type: kind
-          - type: namespace
+          - type: "kind"
+          - type: "namespace"
       unavailable:
-        header: [["Unavailable:", [main, infoheader]]]
+        header: [["Unavailable:", ["main", "infoheader"]]]
         path: "status#unavailableReplicas"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       updated:
-        header: [["Updated:", [main, infoheader]]]
+        header: [["Updated:", ["main", "infoheader"]]]
         path: "status#updatedReplicas"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       version:
-        header: [["Version:", [main, infoheader]]]
+        header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: version
+          - type: "version"
   shortcuts:
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
     "Open infrastructure":
-      key: i
-      modifier: shift
+      key: "i"
+      modifier: "shift"
       helptext: "Open info page for infrastructure"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         api_version_path: "spec#machineTemplate#infrastructureRef#apiVersion"
@@ -247,52 +247,52 @@ infoview:
         namespace_path: "metadata#namespace"
         name_path: "spec#machineTemplate#infrastructureRef#name"
     "View cluster configuration":
-      key: o
-      modifier: shift
+      key: "o"
+      modifier: "shift"
       helptext: "Show cluster configuration"
-      action: call
-      action_call: view_yaml
+      action: "call"
+      action_call: "view_yaml"
       action_args:
-        title: Cluster Configuration
+        title: "Cluster Configuration"
         _pass_obj: true
         path: "spec#kubeadmConfigSpec#clusterConfiguration"
     "List files":
-      key: f
-      modifier: shift
+      key: "f"
+      modifier: "shift"
       helptext: "List files"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Files:"
       selectable: true
       headers: ["Path:", "Owner:", "Permissions:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#kubeadmConfigSpec#files"
         fields:
         - path
         - owner
         - permissions
-      action: call
-      action_call: decode_and_view_file_templates
+      action: "call"
+      action_call: "decode_and_view_file_templates"
       action_args:
         _pass_obj: true
         _pass_selected: true
         name_path: 0
         file_path: "spec#kubeadmConfigSpec#files"
     "View init configuration":
-      key: i
+      key: "i"
       helptext: "Show init configuration"
-      action: call
-      action_call: view_yaml
+      action: "call"
+      action_call: "view_yaml"
       action_args:
-        title: Init Configuration
+        title: "Init Configuration"
         _pass_obj: true
         path: "spec#kubeadmConfigSpec#initConfiguration"
     "View join configuration":
-      key: j
+      key: "j"
       helptext: "Show join configuration"
-      action: call
-      action_call: view_yaml
+      action: "call"
+      action_call: "view_yaml"
       action_args:
-        title: Join Configuration
+        title: "Join Configuration"
         _pass_obj: true
         path: "spec#kubeadmConfigSpec#joinConfiguration"

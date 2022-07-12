@@ -1,34 +1,34 @@
-kind: DsaDevicePlugin
-api_family: deviceplugin.intel.com
-default_command: dsadeviceplugins
+kind: "DsaDevicePlugin"
+api_family: "deviceplugin.intel.com"
+default_command: "dsadeviceplugins"
 command:
-- dsadevplugins
-- dsadevplugin
+- "dsadevplugins"
+- "dsadevplugin"
 listview:
-  name: DSA Device Plugins
-  group: Accelerators
+  name: "DSA Device Plugins"
+  group: "Accelerators"
   field_indexes:
-    Normal: [name, desired_number_scheduled, number_ready, node_selector, age]
+    Normal: ["name", "desired_number_scheduled", "number_ready", "node_selector", "age"]
   fields:
     desired_number_scheduled:
       header: "Desired:"
       path: "status#desiredNumberScheduled"
-      type: int
-      align: right
+      type: "int"
+      align: "right"
     node_selector:
       header: "Node Selector:"
       paths:
       - path: ["spec#nodeSelector"]
-        pathtype: key_value
-      formatter: list
+        pathtype: "key_value"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: key
-        - type: value
+        - type: "key"
+        - type: "value"
         field_separators:
-        - type: selector
+        - type: "selector"
     number_ready:
      header: "Ready:"
      path: "status#numberReady"
-     type: int
-     align: right
+     type: "int"
+     align: "right"

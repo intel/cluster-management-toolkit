@@ -1,24 +1,24 @@
-kind: IstioOperator
-api_family: install.istio.io
-default_command: istiooperators
+kind: "IstioOperator"
+api_family: "install.istio.io"
+default_command: "istiooperators"
 command:
-- iop
-- io
+- "iop"
+- "io"
 listview:
-  name: Istio Operators
-  group: Istio
+  name: "Istio Operators"
+  group: "Istio"
   field_indexes:
-    Normal: [namespace, name, revision, status, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "revision", "status", "age"]
+  sortcolumn: "namespace"
   fields:
     revision:
       header: "Revision:"
       path: "spec#revision"
-      type: str
+      type: "str"
       formatting:
         field_colors:
-        - type: version
+        - type: "version"
     status:
       header: "Status:"
       path: "status#status"
-      type: str
+      type: "str"

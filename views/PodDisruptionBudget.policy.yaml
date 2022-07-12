@@ -1,121 +1,121 @@
-kind: PodDisruptionBudget
-api_family: policy
-default_command: poddisruptionbudgets
+kind: "PodDisruptionBudget"
+api_family: "policy"
+default_command: "poddisruptionbudgets"
 command:
-- pdb
+- "pdb"
 listview:
-  name: Pod Disruption Budgets
-  group: Policy
+  name: "Pod Disruption Budgets"
+  group: "Policy"
   field_indexes:
-    Normal: [namespace, name, min_available, max_unavailable, allowed_disruptions, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "min_available", "max_unavailable", "allowed_disruptions", "age"]
+  sortcolumn: "namespace"
   fields:
     allowed_disruptions:
       header: "Allowed Disruptions:"
       paths:
       - path: "status#disruptionsAllowed"
-        type: int
-      align: right
+        type: "int"
+      align: "right"
       default: 0
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
     max_unavailable:
       header: "Max Unavailable:"
       paths:
       - path: "spec#maxUnavailable"
-        type: int
-      align: right
+        type: "int"
+      align: "right"
       default: "<unset>"
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
     min_available:
       header: "Min Available:"
       paths:
       - path: "spec#minAvailable"
-        type: int
-      align: right
+        type: "int"
+      align: "right"
       default: "<unset>"
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
 infoview:
-  name: Pod Disruption Budget Info
+  name: "Pod Disruption Budget Info"
   infopad:
     row_indexes:
-      Normal: [min_available, max_unavailable, label_selector, set_based_selector, status_header, expected_pods, current_healthy, desired_healthy, disruptions_allowed]
+      Normal: ["min_available", "max_unavailable", "label_selector", "set_based_selector", "status_header", "expected_pods", "current_healthy", "desired_healthy", "disruptions_allowed"]
     rows:
       current_healthy:
-        header: [["  Current Healthy:", [main, infoheader]]]
+        header: [["  Current Healthy:", ["main", "infoheader"]]]
         path: "status#currentHealthy"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       desired_healthy:
-        header: [["  Desired Healthy:", [main, infoheader]]]
+        header: [["  Desired Healthy:", ["main", "infoheader"]]]
         path: "status#desiredHealthy"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       disruptions_allowed:
-        header: [["  Disruptions Allowed:", [main, infoheader]]]
+        header: [["  Disruptions Allowed:", ["main", "infoheader"]]]
         path: "status#disruptionsAllowed"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       expected_pods:
-        header: [["  Expected Pods:", [main, infoheader]]]
+        header: [["  Expected Pods:", ["main", "infoheader"]]]
         path: "status#expectedPods"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       max_unavailable:
-        header: [["Max Unavailable:", [main, infoheader]]]
+        header: [["Max Unavailable:", ["main", "infoheader"]]]
         path: "spec#maxUnavailable"
         default: "<unset>"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       min_available:
-        header: [["Min Available:", [main, infoheader]]]
+        header: [["Min Available:", ["main", "infoheader"]]]
         path: "spec#minAvailable"
         default: "<unset>"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       label_selector:
-        header: [["Label Selector:", [main, infoheader]]]
+        header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#selector#matchLabels"]
-          pathtype: key_value
-        formatter: list
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       set_based_selector:
-        header: [["Set-based Selector:", [main, infoheader]]]
+        header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
         - path: "spec#selector#matchExpressions"
-          pathtype: match_expression
+          pathtype: "match_expression"
           default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: operator
-          - type: value
+          - type: "key"
+          - type: "operator"
+          - type: "value"
           field_separators:
-          - type: space
-          - type: no_pad
+          - type: "space"
+          - type: "no_pad"
       status_header:
-        header: [["Status:", [main, infoheader]]]
+        header: [["Status:", ["main", "infoheader"]]]

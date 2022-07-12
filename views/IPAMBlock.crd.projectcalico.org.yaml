@@ -1,134 +1,134 @@
-kind: IPAMBlock
-api_family: crd.projectcalico.org
-default_command: ipamblocks
+kind: "IPAMBlock"
+api_family: "crd.projectcalico.org"
+default_command: "ipamblocks"
 command:
-- ipamblks
-- ipamblk
+- "ipamblks"
+- "ipamblk"
 listview:
-  name: IPAM Blocks
-  group: Calico
+  name: "IPAM Blocks"
+  group: "Calico"
   field_indexes:
-    Normal: [name, cidr, allocations, strict_affinity, deleted, age]
+    Normal: ["name", "cidr", "allocations", "strict_affinity", "deleted", "age"]
   fields:
     allocations:
       header: "Allocations:"
       paths:
       - path: ["spec#allocations"]
-        pathtype: ranges
-      formatter: list
+        pathtype: "ranges"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: numerical
-        - type: numerical
-        - type: generic
+        - type: "numerical"
+        - type: "numerical"
+        - type: "generic"
         field_separators:
-        - type: range
-        - type: no_pad
+        - type: "range"
+        - type: "no_pad"
         ellipsise: 5
     cidr:
       header: "CIDR:"
       path: "spec#cidr"
-      type: address
-      formatter: address
+      type: "address"
+      formatter: "address"
     deleted:
       header: "Deleted:"
       path: "spec#deleted"
-      type: bool
-      formatter: value_mapper
+      type: "bool"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
             "False":
               field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
     strict_affinity:
       header: "Strict Affinity:"
       path: "spec#strictAffinity"
-      type: bool
+      type: "bool"
 infoview:
-  name: IPAM Block Info
+  name: "IPAM Block Info"
   infopad:
     row_indexes:
-      Normal: [cidr, allocations, strict_affinity, deleted]
+      Normal: ["cidr", "allocations", "strict_affinity", "deleted"]
     rows:
       allocations:
-        header: [["Allocations:", [main, infoheader]]]
+        header: [["Allocations:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#allocations"]
-          pathtype: ranges
-        formatter: list
+          pathtype: "ranges"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: numerical
-          - type: numerical
-          - type: generic
+          - type: "numerical"
+          - type: "numerical"
+          - type: "generic"
           field_separators:
-          - type: range
-          - type: no_pad
+          - type: "range"
+          - type: "no_pad"
       cidr:
-        header: [["CIDR:", [main, infoheader]]]
+        header: [["CIDR:", ["main", "infoheader"]]]
         path: "spec#cidr"
-        type: address
-        formatter: address
+        type: "address"
+        formatter: "address"
       deleted:
-        header: [["Deleted:", [main, infoheader]]]
+        header: [["Deleted:", ["main", "infoheader"]]]
         path: "spec#deleted"
-        type: bool
-        formatter: value_mapper
+        type: "bool"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                  - context: main
-                    type: status_not_ok
+                  - context: "main"
+                    type: "status_not_ok"
               "False":
                 field_colors:
-                  - context: main
-                    type: status_ok
+                  - context: "main"
+                    type: "status_ok"
       strict_affinity:
-        header: [["Strict Affinity:", [main, infoheader]]]
+        header: [["Strict Affinity:", ["main", "infoheader"]]]
         path: "spec#strictAffinity"
-        type: bool
+        type: "bool"
   listpad:
     on_activation:
-      call: resourceinfodispatch_with_lookup_on_activation
-      kind: Pod
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind: "Pod"
       namespace_path: "secondary#namespace"
       name_path: "secondary#pod"
     path: "spec#attributes"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [namespace, node, type, pod, timestamp, handle_id]
-    sortcolumn: handle_id
+      Normal: ["namespace", "node", "type", "pod", "timestamp", "handle_id"]
+    sortcolumn: "handle_id"
     fields:
       handle_id:
         header: "Handle ID:"
         path: "handle_id"
-        type: str
+        type: "str"
       namespace:
         header: "Namespace:"
         path: "secondary#namespace"
-        type: str
+        type: "str"
       node:
         header: "Node:"
         path: "secondary#node"
-        type: str
+        type: "str"
       pod:
         header: "Pod:"
         path: "secondary#pod"
-        type: str
+        type: "str"
       type:
         header: "Type:"
         path: "secondary#type"
-        type: str
+        type: "str"
       timestamp:
         header: "Timestamp:"
         path: "secondary#timestamp"
-        type: timestamp
-        formatter: timestamp
+        type: "timestamp"
+        formatter: "timestamp"

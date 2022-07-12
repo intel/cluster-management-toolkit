@@ -1,15 +1,15 @@
-kind: RoleBinding
-api_family: rbac.authorization.k8s.io
-default_command: rolebindings
+kind: "RoleBinding"
+api_family: "rbac.authorization.k8s.io"
+default_command: "rolebindings"
 command:
-- rb
+- "rb"
 listview:
-  name: Role Bindings
-  group: Authorization & Access Control
+  name: "Role Bindings"
+  group: "Authorization & Access Control"
   field_indexes:
-    Wide: [namespace, name, role, subjects, age]
-    Normal: [namespace, name, subjects, age]
-  sortcolumn: namespace
+    Wide: ["namespace", "name", "role", "subjects", "age"]
+    Normal: ["namespace", "name", "subjects", "age"]
+  sortcolumn: "namespace"
   fields:
     role:
       header: "Role:"
@@ -18,137 +18,137 @@ listview:
     subjects:
       header: "Subjects:"
       paths:
-      - path: subjects
-        pathtype: items
+      - path: "subjects"
+        pathtype: "items"
         subpaths:
         - kind
         - name
-      formatter: list
+      formatter: "list"
       formatting:
         field_colors:
-        - type: kind
-        - type: generic
+        - type: "kind"
+        - type: "generic"
 infoview:
-  name: Role Binding
+  name: "Role Binding"
   infopad:
     row_indexes:
-      Normal: [role_ref_header, role_ref_name, role_ref_kind, role_ref_exists]
+      Normal: ["role_ref_header", "role_ref_name", "role_ref_kind", "role_ref_exists"]
     rows:
       role_ref_exists:
-        header: [["  Exists:", [main, infoheader]]]
+        header: [["  Exists:", ["main", "infoheader"]]]
         paths:
         - path: [["roleRef#kind"], ["roleRef#apiGroup"], ["metadata#namespace"], ["roleRef#name"], []]
-          pathtype: lookup
+          pathtype: "lookup"
           when:
           - key: "metadata#name"
             notnone: true
           substitute: "True"
           unknown: "Unknown"
         default: "False"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "Unknown":
                 field_colors:
-                - context: main
-                  type: status_unknown
+                - context: "main"
+                  type: "status_unknown"
               "False":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       role_ref_header:
-        header: [["R", [main, infoheader_shortcut]], ["ole Reference:", [main, infoheader]]]
+        header: [["R", ["main", "infoheader_shortcut"]], ["ole Reference:", ["main", "infoheader"]]]
       role_ref_kind:
-        header: [["  Kind:", [main, infoheader]]]
+        header: [["  Kind:", ["main", "infoheader"]]]
         paths:
         - path: [["roleRef#kind"], ["roleRef#apiGroup"]]
-          pathtype: tuple
-        formatter: list
+          pathtype: "tuple"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
+          - type: "kind"
+          - type: "api_group"
           field_separators:
-          - type: kind_api_group
+          - type: "kind_api_group"
       role_ref_name:
-        header: [["  Name:", [main, infoheader]]]
+        header: [["  Name:", ["main", "infoheader"]]]
         path: "roleRef#name"
-        type: str
+        type: "str"
   listpad:
     path: "subjects"
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     infogetter_args:
       _extra_data:
         namespace: ["metadata#namespace"]
     on_activation:
-      call: resourceinfodispatch_with_lookup_on_activation
+      call: "resourceinfodispatch_with_lookup_on_activation"
       kind_path: "kind"
       namespace_path: ["namespace", "_extra_data#namespace"]
       name_path: "name"
     field_indexes:
-      Normal: [namespace, name, kind, exists]
-    sortcolumn: kind
+      Normal: ["namespace", "name", "kind", "exists"]
+    sortcolumn: "kind"
     fields:
       exists:
         header: "Exists:"
         paths:
         - path: [["kind"], ["apiGroup"], ["namespace", "_extra_data#namespace"], ["name"], []]
-          pathtype: lookup
+          pathtype: "lookup"
           when:
           - key: "metadata#name"
             notnone: true
           substitute: "True"
           unknown: "Unknown"
         default: "False"
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "Unknown":
                 field_colors:
-                - context: main
-                  type: status_unknown
+                - context: "main"
+                  type: "status_unknown"
               "False":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       name:
         header: "Name:"
         path: "name"
-        type: str
+        type: "str"
       namespace:
         header: "Namespace:"
         paths:
         - path: ["namespace", "_extra_data#namespace"]
-        type: str
+        type: "str"
       kind:
         header: "Kind:"
         paths:
         - path: [["kind"], ["apiGroup"]]
-          pathtype: tuple
-        formatter: list
+          pathtype: "tuple"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
+          - type: "kind"
+          - type: "api_group"
           field_separators:
-          - type: kind_api_group
+          - type: "kind_api_group"
   shortcuts:
     "Role Reference":
-      key: r
-      modifier: shift
+      key: "r"
+      modifier: "shift"
       helptext: "Open info page for role reference"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         name_path: "roleRef#name"

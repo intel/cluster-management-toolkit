@@ -1,48 +1,48 @@
-kind: PrometheusRule
-api_family: monitoring.coreos.com
-default_command: prometheusrules
+kind: "PrometheusRule"
+api_family: "monitoring.coreos.com"
+default_command: "prometheusrules"
 command:
-- promrules
-- promrule
+- "promrules"
+- "promrule"
 listview:
-  name: Prometheus Rules
-  group: Monitoring
+  name: "Prometheus Rules"
+  group: "Monitoring"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Prometheus Rule Info
+  name: "Prometheus Rule Info"
   # PrometheusRule annotations contains the entire rule set;
   # this is way too much to handle for the annotations widget
   annotations: ""
   infopad:
   listpad:
-    infogetter: get_promrules_info
+    infogetter: "get_promrules_info"
     on_activation:
-      call: resourceinfodispatch
+      call: "resourceinfodispatch"
       kind: "__PrometheusRuleData"
       api_family: "monitoring.coreos.com"
     field_indexes:
-      Normal: [group, rtype, alertrecord, duration]
-    sortcolumn: rtype
+      Normal: ["group", "rtype", "alertrecord", "duration"]
+    sortcolumn: "rtype"
     fields:
       alertrecord:
         header: "Name:"
         path: "alertheader"
-        type: str
+        type: "str"
       duration:
         header: "Duration:"
         path: "duration"
-        type: raw
+        type: "raw"
         formatting:
           field_colors:
-          - type: numerical
-        align: right
+          - type: "numerical"
+        align: "right"
       group:
         header: "Group:"
         path: "group"
-        type: str
+        type: "str"
       rtype:
         header: "Type:"
         path: "rtype"
-        type: str
+        type: "str"

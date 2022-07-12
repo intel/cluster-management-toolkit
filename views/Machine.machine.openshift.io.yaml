@@ -1,151 +1,151 @@
-kind: Machine
-api_family: machine.openshift.io
-default_command: machines.machine.openshift.io
+kind: "Machine"
+api_family: "machine.openshift.io"
+default_command: "machines.machine.openshift.io"
 command:
-- os-machines
-- os-machine
+- "os-machines"
+- "os-machine"
 listview:
-  name: Machines (OpenShift)
-  group: OpenShift
+  name: "Machines (OpenShift)"
+  group: "OpenShift"
   field_indexes:
-    Normal: [namespace, name, provider_id, phase, age, taints]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "provider_id", "phase", "age", "taints"]
+  sortcolumn: "namespace"
   fields:
     phase:
       header: "Phase:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Deleting:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Failed:
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
             Provisioned:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Provisioning:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Running:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
     provider_id:
       header: "Provider ID:"
       path: "spec#providerID"
-      type: str
+      type: "str"
     taints:
       header: "Taints:"
       paths:
       - path: "spec#taints"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - key
-        - value
-        - effect
-      formatter: list
+        - "key"
+        - "value"
+        - "effect"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: key
-        - type: value
-        - type: generic
+        - type: "key"
+        - type: "value"
+        - type: "generic"
         field_separators:
-        - type: keyvalue
-        - type: field
+        - type: "keyvalue"
+        - type: "field"
 infoview:
-  name: Machine Info (OpenShift)
+  name: "Machine Info (OpenShift)"
   infopad:
     row_indexes:
-      Normal: [node_ref, provider_id, phase, taints]
+      Normal: ["node_ref", "provider_id", "phase", "taints"]
     rows:
       node_ref:
-        header: [["Node ", [main, infoheader]], ["R", [main, infoheader_shortcut]], ["eference:", [main, infoheader]]]
+        header: [["Node ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["eference:", ["main", "infoheader"]]]
         path: "status#nodeRef#name"
-        type: str
+        type: "str"
         formatting:
           field_colors:
-          - type: hostname
+          - type: "hostname"
       phase:
-        header: [["Phase:", [main, infoheader]]]
+        header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Deleting:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Failed:
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               Provisioned:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Provisioning:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Running:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
       provider_id:
-        header: [["Provider ID:", [main, infoheader]]]
+        header: [["Provider ID:", ["main", "infoheader"]]]
         path: "spec#providerID"
-        type: str
+        type: "str"
       taints:
-        header: [["Taints:", [main, infoheader]]]
+        header: [["Taints:", ["main", "infoheader"]]]
         paths:
         - path: "spec#taints"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - key
-          - value
-          - effect
-        formatter: list
+          - "key"
+          - "value"
+          - "effect"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
-          - type: generic
+          - type: "key"
+          - type: "value"
+          - type: "generic"
           field_separators:
-          - type: keyvalue
-          - type: field
+          - type: "keyvalue"
+          - type: "field"
   shortcuts:
     "Addresses":
-      key: a
-      modifier: shift
+      key: "a"
+      modifier: "shift"
       helptext: "List addresses"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Addresses:"
       headers: ["Address:", "Type:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "status#addresses"
         fields:
-        - address
-        - type
+        - "address"
+        - "type"
       # Not supported for now
-      sortcolumn: type
+      sortcolumn: "type"
     "Node":
-      key: r
-      modifier: shift
+      key: "r"
+      modifier: "shift"
       helptext: "Open info page for Node"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         kind_path: "status#nodeRef#kind"

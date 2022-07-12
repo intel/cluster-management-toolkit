@@ -1,25 +1,25 @@
-kind: Subscription
-api_family: operators.coreos.com
-default_command: subscriptions
+kind: "Subscription"
+api_family: "operators.coreos.com"
+default_command: "subscriptions"
 command:
-- subs
-- sub
+- "subs"
+- "sub"
 listview:
-  name: Subscriptions
-  group: API & Extendability
+  name: "Subscriptions"
+  group: "API & Extendability"
   field_indexes:
-    Normal: [namespace, name, package, source, channel, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "package", "source", "channel", "age"]
+  sortcolumn: "namespace"
   fields:
     channel:
       header: "Channel:"
       path: "spec#channel"
-      type: str
+      type: "str"
     package:
       header: "Package:"
       path: "spec#name"
-      type: str
+      type: "str"
     source:
       header: "Source:"
       path: "spec#source"
-      type: str
+      type: "str"

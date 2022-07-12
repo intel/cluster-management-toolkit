@@ -1,47 +1,47 @@
-kind: APIServer
-api_family: operator.tigera.io
-default_command: apiservers.operator.tigera.io
+kind: "APIServer"
+api_family: "operator.tigera.io"
+default_command: "apiservers.operator.tigera.io"
 listview:
-  name: API Servers (Tigera)
-  group: Istio
+  name: "API Servers (Tigera)"
+  group: "Istio"
   field_indexes:
-    Normal: [name, status, age]
+    Normal: ["name", "status", "age"]
   fields:
     status:
       header: "Status:"
       path: "status#state"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
           mapping:
             mappings:
               Ready:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               __default:
                 field_colors:
-                - context: main
-                  type: status_unknown
+                - context: "main"
+                  type: "status_unknown"
 infoview:
-  name: API Server Info
+  name: "API Server Info"
   infopad:
     row_indexes:
-      Normal: [status]
+      Normal: ["status"]
     rows:
       status:
-        header: [["Status:", [main, infoheader]]]
+        header: [["Status:", ["main", "infoheader"]]]
         path: "status#state"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
             mapping:
               mappings:
                 Ready:
                   field_colors:
-                  - context: main
-                    type: status_ok
+                  - context: "main"
+                    type: "status_ok"
                 __default:
                   field_colors:
-                  - context: main
-                    type: status_unknown
+                  - context: "main"
+                    type: "status_unknown"

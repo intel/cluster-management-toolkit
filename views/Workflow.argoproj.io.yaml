@@ -1,35 +1,35 @@
-kind: Workflow
-api_family: argoproj.io
-default_command: workflows
+kind: "Workflow"
+api_family: "argoproj.io"
+default_command: "workflows"
 listview:
-  name: Workflows
-  group: Workloads
+  name: "Workflows"
+  group: "Workloads"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Workflow Info
+  name: "Workflow Info"
   infopad:
     row_indexes:
-      Normal: [entrypoint, service_account, status]
+      Normal: ["entrypoint", "service_account", "status"]
     rows:
       entrypoint:
-        header: [["Entrypoint:", [main, infoheader]]]
+        header: [["Entrypoint:", ["main", "infoheader"]]]
         path: "spec#entrypoint"
-        type: str
+        type: "str"
       service_account:
-        fieldname: [["S", [main, infoheader_shortcut]], ["ervice Account:", [main, infoheader]]]
+        fieldname: [["S", ["main", "infoheader_shortcut"]], ["ervice Account:", ["main", "infoheader"]]]
         path: "spec#serviceAccountName"
-        type: str
+        type: "str"
   shortcuts:
     "Service Account":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "Open info page for Service Account"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: ServiceAccount
+        kind: "ServiceAccount"
         name_path: "spec#serviceAccountName"
         namespace_path: "metadata#namespace"

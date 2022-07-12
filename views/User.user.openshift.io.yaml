@@ -1,70 +1,70 @@
-kind: User
-api_family: user.openshift.io
-default_command: users
+kind: "User"
+api_family: "user.openshift.io"
+default_command: "users"
 listview:
-  name: Users
-  group: Users & Groups
+  name: "Users"
+  group: "Users & Groups"
   field_indexes:
-    Normal: [name, fullname, uid, identities, age]
+    Normal: ["name", "fullname", "uid", "identities", "age"]
   fields:
     fullname:
       header: "Full Name:"
       path: "fullName"
-      type: str
+      type: "str"
     identities:
       header: "Identities:"
       paths:
-      - path: identities
-        pathtype: list
-      formatter: list
+      - path: "identities"
+        pathtype: "list"
+      formatter: "list"
     uid:
       header: "UID:"
       path: "metadata#uid"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
+        - type: "numerical"
 infoview:
-  name: User Info
+  name: "User Info"
   infopad:
     row_indexes:
-      Normal: [groups, uid, identities]
+      Normal: ["groups", "uid", "identities"]
     rows:
       groups:
-        header: [["Groups:", [main, infoheader]]]
+        header: [["Groups:", ["main", "infoheader"]]]
         paths:
-        - path: groups
-          pathtype: list
-        formatter: list
+        - path: "groups"
+          pathtype: "list"
+        formatter: "list"
       identities:
-        header: [["I", [main, infoheader_shortcut]], ["dentities:", [main, infoheader]]]
+        header: [["I", ["main", "infoheader_shortcut"]], ["dentities:", ["main", "infoheader"]]]
         paths:
-        - path: identities
-          pathtype: list
-        formatter: list
+        - path: "identities"
+          pathtype: "list"
+        formatter: "list"
       uid:
-        header: [["UID:", [main, infoheader]]]
+        header: [["UID:", ["main", "infoheader"]]]
         path: "metadata#uid"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
   shortcuts:
     "Show Identity list":
-      key: i
-      modifier: shift
+      key: "i"
+      modifier: "shift"
       helptext: "List Identitites"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Identities:"
       selectable: true
-      itemgetter: get_list_as_list
+      itemgetter: "get_list_as_list"
       itemgetter_args:
         paths: ["identities"]
       # Not supported for now
-      sortcolumn: identities
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      sortcolumn: "identities"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
-        kind: Identity
-        api_family: user.openshift.io
+        kind: "Identity"
+        api_family: "user.openshift.io"
         name_path: 0

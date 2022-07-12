@@ -1,103 +1,103 @@
-kind: Vpc
-api_family: kubeovn.io
-default_command: vpcs
+kind: "Vpc"
+api_family: "kubeovn.io"
+default_command: "vpcs"
 listview:
-  name: VPCs
-  group: Kube-OVN
+  name: "VPCs"
+  group: "Kube-OVN"
   field_indexes:
-    Normal: [name, standby, subnets, namespaces, age]
-  sortcolumn: standby
+    Normal: ["name", "standby", "subnets", "namespaces", "age"]
+  sortcolumn: "standby"
   fields:
     namespaces:
       header: "Namespaces:"
       path: "spec#namespaces"
-      type: raw
-      formatter: list
+      type: "raw"
+      formatter: "list"
     standby:
       header: "Standby:"
       path: "status#standby"
-      type: bool
+      type: "bool"
     subnets:
       header: "Subnets:"
       path: "status#subnets"
-      type: raw
-      formatter: list
+      type: "raw"
+      formatter: "list"
 infoview:
-  name: VPC Info
+  name: "VPC Info"
   infopad:
     row_indexes:
-      Normal: [default, default_logical_switch, router, standby, tcp_load_balancer, tcp_session_load_balancer, udp_load_balancer, udp_session_load_balancer, subnets, namespaces]
+      Normal: ["default", "default_logical_switch", "router", "standby", "tcp_load_balancer", "tcp_session_load_balancer", "udp_load_balancer", "udp_session_load_balancer", "subnets", "namespaces"]
     rows:
       default:
-        header: [["Default:", [main, infoheader]]]
+        header: [["Default:", ["main", "infoheader"]]]
         path: "status#default"
-        type: bool
+        type: "bool"
       default_logical_switch:
-        header: [["Default Logical Switch:", [main, infoheader]]]
+        header: [["Default Logical Switch:", ["main", "infoheader"]]]
         path: "status#defaultLogicalSwitch"
-        type: str
+        type: "str"
       namespaces:
-        header: [["N", [main, infoheader_shortcut]], ["amespaces:", [main, infoheader]]]
+        header: [["N", ["main", "infoheader_shortcut"]], ["amespaces:", ["main", "infoheader"]]]
         path: "spec#namespaces"
-        type: raw
+        type: "raw"
         default: "<none>"
-        formatter: list
+        formatter: "list"
       router:
-        header: [["Router:", [main, infoheader]]]
+        header: [["Router:", ["main", "infoheader"]]]
         path: "status#router"
-        type: str
+        type: "str"
       standby:
-        header: [["Standby:", [main, infoheader]]]
+        header: [["Standby:", ["main", "infoheader"]]]
         path: "status#standby"
-        type: bool
+        type: "bool"
       subnets:
-        header: [["S", [main, infoheader_shortcut]], ["ubnets:", [main, infoheader]]]
+        header: [["S", ["main", "infoheader_shortcut"]], ["ubnets:", ["main", "infoheader"]]]
         path: "status#subnets"
-        type: raw
         default: "<none>"
-        formatter: list
+        type: "raw"
+        formatter: "list"
       tcp_load_balancer:
-        header: [["TCP Load Balancer:", [main, infoheader]]]
+        header: [["TCP Load Balancer:", ["main", "infoheader"]]]
         path: "status#tcpLoadBalancer"
-        type: str
+        type: "str"
       tcp_session_load_balancer:
-        header: [["TCP Session Load Balancer:", [main, infoheader]]]
+        header: [["TCP Session Load Balancer:", ["main", "infoheader"]]]
         path: "status#tcpSessionLoadBalancer"
-        type: str
+        type: "str"
       udp_load_balancer:
-        header: [["UDP Load Balancer:", [main, infoheader]]]
+        header: [["UDP Load Balancer:", ["main", "infoheader"]]]
         path: "status#udpLoadBalancer"
-        type: str
+        type: "str"
       udp_session_load_balancer:
-        header: [["UDP Session Load Balancer:", [main, infoheader]]]
+        header: [["UDP Session Load Balancer:", ["main", "infoheader"]]]
         path: "status#udpSessionLoadBalancer"
-        type: str
+        type: "str"
   shortcuts:
     "Show Namespace list":
-      key: n
-      modifier: shift
+      key: "n"
+      modifier: "shift"
       helptext: "List Namespaces"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Namespaces:"
       selectable: true
-      itemgetter: get_list_as_list
+      itemgetter: "get_list_as_list"
       itemgetter_args:
         paths: ["spec#namespaces"]
       # Not supported for now
-      sortcolumn: namespace
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      sortcolumn: "namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
-        kind: Namespace
+        kind: "Namespace"
         name_path: 0
     "Show Policy Route list":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "List Policy Routes"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Policy Routes:"
       headers: ["Action:", "Match:", "Priority:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#policyRoutes"
         fields:
@@ -105,15 +105,15 @@ infoview:
         - match
         - priority
       # Not supported for now
-      sortcolumn: action
+      sortcolumn: "action"
     "Show Static Route list":
-      key: r
-      modifier: shift
+      key: "r"
+      modifier: "shift"
       helptext: "List Static Routes"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Static Routes:"
       headers: ["CIDR:", "Next Hop IP:", "Policy:"]
-      itemgetter: get_list_fields
+      itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#staticRoutes"
         fields:
@@ -121,22 +121,22 @@ infoview:
         - nextHopIP
         - policy
       # Not supported for now
-      sortcolumn: cidr
+      sortcolumn: "cidr"
     "Show Subnet list":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "List Subnets"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Subnets:"
       selectable: true
-      itemgetter: get_list_as_list
+      itemgetter: "get_list_as_list"
       itemgetter_args:
         paths: ["status#subnets"]
       # Not supported for now
-      sortcolumn: subnet
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      sortcolumn: "subnet"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
-        kind: Subnet
-        api_family: kubeovn.io
+        kind: "Subnet"
+        api_family: "kubeovn.io"
         name_path: 0

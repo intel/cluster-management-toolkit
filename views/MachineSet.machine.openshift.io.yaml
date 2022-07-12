@@ -1,141 +1,141 @@
-kind: MachineSet
-api_family: machine.openshift.io
-default_command: machinesets.machine.openshift.io
+kind: "MachineSet"
+api_family: "machine.openshift.io"
+default_command: "machinesets.machine.openshift.io"
 command:
-- os-ms
+- "os-ms"
 listview:
-  name: Machine Sets (OpenShift)
-  group: OpenShift
+  name: "Machine Sets (OpenShift)"
+  group: "OpenShift"
   field_indexes:
-    Wide: [namespace, name, desired, observed, ready, available, fully_labelled, age]
-    Normal: [namespace, name, desired, observed, ready, available, age]
-  sortcolumn: namespace
+    Wide: ["namespace", "name", "desired", "observed", "ready", "available", "fully_labelled", "age"]
+    Normal: ["namespace", "name", "desired", "observed", "ready", "available", "age"]
+  sortcolumn: "namespace"
   fields:
     available:
       header: "Available:"
       path: "status#availableReplicas"
       default: 0
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     desired:
       header: "Desired:"
       path: "spec#replicas"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     fully_labelled:
       header: "Fully Labelled:"
       path: "spec#replicas"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     observed:
       header: "Observed:"
       path: "status#replicas"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     ready:
       header: "Ready:"
       path: "status#readyReplicas"
       default: 0
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
 infoview:
-  name: Machine Set Info (OpenShift)
+  name: "Machine Set Info (OpenShift)"
   infopad:
     row_indexes:
-      Normal: [label_selector, set_based_selector, delete_policy, min_ready_seconds, replicas_header, desired, observed, ready, available, fully_labelled]
+      Normal: ["label_selector", "set_based_selector", "delete_policy", "min_ready_seconds", "replicas_header", "desired", "observed", "ready", "available", "fully_labelled"]
     rows:
       available:
-        header: [["  Available:", [main, infoheader]]]
+        header: [["  Available:", ["main", "infoheader"]]]
         path: "status#availableReplicas"
         default: 0
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       delete_policy:
-        header: [["Delete Policy:", [main, infoheader]]]
+        header: [["Delete Policy:", ["main", "infoheader"]]]
         path: "spec#deletePolicy"
         default: "Random"
-        type: str
+        type: "str"
       desired:
-        header: [["  Desired:", [main, infoheader]]]
+        header: [["  Desired:", ["main", "infoheader"]]]
         path: "spec#replicas"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       fully_labelled:
-        header: [["  Fully Labelled:", [main, infoheader]]]
+        header: [["  Fully Labelled:", ["main", "infoheader"]]]
         path: "spec#replicas"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       label_selector:
-        header: [["Label Selector:", [main, infoheader]]]
+        header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#selector#matchLabels"]
-          pathtype: key_value
+          pathtype: "key_value"
           default: ["<none>"]
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       min_ready_seconds:
-        header: [["Min Ready Seconds:", [main, infoheader]]]
+        header: [["Min Ready Seconds:", ["main", "infoheader"]]]
         path: "spec#minReadySeconds"
         default: 0
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       observed:
-        header: [["  Observed:", [main, infoheader]]]
+        header: [["  Observed:", ["main", "infoheader"]]]
         path: "status#replicas"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       ready:
-        header: [["  Ready:", [main, infoheader]]]
+        header: [["  Ready:", ["main", "infoheader"]]]
         path: "status#readyReplicas"
         default: 0
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       replicas_header:
-        header: [["Replicas:", [main, infoheader]]]
+        header: [["Replicas:", ["main", "infoheader"]]]
       set_based_selector:
-        header: [["Set-based Selector:", [main, infoheader]]]
+        header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
         - path: "spec#selector#matchExpressions"
-          pathtype: match_expression
+          pathtype: "match_expression"
           default: "<none>"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: operator
-          - type: value
+          - type: "key"
+          - type: "operator"
+          - type: "value"
           field_separators:
-          - type: space
-          - type: no_pad
+          - type: "space"
+          - type: "no_pad"

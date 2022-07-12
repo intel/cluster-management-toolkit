@@ -1,87 +1,87 @@
-kind: Namespace
-default_command: namespaces
+kind: "Namespace"
+default_command: "namespaces"
 command:
-- ns
+- "ns"
 listview:
-  name: Namespaces
-  group: Core
+  name: "Namespaces"
+  group: "Core"
   field_indexes:
-    Normal: [name, phase, age]
+    Normal: ["name", "phase", "age"]
   fields:
     phase:
       header: "Status:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             Active:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Terminating:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
   shortcuts:
     "Create namespace":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: Create a new namespace
-      action: call
-      action_call: create_namespace
+      action: "call"
+      action_call: "create_namespace"
       action_args:
         _pass_selection_vars: true
       query: New namespace
       queryval: namespace
       queryfunc: string
 infoview:
-  name: Namespace Info
+  name: "Namespace Info"
   infopad:
     row_indexes:
-      Normal: [status]
+      Normal: ["status"]
     rows:
       status:
-        header: [["Status:", [main, infoheader]]]
+        header: [["Status:", ["main", "infoheader"]]]
         path: "status#phase"
-        type: str
-        formatter: value_mapper
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               Active:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Terminating:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
   listpad:
-    listgetter: listgetter_namespaced_resources
-    infogetter: generic_infogetter
+    listgetter: "listgetter_namespaced_resources"
+    infogetter: "generic_infogetter"
     on_activation:
-      call: resourceinfodispatch_with_lookup_on_activation
-      kind_path: __kind_tuple
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind_path: "__kind_tuple"
       name_path: "metadata#name"
       namespace_path: "metadata#namespace"
     field_indexes:
-      Normal: [resource, kind]
-    sortcolumn: kind
+      Normal: ["resource", "kind"]
+    sortcolumn: "kind"
     fields:
       kind:
         header: "Kind:"
         path: "__kind_tuple"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
+          - type: "kind"
+          - type: "api_group"
           field_separators:
-          - type: kind_api_group
+          - type: "kind_api_group"
       resource:
         header: "Resource:"
         path: "metadata#name"
-        type: raw
+        type: "raw"

@@ -1,197 +1,197 @@
-kind: CertificateSigningRequest
-api_family: certificates.k8s.io
-default_command: certificatesigningrequests
+kind: "CertificateSigningRequest"
+api_family: "certificates.k8s.io"
+default_command: "certificatesigningrequests"
 command:
-- certsignreqs
-- certsignreq
-- csrs
-- csr
+- "certsignreqs"
+- "certsignreq"
+- "csrs"
+- "csr"
 listview:
-  name: Certificate Signing Requests
-  group: Certificate Management
+  name: "Certificate Signing Requests"
+  group: "Certificate Management"
   field_indexes:
-    Normal: [name, signername, requestor, requested_duration, age, csr_condition]
+    Normal: ["name", "signername", "requestor", "requested_duration", "age", "csr_condition"]
   fields:
     csr_condition:
       header: "Condition:"
       paths:
       - path: "status#conditions"
-        pathtype: substitution
-        subpath: type
+        pathtype: "substitution"
+        subpath: "type"
         when:
-        - key: type
-          eq: Denied
-        - key: status
+        - key: "type"
+          eq: "Denied"
+        - key: "status"
           eq: "True"
-        substitute: Denied
+        substitute: "Denied"
         default: ~
       - path: "status#conditions"
-        pathtype: substitution
-        subpath: type
+        pathtype: "substitution"
+        subpath: "type"
         when:
-        - key: type
-          eq: Approved
-        - key: status
+        - key: "type"
+          eq: "Approved"
+        - key: "status"
           eq: "True"
-        substitute: Approved
+        substitute: "Approved"
         default: ~
       - path: "status"
-        pathtype: substitution
+        pathtype: "substitution"
         when:
           key: "certificate"
           notmissing: "certificate"
-        substitute: Issued
+        substitute: "Issued"
         default: ~
-      default: [Pending]
-      formatter: list
+      default: ["Pending"]
+      formatter: "list"
       formatting:
         field_separators:
-        - type: list
+        - type: "list"
         mapping:
           mappings:
             Approved:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Issued:
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             Pending:
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             Denied:
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
     requested_duration:
       header: "Requested Duration:"
       path: "spec#expirationSeconds"
-      type: age
-      formatter: age
-      align: right
+      type: "age"
+      formatter: "age"
+      align: "right"
     requestor:
       header: "Requesting User:"
       path: "spec#username"
-      type: str
+      type: "str"
     signername:
       header: "Signer:"
       path: "spec#signerName"
-      type: str
+      type: "str"
   actions:
     actionlist:
       "Approve Request":
         description: Approve signing request
         confirm: true
-        action: execute
+        action: "execute"
         action_args:
           command: ["kubectl", "certificate", "approve", "<<<items>>>"]
       "Deny Request":
         description: Deny signing request
         confirm: true
-        action: execute
+        action: "execute"
         action_args:
           command: ["kubectl", "certificate", "deny", "<<<items>>>"]
 infoview:
-  name: Certificate Signing Request Info
+  name: "Certificate Signing Request Info"
   infopad:
     row_indexes:
-      Normal: [signername, requestor, requested_duration, groups, csr_condition, usages]
+      Normal: ["signername", "requestor", "requested_duration", "groups", "csr_condition", "usages"]
     rows:
       csr_condition:
-        header: [["Condition:", [main, infoheader]]]
+        header: [["Condition:", ["main", "infoheader"]]]
         paths:
         - path: "status#conditions"
-          pathtype: substitution
-          subpath: type
+          pathtype: "substitution"
+          subpath: "type"
           when:
-          - key: type
-            eq: Denied
-          - key: status
+          - key: "type"
+            eq: "Denied"
+          - key: "status"
             eq: "True"
-          substitute: Denied
+          substitute: "Denied"
           default: ~
         - path: "status#conditions"
-          pathtype: substitution
-          subpath: type
+          pathtype: "substitution"
+          subpath: "type"
           when:
-          - key: type
-            eq: Approved
-          - key: status
+          - key: "type"
+            eq: "Approved"
+          - key: "status"
             eq: "True"
-          substitute: Approved
+          substitute: "Approved"
           default: ~
         - path: "status"
-          pathtype: substitution
+          pathtype: "substitution"
           when:
             key: "certificate"
             notmissing: "certificate"
-          substitute: Issued
+          substitute: "Issued"
           default: ~
-        default: [Pending]
-        formatter: list
+        default: ["Pending"]
+        formatter: "list"
         formatting:
           field_separators:
-          - type: list
+          - type: "list"
           mapping:
             mappings:
               Approved:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Issued:
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               Pending:
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               Denied:
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       groups:
-        header: [["Groups:", [main, infoheader]]]
+        header: [["Groups:", ["main", "infoheader"]]]
         path: "spec#groups"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
       requested_duration:
-        header: [["Requested Duration:", [main, infoheader]]]
+        header: [["Requested Duration:", ["main", "infoheader"]]]
         path: "spec#expirationSeconds"
-        type: age
-        formatter: age
-        align: right
+        type: "age"
+        formatter: "age"
+        align: "right"
       requestor:
-        header: [["Requesting User:", [main, infoheader]]]
+        header: [["Requesting User:", ["main", "infoheader"]]]
         path: "spec#username"
-        type: str
+        type: "str"
       signername:
-        header: [["Signer:", [main, infoheader]]]
+        header: [["Signer:", ["main", "infoheader"]]]
         path: "spec#signerName"
-        type: str
+        type: "str"
       usages:
-        header: [["Usages:", [main, infoheader]]]
+        header: [["Usages:", ["main", "infoheader"]]]
         path: "spec#usages"
-        type: raw
-        formatter: list
+        type: "raw"
+        formatter: "list"
   shortcuts:
     "Approve Request":
-      key: a
-      modifier: shift
+      key: "a"
+      modifier: "shift"
       helptext: "Approve signing request"
       confirm: true
       confirmtitle: "Approve certificate signing request"
-      action: execute
+      action: "execute"
       action_args:
         command: ["kubectl", "certificate", "approve", ["metadata#name"]]
     "Deny Request":
-      key: d
-      modifier: shift
+      key: "d"
+      modifier: "shift"
       helptext: "Deny signing request"
       confirm: true
       confirmtitle: "Deny certificate signing request"
-      action: execute
+      action: "execute"
       action_args:
         command: ["kubectl", "certificate", "deny", ["metadata#name"]]

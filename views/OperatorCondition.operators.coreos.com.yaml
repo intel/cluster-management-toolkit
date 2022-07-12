@@ -1,93 +1,93 @@
-kind: OperatorCondition
-api_family: operators.coreos.com
-default_command: operatorconditions
+kind: "OperatorCondition"
+api_family: "operators.coreos.com"
+default_command: "operatorconditions"
 # Not sure OperatorCondition deserves something as generic as "condition"
 # even if the CRD thinks so
 command:
 #- conditions
-- opconds
-- opcond
+- "opconds"
+- "opcond"
 listview:
-  name: Operator Conditions
-  group: API & Extendability
+  name: "Operator Conditions"
+  group: "API & Extendability"
   field_indexes:
-    Normal: [namespace, name, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "age"]
+  sortcolumn: "namespace"
 infoview:
-  name: Operator Condition Info
+  name: "Operator Condition Info"
   infopad:
     row_indexes:
-      Normal: [controller]
+      Normal: ["controller"]
     rows:
       controller:
-        header: [["C", [main, infoheader_shortcut]], ["ontroller:", [main, infoheader]]]
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
-          pathtype: items
+          pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
             key: controller
             eq: true
-          type: [kind, api_group, name]
-        formatter: list
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
   shortcuts:
     "Open controller":
-      key: c
-      modifier: shift
+      key: "c"
+      modifier: "shift"
       helptext: "Open info page for controller"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
         owner_reference_path: "metadata#ownerReferences"
         namespace_path: "metadata#namespace"
     "Show Deployment list":
-      key: d
-      modifier: shift
+      key: "d"
+      modifier: "shift"
       helptext: "List Deployments"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Deployments:"
       headers: ["Namespace:", "Name:"]
       selectable: true
-      itemgetter: get_list_as_list
+      itemgetter: "get_list_as_list"
       itemgetter_args:
         paths: ["metadata#namespace", "spec#deployments"]
       # Not supported for now
-      sortcolumn: namespace
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      sortcolumn: "namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
-        kind: Deployment
-        api_family: apps
+        kind: "Deployment"
+        api_family: "apps"
         namespace_path: 0
         name_path: 1
     "Show Service Account list":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "List Service Accounts"
-      widget: windowwidget
+      widget: "windowwidget"
       title: "Service Accounts:"
       headers: ["Namespace:", "Name:"]
       selectable: true
-      itemgetter: get_list_as_list
+      itemgetter: "get_list_as_list"
       itemgetter_args:
         paths: ["metadata#namespace", "spec#serviceAccounts"]
       # Not supported for now
-      sortcolumn: namespace
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      sortcolumn: "namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
-        kind: ServiceAccount
+        kind: "ServiceAccount"
         namespace_path: 0
         name_path: 1

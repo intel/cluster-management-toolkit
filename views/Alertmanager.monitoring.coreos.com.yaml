@@ -1,109 +1,109 @@
-kind: Alertmanager
-api_family: monitoring.coreos.com
-default_command: alertmanagers
+kind: "Alertmanager"
+api_family: "monitoring.coreos.com"
+default_command: "alertmanagers"
 command:
-- alm
+- "alm"
 listview:
-  name: Alertmanagers
-  group: Monitoring
+  name: "Alertmanagers"
+  group: "Monitoring"
   field_indexes:
-    Normal: [namespace, name, version, replicas, age]
-  sortcolumn: namespace
+    Normal: ["namespace", "name", "version", "replicas", "age"]
+  sortcolumn: "namespace"
   fields:
     replicas:
       header: "Replicas:"
       path: "spec#replicas"
-      type: int
+      type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
     version:
       header: "Version:"
       path: "spec#version"
-      type: str
+      type: "str"
       formatting:
         field_colors:
-        - type: version
+        - type: "version"
 infoview:
-  name: Alertmanager Info
+  name: "Alertmanager Info"
   infopad:
     row_indexes:
-      Normal: [image, node_selector, replicas, service_account]
+      Normal: ["image", "node_selector", "replicas", "service_account"]
     rows:
       image:
-        header: [["Image:", [main, infoheader]]]
+        header: [["Image:", ["main", "infoheader"]]]
         paths:
         - path: "spec#image"
-          pathtype: regex
+          pathtype: "regex"
           regex: "^([^:]+):(.*)"
-        formatter: list
+        formatter: "list"
         formatting:
           field_colors:
-          - type: generic
-          - type: version
+          - type: "generic"
+          - type: "version"
           field_separators:
-          - type: version
+          - type: "version"
       node_selector:
-        header: [["Node Selector:", [main, infoheader]]]
+        header: [["Node Selector:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#nodeSelector"]
-          pathtype: key_value
-        formatter: list
+          pathtype: "key_value"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: key
-          - type: value
+          - type: "key"
+          - type: "value"
           field_separators:
-          - type: selector
+          - type: "selector"
       replicas:
-        header: [["Replicas:", [main, infoheader]]]
+        header: [["Replicas:", ["main", "infoheader"]]]
         path: "spec#replicas"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       service_account:
-        header: [["S", [main, infoheader_shortcut]], ["ervice Account:", [main, infoheader]]]
+        header: [["S", ["main", "infoheader_shortcut"]], ["ervice Account:", ["main", "infoheader"]]]
         path: "spec#serviceAccountName"
-        type: str
+        type: "str"
   listpad:
-    listgetter: listgetter_join_dicts_to_list
+    listgetter: "listgetter_join_dicts_to_list"
     listgetter_args:
       key_paths: ["spec#resources#limits", "spec#resources#requests"]
-      key_name: resource
+      key_name: "resource"
       fields:
       - path: "spec#resources#limits"
-        name: limit
+        name: "limit"
         default:
       - path: "spec#resources#requests"
-        name: request
+        name: "request"
         default:
-    infogetter: generic_infogetter
+    infogetter: "generic_infogetter"
     field_indexes:
-      Normal: [resource, request, limit]
-    sortcolumn: resource
+      Normal: ["resource", "request", "limit"]
+    sortcolumn: "resource"
     fields:
       limit:
         header: "Limit:"
-        path: limit
-        type: raw
+        path: "limit"
+        type: "raw"
       resource:
         header: "Resource:"
-        path: resource
-        type: str
+        path: "resource"
+        type: "str"
       request:
         header: "Request:"
-        path: request
-        type: raw
+        path: "request"
+        type: "raw"
     "Service Account":
-      key: s
-      modified: shift
+      key: "s"
+      modifier: "shift"
       helptext: "Open info page for Service Account"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: ServiceAccount
+        kind: "ServiceAccount"
         namespace_path: "metadata#namespace"
         name_path: "spec#serviceAccountName"

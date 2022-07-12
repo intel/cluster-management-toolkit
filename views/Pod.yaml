@@ -1,15 +1,15 @@
-kind: Pod
-default_command: pods
+kind: "Pod"
+default_command: "pods"
 command:
-- po
+- "po"
 listview:
-  name: Pods
-  group: Workloads
+  name: "Pods"
+  group: "Workloads"
   field_indexes:
-    Wide: [namespace, name, controller, phase, node_name, pod_ip, age, restarts, last_restart, containers]
-    Normal: [namespace, name, controller, phase, node_name, age, restarts, last_restart]
-    Compact: [namespace, name, phase, age, restarts, last_restart]
-  sortcolumn: phase
+    Wide: ["namespace", "name", "controller", "phase", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+    Normal: ["namespace", "name", "controller", "phase", "node_name", "age", "restarts", "last_restart"]
+    Compact: ["namespace", "name", "phase", "age", "restarts", "last_restart"]
+  sortcolumn: "phase"
   fields:
     containers:
       header: "Containers:"
@@ -17,24 +17,24 @@ listview:
       - paths:
         - "spec#initContainers"
         - "spec#containers"
-        pathtype: items
+        pathtype: "items"
         subpaths:
-        - name
-        - subpath: image
+        - "name"
+        - subpath: "image"
           regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-        type: raw
-      formatter: list
+        type: "raw"
+      formatter: "list"
       formatting:
         field_colors:
-        - type: generic
-        - type: version
+        - type: "generic"
+        - type: "version"
         field_separators:
-        - type: version
+        - type: "version"
     controller:
       header: "Controller:"
       paths:
       - path: "metadata#ownerReferences"
-        pathtype: items
+        pathtype: "items"
         subpaths:
         - kind
         - apiVersion
@@ -42,105 +42,105 @@ listview:
         when:
           key: controller
           eq: true
-        type: [kind, api_group, name]
-      formatter: list
+        type: ["kind", "api_group", "name"]
+      formatter: "list"
       formatting:
         field_colors:
-        - type: kind
-        - type: api_group
-        - type: generic
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
         field_separators:
-        - type: kind_api_group
-        - type: kind
+        - type: "kind_api_group"
+        - type: "kind"
     last_restart:
       header: "Latest Restart:"
       paths:
       - path: "status#containerStatuses"
-        pathtype: items
+        pathtype: "items"
         subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
         when:
           key: "restartCount"
           gt: 0
-        action: latest
-        type: timestamp
+        action: "latest"
+        type: "timestamp"
       default: -1
-      formatter: age
-      align: right
+      formatter: "age"
+      align: "right"
     node_name:
       header: "Node:"
       path: "spec#nodeName"
       default: "<none>"
-      type: str
+      type: "str"
       formatting:
         field_colors:
-          - type: host
+          - type: "host"
     phase:
       header: "Phase:"
       paths:
       - path: "metadata#deletionTimestamp"
-        pathtype: substitution
+        pathtype: "substitution"
         substitute: Terminating
         else: ["status#phase"]
         when:
           key: "metadata#deletionTimestamp"
           not_missing: true
-      formatter: value_mapper
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "Failed":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
             "Pending":
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             "Running":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "Succeeded":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "Terminating":
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             "Unknown":
               field_colors:
-              - context: main
-                type: status_unknown
+              - context: "main"
+                type: "status_unknown"
     pod_ip:
       header: "Pod IP:"
       path: "status#podIP"
       default: "<unset>"
-      type: str
-      formatter: address
+      type: "str"
+      formatter: "address"
     restarts:
       header: "Restarts:"
       paths:
       - path: "status#containerStatuses"
-        pathtype: items
+        pathtype: "items"
         subpath: "restartCount"
-        action: sum
-        type: int
+        action: "sum"
+        type: "int"
       formatting:
         field_colors:
-        - type: numerical
-      align: right
+        - type: "numerical"
+      align: "right"
       default: 0
   listview_args:
     filters:
       evicted:
-        source: object
+        source: "object"
         enabled: true
         block:
         - key: "status#phase"
-          values: [Failed]
+          values: ["Failed"]
         - key: "status#reason"
-          values: [Evicted]
+          values: ["Evicted"]
   actions:
     actionlist:
       "Delete resource":
@@ -153,380 +153,380 @@ listview:
         actionfunc: force_delete_resource
   shortcuts:
     "Show Evicted Pods":
-      key: e
-      modifier: shift
+      key: "e"
+      modifier: "shift"
       helptext: "Show / Hide evicted pods"
-      action: toggle_var
+      action: "toggle_var"
       action_args:
         var: "filters#evicted#enabled"
   statusmsg:
   - ["Hide evicted pods: ", "filters#evicted#enabled"]
 infoview:
-  name: Pod Info
+  name: "Pod Info"
   infopad:
     row_indexes:
-      Normal: [phase, conditions, scheduler, priority, priority_class, qos_class, pod_ips, termination_grace_period, enable_service_links]
+      Normal: ["phase", "conditions", "scheduler", "priority", "priority_class", "qos_class", "pod_ips", "termination_grace_period", "enable_service_links"]
     rows:
       conditions:
-        header: [["Conditions:", [main, infoheader]]]
+        header: [["Conditions:", ["main", "infoheader"]]]
         paths:
         - path: "status#conditions"
-          pathtype: items
-          subpath: type
+          pathtype: "items"
+          subpath: "type"
           when:
-          - key: type
-            in: [ContainersReady, Degraded, DiskPressure, Initialized, MemoryPressure, NetworkUnavailable, OutOfDisk, PIDPressure, PodScheduled, Progressing, Ready, PodScheduled]
-          - key: status
+          - key: "type"
+            in: ["ContainersReady", "Degraded", "DiskPressure", "Initialized", "MemoryPressure", "NetworkUnavailable", "OutOfDisk", "PIDPressure", "PodScheduled", "Progressing", "Ready", "PodScheduled"]
+          - key: "status"
             eq: "True"
         - path: "status#conditions"
-          pathtype: items
-          subpath: type
+          pathtype: "items"
+          subpath: "type"
           when:
-          - key: type
-            in: [ContainersReady, Initialized, PodScheduled, Progressing, Ready]
-          - key: status
+          - key: "type"
+            in: ["ContainersReady", "Initialized", "PodScheduled", "Progressing", "Ready"]
+          - key: "status"
             eq: "False"
           prefix: "!"
-        formatter: list
+        formatter: "list"
         formatting:
           mapping:
             mappings:
               "ContainersReady":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "!ContainersReady":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "Degraded":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "DiskPressure":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "Initialized":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "!Initialized":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "MemoryPressure":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "NetworkUnavailable":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "OutOfDisk":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "PIDPressure":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "PodScheduled":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "!PodScheduled":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "Progressing":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               "!Progressing":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "Ready":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "!Ready":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
       enable_service_links:
-        header: [["Enable Service Links:", [main, infoheader]]]
+        header: [["Enable Service Links:", ["main", "infoheader"]]]
         path: "spec#enableServiceLinks"
-        type: bool
+        type: "bool"
       phase:
-        header: [["Phase:", [main, infoheader]]]
+        header: [["Phase:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#deletionTimestamp"
-          pathtype: substitution
+          pathtype: "substitution"
           substitute: Terminating
           else: ["status#phase"]
           when:
             key: "metadata#deletionTimestamp"
             not_missing: true
-        formatter: value_mapper
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "Failed":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "Pending":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               "Running":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "Succeeded":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "Terminating":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               "Unknown":
                 field_colors:
-                - context: main
-                  type: status_unknown
+                - context: "main"
+                  type: "status_unknown"
       pod_ips:
-        header: [["Pod IPs:", [main, infoheader]]]
+        header: [["Pod IPs:", ["main", "infoheader"]]]
         paths:
         - path: "status#podIPs"
-          pathtype: items
-          subpath: ip
-        formatter: address
+          pathtype: "items"
+          subpath: "ip"
+        formatter: "address"
       priority:
-        header: [["Priority:", [main, infoheader]]]
+        header: [["Priority:", ["main", "infoheader"]]]
         path: "spec#priority"
-        type: int
+        type: "int"
         formatting:
           field_colors:
-          - type: numerical
+          - type: "numerical"
       priority_class:
-        header: [["P", [main, infoheader_shortcut]], ["riority Class:", [main, infoheader]]]
+        header: [["P", ["main", "infoheader_shortcut"]], ["riority Class:", ["main", "infoheader"]]]
         path: "spec#priorityClassName"
-        type: str
+        type: "str"
       qos_class:
-        header: [["QoS Class:", [main, infoheader]]]
+        header: [["QoS Class:", ["main", "infoheader"]]]
         path: "status#qosClass"
-        type: str
+        type: "str"
       scheduler:
-        header: [["Scheduler:", [main, infoheader]]]
+        header: [["Scheduler:", ["main", "infoheader"]]]
         path: "spec#schedulerName"
-        type: str
+        type: "str"
       termination_grace_period:
-        header: [["Termination Grace Period:", [main, infoheader]]]
+        header: [["Termination Grace Period:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#terminationGracePeriodSeconds"], "s"]
-          pathtype: tuple
+          pathtype: "tuple"
           when:
             key: "spec#terminationGracePeriodSeconds"
             gt: 0
         - path: [["spec#terminationGracePeriodSeconds"]]
-          pathtype: tuple
+          pathtype: "tuple"
           when:
             key: "spec#terminationGracePeriodSeconds"
             eq: 0
-          substitute: [Immediately, ""]
-        formatter: list
+          substitute: ["Immediately", ""]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: numerical
-          - type: unit
+          - type: "numerical"
+          - type: "unit"
           field_separators:
-          - type: no_pad
+          - type: "no_pad"
   listpad:
-    listgetter: get_pod_resource_list
-    infogetter: generic_infogetter
+    listgetter: "get_pod_resource_list"
+    infogetter: "generic_infogetter"
     on_activation:
-      call: resourceinfodispatch_from_pod_resource_list
-      extraref: kind
+      call: "resourceinfodispatch_from_pod_resource_list"
+      extraref: "kind"
       data: true
     field_indexes:
-      Normal: [resource, type, status, restarts, age, message]
-    sortcolumn: type
+      Normal: ["resource", "type", "status", "restarts", "age", "message"]
+    sortcolumn: "type"
     fields:
       resource:
         header: "Resource:"
-        path: resource_tuple
-        type: raw
-        formatter: list
+        path: "resource_tuple"
+        type: "raw"
+        formatter: "list"
         formatting:
           field_colors:
-          - type: kind
-          - type: api_group
-          - type: generic
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
           field_separators:
-          - type: kind_api_group
-          - type: kind
+          - type: "kind_api_group"
+          - type: "kind"
       type:
         header: "Type:"
-        path: type
-        type: str
+        path: "type"
+        type: "str"
       status:
         header: "Status:"
-        path: status
-        type: str
-        formatter: value_mapper
+        path: "status"
+        type: "str"
+        formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "Available":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "Bound":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "Completed":
                 field_colors:
-                - context: main
-                  type: status_done
+                - context: "main"
+                  type: "status_done"
               "ContainerCreating":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               "CrashLoopBackOff":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "CreateContainerConfigError":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "<empty>":
                 field_colors:
-                - context: types
-                  type: none
+                - context: "types"
+                  type: "none"
               "ErrImagePull":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "Error":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "GuestNotRunning":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "Healthy":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "ImagePullBackOff":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "<missing>":
                 field_colors:
-                - context: types
-                  type: unset
+                - context: "types"
+                  type: "unset"
               "KubeletReady":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "Normal":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "NotReady":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               "<optional>":
                 field_colors:
-                - context: types
-                  type: none
+                - context: "types"
+                  type: "none"
               "Pending":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               "PodInitializing":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               "Ready":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "Released":
                 field_colors:
-                - context: main
-                  type: status_pending
+                - context: "main"
+                  type: "status_pending"
               "Running":
                 field_colors:
-                - context: main
-                  type: status_ok
+                - context: "main"
+                  type: "status_ok"
               "Unhealthy":
                 field_colors:
-                - context: main
-                  type: status_not_ok
+                - context: "main"
+                  type: "status_not_ok"
               "Unknown":
                 field_colors:
-                - context: main
-                  type: status_unknown
+                - context: "main"
+                  type: "status_unknown"
               "UNKNOWN":
                 field_colors:
-                - context: main
-                  type: status_unknown
+                - context: "main"
+                  type: "status_unknown"
               "Unreachable":
                 field_colors:
-                - context: main
-                  type: status_unknown
+                - context: "main"
+                  type: "status_unknown"
               "<unset>":
                 field_colors:
-                - context: types
-                  type: unset
+                - context: "types"
+                  type: "unset"
               "Warning":
                 field_colors:
-                - context: main
-                  type: status_warning
+                - context: "main"
+                  type: "status_warning"
       restarts:
         header: "Restarts:"
         paths:
-        - path: restarts
-          pathtype: remap
+        - path: "restarts"
+          pathtype: "remap"
           substitutions:
             -1: ""
         formatting:
           field_colors:
-          - type: numerical
-        align: right
+          - type: "numerical"
+        align: "right"
       age:
         header: "Age:"
-        path: age
-        type: age
-        formatter: age
+        path: "age"
+        type: "age"
+        formatter: "age"
       message:
         header: "Message:"
-        path: message
-        type: str
+        path: "message"
+        type: "str"
   shortcuts:
     "Show affinities":
-      key: a
-      modifier: shift
+      key: "a"
+      modifier: "shift"
       helptext: "Show affinities"
-      widget: windowwidget
+      widget: "windowwidget"
       headers: ["Type:", "Scheduling:", "Execution:", "Selector:", "Topology:"]
-      itemgetter: get_pod_affinity
+      itemgetter: "get_pod_affinity"
       # This isn't supported for now
-      sortcolumn: type
+      sortcolumn: "type"
     "Execute command in container":
-      key: e
-      modifier: ctrl
+      key: "e"
+      modifier: "ctrl"
       helptext: "Execute command inside container"
-      widget: executecommand
+      widget: "executecommand"
       inputtitle: "Command to execute:"
       widget_args:
         kinds: [["Container", ""], ["InitContainer", ""], ["EphemeralContainer", ""]]
@@ -534,47 +534,47 @@ infoview:
         waitforkeypress: true
     # This is only supported in Kubernetes v1.23+; do we need to add some sort of conditional support for this?
     "Open ephemeral shell in container":
-      key: d
-      modifier: ctrl
+      key: "d"
+      modifier: "ctrl"
       helptext: "Open a debug (ephemeral) shell inside container"
-      widget: executecommand
+      widget: "executecommand"
       widget_args:
         kinds: [["Container", ""], ["InitContainer", ""]]
         command: ["<ephemeral>"]
     "Open shell in container":
-      key: o
-      modifier: ctrl
+      key: "o"
+      modifier: "ctrl"
       helptext: "Open a shell inside container"
-      widget: executecommand
+      widget: "executecommand"
       widget_args:
         kinds: [["Container", ""], ["InitContainer", ""], ["EphemeralContainer", ""]]
         command: ["/bin/sh"]
     "Show tolerations":
-      key: t
+      key: "t"
       helptext: "Show tolerations"
-      widget: windowwidget
+      widget: "windowwidget"
       headers: ["Key:", "Operator:", "Value:", "Effect:", "Timeout:"]
-      itemgetter: get_pod_tolerations
+      itemgetter: "get_pod_tolerations"
       # This isn't supported for now
-      sortcolumn: key
+      sortcolumn: "key"
     "Priority Class":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "Open info page for Priority Class"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: PriorityClass
-        api_family: scheduling.k8s.io
+        kind: "PriorityClass"
+        api_family: "scheduling.k8s.io"
         name_path: "spece#priorityClassName"
     "SSH to Node":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "SSH to selected Node"
-      action: call
-      action_call: ssh_to_host
+      action: "call"
+      action_call: "ssh_to_host"
       action_args:
         _pass_selected: true
       kind_filter:
-        kind: Node
+        kind: "Node"

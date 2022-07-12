@@ -1,117 +1,117 @@
-kind: IP
-api_family: kubeovn.io
-default_command: ips.kubeovn.io
+kind: "IP"
+api_family: "kubeovn.io"
+default_command: "ips.kubeovn.io"
 command:
-- kubeovnips
-- kubeovnip
-- koips
-- koip
+- "kubeovnips"
+- "kubeovnip"
+- "koips"
+- "koip"
 listview:
-  name: Kube-OVN IPs
-  group: Kube-OVN
+  name: "Kube-OVN IPs"
+  group: "Kube-OVN"
   field_indexes:
-    Normal: [name, ipv4, ipv6, mac, node, subnet, age]
+    Normal: ["name", "ipv4", "ipv6", "mac", "node", "subnet", "age"]
   fields:
     ipv4:
       header: "IPv4:"
       paths:
       - path: ["spec#v4IpAddress", "spec#ipAddress"]
-      type: str
-      formatter: address
+      type: "str"
+      formatter: "address"
     ipv6:
       header: "IPv6:"
       path: "spec#v6IpAddress"
-      type: str
-      formatter: address
+      type: "str"
+      formatter: "address"
     mac:
       header: "MAC:"
       path: "spec#macAddress"
-      type: str
-      formatter: address
+      type: "str"
+      formatter: "address"
       formatting:
         field_separators:
-        - type: macaddress
+        - type: "macaddress"
     node:
       header: "Node:"
       path: "spec#nodeName"
-      type: str
+      type: "str"
     subnet:
       header: "Subnet:"
       path: "spec#subnet"
-      type: str
+      type: "str"
 infoview:
-  name: Kube-OVN IP Info
+  name: "Kube-OVN IP Info"
   infopad:
     row_indexes:
-      Normal: [ipv4, ipv6, mac, node, pod, subnet]
+      Normal: ["ipv4", "ipv6", "mac", "node", "pod", "subnet"]
     rows:
       ipv4:
-        header: [["IPv4:", [main, infoheader]]]
+        header: [["IPv4:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#v4IpAddress", "spec#ipAddress"]
-        type: str
-        formatter: address
+        type: "str"
+        formatter: "address"
       ipv6:
-        header: [["IPv6:", [main, infoheader]]]
+        header: [["IPv6:", ["main", "infoheader"]]]
         path: "spec#v6IpAddress"
-        type: str
-        formatter: address
+        type: "str"
+        formatter: "address"
       mac:
-        header: [["MAC:", [main, infoheader]]]
+        header: [["MAC:", ["main", "infoheader"]]]
         path: "spec#macAddress"
-        type: str
-        formatter: address
+        type: "str"
+        formatter: "address"
       pod:
-        header: [["P", [main, infoheader_shortcut]], ["od:", [main, infoheader]]]
+        header: [["P", ["main", "infoheader_shortcut"]], ["od:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#namespace"], ["spec#podName"]]
-          pathtype: tuple
-          type: [name, name]
-        formatter: list
+          pathtype: "tuple"
+          type: ["name", "name"]
+        formatter: "list"
         formatting:
           field_colors:
-          - type: namespace
-          - type: generic
+          - type: "namespace"
+          - type: "generic"
           field_separators:
-          - type: namespace
+          - type: "namespace"
       node:
-        header: [["N", [main, infoheader_shortcut]], ["ode:", [main, infoheader]]]
+        header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]
         path: "spec#nodeName"
-        type: str
+        type: "str"
       subnet:
-        header: [["S", [main, infoheader_shortcut]], ["ubnet:", [main, infoheader]]]
+        header: [["S", ["main", "infoheader_shortcut"]], ["ubnet:", ["main", "infoheader"]]]
         path: "spec#subnet"
-        type: str
+        type: "str"
   shortcuts:
     "Node":
-      key: n
-      modifier: shift
+      key: "n"
+      modifier: "shift"
       helptext: "Open info page for Node"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Node
+        kind: "Node"
         name_path: "spec#nodeName"
     "Pod":
-      key: p
-      modifier: shift
+      key: "p"
+      modifier: "shift"
       helptext: "Open info page for Pod"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Pod
+        kind: "Pod"
         name_path: "spec#podName"
         namespace_path: "spec#namespace"
     "Subnet":
-      key: s
-      modifier: shift
+      key: "s"
+      modifier: "shift"
       helptext: "Open info page for Subnet"
-      action: call
-      action_call: resourceinfodispatch_with_lookup
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind: Subnet
-        api_family: kubeovn.io
+        kind: "Subnet"
+        api_family: "kubeovn.io"
         name_path: "spec#subnet"

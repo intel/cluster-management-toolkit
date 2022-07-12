@@ -1,60 +1,60 @@
-kind: Traceflow
-api_family: crd.antrea.io
-default_command: traceflows
+kind: "Traceflow"
+api_family: "crd.antrea.io"
+default_command: "traceflows"
 command:
-- tf
+- "tf"
 listview:
-  name: Antrea Traceflows
-  group: Antrea
+  name: "Antrea Traceflows"
+  group: "Antrea"
   field_indexes:
-    Normal: [name, source_pod, destination_pod, destination_ip, live_traffic, dropped_only, timeout, phase, age]
+    Normal: ["name", "source_pod", "destination_pod", "destination_ip", "live_traffic", "dropped_only", "timeout", "phase", "age"]
   fields:
     destination_ip:
       header: "Destination IP:"
       path: "spec#destination#ip"
-      type: str
+      type: "str"
     destination_pod:
       header: "Destination Pod:"
       path: "spec#destination#pod"
-      type: str
+      type: "str"
     dropped_only:
       header: "Dropped Only:"
       path: "spec#droppedOnly"
-      type: bool
+      type: "bool"
     live_traffic:
       header: "Live Traffic:"
       path: "spec#liveTraffic"
-      type: bool
+      type: "bool"
     phase:
       header: "Phase:"
       path: "status#phase"
-      type: str
-      formatter: value_mapper
+      type: "str"
+      formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "Running":
               field_colors:
-              - context: main
-                type: status_ok
+              - context: "main"
+                type: "status_ok"
             "Pending":
               field_colors:
-              - context: main
-                type: status_pending
+              - context: "main"
+                type: "status_pending"
             "Failed":
               field_colors:
-              - context: main
-                type: status_not_ok
+              - context: "main"
+                type: "status_not_ok"
             "Unknown":
               field_colors:
-              - context: main
-                type: status_unknown
+              - context: "main"
+                type: "status_unknown"
     source_pod:
       header: "Source Pod:"
       path: "spec#source#pod"
-      type: str
+      type: "str"
     timeout:
       header: "Timeout:"
       path: "spec#timeout"
-      type: int
+      type: "int"
       default: 20
