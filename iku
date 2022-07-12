@@ -11690,6 +11690,7 @@ def populate_views():
 
 				sortcolumn = deep_get(d, "listview#sortcolumn")
 				reversible = deep_get(d, "listview#reversible", True)
+				sortorder_reverse = deep_get(d, "listview#sortorder_reverse", False)
 				fields = deep_get(d, "listview#fields", {})
 
 				field_indexes = deep_get(d, "listview#field_indexes", {})
@@ -11746,6 +11747,7 @@ def populate_views():
 					"infogetter": infogetter,
 					"infogetter_args": deep_get(d, "listview#infogetter_args", {}),
 					"actions": deep_get(d, "listview#actions", {}),
+					"sortorder_reverse": sortorder_reverse,
 				}
 				if sortcolumn is not None:
 					listview_entry["sortcolumn"] = sortcolumn
@@ -11888,6 +11890,7 @@ def populate_views():
 
 				sortcolumn = deep_get(listpad, "sortcolumn")
 				reversible = deep_get(listpad, "reversible", True)
+				sortorder_reverse = deep_get(d, "listview#sortorder_reverse", False)
 
 				infoview_entry = {
 					"windowheader": name,
@@ -11900,6 +11903,7 @@ def populate_views():
 					"infopad": row_fields,
 					"listpad": {},
 					"reversible": reversible,
+					"sortorder_reverse": sortorder_reverse,
 					"annotations": annotations,
 					"shortcuts": {},
 				}
