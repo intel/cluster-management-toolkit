@@ -432,6 +432,8 @@ def prepare_hosts(options = [], args = None):
 			no_password = True
 		elif opt == "--save-ansible-logs":
 			ansible_configuration.save_logs = True
+		elif opt == "--forks":
+			ansible_configuration.forks = optarg
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -519,6 +521,8 @@ def add_nodes(options = [], args = None):
 			ansible_configuration.save_logs = True
 		elif opt == "--ca-cert-path":
 			ca_cert_path = optarg
+		elif opt == "--forks":
+			ansible_configuration.forks = optarg
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -679,6 +683,8 @@ def remove_nodes(options = [], args = None):
 			purge = True
 		elif opt == "--save-ansible-logs":
 			ansible_configuration.save_logs = True
+		elif opt == "--forks":
+			ansible_configuration.forks = optarg
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -756,6 +762,8 @@ def purge_hosts(options = [], args = None):
 			ignore_non_existing = True
 		elif opt == "--save-ansible-logs":
 			ansible_configuration.save_logs = True
+		elif opt == "--forks":
+			ansible_configuration.forks = optarg
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -824,6 +832,8 @@ def upgrade_nodes(options = [], args = None):
 	for opt, optarg in options:
 		if opt == "--save-ansible-logs":
 			ansible_configuration.save_logs = True
+		elif opt == "--forks":
+			ansible_configuration.forks = optarg
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -971,6 +981,10 @@ ikt_commandline = {
 			"--ignore-existing": {
 				"description": [("Ignore hosts that are already part of the cluster", "description")],
 			},
+			"--forks": {
+				"values": [("FORKS", "argument")],
+				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")]
+			},
 			"--no-password": {
 				"description": [("Do not prompt for a password; use this if the hosts you're preparing are already configured for login using an SSH key", "description")],
 			},
@@ -991,6 +1005,10 @@ ikt_commandline = {
 				"values": [("PATH", "argument")],
 				"description": [("Use ", "description"), ("PATH", "argument"), (" as token CA certificate", "description")],
 				"requires_arg": True,
+			},
+			"--forks": {
+				"values": [("FORKS", "argument")],
+				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")]
 			},
 			"--ignore-existing": {
 				"description": [("Ignore hosts that are already part of the cluster", "description")],
@@ -1014,6 +1032,10 @@ ikt_commandline = {
 			"--force": {
 				"description": [("Attempt to teardown Kubernetes nodes that are no longer in the cluster", "description")],
 			},
+			"--forks": {
+				"values": [("FORKS", "argument")],
+				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")]
+			},
 			"--purge": {
 				"description": [("Purge hosts if teardown completes successfully", "description")],
 			},
@@ -1033,6 +1055,10 @@ ikt_commandline = {
 			"--ignore-non-existing": {
 				"description": [("Ignore hosts that cannot be found in the inventory", "description")],
 			},
+			"--forks": {
+				"values": [("FORKS", "argument")],
+				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")]
+			},
 			"--save-ansible-logs": {
 				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
 			},
@@ -1050,6 +1076,10 @@ ikt_commandline = {
 		"max_args": 1,
 		"callback": upgrade_nodes,
 		"options": {
+			"--forks": {
+				"values": [("FORKS", "argument")],
+				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")]
+			},
 			"--save-ansible-logs": {
 				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
 			},
