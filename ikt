@@ -527,11 +527,11 @@ def prepare_hosts(options = [], args = None):
 
 	iktprint([("\nHosts successfully prepared", "success")])
 
-
 def add_nodes(options = [], args = None):
 	ignore_existing = False
 	ignore_non_existing = False
 	ca_cert_path = ""
+	cri = None
 
 	selection = args[0].split(",")
 
@@ -550,6 +550,12 @@ def add_nodes(options = [], args = None):
 			ca_cert_path = optarg
 		elif opt == "--forks":
 			ansible_configuration.forks = optarg
+		elif opt == "--cri":
+			if optarg in ["dockershim", "containerd", "manual"]:
+				cri = optarg
+			else:
+				iktprint([("Error: ", "error"), ("Unknown CRI “", "default"), (optarg, "argument"), ("“ specified; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -592,13 +598,6 @@ def add_nodes(options = [], args = None):
 
 	# Time to setup and add the hosts to the cluster
 	iktprint([("\n[Adding nodes]", "phase")])
-	add_playbooks = [
-		# ikt doesn't use run_before/run_after/add_to_groups/remove_from_groups,
-		# so we have to do all of that explicitly
-		f"{ANSIBLE_PLAYBOOK_DIR}/add_kubernetes_repo.yaml",
-		f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_setup_node.yaml",
-	]
-	playbooks = populate_playbooks_from_paths(add_playbooks)
 
 	# Get variables that need to be available when setting up nodes
 	from kubernetes_helper import KubernetesHelper
@@ -678,12 +677,33 @@ def add_nodes(options = [], args = None):
 		iktprint([("Error: ", "error"), ("Failed to get ", "default"), ("kubeadm", "programname"), (" package version from control-plane at {control_plane_ip}; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
+	# 1.24.2-00
+	_version = kubeadm_version.split(".")
+	if int(_version[1]) >= 24:
+		if cri == "dockershim":
+			iktprint([("Error: ", "error"), ("CRI cannot be “", "default"), ("dockershim", "argument"), ("“ for ", "default"), ("Kubernetes ", "programname"), (">= ", "default"), ("1.24", "version"), ("; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+		elif cri is None:
+			cri = "containerd"
+	else:
+		if cri is None:
+			cri = "dockershim"
+
+	add_playbooks = [
+		# ikt doesn't use run_before/run_after/add_to_groups/remove_from_groups,
+		# so we have to do all of that explicitly
+		f"{ANSIBLE_PLAYBOOK_DIR}/add_kubernetes_repo.yaml",
+		f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_setup_node.yaml",
+	]
+	playbooks = populate_playbooks_from_paths(add_playbooks)
+
 	extra_values = {
 		"control_plane_ip": control_plane_ip,
 		"control_plane_port": control_plane_port,
 		"join_token": join_token,
 		"ca_cert_hash": ca_cert_hash,
 		"control_plane_k8s_version": kubeadm_version,
+		"cri": cri,
 	}
 	retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
 	if retval == True:
@@ -1032,6 +1052,23 @@ ikt_commandline = {
 			"--ca-cert-file": {
 				"values": [("PATH", "argument")],
 				"description": [("Use ", "description"), ("PATH", "argument"), (" as token CA certificate", "description")],
+				"requires_arg": True,
+			},
+			"--cri": {
+				"values": [("CRI", "argument")],
+				"description": [("Use ", "description"), ("CRI", "argument"), (" instead of the default CRI", "description")],
+				"extended_description": [
+					[("Valid options for CRI (Container Runtime Interface) are:", "description")],
+					[
+						("dockershim", "argument"), (" (", "description"), ("Kubernetes", "programname"), (" < ", "description"), ("1.24", "version"), (")", "description"), (", ", "separator"),
+						("containerd", "argument"), (", ", "separator"),
+					],
+					[
+						("manual", "argument"), (" (do not install a CRI; this requires you to manually install and configure the CRI)", "description"),
+					],
+					[("The default CRI is ", "description"), ("dockershim", "argument"), (" for ", "description"), ("Kubernetes", "programname"), (" < ", "description"), ("1.24", "version")],
+					[("and ", "description"), ("containerd", "argument"), (" for ", "description"), ("Kubernetes", "programname"), (" >= ", "description"), ("1.24", "version")],
+				],
 				"requires_arg": True,
 			},
 			"--forks": {
