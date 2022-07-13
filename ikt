@@ -12,10 +12,13 @@ import hashlib
 import os
 from pathlib import Path
 import re
+import socket
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
 import yaml
+
+import paramiko
 
 try:
 	from natsort import natsorted
@@ -51,6 +54,28 @@ PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
 iktconfig = None
+
+def scan_and_add_ssh_keys(hosts):
+	for host in hosts:
+		try:
+			transport = paramiko.Transport(host)
+		except socket.gaierror as e:
+			if str(e) in ["[Errno -3] Temporary failure in name resolution", "[Errno -2] Name or service not known"]:
+				continue
+			else:
+				raise socket.gaierror(f"{str(e)}\nhost: {host}")
+		transport.connect()
+		key = transport.get_remote_server_key()
+		transport.close()
+		known_hosts = f"{HOMEDIR}/.ssh/known_hosts"
+
+		# Note: Paramiko seems to have issues if .ssh/known_hosts doesn't exist,
+		# so "touch" the file just in case.
+		open(known_hosts, 'a').close()
+
+		hostfile = paramiko.HostKeys(filename = known_hosts)
+		hostfile.add(hostname = host, key = key, keytype = key.get_name())
+		hostfile.save(filename = known_hosts)
 
 def request_ansible_password():
 	# Check whether ansible_password is defined or not
@@ -476,6 +501,8 @@ def prepare_hosts(options = [], args = None):
 			sys.exit(errno.EINTR)
 
 	iktprint([(f"\n[Preparing host(s)]", "phase")])
+
+	scan_and_add_ssh_keys(non_existing)
 
 	# We most likely won't be able to connect to the remote host without a password
 	if no_password == False:
@@ -983,7 +1010,8 @@ ikt_commandline = {
 			},
 			"--forks": {
 				"values": [("FORKS", "argument")],
-				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")]
+				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")],
+				"requires_arg": True,
 			},
 			"--no-password": {
 				"description": [("Do not prompt for a password; use this if the hosts you're preparing are already configured for login using an SSH key", "description")],
@@ -1008,7 +1036,8 @@ ikt_commandline = {
 			},
 			"--forks": {
 				"values": [("FORKS", "argument")],
-				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")]
+				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")],
+				"requires_arg": True,
 			},
 			"--ignore-existing": {
 				"description": [("Ignore hosts that are already part of the cluster", "description")],
@@ -1034,7 +1063,8 @@ ikt_commandline = {
 			},
 			"--forks": {
 				"values": [("FORKS", "argument")],
-				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")]
+				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")],
+				"requires_arg": True,
 			},
 			"--purge": {
 				"description": [("Purge hosts if teardown completes successfully", "description")],
@@ -1057,7 +1087,8 @@ ikt_commandline = {
 			},
 			"--forks": {
 				"values": [("FORKS", "argument")],
-				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")]
+				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")],
+				"requires_arg": True,
 			},
 			"--save-ansible-logs": {
 				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
@@ -1078,7 +1109,8 @@ ikt_commandline = {
 		"options": {
 			"--forks": {
 				"values": [("FORKS", "argument")],
-				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")]
+				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")],
+				"requires_arg": True,
 			},
 			"--save-ansible-logs": {
 				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
