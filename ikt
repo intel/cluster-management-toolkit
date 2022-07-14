@@ -443,12 +443,7 @@ def setup_nodes(options = [], args = None):
 def prepare_hosts(options = [], args = None):
 	ignore_existing = False
 	no_password = False
-
-	selection = args[0].split(",")
-
-	if "ALL" in selection:
-		iktprint([("Error: ", "error"), ("ALL", "hostname"), (" cannot be used with ", "default"), ("prepare", "command"), ("; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
+	from_file = False
 
 	for opt, optarg in options:
 		if opt == "--ignore-existing":
@@ -459,8 +454,41 @@ def prepare_hosts(options = [], args = None):
 			ansible_configuration.save_logs = True
 		elif opt == "--forks":
 			ansible_configuration.forks = optarg
+		elif opt == "--from-file":
+			from_file = True
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
+
+	if from_file == True:
+		hostfile = args[0]
+		if not os.path.exists(hostfile):
+			iktprint([("Error: ", "error"), (f"{hostfile}", "path"), (" does not exist; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+		elif not os.path.isfile(hostfile):
+			iktprint([("Error: ", "error"), (f"{hostfile}", "path"), (" is not a file; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+		else:
+			hosts_raw = None
+			with open(hostfile, "r") as f:
+				hosts_raw = f.readlines()
+
+			if hosts_raw is None:
+				iktprint([("Error: ", "error"), ("failed to read hostnames from ", "default"), (f"{hostfile}", "path"), ("; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
+
+			# strip newlines
+			hosts_raw = [s.strip() for s in hosts_raw]
+
+			if len(hosts_raw) == 1 and "," in hosts_raw[0]:
+				selection = hosts_raw[0].split(",")
+			else:
+				selection = hosts_raw
+	else:
+		selection = args[0].split(",")
+
+		if "ALL" in selection:
+			iktprint([("Error: ", "error"), ("ALL", "hostname"), (" cannot be used with ", "default"), ("prepare", "command"), ("; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
 
 	# Correlate the list of hosts with the nodes in the cluster
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
@@ -530,14 +558,9 @@ def prepare_hosts(options = [], args = None):
 def add_nodes(options = [], args = None):
 	ignore_existing = False
 	ignore_non_existing = False
+	from_file = False
 	ca_cert_path = ""
 	cri = None
-
-	selection = args[0].split(",")
-
-	if "ALL" in selection:
-		iktprint([("Error: ", "error"), ("ALL", "hostname"), (" cannot be used with ", "default"), ("add-node", "command"), ("; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
 
 	for opt, optarg in options:
 		if opt == "--ignore-existing":
@@ -556,8 +579,41 @@ def add_nodes(options = [], args = None):
 			else:
 				iktprint([("Error: ", "error"), ("Unknown CRI “", "default"), (optarg, "argument"), ("“ specified; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
+		elif opt == "--from-file":
+			from_file = True
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
+
+	if from_file == True:
+		hostfile = args[0]
+		if not os.path.exists(hostfile):
+			iktprint([("Error: ", "error"), (f"{hostfile}", "path"), (" does not exist; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+		elif not os.path.isfile(hostfile):
+			iktprint([("Error: ", "error"), (f"{hostfile}", "path"), (" is not a file; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+		else:
+			hosts_raw = None
+			with open(hostfile, "r") as f:
+				hosts_raw = f.readlines()
+
+			if hosts_raw is None:
+				iktprint([("Error: ", "error"), ("failed to read hostnames from ", "default"), (f"{hostfile}", "path"), ("; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
+
+			# strip newlines
+			hosts_raw = [s.strip() for s in hosts_raw]
+
+			if len(hosts_raw) == 1 and "," in hosts_raw[0]:
+				selection = hosts_raw[0].split(",")
+			else:
+				selection = hosts_raw
+	else:
+		selection = args[0].split(",")
+
+	if "ALL" in selection:
+		iktprint([("Error: ", "error"), ("ALL", "hostname"), (" cannot be used with ", "default"), ("add-node", "command"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
 
 	# Correlate the list of hosts with the nodes in the cluster
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
@@ -1019,7 +1075,7 @@ ikt_commandline = {
 	},
 	"Prepare Host": {
 		"command": ["prepare"],
-		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("PATH", "argument")],
 		"description": [("Prepare ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" for use as a node in a Kubernetes cluster", "description")],
 		"extended_description": [
 			[("Note: ", "note"), ("HOST", "argument"), (" should be a resolvable hostname; using IP-addresses may cause issues.", "description")],
@@ -1037,6 +1093,9 @@ ikt_commandline = {
 				"values": [("FORKS", "argument")],
 				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")],
 				"requires_arg": True,
+			},
+			"--from-file": {
+				"description": [("Treat the argument to ", "description"), ("prepare", "command"), (" as the path to a file with hostnames instead of a list of hostnames.", "description")],
 			},
 			"--no-password": {
 				"description": [("Do not prompt for a password; use this if the hosts you're preparing are already configured for login using an SSH key", "description")],
@@ -1085,6 +1144,9 @@ ikt_commandline = {
 				"values": [("FORKS", "argument")],
 				"description": [("Max number of parallel connections when running Ansible playbooks (overrides ", "description"), ("ikt.yaml", "argument"), ("; default: ", "description"), ("5", "argument"), (")", "description")],
 				"requires_arg": True,
+			},
+			"--from-file": {
+				"description": [("Treat the argument to ", "description"), ("prepare", "command"), (" as the path to a file with hostnames instead of a list of hostnames.", "description")],
 			},
 			"--ignore-existing": {
 				"description": [("Ignore hosts that are already part of the cluster", "description")],
