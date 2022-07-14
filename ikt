@@ -1021,6 +1021,11 @@ ikt_commandline = {
 		"command": ["prepare"],
 		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument")],
 		"description": [("Prepare ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" for use as a node in a Kubernetes cluster", "description")],
+		"extended_description": [
+			[("Note: ", "note"), ("HOST", "argument"), (" should be a resolvable hostname; using IP-addresses may cause issues.", "description")],
+			[("If the hosts intended for use as nodes in the cluster do not have a resolvable", "description")],
+			[("hostnames it's recommended to use ", "description"), ("/etc/hosts", "path"), (" for this purpose.", "description")],
+		],
 		"min_args": 1,
 		"max_args": 1,
 		"callback": prepare_hosts,
@@ -1045,6 +1050,11 @@ ikt_commandline = {
 		"command": ["add-node", "add-nodes"],
 		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument")],
 		"description": [("Add ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" as Kubernetes nodes to a cluster", "description")],
+		"extended_description": [
+			[("Note: ", "note"), ("HOST", "argument"), (" should be a resolvable hostname; using IP-addresses may cause issues.", "description")],
+			[("If the hosts intended for use as nodes in the cluster do not have a resolvable", "description")],
+			[("hostnames it's recommended to use ", "description"), ("/etc/hosts", "path"), (" for this purpose.", "description")],
+		],
 		"min_args": 1,
 		"max_args": 1,
 		"callback": add_nodes,

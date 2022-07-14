@@ -2573,6 +2573,11 @@ commandline = {
 		"options": {
 			"--control-plane": {
 				"values": [("HOST", "argument")],
+				"extended_description": [
+					[("Note: ", "note"), ("HOST", "argument"), (" should be a resolvable hostname; using IP-addresses may cause issues.", "description")],
+					[("If the host intend for use as control plane in the cluster does not have a resolvable", "description")],
+					[("hostname it's recommended to use ", "description"), ("/etc/hosts", "path"), (" for this purpose.", "description")],
+				],
 				"description": [("Use ", "description"), ("HOST", "argument"), (" as control plane ", "description")],
 				"requires_arg": True,
 			},
