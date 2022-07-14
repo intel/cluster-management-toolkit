@@ -255,7 +255,7 @@ def rebuild_installation_info(state = None):
 	deb_versions = check_deb_versions(["kubeadm"])
 	if len(deb_versions) == 0 or deb_versions[0][1] == "<none>":
 		iktprint([("", "default")])
-		iktprint([("Critical:", "critical"), (" Failed to identify cluster; are you sure there's one installed? Aborting.", "default")], stderr = True)
+		iktprint([("Critical:", "critical"), (" Failed to get kubeadm version; are you sure there's a kubeadm-based cluster installed? Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 	else:
 		version = deb_versions[0][1]
@@ -1418,7 +1418,10 @@ def __find_requested_version(distro, version = None):
 		# If no version is specified, use the latest package revision.
 		versions = check_deb_versions(["kubeadm"])
 
-		if version is not None:
+		if len(versions) == 0:
+			iktprint([("Critical: ", "critical"), ("No candidate version for ", "default"), ("kubeadm", "programname"), (" available; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+		elif version is not None:
 			# The list is sorted in falling order, so the first match is the one we want, since that's the newest package revision.
 			for package_version in versions[0][3]:
 				if package_version.split("-")[0] == version:
@@ -2201,6 +2204,10 @@ def upgrade_control_plane(options = [], args = None):
 	iktprint([("\n• ", "separator"), ("Running sanity checks", "action")])
 
 	deb_versions = check_deb_versions(["kubeadm"])
+
+	if len(deb_versions) == 0:
+		iktprint([("Critical: ", "critical"), ("No candidate version for ", "default"), ("kubeadm", "programname"), (" available; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
 	if requested_version is not None:
 		if requested_version not in deb_versions[0][3]:
