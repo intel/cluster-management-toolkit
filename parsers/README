@@ -23,7 +23,7 @@ to treat images from different servers differently you simply match against the 
     image_name: (matches using startswith)
     container_type: (either container or init_container)
   parser_rules:
-  - rule
+  - name: rule
     ...
     ...
 
@@ -42,10 +42,10 @@ Some possible parser rules:
   message key=value key=value
   respectively
 * json:
-  this rule (tries to) format messages where the an entire line is a JSON expression
+  this rule (tries to) format messages where the entire line is a JSON expression
 * json_line:
   this rule (tries to) format messages where a JSON expression is spread over multiple lines;
-  there's some heuristics involved, and you might need to provide extra information
+  some heuristics are involved, and you might need to provide extra information
 * glog:
   this rule extracts severity and facility from GLOG style log entries
 * override_severity:

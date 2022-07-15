@@ -83,7 +83,7 @@ infoview:
           pathtype: "substitution"
           subpath: "namespace"
           when:
-          - key: namespace
+          - key: "namespace"
             isdict: true
           substitute: "True"
           default: "False"
@@ -102,7 +102,7 @@ infoview:
         - path: "spec#controllers"
           pathtype: "substitution"
           when:
-          - key: node
+          - key: "node"
             isdict: true
           substitute: "True"
           default: "False"
@@ -117,17 +117,17 @@ infoview:
         paths:
         - path: "spec#controllers#node#hostEndpoint"
           pathtype: "str"
-          default: Disabled
+          default: "Disabled"
       configuration_node_controller_host_endpoint_auto_create:
         header: [["      Endpoint Autocreate:", ["main", "infoheader"]]]
         paths:
         - path: "spec#controllers#node#hostEndpoint#autoCreate"
           pathtype: "str"
-          default: Disabled
+          default: "Disabled"
       configuration_node_controller_sync_labels:
         header: [["    Sync Labels:", ["main", "infoheader"]]]
         path: "spec#controllers#node#syncLabels"
-        default: Enabled
+        default: "Enabled"
         type: "raw"
       configuration_policy_controller_header:
         header: [["  Policy Controller:", ["main", "infoheader"]]]
@@ -137,7 +137,7 @@ infoview:
         - path: "spec#controllers"
           pathtype: "substitution"
           when:
-          - key: policy
+          - key: "policy"
             isdict: true
           substitute: "True"
           default: "False"
@@ -155,7 +155,7 @@ infoview:
         - path: "spec#controllers"
           pathtype: "substitution"
           when:
-          - key: serviceAccount
+          - key: "serviceAccount"
             isdict: true
           substitute: "True"
           default: "False"
@@ -173,7 +173,7 @@ infoview:
         - path: "spec#controllers"
           pathtype: "substitution"
           when:
-          - key: workloadEndpoint
+          - key: "workloadEndpoint"
             isdict: true
           substitute: "True"
           default: "False"
@@ -207,16 +207,16 @@ infoview:
           pathtype: "substitution"
           subpath: "namespace"
           when:
-          - key: namespace
+          - key: "namespace"
             notnone: true
           substitute: "True"
         - path: "status#runningConfig#controllers"
           pathtype: "substitution"
           subpath: "namespace"
           when:
-          - key: namespace
+          - key: "namespace"
             notmissing: true
-          - key: namespace
+          - key: "namespace"
             none: true
           substitute: "False"
         formatter: "list"
@@ -233,15 +233,15 @@ infoview:
         - path: "status#runningConfig#controllers"
           pathtype: "substitution"
           when:
-          - key: node
+          - key: "node"
             notnone: true
           substitute: "True"
         - path: "status#runningConfig#controllers"
           pathtype: "substitution"
           when:
-          - key: node
+          - key: "node"
             notmissing: true
-          - key: node
+          - key: "node"
             none: true
           substitute: "False"
       running_node_controller_reconciler_period:
@@ -255,15 +255,15 @@ infoview:
         - path: "status#runningConfig#controllers#node"
           pathtype: "substitution"
           when:
-          - key: hostEndpoint
+          - key: "hostEndpoint"
             notnone: true
           substitute: "True"
         - path: "status#runningConfig#controllers#node"
           pathtype: "substitution"
           when:
-          - key: hostEndpoint
+          - key: "hostEndpoint"
             notmissing: true
-          - key: hostEndpoint
+          - key: "hostEndpoint"
             none: true
           substitute: "False"
       running_node_controller_host_endpoint_auto_create:
@@ -283,15 +283,15 @@ infoview:
         - path: "status#runningConfig#controllers"
           pathtype: "substitution"
           when:
-          - key: policy
+          - key: "policy"
             notnone: true
           substitute: "True"
         - path: "status#runningConfig#controllers"
           pathtype: "substitution"
           when:
-          - key: policy
+          - key: "policy"
             notmissing: true
-          - key: policy
+          - key: "policy"
             none: true
           substitute: "False"
       running_policy_controller_reconciler_period:
@@ -307,15 +307,15 @@ infoview:
         - path: "status#runningConfig#controllers"
           pathtype: "substitution"
           when:
-          - key: serviceAccount
+          - key: "serviceAccount"
             notnone: true
           substitute: "True"
         - path: "status#runningConfig#controllers"
           pathtype: "substitution"
           when:
-          - key: serviceAccount
+          - key: "serviceAccount"
             notmissing: true
-          - key: serviceAccount
+          - key: "serviceAccount"
             none: true
           substitute: "False"
       running_service_account_controller_reconciler_period:
@@ -331,15 +331,15 @@ infoview:
         - path: "status#runningConfig#controllers"
           pathtype: "substitution"
           when:
-          - key: workloadEndpoint
+          - key: "workloadEndpoint"
             notnone: true
           substitute: "True"
         - path: "status#runningConfig#controllers"
           pathtype: "substitution"
           when:
-          - key: workloadEndpoint
+          - key: "workloadEndpoint"
             notmissing: true
-          - key: workloadEndpoint
+          - key: "workloadEndpoint"
             none: true
           substitute: "False"
       running_workload_endpoint_controller_reconciler_period:

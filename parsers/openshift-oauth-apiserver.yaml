@@ -1,12 +1,12 @@
-- name: openshift-oauth-apiserver
+- name: "openshift-oauth-apiserver"
   show_in_selector: false
   matchkeys:
-  - pod_name: apiserver
-    container_name: oauth-apiserver
+  - pod_name: "apiserver"
+    container_name: "oauth-apiserver"
   parser_rules:
-  - name: glog
-  - name: override_severity
+  - name: "glog"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
-      matchkey: "http2: server: error"
-      loglevel: error
+    - matchtype: "startswith"
+      matchkey: "http2: \"server\": error"
+      loglevel: "error"

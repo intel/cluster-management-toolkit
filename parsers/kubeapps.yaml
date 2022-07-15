@@ -1,41 +1,41 @@
-- name: kubeapps
+- name: "kubeapps"
   show_in_selector: false
   matchkeys:
-  - pod_name: kubeapps
-    container_name: controller
+  - pod_name: "kubeapps"
+    container_name: "controller"
   parser_rules:
-  - name: glog
-  - name: key_value
-  - name: expand_event
-  - name: override_severity
+  - name: "glog"
+  - name: "key_value"
+  - name: "expand_event"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
-- name: kubeapps
+      loglevel: "debug"
+- name: "kubeapps"
   show_in_selector: false
   matchkeys:
-  - pod_name: kubeapps
-    container_name: dashboard
-  - pod_name: kubeapps
-    container_name: nginx
+  - pod_name: "kubeapps"
+    container_name: "dashboard"
+  - pod_name: "kubeapps"
+    container_name: "nginx"
   parser_rules:
-  - name: http
-- name: kubeapps
+  - name: "http"
+- name: "kubeapps"
   show_in_selector: false
   matchkeys:
-  - pod_name: kubeapps
-    container_name: kubeappsapis
+  - pod_name: "kubeapps"
+    container_name: "kubeappsapis"
   parser_rules:
-  - name: glog
-- name: kubeapps
+  - name: "glog"
+- name: "kubeapps"
   show_in_selector: false
   matchkeys:
-  - pod_name: kubeapps
-    container_name: kubeops
+  - pod_name: "kubeapps"
+    container_name: "kubeops"
   parser_rules:
-  - name: glog
-  - name: custom_splitter
+  - name: "glog"
+  - name: "custom_splitter"
     options:
       regex: '^\[(\S+?)\] (.*)'
       facility:
@@ -43,23 +43,23 @@
         - 1
       message:
         field: 2
-  - name: ts_8601
-  - name: http
-- name: kubeapps
+  - name: "ts_8601"
+  - name: "http"
+- name: "kubeapps"
   show_in_selector: false
   matchkeys:
-  - pod_name: kubeapps
-    image_name: /bitnami/postgresql
+  - pod_name: "kubeapps"
+    image_name: "/bitnami/postgresql"
   parser_rules:
-  - name: strip_ansicodes
-  # FIXME: This should be modified to use custom_splitter instead
-  - name: ts_8601_tz
-  - name: facility_hh_mm_ss_ms_severity
-  - name: strip_bracketed_pid
-- name: kubeapps
+  - name: "strip_ansicodes"
+  # FIXME: "This" should be modified to use custom_splitter instead
+  - name: "ts_8601_tz"
+  - name: "facility_hh_mm_ss_ms_severity"
+  - name: "strip_bracketed_pid"
+- name: "kubeapps"
   show_in_selector: false
   matchkeys:
-  - pod_name: apprepo
-    container_name: sync
+  - pod_name: "apprepo"
+    container_name: "sync"
   parser_rules:
-  - name: glog
+  - name: "glog"

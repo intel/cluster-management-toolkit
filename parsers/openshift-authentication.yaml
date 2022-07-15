@@ -1,17 +1,17 @@
-- name: openshift-authentication
+- name: "openshift-authentication"
   show_in_selector: false
   matchkeys:
-  - pod_name: authentication-operator
-    container_name: openshift-authentication-operator
-  - pod_name: authentication-operator
-    container_name: authentication-operator
-  - pod_name: oauth-openshift
-    container_name: oauth-openshift
+  - pod_name: "authentication-operator"
+    container_name: "openshift-authentication-operator"
+  - pod_name: "authentication-operator"
+    container_name: "authentication-operator"
+  - pod_name: "oauth-openshift"
+    container_name: "oauth-openshift"
   parser_rules:
-  - name: glog
-  - name: expand_event
-  - name: override_severity
+  - name: "glog"
+  - name: "expand_event"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "cluster-authentication-operator version"
-      loglevel: notice
+      loglevel: "notice"

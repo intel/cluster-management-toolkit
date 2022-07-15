@@ -1,15 +1,15 @@
-- name: pmem-csi
+- name: "pmem-csi"
   show_in_selector: false
   matchkeys:
-  - container_name: pmem-driver
-  - container_name: pmem-csi-operator
+  - container_name: "pmem-driver"
+  - container_name: "pmem-csi-operator"
   parser_rules:
-  - name: glog
-  - name: override_severity
+  - name: "glog"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "\"PMEM-CSI started.\" version="
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
+      loglevel: "debug"

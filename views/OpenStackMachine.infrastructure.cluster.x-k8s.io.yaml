@@ -26,8 +26,8 @@ listview:
         subpaths:
         - "name"
         when:
-          key: kind
-          eq: Machine
+          key: "kind"
+          eq: "Machine"
       formatter: "list"
       formatting:
         field_colors:
@@ -72,11 +72,11 @@ infoview:
         - path: "metadata#ownerReferences"
           pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
           type: ["kind", "api_group", "name"]
         default: "<none>"
@@ -137,10 +137,10 @@ infoview:
         - path: "status#addresses"
           pathtype: "items"
           subpaths:
-          - address
+          - "address"
           when:
-            key: type
-            eq: InternalIP
+            key: "type"
+            eq: "InternalIP"
         formatter: "address"
       provider_id:
         header: [["Provider ID:", ["main", "infoheader"]]]

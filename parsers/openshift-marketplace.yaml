@@ -1,21 +1,21 @@
-- name: openshift-marketplace
+- name: "openshift-marketplace"
   show_in_selector: false
   matchkeys:
-  - pod_name: certified-operators
-    container_name: registry-server
-  - pod_name: community-operators
-    container_name: registry-server
-  - pod_name: redhat-operators
-    container_name: registry-server
-  - pod_name: redhat-marketplace
-    container_name: registry-server
-  - pod_name: marketplace-operator
-    container_name: marketplace-operator
+  - pod_name: "certified-operators"
+    container_name: "registry-server"
+  - pod_name: "community-operators"
+    container_name: "registry-server"
+  - pod_name: "redhat-operators"
+    container_name: "registry-server"
+  - pod_name: "redhat-marketplace"
+    container_name: "registry-server"
+  - pod_name: "marketplace-operator"
+    container_name: "marketplace-operator"
   parser_rules:
-  - name: strip_ansicodes
-  - name: glog
-  - name: key_value
-  - name: custom_splitter
+  - name: "strip_ansicodes"
+  - name: "glog"
+  - name: "key_value"
+  - name: "custom_splitter"
     options:
       regex: '^\[([a-z]+?)\] (.*)'
       facility:
@@ -23,8 +23,8 @@
         - 1
       message:
         field: 2
-  - name: override_severity
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "operator-sdk Version"
-      loglevel: warning
+      loglevel: "warning"

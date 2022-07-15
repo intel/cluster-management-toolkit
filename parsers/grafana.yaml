@@ -1,11 +1,11 @@
-- name: grafana
+- name: "grafana"
   show_in_selector: false
   matchkeys:
-  - pod_name: grafana
-    container_name: grafana
+  - pod_name: "grafana"
+    container_name: "grafana"
   parser_rules:
-  - name: key_value
-  - name: json
+  - name: "key_value"
+  - name: "json"
     options:
       severities:
       - "@level"
@@ -13,8 +13,8 @@
       - "@timestamp"
       messages:
       - "@message"
-  - name: override_severity
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Starting Grafana"
-      loglevel: notice
+      loglevel: "notice"

@@ -1,19 +1,19 @@
-- name: kubevirt-cdi
+- name: "kubevirt-cdi"
   show_in_selector: false
   matchkeys:
-  - pod_name: cdi-apiserver
-  - pod_name: cdi-deployment
-  - pod_name: cdi-operator
-  - pod_name: cdi-uploadproxy
+  - pod_name: "cdi-apiserver"
+  - pod_name: "cdi-deployment"
+  - pod_name: "cdi-operator"
+  - pod_name: "cdi-uploadproxy"
   parser_rules:
-  - name: ts_8601
-  - name: glog
-  - name: json
-  - name: override_severity
+  - name: "ts_8601"
+  - name: "glog"
+  - name: "json"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
-      matchkey: "http: TLS handshake error"
-      loglevel: error
-    - matchtype: startswith
+    - matchtype: "startswith"
+      matchkey: "http: \"TLS\" handshake error"
+      loglevel: "error"
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
+      loglevel: "debug"

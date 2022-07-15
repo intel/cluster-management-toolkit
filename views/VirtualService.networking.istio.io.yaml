@@ -33,11 +33,11 @@ infoview:
         - path: "metadata#ownerReferences"
           pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
           type: ["kind", "api_group", "name"]
         default: "<none>"
@@ -56,9 +56,9 @@ infoview:
         - path: "spec#exportTo"
           pathtype: "remap"
           substitutions:
-            "*": All
-            ".": Same
-          default: All
+            "*": "All"
+            ".": "Same"
+          default: "All"
         type: "raw"
         formatter: "list"
       gateways:

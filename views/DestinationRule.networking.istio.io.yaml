@@ -175,13 +175,13 @@ infoview:
         header: [["    Upgrade HTTP1.1 to HTTP2:", ["main", "infoheader"]]]
         path: "spec#trafficPolicy#connectionPool#http#h2UpgradePolicy"
         type: "str"
-        default: DEFAULT
+        default: "DEFAULT"
       traffic_policy_outlier_detection_header:
         header: [["  Outlier Detection:", ["main", "infoheader"]]]
       traffic_policy_outlier_detection_consecutive_gateway_errors:
         header: [["    Consecutive Gateway Errors:", ["main", "infoheader"]]]
         path: "spec#trafficPolicy#outlierDetection#consecutiveGatewayErrors"
-        default: Disabled
+        default: "Disabled"
         type: "raw"
         formatter: "value_mapper"
         formatting:
@@ -279,14 +279,13 @@ infoview:
         - path: "spec#exportTo"
           pathtype: "remap"
           substitutions:
-            "*": All
-            ".": Same
-          default: All
-
-        # Subsets essentially have same kind of DestinationRules as their parent (except they cannot have subsets, TTBOMK)
-        # Since we need to list subsets anyway, treat all Traffic Policies for the parent as yet another subset, but
-        # with a different (fake) type
-        #
-        # Show the information in the logpad, not in the infopad, that way it won't cause crash on resize,
-        # especially once we had the remaining information
-        #listpad: { SUBSETS }
+            "*": "All"
+            ".": "Same"
+          default: "All"
+# Subsets essentially have same kind of DestinationRules as their parent (except they cannot have subsets, TTBOMK)
+# Since we need to list subsets anyway, treat all Traffic Policies for the parent as yet another subset, but
+# with a different (fake) type
+#
+# Show the information in the logpad, not in the infopad, that way it won't cause crash on resize,
+# especially once we had the remaining information
+# listpad: { "SUBSETS" }

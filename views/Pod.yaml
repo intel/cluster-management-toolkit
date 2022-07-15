@@ -36,11 +36,11 @@ listview:
       - path: "metadata#ownerReferences"
         pathtype: "items"
         subpaths:
-        - kind
-        - apiVersion
-        - name
+        - "kind"
+        - "apiVersion"
+        - "name"
         when:
-          key: controller
+          key: "controller"
           eq: true
         type: ["kind", "api_group", "name"]
       formatter: "list"
@@ -73,13 +73,13 @@ listview:
       type: "str"
       formatting:
         field_colors:
-          - type: "host"
+        - type: "host"
     phase:
       header: "Phase:"
       paths:
       - path: "metadata#deletionTimestamp"
         pathtype: "substitution"
-        substitute: Terminating
+        substitute: "Terminating"
         else: ["status#phase"]
         when:
           key: "metadata#deletionTimestamp"
@@ -144,13 +144,13 @@ listview:
   actions:
     actionlist:
       "Delete resource":
-        description: Delete resource
+        description: "Delete resource"
         confirm: true
-        actionfunc: delete_resource
+        actionfunc: "delete_resource"
       "Force delete resource":
-        description: Delete resource (No grace period)
+        description: "Delete resource (No grace period)"
         confirm: true
-        actionfunc: force_delete_resource
+        actionfunc: "force_delete_resource"
   shortcuts:
     "Show Evicted Pods":
       key: "e"
@@ -264,7 +264,7 @@ infoview:
         paths:
         - path: "metadata#deletionTimestamp"
           pathtype: "substitution"
-          substitute: Terminating
+          substitute: "Terminating"
           else: ["status#phase"]
           when:
             key: "metadata#deletionTimestamp"

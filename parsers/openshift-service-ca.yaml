@@ -1,22 +1,22 @@
-- name: openshift-service-ca
+- name: "openshift-service-ca"
   show_in_selector: false
   matchkeys:
-  - pod_name: service-ca
-    container_name: service-ca-controller
-  - pod_name: service-ca-operator
-    container_name: service-ca-operator
+  - pod_name: "service-ca"
+    container_name: "service-ca-controller"
+  - pod_name: "service-ca-operator"
+    container_name: "service-ca-operator"
   parser_rules:
-  - name: glog
-  - name: expand_event
-  - name: key_value_with_leading_message
-  - name: override_severity
+  - name: "glog"
+  - name: "expand_event"
+  - name: "key_value_with_leading_message"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "service-ca-controller version"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "service-ca-operator version"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
+      loglevel: "debug"

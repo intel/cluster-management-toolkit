@@ -25,8 +25,8 @@ listview:
         pathtype: "items"
         subpath: "status"
         when:
-        - key: type
-          eq: LiveMigratable
+        - key: "type"
+          eq: "LiveMigratable"
       type: "str"
     node_name:
       header: "Node Name:"
@@ -75,8 +75,8 @@ listview:
         pathtype: "items"
         subpath: "status"
         when:
-        - key: type
-          eq: Paused
+        - key: "type"
+          eq: "Paused"
       type: "str"
     ready:
       header: "Ready:"
@@ -85,8 +85,8 @@ listview:
         pathtype: "items"
         subpath: "status"
         when:
-        - key: type
-          eq: Ready
+        - key: "type"
+          eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -112,11 +112,11 @@ infoview:
         - path: "metadata#ownerReferences"
           pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
           type: ["kind", "api_group", "name"]
         default: "<none>"

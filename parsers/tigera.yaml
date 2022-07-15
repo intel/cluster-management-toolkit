@@ -1,14 +1,14 @@
-- name: tigera
+- name: "tigera"
   show_in_selector: false
   matchkeys:
-  - container_name: tigera-operator
+  - container_name: "tigera-operator"
   parser_rules:
-  - name: glog
-  - name: ts_8601
-  - name: bracketed_severity
-  - name: json
-  - name: override_severity
+  - name: "glog"
+  - name: "ts_8601"
+  - name: "bracketed_severity"
+  - name: "json"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Version: "
-      loglevel: notice
+      loglevel: "notice"

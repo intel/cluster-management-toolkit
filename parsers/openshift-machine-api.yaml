@@ -1,28 +1,28 @@
-- name: machine-api
+- name: "machine-api"
   show_in_selector: false
   matchkeys:
-  - pod_name: machine-api
-    container_name: machineset-controller
-  - pod_name: machine-api
-    container_name: machine-controller
-  - pod_name: machine-api
-    container_name: nodelink-controller
-  - pod_name: machine-api
-    container_name: machine-healthcheck-controller
-  - pod_name: machine-api
-    container_name: machine-api-operator
+  - pod_name: "machine-api"
+    container_name: "machineset-controller"
+  - pod_name: "machine-api"
+    container_name: "machine-controller"
+  - pod_name: "machine-api"
+    container_name: "nodelink-controller"
+  - pod_name: "machine-api"
+    container_name: "machine-healthcheck-controller"
+  - pod_name: "machine-api"
+    container_name: "machine-api-operator"
   parser_rules:
-  - name: ts_8601
-  - name: glog
-  - name: expand_event
-  - name: override_severity
+  - name: "ts_8601"
+  - name: "glog"
+  - name: "expand_event"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Version:"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
-    - matchtype: startswith
-      matchkey: "http: TLS handshake error"
-      loglevel: error
+      loglevel: "debug"
+    - matchtype: "startswith"
+      matchkey: "http: \"TLS\" handshake error"
+      loglevel: "error"

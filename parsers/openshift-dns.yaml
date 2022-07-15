@@ -1,27 +1,27 @@
-- name: openshift-dns
+- name: "openshift-dns"
   show_in_selector: false
   matchkeys:
-  - pod_name: dns-default
-    container_name: dns
+  - pod_name: "dns-default"
+    container_name: "dns"
   parser_rules:
-  - name: glog
-  - name: bracketed_severity
-    default_loglevel: info
-  - name: override_severity
+  - name: "glog"
+  - name: "bracketed_severity"
+    default_loglevel: "info"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "CoreDNS"
-      loglevel: notice
-- name: openshift-dns
+      loglevel: "notice"
+- name: "openshift-dns"
   show_in_selector: false
   matchkeys:
-  - pod_name: dns-operator
-    container_name: dns-operator
+  - pod_name: "dns-operator"
+    container_name: "dns-operator"
   parser_rules:
-  - name: glog
-  - name: key_value
-  - name: override_severity
+  - name: "glog"
+  - name: "key_value"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
+      loglevel: "debug"

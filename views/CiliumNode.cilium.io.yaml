@@ -93,12 +93,12 @@ infoview:
         - path: "metadata#ownerReferences"
           pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: kind
-            eq: Node
+            key: "kind"
+            eq: "Node"
           type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
@@ -122,8 +122,8 @@ infoview:
       itemgetter_args:
         path: "spec#addresses"
         fields:
-        - ip
-        - type
+        - "ip"
+        - "type"
         formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
         # This isn't supported for now
         sortcolumn: "ip"

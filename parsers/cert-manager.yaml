@@ -1,19 +1,19 @@
-- name: cert-manager
+- name: "cert-manager"
   show_in_selector: false
   matchkeys:
-  - pod_name: cert-manager
+  - pod_name: "cert-manager"
   parser_rules:
-  - name: glog
-  - name: key_value_with_leading_message
+  - name: "glog"
+  - name: "key_value_with_leading_message"
     options:
       versions:
       - "version"
       - "\"version\""
-  - name: override_severity
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "\"starting\" version"
-      loglevel: notice
-    - matchtype: regex
+      loglevel: "notice"
+    - matchtype: "regex"
       matchkey: 'cert-manager.*starting controller.*version'
-      loglevel: notice
+      loglevel: "notice"

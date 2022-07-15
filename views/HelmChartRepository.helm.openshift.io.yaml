@@ -18,10 +18,10 @@ infoview:
         - path: "metadata#ownerReferences"
           pathtype: "items"
           subpaths:
-          - name
+          - "name"
           when:
-            key: kind
-            eq: ClusterVersion
+            key: "kind"
+            eq: "ClusterVersion"
         default: "<none>"
       connection_config_header:
         header: [["Connection Config:", ["main", "infoheader"]]]
@@ -70,7 +70,7 @@ infoview:
       action_args:
         _pass_obj: true
         kind: "ConfigMap"
-        namespace: openshift-config
+        namespace: "openshift-config"
         name_path: "spec#connectionConfig#ca#name"
     "Open TLS client configuration Secret":
       key: "t"
@@ -81,5 +81,5 @@ infoview:
       action_args:
         _pass_obj: true
         kind: "Secret"
-        namespace: openshift-config
+        namespace: "openshift-config"
         name_path: "spec#connectionConfig#tlsClientConfig#name"

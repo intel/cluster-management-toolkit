@@ -1,17 +1,17 @@
-- name: openvswitch
+- name: "openvswitch"
   show_in_selector: false
   matchkeys:
-  - pod_name: ovs
-    container_name: openvswitch
+  - pod_name: "ovs"
+    container_name: "openvswitch"
   parser_rules:
-  - name: ts_8601
-  - name: modinfo
-  - name: custom_splitter
+  - name: "ts_8601"
+  - name: "modinfo"
+  - name: "custom_splitter"
     options:
       regex: '^\|\d+?\|([^|]+?)\|([A-Z]{4})\|(.*)'
       severity:
         field: 2
-        transform: 4letter
+        transform: "4letter"
       facility:
         fields:
         - 1

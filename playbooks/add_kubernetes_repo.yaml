@@ -62,6 +62,6 @@
     when: ansible_os_family == 'RedHat'
   - name: Installing dnf-plugin-versionlock
     ansible.builtin.dnf:
-      update_cache: yes
+      update_cache: true
       name: dnf-plugin-versionlock
     when: ansible_os_family == 'RedHat'

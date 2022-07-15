@@ -1,15 +1,15 @@
-- name: openshift-network
+- name: "openshift-network"
   show_in_selector: false
   matchkeys:
-  - pod_name: network-operator
-    container_name: network-operator
+  - pod_name: "network-operator"
+    container_name: "network-operator"
   parser_rules:
-  - name: glog
-  - name: override_severity
+  - name: "glog"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "network-operator version"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
+      loglevel: "debug"

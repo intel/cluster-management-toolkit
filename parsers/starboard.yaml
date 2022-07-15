@@ -1,39 +1,39 @@
-- name: starboard
+- name: "starboard"
   show_in_selector: false
   matchkeys:
-  - pod_name: starboard-operator
-  - image_name: aquasec/kube-hunter
-  - image_name: aquasec/kube-bench
+  - pod_name: "starboard-operator"
+  - image_name: "aquasec/kube-hunter"
+  - image_name: "aquasec/kube-bench"
   parser_rules:
-  - name: glog
-  - name: json
-  - name: override_severity
+  - name: "glog"
+  - name: "json"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Starting operator"
-      loglevel: notice
-- name: starboard
+      loglevel: "notice"
+- name: "starboard"
   show_in_selector: false
   matchkeys:
-  - image_name: aquasec/trivy
-    container_type: init_container
+  - image_name: "aquasec/trivy"
+    container_type: "init_container"
   parser_rules:
-  - name: strip_ansicodes
-  - name: ts_8601
-  - name: 4letter_spaced_severity
-- name: starboard
+  - name: "strip_ansicodes"
+  - name: "ts_8601"
+  - name: "4letter_spaced_severity"
+- name: "starboard"
   show_in_selector: false
   matchkeys:
-  - image_name: aquasec/trivy
-    container_type: container
-  - image_name: /fairwinds/polaris
+  - image_name: "aquasec/trivy"
+    container_type: "container"
+  - image_name: "/fairwinds/polaris"
   parser_rules:
-  - name: json_line
+  - name: "json_line"
     options:
       block_start:
-      - matchtype: exact
+      - matchtype: "exact"
         matchkey: "{"
-        matchline: any
-      - matchtype: startswith
+        matchline: "any"
+      - matchtype: "startswith"
         matchkey: "  "
-        matchline: first
+        matchline: "first"

@@ -1,37 +1,37 @@
-- name: antrea-ovs
+- name: "antrea-ovs"
   show_in_selector: false
   matchkeys:
-  - pod_name: antrea-agent
-    container_name: antrea-ovs
+  - pod_name: "antrea-agent"
+    container_name: "antrea-ovs"
   parser_rules:
-  - name: strip_ansicodes
-  - name: substitute_bullets
+  - name: "strip_ansicodes"
+  - name: "substitute_bullets"
     prefix: " * "
-  - name: bracketed_timestamp_severity_facility
-    default_loglevel: info
-- name: antrea-agent
+  - name: "bracketed_timestamp_severity_facility"
+    default_loglevel: "info"
+- name: "antrea-agent"
   show_in_selector: false
   matchkeys:
-  - pod_name: antrea-agent
-    container_name: antrea-agent
+  - pod_name: "antrea-agent"
+    container_name: "antrea-agent"
   parser_rules:
-  - name: glog
-  - name: override_severity
+  - name: "glog"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Starting Antrea agent (version"
-      loglevel: notice
-- name: antrea-controller
+      loglevel: "notice"
+- name: "antrea-controller"
   show_in_selector: false
   matchkeys:
-  - pod_name: antrea-controller
+  - pod_name: "antrea-controller"
   parser_rules:
-  - name: glog
-  - name: override_severity
+  - name: "glog"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
-      matchkey: "http2: server: error"
-      loglevel: warning
-    - matchtype: startswith
+    - matchtype: "startswith"
+      matchkey: "http2: \"server\": error"
+      loglevel: "warning"
+    - matchtype: "startswith"
       matchkey: "Starting Antrea Controller (version"
-      loglevel: notice
+      loglevel: "notice"

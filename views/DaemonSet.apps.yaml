@@ -125,16 +125,16 @@ listview:
       align: "right"
   actions:
     actionlist:
-      #"Delete resource":
-      #  description: Delete resource
-      #  confirm: true
-      #  actionfunc: delete_resource
+      # "Delete resource":
+      #   description: Delete resource
+      #   confirm: true
+      #   actionfunc: delete_resource
       "Restart resource (Rollout)":
-        description: Restart resource
-        category: Resource Level
+        description: "Restart resource"
+        category: "Resource Level"
         metadata: [["Strategy: Rollout", ["windowwidget", "description"]]]
         confirm: true
-        actionfunc: restart_resource_rollout
+        actionfunc: "restart_resource_rollout"
 infoview:
   name: "Daemon Set Info"
   infopad:
@@ -147,11 +147,11 @@ infoview:
         - path: "metadata#ownerReferences"
           pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
           type: ["kind", "api_group", "name"]
         default: "<none>"

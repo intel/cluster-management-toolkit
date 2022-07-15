@@ -4,7 +4,7 @@ default_command: "operatorconditions"
 # Not sure OperatorCondition deserves something as generic as "condition"
 # even if the CRD thinks so
 command:
-#- conditions
+# - "conditions"
 - "opconds"
 - "opcond"
 listview:
@@ -29,7 +29,7 @@ infoview:
           - "apiVersion"
           - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
           type: ["kind", "api_group", "name"]
         formatter: "list"

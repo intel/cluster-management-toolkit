@@ -33,9 +33,9 @@ listview:
       - path: "ports"
         pathtype: "items"
         subpaths:
-        - name
-        - port
-        - protocol
+        - "name"
+        - "port"
+        - "protocol"
         type: "raw"
       formatter: "list"
       formatting:
@@ -52,8 +52,8 @@ listview:
       - path: "ports"
         pathtype: "items"
         subpaths:
-        - port
-        - protocol
+        - "port"
+        - "protocol"
         type: "raw"
       formatter: "list"
       formatting:
@@ -73,11 +73,11 @@ infoview:
         - path: "metadata#ownerReferences"
           pathtype: "items"
           subpaths:
-          - kind
-          - apiVersion
-          - name
+          - "kind"
+          - "apiVersion"
+          - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
           type: ["kind", "api_group", "name"]
         default: "<none>"
@@ -155,7 +155,7 @@ infoview:
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
     "Open target reference":
-      key: enter
+      key: "enter"
       helptext: "Open info page for selected resource"
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"

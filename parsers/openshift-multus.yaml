@@ -1,35 +1,35 @@
-- name: openshift-multus
+- name: "openshift-multus"
   show_in_selector: false
   matchkeys:
-  - pod_name: multus
-    container_name: kube-multus
+  - pod_name: "multus"
+    container_name: "kube-multus"
   parser_rules:
-  - name: ts_8601
-  - name: json
+  - name: "ts_8601"
+  - name: "json"
     options:
       versions:
-      - cniVersion
-  - name: override_severity
+      - "cniVersion"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "WARN: "
-      loglevel: warning
-- name: openshift-multus
+      loglevel: "warning"
+- name: "openshift-multus"
   show_in_selector: false
   matchkeys:
-  - pod_name: multus-admission-controller
-    container_name: multus-admission-controller
-  - pod_name: network-metrics-daemon
-    container_name: network-metrics-daemon
-    image_name: /openshift
+  - pod_name: "multus-admission-controller"
+    container_name: "multus-admission-controller"
+  - pod_name: "network-metrics-daemon"
+    container_name: "network-metrics-daemon"
+    image_name: "/openshift"
   parser_rules:
-  - name: ts_8601
-  - name: glog
-  - name: override_severity
+  - name: "ts_8601"
+  - name: "glog"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
-      matchkey: "http: TLS handshake error"
-      loglevel: error
-    - matchtype: startswith
+    - matchtype: "startswith"
+      matchkey: "http: \"TLS\" handshake error"
+      loglevel: "error"
+    - matchtype: "startswith"
       matchkey: "Version:"
-      loglevel: notice
+      loglevel: "notice"

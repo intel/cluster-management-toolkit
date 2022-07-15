@@ -1,45 +1,45 @@
-- name: kube-scheduler
+- name: "kube-scheduler"
   show_in_selector: false
   matchkeys:
-  - pod_name: openshift-kube-scheduler
-    container_name: kube-scheduler
+  - pod_name: "openshift-kube-scheduler"
+    container_name: "kube-scheduler"
   parser_rules:
-  - name: glog
-  - name: yaml_line
+  - name: "glog"
+  - name: "yaml_line"
     options:
       block_start:
-      - matchtype: exact
+      - matchtype: "exact"
         matchkey: "-------------------------Configuration File Contents Start Here----------------------"
-        matchline: any
+        matchline: "any"
       block_end:
-      - matchtype: exact
+      - matchtype: "exact"
         matchkey: "------------------------------------Configuration File Contents End Here---------------------------------"
-        matchline: any
-      - matchtype: empty
-  - name: yaml_line
+        matchline: "any"
+      - matchtype: "empty"
+  - name: "yaml_line"
     options:
       block_start:
-      - matchtype: exact
+      - matchtype: "exact"
         matchkey: "Using component config:"
-        matchline: any
+        matchline: "any"
       block_end:
-      - matchtype: empty
-  - name: expand_event
-  - name: key_value_with_leading_message
-  - name: override_severity
+      - matchtype: "empty"
+  - name: "expand_event"
+  - name: "key_value_with_leading_message"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
-    - matchtype: startswith
+      loglevel: "debug"
+    - matchtype: "startswith"
       matchkey: "Version: v"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "Starting Kubernetes Scheduler version"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "cert-recovery-controller version"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "openshift-cluster-kube-scheduler-operator version"
-      loglevel: notice
+      loglevel: "notice"

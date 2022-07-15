@@ -1,13 +1,13 @@
-- name: openshift-config
+- name: "openshift-config"
   show_in_selector: false
   matchkeys:
-  - pod_name: openshift-config-operator
-    container_name: openshift-config-operator
+  - pod_name: "openshift-config-operator"
+    container_name: "openshift-config-operator"
   parser_rules:
-  - name: glog
-  - name: expand_event
-  - name: override_severity
+  - name: "glog"
+  - name: "expand_event"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "config-operator version "
-      loglevel: notice
+      loglevel: "notice"

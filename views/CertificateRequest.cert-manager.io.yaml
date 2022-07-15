@@ -18,8 +18,8 @@ listview:
         pathtype: "items"
         subpath: "status"
         when:
-        - key: type
-          eq: Ready
+        - key: "type"
+          eq: "Ready"
         default: "<unknown>"
       formatter: "value_mapper"
       formatting:
@@ -53,8 +53,8 @@ listview:
         pathtype: "items"
         subpath: "message"
         when:
-        - key: type
-          eq: Ready
+        - key: "type"
+          eq: "Ready"
         default: ""
 infoview:
   name: "Certificate Request Info"
@@ -68,10 +68,10 @@ infoview:
         - path: "metadata#ownerReferences"
           pathtype: "items"
           subpaths:
-          - name
+          - "name"
           when:
-            key: kind
-            eq: Certificate
+            key: "kind"
+            eq: "Certificate"
         formatter: "list"
         formatting:
           field_colors:
@@ -83,8 +83,8 @@ infoview:
           pathtype: "items"
           subpath: "status"
           when:
-          - key: type
-            eq: Ready
+          - key: "type"
+            eq: "Ready"
           default: "<unknown>"
         formatter: "value_mapper"
         formatting:

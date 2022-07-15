@@ -1,33 +1,33 @@
-- name: jaeger
+- name: "jaeger"
   show_in_selector: false
   matchkeys:
-  - pod_name: jaeger
-    container_name: jaeger-operator
+  - pod_name: "jaeger"
+    container_name: "jaeger-operator"
   parser_rules:
-  - name: custom_splitter
+  - name: "custom_splitter"
     options:
       regex: '^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d\d\dZ)\s([A-Z]+)\s([^\s]+)\s(.*)'
       severity:
         field: 2
-        transform: 4letter
+        transform: "4letter"
       facility:
         fields:
         - 3
       message:
         field: 4
-  - name: glog
-  - name: key_value
+  - name: "glog"
+  - name: "key_value"
     options:
       versions:
-      - jaeger
-  - name: ts_8601
-- name: istio-tracing
+      - "jaeger"
+  - name: "ts_8601"
+- name: "istio-tracing"
   show_in_selector: false
   matchkeys:
-  - pod_name: istio-tracing
-    container_name: jaeger
-  - pod_name: jaeger
-    container_name: jaeger
+  - pod_name: "istio-tracing"
+    container_name: "jaeger"
+  - pod_name: "jaeger"
+    container_name: "jaeger"
   parser_rules:
-  - name: ts_8601
-  - name: json
+  - name: "ts_8601"
+  - name: "json"

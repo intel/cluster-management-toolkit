@@ -33,11 +33,11 @@ listview:
       - path: "metadata#ownerReferences"
         pathtype: "items"
         subpaths:
-        - kind
-        - apiVersion
-        - name
+        - "kind"
+        - "apiVersion"
+        - "name"
         when:
-          key: controller
+          key: "controller"
           eq: true
         type: ["kind", "api_group", "name"]
       default: "<none>"
@@ -137,7 +137,7 @@ infoview:
           - "apiVersion"
           - "name"
           when:
-            key: controller
+            key: "controller"
             eq: true
           type: ["kind", "api_group", "name"]
         default: "<none>"
@@ -268,9 +268,9 @@ infoview:
       itemgetter_args:
         path: "spec#kubeadmConfigSpec#files"
         fields:
-        - path
-        - owner
-        - permissions
+        - "path"
+        - "owner"
+        - "permissions"
       action: "call"
       action_call: "decode_and_view_file_templates"
       action_args:

@@ -21,7 +21,7 @@ infoview:
         - path: "metadata#ownerReferences"
           pathtype: "items"
           subpaths:
-          - name
+          - "name"
           when:
             key: "kind"
             eq: "ClusterVersion"
@@ -69,7 +69,7 @@ infoview:
       action_args:
         _pass_obj: true
         name_path: "status#integratedOAuthMetadata#name"
-        namespace: openshift-config-managed
+        namespace: "openshift-config-managed"
         kind: "ConfigMap"
     "Open Oauth metadata":
       key: "o"
@@ -80,7 +80,7 @@ infoview:
       action_args:
         _pass_obj: true
         name_path: "spec#oauthMetadata#name"
-        namespace: openshift-config
+        namespace: "openshift-config"
         kind: "ConfigMap"
     "Open webhook token authenticator config":
       key: "t"
@@ -91,5 +91,5 @@ infoview:
       action_args:
         _pass_obj: true
         name_path: "spec#webhookTokenAuthenticator#kubeConfig#name"
-        namespace: openshift-config
+        namespace: "openshift-config"
         kind: "Secret"

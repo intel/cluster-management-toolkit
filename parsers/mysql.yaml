@@ -1,22 +1,22 @@
-- name: mysql
+- name: "mysql"
   show_in_selector: false
   matchkeys:
-  - container_name: mysql
+  - container_name: "mysql"
   parser_rules:
-  - name: ts_8601
-  - name: custom_splitter
+  - name: "ts_8601"
+  - name: "custom_splitter"
     options:
       regex: '^(\d*?)\s?\[([A-Z][a-z]*?)\]\s(.*)'
       severity:
         field: 2
-        transform: str
+        transform: "str"
       facility:
         fields:
         - 1
       message:
         field: 3
-  - name: override_severity
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Version: "
-      loglevel: notice
+      loglevel: "notice"

@@ -1,12 +1,12 @@
-- name: openshift-machine-approver
+- name: "openshift-machine-approver"
   show_in_selector: false
   matchkeys:
-  - pod_name: machine-approver
-    container_name: machine-approver-controller
+  - pod_name: "machine-approver"
+    container_name: "machine-approver-controller"
   parser_rules:
-  - name: glog
-  - name: override_severity
+  - name: "glog"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
+      loglevel: "debug"

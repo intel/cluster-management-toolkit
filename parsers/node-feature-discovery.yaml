@@ -1,23 +1,23 @@
-- name: node-feature-discovery
+- name: "node-feature-discovery"
   show_in_selector: false
   matchkeys:
-  - pod_name: nfd-master
-  - pod_name: nfd-worker
-  - pod_name: nfd-topology-updater
+  - pod_name: "nfd-master"
+  - pod_name: "nfd-worker"
+  - pod_name: "nfd-topology-updater"
   parser_rules:
-  - name: ts_8601
-  - name: glog
-  - name: override_severity
+  - name: "ts_8601"
+  - name: "glog"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Node Feature Discovery Master v"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "Node Feature Discovery Worker v"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "Node Feature Discovery Topology Updater v"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "NodeName:"
-      loglevel: notice
+      loglevel: "notice"

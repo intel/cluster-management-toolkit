@@ -34,8 +34,8 @@ listview:
         pathtype: "items"
         subpath: "address"
         when:
-          key: type
-          eq: InternalIP
+          key: "type"
+          eq: "InternalIP"
         default: "<unset>"
       formatter: "list"
       formatting:
@@ -64,7 +64,7 @@ listview:
       - path: ["metadata#labels"]
         pathtype: "key_value"
         when:
-        - key_startswith: node-role.kubernetes.io
+        - key_startswith: "node-role.kubernetes.io"
         key:
           transform:
             "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
@@ -77,11 +77,11 @@ listview:
         pathtype: "substitution"
         subpath: "status"
         when:
-        - key: type
-          eq: Ready
-        - key: status
+        - key: "type"
+          eq: "Ready"
+        - key: "status"
           eq: "True"
-        substitute: Ready
+        substitute: "Ready"
       default: "Not Ready"
       formatter: "value_mapper"
       formatting:
@@ -105,7 +105,7 @@ listview:
           transform:
             "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
           regex: ["^[^/]*/(.*)"]
-        - effect
+        - "effect"
       formatter: "list"
       formatting:
         field_colors:
@@ -175,10 +175,10 @@ infoview:
         - path: "status#addresses"
           pathtype: "items"
           subpaths:
-          - address
+          - "address"
           when:
-            key: type
-            eq: ExternalIP
+            key: "type"
+            eq: "ExternalIP"
           default: ["<none>"]
         formatter: "address"
       internal_ips:
@@ -187,10 +187,10 @@ infoview:
         - path: "status#addresses"
           pathtype: "items"
           subpaths:
-          - address
+          - "address"
           when:
-            key: type
-            eq: InternalIP
+            key: "type"
+            eq: "InternalIP"
         formatter: "address"
       kernel_version:
         header: [["Kernel Version:", ["main", "infoheader"]]]
@@ -233,33 +233,33 @@ infoview:
           pathtype: "substitution"
           subpath: "status"
           when:
-          - key: type
-            eq: Ready
-          - key: status
+          - key: "type"
+            eq: "Ready"
+          - key: "status"
             eq: "True"
-          substitute: Ready
+          substitute: "Ready"
           else: ""
           default: null
         - path: "status#conditions"
           pathtype: "substitution"
           subpath: "status"
           when:
-          - key: type
-            eq: Ready
-          - key: status
+          - key: "type"
+            eq: "Ready"
+          - key: "status"
             eq: "False"
-          substitute: NotReady
+          substitute: "NotReady"
           else: ""
           default: null
         - path: "status#conditions"
           pathtype: "substitution"
           subpath: "status"
           when:
-          - key: type
-            eq: Ready
-          - key: status
+          - key: "type"
+            eq: "Ready"
+          - key: "status"
             eq: "Unknown"
-          substitute: Unreachable
+          substitute: "Unreachable"
           else: ""
           default: null
         formatter: "value_mapper"
@@ -284,9 +284,9 @@ infoview:
         - path: "spec#taints"
           pathtype: "items"
           subpaths:
-          - key
-          - value
-          - effect
+          - "key"
+          - "value"
+          - "effect"
         formatter: "list"
         formatting:
           field_colors:

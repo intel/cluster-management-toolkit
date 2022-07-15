@@ -1,20 +1,20 @@
-- name: knative-serving
+- name: "knative-serving"
   show_in_selector: false
   matchkeys:
   - image_regex: '^.*knative.*serving.*'
-    container_name: webhook
-  - pod_name: net-istio-webhook
-    container_name: webhook
-  - container_name: domainmapping-webhook
-  - pod_name: net-istio-controller
+    container_name: "webhook"
+  - pod_name: "net-istio-webhook"
+    container_name: "webhook"
+  - container_name: "domainmapping-webhook"
+  - pod_name: "net-istio-controller"
   - image_regex: '^.*knative.*serving.*'
-    container_name: controller
-  - container_name: domain-mapping
+    container_name: "controller"
+  - container_name: "domain-mapping"
   - image_regex: '^.*knative.*serving.*'
-    container_name: autoscaler
+    container_name: "autoscaler"
   - image_regex: '^.*knative.*serving.*'
-    container_name: activator
+    container_name: "activator"
   parser_rules:
-  - name: glog
-  - name: ts_8601
-  - name: json
+  - name: "glog"
+  - name: "ts_8601"
+  - name: "json"

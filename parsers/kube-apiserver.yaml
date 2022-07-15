@@ -1,32 +1,32 @@
-- name: kube-apiserver
+- name: "kube-apiserver"
   show_in_selector: false
   matchkeys:
-  - pod_name: kube-apiserver
+  - pod_name: "kube-apiserver"
   parser_rules:
-  - name: glog
-  - name: json
-  - name: key_value_with_leading_message
-  - name: expand_event
-  - name: override_severity
+  - name: "glog"
+  - name: "json"
+  - name: "key_value_with_leading_message"
+  - name: "expand_event"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Version: v"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "cert-regeneration-controller version"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "check-endpoints version"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "kube-apiserver-operator version"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
-    - matchtype: startswith
+      loglevel: "debug"
+    - matchtype: "startswith"
       matchkey: "ERROR "
-      loglevel: error
-    - matchtype: regex
+      loglevel: "error"
+    - matchtype: "regex"
       matchkey: 'Flag \S+? has been deprecated'
-      loglevel: warning
+      loglevel: "warning"

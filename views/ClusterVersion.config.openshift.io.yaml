@@ -17,10 +17,10 @@ listview:
       - path: "status#conditions"
         pathtype: "items"
         subpaths:
-        - status
+        - "status"
         when:
-          key: type
-          eq: Available
+          key: "type"
+          eq: "Available"
       formatter: "value_mapper"
       formatting:
         mapping:
@@ -43,10 +43,10 @@ listview:
       - path: "status#conditions"
         pathtype: "items"
         subpaths:
-        - status
+        - "status"
         when:
-          key: type
-          eq: Progressing
+          key: "type"
+          eq: "Progressing"
       formatter: "value_mapper"
       formatting:
         mapping:
@@ -69,20 +69,20 @@ listview:
       - path: "status#conditions"
         pathtype: "items"
         subpaths:
-        - message
+        - "message"
         when:
-          key: type
-          eq: Progressing
+          key: "type"
+          eq: "Progressing"
     version:
       header: "Version:"
       paths:
       - path: "status#history"
         pathtype: "items"
         subpaths:
-        - version
+        - "version"
         when:
-          key: state
-          eq: Completed
+          key: "state"
+          eq: "Completed"
       type: "str"
       formatting:
         field_colors:

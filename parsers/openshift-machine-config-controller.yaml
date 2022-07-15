@@ -1,11 +1,11 @@
-- name: machine-config-controller
+- name: "machine-config-controller"
   show_in_selector: false
   matchkeys:
-  - container_name: machine-config-
-  - container_name: oauth-proxy
+  - container_name: "machine-config-"
+  - container_name: "oauth-proxy"
   parser_rules:
-  - name: glog
-  - name: custom_splitter
+  - name: "glog"
+  - name: "custom_splitter"
     options:
       regex: '^\d{4}/\d\d/\d\d \d\d:\d\d:\d\d ([^:]+:[^:]+): (.*)'
       facility:
@@ -13,15 +13,15 @@
         - 1
       message:
         field: 2
-  - name: expand_event
-  - name: override_severity
+  - name: "expand_event"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Version:"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
-    - matchtype: startswith
+      loglevel: "debug"
+    - matchtype: "startswith"
       matchkey: "Error syncing "
-      loglevel: error
+      loglevel: "error"

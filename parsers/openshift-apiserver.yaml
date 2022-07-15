@@ -1,26 +1,26 @@
-- name: openshift-apiserver
+- name: "openshift-apiserver"
   show_in_selector: false
   matchkeys:
-  - pod_name: apiserver
-    container_name: openshift-apiserver-check-endpoints
-  - pod_name: apiserver
-    container_name: openshift-apiserver
-  - pod_name: openshift-apiserver-operator
-    container_name: openshift-apiserver-operator
+  - pod_name: "apiserver"
+    container_name: "openshift-apiserver-check-endpoints"
+  - pod_name: "apiserver"
+    container_name: "openshift-apiserver"
+  - pod_name: "openshift-apiserver-operator"
+    container_name: "openshift-apiserver-operator"
   parser_rules:
-  - name: glog
-  - name: expand_event
-  - name: override_severity
+  - name: "glog"
+  - name: "expand_event"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "openshift-apiserver-operator version"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "check-endpoints version"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
-    - matchtype: startswith
-      matchkey: "http2: server: error"
-      loglevel: error
+      loglevel: "debug"
+    - matchtype: "startswith"
+      matchkey: "http2: \"server\": error"
+      loglevel: "error"

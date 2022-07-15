@@ -1,26 +1,26 @@
-- name: openshift-image-registry
+- name: "openshift-image-registry"
   show_in_selector: false
   matchkeys:
-  - pod_name: cluster-image-registry
-    container_name: cluster-image-registry
+  - pod_name: "cluster-image-registry"
+    container_name: "cluster-image-registry"
   parser_rules:
-  - name: glog
-  - name: expand_event
-  - name: override_severity
+  - name: "glog"
+  - name: "expand_event"
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
+    - matchtype: "startswith"
       matchkey: "Cluster Image Registry Operator Version"
-      loglevel: notice
-    - matchtype: startswith
+      loglevel: "notice"
+    - matchtype: "startswith"
       matchkey: "Trace["
-      loglevel: debug
-- name: openshift-image-registry
+      loglevel: "debug"
+- name: "openshift-image-registry"
   show_in_selector: false
   matchkeys:
-  - pod_name: image-registry
-    container_name: registry
+  - pod_name: "image-registry"
+    container_name: "registry"
   parser_rules:
-  - name: key_value
+  - name: "key_value"
     options:
       versions:
-      - distribution_version
+      - "distribution_version"

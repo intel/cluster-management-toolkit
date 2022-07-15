@@ -1,41 +1,41 @@
-- name: olm
+- name: "olm"
   show_in_selector: false
   matchkeys:
-  - pod_name: catalog-operator
-    container_name: catalog-operator
-  - pod_name: olm-operator
-    container_name: olm-operator
-  - pod_name: package-server
-    container_name: package-server
-  - pod_name: packageserver
-    container_name: packageserver
+  - pod_name: "catalog-operator"
+    container_name: "catalog-operator"
+  - pod_name: "olm-operator"
+    container_name: "olm-operator"
+  - pod_name: "package-server"
+    container_name: "package-server"
+  - pod_name: "packageserver"
+    container_name: "packageserver"
   parser_rules:
-  - name: ts_8601
-  - name: glog
-  - name: json
-  - name: key_value_with_leading_message
-  - name: custom_splitter
+  - name: "ts_8601"
+  - name: "glog"
+  - name: "json"
+  - name: "key_value_with_leading_message"
+  - name: "custom_splitter"
     options:
       regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z\s([A-Z]+)\s([^\s]+)\s(.*)'
       severity:
         field: 1
-        transform: str
+        transform: "str"
       facility:
         fields:
         - 2
       message:
         field: 3
-  - name: override_severity
+  - name: "override_severity"
     overrides:
-    - matchtype: startswith
-      matchkey: "http: TLS handshake error"
-      loglevel: error
-  - name: expand_event
-- name: olm
+    - matchtype: "startswith"
+      matchkey: "http: \"TLS\" handshake error"
+      loglevel: "error"
+  - name: "expand_event"
+- name: "olm"
   show_in_selector: false
   matchkeys:
-  - pod_name: operatorhubio-catalog
-    container_name: registry-server
+  - pod_name: "operatorhubio-catalog"
+    container_name: "registry-server"
   parser_rules:
-  - name: strip_ansicodes
-  - name: key_value
+  - name: "strip_ansicodes"
+  - name: "key_value"
