@@ -1,13 +1,13 @@
 - hosts: selection:!controlplane:!nas
   vars:
     metadata:
-      description: Reboot
+      description: "Reboot"
       confirm: true
-      allow_on_control_plane: never
-      category: Administration
+      allow_on_control_plane: "never"
+      category: "Administration"
   gather_facts: false
   become: true
-  become_user: root
+  become_user: "root"
   tasks:
-  - name: Rebooting system
-    reboot:
+  - name: "Rebooting system"
+    ansible.builtin.reboot:

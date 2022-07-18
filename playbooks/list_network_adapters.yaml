@@ -1,13 +1,13 @@
 - hosts: selection
   vars:
     metadata:
-      description: List Network Adapters
-      category: Information
+      description: "List Network Adapters"
+      category: "Information"
       read_only: true
   gather_facts: false
   tasks:
-  - name: Listing Network Adapters
-    shell: |
+  - name: "Listing Network Adapters"
+    ansible.builtin.shell: |
       get_speeds()
       {
         duplex=${1}

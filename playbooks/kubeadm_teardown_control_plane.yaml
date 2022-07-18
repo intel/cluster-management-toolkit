@@ -1,16 +1,16 @@
 - hosts: selection
   vars:
     metadata:
-      description: Tear down kubeadm cluster
-      time_consumption: Slow
+      description: "Tear down kubeadm cluster"
+      time_consumption: "Slow"
       playbook_types:
-      - internal
-      category: Administration
+      - "internal"
+      category: "Administration"
   gather_facts: false
   become: true
-  become_user: root
+  become_user: "root"
   tasks:
-  - name: Tearing down Kubernetes
-    shell: |
+  - name: "Tearing down Kubernetes"
+    ansible.builtin.shell: |
       kubeadm version > /dev/null 2> /dev/null && kubeadm reset -f
       killall -q kube-apiserver || true

@@ -2,11 +2,11 @@
 - hosts: selection
   vars:
     metadata:
-      description: List GPUs
-      category: Information
+      description: "List GPUs"
+      category: "Information"
       read_only: true
   gather_facts: false
   tasks:
-  - name: Listing GPUs
-    shell: lspci -nn | grep -E "VGA|Display"
+  - name: "Listing GPUs"
+    ansible.builtin.shell: lspci -nn | grep -E "VGA|Display"
     changed_when: false

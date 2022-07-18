@@ -1,14 +1,14 @@
 - hosts: selection
   vars:
-    logpath: /home/tao/.ikt/ansible/logs
+    logpath: "/home/tao/.ikt/ansible/logs"
     metadata:
-      description: Fetch dmesg
-      category: Administration
+      description: "Fetch dmesg"
+      category: "Administration"
       quiet: true
       read_only: true
   gather_facts: false
   become: true
   become_user: root
   tasks:
-  - name: Fetching dmesg
-    shell: journalctl -k # --no-pager -ojson -n 1000
+  - name: "Fetching dmesg"
+    ansible.builtin.shell: journalctl -k # --no-pager -ojson -n 1000

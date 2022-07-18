@@ -1,13 +1,13 @@
 - hosts: selection
   vars:
     metadata:
-      description: Show NVidia information
-      category: Information
+      description: "Show NVidia information"
+      category: "Information"
       read_only: true
   gather_facts: false
   tasks:
-  - name: Showing NVidia information
-    shell: |
+  - name: "Showing NVidia information"
+    ansible.builtin.shell: |
       if [ -x /usr/bin/nvidia-smi ]; then
         nvidia-smi | sed -e '/^\s*$/q'
       else

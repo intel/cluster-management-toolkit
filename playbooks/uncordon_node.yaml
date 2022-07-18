@@ -1,15 +1,15 @@
 - hosts: selection
   vars:
     metadata:
-      description: Uncordon node
+      description: "Uncordon node"
       playbook_types:
-      - node
-      allow_on_control_plane: single
-      category: Scheduling
+      - "node"
+      allow_on_control_plane: "single"
+      category: "Scheduling"
   gather_facts: false
   tasks:
-  - name: Uncordoning node
-    shell: |
+  - name: "Uncordoning node"
+    ansible.builtin.shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
       kubectl uncordon ${nodes}
-    delegate_to: localhost
+    delegate_to: "localhost"

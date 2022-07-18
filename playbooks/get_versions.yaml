@@ -1,26 +1,26 @@
 - hosts: selection
   vars:
     metadata:
-      description: Get package versions
+      description: "Get package versions"
       playbook_types:
-      - internal
-      category: SHOULD NOT SHOW UP
+      - "internal"
+      category: "SHOULD NOT SHOW UP"
       read_only: true
   gather_subset:
   - '!min'
   - '!all'
-  - distribution
+  - 'distribution'
   tasks:
-  - name: Gathering package facts
-    package_facts:
-      manager: apt
+  - name: "Gathering package facts"
+    ansible.builtin.package_facts:
+      manager: "apt"
     when: ansible_os_family == 'Debian'
-  - name: Gathering package facts
-    package_facts:
-      manager: rpm
+  - name: "Gathering package facts"
+    ansible.builtin.package_facts:
+      manager: "rpm"
     when: ansible_os_family == 'RedHat'
-  - name: package versions
-    debug:
+  - name: "package versions"
+    ansible.builtin.debug:
       msg: |
         ansible: {% if (ansible_facts.packages['ansible'] is defined) %}{{ ansible_facts.packages['ansible'][0].version }}{% else %}N/A{% endif %}
 

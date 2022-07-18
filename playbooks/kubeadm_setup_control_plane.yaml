@@ -1,32 +1,32 @@
 - hosts: selection
   vars:
     metadata:
-      description: Setup a Kubernetes control plane using kubeadm
-      time_consumption: Slow
+      description: "Setup a Kubernetes control plane using kubeadm"
+      time_consumption: "Slow"
       playbook_types:
-      - internal
-      category: Setup
+      - "internal"
+      category: "Setup"
   gather_subset:
   - '!min'
   - '!all'
-  - distribution
+  - 'distribution'
   become: true
-  become_user: root
+  become_user: "root"
   tasks:
-  - name: Checking if cluster is already running
-    shell: |
+  - name: "Checking if cluster is already running"
+    ansible.builtin.shell: |
       lsof -i -P -n | grep 6443.*LISTEN > /dev/null
-    register: port_check
+    register: "port_check"
     ignore_errors: true
     changed_when: false
-  - name: Enabling kubelet
+  - name: "Enabling kubelet"
     ansible.builtin.systemd:
-      name: kubelet
+      name: "kubelet"
       enabled: true
-      state: started
+      state: "started"
     when: ansible_os_family == 'RedHat'
-  - name: Pulling Kubernetes images
-    shell: |
+  - name: "Pulling Kubernetes images"
+    ansible.builtin.shell: |
       if [ -n "{{ https_proxy }}" ]; then
         export https_proxy={{ https_proxy }}
       else
@@ -34,9 +34,9 @@
       fi
       kubeadm config images pull
     when: port_check.rc == 1
-  - name: Initialising Kubernetes cluster
-    command: kubeadm init --skip-token-print --pod-network-cidr={{ pod_network_cidr }}
+  - name: "Initialising Kubernetes cluster"
+    ansible.builtin.command: kubeadm init --skip-token-print --pod-network-cidr={{ pod_network_cidr }}
     when: port_check.rc == 1
-  - name: Creating permanent join token
-    command: kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command
+  - name: "Creating permanent join token"
+    ansible.builtin.command: kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command
     when: port_check.rc == 1

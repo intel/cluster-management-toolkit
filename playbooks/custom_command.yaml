@@ -1,14 +1,14 @@
 - hosts: selection
   vars:
     metadata:
-      description: Execute command
+      description: "Execute command"
       confirm: true
       query:
-        string: Command to execute
-        function: string
-        variable: command
-      category: Administration
+        string: "Command to execute"
+        function: "string"
+        variable: "command"
+      category: "Administration"
   gather_facts: false
   tasks:
-  - name: Executing command
-    shell: "{{ command }}"
+  - name: "Executing command"
+    ansible.builtin.shell: "{{ command }}"

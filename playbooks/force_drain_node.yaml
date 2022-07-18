@@ -1,16 +1,16 @@
 - hosts: selection
   vars:
     metadata:
-      description: Drain node (No grace period)
+      description: "Drain node (No grace period)"
       playbook_types:
-      - internal
-      - node
-      allow_on_control_plane: never
-      category: Scheduling
+      - "internal"
+      - "node"
+      allow_on_control_plane: "never"
+      category: "Scheduling"
   gather_facts: false
   tasks:
-  - name: Draining node (No grace period)
-    shell: |
+  - name: "Draining node (No grace period)"
+    ansible.builtin.shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
       minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/")"
       if [ "${minor_version}" -lt 18 ]; then

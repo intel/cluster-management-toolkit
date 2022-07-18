@@ -1,54 +1,54 @@
 - hosts: selection:&nodes:!controlplane:!nas
   vars:
     metadata:
-      description: Remove Kubernetes node from cluster
-      time_consumption: Slow
+      description: "Remove Kubernetes node from cluster"
+      time_consumption: "Slow"
       playbook_types:
-      - node
+      - "node"
       confirm: true
-      allow_on_control_plane: never
+      allow_on_control_plane: "never"
       run_before:
-      - delete_node
+      - "delete_node"
       run_after:
-      - teardown_cni
+      - "teardown_cni"
       remove_from_groups:
-      - nodes
-      category: Administration
+      - "nodes"
+      category: "Administration"
   gather_subset:
   - '!min'
   - '!all'
-  - distribution
+  - 'distribution'
   become: true
-  become_user: root
+  become_user: "root"
   tasks:
-  - name: Tearing down Kubernetes
-    shell: |
+  - name: "Tearing down Kubernetes"
+    ansible.builtin.shell: |
       if kubeadm version > /dev/null 2> /dev/null; then
         kubeadm reset -f
       fi
-  - name: Unmarking packages as held
-    shell: apt-mark unhold kubeadm kubectl kubelet || true
+  - name: "Unmarking packages as held"
+    ansible.builtin.shell: apt-mark unhold kubeadm kubectl kubelet || true
     when: ansible_os_family == 'Debian'
-  - name: Removing Kubernetes packages
+  - name: "Removing Kubernetes packages"
     ansible.builtin.apt:
       pkg:
-      - kubeadm
-      - kubectl
-      - kubelet
-      - kubernetes-cni
+      - "kubeadm"
+      - "kubectl"
+      - "kubelet"
+      - "kubernetes-cni"
       force_apt_get: true
-      state: absent
+      state: "absent"
       purge: true
     when: ansible_os_family == 'Debian'
-  - name: Unmarking packages as held
-    shell: dnf versionlock delete kubeadm kubelet kubectl || true
+  - name: "Unmarking packages as held"
+    ansible.builtin.shell: dnf versionlock delete kubeadm kubelet kubectl || true
     when: ansible_os_family == 'RedHat'
-  - name: Removing Kubernetes packages
+  - name: "Removing Kubernetes packages"
     ansible.builtin.dnf:
       pkg:
-      - kubeadm
-      - kubectl
-      - kubelet
-      - kubernetes-cni
-      state: absent
+      - "kubeadm"
+      - "kubectl"
+      - "kubelet"
+      - "kubernetes-cni"
+      state: "absent"
     when: ansible_os_family == 'RedHat'

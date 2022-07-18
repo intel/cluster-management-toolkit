@@ -1,12 +1,12 @@
 - hosts: selection
   vars:
     metadata:
-      description: Get package versions
+      description: "Get package versions"
       playbook_types:
-      - internal
-      category: SHOULD NOT SHOW UP
+      - "internal"
+      category: "SHOULD NOT SHOW UP"
       read_only: true
   gather_facts: false
   tasks:
-  - name: Gathering host facts
+  - name: "Gathering host facts"
     ansible.builtin.setup:

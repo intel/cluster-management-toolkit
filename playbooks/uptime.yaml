@@ -1,11 +1,11 @@
 - hosts: selection
   vars:
     metadata:
-      description: Uptime
-      category: Information
+      description: "Uptime"
+      category: "Information"
       read_only: true
   gather_facts: false
   tasks:
-  - name: Checking uptime
-    command: /usr/bin/uptime
+  - name: "Checking uptime"
+    ansible.builtin.command: /usr/bin/uptime
     changed_when: false

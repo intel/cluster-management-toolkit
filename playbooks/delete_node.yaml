@@ -1,14 +1,14 @@
 - hosts: selection
   vars:
     metadata:
-      description: Delete node from cluster
+      description: "Delete node from cluster"
       playbook_types:
-      - internal
-      category: Administration
+      - "internal"
+      category: "Administration"
   gather_facts: false
   tasks:
-  - name: Deleting node from cluster
-    shell: |
+  - name: "Deleting node from cluster"
+    ansible.builtin.shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
       minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/")"
       if [ "${minor_version}" -lt 18 ]; then

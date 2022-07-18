@@ -1,15 +1,15 @@
 - hosts: selection
   vars:
     metadata:
-      description: Drain node
+      description: "Drain node"
       playbook_types:
-      - node
-      allow_on_control_plane: single
-      category: Scheduling
+      - "node"
+      allow_on_control_plane: "single"
+      category: "Scheduling"
   gather_facts: false
   tasks:
-  - name: Draining node
-    shell: |
+  - name: "Draining node"
+    ansible.builtin.shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
       kubectl drain --delete-local-data --ignore-daemonsets ${nodes}
     delegate_to: localhost

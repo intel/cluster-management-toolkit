@@ -1,47 +1,47 @@
 - hosts: selection
   vars:
     metadata:
-      description: Purge kubeadm
-      time_consumption: Moderately slow
+      description: "Purge kubeadm"
+      time_consumption: "Moderately slow"
       playbook_types:
-      - internal
-      category: Administration
+      - "internal"
+      category: "Administration"
   gather_subset:
   - '!min'
   - '!all'
-  - distribution
+  - 'distribution'
   become: true
-  become_user: root
+  become_user: "root"
   tasks:
-  - name: Unmarking packages as held
-    shell: apt-mark unhold "{{ item }}" || true
+  - name: "Unmarking packages as held"
+    ansible.builtin.shell: apt-mark unhold "{{ item }}" || true
     loop: "{{ held_packages }}"
     when: ansible_os_family == 'Debian'
-  - name: Removing Kubernetes packages
+  - name: "Removing Kubernetes packages"
     ansible.builtin.apt:
       name: "{{ packages }}"
       force_apt_get: true
-      state: absent
+      state: "absent"
       purge: true
     when: ansible_os_family == 'Debian'
-  - name: Unmarking packages as held
-    shell: dnf versionlock delete "{{ item }}" || true
+  - name: "Unmarking packages as held"
+    ansible.builtin.shell: dnf versionlock delete "{{ item }}" || true
     loop: "{{ held_packages }}"
     when: ansible_os_family == 'RedHat'
-  - name: Removing Kubernetes packages
+  - name: "Removing Kubernetes packages"
     ansible.builtin.dnf:
       name: "{{ packages }}"
-      state: absent
+      state: "absent"
     when: ansible_os_family == 'RedHat'
-  - name: Removing directories
-    file:
+  - name: "Removing directories"
+    ansible.builtin.file:
       path: "{{ item }}"
-      state: absent
+      state: "absent"
     with_items:
-    - /etc/kubernetes
-    - /etc/systemd/system/kubelet.service.d
-    - /var/lib/etcd
-    - /var/lib/kubelet
-  - name: Reloading systemd configuration
+    - "/etc/kubernetes"
+    - "/etc/systemd/system/kubelet.service.d"
+    - "/var/lib/etcd"
+    - "/var/lib/kubelet"
+  - name: "Reloading systemd configuration"
     ansible.builtin.systemd:
       daemon_reload: true

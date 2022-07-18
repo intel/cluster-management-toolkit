@@ -2,23 +2,23 @@
 - hosts: selection:&controlplane
   vars:
     metadata:
-      description: Copy /etc/kubernetes/admin.conf from control plane to .kube on localhost
+      description: "Copy /etc/kubernetes/admin.conf from control plane to .kube on localhost"
       playbook_types:
-      - internal
-      category: Setup
+      - "internal"
+      category: "Setup"
   gather_facts: false
   become: true
   become_user: root
   tasks:
-  - name: Creating .kube if it doesn't exist
-    file:
-      path: ~/.kube
-      state: directory
+  - name: "Creating .kube if it doesn't exist"
+    ansible.builtin.file:
+      path: "~/.kube"
+      state: "directory"
       mode: "0700"
     delegate_to: localhost
-  - name: Copying /etc/kubernetes/admin.conf from control plane to localhost
-    fetch:
-      src: /etc/kubernetes/admin.conf
-      dest: ~/.kube/config.{{ cluster_name }}
+  - name: "Copying /etc/kubernetes/admin.conf from control plane to localhost"
+    ansible.builtin.fetch:
+      src: "/etc/kubernetes/admin.conf"
+      dest: "~/.kube/config.{{ cluster_name }}"
       flat: true
       mode: "0600"

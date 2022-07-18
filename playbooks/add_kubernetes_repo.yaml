@@ -1,67 +1,55 @@
 - hosts: selection:!nas
   vars:
     metadata:
-      description: Add Kubernetes repository
+      description: "Add Kubernetes repository"
       playbook_types:
-      - internal
+      - "internal"
   gather_subset:
   - '!min'
   - '!all'
-  - distribution
+  - 'distribution'
   become: true
-  become_user: root
+  become_user: "root"
   tasks:
-  - name: Creating /usr/local/keyrings
+  - name: "Creating /usr/local/keyrings"
     ansible.builtin.file:
-      path: /usr/local/keyrings
-      state: directory
+      path: "/usr/local/keyrings"
+      state: "directory"
       mode: "0755"
     when: ansible_os_family == 'Debian'
-  - name: Fetching Kubernetes repository key
+  - name: "Fetching Kubernetes repository key"
     ansible.builtin.get_url:
-      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-      dest: /usr/local/keyrings/packages.cloud.google.com-keyring.gpg
+      url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+      dest: "/usr/local/keyrings/packages.cloud.google.com-keyring.gpg"
       mode: "0644"
       force: true
       use_proxy: "{{ use_proxy }}"
     environment:
       https_proxy: "{{ https_proxy }}"
     when: ansible_os_family == 'Debian'
-  - name: Configuring package repository for Kubernetes
-    shell: |
-      if [ -n "{{ https_proxy }}" ]; then
-        cat <<EOF | tee /etc/apt/apt.conf.d/01proxy-kubernetes > /dev/null
-      Acquire::https::Proxy::apt.kubernetes.io "{{ https_proxy }}";
-      Acquire::https::Proxy::packages.cloud.google.com "{{ https_proxy }}";
-      EOF
-      fi
-      echo "deb [signed-by=/usr/local/keyrings/packages.cloud.google.com-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
-    args:
-      creates: /etc/apt/sources.list.d/kubernetes.list
+  - name: "Configuring package repository for Kubernetes"
+    ansible.builtin.template:
+      dest: "/etc/apt/sources.list.d/kubernetes.list"
+      src: "templates/etc/apt/sources.list.d/kubernetes.list.j2"
+      mode: "0644"
     when: ansible_os_family == 'Debian'
-  - name: Updating package cache
+  - name: "Configuring package repository proxy for Kubernetes"
+    ansible.builtin.template:
+      dest: "/etc/apt/apt.conf.d/01proxy-kubernetes"
+      src: "templates/etc/apt/apt.conf.d/01proxy-kubernetes.j2"
+      mode: "0644"
+    when: (ansible_os_family == 'Debian') and (https_proxy | length > 0)
+  - name: "Updating package cache"
     ansible.builtin.apt: update_cache=yes force_apt_get=yes
     when: ansible_os_family == 'Debian'
-  - name: Configuring package repository for Kubernetes
-    shell: |
-      cat <<EOF | tee /etc/yum.repos.d/kubernetes.repo > /dev/null
-      [kubernetes]
-      name=Kubernetes
-      baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
-      enabled=1
-      gpgcheck=1
-      repo_gpgcheck=1
-      gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-      exclude=kubelet kubeadm kubectl
-      EOF
-      if [ -n "{{ https_proxy }}" ]; then
-        echo "proxy={{ https_proxy }}" | tee -a /etc/yum.repos.d/kubernetes.repo > /dev/null
-      fi
-    args:
-      creates: /etc/yum.repos.d/apt.conf.d/kubernetes.repo
+  - name: "Configuring package repository for Kubernetes"
+    ansible.builtin.template:
+      dest: "/etc/yum.repos.d/kubernetes.repo"
+      src: "templates/etc/yum.repos.d/kubernetes.repo.j2"
+      mode: "0644"
     when: ansible_os_family == 'RedHat'
-  - name: Installing dnf-plugin-versionlock
+  - name: "Installing dnf-plugin-versionlock"
     ansible.builtin.dnf:
       update_cache: true
-      name: dnf-plugin-versionlock
+      name: "dnf-plugin-versionlock"
     when: ansible_os_family == 'RedHat'
