@@ -120,7 +120,7 @@ def name_to_loglevel(name):
 	for severity in loglevel_mappings:
 		if loglevel_mappings[severity].lower() == name.lower():
 			return severity
-	raise Exception(f"Programming error! Loglevel {name} does not exist!")
+	raise ValueError(f"Programming error! Loglevel {name} does not exist!")
 
 def month_to_numerical(month):
 	months = [ "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" ]
@@ -3075,7 +3075,7 @@ def init_parser_list():
 									sys.exit(f"Parser {parser_file} has an invalid override rule; loglevel cannot be empty; aborting.")
 								try:
 									severity = name_to_loglevel(_loglevel)
-								except:
+								except ValueError:
 									sys.exit(f"Parser {parser_file} contains an invalid loglevel {_loglevel}; aborting.")
 
 								overrides.append((matchtype, matchkey, severity))
@@ -3084,7 +3084,7 @@ def init_parser_list():
 							_loglevel = rule.get("default_loglevel", "info")
 							try:
 								default_loglevel = name_to_loglevel(_loglevel)
-							except:
+							except ValueError:
 								sys.exit(f"Parser {parser_file} contains an invalid loglevel {_loglevel}; aborting.")
 							rules.append((rule_name, default_loglevel))
 						else:

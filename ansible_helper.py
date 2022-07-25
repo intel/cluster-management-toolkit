@@ -69,7 +69,7 @@ try:
 	from ansible.utils.unsafe_proxy import AnsibleUnsafeText
 	from ansible.vars.manager import VariableManager
 	ansible_support = True
-except:
+except ModuleNotFoundError:
 	ansible_support = False
 
 def ansible_ping(inventory, selection = "all"):

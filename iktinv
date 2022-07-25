@@ -56,7 +56,7 @@ def set_host_vars(options = [], args = None):
 	for keyval in keyvals:
 		try:
 			key, value = keyval.split(":")
-		except:
+		except ValueError:
 			iktprint([(f"Error: ", "error"), ("Setting a variable requires a ", "default"), ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
 			print()
 			iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
@@ -84,7 +84,7 @@ def set_group_vars(options = [], args = None):
 	for keyval in keyvals:
 		try:
 			key, value = keyval.split(":")
-		except:
+		except ValueError:
 			iktprint([(f"Error: ", "error"), ("Setting a variable requires a ", "default"), ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
 			print()
 			iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)

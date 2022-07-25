@@ -5,7 +5,7 @@ import hashlib
 # but it might not be available
 try:
 	import ujson as json
-except:
+except ModuleNotFoundError:
 	import json
 from pathlib import Path
 import re

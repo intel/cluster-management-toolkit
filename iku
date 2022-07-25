@@ -159,7 +159,7 @@ def get_package_versions(hostname):
 	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [hostname])
 
 	if len(ansible_results) == 0:
-		raise Exception(f"Error: Failed to get package versions from {hostname} (retval: {retval}); aborting.")
+		raise ValueError(f"Error: Failed to get package versions from {hostname} (retval: {retval}); aborting.")
 
 	for host in ansible_results:
 		data = ansible_results[host]
@@ -169,7 +169,7 @@ def get_package_versions(hostname):
 				tmp = str(data[task].get("msg", "")).split("\n")
 
 	if len(tmp) == 0:
-		raise Exception(f"Error: Failed to get package versions from {hostname} (retval: {retval}); aborting.")
+		raise ValueError(f"Error: Received empty version data from {hostname} (retval: {retval}); aborting.")
 
 	package_versions = []
 
@@ -1450,7 +1450,7 @@ def datagetter_api_support(obj, path, default):
 	try:
 		_kind, _api_group = kh.guess_kind((kind, api_family))
 		available_views.append("Known")
-	except:
+	except NameError:
 		pass
 
 	for view in views:
@@ -5223,7 +5223,7 @@ def get_package_version_list(obj, **kwargs):
 	hostname = deep_get(kwargs, "name", hostname)
 	try:
 		package_versions = get_package_versions(hostname)
-	except:
+	except ValueError:
 		package_versions = None
 	return package_versions
 
@@ -6496,7 +6496,7 @@ def genericlistloop(stdscr, view):
 			for skip in ["all", "controlplane", "controlplanes", "master", "node", "nodes"]:
 				try:
 					groups.remove(skip)
-				except:
+				except KeyError:
 					pass
 			host_groups = ansible_get_groups_by_host(ANSIBLE_INVENTORY, selected.name)
 			grouplist = []
@@ -10929,7 +10929,7 @@ def ssh_to_host(stdscr, **kwargs):
 			_api_group = deep_get(ref, "api_group", "")
 			try:
 				kind = kh.guess_kind((_kind, _api_group))
-			except:
+			except NameError:
 				# If we cannot guess the kind we return
 				return
 
@@ -11635,13 +11635,7 @@ def populate_views():
 		with open(view_file, "r") as f:
 			try:
 				d = yaml.safe_load(f)
-			except:
-				sys.exit(f"View-file {view_file} is invalid; aborting.")
-
-			try:
-				for view in d:
-					pass
-			except:
+			except yaml.parser.ParserError:
 				sys.exit(f"View-file {view_file} is invalid; aborting.")
 
 			kind = deep_get(d, "kind", "<missing>")

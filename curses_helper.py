@@ -91,15 +91,14 @@ def init_pair(color_pair, color_nr):
 	fg, bg = color_pair
 	try:
 		curses.init_pair(color_nr, fg, bg)
-	except:
+	except ValueError:
 		# Most likely we failed due to the terminal only
 		# supporting colours 0-7. If "bright black" was
 		# requested, we need to remap it. Fallback to blue;
 		# hopefully there are no cases of bright black on blue.
 		if fg & 7 == curses.COLOR_BLACK:
 			fg = curses.COLOR_BLUE
-		bg &= 7
-		curses.init_pair(color_nr, fg & 7, bg)
+		curses.init_pair(color_nr, fg & 7, bg & 7)
 
 def read_theme(configthemefile, defaultthemefile):
 	global theme
@@ -814,7 +813,6 @@ def strarray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
 	return strarrays
 
 def themearray_extract_string(key, context = "main", selected = False):
-	string = ""
 	try:
 		strarray = themearray_to_strarray(key, context, selected)
 	except:
