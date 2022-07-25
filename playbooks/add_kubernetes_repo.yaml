@@ -38,7 +38,7 @@
       dest: "/etc/apt/apt.conf.d/01proxy-kubernetes"
       src: "templates/etc/apt/apt.conf.d/01proxy-kubernetes.j2"
       mode: "0644"
-    when: (ansible_os_family == 'Debian') and (https_proxy | length > 0)
+    when: (ansible_os_family == 'Debian') and (use_proxy == "yes")
   - name: "Updating package cache"
     ansible.builtin.apt: update_cache=yes force_apt_get=yes
     when: ansible_os_family == 'Debian'
