@@ -228,10 +228,10 @@ def ansible_get_groups(inventory):
 def ansible_get_groups_by_host(inventory, host):
 	groups = []
 
-	if not os.path.exists(ANSIBLE_INVENTORY):
+	if not os.path.exists(inventory):
 		return []
 
-	with open(ANSIBLE_INVENTORY, "r") as f:
+	with open(inventory, "r") as f:
 		d = yaml.safe_load(f)
 
 		for group in d:
@@ -826,6 +826,7 @@ if ansible_support == True:
 	# Ansible callback
 	class ResultCallback(CallbackBase):
 		def v2_runner_on_ok(self, result, **kwargs):
+			# pylint: disable=unused-argument
 			global ansible_results
 			global active_task
 			global suffix
@@ -850,6 +851,7 @@ if ansible_support == True:
 				ansible_results[host][newkey] = result._result
 
 		def v2_runner_on_failed(self, result, **kwargs):
+			# pylint: disable=unused-argument
 			global ansible_results
 			global active_task
 			global suffix
@@ -872,9 +874,11 @@ if ansible_support == True:
 				ansible_results[host][newkey] = result._result
 
 		#def v2_runner_on_unreachable(self, result, **kwargs):
+			# pylint: disable=unused-argument
 		#	sys.exit(f"host {result._host} unreachable")
 
 		def v2_runner_on_skipped(self, result, **kwargs):
+			# pylint: disable=unused-argument
 			global ansible_results
 			global active_task
 			global suffix

@@ -13,10 +13,7 @@ programauthors = None
 commandline = None
 
 def themearray_len(themearray):
-	tlen = 0
-	for _str, _format in themearray:
-		tlen += len(_str)
-	return tlen
+	return len("".join([_str for _str, _format in themearray]))
 
 def version(options = [], args = None):
 	iktprint([(f"{programname} ", "programname"), (f"{programversion}", "version")])

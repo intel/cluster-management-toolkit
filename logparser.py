@@ -502,6 +502,7 @@ def split_wd_mmm_dd_hh_mm_ss_yyyy_timestamp(message, timestamp):
 # 10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"
 # 10.244.0.1 - - [29/Jan/2022:10:33:50 +0000] "GET /v0/healthz/ HTTP/1.1" 200 3 "http://10.244.0.123:8000/v0/healthz" "kube-probe/1.23"
 def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
+	# pylint: disable=unused-argument
 	remnants = []
 	reformat_timestamps = deep_get(options, "reformat_timestamps", False)
 
@@ -517,7 +518,7 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, opti
 		if tmp is not None:
 			ipaddress = tmp[1]
 			message = tmp[2]
-		
+
 	# Short format
 	if ipaddress is not None:
 		tmp = re.match(r"( - - )"
@@ -1087,6 +1088,7 @@ def replace_tabs(message):
 # Basic with colon severity prefix (with ISO8601:ish / RFC3339:ish timestamps):
 # Only split the lines and separate out timestamps
 def basic_8601_colon_severity(message, fold_msg = True):
+	# pylint: disable=unused-argument
 	facility = ""
 	remnants = []
 
@@ -1097,6 +1099,7 @@ def basic_8601_colon_severity(message, fold_msg = True):
 # Basic (with ISO8601:ish timestamps):
 # Only split the lines and separate out timestamps
 def basic_8601(message, fold_msg = True):
+	# pylint: disable=unused-argument
 	facility = ""
 	severity = loglevel.INFO
 	remnants = []
@@ -1108,6 +1111,7 @@ def basic_8601(message, fold_msg = True):
 
 # basic_8601 but with no removal of double timestamps
 def basic_8601_raw(message, fold_msg = True):
+	# pylint: disable=unused-argument
 	facility = ""
 	severity = loglevel.INFO
 	remnants = []
@@ -1351,6 +1355,7 @@ def custom_override_severity(message, severity, overrides = []):
 	return severity
 
 def expand_event_objectmeta(message, severity, remnants = None, fold_msg = True):
+	# pylint: disable=unused-argument
 	raw_message = message
 	curlydepth = 0
 
@@ -2505,6 +2510,7 @@ def substitute_bullets(message, prefix):
 	return message
 
 def python_traceback_scanner(message, fold_msg = True, options = {}):
+	# pylint: disable=unused-argument
 	timestamp = None
 	facility = ""
 	severity = loglevel.ERR
@@ -2547,6 +2553,7 @@ def python_traceback(message, fold_msg = True):
 	return message, remnants
 
 def json_line_scanner(message, fold_msg = True, options = {}):
+	# pylint: disable=unused-argument
 	allow_empty_lines = True #deep_get(options, "allow_empty_lines", False)
 	timestamp = None
 	facility = ""
@@ -3015,13 +3022,7 @@ def init_parser_list():
 		with open(parser_file, "r") as f:
 			try:
 				d = yaml.safe_load(f)
-			except:
-				sys.exit(f"Parser-file {parser_file} is invalid; aborting.")
-
-			try:
-				for parser in d:
-					pass
-			except:
+			except yaml.parser.ParserError:
 				sys.exit(f"Parser-file {parser_file} is invalid; aborting.")
 
 			for parser in d:

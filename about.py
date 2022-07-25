@@ -1,7 +1,8 @@
 #! /usr/bin/env python3
 
 copyright = "Copyright © 2019-2022 Intel Corporation"
-license = "This is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+license  = "This is free software; see the source for copying conditions.  There is NO\n"
+license += "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
 
 program_suite_name = "iKT"
 program_suite_full_name = "Intel Kubernetes Toolkit"
