@@ -21,6 +21,11 @@
       versions:
       - "jaeger"
   - name: "ts_8601"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Trace["
+      loglevel: "debug"
 - name: "istio-tracing"
   show_in_selector: false
   matchkeys:
@@ -28,6 +33,8 @@
     container_name: "jaeger"
   - pod_name: "jaeger"
     container_name: "jaeger"
+  - container_name: "jaeger"
+    image_name: "/jaegertracing"
   parser_rules:
   - name: "ts_8601"
   - name: "json"

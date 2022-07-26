@@ -15,6 +15,7 @@
 #
 # Return format is timestamp, facility, severity, message
 
+import ast
 from collections import namedtuple
 from datetime import datetime
 import difflib
@@ -803,9 +804,8 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 	if logentry is None:
 		d = None
 		try:
-			d = eval(message)
-		# FIXME: We need a tighter exception here
-		except:
+			d = ast.literal_eval(message)
+		except (ValueError, TypeError, SyntaxError, RecursionError):
 			pass
 
 		if d is not None:
