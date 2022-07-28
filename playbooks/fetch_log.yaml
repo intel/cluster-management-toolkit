@@ -16,4 +16,4 @@
   become_user: root
   tasks:
   - name: "Fetching a journald log"
-    ansible.builtin.shell: journalctl -u "{{ unit }}" --no-pager -n 1000
+    shell: journalctl -u "{{ unit }}" --no-pager -n 1000

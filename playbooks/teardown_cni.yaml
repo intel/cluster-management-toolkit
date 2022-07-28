@@ -10,7 +10,7 @@
   become_user: "root"
   tasks:
   - name: "Tearing down container network interfaces"
-    ansible.builtin.shell: |
+    shell: |
       for network in $(cat /proc/net/dev | grep -E "^antrea|^genev" | cut -f 1 -d:); do
         ifconfig "${network}" down || ip link set dev "${network}" down || true
       done
@@ -34,7 +34,7 @@
       done
       killall -q weaver || true
   - name: "Removing leftover network configurations"
-    ansible.builtin.shell: |
+    shell: |
       rm -rf /etc/cni /opt/cni /var/lib/cni /var/lib/weave
       iptables -F
       iptables -t nat -F

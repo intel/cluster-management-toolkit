@@ -20,7 +20,7 @@
     ansible.builtin.apt: update_cache=yes force_apt_get=yes
     when: ansible_os_family == 'Debian'
   - name: "Unmarking packages as held"
-    ansible.builtin.shell: apt-mark unhold kubeadm kubelet kubectl || true
+    shell: apt-mark unhold kubeadm kubelet kubectl || true
     when: ansible_os_family == 'Debian'
   - name: "Installing new versions of kubeadm, kubelet and kubectl"
     ansible.builtin.apt:
@@ -31,16 +31,16 @@
       force_apt_get: true
     when: ansible_os_family == 'Debian'
   - name: "Marking packages as held"
-    ansible.builtin.shell: apt-mark hold kubeadm kubelet kubectl || true
+    shell: apt-mark hold kubeadm kubelet kubectl || true
     when: ansible_os_family == 'Debian'
   - name: "Updating package cache"
     ansible.builtin.dnf: update_cache=yes
     when: ansible_os_family == 'RedHat'
   - name: "Unmarking packages as held"
-    ansible.builtin.shell: dnf versionlock delete kubeadm kubelet kubectl || true
+    shell: dnf versionlock delete kubeadm kubelet kubectl || true
     when: ansible_os_family == 'RedHat'
   - name: "Remove deprecated config options"
-    ansible.builtin.shell: |
+    shell: |
       major_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^\([0-9]*\)\.[0-9]*.*/\1/')
       minor_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^[0-9]*\.\([0-9]*\).*/\1/')
       if [ $major_version -gt 0 ] && [ $minor_version -gt 23 ]; then
@@ -55,10 +55,10 @@
       disable_excludes: "kubernetes"
     when: ansible_os_family == 'RedHat'
   - name: "Marking packages as held"
-    ansible.builtin.shell: dnf versionlock add kubeadm kubelet kubectl || true
+    shell: dnf versionlock add kubeadm kubelet kubectl || true
     when: ansible_os_family == 'RedHat'
   - name: "Upgrading node"
-    ansible.builtin.shell: |
+    shell: |
       kubeadm upgrade node
   - name: "Restarting kubelet"
     ansible.builtin.systemd:

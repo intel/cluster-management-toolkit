@@ -17,10 +17,10 @@
     ansible.builtin.apt: update_cache=yes force_apt_get=yes
     when: ansible_os_family == 'Debian'
   - name: "Unmarking packages as held"
-    ansible.builtin.shell: apt-mark unhold kubeadm kubelet kubectl || true
+    shell: apt-mark unhold kubeadm kubelet kubectl || true
     when: ansible_os_family == 'Debian'
   - name: "Remove deprecated config options"
-    ansible.builtin.shell: |
+    shell: |
       major_version=$(echo {{ requested_control_plane_k8s_version }} | sed -e 's/^\([0-9]*\)\.[0-9]*.*/\1/')
       minor_version=$(echo {{ requested_control_plane_k8s_version }} | sed -e 's/^[0-9]*\.\([0-9]*\).*/\1/')
       if [ $major_version -gt 0 ] && [ $minor_version -gt 23 ]; then
@@ -35,13 +35,13 @@
       force_apt_get: true
     when: ansible_os_family == 'Debian'
   - name: "Marking packages as held"
-    ansible.builtin.shell: apt-mark hold kubeadm kubelet kubectl || true
+    shell: apt-mark hold kubeadm kubelet kubectl || true
     when: ansible_os_family == 'Debian'
   - name: "Updating package cache"
     ansible.builtin.dnf: update_cache=yes
     when: ansible_os_family == 'RedHat'
   - name: "Unmarking packages as held"
-    ansible.builtin.shell: dnf versionlock delete kubeadm kubelet kubectl || true
+    shell: dnf versionlock delete kubeadm kubelet kubectl || true
     when: ansible_os_family == 'RedHat'
   - name: "Installing new versions of kubeadm, kubelet and kubectl"
     ansible.builtin.dnf:
@@ -52,13 +52,13 @@
       disable_excludes: "kubernetes"
     when: ansible_os_family == 'RedHat'
   - name: "Marking packages as held"
-    ansible.builtin.shell: dnf versionlock add kubeadm kubelet kubectl || true
+    shell: dnf versionlock add kubeadm kubelet kubectl || true
     when: ansible_os_family == 'RedHat'
   - name: "Planning upgrade"
-    ansible.builtin.shell: |
+    shell: |
       kubeadm upgrade plan
   - name: "Pulling Kubernetes images"
-    ansible.builtin.shell: |
+    shell: |
       if [ -n "{{ https_proxy }}" ]; then
         export https_proxy={{ https_proxy }}
       else
@@ -66,7 +66,7 @@
       fi
       kubeadm config images pull
   - name: "Upgrading control plane"
-    ansible.builtin.shell: |
+    shell: |
       kubeadm upgrade apply -y {{ requested_control_plane_k8s_version.split("-")[0] }}
   - name: "Restarting kubelet"
     ansible.builtin.systemd:

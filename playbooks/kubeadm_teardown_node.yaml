@@ -22,12 +22,12 @@
   become_user: "root"
   tasks:
   - name: "Tearing down Kubernetes"
-    ansible.builtin.shell: |
+    shell: |
       if kubeadm version > /dev/null 2> /dev/null; then
         kubeadm reset -f
       fi
   - name: "Unmarking packages as held"
-    ansible.builtin.shell: apt-mark unhold kubeadm kubectl kubelet || true
+    shell: apt-mark unhold kubeadm kubectl kubelet || true
     when: ansible_os_family == 'Debian'
   - name: "Removing Kubernetes packages"
     ansible.builtin.apt:
@@ -41,7 +41,7 @@
       purge: true
     when: ansible_os_family == 'Debian'
   - name: "Unmarking packages as held"
-    ansible.builtin.shell: dnf versionlock delete kubeadm kubelet kubectl || true
+    shell: dnf versionlock delete kubeadm kubelet kubectl || true
     when: ansible_os_family == 'RedHat'
   - name: "Removing Kubernetes packages"
     ansible.builtin.dnf:

@@ -119,7 +119,7 @@
       state: "restarted"
     when: cri == 'containerd'
   - name: "Disabling swap"
-    ansible.builtin.shell: |
+    shell: |
       # Disable swap during this boot
       swapoff -a
       # Disable swap entries in /etc/fstab

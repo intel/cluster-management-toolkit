@@ -28,7 +28,7 @@
       manager: "apt"
     when: ansible_os_family == 'Debian'
   - name: "Unmarking packages as held"
-    ansible.builtin.shell: apt-mark unhold kubeadm kubelet kubectl || true
+    shell: apt-mark unhold kubeadm kubelet kubectl || true
     when: ansible_os_family == 'Debian'
   - name: "Installing Kubernetes packages"
     ansible.builtin.apt:
@@ -39,7 +39,7 @@
       force_apt_get: true
     when: ansible_os_family == 'Debian'
   - name: "Marking packages as held"
-    ansible.builtin.shell: apt-mark hold kubeadm kubelet kubectl || true
+    shell: apt-mark hold kubeadm kubelet kubectl || true
     when: ansible_os_family == 'Debian'
   - name: "Installing containerd"
     ansible.builtin.apt:
@@ -116,7 +116,7 @@
       manager: rpm
     when: ansible_os_family == 'RedHat'
   - name: "Unmarking packages as held"
-    ansible.builtin.shell: dnf versionlock delete kubeadm kubelet kubectl || true
+    shell: dnf versionlock delete kubeadm kubelet kubectl || true
     when: ansible_os_family == 'RedHat'
   - name: "Installing Kubernetes packages"
     ansible.builtin.dnf:
@@ -127,7 +127,7 @@
       disable_excludes: "kubernetes"
     when: ansible_os_family == 'RedHat'
   - name: "Marking packages as held"
-    ansible.builtin.shell: dnf versionlock add kubeadm kubelet kubectl || true
+    shell: dnf versionlock add kubeadm kubelet kubectl || true
     when: ansible_os_family == 'RedHat'
   - name: "Enabling kubelet"
     ansible.builtin.systemd:
@@ -136,5 +136,5 @@
       state: "started"
     when: ansible_os_family == 'RedHat'
   - name: "Joining node to the cluster"
-    ansible.builtin.shell: |
+    shell: |
       kubeadm join "{{ control_plane_ip }}:{{ control_plane_port }}" --token "{{ join_token }}" --discovery-token-ca-cert-hash "sha256:{{ ca_cert_hash }}"

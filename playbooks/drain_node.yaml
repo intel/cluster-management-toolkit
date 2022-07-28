@@ -9,7 +9,7 @@
   gather_facts: false
   tasks:
   - name: "Draining node"
-    ansible.builtin.shell: |
+    shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
       kubectl drain --delete-local-data --ignore-daemonsets ${nodes}
     delegate_to: localhost

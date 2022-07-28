@@ -11,6 +11,6 @@
   become_user: "root"
   tasks:
   - name: "Tearing down Kubernetes"
-    ansible.builtin.shell: |
+    shell: |
       kubeadm version > /dev/null 2> /dev/null && kubeadm reset -f
       killall -q kube-apiserver || true

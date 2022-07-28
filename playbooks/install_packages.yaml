@@ -31,7 +31,7 @@
       force: true
     when: ansible_os_family == 'Debian'
   - name: "Marking packages as held"
-    ansible.builtin.shell: apt-mark hold "{{ item }}" || true
+    shell: apt-mark hold "{{ item }}" || true
     loop: "{{ vars['held_packages'] }}"
     when: ansible_os_family == 'Debian'
   - name: "Updating package cache"
@@ -44,6 +44,6 @@
       disable_excludes: "kubernetes"
     when: ansible_os_family == 'RedHat'
   - name: "Marking packages as held"
-    ansible.builtin.shell: dnf versionlock add "{{ item }}" || true
+    shell: dnf versionlock add "{{ item }}" || true
     loop: "{{ vars['held_packages'] }}"
     when: ansible_os_family == 'RedHat'

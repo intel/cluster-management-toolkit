@@ -101,7 +101,7 @@
       daemon_reload: true
       state: "restarted"
   - name: "Disabling swap"
-    ansible.builtin.shell: |
+    shell: |
       # Disable swap during this boot
       swapoff -a
       # Disable swap entries in /etc/fstab
@@ -115,7 +115,7 @@
       fi
     changed_when: false
   - name: "Setting SELinux to permissive mode"
-    ansible.builtin.shell: |
+    shell: |
       setenforce 0
       sed -i -e 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
     when: ansible_os_family == 'RedHat'

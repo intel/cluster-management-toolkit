@@ -14,7 +14,7 @@
   become_user: "root"
   tasks:
   - name: "Checking if cluster is already running"
-    ansible.builtin.shell: |
+    shell: |
       lsof -i -P -n | grep 6443.*LISTEN > /dev/null
     register: "port_check"
     ignore_errors: true
@@ -26,7 +26,7 @@
       state: "started"
     when: ansible_os_family == 'RedHat'
   - name: "Pulling Kubernetes images"
-    ansible.builtin.shell: |
+    shell: |
       if [ -n "{{ https_proxy }}" ]; then
         export https_proxy={{ https_proxy }}
       else
@@ -35,8 +35,8 @@
       kubeadm config images pull
     when: port_check.rc == 1
   - name: "Initialising Kubernetes cluster"
-    ansible.builtin.command: kubeadm init --skip-token-print --pod-network-cidr={{ pod_network_cidr }}
+    command: kubeadm init --skip-token-print --pod-network-cidr={{ pod_network_cidr }}
     when: port_check.rc == 1
   - name: "Creating permanent join token"
-    ansible.builtin.command: kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command
+    command: kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command
     when: port_check.rc == 1

@@ -9,11 +9,11 @@
   become_user: "root"
   tasks:
   - name: "Checking that cluster is running"
-    ansible.builtin.shell: |
+    shell: |
       lsof -i -P -n | grep 6443.*LISTEN > /dev/null
     register: "port_check"
     ignore_errors: true
     changed_when: false
   - name: "Creating permanent join token"
-    ansible.builtin.command: kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command
+    command: kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command
     when: port_check.rc == 0

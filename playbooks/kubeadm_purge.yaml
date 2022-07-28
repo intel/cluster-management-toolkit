@@ -14,7 +14,7 @@
   become_user: "root"
   tasks:
   - name: "Unmarking packages as held"
-    ansible.builtin.shell: apt-mark unhold "{{ item }}" || true
+    shell: apt-mark unhold "{{ item }}" || true
     loop: "{{ held_packages }}"
     when: ansible_os_family == 'Debian'
   - name: "Removing Kubernetes packages"
@@ -25,7 +25,7 @@
       purge: true
     when: ansible_os_family == 'Debian'
   - name: "Unmarking packages as held"
-    ansible.builtin.shell: dnf versionlock delete "{{ item }}" || true
+    shell: dnf versionlock delete "{{ item }}" || true
     loop: "{{ held_packages }}"
     when: ansible_os_family == 'RedHat'
   - name: "Removing Kubernetes packages"
