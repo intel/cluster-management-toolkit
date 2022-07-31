@@ -137,7 +137,9 @@ def read_iktconfig():
 
 	for item in natsorted(os.listdir(IKT_CONFIG_FILE_DIR)):
 		# Only read entries that end with .y{,a}ml
-		if not (item.endswith(".yml") or item.endswith(".yaml")):
+		if item.startswith(("~", ".")):
+			continue
+		if not item.endswith((".yaml", ".yml")):
 			continue
 
 		# Read the conflet files

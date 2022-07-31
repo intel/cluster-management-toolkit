@@ -1002,7 +1002,7 @@ def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True
 	remnants = []
 	tmp = message.split(" ", 2)
 
-	# At least events from weave seems to be able to end up with \0; remove them
+	# At least events from weave seem to be able to end up with \0; remove them
 	message.replace("\0", "")
 
 	if not message.startswith("EVENT ") or len(tmp) < 3:
@@ -3013,7 +3013,9 @@ def init_parser_list():
 			continue
 
 		for filename in natsorted(os.listdir(parser_dir)):
-			if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
+			if filename.startswith(("~", ".")):
+				continue
+			if not filename.endswith((".yaml", ".yml")):
 				continue
 
 			parser_files.append(os.path.join(parser_dir, filename))

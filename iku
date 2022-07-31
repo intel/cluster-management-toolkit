@@ -4606,7 +4606,7 @@ def get_inventory_list(**kwargs):
 					addr = tmp[2]
 					# There are probably a lot of other things we should exclude,
 					# but let's start with these
-					if iface.startswith("docker") or iface.startswith("weave"):
+					if iface.startswith(("docker", "weave", "vxlan.calico", "virbr")):
 						continue
 					ips.append(addr)
 
@@ -7879,7 +7879,7 @@ def decode_and_view_data(stdscr, **kwargs):
 		obj = value
 	elif vtype.startswith("base64-utf-8"):
 		obj = base64.b64decode(value).decode("utf-8")
-	elif vtype.startswith("base64-binary") or vtype.startswith("gzip"):
+	elif vtype.startswith(("base64-binary", "gzip")):
 		return
 	else:
 		raise Exception(f"Trying to export unknown vtype: {vtype}")
@@ -7928,7 +7928,7 @@ def decode_and_view_file_templates(stdscr, **kwargs):
 			obj = value
 		elif vtype.startswith("base64-utf-8"):
 			obj = base64.b64decode(value).decode("utf-8")
-		elif vtype.startswith("base64-binary") or vtype.startswith("gzip"):
+		elif vtype.startswith(("base64-binary", "gzip")):
 			return
 		if title.endswith((".crt", "tls.key", ".pem", "CAKey")):
 			formatter = iktlib.format_crt
@@ -7951,7 +7951,7 @@ def export_data(stdscr, **kwargs):
 	elif vtype.startswith("base64-utf-8"):
 		f = open(filename, "w")
 		f.write(base64.b64decode(value).decode("utf-8"))
-	elif vtype.startswith("base64-binary") or vtype.startswith("gzip"):
+	elif vtype.startswith(("base64-binary", "gzip")):
 		f = open(filename, "wb")
 		f.write(base64.b64decode(value))
 	else:
@@ -10296,7 +10296,7 @@ def __run_playbook(playbookpath, nodes, values = None):
 
 				for task in ansible_results[host]:
 					# Messages (should) always succeed
-					if task.startswith("TASK: ") or task.startswith("output"):
+					if task.startswith(("TASK: ", "output")):
 						retval = data[task].get("rc", retval)
 						if ansible_results[host][task].get("stdout", "").startswith("[SKIP]") and len(ansible_results[host][task].get("stderr", "")) == 0 and len(ansible_results[host][task].get("msg", "")) == 0 and tmpskipped != 0:
 							tmpskipped = 1
@@ -10328,7 +10328,7 @@ def __run_playbook(playbookpath, nodes, values = None):
 					print_ansible_results(data, host, "", retval)
 				else:
 					for task in ansible_results[host]:
-						if task.startswith("TASK: ") or task.startswith("output") or task.startswith("msg"):
+						if task.startswith(("TASK: ", "output", "msg")):
 							print_ansible_results(data[task], host, task, retval)
 					print()
 
@@ -10981,10 +10981,11 @@ def list_configuration_files(basedir):
 
 	if os.path.isdir(basedir):
 		for filename in os.listdir(basedir):
-			if filename.startswith("~") or filename.startswith("."):
+			if filename.startswith(("~", ".")):
 				continue
+
 			# real path, display name, type
-			if filename.endswith(".yaml") or filename.endswith(".yml"):
+			if filename.endswith((".yaml", ".yml")):
 				files.append((f"{basedir}/{filename}", filename, "Configuration File"))
 				ptype = "Configuration File"
 			elif os.path.isdir(f"{basedir}/{filename}"):
@@ -11061,7 +11062,7 @@ def __populate_playbooklist(path, action_list = {}):
 		action_list = {}
 
 	for filename in os.listdir(path):
-		if filename.startswith("~") or filename.startswith("."):
+		if filename.startswith(("~", ".")):
 			continue
 
 		tmp = re.match(r"(.*)\.ya?ml$", filename)
@@ -11615,7 +11616,9 @@ def populate_views():
 			continue
 
 		for filename in natsorted(os.listdir(view_dir)):
-			if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
+			if filename.startswith(("~", ".")):
+				continue
+			if not filename.endswith((".yaml", ".yml")):
 				continue
 
 			if len(available_api_families) > 0:
