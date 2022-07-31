@@ -69,6 +69,8 @@ iktconfig = None
 
 DEFAULT_CNI = "weave"
 
+no_password = False
+
 prepare_targets = OrderedDict()
 prepare_targets = {
 	"kubeadm": {
@@ -929,10 +931,12 @@ def populate_playbooks_from_dir(path):
 	return populate_playbooks_from_paths(playbook_paths)
 
 def __task_request_ansible_password(installation_info):
+	global no_password
+
 	# Check whether ansible_password is defined or not
-	if ansible_configuration.ansible_password == None:
+	if ansible_configuration.ansible_password == None and no_password == False:
 		iktprint([("Attention: ", "warning"), ("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
-		iktprint([("Since the system will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing when preparing systems.", "default")])
+		iktprint([("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
 		ansible_password = iktinput_password([("\nPassword: ", "default")])
 		if len(ansible_password) == 0:
 			iktprint([("\nError: ", "Error"), ("Empty password; aborting.")], stderr = True)
@@ -1453,6 +1457,7 @@ def __find_requested_version(distro, version = None):
 	return requested_version
 
 def prepare_installation(options = [], args = None):
+	global no_password
 	confirm = True
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
@@ -1509,6 +1514,8 @@ def prepare_installation(options = [], args = None):
 		if opt == "--control-plane":
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = "controlplane", skip_all = False)
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = cluster_name, skip_all = True)
+		elif opt == "--no-password":
+			no_password = True
 		elif opt == "--start-at-task":
 			phase = __validate_task_index(prepare_tasks, optarg)
 		elif opt == "--skip-tasks":
@@ -1588,6 +1595,8 @@ def prepare_installation(options = [], args = None):
 	iktprint([("\nSee “", "separator"), (f"{about.admin_program_name}", "programname"), (" help", "command"), ("“ for more information about valid ", "default"), ("CNI", "argument"), (" options.\n", "default")])
 
 def import_cluster(options = [], args = None):
+	global no_password
+
 	if os.path.exists("/etc/hostname"):
 		f = open("/etc/hostname", "r")
 		hostname = f.readline().strip()
@@ -1600,6 +1609,8 @@ def import_cluster(options = [], args = None):
 	for opt, optarg in options:
 		if opt == "-Y":
 			confirm = False
+		elif opt == "--no-password":
+			no_password = True
 
 	from kubernetes_helper import KubernetesHelper
 	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
@@ -1673,16 +1684,11 @@ def import_cluster(options = [], args = None):
 			kh.set_context(current_context)
 			sys.exit(errno.ENOENT)
 
-		iktprint([("Attention: ", "warning"), ("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
-		iktprint([("Since the system will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing when importing systems.", "default")])
-		ansible_password = iktinput_password([("\nPassword (for ", "default"), (controlplane, "hostname"), ("): ", "default")])
-		if len(ansible_password) == 0:
-			iktprint([("\nError: ", "Error"), ("Empty password; aborting.")], stderr = True)
-			sys.exit(errno.EINVAL)
+		__task_request_ansible_password(None)
 
 		extra_values = {
-			"ansible_become_pass": ansible_password,
-			"ansible_ssh_pass": ansible_password,
+			"ansible_become_pass": ansible_configuration.ansible_password,
+			"ansible_ssh_pass": ansible_configuration.ansible_password,
 		}
 
 		install_ansible_posix()
@@ -2561,6 +2567,9 @@ commandline = {
 			"-Y": {
 				"description": [("Do not ask for confirmation before performing actions", "description")],
 			},
+			"--no-password": {
+				"description": [("Do not prompt for a password; use this if the hosts you're preparing are already configured for login using an SSH key", "description")],
+			},
 		},
 	},
 	"Prepare Installation": {
@@ -2596,6 +2605,9 @@ commandline = {
 			},
 			"--list-tasks": {
 				"description": [("List valid values for ", "description"), ("TASK", "argument"), (" to use with ", "description"), ("--start-at-task", "option"), (" and ", "description"), ("--skip-tasks", "option")],
+			},
+			"--no-password": {
+				"description": [("Do not prompt for a password; use this if the hosts you're preparing are already configured for login using an SSH key", "description")],
 			},
 			"--save-ansible-logs": {
 				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]

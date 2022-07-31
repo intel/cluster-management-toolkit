@@ -81,7 +81,7 @@ def request_ansible_password():
 	# Check whether ansible_password is defined or not
 	if ansible_configuration.ansible_password == None:
 		iktprint([("Attention: ", "warning"), ("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
-		iktprint([("Since the system will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing when preparing systems.", "default")])
+		iktprint([("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
 		ansible_password = iktinput_password([("\nPassword: ", "default")])
 		if len(ansible_password) == 0:
 			iktprint([("\nError: ", "Error"), ("Empty password; aborting.")], stderr = True)
