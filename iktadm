@@ -67,7 +67,7 @@ THEME_PATH = f"{THEMEDIR}/default.yaml"
 
 iktconfig = None
 
-DEFAULT_CNI = "weave"
+DEFAULT_CNI = "cilium"
 
 no_password = False
 
@@ -874,7 +874,7 @@ def __playbook_paths_from_path(path):
 	# Populate list of playbooks
 	for filename in os.listdir(path):
 		# Don't process backups, etc.
-		if filename.startswith("~") or filename.startswith("."):
+		if filename.startswith(("~", ".")):
 			continue
 
 		# Only process playbooks
@@ -917,7 +917,7 @@ def populate_playbooks_from_dir(path):
 	# Populate list of playbooks
 	for filename in os.listdir(path):
 		# Don't process backups, etc.
-		if filename.startswith("~") or filename.startswith("."):
+		if filename.startswith(("~", ".")):
 			continue
 
 		# Only process playbooks
@@ -2655,7 +2655,8 @@ commandline = {
 				("kube-router", "argument"), (", ", "separator"),
 				("weave", "argument"),
 			],
-			[("By default ", "description"), ("10.244.0.0/16", "argument"), (" will be used as pod network CIDR", "description")],
+			[("By default ", "description"), ("cilium", "argument"), (" will be used as CNI", "description")],
+			[("and ", "description"), ("10.244.0.0/16", "argument"), (" will be used as pod network CIDR", "description")],
 		],
 		"options": {
 			"--resume": {
