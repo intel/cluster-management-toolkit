@@ -1149,122 +1149,6 @@ def split_bracketed_timestamp_severity_facility(message, default = loglevel.INFO
 
 	return message, severity, facility
 
-# kube-app-manager
-# 2020-12-27T02:57:49.788Z        INFO    controller-runtime.metrics      metrics server is starting to listen    {"addr": "127.0.0.1:8080"}
-# 2020-12-27T02:57:49.789Z        INFO    setup   starting kube-app-manager
-# I1227 02:57:49.887903       1 leaderelection.go:242] attempting to acquire leader lease  application-system/controller-leader-election-helper...
-# 2020-12-27T02:57:49.887Z        INFO    controller-runtime.manager      starting metrics server {"path": "/metrics"}
-# I1227 02:57:49.926209       1 leaderelection.go:252] successfully acquired lease application-system/controller-leader-election-helper
-def kube_app_manager(message, fold_msg = True):
-	remnants = []
-
-	message, _timestamp = split_iso_timestamp(message, None)
-	message, severity, facility, remnants, _match = split_glog(message)
-	message, severity, facility = __split_severity_facility_style(message, severity, facility)
-
-	tmp = re.match(r"^(.*?)\s*?({.*})", message)
-	if tmp is not None:
-		message = tmp[1]
-		extra_message, _severity, _facility, remnants = split_json_style(tmp[2], severity = severity, facility = facility, fold_msg = fold_msg)
-		if len(extra_message) > 0:
-			if remnants is None or len(remnants) == 0:
-				message = f"{messsage}  {extra_message}"
-			else:
-				raise Exception(f"message: {message}\nextra_message: {extra_message}")
-
-	return facility, severity, message, remnants
-
-# katib-controller
-# {"level":"info","ts":1586872332.7322807,"logger":"entrypoint","msg":"Registering Components."}
-# XXX: Use split_json_style
-def kube_parser_json(message, fold_msg = True, glog = False):
-	facility = ""
-	severity = loglevel.INFO
-	remnants = None
-
-	try:
-		logentry = json.loads(message)
-
-		msg = logentry.pop("msg", "")
-		level = logentry.pop("level", "")
-		logentry.pop("ts", None)
-		logentry.pop("time", None)
-		logentry.pop("timestamp", None)
-
-		logger = logentry.pop("logger", None)
-		caller = logentry.pop("caller", None)
-
-		if level is not None:
-			tmpseverity = str_to_severity(level)
-		else:
-			tmpseverity = loglevel.INFO
-
-		# Doesn't this overpromote debug messages?
-		severity = min(tmpseverity, severity)
-
-		if facility == "":
-			if caller is not None:
-				facility = caller
-			elif logger is not None:
-				facility = logger
-
-		# If the message is folded, append the rest
-		if fold_msg == True:
-			tmp = ""
-			if msg == "":
-				message = str(logentry)
-			else:
-				# Escape newlines
-				msg = msg.replace("\n", "\\n")
-
-				if len(logentry) > 0:
-					message = f"{msg}  {logentry}"
-				else:
-					message = msg
-
-			if severity > loglevel.NOTICE and "version" in message:
-				severity = loglevel.NOTICE
-
-			message, severity = split_bracketed_severity(message, severity)
-		# else return an expanded representation
-		else:
-			message = msg
-
-			if severity > loglevel.NOTICE and "version" in message:
-				severity = loglevel.NOTICE
-
-			message, severity = split_bracketed_severity(message, severity)
-			if len(logentry) > 0:
-				# Don't make the mistake of setting the loglevel higher than that of the main message
-				if severity < loglevel.INFO:
-					tmpseverity = loglevel.INFO
-				else:
-					tmpseverity = severity
-				remnants = (json_dumps(logentry), tmpseverity)
-			if "\n" in message:
-				tmp = message.split("\n")
-				message = tmp[0]
-				tmpremnants = []
-				for remnant in tmp[1:]:
-					tmpremnants.append((remnant, tmpseverity))
-				if remnants is None:
-					remnants = tmpremnants
-				elif len(tmpremnants) > 0:
-					remnants = tmpremnants + remnants
-	# FIXME: We need a tighter exception here
-	except Exception as e:
-		# We might receive kubernetes style error messages
-		if glog == True:
-			message, severity, facility, remnants, _match = split_glog(message)
-		else:
-			e.args = e.args + (f"Original message: {message}",)
-			raise e.with_traceback(e.__traceback__)
-
-	return facility, severity, message, remnants
-
-def kube_parser_json_glog(message, fold_msg = True):
-	return kube_parser_json(message, fold_msg = fold_msg, glog = True)
-
 def override_severity(message, severity, facility = None):
 	if type(message) != str:
 		return message, severity
@@ -1395,7 +1279,7 @@ def expand_event_objectmeta(message, severity, remnants = None, fold_msg = True)
 					depth -= 1
 					if i < len(raw_message) - 1:
 						continue
-			
+
 			# OK, this isn't an escaped curly brace or comma,
 			# so it's time to flush the buffer
 			if message is None:
@@ -1506,7 +1390,7 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 			# Now add key: value into the dict
 			if tmp2[1].startswith("”"):
 				if not tmp2[1].endswith("”"):
-					raise Exception(f"kube_parser_structured_glog(): unbalanced quotes in item: {item}")
+					raise Exception(f"expand_header_key_value(): unbalanced quotes in item: {item}")
 				else:
 					res[tmp2[0]] = tmp2[1][1:-1]
 			else:
@@ -1586,156 +1470,6 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 
 	return message, remnants
 
-# metrics-server/metrics-server
-# Example(s):
-# I0221 23:26:05.862399       1 server.go:150] Version: v1.17.3
-# E0702 11:03:23.913858859       1 server_chttp2.cc:40]        {"created":
-# http-style messages
-# [10/Feb/2020:23:09:45 +0000]TCP200000.000
-def kube_parser_1(message, fold_msg = True):
-	remnants = None
-
-	message, severity, facility, remnants, match = split_glog(message)
-	if match == True and remnants is not None:
-		# Event(v1.ObjectReference{.*}):
-		if message.startswith("Event(v1.ObjectReference{"):
-			severity, message, remnants = expand_event(message, severity, remnants = remnants, fold_msg = fold_msg)
-		elif message.startswith("\"Event occurred\""):
-			message, remnants = expand_header_key_value(message, severity, remnants = remnants, fold_msg = fold_msg)
-
-		message, severity = override_severity(message, severity)
-		return facility, severity, message, remnants
-
-	message, _timestamp = split_http_style(message, None)
-
-	# For messages of the format
-	# [10/Feb/2020:23:09:45 +0000][...]
-	message, _timestamp = split_dd_mmm_yyyy_timestamp(message, None)
-
-	# tensorflow-style
-	message, _timestamp, severity, facility = split_tensorflow_style(message, None, severity, facility)
-
-	# Some logs have the severity before the timestamp
-	message, tmpseverity = split_colon_severity(message, severity)
-	severity = min(tmpseverity, severity)
-
-	# Another timestamp to strip
-	message, _timestamp = split_iso_timestamp(message, None)
-
-	# While other logs have the severity after the timestamp
-	message, tmpseverity = split_colon_severity(message, severity)
-	severity = min(tmpseverity, severity)
-
-	# For messages of the format
-	# [main] 2021/03/27 20:45:25 Starting Tiller v2.16.10 (tls=false)
-	message, facility = split_tiller_style(message, facility = facility)
-
-	# For messages of the format
-	# W facility.cc] [...]
-	# I suspect that this should be handled by split_tensorflow_style
-	tmp = re.match(r"^([A-Z]) (.*?:\d+)] (.*)", message)
-	if tmp is not None:
-		# XXX: This is just to be able to debug this
-		raise Exception(f"triggered by message: {message}")
-		severity = letter_to_severity(tmp[1])
-		facility = tmp[2]
-		message = tmp[3]
-
-	# JSON/Python dict
-	message, severity, facility, remnants = split_json_style(message, severity = severity, facility = facility, fold_msg = fold_msg)
-	message, severity = override_severity(message, severity)
-
-	return facility, severity, message, remnants
-
-# seldon-controller-manager:
-# 2020-06-24T09:16:12.085Z        INFO    controller-runtime.metrics      metrics server is starting to listen    {"addr": ":8080"}
-# github.com/go-logr/zapr.(*zapLogger).Error
-#         /go/pkg/mod/github.com/go-logr/zapr@v0.1.0/zapr.go:128
-def seldon(message, fold_msg = True):
-	remnants = None
-	severity = loglevel.INFO
-	facility = ""
-
-	# Another timestamp to strip
-	message, _timestamp = split_iso_timestamp(message, None)
-
-	# This log uses a rather special format for severity and facility
-	tmp = re.match(r"^\s*([A-Z]+)\s*([-a-zA-Z.]*)\s*(.*)", message)
-	if tmp is not None:
-		severity = str_to_severity(tmp[1])
-		facility = tmp[2]
-		message = tmp[3]
-
-	# Some log messages have an additional JSON portion at the end;
-	# expand it if available and the configuration requests this
-	tmp = re.match(r"^(.*?)\s*?({.*})", message)
-	if tmp is not None:
-		message = tmp[1]
-		extra_message, severity, facility, remnants = split_json_style(tmp[2], severity = severity, facility = facility, fold_msg = fold_msg)
-		if len(extra_message) > 0:
-			if remnants is None or len(remnants) == 0:
-				message = f"{message}  {extra_message}"
-			else:
-				raise Exception(f"message: {message}\nextra_message: {extra_message}")
-
-	return facility, severity, message, remnants
-
-# mysql:
-# 2020-06-24 09:16:04+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 5.6.48-1debian9 started.
-# 2020-06-24 09:16:05 0 [Note] mysqld (mysqld 5.6.48) starting as process 1 ...
-# Version: '5.6.48'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server (GPL)
-def mysql(message, fold_msg = True):
-	remnants = []
-	severity = loglevel.INFO
-	facility = ""
-
-	# If the line starts with a number it's another timestamp,
-	# if it starts with a letter check if it's a severity
-	if len(message) > 0 and message[0] in "0123456789":
-		message, _timestamp = split_iso_timestamp(message, None)
-	else:
-		tmp = re.match(r"^([A-Z][a-z]+):\s+(.*)", message)
-		if tmp is not None:
-			_severity = str_to_severity(tmp[1], -1)
-			if severity != -1:
-				severity = _severity
-				message = tmp[2]
-				return facility, severity, message, remnants
-
-	# Some lines begin with a mysterious number (possibly the PID); remove it
-	tmp = re.match(r"^\d+ (.*)", message)
-	if tmp is not None:
-		message = tmp[1]
-
-	# Get the severity (if specified)
-	message, tmpseverity = split_bracketed_severity(message)
-	severity = min(tmpseverity, severity)
-
-	# Some lines have what presumably is a mysql internal error prefix; remove it
-	tmp = re.match(r"^\[MY-\d+\] (.*)", message)
-	if tmp is not None:
-		message = tmp[1]
-
-	tmp = re.match(r"^\[(Entrypoint|Server|InnoDB)\]:? (.*)", message)
-	if tmp is not None:
-		facility = tmp[1]
-		message = tmp[2]
-	else:
-		# Only match this if we didn't remove a bracketed prefix
-		tmp = re.match(r"^(InnoDB): (.*)", message)
-		if tmp is not None:
-			facility = tmp[1]
-			message = tmp[2]
-
-	# Override the severity for the version string
-	tmp = re.match(r".*mysqld? \(mysqld .*?\) starting as process", message)
-	if tmp is not None:
-		severity = loglevel.NOTICE
-	# Override severity for a message that looks like it should be warning
-	message, severity = override_severity(message, severity)
-
-	return facility, severity, message, remnants
-
 # k8s-mlperf-image-classification-training/k8s-mlperf-image-classification-training
 # INFO:tensorflow:Done running local_init_op.
 # 2020-02-24 11:52:00.243943: W [...]
@@ -1773,24 +1507,6 @@ def mlperf_image_classification_training(message, fold_msg = True):
 		severity = loglevel.DEBUG
 		message = message[len("DEBUG:"):]
 	else:
-		severity = loglevel.INFO
-
-	return facility, severity, message, remnants
-
-# nvidia-smi-exporter
-# Examples:
-# nvidia-smi-exporter/*:<bla bla.rb:\d+: >:< warning: >:no extra ts:/var/lib/gems/2.5.0/gems/bundler-1.17.2/lib/bundler/rubygems_integration.rb:200: warning: constant Gem::ConfigMap is deprecated
-def nvidia_smi_exporter(message, fold_msg = True):
-	remnants = []
-
-	tmp = re.match(r"(/.*?\.rb:\d+): (.*?): (.*)", message)
-
-	if tmp is not None:
-		facility = tmp[1]
-		severity = str_to_severity(tmp[2])
-		message = tmp[3]
-	else:
-		facility = ""
 		severity = loglevel.INFO
 
 	return facility, severity, message, remnants
@@ -2021,153 +1737,6 @@ def key_value_with_leading_message(message, severity = loglevel.INFO, facility =
 				remnants = ([_message], severity)
 	return facility, severity, message, remnants
 
-# [2021-09-24 12:43:53 +0000] [11] [INFO] Booting worker with pid: 11
-# | apps.default | INFO | Setting STATIC_DIR to: /src/apps/default/static
-def web_app(message, fold_msg = True):
-	remnants = []
-	facility = ""
-	severity = None
-
-	if len(message) > 0:
-		if message[0] == "[":
-			tmp = re.match(r"^\[(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d .\d\d\d\d)\] \[(\d+)\] \[([A-Z]+)\] (.*)", message)
-			if tmp is not None:
-				_timestamp = tmp[1]
-				_pid = tmp[2]
-				severity = str_to_severity(tmp[3])
-				message = tmp[4]
-		else:
-			tmp = re.match(r"^(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d,\d\d\d) \| (.+?) \| ([A-Z]+) \| (.*)", message)
-			if tmp is not None:
-				_timestamp = tmp[1]
-				facility = tmp[2]
-				severity = str_to_severity(tmp[3])
-				message = tmp[4]
-
-	if severity is None:
-		severity = loglevel.INFO
-
-	return facility, severity, message, remnants
-
-# 2020-04-17T10:58:19.855304Z     info    FLAG: --applicationPorts="[]"
-# [2020-04-17 10:58:19.870][18][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Cluster.hosts' from file cds.proto.
-# XXX: We need a better name for this parser; it's also used for kourier and possibly other things as well
-def istio(message, fold_msg = True):
-	remnants = []
-	facility = ""
-	severity = None
-
-	# Another timestamp to strip
-	message, _timestamp = split_iso_timestamp(message, None)
-
-	tmp = re.match(r"^\s+([a-z]+)\s+(.*)", message)
-	if tmp is not None:
-		severity = str_to_severity(tmp[1])
-		message = tmp[2]
-
-	tmp = re.match(r"^\[(\d+-\d\d-\d\d \d\d:\d\d:\d\d\.\d+)\]\[\d+\]\[([a-z]+)\]\[([a-z]+)\] \[(.+)\] (.*)", message)
-	if tmp is not None:
-		# timestamp = tmp[1]
-		# something = tmp[3]
-		if severity is None:
-			severity = str_to_severity(tmp[2])
-		facility = tmp[4]
-		message = tmp[5]
-
-	if severity is None:
-		severity = loglevel.INFO
-
-	# split dates of the format [YYYY-MM-DD HH:MM:SS.sssZ]
-	tmp = re.match(r"\[\d+-\d\d-\d\dT\d\d:\d\d:\d\d\.\d\d\dZ\] (.*)", message)
-	if tmp is not None:
-		message = tmp[1]
-
-	# If the message contains a version,
-	# or something similarly useful, bump the severity
-	message, severity = override_severity(message, severity)
-
-	return facility, severity, message, remnants
-
-def istio_pilot(message, fold_msg = True):
-	remnants = []
-	facility = None
-	severity = None
-
-	# If the line starts with a number it's another timestamp,
-	# if it starts with a letter try to treat it as a glog message instead
-	if len(message) > 0 and message[0] in "0123456789":
-		message, _timestamp = split_iso_timestamp(message, None)
-	else:
-		message, severity, facility, remnants, _match = split_glog(message)
-		return facility, severity, message, remnants
-
-	tmp = re.match(r"^\s+([A-Za-z]+)\s+(.*)", message)
-	if tmp is not None:
-		severity = str_to_severity(tmp[1])
-		message = tmp[2]
-	else:
-		severity = loglevel.INFO
-
-	tmp = re.match(r"^([A-Za-z-. ]+)\t(.*)", message)
-	if tmp is not None:
-		facility = tmp[1]
-		message = tmp[2]
-	else:
-		facility = ""
-
-	return facility, severity, message, remnants
-
-# jupyter:
-# [I 10:29:35.079 NotebookApp] Writing notebook server cookie secret to /root/.local/share/jupyter/runtime/notebook_cookie_secret
-# [W 10:29:35.131 NotebookApp] WARNING: The notebook server is listening on all IP addresses and not using encryption. This is not recommended.
-# [C 10:29:35.149 NotebookApp]
-def jupyter(message, fold_msg = True):
-	facility = ""
-	severity = loglevel.INFO
-	remnants = []
-
-	tmp = re.match(r"^\[(.) \d\d:\d\d:\d\d\.\d\d\d (.*?)\] ?(.*)", message)
-
-	if tmp is not None:
-		facility = tmp[2]
-		severity = letter_to_severity(tmp[1])
-		message = tmp[3]
-
-	return facility, severity, message, remnants
-
-# tiller:
-# [main] 2020/04/15 11:29:07 Starting Tiller v2.16.6 (tls=false)
-def tiller(message, fold_msg = True):
-	facility = ""
-	severity = loglevel.INFO
-	remnants = []
-
-	tmp = re.match(r"^\[(.+?)\] ?(.*)", message)
-
-	if tmp is not None:
-		facility = tmp[1]
-		# Another timestamp to strip
-		message, _timestamp = split_iso_timestamp(tmp[2], None)
-
-	# If the message contains a version,
-	# or something similarly useful, bump the severity
-	message, severity = override_severity(message, severity)
-
-	return facility, severity, message, remnants
-
-# [main] 2021/03/27 20:45:25 Starting Tiller v2.16.10 (tls=false)
-# [restful] 2020/03/04 10:24:17 log.go:33: [restful/swagger] listing is available at https://:443/swaggerapi
-def split_tiller_style(message, facility = None):
-	tmp = re.match(r"^\[(.+?)\] \d\d\d\d\/\d\d\/\d\d \d\d:\d\d:\d\d (.+?:\d+: |)(.*)", message)
-
-	if tmp is not None:
-		if len(tmp[2]) > 0:
-			facility = tmp[2][:-2]
-		else:
-			facility = tmp[1]
-		message = tmp[3]
-	return message, facility
-
 # Messages on the format:
 # <key>:<whitespace>...<value>
 def modinfo(message, fold_msg = True):
@@ -2201,137 +1770,6 @@ def bracketed_timestamp_severity(message, fold_msg = True):
 
 	if message.startswith(("XPU Manager:", "Build:", "Level Zero:")):
 		severity = loglevel.NOTICE
-
-	return facility, severity, message, remnants
-
-def kube_parser_structured_glog(message, fold_msg = True):
-	facility = ""
-	severity = loglevel.INFO
-	remnants = []
-
-	message, severity, facility, remnants, match = split_glog(message)
-
-	# Embedded quotes in the messages causes issues when
-	# splitting, so replace them with fancy quotes
-	message = message.replace("\\\"", "”")
-
-	if fold_msg == True:
-		# Split into substrings based on spaces
-		tmp = re.findall(r"(?:\".*?\"|\S)+", message)
-
-		if tmp is not None and len(tmp) > 0 and "=" in tmp[0]:
-			fac, sev, message, remnants = key_value(message, fold_msg = fold_msg)
-			if len(facility) == 0:
-				facility = fac
-			if sev < severity:
-				severity = sev
-	else:
-		header = ""
-
-		# Split into substrings based on spaces
-		tmp = re.findall(r"(?:\".*?\"|\S)+", message)
-
-		if tmp is not None and len(tmp) > 0:
-			if "=" not in tmp[0]:
-				header = f"{tmp[0]}: "
-				tmp = tmp[1:]
-
-			res = {}
-			for item in tmp:
-				# First split into [key, value]
-				tmp2 = item.split("=", 1)
-				if len(tmp2) < 2:
-					# We found a non key=value item; treat the entire string as non-key=value
-					res = {}
-					break
-
-				# Now add key: value into the dict
-				if tmp2[1].startswith("”"):
-					if not tmp2[1].endswith("”"):
-						raise Exception(f"kube_parser_structured_glog(): unbalanced quotes in item: {item}")
-					else:
-						res[tmp2[0]] = tmp2[1][1:-1]
-				else:
-					# Now we restore the quotation marks; fancy quotes should be paired,
-					# and since we cannot do that we shouldn't pretend that we did
-					res[tmp2[0]] = tmp2[1].replace("”", "\"")
-
-			if len(res) > 0:
-				resmsg = res.get("msg")
-				if resmsg is not None:
-					if resmsg.startswith("\"") and resmsg.endswith("\""):
-						message = f"{header}{resmsg[1:-1]}"
-					else:
-						message = f"{header}{resmsg}"
-				else:
-					message = header
-
-				for entry, value in res.items():
-					if severity > loglevel.INFO:
-						tmpseverity = loglevel.INFO
-					else:
-						tmpseverity = severity
-
-					# We have already extracted the message
-					if entry == "msg":
-						continue
-					# We should already have a timestamp
-					elif entry in ["ts", "time"]:
-						continue
-					elif entry == "caller":
-						if facility == "":
-							facility = value
-						continue
-					elif entry == "source":
-						if facility == "":
-							facility = value
-						continue
-					elif entry == "Topic":
-						if facility == "":
-							facility = value
-						continue
-					elif entry == "level":
-						s = str_to_severity(value, -1)
-						if s != -1 and s < severity:
-							severity = s
-						continue
-					elif entry == "err":
-						# alertmanager sometimes folds up multiple errors on one line;
-						# try to unfold them
-						tmpseverity = severity
-						tmp = re.match(r"(\d+ errors occurred:)(.*)", value)
-						if tmp is not None:
-							remnants.append((f"{entry}: {tmp[1]}\n", tmpseverity))
-							s = tmp[2].replace("\\t", "").split("\\n")
-							for line in s:
-								if len(line) > 0:
-									if line.startswith("* "):
-										remnants.append(("   {line}\n", tmpseverity))
-									else:
-										remnants.append(("   * {line}\n", tmpseverity))
-							continue
-					elif entry == "error":
-						tmpseverity = severity
-					# Should we highlight this too?
-					#elif entry == "cluster-version":
-					#	tmpseverity = loglevel.NOTICE
-					elif entry in ["version", "git-commit"]:
-						tmpseverity = loglevel.NOTICE
-					elif entry == "Workflow":
-						if message.startswith("Syncing Workflow") and value in message:
-							continue
-					elif entry == "component":
-						# this should have loglevel.INFO or lower severity
-						tmpseverity = max(loglevel.INFO, severity, tmpseverity)
-
-					remnants.append(([(entry, ("types", "key")), ("separators", "keyvalue_log"), (value, ("types", "value"))], tmpseverity))
-				if len(message) == 0:
-					message = remnants[0]
-					remnants.pop(0)
-
-	# If the message contains a version,
-	# or something similarly useful, bump the severity
-	message, severity = override_severity(message, severity, facility = facility)
 
 	return facility, severity, message, remnants
 
@@ -2871,116 +2309,6 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 
 	return facility, severity, message, remnants
 
-builtin_parsers = [
-	# Formats:
-	# pod, container, image, parser (old style)
-	# parser_name, show_in_selector, [match_rules], parser (new style)
-	#
-	# One or more of pod, container, image must be specified
-
-	("3scale-kourier-gateway", "", "", "istio"),
-
-	("admission-webhook-bootstrap-stateful-set", "bootstrap", "", "basic_8601"),
-	("admission-webhook-bootstrap", "", "", "basic_8601"),
-	("admission-webhook-deployment", "admission-webhook", "", "kube_parser_1"),
-	("admission-webhook-deployment", "", "", "kube_parser_1"),
-	("application-controller-stateful-set", "manager", "", "kube_parser_1"),
-	("argo-ui", "argo-ui", "", "basic_8601_colon_severity"),
-	("autoscaler-hpa", "autoscaler-hpa", "", "kube_parser_1"),
-
-	("blackbox-exporter", "", "", "kube_parser_structured_glog"),
-
-	("cass-operator", "", "", "kube_parser_json"),
-	("cdi-controller", "", "", "kube_parser_1"),
-	("cdi-node", "", "", "kube_parser_1"),
-	("centraldashboard", "", "", "basic_8601"),
-	("cifar10-training-gpu-worker", "", "", "kube_parser_1"),
-
-	("", "", "quay.io/dexidp/dex", "key_value"),
-	("dist-mnist", "", "", "jupyter"),
-	("dns-autoscaler", "", "", "kube_parser_structured_glog"),
-
-	("grafana", "", "", "key_value"),
-	("", "grafana-operator", "", "kube_parser_json_glog"),
-
-	("helm-", "", "", "kube_parser_1"),
-
-	("katib-controller", "", "", "kube_parser_json_glog"),
-	("katib-db-manager", "", "", "kube_parser_1"),
-	("katib-ui", "", "", "kube_parser_1"),
-	("kfserving-controller-manager", "", "", "kube_parser_1"),
-	("kilo", "", "", "kube_parser_json_glog"),
-	("k8s-mlperf-image-classification-training", "", "", "kube_parser_1"),
-	("kube-app-manager-controller", "kube-app-manager", "", "kube_app_manager"),
-	# kubeflow
-	("", "", "gcr.io/arrikto/kubeflow/oidc-authservice", "key_value"),
-
-	("metacontroller", "metacontroller", "", "kube_parser_1"),
-	("metadata-db", "db-container", "", "mysql"),
-	("metadata-deployment", "container", "", "kube_parser_1"),
-	("metadata-envoy-deployment", "container", "", "istio"),
-	("metadata-grpc-deployment", "container", "", "kube_parser_1"),
-	("metadata-ui", "metadata-ui", "", "basic_8601"),
-
-	("minio", "minio", "", "basic_8601"),
-	("ml-pipeline", "ml-pipeline-api-server", "", "kube_parser_1"),
-	("ml-pipeline", "ml-pipeline-visualizationserver", "", "kube_parser_1"),	#UNKNOWN
-	("ml-pipeline", "ml-pipeline-persistenceagent", "", "kube_parser_structured_glog"),
-	("ml-pipeline", "ml-pipeline-scheduledworkflow", "", "kube_parser_structured_glog"),
-	("ml-pipeline", "ml-pipeline-ui", "", "kube_parser_1"),
-	("ml-pipeline", "ml-pipeline-viewer-controller", "", "kube_parser_1"),
-	("", "", "docker.io/kubeflow/mxnet-operator", "kube_parser_json_glog"),
-	("mysql", "mysql", "", "mysql"),
-	("", "", "docker.io/library/mysql", "mysql"),
-
-	("node-exporter", "", "", "key_value"),
-	("nodelocaldns", "", "", "kube_parser_1"),
-	("notebook-controller-deployment", "manager", "", "seldon"),
-	("nvidia-cuda-validator", "", "", "basic_8601"),
-	("nvidia-device-plugin", "", "", "basic_8601"),
-	("nvidia-container-toolkit", "driver-validation", "", "basic_8601"),
-	("nvidia-container-toolkit", "", "", "key_value"),
-	("nvidia-dcgm", "toolkit-validation", "", "basic_8601"),
-	("nvidia-dcgm", "", "", "key_value"),
-	("nvidia-operator-validator", "cuda-validation", "", "key_value"),
-	("nvidia-operator-validator", "plugin-validation", "", "key_value"),
-	("nvidia-operator-validator", "", "", "basic_8601"),
-	("nvidia-smi-exporter", "", "", "nvidia_smi_exporter"),
-
-	("parallel-pipeline", "", "", "kube_parser_1"),
-	("pmem-csi-", "", "", "kube_parser_1"),
-	("profiles-deployment", "kfam", "", "kube_parser_1"),
-	("profiles-deployment", "manager", "", "seldon"),
-	("", "kube-prometheus-stack", "", "kube_parser_structured_glog"),
-	("pytorch-operator", "", "", "kube_parser_1"),	#ALMOST
-
-	("seldon-controller-manager", "", "", "seldon"),
-	("spark-operatorcrd-cleanup", "delete-scheduledsparkapp-crd", "", "kube_parser_1"),	#ALMOST
-	("spark-operatorcrd-cleanup", "delete-sparkapp-crd", "", "kube_parser_1"),	#ALMOST
-	("spark-operatorsparkoperator", "", "", "kube_parser_1"),
-	("spartakus-volunteer", "", "", "kube_parser_1"),
-
-	("tensorboard-controller-controller-manager", "manager", "", "istio_pilot"),
-	("tensorboard", "tensorboard", "", "kube_parser_1"),
-	("tf-job-operator", "", "", "kube_parser_1"),
-	("tiller-deploy", "tiller", "", "tiller"),
-
-	("svclb-traefik", "", "", "kube_parser_1"),
-
-	("", "", "gcr.io/ml-pipeline/viewer-crd-controller", "kube_parser_1"),
-	("volcano-admission-init", "", "docker.io/volcanosh/vc-webhook-manager", "basic_8601_raw"),
-	("", "", "docker.io/volcanosh/vc-webhook-manager", "kube_parser_1"),
-	("", "", "docker.io/volcanosh/vc-controller-manager", "kube_parser_1"),
-	("", "", "docker.io/volcanosh/vc-scheduler", "kube_parser_1"),
-
-	("jupyter-web-app", "", "", "web_app"),
-	("tensorboards-web-app", "", "", "web_app"),
-	("volumes-web-app", "", "", "web_app"),
-	("workflow-controller", "", "", "kube_parser_structured_glog"),
-
-	("", "", "docker.io/kubeflow/xgboost-operator", "kube_parser_json"),
-]
-
 Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser")
 parsers = []
 
@@ -2998,8 +2326,6 @@ def init_parser_list():
 	if iktconfig is None:
 		iktconfig = iktlib.read_iktconfig()
 		parser_dirs += deep_get(iktconfig, "Pods#local_parsers", [])
-
-	disable_builtin_parsers = deep_get(iktconfig, "Internal#disable_builtin_parsers", False)
 
 	parser_dirs.append(os.path.join(IKTDIR, PARSER_DIRNAME))
 
@@ -3096,36 +2422,10 @@ def init_parser_list():
 
 				parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = ("custom", rules)))
 
-	# Now do the same for built-in parsers, unless disabled
-	if disable_builtin_parsers == False:
-		for builtin_parser in builtin_parsers:
-			# Old-style parser definition
-			if type(builtin_parser[2]) == str:
-				if type(builtin_parser[3]) == tuple and builtin_parser[3][0] == "custom":
-					parser_name = "custom"
-					show_in_selector = False
-				elif type(builtin_parser[3]) == list:
-					parser_name = "|".join(builtin_parser[3])
-					show_in_selector = False
-				else:
-					parser_name = builtin_parser[3]
-					show_in_selector = True
-				matchrules = [(builtin_parser[0], builtin_parser[1], builtin_parser[2], "container", "")]
-			# New-style parser definition;
-			elif type(builtin_parser[2]) == list:
-				parser_name = builtin_parser[0]
-				show_in_selector = builtin_parser[1]
-				matchrules = builtin_parser[2]
-				parser = builtin_parser[3]
-			else:
-				sys.exit(f"Could not determine parser type for entry: {builtin_parser}; aborting.")
-
-			parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = builtin_parser[3]))
-
 	# Fallback entries
-	parsers.append(Parser(parser_name = "basic_8601_raw", show_in_selector = True, match_rules = [("raw", "", "", "container", "")], parser = "basic_8601_raw"))
+	parsers.append(Parser(parser_name = "basic_8601_raw", show_in_selector = True, match_rules = [("raw", "", "", "container", "")], parser = basic_8601_raw))
 	# This should always be last
-	parsers.append(Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("", "", "", "container", "")], parser = "basic_8601"))
+	parsers.append(Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("", "", "", "container", "")], parser = basic_8601))
 
 def get_parser_list():
 	_parsers = set()
@@ -3151,7 +2451,7 @@ def logparser_initialised(parser = None, message = "", fold_msg = True, line = 0
 		}
 		pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1], options = options)
 	else:
-		pod_name, severity, message, remnants = eval(parser.parser)(message, fold_msg = fold_msg)
+		pod_name, severity, message, remnants = parser.parser(message, fold_msg = fold_msg)
 
 	if len(message) > 16383:
 		remnants = (message[0:16383], severity)
@@ -3191,7 +2491,7 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 						}
 						pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1], options = options)
 					else:
-						pod_name, severity, message, remnants = eval(parser.parser)(message, fold_msg = fold_msg)
+						pod_name, severity, message, remnants = parser.parser(message, fold_msg = fold_msg)
 			return timestamp, pod_name, severity, message, remnants, ("<override>", str(override_parser)), parser
 		except Exception as e:
 			return timestamp, "", loglevel.ERR, f"Could not parse using {str(override_parser)}:", [(message, loglevel.INFO)], ("<override>", str(override_parser)), None
@@ -3228,7 +2528,7 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 					}
 					pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1], options = options)
 				else:
-					pod_name, severity, message, remnants = eval(parser.parser)(message, fold_msg = fold_msg)
+					pod_name, severity, message, remnants = parser.parser(message, fold_msg = fold_msg)
 				_lparser = []
 				if len(pod_prefix) > 0:
 					_lparser.append(pod_prefix)
