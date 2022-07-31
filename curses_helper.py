@@ -54,43 +54,60 @@ __pairs = {
 def get_theme_ref():
 	return theme
 
+def __color_name_to_curses_color(color, color_type):
+	if type(color) == list:
+		col, attr = color
+		if type(attr) != str:
+			raise ValueError(f"Invalid color attribute used in theme; attribute has to be a string and one of: normal, bright")
+		if type(col) == str:
+			col = col.lower()
+	else:
+		col = color.lower()
+
+	if type(col) != str:
+		raise ValueError(f"Invalid color type used in theme; color has to be a string and one of: black, red, green, yellow, blue, magenta, cyan, white")
+
+	if attr == "bright":
+		attr = 8
+	else:
+		attr = 0
+
+	if col == "black":
+		color = curses.COLOR_BLACK
+	elif col == "red":
+		color = curses.COLOR_RED
+	elif col == "green":
+		color = curses.COLOR_GREEN
+	elif col == "yellow":
+		color = curses.COLOR_YELLOW
+	elif col == "blue":
+		color = curses.COLOR_BLUE
+	elif col == "magenta":
+		color = curses.COLOR_MAGENTA
+	elif col == "cyan":
+		color = curses.COLOR_CYAN
+	elif col == "white":
+		color = curses.COLOR_WHITE
+	else:
+		raise ValueError(f"Invalid {color_type} color {col} used in theme; valid colors are: black, red, green, yellow, blue, magenta, cyan, white")
+	return color + attr
+
 def __convert_color_pair(color_pair):
 	fg, bg = color_pair
 
-	if type(fg) == list:
-		fg, attr = fg
-		if attr == "normal":
-			attr = 0
-		elif attr == "bright":
-			attr = 8
-		else:
-			raise Exception(f"Unknown attribute {attr}")
-	else:
-		attr = 0
-
-	fg = eval(f"curses.COLOR_{fg.upper()}")
-	fg += attr
-
-	if type(bg) == list:
-		bg, attr = bg
-		if attr == "normal":
-			attr = 0
-		elif attr == "bright":
-			attr = 8
-		else:
-			raise Exception(f"Unknown attribute {attr}")
-	else:
-		attr = 0
-
-	bg = eval(f"curses.COLOR_{bg.upper()}")
-	bg += attr
+	fg = __color_name_to_curses_color(fg, "foreground")
+	bg = __color_name_to_curses_color(bg, "background")
 
 	return (fg, bg)
 
-def init_pair(color_pair, color_nr):
+def init_pair(pair, color_pair, color_nr):
 	fg, bg = color_pair
+	bright_black_remapped = False
+
 	try:
 		curses.init_pair(color_nr, fg, bg)
+		if fg == bg:
+			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 	except ValueError:
 		# Most likely we failed due to the terminal only
 		# supporting colours 0-7. If "bright black" was
@@ -98,7 +115,10 @@ def init_pair(color_pair, color_nr):
 		# hopefully there are no cases of bright black on blue.
 		if fg & 7 == curses.COLOR_BLACK:
 			fg = curses.COLOR_BLUE
+			bright_black_remapped = True
 		curses.init_pair(color_nr, fg & 7, bg & 7)
+		if fg & 7 == bg & 7:
+			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg}; bright black remapped: {bright_black_remapped})")
 
 def read_theme(configthemefile, defaultthemefile):
 	global theme
@@ -136,12 +156,12 @@ def init_curses():
 			selected = __convert_color_pair(theme["color_pairs_curses"][pair]["selected"])
 
 		if unselected not in __pairs:
-			init_pair(unselected, color_last)
+			init_pair(pair, unselected, color_last)
 			__pairs[unselected] = curses.color_pair(color_last)
 			color_last += 1
 		unselected_index = __pairs[unselected]
 		if selected not in __pairs:
-			init_pair(selected, color_last)
+			init_pair(pair, selected, color_last)
 			__pairs[selected] = curses.color_pair(color_last)
 			color_last += 1
 		selected_index = __pairs[selected]
@@ -659,8 +679,16 @@ def __attr_to_curses(attr, selected = False):
 			attr = list(attr)
 		tmp = 0
 		for item in attr:
-			# attr can be one or more of "dim", "normal", "bold", "underline"
-			tmp |= eval(f"curses.A_{item.upper()}")
+			if item == "dim":
+				tmp |= curses.A_DIM
+			elif item == "normal":
+				tmp |= curses.A_NORMAL
+			elif item == "bold":
+				tmp |= curses.A_BOLD
+			elif item == "underline":
+				tmp |= curses.A_UNDERLINE
+			else:
+				raise ValueError(f"Invalid text attribute {attr} used in theme; valid attributes are: dim, normal, bold, underline")
 		attr = tmp
 	else:
 		col = attr
@@ -669,7 +697,7 @@ def __attr_to_curses(attr, selected = False):
 	try:
 		key = color[col][selected]
 	except KeyError:
-		sys.exit(f"KeyError: __attr_to_curses: (color: {col}, selected: {selected}) not found")
+		raise KeyError(f"__attr_to_curses: (color: {col}, selected: {selected}) not found")
 	return key, attr
 
 def __attr_to_curses_merged(attr, selected = False):
