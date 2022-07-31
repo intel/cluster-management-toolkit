@@ -2790,8 +2790,7 @@ class KubernetesHelper:
 			pass
 		elif status == 500:
 			# Internal Server Error
-			d = eval(result.data.decode("utf-8"))
-			msg = deep_get(d, "message")
+			msg = result.data.decode("utf-8")
 			message = f"500: Internal Server Error; method: {method} URL {url}; header_params: {header_params}; message: {msg}"
 		elif status == 503:
 			# Service Unavailable
