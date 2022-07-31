@@ -11600,9 +11600,7 @@ def populate_views():
 	view_dirs = []
 	view_dirs += deep_get(iktconfig, "General#local_views", [])
 
-	disable_builtin_views = deep_get(iktconfig, "Internal#disable_builtin_views", False)
-	if disable_builtin_views == True:
-		views = {**views_special}
+	views = {**views_special}
 
 	view_dirs.append(viewdir)
 
