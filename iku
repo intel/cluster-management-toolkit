@@ -9843,7 +9843,7 @@ def do_command(stdscr, **kwargs):
 	msg = deep_get(kwargs, "msg", "")
 
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 	if len(msg) > 0:
 		iktprint(msg)
 		print()
@@ -9856,13 +9856,13 @@ def do_command(stdscr, **kwargs):
 		subprocess.call(args)
 
 	if waitforkeypress:
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
 def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 	# This should probably be done using connect_get_namespaced_pod_exec()
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 	iktprint(msg)
 	print()
 	if obj is not None:
@@ -9911,7 +9911,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 		sys.exit("Called execute command with obj=None")
 
 	if waitforkeypress:
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
 def listviewdispatch(stdscr, **kwargs):
@@ -10139,7 +10139,7 @@ def executecommand_multiple(stdscr, msg, command, items, waitforkeypress):
 	item = None
 
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 	print(msg + "\n")
 
 	for item in items:
@@ -10152,7 +10152,7 @@ def executecommand_multiple(stdscr, msg, command, items, waitforkeypress):
 	if waitforkeypress or retval > 0:
 		if retval > 0:
 			iktprint([(f"Error: ", "error")] + format_commandline(args) + [(" returned ", "default"), (f"{retval}", "errorvalue")], stderr = True)
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
 def print_ansible_results(data, host, task, retval):
@@ -10467,7 +10467,7 @@ def create_namespace(stdscr, **kwargs):
 	name = deep_get(selection_vars, "namespace")
 
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 
 	# Verify that the name of the new namespace is valid
 	if kh.validate_name("dns-label", name) == False:
@@ -10485,7 +10485,7 @@ def create_namespace(stdscr, **kwargs):
 
 	waitforkeypress = True
 	if waitforkeypress:
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
 # Valid kinds:
@@ -10535,7 +10535,7 @@ def __edit_resource(kind, namespace, name):
 
 def apply_configuration_from_file(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 	resource_path, rtype = values["resource_path"]
 
 	if rtype == "Configuration File":
@@ -10550,7 +10550,7 @@ def apply_configuration_from_file(uip, items = [], action = {}, values = {}, kin
 
 def apply_configuration_from_url(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 	resource_path = values["resource_url"]
 
 	args = ["kubectl", "apply", "-f", resource_path]
@@ -10560,7 +10560,7 @@ def apply_configuration_from_url(uip, items = [], action = {}, values = {}, kind
 # We should probably download and apply locally instead
 def create_resource_from_url(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 	resource_path, rtype = values["resource_url"]
 
 	args = ["kubectl", "create", "-f", resource_path]
@@ -10693,19 +10693,19 @@ def edit_resource(stdscr, **kwargs):
 		return
 
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 	retval, args = __edit_resource(kind, namespace, name)
 
 	waitforkeypress = False
 	if waitforkeypress or retval > 0:
 		if retval > 0:
 			iktprint([("\nError: ", "error")] + format_commandline(args, implicit_command = False) + [(" returned ", "default"), (retval, "errorvalue")], stderr = True)
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
 def restart_resource_rescale(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 
 	for item in items:
 		namespace, name = item
@@ -10719,12 +10719,12 @@ def restart_resource_rescale(uip, items = [], action = {}, values = {}, kind = N
 
 	waitforkeypress = True
 	if waitforkeypress:
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
 def restart_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 
 	for item in items:
 		namespace, name = item
@@ -10736,12 +10736,12 @@ def restart_resource_rollout(uip, items = [], action = {}, values = {}, kind = N
 
 	waitforkeypress = True
 	if waitforkeypress:
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
 def rescale_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 
 	for item in items:
 		namespace, name = item
@@ -10755,14 +10755,14 @@ def rescale_resource(uip, items = [], action = {}, values = {}, kind = None, **k
 
 	waitforkeypress = True
 	if waitforkeypress:
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
 # Valid kinds:
 # ("Deployment", "apps")
 def pause_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 
 	for item in items:
 		namespace, name = item
@@ -10774,14 +10774,14 @@ def pause_resource_rollout(uip, items = [], action = {}, values = {}, kind = Non
 
 	waitforkeypress = True
 	if waitforkeypress:
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
 # Valid kinds:
 # ("Deployment", "apps")
 def resume_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 
 	for item in items:
 		namespace, name = item
@@ -10793,14 +10793,14 @@ def resume_resource_rollout(uip, items = [], action = {}, values = {}, kind = No
 
 	waitforkeypress = True
 	if waitforkeypress:
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
 # Valid kinds:
 # ("Deployment", "apps")
 def stop_resource_rescale(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 
 	for item in items:
 		namespace, name = item
@@ -10813,7 +10813,7 @@ def stop_resource_rescale(uip, items = [], action = {}, values = {}, kind = None
 
 	waitforkeypress = True
 	if waitforkeypress:
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
 def delete_logs(uip, items = [], action = {}, values = {}, kind = None, title = ""):
@@ -10842,7 +10842,7 @@ def execute_command(uip, items = [], action = {}, values = {}, kind = None, **kw
 	msg = [("Executing “", "action"), (description, "argument"), ("“\n", "action")]
 
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 
 	iktprint(msg)
 
@@ -10855,7 +10855,7 @@ def execute_command(uip, items = [], action = {}, values = {}, kind = None, **kw
 
 	waitforkeypress = True
 	if waitforkeypress or retval > 0:
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
 def command_hosts(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
@@ -10864,7 +10864,7 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None, **kwar
 	msg = [("Executing playbook “", "action"), (action.get("description"), "argument"), ("“ on the following hosts: ", "action")] + hosts + [("\n", "action")]
 
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 
 	if action.get("requires_cluster_info") == True:
 		gather_cluster_info()
@@ -10910,7 +10910,7 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None, **kwar
 
 	waitforkeypress = True
 	if waitforkeypress or retval > 0:
-		input("\nPress Enter to continue...")
+		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
 nodeplaybooks = {
@@ -10959,7 +10959,7 @@ def ssh_to_host(stdscr, **kwargs):
 	sshuser = deep_get(inventory, f"all#hosts#{host}#ansible_user", sshuser)
 
 	curses.endwin()
-	os.system("clear")
+	os.system("/usr/bin/clear")
 	iktprint(msg)
 
 	args = ["/usr/bin/ssh"]

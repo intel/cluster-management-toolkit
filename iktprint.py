@@ -30,7 +30,7 @@ def __themearray_to_string(themearray):
 # (string, theme_attr_ref); context is implicitly understood to be term
 def iktinput(themearray):
 	string = __themearray_to_string(themearray)
-	return input(string)
+	return input(string) # nosec
 
 # themearray is a list of format strings of the format:
 # (string, theme_attr_ref); context is implicitly understood to be term
