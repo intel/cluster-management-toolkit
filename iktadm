@@ -198,28 +198,28 @@ def copy_if_not_exists_sudo(src, dst):
 	retval = True
 	if not os.path.exists(dst):
 		iktprint([("cp (sudo) ", "programname"), (f"{src} ", "path"), (f"{dst}", "path")])
-		args = ["sudo", "mv", src, dst]
+		args = ["/usr/bin/sudo", "/usr/bin/mv", src, dst]
 		retval = execute_command_with_response(args)
 
 def remove_if_exists_sudo(path):
 	if os.path.exists(path):
 		iktprint([("rm (sudo) ", "programname"), (f"{path}", "path")])
-		args = ["sudo", "rm", path]
+		args = ["/usr/bin/sudo", "/usr/bin/rm", path]
 		execute_command_with_response(args)
 
 def set_file_owner_and_group_sudo(path, user, group):
 	iktprint([("chown (sudo) ", "programname"), (f"{user}", "argument"), (":", "separator"), (f"{group} ", "argument"), (f"{path}", "path")])
-	args = ["sudo", "chown", f"{user}:{group}", path]
+	args = ["/usr/bin/sudo", "/usr/bin/chown", f"{user}:{group}", path]
 	execute_command_with_response(args)
 
 def set_file_permissions(path, permissions):
 	iktprint([("chmod ", "programname"), (f"{permissions} ", "argument"), (f"{path}", "path")])
-	args = ["chmod", permissions, path]
+	args = ["/usr/bin/chmod", permissions, path]
 	execute_command_with_response(args)
 
 def set_file_permissions_sudo(path, permissions):
 	iktprint([("chmod (sudo) ", "programname"), (f"{permissions} ", "argument"), (f"{path}", "path")])
-	args = ["sudo", "chmod", permissions, path]
+	args = ["/usr/bin/sudo", "/usr/bin/chmod", permissions, path]
 	execute_command_with_response(args)
 
 def rmdir_recursive(directory):
@@ -240,7 +240,7 @@ def rmdir_recursive(directory):
 
 	if os.path.isdir(directory):
 		iktprint([(f"  {directory}", "path")])
-		args = ["sudo", "rm", "-r", directory]
+		args = ["/usr/bin/sudo", "/usr/bin/rm", "-r", directory]
 		execute_command_with_response(args)
 
 def rebuild_installation_info(state = None):
@@ -344,7 +344,7 @@ def check_and_print_status(retval):
 		sys.exit(errno.EINVAL)
 
 def weave_urlgetter(pod_network_cidr):
-	args = ["kubectl", "version"]
+	args = ["/usr/bin/kubectl", "version"]
 	kubectl_version = execute_command_with_response(args).encode("ascii")
 	version_base64 = base64.urlsafe_b64encode(kubectl_version).decode("ascii")
 	url = f"https://cloud.weave.works/k8s/net?k8s-version=\"{version_base64}\"&env.IPALLOC_RANGE={pod_network_cidr}"
@@ -361,7 +361,7 @@ def patch_cni_flannel(cni_path, pod_network_cidr):
 	# Ideally we should patch this using a round-trip capable YAML parser,
 	# such as ruamel
 	sedstr = f's#^\(.*"\)Network": "10.244.0.0/16",$#\\1Network:": "{pod_network_cidr}",#'
-	args = ["sed", "-i", "-e", sedstr, cni_path]
+	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	check_and_print_status(execute_command(args))
 
 cni_data = {
@@ -474,7 +474,7 @@ def scan_and_add_ssh_keys():
 
 def create_ssh_key():
 	if not os.path.exists(f"{HOMEDIR}/.ssh/id_ed25519"):
-		args = ["ssh-keygen", "-t", "ed25519", "-f", f"{HOMEDIR}/.ssh/id_ed25519"]
+		args = ["/usr/bin/ssh-keygen", "-t", "ed25519", "-f", f"{HOMEDIR}/.ssh/id_ed25519"]
 		retval = execute_command(args)
 	else:
 		retval = True
@@ -577,7 +577,7 @@ def __task_check_and_add_ssh_keys_to_authorized_keys(installation_info):
 def install_ansible_posix():
 	# Old versions of ansible-galaxy doesn't have the list command;
 	# if it doesn't work we just assume that ansible.posix is missing
-	args = ["ansible-galaxy", "collection", "list"]
+	args = ["/usr/bin/ansible-galaxy", "collection", "list"]
 	result = execute_command_with_response(args)
 	if "COLLECTION_ACTION: invalid choice" in result or "ansible.posix" not in result:
 		http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
@@ -588,7 +588,7 @@ def install_ansible_posix():
 			"https_proxy": https_proxy,
 			"no_proxy": no_proxy,
 		}
-		args = ["ansible-galaxy", "collection", "install", "ansible.posix"]
+		args = ["/usr/bin/ansible-galaxy", "collection", "install", "ansible.posix"]
 		return execute_command(args, env = env)
 	else:
 		return True
@@ -648,11 +648,11 @@ def download_files(directory, fetch_urls):
 	return retval
 
 def update_apt_cache():
-	retval = subprocess.run(["sudo", "apt-get", "update"])
-	return retval.returncode == 0
+	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "update"]
+	return execute_command(args)
 
 def deb_compare_versions(current_version, candidate_version):
-	args = ["dpkg", "--compare-versions", current_version, "lt", candidate_version]
+	args = ["/usr/bin/dpkg", "--compare-versions", current_version, "lt", candidate_version]
 	retval = subprocess.run(args)
 	return retval.returncode == 1
 
@@ -674,7 +674,8 @@ def extract_version(line):
 def check_deb_versions(deb_packages):
 	deb_versions = []
 
-	response = execute_command_with_response(["apt-cache", "policy"] + deb_packages)
+	args = ["/usr/bin/apt-cache", "policy"] + deb_packages
+	response = execute_command_with_response(args)
 	split_response = response.splitlines()
 	for line in split_response:
 		if line.endswith(":"):
@@ -701,7 +702,8 @@ def check_deb_versions(deb_packages):
 			else:
 				candidate_version = ""
 			# We have the current and candidate version now; get all the other versions of the same package
-			_response = execute_command_with_response(["apt-cache", "madison", package])
+			_args = ["/usr/bin/apt-cache", "madison", package]
+			_response = execute_command_with_response(_args)
 			_split_response = _response.splitlines()
 			all_versions = natsorted([extract_version(line) for line in _split_response], reverse = True)
 			deb_versions.append((package, installed_version, candidate_version, all_versions))
@@ -990,12 +992,12 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info):
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
 def __task_setup_bash_completion(installation_info):
-	args = ["kubectl", "completion", "bash"]
+	args = ["/usr/bin/kubectl", "completion", "bash"]
 	result = execute_command_with_response(args)
 	with tempfile.TemporaryDirectory() as td:
 		with open(f"{td}/kubectl", "w") as f:
 			f.write(result)
-		args = ["sudo", "mv", f"{td}/kubectl", "/etc/bash_completion.d/kubectl"]
+		args = ["/usr/bin/sudo", "/usr/bin/mv", f"{td}/kubectl", "/etc/bash_completion.d/kubectl"]
 		check_and_print_status(execute_command(args))
 
 def get_cluster_name():
@@ -1140,7 +1142,7 @@ def __task_setup_kubeadm_cni(installation_info):
 
 	# If everything is successful so far we deploy the pod network
 	cni_path = setup_cni(cni, pod_network_cidr)
-	args = ["kubectl", "apply", f"--context={context_name}", "-f", cni_path]
+	args = ["/usr/bin/kubectl", "apply", f"--context={context_name}", "-f", cni_path]
 	check_and_print_status(execute_command(args))
 
 def __task_drain_control_planes(installation_info):
@@ -1149,7 +1151,8 @@ def __task_drain_control_planes(installation_info):
 	# Check if there's an API-server running that will listen to our request;
 	# drain is issued during teardown--so if we're resuming a teardown the cluster
 	# might already be partially deconfigured
-	args = ["sudo", "lsof", "-i", "-P", "-n"]
+	# XXX: This should be done on the control plane(s), not on localhost
+	args = ["/usr/bin/sudo", "/usr/bin/lsof", "-i", "-P", "-n"]
 	response = execute_command_with_response(args)
 	running = False
 	for line in response.splitlines():
@@ -1161,14 +1164,14 @@ def __task_drain_control_planes(installation_info):
 		return
 
 	# Check kubectl version
-	_args = ["kubectl", "version", "-oyaml"]
+	_args = ["/usr/bin/kubectl", "version", "-oyaml"]
 	response = execute_command_with_response(_args)
 	version_data = yaml.safe_load(response)
 	major_version = deep_get(version_data, "clientVersion#major")
 	minor_version = deep_get(version_data, "clientVersion#minor")
 
 	# Build the drain command line based on what version of kubectl is installed
-	args = ["kubectl", "drain", "--ignore-daemonsets"]
+	args = ["/usr/bin/kubectl", "drain", "--ignore-daemonsets"]
 	if int(major_version) >= 1 and int(minor_version) >= 20:
 		args.append("--delete-emptydir-data")
 	else:
@@ -1181,7 +1184,7 @@ def __task_drain_control_planes(installation_info):
 
 def __task_uncordon_control_planes(installation_info):
 	controlplanes = __selection_control_planes()
-	args = ["kubectl", "uncordon"]
+	args = ["/usr/bin/kubectl", "uncordon"]
 
 	for controlplane in controlplanes:
 		check_and_print_status(execute_command(args + [controlplane]))
@@ -2328,7 +2331,7 @@ def taint_control_plane(options = [], args = None):
 				iktprint([("Tainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
-			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/control-plane:NoSchedule"]
+			args = ["/usr/bin/kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/control-plane:NoSchedule"]
 			response = execute_command_with_response(args).strip("\n")
 			if "with same effect(s) and --overwrite is false" in response:
 				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
@@ -2338,7 +2341,7 @@ def taint_control_plane(options = [], args = None):
 			elif response.startswith("error: "):
 				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.")], stderr = True)
 				sys.exit(errno.EINVAL)
-			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master:NoSchedule"]
+			args = ["/usr/bin/kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master:NoSchedule"]
 			response = execute_command_with_response(args).strip("\n")
 			if "with same effect(s) and --overwrite is false" in response:
 				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
@@ -2369,7 +2372,7 @@ def untaint_control_plane(options = [], args = None):
 				iktprint([("Untainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
-			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/control-plane-"]
+			args = ["/usr/bin/kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/control-plane-"]
 			response = execute_command_with_response(args).strip("\n")
 			if "error: taint \"node-role.kubernetes.io/control-plane\" not found" in response:
 				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
@@ -2379,7 +2382,7 @@ def untaint_control_plane(options = [], args = None):
 				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
-			args = ["kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master-"]
+			args = ["/usr/bin/kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master-"]
 			response = execute_command_with_response(args).strip("\n")
 			if "error: taint \"node-role.kubernetes.io/master\" not found" in response:
 				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
@@ -2406,7 +2409,7 @@ def troubleshoot(options = [], args = None):
 
 	# Is the version of kubectl within one version of the cluster version?
 	iktprint([("[Checking client/server version match]\n", "phase")])
-	args = ["kubectl", "version", "-oyaml"]
+	args = ["/usr/bin/kubectl", "version", "-oyaml"]
 	response = execute_command_with_response(args)
 	version_data = yaml.safe_load(response)
 

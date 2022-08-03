@@ -319,7 +319,7 @@ def cordon_nodes(options = [], args = None):
 	include_control_planes = False
 	header = True
 
-	_args = ["kubectl", "cordon"]
+	_args = ["/usr/bin/kubectl", "cordon"]
 
 	for opt, optarg in options:
 		if opt == "--include-control-planes":
@@ -355,13 +355,13 @@ def drain_nodes(options = [], args = None):
 	header = True
 
 	# Check kubectl version
-	_args = ["kubectl", "version", "-oyaml"]
+	_args = ["/usr/bin/kubectl", "version", "-oyaml"]
 	response = execute_command_with_response(_args)
 	version_data = yaml.safe_load(response)
 	major_version = deep_get(version_data, "clientVersion#major")
 	minor_version = deep_get(version_data, "clientVersion#minor")
 
-	_args = ["kubectl", "drain"]
+	_args = ["/usr/bin/kubectl", "drain"]
 
 	for opt, optarg in options:
 		if opt in ["--delete-emptydir-data", "--delete-local-data"]:
@@ -406,7 +406,7 @@ def uncordon_nodes(options = [], args = None):
 	include_control_planes = False
 	header = True
 
-	_args = ["kubectl", "uncordon"]
+	_args = ["/usr/bin/kubectl", "uncordon"]
 
 	for opt, optarg in options:
 		if opt == "--include-control-planes":

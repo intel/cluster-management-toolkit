@@ -9871,11 +9871,11 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 		# This is a request to create a new ephemeral container
 		if command == ["<ephemeral>"]:
 			ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
-			args = ["kubectl", "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image]
+			args = ["/usr/bin/kubectl", "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image]
 			subprocess.call(args)
 		elif command == ["<dnsutils>"]:
 			dnsutils_image = deep_get(iktconfig, "Debug#network_image", "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
-			args = ["kubectl", "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
+			args = ["/usr/bin/kubectl", "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
 			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 			if result.returncode != 0:
 				iktprint([(f"Error: ", "error"), ("Failed to create debug image", "default")], stderr = True)
@@ -9890,14 +9890,14 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 
 				# Wait for the pod to be ready
 				iktprint([("Waiting for debug pod to be ready (timeout: 60s).", "default")])
-				args = ["kubectl", "wait", "--for=condition=ready", "--timeout=60s", "-n", "default", "pod", pod_name]
+				args = ["/usr/bin/kubectl", "wait", "--for=condition=ready", "--timeout=60s", "-n", "default", "pod", pod_name]
 				result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 				if result.returncode != 0:
 					iktprint([(f"Error: ", "error"), ("the pod failed to become ready before timeout.", "default")], stderr = True)
 				else:
 					# Attach to the debug container
 					# XXX: Should we perhaps use subprocess.run here?
-					args = ["kubectl", "attach", "-n", "default", pod_name, "-c", container_name, "-i", "-t", "--pod-running-timeout=1m0s"]
+					args = ["/usr/bin/kubectl", "attach", "-n", "default", pod_name, "-c", container_name, "-i", "-t", "--pod-running-timeout=1m0s"]
 					subprocess.call(args)
 
 				# Delete the pod
@@ -9905,7 +9905,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 				message, status = kh.delete_obj_by_kind_name_namespace(("Pod", ""), pod_name, "default", force = True)
 		else:
 			# Should we perhaps use subprocess.run here?
-			args = ["kubectl", "exec", obj_name, "-n", obj_namespace, "-i", "-t", "--container", container, "--"] + command
+			args = ["/usr/bin/kubectl", "exec", obj_name, "-n", obj_namespace, "-i", "-t", "--container", container, "--"] + command
 			subprocess.call(args)
 	else:
 		sys.exit("Called execute command with obj=None")
@@ -10491,14 +10491,14 @@ def create_namespace(stdscr, **kwargs):
 # Valid kinds:
 # ("Deployment", "apps")
 def __pause_resource(kind, namespace, name):
-	args = ["kubectl", "rollout", "pause", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
+	args = ["/usr/bin/kubectl", "rollout", "pause", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
 	return result
 
 # Valid kinds:
 # ("Deployment", "apps")
 def __resume_resource(kind, namespace, name):
-	args = ["kubectl", "rollout", "resume", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
+	args = ["/usr/bin/kubectl", "rollout", "resume", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
 	return result
 
@@ -10507,7 +10507,7 @@ def __resume_resource(kind, namespace, name):
 # ("Deployment", "apps")
 # ("StatefulSet", apps")
 def __restart_resource(kind, namespace, name):
-	args = ["kubectl", "rollout", "restart", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
+	args = ["/usr/bin/kubectl", "rollout", "restart", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
 	return result
 
@@ -10521,15 +10521,15 @@ def __get_resource_scale(kind, namespace, name):
 # ("ReplicationController", "")
 # ("StatefulSet", apps")
 def __scale_replicas(kind, namespace, name, scale):
-	args = ["kubectl", "scale", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}", f"--replicas={scale}"]
+	args = ["/usr/bin/kubectl", "scale", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}", f"--replicas={scale}"]
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
 	return result
 
 def __edit_resource(kind, namespace, name):
 	if namespace is None:
-		args = ["kubectl", "edit", f"{kind[0]}.{kind[1]}/{name}"]
+		args = ["/usr/bin/kubectl", "edit", f"{kind[0]}.{kind[1]}/{name}"]
 	else:
-		args = ["kubectl", "edit", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
+		args = ["/usr/bin/kubectl", "edit", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
 	result = subprocess.run(args, universal_newlines = True)
 	return result.returncode, args
 
@@ -10539,9 +10539,9 @@ def apply_configuration_from_file(uip, items = [], action = {}, values = {}, kin
 	resource_path, rtype = values["resource_path"]
 
 	if rtype == "Configuration File":
-		args = ["kubectl", "apply", "-f", resource_path]
+		args = ["/usr/bin/kubectl", "apply", "-f", resource_path]
 	elif rtype == "Kustomization":
-		args = ["kubectl", "apply", "-k", resource_path]
+		args = ["/usr/bin/kubectl", "apply", "-k", resource_path]
 	else:
 		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
 
@@ -10553,7 +10553,7 @@ def apply_configuration_from_url(uip, items = [], action = {}, values = {}, kind
 	os.system("/usr/bin/clear")
 	resource_path = values["resource_url"]
 
-	args = ["kubectl", "apply", "-f", resource_path]
+	args = ["/usr/bin/kubectl", "apply", "-f", resource_path]
 	result = subprocess.run(args, universal_newlines = True)
 	return result.returncode, args
 
@@ -10563,7 +10563,7 @@ def create_resource_from_url(uip, items = [], action = {}, values = {}, kind = N
 	os.system("/usr/bin/clear")
 	resource_path, rtype = values["resource_url"]
 
-	args = ["kubectl", "create", "-f", resource_path]
+	args = ["/usr/bin/kubectl", "create", "-f", resource_path]
 	result = subprocess.run(args, universal_newlines = True)
 	return result.returncode, args
 
@@ -10606,9 +10606,9 @@ def create_resource_from_file(uip, items = [], action = {}, values = {}, kind = 
 		confirm_press, tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, resource_list, headers = headers, title = title, confirm = True, confirm_buttons = confirm_buttons, cursor = False)
 
 		if confirm_press in [ord("y"), ord("Y")]:
-			args = ["kubectl", "create", "-f", resource_path]
+			args = ["/usr/bin/kubectl", "create", "-f", resource_path]
 	elif rtype == "Kustomization":
-		args = ["kubectl", "create", "-k", resource_path]
+		args = ["/usr/bin/kubectl", "create", "-k", resource_path]
 	else:
 		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
 
@@ -10621,9 +10621,9 @@ def diff_resource_configuration(uip, items = [], action = {}, values = {}, kind 
 	resource_path, rtype = values["resource_path"]
 
 	if rtype == "Configuration File":
-		args = ["kubectl", "diff", "-f", resource_path]
+		args = ["/usr/bin/kubectl", "diff", "-f", resource_path]
 	elif rtype == "Kustomization":
-		args = ["kubectl", "diff", "-k", resource_path]
+		args = ["/usr/bin/kubectl", "diff", "-k", resource_path]
 	else:
 		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
 
@@ -10943,7 +10943,7 @@ def ssh_to_host(stdscr, **kwargs):
 		name = deep_get(obj, name_path)
 		host = deep_get(kwargs, "name", name)
 
-	if host is None:
+	if host is None or len(host) == 0:
 		return
 
 	msg = [("SSH:ing to ", "action"), (host, "hostname"), (":\n", "action")]

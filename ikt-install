@@ -100,7 +100,7 @@ packages = [
 ]
 
 def install_software(verbose = False):
-	args = ["sudo", "apt-get", "install"] + packages
+	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + packages
 	subprocess.call(args)
 
 def install(options = [], args = None):
