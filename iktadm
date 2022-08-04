@@ -634,8 +634,9 @@ def download_files(directory, fetch_urls):
 			with open(f"{directory}/{filename}", "wb") as f:
 				try:
 					f.write(r1.data)
-				except:
-					iktprint([("Error: ", "error"), ("Could not write file ", "default"), (f"{filename}", "path")], stderr = True)
+				except Exception as e:
+					iktprint([("Error: ", "error"), ("Could not write file ", "default"), (f"{filename}", "path"), (f" exception:", "default")], stderr = True)
+					iktprint([(e, "warning")], stderr = True)
 					retval = False
 					continue
 		else:
