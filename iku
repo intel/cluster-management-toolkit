@@ -7,6 +7,7 @@
 
 from collections import OrderedDict
 import base64
+from base64 import binascii
 import copy
 import csv
 import curses
@@ -3713,10 +3714,12 @@ def decode_value(value):
 			vtype = "base64-binary"
 
 		try:
-			tmp = base64.b64decode(base64.b64decode(value))
-			if tmp[0] == 0x1f and tmp[1] == 0x8b:
+			tmp = base64.b64decode(value)
+			if len(tmp) >= 2 and tmp[0] == 0x1f and tmp[1] == 0x8b:
 				vtype = "gzip"
 				value = tmp
+		except binascii.Error:
+			pass
 		except:
 			pass
 
@@ -3740,7 +3743,7 @@ def get_key_value_info(**kwargs):
 			value = ""
 			vtype = "empty"
 
-		if len(decoded_value) > 8192 and len(decoded_value) > 0:
+		if len(decoded_value) > 8192 and len(value) > 0:
 			vtype = f"{vtype} [truncated]"
 			decoded_value = value[0:8192 - 1]
 
@@ -7875,12 +7878,12 @@ def decode_and_view_data(stdscr, **kwargs):
 	if bvalue == value:
 		vtype = bvtype
 
-	if vtype.startswith("string"):
+	if vtype == "empty" or vtype.startswith(("base64-binary", "gzip")):
+		return
+	elif vtype.startswith("string"):
 		obj = value
 	elif vtype.startswith("base64-utf-8"):
 		obj = base64.b64decode(value).decode("utf-8")
-	elif vtype.startswith(("base64-binary", "gzip")):
-		return
 	else:
 		raise Exception(f"Trying to export unknown vtype: {vtype}")
 	if title.endswith((".crt", "tls.key", ".pem", "CAKey")) or type(obj) == str and obj.startswith(("-----BEGIN", "-----END")):
@@ -12147,11 +12150,7 @@ def list_views():
 	iktprint([("View:", "header"), (f"{''.ljust(maxviewlen + 2 - len('View:'))}", "default"), ("Kind:", "header"), (f"{''.ljust(maxkindlen + 2 - len('Kind:'))}", "default"), ("Supported fields:", "header")])
 	for view, kind, fields in viewfields:
 		joined_fields = iktlib.join_tuple_list(fields, separator = (", ", "separator"))
-		try:
-			iktprint([(f"{view.ljust(maxviewlen + 2)}{kind.ljust(maxkindlen + 2)}", "default")] + joined_fields)
-		except:
-			iktprint([(f"view: {view}\nmaxviewlen + 2: {maxviewlen + 2}\nkind: {kind}\nmaxkindlen + 2: {maxkindlen + 2}\nfields: {fields}", "default")])
-			sys.exit()
+		iktprint([(f"{view.ljust(maxviewlen + 2)}{kind.ljust(maxkindlen + 2)}", "default")] + joined_fields)
 
 	iktprint([(f"\nList views can be customised to only show select fields by editing “", "default"), (IKT_CONFIG_FILE, "path"), ("“.\n", "default")])
 	iktprint([(f"Simply add “", "default"), ("field:", "emphasis"), ("“ followed by a list of the fields you want the list to a section named like", "default")])
