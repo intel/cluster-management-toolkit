@@ -52,7 +52,7 @@ import iktlib
 from iktlib import split_msg, deep_get, deep_get_list, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
 
-from ansible_helper import ansible_clean_results, ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
+from ansible_helper import ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
@@ -162,12 +162,12 @@ def get_package_versions(hostname):
 	if len(ansible_results) == 0:
 		raise ValueError(f"Error: Failed to get package versions from {hostname} (retval: {retval}); aborting.")
 
-	for host in ansible_results:
-		data = ansible_results[host]
+	tmp = ""
 
-		for task in data:
-			if "package versions" in task.replace("_", " "):
-				tmp = str(data[task].get("msg", "")).split("\n")
+	for result in deep_get(ansible_results, hostname, []):
+		if deep_get(result, "task", "") == "package versions":
+			tmp = deep_get(result, "msg_lines", [])
+			break
 
 	if len(tmp) == 0:
 		raise ValueError(f"Error: Received empty version data from {hostname} (retval: {retval}); aborting.")
@@ -2722,9 +2722,13 @@ def objgetter_ansible_facts(obj):
 	if retval != 0:
 		return {}
 
-	ar = ansible_clean_results(ansible_results)
+	ar = {}
 
-	return deep_get(ar, f"{hostname}#TASK: Gathering host facts#ansible_facts", {})
+	for result in deep_get(ansible_results, hostname, []):
+		if deep_get(result, "task", "") == "Gathering host facts":
+			ar = deep_get(result, "ansible_facts")
+
+	return ar
 
 def objgetter_ansible_log(obj):
 	tmpobj = {}
@@ -2761,9 +2765,14 @@ def objgetter_ansible_log(obj):
 def get_task_log(obj):
 	field = []
 
+	skipped = deep_get(obj, "log#skipped", False)
 	stdout_lines = deep_get(obj, "log#stdout_lines", [])
 	stderr_lines = deep_get(obj, "log#stderr_lines", [])
 	msg_lines = deep_get(obj, "log#msg_lines", [])
+
+	if skipped == True:
+		field.append([("[skipped]", ("types", "unset"))])
+		return field
 
 	if len(stderr_lines) > 0:
 		field.append([("stderr:", curses.A_BOLD | curses.A_UNDERLINE)])
@@ -4560,16 +4569,13 @@ def get_inventory_list(**kwargs):
 	# Do we want to ping the hosts?
 	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", "Lazy")
 
-	# FIXME
 	if ping_hosts == "Always" or (ping_hosts == "Lazy" and latest_info in ["Inventory", "*Inventory"]):
 		# ping all nodes and update their status accordingly
-		retval, output = ansible_ping(ANSIBLE_INVENTORY)
+		output = ansible_ping(ANSIBLE_INVENTORY)
 
 		if output is None or len(output) == 0:
-			sys.exit(f"Internal error; ansible_ping() failed with: {retval}")
+			sys.exit(f"Internal error; ansible_ping() failed")
 
-		# This needs to be improved; if there's a message we need to tell the difference
-		# between "Permission denied" and "No route to host"
 		for (host, _status) in output:
 			if host in deep_get(inventory, "all#hosts"):
 				# We don't want to risk overwriting hostvars
@@ -10158,115 +10164,6 @@ def executecommand_multiple(stdscr, msg, command, items, waitforkeypress):
 		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
-def print_ansible_results(data, host, task, retval):
-	if task.startswith("TASK: "):
-		task = task[len("TASK: "):]
-	elif task.startswith("output"):
-		tmp = re.match(r"output.*?_(.*)", task)
-		if tmp:
-			task = tmp[1].replace("_", " ")
-	elif task == "":
-		task = "<unnamed>"
-
-	tmp = re.match(r"(.*)#\d*$", task)
-	if tmp is not None:
-		task = tmp[1]
-
-	if type(data) is str:
-		stdout_lines = ""
-		stderr_lines = ""
-		msg = data
-	else:
-		stdout_lines = data.get("stdout", "").rstrip(" \t\v\r\n").splitlines()
-		stderr_lines = data.get("stderr", "").rstrip(" \t\v\r\n").splitlines()
-		msg = data.get("msg", "")
-		retval = data.get("rc", retval)
-
-	# If this is an empty debug message we don't need to show it
-	if task.startswith("debug") and len(stdout_lines) == 0 and len(stderr_lines) == 0 and len(msg) == 0 and retval == 0:
-		return
-
-	# Header for this section
-	if data.get("skipped", False) == True or data.get("skip_reason", "") == "Conditional result was False":
-		iktprint([("• ", "separator"), (f"{task}", "skip")])
-		iktprint([(data.get("skip_reason", "<skipped>"), "default")])
-		iktprint([("", "default")])
-		return
-
-	if retval != 0:
-		iktprint([("• ", "separator"), (f"{task}", "error"), (" (retval: ", "default"), (retval, "errorvalue"), (")", "default")], stderr = True)
-	else:
-		iktprint([("• ", "separator"), (f"{task}", "success")])
-
-	if len(msg) > 0:
-		iktprint([("msg:", "header")])
-		for line in msg.splitlines():
-			iktprint([(line, "default")])
-		iktprint([("", "default")])
-
-	if type(data) is str:
-		iktprint([(f"{data}", "default")])
-	else:
-		# If we have module_stdout or module_stderr,
-		# and stderr and stderr are empty, don't show either
-		failed_modules = data.get("failed_modules")
-		module_stdout_lines = str(data.get("module_stdout", "")).rstrip(" \t\v\r\n").splitlines()
-		module_stderr_lines = str(data.get("module_stderr", "")).rstrip(" \t\v\r\n").splitlines()
-
-		if len(stdout_lines) > 0 or (failed_modules is None and len(module_stdout_lines) == 0 and len(module_stderr_lines) == 0):
-			iktprint([("stdout:", "header")])
-			for line in stdout_lines:
-				iktprint([(f"{line}", "default")])
-			if len(stdout_lines) == 0 and (failed_modules is None and len(module_stdout_lines) == 0 and len(module_stderr_lines) == 0):
-				iktprint([("<no output>\n", "none")])
-			else:
-				iktprint([("", "default")])
-
-		# If retval isn't 0 we don't really care if stderr is empty
-		if len(stderr_lines) > 0 or (retval != 0 and failed_modules is None and len(module_stdout_lines) == 0 and len(module_stderr_lines) == 0):
-			iktprint([("stderr:", "header")])
-			for line in stderr_lines:
-				iktprint([(f"{line}", "default")], stderr = True)
-			if len(stderr_lines) == 0 and (failed_modules is None and len(module_stdout_lines) == 0 and len(module_stderr_lines) == 0):
-				iktprint([("<no output>\n", "none")])
-			else:
-				iktprint([("", "default")])
-
-		if len(module_stdout_lines) > 0:
-			iktprint([("module_stdout:", "header")])
-			for line in module_stdout_lines:
-				iktprint([(f"{line}", "default")])
-			iktprint([("", "default")])
-
-		if len(module_stderr_lines) > 0:
-			iktprint([("module_stderr:", "header")])
-			for line in module_stderr_lines:
-				iktprint([(f"{line}", "default")])
-			iktprint([("", "default")])
-
-		if failed_modules is not None and len(failed_modules) > 0:
-			for module in failed_modules:
-				iktprint([(f"{module}", "default")])
-				iktprint([("module_stdout:", "header")])
-
-				module_stdout_lines = str(failed_modules[module].get("module_stdout", "")).rstrip(" \t\v\r\n").splitlines()
-				module_stderr_lines = str(failed_modules[module].get("module_stderr", "")).rstrip(" \t\v\r\n").splitlines()
-
-				if len(module_stdout_lines) > 0:
-					for line in module_stdout_lines:
-						iktprint([(f"{line}", "default")])
-					iktprint([("", "default")])
-				else:
-					iktprint([("<no output>\n", "none")])
-
-				iktprint([("module_stderr:", "header")])
-				if len(module_stderr_lines) > 0:
-					for line in module_stderr_lines:
-						iktprint([(f"{line}", "default")], stderr = True)
-					iktprint([("\n", "default")])
-				else:
-					iktprint([("<no output>\n", "none")])
-
 def __run_playbook(playbookpath, nodes, values = None):
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
 	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
@@ -10276,64 +10173,7 @@ def __run_playbook(playbookpath, nodes, values = None):
 	values["use_proxy"] = use_proxy
 
 	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = nodes, values = values)
-
-	# FIXME: ensure that we tell apart fail from skip
-	if retval != 0 and len(ansible_results) == 0:
-		iktprint([("Failed to execute playbook; retval: ", "error"), (f"{retval}", "errorvalue")], stderr = True)
-	else:
-		for host in ansible_results:
-			# Start by trying to discern the overall result of the run,
-			# to use as the colour for the hostname
-			data = ansible_results[host]
-
-			# This task does not log using register/debug;
-			# users of ansible-playbook will be unhappy
-			if data.get("stdout") or data.get("stderr") or data.get("msg"):
-				skipped = False
-
-				retval = data.get("rc", retval)
-				if data.get("stdout", "").startswith("[SKIP]") and len(data.get("stderr", "")) == 0 and len(data.get("msg", "")) == 0:
-					skipped = True
-			else:
-				tmpskipped = -1
-
-				for task in ansible_results[host]:
-					# Messages (should) always succeed
-					if task.startswith(("TASK: ", "output")):
-						retval = data[task].get("rc", retval)
-						if ansible_results[host][task].get("stdout", "").startswith("[SKIP]") and len(ansible_results[host][task].get("stderr", "")) == 0 and len(ansible_results[host][task].get("msg", "")) == 0 and tmpskipped != 0:
-							tmpskipped = 1
-						elif (len(ansible_results[host][task].get("stdout", "")) > 0 and ansible_results[host][task].get("stdout", "").startswith("[SKIP]") == False) or len(ansible_results[host][task].get("stderr", "")) > 0 or len(ansible_results[host][task].get("msg", "")) > 0:
-							tmpskipped = 0
-
-					if retval != 0:
-						break
-
-			skipped = bool(tmpskipped)
-
-			# Time to output the messages:
-			if retval == 0:
-				if skipped == False:
-					iktprint([(f"[{host}]", "success")])
-				else:
-					iktprint([(f"[{host}] N/A (SKIPPED)\n", "skip")])
-			else:
-				iktprint([(f"[{host}]", "error")])
-
-			if skipped == False:
-				if "quiet" in values and values["quiet"] == True:
-					print("See Logs for output")
-					continue
-
-				# This task does not log using register/debug;
-				# users of ansible-playbook will be unhappy
-				if data.get("stdout") or data.get("stderr") or data.get("msg"):
-					print_ansible_results(data, host, "", retval)
-				else:
-					for task in ansible_results[host]:
-						if task.startswith(("TASK: ", "output", "msg")):
-							print_ansible_results(data[task], host, task, retval)
-					print()
+	ansible_print_play_results(retval, ansible_results)
 
 	return retval
 
@@ -11888,7 +11728,7 @@ def populate_views():
 
 				sortcolumn = deep_get(listpad, "sortcolumn")
 				reversible = deep_get(listpad, "reversible", True)
-				sortorder_reverse = deep_get(d, "listview#sortorder_reverse", False)
+				sortorder_reverse = deep_get(listpad, "sortorder_reverse", False)
 
 				infoview_entry = {
 					"windowheader": name,

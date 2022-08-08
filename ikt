@@ -32,7 +32,7 @@ except ModuleNotFoundError:
 
 from commandparser import parse_commandline
 
-from ansible_helper import ansible_configuration, ansible_set_vars, ansible_run_playbook_on_host_list, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts
+from ansible_helper import ansible_configuration, ansible_set_vars, ansible_run_playbook_on_host_list, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_print_play_results
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import iktlib
@@ -123,58 +123,9 @@ def run_playbook(playbookpath, hosts = None, extra_values = {}, quiet = False):
 	else:
 		retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
 
-	for host in ansible_results:
-		data = ansible_results[host]
-		if retval == 0 and quiet == True:
-			break
+	ansible_print_play_results(retval, ansible_results)
 
-		# RUN_ERROR = 1
-		# RUN_FAILED_HOSTS = 2
-		# RUN_UNREACHABLE_HOSTS = 4
-		# RUN_FAILED_BREAK_PLAY = 8
-		extra_status = ""
-		if retval & 1 == 1:
-			extra_status += " Error,"
-		if retval & 2 == 2:
-			extra_status += " Failed hosts,"
-		if retval & 4 == 4:
-			extra_status += " host unreachable,"
-		if retval & 8 == 8:
-			extra_status += " Failed break play,"
-
-		extra_status = extra_status.rstrip(",")
-
-		if retval == 0:
-			iktprint([(f"    [{host}]", "success")])
-		else:
-			iktprint([(f"    [{host}]", "error"), (extra_status, "errorvalue")])
-
-		for task in ansible_results[host]:
-			taskname = task[len("TASK: "):]
-			iktprint([(f"      {taskname}:", "default")])
-			msg = data[task].get("msg", "").splitlines()
-			if len(msg) > 0:
-				iktprint([(f"        ", "default"), ("msg:", "header")])
-				for line in msg:
-					iktprint([(f"        {line}", "default")])
-				iktprint([("", "default")])
-			stdout_lines = data[task].get("stdout_lines", [])
-			if len(stdout_lines) > 0:
-				iktprint([(f"        ", "default"), ("stdout:", "header")])
-				for line in data[task]["stdout_lines"]:
-					iktprint([(f"        {line}", "default")])
-				iktprint([("", "default")])
-			stderr_lines = data[task].get("stderr_lines", [])
-			if len(stderr_lines) > 0:
-				iktprint([(f"        ", "default"), ("stderr:", "header")])
-				for line in data[task]["stderr_lines"]:
-					iktprint([(f"        {line}", "default")])
-				iktprint([("", "default")])
-			if len(msg) == 0 and len(stdout_lines) == 0 and len(stderr_lines) == 0:
-				iktprint([(f"        <no output>", "none")])
-				iktprint([("", "default")])
-
-	return retval, ansible_results
+	return _retval, ansible_results
 
 def __format_none(string, fmt):
 	if string is None or string == "<none>":

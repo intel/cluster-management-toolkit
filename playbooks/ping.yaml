@@ -1,0 +1,12 @@
+- hosts: selection
+  vars:
+    metadata:
+      description: "Ping"
+      playbook_types:
+      - "internal"
+      category: "Information"
+      read_only: true
+  gather_facts: false
+  tasks:
+  - name: "ping"
+    ansible.builtin.ping:

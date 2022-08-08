@@ -6,13 +6,11 @@ import os
 from pathlib import Path
 import pwd
 import re
-import subprocess
-from subprocess import PIPE
-import shutil
 import sys
 import yaml
 
 from iktlib import deep_get
+from iktprint import iktprint
 
 ansible_support = False
 ansible_bin_path = None
@@ -34,6 +32,7 @@ ANSIBLE_TMP_INVENTORY = f"{ANSIBLE_DIR}/tmp_inventory.yaml"
 class ansible_configuration:
 	ansible_user = None
 	ansible_password = None
+	save_logs = False
 
 # Behaves roughly as which(1)
 def which(commandname):
@@ -58,45 +57,10 @@ def which(commandname):
 
 # Used by Ansible
 try:
-	from ansible import context
-	import ansible.constants as ansibleC
-	from ansible.executor.playbook_executor import PlaybookExecutor
-	from ansible.inventory.host import Host
-	from ansible.inventory.manager import InventoryManager
-	from ansible.module_utils.common.collections import ImmutableDict
-	from ansible.parsing.dataloader import DataLoader
-	from ansible.plugins.callback import CallbackBase
-	from ansible.utils.unsafe_proxy import AnsibleUnsafeText
-	from ansible.vars.manager import VariableManager
+	import ansible_runner
 	ansible_support = True
 except ModuleNotFoundError:
 	ansible_support = False
-
-def ansible_ping(inventory, selection = "all"):
-	host_status = []
-
-	# FIXME: ansible bin path
-	forks = ansible_configuration.ansible_forks
-
-	# "-o" => one line result; makes parsing easier
-	ansible_command = [ "/usr/bin/ansible", "-o", f"--forks={forks}", f"--inventory={inventory}", selection, "-m", "ping" ]
-	result = subprocess.run(ansible_command, stdout = PIPE, stderr = PIPE, universal_newlines = True)
-
-	for line in result.stdout.splitlines():
-		tmp = re.match(r"^(.*?) \| (.*?):? (.*)", line)
-		if tmp is not None:
-			host = tmp[1]
-			status = tmp[2]
-			output = tmp[3]
-			if "Permission denied" in output:
-				status = "PERMISSION DENIED"
-			elif "The module failed to execute correctly" in output:
-				status = "MISSING INTERPRETER?"
-			elif "Name or service not known" in output:
-				status = "COULD NOT RESOLVE"
-			host_status.append((host, status))
-
-	return result.returncode, host_status
 
 # If ansible support is available, ensure that the directories are there
 if ansible_support == True:
@@ -228,15 +192,18 @@ def ansible_get_groups(inventory):
 def ansible_get_groups_by_host(inventory, host):
 	groups = []
 
-	if not os.path.exists(inventory):
-		return []
+	#if not os.path.exists(inventory):
+	#	return []
 
-	with open(inventory, "r") as f:
-		d = yaml.safe_load(f)
+	#with open(inventory, "r") as f:
+	#	d = yaml.safe_load(f)
 
-		for group in d:
-			if d[group].get("hosts") and host in d[group]["hosts"]:
-				groups.append(group)
+	for group in inventory:
+		if inventory[group].get("hosts") and host in inventory[group]["hosts"]:
+			groups.append(group)
+	#	for group in d:
+	#		if d[group].get("hosts") and host in d[group]["hosts"]:
+	#			groups.append(group)
 
 	return groups
 
@@ -703,13 +670,130 @@ def ansible_get_logs():
 			raise Exception(f"Could not parse {item}")
 	return logs
 
+def ansible_extract_failure(retval, error_msg_lines, skipped = False, unreachable = False):
+	status = ""
+
+	if unreachable == True:
+		for line in error_msg_lines:
+			if "Name or service not known" in line:
+				status = "COULD NOT RESOLVE"
+				break
+			elif "Permission denied" in line:
+				status = "PERMISSION DENIED"
+				break
+			elif "The module failed to execute correctly" in line:
+				status = "MISSING INTERPRETER?"
+				break
+			elif "No route to host" in line:
+				status = "NO ROUTE TO HOST"
+				break
+		if len(status) == 0:
+			status = "UNREACHABLE (unknown reason)"
+	elif skipped == True:
+		status = "SKIPPED"
+	else:
+		if retval != 0:
+			status = "FAILED"
+		else:
+			status = "SUCCESS"
+
+	return status
+
+def ansible_results_add(event):
+	host = deep_get(event, "event_data#host", "")
+	if len(host) == 0:
+		return 0
+
+	task = deep_get(event, "event_data#task", "")
+	if len(task) == 0:
+		return 0
+
+	ansible_facts = deep_get(event, "event_data#res#ansible_facts", {})
+
+	skipped = deep_get(event, "event", "") == "runner_on_skipped"
+	unreachable = deep_get(event, "event_data#res#unreachable", False)
+
+	if unreachable == True:
+		retval = -1
+	elif skipped == True or deep_get(event, "event", "") == "runner_on_ok":
+		retval = 0
+	else:
+		retval = deep_get(event, "event_data#res#rc")
+
+	if retval is None:
+		return 0
+
+	taskname = task
+
+	msg = deep_get(event, "event_data#res#msg", "")
+	msg_lines = []
+	if len(msg) > 0:
+		msg_lines = msg.split("\n")
+
+	start_date_timestamp = deep_get(event, "event_data#start")
+	end_date_timestamp = deep_get(event, "event_data#end")
+
+	stdout = deep_get(event, "event_data#res#stdout", "")
+	stderr = deep_get(event, "event_data#res#stderr", "")
+	stdout_lines = deep_get(event, "event_data#res#stdout_lines", "")
+	stderr_lines = deep_get(event, "event_data#res#stderr_lines", "")
+
+	if len(stdout_lines) == 0 and len(stdout) > 0:
+		stdout_lines = stdout.split("\n")
+	if len(stderr_lines) == 0 and len(stderr) > 0:
+		stderr_lines = stderr.split("\n")
+
+	d = {
+		"task": task,
+		"start_date": start_date_timestamp,
+		"end_date": end_date_timestamp,
+		"retval": retval,
+		"unreachable": unreachable,
+		"status": "UNKNOWN",
+		"skipped": skipped,
+		"stdout_lines": [],
+		"stderr_lines": [],
+		"msg_lines": [],
+		"ansible_facts": ansible_facts,
+	}
+
+	if unreachable == False and retval == 0:
+		d["status"] = "SUCCESS"
+
+	if len(msg_lines) > 0 or len(stdout_lines) > 0 or len(stderr_lines) > 0:
+		if len(stdout_lines) > 0:
+			d["stdout_lines"] = stdout_lines
+		if len(stderr_lines) > 0:
+			d["stderr_lines"] = stderr_lines
+		# We don't want msg unless stdout_lines and stderr_lines are empty
+		# XXX: Or can it be used to get a sequential log when there's both
+		# stdout and stderr?
+		if len(stdout_lines) == 0 and len(stderr_lines) == 0 and len(msg_lines) > 0:
+			if retval != 0:
+				d["stderr_lines"] = msg_lines
+			else:
+				d["msg_lines"] = msg_lines
+	else:
+		d["stdout_lines"] = ["<no output>"]
+
+	error_msg_lines = stderr_lines
+	if len(error_msg_lines) == 0:
+		error_msg_lines = msg_lines
+	d["status"] = ansible_extract_failure(retval, error_msg_lines, skipped = skipped, unreachable = unreachable)
+
+	if host not in ansible_results:
+		ansible_results[host] = []
+	ansible_results[host].append(d)
+
+	return retval
+
 def ansible_delete_log(log):
 	if os.path.exists(f"{ANSIBLE_LOG_DIR}/{log}"):
 		for filename in os.listdir(f"{ANSIBLE_LOG_DIR}/{log}"):
 			os.remove(f"{ANSIBLE_LOG_DIR}/{log}/{filename}")
 		os.rmdir(f"{ANSIBLE_LOG_DIR}/{log}")
 
-def ansible_write_log(start_date, playbook, ansible_results):
+def ansible_write_log(start_date, playbook, events):
 	save_logs = ansible_configuration.save_logs
 	if save_logs == False:
 		return
@@ -731,183 +815,161 @@ def ansible_write_log(start_date, playbook, ansible_results):
 	with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/metadata.yaml", "w", opener = partial(os.open, mode = 0o640)) as f:
 		f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
 
+	i = 0
+	for event in events:
+		host = deep_get(event, "event_data#host", "")
+		if len(host) == 0:
+			continue
 
-	for host in ansible_results:
-		i = 0
-		for task in ansible_results[host]:
-			taskname = task
-			if taskname.startswith("TASK: debug"):
-				continue
-			elif taskname.startswith("TASK: "):
-				taskname = taskname[len("TASK: "):]
-			elif taskname.startswith("output"):
-				tmp = re.match(r"output.*?_(.*)", taskname)
-				if tmp:
-					taskname = tmp[1].replace("_", " ")
-			elif taskname == "":
-				taskname = "<unnamed>"
-			i += 1
+		task = deep_get(event, "event_data#task", "")
+		if len(task) == 0:
+			continue
 
-			filename = f"{i:02d}-{host}_{taskname}.yaml".replace(" ", "_").replace("/", "_")
-			hostname = f"{str(host)}"
-			retval = ansible_results[host][task].get("rc", 0)
-			msg = str(ansible_results[host][task].get("msg", ""))
-			msg_lines = []
-			if len(msg) > 0:
-				msg_lines = str(ansible_results[host][task].get("msg", "")).split("\n")
-			start_date_timestamp = str(ansible_results[host][task].get("start"))
-			end_date_timestamp = str(ansible_results[host][task].get("end"))
-			stdout = str(ansible_results[host][task].get("stdout", ""))
-			stderr = str(ansible_results[host][task].get("stderr", ""))
-			stdout_lines = [str(f) for f in ansible_results[host][task].get("stdout_lines", "")]
-			stderr_lines = [str(f) for f in ansible_results[host][task].get("stderr_lines", "")]
+		skipped = deep_get(event, "event", "") == "runner_on_skipped"
+		unreachable = deep_get(event, "event_data#res#unreachable", False)
 
-			if len(stdout_lines) == 0 and len(stdout) > 0:
-				stdout_lines = stdout.split("\n")
-			if len(stderr_lines) == 0 and len(stderr) > 0:
-				stderr_lines = stderr.split("\n")
+		if unreachable == True:
+			retval = -1
+		elif skipped == True or deep_get(event, "event", "") == "runner_on_ok":
+			retval = 0
+		else:
+			retval = deep_get(event, "event_data#res#rc")
 
-			d = {
-				"playbook": playbook_name,
-				"playbook_file": playbook,
-				"task": taskname,
-				"host": hostname,
-				"start_date": start_date_timestamp,
-				"end_date": end_date_timestamp,
-				"retval": retval,
-			}
+		if retval is None:
+			continue
 
-			if len(msg_lines) > 0 or len(stdout_lines) > 0 or len(stderr_lines) > 0:
-				if len(stdout_lines) > 0:
-					d["stdout_lines"] = stdout_lines
-				if len(stderr_lines) > 0:
-					d["stderr_lines"] = stderr_lines
-				# We don't want msg unless stdout_lines and stderr_lines are empty
-				# XXX: Or can it be used to get a sequential log when there's both
-				# stdout and stderr?
-				if len(stdout_lines) == 0 and len(stderr_lines) == 0 and len(msg_lines) > 0:
+		taskname = task
+		i += 1
+
+		filename = f"{i:02d}-{host}_{taskname}.yaml".replace(" ", "_").replace("/", "_")
+		msg = deep_get(event, "event_data#res#msg", "")
+		msg_lines = []
+		if len(msg) > 0:
+			msg_lines = msg.split("\n")
+
+		start_date_timestamp = deep_get(event, "event_data#start")
+		end_date_timestamp = deep_get(event, "event_data#end")
+
+		stdout = deep_get(event, "event_data#res#stdout", "")
+		stderr = deep_get(event, "event_data#res#stderr", "")
+		stdout_lines = deep_get(event, "event_data#res#stdout_lines", "")
+		stderr_lines = deep_get(event, "event_data#res#stderr_lines", "")
+
+		if len(stdout_lines) == 0 and len(stdout) > 0:
+			stdout_lines = stdout.split("\n")
+		if len(stderr_lines) == 0 and len(stderr) > 0:
+			stderr_lines = stderr.split("\n")
+
+		error_msg_lines = stderr_lines
+		if len(error_msg_lines) == 0:
+			error_msg_lines = msg_lines
+		status = ansible_extract_failure(retval, error_msg_lines, skipped = skipped, unreachable = unreachable)
+
+		d = {
+			"playbook": playbook_name,
+			"playbook_file": playbook,
+			"task": task,
+			"host": host,
+			"start_date": start_date_timestamp,
+			"end_date": end_date_timestamp,
+			"retval": retval,
+			"unreachable": unreachable,
+			"skipped": skipped,
+			"status": status,
+		}
+
+		if len(msg_lines) > 0 or len(stdout_lines) > 0 or len(stderr_lines) > 0:
+			if len(stdout_lines) > 0:
+				d["stdout_lines"] = stdout_lines
+			if len(stderr_lines) > 0:
+				d["stderr_lines"] = stderr_lines
+			# We don't want msg unless stdout_lines and stderr_lines are empty
+			# XXX: Or can it be used to get a sequential log when there's both
+			# stdout and stderr?
+			if len(stdout_lines) == 0 and len(stderr_lines) == 0 and len(msg_lines) > 0:
+				if retval != 0:
+					d["stderr_lines"] = msg_lines
+				else:
 					d["msg_lines"] = msg_lines
-			else:
-				d["stdout_lines"] = ["<no output>"]
+		else:
+			d["stdout_lines"] = ["<no output>"]
 
-			with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}", "w", opener = partial(os.open, mode = 0o640)) as f:
-				f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
+		with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}", "w", opener = partial(os.open, mode = 0o640)) as f:
+			f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
+
+def ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval, unreachable = False, skipped = False):
+	if unreachable == True:
+		iktprint([("• ", "separator"), (f"{task}", "error")], stderr = True)
+	elif skipped == True:
+		iktprint([("• ", "separator"), (f"{task} [skipped]", "skip")], stderr = True)
+		iktprint([("", "default")])
+		return
+	elif retval != 0:
+		iktprint([("• ", "separator"), (f"{task}", "error"), (" (retval: ", "default"), (retval, "errorvalue"), (")", "default")], stderr = True)
+	else:
+		iktprint([("• ", "separator"), (f"{task}", "success")])
+
+	if len(msg_lines) > 0:
+		iktprint([("msg:", "header")])
+		for line in msg_lines:
+			iktprint([(line, "default")])
+		iktprint([("", "default")])
+
+	if len(stdout_lines) > 0 or len(msg_lines) == 0 and len(stderr_lines) == 0:
+		iktprint([("stdout:", "header")])
+		for line in stdout_lines:
+			iktprint([(f"{line}", "default")])
+		if len(stdout_lines) == 0:
+			iktprint([("<no output>", "none")])
+		iktprint([("", "default")])
+
+	# If retval isn't 0 we don't really care if stderr is empty
+	if len(stderr_lines) > 0 or retval != 0:
+		iktprint([("stderr:", "header")])
+		for line in stderr_lines:
+			iktprint([(f"{line}", "default")], stderr = True)
+		if len(stderr_lines) == 0:
+			iktprint([("<no output>", "none")])
+		iktprint([("", "default")])
+
+def ansible_print_play_results(retval, ansible_results):
+	if retval != 0 and len(ansible_results) == 0:
+		iktprint([("Failed to execute playbook; retval: ", "error"), (f"{retval}", "errorvalue")], stderr = True)
+	else:
+		for host in ansible_results:
+			plays = ansible_results[host]
+			header_output = False
+
+			for play in plays:
+				task = deep_get(play, "task")
+
+				unreachable = deep_get(play, "unreachable", False)
+				skipped = deep_get(play, "skipped", False)
+				retval = deep_get(play, "retval")
+
+				if header_output == False:
+					header_output = True
+
+					if unreachable == True:
+						iktprint([(f"[{host}]", "error")])
+					elif retval == 0:
+						iktprint([(f"[{host}]", "success")])
+					else:
+						iktprint([(f"[{host}]", "error")])
+
+				msg_lines = deep_get(play, "msg_lines", "")
+				stdout_lines = deep_get(play, "stdout_lines", "")
+				stderr_lines = deep_get(play, "stderr_lines", "")
+				ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval, unreachable, skipped)
+				print()
+
+				# Only show unreachable once
+				if unreachable == True:
+					break
 
 if ansible_support == True:
 	active_task = ""
 	suffix = 0
-
-	def ansible_clean_results(item):
-		newitem = None
-		if item is None:
-			return None
-		elif isinstance(item, AnsibleUnsafeText):
-			newitem = str(item)
-		elif isinstance(item, Host):
-			newitem = str(item)
-		elif type(item) == list or type(item) == tuple:
-			if newitem is None:
-				newitem = []
-			for i in item:
-				newitem.append(ansible_clean_results(i))
-			if type(item) == tuple:
-				newitem = tuple(newitem)
-		elif type(item) == dict:
-			if newitem is None:
-				newitem = {}
-			for key in item:
-				newitem[ansible_clean_results(key)] = ansible_clean_results(item[key])
-		elif type(item) in [str, int, bool]:
-			newitem = item
-		else:
-			raise Exception(f"unhandled type: {type(item)} for item: {item}")
-		return newitem
-
-	# Ansible callback
-	class ResultCallback(CallbackBase):
-		def v2_runner_on_ok(self, result, **kwargs):
-			# pylint: disable=unused-argument
-			global ansible_results
-			global active_task
-			global suffix
-
-			host = result._host
-			output = result._result
-
-			if active_task == "":
-				sys.exit("v2_runner_on_ok: active_task is empty; this should never happen!")
-
-			if active_task == "TASK: Gathering Facts":
-				return
-
-			key = f"{active_task}"
-			if ansible_results.get(host) is None:
-				ansible_results[host] = { active_task: result._result }
-			else:
-				newkey = key
-				if ansible_results[host].get(key) is not None:
-					newkey = f"{key}#{suffix}"
-					suffix += 1
-				ansible_results[host][newkey] = result._result
-
-		def v2_runner_on_failed(self, result, **kwargs):
-			# pylint: disable=unused-argument
-			global ansible_results
-			global active_task
-			global suffix
-
-			host = result._host
-
-			if active_task == "":
-				sys.exit("v2_runner_on_failed: active_task is empty; this should never happen!")
-
-			# While we ignore the Gathering Facts task when the return value is OK,
-			# we need to process it on failure
-			key = f"{active_task}"
-			if ansible_results.get(host) is None:
-				ansible_results[host] = { active_task: result._result }
-			else:
-				newkey = key
-				if ansible_results[host].get(key) is not None:
-					newkey = f"{key}#{suffix}"
-					suffix += 1
-				ansible_results[host][newkey] = result._result
-
-		#def v2_runner_on_unreachable(self, result, **kwargs):
-			# pylint: disable=unused-argument
-		#	sys.exit(f"host {result._host} unreachable")
-
-		def v2_runner_on_skipped(self, result, **kwargs):
-			# pylint: disable=unused-argument
-			global ansible_results
-			global active_task
-			global suffix
-
-			host = result._host
-
-			if active_task == "":
-				sys.exit("v2_runner_on_skipped: active_task is empty; this should never happen!")
-
-			# While we ignore the Gathering Facts task when the return value is OK,
-			# we need to process it on failure
-			key = f"{active_task}"
-			if ansible_results.get(host) is None:
-				ansible_results[host] = { active_task: result._result }
-			else:
-				newkey = key
-				if ansible_results[host].get(key) is not None:
-					newkey = f"{key}#{suffix}"
-					suffix += 1
-				ansible_results[host][newkey] = result._result
-
-		#def v2_playbook_on_notify(self, task, is_conditional):
-		#def v2_playbook_on_include(self, task, is_conditional):
-		#def v2_playbook_on_no_hosts_remaining(self, task, is_conditional):
-
-		def v2_playbook_on_task_start(self, task, is_conditional):
-			global active_task
-
-			active_task = str(task)
 
 	def ansible_run_playbook(playbook, override_inventory = False):
 		global ansible_results
@@ -918,55 +980,30 @@ if ansible_support == True:
 
 		# Flush previous results
 		ansible_results = {}
-		active_task = ""
-		suffix = 0
 
-		context.CLIARGS = ImmutableDict(
-			connection = "smart",		# The python ssh method
-			module_path = [],		# We don't have any custom modules
-			forks = forks,			# Override the number of forks
-			become = None,			# This is provided by the playbooks
-			become_method = "sudo",		# If we need to become root, use sudo
-			become_user = None,		# This is provided by the playbooks
-			check = False,			# We don't want to do a dummy run
-			diff = False,			# We don't want a diff of modified files
-			syntax = False,
-			start_at_task = None,
-			verbosity = 0,
-		)
-
-		passwords = dict(vault_pass = "")
-
-		results_callback = ResultCallback()
-		loader = DataLoader()
 		if override_inventory == True:
-			sources = []
+			inventory = []
 		else:
-			sources = [ANSIBLE_INVENTORY]
+			inventory = [ANSIBLE_INVENTORY]
 		if os.path.exists(ANSIBLE_TMP_INVENTORY):
-			sources.append(ANSIBLE_TMP_INVENTORY)
-		inventory = InventoryManager(loader = loader, sources = sources)
-		variable_manager = VariableManager(loader = loader, inventory = inventory)
-
-		pbex = PlaybookExecutor(
-			playbooks = [playbook],
-			inventory = inventory,
-			variable_manager = variable_manager,
-			loader = loader,
-			passwords = passwords)
-		pbex._tqm._stdout_callback = results_callback
+			inventory.append(ANSIBLE_TMP_INVENTORY)
 
 		start_date = datetime.now()
 
-		result = pbex.run()
-
-		ansible_write_log(start_date, playbook, ansible_results)
+		runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventory)
+		retval = 0
+		if runner is not None:
+			for event in runner.events:
+				_retval = ansible_results_add(event)
+				if retval == 0 and _retval != 0:
+					retval = _retval
+			ansible_write_log(start_date, playbook, runner.events)
 
 		# Remove old temporary inventory
 		if os.path.isfile(ANSIBLE_TMP_INVENTORY):
 			os.remove(ANSIBLE_TMP_INVENTORY)
 
-		return result, ansible_results
+		return retval, ansible_results
 
 	# Execute a playbook on a list of hosts
 	# by creating a temporary inventory
@@ -1018,3 +1055,25 @@ if ansible_support == True:
 			ansible_set_vars(ANSIBLE_TMP_INVENTORY, group = "all", values = values)
 
 		return ansible_run_playbook(playbook)
+
+	def ansible_ping(inventory, selection = []):
+		save_logs_tmp = ansible_configuration.save_logs
+		ansible_configuration.save_logs = False
+
+		host_status = []
+
+		if len(selection) == 0:
+			selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+
+		_retval, ansible_results = ansible_run_playbook_on_selection(f"{ANSIBLE_PLAYBOOK_DIR}/ping.yaml", selection = selection)
+
+		for host in ansible_results:
+			for task in deep_get(ansible_results, host, []):
+				unreachable = deep_get(task, "unreachable")
+				skipped = deep_get(task, "skipped")
+				stderr_lines = deep_get(task, "stderr_lines")
+				retval = deep_get(task, "retval")
+				status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
+				host_status.append((host, status))
+		ansible_configuration.save_logs = save_logs_tmp
+		return host_status

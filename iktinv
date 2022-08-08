@@ -488,37 +488,48 @@ def ping(options = [], args = None):
 	hoststatuses = []
 
 	if args is not None and len(args) > 0:
-		selection = args[0]
+		groups_or_hosts = args[0].split(",")
+		selection = []
+		_all = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+		for group_or_host in groups_or_hosts:
+			# First check if there's a group by this name
+			hosts = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, group_or_host)
+			# If the group is empty let's try to see if it's a host
+			if len(hosts) == 0:
+				if group_or_host in _all:
+					selection.append(group_or_host)
+				else:
+					iktprint([("Warning: ", "warning"), ("Skipping unknown host or group “", "default"), (group_or_host, "argument"), ("“", "default")], stderr = True)
+			else:
+				selection += hosts
+		# Eliminate duplicates
+		selection = list(set(selection))
 	else:
-		selection = "all"
+		selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
 
 	print("Please stand by, attempting to ping hosts")
 	print()
 
-	retval, output = ansible_ping(inventory = ANSIBLE_INVENTORY, selection = selection)
+	output = ansible_ping(inventory = ANSIBLE_INVENTORY, selection = selection)
 
 	if output is None or len(output) == 0:
-		raise Exception(f"Internal error; ansible -m ping failed with: {retval}")
+		raise Exception(f"Internal error; ansible -m ping failed")
 
 	maxlen = 0
 
 	# This needs to be improved; if there's a message we need to tell the difference
 	# between "Permission denied" and "No route to host"
-	for (host, status) in output:
+	for (host, status) in natsorted(output):
 		maxlen = max(len(host), maxlen)
+		status_group = "error"
 
 		if status == "SUCCESS":
 			status_group = "success"
-		elif status == "FAILED!":
-			status_group = "warning"
-		elif status == "UNREACHABLE!":
-			status_group = "error"
 		elif status == "COULD NOT RESOLVE":
 			status_group = "critical"
 		elif status == "MISSING INTERPRETER?":
 			status_group = "warning"
-		else:
-			status = "UNKNOWN"
+		elif status in ["UNKNOWN", "UNKNOWN ERROR"]:
 			status_group = "unknown"
 
 		hoststatuses.append((host, status, status_group))

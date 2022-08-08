@@ -68,7 +68,7 @@ infoview:
       call: "resourceinfodispatch"
       kind: "__LogView"
     field_indexes:
-      Normal: ["index", "name", "host", "start_time", "completion_time", "retval"]
+      Normal: ["index", "name", "host", "start_time", "completion_time", "retval", "status"]
     sortcolumn: "index"
     fields:
       completion_time:
@@ -103,5 +103,44 @@ infoview:
         header: "Started At:"
         path: "log#start_date"
         type: "age"
+      status:
+        header: "Status:"
+        path: "log#status"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "COULD NOT RESOLVE":
+                field_colors:
+                - context: "main"
+                  type: "status_critical"
+              "MISSING INTERPRETER?":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "NO ROUTE TO HOST":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "PERMISSION DENIED":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "SKIPPED":
+                field_colors:
+                  type: "none"
+              "SUCCESS":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "UNKNOWN ERROR":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "UNKNOWN":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
   shortcuts:
     "Last Applied Configuration": null

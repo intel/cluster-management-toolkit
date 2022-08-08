@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+from subprocess import PIPE, STDOUT
 import sys
 import yaml
 
@@ -89,19 +90,54 @@ def create_symlinks(verbose = False):
 def copy_configuration_files(verbose = False):
 	copy_if_not_exists(IKT_CONFIG_FILENAME, IKT_CONFIG_FILE, verbose = verbose)
 
+packages_with_pip_fallback = {
+	"python3-ansible-runner": "ansible-runner",
+}
+
 packages = [
 	"ansible",
 	"python3-natsort",
 	"python3-openssl",
 	"python3-paramiko",
+	"python3-pip",
 	"python3-ujson",
 	"python3-urllib3",
 	"sshpass",
 ]
 
-def install_software(verbose = False):
+# This executes a command with the output captured
+def execute_command_with_response(args):
+	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+	return result.stdout.decode("utf-8")
+
+def install_software(packages, verbose = False):
 	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + packages
 	subprocess.call(args)
+
+def install_software_with_pip_fallback(packages, verbose = False):
+	pkgs = set()
+	fallbacks = set()
+
+	args = ["/usr/bin/apt-cache", "madison"] + list(packages.keys())
+	response = execute_command_with_response(args)
+	split_response = response.splitlines()
+
+	for line in split_response:
+		_pkg = line.split(' ', 1)
+		if _pkg[0] not in pkgs:
+			pkgs.add(_pkg[0])
+
+	for pkg, fallback in packages.items():
+		if pkg not in pkgs:
+			fallbacks.add(fallback)
+
+	if len(pkgs) > 0:
+		args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + list(pkgs)
+		subprocess.call(args)
+
+	if len(fallbacks) > 0:
+		args = ["/usr/bin/pip3", "install"] + list(fallbacks)
+		subprocess.call(args)
 
 def install(options = [], args = None):
 	verbose = False
@@ -120,7 +156,8 @@ def install(options = [], args = None):
 	create_symlinks(verbose = verbose)
 
 	if install_dependencies == True:
-		install_software(verbose = verbose)
+		install_software(packages, verbose = verbose)
+		install_software_with_pip_fallback(packages_with_pip_fallback, verbose = verbose)
 
 commandline = {
 	# Global option
