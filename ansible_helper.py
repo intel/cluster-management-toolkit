@@ -12,9 +12,11 @@ import yaml
 from iktlib import deep_get
 from iktprint import iktprint
 
-ansible_support = False
 ansible_bin_path = None
 ansible_results = {}
+
+active_task = ""
+suffix = 0
 
 HOMEDIR = str(Path.home())
 
@@ -58,22 +60,19 @@ def which(commandname):
 # Used by Ansible
 try:
 	import ansible_runner
-	ansible_support = True
 except ModuleNotFoundError:
-	ansible_support = False
+	sys.exit(f"ansible_runner not available; try (re-)running ikt-install")
 
-# If ansible support is available, ensure that the directories are there
-if ansible_support == True:
-	# If the ansible directory doesn't exist, create it
-	if not os.path.exists(ANSIBLE_DIR):
-		try:
-			os.mkdir(ANSIBLE_DIR)
-		except FileNotFoundError:
-			sys.exit(f"{ANSIBLE_DIR} not found; did you forget to run ikt-install?")
+# If the ansible directory doesn't exist, create it
+if not os.path.exists(ANSIBLE_DIR):
+	try:
+		os.mkdir(ANSIBLE_DIR)
+	except FileNotFoundError:
+		sys.exit(f"{ANSIBLE_DIR} not found; did you forget to run ikt-install?")
 
-	# If the ansible log directory doesn't exist, create it
-	if not os.path.exists(ANSIBLE_LOG_DIR):
-		os.mkdir(ANSIBLE_LOG_DIR)
+# If the ansible log directory doesn't exist, create it
+if not os.path.exists(ANSIBLE_LOG_DIR):
+	os.mkdir(ANSIBLE_LOG_DIR)
 
 def ansible_get_inventory_dict():
 	if not os.path.exists(ANSIBLE_INVENTORY):
@@ -967,113 +966,109 @@ def ansible_print_play_results(retval, ansible_results):
 				if unreachable == True:
 					break
 
-if ansible_support == True:
-	active_task = ""
-	suffix = 0
+def ansible_run_playbook(playbook, override_inventory = False):
+	global ansible_results
+	global active_task
+	global suffix
 
-	def ansible_run_playbook(playbook, override_inventory = False):
-		global ansible_results
-		global active_task
-		global suffix
+	forks = ansible_configuration.ansible_forks
 
-		forks = ansible_configuration.ansible_forks
+	# Flush previous results
+	ansible_results = {}
 
-		# Flush previous results
-		ansible_results = {}
+	if override_inventory == True:
+		inventory = []
+	else:
+		inventory = [ANSIBLE_INVENTORY]
+	if os.path.exists(ANSIBLE_TMP_INVENTORY):
+		inventory.append(ANSIBLE_TMP_INVENTORY)
 
-		if override_inventory == True:
-			inventory = []
-		else:
-			inventory = [ANSIBLE_INVENTORY]
-		if os.path.exists(ANSIBLE_TMP_INVENTORY):
-			inventory.append(ANSIBLE_TMP_INVENTORY)
+	start_date = datetime.now()
 
-		start_date = datetime.now()
+	runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventory)
+	retval = 0
+	if runner is not None:
+		for event in runner.events:
+			_retval = ansible_results_add(event)
+			if retval == 0 and _retval != 0:
+				retval = _retval
+		ansible_write_log(start_date, playbook, runner.events)
 
-		runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventory)
-		retval = 0
-		if runner is not None:
-			for event in runner.events:
-				_retval = ansible_results_add(event)
-				if retval == 0 and _retval != 0:
-					retval = _retval
-			ansible_write_log(start_date, playbook, runner.events)
+	# Remove old temporary inventory
+	if os.path.isfile(ANSIBLE_TMP_INVENTORY):
+		os.remove(ANSIBLE_TMP_INVENTORY)
 
-		# Remove old temporary inventory
-		if os.path.isfile(ANSIBLE_TMP_INVENTORY):
-			os.remove(ANSIBLE_TMP_INVENTORY)
+	return retval, ansible_results
 
-		return retval, ansible_results
+# Execute a playbook on a list of hosts
+# by creating a temporary inventory
+def ansible_run_playbook_on_host_list(playbook, hosts, values = None):
+	# Remove old temporary inventory
+	if os.path.isfile(ANSIBLE_TMP_INVENTORY):
+		os.remove(ANSIBLE_TMP_INVENTORY)
 
-	# Execute a playbook on a list of hosts
-	# by creating a temporary inventory
-	def ansible_run_playbook_on_host_list(playbook, hosts, values = None):
-		# Remove old temporary inventory
-		if os.path.isfile(ANSIBLE_TMP_INVENTORY):
-			os.remove(ANSIBLE_TMP_INVENTORY)
+	ansible_add_hosts(ANSIBLE_TMP_INVENTORY, hosts, group = "selection", skip_all = False)
 
-		ansible_add_hosts(ANSIBLE_TMP_INVENTORY, hosts, group = "selection", skip_all = False)
+	if values is not None and len(values) > 0:
+		ansible_set_vars(ANSIBLE_TMP_INVENTORY, group = "all", values = values)
 
-		if values is not None and len(values) > 0:
-			ansible_set_vars(ANSIBLE_TMP_INVENTORY, group = "all", values = values)
+	return ansible_run_playbook(playbook, override_inventory = True)
 
-		return ansible_run_playbook(playbook, override_inventory = True)
+# Execute a playbook using ansible
+def ansible_run_playbook_on_selection(playbook, selection, values = None):
+	# Remove old temporary inventory
+	if os.path.isfile(ANSIBLE_TMP_INVENTORY):
+		os.remove(ANSIBLE_TMP_INVENTORY)
 
-	# Execute a playbook using ansible
-	def ansible_run_playbook_on_selection(playbook, selection, values = None):
-		# Remove old temporary inventory
-		if os.path.isfile(ANSIBLE_TMP_INVENTORY):
-			os.remove(ANSIBLE_TMP_INVENTORY)
+	ansible_add_hosts(ANSIBLE_TMP_INVENTORY, selection, group = "selection", skip_all = True)
 
-		ansible_add_hosts(ANSIBLE_TMP_INVENTORY, selection, group = "selection", skip_all = True)
+	# If ansible_ssh_pass system variable is not set, and ansible_sudo_pass is set,
+	# we set ansible_ssh_pass to ansible_become_pass; on systems where we already have a host key
+	# this will be ignored; the same goes for groups or hosts where ansible_ssh_pass is set,
+	# since group and host vars take precedence over system vars.
+	#
+	# This is mainly for the benefit of making the prepare_host task possible to run without
+	# encouraging permanent use of ansible_{ssh,sudo,become}_pass.
+	# Ideally these variables should only be needed once; when preparing the host; after that
+	# we'll use passwordless sudo and ssh hostkeys.
+	#
+	# Also, if ansible_user is not set ansible will implicitly use the local user. Pass this
+	# as ansible user to make scripts that tries to access ansible_user function properly.
+	d = ansible_get_inventory_dict()
 
-		# If ansible_ssh_pass system variable is not set, and ansible_sudo_pass is set,
-		# we set ansible_ssh_pass to ansible_become_pass; on systems where we already have a host key
-		# this will be ignored; the same goes for groups or hosts where ansible_ssh_pass is set,
-		# since group and host vars take precedence over system vars.
-		#
-		# This is mainly for the benefit of making the prepare_host task possible to run without
-		# encouraging permanent use of ansible_{ssh,sudo,become}_pass.
-		# Ideally these variables should only be needed once; when preparing the host; after that
-		# we'll use passwordless sudo and ssh hostkeys.
-		#
-		# Also, if ansible_user is not set ansible will implicitly use the local user. Pass this
-		# as ansible user to make scripts that tries to access ansible_user function properly.
-		d = ansible_get_inventory_dict()
+	if values is None:
+		values = {}
 
-		if values is None:
-			values = {}
+	if "ansible_sudo_pass" in values and "ansible_become_pass" not in values:
+		values["ansible_become_pass"] = values["ansible_sudo_pass"]
+	if "ansible_become_pass" in values and "ansible_ssh_pass" not in d["all"]["vars"]:
+		values["ansible_ssh_pass"] = values["ansible_become_pass"]
+	if "ansible_user" not in d["all"]["vars"]:
+		values["ansible_user"] = ansible_configuration.ansible_user
 
-		if "ansible_sudo_pass" in values and "ansible_become_pass" not in values:
-			values["ansible_become_pass"] = values["ansible_sudo_pass"]
-		if "ansible_become_pass" in values and "ansible_ssh_pass" not in d["all"]["vars"]:
-			values["ansible_ssh_pass"] = values["ansible_become_pass"]
-		if "ansible_user" not in d["all"]["vars"]:
-			values["ansible_user"] = ansible_configuration.ansible_user
+	if len(values) > 0:
+		ansible_set_vars(ANSIBLE_TMP_INVENTORY, group = "all", values = values)
 
-		if len(values) > 0:
-			ansible_set_vars(ANSIBLE_TMP_INVENTORY, group = "all", values = values)
+	return ansible_run_playbook(playbook)
 
-		return ansible_run_playbook(playbook)
+def ansible_ping(inventory, selection = []):
+	save_logs_tmp = ansible_configuration.save_logs
+	ansible_configuration.save_logs = False
 
-	def ansible_ping(inventory, selection = []):
-		save_logs_tmp = ansible_configuration.save_logs
-		ansible_configuration.save_logs = False
+	host_status = []
 
-		host_status = []
+	if len(selection) == 0:
+		selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
 
-		if len(selection) == 0:
-			selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+	_retval, ansible_results = ansible_run_playbook_on_selection(f"{ANSIBLE_PLAYBOOK_DIR}/ping.yaml", selection = selection)
 
-		_retval, ansible_results = ansible_run_playbook_on_selection(f"{ANSIBLE_PLAYBOOK_DIR}/ping.yaml", selection = selection)
-
-		for host in ansible_results:
-			for task in deep_get(ansible_results, host, []):
-				unreachable = deep_get(task, "unreachable")
-				skipped = deep_get(task, "skipped")
-				stderr_lines = deep_get(task, "stderr_lines")
-				retval = deep_get(task, "retval")
-				status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
-				host_status.append((host, status))
-		ansible_configuration.save_logs = save_logs_tmp
-		return host_status
+	for host in ansible_results:
+		for task in deep_get(ansible_results, host, []):
+			unreachable = deep_get(task, "unreachable")
+			skipped = deep_get(task, "skipped")
+			stderr_lines = deep_get(task, "stderr_lines")
+			retval = deep_get(task, "retval")
+			status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
+			host_status.append((host, status))
+	ansible_configuration.save_logs = save_logs_tmp
+	return host_status

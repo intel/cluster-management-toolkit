@@ -19,7 +19,7 @@ except ModuleNotFoundError:
 
 from commandparser import parse_commandline
 
-from ansible_helper import ansible_configuration, ansible_support, ansible_get_inventory_pretty, ansible_get_groups, ansible_get_groups_by_host, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_remove_groups, ansible_set_vars, ansible_set_hostvars, ansible_set_groupvars, ansible_unset_hostvars, ansible_unset_groupvars, ansible_create_groups, ansible_ping
+from ansible_helper import ansible_configuration, ansible_get_inventory_pretty, ansible_get_groups, ansible_get_groups_by_host, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_remove_groups, ansible_set_vars, ansible_set_hostvars, ansible_set_groupvars, ansible_unset_hostvars, ansible_unset_groupvars, ansible_create_groups, ansible_ping
 from ansible_helper import ANSIBLE_INVENTORY
 
 import iktlib
@@ -757,14 +757,6 @@ def main():
 	if command is None:
 		command = inventory
 		commandname = "inventory"
-
-	if ansible_support == False:
-		iktprint([("Ansible not available", "critical")], stderr = True)
-		print()
-		iktprint([(f"{about.inventory_program_name} ", "programname"), ("requires Ansible for some of its functionality,", "default")], stderr = True)
-		iktprint([("and its sole purpose is to act as ikt's way to manipulate its ansible inventory.", "default")], stderr = True)
-		iktprint([("Please install Ansible.", "default")], stderr = True)
-		sys.exit(errno.ENOSYS)
 
 	iktconfig = iktlib.read_iktconfig()
 	# Used by the ansible module

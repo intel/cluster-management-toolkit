@@ -52,7 +52,7 @@ import iktlib
 from iktlib import split_msg, deep_get, deep_get_list, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
 
-from ansible_helper import ansible_configuration, ansible_support, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results
+from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
@@ -151,7 +151,7 @@ def get_playbook_path(playbook):
 	return path
 
 def get_package_versions(hostname):
-	if ansible_support == False or not os.path.isdir(ANSIBLE_PLAYBOOK_DIR):
+	if not os.path.isdir(ANSIBLE_PLAYBOOK_DIR):
 		return []
 
 	control_plane_k8s_version = ""
@@ -11020,82 +11020,80 @@ def __populate_playbooklist(path, action_list = {}):
 	return action_list
 
 def populate_playbooklist(context = None, actions = [], action_list = {}, control_plane_selected = False, single_item = False, cluster_available = True):
-	# Only populate the list of playbooks if we have ansible support
-	if ansible_support == True:
-		local_playbooks = deep_get(iktconfig, "Ansible#local_playbooks", [])
-		for playbook_path in local_playbooks:
-			# Substitute {HOME}/ for {HOMEDIR}
-			if playbook_path.startswith("{HOME}/"):
-				playbook_path = f"{HOMEDIR}/{playbook_path[len('{HOME}/'):]}"
-			# Skip non-existing playbook paths
-			if not os.path.isdir(playbook_path):
-				continue
-			action_list = __populate_playbooklist(playbook_path, action_list = action_list)
-		action_list = __populate_playbooklist(ANSIBLE_PLAYBOOK_DIR, action_list = action_list)
+	local_playbooks = deep_get(iktconfig, "Ansible#local_playbooks", [])
+	for playbook_path in local_playbooks:
+		# Substitute {HOME}/ for {HOMEDIR}
+		if playbook_path.startswith("{HOME}/"):
+			playbook_path = f"{HOMEDIR}/{playbook_path[len('{HOME}/'):]}"
+		# Skip non-existing playbook paths
+		if not os.path.isdir(playbook_path):
+			continue
+		action_list = __populate_playbooklist(playbook_path, action_list = action_list)
+	action_list = __populate_playbooklist(ANSIBLE_PLAYBOOK_DIR, action_list = action_list)
 
-		order = []
-		for item in action_list:
-			playbooktypes = action_list[item].get("playbook_types", [])
-			if context is not None and playbooktypes != [] and context not in playbooktypes:
-				continue
+	order = []
+	for item in action_list:
+		playbooktypes = action_list[item].get("playbook_types", [])
+		if context is not None and playbooktypes != [] and context not in playbooktypes:
+			continue
 
-			description = action_list[item].get("description")
-			category = action_list[item].get("category", "")
-			name = item
-			order.append((description, category, name))
+		description = action_list[item].get("description")
+		category = action_list[item].get("category", "")
+		name = item
+		order.append((description, category, name))
 
-		currentcategory = ""
-		for item in natsorted(order, key = itemgetter(1, 0)):
-			action = item[0]
-			category = item[1]
-			allowoncontrolplane = action_list[item[2]].get("allow_on_control_plane", True)
-			singleoncontrolplane = action_list[item[2]].get("single_on_control_plane", True)
-			readonly = action_list[item[2]].get("read_only", False)
-			comments = action_list[item[2]].get("comments", "")
-			lineattrs = widgetlineattrs.NORMAL
-			if read_only_mode == True and readonly == False:
-				continue
-			if singleoncontrolplane == True and control_plane_selected == True and single_item == False:
-				continue
-			elif allowoncontrolplane == False and control_plane_selected == True:
-				continue
-			elif action_list[item[2]].get("requires_cluster_info", False) == True and cluster_available == False:
-				metadata = []
-				if len(comments) > 0:
-					metadata.append((f"{comments},", ("windowwidget", "highlight")))
-				metadata.append(("<cluster not available>", ("windowwidget", "alert")))
-				lineattrs = widgetlineattrs.UNSELECTABLE
-			elif category == "__INVALID__":
-				lineattrs = widgetlineattrs.UNSELECTABLE & widgetlineattrs.INVALID
-				metadata = [(comments, ("windowwidget", "alert"))]
-			elif category == "__DISABLED__":
-				continue
-			else:
-				metadata = [(comments, ("windowwidget", "highlight"))]
+	currentcategory = ""
+	for item in natsorted(order, key = itemgetter(1, 0)):
+		action = item[0]
+		category = item[1]
+		allowoncontrolplane = action_list[item[2]].get("allow_on_control_plane", True)
+		singleoncontrolplane = action_list[item[2]].get("single_on_control_plane", True)
+		readonly = action_list[item[2]].get("read_only", False)
+		comments = action_list[item[2]].get("comments", "")
+		lineattrs = widgetlineattrs.NORMAL
+		if read_only_mode == True and readonly == False:
+			continue
+		if singleoncontrolplane == True and control_plane_selected == True and single_item == False:
+			continue
+		elif allowoncontrolplane == False and control_plane_selected == True:
+			continue
+		elif action_list[item[2]].get("requires_cluster_info", False) == True and cluster_available == False:
+			metadata = []
+			if len(comments) > 0:
+				metadata.append((f"{comments},", ("windowwidget", "highlight")))
+			metadata.append(("<cluster not available>", ("windowwidget", "alert")))
+			lineattrs = widgetlineattrs.UNSELECTABLE
+		elif category == "__INVALID__":
+			lineattrs = widgetlineattrs.UNSELECTABLE & widgetlineattrs.INVALID
+			metadata = [(comments, ("windowwidget", "alert"))]
+		elif category == "__DISABLED__":
+			continue
+		else:
+			metadata = [(comments, ("windowwidget", "highlight"))]
 
-			if currentcategory != category:
-				if category == "__INVALID__":
-					actions.append({
-						"lineattrs": widgetlineattrs.SEPARATOR,
-						"columns": [[(f" INVALID ", ("windowwidget", "bright"))], [("", ("windowwidget", "default"))]],
-					})
-					currentcategory = category
-				else:
-					actions.append({
-						"lineattrs": widgetlineattrs.SEPARATOR,
-						"columns": [[(f" {category} ", ("windowwidget", "default"))], [("", ("windowwidget", "default"))]],
-					})
-					currentcategory = category
-			if currentcategory == "__INVALID__":
+		if currentcategory != category:
+			if category == "__INVALID__":
 				actions.append({
-					"lineattrs": lineattrs,
-					"columns": [[(f"{action}", ("windowwidget", "alert"))], metadata],
+					"lineattrs": widgetlineattrs.SEPARATOR,
+					"columns": [[(f" INVALID ", ("windowwidget", "bright"))], [("", ("windowwidget", "default"))]],
 				})
+				currentcategory = category
 			else:
 				actions.append({
-					"lineattrs": lineattrs,
-					"columns": [[(f"{action}", ("windowwidget", "default"))], metadata],
+					"lineattrs": widgetlineattrs.SEPARATOR,
+					"columns": [[(f" {category} ", ("windowwidget", "default"))], [("", ("windowwidget", "default"))]],
 				})
+				currentcategory = category
+		if currentcategory == "__INVALID__":
+			actions.append({
+				"lineattrs": lineattrs,
+				"columns": [[(f"{action}", ("windowwidget", "alert"))], metadata],
+			})
+		else:
+			actions.append({
+				"lineattrs": lineattrs,
+				"columns": [[(f"{action}", ("windowwidget", "default"))], metadata],
+			})
 
 	return actions, action_list
 
