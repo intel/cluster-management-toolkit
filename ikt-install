@@ -124,7 +124,7 @@ def install_software_with_pip_fallback(packages, verbose = False):
 
 	for line in split_response:
 		_pkg = line.split(' ', 1)
-		if _pkg[0] not in pkgs:
+		if _pkg[0] in packages.keys() and _pkg[0] not in pkgs:
 			pkgs.add(_pkg[0])
 
 	for pkg, fallback in packages.items():
