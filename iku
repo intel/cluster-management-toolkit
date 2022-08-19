@@ -162,7 +162,7 @@ def get_package_versions(hostname):
 	if len(ansible_results) == 0:
 		raise ValueError(f"Error: Failed to get package versions from {hostname} (retval: {retval}); aborting.")
 
-	tmp = ""
+	tmp = []
 
 	for result in deep_get(ansible_results, hostname, []):
 		if deep_get(result, "task", "") == "package versions":
