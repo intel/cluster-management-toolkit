@@ -125,7 +125,7 @@ def run_playbook(playbookpath, hosts = None, extra_values = {}, quiet = False):
 
 	ansible_print_play_results(retval, ansible_results)
 
-	return _retval, ansible_results
+	return retval, ansible_results
 
 def __format_none(string, fmt):
 	if string is None or string == "<none>":
@@ -135,7 +135,7 @@ def __format_none(string, fmt):
 	return __string
 
 def show_configuration(hosts):
-	# cluster_name = 
+	# cluster_name =
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
 	if http_proxy is not None and http_proxy == "":
 		http_proxy = None
