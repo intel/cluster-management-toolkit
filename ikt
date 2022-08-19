@@ -660,12 +660,12 @@ def add_nodes(options = [], args = None):
 		iktprint([("Error: ", "error"), ("Failed to get package versions from control-plane at {control_plane_ip} (retval: {retval}); aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	for host in ansible_results:
-		data = ansible_results[host]
+	tmp = []
 
-		for task in data:
-			if "package versions" in task.replace("_", " "):
-				tmp = str(data[task].get("msg", "")).split("\n")
+	for result in deep_get(ansible_results, control_plane_ip, []):
+		if deep_get(result, "task", "") == "package versions":
+			tmp = deep_get(result, "msg_lines", [])
+			break
 
 	if len(tmp) == 0:
 		iktprint([("Error: ", "error"), ("Failed to get package versions from control-plane at {control_plane_ip} (playbook returned no valid data); aborting.", "default")], stderr = True)
