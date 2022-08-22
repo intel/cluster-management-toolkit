@@ -8723,6 +8723,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							continue
 				elif widget == "command":
 					w_args = deep_get(value, "widget_args", {})
+					if "_pass_obj" in w_args:
+						w_args["obj"] = obj
 					do_command(uip.stdscr, **w_args)
 					changed = True
 				elif widget == "executecommand":
@@ -9843,9 +9845,26 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			f.close()
 
 def do_command(stdscr, **kwargs):
-	args = deep_get(kwargs, "command")
+	_args = deep_get(kwargs, "command")
+
 	if len(args) == 0:
 		return
+
+	obj = deep_get(kwargs, "obj", {})
+
+	args = []
+	for arg in _args:
+		if type(arg) == str:
+			args.append(arg)
+		elif type(arg) == list:
+			for path in arg:
+				tmp = deep_get(obj, path)
+				if type(tmp) == str:
+					args.append(tmp)
+				elif type(tmp) == list:
+					args += tmp
+				else:
+					sys.exit(f"widget_args: command requested incorrect data type; only str and list are valid")
 
 	waitforkeypress = deep_get(kwargs, "waitforkeypress", False)
 

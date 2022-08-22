@@ -320,7 +320,8 @@ infoview:
       helptext: "Open a shell inside virtual machine"
       widget: "command"
       widget_args:
-        command: ["virtctl", "console", "testvm"]
+        command: ["virtctl", "console", ["metadata#name"]]
+        _pass_obj: true
     "Show interfaces":
       key: "i"
       modifier: "shift"
