@@ -108,17 +108,20 @@ def init_pair(pair, color_pair, color_nr):
 		curses.init_pair(color_nr, fg, bg)
 		if fg == bg:
 			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
-	except ValueError:
-		# Most likely we failed due to the terminal only
-		# supporting colours 0-7. If "bright black" was
-		# requested, we need to remap it. Fallback to blue;
-		# hopefully there are no cases of bright black on blue.
-		if fg & 7 == curses.COLOR_BLACK:
-			fg = curses.COLOR_BLUE
-			bright_black_remapped = True
-		curses.init_pair(color_nr, fg & 7, bg & 7)
-		if fg & 7 == bg & 7:
-			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg}; bright black remapped: {bright_black_remapped})")
+	except Exception as e:
+		if str(e) in ["init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."]:
+			# Most likely we failed due to the terminal only
+			# supporting colours 0-7. If "bright black" was
+			# requested, we need to remap it. Fallback to blue;
+			# hopefully there are no cases of bright black on blue.
+			if fg & 7 == curses.COLOR_BLACK:
+				fg = curses.COLOR_BLUE
+				bright_black_remapped = True
+			if fg & 7 == bg & 7:
+				raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg}; bright black remapped: {bright_black_remapped})")
+			curses.init_pair(color_nr, fg & 7, bg & 7)
+		else:
+			raise
 
 def read_theme(configthemefile, defaultthemefile):
 	global theme
