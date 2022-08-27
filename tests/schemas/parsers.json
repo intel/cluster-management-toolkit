@@ -1,0 +1,622 @@
+{
+	"description": "A list of parser rules for the iku log viewer",
+	"type": "array",
+	"definitions": {
+		"severity_overrides": {
+			"description": "A list of severity_overrides",
+			"type": "array",
+			"items": {
+				"$ref": "#/definitions/severity_override"
+			},
+			"minItems": 1
+
+		},
+		"severity_override": {
+			"description": "A severity override",
+			"type": "object",
+			"properties": {
+				"matchtype": {
+					"enum": [
+						"endswith",
+						"regex",
+						"startswith"
+					]
+				},
+				"matchkey": {
+					"type": "string"
+				},
+				"loglevel": {
+					"$ref": "#/definitions/loglevel"
+				}
+			},
+			"required": [ "matchtype", "matchkey", "loglevel" ]
+		},
+		"loglevel": {
+			"enum": [
+				"emergency",
+				"alert",
+				"critical",
+				"error",
+				"warning",
+				"notice",
+				"info",
+				"debug"
+			]
+		},
+		"match_rule": {
+			"description": "A set of rules to match individual containers",
+			"type": "object",
+			"properties": {
+				"pod_name": { "$ref": "#/definitions/pod_name" },
+				"container_name": { "$ref": "#/definitions/container_name" },
+				"container_type": { "$ref": "#/definitions/container_type" },
+				"image_name": { "$ref": "#/definitions/image_name" },
+				"image_regex": { "$ref": "#/definitions/image_regex" }
+			},
+			"additionalProperties": false
+		},
+		"pod_name": {
+			"description": "The prefix for a pod name",
+			"type": "string"
+		},
+		"container_name": {
+			"description": "The prefix for a container name",
+			"type": "string"
+		},
+		"container_type": {
+			"description": "The container type",
+			"type": "string",
+			"enum": [
+				"container",
+				"init_container"
+			]
+		},
+		"image_name": {
+			"description": "The prefix for the name of the container image",
+			"type": "string"
+		},
+		"image_regex": {
+			"description": "A regex pattern to match container image names against",
+			"type": "string"
+		}
+	},
+	"items": {
+		"description": "A parser rule set",
+		"type": "object",
+		"properties": {
+			"name": {
+				"description": "The name of the rule set",
+				"type": "string",
+				"pattern": "^[A-Za-z0-9_-]*[A-Za-z0-9]$"
+			},
+			"show_in_selector": {
+				"description": "Should the rule set be listed in the parser override list (default: false)",
+				"type": "boolean"
+			},
+			"matchkeys": {
+				"type": "array",
+				"items": {
+					"description": "A set of rules to match individual containers",
+					"type": "object",
+					"anyOf": [
+						{
+							"$ref": "#/definitions/match_rule",
+							"required": [ "pod_name" ]
+						}, {
+							"$ref": "#/definitions/match_rule",
+							"required": [ "container_name" ]
+						}, {
+							"$ref": "#/definitions/match_rule",
+							"required": [ "image_name" ]
+						}, {
+							"$ref": "#/definitions/match_rule",
+							"required": [ "image_regex" ]
+						}
+					]
+				},
+				"minItems": 1
+			},
+			"parser_rules": {
+				"description": "An order set of rules to execute when parsing a log",
+				"type": "array",
+				"items": {
+					"description": "A rule to execute when parsing a log",
+					"anyOf": [
+						{
+							"description": "Parser rules that take no additional options",
+							"type": "object",
+							"properties": {
+								"name": {
+									"enum": [
+										"4letter_colon_severity",
+										"4letter_spaced_severity",
+										"angle_bracketed_facility",
+										"colon_facility",
+										"colon_severity",
+										"directory",
+										"expand_event",
+										"facility_hh_mm_ss_ms_severity",
+										"glog",
+										"letter_severity_colon_facility",
+										"modinfo",
+										"python_traceback",
+										"seconds_severity_facility",
+										"spaced_severity_facility",
+										"strip_ansicodes",
+										"strip_bracketed_pid",
+										"ts_8601",
+										"ts_8601_tz"
+									]
+								}
+							},
+							"requiredProperties": [ "name" ],
+							"additionalProperties": false
+						}, {
+							"type": "object",
+							"properties": {
+								"name": {
+									"enum": [
+										"bracketed_severity",
+										"bracketed_timestamp_severity_facility"
+									]
+								},
+								"default_loglevel": {
+									"$ref": "#/definitions/loglevel"
+								}
+							},
+							"requiredProperties": [ "name" ],
+							"additionalProperties": false
+						}, {
+							"type": "object",
+							"properties": {
+								"name": {
+									"enum": [
+										"custom_splitter"
+									]
+								},
+								"options": {
+									"type": "object",
+									"properties": {
+										"regex": {
+											"description": "The regex pattern to use for matches",
+											"type": "string"
+										},
+										"severity": {
+											"type": "object",
+											"properties": {
+												"field": {
+													"description": "The regex capture group to get the severity from",
+													"type": "integer",
+													"minimum": 0
+												},
+												"overrides": {
+													"$ref": "#/definitions/severity_overrides"
+												},
+												"transform": {
+													"description": "The transformation to use when converting the severity",
+													"enum": [
+														"3letter",
+														"4letter",
+														"int",
+														"letter",
+														"str"
+													]
+												}
+											},
+											"required": [ "field", "transform" ],
+											"additionalProperties": false
+										},
+										"facility": {
+											"type": "object",
+											"properties": {
+												"fields": {
+													"description": "The regex capture group(s) to get the facility from",
+													"type": "array",
+													"items": {
+														"type": "integer",
+														"minimum": 0
+													}
+												},
+												"separators": {
+													"description": "The separators to insert between the facility fields. Extra separators will be ignored, the last separator will be reused if len(fields) - 1 > len(separators)",
+													"type": "array",
+													"items": {
+														"description": "A string to insert as separator between two facility fields",
+														"type": "string"
+													},
+													"minItems": 1
+												}
+											},
+											"required": [ "fields" ],
+											"additionalProperties": false
+										},
+										"message": {
+											"type": "object",
+											"properties": {
+												"field": {
+													"description": "The regex capture group to get the message from",
+													"type": "integer",
+													"minimum": 0
+												}
+											},
+											"required": [ "field" ],
+											"additionalProperties": false
+										}
+									},
+									"required": [ "regex", "message" ],
+									"additionalProperties": false
+								}
+							},
+							"required": [ "name", "options" ],
+							"additionalProperties": false
+						}, {
+							"type": "object",
+							"properties": {
+								"name": {
+									"enum": [
+										"http"
+									]
+								},
+								"options": {
+									"type": "object",
+									"properties": {
+										"reformat_timestamps": {
+											"description": "Should the timestamps be reformatted to ISO-8601 format? Default: false",
+											"type": "boolean"
+										}
+									},
+									"additionalProperties": false
+								}
+							},
+							"requiredProperties": [ "name" ],
+							"additionalProperties": false
+						}, {
+							"type": "object",
+							"properties": {
+								"name": {
+									"enum": [
+										"json",
+										"json_event",
+										"json_with_leading_message"
+									]
+								},
+								"options": {
+									"type": "object",
+									"properties": {
+										"messages": {
+											"description": "A list of fields that should be treated as messages",
+											"type": "array",
+											"items": {
+												"type": "string"
+											},
+											"minItems": 1
+										},
+										"errors": {
+											"description": "A list of fields that should be treated as errors",
+											"type": "array",
+											"items": {
+												"type": "string"
+											},
+											"minItems": 1
+										},
+										"timestamps": {
+											"description": "A list of fields that should be treated as timestamps",
+											"type": "array",
+											"items": {
+												"type": "string"
+											},
+											"minItems": 1
+										},
+										"severities": {
+											"description": "A list of fields that should be treated as severities",
+											"type": "array",
+											"items": {
+												"type": "string"
+											},
+											"minItems": 1
+										},
+										"facilities": {
+											"description": "A list of fields that should be treated as facilities",
+											"type": "array",
+											"items": {
+												"anyOf": [
+													{
+														"type": "string"
+													}, {
+														"type": "object",
+														"properties": {
+															"keys": {
+																"type": "array",
+																"items": {
+																	"type": "string"
+																}
+															},
+															"separators": {
+																"type": "array",
+																"items": {
+																	"type": "string"
+																}
+															}
+														},
+														"required": [ "keys" ],
+														"additionalProperties": false
+													}
+												]
+											},
+											"minItems": 1
+										},
+										"versions": {
+											"description": "A list of fields that should be treated as versions",
+											"type": "array",
+											"items": {
+												"type": "string"
+											},
+											"minItems": 1
+										}
+									},
+									"additionalProperties": false
+								}
+							},
+							"requiredProperties": [ "name" ],
+							"additionalProperties": false
+						}, {
+							"type": "object",
+							"properties": {
+								"name": {
+									"enum": [
+										"key_value",
+										"key_value_with_leading_message"
+									]
+								},
+								"options": {
+									"type": "object",
+									"properties": {
+										"messages": {
+											"description": "A list of fields that should be treated as messages",
+											"type": "array",
+											"items": {
+												"type": "string"
+											},
+											"minItems": 1
+										},
+										"errors": {
+											"description": "A list of fields that should be treated as errors",
+											"type": "array",
+											"items": {
+												"type": "string"
+											},
+											"minItems": 1
+										},
+										"timestamps": {
+											"description": "A list of fields that should be treated as timestamps",
+											"type": "array",
+											"items": {
+												"type": "string"
+											},
+											"minItems": 1
+										},
+										"severities": {
+											"description": "A list of fields that should be treated as severities",
+											"type": "array",
+											"items": {
+												"type": "string"
+											},
+											"minItems": 1
+										},
+										"severity": {
+											"type": "object",
+											"properties": {
+												"overrides": {
+													"$ref": "#/definitions/severity_overrides"
+												}
+											},
+											"additionalProperties": false
+										},
+										"facilities": {
+											"description": "A list of fields that should be treated as facilities",
+											"type": "array",
+											"items": {
+												"anyOf": [
+													{
+														"type": "string"
+													}, {
+														"type": "object",
+														"properties": {
+															"keys": {
+																"type": "array",
+																"items": {
+																	"type": "string"
+																}
+															},
+															"separators": {
+																"type": "array",
+																"items": {
+																	"type": "string"
+																}
+															}
+														},
+														"required": [ "keys" ],
+														"additionalProperties": false
+													}
+												]
+											},
+											"minItems": 1
+										},
+										"versions": {
+											"description": "A list of fields that should be treated as versions",
+											"type": "array",
+											"items": {
+												"type": "string"
+											},
+											"minItems": 1
+										}
+									},
+									"additionalProperties": false
+								}
+							},
+							"requiredProperties": [ "name" ],
+							"additionalProperties": false
+						}, {
+							"type": "object",
+							"properties": {
+								"name": {
+									"enum": [
+										"override_severity"
+									]
+								},
+								"overrides": {
+									"$ref": "#/definitions/severity_overrides"
+								}
+							},
+							"required": [ "name", "overrides" ],
+							"additionalProperties": false
+						}, {
+							"type": "object",
+							"properties": {
+								"name": {
+									"enum": [
+										"substitute_bullets"
+									]
+								},
+								"prefix": {
+									"description": "The prefix to substitute",
+									"type": "string"
+								}
+							},
+							"requiredProperties": [ "name" ],
+							"additionalProperties": false
+						}, {
+							"type": "object",
+							"properties": {
+								"name": {
+									"enum": [
+										"json_line"
+									]
+								},
+								"options": {
+									"type": "object",
+									"properties": {
+										"allow_empty_lines": {
+											"type": "boolean"
+										},
+										"block_start": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"matchtype": {
+														"enum": [
+															"exact",
+															"regex",
+															"startswith"
+														]
+													},
+													"matchkey": {
+														"type": "string"
+													},
+													"matchline": {
+														"enum": [
+															"any",
+															"first"
+														]
+													},
+													"format_block_start": {
+														"type": "boolean"
+													}
+												},
+												"additionalProperties": false
+											},
+											"minItems": 1
+										}
+									},
+									"additionalProperties": false
+								}
+							},
+							"requiredProperties": [ "name" ],
+							"additionalProperties": false
+						}, {
+							"type": "object",
+							"properties": {
+								"name": {
+									"enum": [
+										"yaml_line"
+									]
+								},
+								"options": {
+									"type": "object",
+									"properties": {
+										"block_start": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"matchtype": {
+														"enum": [
+															"exact",
+															"regex",
+															"startswith"
+														]
+													},
+													"matchkey": {
+														"type": "string"
+													},
+													"matchline": {
+														"enum": [
+															"any",
+															"first"
+														]
+													},
+													"format_block_start": {
+														"type": "boolean"
+													}
+												},
+												"additionalProperties": false
+											},
+											"minItems": 1
+										},
+										"block_end": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"matchtype": {
+														"enum": [
+															"empty",
+															"exact",
+															"regex",
+															"startswith"
+														]
+													},
+													"matchkey": {
+														"type": "string"
+													},
+													"format_block_end": {
+														"type": "boolean"
+													},
+													"process_block_end": {
+														"type": "boolean"
+													}
+												},
+												"additionalProperties": false
+											},
+											"minItems": 1
+										}
+									},
+									"additionalProperties": false
+								}
+							},
+							"requiredProperties": [ "name" ],
+							"additionalProperties": false
+						}
+					],
+					"minItems": 1
+				},
+				"minItems": 1
+			}
+		},
+		"required": [ "name", "matchkeys", "parser_rules" ],
+		"additionalProperties": false
+	},
+	"uniqueItems": true,
+	"minItems": 1
+}

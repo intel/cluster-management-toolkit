@@ -1492,26 +1492,12 @@ def datagetter_metrics(obj, path, default):
 	if obj is None or path is None:
 		return default
 
-	# fields is a dict
-	fields = deep_get(obj, "fields", {})
 	result = []
 
-	if type(path[0]) == list:
-		return_type = path[1]
-		rfields = path[0]
-	else:
-		return_type = "list"
-		rfields = path
-
-	for field in rfields:
+	for field in path:
 		result.append(deep_get(obj, f"fields#{field}", ""))
 
-	if return_type == "str":
-		result = str("".join(result))
-	elif return_type == "tuple":
-		result = tuple(result)
-	elif return_type != "list":
-		raise Exception(f"datagetter_metrics: Invalid return type {return_type}; this is a programming error")
+	result = tuple(result)
 
 	return result, {}
 

@@ -1,0 +1,83 @@
+#! /usr/bin/env python3
+
+import json
+import jsonschema
+import os
+import yaml
+import sys
+
+def usage():
+	print("validate_yaml [ARGUMENTS]\n")
+	print("Validate YAML files used by iKT\n")
+	print("themes|views|parsers                 Validate all YAML-files in the default directory for the specified type")
+	print("themes|views|parsers|SCHEMA PATH...  Validate all YAML-files at PATH for the specified type")
+	print("                                     if PATH is a directory, or the specified file if PATH is a file")
+	print("")
+	print("If no arguments are specified all YAML-files will be validated")
+	print("If the schema isn't one of themes|views|parsers it'll be expected to be a path to a valid JSON schema file\n")
+	print("Built-in paths are relative to the base directory of the iKT source code\n")
+	print("Note: No schemas are available to validate playbooks; use ansible-playbook to validate playbooks\n")
+	print("help|--help        Display this help and exit")
+#	print("version|--version  Output version information and exit")
+
+def validate_file(yaml_path, schema_path):
+	if not yaml_path.endswith(".yaml"):
+		return
+
+	if not os.path.isfile(yaml_path):
+		print(f"\n{yaml_path} is not a file; skipping.\n")
+		return
+
+	yaml_data = {}
+
+	if not os.path.isfile(schema_path):
+		sys.exit(f"schema {schema_path} does not exist or is not a file; aborting.")
+
+	with open(schema_path, "r") as f:
+		schema = json.load(f)
+
+	with open(yaml_path, "r") as f:
+		yaml_data = yaml.safe_load(f)
+
+	print(f"Validating {yaml_path} with {schema_path}")
+
+	jsonschema.validate(schema = schema, instance = yaml_data)
+
+def main():
+	if len(sys.argv) == 2 and sys.argv[1] in ["help", "--help"]:
+		usage()
+		sys.exit(0)
+
+	if len(sys.argv) == 1:
+		yaml_paths = [
+			("themes", "tests/schemas/themes.json"),
+			("views", "tests/schemas/views.json"),
+			("parsers", "tests/schemas/parsers.json"),
+		]
+	else:
+		schema = sys.argv[1]
+		if schema in ["themes", "views", "parsers"]:
+			schema_path = f"tests/schemas/{schema}.json"
+		else:
+			schema_path = schema
+			if not os.path.isfile(schema_path) or not schema_path.lower().endswith(".json"):
+				sys.exit(f"SCHEMA has to be a path to a JSON schema file")
+
+	if len(sys.argv) == 2:
+		yaml_paths = [
+			(schema, f"tests/schemas/{schema}.json")
+		]
+	elif len(sys.argv) > 2:
+		yaml_paths = []
+		for path in sys.argv[2:]:
+			yaml_paths.append((path, schema_path))
+
+	for yaml_path, schema in yaml_paths:
+		if os.path.isfile(yaml_path):
+			validate_file(yaml_path, schema)
+		elif os.path.isdir(yaml_path):
+			for path in os.listdir(yaml_path):
+				validate_file(f"{yaml_path}/{path}", schema)
+
+if __name__ == "__main__":
+	main()

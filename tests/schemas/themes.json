@@ -1,0 +1,260 @@
+{
+	"description": "A theme for iKT",
+	"type": "object",
+	"definitions": {
+		"color_pair": {
+			"description": "A list of [foreground colour, background colour]",
+			"prefixItems": [
+				{
+					"description": "Foreground colour",
+					"$ref": "#/definitions/color"
+				}, {
+					"description": "Background colour",
+					"$ref": "#/definitions/color"
+				}
+			],
+			"items": false
+		},
+		"color": {
+			"description": "A list of [colour, intensity]",
+			"prefixItems": [
+				{
+					"$ref": "#/definitions/color_name"
+				}, {
+					"$ref": "#/definitions/color_intensity"
+				}
+			],
+			"items": false
+		},
+		"color_name": {
+			"description": "The name of a curses colour",
+			"enum": [
+				"black",
+				"red",
+				"green",
+				"yellow",
+				"blue",
+				"magenta",
+				"cyan",
+				"white"
+			]
+		},
+		"color_intensity": {
+			"description": "Colour intensity",
+			"enum": [
+				"normal",
+				"bright"
+			]
+		},
+		"formatted_string": {
+			"description": "A a list of formatted string fragments",
+			"type": "array",
+			"items": {
+				"$ref": "#/definitions/formatted_string_fragment"
+			},
+			"minItems": 1
+		},
+		"formatted_string_fragment": {
+			"description": "A formatted string fragment",
+			"type": "array",
+			"prefixItems": [
+				{
+					"description": "A string fragment",
+					"type": "string"
+				}, {
+					"$ref": "#/definitions/color_pair_name"
+				}
+			],
+			"items": false
+		},
+		"text_formatting": {
+			"description": "Text formatting",
+			"type": "object",
+			"patternProperties": {
+				"^[a-z][a-z0-9_]*[a-z0-9]$": {
+					"$ref": "#/definitions/color_pair_name"
+				}
+			},
+			"additionalProperties": false
+		},
+		"color_pair_name": {
+			"description": "The name of a colour pair, optionally with unselected and selected versions",
+			"anyOf": [
+				{
+					"$ref": "#/definitions/attributed_color_pair_name"
+				}, {
+					"description": "Unselected and selected colour pair names from color_pairs_curses",
+					"type": "object",
+					"properties": {
+						"unselected": {
+							"$ref": "#/definitions/attributed_color_pair_name"
+						},
+						"selected": {
+							"$ref": "#/definitions/attributed_color_pair_name"
+						}
+					},
+					"additionalProperties": false
+				}
+			]
+		},
+		"attributed_color_pair_name": {
+			"description": "The name of a colour pair, optionally with additional text attributes",
+			"anyOf": [
+				{
+					"$ref": "#/definitions/simple_color_pair_name"
+				}, {
+					"description": "A list of [colour pair name, additional attribute(s)]",
+					"type": "array",
+					"prefixItems": [
+						{
+							"$ref": "#/definitions/simple_color_pair_name"
+						}, {
+							"$ref": "#/definitions/text_attributes"
+						}
+					],
+					"items": false
+				}
+			]
+		},
+		"simple_color_pair_name": {
+			"description": "The name of a colour pair",
+			"type": "string"
+		},
+		"text_attributes": {
+			"anyOf": [
+				{
+					"$ref": "#/definitions/text_attribute"
+				}, {
+					"description": "List of text attributes",
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/text_attribute"
+					},
+					"uniqueItems": true,
+					"minItems": 1
+				}
+			]
+		},
+		"text_attribute": {
+			"description": "Text attribute",
+			"enum": [
+				"dim",
+				"normal",
+				"bold",
+				"underline"
+			]
+		}
+	},
+	"properties": {
+		"term": {
+			"description": "Themes for strings printed to the text console",
+			"type": "object",
+			"patternProperties": {
+				"^[a-z][a-z0-9_]*[a-z0-9]$": {
+					"description": "ANSI codes for a specific type",
+					"type": "string"
+				}
+			}
+		},
+		"colors": {
+			"description": "Overrides for console colour definitions",
+			"type": "object",
+			"patternProperties": {
+				"^(black|red|green|yellow|blue|magenta|cyan|white)$": {
+					"description": "An RGB tuple",
+					"type": "array",
+					"items": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 1000
+					},
+					"minItems": 3,
+					"maxItems": 3
+				}
+			},
+			"additionalProperties": false,
+			"minItems": 1
+		},
+		"color_pairs_curses": {
+			"description": "A list of combinations of foreground/background colours for use with curses",
+			"type": "object",
+			"patternProperties": {
+				"^[a-z][a-z0-9_]*[a-z0-9]$": {
+					"anyOf": [
+						{
+							"$ref": "#/definitions/color_pair"
+						}, {
+							"description": "Unselected and selected versions of foreground/background colours",
+							"type": "object",
+							"properties": {
+								"unselected": {
+									"description": "The colour for unselected text",
+									"$ref": "#/definitions/color_pair"
+								},
+								"selected": {
+									"description": "The colour for selected text",
+									"$ref": "#/definitions/color_pair"
+								}
+							},
+							"required": [ "unselected", "selected" ],
+							"additionalProperties": false
+						}
+					]
+				}
+			}
+		},
+		"boxdrawing": {
+			"description": "Characters used (mainly) for box drawing",
+			"type": "object",
+			"patternProperties": {
+				"^[a-z][a-z0-9_]*[a-z0-9]$": {
+					"type": "string"
+				}
+			}
+		},
+		"main": {
+			"description": "Text formatting for the main context",
+			"$ref": "#/definitions/text_formatting"
+		},
+		"statusbar": {
+			"description": "Text formatting for the status bar",
+			"$ref": "#/definitions/text_formatting"
+		},
+		"windowwidget": {
+			"description": "Text formatting for the window widget",
+			"$ref": "#/definitions/text_formatting"
+		},
+		"logview": {
+			"description": "Text formatting for the log viewer",
+			"$ref": "#/definitions/text_formatting"
+		},
+		"types": {
+			"description": "Text formatting for various text types",
+			"$ref": "#/definitions/text_formatting"
+		},
+		"strings": {
+			"description": "Misc formatted strings",
+			"type": "object",
+			"patternProperties": {
+				"^[a-z][a-z0-9_]*[a-z0-9]$": {
+					"description": "Misc formatted string",
+					"$ref": "#/definitions/formatted_string"
+				}
+			},
+			"additionalProperties": false
+		},
+		"separators": {
+			"description": "Formatted separator strings",
+			"type": "object",
+			"patternProperties": {
+				"^[a-z][a-z0-9_]*[a-z0-9]$": {
+					"description": "A separator string",
+					"$ref": "#/definitions/formatted_string"
+				}
+			},
+			"additionalProperties": false
+		}
+	},
+	"required": [ "term", "color_pairs_curses", "boxdrawing", "main", "statusbar", "windowwidget", "logview", "types", "strings", "separators" ],
+	"additionalProperties": false
+}

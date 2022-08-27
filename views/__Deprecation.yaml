@@ -15,7 +15,7 @@ listview:
   fields:
     deprecated_api:
       header: "Deprecated API:"
-      path: [["resource", "group", "version"], "tuple"]
+      path: ["resource", "group", "version"]
       datagetter: "datagetter_deprecated_api"
       formatter: "list"
       formatting:
@@ -28,8 +28,9 @@ listview:
         - type: "kind"
     deprecated_removed_release:
       header: "Planned Removal:"
-      path: [["removed_release"], "str"]
+      path: ["removed_release"]
       datagetter: "datagetter_metrics"
+      formatter: "list"
       formatting:
         field_colors:
         - type: "version"

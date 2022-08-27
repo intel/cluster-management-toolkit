@@ -1200,14 +1200,9 @@ def custom_override_severity(message, severity, overrides = []):
 		return severity
 
 	for override in overrides:
-		if type(override) == dict:
-			override_type = override["matchtype"]
-			override_pattern = override["matchkey"]
-			override_severity = name_to_loglevel(override["loglevel"])
-		else:
-			override_type = override[0]
-			override_pattern = override[1]
-			override_severity = override[2]
+		override_type = deep_get(override, "matchtype", "")
+		override_pattern = deep_get(override, "matchkey", "")
+		override_severity = name_to_loglevel(deep_get(override, "loglevel", ""))
 
 		if override_type == "startswith":
 			if not message.startswith(override_pattern):
@@ -1981,7 +1976,7 @@ def python_traceback(message, fold_msg = True):
 
 def json_line_scanner(message, fold_msg = True, options = {}):
 	# pylint: disable=unused-argument
-	allow_empty_lines = True #deep_get(options, "allow_empty_lines", False)
+	allow_empty_lines = deep_get(options, "allow_empty_lines", True)
 	timestamp = None
 	facility = ""
 	severity = loglevel.INFO
@@ -2145,8 +2140,12 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 
 	tmp = re.match(regex_pattern, message)
 	if tmp is not None:
+		if message_field > len(tmp) - 1:
+			sys.exit(f"The parser rule references a non-existing capture group {message_field} for message; the regex only has {len(tmp)} capture groups")
 		message = tmp[message_field]
 		if severity_field is not None and severity_transform is not None:
+			if severity_field > len(tmp) - 1:
+				sys.exit(f"The parser rule references a non-existing capture group {severity_field} for severity; the regex only has {len(tmp)} capture groups")
 			if severity_transform == "letter":
 				severity = letter_to_severity(tmp[severity_field], severity)
 			elif severity_transform == "3letter":
@@ -2168,6 +2167,8 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 			i = 0
 			facility = ""
 			for field in facility_fields:
+				if field > len(tmp) - 1:
+					sys.exit(f"The parser rule references a non-existing capture group {field} for facility; the regex only has {len(tmp)} capture groups")
 				if i > 0:
 					facility += facility_separators[min(i - 1, len(facility_separators) - 1)]
 				if field != 0:
@@ -2379,24 +2380,7 @@ def init_parser_list():
 							prefix = rule.get("prefix", "* ")
 							rules.append((rule_name, prefix))
 						elif rule_name == "override_severity":
-							overrides = []
-							for override in rule.get("overrides"):
-								matchtype = override.get("matchtype", "")
-								if len(matchtype) == 0:
-									sys.exit(f"Parser {parser_file} has an invalid override rule; matchtype cannot be empty; aborting.")
-								matchkey = override.get("matchkey", "")
-								if len(matchkey) == 0:
-									sys.exit(f"Parser {parser_file} has an invalid override rule; matchkey cannot be empty; aborting.")
-								_loglevel = override.get("loglevel", "")
-								if len(_loglevel) == 0:
-									sys.exit(f"Parser {parser_file} has an invalid override rule; loglevel cannot be empty; aborting.")
-								try:
-									severity = name_to_loglevel(_loglevel)
-								except ValueError:
-									sys.exit(f"Parser {parser_file} contains an invalid loglevel {_loglevel}; aborting.")
-
-								overrides.append((matchtype, matchkey, severity))
-							rules.append((rule_name, overrides))
+							rules.append((rule_name, deep_get(rule, "overrides", [])))
 						elif rule_name in ["bracketed_severity", "bracketed_timestamp_severity_facility"]:
 							_loglevel = rule.get("default_loglevel", "info")
 							try:

@@ -1,0 +1,309 @@
+{
+	"description": "A definition of a list and/or info view for iKT",
+	"type": "object",
+	"definitions": {
+		"api_family": {
+			"description": "A Kubernetes API family",
+			"type": "string",
+			"pattern": "^[a-z][a-z0-9.-]*[a-z0-9]$"
+		},
+		"field": {
+			"description": "A name of a field in a row or column",
+			"type": "string",
+			"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+		},
+		"header": {
+			"description": "A header to use for fields",
+			"type": "string",
+			"pattern": "^[A-Za-z0-9#][A-Za-z0-9()#./ -]*:$"
+		},
+		"kind": {
+			"description": "A Kubernetes or meta kind",
+			"type": "string",
+			"pattern": "^[_A-Z][_A-Za-z0-9]*$"
+		},
+		"path_data_type": {
+			"description": "A data type as used by path/paths",
+			"enum": [
+				"api_group",
+				"bool",
+				"cpu_usage",
+				"int",
+				"kind",
+				"kind_api_group",
+				"mem_usage",
+				"name",
+				"raw",
+				"regex_to_tuples",
+				"str",
+				"timestamp"
+			]
+		},
+		"path": {
+			"anyOf": [
+				{
+					"$ref": "#/definitions/simple_path"
+				}, {
+					"description": "A list of paths",
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/path"
+					}
+				}
+			]
+		},
+		"simple_path": {
+			"description": "A path to use with deep_get()/deep_set()",
+			"type": "string",
+			"pattern": "^[a-z][A-Za-z0-9#_/.-]*[A-Za-z0-9]$"
+		},
+		"postprocessor": {
+			"description": "The postprocessor to use for the data",
+			"enum": [
+				"age",
+				"appenditems",
+				"comparison",
+				"dictfields",
+				"dictlist",
+				"items",
+				"key_value",
+				"list",
+				"lookup",
+				"match_expression",
+				"ranges",
+				"regex",
+				"remap",
+				"split",
+				"status_tuple",
+				"str",
+				"substitution",
+				"timediff",
+				"timestamp_with_age",
+				"tuple",
+				"value"
+			]
+		},
+		"view_name": {
+			"description": "The name of a view, as used from the command line; view names starting with __ are skipped",
+			"type": "string",
+			"pattern": "^[_a-zA-Z][a-zA-Z0-9._-]*[a-zA-Z0-9_]$"
+		}
+	},
+	"properties": {
+		"kind": {
+			"description": "The Kubernetes or meta kind the view is associated with",
+			"$ref": "#/definitions/kind"
+		},
+		"api_family": {
+			"description": "The Kubernetes API family the view is associated with",
+			"$ref": "#/definitions/api_family"
+		},
+		"default_command": {
+			"$ref": "#/definitions/view_name"
+		},
+		"command": {
+			"description": "Alternate names for the view",
+			"type": "array",
+			"items": {
+				"$ref": "#/definitions/view_name"
+			},
+			"minitems": 1,
+			"uniqueItems": true
+		},
+		"listview": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "The name of the view to display in the view list",
+					"type": "string"
+				},
+				"group": {
+					"description": "The name of the group to sort the view into",
+					"type": "string"
+				},
+				"field_indexes": {
+					"description": "A lookup index to the fields to display in the list",
+					"type": "object",
+					"patternProperties": {
+						"^.*$": {
+							"anyOf": [
+								{
+									"description": "An object that defines both sortcolumn and the list of fields",
+									"type": "object",
+									"properties": {
+										"fields": {
+											"description": "A list of fields to display in the list",
+											"type": "array",
+											"items": {
+												"$ref": "#/definitions/field"
+											},
+											"minItems": 1
+										},
+										"sortcolumn": {
+											"description": "The field to use as sort key for the list",
+											"$ref": "#/definitions/field"
+										}
+									}
+								}, {
+									"description": "A list of fields to display in the list",
+									"type": "array",
+									"items": {
+										"$ref": "#/definitions/field"
+									},
+									"minItems": 1
+								}
+							]
+						}
+					},
+					"additionalProperties": false,
+					"minItems": 1
+				},
+				"sortcolumn": {
+					"description": "The field to use as sort key for the list",
+					"$ref": "#/definitions/field"
+				},
+				"fields": {
+					"description": "Declarations for fields that are used in the list",
+					"type": "object",
+					"patternProperties": {
+						"^.*$": {
+							"type": "object",
+							"properties": {
+								"header": {
+									"$ref": "#/definitions/header"
+								},
+								"path": {
+									"$ref": "#/definitions/path"
+								},
+								"paths": {
+									"description": "An array of paths",
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"paths": {
+												"type": "array",
+												"items": {
+													"$ref": "#/definitions/path"
+												}
+											},
+											"pathtype": {
+												"$ref": "#/definitions/postprocessor"
+											},
+											"subpaths": {
+												"description": "Fields to fetch within a dict path",
+												"type": "array",
+												"items": {
+													"anyOf": [
+														{
+															"description": "A field name",
+															"type": "string"
+														}, {
+															"description": "A field object with post processing",
+															"type": "object",
+															"properties": {
+																"subpath": {
+																	"description": "A field name",
+																	"type": "string"
+																},
+																"regex": {
+																	"description": "A list of regular expression filters",
+																	"type": "array",
+																	"items": {
+																		"description": "A regular expression filter",
+																		"type": "string"
+																	}
+																}
+															}
+														}
+													]
+												}
+											},
+											"type": {
+												"anyOf": [
+													{
+														"$ref": "#/definitions/path_data_type"
+													}, {
+														"description": "An array of data types",
+														"type": "array",
+														"items": {
+															"$ref": "#/definitions/path_data_type"
+														}
+													}
+												]
+											}
+										}
+									}
+								},
+								"default": {
+									"description": "The fallback value to use if no data is available",
+									"type": [ "number", "string", "boolean", "object", "array", "null" ]
+								},
+								"type": {
+									"description": "The type of data",
+									"type": "string"
+								},
+								"align": {
+									"description": "Align the field left or right in the column",
+									"enum": [
+										"left",
+										"right"
+									]
+								},
+								"formatting": {
+									"description": "Formatting to use when outputting the field",
+									"type": "object",
+									"properties": {
+										"field_colors": {
+											"description": "Colours to use when outputting the field",
+											"type": "array",
+											"items": {
+												"description": "[context]/type lookup to a fg/bg pair in the theme file",
+												"type": "object",
+												"properties": {
+													"type": {
+														"description": "The name of the colour pair",
+														"type": "string",
+														"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+													},
+													"context": {
+														"description": "The context for the the colour pair",
+														"type": "string",
+														"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+													}
+												}
+											}
+										},
+										"field_separators": {
+											"description": "Separators to use between items in a field",
+											"type": "array",
+											"items": {
+												"description": "[context]/type lookup to a separator in the theme file",
+												"type": "object",
+												"properties": {
+													"type": {
+														"description": "The name of the separator",
+														"type": "string",
+														"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+													},
+													"context": {
+														"description": "The context of the separator (default: 'separators'):",
+														"type": "string",
+														"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+													}
+												}
+											}
+										}
+									}
+								}
+							},
+							"required": [ "header" ]
+						}
+					}
+				}
+			},
+			"required": [ "name", "group", "field_indexes" ]
+		}
+	},
+	"required": [ "kind", "default_command" ]
+}
