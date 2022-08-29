@@ -11318,12 +11318,17 @@ listviewactions = {
 
 infoviews = {}
 
+# These functions are used to check whether an API is available
 def is_cluster_reachable():
 	reachable = False
 
 	if kh is not None:
 		reachable = kh.is_cluster_reachable()
 	return reachable
+
+availability_checkers = {
+	"is_cluster_available": is_cluster_reachable
+}
 
 # These views are always defined internally and cannot be disabled
 views_special = {
@@ -11527,7 +11532,9 @@ def populate_views():
 
 				check_availability = deep_get(d, "listview#check_availability", None)
 				if check_availability is not None:
-					check_availability = eval(check_availability)
+					availability_checker = deep_get(availability_checkers, check_availability)
+					if availability_checker is not None:
+						check_availability = availability_checker
 
 				sortcolumn = deep_get(d, "listview#sortcolumn")
 				reversible = deep_get(d, "listview#reversible", True)

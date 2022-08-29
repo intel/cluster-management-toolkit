@@ -2,6 +2,17 @@
 	"description": "A definition of a list and/or info view for iKT",
 	"type": "object",
 	"definitions": {
+		"nullable_function": {
+			"description": "Used when a value can either be a function name or null",
+			"oneOf": [
+				{
+					"description": "The name of a function",
+					"type": "string"
+				}, {
+					"type": "null"
+				}
+			]
+		},
 		"api_family": {
 			"description": "A Kubernetes API family",
 			"type": "string",
@@ -142,6 +153,10 @@
 										"sortcolumn": {
 											"description": "The field to use as sort key for the list",
 											"$ref": "#/definitions/field"
+										},
+										"sortorder_reverse": {
+											"description": "Should the list default to reversed sort order",
+											"type": "boolean"
 										}
 									}
 								}, {
@@ -161,6 +176,10 @@
 				"sortcolumn": {
 					"description": "The field to use as sort key for the list",
 					"$ref": "#/definitions/field"
+				},
+				"sortorder_reverse": {
+					"description": "Should the list default to reversed sort order",
+					"type": "boolean"
 				},
 				"fields": {
 					"description": "Declarations for fields that are used in the list",
@@ -300,9 +319,209 @@
 							"required": [ "header" ]
 						}
 					}
+				},
+				"listgetter": {
+					"description": "Function to use to get list entries",
+					"$ref": "#/definitions/nullable_function"
+				},
+				"listgetter_args": {
+					"description": "Additional arguments to pass to the listgetter",
+					"type": "object"
+				},
+				"labels": {
+					"description": "Do the list entries support labels",
+					"type": "boolean"
+				},
+				"check_availability": {
+					"description": "Function to use to check whether the API is available",
+					"type": "string"
+				},
+				"is_taggable": {
+					"description": "Can items in the list be tagged",
+					"type": "boolean"
+				},
+				"on_activation": {
+					"description": "Action to perform when activating an entry",
+					"type": "object",
+					"properties": {
+						"call": {
+							"description": "The function to call when activating the entry"
+						}
+					}
+				},
+				"listview_args": {
+					"description": "Additional arguments that apply to the listview",
+					"type": "object",
+					"properties": {
+						"filters": {
+							"description": "Filters to apply before populating the list",
+							"type": "object",
+							"patternProperties": {
+								"^[a-z0-9]*$": {
+									"type": "object",
+									"oneOf": [
+										{
+											"properties": {
+												"source": {
+													"description": "Is the data source the caller or the object",
+													"enum": [
+														"caller",
+														"object"
+													]
+												},
+												"enabled": {
+													"description": "Is the filter enabled (can be toggled using the toggle_var shortcut)",
+													"type": "boolean"
+												},
+												"allow": {
+													"description": "A list of explicitly allowed values (all non-matches are discarded)",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"key": {
+																"description": "A path to get data from",
+																"$ref": "#/definitions/simple_path"
+															},
+															"values": {
+																"description": "A list of values to allow",
+																"type": "array",
+																"items": {
+																	"type": "string"
+																},
+																"minItems": 1
+															}
+														},
+														"required": [ "key", "values" ],
+														"additionalProperties": false
+													},
+													"minItems": 1
+												}
+											},
+											"required": [ "allow" ],
+											"additionalProperties": false
+										}, {
+											"properties": {
+												"source": {
+													"description": "Is the data source the caller or the object",
+													"enum": [
+														"caller",
+														"object"
+													]
+												},
+												"enabled": {
+													"description": "Is the filter enabled (can be toggled using the toggle_var shortcut)",
+													"type": "boolean"
+												},
+												"block": {
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"key": {
+																"description": "A path to get data from",
+																"$ref": "#/definitions/simple_path"
+															},
+															"values": {
+																"description": "A list of blocked values (all non-matches are permitted)",
+																"type": "array",
+																"items": {
+																	"type": "string"
+																},
+																"minItems": 1
+															}
+														},
+														"required": [ "key", "values" ],
+														"additionalProperties": false
+													},
+													"minItems": 1
+												}
+											},
+											"required": [ "block" ],
+											"additionalProperties": false
+										}
+									]
+								}
+							}
+						}
+					},
+					"additionalProperties": false
+				},
+				"statusmsg": {
+					"description": "A list of entries to add to the status bar",
+					"type": "array",
+					"items": {
+						"description": "An item to add to the status bar",
+						"type": "array",
+						"prefixItems": [
+							{
+								"description": "The header for the entry",
+								"type": "string"
+							}, {
+								"description": "The path to get the value from",
+								"$ref": "#/definitions/simple_path"
+							}
+						],
+						"items": false
+					},
+					"minItems": 1
+				},
+				"actions": {
+					"description": "Actions that can be performed on the selected list entry or on all tagged list entries",
+					"type": "object",
+					"properties": {
+						"actionlist": {
+							"type": "object",
+							"patternProperties": {
+								"^[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9]$": {
+									"type": "object",
+									"properties": {
+										"description": {
+											"description": "A description of the action to use in the action menu",
+											"type": "string"
+										},
+										"confirm": {
+											"description": "Should the program ask for confirmation before performing the action",
+											"type": "boolean"
+										},
+										"actionfunc": {
+											"description": "The function to call",
+											"type": "string"
+										}
+									},
+									"required": [ "description", "actionfunc" ],
+									"additionalProperties": false
+								}
+							}
+						},
+						"playbooklist": {
+							"description": "Include this to populate the actions from Ansible playbooks",
+							"anyOf": [
+								{
+									"type": "object",
+									"properties": {
+										"context": {
+											"description": "The context is matched against the context specified in the playbooks; all playbooks matching the context will be included; if context isn't specified all playbooks will be included"
+										}
+									}
+								}, {
+									"type": "null"
+								}
+							]
+						}
+					},
+					"additionalProperties": false
+				},
+				"infogetter": {
+					"description": "Function to use to extract fields from a list item",
+					"$ref": "#/definitions/nullable_function"
+				},
+				"shortcuts": {
+					"type": "object"
 				}
 			},
-			"required": [ "name", "group", "field_indexes" ]
+			"required": [ "name", "group", "field_indexes" ],
+			"additionalProperties": false
 		}
 	},
 	"required": [ "kind", "default_command" ]
