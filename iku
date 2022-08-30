@@ -6761,6 +6761,10 @@ def genericlistloop(stdscr, view):
 			}
 
 		for key, value in shortcuts.items():
+			read_only = deep_get(value, "read_only", False)
+			if read_only_mode == True and read_only == False:
+				continue
+
 			shortcut_keys = deep_get(value, "shortcut")
 			if shortcut_keys is None:
 				continue
@@ -8005,6 +8009,9 @@ def generate_helptext(view, viewtype, additional_helptexts = [], shortcuts = [])
 
 		if "shortcuts" in viewref:
 			for shortcut in deep_get(viewref, "shortcuts"):
+				read_only = deep_get(viewref, f"shortcuts#{shortcut}#read_only", False)
+				if read_only_mode == True and read_only == False:
+					continue
 				tmp = deep_get(viewref, f"shortcuts#{shortcut}#helptext")
 				if tmp is not None:
 					helptext.append(tmp)
@@ -11618,6 +11625,7 @@ def populate_views():
 					queryfunc = deep_get(_shortcuts[shortcut], "queryfunc")
 					queryval = deep_get(_shortcuts[shortcut], "queryval")
 					query = deep_get(_shortcuts[shortcut], "query")
+					read_only = deep_get(_shortcuts[shortcut], "read_only", False)
 
 					if key is None or helptext is None or action is None or "<missing>" in [key, helptext, action]:
 						sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
@@ -11672,6 +11680,7 @@ def populate_views():
 						"queryfunc": queryfunc,
 						"queryval": queryval,
 						"query": query,
+						"read_only": read_only
 					}
 					if action == "call":
 						action_call = eval(action_call)
