@@ -117,16 +117,16 @@ infoview:
       helptext: "Show addresses"
       widget: "windowwidget"
       title: "Addresses:"
-      header: ["IP:", "Type:"]
+      headers: ["IP:", "Type:"]
       itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#addresses"
         fields:
         - "ip"
         - "type"
-        formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
-        # This isn't supported for now
-        sortcolumn: "ip"
+      formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
+      # This isn't supported for now
+      sortcolumn: "ip"
     "Cilium Identity":
       key: "c"
       modifier: "shift"
@@ -153,7 +153,7 @@ infoview:
       helptext: "Show Alibaba Cloud configuration"
       widget: "windowwidget"
       title: "Alibaba Cloud configuration:"
-      header: ["Parameter:", "Value:"]
+      headers: ["Parameter:", "Value:"]
       itemgetter: "get_key_value"
       itemgetter_args:
         path: "spec#alibaba-cloud"
@@ -163,7 +163,7 @@ infoview:
       helptext: "Show Alibaba Cloud status"
       widget: "windowwidget"
       title: "Alibaba Cloud status:"
-      header: ["Parameter:", "Value:"]
+      headers: ["Parameter:", "Value:"]
       itemgetter: "get_key_value"
       itemgetter_args:
         path: "status#alibaba-cloud#enis"
@@ -172,7 +172,7 @@ infoview:
       helptext: "Show Azure configuration"
       widget: "windowwidget"
       title: "Azure configuration:"
-      header: ["Parameter:", "Value:"]
+      headers: ["Parameter:", "Value:"]
       itemgetter: "get_key_value"
       itemgetter_args:
         path: "spec#azure"
@@ -182,7 +182,7 @@ infoview:
       helptext: "Show Azure status"
       widget: "windowwidget"
       title: "Azure status:"
-      header: ["Parameter:", "Value:"]
+      headers: ["Parameter:", "Value:"]
       itemgetter: "get_key_value"
       itemgetter_args:
         path: "status#azure#nterfaces"
@@ -191,7 +191,7 @@ infoview:
       helptext: "Show AWS configuration"
       widget: "windowwidget"
       title: "AWS configuration:"
-      header: ["Parameter:", "Value:"]
+      headers: ["Parameter:", "Value:"]
       itemgetter: "get_key_value"
       itemgetter_args:
         path: "spec#eni"
@@ -201,7 +201,7 @@ infoview:
       helptext: "Show AWS status"
       widget: "windowwidget"
       title: "AWS status:"
-      header: ["Parameter:", "Value:"]
+      headers: ["Parameter:", "Value:"]
       itemgetter: "get_key_value"
       itemgetter_args:
         path: "status#eni#enis"

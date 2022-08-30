@@ -6,6 +6,8 @@ import os
 import yaml
 import sys
 
+verbose = False
+
 def usage():
 	print("validate_yaml [ARGUMENTS]\n")
 	print("Validate YAML files used by iKT\n")
@@ -17,6 +19,7 @@ def usage():
 	print("If the schema isn't one of themes|views|parsers it'll be expected to be a path to a valid JSON schema file\n")
 	print("Built-in paths are relative to the base directory of the iKT source code\n")
 	print("Note: No schemas are available to validate playbooks; use ansible-playbook to validate playbooks\n")
+#	print("--verbose          Output version information and exit")
 	print("help|--help        Display this help and exit")
 #	print("version|--version  Output version information and exit")
 
@@ -34,14 +37,26 @@ def validate_file(yaml_path, schema_path):
 		sys.exit(f"schema {schema_path} does not exist or is not a file; aborting.")
 
 	with open(schema_path, "r") as f:
-		schema = json.load(f)
+		try:
+			schema = json.load(f)
+		except json.decoder.JSONDecodeError as e:
+			print(f"\nThe schema file {schema_path} is not valid JSON:")
+			sys.exit(f"\njson.decoder.JSONDecodeError: {e}")
 
 	with open(yaml_path, "r") as f:
 		yaml_data = yaml.safe_load(f)
 
-	print(f"Validating {yaml_path} with {schema_path}")
+	if verbose == True:
+		print(f"Validating {yaml_path} with {schema_path}")
 
-	jsonschema.validate(schema = schema, instance = yaml_data)
+	try:
+		jsonschema.validate(schema = schema, instance = yaml_data)
+	except jsonschema.exceptions.SchemaError as e:
+		print(f"\nFailed to validate schema {schema_path}")
+		sys.exit(f"\njsonschema.exceptions.SchemaError: {e}")
+	except jsonschema.exceptions.ValidationError as e:
+		print(f"\nFailed to validate {yaml_path} using {schema_path}")
+		sys.exit(f"\njsonschema.exceptions.ValidationError: {e}")
 
 def main():
 	if len(sys.argv) == 2 and sys.argv[1] in ["help", "--help"]:

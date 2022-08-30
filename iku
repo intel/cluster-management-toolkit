@@ -8838,6 +8838,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 				call_kind_name_namespace_selection_path = deep_get(value, "call_kind_name_namespace_selection_path")
 				if call_kind_name_namespace_selection_path is not None:
+					# FIXME: this only allows for core APIs
 					kind_filter = deep_get(value, "kind_filter", None)
 					selected = uip.get_selected()
 

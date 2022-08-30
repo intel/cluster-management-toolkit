@@ -15,8 +15,15 @@
 		},
 		"api_family": {
 			"description": "A Kubernetes API family",
-			"type": "string",
-			"pattern": "^[a-z][a-z0-9.-]*[a-z0-9]$"
+			"oneOf": [
+				{
+					"type": "string",
+					"pattern": "^[a-z][a-z0-9.-]*[a-z0-9]$"
+				}, {
+					"description": "The API belongs to the core API",
+					"type": "null"
+				}
+			]
 		},
 		"field": {
 			"description": "A name of a field in a row or column",
@@ -51,7 +58,7 @@
 			]
 		},
 		"path": {
-			"anyOf": [
+			"oneOf": [
 				{
 					"$ref": "#/definitions/simple_path"
 				}, {
@@ -137,7 +144,7 @@
 					"type": "object",
 					"patternProperties": {
 						"^.*$": {
-							"anyOf": [
+							"oneOf": [
 								{
 									"description": "An object that defines both sortcolumn and the list of fields",
 									"type": "object",
@@ -318,7 +325,8 @@
 							},
 							"required": [ "header" ]
 						}
-					}
+					},
+					"additionalProperties": false
 				},
 				"listgetter": {
 					"description": "Function to use to get list entries",
@@ -345,7 +353,15 @@
 					"type": "object",
 					"properties": {
 						"call": {
-							"description": "The function to call when activating the entry"
+							"oneOf": [
+								{
+									"description": "The function to call when activating the entry",
+									"type": "string"
+								}, {
+									"description": "Used to disable the default activation action",
+									"type": "null"
+								}
+							]
 						}
 					}
 				},
@@ -414,6 +430,7 @@
 													"type": "boolean"
 												},
 												"block": {
+													"description": "A list of explicitly blocked values (all non-matches are accepted)",
 													"type": "array",
 													"items": {
 														"type": "object",
@@ -442,7 +459,8 @@
 										}
 									]
 								}
-							}
+							},
+							"additionalProperties": false
 						}
 					},
 					"additionalProperties": false
@@ -473,30 +491,90 @@
 						"actionlist": {
 							"type": "object",
 							"patternProperties": {
-								"^[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9]$": {
+								"^[A-Za-z0-9][A-Za-z0-9() -]*[A-Za-z0-9)]$": {
 									"type": "object",
 									"properties": {
-										"description": {
-											"description": "A description of the action to use in the action menu",
+										"action": {
+											"enum": [
+												"execute"
+											]
+										},
+										"action_args": {
+											"type": "object",
+											"properties": {
+												"command": {
+													"description": "Command to execute; only valid if widget is 'command'; use <<<items>>> to append the list of selected items",
+													"type": "array",
+													"items": {
+														"type": "string"
+													},
+													"minItems": 1
+												}
+											},
+											"additionalProperties": false
+										},
+										"actionfunc": {
+											"description": "The function to call",
+											"type": "string"
+										},
+										"category": {
 											"type": "string"
 										},
 										"confirm": {
 											"description": "Should the program ask for confirmation before performing the action",
 											"type": "boolean"
 										},
-										"actionfunc": {
-											"description": "The function to call",
+										"description": {
+											"description": "A description of the action to use in the action menu",
+											"type": "string"
+										},
+										"metadata": {
+											"type": "array",
+											"items": {
+												"type": "array",
+												"prefixItems": [
+													{
+														"type": "string"
+													}, {
+														"type": "array",
+														"prefixItems": [
+															{
+																"description": "Formatting context",
+																"type": "string"
+															}, {
+																"description": "Formatting",
+																"type": "string"
+															}
+														],
+														"items": false,
+														"minItems": 2,
+														"maxItems": 2
+													}
+
+												],
+												"items": false
+											},
+											"minItems": 1
+										},
+										"query": {
+											"type": "string"
+										},
+										"queryfunc": {
+											"type": "string"
+										},
+										"queryval": {
 											"type": "string"
 										}
 									},
-									"required": [ "description", "actionfunc" ],
+									"required": [ "description" ],
 									"additionalProperties": false
 								}
-							}
+							},
+							"additionalProperties": false
 						},
 						"playbooklist": {
 							"description": "Include this to populate the actions from Ansible playbooks",
-							"anyOf": [
+							"oneOf": [
 								{
 									"type": "object",
 									"properties": {
@@ -505,6 +583,7 @@
 										}
 									}
 								}, {
+									"description": "Playbooks disabled",
 									"type": "null"
 								}
 							]
@@ -519,77 +598,628 @@
 				"shortcuts": {
 					"type": "object",
 					"patternProperties": {
-						"^[a-z][a-z0-9_][a-z0-9]$": {
-							"type": "object",
-							"properties": {
-								"key": {
-									"oneOf": [
-										{
-											"type": "string",
-											"minLength": 1,
-											"maxLength": 1
-										}, {
-											"enum": [
-												"f1", "f2", "f3",  "f4",  "f5",  "f6",
-												"f7", "f8", "f9", "f10", "f11", "f12",
-												"enter", "return"
-											]
-										}
-									]
-								},
-								"modifier": {
-									"enum": [
-										"shift",
-										"ctrl"
-									]
-								},
-								"helptext": {
-									"type": "string"
-								},
-								"action": {
-									"type": "string"
-								},
-								"action_args": {
+						"^[A-Z][A-Za-z0-9 -]*[A-Za-z0-9]$": {
+							"oneOf": [
+								{
 									"type": "object",
 									"properties": {
-										"title": {
+										"action": {
 											"type": "string"
 										},
-										"_named_title": {
+										"action_args": {
+											"type": "object",
+											"properties": {
+												"api_family": {
+													"description": "The API family of the object",
+													"$ref": "#/definitions/api_family"
+												},
+												"api_family_path": {
+													"description": "Path to get the API version of the object from, optionally with fallback(s)",
+													"$ref": "#/definitions/path"
+												},
+												"api_version_path": {
+													"description": "Path to get the API version of the object from, optionally with fallback(s)",
+													"$ref": "#/definitions/path"
+												},
+												"kind": {
+													"$ref": "#/definitions/kind"
+												},
+												"kind_path": {
+													"description": "Path to get the kind of the object from, optionally with fallback(s)",
+													"$ref": "#/definitions/path"
+												},
+												"name_path": {
+													"description": "Path to get the name of the object from, optionally with fallback(s)",
+													"$ref": "#/definitions/path"
+												},
+												"namespace_path": {
+													"description": "Path to get the namespace of the object from, optionally with fallback(s)",
+													"$ref": "#/definitions/path"
+												},
+												"title": {
+													"description": "Window title for widget",
+													"type": "string"
+												},
+												"var": {
+													"description": "A variable associated with the shortcut that can be toggled using the toggle_var action",
+													"$ref": "#/definitions/path"
+												},
+												"_named_title": {
+													"description": "Should the name of the selected object be appended to the title",
+													"type": "boolean"
+												},
+												"_pass_obj": {
+													"description": "Pass obj to callback",
+													"type": "boolean"
+												},
+												"_pass_selected": {
+													"type": "boolean"
+												},
+												"_pass_selection_vars": {
+													"type": "boolean"
+												}
+											},
+											"additionalProperties": false
+										},
+										"action_call": {
+											"type": "string"
+										},
+										"confirm": {
+											"description": "Should the program ask for confirmation before performing the action",
 											"type": "boolean"
 										},
-										"_pass_obj": {
+										"helptext": {
+											"type": "string"
+										},
+										"key": {
+											"oneOf": [
+												{
+													"type": "string",
+													"minLength": 1,
+													"maxLength": 1
+												}, {
+													"enum": [
+														"f1", "f2", "f3",  "f4",  "f5",  "f6",
+														"f7", "f8", "f9", "f10", "f11", "f12",
+														"enter", "return"
+													]
+												}
+											]
+										},
+										"modifier": {
+											"enum": [
+												"shift",
+												"ctrl"
+											]
+										},
+										"query": {
+											"type": "string"
+										},
+										"queryfunc": {
+											"type": "string"
+										},
+										"queryval": {
+											"type": "string"
+										},
+										"read_only": {
+											"description": "Shortcuts not explicitly marked as read only will be disabled when iku is started with --read-only",
 											"type": "boolean"
+										},
+										"title": {
+											"description": "A title to use for the widget",
+											"type": "string"
 										}
 									},
+									"required": [ "key", "helptext", "action" ],
 									"additionalProperties": false
-								},
-								"action_call": {
-									"type": "string"
-								},
-								"queryfunc": {
-									"type": "string"
-								},
-								"queryval": {
-									"type": "string"
-								},
-								"query": {
-									"type": "string"
-								},
-								"read_only": {
-									"description": "Shortcuts not explicitly marked as read only will be disabled when iku is started with --read-only",
-									"type": "boolean"
+								}, {
+									"description": "Shortcuts disabled",
+									"type": "null"
 								}
-							},
-							"required": [ "key", "helptext", "action" ],
-							"additionalProperties": false
+							]
 						}
-					}
+					},
+					"additionalProperties": false
 				}
 			},
 			"required": [ "name", "group", "field_indexes" ],
 			"additionalProperties": false
+		},
+		"infoview": {
+			"type": "object",
+			"properties": {
+				"annotations": {
+					"oneOf": [
+						{
+							"$ref": "#/definitions/simple_path"
+						}, {
+							"type": "string",
+							"length": 0
+						}, {
+							"description": "Annotations disabled",
+							"type": "null"
+						}
+					]
+				},
+				"labels": {
+					"oneOf": [
+						{
+							"$ref": "#/definitions/simple_path"
+						}, {
+							"type": "string",
+							"length": 0
+						}, {
+							"description": "Labels disabled",
+							"type": "null"
+						}
+					]
+				},
+				"name": {
+					"type": "string",
+					"pattern": "^[A-Z0-9][A-Za-z0-9-() ]*[A-Za-z0-9)]$"
+				},
+				"infopad": {
+				},
+				"listpad": {
+				},
+				"logpad": {
+				},
+				"shortcuts": {
+					"type": "object",
+					"patternProperties": {
+						"^[A-Z][A-Za-z0-9 -]*[A-Za-z0-9]$": {
+							"oneOf": [
+								{
+									"type": "object",
+									"properties": {
+										"action": {
+											"type": "string"
+										},
+										"action_args": {
+											"type": "object",
+											"properties": {
+												"api_family": {
+													"$ref": "#/definitions/api_family"
+												},
+												"api_family_path": {
+													"description": "Path to get the API family of the object from",
+													"$ref": "#/definitions/simple_path"
+												},
+												"api_group": {
+													"$ref": "#/definitions/api_family"
+												},
+												"api_group_path": {
+													"description": "Path to get the API group of the object from",
+													"$ref": "#/definitions/simple_path"
+												},
+												"api_version_path": {
+													"description": "Path to get the API version of the object from, optionally with fallback(s)",
+													"$ref": "#/definitions/path"
+												},
+												"command": {
+													"description": "Command to execute; only valid if widget is 'command'; use nested arrays to denote paths",
+													"type": "array",
+													"prefixItems": [
+														{
+															"description": "A shell command to execute",
+															"type": "string"
+														}
+													],
+													"items": {
+														"anyOf": [
+															{
+																"description": "An option or argument to pass to the command",
+																"type": "string"
+															}, {
+																"description": "A path to fetch the option or argument to pass to the command from",
+																"type": "array",
+																"items": {
+																	"$ref": "#/definitions/simple_path"
+																},
+																"minItems": 1,
+																"maxItems": 1
+															}
+														]
+													},
+													"minItems": 1
+												},
+												"file_path": {
+													"description": "Path to a file template",
+													"$ref": "#/definitions/simple_path"
+												},
+												"formatter": {
+													"description": "Function to use to format the text before viewing it",
+													"type": "string"
+												},
+												"holder_identity_path": {
+													"description": "Path to get the name and namespace of the object from if there's a holder identity",
+													"$ref": "#/definitions/simple_path"
+												},
+												"include_root": {
+													"description": "When processing a YAML path, should the root of the path be included",
+													"type": "boolean"
+												},
+												"kind": {
+													"$ref": "#/definitions/kind"
+												},
+												"kind_path": {
+													"description": "Path to get the kind of the object from, optionally with fallback(s)",
+													"$ref": "#/definitions/path"
+												},
+												"name_path": {
+													"description": "Path to get the name of the object from, optionally with fallback(s)",
+													"oneOf": [
+														{
+															"$ref": "#/definitions/path"
+														}, {
+															"description": "A field index to the field in the data returned by the itemgetter to get the data from",
+															"type": "integer",
+															"minimum": 0
+														}
+													]
+												},
+												"namespace": {
+													"description": "The namespace of the object",
+													"type": "string"
+												},
+												"namespace_path": {
+													"description": "path to get the namespace of the object from",
+													"anyof": [
+														{
+															"$ref": "#/definitions/simple_path"
+														}, {
+															"description": "a field index to the field in the data returned by the itemgetter to get the data from",
+															"type": "integer",
+															"minimum": 0
+														}
+													]
+												},
+												"path": {
+													"description": "Some actions take a path as argument",
+													"$ref": "#/definitions/simple_path"
+												},
+												"owner_reference_path": {
+													"description": "Path to get the name and namespace of the object from if there's an owner reference",
+													"$ref": "#/definitions/simple_path"
+												},
+												"title": {
+													"type": "string"
+												},
+												"title_path": {
+													"description": "Path to get the title to use for the widget from",
+													"$ref": "#/definitions/simple_path"
+												},
+												"_named_title": {
+													"type": "boolean"
+												},
+												"_pass_obj": {
+													"type": "boolean"
+												},
+												"_pass_result": {
+													"type": "boolean"
+												},
+												"_pass_selected": {
+													"type": "boolean"
+												},
+												"_selected_objs": {
+													"type": "object",
+													"properties": {
+														"target_ref_kind": {
+															"type": "array",
+															"prefixItems": [
+																{
+																	"type": "string"
+																}, {
+																	"type": "integer",
+																	"minimum": 0
+																}
+															],
+															"items": false
+														},
+														"target_ref_api_version": {
+															"type": "array",
+															"prefixItems": [
+																{
+																	"type": "string"
+																}, {
+																	"type": "integer",
+																	"minimum": 0
+																}
+															],
+															"items": false
+														},
+														"target_ref_name": {
+															"type": "array",
+															"prefixItems": [
+																{
+																	"type": "string"
+																}, {
+																	"type": "integer",
+																	"minimum": 0
+																}
+															],
+															"items": false
+														},
+														"target_ref_namespace": {
+															"type": "array",
+															"prefixItems": [
+																{
+																	"type": "string"
+																}, {
+																	"type": "integer",
+																	"minimum": 0
+																}
+															],
+															"items": false
+														}
+													}
+												}
+											},
+											"additionalProperties": false
+										},
+										"action_call": {
+											"type": "string"
+										},
+										"confirm": {
+											"description": "Function or value to use to decide whether or not to show the confirmation dialogue",
+											"anyOf": [
+												{
+													"type": "string"
+												}, {
+													"type": "boolean"
+												}
+											]
+										},
+										"confirmtitle": {
+											"description": "Title for the confirmation window",
+											"type": "string"
+										},
+										"formatting": {
+											"description": "Formatting for each column in a windowwidget",
+											"type": "array",
+											"items": {
+												"type": "array",
+												"prefixItems": [
+													{
+														"description": "The context of the formatting",
+														"type": "string"
+													}, {
+														"description": "The name of the formatting",
+														"type": "string"
+													}
+												],
+												"items": false,
+												"minItems": 1
+											},
+											"minItems": 1
+										},
+										"headers": {
+											"description": "Headers to use for the widget list",
+											"type": "array",
+											"items": {
+												"type": "string"
+											}
+										},
+										"helptext": {
+											"type": "string"
+										},
+										"inputtitle": {
+											"description": "Title to use for the inputbox widget",
+											"type": "string"
+										},
+										"itemgetter": {
+											"type": "string"
+										},
+										"itemgetter_args": {
+											"oneOf": [
+												{
+													"type": "object",
+													"properties": {
+														"fields": {
+															"type": "array"
+														},
+														"override_types": {
+															"description": "Override the type of the object",
+															"type": "array",
+															"items": {
+																"enum": [
+																	"list",
+																	"dict",
+																	"str",
+																	"timestamp",
+																	"age",
+																	""
+																]
+															},
+															"minItems": 1
+														},
+														"path": {
+															"$ref": "#/definitions/simple_path"
+														},
+														"pass_ref": {
+															"description": "Pass a reference to the list entry along with its elements",
+															"type": "boolean"
+														},
+														"regex": {
+															"description": "A regular expression used to split elements into capture groups",
+															"type": "string"
+														}
+													},
+													"required": [ "path" ],
+													"additionalProperties": false
+												}, {
+													"type": "object",
+													"properties": {
+														"paths": {
+															"type": "array",
+															"items": {
+																"$ref": "#/definitions/simple_path"
+															}
+														}
+													},
+													"required": [ "paths" ],
+													"additionalProperties": false
+												}, {
+													"type": "object",
+													"properties": {
+														"_slow_task_msg": {
+															"type": "string"
+														},
+														"name_path": {
+															"description": "Path to get the name of the object from, optionally with fallback(s)",
+															"$ref": "#/definitions/path"
+														}
+													},
+													"required": [ "name_path" ],
+													"additionalProperties": false
+												}
+											]
+										},
+										"key": {
+											"oneOf": [
+												{
+													"type": "string",
+													"minLength": 1,
+													"maxLength": 1
+												}, {
+													"enum": [
+														"f1", "f2", "f3",  "f4",  "f5",  "f6",
+														"f7", "f8", "f9", "f10", "f11", "f12",
+														"enter", "return"
+													]
+												}
+											]
+										},
+										"kind_filter": {
+											"type": "object",
+											"properties": {
+												"kind": {
+													"type": "string"
+												}
+											}
+										},
+										"modifier": {
+											"enum": [
+												"shift",
+												"ctrl"
+											]
+										},
+										"query": {
+											"type": "string"
+										},
+										"queryfunc": {
+											"type": "string"
+										},
+										"queryval": {
+											"type": "string"
+										},
+										"read_only": {
+											"description": "Shortcuts not explicitly marked as read only will be disabled when iku is started with --read-only",
+											"type": "boolean"
+										},
+										"selectable": {
+											"type": "boolean"
+										},
+										"sortcolumn": {
+											"description": "The field to use as sort key for the list; currently not supported",
+											"$ref": "#/definitions/field"
+										},
+										"title": {
+											"description": "A title to use for the widget",
+											"type": "string"
+										},
+										"widget": {
+											"description": "The widget to use",
+											"enum": [
+												"command",
+												"executecommand",
+												"inputbox",
+												"windowwidget"
+											]
+										},
+										"widget_args": {
+											"description": "Arguments to pass to the widget",
+											"type": "object",
+											"properties": {
+												"command": {
+													"description": "Command to execute; only valid if widget is 'command'; use nested arrays to denote paths",
+													"type": "array",
+													"prefixItems": [
+														{
+															"description": "A shell command to execute",
+															"type": "string"
+														}
+													],
+													"items": {
+														"anyOf": [
+															{
+																"description": "An option or argument to pass to the command",
+																"type": "string"
+															}, {
+																"description": "A path to fetch the option or argument to pass to the command from",
+																"type": "array",
+																"items": {
+																	"$ref": "#/definitions/simple_path"
+																},
+																"minItems": 1,
+																"maxItems": 1
+															}
+														]
+													},
+													"minItems": 1
+												},
+												"kinds": {
+													"description": "A list of kinds that the action can be executed on",
+													"type": "array",
+													"items": {
+														"oneOf": [
+															{
+																"type": "array",
+																"prefixItems": [
+																	{
+																		"type": "string",
+																		"minLength": 1
+																	}, {
+																		"type": "string"
+																	}
+																],
+																"items": false,
+																"minItems": 1
+															}, {
+																"enum": [
+																	"<native>"
+																]
+															}
+														]
+													},
+													"minItems": 1
+												},
+												"waitforkeypress": {
+													"description": "Wait for a keypress before returning from command",
+													"type": "boolean"
+												},
+												"_pass_obj": {
+													"description": "Pass obj to command",
+													"type": "boolean"
+												}
+											},
+											"additionalProperties": false
+										}
+									},
+									"required": [ "key", "helptext" ],
+									"additionalProperties": false
+								}, {
+									"description": "Shortcut disabled",
+									"type": "null"
+								}
+							]
+						}
+					},
+					"additionalProperties": false
+				}
+			},
+			"required": [ "name" ],
+			"additionalProperties": false
 		}
-	},
-	"required": [ "kind", "default_command" ]
+	}
 }
