@@ -517,7 +517,74 @@
 					"$ref": "#/definitions/nullable_function"
 				},
 				"shortcuts": {
-					"type": "object"
+					"type": "object",
+					"patternProperties": {
+						"^[a-z][a-z0-9_][a-z0-9]$": {
+							"type": "object",
+							"properties": {
+								"key": {
+									"oneOf": [
+										{
+											"type": "string",
+											"minLength": 1,
+											"maxLength": 1
+										}, {
+											"enum": [
+												"f1", "f2", "f3",  "f4",  "f5",  "f6",
+												"f7", "f8", "f9", "f10", "f11", "f12",
+												"enter", "return"
+											]
+										}
+									]
+								},
+								"modifier": {
+									"enum": [
+										"shift",
+										"ctrl"
+									]
+								},
+								"helptext": {
+									"type": "string"
+								},
+								"action": {
+									"type": "string"
+								},
+								"action_args": {
+									"type": "object",
+									"properties": {
+										"title": {
+											"type": "string"
+										},
+										"_named_title": {
+											"type": "boolean"
+										},
+										"_pass_obj": {
+											"type": "boolean"
+										}
+									},
+									"additionalProperties": false
+								},
+								"action_call": {
+									"type": "string"
+								},
+								"queryfunc": {
+									"type": "string"
+								},
+								"queryval": {
+									"type": "string"
+								},
+								"query": {
+									"type": "string"
+								},
+								"read_only": {
+									"description": "Shortcuts not explicitly marked as read only will be disabled when iku is started with --read-only",
+									"type": "boolean"
+								}
+							},
+							"required": [ "key", "helptext", "action" ],
+							"additionalProperties": false
+						}
+					}
 				}
 			},
 			"required": [ "name", "group", "field_indexes" ],
