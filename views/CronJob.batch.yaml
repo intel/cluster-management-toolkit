@@ -60,7 +60,7 @@ infoview:
   name: "Cron Job Info"
   infopad:
     row_indexes:
-      Normal: ["concurrency_policy", "restart_policy", "selector", "parallelism", "completions", "starting_deadline", "suspend", "schedule", "active"]
+      Normal: ["concurrency_policy", "restart_policy", "selector", "parallelism", "completions", "starting_deadline", "suspend", "schedule", "last_scheduled", "last_successful", "active"]
     rows:
       active:
         header: [["Active:", ["main", "infoheader"]]]
@@ -82,13 +82,13 @@ infoview:
         path: "spec#concurrencyPolicy"
         type: "raw"
       last_scheduled:
-        header: "Last Scheduled:"
+        header: [["Last Scheduled:", ["main", "infoheader"]]]
         path: "status#lastScheduleTime"
         default: -1
         type: "timestamp"
         formatter: "age"
       last_successful:
-        header: "Last Successful:"
+        header: [["Last Successful:", ["main", "infoheader"]]]
         path: "status#lastSuccessfulTime"
         default: -1
         type: "timestamp"

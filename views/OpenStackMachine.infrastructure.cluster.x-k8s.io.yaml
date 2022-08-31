@@ -26,7 +26,7 @@ listview:
         subpaths:
         - "name"
         when:
-          key: "kind"
+        - key: "kind"
           eq: "Machine"
       formatter: "list"
       formatting:
@@ -76,7 +76,7 @@ infoview:
           - "apiVersion"
           - "name"
           when:
-            key: "controller"
+          - key: "controller"
             eq: true
           type: ["kind", "api_group", "name"]
         default: "<none>"
@@ -97,7 +97,7 @@ infoview:
           subpaths:
           - "address"
           when:
-            key: "type"
+          - key: "type"
             eq: "ExternalIP"
           default: ["<none>"]
         formatter: "address"
@@ -105,10 +105,8 @@ infoview:
         header: [["Flavor:", ["main", "infoheader"]]]
         path: "spec#flavor"
         type: "str"
-      header:
-        header: [["T", ["main", "infoheader_shortcut"]], ["emplate:", ["main", "infoheader"]]]
       identity:
-        header: [["", ["main", "infoheader"]], ["I", ["main", "infoheader_shortcut"]], ["dentity:", ["main", "infoheader"]]]
+        header: [["I", ["main", "infoheader_shortcut"]], ["dentity:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#identityRef#kind"], ["spec#identityRef#name"]]
           pathtype: "tuple"
@@ -139,7 +137,7 @@ infoview:
           subpaths:
           - "address"
           when:
-            key: "type"
+          - key: "type"
             eq: "InternalIP"
         formatter: "address"
       provider_id:

@@ -263,12 +263,12 @@ infoview:
         - path: [["spec#strategy#type"], " (", "Max Surge: ", ["spec#strategy#rollingUpdate#maxSurge"], "Max Unavailable: ", ["spec#strategy#rollingUpdate#maxUnavailable"], ")"]
           pathtype: "tuple"
           when:
-            key: "spec#strategy#type"
+          - key: "spec#strategy#type"
             eq: "RollingUpdate"
         - path: [["spec#strategy#type"]]
           pathtype: "tuple"
           when:
-            key: "spec#strategy#type"
+          - key: "spec#strategy#type"
             eq: "Recreate"
         formatter: "list"
         formatting:

@@ -40,7 +40,7 @@ listview:
         - "apiVersion"
         - "name"
         when:
-          key: "controller"
+        - key: "controller"
           eq: true
         type: ["kind", "api_group", "name"]
       formatter: "list"
@@ -59,7 +59,7 @@ listview:
         pathtype: "items"
         subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
         when:
-          key: "restartCount"
+        - key: "restartCount"
           gt: 0
         action: "latest"
         type: "timestamp"
@@ -82,7 +82,7 @@ listview:
         substitute: "Terminating"
         else: ["status#phase"]
         when:
-          key: "metadata#deletionTimestamp"
+        - key: "metadata#deletionTimestamp"
           not_missing: true
       formatter: "value_mapper"
       formatting:
@@ -267,7 +267,7 @@ infoview:
           substitute: "Terminating"
           else: ["status#phase"]
           when:
-            key: "metadata#deletionTimestamp"
+          - key: "metadata#deletionTimestamp"
             not_missing: true
         formatter: "value_mapper"
         formatting:
@@ -329,12 +329,12 @@ infoview:
         - path: [["spec#terminationGracePeriodSeconds"], "s"]
           pathtype: "tuple"
           when:
-            key: "spec#terminationGracePeriodSeconds"
+          - key: "spec#terminationGracePeriodSeconds"
             gt: 0
         - path: [["spec#terminationGracePeriodSeconds"]]
           pathtype: "tuple"
           when:
-            key: "spec#terminationGracePeriodSeconds"
+          - key: "spec#terminationGracePeriodSeconds"
             eq: 0
           substitute: ["Immediately", ""]
         formatter: "list"

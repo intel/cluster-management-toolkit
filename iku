@@ -1715,10 +1715,9 @@ def transform_filter(transformations, value):
 	return value
 
 def when_filter(when_path, item, key = None, value = None):
-	if type(deep_get(when_path, "when", [])) == dict:
-		when_conditions = [deep_get(when_path, "when", {})]
-	else:
-		when_conditions = deep_get(when_path, "when", [])
+	# When is a list of when-conditions,
+	# all of which have to evaluate to true
+	when_conditions = deep_get(when_path, "when", [])
 
 	_key = key
 	_value = value
@@ -1773,10 +1772,6 @@ def when_filter(when_path, item, key = None, value = None):
 		when_notin = deep_get(when_condition, "notin")
 		when_missing = deep_get(when_condition, "missing")
 		when_notmissing = deep_get(when_condition, "notmissing")
-		when_startswith = deep_get(when_condition, "startswith")
-		when_notstartswith = deep_get(when_condition, "notstartswith")
-		when_endswith = deep_get(when_condition, "endswith")
-		when_notendswith = deep_get(when_condition, "notendswith")
 
 		# These check dict values
 		when_isdict = deep_get(when_condition, "isdict")
@@ -1837,7 +1832,6 @@ def transform_list(vlist, transform = {}):
 	value_regexes = deep_get(transform, "value#regex", [])
 	value_groups = deep_get(transform, "value#groups", [])
 	value_join = deep_get(transform, "value#join")
-	value_pad_empty = deep_get(transform, "value#pad_empty", "")
 	value_defaults = deep_get(transform, "value#default", [])
 	output = deep_get(transform, "output", ["key", "value"])
 

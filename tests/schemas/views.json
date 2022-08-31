@@ -30,6 +30,36 @@
 			"type": "string",
 			"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
 		},
+		"row_header": {
+			"description": "A header to use for rows",
+			"type": "array",
+			"items": {
+				"description": "A formatted string fragment",
+				"type": "array",
+				"prefixItems": [
+					{
+						"description": "A string fragment",
+						"type": "string",
+						"pattern": "^([A-Za-z0-9# ]|[A-Za-z0-9# ][A-Za-z0-9()#./ :-]*)$"
+					}, {
+						"description": "formatting to use for the string fragment",
+						"type": "array",
+						"prefixItems": [
+							{
+								"description": "The context for the formatting",
+								"type": "string"
+							}, {
+								"description": "The name of the formatting",
+								"type": "string"
+							}
+						],
+						"items": false
+					}
+				],
+				"items": false
+			},
+			"minItems": 1
+		},
 		"header": {
 			"description": "A header to use for fields",
 			"type": "string",
@@ -39,6 +69,303 @@
 			"description": "A Kubernetes or meta kind",
 			"type": "string",
 			"pattern": "^[_A-Z][_A-Za-z0-9]*$"
+		},
+		"processed_data_type": {
+			"description": "The type of data after processing",
+			"enum": [
+				"address",
+				"bool",
+				"float",
+				"int",
+				"len",
+				"list",
+				"raw",
+				"str",
+				"timestamp",
+				"version"
+			]
+		},
+		"default": {
+			"description": "The fallback to use if no data is available",
+			"type": [ "number", "string", "boolean", "object", "array", "null" ]
+		},
+		"paths": {
+			"description": "An array of paths",
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"default": {
+						"description": "The fallback value to use if no data is available",
+						"type": [ "number", "string", "boolean", "object", "array", "null" ]
+					},
+					"fallback_on_empty": {
+						"description": "Normally an existing, but empty, field is treated as valid; this option allows for using the fallback path if the field is empty",
+						"type": "boolean"
+					},
+					"limit": {
+						"description": "Number of results to return from the path lookup",
+						"type": "integer",
+						"minimum": 1
+					},
+					"lookup": {
+						"description": "Used to populate a status tuple by making a Kubernetes lookup",
+						"type": "object",
+						"properties": {
+							"api_family": {
+								"$ref": "#/definitions/api_family"
+							},
+							"kind": {
+								"$ref": "#/definitions/kind"
+							},
+							"messages": {
+								"type": "object",
+								"properties": {
+									"not_ok": {
+										"description": "Used when the lookup fails",
+										"type": "string"
+									},
+									"ok": {
+										"description": "Used when the lookup is successful",
+										"type": "string"
+									}
+								},
+								"additionalProperties": false
+							},
+							"status": {
+								"description": "highlight: (value, stgroup.OK/stgroup.NOT_OK), message: (message, stgroup.NEUTRAL)",
+								"enum": [
+									"highlight",
+									"message"
+								]
+							}
+						},
+						"additionalProperties": {
+						}
+					},
+					"none_str_as_none": {
+						"description": "By default the string None is treated as any other string; if this is true it's instead treated as null",
+						"type": "boolean"
+					},
+					"path": {
+						"anyOf": [
+							{
+								"$ref": "#/definitions/path"
+							}, {
+								"type": "array",
+								"items": {
+									"anyOf": [
+										{
+											"type": "array",
+											"items": {
+												"$ref": "#/definitions/path"
+											}
+										}, {
+											"description": "Literal string to return as if it were the result from a lookup",
+											"type": "string"
+										}
+									]
+								}
+							}
+						]
+					},
+					"paths": {
+						"type": "array",
+						"items": {
+							"anyOf": [
+								{
+									"type": "array",
+									"items": {
+										"$ref": "#/definitions/path"
+									}
+								}, {
+									"description": "Literal string to return as if it were the result from a lookup",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"pathtype": {
+						"$ref": "#/definitions/postprocessor"
+					},
+					"regex": {
+						"description": "Regular expression to process data; used when pathtype is regex",
+						"type": "string"
+					},
+					"replace_quotes": {
+						"description": "How to handle quotes",
+						"enum": [
+							"pretty",
+							"same"
+						]
+					},
+					"subpath": {
+						"$ref": "#/definitions/path"
+					},
+					"subpaths": {
+						"description": "Fields to fetch within a dict path",
+						"type": "array",
+						"items": {
+							"anyOf": [
+								{
+									"description": "A field name to fetch, or for dictfields a literal string",
+									"type": "string"
+								}, {
+									"description": "For dictfields a field name to fetch",
+									"type": "array"
+								}, {
+									"description": "A field object with post processing",
+									"type": "object",
+									"properties": {
+										"subpath": {
+											"description": "A field name",
+											"type": "string"
+										},
+										"regex": {
+											"description": "A list of regular expression filters",
+											"type": "array",
+											"items": {
+												"description": "A regular expression filter",
+												"type": "string"
+											}
+										}
+									}
+								}
+							]
+						}
+					},
+					"substitute": {
+						"description": "Substitute the value of the output for this string; typically used with when-conditions",
+						"type": [ "number", "string", "boolean", "object", "array", "null" ]
+					},
+					"substitutions": {
+						"description": "Used when pathtype is remap",
+						"type": "object",
+						"patternProperties": {
+							"^.*$": {
+								"type": "string"
+							}
+						}
+					},
+					"transform": {
+						"description": "Transformation rules to process dictlists",
+						"type": "object",
+						"properties": {
+							"key": {
+								"description": "Perform transformation on the key",
+								"type": "object",
+								"properties": {
+									"default": {
+										"type": "array",
+										"items": {
+											"$ref": "#/definitions/default"
+										},
+										"minItems": 1
+									},
+									"groups": {
+										"description": "A list of order of the regex capture groups",
+										"type": "array",
+										"items": {
+											"type": "integer",
+											"minimum": 0
+										},
+										"minItems": 1
+									},
+									"join": {
+										"description": "Separators to use when joining elements",
+										"type": "array",
+										"items": {
+											"type": "string"
+										},
+										"minItems": 1
+									},
+									"regex": {
+										"type": "array",
+										"items": {
+											"type": "string"
+										},
+										"minItems": 1
+									}
+								},
+								"sorted": {
+									"description": "Should the output be sorted",
+									"type": "boolean"
+								}
+							},
+							"value": {
+								"description": "Perform transformation on the value",
+								"type": "object",
+								"properties": {
+									"default": {
+										"type": "array",
+										"items": {
+											"$ref": "#/definitions/default"
+										},
+										"minItems": 1
+									},
+									"groups": {
+										"description": "A list of order of the regex capture groups",
+										"type": "array",
+										"items": {
+											"type": "integer",
+											"minimum": 0
+										},
+										"minItems": 1
+									},
+									"join": {
+										"description": "Separators to use when joining elements",
+										"type": "array",
+										"items": {
+											"type": "string"
+										},
+										"minItems": 1
+									},
+									"regex": {
+										"type": "array",
+										"items": {
+											"type": "string"
+										},
+										"minItems": 1
+									}
+								}
+							},
+							"output": {
+								"description": "What should the output field(s) be named",
+								"type": "array",
+								"items": {
+									"$ref": "#/definitions/field"
+								},
+								"minItems": 1
+							},
+							"sorted": {
+								"description": "Should the output be sorted",
+								"type": "boolean"
+							}
+						}
+					},
+					"type": {
+						"anyOf": [
+							{
+								"$ref": "#/definitions/path_data_type"
+							}, {
+								"description": "An array of data types",
+								"type": "array",
+								"items": {
+									"$ref": "#/definitions/path_data_type"
+								}
+							}
+						]
+					},
+					"unknown": {
+						"description": "This string is shown if a Kubernetes API lookup fails due to the API being unknown",
+						"type": "string"
+					},
+					"when": {
+						"$ref": "#/definitions/when"
+					}
+				},
+				"additionalProperties": false
+			}
 		},
 		"path_data_type": {
 			"description": "A data type as used by path/paths",
@@ -73,7 +400,7 @@
 		"simple_path": {
 			"description": "A path to use with deep_get()/deep_set()",
 			"type": "string",
-			"pattern": "^[a-z][A-Za-z0-9#_/.-]*[A-Za-z0-9]$"
+			"pattern": "^[_a-z][A-Za-z0-9#_/.=-]*[A-Za-z0-9=]$"
 		},
 		"postprocessor": {
 			"description": "The postprocessor to use for the data",
@@ -105,6 +432,104 @@
 			"description": "The name of a view, as used from the command line; view names starting with __ are skipped",
 			"type": "string",
 			"pattern": "^[_a-zA-Z][a-zA-Z0-9._-]*[a-zA-Z0-9_]$"
+		},
+		"when": {
+			"description": "Conditional; only include path elements that match the specified when condition(s)",
+			"type": "array",
+			"items": {
+				"anyOf": [
+					{
+						"type": "object",
+						"patternProperties": {
+							"^(key_eq|key_ne|key_in|key_notin|key_startswith|key_notstartswith|key_endswith|key_notendswith)$": {
+								"type": "string"
+							}
+						},
+						"additionalProperties": false
+					}, {
+						"type": "object",
+						"properties": {
+							"key": {
+								"description": "The key to match against",
+								"type": "string"
+							},
+							"none": {
+								"description": "Check whether key has a value",
+								"type": [ "boolean" ]
+							},
+							"notnone": {
+								"description": "Check whether key lacks a value",
+								"type": [ "boolean" ]
+							},
+							"eq": {
+								"description": "Exact match against this value",
+								"type": [ "number", "string", "boolean", "object", "array", "null" ]
+							},
+							"ne": {
+								"description": "Negative exact match against this value",
+								"type": [ "number", "string", "boolean", "object", "array", "null" ]
+							},
+							"lt": {
+								"description": "Less than this value",
+								"type": [ "number", "string", "boolean", "object", "array", "null" ]
+							},
+							"lte": {
+								"description": "Less than or equal to this value",
+								"type": [ "number", "string", "boolean", "object", "array", "null" ]
+							},
+							"gt": {
+								"description": "Greater than this value",
+								"type": [ "number", "string", "boolean", "object", "array", "null" ]
+							},
+							"gte": {
+								"description": "Greater than or equal to this value",
+								"type": [ "number", "string", "boolean", "object", "array", "null" ]
+							},
+							"in": {
+								"description": "Match against any of these values",
+								"type": "array",
+								"items": {
+									"type": [ "number", "string", "boolean", "object", "array", "null" ]
+								}
+							},
+							"notin": {
+								"description": "Negative match against any of these values",
+								"type": "array",
+								"items": {
+									"type": [ "number", "string", "boolean", "object", "array", "null" ]
+								}
+							},
+							"missing": {
+								"description": "The key is missing from the object",
+								"type": [ "number", "string", "boolean", "object", "array", "null" ]
+							},
+							"notmissing": {
+								"description": "The key exists in the object",
+								"type": [ "number", "string", "boolean", "object", "array", "null" ]
+							},
+							"isdict": {
+								"description": "Is the value a dict",
+								"type": "boolean"
+							},
+							"notisdict": {
+								"description": "Is the value a not dict",
+								"type": "boolean"
+							},
+							"dicthaskey": {
+								"description": "Is key a member of the dict",
+								"type": "string"
+							},
+							"notdicthaskey": {
+								"description": "Is key not a member of the dict",
+								"type": "string"
+							}
+						},
+						"additionalProperties": false,
+						"required": [ "key" ]
+					}
+				]
+			},
+			"minItems": 1
 		}
 	},
 	"properties": {
@@ -143,7 +568,7 @@
 					"description": "A lookup index to the fields to display in the list",
 					"type": "object",
 					"patternProperties": {
-						"^.*$": {
+						"^[A-Z][A-Za-z0-9_]*[A-Za-z0-9]$": {
 							"oneOf": [
 								{
 									"description": "An object that defines both sortcolumn and the list of fields",
@@ -192,89 +617,22 @@
 					"description": "Declarations for fields that are used in the list",
 					"type": "object",
 					"patternProperties": {
-						"^.*$": {
+						"^[a-z][a-z0-9_]*[a-z0-9]$": {
 							"type": "object",
 							"properties": {
-								"header": {
-									"$ref": "#/definitions/header"
-								},
-								"path": {
-									"$ref": "#/definitions/path"
-								},
-								"paths": {
-									"description": "An array of paths",
-									"type": "array",
-									"items": {
-										"type": "object",
-										"properties": {
-											"paths": {
-												"type": "array",
-												"items": {
-													"$ref": "#/definitions/path"
-												}
-											},
-											"pathtype": {
-												"$ref": "#/definitions/postprocessor"
-											},
-											"subpaths": {
-												"description": "Fields to fetch within a dict path",
-												"type": "array",
-												"items": {
-													"anyOf": [
-														{
-															"description": "A field name",
-															"type": "string"
-														}, {
-															"description": "A field object with post processing",
-															"type": "object",
-															"properties": {
-																"subpath": {
-																	"description": "A field name",
-																	"type": "string"
-																},
-																"regex": {
-																	"description": "A list of regular expression filters",
-																	"type": "array",
-																	"items": {
-																		"description": "A regular expression filter",
-																		"type": "string"
-																	}
-																}
-															}
-														}
-													]
-												}
-											},
-											"type": {
-												"anyOf": [
-													{
-														"$ref": "#/definitions/path_data_type"
-													}, {
-														"description": "An array of data types",
-														"type": "array",
-														"items": {
-															"$ref": "#/definitions/path_data_type"
-														}
-													}
-												]
-											}
-										}
-									}
-								},
-								"default": {
-									"description": "The fallback value to use if no data is available",
-									"type": [ "number", "string", "boolean", "object", "array", "null" ]
-								},
-								"type": {
-									"description": "The type of data",
-									"type": "string"
-								},
 								"align": {
 									"description": "Align the field left or right in the column",
 									"enum": [
 										"left",
 										"right"
 									]
+								},
+								"datagetter":  {
+									"description": "Custom function to use to get data from an object",
+									"type": "string"
+								},
+								"default": {
+									"$ref": "#/definitions/default"
 								},
 								"formatting": {
 									"description": "Formatting to use when outputting the field",
@@ -321,6 +679,18 @@
 											}
 										}
 									}
+								},
+								"header": {
+									"$ref": "#/definitions/header"
+								},
+								"path": {
+									"$ref": "#/definitions/path"
+								},
+								"paths": {
+									"$ref": "#/definitions/paths"
+								},
+								"type": {
+									"$ref": "#/definitions/processed_data_type"
 								}
 							},
 							"required": [ "header" ]
@@ -333,7 +703,7 @@
 					"$ref": "#/definitions/nullable_function"
 				},
 				"listgetter_args": {
-					"description": "Additional arguments to pass to the listgetter",
+					"description": "Arguments to pass to the listgetter",
 					"type": "object"
 				},
 				"labels": {
@@ -366,7 +736,7 @@
 					}
 				},
 				"listview_args": {
-					"description": "Additional arguments that apply to the listview",
+					"description": "Arguments to pass to the listview",
 					"type": "object",
 					"properties": {
 						"filters": {
@@ -500,6 +870,7 @@
 											]
 										},
 										"action_args": {
+											"description": "Arguments to pass to the action",
 											"type": "object",
 											"properties": {
 												"command": {
@@ -607,6 +978,7 @@
 											"type": "string"
 										},
 										"action_args": {
+											"description": "Arguments to pass to the action",
 											"type": "object",
 											"properties": {
 												"api_family": {
@@ -733,9 +1105,6 @@
 						{
 							"$ref": "#/definitions/simple_path"
 						}, {
-							"type": "string",
-							"length": 0
-						}, {
 							"description": "Annotations disabled",
 							"type": "null"
 						}
@@ -747,7 +1116,7 @@
 							"$ref": "#/definitions/simple_path"
 						}, {
 							"type": "string",
-							"length": 0
+							"maxLength": 0
 						}, {
 							"description": "Labels disabled",
 							"type": "null"
@@ -759,10 +1128,205 @@
 					"pattern": "^[A-Z0-9][A-Za-z0-9-() ]*[A-Za-z0-9)]$"
 				},
 				"infopad": {
+					"oneOf": [
+						{
+							"description": "A screen area used to display information about an object",
+							"type": "object",
+							"properties": {
+								"creation_timestamp_path": {
+									"description": "By default the timestamp for the object is read from metadata#creationTimestamp; use this path to override",
+									"oneOf": [
+										{
+											"$ref": "#/definitions/simple_path"
+										}, {
+											"type": "string",
+											"maxLength": 0
+										}, {
+											"description": "Creation timestamp disabled",
+											"type": "null"
+										}
+									]
+								},
+								"infogetter": {
+									"description": "The function to use to get the content for the infopad",
+									"type": "string"
+								},
+								"objgetter": {
+									"description": "The function to use to get an object to pass to the infogetter",
+									"type": "string"
+								},
+								"name_path": {
+									"description": "By default the name of the object is read from metadata#name; use this path to override",
+									"oneOf": [
+										{
+											"$ref": "#/definitions/simple_path"
+										}, {
+											"type": "string",
+											"maxLength": 0
+										}, {
+											"description": "Name disabled",
+											"type": "null"
+										}
+									]
+								},
+								"namespace_path": {
+									"description": "By default the namespace of the object is read from metadata#namespace; use this path to override",
+									"oneOf": [
+										{
+											"$ref": "#/definitions/simple_path"
+										}, {
+											"type": "string",
+											"maxLength": 0
+										}, {
+											"description": "Namespace disabled",
+											"type": "null"
+										}
+									]
+								},
+								"rows": {
+									"description": "Declarations for rows that are used in the infopad",
+									"type": "object",
+									"patternProperties": {
+										"^[a-z][a-z0-9_]*[a-z0-9]$": {
+											"type": "object",
+											"properties": {
+												"align": {
+													"description": "Align the field left or right in the column",
+													"enum": [
+														"left",
+														"right"
+													]
+												},
+												"datagetter":  {
+													"description": "Custom function to use to get data from an object",
+													"type": "string"
+												},
+												"default": {
+													"description": "The fallback value to use if no data is available",
+													"type": [ "number", "string", "boolean", "object", "array", "null" ]
+												},
+												"formatter": {
+													"description": "Function to use to format the text before viewing it",
+													"type": "string"
+												},
+												"formatting": {
+													"description": "Formatting to use when outputting the field",
+													"type": "object",
+													"properties": {
+														"field_colors": {
+															"description": "Colours to use when outputting the field",
+															"type": "array",
+															"items": {
+																"description": "[context]/type lookup to a fg/bg pair in the theme file",
+																"type": "object",
+																"properties": {
+																	"type": {
+																		"description": "The name of the colour pair",
+																		"type": "string",
+																		"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+																	},
+																	"context": {
+																		"description": "The context for the the colour pair",
+																		"type": "string",
+																		"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+																	}
+																}
+															}
+														},
+														"field_separators": {
+															"description": "Separators to use between items in a field",
+															"type": "array",
+															"items": {
+																"description": "[context]/type lookup to a separator in the theme file",
+																"type": "object",
+																"properties": {
+																	"type": {
+																		"description": "The name of the separator",
+																		"type": "string",
+																		"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+																	},
+																	"context": {
+																		"description": "The context of the separator (default: 'separators'):",
+																		"type": "string",
+																		"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+																	}
+																}
+															}
+														}
+													}
+												},
+												"header": {
+													"$ref": "#/definitions/row_header"
+												},
+												"path": {
+													"$ref": "#/definitions/path"
+												},
+												"paths": {
+													"$ref": "#/definitions/paths"
+												},
+												"type": {
+													"$ref": "#/definitions/processed_data_type"
+												}
+											},
+											"required": [ "header" ],
+											"additionalProperties": false
+										}
+									},
+									"additionalProperties": false
+								},
+								"row_indexes": {
+									"description": "A lookup index to the rows to display in the infopad",
+									"type": "object",
+										"patternProperties": {
+											"^[A-Z][A-Za-z0-9_]*[A-Za-z0-9]$": {
+												"description": "A list of rows to display in the infopad",
+												"type": "array",
+												"items": {
+													"$ref": "#/definitions/field"
+												},
+												"minItems": 1
+											}
+										}
+								}
+							},
+							"additionalProperties": false
+						}, {
+							"description": "Only show default fields",
+							"type": "string",
+							"maxLength": 0
+						}, {
+							"description": "Only show default fields",
+							"type": "null"
+						}
+					]
 				},
 				"listpad": {
 				},
 				"logpad": {
+					"description": "A screen area used to display preformatted text, optionally with timestamps",
+					"type": "object",
+					"properties": {
+						"infogetter": {
+							"description": "The function to use to get the content for the listpad",
+							"type": "string"
+						},
+						"infogetter_args": {
+							"description": "Arguments to pass to the infogetter",
+							"type": "object",
+							"properties": {
+								"path": {
+									"description": "The path to get the information from",
+									"$ref": "#/definitions/simple_path"
+								}
+							},
+							"additionalProperties": false
+						},
+						"timestamps": {
+							"description": "Should the timestamp column be displayed",
+							"type": "boolean"
+						}
+					},
+					"additionalProperties": false
 				},
 				"shortcuts": {
 					"type": "object",
@@ -1011,6 +1575,7 @@
 											"type": "string"
 										},
 										"itemgetter_args": {
+											"description": "Arguments to pass to the infogetter",
 											"oneOf": [
 												{
 													"type": "object",

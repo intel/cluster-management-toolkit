@@ -17,7 +17,7 @@ listview:
         pathtype: "items"
         subpath: "status"
         when:
-          key: "type"
+        - key: "type"
           eq: "Available"
       type: "str"
       formatter: "value_mapper"
@@ -39,7 +39,7 @@ listview:
         pathtype: "items"
         subpath: "status"
         when:
-          key: "type"
+        - key: "type"
           eq: "Degraded"
       type: "str"
       formatter: "value_mapper"
@@ -61,7 +61,7 @@ listview:
         pathtype: "items"
         subpath: "status"
         when:
-          key: "type"
+        - key: "type"
           eq: "Progressing"
       type: "str"
     version:
@@ -71,7 +71,7 @@ listview:
         pathtype: "items"
         subpath: "version"
         when:
-          key: "name"
+        - key: "name"
           eq: "operator"
         default: ["<unset>"]
       type: "str"
@@ -92,7 +92,7 @@ infoview:
           subpaths:
           - "name"
           when:
-            key: "kind"
+          - key: "kind"
             eq: "ClusterVersion"
         default: "<none>"
       operator_versions:

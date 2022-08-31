@@ -151,7 +151,7 @@ infoview:
           pathtype: "items"
           subpath: "pathPrefix"
           when:
-            key: "readOnly"
+          - key: "readOnly"
             eq: true
           suffix:
           - " (Read Only)"
@@ -159,13 +159,13 @@ infoview:
           pathtype: "items"
           subpath: "pathPrefix"
           when:
-            key: "readOnly"
+          - key: "readOnly"
             ne: true
         - path: "spec#allowedHostPaths"
           pathtype: "items"
           subpath: "pathPrefix"
           when:
-            key: "readOnly"
+          - key: "readOnly"
             none: true
         default: "All"
         type: "raw"

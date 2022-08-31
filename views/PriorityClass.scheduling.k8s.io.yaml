@@ -103,7 +103,7 @@ infoview:
           - "apiVersion"
           - "name"
           when:
-            key: "controller"
+          - key: "controller"
             eq: true
           type: ["kind", "api_group", "name"]
         formatter: "list"
@@ -122,7 +122,7 @@ infoview:
           pathtype: "items"
           subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
           when:
-            key: "restartCount"
+          - key: "restartCount"
             gt: 0
           action: "latest"
           type: "timestamp"

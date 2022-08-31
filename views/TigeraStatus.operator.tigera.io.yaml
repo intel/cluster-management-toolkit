@@ -14,7 +14,7 @@ listview:
         pathtype: "items"
         subpath: "status"
         when:
-          key: "type"
+        - key: "type"
           eq: "Available"
         default: "Unknown"
       type: "str"
@@ -37,7 +37,7 @@ listview:
         pathtype: "items"
         subpath: "status"
         when:
-          key: "type"
+        - key: "type"
           eq: "Degraded"
         default: "Unknown"
       type: "str"
@@ -60,7 +60,7 @@ listview:
         pathtype: "items"
         subpath: "status"
         when:
-          key: "type"
+        - key: "type"
           eq: "Progressing"
         default: "Unknown"
       type: "str"
@@ -83,7 +83,7 @@ listview:
         pathtype: "items"
         subpath: "lastTransitionTime"
         when:
-          key: "type"
+        - key: "type"
           eq: "Available"
         type: "timestamp"
       default: -1
@@ -102,7 +102,7 @@ infoview:
           pathtype: "items"
           subpath: "status"
           when:
-            key: "type"
+          - key: "type"
             eq: "Available"
           default: "Unknown"
         type: "str"
@@ -125,7 +125,7 @@ infoview:
           pathtype: "items"
           subpath: "status"
           when:
-            key: "type"
+          - key: "type"
             eq: "Degraded"
           default: "Unknown"
         type: "str"
@@ -148,7 +148,7 @@ infoview:
           pathtype: "items"
           subpath: "status"
           when:
-            key: "type"
+          - key: "type"
             eq: "Progressing"
           default: "Unknown"
         type: "str"
@@ -171,7 +171,7 @@ infoview:
           pathtype: "items"
           subpath: "lastTransitionTime"
           when:
-            key: "type"
+          - key: "type"
             eq: "Available"
           type: "timestamp"
         default: -1
