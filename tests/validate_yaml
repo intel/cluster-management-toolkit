@@ -6,7 +6,10 @@ import os
 import yaml
 import sys
 
-verbose = False
+verbose = True
+abort_on_fail = True
+
+failed_files = []
 
 def usage():
 	print("validate_yaml [ARGUMENTS]\n")
@@ -24,12 +27,13 @@ def usage():
 #	print("version|--version  Output version information and exit")
 
 def validate_file(yaml_path, schema_path):
-	if not yaml_path.endswith(".yaml"):
-		return
+	if not yaml_path.endswith((".yaml", ".yml")):
+		print(f"\n{yaml_path} does not end in .yaml or .yml; skipping.\n")
+		return -1
 
 	if not os.path.isfile(yaml_path):
 		print(f"\n{yaml_path} is not a file; skipping.\n")
-		return
+		return -1
 
 	yaml_data = {}
 
@@ -49,14 +53,21 @@ def validate_file(yaml_path, schema_path):
 	if verbose == True:
 		print(f"Validating {yaml_path} with {schema_path}")
 
+	fail = 0
+
 	try:
 		jsonschema.validate(schema = schema, instance = yaml_data)
 	except jsonschema.exceptions.SchemaError as e:
 		print(f"\nFailed to validate schema {schema_path}")
 		sys.exit(f"\njsonschema.exceptions.SchemaError: {e}")
 	except jsonschema.exceptions.ValidationError as e:
-		print(f"\nFailed to validate {yaml_path} using {schema_path}")
-		sys.exit(f"\njsonschema.exceptions.ValidationError: {e}")
+		print(f"\n  Failed to validate {yaml_path} using {schema_path}\n")
+		if abort_on_fail == True:
+			sys.exit(f"\njsonschema.exceptions.ValidationError: {e}")
+		failed_files.append(yaml_path)
+		fail = 1
+
+	return fail
 
 def main():
 	if len(sys.argv) == 2 and sys.argv[1] in ["help", "--help"]:
@@ -87,12 +98,34 @@ def main():
 		for path in sys.argv[2:]:
 			yaml_paths.append((path, schema_path))
 
+	count = 0
+	successful = 0
+	fail = 0
+	skip = 0
+
 	for yaml_path, schema in yaml_paths:
 		if os.path.isfile(yaml_path):
 			validate_file(yaml_path, schema)
 		elif os.path.isdir(yaml_path):
 			for path in os.listdir(yaml_path):
-				validate_file(f"{yaml_path}/{path}", schema)
+				retval = validate_file(f"{yaml_path}/{path}", schema)
+				if retval == -1:
+					skip += 1
+				else:
+					fail += retval
+		count += 1
+
+	print(f"\nSummary:")
+	if abort_on_fail == False:
+		print(f"     fail: {fail}")
+	print(f"     skip: {skip}")
+	print(f"  success: {count - fail}")
+	print(f"    total: {count}")
+
+	print("\n\nThe following files failed validation:")
+	print("---")
+	for file in failed_files:
+		print(f"  {file}")
 
 if __name__ == "__main__":
 	main()

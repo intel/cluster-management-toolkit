@@ -2,6 +2,290 @@
 	"description": "A definition of a list and/or info view for iKT",
 	"type": "object",
 	"definitions": {
+		"api_family": {
+			"description": "A Kubernetes API family",
+			"oneOf": [
+				{
+					"type": "string",
+					"pattern": "^[a-z][a-z0-9.-]*[a-z0-9]$"
+				}, {
+					"description": "Needed to pass (kind, api_family) == ('', '') which is used to fetch (kind, api_family) from the source",
+					"type": "string",
+					"maxLength": 0
+				}, {
+					"description": "The API belongs to the core API",
+					"type": "null"
+				}
+			]
+		},
+		"default": {
+			"description": "The fallback to use if no data is available",
+			"type": [ "number", "string", "boolean", "object", "array", "null" ]
+		},
+		"field": {
+			"description": "A name of a field in a row or column",
+			"type": "string",
+			"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+		},
+		"field_colors": {
+			"description": "Colours to use when outputting the field",
+			"type": "array",
+			"items": {
+				"description": "[context]/type lookup to a fg/bg pair in the theme file",
+				"type": "object",
+				"properties": {
+					"type": {
+						"description": "The name of the colour pair",
+						"type": "string",
+						"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+					},
+					"context": {
+						"description": "The context for the the colour pair",
+						"type": "string",
+						"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+					}
+				}
+			}
+		},
+		"field_indexes": {
+			"description": "A lookup index to the fields to display in the list",
+			"type": "object",
+			"patternProperties": {
+				"^[A-Z][A-Za-z0-9_]*[A-Za-z0-9]$": {
+					"oneOf": [
+						{
+							"description": "An object that defines both sortcolumn and the list of fields",
+							"type": "object",
+							"properties": {
+								"fields": {
+									"description": "A list of fields to display in the list",
+									"type": "array",
+									"items": {
+										"$ref": "#/definitions/field"
+									},
+									"minItems": 1
+								},
+								"sortcolumn": {
+									"description": "The field to use as sort key for the list",
+									"$ref": "#/definitions/field"
+								},
+								"sortorder_reverse": {
+									"description": "Should the list default to reversed sort order",
+									"type": "boolean"
+								}
+							}
+						}, {
+							"description": "A list of fields to display in the list",
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/field"
+							},
+							"minItems": 1
+						}
+					]
+				}
+			},
+			"additionalProperties": false,
+			"minItems": 1
+		},
+		"fields": {
+			"description": "Declarations for fields that are used in the list",
+			"type": "object",
+			"patternProperties": {
+				"^[a-z][a-z0-9_]*[a-z0-9]$": {
+					"type": "object",
+					"properties": {
+						"align": {
+							"description": "Align the field left or right in the column",
+							"enum": [
+								"left",
+								"right"
+							]
+						},
+						"datagetter":  {
+							"description": "Custom function to use to get data from an object",
+							"type": "string"
+						},
+						"default": {
+							"$ref": "#/definitions/default"
+						},
+						"header": {
+							"$ref": "#/definitions/header"
+						},
+						"path": {
+							"$ref": "#/definitions/path"
+						},
+						"paths": {
+							"$ref": "#/definitions/paths"
+						},
+						"type": {
+							"$ref": "#/definitions/processed_data_type"
+						}
+					},
+					"required": [ "header" ]
+				}
+			},
+			"additionalProperties": false
+		},
+		"field_separators": {
+			"description": "Separators to use between items in a field",
+			"type": "array",
+			"items": {
+				"description": "[context]/type lookup to a separator in the theme file",
+				"type": "object",
+				"properties": {
+					"type": {
+						"description": "The name of the separator",
+						"type": "string",
+						"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+					},
+					"context": {
+						"description": "The context of the separator (default: 'separators'):",
+						"type": "string",
+						"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+					}
+				}
+			}
+		},
+		"formatting": {
+			"description": "Formatting to use when outputting a field",
+			"type": "object",
+			"properties": {
+				"ellipsise": {
+					"description": "Ellipsise the list after this many entries",
+					"type": "integer"
+				},
+				"field_colors": {
+					"$ref": "#/definitions/field_colors"
+				},
+				"field_separators": {
+					"$ref": "#/definitions/field_separators"
+				},
+				"mapping": {
+					"description": "Remap values",
+					"type": "object",
+					"properties": {
+						"mappings": {
+							"patternProperties": {
+								"^.*$": {
+									"type": "object",
+									"properties": {
+										"field_colors": {
+											"$ref": "#/definitions/field_colors"
+										}
+									},
+									"additionalProperties": false
+								},
+								"^__default$": {
+									"properties": {
+										"field_colors": {
+											"$ref": "#/definitions/field_colors"
+										}
+									},
+									"additionalProperties": false
+								}
+							},
+							"additionalProperties": false
+						},
+						"ranges": {
+							"description": "Format ranges of values",
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"default": {
+										"description": "Is this the default entry",
+										"type": "boolean"
+									},
+									"field_colors": {
+										"$ref": "#/definitions/field_colors"
+									},
+									"max": {
+										"description": "Upper value in the range",
+										"type": "integer"
+									},
+									"min": {
+										"description": "Lower value in the range",
+										"type": "integer"
+									}
+								},
+								"additionalProperties": false
+							},
+							"minItems": 1
+						},
+						"substitutions": {
+							"type": "object",
+							"patternProperties": {
+								"^.*$": {
+									"anyOf": [
+										{
+											"description": "Substitute the value with a literal string",
+											"type": "string"
+										}, {
+											"description": "A theme-file (context, type) lookup",
+											"type": "object",
+											"properties": {
+												"context": {
+													"type": "string"
+												},
+												"type": {
+													"type": "string"
+												}
+											},
+											"required": [ "type" ],
+											"additionalProperties": false
+										}
+									]
+								}
+							},
+							"additionalProperties": false
+						}
+					},
+					"additionalProperties": false
+				}
+			}
+		},
+		"header": {
+			"description": "A header to use for fields",
+			"type": "string",
+			"pattern": "^[A-Za-z0-9#][A-Za-z0-9()#./ -]*:$"
+		},
+		"infogetter": {
+			"description": "Function to use to extract data from an object",
+			"$ref": "#/definitions/nullable_function"
+		},
+		"infogetter_args": {
+			"$ref": "#/definitions/infogetter_args"
+		},
+		"infogetter_args": {
+			"description": "Arguments to pass to the infogetter",
+			"type": "object",
+			"properties": {
+				"_extra_data": {
+					"description": "Extra data to pass to the infogetter",
+					"type": "object"
+				},
+				"path": {
+					"description": "The path to get the information from",
+					"$ref": "#/definitions/simple_path"
+				}
+			},
+			"additionalProperties": false
+		},
+		"kind": {
+			"description": "A Kubernetes or meta kind",
+			"type": "string",
+			"pattern": "^[_A-Z][_A-Za-z0-9]*$",
+			"minLength": 1
+		},
+		"listgetter": {
+			"description": "Function to use to get list entries",
+			"$ref": "#/definitions/nullable_function"
+		},
+		"listgetter_args": {
+			"description": "Arguments to pass to the listgetter",
+			"type": "object"
+		},
 		"nullable_function": {
 			"description": "Used when a value can either be a function name or null",
 			"oneOf": [
@@ -13,81 +297,83 @@
 				}
 			]
 		},
-		"api_family": {
-			"description": "A Kubernetes API family",
+		"on_activation": {
+			"description": "Action to perform when activating an entry",
+			"type": "object",
+			"properties": {
+				"api_family": {
+					"description": "The API family of the object (used with resourceinfodispatch and its variants)",
+					"$ref": "#/definitions/api_family"
+				},
+				"api_family_path": {
+					"description": "Path to get the API family of the object from (used with resourceinfodispatch and its variants)",
+					"$ref": "#/definitions/path"
+				},
+				"call": {
+					"oneOf": [
+						{
+							"description": "The function to call when activating the entry",
+							"type": "string"
+						}, {
+							"description": "Used to disable the default activation action",
+							"type": "null"
+						}
+					]
+				},
+				"kind": {
+					"oneOf": [
+						{
+							"$ref": "#/definitions/kind"
+						}, {
+							"description": "Get the kind from the source object",
+							"type": "string",
+							"maxLength": 0
+						}
+					]
+				},
+				"kind_path": {
+					"description": "Path to get the kind of the object from (used with resourceinfodispatch and its variants)",
+					"$ref": "#/definitions/path"
+				},
+				"name_path": {
+					"description": "Path to get the name of the object from (used with resourceinfodispatch and its variants)",
+					"$ref": "#/definitions/path"
+				},
+				"namespace_path": {
+					"description": "Path to get the namespace of the object from (used with resourceinfodispatch and its variants)",
+					"$ref": "#/definitions/path"
+				}
+			}
+		},
+		"path": {
 			"oneOf": [
 				{
-					"type": "string",
-					"pattern": "^[a-z][a-z0-9.-]*[a-z0-9]$"
+					"$ref": "#/definitions/simple_path"
 				}, {
-					"description": "The API belongs to the core API",
-					"type": "null"
+					"description": "A list of paths",
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/path"
+					}
 				}
 			]
 		},
-		"field": {
-			"description": "A name of a field in a row or column",
-			"type": "string",
-			"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
-		},
-		"row_header": {
-			"description": "A header to use for rows",
-			"type": "array",
-			"items": {
-				"description": "A formatted string fragment",
-				"type": "array",
-				"prefixItems": [
-					{
-						"description": "A string fragment",
-						"type": "string",
-						"pattern": "^([A-Za-z0-9# ]|[A-Za-z0-9# ][A-Za-z0-9()#./ :-]*)$"
-					}, {
-						"description": "formatting to use for the string fragment",
-						"type": "array",
-						"prefixItems": [
-							{
-								"description": "The context for the formatting",
-								"type": "string"
-							}, {
-								"description": "The name of the formatting",
-								"type": "string"
-							}
-						],
-						"items": false
-					}
-				],
-				"items": false
-			},
-			"minItems": 1
-		},
-		"header": {
-			"description": "A header to use for fields",
-			"type": "string",
-			"pattern": "^[A-Za-z0-9#][A-Za-z0-9()#./ -]*:$"
-		},
-		"kind": {
-			"description": "A Kubernetes or meta kind",
-			"type": "string",
-			"pattern": "^[_A-Z][_A-Za-z0-9]*$"
-		},
-		"processed_data_type": {
-			"description": "The type of data after processing",
+		"path_data_type": {
+			"description": "A data type as used by path/paths",
 			"enum": [
-				"address",
+				"api_group",
 				"bool",
-				"float",
+				"cpu_usage",
 				"int",
-				"len",
-				"list",
+				"kind",
+				"kind_api_group",
+				"mem_usage",
+				"name",
 				"raw",
+				"regex_to_tuples",
 				"str",
-				"timestamp",
-				"version"
+				"timestamp"
 			]
-		},
-		"default": {
-			"description": "The fallback to use if no data is available",
-			"type": [ "number", "string", "boolean", "object", "array", "null" ]
 		},
 		"paths": {
 			"description": "An array of paths",
@@ -95,13 +381,49 @@
 			"items": {
 				"type": "object",
 				"properties": {
+					"action": {
+						"description": "An action to perform on the list of output; 'sum' adds values (only works on type: [int, float]), 'earliest'/'latest' returns the newest/oldest timestamp (only works on type: timestamp)",
+						"enum": [
+							"earliest",
+							"latest",
+							"sum"
+						]
+					},
 					"default": {
 						"description": "The fallback value to use if no data is available",
+						"type": [ "number", "string", "boolean", "object", "array", "null" ]
+					},
+					"else": {
+						"description": "This value is used if a when-clause evaluates to false",
 						"type": [ "number", "string", "boolean", "object", "array", "null" ]
 					},
 					"fallback_on_empty": {
 						"description": "Normally an existing, but empty, field is treated as valid; this option allows for using the fallback path if the field is empty",
 						"type": "boolean"
+					},
+					"key": {
+						"description": "Used in conjunction with pathtype 'key_value' to transform the key of a key/value pairs",
+						"type": "object",
+						"properties": {
+							"transform": {
+								"type": "object",
+								"patternProperties": {
+									"^.*$": {
+										"type": "string"
+									}
+								},
+								"additionalProperties": false
+							},
+							"regex": {
+								"description": "A list of regular expressions to match against when doing the substitution",
+								"type": "array",
+								"items": {
+									"description": "A regular expression",
+									"type": "string"
+								},
+								"minItems": 1
+							}
+						}
 					},
 					"limit": {
 						"description": "Number of results to return from the path lookup",
@@ -188,6 +510,19 @@
 					"pathtype": {
 						"$ref": "#/definitions/postprocessor"
 					},
+					"prefix": {
+						"description": "A prefix or list of prefixes to add before the output",
+						"anyOf": [
+							{
+								"type": "string"
+							}, {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							}
+						]
+					},
 					"regex": {
 						"description": "Regular expression to process data; used when pathtype is regex",
 						"type": "string"
@@ -246,6 +581,19 @@
 								"type": "string"
 							}
 						}
+					},
+					"suffix": {
+						"description": "A suffix or list of suffixes to add after the output",
+						"anyOf": [
+							{
+								"type": "string"
+							}, {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							}
+						]
 					},
 					"transform": {
 						"description": "Transformation rules to process dictlists",
@@ -360,47 +708,36 @@
 						"description": "This string is shown if a Kubernetes API lookup fails due to the API being unknown",
 						"type": "string"
 					},
+					"value": {
+						"description": "Used in conjunction with pathtype 'key_value' to transform the value of a key/value pairs",
+						"type": "object",
+						"properties": {
+							"transform": {
+								"type": "object",
+								"patternProperties": {
+									"^.*$": {
+										"type": "string"
+									}
+								},
+								"additionalProperties": false
+							},
+							"regex": {
+								"description": "A list of regular expressions to match against when doing the substitution",
+								"type": "array",
+								"items": {
+									"description": "A regular expression",
+									"type": "string"
+								},
+								"minItems": 1
+							}
+						}
+					},
 					"when": {
 						"$ref": "#/definitions/when"
 					}
 				},
 				"additionalProperties": false
 			}
-		},
-		"path_data_type": {
-			"description": "A data type as used by path/paths",
-			"enum": [
-				"api_group",
-				"bool",
-				"cpu_usage",
-				"int",
-				"kind",
-				"kind_api_group",
-				"mem_usage",
-				"name",
-				"raw",
-				"regex_to_tuples",
-				"str",
-				"timestamp"
-			]
-		},
-		"path": {
-			"oneOf": [
-				{
-					"$ref": "#/definitions/simple_path"
-				}, {
-					"description": "A list of paths",
-					"type": "array",
-					"items": {
-						"$ref": "#/definitions/path"
-					}
-				}
-			]
-		},
-		"simple_path": {
-			"description": "A path to use with deep_get()/deep_set()",
-			"type": "string",
-			"pattern": "^[_a-z][A-Za-z0-9#_/.=-]*[A-Za-z0-9=]$"
 		},
 		"postprocessor": {
 			"description": "The postprocessor to use for the data",
@@ -427,6 +764,65 @@
 				"tuple",
 				"value"
 			]
+		},
+		"processed_data_type": {
+			"description": "The type of data after processing",
+			"enum": [
+				"address",
+				"age",
+				"bool",
+				"cpu_usage",
+				"float",
+				"host",
+				"int",
+				"len",
+				"list",
+				"mem_usage",
+				"numerical",
+				"raw",
+				"str",
+				"timestamp",
+				"version"
+			]
+		},
+		"row_header": {
+			"description": "A header to use for rows",
+			"type": "array",
+			"items": {
+				"description": "A formatted string fragment",
+				"type": "array",
+				"prefixItems": [
+					{
+						"description": "A string fragment",
+						"type": "string",
+						"pattern": "^([A-Za-z0-9# ]|[A-Za-z0-9# ][A-Za-z0-9()#./ :-]*)$"
+					}, {
+						"description": "formatting to use for the string fragment",
+						"type": "array",
+						"prefixItems": [
+							{
+								"description": "The context for the formatting",
+								"type": "string"
+							}, {
+								"description": "The name of the formatting",
+								"type": "string"
+							}
+						],
+						"items": false
+					}
+				],
+				"items": false
+			},
+			"minItems": 1
+		},
+		"simple_path": {
+			"description": "A path to use with deep_get()/deep_set()",
+			"type": "string",
+			"pattern": "^[_a-z][A-Za-z0-9#_/.=-]*[A-Za-z0-9=]$"
+		},
+		"sortcolumn": {
+			"description": "The field to use as sort key for the list",
+			"$ref": "#/definitions/field"
 		},
 		"view_name": {
 			"description": "The name of a view, as used from the command line; view names starting with __ are skipped",
@@ -554,306 +950,9 @@
 			"uniqueItems": true
 		},
 		"listview": {
+			"description": " A view used to list objects",
 			"type": "object",
 			"properties": {
-				"name": {
-					"description": "The name of the view to display in the view list",
-					"type": "string"
-				},
-				"group": {
-					"description": "The name of the group to sort the view into",
-					"type": "string"
-				},
-				"field_indexes": {
-					"description": "A lookup index to the fields to display in the list",
-					"type": "object",
-					"patternProperties": {
-						"^[A-Z][A-Za-z0-9_]*[A-Za-z0-9]$": {
-							"oneOf": [
-								{
-									"description": "An object that defines both sortcolumn and the list of fields",
-									"type": "object",
-									"properties": {
-										"fields": {
-											"description": "A list of fields to display in the list",
-											"type": "array",
-											"items": {
-												"$ref": "#/definitions/field"
-											},
-											"minItems": 1
-										},
-										"sortcolumn": {
-											"description": "The field to use as sort key for the list",
-											"$ref": "#/definitions/field"
-										},
-										"sortorder_reverse": {
-											"description": "Should the list default to reversed sort order",
-											"type": "boolean"
-										}
-									}
-								}, {
-									"description": "A list of fields to display in the list",
-									"type": "array",
-									"items": {
-										"$ref": "#/definitions/field"
-									},
-									"minItems": 1
-								}
-							]
-						}
-					},
-					"additionalProperties": false,
-					"minItems": 1
-				},
-				"sortcolumn": {
-					"description": "The field to use as sort key for the list",
-					"$ref": "#/definitions/field"
-				},
-				"sortorder_reverse": {
-					"description": "Should the list default to reversed sort order",
-					"type": "boolean"
-				},
-				"fields": {
-					"description": "Declarations for fields that are used in the list",
-					"type": "object",
-					"patternProperties": {
-						"^[a-z][a-z0-9_]*[a-z0-9]$": {
-							"type": "object",
-							"properties": {
-								"align": {
-									"description": "Align the field left or right in the column",
-									"enum": [
-										"left",
-										"right"
-									]
-								},
-								"datagetter":  {
-									"description": "Custom function to use to get data from an object",
-									"type": "string"
-								},
-								"default": {
-									"$ref": "#/definitions/default"
-								},
-								"formatting": {
-									"description": "Formatting to use when outputting the field",
-									"type": "object",
-									"properties": {
-										"field_colors": {
-											"description": "Colours to use when outputting the field",
-											"type": "array",
-											"items": {
-												"description": "[context]/type lookup to a fg/bg pair in the theme file",
-												"type": "object",
-												"properties": {
-													"type": {
-														"description": "The name of the colour pair",
-														"type": "string",
-														"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
-													},
-													"context": {
-														"description": "The context for the the colour pair",
-														"type": "string",
-														"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
-													}
-												}
-											}
-										},
-										"field_separators": {
-											"description": "Separators to use between items in a field",
-											"type": "array",
-											"items": {
-												"description": "[context]/type lookup to a separator in the theme file",
-												"type": "object",
-												"properties": {
-													"type": {
-														"description": "The name of the separator",
-														"type": "string",
-														"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
-													},
-													"context": {
-														"description": "The context of the separator (default: 'separators'):",
-														"type": "string",
-														"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
-													}
-												}
-											}
-										}
-									}
-								},
-								"header": {
-									"$ref": "#/definitions/header"
-								},
-								"path": {
-									"$ref": "#/definitions/path"
-								},
-								"paths": {
-									"$ref": "#/definitions/paths"
-								},
-								"type": {
-									"$ref": "#/definitions/processed_data_type"
-								}
-							},
-							"required": [ "header" ]
-						}
-					},
-					"additionalProperties": false
-				},
-				"listgetter": {
-					"description": "Function to use to get list entries",
-					"$ref": "#/definitions/nullable_function"
-				},
-				"listgetter_args": {
-					"description": "Arguments to pass to the listgetter",
-					"type": "object"
-				},
-				"labels": {
-					"description": "Do the list entries support labels",
-					"type": "boolean"
-				},
-				"check_availability": {
-					"description": "Function to use to check whether the API is available",
-					"type": "string"
-				},
-				"is_taggable": {
-					"description": "Can items in the list be tagged",
-					"type": "boolean"
-				},
-				"on_activation": {
-					"description": "Action to perform when activating an entry",
-					"type": "object",
-					"properties": {
-						"call": {
-							"oneOf": [
-								{
-									"description": "The function to call when activating the entry",
-									"type": "string"
-								}, {
-									"description": "Used to disable the default activation action",
-									"type": "null"
-								}
-							]
-						}
-					}
-				},
-				"listview_args": {
-					"description": "Arguments to pass to the listview",
-					"type": "object",
-					"properties": {
-						"filters": {
-							"description": "Filters to apply before populating the list",
-							"type": "object",
-							"patternProperties": {
-								"^[a-z0-9]*$": {
-									"type": "object",
-									"oneOf": [
-										{
-											"properties": {
-												"source": {
-													"description": "Is the data source the caller or the object",
-													"enum": [
-														"caller",
-														"object"
-													]
-												},
-												"enabled": {
-													"description": "Is the filter enabled (can be toggled using the toggle_var shortcut)",
-													"type": "boolean"
-												},
-												"allow": {
-													"description": "A list of explicitly allowed values (all non-matches are discarded)",
-													"type": "array",
-													"items": {
-														"type": "object",
-														"properties": {
-															"key": {
-																"description": "A path to get data from",
-																"$ref": "#/definitions/simple_path"
-															},
-															"values": {
-																"description": "A list of values to allow",
-																"type": "array",
-																"items": {
-																	"type": "string"
-																},
-																"minItems": 1
-															}
-														},
-														"required": [ "key", "values" ],
-														"additionalProperties": false
-													},
-													"minItems": 1
-												}
-											},
-											"required": [ "allow" ],
-											"additionalProperties": false
-										}, {
-											"properties": {
-												"source": {
-													"description": "Is the data source the caller or the object",
-													"enum": [
-														"caller",
-														"object"
-													]
-												},
-												"enabled": {
-													"description": "Is the filter enabled (can be toggled using the toggle_var shortcut)",
-													"type": "boolean"
-												},
-												"block": {
-													"description": "A list of explicitly blocked values (all non-matches are accepted)",
-													"type": "array",
-													"items": {
-														"type": "object",
-														"properties": {
-															"key": {
-																"description": "A path to get data from",
-																"$ref": "#/definitions/simple_path"
-															},
-															"values": {
-																"description": "A list of blocked values (all non-matches are permitted)",
-																"type": "array",
-																"items": {
-																	"type": "string"
-																},
-																"minItems": 1
-															}
-														},
-														"required": [ "key", "values" ],
-														"additionalProperties": false
-													},
-													"minItems": 1
-												}
-											},
-											"required": [ "block" ],
-											"additionalProperties": false
-										}
-									]
-								}
-							},
-							"additionalProperties": false
-						}
-					},
-					"additionalProperties": false
-				},
-				"statusmsg": {
-					"description": "A list of entries to add to the status bar",
-					"type": "array",
-					"items": {
-						"description": "An item to add to the status bar",
-						"type": "array",
-						"prefixItems": [
-							{
-								"description": "The header for the entry",
-								"type": "string"
-							}, {
-								"description": "The path to get the value from",
-								"$ref": "#/definitions/simple_path"
-							}
-						],
-						"items": false
-					},
-					"minItems": 1
-				},
 				"actions": {
 					"description": "Actions that can be performed on the selected list entry or on all tagged list entries",
 					"type": "object",
@@ -962,9 +1061,146 @@
 					},
 					"additionalProperties": false
 				},
+				"check_availability": {
+					"description": "Function to use to check whether the API is available",
+					"type": "string"
+				},
+				"field_indexes": {
+					"$ref": "#/definitions/field_indexes"
+				},
+				"fields": {
+					"$ref": "#/definitions/fields"
+				},
+				"group": {
+					"description": "The name of the group to sort the view into",
+					"type": "string"
+				},
 				"infogetter": {
-					"description": "Function to use to extract fields from a list item",
-					"$ref": "#/definitions/nullable_function"
+					"$ref": "#/definitions/infogetter"
+				},
+				"infogetter_args": {
+					"$ref": "#/definitions/infogetter_args"
+				},
+				"is_taggable": {
+					"description": "Can items in the list be tagged",
+					"type": "boolean"
+				},
+				"labels": {
+					"description": "Do the list entries support labels",
+					"type": "boolean"
+				},
+				"listgetter": {
+					"$ref": "#/definitions/listgetter"
+				},
+				"listgetter_args": {
+					"$ref": "#/definitions/listgetter_args"
+				},
+				"listview_args": {
+					"description": "Arguments to pass to the listview",
+					"type": "object",
+					"properties": {
+						"filters": {
+							"description": "Filters to apply before populating the list",
+							"type": "object",
+							"patternProperties": {
+								"^[a-z0-9]*$": {
+									"type": "object",
+									"oneOf": [
+										{
+											"properties": {
+												"source": {
+													"description": "Is the data source the caller or the object",
+													"enum": [
+														"caller",
+														"object"
+													]
+												},
+												"enabled": {
+													"description": "Is the filter enabled (can be toggled using the toggle_var shortcut)",
+													"type": "boolean"
+												},
+												"allow": {
+													"description": "A list of explicitly allowed values (all non-matches are discarded)",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"key": {
+																"description": "A path to get data from",
+																"$ref": "#/definitions/simple_path"
+															},
+															"values": {
+																"description": "A list of values to allow",
+																"type": "array",
+																"items": {
+																	"type": "string"
+																},
+																"minItems": 1
+															}
+														},
+														"required": [ "key", "values" ],
+														"additionalProperties": false
+													},
+													"minItems": 1
+												}
+											},
+											"required": [ "allow" ],
+											"additionalProperties": false
+										}, {
+											"properties": {
+												"source": {
+													"description": "Is the data source the caller or the object",
+													"enum": [
+														"caller",
+														"object"
+													]
+												},
+												"enabled": {
+													"description": "Is the filter enabled (can be toggled using the toggle_var shortcut)",
+													"type": "boolean"
+												},
+												"block": {
+													"description": "A list of explicitly blocked values (all non-matches are accepted)",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"key": {
+																"description": "A path to get data from",
+																"$ref": "#/definitions/simple_path"
+															},
+															"values": {
+																"description": "A list of blocked values (all non-matches are permitted)",
+																"type": "array",
+																"items": {
+																	"type": "string"
+																},
+																"minItems": 1
+															}
+														},
+														"required": [ "key", "values" ],
+														"additionalProperties": false
+													},
+													"minItems": 1
+												}
+											},
+											"required": [ "block" ],
+											"additionalProperties": false
+										}
+									]
+								}
+							},
+							"additionalProperties": false
+						}
+					},
+					"additionalProperties": false
+				},
+				"name": {
+					"description": "The name of the view to display in the view list",
+					"type": "string"
+				},
+				"on_activation": {
+					"$ref": "#/definitions/on_activation"
 				},
 				"shortcuts": {
 					"type": "object",
@@ -986,7 +1222,7 @@
 													"$ref": "#/definitions/api_family"
 												},
 												"api_family_path": {
-													"description": "Path to get the API version of the object from, optionally with fallback(s)",
+													"description": "Path to get the API family of the object from, optionally with fallback(s)",
 													"$ref": "#/definitions/path"
 												},
 												"api_version_path": {
@@ -1092,6 +1328,32 @@
 						}
 					},
 					"additionalProperties": false
+				},
+				"sortcolumn": {
+					"$ref": "#/definitions/sortcolumn"
+				},
+				"sortorder_reverse": {
+					"description": "Should the list default to reversed sort order",
+					"type": "boolean"
+				},
+				"statusmsg": {
+					"description": "A list of entries to add to the status bar",
+					"type": "array",
+					"items": {
+						"description": "An item to add to the status bar",
+						"type": "array",
+						"prefixItems": [
+							{
+								"description": "The header for the entry",
+								"type": "string"
+							}, {
+								"description": "The path to get the value from",
+								"$ref": "#/definitions/simple_path"
+							}
+						],
+						"items": false
+					},
+					"minItems": 1
 				}
 			},
 			"required": [ "name", "group", "field_indexes" ],
@@ -1210,50 +1472,7 @@
 													"type": "string"
 												},
 												"formatting": {
-													"description": "Formatting to use when outputting the field",
-													"type": "object",
-													"properties": {
-														"field_colors": {
-															"description": "Colours to use when outputting the field",
-															"type": "array",
-															"items": {
-																"description": "[context]/type lookup to a fg/bg pair in the theme file",
-																"type": "object",
-																"properties": {
-																	"type": {
-																		"description": "The name of the colour pair",
-																		"type": "string",
-																		"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
-																	},
-																	"context": {
-																		"description": "The context for the the colour pair",
-																		"type": "string",
-																		"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
-																	}
-																}
-															}
-														},
-														"field_separators": {
-															"description": "Separators to use between items in a field",
-															"type": "array",
-															"items": {
-																"description": "[context]/type lookup to a separator in the theme file",
-																"type": "object",
-																"properties": {
-																	"type": {
-																		"description": "The name of the separator",
-																		"type": "string",
-																		"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
-																	},
-																	"context": {
-																		"description": "The context of the separator (default: 'separators'):",
-																		"type": "string",
-																		"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
-																	}
-																}
-															}
-														}
-													}
+													"$ref": "#/definitions/formatting"
 												},
 												"header": {
 													"$ref": "#/definitions/row_header"
@@ -1301,25 +1520,54 @@
 					]
 				},
 				"listpad": {
+					"description": "A screen area used to display objects related to the info view",
+					"type": "object",
+					"properties": {
+						"field_indexes": {
+							"$ref": "#/definitions/field_indexes"
+						},
+						"fields": {
+							"$ref": "#/definitions/fields"
+						},
+						"infogetter": {
+							"$ref": "#/definitions/infogetter"
+						},
+						"infogetter_args": {
+							"$ref": "#/definitions/infogetter_args"
+						},
+						"listgetter": {
+							"$ref": "#/definitions/listgetter"
+						},
+						"listgetter_args": {
+							"$ref": "#/definitions/listgetter_args"
+						},
+						"on_activation": {
+							"$ref": "#/definitions/on_activation"
+						},
+						"path": {
+							"description": "Get the list from a path instead of using a listgetter",
+							"$ref": "#/definitions/simple_path"
+						},
+						"reversible": {
+							"description": "Is the list reversible",
+							"type": "boolean"
+						},
+						"sortcolumn": {
+							"$ref": "#/definitions/sortcolumn"
+						}
+					},
+					"required": [ "field_indexes" ],
+					"additionalProperties": false
 				},
 				"logpad": {
 					"description": "A screen area used to display preformatted text, optionally with timestamps",
 					"type": "object",
 					"properties": {
 						"infogetter": {
-							"description": "The function to use to get the content for the listpad",
-							"type": "string"
+							"$ref": "#/definitions/infogetter"
 						},
 						"infogetter_args": {
-							"description": "Arguments to pass to the infogetter",
-							"type": "object",
-							"properties": {
-								"path": {
-									"description": "The path to get the information from",
-									"$ref": "#/definitions/simple_path"
-								}
-							},
-							"additionalProperties": false
+							"$ref": "#/definitions/infogetter_args"
 						},
 						"timestamps": {
 							"description": "Should the timestamp column be displayed",
@@ -1575,7 +1823,7 @@
 											"type": "string"
 										},
 										"itemgetter_args": {
-											"description": "Arguments to pass to the infogetter",
+											"description": "Arguments to pass to the itemgetter",
 											"oneOf": [
 												{
 													"type": "object",
@@ -1786,5 +2034,6 @@
 			"required": [ "name" ],
 			"additionalProperties": false
 		}
-	}
+	},
+	"required": [ "kind" ]
 }

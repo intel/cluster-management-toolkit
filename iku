@@ -752,7 +752,10 @@ def map_value(value, references = None, selected = False, default_field_color = 
 	field_colors = None
 
 	if value in substitutions:
-		value = substitutions[value]
+		if type(value) in [bool, int]:
+			substitutions[f"__{str(value)}"]
+		else:
+			value = substitutions[value]
 		# If the substitution is a dict it's a themearray; typically either a separator or a string
 		if type(value) == dict:
 			context = deep_get(value, "context", "main")

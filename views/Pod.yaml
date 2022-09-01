@@ -83,7 +83,7 @@ listview:
         else: ["status#phase"]
         when:
         - key: "metadata#deletionTimestamp"
-          not_missing: true
+          notmissing: true
       formatter: "value_mapper"
       formatting:
         mapping:
@@ -268,7 +268,7 @@ infoview:
           else: ["status#phase"]
           when:
           - key: "metadata#deletionTimestamp"
-            not_missing: true
+            notmissing: true
         formatter: "value_mapper"
         formatting:
           mapping:
@@ -498,7 +498,7 @@ infoview:
         - path: "restarts"
           pathtype: "remap"
           substitutions:
-            -1: ""
+            "__-1": ""
         formatting:
           field_colors:
           - type: "numerical"
