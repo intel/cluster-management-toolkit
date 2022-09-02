@@ -11540,6 +11540,8 @@ def populate_views():
 					availability_checker = deep_get(availability_checkers, check_availability)
 					if availability_checker is not None:
 						check_availability = availability_checker
+					else:
+						check_availability = None
 
 				sortcolumn = deep_get(d, "listview#sortcolumn")
 				reversible = deep_get(d, "listview#reversible", True)
