@@ -185,9 +185,9 @@
 											"type": "object",
 											"properties": {
 												"field": {
-													"description": "The regex capture group to get the severity from",
+													"description": "The regex capture group to get the severity from, indexed from 1",
 													"type": "integer",
-													"minimum": 0
+													"minimum": 1
 												},
 												"overrides": {
 													"$ref": "#/definitions/severity_overrides"
@@ -210,11 +210,11 @@
 											"type": "object",
 											"properties": {
 												"fields": {
-													"description": "The regex capture group(s) to get the facility from",
+													"description": "The regex capture group(s) to get the facility from, indexed from 1",
 													"type": "array",
 													"items": {
 														"type": "integer",
-														"minimum": 0
+														"minimum": 1
 													}
 												},
 												"separators": {
@@ -234,9 +234,9 @@
 											"type": "object",
 											"properties": {
 												"field": {
-													"description": "The regex capture group to get the message from",
+													"description": "The regex capture group to get the message from, indexed from 1",
 													"type": "integer",
-													"minimum": 0
+													"minimum": 1
 												}
 											},
 											"required": [ "field" ],

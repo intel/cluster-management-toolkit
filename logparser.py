@@ -2140,12 +2140,13 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 
 	tmp = re.match(regex_pattern, message)
 	if tmp is not None:
-		if message_field > len(tmp) - 1:
-			sys.exit(f"The parser rule references a non-existing capture group {message_field} for message; the regex only has {len(tmp)} capture groups")
+		group_count = len(tmp.groups())
+		if message_field > group_count:
+			sys.exit(f"The parser rule references a non-existing capture group {message_field} for message; the valid range is [1-{group_count}]")
 		message = tmp[message_field]
 		if severity_field is not None and severity_transform is not None:
-			if severity_field > len(tmp) - 1:
-				sys.exit(f"The parser rule references a non-existing capture group {severity_field} for severity; the regex only has {len(tmp)} capture groups")
+			if severity_field > group_count:
+				sys.exit(f"The parser rule references a non-existing capture group {severity_field} for severity; the valid range is [1-{group_count}]")
 			if severity_transform == "letter":
 				severity = letter_to_severity(tmp[severity_field], severity)
 			elif severity_transform == "3letter":
@@ -2167,8 +2168,8 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 			i = 0
 			facility = ""
 			for field in facility_fields:
-				if field > len(tmp) - 1:
-					sys.exit(f"The parser rule references a non-existing capture group {field} for facility; the regex only has {len(tmp)} capture groups")
+				if field > group_count:
+					sys.exit(f"The parser rule references a non-existing capture group {field} for facility; the valid range is [1-{group_count}]")
 				if i > 0:
 					facility += facility_separators[min(i - 1, len(facility_separators) - 1)]
 				if field != 0:
