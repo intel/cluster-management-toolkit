@@ -77,13 +77,13 @@ listview:
     phase:
       header: "Phase:"
       paths:
-      - path: "metadata#deletionTimestamp"
+      - path: "metadata"
         pathtype: "substitution"
         substitute: "Terminating"
         else: ["status#phase"]
         when:
-        - key: "metadata#deletionTimestamp"
-          notmissing: true
+        - key: "metadata"
+          notmissing: "deletionTimestamp"
       formatter: "value_mapper"
       formatting:
         mapping:
@@ -262,13 +262,13 @@ infoview:
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#deletionTimestamp"
+        - path: "metadata"
           pathtype: "substitution"
           substitute: "Terminating"
           else: ["status#phase"]
           when:
-          - key: "metadata#deletionTimestamp"
-            notmissing: true
+          - key: "metadata"
+            notmissing: "deletionTimestamp"
         formatter: "value_mapper"
         formatting:
           mapping:
