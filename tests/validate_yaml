@@ -1,7 +1,11 @@
 #! /usr/bin/env python3
 
 import json
-import jsonschema
+try:
+	import jsonschema
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: you probably need to install python3-jsonschema")
+
 import os
 import yaml
 import sys
