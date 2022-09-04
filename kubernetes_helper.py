@@ -1199,6 +1199,11 @@ class KubernetesHelper:
 			"api": "networks",
 			"namespaced": False,
 		},
+		("Node", "config.openshift.io"): {
+			"api_family": ["apis/config.openshift.io/v1/"],
+			"api": "nodes",
+			"namespaced": False,
+		},
 		("OAuth", "config.openshift.io"): {
 			"api_family": ["apis/config.openshift.io/v1/"],
 			"api": "oauths",
@@ -2234,6 +2239,12 @@ class KubernetesHelper:
 		("PackageManifest", "packages.operators.coreos.com"): {
 			"api_family": ["apis/packages.operators.coreos.com/v1/"],
 			"api": "packagemanifests",
+		},
+		# performance.openshift.io
+		("PerformanceProfile", "performance.openshift.io"): {
+			"api_family": ["apis/performance.openshift.io/v2/"],
+			"api": "performanceprofiles",
+			"namespaced": False,
 		},
 		# policy.linkerd.io
 		("ServerAuthorization", "policy.linkerd.io"): {
