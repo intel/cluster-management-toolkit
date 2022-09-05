@@ -112,7 +112,12 @@ def main():
 
 	for yaml_path, schema in yaml_paths:
 		if os.path.isfile(yaml_path):
-			validate_file(yaml_path, schema)
+			retval = validate_file(yaml_path, schema)
+			if retval == -1:
+				skip += 1
+			else:
+				fail += retval
+			count += 1
 		elif os.path.isdir(yaml_path):
 			for path in os.listdir(yaml_path):
 				retval = validate_file(f"{yaml_path}/{path}", schema)
@@ -120,7 +125,7 @@ def main():
 					skip += 1
 				else:
 					fail += retval
-		count += 1
+				count += 1
 
 	print(f"\nSummary:")
 	if abort_on_fail == False:
