@@ -52,43 +52,46 @@
 			"type": "object",
 			"patternProperties": {
 				"^[A-Z][A-Za-z0-9_]*[A-Za-z0-9]$": {
-					"oneOf": [
-						{
-							"description": "An object that defines both sortcolumn and the list of fields",
-							"type": "object",
-							"properties": {
-								"fields": {
-									"description": "A list of fields to display in the list",
-									"type": "array",
-									"items": {
-										"$ref": "#/definitions/field"
-									},
-									"minItems": 1
-								},
-								"sortcolumn": {
-									"description": "The field to use as sort key for the list",
-									"$ref": "#/definitions/field"
-								},
-								"sortorder_reverse": {
-									"description": "Should the list default to reversed sort order",
-									"type": "boolean"
-								}
-							},
-							"required": [ "fields" ],
-							"additionalProperties": false
-						}, {
-							"description": "A list of fields to display in the list",
+					"$ref": "#/definitions/field_index"
+				}
+			},
+			"additionalProperties": false,
+			"minProperties": 1
+		},
+		"field_index": {
+			"oneOf": [
+				{
+					"description": "An object that defines both sortcolumn and the list of fields",
+					"type": "object",
+					"properties": {
+						"fields": {
+							"description": "A list of fields to display",
 							"type": "array",
 							"items": {
 								"$ref": "#/definitions/field"
 							},
 							"minItems": 1
+						},
+						"sortcolumn": {
+							"description": "The field to use as sort key",
+							"$ref": "#/definitions/field"
+						},
+						"sortorder_reverse": {
+							"description": "Should the list default to reversed sort order",
+							"type": "boolean"
 						}
-					]
+					},
+					"required": [ "fields" ],
+					"additionalProperties": false
+				}, {
+					"description": "A list of fields to display in the list",
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/field"
+					},
+					"minItems": 1
 				}
-			},
-			"additionalProperties": false,
-			"minItems": 1
+			]
 		},
 		"fields": {
 			"description": "Declarations for fields that are used in the list",
@@ -1496,20 +1499,17 @@
 									"additionalProperties": false
 								},
 								"row_indexes": {
-									"description": "A lookup index to the rows to display in the infopad",
+									"description": "A lookup index to the rows to display in the infopad (reuses field_indexes, but with sortcolumn and sortorder_reverse ignored)",
 									"type": "object",
-										"patternProperties": {
-											"^[A-Z][A-Za-z0-9_]*[A-Za-z0-9]$": {
-												"description": "A list of rows to display in the infopad",
-												"type": "array",
-												"items": {
-													"$ref": "#/definitions/field"
-												},
-												"minItems": 1
-											}
+									"properties": {
+										"Normal": {
+											"$ref": "#/definitions/field_index"
 										}
+									},
+									"required": [ "Normal" ]
 								}
 							},
+							"required": [ "row_indexes" ],
 							"additionalProperties": false
 						}, {
 							"description": "Only show default fields",
