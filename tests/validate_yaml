@@ -51,8 +51,11 @@ def validate_file(yaml_path, schema_path):
 			print(f"\nThe schema file {schema_path} is not valid JSON:")
 			sys.exit(f"\njson.decoder.JSONDecodeError: {e}")
 
-	with open(yaml_path, "r") as f:
-		yaml_data = yaml.safe_load(f)
+	try:
+		with open(yaml_path, "r") as f:
+			yaml_data = yaml.safe_load(f)
+	except yaml.scanner.ScannerError as e:
+		sys.exit(f"ScannerError: {str(e)}\n\ninvalid YAML; aborting.")
 
 	if verbose == True:
 		print(f"Validating {yaml_path} with {schema_path}")
@@ -126,10 +129,11 @@ def main():
 	print(f"  success: {count - fail}")
 	print(f"    total: {count}")
 
-	print("\n\nThe following files failed validation:")
-	print("---")
-	for file in failed_files:
-		print(f"  {file}")
+	if fail > 0:
+		print("\n\nThe following files failed validation:")
+		print("---")
+		for file in failed_files:
+			print(f"  {file}")
 
 if __name__ == "__main__":
 	main()
