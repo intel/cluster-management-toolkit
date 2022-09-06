@@ -56,6 +56,8 @@ def validate_file(yaml_path, schema_path):
 			yaml_data = yaml.safe_load(f)
 	except yaml.scanner.ScannerError as e:
 		sys.exit(f"ScannerError: {str(e)}\n\ninvalid YAML; aborting.")
+	except yaml.parser.ParserError as e:
+		sys.exit(f"ParserError: {str(e)}\n\ninvalid YAML; aborting.")
 
 	if verbose == True:
 		print(f"Validating {yaml_path} with {schema_path}")
