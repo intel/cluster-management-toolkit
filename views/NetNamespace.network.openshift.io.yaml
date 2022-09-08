@@ -5,8 +5,9 @@ listview:
   name: "Net Namespaces"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "netid", "egress_ips", "age"]
-  sortcolumn: "netid"
+    Normal:
+      fields: ["name", "netid", "egress_ips", "age"]
+      sortcolumn: "netid"
   fields:
     netid:
       header: "Net ID:"
@@ -27,7 +28,8 @@ infoview:
   name: "Net Namespace Info"
   infopad:
     row_indexes:
-      Normal: ["netid", "egress_ips"]
+      Normal:
+        fields: ["netid", "egress_ips"]
     rows:
       netid:
         header: [["Net ID:", ["main", "infoheader"]]]

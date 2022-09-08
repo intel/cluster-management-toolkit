@@ -8,7 +8,8 @@ listview:
   name: "Priority Level Configurations"
   group: "Scheduling & Scaling"
   field_indexes:
-    Normal: ["name", "priority_type", "assured_concurrency_shares", "queues", "hand_size", "queue_length_limit", "age"]
+    Normal:
+      fields: ["name", "priority_type", "assured_concurrency_shares", "queues", "hand_size", "queue_length_limit", "age"]
   fields:
     assured_concurrency_shares:
       header: "Assured Concurrency Shares:"
@@ -50,7 +51,8 @@ infoview:
   name: "Priority Level Configuration Info"
   infopad:
     row_indexes:
-      Normal: ["priority_type", "assured_concurrency_shares", "queues", "hand_size", "queue_length_limit", "queues"]
+      Normal:
+        fields: ["priority_type", "assured_concurrency_shares", "queues", "hand_size", "queue_length_limit", "queues"]
     rows:
       assured_concurrency_shares:
         header: [["Assured Concurrency Shares:", ["main", "infoheader"]]]

@@ -7,8 +7,10 @@ listview:
   name: "Cluster Role Bindings"
   group: "Authorization & Access Control"
   field_indexes:
-    Wide: ["name", "role", "subjects", "age"]
-    Normal: ["name", "subjects", "age"]
+    Wide:
+      fields: ["name", "role", "subjects", "age"]
+    Normal:
+      fields: ["name", "subjects", "age"]
   fields:
     role:
       header: "Role:"
@@ -31,7 +33,8 @@ infoview:
   name: "Cluster Role Binding"
   infopad:
     row_indexes:
-      Normal: ["role_ref_header", "role_ref_name", "role_ref_kind", "role_ref_exists"]
+      Normal:
+        fields: ["role_ref_header", "role_ref_name", "role_ref_kind", "role_ref_exists"]
     rows:
       role_ref_exists:
         header: [["  Exists:", ["main", "infoheader"]]]
@@ -87,8 +90,9 @@ infoview:
       namespace_path: "namespace"
       name_path: "name"
     field_indexes:
-      Normal: ["namespace", "name", "kind", "exists"]
-    sortcolumn: "kind"
+      Normal:
+        fields: ["namespace", "name", "kind", "exists"]
+        sortcolumn: "kind"
     fields:
       exists:
         header: "Exists:"

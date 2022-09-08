@@ -5,8 +5,9 @@ listview:
   name: "KubeVirts"
   group: "Virtualization"
   field_indexes:
-    Normal: ["namespace", "name", "phase", "replicas", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "phase", "replicas", "age"]
+      sortcolumn: "namespace"
   fields:
     phase:
       header: "Phase:"
@@ -44,7 +45,8 @@ infoview:
   name: "KubeVirt Info"
   infopad:
     row_indexes:
-      Normal: ["image_pull_policy", "observed_kubevirt_registry", "observed_kubevirt_version", "target_kubevirt_registry", "target_kubevirt_version", "replicas", "phase"]
+      Normal:
+        fields: ["image_pull_policy", "observed_kubevirt_registry", "observed_kubevirt_version", "target_kubevirt_registry", "target_kubevirt_version", "replicas", "phase"]
     rows:
       image_pull_policy:
         header: [["Image Pull Policy:", ["main", "infoheader"]]]

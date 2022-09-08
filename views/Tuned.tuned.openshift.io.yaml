@@ -5,13 +5,15 @@ listview:
   name: "Tuneds"
   group: "OpenShift"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Tuned Info"
   infopad:
     row_indexes:
-      Normal: ["controller"]
+      Normal:
+        fields: ["controller"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -44,8 +46,9 @@ infoview:
       kind: "__TunedProfile"
       api_family: "tuned.openshift.io"
     field_indexes:
-      Normal: ["profile", "priority", "operand", "machine_config_labels"]
-    sortcolumn: "priority"
+      Normal:
+        fields: ["profile", "priority", "operand", "machine_config_labels"]
+        sortcolumn: "priority"
     fields:
       machine_config_labels:
         header: "Machine Config Labels:"

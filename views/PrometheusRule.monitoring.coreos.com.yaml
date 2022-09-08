@@ -8,8 +8,9 @@ listview:
   name: "Prometheus Rules"
   group: "Monitoring"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Prometheus Rule Info"
   # PrometheusRule annotations contains the entire rule set;
@@ -23,7 +24,8 @@ infoview:
       kind: "__PrometheusRuleData"
       api_family: "monitoring.coreos.com"
     field_indexes:
-      Normal: ["group", "rtype", "alertrecord", "duration"]
+      Normal:
+        fields: ["group", "rtype", "alertrecord", "duration"]
     sortcolumn: "rtype"
     fields:
       alertrecord:

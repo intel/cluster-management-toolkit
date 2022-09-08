@@ -7,9 +7,12 @@ listview:
   name: "Pod Metrics"
   group: "Monitoring"
   field_indexes:
-    Wide: ["namespace", "name", "cpu_total", "mem_total", "container_count", "start_time", "window"]
-    Normal: ["namespace", "name", "cpu_total_short", "mem_total", "start_time", "window"]
-  sortcolumn: "namespace"
+    Wide:
+      fields: ["namespace", "name", "cpu_total", "mem_total", "container_count", "start_time", "window"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "cpu_total_short", "mem_total", "start_time", "window"]
+      sortcolumn: "namespace"
   fields:
     container_count:
       header: "# of Containers:"
@@ -64,7 +67,8 @@ infoview:
   name: "Pod Metrics Info"
   infopad:
     row_indexes:
-      Normal: ["window"]
+      Normal:
+        fields: ["window"]
     rows:
       window:
         header: [["Window:", ["main", "infoheader"]]]
@@ -75,7 +79,8 @@ infoview:
     path: "containers"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["name", "cpu_millicores", "mem_bytes"]
+      Normal:
+        fields: ["name", "cpu_millicores", "mem_bytes"]
     fields:
       cpu_millicores:
         header: "CPU (Millicores):"

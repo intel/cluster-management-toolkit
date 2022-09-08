@@ -8,8 +8,9 @@ listview:
   name: "Catalog Sources"
   group: "API & Extendability"
   field_indexes:
-    Normal: ["namespace", "name", "display_name", "source_type", "publisher", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "display_name", "source_type", "publisher", "age"]
+      sortcolumn: "namespace"
   fields:
     display_name:
       header: "Display Name:"
@@ -27,7 +28,8 @@ infoview:
   name: "Catalogue Source Info"
   infopad:
     row_indexes:
-      Normal: ["display_name", "image", "publisher", "source_type"]
+      Normal:
+        fields: ["display_name", "image", "publisher", "source_type"]
     rows:
       display_name:
         header: [["Display Name:", ["main", "infoheader"]]]

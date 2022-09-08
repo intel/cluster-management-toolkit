@@ -5,7 +5,8 @@ listview:
   name: "Host Subnets"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "host", "host_ip", "subnet", "egress_cidrs", "egress_ips", "age"]
+    Normal:
+      fields: ["name", "host", "host_ip", "subnet", "egress_cidrs", "egress_ips", "age"]
   fields:
     host:
       header: "Host:"
@@ -37,7 +38,8 @@ infoview:
   name: "Host Subnet Info"
   infopad:
     row_indexes:
-      Normal: ["host", "host_ip", "subnet", "egress_cidrs", "egress_ips"]
+      Normal:
+        fields: ["host", "host_ip", "subnet", "egress_cidrs", "egress_ips"]
     rows:
       host:
         header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]

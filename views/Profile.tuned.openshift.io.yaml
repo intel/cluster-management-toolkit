@@ -8,8 +8,9 @@ listview:
   name: "Profiles (OpenShift)"
   group: "OpenShift"
   field_indexes:
-    Normal: ["namespace", "name", "tuned", "applied", "degraded", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "tuned", "applied", "degraded", "age"]
+      sortcolumn: "namespace"
   fields:
     applied:
       header: "Applied:"
@@ -53,7 +54,8 @@ infoview:
   name: "Profile Info (OpenShift)"
   infopad:
     row_indexes:
-      Normal: ["tuned", "commandline", "debug", "stalld", "applied", "degraded"]
+      Normal:
+        fields: ["tuned", "commandline", "debug", "stalld", "applied", "degraded"]
     rows:
       applied:
         header: [["Applied:", ["main", "infoheader"]]]

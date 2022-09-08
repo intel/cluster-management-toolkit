@@ -5,7 +5,8 @@ listview:
   name: "Identities"
   group: "Users & Groups"
   field_indexes:
-    Normal: ["name", "provider", "providerusername", "user_uid_tuple", "age"]
+    Normal:
+      fields: ["name", "provider", "providerusername", "user_uid_tuple", "age"]
   fields:
     provider:
       header: "Provider:"
@@ -31,7 +32,8 @@ infoview:
   name: "Identity Info"
   infopad:
     row_indexes:
-      Normal: ["provider", "provider_user_name", "user_uid_tuple"]
+      Normal:
+        fields: ["provider", "provider_user_name", "user_uid_tuple"]
     rows:
       provider:
         header: [["Provider:", ["main", "infoheader"]]]

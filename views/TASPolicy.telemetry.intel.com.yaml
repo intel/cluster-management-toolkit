@@ -7,16 +7,18 @@ listview:
   name: "Telemetry Aware Scheduling Policies"
   group: "Scheduling & Scaling"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Telemetry Aware Scheduling Policy Info"
   infopad:
   listpad:
     infogetter: "get_strategy_info"
     field_indexes:
-      Normal: ["strategy", "name", "operator", "target"]
-    sortcolumn: "strategy"
+      Normal:
+        fields: ["strategy", "name", "operator", "target"]
+        sortcolumn: "strategy"
     reversible: false
     fields:
       name:

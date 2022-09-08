@@ -8,8 +8,9 @@ listview:
   name: "Kubeadm Control Planes"
   group: "Cluster Configuration"
   field_indexes:
-    Normal: ["namespace", "name", "controller", "initialized", "api_server_available", "replicas", "ready", "updated", "unavailable", "age", "version"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "controller", "initialized", "api_server_available", "replicas", "ready", "updated", "unavailable", "age", "version"]
+      sortcolumn: "namespace"
   fields:
     api_server_available:
       header: "API-server Available:"
@@ -109,7 +110,8 @@ infoview:
   name: "Kubeadm Control Plane Info"
   infopad:
     row_indexes:
-      Normal: ["controller", "initialized", "api_server_available", "selector", "replicas", "ready", "updated", "unavailable", "template_header", "template_infrastructure", "version"]
+      Normal:
+        fields: ["controller", "initialized", "api_server_available", "selector", "replicas", "ready", "updated", "unavailable", "template_header", "template_infrastructure", "version"]
     rows:
       api_server_available:
         header: [["API-server Available:", ["main", "infoheader"]]]

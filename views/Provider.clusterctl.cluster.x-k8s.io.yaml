@@ -5,8 +5,9 @@ listview:
   name: "Providers"
   group: "Cluster Configuration"
   field_indexes:
-    Normal: ["namespace", "name", "type", "provider", "age", "version"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "type", "provider", "age", "version"]
+      sortcolumn: "namespace"
   fields:
     provider:
       header: "Provider:"
@@ -27,7 +28,8 @@ infoview:
   name: "Provider Info"
   infopad:
     row_indexes:
-      Normal: ["provider", "type", "version"]
+      Normal:
+        fields: ["provider", "type", "version"]
     rows:
       provider:
         header: [["Provider:", ["main", "infoheader"]]]

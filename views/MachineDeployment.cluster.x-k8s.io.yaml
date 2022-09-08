@@ -11,8 +11,9 @@ listview:
   name: "Machine Deployments"
   group: "Cluster Configuration"
   field_indexes:
-    Normal: ["namespace", "name", "cluster", "replicas", "ready", "updated", "unavailable", "phase", "age", "version"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "cluster", "replicas", "ready", "updated", "unavailable", "phase", "age", "version"]
+      sortcolumn: "namespace"
   fields:
     cluster:
       header: "Cluster:"
@@ -89,7 +90,8 @@ infoview:
   name: "Machine Deployment Info"
   infopad:
     row_indexes:
-      Normal: ["cluster", "label_selector", "min_ready", "progress_deadline", "revision_history_limit", "replicas", "ready", "updated", "unavailable", "update_strategy", "phase", "template_header", "template_cluster_name", "template_labels", "template_failure_domain", "template_bootstrap", "template_infrastructure", "template_version"]
+      Normal:
+        fields: ["cluster", "label_selector", "min_ready", "progress_deadline", "revision_history_limit", "replicas", "ready", "updated", "unavailable", "update_strategy", "phase", "template_header", "template_cluster_name", "template_labels", "template_failure_domain", "template_bootstrap", "template_infrastructure", "template_version"]
     rows:
       cluster:
         header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]

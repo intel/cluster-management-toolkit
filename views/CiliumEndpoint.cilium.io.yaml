@@ -10,9 +10,12 @@ listview:
   name: "Cilium Endpoints"
   group: "Cilium"
   field_indexes:
-    Wide: ["namespace", "name", "endpoint_id", "cilium_identity", "ingress_enforcement", "egress_enforcement", "visibility_policy", "endpoint_state", "ipv4", "ipv6", "node", "age"]
-    Normal: ["namespace", "name", "endpoint_state", "ipv4", "ipv6", "node", "age"]
-  sortcolumn: "namespace"
+    Wide:
+      fields: ["namespace", "name", "endpoint_id", "cilium_identity", "ingress_enforcement", "egress_enforcement", "visibility_policy", "endpoint_state", "ipv4", "ipv6", "node", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "endpoint_state", "ipv4", "ipv6", "node", "age"]
+      sortcolumn: "namespace"
   fields:
     cilium_identity:
       header: "Identity ID:"
@@ -123,7 +126,8 @@ infoview:
   name: "Cilium Endpoint"
   infopad:
     row_indexes:
-      Normal: ["endpoint_id", "cilium_identity", "pod", "ingress_enforcement", "egress_enforcement", "visibility_policy", "endpoint_state", "ipv4", "ipv6", "node"]
+      Normal:
+        fields: ["endpoint_id", "cilium_identity", "pod", "ingress_enforcement", "egress_enforcement", "visibility_policy", "endpoint_state", "ipv4", "ipv6", "node"]
     rows:
       cilium_identity:
         header: [["C", ["main", "infoheader_shortcut"]], ["ilium Identity:", ["main", "infoheader"]]]

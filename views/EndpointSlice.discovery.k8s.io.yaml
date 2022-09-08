@@ -7,9 +7,12 @@ listview:
   name: "Endpoint Slices"
   group: "Core"
   field_indexes:
-    Wide: ["namespace", "name", "ports", "endpoints", "addresstype", "age"]
-    Normal: ["namespace", "name", "ports_compact", "endpoints_ellipsise", "addresstype", "age"]
-  sortcolumn: "namespace"
+    Wide:
+      fields: ["namespace", "name", "ports", "endpoints", "addresstype", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "ports_compact", "endpoints_ellipsise", "addresstype", "age"]
+      sortcolumn: "namespace"
   fields:
     addresstype:
       header: "Type:"
@@ -67,6 +70,9 @@ infoview:
   name: "Endpoint Slice Info"
   infopad:
     row_indexes:
+      Normal:
+        fields: ["controller"]
+    rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
@@ -93,7 +99,8 @@ infoview:
   listpad:
     infogetter: "get_eps_subsets_info"
     field_indexes:
-      Normal: ["addresstype", "addresses", "ports_eps", "status", "target_ref", "topology"]
+      Normal:
+        fields: ["addresstype", "addresses", "ports_eps", "status", "target_ref", "topology"]
     fields:
       addresses:
         header: "Addresses:"

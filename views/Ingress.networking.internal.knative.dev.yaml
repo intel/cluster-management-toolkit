@@ -8,8 +8,9 @@ listview:
   name: "Ingresses (KNative)"
   group: "KNative"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Ingress Info (KNative)"
   infopad:
@@ -17,7 +18,8 @@ infoview:
     path: "spec#rules"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["hosts", "visibility", "http"]
+      Normal:
+        fields: ["hosts", "visibility", "http"]
     sortcolumn: "hosts"
     fields:
       hosts:

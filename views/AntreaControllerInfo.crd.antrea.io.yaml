@@ -7,7 +7,8 @@ listview:
   name: "Antrea Controller Infos"
   group: "Antrea"
   field_indexes:
-    Normal: ["name", "healthy", "last_heartbeat", "version", "node", "age"]
+    Normal:
+      fields: ["name", "healthy", "last_heartbeat", "version", "node", "age"]
   fields:
     healthy:
       header: "Healthy:"
@@ -60,7 +61,8 @@ infoview:
   name: "Antrea Controller Info"
   infopad:
     row_indexes:
-      Normal: ["node", "pod", "service", "version"]
+      Normal:
+        fields: ["node", "pod", "service", "version"]
     rows:
       node:
         header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]

@@ -8,7 +8,8 @@ listview:
   name: "API Request Counts"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "requests_last_hour", "requests_last_24h", "planned_removal"]
+    Normal:
+      fields: ["name", "requests_last_hour", "requests_last_24h", "planned_removal"]
   fields:
     planned_removal:
       header: "Planned Removal:"
@@ -39,7 +40,8 @@ infoview:
   name: "API Request Info"
   infopad:
     row_indexes:
-      Normal: ["planned_removal", "requests_last_hour", "requests_last_24h"]
+      Normal:
+        fields: ["planned_removal", "requests_last_hour", "requests_last_24h"]
     rows:
       planned_removal:
         header: [["Planned Removal:", ["main", "infoheader"]]]

@@ -6,7 +6,8 @@ listview:
   name: "Namespaces"
   group: "Core"
   field_indexes:
-    Normal: ["name", "phase", "age"]
+    Normal:
+      fields: ["name", "phase", "age"]
   fields:
     phase:
       header: "Status:"
@@ -40,7 +41,8 @@ infoview:
   name: "Namespace Info"
   infopad:
     row_indexes:
-      Normal: ["status"]
+      Normal:
+        fields: ["status"]
     rows:
       status:
         header: [["Status:", ["main", "infoheader"]]]
@@ -67,8 +69,9 @@ infoview:
       name_path: "metadata#name"
       namespace_path: "metadata#namespace"
     field_indexes:
-      Normal: ["resource", "kind"]
-    sortcolumn: "kind"
+      Normal:
+        fields: ["resource", "kind"]
+        sortcolumn: "kind"
     fields:
       kind:
         header: "Kind:"

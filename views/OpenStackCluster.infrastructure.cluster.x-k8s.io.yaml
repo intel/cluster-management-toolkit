@@ -7,8 +7,9 @@ listview:
   name: "OpenStack Clusters"
   group: "Cluster Configuration"
   field_indexes:
-    Normal: ["namespace", "name", "cluster", "ready", "network", "subnet", "endpoint", "age", "bastion_ip"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "cluster", "ready", "network", "subnet", "endpoint", "age", "bastion_ip"]
+      sortcolumn: "namespace"
   fields:
     bastion_ip:
       header: "Bastion IP:"
@@ -53,7 +54,8 @@ infoview:
   name: "OpenStack Cluster Info"
   infopad:
     row_indexes:
-      Normal: ["cluster", "cloud_name", "ready", "identity", "network_header", "network_id", "network_name", "router_header", "router_id", "router_name", "subnet_header", "subnet_id", "subnet_name", "subnet_cidr", "control_plane_endpoint", "dns_nameservers", "bastion_ip"]
+      Normal:
+        fields: ["cluster", "cloud_name", "ready", "identity", "network_header", "network_id", "network_name", "router_header", "router_id", "router_name", "subnet_header", "subnet_id", "subnet_name", "subnet_cidr", "control_plane_endpoint", "dns_nameservers", "bastion_ip"]
     rows:
       bastion_ip:
         header: [["Bastion IP:", ["main", "infoheader"]]]

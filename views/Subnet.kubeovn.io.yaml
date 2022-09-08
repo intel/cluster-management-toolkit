@@ -5,7 +5,8 @@ listview:
   name: "Subnets"
   group: "Kube-OVN"
   field_indexes:
-    Normal: ["name", "provider", "vpc", "protocol", "cidr_block", "private", "nat_outgoing", "default", "gateway_type", "used_ipv4", "used_ipv6", "excluded_ips", "age"]
+    Normal:
+      fields: ["name", "provider", "vpc", "protocol", "cidr_block", "private", "nat_outgoing", "default", "gateway_type", "used_ipv4", "used_ipv6", "excluded_ips", "age"]
   fields:
     cidr_block:
       header: "CIDR block:"
@@ -75,7 +76,8 @@ infoview:
   name: "Subnet Info"
   infopad:
     row_indexes:
-      Normal: ["cidr_block", "default", "provider", "vpc", "activate_gateway", "dhcpv4_options", "dhcpv4_options_uuid", "dhcpv6_options", "dhcpv6_options_uuid", "disable_gateway_check", "disable_interconnection", "enable_dhcp", "enable_ipv6_ra", "excluded_ips", "gateway", "gateway_node", "gateway_type", "ipv6_ra_configs", "logical_gateway", "nat_outgoing", "private", "protocol", "used_ipv4", "used_ipv6"]
+      Normal:
+        fields: ["cidr_block", "default", "provider", "vpc", "activate_gateway", "dhcpv4_options", "dhcpv4_options_uuid", "dhcpv6_options", "dhcpv6_options_uuid", "disable_gateway_check", "disable_interconnection", "enable_dhcp", "enable_ipv6_ra", "excluded_ips", "gateway", "gateway_node", "gateway_type", "ipv6_ra_configs", "logical_gateway", "nat_outgoing", "private", "protocol", "used_ipv4", "used_ipv6"]
     rows:
       activate_gateway:
         header: [["Activate Gateway:", ["main", "infoheader"]]]

@@ -8,13 +8,15 @@ listview:
   name: "Service Monitors"
   group: "Monitoring"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Service Monitor Info"
   infopad:
     row_indexes:
-      Normal: ["job_label", "selector", "namespace_selector"]
+      Normal:
+        fields: ["job_label", "selector", "namespace_selector"]
     rows:
       job_label:
         header: [["Job Label:", ["main", "infoheader"]]]
@@ -40,8 +42,9 @@ infoview:
   listpad:
     infogetter: "get_svcmon_endpoints_info"
     field_indexes:
-      Normal: ["bearer_token_file", "port", "target_port", "interval", "scheme", "path", "honor_labels", "proxy_url"]
-    sortcolumn: "bearer_token_file"
+      Normal:
+        fields: ["bearer_token_file", "port", "target_port", "interval", "scheme", "path", "honor_labels", "proxy_url"]
+        sortcolumn: "bearer_token_file"
     fields:
       bearer_token_file:
         header: "Bearer Token File:"

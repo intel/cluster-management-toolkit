@@ -5,13 +5,15 @@ listview:
   name: "Envoy Filters"
   group: "Istio"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Envoy Filter Info"
   infopad:
     row_indexes:
-      Normal: ["workload_selector"]
+      Normal:
+        fields: ["workload_selector"]
     rows:
       workload_selector:
         header: [["Workload Selector:", ["main", "infoheader"]]]
@@ -31,8 +33,9 @@ infoview:
       path: "spec#configPatches"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["apply_to", "context", "patch_operation"]
-    sortcolumn: "apply_to"
+      Normal:
+        fields: ["apply_to", "context", "patch_operation"]
+        sortcolumn: "apply_to"
     fields:
       apply_to:
         header: "Apply To:"

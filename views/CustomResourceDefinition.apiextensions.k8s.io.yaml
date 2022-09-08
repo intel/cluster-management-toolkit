@@ -8,10 +8,15 @@ listview:
   name: "Custom Resource Definitions"
   group: "API & Extendability"
   field_indexes:
-    Wide: ["name", "kind", "api_group_crd", "stored_versions", "scope", "created_at", "api_support"]
-    Normal: ["name", "api_group_crd", "created_at", "api_support"]
-    Development: ["plural", "kind", "api_group_crd", "stored_versions", "scope", "api_support"]
-  sortcolumn: "api_group_crd"
+    Wide:
+      fields: ["name", "kind", "api_group_crd", "stored_versions", "scope", "created_at", "api_support"]
+      sortcolumn: "api_group_crd"
+    Normal:
+      fields: ["name", "api_group_crd", "created_at", "api_support"]
+      sortcolumn: "api_group_crd"
+    Development:
+      fields: ["plural", "kind", "api_group_crd", "stored_versions", "scope", "api_support"]
+      sortcolumn: "api_support"
   fields:
     api_group_crd:
       header: "API-Group:"
@@ -59,7 +64,8 @@ infoview:
   name: "Custom Resource Definition Info"
   infopad:
     row_indexes:
-      Normal: ["kind", "list_kind", "api_group", "singular", "plural", "short_names", "scope", "stored_versions"]
+      Normal:
+        fields: ["kind", "list_kind", "api_group", "singular", "plural", "short_names", "scope", "stored_versions"]
     rows:
       api_group:
         header: [["API-Group:", ["main", "infoheader"]]]

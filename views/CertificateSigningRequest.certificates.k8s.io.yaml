@@ -10,7 +10,8 @@ listview:
   name: "Certificate Signing Requests"
   group: "Certificate Management"
   field_indexes:
-    Normal: ["name", "signername", "requestor", "requested_duration", "age", "csr_condition"]
+    Normal:
+      fields: ["name", "signername", "requestor", "requested_duration", "age", "csr_condition"]
   fields:
     csr_condition:
       header: "Condition:"
@@ -97,7 +98,8 @@ infoview:
   name: "Certificate Signing Request Info"
   infopad:
     row_indexes:
-      Normal: ["signername", "requestor", "requested_duration", "groups", "csr_condition", "usages"]
+      Normal:
+        fields: ["signername", "requestor", "requested_duration", "groups", "csr_condition", "usages"]
     rows:
       csr_condition:
         header: [["Condition:", ["main", "infoheader"]]]

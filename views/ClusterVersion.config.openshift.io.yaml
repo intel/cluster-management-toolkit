@@ -9,7 +9,8 @@ listview:
   name: "Cluster Versions (Config)"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "version", "available", "progressing", "age", "status"]
+    Normal:
+      fields: ["name", "version", "available", "progressing", "age", "status"]
   fields:
     available:
       header: "Available:"
@@ -91,7 +92,8 @@ infoview:
   name: "Cluster Version Info"
   infopad:
     row_indexes:
-      Normal: ["channel", "cluster_id", "desired_channels", "desired_image", "desired_url", "desired_version"]
+      Normal:
+        fields: ["channel", "cluster_id", "desired_channels", "desired_image", "desired_url", "desired_version"]
     rows:
       channel:
         header: [["Channel:", ["main", "infoheader"]]]
@@ -131,8 +133,9 @@ infoview:
     path: "spec#overrides"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["namespace", "name", "kind", "unmanaged"]
-    sortcolumn: "namespace"
+      Normal:
+        fields: ["namespace", "name", "kind", "unmanaged"]
+        sortcolumn: "namespace"
     fields:
       kind:
         header: "Kind:"

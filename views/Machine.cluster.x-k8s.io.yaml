@@ -8,8 +8,9 @@ listview:
   name: "Machines (X-K8s)"
   group: "Cluster Configuration"
   field_indexes:
-    Normal: ["namespace", "name", "cluster", "node_ref", "provider_id", "phase", "age", "version"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "cluster", "node_ref", "provider_id", "phase", "age", "version"]
+      sortcolumn: "namespace"
   fields:
     cluster:
       header: "Cluster:"
@@ -65,7 +66,8 @@ infoview:
   name: "Machine Info (X-k8s)"
   infopad:
     row_indexes:
-      Normal: ["node_name", "cluster", "controller", "bootstrap", "bootstrap_ready", "infrastructure", "infrastructure_ready", "provider_id", "phase", "version"]
+      Normal:
+        fields: ["node_name", "cluster", "controller", "bootstrap", "bootstrap_ready", "infrastructure", "infrastructure_ready", "provider_id", "phase", "version"]
     rows:
       bootstrap:
         header: [["B", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["otstrap:", ["main", "infoheader"]]]

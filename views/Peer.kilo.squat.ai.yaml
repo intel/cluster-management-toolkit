@@ -5,12 +5,14 @@ listview:
   name: "Peers"
   group: "CNI"
   field_indexes:
-    Normal: ["name", "age"]
+    Normal:
+      fields: ["name", "age"]
 infoview:
   name: "Peer Info"
   infopad:
     row_indexes:
-      Normal: ["persistent_keepalive", "peer_endpoint", "allowed_ips"]
+      Normal:
+        fields: ["persistent_keepalive", "peer_endpoint", "allowed_ips"]
     rows:
       allowed_ips:
         header: [["Allowed ", ["main", "infoheader"]], ["I", ["main", "infoheader_shortcut"]], ["Ps:", ["main", "infoheader"]]]

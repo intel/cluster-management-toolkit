@@ -5,7 +5,8 @@ listview:
   name: "API Servers (Tigera)"
   group: "Istio"
   field_indexes:
-    Normal: ["name", "status", "age"]
+    Normal:
+      fields: ["name", "status", "age"]
   fields:
     status:
       header: "Status:"
@@ -27,7 +28,8 @@ infoview:
   name: "API Server Info"
   infopad:
     row_indexes:
-      Normal: ["status"]
+      Normal:
+        fields: ["status"]
     rows:
       status:
         header: [["Status:", ["main", "infoheader"]]]

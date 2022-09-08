@@ -8,8 +8,9 @@ listview:
   name: "Virtual Machines"
   group: "Virtualization"
   field_indexes:
-    Normal: ["name", "status", "ready", "age"]
-  sortcolumn: "status"
+    Normal:
+      fields: ["name", "status", "ready", "age"]
+      sortcolumn: "status"
   fields:
     ready:
       header: "Ready:"
@@ -53,7 +54,8 @@ infoview:
   name: "Virtual Machine Info"
   infopad:
     row_indexes:
-      Normal: ["status", "ready"]
+      Normal:
+        fields: ["status", "ready"]
     rows:
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
@@ -118,8 +120,9 @@ infoview:
       kind: "VirtualMachineInstance"
       api_family: "kubevirt.io"
     field_indexes:
-      Normal: ["name", "ipaddresses", "node_name", "ready", "live_migratable", "paused", "phase", "age"]
-    sortcolumn: "status"
+      Normal:
+        fields: ["name", "ipaddresses", "node_name", "ready", "live_migratable", "paused", "phase", "age"]
+        sortcolumn: "status"
     fields:
       ipaddresses:
         header: "IP-addresses:"

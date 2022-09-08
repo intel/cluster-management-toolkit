@@ -7,8 +7,9 @@ listview:
   name: "Limit Ranges"
   group: "Policy"
   field_indexes:
-    Normal: ["namespace", "name", "created_at"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "created_at"]
+      sortcolumn: "namespace"
   fields:
     created_at:
       header: "Created At:"
@@ -23,7 +24,8 @@ infoview:
   listpad:
     infogetter: "get_limit_info"
     field_indexes:
-      Normal: ["ltype", "name", "lmin", "lmax", "default_request", "default_limit", "max_lr_ratio"]
+      Normal:
+        fields: ["ltype", "name", "lmin", "lmax", "default_request", "default_limit", "max_lr_ratio"]
     fields:
       default_limit:
         header: "Default Limit:"

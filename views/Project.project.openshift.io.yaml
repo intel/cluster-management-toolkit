@@ -11,7 +11,8 @@ listview:
   name: "Projects"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "phase", "age"]
+    Normal:
+      fields: ["name", "phase", "age"]
   fields:
     phase:
       header: "Status:"
@@ -33,7 +34,8 @@ infoview:
   name: "Project Info"
   infopad:
     row_indexes:
-      Normal: ["cluster_version", "phase"]
+      Normal:
+        fields: ["cluster_version", "phase"]
     rows:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]

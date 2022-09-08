@@ -10,7 +10,8 @@ listview:
   name: "Kube-OVN IPs"
   group: "Kube-OVN"
   field_indexes:
-    Normal: ["name", "ipv4", "ipv6", "mac", "node", "subnet", "age"]
+    Normal:
+      fields: ["name", "ipv4", "ipv6", "mac", "node", "subnet", "age"]
   fields:
     ipv4:
       header: "IPv4:"
@@ -43,7 +44,8 @@ infoview:
   name: "Kube-OVN IP Info"
   infopad:
     row_indexes:
-      Normal: ["ipv4", "ipv6", "mac", "node", "pod", "subnet"]
+      Normal:
+        fields: ["ipv4", "ipv6", "mac", "node", "pod", "subnet"]
     rows:
       ipv4:
         header: [["IPv4:", ["main", "infoheader"]]]

@@ -10,12 +10,14 @@ listview:
   name: "Cilium Nodes"
   group: "Cilium"
   field_indexes:
-    Normal: ["name", "age"]
+    Normal:
+      fields: ["name", "age"]
 infoview:
   name: "Cilium Node Info"
   infopad:
     row_indexes:
-      Normal: ["node", "instance_id", "cilium_identity", "health_header", "health_ipv4", "health_ipv6", "encryption", "ipam_header", "ipam_pod_cidrs", "ipam_max_above_watermark", "ipam_min_allocate", "ipam_max_allocate", "ipam_operator_status", "ipam_release_ips", "ipam_preallocate"]
+      Normal:
+        fields: ["node", "instance_id", "cilium_identity", "health_header", "health_ipv4", "health_ipv6", "encryption", "ipam_header", "ipam_pod_cidrs", "ipam_max_above_watermark", "ipam_min_allocate", "ipam_max_allocate", "ipam_operator_status", "ipam_release_ips", "ipam_preallocate"]
     rows:
       cilium_identity:
         header: [["C", ["main", "infoheader_shortcut"]], ["ilium Identity:", ["main", "infoheader"]]]

@@ -9,12 +9,14 @@ listview:
   name: "IP Pools (Calico)"
   group: "Calico"
   field_indexes:
-    Normal: ["name", "age"]
+    Normal:
+      fields: ["name", "age"]
 infoview:
   name: "IP Pool Info (Calico)"
   infopad:
     row_indexes:
-      Normal: ["node_selector", "disabled", "block_size", "cidr", "ipip_mode", "nat_outgoing", "vxlan_mode", "disable_bgp_export", "allowed_uses"]
+      Normal:
+        fields: ["node_selector", "disabled", "block_size", "cidr", "ipip_mode", "nat_outgoing", "vxlan_mode", "disable_bgp_export", "allowed_uses"]
     rows:
       allowed_uses:
         header: [["Allowed Uses:", ["main", "infoheader"]]]

@@ -8,8 +8,9 @@ listview:
   name: "Network Policies"
   group: "Network"
   field_indexes:
-    Normal: ["namespace", "name", "controller", "pod_label_selector", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "controller", "pod_label_selector", "age"]
+      sortcolumn: "namespace"
   fields:
     controller:
       header: "Controller:"
@@ -50,7 +51,8 @@ infoview:
   name: "Network Policy Info"
   infopad:
     row_indexes:
-      Normal: ["controller", "pod_label_selector", "policy_types"]
+      Normal:
+        fields: ["controller", "pod_label_selector", "policy_types"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -97,8 +99,9 @@ infoview:
     listgetter: "get_netpol_rule_list"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["policy_type", "ports", "ipblock", "ipblock_exceptions", "pod_label_selector", "namespace_label_selector"]
-    sortcolumn: "policy_type"
+      Normal:
+        fields: ["policy_type", "ports", "ipblock", "ipblock_exceptions", "pod_label_selector", "namespace_label_selector"]
+        sortcolumn: "policy_type"
     fields:
       ipblock:
         header: "IP-Block:"

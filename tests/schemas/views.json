@@ -59,39 +59,28 @@
 			"minProperties": 1
 		},
 		"field_index": {
-			"oneOf": [
-				{
-					"description": "An object that defines both sortcolumn and the list of fields",
-					"type": "object",
-					"properties": {
-						"fields": {
-							"description": "A list of fields to display",
-							"type": "array",
-							"items": {
-								"$ref": "#/definitions/field"
-							},
-							"minItems": 1
-						},
-						"sortcolumn": {
-							"description": "The field to use as sort key",
-							"$ref": "#/definitions/field"
-						},
-						"sortorder_reverse": {
-							"description": "Should the list default to reversed sort order",
-							"type": "boolean"
-						}
-					},
-					"required": [ "fields" ],
-					"additionalProperties": false
-				}, {
-					"description": "A list of fields to display in the list",
+			"description": "An object that defines both sortcolumn and the list of fields",
+			"type": "object",
+			"properties": {
+				"fields": {
+					"description": "A list of fields to display",
 					"type": "array",
 					"items": {
 						"$ref": "#/definitions/field"
 					},
 					"minItems": 1
+				},
+				"sortcolumn": {
+					"description": "The field to use as sort key",
+					"$ref": "#/definitions/field"
+				},
+				"sortorder_reverse": {
+					"description": "Should the list default to reversed sort order",
+					"type": "boolean"
 				}
-			]
+			},
+			"required": [ "fields" ],
+			"additionalProperties": false
 		},
 		"fields": {
 			"description": "Declarations for fields that are used in the list",
@@ -1333,13 +1322,6 @@
 						}
 					},
 					"additionalProperties": false
-				},
-				"sortcolumn": {
-					"$ref": "#/definitions/sortcolumn"
-				},
-				"sortorder_reverse": {
-					"description": "Should the list default to reversed sort order",
-					"type": "boolean"
 				},
 				"statusmsg": {
 					"description": "A list of entries to add to the status bar",

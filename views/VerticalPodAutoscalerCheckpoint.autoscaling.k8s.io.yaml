@@ -8,13 +8,15 @@ listview:
   name: "Vertical Pod Autoscaler Checkpoints"
   group: "Scheduling & Scaling"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Vertical Pod Autoscaler Checkpoint Info"
   infopad:
     row_indexes:
-      Normal: ["container_name", "vpa_object_name", "first_sample_start", "last_sample_start", "last_update_time", "total_samples_count", "version"]
+      Normal:
+        fields: ["container_name", "vpa_object_name", "first_sample_start", "last_sample_start", "last_update_time", "total_samples_count", "version"]
     rows:
       container_name:
         header: [["Container:", ["main", "infoheader"]]]
@@ -71,7 +73,8 @@ infoview:
         name_value: "memory"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["name", "bucket_weights", "total_weight", "reference_timestamp"]
+      Normal:
+        fields: ["name", "bucket_weights", "total_weight", "reference_timestamp"]
     fields:
       bucket_weights:
         header: "Bucket Weights:"

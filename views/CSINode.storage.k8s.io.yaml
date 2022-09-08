@@ -5,7 +5,8 @@ listview:
   name: "CSI Nodes"
   group: "Storage & Backups"
   field_indexes:
-    Normal: ["name", "drivers", "age"]
+    Normal:
+      fields: ["name", "drivers", "age"]
   fields:
     drivers:
       header: "# of Drivers:"
@@ -19,7 +20,8 @@ infoview:
   name: "CSI Node Info"
   infopad:
     row_indexes:
-      Normal: ["node"]
+      Normal:
+        fields: ["node"]
     rows:
       node:
         header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]
@@ -43,8 +45,9 @@ infoview:
       kind: "CSIDriver"
       api_family: "storage.k8s.io"
     field_indexes:
-      Normal: ["name", "node_id", "topology_keys", "allocatable_count"]
-    sortcolumn: "name"
+      Normal:
+        fields: ["name", "node_id", "topology_keys", "allocatable_count"]
+        sortcolumn: "name"
     fields:
       allocatable_count:
         header: "Allocatable (Count):"

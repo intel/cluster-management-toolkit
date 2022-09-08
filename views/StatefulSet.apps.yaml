@@ -7,8 +7,9 @@ listview:
   name: "Stateful Sets"
   group: "Workloads"
   field_indexes:
-    Normal: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "age"]
+      sortcolumn: "namespace"
   fields:
     current_replicas:
       header: "Current:"
@@ -108,7 +109,8 @@ infoview:
   name: "Stateful Set Info"
   infopad:
     row_indexes:
-      Normal: ["controller", "label_selector", "set_based_selector", "pod_management_policy", "minimum_ready_seconds", "update_strategy", "replicas"]
+      Normal:
+        fields: ["controller", "label_selector", "set_based_selector", "pod_management_policy", "minimum_ready_seconds", "update_strategy", "replicas"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -232,10 +234,15 @@ infoview:
       call: "resourceinfodispatch"
       kind: "Pod"
     field_indexes:
-      Wide: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
-      Normal: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
-      Compact: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
-    sortcolumn: "pod_status"
+      Wide:
+        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        sortcolumn: "pod_status"
+      Normal:
+        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+      Compact:
+        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"

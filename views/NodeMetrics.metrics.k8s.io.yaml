@@ -7,7 +7,8 @@ listview:
   name: "Node Metrics"
   group: "Monitoring"
   field_indexes:
-    Normal: ["name", "cpu_usage", "memory_usage", "window"]
+    Normal:
+      fields: ["name", "cpu_usage", "memory_usage", "window"]
   fields:
     cpu_usage:
       header: "CPU (millicores):"
@@ -33,7 +34,8 @@ infoview:
   name: "Node Metric Info"
   infopad:
     row_indexes:
-      Normal: ["cpu_usage", "memory_usage", "window"]
+      Normal:
+        fields: ["cpu_usage", "memory_usage", "window"]
     rows:
       cpu_usage:
         header: [["CPU (millicores):", ["main", "infoheader"]]]

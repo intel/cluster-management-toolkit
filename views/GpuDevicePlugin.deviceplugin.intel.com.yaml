@@ -8,7 +8,8 @@ listview:
   name: "GPU Device Plugins"
   group: "Accelerators"
   field_indexes:
-    Normal: ["name", "desired_number_scheduled", "number_ready", "node_selector", "age"]
+    Normal:
+      fields: ["name", "desired_number_scheduled", "number_ready", "node_selector", "age"]
   fields:
     desired_number_scheduled:
       header: "Desired:"
@@ -36,7 +37,8 @@ infoview:
   name: "GPU Device Plugin Info"
   infopad:
     row_indexes:
-      Normal: ["image", "init_image", "node_selector", "enable_monitoring", "loglevel", "replicas", "resource_manager", "shared_device_number"]
+      Normal:
+        fields: ["image", "init_image", "node_selector", "enable_monitoring", "loglevel", "replicas", "resource_manager", "shared_device_number"]
     rows:
       enable_monitoring:
         header: [["Enable Monitoring:", ["main", "infoheader"]]]

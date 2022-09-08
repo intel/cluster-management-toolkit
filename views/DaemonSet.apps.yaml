@@ -7,8 +7,9 @@ listview:
   name: "Daemon Sets"
   group: "Workloads"
   field_indexes:
-    Normal: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "available_replicas", "misscheduled_replicas", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "available_replicas", "misscheduled_replicas", "age"]
+      sortcolumn: "namespace"
   fields:
     available_replicas:
       header: "Available:"
@@ -139,7 +140,8 @@ infoview:
   name: "Daemon Set Info"
   infopad:
     row_indexes:
-      Normal: ["controller", "label_selector", "set_based_selector", "priority_class", "scheduler", "dns_policy", "restart_policy", "host_ipc", "host_pid", "host_network", "nodes", "node_selector", "service_account", "update_strategy"]
+      Normal:
+        fields: ["controller", "label_selector", "set_based_selector", "priority_class", "scheduler", "dns_policy", "restart_policy", "host_ipc", "host_pid", "host_network", "nodes", "node_selector", "service_account", "update_strategy"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -319,10 +321,15 @@ infoview:
       call: "resourceinfodispatch"
       kind: "Pod"
     field_indexes:
-      Wide: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
-      Normal: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
-      Compact: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
-    sortcolumn: "pod_status"
+      Wide:
+        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        sortcolumn: "pod_status"
+      Normal:
+        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+      Compact:
+        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"

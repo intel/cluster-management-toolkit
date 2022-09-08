@@ -5,7 +5,8 @@ listview:
   name: "CDIs"
   group: "Storage & Backups"
   field_indexes:
-    Normal: ["name", "phase", "age"]
+    Normal:
+      fields: ["name", "phase", "age"]
   fields:
     phase:
       header: "Phase:"
@@ -15,7 +16,8 @@ infoview:
   name: "CDI Info"
   infopad:
     row_indexes:
-      Normal: ["phase", "image_pull_policy", "infrastructure_header", "infrastructure_node_selector", "infrastructure_tolerations", "workload_header", "workload_node_selector", "version_header", "version_observed", "version_operator", "version_target"]
+      Normal:
+        fields: ["phase", "image_pull_policy", "infrastructure_header", "infrastructure_node_selector", "infrastructure_tolerations", "workload_header", "workload_node_selector", "version_header", "version_observed", "version_operator", "version_target"]
     rows:
       image_pull_policy:
         header: [["Image Pull Policy:", ["main", "infoheader"]]]

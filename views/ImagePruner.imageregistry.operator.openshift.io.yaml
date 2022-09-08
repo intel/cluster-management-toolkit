@@ -5,12 +5,14 @@ listview:
   name: "Image Pruners (Imageregistry Operator)"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "age"]
+    Normal:
+      fields: ["name", "age"]
 infoview:
   name: "Image Pruner Info (Imageregistry Operator)"
   infopad:
     row_indexes:
-      Normal: ["successful_jobs_history_limit", "failed_jobs_history_limit", "ignore_invalid_image_references", "keep_tag_revisions", "loglevel", "schedule", "suspend"]
+      Normal:
+        fields: ["successful_jobs_history_limit", "failed_jobs_history_limit", "ignore_invalid_image_references", "keep_tag_revisions", "loglevel", "schedule", "suspend"]
     rows:
       failed_jobs_history_limit:
         header: [["Failed Jobs History Limit:", ["main", "infoheader"]]]

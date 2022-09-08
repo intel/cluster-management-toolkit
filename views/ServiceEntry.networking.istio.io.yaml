@@ -8,9 +8,12 @@ listview:
   name: "Service Entries"
   group: "Istio"
   field_indexes:
-    Wide: ["namespace", "name", "age", "hosts", "ports_svc", "location", "resolution"]
-    Normal: ["namespace", "name", "age", "hosts", "ports_svc_compact", "location", "resolution"]
-  sortcolumn: "namespace"
+    Wide:
+      fields: ["namespace", "name", "age", "hosts", "ports_svc", "location", "resolution"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age", "hosts", "ports_svc_compact", "location", "resolution"]
+      sortcolumn: "namespace"
   fields:
     hosts:
       header: "Hosts:"
@@ -64,7 +67,8 @@ infoview:
   name: "Service Entry Info"
   infopad:
     row_indexes:
-      Normal: ["hosts", "ports_svc", "location", "resolution"]
+      Normal:
+        fields: ["hosts", "ports_svc", "location", "resolution"]
     rows:
       hosts:
         header: [["Hosts:", ["main", "infoheader"]]]

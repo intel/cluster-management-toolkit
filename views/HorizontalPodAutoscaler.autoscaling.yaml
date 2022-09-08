@@ -7,8 +7,9 @@ listview:
   name: "Horizontal Pod Autoscalers"
   group: "Scheduling & Scaling"
   field_indexes:
-    Normal: ["namespace", "name", "reference", "minpods", "maxpods", "replicas", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "reference", "minpods", "maxpods", "replicas", "age"]
+      sortcolumn: "namespace"
   fields:
     maxpods:
       header: "Max Pods:"
@@ -44,7 +45,8 @@ infoview:
   name: "Horizontal Pod Autoscaler Info"
   infopad:
     row_indexes:
-      Normal: ["min_replicas", "max_replicas", "scale_target_reference", "status"]
+      Normal:
+        fields: ["min_replicas", "max_replicas", "scale_target_reference", "status"]
     rows:
       max_replicas:
         header: [["Max Replicas:", ["main", "infoheader"]]]
@@ -92,8 +94,9 @@ infoview:
       name_path: "described_object_name"
       namespace_path: "described_object_namespace"
     field_indexes:
-      Normal: ["metrics_type", "name", "described_object", "target_type", "target_value", "selector"]
-    sortcolumn: "name"
+      Normal:
+        fields: ["metrics_type", "name", "described_object", "target_type", "target_value", "selector"]
+        sortcolumn: "name"
     fields:
       described_object:
         header: "Described Object:"

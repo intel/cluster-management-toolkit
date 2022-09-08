@@ -8,9 +8,10 @@ listview:
   listgetter: null
   infogetter: "get_log_info"
   field_indexes:
-    Normal: ["name", "action", "created_at", "log_type"]
-  sortcolumn: "created_at"
-  sortorder_reverse: true
+    Normal:
+      fields: ["name", "action", "created_at", "log_type"]
+      sortcolumn: "created_at"
+      sortorder_reverse: true
   labels: false
   fields:
     action:
@@ -44,7 +45,8 @@ infoview:
     objgetter: "objgetter_ansible_log"
     infogetter: "generic_infogetter"
     row_indexes:
-      Normal: ["path", "category", "playbook_types"]
+      Normal:
+        fields: ["path", "category", "playbook_types"]
     rows:
       category:
         header: [["Category:", ["main", "infoheader"]]]
@@ -68,8 +70,9 @@ infoview:
       call: "resourceinfodispatch"
       kind: "__LogView"
     field_indexes:
-      Normal: ["index", "name", "host", "start_time", "completion_time", "retval", "status"]
-    sortcolumn: "index"
+      Normal:
+        fields: ["index", "name", "host", "start_time", "completion_time", "retval", "status"]
+        sortcolumn: "index"
     fields:
       completion_time:
         header: "Finished At:"

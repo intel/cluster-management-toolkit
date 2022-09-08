@@ -8,7 +8,8 @@ listview:
   name: "Ingress Classes"
   group: "Network"
   field_indexes:
-    Normal: ["name", "ingress_controller", "parameters", "age"]
+    Normal:
+      fields: ["name", "ingress_controller", "parameters", "age"]
   fields:
     ingress_controller:
       header: "Controller:"
@@ -35,7 +36,8 @@ infoview:
   name: "Ingress Class Info"
   infopad:
     row_indexes:
-      Normal: ["ingress_controller", "parameters"]
+      Normal:
+        fields: ["ingress_controller", "parameters"]
     rows:
       ingress_controller:
         header: [["Ingress Controller:", ["main", "infoheader"]]]
@@ -76,7 +78,8 @@ infoview:
               path: "metadata#name"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["namespace", "name", "age"]
+      Normal:
+        fields: ["namespace", "name", "age"]
   shortcuts:
     "Open parameters reference":
       key: "p"

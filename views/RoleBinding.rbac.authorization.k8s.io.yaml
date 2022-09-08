@@ -7,9 +7,12 @@ listview:
   name: "Role Bindings"
   group: "Authorization & Access Control"
   field_indexes:
-    Wide: ["namespace", "name", "role", "subjects", "age"]
-    Normal: ["namespace", "name", "subjects", "age"]
-  sortcolumn: "namespace"
+    Wide:
+      fields: ["namespace", "name", "role", "subjects", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "subjects", "age"]
+      sortcolumn: "namespace"
   fields:
     role:
       header: "Role:"
@@ -32,7 +35,8 @@ infoview:
   name: "Role Binding"
   infopad:
     row_indexes:
-      Normal: ["role_ref_header", "role_ref_name", "role_ref_kind", "role_ref_exists"]
+      Normal:
+        fields: ["role_ref_header", "role_ref_name", "role_ref_kind", "role_ref_exists"]
     rows:
       role_ref_exists:
         header: [["  Exists:", ["main", "infoheader"]]]
@@ -91,8 +95,9 @@ infoview:
       namespace_path: ["namespace", "_extra_data#namespace"]
       name_path: "name"
     field_indexes:
-      Normal: ["namespace", "name", "kind", "exists"]
-    sortcolumn: "kind"
+      Normal:
+        fields: ["namespace", "name", "kind", "exists"]
+        sortcolumn: "kind"
     fields:
       exists:
         header: "Exists:"

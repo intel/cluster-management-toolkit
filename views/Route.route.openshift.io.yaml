@@ -5,8 +5,9 @@ listview:
   name: "Routes"
   group: "OpenShift"
   field_indexes:
-    Normal: ["namespace", "name", "host", "target", "port", "termination", "target_weight", "wildcard", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "host", "target", "port", "termination", "target_weight", "wildcard", "age"]
+      sortcolumn: "namespace"
   fields:
     host:
       header: "Host:"
@@ -52,7 +53,8 @@ infoview:
   name: "Route Info"
   infopad:
     row_indexes:
-      Normal: ["host", "target", "port", "termination", "target_weight", "wildcard"]
+      Normal:
+        fields: ["host", "target", "port", "termination", "target_weight", "wildcard"]
     rows:
       host:
         header: [["Host:", ["main", "infoheader"]]]

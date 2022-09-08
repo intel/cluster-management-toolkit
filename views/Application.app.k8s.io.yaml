@@ -8,8 +8,9 @@ listview:
   name: "Applications"
   group: "API & Extendability"
   field_indexes:
-    Normal: ["namespace", "name", "type", "version", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "type", "version", "age"]
+      sortcolumn: "namespace"
   fields:
     type:
       header: "Type:"
@@ -26,7 +27,8 @@ infoview:
   name: "Application Info"
   infopad:
     row_indexes:
-      Normal: ["add_ownerref", "label_selector", "kinds", "keywords", "type", "version"]
+      Normal:
+        fields: ["add_ownerref", "label_selector", "kinds", "keywords", "type", "version"]
     rows:
       add_ownerref:
         header: [["Add ownerRef:", ["main", "infoheader"]]]
@@ -91,8 +93,9 @@ infoview:
       _extra_data:
         namespace: ["metadata#namespace"]
     field_indexes:
-      Normal: ["kind", "name", "status", "link"]
-    sortcolumn: "kind"
+      Normal:
+        fields: ["kind", "name", "status", "link"]
+        sortcolumn: "kind"
     fields:
       kind:
         header: "Kind:"

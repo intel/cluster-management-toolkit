@@ -8,13 +8,15 @@ listview:
   name: "Gateways"
   group: "Istio"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Gateway Info"
   infopad:
     row_indexes:
-      Normal: ["selector"]
+      Normal:
+        fields: ["selector"]
     rows:
       selector:
         header: [["Selector:", ["main", "infoheader"]]]
@@ -32,7 +34,8 @@ infoview:
     path: "spec#servers"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["hosts", "port"]
+      Normal:
+        fields: ["hosts", "port"]
     sortcolumn: "hosts"
     fields:
       hosts:

@@ -7,8 +7,9 @@ listview:
   name: "Ingresses"
   group: "Network"
   field_indexes:
-    Normal: ["namespace", "name", "class", "hosts", "address", "ports", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "class", "hosts", "address", "ports", "age"]
+      sortcolumn: "namespace"
   fields:
     class:
       header: "Class:"
@@ -53,7 +54,8 @@ infoview:
   name: "Ingress Info"
   infopad:
     row_indexes:
-      Normal: ["class", "default_backend"]
+      Normal:
+        fields: ["class", "default_backend"]
     rows:
       class:
         header: [["C", ["main", "infoheader_shortcut"]], ["lass:", ["main", "infoheader"]]]
@@ -77,7 +79,8 @@ infoview:
     listgetter: "get_ingress_rule_list"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["host", "path", "path_type", "backend_kind", "name", "port"]
+      Normal:
+        fields: ["host", "path", "path_type", "backend_kind", "name", "port"]
     fields:
       backend_kind:
         header: "Backend Kind:"

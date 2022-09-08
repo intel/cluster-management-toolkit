@@ -8,8 +8,9 @@ listview:
   name: "Kubeadm Configs"
   group: "Cluster Configuration"
   field_indexes:
-    Normal: ["namespace", "name", "cluster", "ready", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "cluster", "ready", "age"]
+      sortcolumn: "namespace"
   fields:
     cluster:
       header: "Cluster:"
@@ -35,7 +36,8 @@ infoview:
   name: "Kubeadm Config Info"
   infopad:
     row_indexes:
-      Normal: ["cluster", "controller", "control_plane", "ready", "data_secret_name"]
+      Normal:
+        fields: ["cluster", "controller", "control_plane", "ready", "data_secret_name"]
     rows:
       cluster:
         header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]

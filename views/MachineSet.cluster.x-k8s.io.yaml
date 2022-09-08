@@ -9,8 +9,9 @@ listview:
   name: "Machine Sets (X-K8s)"
   group: "Cluster Configuration"
   field_indexes:
-    Normal: ["namespace", "name", "cluster", "replicas", "ready", "available", "age", "version"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "cluster", "replicas", "ready", "available", "age", "version"]
+      sortcolumn: "namespace"
   fields:
     available:
       header: "Available:"
@@ -51,7 +52,8 @@ infoview:
   name: "Machine Info (X-K8s)"
   infopad:
     row_indexes:
-      Normal: ["controller", "cluster", "label_selector", "delete_policy", "replicas", "ready", "available", "template_header", "template_cluster_name", "template_failure_domain", "template_bootstrap", "template_infrastructure", "template_version"]
+      Normal:
+        fields: ["controller", "cluster", "label_selector", "delete_policy", "replicas", "ready", "available", "template_header", "template_cluster_name", "template_failure_domain", "template_bootstrap", "template_infrastructure", "template_version"]
     rows:
       available:
         header: [["Available:", ["main", "infoheader"]]]

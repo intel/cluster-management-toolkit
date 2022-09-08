@@ -7,7 +7,8 @@ listview:
   name: "Antrea Agent Infos"
   group: "Antrea"
   field_indexes:
-    Normal: ["name", "healthy", "last_heartbeat", "version", "node", "subnets", "age"]
+    Normal:
+      fields: ["name", "healthy", "last_heartbeat", "version", "node", "subnets", "age"]
   fields:
     healthy:
       header: "Healthy:"
@@ -65,7 +66,8 @@ infoview:
   name: "Antrea Agent Info"
   infopad:
     row_indexes:
-      Normal: ["node", "pod", "node_subnets", "version"]
+      Normal:
+        fields: ["node", "pod", "node_subnets", "version"]
     rows:
       node:
         header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]

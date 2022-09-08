@@ -5,7 +5,8 @@ listview:
   name: "Runtime Classes"
   group: "Policy"
   field_indexes:
-    Normal: ["name", "handler", "age"]
+    Normal:
+      fields: ["name", "handler", "age"]
   fields:
     handler:
       header: "Handler:"
@@ -15,7 +16,8 @@ infoview:
   name: "Runtime Class Info"
   infopad:
     row_indexes:
-      Normal: ["handler", "node_selector"]
+      Normal:
+        fields: ["handler", "node_selector"]
     rows:
       handler:
         header: [["Handler:", ["main", "infoheader"]]]
@@ -40,8 +42,9 @@ infoview:
       path: "overhead#podFixed"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["resource", "overhead"]
-    sortcolumn: "resource"
+      Normal:
+        fields: ["resource", "overhead"]
+        sortcolumn: "resource"
     fields:
       resource:
         header: "Resource:"

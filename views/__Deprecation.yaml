@@ -11,8 +11,9 @@ listview:
   check_availability: "is_cluster_reachable"
   is_taggable: false
   field_indexes:
-    Normal: ["deprecated_api", "deprecated_removed_release"]
-  sortcolumn: "deprecated_api"
+    Normal:
+      fields: ["deprecated_api", "deprecated_removed_release"]
+      sortcolumn: "deprecated_api"
   fields:
     deprecated_api:
       header: "Deprecated API:"
@@ -45,7 +46,8 @@ infoview:
     namespace_path:
     creation_timestamp_path:
     row_indexes:
-      Normal: ["deprecated_api", "deprecated_version", "latest_version", "planned_removal"]
+      Normal:
+        fields: ["deprecated_api", "deprecated_version", "latest_version", "planned_removal"]
     rows:
       deprecated_api:
         header: [["Deprecated API:", ["main", "infoheader"]]]
@@ -104,8 +106,9 @@ infoview:
       kind: ""
       api_family: ""
     field_indexes:
-      Normal: ["kind", "namespace", "name"]
-    sortcolumn: "namespace"
+      Normal:
+        fields: ["kind", "namespace", "name"]
+        sortcolumn: "namespace"
     fields:
       kind:
         header: "Kind:"

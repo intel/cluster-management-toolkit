@@ -7,9 +7,12 @@ listview:
   name: "Services"
   group: "Core"
   field_indexes:
-    Wide: ["namespace", "name", "svc_type", "cluster_ips", "external_ips", "ports_svc", "age"]
-    Normal: ["namespace", "name", "svc_type", "cluster_ips", "external_ips", "ports_svc_compact", "age"]
-  sortcolumn: "namespace"
+    Wide:
+      fields: ["namespace", "name", "svc_type", "cluster_ips", "external_ips", "ports_svc", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "svc_type", "cluster_ips", "external_ips", "ports_svc_compact", "age"]
+      sortcolumn: "namespace"
   fields:
     cluster_ips:
       header: "Cluster-IPs:"
@@ -71,7 +74,8 @@ infoview:
   name: "Service Info"
   infopad:
     row_indexes:
-      Normal: ["selector", "endpoints", "endpoint_slices", "type", "cluster_ips", "internal_traffic_policy", "ip_families", "ip_family_policy", "external_ips", "ports", "topology_keys", "session_affinity"]
+      Normal:
+        fields: ["selector", "endpoints", "endpoint_slices", "type", "cluster_ips", "internal_traffic_policy", "ip_families", "ip_family_policy", "external_ips", "ports", "topology_keys", "session_affinity"]
     rows:
       cluster_ips:
         header: [["Cluster IPs:", ["main", "infoheader"]]]
@@ -194,10 +198,15 @@ infoview:
       call: "resourceinfodispatch"
       kind: "Pod"
     field_indexes:
-      Wide: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
-      Normal: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
-      Compact: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
-    sortcolumn: "pod_status"
+      Wide:
+        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        sortcolumn: "pod_status"
+      Normal:
+        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+      Compact:
+        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"

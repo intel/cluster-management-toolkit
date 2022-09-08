@@ -7,7 +7,8 @@ listview:
   name: "Kube-Hunter Reports"
   group: "Security"
   field_indexes:
-    Normal: ["name", "scanner", "high_severity", "medium_severity", "low_severity", "unknown_severity", "age"]
+    Normal:
+      fields: ["name", "scanner", "high_severity", "medium_severity", "low_severity", "unknown_severity", "age"]
   fields:
     high_severity:
       header: "High:"
@@ -97,7 +98,8 @@ infoview:
   name: "Kube-Hunter Report Info"
   infopad:
     row_indexes:
-      Normal: ["scanner", "vendor", "high_severity", "medium_severity", "low_severity", "unknown_severity"]
+      Normal:
+        fields: ["scanner", "vendor", "high_severity", "medium_severity", "low_severity", "unknown_severity"]
     rows:
       high_severity:
         header: [["High:", ["main", "infoheader"]]]
@@ -191,8 +193,12 @@ infoview:
     path: "report#vulnerabilities"
     infogetter: "generic_infogetter"
     field_indexes:
-      Wide: ["severity", "vulnerability", "vid", "location", "evidence", "description"]
-      Normal: ["severity", "vulnerability", "vid", "description"]
+      Wide:
+        fields: ["severity", "vulnerability", "vid", "location", "evidence", "description"]
+        sortcolumn: "severity"
+      Normal:
+        fields: ["severity", "vulnerability", "vid", "description"]
+        sortcolumn: "severity"
     fields:
       description:
         header: "Description:"

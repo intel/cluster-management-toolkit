@@ -5,7 +5,8 @@ listview:
   name: "Users"
   group: "Users & Groups"
   field_indexes:
-    Normal: ["name", "fullname", "uid", "identities", "age"]
+    Normal:
+      fields: ["name", "fullname", "uid", "identities", "age"]
   fields:
     fullname:
       header: "Full Name:"
@@ -28,7 +29,8 @@ infoview:
   name: "User Info"
   infopad:
     row_indexes:
-      Normal: ["groups", "uid", "identities"]
+      Normal:
+        fields: ["groups", "uid", "identities"]
     rows:
       groups:
         header: [["Groups:", ["main", "infoheader"]]]

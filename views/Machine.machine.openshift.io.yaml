@@ -8,8 +8,9 @@ listview:
   name: "Machines (OpenShift)"
   group: "OpenShift"
   field_indexes:
-    Normal: ["namespace", "name", "provider_id", "phase", "age", "taints"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "provider_id", "phase", "age", "taints"]
+      sortcolumn: "namespace"
   fields:
     phase:
       header: "Phase:"
@@ -65,7 +66,8 @@ infoview:
   name: "Machine Info (OpenShift)"
   infopad:
     row_indexes:
-      Normal: ["node_ref", "provider_id", "phase", "taints"]
+      Normal:
+        fields: ["node_ref", "provider_id", "phase", "taints"]
     rows:
       node_ref:
         header: [["Node ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["eference:", ["main", "infoheader"]]]

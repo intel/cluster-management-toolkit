@@ -8,8 +8,9 @@ listview:
   name: "Certificates"
   group: "Certificate Management"
   field_indexes:
-    Normal: ["namespace", "name", "condition_ready", "secret", "issuer", "status_message", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "condition_ready", "secret", "issuer", "status_message", "age"]
+      sortcolumn: "namespace"
   fields:
     condition_ready:
       header: "Ready:"
@@ -64,7 +65,8 @@ infoview:
   name: "Certificate Info"
   infopad:
     row_indexes:
-      Normal: ["common_name", "dns_names", "issuer", "secret_name", "condition_ready"]
+      Normal:
+        fields: ["common_name", "dns_names", "issuer", "secret_name", "condition_ready"]
     rows:
       common_name:
         header: [["Common Name:", ["main", "infoheader"]]]

@@ -8,7 +8,8 @@ listview:
   name: "CSI Drivers"
   group: "Storage & Backups"
   field_indexes:
-    Normal: ["name", "attach_required", "pod_info_on_mount", "volume_lifecycle_modes", "age"]
+    Normal:
+      fields: ["name", "attach_required", "pod_info_on_mount", "volume_lifecycle_modes", "age"]
   fields:
     attach_required:
       header: "Attach Required:"
@@ -28,7 +29,8 @@ infoview:
   name: "CSI Driver Info"
   infopad:
     row_indexes:
-      Normal: ["attach_required", "pod_info_on_mount", "fs_group_policy", "requires_republish", "storage_capacity", "volume_lifecycle_modes"]
+      Normal:
+        fields: ["attach_required", "pod_info_on_mount", "fs_group_policy", "requires_republish", "storage_capacity", "volume_lifecycle_modes"]
     rows:
       attach_required:
         header: [["Attach Required:", ["main", "infoheader"]]]

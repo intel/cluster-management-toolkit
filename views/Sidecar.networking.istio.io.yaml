@@ -5,13 +5,15 @@ listview:
   name: "Sidecars"
   group: "Istio"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Sidecar Info"
   infopad:
     row_indexes:
-      Normal: ["workload_selector", "outbound_traffic_policy"]
+      Normal:
+        fields: ["workload_selector", "outbound_traffic_policy"]
     rows:
       outbound_traffic_policy:
         header: [["Outbound Traffic Policy:", ["main", "infoheader"]]]
@@ -35,8 +37,9 @@ infoview:
     listgetter: "get_sidecar_rule_list"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["traffic_type", "port", "bind", "capture_mode", "default_endpoint", "hosts"]
-    sortcolumn: "traffic_type"
+      Normal:
+        fields: ["traffic_type", "port", "bind", "capture_mode", "default_endpoint", "hosts"]
+        sortcolumn: "traffic_type"
     fields:
       bind:
         header: "Bind:"

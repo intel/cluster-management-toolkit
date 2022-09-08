@@ -8,8 +8,9 @@ listview:
   name: "Controller Revisions"
   group: "API & Extendability"
   field_indexes:
-    Normal: ["namespace", "name", "controller", "revision", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "controller", "revision", "age"]
+      sortcolumn: "namespace"
   fields:
     controller:
       header: "Controller:"
@@ -45,7 +46,8 @@ infoview:
   name: "Controller Revision Info"
   infopad:
     row_indexes:
-      Normal: ["controller", "revision"]
+      Normal:
+        fields: ["controller", "revision"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]

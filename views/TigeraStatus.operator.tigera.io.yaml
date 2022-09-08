@@ -5,7 +5,8 @@ listview:
   name: "Tigera Statuses"
   group: "Istio"
   field_indexes:
-    Normal: ["name", "available", "progressing", "degraded", "since", "age"]
+    Normal:
+      fields: ["name", "available", "progressing", "degraded", "since", "age"]
   fields:
     available:
       header: "Available:"
@@ -93,7 +94,8 @@ infoview:
   name: "Tiger Status Info"
   infopad:
     row_indexes:
-      Normal: ["available", "progressing", "degraded", "since"]
+      Normal:
+        fields: ["available", "progressing", "degraded", "since"]
     rows:
       available:
         header: [["Available:", ["main", "infoheader"]]]

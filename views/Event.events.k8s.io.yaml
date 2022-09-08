@@ -8,9 +8,12 @@ listview:
   name: "Events"
   group: "Core"
   field_indexes:
-    Wide: ["namespace", "name", "seen", "type", "reason", "involved_obj", "reporter", "first_seen", "count", "message"]
-    Normal: ["namespace", "name", "seen", "type", "reason", "involved_obj", "message"]
-  sortcolumn: "seen"
+    Wide:
+      fields: ["namespace", "name", "seen", "type", "reason", "involved_obj", "reporter", "first_seen", "count", "message"]
+      sortcolumn: "seen"
+    Normal:
+      fields: ["namespace", "name", "seen", "type", "reason", "involved_obj", "message"]
+      sortcolumn: "seen"
   fields:
     count:
       header: "Count:"
@@ -116,7 +119,8 @@ infoview:
   name: "Event Info"
   infopad:
     row_indexes:
-      Normal: ["involved_obj", "reporter", "message", "reason", "type", "seen", "first_seen", "count"]
+      Normal:
+        fields: ["involved_obj", "reporter", "message", "reason", "type", "seen", "first_seen", "count"]
     rows:
       count:
         header: [["Count:", ["main", "infoheader"]]]

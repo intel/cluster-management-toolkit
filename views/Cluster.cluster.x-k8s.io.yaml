@@ -7,8 +7,9 @@ listview:
   name: "Clusters"
   group: "Cluster Configuration"
   field_indexes:
-    Normal: ["namespace", "name", "phase", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "phase", "age"]
+      sortcolumn: "namespace"
   fields:
     phase:
       header: "Phase:"
@@ -42,7 +43,8 @@ infoview:
   name: "Cluster Info"
   infopad:
     row_indexes:
-      Normal: ["cluster_network_header", "cluster_network_cidr_blocks", "cluster_network_service_domain", "control_plane", "control_plane_endpoint", "control_plane_ready", "infrastructure", "infrastructure_ready", "phase"]
+      Normal:
+        fields: ["cluster_network_header", "cluster_network_cidr_blocks", "cluster_network_service_domain", "control_plane", "control_plane_endpoint", "control_plane_ready", "infrastructure", "infrastructure_ready", "phase"]
     rows:
       cluster_network_header:
         header: [["Cluster Network:", ["main", "infoheader"]]]

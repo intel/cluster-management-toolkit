@@ -5,12 +5,14 @@ listview:
   name: "Helm Chart Repositories"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "age"]
+    Normal:
+      fields: ["name", "age"]
 infoview:
   name: "Helm Chart Repository Info"
   infopad:
     row_indexes:
-      Normal: ["description", "disabled", "connection_config_header", "connection_config_url", "connection_config_tls_client_config", "connection_config_ca", "cluster_version"]
+      Normal:
+        fields: ["description", "disabled", "connection_config_header", "connection_config_url", "connection_config_tls_client_config", "connection_config_ca", "cluster_version"]
     rows:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]

@@ -7,8 +7,9 @@ listview:
   name: "OpenStack Machines"
   group: "Cluster Configuration"
   field_indexes:
-    Normal: ["namespace", "name", "cluster", "instance_state", "ready", "provider_id", "machine", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "cluster", "instance_state", "ready", "provider_id", "machine", "age"]
+      sortcolumn: "namespace"
   fields:
     cluster:
       header: "Cluster:"
@@ -56,7 +57,8 @@ infoview:
   name: "OpenStack Machine Info"
   infopad:
     row_indexes:
-      Normal: ["controller", "cluster", "instance_state", "ready", "instance_id", "provider_id", "cloud_name", "flavor", "identity", "image", "security_groups", "ssh_key_name", "internal_ips", "external_ips"]
+      Normal:
+        fields: ["controller", "cluster", "instance_state", "ready", "instance_id", "provider_id", "cloud_name", "flavor", "identity", "image", "security_groups", "ssh_key_name", "internal_ips", "external_ips"]
     rows:
       cloud_name:
         header: [["Cloud Name:", ["main", "infoheader"]]]

@@ -5,11 +5,12 @@ listview:
   name: "Flow Schemas"
   group: "Scheduling & Scaling"
   field_indexes:
-    Wide: ["name", "priority_level", "matching_precedence", "distinguisher_method", "age"]
-    # Until we can specify different sortcolumn for each set of field_indexes,
-    # don't use this
-    # Normal: ["name", "priority_level", "matching_precedence_abbrev", "distinguisher_method_abbrev", "age"]
-  sortcolumn: "matching_precedence"
+    Wide:
+      fields: ["name", "priority_level", "matching_precedence", "distinguisher_method", "age"]
+      sortcolumn: "matching_precedence"
+    Normal:
+      fields: ["name", "priority_level", "matching_precedence_abbrev", "distinguisher_method_abbrev", "age"]
+      sortcolumn: "matching_precedence_abbrev"
   fields:
     distinguisher_method:
       header: "Distinguisher Method:"
@@ -58,7 +59,8 @@ infoview:
   name: "Flow Schema Info"
   infopad:
     row_indexes:
-      Normal: ["priority_level", "matching_precedence", "distinguisher_method"]
+      Normal:
+        fields: ["priority_level", "matching_precedence", "distinguisher_method"]
     rows:
       priority_level:
         header: [["P", ["main", "infoheader_shortcut"]], ["riority Level:", ["main", "infoheader"]]]

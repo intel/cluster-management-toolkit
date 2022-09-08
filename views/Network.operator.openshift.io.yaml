@@ -8,12 +8,14 @@ listview:
   name: "Networks (Operator)"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "age"]
+    Normal:
+      fields: ["name", "age"]
 infoview:
   name: "Network Info (Operator)"
   infopad:
     row_indexes:
-      Normal: ["deploy_kube_proxy", "disable_multi_network", "use_multi_network_policy", "loglevel", "operator_loglevel", "management_state", "ready_replicas", "version", "disable_network_diagnostics", "cluster_network", "service_network"]
+      Normal:
+        fields: ["deploy_kube_proxy", "disable_multi_network", "use_multi_network_policy", "loglevel", "operator_loglevel", "management_state", "ready_replicas", "version", "disable_network_diagnostics", "cluster_network", "service_network"]
     rows:
       deploy_kube_proxy:
         header: [["Deploy kube-proxy:", ["main", "infoheader"]]]

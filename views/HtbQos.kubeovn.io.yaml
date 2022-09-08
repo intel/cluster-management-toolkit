@@ -5,7 +5,8 @@ listview:
   name: "HTB QoSes"
   group: "Kube-OVN"
   field_indexes:
-    Normal: ["name", "priority", "age"]
+    Normal:
+      fields: ["name", "priority", "age"]
   fields:
     priority:
       header: "Priority:"
@@ -19,7 +20,8 @@ infoview:
   name: "HTB QoS Info"
   infopad:
     row_indexes:
-      Normal: ["priority"]
+      Normal:
+        fields: ["priority"]
     rows:
       priority:
         header: [["Priority:", ["main", "infoheader"]]]

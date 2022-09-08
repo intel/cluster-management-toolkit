@@ -9,9 +9,12 @@ listview:
   infogetter: "generic_infogetter"
   labels: false
   field_indexes:
-    Wide: ["name", "ips", "ansible_groups", "status"]
-    Normal: ["name", "ips_ellipsise", "ansible_groups", "status"]
-  sortcolumn: "name"
+    Wide:
+      fields: ["name", "ips", "ansible_groups", "status"]
+      sortcolumn: "name"
+    Normal:
+      fields: ["name", "ips_ellipsise", "ansible_groups", "status"]
+      sortcolumn: "name"
   actions:
     playbooklist:
       context: "inventory"
@@ -96,7 +99,8 @@ infoview:
     name_path: "ansible_hostname"
     creation_timestamp_path: ""
     row_indexes:
-      Normal: ["kernel_version", "product_name", "bios_version", "bios_date", "cores", "threads_per_core", "processors", "ram", "default_ipv4_address", "default_ipv6_address"]
+      Normal:
+        fields: ["kernel_version", "product_name", "bios_version", "bios_date", "cores", "threads_per_core", "processors", "ram", "default_ipv4_address", "default_ipv6_address"]
     rows:
       bios_date:
         header: [["BIOS date:", ["main", "infoheader"]]]
@@ -174,8 +178,9 @@ infoview:
     listgetter: "listgetter_ansible_volumes"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["mountpoint", "device", "fstype", "model", "disk_usage_partition", "options"]
-    sortcolumn: "mountpoint"
+      Normal:
+        fields: ["mountpoint", "device", "fstype", "model", "disk_usage_partition", "options"]
+        sortcolumn: "mountpoint"
     fields:
       device:
         header: "Device:"

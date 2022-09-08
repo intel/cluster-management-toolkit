@@ -8,12 +8,14 @@ listview:
   name: "Ingresses (Config)"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "age"]
+    Normal:
+      fields: ["name", "age"]
 infoview:
   name: "Ingress Info (OpenShift Config)"
   infopad:
     row_indexes:
-      Normal: ["domain", "apps_domain"]
+      Normal:
+        fields: ["domain", "apps_domain"]
     rows:
       apps_domain:
         header: [["Apps Domain:", ["main", "infoheader"]]]
@@ -34,7 +36,8 @@ infoview:
       kind: "Route"
       api_family: "route.openshift.io"
     field_indexes:
-      Normal: ["namespace", "name", "consuming_users", "current_hostnames", "default_hostname"]
+      Normal:
+        fields: ["namespace", "name", "consuming_users", "current_hostnames", "default_hostname"]
     fields:
       consuming_users:
         header: "Consuming Users:"

@@ -5887,7 +5887,7 @@ def get_formatter(field):
 
 	return tmp_field
 
-def fieldgenerator(view, field_index, field_indexes, fields = {}, sortcolumn = None, denylist = []):
+def fieldgenerator(view, field_index, field_indexes, fields = {}, denylist = []):
 	global namespace
 
 	if field_indexes is None or len(field_indexes) == 0:
@@ -5896,7 +5896,8 @@ def fieldgenerator(view, field_index, field_indexes, fields = {}, sortcolumn = N
 	if namespace != "" and "namespace" not in denylist:
 		denylist.append("namespace")
 
-	field_names = field_indexes[field_index]
+	field_names = deep_get(field_indexes, f"{field_index}#fields", [])
+	sortcolumn = deep_get(field_indexes, f"{field_index}#sortcolumn")
 
 	# delete all denylisted fields
 	for field in denylist:
@@ -5967,7 +5968,7 @@ def genericlistloop(stdscr, view):
 	else:
 		field_index = list(field_indexes.keys())[0]
 
-	field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, f"{view}#fields"), sortcolumn = deep_get(views, f"{view}#sortcolumn"), denylist = denylist)
+	field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, f"{view}#fields"), denylist = denylist)
 	uip = UIProps(stdscr)
 
 	windowheader = view
@@ -6167,7 +6168,7 @@ def genericlistloop(stdscr, view):
 			field_index = _list[(_index + 1) % len(field_indexes)]
 
 			# Toggle field width
-			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, f"{view}#fields"), sortcolumn = deep_get(views, f"{view}#sortcolumn"), denylist = denylist)
+			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, f"{view}#fields"), denylist = denylist)
 			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
 			uip.resize_listpad(height = -1, width = -1)
 			uip.refresh_all()
@@ -6338,7 +6339,7 @@ def genericlistloop(stdscr, view):
 					namespace = ""
 				else:
 					namespace = selection
-			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, f"{view}#fields"), sortcolumn = deep_get(views, f"{view}#sortcolumn"), denylist = denylist)
+			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, f"{view}#fields"), denylist = denylist)
 			uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
 			headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = 1, xpos = 1)
 
@@ -8072,9 +8073,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	field_indexes = deep_get(viewref, "field_indexes", {})
 	field_index = "Normal"
 
-	sortcolumn = deep_get(viewref, "sortcolumn")
 	field_denylist = deep_get(viewref, "field_denylist", [])
-	field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, "fields"), sortcolumn = sortcolumn, denylist = field_denylist)
+	field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, "fields"), denylist = field_denylist)
 
 	# If no window header has been specified that overrides the default, just use the view name with " Info" tacked on at the end
 	# XXX: The fallback should be removed once we use view files for all info views, since the title is mandatory there
@@ -8619,7 +8619,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 			# Toggle field width
 			denylist = []
-			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, "fields"), sortcolumn = deep_get(viewref, "sortcolumn"), denylist = denylist)
+			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, "fields"), denylist = denylist)
 			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
 			uip.resize_listpad(height = -1, width = -1)
 			uip.refresh_all()
@@ -11548,9 +11548,20 @@ def populate_views():
 				sortorder_reverse = deep_get(d, "listview#sortorder_reverse", False)
 				fields = deep_get(d, "listview#fields", {})
 
-				field_indexes = deep_get(d, "listview#field_indexes", {})
-				if len(field_indexes) == 0:
+				field_indexes = {}
+				_indexes = deep_get(d, "listview#field_indexes", {})
+
+				if len(_indexes) == 0:
 					sys.exit(f"View-file {view_file} is invalid: field_indexes is either missing or empty for the list view. Aborting.")
+
+				for key in _indexes.keys():
+					if type(_indexes[key]) == list:
+						field_indexes[key] = {}
+						field_indexes[key]["fields"] = copy.deepcopy(_indexes[key])
+						field_indexes[key]["sortcolumn"] = sortcolumn
+						field_indexes[key]["sortorder_reverse"] = sortorder_reverse
+					else:
+						field_indexes = copy.deepcopy(_indexes)
 
 				if name is None or group is None or "<missing>" in [name, group]:
 					sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing, empty or None:\n"
@@ -11602,10 +11613,7 @@ def populate_views():
 					"infogetter": infogetter,
 					"infogetter_args": deep_get(d, "listview#infogetter_args", {}),
 					"actions": deep_get(d, "listview#actions", {}),
-					"sortorder_reverse": sortorder_reverse,
 				}
-				if sortcolumn is not None:
-					listview_entry["sortcolumn"] = sortcolumn
 
 				shortcuts = {}
 
@@ -11708,19 +11716,34 @@ def populate_views():
 					api_family = deep_get(d, "infoview#api_family", "")
 				name = deep_get(d, "infoview#name", "<missing>")
 				infopad = deep_get(d, "infoview#infopad", {})
-				# Eventually we should handle this the same way as in genericlistloop,
-				# with the row_indexes used on the fly, but let's change a bit at a time
-				rows = deep_get(infopad, "row_indexes#Normal", {})
+
+				row_indexes = {}
 				row_fields = {}
 
-				for row in rows:
-					row_fields[row] = deep_get(infopad, f"rows#{row}", {})
-					# We need to reformat the header
-					_header = deep_get(infopad, f"rows#{row}#header", [["<unset>", ["types", "unset"]]])
-					header = []
-					for string, formatting in _header:
-						header.append((string, tuple(formatting)))
-					row_fields[row]["header"] = header
+				_indexes = deep_get(infopad, "row_indexes")
+
+				if _indexes is not None:
+					if len(_indexes) == 0:
+						sys.exit(f"View-file {view_file} is invalid: row_indexes is empty for the info view. Aborting.")
+
+					# We're not using row_indexes in the same way field_indexes are used; we don't support multiple profiles;
+					# since dicts are ordered by insertion we get the rows in the right order if we order by row_indexes,
+					# and we don't support resorting, so we don't need to include the row_indexes
+					for key in _indexes.keys():
+						if type(_indexes[key]) == list:
+							row_indexes = copy.deepcopy(_indexes[key])
+						else:
+							row_indexes = copy.deepcopy(_indexes[key]["fields"])
+
+					# Rows need to be reformatted
+					for row in deep_get(row_indexes, "Normal#fields", []):
+						row_fields[row] = deep_get(infopad, f"rows#{row}", {})
+						# We need to reformat the header
+						_header = deep_get(infopad, f"rows#{row}#header", [["<unset>", ["types", "unset"]]])
+						header = []
+						for string, formatting in _header:
+							header.append((string, tuple(formatting)))
+						row_fields[row]["header"] = header
 
 				name_path = deep_get(d, "infoview#infopad#name_path")
 				namespace_path = deep_get(d, "infoview#infopad#namespace_path", "")
@@ -11749,10 +11772,24 @@ def populate_views():
 				reversible = deep_get(listpad, "reversible", True)
 				sortorder_reverse = deep_get(listpad, "sortorder_reverse", False)
 
+				listpad_fields = deep_get(listpad, "fields", {})
+
+				listpad_field_indexes = {}
+				_indexes = deep_get(listpad, "field_indexes", {})
+
+				for key in _indexes.keys():
+					if type(_indexes[key]) == list:
+						listpad_field_indexes[key] = {}
+						listpad_field_indexes[key]["fields"] = copy.deepcopy(_indexes[key])
+						listpad_field_indexes[key]["sortcolumn"] = sortcolumn
+						listpad_field_indexes[key]["sortorder_reverse"] = sortorder_reverse
+					else:
+						listpad_field_indexes = copy.deepcopy(_indexes)
+
 				infoview_entry = {
 					"windowheader": name,
-					"field_indexes": deep_get(listpad, "field_indexes"),
-					"fields": deep_get(listpad, "fields"),
+					"field_indexes": listpad_field_indexes,
+					"fields": listpad_fields,
 					"activatedfun": activatedfun,
 					"viewoverride": viewoverride,
 					"extraref": on_activation_extraref,
@@ -11760,7 +11797,6 @@ def populate_views():
 					"infopad": row_fields,
 					"listpad": {},
 					"reversible": reversible,
-					"sortorder_reverse": sortorder_reverse,
 					"annotations": annotations,
 					"shortcuts": {},
 				}
@@ -11770,9 +11806,6 @@ def populate_views():
 
 				if len(listpad) > 0:
 					infoview_entry["listpad"]["on_activation"] = on_activation
-
-				if sortcolumn is not None:
-					infoview_entry["sortcolumn"] = sortcolumn
 
 				if name_path is not None:
 					infoview_entry["name_path"] = name_path

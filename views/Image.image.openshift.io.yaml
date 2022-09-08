@@ -12,9 +12,12 @@ listview:
   name: "Images"
   group: "OpenShift"
   field_indexes:
-    Wide: ["label_name", "name", "image_reference", "age"]
-    Normal: ["label_name", "image_reference", "age"]
-  sortcolumn: "label_name"
+    Wide:
+      fields: ["label_name", "name", "image_reference", "age"]
+      sortcolumn: "label_name"
+    Normal:
+      fields: ["label_name", "image_reference", "age"]
+      sortcolumn: "label_name"
   fields:
     image_reference:
       header: "Reference:"

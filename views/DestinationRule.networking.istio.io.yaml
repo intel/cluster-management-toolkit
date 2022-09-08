@@ -10,8 +10,9 @@ listview:
   name: "Destination Rules"
   group: "Istio"
   field_indexes:
-    Normal: ["namespace", "name", "host", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "host", "age"]
+      sortcolumn: "namespace"
   fields:
     host:
       header: "Host:"
@@ -21,7 +22,8 @@ infoview:
   name: "Destination Rule Info"
   infopad:
     row_indexes:
-      Normal: ["host", "traffic_policy_header", "traffic_policy_load_balancer_header", "traffic_policy_load_balancer_type", "traffic_policy_load_balancer_name", "traffic_policy_load_balancer_path", "traffic_policy_load_balancer_ttl", "traffic_policy_load_balancer_minimum_ring_size", "traffic_policy_tcp_header", "traffic_policy_tcp_max_connections", "traffic_policy_tcp_max_connection_timeout", "traffic_policy_tcp_keepalive_header", "traffic_policy_tcp_keepalive_time", "traffic_policy_tcp_keepalive_interval", "traffic_policy_tcp_keepalive_probes", "traffic_policy_http_header", "traffic_policy_http_max_http1_pending_requests", "traffic_policy_http_max_http2_requests", "traffic_policy_http_max_requests_per_connection", "traffic_policy_http_max_retries", "traffic_policy_http_idle_timeout", "traffic_policy_http_upgrade_http1_1_to_http2", "traffic_policy_outlier_detection_header", "traffic_policy_outlier_detection_consecutive_gateway_errors", "traffic_policy_outlier_detection_consecutive_5xx_errors", "traffic_policy_outlier_ejection_sweep_interval", "traffic_policy_outlier_base_ejection_time", "traffic_policy_outlier_max_ejection_percent", "traffic_policy_outlier_min_health_percent", "traffic_policy_tls_header", "traffic_policy_tls_mode", "traffic_policy_tls_client_certificate", "traffic_policy_tls_private_key", "traffic_policy_tls_ca_certificates", "traffic_policy_tls_credential_name", "traffic_policy_tls_subject_alt_names", "traffic_policy_tls_sni", "traffic_policy_tls_insecure_skip_verify", "export_to"]
+      Normal:
+        fields: ["host", "traffic_policy_header", "traffic_policy_load_balancer_header", "traffic_policy_load_balancer_type", "traffic_policy_load_balancer_name", "traffic_policy_load_balancer_path", "traffic_policy_load_balancer_ttl", "traffic_policy_load_balancer_minimum_ring_size", "traffic_policy_tcp_header", "traffic_policy_tcp_max_connections", "traffic_policy_tcp_max_connection_timeout", "traffic_policy_tcp_keepalive_header", "traffic_policy_tcp_keepalive_time", "traffic_policy_tcp_keepalive_interval", "traffic_policy_tcp_keepalive_probes", "traffic_policy_http_header", "traffic_policy_http_max_http1_pending_requests", "traffic_policy_http_max_http2_requests", "traffic_policy_http_max_requests_per_connection", "traffic_policy_http_max_retries", "traffic_policy_http_idle_timeout", "traffic_policy_http_upgrade_http1_1_to_http2", "traffic_policy_outlier_detection_header", "traffic_policy_outlier_detection_consecutive_gateway_errors", "traffic_policy_outlier_detection_consecutive_5xx_errors", "traffic_policy_outlier_ejection_sweep_interval", "traffic_policy_outlier_base_ejection_time", "traffic_policy_outlier_max_ejection_percent", "traffic_policy_outlier_min_health_percent", "traffic_policy_tls_header", "traffic_policy_tls_mode", "traffic_policy_tls_client_certificate", "traffic_policy_tls_private_key", "traffic_policy_tls_ca_certificates", "traffic_policy_tls_credential_name", "traffic_policy_tls_subject_alt_names", "traffic_policy_tls_sni", "traffic_policy_tls_insecure_skip_verify", "export_to"]
     rows:
       host:
         header: [["Host:", ["main", "infoheader"]]]

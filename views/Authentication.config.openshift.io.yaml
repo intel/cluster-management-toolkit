@@ -8,12 +8,14 @@ listview:
   name: "Authentications (Config)"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "age"]
+    Normal:
+      fields: ["name", "age"]
 infoview:
   name: "Authentication Info (Config)"
   infopad:
     row_indexes:
-      Normal: ["oauth_metadata", "integrated_oauth_metadata", "cluster_version", "service_account_issuer", "webhook_token_authenticator_config", "type"]
+      Normal:
+        fields: ["oauth_metadata", "integrated_oauth_metadata", "cluster_version", "service_account_issuer", "webhook_token_authenticator_config", "type"]
     rows:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]

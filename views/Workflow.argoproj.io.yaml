@@ -5,13 +5,15 @@ listview:
   name: "Workflows"
   group: "Workloads"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Workflow Info"
   infopad:
     row_indexes:
-      Normal: ["entrypoint", "service_account", "status"]
+      Normal:
+        fields: ["entrypoint", "service_account", "status"]
     rows:
       entrypoint:
         header: [["Entrypoint:", ["main", "infoheader"]]]

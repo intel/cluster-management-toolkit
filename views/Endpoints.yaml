@@ -6,9 +6,12 @@ listview:
   name: "Endpoints"
   group: "Core"
   field_indexes:
-    Wide: ["namespace", "name", "ports", "endpoints", "age"]
-    Normal: ["namespace", "name", "ports_compact", "endpoints_ellipsise", "age"]
-  sortcolumn: "namespace"
+    Wide:
+      fields: ["namespace", "name", "ports", "endpoints", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "ports_compact", "endpoints_ellipsise", "age"]
+      sortcolumn: "namespace"
   fields:
     # Map ready & non-ready endpoints to ok, not ok;
     # we need some special way to handle this
@@ -65,7 +68,8 @@ infoview:
   listpad:
     infogetter: "get_subsets_info"
     field_indexes:
-      Normal: ["addresses", "ports", "status"]
+      Normal:
+        fields: ["addresses", "ports", "status"]
     sortcolumn: "status"
     fields:
       addresses:

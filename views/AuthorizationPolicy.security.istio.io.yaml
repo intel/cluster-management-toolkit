@@ -8,13 +8,15 @@ listview:
   name: "Authorization Policies"
   group: "Istio"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Authorization Policy Info"
   infopad:
     row_indexes:
-      Normal: ["workload_selector", "action"]
+      Normal:
+        fields: ["workload_selector", "action"]
     rows:
       action:
         header: [["Action:", ["main", "infoheader"]]]
@@ -36,8 +38,9 @@ infoview:
   listpad:
     infogetter: "get_auth_rule_info"
     field_indexes:
-      Normal: ["source", "operation", "condition"]
-    sortcolumn: "source"
+      Normal:
+        fields: ["source", "operation", "condition"]
+        sortcolumn: "source"
     fields:
       condition:
         header: "Condition:"

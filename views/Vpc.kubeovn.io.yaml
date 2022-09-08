@@ -5,8 +5,9 @@ listview:
   name: "VPCs"
   group: "Kube-OVN"
   field_indexes:
-    Normal: ["name", "standby", "subnets", "namespaces", "age"]
-  sortcolumn: "standby"
+    Normal:
+      fields: ["name", "standby", "subnets", "namespaces", "age"]
+      sortcolumn: "standby"
   fields:
     namespaces:
       header: "Namespaces:"
@@ -26,7 +27,8 @@ infoview:
   name: "VPC Info"
   infopad:
     row_indexes:
-      Normal: ["default", "default_logical_switch", "router", "standby", "tcp_load_balancer", "tcp_session_load_balancer", "udp_load_balancer", "udp_session_load_balancer", "subnets", "namespaces"]
+      Normal:
+        fields: ["default", "default_logical_switch", "router", "standby", "tcp_load_balancer", "tcp_session_load_balancer", "udp_load_balancer", "udp_session_load_balancer", "subnets", "namespaces"]
     rows:
       default:
         header: [["Default:", ["main", "infoheader"]]]

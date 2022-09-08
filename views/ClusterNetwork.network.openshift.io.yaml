@@ -5,7 +5,8 @@ listview:
   name: "Cluster Networks"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "cluster_network", "service_network", "plugin_name", "age"]
+    Normal:
+      fields: ["name", "cluster_network", "service_network", "plugin_name", "age"]
   fields:
     cluster_network:
       header: "Cluster Network:"
@@ -25,7 +26,8 @@ infoview:
   name: "Cluster Network Info"
   infopad:
     row_indexes:
-      Normal: ["controller", "cluster_network", "service_network", "vxlan_port", "mtu", "plugin_name"]
+      Normal:
+        fields: ["controller", "cluster_network", "service_network", "vxlan_port", "mtu", "plugin_name"]
     rows:
       cluster_network:
         header: [["Cluster Network:", ["main", "infoheader"]]]

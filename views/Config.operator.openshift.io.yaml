@@ -8,12 +8,14 @@ listview:
   name: "Configs (Operator)"
   group: "OpenShift"
   field_indexes:
-    Normal: ["name", "age"]
+    Normal:
+      fields: ["name", "age"]
 infoview:
   name: "Config Info (Operator)"
   infopad:
     row_indexes:
-      Normal: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "ready_replicas"]
+      Normal:
+        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "ready_replicas"]
     rows:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]

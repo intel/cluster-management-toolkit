@@ -8,8 +8,9 @@ listview:
   name: "Peer Authentications"
   group: "Istio"
   field_indexes:
-    Normal: ["namespace", "name", "mtls_mode", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "mtls_mode", "age"]
+      sortcolumn: "namespace"
   fields:
     mtls_mode:
       header: "mTLS Mode:"
@@ -20,7 +21,8 @@ infoview:
   name: "Peer Authentication Info"
   infopad:
     row_indexes:
-      Normal: ["label_selector", "mtls_mode", "port_level_mtls"]
+      Normal:
+        fields: ["label_selector", "mtls_mode", "port_level_mtls"]
     rows:
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]

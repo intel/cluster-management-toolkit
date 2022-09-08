@@ -7,8 +7,9 @@ listview:
   name: "Cron Jobs"
   group: "Workloads"
   field_indexes:
-    Normal: ["namespace", "name", "schedule", "suspend", "active", "concurrency_policy", "last_scheduled", "last_successful", "age", "containers_jobtemplate"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "schedule", "suspend", "active", "concurrency_policy", "last_scheduled", "last_successful", "age", "containers_jobtemplate"]
+      sortcolumn: "namespace"
   fields:
     active:
       header: "Active:"
@@ -60,7 +61,8 @@ infoview:
   name: "Cron Job Info"
   infopad:
     row_indexes:
-      Normal: ["concurrency_policy", "restart_policy", "selector", "parallelism", "completions", "starting_deadline", "suspend", "schedule", "last_scheduled", "last_successful", "active"]
+      Normal:
+        fields: ["concurrency_policy", "restart_policy", "selector", "parallelism", "completions", "starting_deadline", "suspend", "schedule", "last_scheduled", "last_successful", "active"]
     rows:
       active:
         header: [["Active:", ["main", "infoheader"]]]

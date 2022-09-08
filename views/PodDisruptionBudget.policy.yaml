@@ -7,8 +7,9 @@ listview:
   name: "Pod Disruption Budgets"
   group: "Policy"
   field_indexes:
-    Normal: ["namespace", "name", "min_available", "max_unavailable", "allowed_disruptions", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "min_available", "max_unavailable", "allowed_disruptions", "age"]
+      sortcolumn: "namespace"
   fields:
     allowed_disruptions:
       header: "Allowed Disruptions:"
@@ -44,7 +45,8 @@ infoview:
   name: "Pod Disruption Budget Info"
   infopad:
     row_indexes:
-      Normal: ["min_available", "max_unavailable", "label_selector", "set_based_selector", "status_header", "expected_pods", "current_healthy", "desired_healthy", "disruptions_allowed"]
+      Normal:
+        fields: ["min_available", "max_unavailable", "label_selector", "set_based_selector", "status_header", "expected_pods", "current_healthy", "desired_healthy", "disruptions_allowed"]
     rows:
       current_healthy:
         header: [["  Current Healthy:", ["main", "infoheader"]]]

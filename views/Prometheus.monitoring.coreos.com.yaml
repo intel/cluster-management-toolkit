@@ -8,8 +8,9 @@ listview:
   name: "Prometheuses"
   group: "Monitoring"
   field_indexes:
-    Normal: ["namespace", "name", "version", "replicas", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "version", "replicas", "age"]
+      sortcolumn: "namespace"
   fields:
     replicas:
       header: "Replicas:"
@@ -27,7 +28,8 @@ infoview:
   name: "Prometheus Info"
   infopad:
     row_indexes:
-      Normal: ["image", "node_selector", "rule_selector", "replicas", "service_account"]
+      Normal:
+        fields: ["image", "node_selector", "rule_selector", "replicas", "service_account"]
     rows:
       image:
         header: [["Image:", ["main", "infoheader"]]]

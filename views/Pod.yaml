@@ -6,10 +6,15 @@ listview:
   name: "Pods"
   group: "Workloads"
   field_indexes:
-    Wide: ["namespace", "name", "controller", "phase", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
-    Normal: ["namespace", "name", "controller", "phase", "node_name", "age", "restarts", "last_restart"]
-    Compact: ["namespace", "name", "phase", "age", "restarts", "last_restart"]
-  sortcolumn: "phase"
+    Wide:
+      fields: ["namespace", "name", "controller", "phase", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+      sortcolumn: "phase"
+    Normal:
+      fields: ["namespace", "name", "controller", "phase", "node_name", "age", "restarts", "last_restart"]
+      sortcolumn: "phase"
+    Compact:
+      fields: ["namespace", "name", "phase", "age", "restarts", "last_restart"]
+      sortcolumn: "phase"
   fields:
     containers:
       header: "Containers:"
@@ -165,7 +170,8 @@ infoview:
   name: "Pod Info"
   infopad:
     row_indexes:
-      Normal: ["phase", "conditions", "scheduler", "priority", "priority_class", "qos_class", "pod_ips", "termination_grace_period", "enable_service_links"]
+      Normal:
+        fields: ["phase", "conditions", "scheduler", "priority", "priority_class", "qos_class", "pod_ips", "termination_grace_period", "enable_service_links"]
     rows:
       conditions:
         header: [["Conditions:", ["main", "infoheader"]]]
@@ -352,8 +358,9 @@ infoview:
       extraref: "kind"
       data: true
     field_indexes:
-      Normal: ["resource", "type", "status", "restarts", "age", "message"]
-    sortcolumn: "type"
+      Normal:
+        fields: ["resource", "type", "status", "restarts", "age", "message"]
+        sortcolumn: "type"
     fields:
       resource:
         header: "Resource:"

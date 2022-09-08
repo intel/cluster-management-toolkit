@@ -12,13 +12,15 @@ listview:
   name: "Images (Knative)"
   group: "Caching"
   field_indexes:
-    Normal: ["namespace", "name", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
 infoview:
   name: "Image Info (Knative)"
   infopad:
     row_indexes:
-      Normal: ["image"]
+      Normal:
+        fields: ["image"]
     rows:
       image:
         header: [["Image:", ["main", "infoheader"]]]

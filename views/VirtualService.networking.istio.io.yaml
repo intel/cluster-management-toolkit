@@ -8,8 +8,9 @@ listview:
   name: "Virtual Services"
   group: "Istio"
   field_indexes:
-    Normal: ["namespace", "name", "gateways", "hosts", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "gateways", "hosts", "age"]
+      sortcolumn: "namespace"
   fields:
     gateways:
       header: "Gateways:"
@@ -25,7 +26,8 @@ infoview:
   name: "Virtual Service Info"
   infopad:
     row_indexes:
-      Normal: ["controller", "gateways", "hosts", "export_to"]
+      Normal:
+        fields: ["controller", "gateways", "hosts", "export_to"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -75,8 +77,9 @@ infoview:
     listgetter: "get_virtsvc_rule_list"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["rule_type", "destinations"]
-    sortcolumn: "rule_type"
+      Normal:
+        fields: ["rule_type", "destinations"]
+        sortcolumn: "rule_type"
     fields:
       destinations:
         header: "Destinations:"

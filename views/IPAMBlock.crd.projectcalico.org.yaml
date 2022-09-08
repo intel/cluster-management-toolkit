@@ -8,7 +8,8 @@ listview:
   name: "IPAM Blocks"
   group: "Calico"
   field_indexes:
-    Normal: ["name", "cidr", "allocations", "strict_affinity", "deleted", "age"]
+    Normal:
+      fields: ["name", "cidr", "allocations", "strict_affinity", "deleted", "age"]
   fields:
     allocations:
       header: "Allocations:"
@@ -54,7 +55,8 @@ infoview:
   name: "IPAM Block Info"
   infopad:
     row_indexes:
-      Normal: ["cidr", "allocations", "strict_affinity", "deleted"]
+      Normal:
+        fields: ["cidr", "allocations", "strict_affinity", "deleted"]
     rows:
       allocations:
         header: [["Allocations:", ["main", "infoheader"]]]
@@ -104,8 +106,9 @@ infoview:
     path: "spec#attributes"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["namespace", "node", "type", "pod", "timestamp", "handle_id"]
-    sortcolumn: "handle_id"
+      Normal:
+        fields: ["namespace", "node", "type", "pod", "timestamp", "handle_id"]
+        sortcolumn: "handle_id"
     fields:
       handle_id:
         header: "Handle ID:"

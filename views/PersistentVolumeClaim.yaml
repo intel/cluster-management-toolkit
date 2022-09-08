@@ -6,8 +6,9 @@ listview:
   name: "Persistent Volume Claims"
   group: "Storage & Backups"
   field_indexes:
-    Normal: ["namespace", "name", "status", "volume", "capacity", "access_modes", "storage_class", "age", "volume_mode"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "status", "volume", "capacity", "access_modes", "storage_class", "age", "volume_mode"]
+      sortcolumn: "namespace"
   fields:
     access_modes:
       header: "Access Modes:"
@@ -71,7 +72,8 @@ infoview:
   name: "Persistent Volume Claim Info"
   infopad:
     row_indexes:
-      Normal: ["status", "volume", "capacity", "access_modes", "storage_class", "volume_mode"]
+      Normal:
+        fields: ["status", "volume", "capacity", "access_modes", "storage_class", "volume_mode"]
     rows:
       access_modes:
         header: [["Access Modes:", ["main", "infoheader"]]]

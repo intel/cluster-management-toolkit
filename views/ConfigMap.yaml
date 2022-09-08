@@ -6,8 +6,9 @@ listview:
   name: "Config Maps"
   group: "Core"
   field_indexes:
-    Normal: ["namespace", "name", "data", "immutable", "age"]
-  sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "data", "immutable", "age"]
+      sortcolumn: "namespace"
   fields:
     data:
       header: "# of Data:"
@@ -37,8 +38,9 @@ infoview:
     listgetter: "listgetter_configmap_data"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["data", "type"]
-    sortcolumn: "data"
+      Normal:
+        fields: ["data", "type"]
+        sortcolumn: "data"
     fields:
       data:
         header: "Data:"

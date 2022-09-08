@@ -8,7 +8,8 @@ listview:
   name: "Node Resource Topologies"
   group: "Scheduling & Scaling"
   field_indexes:
-    Normal: ["name", "zones", "age"]
+    Normal:
+      fields: ["name", "zones", "age"]
   fields:
     zones:
       header: "Zones:"
@@ -22,7 +23,8 @@ infoview:
   name: "Node Resource Topology Info"
   infopad:
     row_indexes:
-      Normal: ["topology_policies"]
+      Normal:
+        fields: ["topology_policies"]
     rows:
       topology_policies:
         header: [["Topology Policies:", ["main", "infoheader"]]]
@@ -34,8 +36,9 @@ infoview:
     path: "zones"
     infogetter: "generic_infogetter"
     field_indexes:
-      Normal: ["zone", "type", "costs", "resources"]
-    sortcolumn: "zone"
+      Normal:
+        fields: ["zone", "type", "costs", "resources"]
+        sortcolumn: "zone"
     fields:
       costs:
         header: "Costs:"
