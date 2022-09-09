@@ -22,6 +22,8 @@
 * Audit and make a list of all necessary types
 * Show if we're running in read-only mode in the status bar
 * config map YAML-parser should handle single-line files (optionally unfolding)
+* Make generic_infogetter consistent WRT to paths:
+  ["literal", ["path"], [["alternate1", "alternate2"]]]
 
 iktinv:
 * Optionally limit rebuild-inventory to a subset of clusters
@@ -42,12 +44,5 @@ logparser:
   for every line, so expanding tabs into spaces won't work properly)
 
 kubernetes_helper:
-* Replace cordon_node with:
-	"application/strategic-merge-patch+json"
-	"api/v1/nodes/NODE"
-	{"spec":{"unschedulable":true}}
-* Replace uncordon_node with:
-	"application/strategic-merge-patch+json"
-	"api/v1/nodes/NODE"
-	{"spec":{"unschedulable":null}}
-* Figure out the correct way to drain too
+* Replace drain_node with cordon, post evictions (or delete if PodDisruptionBudget causes issues)
+  for all non-DaemonSet pods

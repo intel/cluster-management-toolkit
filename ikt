@@ -270,8 +270,6 @@ def cordon_nodes(options = [], args = None):
 	include_control_planes = False
 	header = True
 
-	_args = ["/usr/bin/kubectl", "cordon"]
-
 	for opt, optarg in options:
 		if opt == "--include-control-planes":
 			include_control_planes = True
@@ -286,7 +284,12 @@ def cordon_nodes(options = [], args = None):
 	if "ALL" not in selection:
 		include_control_planes = True
 
-	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+	_nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	nodes = []
+	nodes += _nodes
+	if include_control_planes == True:
+		nodes += controlplanes
 
 	if len(non_existing) > 0:
 		iktprint([(f"Error: ", "error"), join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")), (" are not part of the cluster; aborting.", "default")], stderr = True)
@@ -298,8 +301,23 @@ def cordon_nodes(options = [], args = None):
 
 	if header == True:
 		iktprint([("\n[Cordoning nodes]", "phase")])
-	_args += nodes
-	execute_command(_args)
+
+	from kubernetes_helper import KubernetesHelper
+	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+
+	for node in nodes:
+		iktprint([(f"{node}:", "hostname")])
+		message, status = kh.cordon_node(node)
+		if status in [200, 204]:
+			iktprint([("  Cordoned", "success")])
+			print(message)
+		elif status == 42503:
+			iktprint([("\nCritical: ", "critical"), ("Cluster not available; aborting", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+		else:
+			iktprint([("\nAPI call returned error:", "error")], stderr = True)
+			iktprint([(f"  {message}", "error")], stderr = True)
+			sys.exit(errno.EINVAL)
 
 def drain_nodes(options = [], args = None):
 	include_control_planes = False
@@ -357,8 +375,6 @@ def uncordon_nodes(options = [], args = None):
 	include_control_planes = False
 	header = True
 
-	_args = ["/usr/bin/kubectl", "uncordon"]
-
 	for opt, optarg in options:
 		if opt == "--include-control-planes":
 			include_control_planes = True
@@ -373,7 +389,12 @@ def uncordon_nodes(options = [], args = None):
 	if "ALL" not in selection:
 		include_control_planes = True
 
-	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+	_nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	nodes = []
+	nodes += _nodes
+	if include_control_planes == True:
+		nodes += controlplanes
 
 	if len(non_existing) > 0:
 		iktprint([(f"Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
@@ -385,8 +406,23 @@ def uncordon_nodes(options = [], args = None):
 
 	if header == True:
 		iktprint([("\n[Uncordoning nodes]", "phase")])
-	_args += nodes
-	execute_command(_args)
+
+	from kubernetes_helper import KubernetesHelper
+	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+
+	for node in nodes:
+		iktprint([(f"{node}:", "hostname")])
+		message, status = kh.uncordon_node(node)
+		if status in [200, 204]:
+			iktprint([("  Uncordoned", "success")])
+			print(message)
+		elif status == 42503:
+			iktprint([("\nCritical: ", "critical"), ("Cluster not available; aborting", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+		else:
+			iktprint([("\nAPI call returned error:", "error")], stderr = True)
+			iktprint([(f"  {message}", "error")], stderr = True)
+			sys.exit(errno.EINVAL)
 
 def setup_nodes(options = [], args = None):
 	return 0

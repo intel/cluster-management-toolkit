@@ -2724,7 +2724,7 @@ class KubernetesHelper:
 				vlist.append(resource)
 		return vlist
 
-	def __rest_helper_generic_json(self, method = None, url = None, query_params = [], retries = 3, connect_timeout = 3.0):
+	def __rest_helper_generic_json(self, method = None, url = None, header_params = None, query_params = [], body = None, retries = 3, connect_timeout = 3.0):
 		data = None
 		message = ""
 
@@ -2733,11 +2733,12 @@ class KubernetesHelper:
 			message = "Cluster Unreachable"
 			return data, message, status
 
-		header_params = {
-			"Accept": "application/json",
-			"Content-Type": "application/json",
-			"User-Agent": f"{self.programname} v{self.programversion}",
-		}
+		if header_params is None:
+			header_params = {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+				"User-Agent": f"{self.programname} v{self.programversion}",
+			}
 
 		if self.token is not None:
 			header_params["Authorization"] = f"Bearer {self.token}"
@@ -2754,7 +2755,10 @@ class KubernetesHelper:
 			_retries = urllib3.Retry(retries)
 
 		try:
-			result = self.pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
+			if body is not None:
+				result = self.pool_manager.request(method, url, headers = header_params, body = body, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
+			else:
+				result = self.pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
 			status = result.status
 		except urllib3.exceptions.MaxRetryError as e:
 			# No route to host doesn't have a HTTP response; make one up...
@@ -2817,6 +2821,53 @@ class KubernetesHelper:
 			raise Exception(f"Unhandled error: {result.status}; method {method} URL {url}; header_params: {header_params}")
 
 		return data, message, status
+
+	def __rest_helper_patch(self, kind, name, namespace = "", body = {}):
+		method = "PATCH"
+
+		header_params = {
+			"Content-Type": "application/strategic-merge-patch+json",
+			"User-Agent": f"{self.programname} v{self.programversion}",
+		}
+
+		namespace_part = ""
+		if namespace is not None and namespace != "":
+			namespace_part = f"namespaces/{namespace}/"
+
+		if kind is None:
+			raise Exception("__rest_helper_patch called with kind None")
+
+		kind = self.guess_kind(kind)
+
+		if kind in self.kubernetes_resources:
+			api_family = deep_get(self.kubernetes_resources[kind], "api_family")
+			api = deep_get(self.kubernetes_resources[kind], "api")
+			namespaced = deep_get(self.kubernetes_resources[kind], "namespaced", True)
+		else:
+			raise Exception(f"kind unknown: {kind}")
+
+		fullitem = f"{kind[0]}.{kind[1]} {name}"
+		if namespaced == True:
+			fullitem = f"{fullitem} (namespace: {namespace})"
+
+		name = f"/{name}"
+
+		if namespaced == False:
+			namespace_part = ""
+
+		status = None
+
+		retval = False
+
+		# Try the newest API first and iterate backwards
+		for i in range(0, len(api_family)):
+			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
+			data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
+			if status in [200, 204, 42503]:
+				break
+
+		return message, status
+
 
 	def __rest_helper_delete(self, kind, name, namespace = "", query_params = []):
 		method = "DELETE"
@@ -2967,6 +3018,26 @@ class KubernetesHelper:
 			vlist = []
 
 		return vlist, status
+
+	def cordon_node(self, node):
+		kind = ("Node", "")
+		data = {
+			"spec": {
+				"unschedulable": True
+			}
+		}
+		body = json.dumps(data).encode('utf-8')
+		return self.__rest_helper_patch(kind, node, body = body)
+
+	def uncordon_node(self, node):
+		kind = ("Node", "")
+		data = {
+			"spec": {
+				"unschedulable": None
+			}
+		}
+		body = json.dumps(data).encode('utf-8')
+		return self.__rest_helper_patch(kind, node, body = body)
 
 	def delete_obj_by_kind_name_namespace(self, kind, name, namespace, force = False):
 		query_params = []
