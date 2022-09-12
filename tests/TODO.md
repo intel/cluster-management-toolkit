@@ -1,9 +1,6 @@
 # TODO
 
 ## validate_schemas:
-* Add command line option parsing; we want to be able to enable/disable verbosity, abort on fail, etc.
-* Add "--resume-from"
-* Add ANSI colours
 
 ## validate_views:
 * NOT IMPLEMENTED
