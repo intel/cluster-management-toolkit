@@ -44,8 +44,11 @@
 						"type": "string",
 						"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
 					}
-				}
-			}
+				},
+				"required": [ "type" ],
+				"additionalProperties": false
+			},
+			"minItems": 1
 		},
 		"field_indexes": {
 			"description": "A lookup index to the fields to display in the list",
@@ -103,6 +106,16 @@
 						"default": {
 							"$ref": "#/definitions/default"
 						},
+						"formatter": {
+							"description": "Function to use to format the text before viewing it",
+							"type": "string"
+						},
+						"formatting": {
+							"$ref": "#/definitions/formatting"
+						},
+						"generator": {
+							"type": "string"
+						},
 						"header": {
 							"$ref": "#/definitions/header"
 						},
@@ -116,7 +129,8 @@
 							"$ref": "#/definitions/processed_data_type"
 						}
 					},
-					"required": [ "header" ]
+					"required": [ "header" ],
+					"additionalProperties": false
 				}
 			},
 			"additionalProperties": false
@@ -237,7 +251,8 @@
 					},
 					"additionalProperties": false
 				}
-			}
+			},
+			"addititionalProperties": false
 		},
 		"header": {
 			"description": "A header to use for fields",
