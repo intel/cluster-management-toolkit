@@ -83,10 +83,6 @@ Network:
   https_proxy:
   no_proxy:
 
-  # This option might be necessary if you're running iku from another
-  # system than the control plane is running on.
-  # allow_insecure_requests: false
-
 Ansible:
   # This determines the parallelism of the commands being executed;
   # the default used by ansible is 5, which makes things slow in any
@@ -222,7 +218,7 @@ Pods:
 
   # Fold log messages by default;
   # choosing false here will (try)
-  # to expand lines that are valid JSON or python dicts,
+  # to expand lines that are valid JSON, YAML, or Python dicts,
   # as well as lines that contain multiple key=value pairs
   # fold_msg: true
 
