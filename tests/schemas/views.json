@@ -101,20 +101,29 @@
 						},
 						"datagetter":  {
 							"description": "Custom function to use to get data from an object",
-							"type": "string"
+							"enum": [
+								"datagetter_container_status",
+								"datagetter_deprecated_api",
+								"datagetter_metrics",
+								"datagetter_endpoint_ips",
+								"datagetter_eps_endpoints"
+							]
 						},
 						"default": {
 							"$ref": "#/definitions/default"
 						},
 						"formatter": {
-							"description": "Function to use to format the text before viewing it",
-							"type": "string"
+							"$ref": "#/definitions/formatter"
 						},
 						"formatting": {
 							"$ref": "#/definitions/formatting"
 						},
 						"generator": {
-							"type": "string"
+							"description": "Custom generator to use when formatting the data",
+							"enum": [
+								"generator_mem",
+								"generator_status"
+							]
 						},
 						"header": {
 							"$ref": "#/definitions/header"
@@ -154,6 +163,25 @@
 					}
 				}
 			}
+		},
+		"formatter": {
+			"description": "Function to use to format the text before viewing it",
+			"enum": [
+				"address",
+				"age",
+				"float",
+				"hex",
+				"identify",
+				"iktlib.format_ini",
+				"list",
+				"list_with_status",
+				"mem",
+				"numerical",
+				"numerical_with_units",
+				"timestamp",
+				"timestamp_with_age",
+				"value_mapper"
+			]
 		},
 		"formatting": {
 			"description": "Formatting to use when outputting a field",
@@ -259,13 +287,6 @@
 			"type": "string",
 			"pattern": "^[A-Za-z0-9#][A-Za-z0-9()#./ -]*:$"
 		},
-		"infogetter": {
-			"description": "Function to use to extract data from an object",
-			"$ref": "#/definitions/nullable_function"
-		},
-		"infogetter_args": {
-			"$ref": "#/definitions/infogetter_args"
-		},
 		"infogetter_args": {
 			"description": "Arguments to pass to the infogetter",
 			"type": "object",
@@ -287,24 +308,9 @@
 			"pattern": "^[_A-Z][_A-Za-z0-9]*$",
 			"minLength": 1
 		},
-		"listgetter": {
-			"description": "Function to use to get list entries",
-			"$ref": "#/definitions/nullable_function"
-		},
 		"listgetter_args": {
 			"description": "Arguments to pass to the listgetter",
 			"type": "object"
-		},
-		"nullable_function": {
-			"description": "Used when a value can either be a function name or null",
-			"oneOf": [
-				{
-					"description": "The name of a function",
-					"type": "string"
-				}, {
-					"type": "null"
-				}
-			]
 		},
 		"on_activation": {
 			"description": "Action to perform when activating an entry",
@@ -1072,7 +1078,9 @@
 				},
 				"check_availability": {
 					"description": "Function to use to check whether the API is available",
-					"type": "string"
+					"enum": [
+						"is_cluster_reachable"
+					]
 				},
 				"field_indexes": {
 					"$ref": "#/definitions/field_indexes"
@@ -1085,7 +1093,12 @@
 					"type": "string"
 				},
 				"infogetter": {
-					"$ref": "#/definitions/infogetter"
+					"description": "The function to use to get the content for the infopad",
+					"enum": [
+						"generic_infogetter",
+						"get_container_info",
+						"get_log_info"
+					]
 				},
 				"infogetter_args": {
 					"$ref": "#/definitions/infogetter_args"
@@ -1099,7 +1112,20 @@
 					"type": "boolean"
 				},
 				"listgetter": {
-					"$ref": "#/definitions/listgetter"
+					"description": "Function to use to get list entries",
+					"oneOf": [
+						{
+							"enum": [
+								"generic_listgetter",
+								"get_context_list",
+								"get_inventory_list",
+								"get_metrics_list",
+								"get_pod_containers_list"
+							]
+						}, {
+							"type": "null"
+						}
+					]
 				},
 				"listgetter_args": {
 					"$ref": "#/definitions/listgetter_args"
@@ -1413,11 +1439,22 @@
 								},
 								"infogetter": {
 									"description": "The function to use to get the content for the infopad",
-									"type": "string"
+									"oneOf": [
+										{
+											"enum": [
+												"generic_infogetter"
+											]
+										}, {
+											"type": "null"
+										}
+									]
 								},
 								"objgetter": {
 									"description": "The function to use to get an object to pass to the infogetter",
-									"type": "string"
+									"enum": [
+										"objgetter_ansible_facts",
+										"objgetter_ansible_log"
+									]
 								},
 								"name_path": {
 									"description": "By default the name of the object is read from metadata#name; use this path to override",
@@ -1463,15 +1500,16 @@
 												},
 												"datagetter":  {
 													"description": "Custom function to use to get data from an object",
-													"type": "string"
+													"enum": [
+														"datagetter_latest_version"
+													]
 												},
 												"default": {
 													"description": "The fallback value to use if no data is available",
 													"type": [ "number", "string", "boolean", "object", "array", "null" ]
 												},
 												"formatter": {
-													"description": "Function to use to format the text before viewing it",
-													"type": "string"
+													"$ref": "#/definitions/formatter"
 												},
 												"formatting": {
 													"$ref": "#/definitions/formatting"
@@ -1529,13 +1567,44 @@
 							"$ref": "#/definitions/fields"
 						},
 						"infogetter": {
-							"$ref": "#/definitions/infogetter"
+							"description": "The function to use to get the content for whe listpad",
+							"enum": [
+								"generic_infogetter",
+								"get_auth_rule_info",
+								"get_eps_subsets_info",
+								"get_key_value_info",
+								"get_limit_info",
+								"get_promrules_info",
+								"get_rq_item_info",
+								"get_sas_info",
+								"get_strategy_info",
+								"get_subsets_info",
+								"get_svcmon_endpoints_info"
+							]
 						},
 						"infogetter_args": {
 							"$ref": "#/definitions/infogetter_args"
 						},
 						"listgetter": {
-							"$ref": "#/definitions/listgetter"
+							"description": "Function to use to get list entries",
+							"enum": [
+								"generic_listgetter",
+								"get_hpa_metrics",
+								"get_ingress_rule_list",
+								"get_netpol_rule_list",
+								"get_pod_resource_list",
+								"get_resource_info_by_last_applied_configuration",
+								"get_sidecar_rule_list",
+								"get_virtsvc_rule_list",
+								"listgetter_ansible_volumes",
+								"listgetter_configmap_data",
+								"listgetter_dict_list",
+								"listgetter_field",
+								"listgetter_join_dicts_to_list",
+								"listgetter_join_lists",
+								"listgetter_namespaced_resources",
+								"listgetter_policy_rules"
+							]
 						},
 						"listgetter_args": {
 							"$ref": "#/definitions/listgetter_args"
@@ -1563,7 +1632,12 @@
 					"type": "object",
 					"properties": {
 						"infogetter": {
-							"$ref": "#/definitions/infogetter"
+							"description": "The function to use to get the content for the logpad",
+							"enum": [
+								"logpad_msg_getter",
+								"get_task_log",
+								"get_themearrays"
+							]
 						},
 						"infogetter_args": {
 							"$ref": "#/definitions/infogetter_args"
@@ -1639,8 +1713,7 @@
 													"$ref": "#/definitions/simple_path"
 												},
 												"formatter": {
-													"description": "Function to use to format the text before viewing it",
-													"type": "string"
+													"$ref": "#/definitions/formatter"
 												},
 												"holder_identity_path": {
 													"description": "Path to get the name and namespace of the object from if there's a holder identity",
@@ -1819,7 +1892,23 @@
 											"type": "string"
 										},
 										"itemgetter": {
-											"type": "string"
+											"description": "Function to use to get items",
+											"enum": [
+												"get_allowed_ips",
+												"get_endpoint_slices",
+												"get_image_list",
+												"get_key_value",
+												"get_list_as_list",
+												"get_list_fields",
+												"get_package_version_list",
+												"get_pod_affinity",
+												"get_pod_tolerations",
+												"get_resource_list",
+												"get_resources",
+												"get_strings_from_string",
+												"get_svc_port_target_endpoints",
+												"get_volume_properties"
+											]
 										},
 										"itemgetter_args": {
 											"description": "Arguments to pass to the itemgetter",

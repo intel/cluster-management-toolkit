@@ -6,7 +6,7 @@
 ## iku
 * Try to find other things we can simplify in the views
 * Make themearrays treat lists as tuples; this would make it possible to remove special casing for views
-* Add a passlist for all acceptable calls instead of using eval
+* Add an allowlist for all acceptable calls instead of using eval
 * Maybe split all objgetters into a objgetters directory?
 * Move field_templates and built-in views to views
 * Modify generator_list; ideally every list element should be typed;

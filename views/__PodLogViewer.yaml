@@ -1,0 +1,62 @@
+kind: "__PodLogViewer"
+default_command: "podlogviewer"
+command:
+- "podlogs"
+- "podlog"
+listview:
+  name: "Pod Log Viewer"
+  group: "Administration"
+  listgetter: "get_pod_containers_list"
+  on_activation:
+    call: null
+  check_availability: "is_cluster_reachable"
+  labels: false
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "container", "status", "node_name", "image_id"]
+      sortcolumn: "namespace"
+  fields:
+    container:
+      header: "Container:"
+      path: "container"
+      type: "str"
+    image_id:
+      header: "Image:"
+      path: "image_id"
+      type: "str"
+    name:
+      header: "Pod Name:"
+      path: "name"
+      type: "str"
+    namespace:
+      header: "Pod Namespace:"
+      path: "namespace"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "namespace"
+    node_name:
+      header: "Node:"
+      path: "node_name"
+      type: "host"
+      default: "<none>"
+    status:
+      header: "Status:"
+      datagetter: "datagetter_container_status"
+      generator: "generator_status"
+  actions:
+    actionlist:
+      "View Logs":
+        description: "View logs for tagged resources interleaved"
+        actionfunc: "action_view_pod_logs"
+  shortcuts:
+    "View Log":
+      key: "enter"
+      helptext: "View log for selected resource"
+      action: "call"
+      action_call: "view_pod_logs"
+      action_args:
+        _pass_selected: true
+    # Overrides:
+    "Edit resource": null
+    "View YAML dump": null
