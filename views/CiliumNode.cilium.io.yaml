@@ -23,10 +23,12 @@ infoview:
         header: [["C", ["main", "infoheader_shortcut"]], ["ilium Identity:", ["main", "infoheader"]]]
         path: "spec#nodeidentity"
         type: "str"
+        default: "<unset>"
       encryption:
-        header: [["encryption:", ["main", "infoheader"]]]
+        header: [["Encryption (Key Index):", ["main", "infoheader"]]]
         path: "spec#encryption#key"
         type: "int"
+        default: "<unset>"
         formatting:
           field_colors:
           - type: "numerical"
@@ -36,22 +38,26 @@ infoview:
         header: [["  IPv4:", ["main", "infoheader"]]]
         path: "spec#health#ipv4"
         type: "str"
+        default: "<none>"
         formatter: "address"
       health_ipv6:
         header: [["  IPv6:", ["main", "infoheader"]]]
         path: "spec#health#ipv6"
         type: "str"
+        default: "<none>"
         formatter: "address"
       instance_id:
         header: [["Instance ID:", ["main", "infoheader"]]]
         path: "spec#instance-id"
         type: "str"
+        default: "<unset>"
       ipam_header:
         header: [["IPAM:", ["main", "infoheader"]]]
       ipam_max_above_watermark:
         header: [["  Max Above Watermark:", ["main", "infoheader"]]]
         path: "spec#ipam#max-above-watermark"
         type: "int"
+        default: "<unset>"
         formatting:
           field_colors:
           - type: "numerical"
@@ -59,6 +65,7 @@ infoview:
         header: [["  Max Allocate:", ["main", "infoheader"]]]
         path: "spec#ipam#max-allocate"
         type: "int"
+        default: "<unset>"
         formatting:
           field_colors:
           - type: "numerical"
@@ -66,6 +73,7 @@ infoview:
         header: [["  Min Allocate:", ["main", "infoheader"]]]
         path: "spec#ipam#max-allocate"
         type: "int"
+        default: "<unset>"
         formatting:
           field_colors:
           - type: "numerical"
@@ -78,6 +86,7 @@ infoview:
         header: [["  Preallocate:", ["main", "infoheader"]]]
         path: "spec#ipam#pre-allocate"
         type: "int"
+        default: "<unset>"
         formatting:
           field_colors:
           - type: "numerical"
@@ -85,6 +94,7 @@ infoview:
         header: [["  Operator Status:", ["main", "infoheader"]]]
         path: "status#ipam#operator-status#error"
         type: "raw"
+        default: "<unset>"
       ipam_release_ips:
         header: [["  Release IPs:", ["main", "infoheader"]]]
         path: "status#ipam#operator-status"
