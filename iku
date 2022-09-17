@@ -10104,6 +10104,8 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	else:
 		if name is None and obj is not None:
 			name = deep_get_with_fallback(obj, name_path)
+			# This is needed since CiliumID, for instance, is an integer
+			name = str(name)
 
 	if kind is None:
 		return None
