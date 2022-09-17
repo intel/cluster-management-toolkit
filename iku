@@ -5741,8 +5741,6 @@ builtin_fields = {
 	},
 }
 
-field_templates = {}
-
 # The return type of the formatting will be the same
 # as the type of the default, so default == None is a programming error
 def get_formatting(field, formatting, default):
@@ -5922,17 +5920,14 @@ def fieldgenerator(view, field_index, field_indexes, fields = {}, denylist = [])
 		else:
 			sortcolumn = field_names[0]
 
-	# XXX: Remove compat when fully converted
 	field_dict = {}
 	for field in field_names:
-		if type(fields) == dict and field in fields and type(deep_get(fields, f"{field}")) == dict:
+		if field in fields:
 			field_dict[field] = deep_get(fields, field, {})
 		elif field in builtin_fields:
 			field_dict[field] = deep_get(builtin_fields, field, {})
-		elif field in field_templates:
-			field_dict[field] = deep_get(field_templates, field, {})
 		else:
-			sys.exit(f"View {view}: field \"{field}\" cannot be found in view, builtin_fields, or field_templates\nView fields: {fields}\nfield_names: {field_names}")
+			sys.exit(f"View {view}: field \"{field}\" cannot be found in view or builtin_fields\nView fields: {fields}\nfield_names: {field_names}")
 
 	tmp_fields = OrderedDict()
 
@@ -11756,17 +11751,17 @@ def populate_views():
 					# We're not using row_indexes in the same way field_indexes are used; we don't support multiple profiles;
 					# since dicts are ordered by insertion we get the rows in the right order if we order by row_indexes,
 					# and we don't support resorting, so we don't need to include the row_indexes
-					for key in _indexes.keys():
-						if type(_indexes[key]) == list:
-							row_indexes = copy.deepcopy(_indexes[key])
-						else:
-							row_indexes = copy.deepcopy(_indexes[key]["fields"])
+					row_indexes = copy.deepcopy(deep_get(_indexes, "Normal#fields", []))
 
 					# Rows need to be reformatted
-					for row in deep_get(row_indexes, "Normal#fields", []):
-						row_fields[row] = deep_get(infopad, f"rows#{row}", {})
+					infopad_rows = deep_get(infopad, "rows", {})
+
+					for row in row_indexes:
+						if row not in infopad_rows:
+							sys.exit(f"View {view}: row \"{row}\" cannot be found in infoview\nInfoview rows: {infopad_rows}\nrow names: {row_indexes}")
+						row_fields[row] = copy.deepcopy(deep_get(infopad_rows, row, {}))
 						# We need to reformat the header
-						_header = deep_get(infopad, f"rows#{row}#header", [["<unset>", ["types", "unset"]]])
+						_header = deep_get(infopad_rows, f"{row}#header", [["<unset>", ["types", "unset"]]])
 						header = []
 						for string, formatting in _header:
 							header.append((string, tuple(formatting)))
