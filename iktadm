@@ -19,6 +19,7 @@ import socket
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
+import tarfile
 import tempfile
 import time
 import yaml
@@ -194,32 +195,9 @@ def mkdir_if_not_exists(directory):
 		iktprint([("mkdir ", "programname"), (f"{directory}", "path")])
 		os.mkdir(directory)
 
-def copy_if_not_exists_sudo(src, dst):
-	retval = True
-	if not os.path.exists(dst):
-		iktprint([("cp (sudo) ", "programname"), (f"{src} ", "path"), (f"{dst}", "path")])
-		args = ["/usr/bin/sudo", "/usr/bin/mv", src, dst]
-		retval = execute_command_with_response(args)
-
-def remove_if_exists_sudo(path):
-	if os.path.exists(path):
-		iktprint([("rm (sudo) ", "programname"), (f"{path}", "path")])
-		args = ["/usr/bin/sudo", "/usr/bin/rm", path]
-		execute_command_with_response(args)
-
-def set_file_owner_and_group_sudo(path, user, group):
-	iktprint([("chown (sudo) ", "programname"), (f"{user}", "argument"), (":", "separator"), (f"{group} ", "argument"), (f"{path}", "path")])
-	args = ["/usr/bin/sudo", "/usr/bin/chown", f"{user}:{group}", path]
-	execute_command_with_response(args)
-
 def set_file_permissions(path, permissions):
 	iktprint([("chmod ", "programname"), (f"{permissions} ", "argument"), (f"{path}", "path")])
 	args = ["/usr/bin/chmod", permissions, path]
-	execute_command_with_response(args)
-
-def set_file_permissions_sudo(path, permissions):
-	iktprint([("chmod (sudo) ", "programname"), (f"{permissions} ", "argument"), (f"{path}", "path")])
-	args = ["/usr/bin/sudo", "/usr/bin/chmod", permissions, path]
 	execute_command_with_response(args)
 
 def rmdir_recursive(directory):
@@ -367,40 +345,57 @@ def patch_cni_flannel(cni_path, pod_network_cidr):
 cni_data = {
 	"antrea": {
 		"url": "https://raw.githubusercontent.com/antrea-io/antrea/main/build/yamls/antrea.yml",
+		"type": "yaml",
 		"filename": "antrea.yaml",
 	},
 	"calico": {
 		"url": "https://docs.projectcalico.org/manifests/calico.yaml",
+		"type": "yaml",
 		"filename": "calico.yaml",
 	},
 	"canal": {
 		"url": "https://docs.projectcalico.org/manifests/canal.yaml",
+		"type": "yaml",
 		"filename": "canal.yaml",
 	},
-	# FIXME: For newer versions we need to do this using the cilium binary instead
 	"cilium": {
-		"url": "https://raw.githubusercontent.com/cilium/cilium/v1.9/install/kubernetes/quick-install.yaml",
-		"filename": "cilium.yaml",
+		"version_url": "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
+		"url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz",
+		"type": "installer",
+		"filename": "cilium",
+		"command": ["cilium", "install", "--cluster-name", "<<<cluster>>>"]
 	},
 	"flannel": {
 		"url": "https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
+		"type": "yaml",
 		"filename": "flannel.yaml",
 		"patch_cni": patch_cni_flannel,
 	},
 	"kube-router": {
 		"url": "https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml",
+		"type": "yaml",
 		"filename": "kube-router.yaml",
 	},
 	"weave": {
 		"urlgetter": weave_urlgetter,
+		"type": "yaml",
 		"filename": "weave.yaml",
 	},
 }
 
-def setup_cni(cni, pod_network_cidr):
+def setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 	if cni not in cni_data:
 		iktprint([("Error: ", "error"), (f"{cni}", "argument"), (" is not a valid/supported CNI; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
+
+	version_url = deep_get(cni_data, f"{cni}#version_url")
+	version = ""
+
+	if version_url is not None:
+		with tempfile.TemporaryDirectory() as td:
+			check_and_print_status(download_files(td, [(version_url, "version.txt")], permissions = 0o600))
+			with open(f"{td}/version.txt") as f:
+				version = f.read().split()[0]
 
 	url = deep_get(cni_data, f"{cni}#url")
 	if url is None:
@@ -408,18 +403,49 @@ def setup_cni(cni, pod_network_cidr):
 		if urlgetter is None:
 			raise Exception(f"Both URL and URL getter for {cni} are empty; this is a programming error.")
 		url = urlgetter(pod_network_cidr)
+
+	# FIXME: for now we hardcode this
+	arch = "amd64"
+	substitutions = {
+		"<<<version>>>": version,
+		"<<<arch>>>": arch,
+	}
+
+	for key, value in substitutions.items():
+		url = url.replace(key, value)
+
 	filename = deep_get(cni_data, f"{cni}#filename")
 	patch_cni = deep_get(cni_data, f"{cni}#patch_cni", None)
-	cni_path = f"{DEPLOYMENTDIR}/cni/{filename}"
+	filetype = deep_get(cni_data, f"{cni}#type")
+	if filetype is None:
+		raise Exception(f"type for {cni} is missing; this is a programming error.")
+	if filetype == "yaml":
+		mkdir_if_not_exists(f"{DEPLOYMENTDIR}")
+		directory = f"{DEPLOYMENTDIR}/cni"
+		permissions = 0o644
+	elif filetype == "installer":
+		directory = f"{BINDIR}"
+		permissions = 0o755
+	mkdir_if_not_exists(directory)
 
-	mkdir_if_not_exists(f"{DEPLOYMENTDIR}")
-	mkdir_if_not_exists(f"{DEPLOYMENTDIR}/cni")
-	check_and_print_status(download_files(f"{DEPLOYMENTDIR}/cni", [(url, filename)]))
+	check_and_print_status(download_files(directory, [(url, filename)], permissions = permissions))
 
 	if patch_cni is not None:
 		iktprint([("\n• ", "separator"), ("Patching “", "action"), (f"{cni}", "argument"), ("“ configuration", "action")])
-		patch_cni(cni_path, pod_network_cidr)
-	return cni_path
+		patch_cni(f"{directory}/{filename}", pod_network_cidr)
+		args = ["/usr/bin/kubectl", "apply", f"--context=<<<context>>>", "-f", cni_path]
+	elif filetype == "installer":
+		args = deep_get(cni_data, f"{cni}#command")
+
+	substitutions = {
+		"<<<cluster>>>": cluster_name,
+		"<<<context>>>": context_name,
+	}
+
+	subst = substitutions.get
+	args = [subst(s, s) for s in args]
+
+	check_and_print_status(execute_command(args))
 
 # This executes a command without capturing the output
 def execute_command(args, env = None):
@@ -596,7 +622,7 @@ def install_ansible_posix():
 def __task_check_and_install_ansible_posix(installation_info):
 	check_and_print_status(install_ansible_posix())
 
-def download_files(directory, fetch_urls):
+def download_files(directory, fetch_urls, permissions = 0o644):
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
 	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
 	retval = True
@@ -631,14 +657,27 @@ def download_files(directory, fetch_urls):
 			continue
 
 		if r1.status == 200:
-			with open(f"{directory}/{filename}", "wb") as f:
+			dl = tempfile.NamedTemporaryFile(delete = False)
+			with open(dl.name, "wb", opener = partial(os.open, mode = 0o600)) as f:
 				try:
 					f.write(r1.data)
 				except Exception as e:
-					iktprint([("Error: ", "error"), ("Could not write file ", "default"), (f"{filename}", "path"), (f" exception:", "default")], stderr = True)
+					iktprint([("Error: ", "error"), ("Could not write temporary file; exception:", "default")], stderr = True)
 					iktprint([(e, "warning")], stderr = True)
 					retval = False
 					continue
+
+			try:
+
+				with tempfile.TemporaryDirectory() as td:
+					tf = tarfile.open(dl.name, "r")
+					tf.extract(filename, path = td, set_attrs = False)
+					tf.close()
+					os.chmod(f"{td}/{filename}", permissions)
+					os.rename(f"{td}/{filename}", f"{directory}/{filename}")
+			except tarfile.ReadError:
+				os.chmod(dl.name, permissions)
+				os.rename(dl.name, f"{directory}/{filename}")
 		else:
 			iktprint([("Error: ", "error"), ("Failed to fetch URL ", "default"), (f"{url}", "url"), ("; HTTP code: ", "default"), (f"{r1.status}", "errorvalue")], stderr = True)
 			retval = False
@@ -1093,9 +1132,7 @@ def __task_setup_kubeadm_cni(installation_info):
 	context_name = f"{admin_name}@{cluster_name}"
 
 	# If everything is successful so far we deploy the pod network
-	cni_path = setup_cni(cni, pod_network_cidr)
-	args = ["/usr/bin/kubectl", "apply", f"--context={context_name}", "-f", cni_path]
-	check_and_print_status(execute_command(args))
+	cni_path = setup_cni(cni, pod_network_cidr, context_name)
 
 def __task_drain_control_planes(installation_info):
 	controlplanes = __selection_control_planes()
@@ -2811,8 +2848,6 @@ commandline = {
 }
 
 def main():
-	global iktconfig
-
 	init_iktprint(THEME_PATH)
 	command, options, args = parse_commandline(about.admin_program_name, about.admin_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline)
 	iktconfig = iktlib.read_iktconfig()

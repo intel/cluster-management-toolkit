@@ -7443,7 +7443,7 @@ def check_cni_updates(cni, current_version):
 	return new_version
 
 # FIXME
-def networkinfoloop(stdscr, view):
+def cniloop(stdscr, view):
 	#field_list, sortcolumn = fieldgenerator(view)
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
@@ -11453,13 +11453,13 @@ views_special = {
 		"is_taggable": False,
 		"check_availability": is_cluster_reachable,
 	},
-	"Network Info": {
-		"commandline": ["network", "net", "cni"],
+	"Container Network Interface Info": {
+		"commandline": ["cni"],
 		"group": "Administration",
-		"viewfunc": networkinfoloop,
+		"viewfunc": cniloop,
 		"fields": None,
 		"sortcolumn": None,
-		"helptext": helptexts.networkinfo,
+		"helptext": helptexts.cniinfo,
 		"activatedfun": None,
 		"listgetter": None,
 		"infogetter": None,

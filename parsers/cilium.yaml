@@ -13,5 +13,12 @@
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"
-      matchkey: "Cilium Operator "
+      # We'll eventually have to fix this if cilium changes major version
+      matchkey: "Cilium 1"
+      loglevel: "notice"
+    - matchtype: "startswith"
+      matchkey: "Cilium Operator 1"
+      loglevel: "notice"
+    - matchtype: "startswith"
+      matchkey: "cilium-envoy  version:"
       loglevel: "notice"

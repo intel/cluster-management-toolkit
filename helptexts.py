@@ -177,9 +177,9 @@ configmapdata = infoviewheader_part1 + infoviewheader_part2 + spacer + [
 	("[Shift] + R", "Toggle syntax highlighting (default: On)"),
 ] + spacer + logmovement
 
-networkinfo = infoviewheader_part1 + infoviewheader_part2 + [
+cniinfo = infoviewheader_part1 + infoviewheader_part2 + [
 	("", ""),
-	("[Shift] + U", "Update CNI network (if a newer candidate is available)"),
+	("[Shift] + U", "Update Cluster Network Interface (if a newer candidate is available)"),
 ]
 
 containerinfo = [
