@@ -7411,7 +7411,8 @@ def identify_formatter(dataformat, kind = None, obj = None, path = None):
 	return formatter
 
 def check_cni_updates(cni, current_version):
-	new_version = None
+	candidate_version = None
+	new_version = False
 
 	if cni == "weave":
 		# GET /report -H 'Accept: application/json'
@@ -7434,13 +7435,96 @@ def check_cni_updates(cni, current_version):
 			weavestatus = json.loads(r1.read())
 			if deep_get(weavestatus, "VersionCheck#Enabled", False) == True and deep_get(weavestatus, "VersionCheck#Success", False) == True:
 				candidate_version = deep_get(weavestatus, "VersionCheck#NewVersion", None)
-				if candidate_version is not None and versiontuple(current_version) < versiontuple(candidate_version):
-					new_version = candidate_version
 		conn.close()
+	elif cni == "cilium":
+		cpath = which("cilium")
+		if cpath is not None:
+			args = [cpath, "version"]
+			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
+			if result is not None:
+				versionoutput = result.stdout.splitlines()
+				for line in versionoutput:
+					tmp = re.match(r"^cilium image \(default\): (.*)", line)
+					if tmp is not None:
+						candidate_version = tmp[1]
+						break
 	else:
-		new_version = "<Update check not implemented>"
+		candidate_version = "<Update check not implemented>"
 
-	return new_version
+	if candidate_version is not None:
+		if versiontuple(current_version) < versiontuple(candidate_version):
+			new_version = True
+		else:
+			candidate_version = "No newer version found"
+
+	return new_version, candidate_version
+
+def update_cni(cni, candidate_version, dry_run = False):
+	retval = True
+
+	if cni == "Unknown":
+		return False
+	elif cni == "weave":
+		# if dry_run == True:
+		#	return True
+		return False
+		weaveupdateaddr = "https://cloud.weave.works"
+
+		# Get the Kubernetes version
+		# XXX: we can get this using the playbook
+		args = ["kubectl", "version", "-o", "yaml"]
+		result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
+		kubeversionoutput = yaml.safe_load(result.stdout)
+		kubeversion = deep_get(kubeversionoutput, "serverVersion#major") + "." + deep_get(kubeversionoutput, "serverVersion#minor")
+
+		page = "/k8s/" + kubeversion + "/net.yaml"
+
+		# FIXME: We need some way to handle no_proxy
+		https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+		if https_proxy is not None and https_proxy != "":
+			pm = urllib3.ProxyManager(https_proxy)
+		else:
+			pm = urllib3.PoolManager()
+
+		r1 = pm.request("GET", weaveupdateaddr + page)
+
+		if r1.status == 200:
+			# Try to get the new weave version, to do a final check
+			# whether we need to update or not
+			weaveupdate = yaml.safe_load(r1.data)
+			new_version = ""
+			for item in weaveupdate.get("items"):
+				if item.get("kind") == "DaemonSet":
+					containers = deep_get(item, "spec#template#spec#containers")
+
+					for container in containers:
+						if container.get("name") == "weave":
+							tmp = container.get("image", "")
+							new_version = re.sub(r".*:", r"", tmp)
+
+			if new_version != "" and versiontuple(current_version) < versiontuple(candidate_version):
+				f = tempfile.NamedTemporaryFile()
+				f.write(r1.data)
+				f.flush()
+
+				# Apply the new configuration
+				args = ["kubectl" , "apply", "-f"]
+				executecommand_multiple(stdscr, f"Updating weave to {new_version}", args, [ f.name ], True)
+				f.close()
+		pm.clear()
+	elif cni == "cilium":
+		cpath = which("cilium")
+		if dry_run == True:
+			return cpath is not None
+		args = [cpath, "upgrade"]
+		curses.endwin()
+		os.system("/usr/bin/clear")
+		iktprint([("Updating Cilium:", "phase")])
+		print()
+		subprocess.call(args)
+		input("\nPress Enter to continue...") # nosec
+
+	return retval
 
 # FIXME
 def cniloop(stdscr, view):
@@ -7506,16 +7590,13 @@ def cniloop(stdscr, view):
 			versionarray = [
 				("Version: ", ("main", "infoheader")),
 			]
-			versionarray +=	cni_version_str
+			versionarray += cni_version_str
 			candidateversionarray = [
 				("Candidate version: ", ("main", "infoheader")),
 			]
 
-			new_version = check_cni_updates(cni, cni_version)
-			if new_version is not None:
-				candidateversionarray.append((f"{new_version}", ("types", "version")))
-			else:
-				candidateversionarray.append(("No newer version available", ("types", "generic")))
+			new_version, candidate_version = check_cni_updates(cni, cni_version)
+			candidateversionarray.append((f"{candidate_version}", ("types", "version")))
 
 
 			namearray = [
@@ -7562,60 +7643,15 @@ def cniloop(stdscr, view):
 			uip.toggle_borders()
 			uip.refresh_all()
 			uip.force_update()
-		"""
-		elif c == ord("U"): # and len(candidate_version) > 0:
-			# If we don't recognise the CNI we cannot update it
-			if cni == "Unknown":
+		elif c == ord("U") and new_version == True:
+			# If we don't recognise the CNI or we don't support updates we cannot update it
+			if update_cni(cni, candidate_version, dry_run = True) == False:
 				continue
 
 			# Try to download and install an update for weave
-			if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Update Weave to version {candidate_version}:", default = False):
-				weaveupdateaddr = "https://cloud.weave.works"
-
-				# Get the Kubernetes version
-				# XXX: we can get this using the playbook
-				args = [ "kubectl", "version", "-o", "yaml" ]
-				result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
-				kubeversionoutput = yaml.safe_load(result.stdout)
-				kubeversion = deep_get(kubeversionoutput, "serverVersion#major") + "." + deep_get(kubeversionoutput, "serverVersion#minor")
-
-				page = "/k8s/" + kubeversion + "/net.yaml"
-
-				# FIXME: We need some way to handle no_proxy
-				https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
-				if https_proxy is not None and https_proxy != "":
-					pm = urllib3.ProxyManager(https_proxy)
-				else:
-					pm = urllib3.PoolManager()
-
-				r1 = pm.request("GET", weaveupdateaddr + page)
-
-				if r1.status == 200:
-					# Try to get the new weave version, to do a final check
-					# whether we need to update or not
-					weaveupdate = yaml.safe_load(r1.data)
-					new_version = ""
-					for item in weaveupdate.get("items"):
-						if item.get("kind") == "DaemonSet":
-							containers = deep_get(item, "spec#template#spec#containers")
-
-							for container in containers:
-								if container.get("name") == "weave":
-									tmp = container.get("image", "")
-									new_version = re.sub(r".*:", r"", tmp)
-
-					if new_version != "" and versiontuple(current_version) < versiontuple(candidate_version):
-						f = tempfile.NamedTemporaryFile()
-						f.write(r1.data)
-						f.flush()
-
-						# Apply the new configuration
-						args = [ "kubectl" , "apply", "-f" ]
-						executecommand_multiple(stdscr, f"Updating weave to {new_version}", args, [ f.name ], True)
-						f.close()
-				pm.clear()
+			if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Update {cni} to version {candidate_version}:", default = False):
+				update_cni(cni, candidate_version)
 			uip.refresh_all()
-		"""
 
 known_pv_types = {
 	"awsElasticBlockStore": {
@@ -10315,7 +10351,7 @@ def force_delete_resource(uip, items = [], action = {}, values = {}, kind = None
 	return delete_resource(uip, items = items, action = action, values = values, kind = kind)
 
 def __create_namespace(name):
-	args = [ "kubectl", "create", "namespace", f"{name}" ]
+	args = ["kubectl", "create", "namespace", f"{name}"]
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
 	return result
 
