@@ -9,6 +9,9 @@ theme = None
 themepath = None
 
 def __themearray_to_string(themearray):
+	if theme is None or themepath is None:
+		sys.exit("iktinput() used without calling init_iktprint() first; this is a programming error.")
+
 	string = ""
 	for _string, theme_attr_ref in themearray:
 		if theme is not None:
@@ -29,18 +32,27 @@ def __themearray_to_string(themearray):
 # themearray is a list of format strings of the format:
 # (string, theme_attr_ref); context is implicitly understood to be term
 def iktinput(themearray):
+	if theme is None or themepath is None:
+		sys.exit("iktinput() used without calling init_iktprint() first; this is a programming error.")
+
 	string = __themearray_to_string(themearray)
 	return input(string) # nosec
 
 # themearray is a list of format strings of the format:
 # (string, theme_attr_ref); context is implicitly understood to be term
 def iktinput_password(themearray):
+	if theme is None or themepath is None:
+		sys.exit("iktinput_password() used without calling init_iktprint() first; this is a programming error.")
+
 	string = __themearray_to_string(themearray)
 	return getpass(string)
 
 # themearray is a list of format strings of the format:
 # (string, theme_attr_ref); context is implicitly understood to be term
 def iktprint(themearray, stderr = False):
+	if theme is None or themepath is None:
+		sys.exit("iktprint() used without calling init_iktprint() first; this is a programming error.")
+
 	string = __themearray_to_string(themearray)
 
 	if stderr == True:
