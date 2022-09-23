@@ -8,6 +8,8 @@ from subprocess import PIPE, STDOUT
 import sys
 import yaml
 
+from iktlib import execute_command_with_response
+
 from commandparser import parse_commandline
 from iktprint import iktprint, init_iktprint
 
@@ -104,11 +106,6 @@ packages = [
 	"python3-urllib3",
 	"sshpass",
 ]
-
-# This executes a command with the output captured
-def execute_command_with_response(args):
-	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
-	return result.stdout.decode("utf-8")
 
 def install_software(packages, verbose = False):
 	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + packages

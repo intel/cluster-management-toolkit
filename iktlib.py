@@ -4,6 +4,8 @@ from functools import reduce
 import os
 from pathlib import Path
 import re
+import subprocess
+from subprocess import PIPE, STDOUT
 import sys
 import yaml
 
@@ -975,3 +977,16 @@ def format_ini(lines, **kwargs):
 				]
 		dumps.append(tmpline)
 	return dumps
+
+# This executes a command without capturing the output
+def execute_command(args, env = None, comparison = 0):
+	if env is None:
+		retval = subprocess.run(args)
+	else:
+		retval = subprocess.run(args, env = env)
+	return retval.returncode == comparison
+
+# This executes a command with the output captured
+def execute_command_with_response(args):
+	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+	return result.stdout.decode("utf-8")

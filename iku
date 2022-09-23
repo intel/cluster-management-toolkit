@@ -6629,7 +6629,7 @@ def genericlistloop(stdscr, view):
 						actiontype = deep_get(actionlist, f"{action}#action")
 						if actiontype is not None:
 							if actiontype == "execute":
-								actionfunc = execute_command
+								actionfunc = action_execute_command
 						else:
 							actionfunc = deep_get(actionlist, f"{action}#actionfunc", command_hosts)
 							if type(actionfunc) == str:
@@ -8833,7 +8833,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							"command": command
 						}
 					}
-					execute_command(uip, values = _values)
+					action_execute_command(uip, values = _values)
 			else:
 				call = deep_get(value, "call")
 				call_name = None
@@ -10713,7 +10713,7 @@ def delete_logs(uip, items = [], action = {}, values = {}, kind = None, title = 
 	for item in items:
 		ansible_delete_log(item)
 
-def execute_command(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def action_execute_command(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	tmpargs = deep_get(values, "action_args#command", [])
 	if len(tmpargs) == 0:
 		return

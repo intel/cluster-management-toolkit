@@ -13,8 +13,6 @@ import os
 from pathlib import Path
 import re
 import socket
-import subprocess
-from subprocess import PIPE, STDOUT
 import sys
 import yaml
 
@@ -36,7 +34,7 @@ from ansible_helper import ansible_configuration, ansible_set_vars, ansible_run_
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import iktlib
-from iktlib import deep_get, join_tuple_list
+from iktlib import deep_get, join_tuple_list, execute_command, execute_command_with_response
 
 HOMEDIR = str(Path.home())
 IKTDIR = f"{HOMEDIR}/.ikt"
@@ -202,19 +200,6 @@ def populate_playbooks_from_paths(paths):
 		playbooks.append(([("  • ", "separator")] + description, playbookpath))
 
 	return playbooks
-
-# This executes a command without capturing the output
-def execute_command(args, env = None):
-	if env is None:
-		retval = subprocess.run(args)
-	else:
-		retval = subprocess.run(args, env = env)
-	return retval.returncode == 0
-
-# This executes a command with the output captured
-def execute_command_with_response(args):
-	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
-	return result.stdout.decode("utf-8")
 
 def get_selection(selection, kind = None, default = None, skip_control_planes = True):
 	all_items = False
