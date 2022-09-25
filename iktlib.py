@@ -448,6 +448,21 @@ def format_yaml(objects, override_formatting = {}, **kwargs):
 
 	return dumps
 
+key_headers = [
+	"-----BEGIN CERTIFICATE-----",
+	"-----END CERTIFICATE-----",
+	"-----BEGIN PUBLIC KEY-----",
+	"-----END PUBLIC KEY-----",
+	"-----BEGIN PRIVATE KEY-----",
+	"-----END PRIVATE KEY-----",
+	"-----BEGIN DSA PRIVATE KEY-----",
+	"-----END DSA PRIVATE KEY-----",
+	"-----BEGIN RSA PRIVATE KEY-----",
+	"-----END RSA PRIVATE KEY-----",
+	"-----BEGIN EC PRIVATE KEY-----",
+	"-----END EC PRIVATE KEY-----",
+]
+
 # Take a certificate and highlight the markup
 def format_crt(lines, **kwargs):
 	dumps = []
@@ -459,7 +474,7 @@ def format_crt(lines, **kwargs):
 		lines = split_msg(lines)
 
 	for line in lines:
-		if line in ["-----BEGIN CERTIFICATE-----", "-----END CERTIFICATE-----", "-----BEGIN PUBLIC KEY-----", "-----END PUBLIC KEY-----", "-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----", "-----BEGIN RSA PRIVATE KEY-----", "-----END RSA PRIVATE KEY-----", "-----BEGIN EC PRIVATE KEY-----", "-----END EC PRIVATE KEY-----"]:
+		if line in key_headers:
 			dumps.append([(line, ("types", "separator"))])
 		else:
 			dumps.append([(line, ("types", "generic"))])

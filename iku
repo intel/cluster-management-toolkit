@@ -5,6 +5,7 @@
 # Requires: python3-openssl
 # Recommends: python3-ujson
 
+import ast
 import base64
 from base64 import binascii
 import copy
@@ -3689,14 +3690,14 @@ class KeyValueInfo:
 def decode_value(value):
 	# Is this base64?
 	try:
-		tmp = base64.b64decode(value)
+		decoded = base64.b64decode(value)
 		vtype = "base64"
-	except Exception as e:
+	except binascii.Error:
 		vtype = "string"
 
 	if vtype == "base64":
 		try:
-			tmp = base64.b64decode(value).decode("utf-8")
+			tmp = decoded.decode("utf-8")
 			if "\n" in tmp:
 				vtype = "base64-utf-8"
 			else:
@@ -3705,15 +3706,21 @@ def decode_value(value):
 		except UnicodeDecodeError as e:
 			vtype = "base64-binary"
 
-		try:
-			tmp = base64.b64decode(value)
-			if len(tmp) >= 2 and tmp[0] == 0x1f and tmp[1] == 0x8b:
-				vtype = "gzip"
-				value = tmp
-		except binascii.Error:
-			pass
-		except:
-			pass
+			try:
+				if len(decoded) >= 2 and decoded[0:1] == [0x1f, 0x8b]:
+					vtype = "gzip"
+					value = decoded
+				elif len(decoded) >= 6 and decoded[0:5] == [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x0]:
+					vtype = "xz"
+					value = decoded
+				elif len(decoded) >= 3 and decoded[0:2] == [0x42, 0x5a, 0x68]:
+					vtype = "bz2"
+					value = decoded
+				elif len(decoded) >= 3 and decoded[0:2] == [0x51, 0x46, 0x49]:
+					vtype = "qcow"
+					value = decoded
+			except binascii.Error:
+				pass
 
 	return vtype, value
 
@@ -4590,7 +4597,7 @@ def get_inventory_list(**kwargs):
 			ips = []
 
 			# Get all interfaces with global scope
-			output = subprocess.check_output(["ip", "-o", "addr", "show", "scope", "global"]).decode("utf-8")
+			output = subprocess.check_output(["/usr/sbin/ip", "-o", "addr", "show", "scope", "global"]).decode("utf-8")
 			for line in output.splitlines():
 				tmp = re.match(r"^\d+: (.*?)\s+inet6? (.*?)/\d+ .*", line)
 				if tmp is not None:
@@ -6211,7 +6218,7 @@ def genericlistloop(stdscr, view):
 					if tmpdescription == selection:
 						actionfunc = deep_get(actionlist, f"{action}#actionfunc", command_hosts)
 						if type(actionfunc) == str:
-							actionfunc = eval(actionfunc)
+							actionfunc = deep_get(actionfunc_allowlist, actionfunc)
 						# These are only relevant for node and inventory view
 						allowoncontrolplane = deep_get(actionlist, f"{action}#allow_on_control_plane", True)
 						singleoncontrolplane = deep_get(actionlist, f"{action}#single_on_control_plane", False)
@@ -6632,7 +6639,7 @@ def genericlistloop(stdscr, view):
 						else:
 							actionfunc = deep_get(actionlist, f"{action}#actionfunc", command_hosts)
 							if type(actionfunc) == str:
-								actionfunc = eval(actionfunc)
+								actionfunc = deep_get(actionfunc_allowlist, actionfunc)
 						action_args = deep_get(actionlist, f"{action}#action_args", {})
 						# These are only relevant for node and inventory view
 						allowoncontrolplane = deep_get(actionlist, f"{action}#allow-on-control-plane", True)
@@ -7517,7 +7524,7 @@ def update_cni(cni, candidate_version, dry_run = False):
 			return cpath is not None
 		args = [cpath, "upgrade"]
 		curses.endwin()
-		os.system("/usr/bin/clear")
+		subprocess.call("/usr/bin/clear") # nosec
 		iktprint([("Updating Cilium:", "phase")])
 		print()
 		subprocess.call(args)
@@ -8081,7 +8088,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		formatter = deep_get(obj, formatter_path)
 	elif formatter is not None:
 		if type(formatter) == str:
-			formatter = eval(formatter)
+			formatter = deep_get(formatter_allowlist, formatter)
 	obj_path = deep_get(kwargs, "obj_path")
 	title = None
 	if obj_path is not None:
@@ -8382,7 +8389,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					filters = []
 					if infogetter_filters is not None:
 						for key, value in infogetter_filters:
-							filters.append((eval(key), eval(value)))
+							filters.append((ast.literal_eval(key), ast.literal_eval(value)))
 				fields = deep_get(viewref, "fields", [])
 
 				if listref is not None:
@@ -8738,11 +8745,13 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					uip.refresh_logpad()
 					uip.refresh_statusbar()
 					curses.doupdate()
-					w_confirm = deep_get(value, "confirm", False)
 					# Check this condition before confirming
-					w_confirm = deep_get(value, "confirm")
+					w_confirm = deep_get(value, "confirm", False)
 					if type(w_confirm) == str:
-						w_confirm = eval(w_confirm)
+						if w_confirm == "path_exists":
+							w_confirm = os.path.exists(w_result)
+						else:
+							sys.exit(f"Unknown value for w_confirm; must be either boolean or path_exists")
 					if w_confirm == True:
 						curses.doupdate()
 						w_confirmtitle = deep_get(value, "confirmtitle")
@@ -8818,9 +8827,12 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							else:
 								command.append(_cmd)
 					# Check this condition before confirming
-					w_confirm = deep_get(value, "confirm")
+					w_confirm = deep_get(value, "confirm", False)
 					if type(w_confirm) == str:
-						w_confirm = eval(w_confirm)
+						if w_confirm == "path_exists":
+							w_confirm = os.path.exists(w_result)
+						else:
+							sys.exit(f"Unknown value for w_confirm; must be either boolean or path_exists")
 					if w_confirm == True:
 						curses.doupdate()
 						w_confirmtitle = deep_get(value, "confirmtitle")
@@ -8869,22 +8881,6 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				call_namespace = ""
 				if call_namespace_path is not None:
 					call_namespace = deep_get(obj, call_namespace_path)
-
-				call_kind_name_namespace_selection_path = deep_get(value, "call_kind_name_namespace_selection_path")
-				if call_kind_name_namespace_selection_path is not None:
-					# FIXME: this only allows for core APIs
-					kind_filter = deep_get(value, "kind_filter", None)
-					selected = uip.get_selected()
-
-					if kind_filter is None or selected.kind in kind_filter:
-						knn_order = deep_get(value, "call_kind_name_namespace_selection_order")
-						knn = eval(f"selected.{call_kind_name_namespace_selection_path}")
-						if knn_order[0] != -1:
-							kind = knn[knn_order[0]]
-						if knn_order[1] != -1:
-							call_name = knn[knn_order[1]]
-						if knn_order[2] != -1:
-							call_namespace = knn[knn_order[2]]
 
 				if call is not None and call_name is not None:
 					if kind is None or kind == ("", ""):
@@ -9899,7 +9895,7 @@ def do_command(stdscr, **kwargs):
 	msg = deep_get(kwargs, "msg", "")
 
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 	if len(msg) > 0:
 		iktprint(msg)
 		print()
@@ -9918,7 +9914,7 @@ def do_command(stdscr, **kwargs):
 def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 	# This should probably be done using connect_get_namespaced_pod_exec()
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 	iktprint(msg)
 	print()
 	if obj is not None:
@@ -10197,7 +10193,7 @@ def executecommand_multiple(stdscr, msg, command, items, waitforkeypress):
 	item = None
 
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 	print(msg + "\n")
 
 	for item in items:
@@ -10253,7 +10249,7 @@ def view_obj(stdscr, **kwargs):
 	else:
 		obj = [obj]
 	if type(formatter) == str:
-		formatter = eval(formatter)
+		formatter = deep_get(formatter_allowlist, formatter)
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
 def view_yaml(stdscr, **kwargs):
@@ -10359,7 +10355,7 @@ def create_namespace(stdscr, **kwargs):
 	name = deep_get(selection_vars, "namespace")
 
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 
 	# Verify that the name of the new namespace is valid
 	if kh.validate_name("dns-label", name) == False:
@@ -10427,7 +10423,7 @@ def __edit_resource(kind, namespace, name):
 
 def apply_configuration_from_file(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 	resource_path, rtype = values["resource_path"]
 
 	if rtype == "Configuration File":
@@ -10442,7 +10438,7 @@ def apply_configuration_from_file(uip, items = [], action = {}, values = {}, kin
 
 def apply_configuration_from_url(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 	resource_path = values["resource_url"]
 
 	args = ["/usr/bin/kubectl", "apply", "-f", resource_path]
@@ -10452,7 +10448,7 @@ def apply_configuration_from_url(uip, items = [], action = {}, values = {}, kind
 # We should probably download and apply locally instead
 def create_resource_from_url(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 	resource_path, rtype = values["resource_url"]
 
 	args = ["/usr/bin/kubectl", "create", "-f", resource_path]
@@ -10585,7 +10581,7 @@ def edit_resource(stdscr, **kwargs):
 		return
 
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 	retval, args = __edit_resource(kind, namespace, name)
 
 	waitforkeypress = False
@@ -10597,7 +10593,7 @@ def edit_resource(stdscr, **kwargs):
 
 def restart_resource_rescale(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 
 	for item in items:
 		namespace, name = item
@@ -10616,7 +10612,7 @@ def restart_resource_rescale(uip, items = [], action = {}, values = {}, kind = N
 
 def restart_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 
 	for item in items:
 		namespace, name = item
@@ -10633,7 +10629,7 @@ def restart_resource_rollout(uip, items = [], action = {}, values = {}, kind = N
 
 def rescale_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 
 	for item in items:
 		namespace, name = item
@@ -10654,7 +10650,7 @@ def rescale_resource(uip, items = [], action = {}, values = {}, kind = None, **k
 # ("Deployment", "apps")
 def pause_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 
 	for item in items:
 		namespace, name = item
@@ -10673,7 +10669,7 @@ def pause_resource_rollout(uip, items = [], action = {}, values = {}, kind = Non
 # ("Deployment", "apps")
 def resume_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 
 	for item in items:
 		namespace, name = item
@@ -10692,7 +10688,7 @@ def resume_resource_rollout(uip, items = [], action = {}, values = {}, kind = No
 # ("Deployment", "apps")
 def stop_resource_rescale(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 
 	for item in items:
 		namespace, name = item
@@ -10734,7 +10730,7 @@ def action_execute_command(uip, items = [], action = {}, values = {}, kind = Non
 	msg = [("Executing “", "action"), (description, "argument"), ("“\n", "action")]
 
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 
 	iktprint(msg)
 
@@ -10756,7 +10752,7 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None, **kwar
 	msg = [("Executing playbook “", "action"), (action.get("description"), "argument"), ("“ on the following hosts: ", "action")] + hosts + [("\n", "action")]
 
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 
 	if action.get("requires_cluster_info") == True:
 		gather_cluster_info()
@@ -10851,7 +10847,7 @@ def ssh_to_host(stdscr, **kwargs):
 	sshuser = deep_get(inventory, f"all#hosts#{host}#ansible_user", sshuser)
 
 	curses.endwin()
-	os.system("/usr/bin/clear")
+	subprocess.call("/usr/bin/clear") # nosec
 	iktprint(msg)
 
 	args = ["/usr/bin/ssh"]
@@ -11374,6 +11370,56 @@ availability_checker_allowlist = {
 	"is_cluster_reachable": is_cluster_reachable
 }
 
+# action calls acceptable for direct use in view files
+action_call_allowlist = {
+	"create_namespace": create_namespace,
+	"decode_and_view_data": decode_and_view_data,
+	"decode_and_view_file_templates": decode_and_view_file_templates,
+	"eventdispatch": eventdispatch,
+	"export_data": export_data,
+	"listviewdispatch": listviewdispatch,
+	"resourceinfodispatch_with_lookup": resourceinfodispatch_with_lookup,
+	"set_cluster_context": set_cluster_context,
+	"ssh_to_host": ssh_to_host,
+	"view_obj": view_obj,
+	"view_pod_logs": view_pod_logs,
+	"view_yaml": view_yaml,
+}
+
+# Actionfuncs acceptable for direct use in view files
+actionfunc_allowlist = {
+	"action_view_pod_logs": action_view_pod_logs,
+	"delete_logs": delete_logs,
+	"delete_resource": delete_resource,
+	"force_delete_resource": force_delete_resource,
+	"pause_resource_rollout": pause_resource_rollout,
+	"rescale_resource": rescale_resource,
+	"restart_resource_rescale": restart_resource_rescale,
+	"restart_resource_rollout": restart_resource_rollout,
+	"resume_resource_rollout": resume_resource_rollout,
+	"stop_resource_rescale": stop_resource_rescale,
+}
+
+# Activatedfuns acceptable for direct use in view files
+activatedfun_allowlist = {
+	"resourceinfodispatch": resourceinfodispatch,
+	"resourceinfodispatch_from_pod_resource_list": resourceinfodispatch_from_pod_resource_list,
+	"resourceinfodispatch_with_lookup_on_activation": resourceinfodispatch_with_lookup_on_activation,
+}
+
+# Formatters acceptable for direct use in view files
+formatter_allowlist = {
+	"iktlib.format_caddyfile": iktlib.format_caddyfile,
+	"iktlib.format_crt": iktlib.format_crt,
+	"iktlib.format_fluentbit": iktlib.format_fluentbit,
+	"iktlib.format_ini": iktlib.format_ini,
+	"iktlib.format_nginx": iktlib.format_nginx,
+	"iktlib.format_none": iktlib.format_none,
+	"iktlib.format_toml": iktlib.format_toml,
+	"iktlib.format_xml": iktlib.format_xml,
+	"iktlib.format_yaml": iktlib.format_yaml,
+}
+
 # Generators acceptable for direct use in view files
 generator_allowlist = {
 	"generator_mem": generator_mem,
@@ -11503,6 +11549,72 @@ views_special = {
 }
 
 views = {**views_special}
+
+key_mappings = {
+	"f1": curses.KEY_F1,
+	"f2": curses.KEY_F2,
+	"f3": curses.KEY_F3,
+	"f4": curses.KEY_F4,
+	"f5": curses.KEY_F5,
+	"f6": curses.KEY_F6,
+	"f7": curses.KEY_F7,
+	"f8": curses.KEY_F8,
+	"f9": curses.KEY_F9,
+	"f10": curses.KEY_F10,
+	"f11": curses.KEY_F11,
+	"f12": curses.KEY_F12,
+	"f13": curses.KEY_F13,
+	"f14": curses.KEY_F14,
+	"f15": curses.KEY_F15,
+	"f16": curses.KEY_F16,
+	"f17": curses.KEY_F17,
+	"f18": curses.KEY_F18,
+	"f19": curses.KEY_F19,
+	"f20": curses.KEY_F20,
+	"f21": curses.KEY_F21,
+	"f22": curses.KEY_F22,
+	"f23": curses.KEY_F23,
+	"f24": curses.KEY_F24,
+}
+
+def map_key(view_file, shortcut, activatedfun, key, modifier):
+	if len(modifier) > 0 and modifier not in ["ctrl", "shift"]:
+		sys.exit(f"View-file {view_file} is invalid: unknown modifier {modifier}; valid modifiers are shift, ctrl; aborting")
+
+	if key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and len(modifier) == 0:
+		shortcut_key = deep_get(key_mappings, key)
+		help_key = f"[{key.upper()}]"
+	elif key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and modifier == "shift":
+		_key = key[0] + str(int(key[1:]) + 12)
+		num = int(key[1:]) + 12
+		shortcut_key = deep_get(key_mappings, _key)
+		help_key = f"[Shift] + [{key.upper()}] / [{key[0].upper()}{num}]"
+	elif key in ["f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24"] and len(modifier) == 0:
+		num = int(key[1:]) - 12
+		_key = key[0] + str(num)
+		shortcut_key = deep_get(key_mappings, key)
+		help_key = f"[Shift] + [{key[0].upper()}{num}] / [{key.upper()}]"
+	elif key in ["enter", "return"]:
+		if len(modifier) > 0:
+			help_key = "[Enter]"
+			shortcut_key = [curses.KEY_ENTER, 10, 13]
+		if len(modifier) > 0 or activatedfun == None:
+			help_key = "[Enter]"
+			shortcut_key = [curses.KEY_ENTER, 10, 13]
+		else:
+			sys.exit(f"View-file “{view_file}“ is invalid: the listview shortcut “{shortcut}“ uses “enter“ as key; this conflicts with built-in shortcut for “on_activation“.")
+	elif len(modifier) > 0:
+		if modifier == "shift":
+			help_key = f"[Shift] + {key.upper()}"
+			shortcut_key = ord(key.upper())
+		elif modifier == "ctrl":
+			help_key = f"[Ctrl] + {key.upper()}"
+			shortcut_key = ord(key) - 96
+	else:
+		help_key = f"{key.upper()}"
+		shortcut_key = ord(key)
+
+	return shortcut_key, help_key
 
 # This function is called before parsing the command-line; it cannot use Kubernetes information,
 # since that would be far too slow, so
@@ -11653,7 +11765,10 @@ def populate_views():
 				else:
 					activatedfun = deep_get(on_activation, "call")
 					if type(activatedfun) == str:
-						activatedfun = eval(activatedfun)
+						_activatedfun = deep_get(activatedfun_allowlist, activatedfun)
+						if _activatedfun is None:
+							sys.exit(f"{activatedfun} is not in the activatedfun allow list")
+						activatedfun = _activatedfun
 
 				listview_entry = {
 					"kind": (kind, api_family),
@@ -11704,39 +11819,7 @@ def populate_views():
 					key = key.lower()
 					modifier = modifier.lower()
 
-					if len(modifier) > 0 and modifier not in ["ctrl", "shift"]:
-						sys.exit(f"View-file {view_file} is invalid: unknown modifier {modifier}; valid modifiers are shift, ctrl; aborting")
-
-					if key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and len(modifier) == 0:
-						shortcut_key = eval(f"curses.KEY_{key.upper()}")
-						help_key = key.upper()
-					elif key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and modifier == "shift":
-						num = int(key[1:]) + 12
-						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
-						help_key = f"[Shift] + {key.upper()} / {key[0]}{num}"
-					elif key in ["f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24"] and len(modifier) == 0:
-						num = int(key[1:]) - 12
-						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
-						help_key = f"[Shift] + {key[0]}{num} / {key.upper()}"
-					elif key in ["enter", "return"]:
-						if len(modifier) > 0:
-							help_key = "[Enter]"
-							shortcut_key = [curses.KEY_ENTER, 10, 13]
-						if len(modifier) > 0 or activatedfun == None:
-							help_key = "[Enter]"
-							shortcut_key = [curses.KEY_ENTER, 10, 13]
-						else:
-							sys.exit(f"View-file “{view_file}“ is invalid: the listview shortcut “{shortcut}“ uses “enter“ as key; this conflicts with built-in shortcut for “on_activation“.")
-					elif len(modifier) > 0:
-						if modifier == "shift":
-							help_key = f"[Shift] + {key.upper()}"
-							shortcut_key = ord(key.upper())
-						elif modifier == "ctrl":
-							help_key = f"[Ctrl] + {key.upper()}"
-							shortcut_key = ord(key) - 96
-					else:
-						help_key = f"{key.upper()}"
-						shortcut_key = ord(key)
+					shortcut_key, help_key = map_key(view_file, shortcut, activatedfun, key, modifier)
 
 					shortcuts[shortcut] = {
 						"shortcut": shortcut_key,
@@ -11750,8 +11833,10 @@ def populate_views():
 						"read_only": read_only
 					}
 					if action == "call":
-						action_call = eval(action_call)
-						shortcuts[shortcut]["action_call"] = action_call
+						_action_call = deep_get(action_call_allowlist, action_call)
+						if _action_call is None:
+							sys.exit(f"{action_call} is not in the action_call allow list")
+						shortcuts[shortcut]["action_call"] = _action_call
 
 				if len(shortcuts) > 0:
 					listview_entry["shortcuts"] = shortcuts
@@ -11795,7 +11880,7 @@ def populate_views():
 
 					for row in row_indexes:
 						if row not in infopad_rows:
-							sys.exit(f"View {view}: row \"{row}\" cannot be found in infoview\nInfoview rows: {infopad_rows}\nrow names: {row_indexes}")
+							sys.exit(f"View {name}: row \"{row}\" cannot be found in infoview\nInfoview rows: {infopad_rows}\nrow names: {row_indexes}")
 						row_fields[row] = copy.deepcopy(deep_get(infopad_rows, row, {}))
 						# We need to reformat the header
 						_header = deep_get(infopad_rows, f"{row}#header", [["<unset>", ["types", "unset"]]])
@@ -11813,7 +11898,10 @@ def populate_views():
 				on_activation = deep_get(listpad, "on_activation")
 				activatedfun = deep_get(on_activation, "call")
 				if type(activatedfun) == str:
-					activatedfun = eval(activatedfun)
+					_activatedfun = deep_get(activatedfun_allowlist, activatedfun)
+					if _activatedfun is None:
+						sys.exit(f"{activatedfun} is not in the activatedfun allow list")
+					activatedfun = _activatedfun
 				override_kind = deep_get(on_activation, "kind")
 				override_api_family = deep_get(on_activation, "api_family", "")
 				on_activation_extraref = deep_get(on_activation, "extraref")
@@ -11942,36 +12030,7 @@ def populate_views():
 					key = key.lower()
 					modifier = modifier.lower()
 
-					if len(modifier) > 0 and modifier not in ["ctrl", "shift"]:
-						sys.exit(f"View-file {view_file} is invalid: unknown modifier {modifier}; valid modifiers are shift, ctrl; aborting")
-
-					if key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and len(modifier) == 0:
-						shortcut_key = eval(f"curses.KEY_{key.upper()}")
-						help_key = key.upper()
-					elif key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and modifier == "shift":
-						num = int(key[1:]) + 12
-						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
-						help_key = f"[Shift] + {key.upper()} / {key[0]}{num}"
-					elif key in ["f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24"] and len(modifier) == 0:
-						num = int(key[1:]) - 12
-						shortcut_key = eval(f"curses.KEY_{key[0].upper()}{num}")
-						help_key = f"[Shift] + {key[0]}{num} / {key.upper()}"
-					elif key in ["enter", "return"]:
-						if len(modifier) > 0 or on_activation is None or len(on_activation) == 0:
-							help_key = "[Enter]"
-							shortcut_key = [curses.KEY_ENTER, 10, 13]
-						else:
-							sys.exit(f"View-file “{view_file}“ is invalid: the infoview shortcut “{shortcut}“ uses “enter“ as key; this conflicts with built-in shortcut for “on_activation“.")
-					elif len(modifier) > 0:
-						if modifier == "shift":
-							help_key = f"[Shift] + {key.upper()}"
-							shortcut_key = ord(key.upper())
-						elif modifier == "ctrl":
-							help_key = f"[Ctrl] + {key.upper()}"
-							shortcut_key = ord(key) - 96
-					else:
-						help_key = f"{key.upper()}"
-						shortcut_key = ord(key)
+					shortcut_key, help_key = map_key(view_file, shortcut, activatedfun, key, modifier)
 
 					shortcuts[shortcut] = {
 						"shortcut": shortcut_key,
@@ -11996,8 +12055,10 @@ def populate_views():
 						"sortcolumn": w_sortcolumn,
 					}
 					if action == "call":
-						action_call = eval(action_call)
-						shortcuts[shortcut]["action_call"] = action_call
+						_action_call = deep_get(action_call_allowlist, action_call)
+						if _action_call is None:
+							sys.exit(f"{action_call} is not in the action_call allow list")
+						shortcuts[shortcut]["action_call"] = _action_call
 
 				logpad = deep_get(d, "infoview#logpad", {})
 
