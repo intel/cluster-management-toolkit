@@ -37,6 +37,8 @@ from iktio import download_files
 import iktlib
 from iktlib import deep_get, execute_command, execute_command_with_response
 
+from kubernetes_helper import kubectl_get_version
+
 HOMEDIR = str(Path.home())
 BINDIR = f"{HOMEDIR}/bin"
 IKTDIR = f"{HOMEDIR}/.ikt"
@@ -1222,20 +1224,15 @@ def __task_drain_control_planes(installation_info):
 		check_and_print_status(True)
 		return
 
-	# Check kubectl version
-	_args = ["/usr/bin/kubectl", "version", "-oyaml"]
-	response = execute_command_with_response(_args)
-	version_data = yaml.safe_load(response)
-	major_version = deep_get(version_data, "clientVersion#major")
-	minor_version = deep_get(version_data, "clientVersion#minor")
+	kubectl_major_version, kubectl_minor_version, _kubectl_git_version, _server_major_version, _server_minor_version, _server_git_version = kubectl_get_version()
 
 	# Build the drain command line based on what version of kubectl is installed
 	args = ["/usr/bin/kubectl", "drain", "--ignore-daemonsets"]
-	if int(major_version) >= 1 and int(minor_version) >= 20:
+	if kubectl_major_version >= 1 and kubectl_minor_version >= 20:
 		args.append("--delete-emptydir-data")
 	else:
 		args.append("--delete-local-data")
-	if int(major_version) >= 1 and int(minor_version) >= 18:
+	if kubectl_major_version >= 1 and kubectl_minor_version >= 18:
 		args.append("--disable-eviction")
 
 	for controlplane in controlplanes:
@@ -1243,10 +1240,23 @@ def __task_drain_control_planes(installation_info):
 
 def __task_uncordon_control_planes(installation_info):
 	controlplanes = __selection_control_planes()
-	args = ["/usr/bin/kubectl", "uncordon"]
+
+	from kubernetes_helper import KubernetesHelper
+	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
 
 	for controlplane in controlplanes:
-		check_and_print_status(execute_command(args + [controlplane]))
+		iktprint([(f"  {controlplane}:", "hostname")])
+		message, status = kh.uncordon_node(controlplane)
+		if status in [200, 204]:
+			iktprint([("    Uncordoned", "success")])
+			print(message)
+		elif status == 42503:
+			iktprint([("\n  Critical: ", "critical"), ("Cluster not available; aborting", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+		else:
+			iktprint([("\n  API call returned error:", "error")], stderr = True)
+			iktprint([(f"    {message}", "error")], stderr = True)
+			sys.exit(errno.EINVAL)
 
 # Run pre-upgrade playbooks on localhost
 def __task_run_preupgrade_playbooks_on_localhost(installation_info):
@@ -2012,10 +2022,12 @@ def __get_node_info(kh = None):
 		node_name = deep_get(node, "metadata#name")
 		node_schedulable = not deep_get(node, "spec#unschedulable", False)
 		node_roles = kh.get_node_roles(node)
+		node_taints = deep_get(node, "spec#taints", [])
 		node_statuses.append({
 			"name": node_name,
 			"schedulable": node_schedulable,
 			"roles": node_roles,
+			"taints": node_taints,
 		})
 
 	return node_statuses, kh
@@ -2287,7 +2299,7 @@ def upgrade_control_plane(options = [], args = None):
 			sys.exit(errno.ENOENT)
 		elif requested_version == version:
 			if allow_reinstall == False:
-				iktprint([("Error:", "error"), (" The requested version ", "default"), (f"{requested_version}", "version"), (" is already installed; to reinstall use the option “", "default"), ("--reinstall", "option"), ("“.", "default")], stderr = True)
+				iktprint([("Warning:", "warning"), (" The requested version ", "default"), (f"{requested_version}", "version"), (" is already installed; to reinstall use the option “", "default"), ("--reinstall", "option"), ("“.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 		elif deb_compare_versions(version, requested_version) == True:
 			iktprint([("Error:", "error"), (" The requested version ", "default"), (f"{requested_version}", "version"), (" is older than than the installed version ", "default"), (f"{deb_versions[0][1]}", "version"), (". Downgrades are not supported; aborting.", "default")], stderr = True)
@@ -2393,27 +2405,16 @@ def taint_control_plane(options = [], args = None):
 				iktprint([("Tainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
-			args = ["/usr/bin/kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/control-plane:NoSchedule"]
-			response = execute_command_with_response(args).strip("\n")
-			if "with same effect(s) and --overwrite is false" in response:
-				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
-				continue
-			elif response.endswith("tainted"):
-				iktprint([("  Tainted", "success")])
-			elif response.startswith("error: "):
-				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.")], stderr = True)
-				sys.exit(errno.EINVAL)
-			args = ["/usr/bin/kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master:NoSchedule"]
-			response = execute_command_with_response(args).strip("\n")
-			if "with same effect(s) and --overwrite is false" in response:
-				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
-				continue
-			elif response.endswith("tainted"):
-				iktprint([("  Tainted", "success")])
-				continue
-			elif response.startswith("error: "):
-				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.")], stderr = True)
-				sys.exit(errno.EINVAL)
+			message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/control-plane", "NoSchedule"))
+			iktprint([("  Tainted", "success")])
+
+		if "master" in node["roles"] and (len(args) == 0 or node["name"] in args):
+			if first == True:
+				iktprint([("Tainting control plane(s):", "header")])
+				first = False
+			iktprint([(node["name"], "hostname")])
+			message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/master", "NoSchedule"))
+			iktprint([("  Tainted", "success")])
 
 	if first == True:
 		iktprint([("Warning:", "warning"), (" No matching control planes found. Aborting.", "default")], stderr = True)
@@ -2434,27 +2435,16 @@ def untaint_control_plane(options = [], args = None):
 				iktprint([("Untainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
-			args = ["/usr/bin/kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/control-plane-"]
-			response = execute_command_with_response(args).strip("\n")
-			if "error: taint \"node-role.kubernetes.io/control-plane\" not found" in response:
-				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
-			elif response.endswith("untainted"):
-				iktprint([("  Untainted", "success")])
-			elif response.startswith("error: "):
-				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
+			message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/control-plane", None))
+			iktprint([("  Untainted", "success")])
 
-			args = ["/usr/bin/kubectl", "taint", "node", node["name"], "node-role.kubernetes.io/master-"]
-			response = execute_command_with_response(args).strip("\n")
-			if "error: taint \"node-role.kubernetes.io/master\" not found" in response:
-				iktprint([("  Warning: ", "warning"), (response[len("error: "):], "default"), ("; ignoring.", "default")])
-				continue
-			elif response.endswith("untainted"):
-				iktprint([("  Untainted", "success")])
-				continue
-			elif response.startswith("error: "):
-				iktprint([("  Error: ", "error"), (response[len("error: "):], "default"), ("; aborting.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
+		if "master" in node["roles"] and (len(args) == 0 or node["name"] in args):
+			if first == True:
+				iktprint([("Untainting control plane(s):", "header")])
+				first = False
+			iktprint([(node["name"], "hostname")])
+			message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/master", None))
+			iktprint([("  Untainted", "success")])
 
 	if first == True:
 		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)
@@ -2471,38 +2461,31 @@ def troubleshoot(options = [], args = None):
 
 	# Is the version of kubectl within one version of the cluster version?
 	iktprint([("[Checking client/server version match]\n", "phase")])
-	args = ["/usr/bin/kubectl", "version", "-oyaml"]
-	response = execute_command_with_response(args)
-	version_data = yaml.safe_load(response)
 
-	server_major = int("".join(filter(str.isdigit, deep_get(version_data, "serverVersion#major"))))
-	server_minor = int("".join(filter(str.isdigit, deep_get(version_data, "serverVersion#minor"))))
-	kubectl_minor = int("".join(filter(str.isdigit, deep_get(version_data, "clientVersion#minor"))))
-	server_git_version = deep_get(version_data, "serverVersion#gitVersion")
-	kubectl_git_version = deep_get(version_data, "clientVersion#gitVersion")
+	kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version = kubectl_get_version()
 
 	iktprint([("       kubectl ", "programname"), ("version: ", "default"), (f"{kubectl_git_version}", "version")])
 	iktprint([("kube-apiserver ", "programname"), ("version: ", "default"), (f"{server_git_version}", "version")])
 
 	print()
 
-	if server_major != 1:
+	if server_major_version != 1:
 		iktprint([("Critical:", "critical"), (f" {about.program_suite_name}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOTSUP)
 
-	if kubectl_minor > server_minor and kubectl_minor == server_minor + 1:
+	if kubectl_minor_version > server_minor_version and kubectl_minor_version == server_minor_version + 1:
 		iktprint([("Note: ", "note"), ("The ", "default"), ("kubectl", "programname"), (f" version is one minor version newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
 		iktprint([("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
 		note += 1
-	elif kubectl_minor > server_minor:
+	elif kubectl_minor_version > server_minor_version:
 		iktprint([("Warning: ", "warning"), ("The ", "default"), ("kubectl", "programname"), (f" version is more than one minor versions newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
 		iktprint([("         this might work, but it's generally recommended to keep the versions in sync.", "default")], stderr = True)
 		warning += 1
-	elif kubectl_minor < server_minor and kubectl_minor + 1 == server_minor:
+	elif kubectl_minor_version < server_minor_version and kubectl_minor_version + 1 == server_minor_version:
 		iktprint([("Note: ", "note"), ("The ", "default"), ("kubectl", "programname"), (f" version is one minor version older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
 		iktprint([("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
 		warning += 1
-	elif kubectl_minor < server_minor:
+	elif kubectl_minor_version < server_minor_version:
 		iktprint([("Error:", "error"), (" The ", "default"), ("kubectl", "programname"), (f" version is much older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
 		iktprint([("       this is NOT supported and is likely to cause issues.", "default")], stderr = True)
 		error += 1
@@ -2531,48 +2514,48 @@ def troubleshoot(options = [], args = None):
 		kubeproxy_version = deep_get(node, "status#nodeInfo#kubeProxyVersion")
 		tmp = re.match(r"^v(\d+)\.(\d+)\..*", kubelet_version)
 
-		kubelet_major = None
-		kubelet_minor = None
-		kubeproxy_major = None
-		kubeproxy_minor = None
+		kubelet_major_version = None
+		kubelet_minor_version = None
+		kubeproxy_major_version = None
+		kubeproxy_minor_version = None
 		if tmp is not None:
-			kubelet_major = int(tmp[1])
-			kubelet_minor = int(tmp[2])
+			kubelet_major_version = int(tmp[1])
+			kubelet_minor_version = int(tmp[2])
 		else:
 			iktprint([("Error:", "error"), (" Failed to extract ", "default"), ("kubelet", "programname"), (" version on node ", "default"), (f"{node_name}", "hostname")], stderr = True)
 			critical = True
 
 		tmp = re.match(r"^v(\d+)\.(\d+)\..*", kubeproxy_version)
 		if tmp is not None:
-			kubeproxy_major = int(tmp[1])
-			kubeproxy_minor = int(tmp[2])
+			kubeproxy_major_version = int(tmp[1])
+			kubeproxy_minor_version = int(tmp[2])
 		else:
 			iktprint([("Error:", "error"), (" Failed to extract ", "default"), ("kube-proxy", "programname"), (" version on node ", "default"), (f"{node_name}", "hostname")], stderr = True)
 			critical = True
 
-		if kubelet_major is not None and kubelet_major != 1:
+		if kubelet_major_version is not None and kubelet_major_version != 1:
 			iktprint([(f"Critical:", "critical"), (f" {about.program_suite_name}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"), (" runs ", "default"), ("kubelet ", "programname"), ("version ", "default"), (f"{kubelet_version}", "version")], stderr = True)
 			critical = True
 
-		if kubeproxy_major is not None and kubeproxy_major != 1:
+		if kubeproxy_major_version is not None and kubeproxy_major_version != 1:
 			iktprint([(f"Critical:", "critical"), (f" {about.program_suite_name}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"), (" runs ", "default"), ("kube-proxy ", "programname"), ("version ", "default"), (f"{kubeproxy_version}", "version")], stderr = True)
 			critical = True
 
-		if kubelet_minor is not None and kubelet_minor > server_minor:
-			iktprint([(f"Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major}.{kubelet_minor}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is newer than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major}.{server_minor}", "version"), (");", "default")], stderr = True)
+		if kubelet_minor_version is not None and kubelet_minor_version > server_minor_version:
+			iktprint([(f"Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is newer than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
 			iktprint([(f"       this is not supported.", "default")], stderr = True)
 			error += 1
-		elif kubelet_minor is not None and kubelet_minor < server_minor and kubelet_minor + 2 >= server_minor:
-			iktprint([(f"Warning: ", "warning"), ("The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major}.{kubelet_minor}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is a bit older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major}.{server_minor}", "version"), (");", "default")], stderr = True)
+		elif kubelet_minor_version is not None and kubelet_minor_version < server_minor_version and kubelet_minor_version + 2 >= server_minor_version:
+			iktprint([(f"Warning: ", "warning"), ("The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is a bit older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
 			iktprint([(f"         this is supported, but not recommended.", "default")], stderr = True)
 			warning += 1
-		elif kubelet_minor is not None and kubelet_minor < server_minor:
-			iktprint([(f"Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major}.{kubelet_minor}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is a much older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major}.{server_minor}", "version"), (");", "default")], stderr = True)
+		elif kubelet_minor_version is not None and kubelet_minor_version < server_minor_version:
+			iktprint([(f"Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is a much older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
 			iktprint([(f"       this is not supported.", "default")], stderr = True)
 			error += 1
 
-		if kubelet_minor is not None and kubeproxy_minor is not None and kubelet_minor != kubeproxy_minor:
-			iktprint([(f"Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major}.{kubelet_minor}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is not the same as that of ", "default"), ("kube-proxy", "programname"), (" (", "default"), (f"{kubeproxy_major}.{kubeproxy_minor}", "version"), (");", "default")], stderr = True)
+		if kubelet_minor_version is not None and kubeproxy_minor_version is not None and kubelet_minor_version != kubeproxy_minor_version:
+			iktprint([(f"Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is not the same as that of ", "default"), ("kube-proxy", "programname"), (" (", "default"), (f"{kubeproxy_major_version}.{kubeproxy_minor_version}", "version"), (");", "default")], stderr = True)
 			iktprint([(f"       this is not supported.", "default")], stderr = True)
 			error += 1
 

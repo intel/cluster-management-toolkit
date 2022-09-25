@@ -23,7 +23,21 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
-from iktlib import deep_get, stgroup, versiontuple, timestamp_to_datetime, get_since
+from iktlib import deep_get, stgroup, versiontuple, timestamp_to_datetime, get_since, execute_command_with_response
+
+def kubectl_get_version():
+	# Check kubectl version
+	args = ["/usr/bin/kubectl", "version", "-oyaml"]
+	response = execute_command_with_response(args)
+	version_data = yaml.safe_load(response)
+	kubectl_major_version = int("".join(filter(str.isdigit, deep_get(version_data, "clientVersion#major"))))
+	kubectl_minor_version = int("".join(filter(str.isdigit, deep_get(version_data, "clientVersion#minor"))))
+	server_major_version = int("".join(filter(str.isdigit, deep_get(version_data, "serverVersion#major"))))
+	server_minor_version = int("".join(filter(str.isdigit, deep_get(version_data, "serverVersion#minor"))))
+	server_git_version = deep_get(version_data, "serverVersion#gitVersion")
+	kubectl_git_version = deep_get(version_data, "clientVersion#gitVersion")
+
+	return kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version
 
 class KubernetesHelper:
 	tmp_ca_certs_file = None
@@ -421,9 +435,6 @@ class KubernetesHelper:
 				continue
 
 			role = tmp[1]
-
-			if role == "master":
-				role = "control-plane"
 
 			if role not in roles:
 				roles.append(role)
@@ -2775,6 +2786,12 @@ class KubernetesHelper:
 			retval = True
 			d = result.data
 			data = d
+		elif status == 201:
+			# Created
+			# (Assuming we tried to create something this means success
+			retval = True
+			d = result.data
+			data = d
 		elif status == 204:
 			# No Content
 			pass
@@ -2785,42 +2802,93 @@ class KubernetesHelper:
 			message = f"400: Bad Request; " + deep_get(d, "message", "")
 		elif status == 401:
 			# Unauthorized
-			message = f"401: Unauthorized; method {method} URL {url} header_params: {header_params}"
+			message = f"401: Unauthorized; method: {method}, URL: {url}, header_params: {header_params}"
 		elif status == 403:
 			# Forbidden: request denied
-			message = f"403: Forbidden; method {method} URL {url} header_params: {header_params}"
+			message = f"403: Forbidden; method: {method}, URL: {url}, header_params: {header_params}"
 		elif status == 404:
 			# page not found (API not available or possibly programming error)
-			message = f"404: Not Found; method {method} URL {url} header_params: {header_params}"
+			message = f"404: Not Found; method: {method}, URL: {url}, header_params: {header_params}"
 		elif status == 405:
 			# Method not allowed
-			raise Exception(f"405: Method Not Allowed; this is probably a programming error; method: {method} URL {url}; header_params: {header_params}")
+			raise Exception(f"405: Method Not Allowed; this is probably a programming error; method: {method}, URL: {url}; header_params: {header_params}")
 		elif status == 406:
 			# Not Acceptable
-			raise Exception(f"406: Not Acceptable; this is probably a programming error; method: {method} URL {url}; header_params: {header_params}")
+			raise Exception(f"406: Not Acceptable; this is probably a programming error; method: {method}, URL: {url}; header_params: {header_params}")
 		elif status == 410:
 			# Gone
 			# Most likely a update events were requested (using resourceVersion), but it's been too long since the previous request;
 			# caller should retry without &resourceVersion=xxxxx
 			pass
+		elif status == 422:
+			# Unprocessable entity
+			# The content and syntax is correct, but the request cannot be processed
+			msg = result.data.decode("utf-8")
+			message = f"422: Unprocessable Entity; method: {method}, URL: {url}; header_params: {header_params}; message: {msg}"
 		elif status == 500:
 			# Internal Server Error
 			msg = result.data.decode("utf-8")
-			message = f"500: Internal Server Error; method: {method} URL {url}; header_params: {header_params}; message: {msg}"
+			message = f"500: Internal Server Error; method: {method}, URL: {url}; header_params: {header_params}; message: {msg}"
 		elif status == 503:
 			# Service Unavailable
 			# This is might be a CRD that has failed to deploy properly
-			message = f"503: Service Unavailable; method: {method} URL {url}; header_params: {header_params}"
+			message = f"503: Service Unavailable; method: {method}, URL: {url}; header_params: {header_params}"
 		elif status == 504:
 			# Gateway Timeout
 			# A request was made for an unrecognised resourceVersion, and timed out waiting for it to become available
-			message = f"504: Gateway Timeout; method: {method} URL {url}; header_params: {header_params}"
+			message = f"504: Gateway Timeout; method: {method}, URL: {url}; header_params: {header_params}"
 		elif status == 42503:
-			message = f"No route to host; method: {method} URL {url}; header_params: {header_params}"
+			message = f"No route to host; method: {method}, URL: {url}; header_params: {header_params}"
 		else:
-			raise Exception(f"Unhandled error: {result.status}; method {method} URL {url}; header_params: {header_params}")
+			raise Exception(f"Unhandled error: {result.status}; method: {method}, URL: {url}; header_params: {header_params}")
 
 		return data, message, status
+
+	def __rest_helper_post(self, kind, name = "", namespace = "", body = {}):
+		method = "POST"
+
+		header_params = {
+			"Content-Type": "application/json",
+			"User-Agent": f"{self.programname} v{self.programversion}",
+		}
+
+		namespace_part = ""
+		if namespace is not None and namespace != "":
+			namespace_part = f"namespaces/{namespace}/"
+
+		if kind is None:
+			raise Exception("__rest_helper_patch called with kind None")
+
+		kind = self.guess_kind(kind)
+
+		if kind in self.kubernetes_resources:
+			api_family = deep_get(self.kubernetes_resources[kind], "api_family")
+			api = deep_get(self.kubernetes_resources[kind], "api")
+			namespaced = deep_get(self.kubernetes_resources[kind], "namespaced", True)
+		else:
+			raise Exception(f"kind unknown: {kind}")
+
+		fullitem = f"{kind[0]}.{kind[1]} {name}"
+		if namespaced == True:
+			fullitem = f"{fullitem} (namespace: {namespace})"
+
+		name = f"/{name}"
+
+		if namespaced == False:
+			namespace_part = ""
+
+		status = None
+
+		retval = False
+
+		# Try the newest API first and iterate backwards
+		for i in range(0, len(api_family)):
+			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
+			data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
+			if status in [200, 201, 204, 42503]:
+				break
+
+		return message, status
 
 	def __rest_helper_patch(self, kind, name, namespace = "", body = {}):
 		method = "PATCH"
@@ -2867,7 +2935,6 @@ class KubernetesHelper:
 				break
 
 		return message, status
-
 
 	def __rest_helper_delete(self, kind, name, namespace = "", query_params = []):
 		method = "DELETE"
@@ -3018,6 +3085,68 @@ class KubernetesHelper:
 			vlist = []
 
 		return vlist, status
+
+	def create_namespace(self, name):
+		kind = ("Namespace", "")
+
+		if name is None or len(name) == 0:
+			return "", 200
+
+		data = {
+			"kind": "Namespace",
+			"apiVersion": "v1",
+			"metadata": {
+				"creationTimestamp": None,
+				"name": name,
+			},
+			"spec": {},
+			"status": {},
+		}
+
+		body = json.dumps(data).encode('utf-8')
+		return self.__rest_helper_post(kind, body = body)
+
+	def taint_node(self, node, taints, new_taint):
+		kind = ("Node", "")
+		if new_taint is None:
+			return "", 200
+
+		key, effect = new_taint
+		match = None
+
+		for i, taint in enumerate(taints):
+			if taint["key"] == key:
+				# If the key is in taints and has the correct effect already, do nothing
+				if taint["effect"] == effect:
+					return "", 200
+				match = i
+				break
+
+		if match is not None:
+			if effect is None:
+				taints.pop(match)
+			else:
+				taints[match] = {
+					"key": key,
+					"effect": effect
+				}
+		else:
+			# If the key isn't in taints and removal is requested, do nothing
+			if effect is None:
+				return "", 200
+
+			taints.append({
+				"key": key,
+				"effect": effect
+			})
+
+		data = {
+			"spec": {
+				"taints": taints
+			}
+		}
+		body = json.dumps(data).encode('utf-8')
+		return self.__rest_helper_patch(kind, node, body = body)
 
 	def cordon_node(self, node):
 		kind = ("Node", "")

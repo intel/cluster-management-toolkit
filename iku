@@ -10345,11 +10345,6 @@ def force_delete_resource(uip, items = [], action = {}, values = {}, kind = None
 	values["__force"] = True
 	return delete_resource(uip, items = items, action = action, values = values, kind = kind)
 
-def __create_namespace(name):
-	args = ["kubectl", "create", "namespace", f"{name}"]
-	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
-	return result
-
 def create_namespace(stdscr, **kwargs):
 	selection_vars = deep_get(kwargs, "selection_vars")
 	name = deep_get(selection_vars, "namespace")
@@ -10367,7 +10362,7 @@ def create_namespace(stdscr, **kwargs):
 	else:
 		msg = [("Creating namespace “", "default"), (name, "argument"), ("“", "default")]
 		iktprint(msg)
-		__create_namespace(name)
+		msg, status = kh.create_namespace(name)
 
 	print("\n")
 
