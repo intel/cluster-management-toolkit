@@ -2450,6 +2450,62 @@ def untaint_control_plane(options = [], args = None):
 		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
+def preflight_check(options = [], args = None):
+	error = 0
+	warning = 0
+	note = 0
+
+	user = getuser()
+
+	iktprint([("[Checking whether ", "phase"), (f"{user}", "path"), (" is in ", "phase"), ("/etc/sudoers", "path"), (" or ", "default"), ("/etc/sudoers.d", "path"), ("]", "phase")])
+	args = ["/usr/bin/sudo", "-l"]
+	result = execute_command_with_response(args)
+
+	sudoer = True
+
+	for line in result.splitlines():
+		tmp = re.match(r"^User ([^\s]+) is not allowed to run sudo on.*", line)
+		if tmp is not None:
+			iktprint([("  Error:", "error"), (f" {user} ", "path"), ("is not in ", "default"), ("/etc/sudoers", "path"), (" or ", "default"), ("/etc/sudoers.d\n", "path")], stderr = True)
+			error += 1
+			sudoer = False
+			break
+
+	if sudoer == True:
+		iktprint([("  OK\n", "emphasis")])
+
+		iktprint([("[Checking whether", "phase") ,(f" {user} ", "path"), ("can perform passwordless sudo]", "phase")])
+		args = ["/usr/bin/sudo", "-l"]
+		result = execute_command_with_response(args)
+		passwordless_sudo = False
+
+		for line in result.splitlines():
+			tmp = re.match(r"^\s*\(ALL\s*:\s*ALL\)\s*NOPASSWD:\s*ALL\s*$", line)
+			if tmp is not None:
+				iktprint([("  OK\n", "emphasis")])
+				passwordless_sudo = True
+				break
+
+		if passwordless_sudo == False:
+			iktprint([("  Error:", "error"), (f" {user} ", "path"), ("cannot perform passwordless sudo\n", "default")], stderr = True)
+
+	iktprint([("[Checking whether ", "phase"), ("ssh", "command"), (" known_hosts hashing is enabled]", "phase")])
+	iktprint([("  Note:", "emphasis"), (" this test is not 100% reliable since ssh settings can vary based on target host\n", "default")])
+	args = ["/usr/bin/ssh", "-G", "localhost"]
+	result = execute_command_with_response(args)
+
+	for line in result.splitlines():
+		tmp = re.match(r"^hashknownhosts\s+yes$", line)
+		if tmp is not None:
+			iktprint([("  Warning:", "warning"), (" ssh", "command"), (" known_hosts hashing is enabled; this may cause issues with ", "default"), ("paramiko\n", "command")], stderr = True)
+			warning += 1
+			break
+
+	iktprint([("Summary:", "header")])
+	iktprint([(f"  Errors: {error}", "error")])
+	iktprint([(f"Warnings: {warning}", "warning")])
+	iktprint([(f"   Notes: {note}", "note")])
+
 def troubleshoot(options = [], args = None):
 	error = 0
 	warning = 0
@@ -2898,9 +2954,16 @@ commandline = {
 		"max_args": 1,
 		"callback": untaint_control_plane,
 	},
+	"Preflight Check": {
+		"command": ["preflight-check"],
+		"description": [("Check for potential pitfalls that may prevent installation from succeeding", "description")],
+		"min_args": 0,
+		"max_args": 0,
+		"callback": preflight_check,
+	},
 	"Troubleshoot": {
 		"command": ["troubleshoot"],
-		"description": [("Search for potential issues", "description")],
+		"description": [("Search for potential issues in a cluster", "description")],
 		"min_args": 0,
 		"max_args": 0,
 		"callback": troubleshoot,

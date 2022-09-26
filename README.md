@@ -63,13 +63,16 @@ _Docker_, and _Containerd_; notably _http_proxy_, _https_proxy_, _no_proxy_.
 ## Setting up a new cluster using __iKT__
 
 0. _OPTIONAL_: Add customisations to `~/.ikt/ikt.yaml.d/` to override the defaults in `~/.ikt/ikt.yaml`
-1. `iktadm prepare CLUSTER_NAME [KUBERNETES_VERSION]`
+1. `iktadm preflight-check`
+2. `iktadm prepare CLUSTER_NAME [KUBERNETES_VERSION]`
    _or_
    `iktadm prepare --control-plane HOSTNAME CLUSTER_NAME [KUBERNETES_VERSION]`
-2. Wait a short while...
-3. `iktadm setup-control-plane [CNI] [POD_NETWORK_CIDR]`
-4. Wait quite a while...
-5. _OPTIONAL_: If you're planning to use the control plane as a worker node: `iktadm untaint-control-plane`
+3. Wait a short while...
+4. `iktadm setup-control-plane [CNI] [POD_NETWORK_CIDR]`
+5. Wait quite a while...
+6. _OPTIONAL_: If you're planning to use the control plane as a worker node: `iktadm untaint-control-plane`
+
+Step 1 will check for known potential issues that can cause setup to fail.
 
 When specifying `--control-plane HOSTNAME` the specified host will be used as control plane.
 If no control plane is specified _iktadm_ will check whether there's a controlplane defined
