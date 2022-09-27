@@ -234,6 +234,9 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 					iktprint([(f"{programname}", "programname"), (": unrecognised command “", "default"), (f"{argv[i]}", "command"), ("“.", "default")], stderr = True)
 					iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
+
+				# If we defaulted we don't want to consume any options
+				continue
 		# OK, we have a command, time to check for options
 		elif argv[i].startswith("-"):
 			if len(args) > 0:

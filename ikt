@@ -973,21 +973,19 @@ ikt_commandline = {
 		"command": ["cordon"],
 		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
 		"description": [("Cordon ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
-		"min_args": 1,
-		"max_args": 1,
-		"callback": cordon_nodes,
 		"options": {
 			"--include-control-planes": {
 				"description": [("Include control planes when ALL is used", "description")],
 			},
 		},
+		"min_args": 1,
+		"max_args": 1,
+		"callback": cordon_nodes,
 	},
 	"Drain Node": {
 		"command": ["drain"],
 		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
 		"description": [("Drain ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
-		"min_args": 1,
-		"max_args": 1,
 		"options": {
 			"--delete-emptydir-data": {
 				"description": [("Drain nodes even if this would cause ", "description"), ("emptyDir", "emphasis"), (" data to be deleted", "description")],
@@ -1005,6 +1003,8 @@ ikt_commandline = {
 				"description": [("Include control planes when ALL is used", "description")],
 			},
 		},
+		"min_args": 1,
+		"max_args": 1,
 		"callback": drain_nodes,
 	},
 	"Drain Node (Force)": {
@@ -1014,8 +1014,6 @@ ikt_commandline = {
 		"extended_description": [
 			[("When a node is force-drained, pods belonging to daemonsets are ignored, and ", "description"), ("emptyDir", "emphasis"), (" data is deleted", "description")],
 		],
-		"min_args": 1,
-		"max_args": 1,
 		"options": {
 			"--disable-eviction": {
 				"description": [("Delete pods instead of using evict; this bypasses ", "description"), ("PodDisruptionBudget", "emphasis")],
@@ -1028,20 +1026,22 @@ ikt_commandline = {
 			("--delete-emptydir-data", None),
 			("--ignore-daemonsets", None),
 		],
+		"min_args": 1,
+		"max_args": 1,
 		"callback": drain_nodes,
 	},
 	"Uncordon Node": {
 		"command": ["uncordon"],
 		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
 		"description": [("Uncordon ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
-		"min_args": 1,
-		"max_args": 1,
-		"callback": uncordon_nodes,
 		"options": {
 			"--include-control-planes": {
 				"description": [("Include control planes when ALL is used", "description")],
 			},
 		},
+		"min_args": 1,
+		"max_args": 1,
+		"callback": uncordon_nodes,
 	},
 	"Prepare Host": {
 		"command": ["prepare"],
@@ -1052,9 +1052,6 @@ ikt_commandline = {
 			[("If the hosts intended for use as nodes in the cluster do not have a resolvable", "description")],
 			[("hostnames it's recommended to use ", "description"), ("/etc/hosts", "path"), (" for this purpose.", "description")],
 		],
-		"min_args": 1,
-		"max_args": 1,
-		"callback": prepare_hosts,
 		"options": {
 			"--ignore-existing": {
 				"description": [("Ignore hosts that are already part of the cluster", "description")],
@@ -1074,6 +1071,9 @@ ikt_commandline = {
 				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
 			},
 		},
+		"min_args": 1,
+		"max_args": 1,
+		"callback": prepare_hosts,
 	},
 	"Add Node": {
 		"command": ["add-node", "add-nodes"],
@@ -1084,9 +1084,6 @@ ikt_commandline = {
 			[("If the hosts intended for use as nodes in the cluster do not have a resolvable", "description")],
 			[("hostnames it's recommended to use ", "description"), ("/etc/hosts", "path"), (" for this purpose.", "description")],
 		],
-		"min_args": 1,
-		"max_args": 1,
-		"callback": add_nodes,
 		"options": {
 			"--ca-cert-file": {
 				"values": [("PATH", "argument")],
@@ -1128,14 +1125,14 @@ ikt_commandline = {
 				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
 			},
 		},
+		"min_args": 1,
+		"max_args": 1,
+		"callback": add_nodes,
 	},
 	"Remove Node": {
 		"command": ["remove-node", "remove-nodes"],
 		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
 		"description": [("Remove ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument"), (" from a Kubernetes cluster", "description")],
-		"min_args": 1,
-		"max_args": 1,
-		"callback": remove_nodes,
 		"options": {
 			"--force": {
 				"description": [("Attempt to teardown Kubernetes nodes that are no longer in the cluster", "description")],
@@ -1152,14 +1149,14 @@ ikt_commandline = {
 				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
 			},
 		},
+		"min_args": 1,
+		"max_args": 1,
+		"callback": remove_nodes,
 	},
 	"Purge": {
 		"command": ["purge"],
 		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument")],
 		"description": [("Remove Kubernetes configuration and packages from ", "description"), ("HOST", "argument")],
-		"min_args": 1,
-		"max_args": 1,
-		"callback": purge_hosts,
 		"options": {
 			"--ignore-non-existing": {
 				"description": [("Ignore hosts that cannot be found in the inventory", "description")],
@@ -1173,6 +1170,9 @@ ikt_commandline = {
 				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
 			},
 		},
+		"min_args": 1,
+		"max_args": 1,
+		"callback": purge_hosts,
 	},
 	"Upgrade Node": {
 		"command": ["upgrade-node", "upgrade-nodes"],
@@ -1182,9 +1182,6 @@ ikt_commandline = {
 			[("Upgrade Kubernetes on ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument"), (" to the version in use on the control-plane(s);", "description")],
 			[("run this on all nodes after running “", "description"), (f"{about.admin_program_name}", "programname"), (" upgrade-control-plane", "command"), ("“", "description")],
 		],
-		"min_args": 1,
-		"max_args": 1,
-		"callback": upgrade_nodes,
 		"options": {
 			"--forks": {
 				"values": [("FORKS", "argument")],
@@ -1195,13 +1192,14 @@ ikt_commandline = {
 				"description": [("Save logs from Ansible runs; the logs can be viewed using “", "description"), ("iku", "programname"), (" logs", "command"), ("“", "description")]
 			},
 		},
+		"min_args": 1,
+		"max_args": 1,
+		"callback": upgrade_nodes,
 	},
 #	"Get": {
 #		"command": ["get", "l", "list"],
 #		"values": [("RESOURCE", "argument"), (",", "separator"), ("...", "argument")],
 #		"description": [("List information about ", "description"), ("RESOURCE", "argument"), (",", "separator"), ("...", "argument")],
-#		"min_args": 1,
-#		"max_args": 1,
 #		"options": {
 #			("-N", "--namespace"): {
 #				"values": [("NAMESPACE", "argument"), (",", "separator"), ("...", "argument")],
@@ -1212,6 +1210,8 @@ ikt_commandline = {
 #				"description": [("Show resources across all namespaces", "description")],
 #			},
 #		},
+#		"min_args": 1,
+#		"max_args": 1,
 #		"callback": get_resource,
 #	},
 	"extended_description": [

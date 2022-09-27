@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.6)
+import errno
 import os
 from pathlib import Path
 import shutil
@@ -11,7 +12,7 @@ import yaml
 from iktlib import execute_command_with_response
 
 from commandparser import parse_commandline
-from iktprint import iktprint, init_iktprint
+from iktprint import iktprint, iktinput, init_iktprint
 
 HOMEDIR = str(Path.home())
 BINDIR = f"{HOMEDIR}/bin"
@@ -72,25 +73,35 @@ def create_directories(verbose = False):
 	for directory in directories:
 		mkdir_if_not_exists(directory, verbose = verbose)
 
-commands = [
+executable_symlinks = [
 	# Python
-	"iktadm",
-	"iktinv",
-	"ikt",
-	"iku",
+	(f"{os.getcwd()}/iktadm", f"{BINDIR}/iktadm"),
+	(f"{os.getcwd()}/iktinv", f"{BINDIR}/iktinv"),
+	(f"{os.getcwd()}/ikt", f"{BINDIR}/ikt"),
+	(f"{os.getcwd()}/iku", f"{BINDIR}/iku"),
+]
+
+misc_symlinks = [
+	(f"{os.getcwd()}/{ANSIBLE_PLAYBOOK_DIRNAME}", f"{IKTDIR}/{ANSIBLE_PLAYBOOK_DIRNAME}"),
+	(f"{os.getcwd()}/{THEME_DIRNAME}", f"{IKTDIR}/{THEME_DIRNAME}"),
+	(f"{os.getcwd()}/{PARSER_DIRNAME}", f"{IKTDIR}/{PARSER_DIRNAME}"),
+	(f"{os.getcwd()}/{VIEW_DIRNAME}", f"{IKTDIR}/{VIEW_DIRNAME}")
 ]
 
 def create_symlinks(verbose = False):
-	replace_symlink(f"{os.getcwd()}/{ANSIBLE_PLAYBOOK_DIRNAME}", f"{IKTDIR}/{ANSIBLE_PLAYBOOK_DIRNAME}")
-	replace_symlink(f"{os.getcwd()}/{THEME_DIRNAME}", f"{IKTDIR}/{THEME_DIRNAME}")
-	replace_symlink(f"{os.getcwd()}/{PARSER_DIRNAME}", f"{IKTDIR}/{PARSER_DIRNAME}")
-	replace_symlink(f"{os.getcwd()}/{VIEW_DIRNAME}", f"{IKTDIR}/{VIEW_DIRNAME}")
+	for src, dst in misc_symlinks:
+		replace_symlink(src, dst)
 
-	for filename in commands:
-		replace_symlink(f"{os.getcwd()}/{filename}", f"{BINDIR}/{filename}")
+	for src, dst in executable_symlinks:
+		replace_symlink(src, dst)
+
+configuration_files = [
+	(IKT_CONFIG_FILENAME, IKT_CONFIG_FILE)
+]
 
 def copy_configuration_files(verbose = False):
-	copy_if_not_exists(IKT_CONFIG_FILENAME, IKT_CONFIG_FILE, verbose = verbose)
+	for src, dst in configuration_files:
+		copy_if_not_exists(src, dst, verbose = verbose)
 
 packages_with_pip_fallback = {
 	"python3-ansible-runner": "ansible-runner",
@@ -139,14 +150,42 @@ def install_software_with_pip_fallback(packages, verbose = False):
 def install(options = [], args = None):
 	verbose = False
 	install_dependencies = True
+	confirm = True
 
 	for opt, optarg in options:
 		if opt == "--verbose":
 			verbose = True
 		elif opt == "--no-dependencies":
 			install_dependencies = False
+		elif opt == "-Y":
+			confirm = False
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
+
+	if confirm == True:
+		iktprint([("Important:", "warning"), (" The following actions will be taken that will modify the system:", "default")])
+		iktprint([("\n• ", "separator"), (f"Create the following new directories", "action")])
+		for name in directories:
+			iktprint([(f"    {name}", "path")])
+		iktprint([("\n• ", "separator"), ("Install the following configuration files:", "action")])
+		for src, dst in configuration_files:
+			iktprint([(f"     {dst}", "path")])
+		iktprint([("\n• ", "separator"), (f"Create the following symlinks", "action")])
+		for src, dst in misc_symlinks:
+			iktprint([(f"    {src}", "path"), (" ⇨ ", "emphasis"), (f"{dst}", "path")])
+		for src, dst in executable_symlinks:
+			iktprint([(f"    {src}", "path"), (" ⇨ ", "emphasis"), (f"{dst}", "path")])
+
+		if install_dependencies == True:
+			iktprint([("\n• ", "separator"), ("Install the following system software:", "action")])
+			iktprint([("  Note:", "warning"), (" this requires sudo permissions", "emphasis")])
+			for pkg in packages:
+				iktprint([(f"    {pkg}", "path")])
+
+		retval = iktinput([("\nInstall ", "default"), ("iKT", "programname"), ("? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		if retval.lower() not in ["y", "yes"]:
+			iktprint([("\nAborting:", "error"), (" User stopped installation.", "default")], stderr = True)
+			sys.exit(errno.EINTR)
 
 	create_directories(verbose = verbose)
 	copy_configuration_files(verbose = verbose)
@@ -157,9 +196,9 @@ def install(options = [], args = None):
 		install_software_with_pip_fallback(packages_with_pip_fallback, verbose = verbose)
 
 commandline = {
-	# Global option
-	"__verbose": {
-		"command": [""],
+	# Default command
+	"__default": {
+		"command": ["__default"],
 		"description": [("", "")],
 		"options": {
 			"--verbose": {
@@ -168,18 +207,8 @@ commandline = {
 			"--no-dependencies": {
 				"description": [("Do not install dependencies", "description")],
 			},
-		},
-		"min_args": 0,
-		"max_args": 0,
-		"callback": install,
-	},
-	# Default command
-	"__default": {
-		"command": ["__default"],
-		"description": [("", "")],
-		"options": {
-			"--no-dependencies": {
-				"description": [("Do not install dependencies", "description")],
+			"-Y": {
+				"description": [("Do not ask for confirmation before performing actions", "description")],
 			},
 		},
 		"min_args": 0,

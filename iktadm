@@ -2665,9 +2665,6 @@ commandline = {
 			[("If ", "description"), ("CLUSTER_NAME", "argument"), (",", "separator"), ("...", "argument"), (" is not specified all clusters in ", "description"), (f"{HOMEDIR}/.kube/config", "path")],
 			[(" will be imported", "description")],
 		],
-		"min_args": 0,
-		"max_args": 1,
-		"callback": import_cluster,
 		"options": {
 			"-Y": {
 				"description": [("Do not ask for confirmation before performing actions", "description")],
@@ -2676,6 +2673,9 @@ commandline = {
 				"description": [("Do not prompt for a password; use this if the hosts you're preparing are already configured for login using an SSH key", "description")],
 			},
 		},
+		"min_args": 0,
+		"max_args": 1,
+		"callback": import_cluster,
 	},
 	"Prepare Installation": {
 		"command": ["prepare"],
