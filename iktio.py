@@ -153,20 +153,19 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 
 			if tarfile.is_tarfile(dl.name) == True:
 				with tempfile.TemporaryDirectory() as td:
-					tf = tarfile.open(dl.name, "r")
-					members = tf.getnames()
-					if filename not in members:
-						iktprint([("Critical: ", "critical"), (f"{filename} is not a part of archive; aborting.", "default")], stderr = True)
-						sys.exit(errno.ENOENT)
+					with tarfile.open(dl.name, "r") as tf:
+						members = tf.getnames()
+						if filename not in members:
+							iktprint([("Critical: ", "critical"), (f"{filename} is not a part of archive; aborting.", "default")], stderr = True)
+							sys.exit(errno.ENOENT)
 
-					member = [tf.getmember(filename)]
-					tf.extractall(path = td, members = member)
-					tf.close()
-					os.chmod(f"{td}/{filename}", permissions)
-					# The file we extract might be in a subdirectory,
-					# but we always want it directly in the destination directory,
-					# hence we use basename
-					os.rename(f"{td}/{filename}", f"{directory}/{os.path.basename(filename)}")
+						tdt = tempfile.NamedTemporaryFile(delete = False)
+						with open(tdt.name, "wb", opener = partial(os.open, mode = 0o600)) as tdf:
+							with tf.extractfile(filename) as tff:
+								tdf.write(tff.read())
+						os.chmod(tdt.name, permissions)
+						os.rename(tdt.name, f"{directory}/{filename}")
+				os.remove(dl.name)
 			else:
 				os.chmod(dl.name, permissions)
 				os.rename(dl.name, f"{directory}/{filename}")
