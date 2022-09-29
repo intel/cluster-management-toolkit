@@ -342,6 +342,8 @@ cni_upgrade_data = {
 			"candidate_version_url": "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz",
+			"checksum_url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz.sha256sum",
+			"checksum_type": "sha256",
 			"filename": "cilium",
 		},
 		"CNI": {
@@ -374,6 +376,8 @@ cni_data = {
 	"cilium": {
 		"version_url": "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
 		"url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz",
+		"checksum_url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz.sha256sum",
+		"checksum_type": "sha256",
 		"type": "installer",
 		"filename": "cilium",
 		"command": ["cilium", "--context", "<<<context>>>", "install"]
@@ -409,7 +413,7 @@ def check_version_from_url(url, version_regex):
 	version = None
 	if url is not None:
 		with tempfile.TemporaryDirectory() as td:
-			check_and_print_status(download_files(td, [(url, "version.txt")], permissions = 0o600))
+			check_and_print_status(download_files(td, [(url, "version.txt", None, None)], permissions = 0o600))
 			with open(f"{td}/version.txt") as f:
 				versionoutput = f.read().splitlines()
 				for line in versionoutput:
@@ -451,6 +455,8 @@ def __upgrade_cni(cni, upgradetype, context):
 	candidate_version_command = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#candidate_version_command")
 	candidate_version_regex = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#candidate_version_regex")
 	download_url = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#url")
+	download_checksum_url = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#checksum_url")
+	download_checksum_type = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#checksum_type")
 	command_filename = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#filename")
 	install_command = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#install")
 	upgrade_command = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#upgrade")
@@ -473,28 +479,32 @@ def __upgrade_cni(cni, upgradetype, context):
 		iktprint([("\n• ", "separator"), (f"Checking {upgradetype} candidate version", "action")])
 		candidate_version = check_version_from_executable(candidate_version_command[0], substitute_list(candidate_version_command[1:], version_substitutions), candidate_version_regex)
 
-	if download_url is not None and command_filename is not None and (version is None or version < candidate_version):
-		version = "".join(candidate_version)
+	if download_url is not None and command_filename is not None:
+		if version is None or version < candidate_version:
+			version = "".join(candidate_version)
 
-		iktprint([("\n• ", "separator"), (f"Downloading {upgradetype} ", "action"), (f"{version}", "version")])
+			iktprint([("\n• ", "separator"), (f"Downloading {upgradetype} ", "action"), (f"{version}", "version")])
 
-		substitutions = {
-			"<<<version>>>": version,
-			"<<<arch>>>": arch,
-			"<<<context>>>": context,
-		}
+			substitutions = {
+				"<<<version>>>": version,
+				"<<<arch>>>": arch,
+				"<<<context>>>": context,
+			}
 
-		download_url = substitute_string(download_url, substitutions)
+			download_url = substitute_string(download_url, substitutions)
+			download_checksum_url = substitute_string(download_checksum_url, substitutions)
 
-		if upgradetype == "CNI":
-			mkdir_if_not_exists(f"{DEPLOYMENTDIR}")
-			directory = f"{DEPLOYMENTDIR}/cni"
-			permissions = 0o644
-		elif upgradetype == "executable":
-			directory = f"{BINDIR}"
-			permissions = 0o755
-		mkdir_if_not_exists(directory)
-		check_and_print_status(download_files(directory, [(download_url, command_filename)], permissions = permissions))
+			if upgradetype == "CNI":
+				mkdir_if_not_exists(f"{DEPLOYMENTDIR}")
+				directory = f"{DEPLOYMENTDIR}/cni"
+				permissions = 0o644
+			elif upgradetype == "executable":
+				directory = f"{BINDIR}"
+				permissions = 0o755
+			mkdir_if_not_exists(directory)
+			check_and_print_status(download_files(directory, [(download_url, command_filename, download_checksum_url, download_checksum_type)], permissions = permissions))
+		else:
+			iktprint([("No newer version available.", "default")])
 	elif install_command is not None and version is None:
 		version = "".join(candidate_version)
 
@@ -506,17 +516,20 @@ def __upgrade_cni(cni, upgradetype, context):
 			"<<<context>>>": context,
 		}
 		check_and_print_status(execute_command(substitute_list(install_command, substitutions)))
-	elif upgrade_command is not None and version is None or version < candidate_version:
-		version = "".join(candidate_version)
+	elif upgrade_command is not None:
+		if version is None or version < candidate_version:
+			version = "".join(candidate_version)
 
-		iktprint([("\n• ", "separator"), (f"Upgrading {upgradetype} to ", "action"), (f"{version}", "version")])
+			iktprint([("\n• ", "separator"), (f"Upgrading {upgradetype} to ", "action"), (f"{version}", "version")])
 
-		substitutions = {
-			"<<<version>>>": version,
-			"<<<arch>>>": arch,
-			"<<<context>>>": context,
-		}
-		check_and_print_status(execute_command(substitute_list(upgrade_command, substitutions)))
+			substitutions = {
+				"<<<version>>>": version,
+				"<<<arch>>>": arch,
+				"<<<context>>>": context,
+			}
+			check_and_print_status(execute_command(substitute_list(upgrade_command, substitutions)))
+		else:
+			iktprint([("No newer version available.", "default")])
 
 def upgrade_cni(options = [], args = None):
 	retval = True
@@ -557,6 +570,9 @@ def setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 			raise Exception(f"Both URL and URL getter for {cni} are empty; this is a programming error.")
 		url = urlgetter(pod_network_cidr)
 
+	checksum_url = deep_get(cni_data, f"{cni}#checksum_url")
+	checksum_type = deep_get(cni_data, f"{cni}#checksum_type")
+
 	# FIXME: for now we hardcode this
 	arch = "amd64"
 	substitutions = {
@@ -565,6 +581,7 @@ def setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 	}
 
 	url = substitute_string(url, substitutions)
+	checksum_url = substitute_string(checksum_url, substitutions)
 
 	filename = deep_get(cni_data, f"{cni}#filename")
 	patch_cni = deep_get(cni_data, f"{cni}#patch_cni", None)
@@ -580,7 +597,7 @@ def setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 		permissions = 0o755
 	mkdir_if_not_exists(directory)
 
-	check_and_print_status(download_files(directory, [(url, filename)], permissions = permissions))
+	check_and_print_status(download_files(directory, [(url, filename, checksum_url, checksum_type)], permissions = permissions))
 
 	if patch_cni is not None:
 		iktprint([("\n• ", "separator"), ("Patching “", "action"), (f"{cni}", "argument"), ("“ configuration", "action")])
