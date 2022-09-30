@@ -53,7 +53,12 @@ import iktlib
 from iktlib import split_msg, deep_get, deep_get_list, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
 
-from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results
+import datagetter
+from datagetter import datagetter_allowlist
+import objgetter
+from objgetter import objgetter_allowlist
+
+from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results, get_playbook_path
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
@@ -126,30 +131,6 @@ def init_kubernetes_client():
 
 override_tail_lines = None
 default_tail_lines = 4000
-
-# Pass in the name of a playbook that exists in {ANSIBLE_PLAYBOOK_DIR};
-# returns the path to the drop-in playbook with the highest priority
-# (or the same playbook in case there is no override)
-def get_playbook_path(playbook):
-	path = ""
-
-	# Check if there's a local playbook overriding this one
-	local_playbooks = deep_get(iktconfig, "Ansible#local_playbooks", [])
-	for playbook_path in local_playbooks:
-		# Substitute {HOME}/ for {HOMEDIR}
-		if playbook_path.startswith("{HOME}/"):
-			playbook_path = f"{HOMEDIR}/{playbook_path[len('{HOME}/'):]}"
-		# Skip non-existing playbook paths
-		if not os.path.isdir(playbook_path):
-			continue
-		# We can have multiple directories with local playbooks;
-		# the first match wins
-		if os.path.isfile(f"{playbook_path}/{playbook}") == True:
-			path = f"{playbook_path}/{playbook}"
-			break
-	if len(path) == 0:
-		path = f"{ANSIBLE_PLAYBOOK_DIR}/{playbook}"
-	return path
 
 def get_package_versions(hostname):
 	if not os.path.isdir(ANSIBLE_PLAYBOOK_DIR):
@@ -1443,139 +1424,8 @@ def normalise_mem_bytes_to_str(_mem):
 
 	return f"{mem:0.1f}{suffix}B"
 
-def datagetter_api_support(obj, path, default):
-	if obj is None:
-		return default
-
-	kind = deep_get(obj, "spec#names#kind", "")
-	api_family = deep_get(obj, "spec#group", "")
-
-	available_views = []
-
-	try:
-		_kind, _api_group = kh.guess_kind((kind, api_family))
-		available_views.append("Known")
-	except NameError:
-		pass
-
-	for view in views:
-		if deep_get(views, f"{view}#kind", ("", "")) == (kind, api_family):
-			available_views.append("List")
-
-	if (kind, api_family) in infoviews:
-		available_views.append("Info")
-
-	if len(available_views) == 0:
-		available_views = default
-
-	return available_views, {}
-
-def datagetter_latest_version(obj, path, default):
-	if obj is None or path is None:
-		return default
-
-	# path is paths to kind, api_family
-	kind = deep_get(obj, path[0])
-	api_family = deep_get(obj, path[1])
-	old_version = deep_get(obj, path[2])
-	kind = kh.guess_kind((kind, api_family))
-
-	latest_api = kh.get_latest_api(kind)
-	if "/" in latest_api:
-		group, version = latest_api.split("/")
-	else:
-		group = ""
-		version = latest_api
-
-	message = ""
-	if old_version == version:
-		message = "(No newer version available; the API might be deprecated)"
-	return (group, version, f"{message}"), {}
-
-def datagetter_metrics(obj, path, default):
-	if obj is None or path is None:
-		return default
-
-	result = []
-
-	for field in path:
-		result.append(deep_get(obj, f"fields#{field}", ""))
-
-	result = tuple(result)
-
-	return result, {}
-
-def datagetter_deprecated_api(obj, path, default):
-	result, extra_vars = datagetter_metrics(obj, path, default)
-	kind = kh.guess_kind((result[0], result[1]))
-	return (kind[0], kind[1], result[2]), extra_vars
-
-def datagetter_endpoint_ips(obj, path, default):
-	subsets = deep_get(obj, path)
-	endpoints = get_endpoint_endpoints(subsets)
-	return endpoints, {}
-
-def datagetter_regex_split_to_tuples(obj, paths, default):
-	if obj is None or paths is None or len(paths) < 2:
-		return default
-
-	# paths is a tuple; the first item is a regex that specifies how to split,
-	# the second one is either a path to a list or a list of paths
-
-	list_fields = []
-
-	if type(paths[1]) == str:
-		for item in deep_get(obj, paths[1], []):
-			tmp = re.match(paths[0], item)
-			if tmp is not None:
-				# This handles ("").*("") | (""); we need to generalise this somehow
-				if len(tmp.groups()) >= 2 and tmp[1] is not None and tmp[2] is not None:
-					list_fields.append((tmp[1], tmp[2]))
-				elif len(tmp.groups()) >= 3:
-					list_fields.append(("", tmp[3]))
-			else:
-				list_fields.append(("", ""))
-	else:
-		for path in paths[1]:
-			item = deep_get(obj, path, "")
-			tmp = re.match(paths[0], str(item))
-			if tmp is not None:
-				# This handles ("").*("") | (""); we need to generalise this somehow
-				if len(tmp.groups()) == 1 and tmp[1] is not None:
-					list_fields.append(tmp[1])
-				if len(tmp.groups()) >= 2 and tmp[1] is not None and tmp[2] is not None:
-					list_fields.append((tmp[1], tmp[2]))
-				elif len(tmp.groups()) >= 3:
-					list_fields.append(("", tmp[3]))
-			else:
-				list_fields.append(("", ""))
-
-	return list_fields, {}
-
-def datagetter_pod_status(obj, path, default):
-	if obj is None:
-		return default
-
-	status, status_group = get_pod_status(obj)
-
-	return status, {"status_group": status_group}
-
-def datagetter_container_status(obj, path, default):
-	if obj is None:
-		return default
-	status = deep_get(obj, "status")
-	status_group = deep_get(obj, "status_group")
-
-	return status, {"status_group": status_group}
-
 def __get_timestamp_with_fallback(obj, paths):
 	return timestamp_to_datetime(deep_get_with_fallback(obj, paths))
-
-def datagetter_eps_endpoints(obj, path, default):
-	if obj is None:
-		return default
-
-	return get_endpointslices_endpoints(obj), {}
 
 latest_info = None
 
@@ -1946,7 +1796,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 			raise Exception(f"Field {name}: exactly one of path and paths must be non-empty unless a datagetter is specified\npath={path}\npaths={paths}\ndatagetter={datagetter}")
 
 		if datagetter is not None:
-			d[name], extradata = datagetter(obj, path, default)
+			d[name], extradata = datagetter(kh, obj, path, default)
 			for key, value in extradata.items():
 				d[key] = value
 		else:
@@ -2700,53 +2550,6 @@ def listgetter_ansible_volumes(obj, **kwargs):
 
 	return info, "OK"
 
-def objgetter_ansible_facts(obj):
-	hostname = deep_get(obj, "name", "")
-	get_facts_path = get_playbook_path("get_facts.yaml")
-	retval, ansible_results = ansible_run_playbook_on_selection(get_facts_path, [hostname])
-	if retval != 0:
-		return {}
-
-	ar = {}
-
-	for result in deep_get(ansible_results, hostname, []):
-		if deep_get(result, "task", "") == "Gathering host facts":
-			ar = deep_get(result, "ansible_facts")
-
-	return ar
-
-def objgetter_ansible_log(obj):
-	tmpobj = {}
-
-	with open(f"{obj}/metadata.yaml", "r") as f:
-		tmpobj = yaml.safe_load(f)
-		tmpobj["log_path"] = obj
-
-	try:
-		with open(tmpobj["playbook_path"], "r") as f:
-			playbook = yaml.safe_load(f)[0]
-			tmpobj["name"] = deep_get(playbook, "vars#metadata#description")
-			tmpobj["playbook_types"] = deep_get(playbook, "vars#metadata#playbook_types", ["<any>"])
-			tmpobj["category"] = deep_get(playbook, "vars#metadata#category", "Uncategorized")
-	except FileNotFoundError:
-		tmpobj["name"] = "File not found"
-		tmpobj["playbook_types"] = ["Unavailable"]
-		tmpobj["category"] = "Unavailable"
-		pass
-
-	logs = []
-	for path in natsorted(os.listdir(obj)):
-		if path == "metadata.yaml":
-			continue
-		with open(f"{obj}/{path}", "r") as f:
-			logs.append({
-				"index": path.split("-")[0],
-				"log": yaml.safe_load(f)
-			})
-	tmpobj["logs"] = logs
-
-	return tmpobj
-
 def get_task_log(obj):
 	field = []
 
@@ -3331,23 +3134,6 @@ def get_controller_from_owner_references(owner_references):
 
 	return controller
 
-def get_endpoint_endpoints(subsets):
-	endpoints = []
-
-	if subsets is None:
-		subsets = []
-
-	for subset in subsets:
-		for address in deep_get(subset, "addresses", []):
-			endpoints.append((deep_get(address, "ip"), stgroup.OK))
-		for address in deep_get(subset, "notReadyAddresses", []):
-			endpoints.append((deep_get(address, "ip"), stgroup.NOT_OK))
-
-	if len(endpoints) == 0:
-		endpoints.append(("<none>", stgroup.UNKNOWN))
-
-	return endpoints
-
 def get_endpoint_ips(subsets):
 	endpoints = []
 	notready = 0
@@ -3372,23 +3158,6 @@ def get_endpoint_ips(subsets):
 		else:
 			return ["<none>"]
 
-	return endpoints
-
-
-def get_endpointslices_endpoints(obj):
-	endpoints = []
-
-	if deep_get(obj, "endpoints") is not None:
-		for endpoint in deep_get(obj, "endpoints", []):
-			for address in deep_get(endpoint, "addresses", []):
-				ready = deep_get(endpoint, "conditions#ready", False)
-				if ready == True:
-					status_group = stgroup.OK
-				else:
-					status_group = stgroup.NOT_OK
-				endpoints.append((address, status_group))
-	else:
-		endpoints.append(("<none>", stgroup.UNKNOWN))
 	return endpoints
 
 class SubsetsInfo:
@@ -5714,13 +5483,13 @@ builtin_fields = {
 	},
 	"api_support": {
 		"header": "API Support:",
-		"datagetter": datagetter_api_support,
+		"datagetter": datagetter.datagetter_api_support,
 		"formatter": "list",
 	},
 	"mem": {
 		"header": "Mem% / Total:",
 		"path": (r"^(\d+).*", ["status#allocatable#memory", "status#capacity#memory"]),
-		"datagetter": datagetter_regex_split_to_tuples,
+		"datagetter": datagetter.datagetter_regex_split_to_tuples,
 		"generator": generator_mem,
 		"ralign": True,
 	},
@@ -5743,7 +5512,7 @@ builtin_fields = {
 	},
 	"pod_status": {
 		"header": "Status:",
-		"datagetter": datagetter_pod_status,
+		"datagetter": datagetter.datagetter_pod_status,
 		"generator": generator_status,
 	},
 }
@@ -11469,22 +11238,6 @@ listgetter_allowlist = {
 	"listgetter_join_lists": listgetter_join_lists,
 	"listgetter_namespaced_resources": listgetter_namespaced_resources,
 	"listgetter_policy_rules": listgetter_policy_rules,
-}
-
-# Datagetters acceptable for direct use in view files
-datagetter_allowlist = {
-	"datagetter_container_status": datagetter_container_status,
-	"datagetter_deprecated_api": datagetter_deprecated_api,
-	"datagetter_latest_version": datagetter_latest_version,
-	"datagetter_metrics": datagetter_metrics,
-	"datagetter_endpoint_ips": datagetter_endpoint_ips,
-	"datagetter_eps_endpoints": datagetter_eps_endpoints,
-}
-
-# Objgetters acceptable for direct use in view files
-objgetter_allowlist = {
-	"objgetter_ansible_facts": objgetter_ansible_facts,
-	"objgetter_ansible_log": objgetter_ansible_log,
 }
 
 # Itemgetters acceptable for direct use in view files

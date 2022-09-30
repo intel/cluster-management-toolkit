@@ -9,11 +9,14 @@ import re
 import sys
 import yaml
 
+import iktlib
 from iktlib import deep_get
 from iktprint import iktprint
 
 ansible_bin_path = None
 ansible_results = {}
+
+iktconfig = None
 
 active_task = ""
 suffix = 0
@@ -30,6 +33,9 @@ ANSIBLE_PLAYBOOK_DIR = f"{IKTDIR}/{ANSIBLE_PLAYBOOK_DIRNAME}"
 ANSIBLE_INVENTORY = f"{ANSIBLE_DIR}/inventory.yaml"
 ANSIBLE_LOG_DIR = f"{ANSIBLE_DIR}/logs"
 ANSIBLE_TMP_INVENTORY = f"{ANSIBLE_DIR}/tmp_inventory.yaml"
+
+if iktconfig is None:
+	iktconfig = iktlib.read_iktconfig()
 
 class ansible_configuration:
 	ansible_user = None
@@ -73,6 +79,30 @@ if not os.path.exists(ANSIBLE_DIR):
 # If the ansible log directory doesn't exist, create it
 if not os.path.exists(ANSIBLE_LOG_DIR):
 	os.mkdir(ANSIBLE_LOG_DIR)
+
+# Pass in the name of a playbook that exists in {ANSIBLE_PLAYBOOK_DIR};
+# returns the path to the drop-in playbook with the highest priority
+# (or the same playbook in case there is no override)
+def get_playbook_path(playbook):
+	path = ""
+
+	# Check if there's a local playbook overriding this one
+	local_playbooks = deep_get(iktconfig, "Ansible#local_playbooks", [])
+	for playbook_path in local_playbooks:
+		# Substitute {HOME}/ for {HOMEDIR}
+		if playbook_path.startswith("{HOME}/"):
+			playbook_path = f"{HOMEDIR}/{playbook_path[len('{HOME}/'):]}"
+		# Skip non-existing playbook paths
+		if not os.path.isdir(playbook_path):
+			continue
+		# We can have multiple directories with local playbooks;
+		# the first match wins
+		if os.path.isfile(f"{playbook_path}/{playbook}") == True:
+			path = f"{playbook_path}/{playbook}"
+			break
+	if len(path) == 0:
+		path = f"{ANSIBLE_PLAYBOOK_DIR}/{playbook}"
+	return path
 
 def ansible_get_inventory_dict():
 	if not os.path.exists(ANSIBLE_INVENTORY):
