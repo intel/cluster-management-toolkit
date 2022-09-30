@@ -654,8 +654,8 @@ def scan_and_add_ssh_keys():
 		hostfile.save(filename = known_hosts)
 
 def create_ssh_key():
-	if not os.path.exists(f"{HOMEDIR}/.ssh/id_ed25519"):
-		args = ["/usr/bin/ssh-keygen", "-t", "ed25519", "-f", f"{HOMEDIR}/.ssh/id_ed25519"]
+	if not os.path.exists(f"{HOMEDIR}/.ssh/id_ecdsa"):
+		args = ["/usr/bin/ssh-keygen", "-t", "ecdsa", "-b", "521", "-f", f"{HOMEDIR}/.ssh/id_ecdsa"]
 		retval = execute_command(args)
 	else:
 		retval = True

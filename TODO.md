@@ -1,6 +1,6 @@
 # TODO
 ## All
-* When running either ikt or iku, check whether .ssh/id_ed25519.pub is in authorized_keys
+* When running either ikt or iku, check whether .ssh/id_ecdsa.pub is in authorized_keys
   in .ikt/ansible/inventory.yaml; if not, add it
 
 ## iku

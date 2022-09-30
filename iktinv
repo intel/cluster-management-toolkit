@@ -355,13 +355,13 @@ def rebuild_inventory(options = [], args = None):
 
 	# Finally import the hostkey into authorized_keys
 	pubkey = None
-	with open(f"{HOMEDIR}/.ssh/id_ed25519.pub", "r") as f:
+	with open(f"{HOMEDIR}/.ssh/id_ecdsa.pub", "r") as f:
 		tmp = f.readlines()
 		if tmp is not None and len(tmp) > 0:
 			pubkey = tmp[0]
 
 	if pubkey == None:
-		iktprint([("Error: ", "error"), ("Failed to read ", "default"), (f"{HOMEDIR}/.ssh/id_ed25519.pub", "path"), ("; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error"), ("Failed to read ", "default"), (f"{HOMEDIR}/.ssh/id_ecdsa.pub", "path"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	values = {
