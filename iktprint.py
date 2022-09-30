@@ -29,6 +29,9 @@ def __themearray_to_string(themearray):
 
 	return string
 
+def themearray_len(themearray):
+	return len("".join([_str for _str, _format in themearray]))
+
 # themearray is a list of format strings of the format:
 # (string, theme_attr_ref); context is implicitly understood to be term
 def iktinput(themearray):

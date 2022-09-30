@@ -3,7 +3,8 @@ import errno
 import sys
 
 import about
-from iktprint import iktprint, init_iktprint
+from iktlib import deep_get
+from iktprint import themearray_len, iktprint, init_iktprint
 
 programname = None
 programversion = None
@@ -11,9 +12,6 @@ programdescription = None
 programauthors = None
 
 commandline = None
-
-def themearray_len(themearray):
-	return len("".join([_str for _str, _format in themearray]))
 
 def version(options = [], args = None):
 	iktprint([(f"{programname} ", "programname"), (f"{programversion}", "version")])
@@ -43,10 +41,10 @@ def usage(options = [], args = None):
 		else:
 			commandcount += 1
 
-		if commandline[key].get("options") is not None:
+		if deep_get(commandline, f"{key}#options") is not None:
 			has_options = True
 
-		if commandline[key].get("max_args", 0) > 0:
+		if deep_get(commandline, f"{key}#max_args", 0) > 0:
 			has_args = True
 
 	if commandcount > 2 or globaloptioncount == 0:
@@ -70,7 +68,7 @@ def usage(options = [], args = None):
 	if has_commands == True:
 		print("Commands:")
 	else:
-		print("Options:")
+		print("Global Options:")
 
 	for key, value in commandline.items():
 		if key in ["__default", "extended_description"]:
@@ -82,7 +80,7 @@ def usage(options = [], args = None):
 
 		tmp = []
 		separator = "|"
-		for cmd in value["command"]:
+		for cmd in deep_get(value, "command", []):
 			if key.startswith("__"):
 				continue
 
@@ -90,7 +88,7 @@ def usage(options = [], args = None):
 				tmp.append((f"{separator}", "separator"))
 			tmp.append((f"{cmd}", "command"))
 
-		values = value.get("values")
+		values = deep_get(value, "values")
 		if values is not None:
 			tmp.append((" ", "default"))
 			for part in values:
@@ -99,49 +97,48 @@ def usage(options = [], args = None):
 		tlen = themearray_len(tmp)
 		maxlen = max(maxlen, tlen)
 		if tlen > 0:
-			commands.append((tlen, tmp, value["description"]))
+			commands.append((tlen, tmp, deep_get(value, "description")))
 
-		if value.get("extended_description") is not None:
-			for line in value["extended_description"]:
-				commands.append((0, [("", "default")], line))
+		for line in deep_get(value, "extended_description", []):
+			commands.append((0, [("", "default")], line))
 
-		if value.get("options") is not None:
-			for option in value["options"]:
-				indent = ""
-				if len(tmp) > 0:
-					indent = "  "
-				tmp2 = [(f"{indent}", "option")]
-				if type(option) == tuple:
-					i = 0
-					for i in range(0, len(option)):
-						# The first string is the initial indentation
-						if len(tmp2) > 1:
-							tmp2.append((f"{separator}", "separator"))
-						tmp2.append((f"{option[i]}", "option"))
-				else:
-					tmp2.append((f"{option}", "option"))
-				values = value["options"][option].get("values")
-				if values is not None:
-					tmp2.append((" ", "default"))
+		for option in deep_get(value, "options", []):
+			indent = ""
+			if len(tmp) > 0:
+				indent = "  "
+			tmp2 = [(f"{indent}", "option")]
+			if type(option) == tuple:
+				i = 0
+				for i in range(0, len(option)):
+					# The first string is the initial indentation
+					if len(tmp2) > 1:
+						tmp2.append((f"{separator}", "separator"))
+					tmp2.append((f"{option[i]}", "option"))
+			elif key.startswith("__"):
+				tmp2.append((f"  {option}", "option"))
+			else:
+				tmp2.append((f"{option}", "option"))
+			values = deep_get(value, f"options#{option}#values")
+			if values is not None:
+				tmp2.append((" ", "default"))
 
-					for part in values:
-						tmp2.append(part)
-				tlen = themearray_len(tmp2)
-				maxlen = max(maxlen, tlen)
-				description = value["options"][option]["description"]
+				for part in values:
+					tmp2.append(part)
+			tlen = themearray_len(tmp2)
+			maxlen = max(maxlen, tlen)
+			description = deep_get(value, f"options#{option}#description")
+			if len(indent) > 0:
+				description = [(indent, "default")] + description
+			commands.append((tlen, tmp2, description))
+			for line in deep_get(value, f"options#{option}#extended_description", []):
 				if len(indent) > 0:
-					description = [(indent, "default")] + description
-				commands.append((tlen, tmp2, description))
-				if value["options"][option].get("extended_description") is not None:
-					for line in value["options"][option]["extended_description"]:
-						if len(indent) > 0:
-							commands.append((tlen, [("".ljust(tlen), "default")], [(indent, "default")] + line))
-						else:
-							commands.append((tlen, [("".ljust(tlen), "default")], line))
+					commands.append((tlen, [("".ljust(tlen), "default")], [(indent, "default")] + line))
+				else:
+					commands.append((tlen, [("".ljust(tlen), "default")], line))
 
-	# cmp[0]: unformatted length of command/option
+	# cmd[0]: unformatted length of command/option
 	# cmd[1]: formatted cmd/option
-	# cmp[2]: formatted description
+	# cmd[2]: formatted description
 	# We cannot do ljust() directly on the string, since it would include the formatting
 	for cmd in commands:
 		string = cmd[1] + [("".ljust(maxlen - cmd[0] + 2), "default")] + cmd[2]
@@ -149,7 +146,7 @@ def usage(options = [], args = None):
 
 	if "extended_description" in commandline:
 		print()
-		for line in commandline["extended_description"]:
+		for line in deep_get(commandline, "extended_description", []):
 			iktprint(line)
 
 	return 0
@@ -165,12 +162,12 @@ def __find_command(commandline, arg):
 		if key == "extended_description":
 			continue
 
-		for cmd in value["command"]:
+		for cmd in deep_get(value, "command", []):
 			if cmd == arg:
 				commandname = cmd
-				command = value["callback"]
-				min_args = value.get("min_args", 0)
-				max_args = value.get("max_args", 0)
+				command = deep_get(value, "callback")
+				min_args = deep_get(value, "min_args", 0)
+				max_args = deep_get(value, "max_args", 0)
 				break
 		if command is not None:
 			break
@@ -247,10 +244,18 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 			else:
 				# Is this option valid for this command?
 				match = None
-				for opt in commandline[key].get("options"):
+				__key = key
+				for opt in deep_get(commandline, f"{__key}#options", {}):
 					if type(opt) is str and argv[i] == opt or type(opt) is tuple and argv[i] in opt:
 						match = opt
 						break
+				# Check global options
+				if match is None:
+					for opt in deep_get(commandline, "__global_options#options", {}):
+						if type(opt) is str and argv[i] == opt or type(opt) is tuple and argv[i] in opt:
+							__key = "__global_options"
+							match = opt
+							break
 
 				if match is None:
 					iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{commandname}", "command"), ("“ does not support option “", "default"), (f"{argv[i]}", "option"), ("“.", "default")], stderr = True)
@@ -261,8 +266,8 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 					option = match
 
 					# Does this option require arguments?
-					requires_arg = commandline[key]["options"][option].get("requires_arg")
-					if requires_arg is not None and requires_arg == True:
+					requires_arg = deep_get(commandline, f"{__key}#options#{option}#requires_arg", False)
+					if requires_arg == True:
 						i += 1
 						if i >= len(argv):
 							iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{option}", "option"), ("“ requires an argument.", "default")], stderr = True)
@@ -302,8 +307,6 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 		sys.exit(errno.EINVAL)
 	else:
 		# Are there implicit options?
-		implicit_options = commandline[key].get("implicit_options")
-		if implicit_options is not None:
-			options += implicit_options
+		options += deep_get(commandline, f"{key}#implicit_options", [])
 
 	return command, options, args

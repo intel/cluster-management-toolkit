@@ -468,7 +468,7 @@ def prepare_hosts(options = [], args = None):
 			iktprint([(f"Error: ", "error")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; aborting.", "default")], stderr = True)
 			sys.exit(errno.EEXIST)
 		else:
-			iktprint([(f"Warning: ", "warning")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; ignoring them since “", "description"), ("--ignore-existing", "argument"), ("“ was specified.", "default")], stderr = True)
+			iktprint([(f"Warning: ", "warning")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; ignoring them since “", "description"), ("--ignore-existing", "option"), ("“ was specified.", "default")], stderr = True)
 
 	if len(non_existing) == 0:
 		iktprint([(f"Error: ", "error"), (" no valid hosts specified; aborting.", "default")], stderr = True)
@@ -593,7 +593,7 @@ def add_nodes(options = [], args = None):
 			iktprint([(f"Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; aborting.", "default")], stderr = True)
 			sys.exit(errno.EEXIST)
 		else:
-			iktprint([(f"Warning: ", "warning")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; ignoring them since “", "description"), ("--ignore-existing", "argument"), ("“ was specified.", "default")], stderr = True)
+			iktprint([(f"Warning: ", "warning")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; ignoring them since “", "description"), ("--ignore-existing", "option"), ("“ was specified.", "default")], stderr = True)
 
 	if len(non_existing) == 0:
 		iktprint([(f"Error: ", "error"), (" no valid hosts specified; aborting.", "default")], stderr = True)
@@ -611,7 +611,7 @@ def add_nodes(options = [], args = None):
 			iktprint([(f"Error: ", "error")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the inventory; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
-			iktprint([(f"Warning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the invetory; ignoring them since “", "description"), ("--ignore-non-existing", "argument"), ("“ was specified.", "default")], stderr = True)
+			iktprint([(f"Warning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the invetory; ignoring them since “", "description"), ("--ignore-non-existing", "option"), ("“ was specified.", "default")], stderr = True)
 
 	show_configuration(non_existing)
 
@@ -772,7 +772,7 @@ def remove_nodes(options = [], args = None):
 			iktprint([(f"Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
-			iktprint([(f"Warning: ", "warning")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; attempting to purge them anyway since “", "description"), ("--force", "argument"), ("“ was specified.", "default")], stderr = True)
+			iktprint([(f"Warning: ", "warning")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; attempting to purge them anyway since “", "description"), ("--force", "option"), ("“ was specified.", "default")], stderr = True)
 			nodes += non_existing
 
 	if len(nodes) == 0:
@@ -791,7 +791,7 @@ def remove_nodes(options = [], args = None):
 	if retval == True:
 		iktprint([("OK", "ok")])
 	elif force == True:
-		iktprint([("NOT OK", "warning"), ("; ignoring since “", "description"), ("--force", "argument"), ("“ was specified.", "default")], stderr = True)
+		iktprint([("NOT OK", "warning"), ("; ignoring since “", "description"), ("--force", "option"), ("“ was specified.", "default")], stderr = True)
 	else:
 		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
@@ -863,7 +863,7 @@ def purge_hosts(options = [], args = None):
 			iktprint([(f"Error: ", "error")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not in the inventory; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
-			iktprint([(f"Warning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not in the inventory; ignoring them since “", "description"), ("--ignore-non-existing", "argument"), ("“ was specified.", "default")], stderr = True)
+			iktprint([(f"Warning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not in the inventory; ignoring them since “", "description"), ("--ignore-non-existing", "option"), ("“ was specified.", "default")], stderr = True)
 
 	if len(selection) == 0:
 		iktprint([(f"Error: ", "error"), (" none of the specified hosts are part of the inventory; aborting.", "default")], stderr = True)

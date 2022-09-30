@@ -122,7 +122,7 @@ def install_software(packages, verbose = False):
 	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + packages
 	subprocess.call(args)
 
-def install_software_with_pip_fallback(packages, verbose = False):
+def install_software_with_pip_fallback(packages, verbose = False, dryrun = False):
 	pkgs = set()
 	fallbacks = set()
 
@@ -139,24 +139,30 @@ def install_software_with_pip_fallback(packages, verbose = False):
 		if pkg not in pkgs:
 			fallbacks.add(fallback)
 
-	if len(pkgs) > 0:
+	if len(pkgs) > 0 and dryrun == False:
 		args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + list(pkgs)
 		subprocess.call(args)
 
-	if len(fallbacks) > 0:
+	if len(fallbacks) > 0 and dryrun == False:
 		args = ["/usr/bin/pip3", "install"] + list(fallbacks)
 		subprocess.call(args)
+
+	fallbacks.add("ansible-runner")
+	return list(pkgs), list(fallbacks)
 
 def install(options = [], args = None):
 	verbose = False
 	install_dependencies = True
 	confirm = True
+	allow_fallback = True
 
 	for opt, optarg in options:
 		if opt == "--verbose":
 			verbose = True
 		elif opt == "--no-dependencies":
 			install_dependencies = False
+		elif opt == "--no-fallback":
+			allow_fallback = False
 		elif opt == "-Y":
 			confirm = False
 		else:
@@ -164,6 +170,18 @@ def install(options = [], args = None):
 
 	if confirm == True:
 		iktprint([("Important:", "warning"), (" The following actions will be taken that will modify the system:", "default")])
+		pkgs = []
+		pkgs_fallback = []
+
+		if install_dependencies == True:
+			pkgs, pkgs_fallback = install_software_with_pip_fallback(packages_with_pip_fallback, dryrun = True)
+			iktprint([("\n• ", "separator"), ("Install the following system software:", "action")])
+			iktprint([("  Note:", "warning"), (" this requires sudo permissions", "emphasis")])
+			for pkg in packages + pkgs:
+				iktprint([(f"    {pkg}", "path")])
+			for pkg in pkgs_fallback:
+				iktprint([(f"    {pkg}", "path"), (" (Using package from PIP)", "emphasis")])
+
 		iktprint([("\n• ", "separator"), (f"Create the following new directories", "action")])
 		for name in directories:
 			iktprint([(f"    {name}", "path")])
@@ -176,41 +194,46 @@ def install(options = [], args = None):
 		for src, dst in executable_symlinks:
 			iktprint([(f"    {src}", "path"), (" ⇨ ", "emphasis"), (f"{dst}", "path")])
 
-		if install_dependencies == True:
-			iktprint([("\n• ", "separator"), ("Install the following system software:", "action")])
-			iktprint([("  Note:", "warning"), (" this requires sudo permissions", "emphasis")])
-			for pkg in packages:
-				iktprint([(f"    {pkg}", "path")])
+		if install_dependencies == True and allow_fallback == False and len(pkgs_fallback) > 0:
+			iktprint([("\n", "default"), ("Error:", "error"), (" Installation would require fallback to PIP, but “", "default"), ("--no-fallback", "option"), ("“ was specified; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
 
 		retval = iktinput([("\nInstall ", "default"), ("iKT", "programname"), ("? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ["y", "yes"]:
 			iktprint([("\nAborting:", "error"), (" User stopped installation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
+	if install_dependencies == True:
+		install_software_with_pip_fallback(packages_with_pip_fallback, verbose = verbose)
+		install_software(packages, verbose = verbose)
+
 	create_directories(verbose = verbose)
 	copy_configuration_files(verbose = verbose)
 	create_symlinks(verbose = verbose)
 
-	if install_dependencies == True:
-		install_software(packages, verbose = verbose)
-		install_software_with_pip_fallback(packages_with_pip_fallback, verbose = verbose)
-
 commandline = {
 	# Default command
-	"__default": {
-		"command": ["__default"],
+	"__global_options": {
+		"command": ["__global_options"],
 		"description": [("", "")],
 		"options": {
-			"--verbose": {
-				"description": [("Be more verbose", "description")],
-			},
 			"--no-dependencies": {
 				"description": [("Do not install dependencies", "description")],
+			},
+			"--no-fallback": {
+				"description": [("Do not use Python packages from PIP if no system package exist", "description")],
+			},
+			"--verbose": {
+				"description": [("Be more verbose", "description")],
 			},
 			"-Y": {
 				"description": [("Do not ask for confirmation before performing actions", "description")],
 			},
 		},
+	},
+	"__default": {
+		"command": ["__default"],
+		"description": [("", "")],
 		"min_args": 0,
 		"max_args": 0,
 		"callback": install,

@@ -2247,7 +2247,7 @@ def upgrade_control_plane(options = [], args = None):
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
 	if state is None or state in ["<none>"]:
-		iktprint([("Error:", "error"), (" Unknown installation state; if you believe this is OK (such as when upgrading a cluster not installed using ", "default"), (f"{about.admin_program_name}", "programname"), (" you can try using the “", "default"), ("--override", "argument"), ("“ argument; aborting.", "default")], stderr = True)
+		iktprint([("Error:", "error"), (" Unknown installation state; if you believe this is OK (such as when upgrading a cluster not installed using ", "default"), (f"{about.admin_program_name}", "programname"), (" you can try using the “", "default"), ("--override", "option"), ("“ option; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if state is None or state in ["<none>", "preparing", "prepared", "installing", "tearing_down", "torn_down", "purging"]:
