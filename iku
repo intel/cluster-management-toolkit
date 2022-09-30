@@ -10786,6 +10786,14 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None, **kwar
 		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
+def cordon_node(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+	for node in items:
+		kh.cordon_node(node)
+
+def uncordon_node(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+	for node in items:
+		kh.uncordon_node(node)
+
 nodeplaybooks = {
 }
 
@@ -10893,8 +10901,8 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 	for item in natsorted(order, key = itemgetter(1, 0)):
 		action = item[0]
 		category = item[1]
-		allowoncontrolplane = deep_get(action_list, f"{item[2]}#allow_on_controlplane", True)
-		singleoncontrolplane = deep_get(action_list, f"{item[2]}#single_on_controlplane", False)
+		allowoncontrolplane = deep_get(action_list, f"{item[2]}#allow_on_control_plane", True)
+		singleoncontrolplane = deep_get(action_list, f"{item[2]}#single_on_control_plane", False)
 		singleonly = deep_get(action_list, f"{item[2]}#single_only", False)
 		readonly = deep_get(action_list, f"{item[2]}#read_only", False)
 		metadata = deep_get(action_list, f"{item[2]}#metadata", [])
@@ -11374,6 +11382,7 @@ action_call_allowlist = {
 # Actionfuncs acceptable for direct use in view files
 actionfunc_allowlist = {
 	"action_view_pod_logs": action_view_pod_logs,
+	"cordon_node": cordon_node,
 	"delete_logs": delete_logs,
 	"delete_resource": delete_resource,
 	"force_delete_resource": force_delete_resource,
@@ -11383,6 +11392,7 @@ actionfunc_allowlist = {
 	"restart_resource_rollout": restart_resource_rollout,
 	"resume_resource_rollout": resume_resource_rollout,
 	"stop_resource_rescale": stop_resource_rescale,
+	"uncordon_node": uncordon_node,
 }
 
 # Activatedfuns acceptable for direct use in view files

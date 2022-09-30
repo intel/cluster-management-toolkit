@@ -2,6 +2,37 @@
   vars:
     metadata:
       description: "Add Kubernetes repository"
+      summary:
+        "Created directories":
+        - description: "/usr/local/keyrings"
+          conditions:
+          - "Debian and derivatives"
+        "Downloaded files":
+        - description: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+          conditions:
+          - "Debian and derivatives"
+        "Created files":
+        - description: "/usr/local/keyrings/packages.cloud.google.com-keyring.gpg"
+          conditions:
+          - "Debian and derivatives"
+        - description: "/etc/apt/sources.list.d/kubernetes.list"
+          conditions:
+          - "Debian and derivatives"
+        - description: "/etc/apt/apt.conf.d/01proxy-kubernetes"
+          conditions:
+          - "Debian and derivatives"
+        - description: "/etc/yum.repos.d/kubernetes.repo"
+          conditions:
+          - "Red Hat and derivatives"
+        "Installed packages":
+        - description: "dnf-plugin-versionlock"
+          conditions:
+          - "Red Hat and derivatives"
+        "Other actions":
+        - description: "Updates package cache"
+          conditions:
+          - "Debian and derivatives"
+          - "Red Hat and derivatives"
       playbook_types:
       - "internal"
   gather_subset:
@@ -29,14 +60,14 @@
     when: ansible_os_family == 'Debian'
   - name: "Configuring package repository for Kubernetes"
     ansible.builtin.template:
-      dest: "/etc/apt/sources.list.d/kubernetes.list"
       src: "templates/etc/apt/sources.list.d/kubernetes.list.j2"
+      dest: "/etc/apt/sources.list.d/kubernetes.list"
       mode: "0644"
     when: ansible_os_family == 'Debian'
   - name: "Configuring package repository proxy for Kubernetes"
     ansible.builtin.template:
-      dest: "/etc/apt/apt.conf.d/01proxy-kubernetes"
       src: "templates/etc/apt/apt.conf.d/01proxy-kubernetes.j2"
+      dest: "/etc/apt/apt.conf.d/01proxy-kubernetes"
       mode: "0644"
     when: (ansible_os_family == 'Debian') and (use_proxy == "yes")
   - name: "Updating package cache"
@@ -44,8 +75,8 @@
     when: ansible_os_family == 'Debian'
   - name: "Configuring package repository for Kubernetes"
     ansible.builtin.template:
-      dest: "/etc/yum.repos.d/kubernetes.repo"
       src: "templates/etc/yum.repos.d/kubernetes.repo.j2"
+      dest: "/etc/yum.repos.d/kubernetes.repo"
       mode: "0644"
     when: ansible_os_family == 'RedHat'
   - name: "Installing dnf-plugin-versionlock"
