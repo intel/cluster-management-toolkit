@@ -48,6 +48,7 @@ except ModuleNotFoundError:
 
 from logparser import logparser, logparser_initialised, loglevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
+from iktio import get_local_hostname
 import iktlib
 from iktlib import split_msg, deep_get, deep_get_list, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
@@ -6888,20 +6889,14 @@ def clusteroverviewloop(stdscr, view):
 
 			# XXX: Once we can run Ansible jobs in the background we can replace this with the data from the load_ping playbook
 			# Check whether we're running local or not; if we're running local this is easy
-			if os.path.exists("/etc/hostname"):
-				f = open("/etc/hostname", "r")
-				hostname = f.readline().strip()
-				islocal = (hostname == name)
-				f.close()
-			#else:
-			#WTF do we do if /etc/hostname doesn't exist?
+			hostname = get_local_hostname()
+			islocal = (hostname == name)
 
 			if islocal == True:
 				# FIXME: handle non-existance
 				if os.path.exists("/proc/loadavg"):
-					f = open("/proc/loadavg", "r")
-					loadavg = f.readline()
-					f.close()
+					with open("/proc/loadavg", "r") as f:
+						loadavg = f.readline()
 
 					tmp = re.match(r"([0-9]+\.[0-9]+) ([0-9]+\.[0-9]+) ([0-9]+\.[0-9]+) ([0-9]+)/([0-9]+) ([0-9]+)", loadavg)
 					if tmp is not None:
@@ -6912,29 +6907,27 @@ def clusteroverviewloop(stdscr, view):
 						tasks = tmp[5]
 
 				if os.path.exists("/proc/meminfo"):
-					f = open("/proc/meminfo", "r")
-
-					for tmp in f:
-						values = tmp.split()
-						if values[0] == "MemTotal:":
-							memtotal = int(values[1])
-						elif values[0] == "MemFree:":
-							memfree = int(values[1])
-						elif values[0] == "MemShared:":
-							memshared = int(values[1])
-						elif values[0] == "Buffers:":
-							buffers = int(values[1])
-						elif values[0] == "Cached:":
-							memcached = int(values[1])
-						elif values[0] == "SwapTotal:":
-							swaptotal = int(values[1])
-						elif values[0] == "SwapFree:":
-							swapfree = int(values[1])
-						elif values[0] == "Shmem:":
-							memshared = int(values[1])
-						elif values[0] == "SReclaimable:":
-							sreclaimable = int(values[1])
-					f.close()
+					with open("/proc/meminfo", "r") as f:
+						for tmp in f:
+							values = tmp.split()
+							if values[0] == "MemTotal:":
+								memtotal = int(values[1])
+							elif values[0] == "MemFree:":
+								memfree = int(values[1])
+							elif values[0] == "MemShared:":
+								memshared = int(values[1])
+							elif values[0] == "Buffers:":
+								buffers = int(values[1])
+							elif values[0] == "Cached:":
+								memcached = int(values[1])
+							elif values[0] == "SwapTotal:":
+								swaptotal = int(values[1])
+							elif values[0] == "SwapFree:":
+								swapfree = int(values[1])
+							elif values[0] == "Shmem:":
+								memshared = int(values[1])
+							elif values[0] == "SReclaimable:":
+								sreclaimable = int(values[1])
 
 					# Total used mem; includes buffers and cache
 					memused = memtotal - memfree
@@ -6944,9 +6937,8 @@ def clusteroverviewloop(stdscr, view):
 					threads = 42
 
 				if os.path.exists("/proc/stat"):
-					f = open("/proc/stat", "r")
-					stat = f.readline()
-					f.close()
+					with open("/proc/stat", "r") as f:
+						stat = f.readline()
 
 				# cpu  30175835 25947 13018006 435764225 200633 0   3229829 0     0     0
 				# ...  normal   niced system   idle      iowait irq softirq steal guest guest_nice
@@ -7986,17 +7978,16 @@ def export_data(stdscr, **kwargs):
 	vtype, value = decode_value(value)
 
 	if vtype.startswith("string"):
-		f = open(filename, "w")
-		f.write(value)
+		with open(filename, "w") as f:
+			f.write(value)
 	elif vtype.startswith("base64-utf-8"):
-		f = open(filename, "w")
-		f.write(base64.b64decode(value).decode("utf-8"))
+		with open(filename, "w") as f:
+			f.write(base64.b64decode(value).decode("utf-8"))
 	elif vtype.startswith(("base64-binary", "gzip")):
-		f = open(filename, "wb")
-		f.write(base64.b64decode(value))
+		with open(filename, "wb") as f:
+			f.write(base64.b64decode(value))
 	else:
 		raise Exception(f"Trying to export unknown vtype: {vtype}")
-	f.close()
 
 def generate_helptext(view, viewtype, additional_helptexts = [], shortcuts = []):
 	helptext = []
@@ -9844,29 +9835,28 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"File “{filename}“ already exists; overwrite?:", default = False) == False:
 					continue
 
-			f = open(filename, "w")
-			for y in range(0, uip.loglen):
-				# Even when the log is raw we want the first timestamp
-				if y >= len(timestamps):
-					timestamp = "".ljust(uip.tspadwidth)
-				else:
-					timestamp = "%s" % (timestamps[y])
+			with open(filename, "w") as f:
+				for y in range(0, uip.loglen):
+					# Even when the log is raw we want the first timestamp
+					if y >= len(timestamps):
+						timestamp = "".ljust(uip.tspadwidth)
+					else:
+						timestamp = "%s" % (timestamps[y])
 
-				if y >= len(facilities) or facilities[y] == "":
-					facility = ""
-				else:
-					facility = f"<{facilities[y]}> "
+					if y >= len(facilities) or facilities[y] == "":
+						facility = ""
+					else:
+						facility = f"<{facilities[y]}> "
 
-				if uip.yoffset + y >= len(severities):
-					severity = f"{lvl_to_4letter_severity(loglevel.INFO)}: "
-				else:
-					severity = f"{lvl_to_4letter_severity(severities[y])}: "
+					if uip.yoffset + y >= len(severities):
+						severity = f"{lvl_to_4letter_severity(loglevel.INFO)}: "
+					else:
+						severity = f"{lvl_to_4letter_severity(severities[y])}: "
 
-				if raw_logs:
-					f.write(f"{timestamp}  {messages[y]}\n")
-				else:
-					f.write(f"{timestamp}  {severity}{facility}{messages[y]}\n")
-			f.close()
+					if raw_logs:
+						f.write(f"{timestamp}  {messages[y]}\n")
+					else:
+						f.write(f"{timestamp}  {severity}{facility}{messages[y]}\n")
 
 def do_command(stdscr, **kwargs):
 	_args = deep_get(kwargs, "command")

@@ -21,8 +21,6 @@ import tempfile
 import time
 import yaml
 
-import paramiko
-
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
@@ -33,7 +31,7 @@ from commandparser import parse_commandline
 from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_set_vars, ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
-from iktio import download_files
+from iktio import download_files, get_local_hostname, scan_and_add_ssh_keys
 import iktlib
 from iktlib import deep_get, execute_command, execute_command_with_response
 
@@ -624,35 +622,6 @@ def check_for_ssh_key():
 			break
 	return retval
 
-def scan_and_add_ssh_keys():
-	controlplanes = get_control_planes()
-	hosts = [controlplane[0] for controlplane in controlplanes]
-	hosts += [f"{controlplane[0]}.local" for controlplane in controlplanes]
-	hosts += [
-		"localhost",
-	]
-
-	for host in hosts:
-		try:
-			transport = paramiko.Transport(host)
-		except socket.gaierror as e:
-			if str(e) in ["[Errno -3] Temporary failure in name resolution", "[Errno -2] Name or service not known"]:
-				continue
-			else:
-				raise socket.gaierror(f"{str(e)}\nhost: {host}")
-		transport.connect()
-		key = transport.get_remote_server_key()
-		transport.close()
-		known_hosts = f"{HOMEDIR}/.ssh/known_hosts"
-
-		# Note: Paramiko seems to have issues if .ssh/known_hosts doesn't exist,
-		# so "touch" the file just in case.
-		open(known_hosts, 'a').close()
-
-		hostfile = paramiko.HostKeys(filename = known_hosts)
-		hostfile.add(hostname = host, key = key, keytype = key.get_name())
-		hostfile.save(filename = known_hosts)
-
 def create_ssh_key():
 	if not os.path.exists(f"{HOMEDIR}/.ssh/id_ecdsa"):
 		args = ["/usr/bin/ssh-keygen", "-t", "ecdsa", "-b", "521", "-f", f"{HOMEDIR}/.ssh/id_ecdsa"]
@@ -718,7 +687,14 @@ def __task_check_and_create_ssh_key(installation_info):
 			check_and_print_status(create_ssh_key())
 
 def __task_scan_and_add_ssh_keys(installation_info):
-	scan_and_add_ssh_keys()
+	controlplanes = get_control_planes()
+	hosts = [controlplane[0] for controlplane in controlplanes]
+	hosts += [f"{controlplane[0]}.local" for controlplane in controlplanes]
+	hosts += [
+		"localhost",
+	]
+
+	scan_and_add_ssh_keys(hosts)
 
 def __task_add_ssh_keys_to_inventory(installation_info):
 	pubkey = None
@@ -1035,13 +1011,7 @@ def __selection_control_planes():
 	return [controlplane[0] for controlplane in __controlplanes]
 
 def __selection_localhost():
-	if os.path.exists("/etc/hostname"):
-		f = open("/etc/hostname", "r")
-		hostname = f.readline().strip()
-	else:
-		raise Exception("Error: /etc/hostname not found; Aborting.")
-
-	return [hostname]
+	return [get_local_hostname()]
 
 # Run preparation playbooks on localhost
 def __task_run_preparation_playbooks_on_localhost(installation_info):
@@ -1578,11 +1548,7 @@ def prepare_installation(options = [], args = None):
 	if phase == "<none>":
 		phase = 0
 
-	if os.path.exists("/etc/hostname"):
-		f = open("/etc/hostname", "r")
-		hostname = f.readline().strip()
-	else:
-		raise Exception("Error: /etc/hostname not found; Aborting.")
+	hostname = get_local_hostname()
 
 	# default options
 	installation_info = update_installation_info(cluster_name = cluster_name, distro = distro, requested_version = requested_version, state = "preparing", phase = phase)
@@ -1687,11 +1653,7 @@ def prepare_installation(options = [], args = None):
 def import_cluster(options = [], args = None):
 	global no_password
 
-	if os.path.exists("/etc/hostname"):
-		f = open("/etc/hostname", "r")
-		hostname = f.readline().strip()
-	else:
-		raise Exception("Error: /etc/hostname not found; Aborting.")
+	hostname = get_local_hostname()
 
 	# default options
 	confirm = True

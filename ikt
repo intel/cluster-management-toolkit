@@ -47,6 +47,7 @@ THEME_DIRNAME = "themes"
 THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
 THEME_PATH = f"{THEMEDIR}/default.yaml"
 
+from iktio import scan_and_add_ssh_keys
 from iktprint import iktprint, iktinput, iktinput_password, init_iktprint
 
 import about
@@ -54,28 +55,6 @@ PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
 iktconfig = None
-
-def scan_and_add_ssh_keys(hosts):
-	for host in hosts:
-		try:
-			transport = paramiko.Transport(host)
-		except socket.gaierror as e:
-			if str(e) in ["[Errno -3] Temporary failure in name resolution", "[Errno -2] Name or service not known"]:
-				continue
-			else:
-				raise socket.gaierror(f"{str(e)}\nhost: {host}")
-		transport.connect()
-		key = transport.get_remote_server_key()
-		transport.close()
-		known_hosts = f"{HOMEDIR}/.ssh/known_hosts"
-
-		# Note: Paramiko seems to have issues if .ssh/known_hosts doesn't exist,
-		# so "touch" the file just in case.
-		open(known_hosts, 'a').close()
-
-		hostfile = paramiko.HostKeys(filename = known_hosts)
-		hostfile.add(hostname = host, key = key, keytype = key.get_name())
-		hostfile.save(filename = known_hosts)
 
 def request_ansible_password():
 	# Check whether ansible_password is defined or not
@@ -1195,6 +1174,10 @@ ikt_commandline = {
 		"min_args": 1,
 		"max_args": 1,
 		"callback": upgrade_nodes,
+	},
+	"spacer1": {
+		"command": [""],
+		"description": [("", "default")],
 	},
 #	"Get": {
 #		"command": ["get", "l", "list"],

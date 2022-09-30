@@ -3,6 +3,8 @@
 from functools import partial
 import hashlib
 import os
+import paramiko
+from pathlib import Path
 import re
 import sys
 import tarfile
@@ -17,6 +19,55 @@ import iktlib
 from iktlib import deep_get
 
 from iktprint import iktprint
+
+def get_local_hostname():
+	try:
+		with open("/etc/hostname", "r") as f:
+			hostname = f.readline().strip()
+	except FileNotFoundError:
+		iktprint([("Critical: ", "critical"), (" “", "default"), ("/etc/hostname", "path"), ("“ not found; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	return hostname
+
+def scan_and_add_ssh_keys(hosts):
+	known_hosts = f"{HOMEDIR}/.ssh/known_hosts"
+
+	# Note: Paramiko seems to have issues if .ssh/known_hosts doesn't exist,
+	# so "touch" the file just in case.
+	old_umask = os.umask(0o077)
+	Path(known_hosts, mode = 0o600, exist_ok = True).touch()
+	os.umask(old_umask)
+
+	try:
+		hostfile = paramiko.HostKeys(filename = known_hosts)
+	except IOError:
+		iktprint([("Critical:", "critical"), (" Failed to open/read “", "default"), (known_hosts, "path"), ("“; aborting.", "default")], stderr = True)
+		sys.exit(errno.EIO)
+
+	for host in hosts:
+		try:
+			transport = paramiko.Transport(host)
+		except socket.gaierror as e:
+			if str(e) in ["[Errno -3] Temporary failure in name resolution", "[Errno -2] Name or service not known"]:
+				continue
+			else:
+				raise socket.gaierror(f"{str(e)}\nhost: {host}")
+		try:
+			transport.connect()
+			key = transport.get_remote_server_key()
+			transport.close()
+		except SSHException:
+			iktprint([("Error:", "error"), (" Failed to get server key from remote host ", "default"), (host, "hostname"), ("; aborting.", "default")], stderr = True)
+			sys.exit(errno.EIO)
+
+		hostfile.add(hostname = host, key = key, keytype = key.get_name())
+
+	try:
+		hostfile.save(filename = known_hosts)
+	except IOError:
+		iktprint([("Critical:", "critical"), (" Failed to save modifications to “", "default"), (known_hosts, "path"), ("“; aborting.", "default")], stderr = True)
+		sys.exit(errno.EIO)
 
 def verify_checksum(checksum, checksum_type, data, filename = None):
 	if checksum_type is None:
