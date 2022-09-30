@@ -5210,7 +5210,7 @@ def get_strings_from_string(obj, **kwargs):
 def get_resource_list(obj, **kwargs):
 	vlist = []
 
-	for res in deep_get(obj, "status#capacity", {}).keys():
+	for res in deep_get(obj, "status#capacity", {}):
 		capacity = deep_get(obj, f"status#capacity#{res}", "")
 		allocatable = deep_get(obj, f"status#allocatable#{res}", "")
 		vlist.append([res, allocatable, capacity])
@@ -5461,7 +5461,7 @@ def listgetter_join_dicts_to_list(obj, **kwargs):
 	keys = set()
 
 	for key_path in key_paths:
-		for key in deep_get(obj, key_path, {}).keys():
+		for key in deep_get(obj, key_path, {}):
 			keys.add(key)
 
 	for key in keys:
@@ -11720,7 +11720,7 @@ def populate_views():
 				if len(_indexes) == 0:
 					sys.exit(f"View-file {view_file} is invalid: field_indexes is either missing or empty for the list view. Aborting.")
 
-				for key in _indexes.keys():
+				for key in _indexes:
 					if type(_indexes[key]) == list:
 						field_indexes[key] = {}
 						field_indexes[key]["fields"] = copy.deepcopy(_indexes[key])
@@ -11919,7 +11919,7 @@ def populate_views():
 				listpad_field_indexes = {}
 				_indexes = deep_get(listpad, "field_indexes", {})
 
-				for key in _indexes.keys():
+				for key in _indexes:
 					if type(_indexes[key]) == list:
 						listpad_field_indexes[key] = {}
 						listpad_field_indexes[key]["fields"] = copy.deepcopy(_indexes[key])
