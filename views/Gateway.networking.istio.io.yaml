@@ -31,12 +31,14 @@ infoview:
           field_separators:
           - type: "selector"
   listpad:
-    path: "spec#servers"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#servers"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
         fields: ["hosts", "port"]
-    sortcolumn: "hosts"
+        sortcolumn: "hosts"
     fields:
       hosts:
         header: "Hosts:"

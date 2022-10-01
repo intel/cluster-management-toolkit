@@ -82,7 +82,9 @@ infoview:
         path: "roleRef#name"
         type: "str"
   listpad:
-    path: "subjects"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "subjects"
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch_with_lookup_on_activation"

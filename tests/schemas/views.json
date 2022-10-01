@@ -835,10 +835,6 @@
 			"type": "string",
 			"pattern": "^[_a-z][A-Za-z0-9#_/.=-]*[A-Za-z0-9=]$"
 		},
-		"sortcolumn": {
-			"description": "The field to use as sort key for the list",
-			"$ref": "#/definitions/field"
-		},
 		"view_name": {
 			"description": "The name of a view, as used from the command line; view names starting with __ are skipped",
 			"type": "string",
@@ -1615,6 +1611,7 @@
 								"listgetter_join_dicts_to_list",
 								"listgetter_join_lists",
 								"listgetter_namespaced_resources",
+								"listgetter_path",
 								"listgetter_policy_rules"
 							]
 						},
@@ -1624,19 +1621,12 @@
 						"on_activation": {
 							"$ref": "#/definitions/on_activation"
 						},
-						"path": {
-							"description": "Get the list from a path instead of using a listgetter",
-							"$ref": "#/definitions/simple_path"
-						},
 						"reversible": {
 							"description": "Is the list reversible",
 							"type": "boolean"
-						},
-						"sortcolumn": {
-							"$ref": "#/definitions/sortcolumn"
 						}
 					},
-					"required": [ "field_indexes" ],
+					"required": [ "field_indexes", "infogetter", "listgetter" ],
 					"additionalProperties": false
 				},
 				"logpad": {

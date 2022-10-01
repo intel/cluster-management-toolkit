@@ -66,11 +66,14 @@ listview:
 infoview:
   name: "Endpoints Info"
   listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: ""
     infogetter: "get_subsets_info"
     field_indexes:
       Normal:
         fields: ["addresses", "ports", "status"]
-    sortcolumn: "status"
+        sortcolumn: "status"
     fields:
       addresses:
         header: "Addresses:"

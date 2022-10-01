@@ -71,7 +71,9 @@ infoview:
         path: "image_id"
         type: "str"
   listpad:
-    path: "pod_references"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "pod_references"
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch"

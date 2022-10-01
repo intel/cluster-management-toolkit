@@ -15,12 +15,14 @@ infoview:
   name: "Ingress Info (KNative)"
   infopad:
   listpad:
-    path: "spec#rules"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#rules"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
         fields: ["hosts", "visibility", "http"]
-    sortcolumn: "hosts"
+        sortcolumn: "hosts"
     fields:
       hosts:
         header: "Hosts:"

@@ -64,7 +64,9 @@ infoview:
         path: "spec#updatePolicy#updateMode"
         type: "str"
   listpad:
-    path: "spec#resourcePolicy#containerPolicies"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#resourcePolicy#containerPolicies"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:

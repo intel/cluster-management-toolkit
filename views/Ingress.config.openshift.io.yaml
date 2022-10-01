@@ -27,7 +27,9 @@ infoview:
         path: "spec#domain"
         type: "str"
   listpad:
-    path: "status#componentRoutes"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "status#componentRoutes"
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch_with_lookup_on_activation"

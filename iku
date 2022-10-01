@@ -2867,11 +2867,19 @@ def get_auth_rule_info(**kwargs):
 
 	return info
 
+def listgetter_path(obj, **kwargs):
+	path = deep_get(kwargs, "path")
+
+	# As a special case passing the empty string as path will return the object as a list
+	if path == "":
+		return obj, 200
+	return deep_get(obj, path), 200
+
 def listgetter_policy_rules(obj, **kwargs):
 	vlist = []
 
 	if obj is None:
-		return []
+		return [], 200
 
 	# We want one entry per resource, hence a dict
 	# Structure:
@@ -8098,7 +8106,6 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			uip.update_window()
 
 			if listpad is not None:
-				listref = deep_get(viewref, "listpad#listref")
 				listgetter = deep_get(viewref, "listpad#listgetter")
 				listgetter_args = deep_get(viewref, "listpad#listgetter_args", {})
 				_kind = deep_get(listgetter_args, "_kind")
@@ -8140,6 +8147,12 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				listgetter_args["namespace"] = _namespace
 				if "_pass_obj" in listgetter_args:
 					listgetter_args["_obj"] = obj
+
+				if listgetter == generic_listgetter:
+					vlist, status = listgetter(**listgetter_args)
+				else:
+					vlist, status = listgetter(obj, **listgetter_args)
+
 				infogetter = deep_get(viewref, "listpad#infogetter")
 				infogetter_filters = deep_get(viewref, "listpad#infogetter_filters", None)
 				infogetter_args = deep_get(viewref, "listpad#infogetter_args", {})
@@ -8151,19 +8164,6 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						for key, value in infogetter_filters:
 							filters.append((ast.literal_eval(key), ast.literal_eval(value)))
 				fields = deep_get(viewref, "fields", [])
-
-				if listref is not None:
-					vlist = deep_get(obj, listref)
-				elif listgetter is not None:
-					if type(listgetter) == str:
-						listgetter = deep_get(listgetter_allowlist, listgetter)
-
-					if listgetter == generic_listgetter:
-						vlist, status = listgetter(**listgetter_args)
-					else:
-						vlist, status = listgetter(obj, **listgetter_args)
-				else:
-					vlist = obj
 
 				infogetter_args.pop("_vlist", None)
 				infogetter_args["_vlist"] = vlist
@@ -11237,6 +11237,7 @@ listgetter_allowlist = {
 	"listgetter_join_dicts_to_list": listgetter_join_dicts_to_list,
 	"listgetter_join_lists": listgetter_join_lists,
 	"listgetter_namespaced_resources": listgetter_namespaced_resources,
+	"listgetter_path": listgetter_path,
 	"listgetter_policy_rules": listgetter_policy_rules,
 }
 
@@ -11711,7 +11712,6 @@ def populate_views():
 
 				list_listgetter = deep_get(listpad, "listgetter")
 				list_listgetter_args = deep_get(listpad, "listgetter_args", {})
-				list_path = deep_get(listpad, "path")
 				list_infogetter = deep_get(listpad, "infogetter")
 				list_infogetter_args = deep_get(listpad, "infogetter_args")
 				if list_infogetter is None:
@@ -11719,12 +11719,17 @@ def populate_views():
 						raise Exception("View-file {view_file} is invalid: listpad specified, but no infogetter is provided")
 				else:
 					infoview_entry["listpad"]["infogetter"] = deep_get(infogetter_allowlist, list_infogetter)
+					if infoview_entry["listpad"]["infogetter"] is None:
+						raise Exception("View-file {view_file} is invalid: infogetter {list_infogetter} for listpad is not in infogetter_allowlist")
 					infoview_entry["listpad"]["infogetter_args"] = list_infogetter_args
-				if list_listgetter is not None:
+				if list_listgetter is None:
+					if len(listpad) > 0:
+						raise Exception("View-file {view_file} is invalid: listpad specified, but no listgetter is provided")
+				else:
 					infoview_entry["listpad"]["listgetter"] = deep_get(listgetter_allowlist, list_listgetter)
+					if infoview_entry["listpad"]["listgetter"] is None:
+						raise Exception("View-file {view_file} is invalid: listgetter {list_listgetter} for listpad is not in listgetter_allowlist")
 					infoview_entry["listpad"]["listgetter_args"] = list_listgetter_args
-				if list_path is not None:
-					infoview_entry["listpad"]["listref"] = list_path
 
 				shortcuts = {}
 
