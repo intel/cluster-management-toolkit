@@ -615,7 +615,7 @@ def addarray(win, array, y = -1, x = -1):
 
 	for string, attr in array:
 		if type(attr) == tuple:
-			raise Exception(f"addarray() called with attr: {attr} (type: tuple); must be integer")
+			raise TypeError(f"addarray() called with attr: {attr} (type: tuple); must be integer")
 		y, x = addstr(win, string, y, x, attr)
 	return y, x
 
@@ -629,7 +629,7 @@ def addarray(win, array, y = -1, x = -1):
 def addthemearray(win, array, y = -1, x = -1, selected = False):
 	for item in array:
 		if type(item) != tuple:
-			raise Exception(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
+			raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
 
 		if len(item) == 3:
 			_p1, _p2, _selected = item
@@ -923,7 +923,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 
 	if headers is not None:
 		if len(headers) != columns:
-			raise Exception(f"Mismatch: Number of headers passed to windowwidget ({len(headers)}) does not match number of columns ({columns})")
+			raise ValueError(f"Mismatch: Number of headers passed to windowwidget ({len(headers)}) does not match number of columns ({columns})")
 		else:
 			for i in range(0, columns):
 				lengths[i] = len(headers[i])
@@ -1917,7 +1917,7 @@ class UIProps:
 
 		for string, attr in array:
 			if type(attr) == tuple:
-				raise Exception(f"addarray() called with attr: {attr} (type: tuple); must be integer")
+				raise TypeError(f"addarray() called with attr: {attr} (type: tuple); must be integer")
 			y, x = self.addstr(win, string, y, x, attr)
 		return y, x
 
@@ -1931,7 +1931,7 @@ class UIProps:
 	def addthemearray(self, win, array, y = -1, x = -1, selected = False):
 		for item in array:
 			if type(item) != tuple:
-				raise Exception(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
+				raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
 
 			if len(item) == 3:
 				_p1, _p2, _selected = item
@@ -2334,7 +2334,7 @@ class UIProps:
 			valid_fields = []
 			for f in self.field_list:
 				valid_fields.append(f)
-			raise Exception(f"Invalid sortcolumn: {self.sortcolumn} does not exist in field_list:\nvalid fields are: {valid_fields}")
+			raise ValueError(f"Invalid sortcolumn: {self.sortcolumn} does not exist in field_list:\nvalid fields are: {valid_fields}")
 		else:
 			sortkey1 = self.field_list[self.sortcolumn]["sortkey1"]
 			sortkey2 = self.field_list[self.sortcolumn]["sortkey2"]
