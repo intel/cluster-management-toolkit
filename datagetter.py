@@ -240,20 +240,19 @@ def datagetter_api_support(kh, obj, path, default):
 	kind = deep_get(obj, "spec#names#kind", "")
 	api_family = deep_get(obj, "spec#group", "")
 
+	available_apis, status, modified = kh.get_available_api_families()
+
 	available_views = []
 
 	try:
-		_kind, _api_group = kh.guess_kind((kind, api_family))
+		kind = kh.guess_kind((kind, api_family))
 		available_views.append("Known")
+		if available_apis[kind]["list"] == True:
+			available_views.append("List")
+		if available_apis[kind]["info"] == True:
+			available_views.append("Info")
 	except NameError:
 		pass
-
-	for view in views:
-		if deep_get(views, f"{view}#kind", ("", "")) == (kind, api_family):
-			available_views.append("List")
-
-	if (kind, api_family) in infoviews:
-		available_views.append("Info")
 
 	if len(available_views) == 0:
 		available_views = default
