@@ -23,7 +23,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
-from iktlib import deep_get, stgroup, versiontuple, timestamp_to_datetime, get_since, execute_command_with_response
+from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, execute_command_with_response, get_since, stgroup, timestamp_to_datetime, versiontuple
 
 def kubectl_get_version():
 	# Check kubectl version
@@ -3235,3 +3235,43 @@ class KubernetesHelper:
 	def get_ref_from_owr(self, owr, namespace):
 		ref, status = self.__rest_helper_get(deep_get(owr, "kind"), deep_get(owr, "name"), namespace)
 		return ref
+
+	def get_events_by_kind_name_namespace(self, kind, name, namespace):
+		events = []
+		vlist, status = self.get_list_by_kind_namespace(("Event", "events.k8s.io"), "")
+		for obj in vlist:
+			__involved_kind = deep_get_with_fallback(obj, ["regarding#kind", "involvedObject#kind"])
+			__involved_api_version = deep_get_with_fallback(obj, ["regarding#apiVersion", "involvedObject#apiVersion"])
+			involved_kind = self.kind_api_version_to_kind(__involved_kind, __involved_api_version)
+			involved_name = deep_get_with_fallback(obj, ["regarding#name", "involvedObject#name"])
+			ev_name = deep_get(obj, "metadata#name")
+			ev_namespace = deep_get(obj, "metadata#namespace", "")
+			_last_seen = timestamp_to_datetime(deep_get_with_fallback(obj, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]))
+			last_seen = datetime_to_timestamp(_last_seen)
+			status = deep_get(obj, "type", "")
+			reason = deep_get(obj, "reason", "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
+			src_component = deep_get(obj, "reportingController", "")
+			if len(src_component) == 0:
+				src_component = deep_get_with_fallback(obj, ["deprecatedSource#component", "source#component"], "")
+			src_host = deep_get(obj, "reportingInstance", "")
+			if len(src_host) == 0:
+				src_host = deep_get_with_fallback(obj, ["deprecatedSource#host", "source#host"], "")
+			if len(src_component) == 0:
+				source = src_host
+			elif len(src_host) == 0:
+				source = src_component
+			else:
+				source = f"{src_host}/{src_component}"
+			_first_seen = timestamp_to_datetime(deep_get_with_fallback(obj, ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]))
+			first_seen = datetime_to_timestamp(_first_seen)
+
+			count = deep_get_with_fallback(obj, ["series#count", "deprecatedCount", "count"], "")
+			if count is None:
+				count = ""
+			else:
+				count = str(count)
+			message = deep_get(obj, "message", "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
+			if kind == involved_kind and name == involved_name and ev_namespace == namespace:
+				event = (ev_namespace, ev_name, last_seen, status, reason, source, first_seen, count, message)
+				events.append(event)
+		return events

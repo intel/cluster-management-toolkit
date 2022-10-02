@@ -47,6 +47,22 @@ stgroup_mapping = {
 def none_timestamp():
 	return (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
 
+def disksize_to_human(size):
+	size_suffixes = [
+		" bytes",
+		"kiB",
+		"MiB",
+		"GiB",
+		"TiB",
+		"PiB",
+	]
+	for i in range(0, len(size_suffixes)):
+		if size < 1024:
+			break
+		size = size // 1024
+	suffix = size_suffixes[i]
+	return f"{size}{suffix}"
+
 def split_msg(rawmsg):
 	# We only want "\n" to represent newlines
 	tmp = rawmsg.replace("\r\n", "\n")
@@ -315,5 +331,78 @@ def execute_command_with_response(args):
 	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 	return result.stdout.decode("utf-8")
 
-#
+def make_set_expression_list(expression_list):
+	expressions = []
+
+	if expression_list is not None:
+		for expression in expression_list:
+			operator = deep_get(expression, "operator", "")
+			if operator == "In":
+				operator = "In "
+			elif operator == "NotIn":
+				operator = "Not In "
+			elif operator == "Exists":
+				operator = "Exists"
+			elif operator == "DoesNotExist":
+				operator = "Does Not Exist"
+			elif operator == "Gt":
+				operator = "> "
+			elif operator == "Lt":
+				operator = "< "
+			key = deep_get_with_fallback(expression, ["key", "scopeName"], "")
+
+			tmp = deep_get(expression, "values", [])
+			values = ",".join(tmp)
+			if len(values) > 0 and operator not in ["Gt", "Lt"]:
+				values = f"[{values}]"
+
+			expressions.append((key, operator, values))
+	return expressions
+
+def make_set_expression(expression_list):
+	vlist = make_set_expression_list(expression_list)
+	xlist = []
+	for key, operator, values in vlist:
+		xlist.append(f"{key} {operator}{values}")
+	return ", ".join(xlist)
+
+def get_package_versions(hostname):
+	import ansible_helper
+	from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ansible_run_playbook_on_selection, get_playbook_path
+
+	if not os.path.isdir(ANSIBLE_PLAYBOOK_DIR):
+		return []
+
+	control_plane_k8s_version = ""
+
+	get_versions_path = get_playbook_path("get_versions.yaml")
+	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [hostname])
+
+	if len(ansible_results) == 0:
+		raise ValueError(f"Error: Failed to get package versions from {hostname} (retval: {retval}); aborting.")
+
+	tmp = []
+
+	for result in deep_get(ansible_results, hostname, []):
+		if deep_get(result, "task", "") == "package versions":
+			tmp = deep_get(result, "msg_lines", [])
+			break
+
+	if len(tmp) == 0:
+		raise ValueError(f"Error: Received empty version data from {hostname} (retval: {retval}); aborting.")
+
+	package_versions = []
+
+	package_version_regex = re.compile(r"^(.*?): (.*)")
+
+	for line in tmp:
+		tmp = package_version_regex.match(line)
+		if tmp is None:
+			continue
+		package = tmp[1]
+		version = tmp[2]
+		package_versions.append((package, version))
+
+	return package_versions
+
 read_iktconfig()

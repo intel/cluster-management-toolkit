@@ -135,6 +135,94 @@ def datagetter_regex_split_to_tuples(kh, obj, paths, default):
 
 	return list_fields, {}
 
+def get_pod_status(pod):
+	if deep_get(pod, "metadata#deletionTimestamp") is not None:
+		status = "Terminating"
+		status_group = stgroup.PENDING
+		return status, status_group
+
+	phase = deep_get(pod, "status#phase")
+
+	if phase == "Pending":
+		status = phase
+		status_group = stgroup.PENDING
+
+		# Any containers in ContainerCreating or similar?
+		for condition in deep_get(pod, "status#conditions", []):
+			condition_type = deep_get(condition, "type")
+			condition_status = deep_get(condition, "status")
+			reason = deep_get(condition, "reason", "")
+
+			if condition_type == "PodScheduled" and condition_status == "False" and reason == "Unschedulable":
+				status = reason
+				status_group = stgroup.NOT_OK
+				break
+			elif condition_type == "ContainersReady" and condition_status == "False":
+				for container in deep_get(pod, "status#initContainerStatuses", []):
+					if deep_get(container, "ready") == False:
+						reason = deep_get(container, "state#waiting#reason", "").rstrip()
+						if reason is not None and len(reason) > 0:
+							return reason, status_group
+				for container in deep_get(pod, "status#containerStatuses", []):
+					if deep_get(container, "ready") == False:
+						reason = deep_get(container, "state#waiting#reason", "").rstrip()
+						if reason is not None and len(reason) > 0:
+							return reason, status_group
+
+		return status, status_group
+	elif phase == "Running":
+		status = "Running"
+		status_group = stgroup.OK
+		last_state = ""
+		exit_code = 0
+
+		# Any container failures?
+		for condition in deep_get(pod, "status#conditions", []):
+			condition_type = deep_get(condition, "type")
+			condition_status = deep_get(condition, "status")
+			ready = True
+
+			if condition_type == "Ready" and condition_status == "False":
+				status_group = stgroup.NOT_OK
+				status = "NotReady"
+				# Can we get more info? Is the host available?
+				node_name = deep_get(pod, "spec#nodeName")
+				node = kh.get_ref_by_kind_name_namespace(("Node", ""), node_name, None)
+				node_status = get_node_status(node)
+				if node_status[0] == "Unreachable":
+					status = "NodeUnreachable"
+				ready = False
+				break
+			elif condition_type == "ContainersReady" and condition_status == "False":
+				status_group = stgroup.NOT_OK
+
+				for container in deep_get(pod, "status#initContainerStatuses", []):
+					kind = "InitContainer"
+					status, status_group, restarts, message, age = get_container_status(deep_get(pod, "status#initContainerStatuses"), deep_get(container, "name"), kind)
+					# If we have a failed container,
+					# break here
+					if status_group == stgroup.NOT_OK:
+						break
+
+				for container in deep_get(pod, "status#containerStatuses", []):
+					kind = "Container"
+					status, status_group, restarts, message, age = get_container_status(deep_get(pod, "status#containerStatuses"), deep_get(container, "name"), kind)
+					# If we have a failed container,
+					# break here
+					if status_group == stgroup.NOT_OK:
+						break
+
+		return status, status_group
+	elif phase == "Failed":
+		# Failed
+		status_group = stgroup.NOT_OK
+		status = deep_get(pod, "status#reason", phase).rstrip()
+		return status, status_group
+	else:
+		# Succeeded
+		status_group = stgroup.DONE
+		return phase, status_group
+
 # Only for internal types for the time being
 def datagetter_pod_status(kh, obj, path, default):
 	if obj is None:

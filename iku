@@ -50,11 +50,13 @@ from logparser import logparser, logparser_initialised, loglevel, lvl_to_letter_
 import curses_helper
 from iktio import get_local_hostname
 import iktlib
-from iktlib import deep_get, deep_get_list, deep_get_with_fallback, deep_set, iktconfig, stgroup, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp, split_msg, versiontuple
+from iktlib import deep_get, deep_get_list, deep_get_with_fallback, deep_set, disksize_to_human, get_package_versions, iktconfig, make_set_expression, make_set_expression_list, stgroup, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp, split_msg, versiontuple
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
 
 import datagetter
 from datagetter import datagetter_allowlist
+import itemgetter as itemgetters
+from itemgetter import itemgetter_allowlist
 import objgetter
 from objgetter import objgetter_allowlist
 import formatter as formatters
@@ -131,42 +133,6 @@ def init_kubernetes_client():
 
 override_tail_lines = None
 default_tail_lines = 4000
-
-def get_package_versions(hostname):
-	if not os.path.isdir(ANSIBLE_PLAYBOOK_DIR):
-		return []
-
-	control_plane_k8s_version = ""
-
-	get_versions_path = get_playbook_path("get_versions.yaml")
-	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [hostname])
-
-	if len(ansible_results) == 0:
-		raise ValueError(f"Error: Failed to get package versions from {hostname} (retval: {retval}); aborting.")
-
-	tmp = []
-
-	for result in deep_get(ansible_results, hostname, []):
-		if deep_get(result, "task", "") == "package versions":
-			tmp = deep_get(result, "msg_lines", [])
-			break
-
-	if len(tmp) == 0:
-		raise ValueError(f"Error: Received empty version data from {hostname} (retval: {retval}); aborting.")
-
-	package_versions = []
-
-	package_version_regex = re.compile(r"^(.*?): (.*)")
-
-	for line in tmp:
-		tmp = package_version_regex.match(line)
-		if tmp is None:
-			continue
-		package = tmp[1]
-		version = tmp[2]
-		package_versions.append((package, version))
-
-	return package_versions
 
 def gather_cluster_info():
 	iktprint([("[Gathering cluster information]\n", "phase")])
@@ -2436,22 +2402,6 @@ def generic_infogetter(**kwargs):
 
 	return info
 
-def disksize_to_human(size):
-	size_suffixes = [
-		" bytes",
-		"kiB",
-		"MiB",
-		"GiB",
-		"TiB",
-		"PiB",
-	]
-	for i in range(0, len(size_suffixes)):
-		if size < 1024:
-			break
-		size = size // 1024
-	suffix = size_suffixes[i]
-	return f"{size}{suffix}"
-
 def get_device_model(obj, device):
 	for dev in deep_get(obj, "ansible_devices", {}):
 		partitions = deep_get(obj, f"ansible_devices#{dev}#partitions", {})
@@ -3149,32 +3099,6 @@ def get_controller_from_owner_references(owner_references):
 
 	return controller
 
-def get_endpoint_ips(subsets):
-	endpoints = []
-	notready = 0
-
-	if subsets is None:
-		return ["<none>"]
-
-	for subset in subsets:
-		# Keep track of whether we have not ready addresses
-		if deep_get(subset, "notReadyAddresses") is not None and len(deep_get(subset, "notReadyAddresses")) > 0:
-			notready += 1
-
-		if deep_get(subset, "addresses") is None:
-			continue
-
-		for address in deep_get(subset, "addresses", []):
-			endpoints.append(deep_get(address, "ip"))
-
-	if endpoints == []:
-		if notready > 0:
-			return ["<not ready>"]
-		else:
-			return ["<none>"]
-
-	return endpoints
-
 class SubsetsInfo:
 	def __init__(self, addresses, ports, status, status_group):
 		self.addresses = addresses
@@ -3396,49 +3320,6 @@ def get_strategy_info(**kwargs):
 
 	return info
 
-# Raw events
-def get_events(obj, **kwargs):
-	event_list = []
-
-	kind = deep_get(obj, "kind")
-	api_version = deep_get(obj, "apiVersion", "")
-	name = deep_get(obj, "metadata#name")
-	namespace = deep_get(obj, "metadata#namespace", "")
-	tmp = get_events_by_kind_name_namespace(kh.kind_api_version_to_kind(kind, api_version), name, namespace)
-	for event in tmp:
-		event_list.append({
-			"fields": event,
-		})
-
-	return event_list
-
-# Raw conditions
-def get_conditions(obj, **kwargs):
-	condition_list = []
-
-	path = deep_get(kwargs, "path", "status#conditions")
-
-	for condition in deep_get(obj, path, []):
-		ctype = deep_get(condition, "type", "")
-		status = deep_get_with_fallback(condition, ["status", "phase"], "")
-		last_probe = deep_get(condition, "lastProbeTime")
-		if last_probe is None:
-			last_probe = "<unset>"
-		else:
-			timestamp = timestamp_to_datetime(last_probe)
-			last_probe = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
-		last_transition = deep_get(condition, "lastTransitionTime")
-		if last_transition is None:
-			last_transition = "<unset>"
-		else:
-			timestamp = timestamp_to_datetime(last_transition)
-			last_transition = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
-		message = deep_get(condition, "message", "")
-		condition_list.append({
-			"fields": [ctype, status, last_probe, last_transition, message],
-		})
-	return condition_list
-
 class RQItemInfo:
 	def __init__(self, resource, used, hard):
 		self.resource = resource
@@ -3535,39 +3416,6 @@ def get_key_value_info(**kwargs):
 
 	return info
 
-def get_svc_port_target_endpoints(obj, **kwargs):
-	svcname = deep_get(obj, "metadata#name")
-	svcnamespace = deep_get(obj, "metadata#namespace")
-	port_target_endpoints = []
-	stype = deep_get(obj, "spec#type")
-	cluster_ip = deep_get(obj, "spec#clusterIP")
-	endpoints = []
-
-	ref = kh.get_ref_by_kind_name_namespace(("Endpoints", ""), svcname, svcnamespace)
-	endpoints = get_endpoint_ips(deep_get(ref, "subsets"))
-
-	for port in deep_get(obj, "spec#ports", []):
-		name = deep_get(port, "name", "")
-		svcport = deep_get(port, "port", "")
-		protocol = deep_get(port, "protocol", "")
-		if stype in ["NodePort", "LoadBalancer"]:
-			node_port = deep_get(port, "nodePort", "Auto Allocate")
-		else:
-			node_port = "N/A"
-		if cluster_ip is not None:
-			target_port = deep_get(port, "targetPort", "")
-		else:
-			target_port = ""
-		endpointstr = (":%s, " % target_port).join(endpoints)
-		if len(endpointstr) > 0:
-			endpointstr += ":%s" % target_port
-		port_target_endpoints.append((f"{name}:{svcport}/{protocol}", f"{node_port}", f"{target_port}/{protocol}", endpointstr))
-
-	if len(port_target_endpoints) == 0:
-		port_target_endpoints = [("<none>", "", "", "")]
-
-	return port_target_endpoints
-
 class ResourceInfo:
 	def __init__(self, resource_tuple, ref, rtype, kind, status, status_group, restarts, message, age = -1):
 		self.resource_tuple = resource_tuple
@@ -3634,41 +3482,6 @@ def get_container_status(src_statuses, container, kind):
 			break
 
 	return reason, status_group, restarts, message, age
-
-def make_set_expression_list(expression_list):
-	expressions = []
-
-	if expression_list is not None:
-		for expression in expression_list:
-			operator = deep_get(expression, "operator", "")
-			if operator == "In":
-				operator = "In "
-			elif operator == "NotIn":
-				operator = "Not In "
-			elif operator == "Exists":
-				operator = "Exists"
-			elif operator == "DoesNotExist":
-				operator = "Does Not Exist"
-			elif operator == "Gt":
-				operator = "> "
-			elif operator == "Lt":
-				operator = "< "
-			key = deep_get_with_fallback(expression, ["key", "scopeName"], "")
-
-			tmp = deep_get(expression, "values", [])
-			values = ",".join(tmp)
-			if len(values) > 0 and operator not in ["Gt", "Lt"]:
-				values = f"[{values}]"
-
-			expressions.append((key, operator, values))
-	return expressions
-
-def make_set_expression(expression_list):
-	vlist = make_set_expression_list(expression_list)
-	xlist = []
-	for key, operator, values in vlist:
-		xlist.append(f"{key} {operator}{values}")
-	return ", ".join(xlist)
 
 def get_pv_from_pvc_name(pvc_name):
 	pv = None
@@ -4618,169 +4431,6 @@ def get_pod_restarts_total(pod):
 		restarted_at = -1
 	return restarts, restarted_at
 
-def get_pod_status(pod):
-	if deep_get(pod, "metadata#deletionTimestamp") is not None:
-		status = "Terminating"
-		status_group = stgroup.PENDING
-		return status, status_group
-
-	phase = deep_get(pod, "status#phase")
-
-	if phase == "Pending":
-		status = phase
-		status_group = stgroup.PENDING
-
-		# Any containers in ContainerCreating or similar?
-		for condition in deep_get(pod, "status#conditions", []):
-			condition_type = deep_get(condition, "type")
-			condition_status = deep_get(condition, "status")
-			reason = deep_get(condition, "reason", "")
-
-			if condition_type == "PodScheduled" and condition_status == "False" and reason == "Unschedulable":
-				status = reason
-				status_group = stgroup.NOT_OK
-				break
-			elif condition_type == "ContainersReady" and condition_status == "False":
-				for container in deep_get(pod, "status#initContainerStatuses", []):
-					if deep_get(container, "ready") == False:
-						reason = deep_get(container, "state#waiting#reason", "").rstrip()
-						if reason is not None and len(reason) > 0:
-							return reason, status_group
-				for container in deep_get(pod, "status#containerStatuses", []):
-					if deep_get(container, "ready") == False:
-						reason = deep_get(container, "state#waiting#reason", "").rstrip()
-						if reason is not None and len(reason) > 0:
-							return reason, status_group
-
-		return status, status_group
-	elif phase == "Running":
-		status = "Running"
-		status_group = stgroup.OK
-		last_state = ""
-		exit_code = 0
-
-		# Any container failures?
-		for condition in deep_get(pod, "status#conditions", []):
-			condition_type = deep_get(condition, "type")
-			condition_status = deep_get(condition, "status")
-			ready = True
-
-			if condition_type == "Ready" and condition_status == "False":
-				status_group = stgroup.NOT_OK
-				status = "NotReady"
-				# Can we get more info? Is the host available?
-				node_name = deep_get(pod, "spec#nodeName")
-				node = kh.get_ref_by_kind_name_namespace(("Node", ""), node_name, None)
-				node_status = get_node_status(node)
-				if node_status[0] == "Unreachable":
-					status = "NodeUnreachable"
-				ready = False
-				break
-			elif condition_type == "ContainersReady" and condition_status == "False":
-				status_group = stgroup.NOT_OK
-
-				for container in deep_get(pod, "status#initContainerStatuses", []):
-					kind = "InitContainer"
-					status, status_group, restarts, message, age = get_container_status(deep_get(pod, "status#initContainerStatuses"), deep_get(container, "name"), kind)
-					# If we have a failed container,
-					# break here
-					if status_group == stgroup.NOT_OK:
-						break
-
-				for container in deep_get(pod, "status#containerStatuses", []):
-					kind = "Container"
-					status, status_group, restarts, message, age = get_container_status(deep_get(pod, "status#containerStatuses"), deep_get(container, "name"), kind)
-					# If we have a failed container,
-					# break here
-					if status_group == stgroup.NOT_OK:
-						break
-
-		return status, status_group
-	elif phase == "Failed":
-		# Failed
-		status_group = stgroup.NOT_OK
-		status = deep_get(pod, "status#reason", phase).rstrip()
-		return status, status_group
-	else:
-		# Succeeded
-		status_group = stgroup.DONE
-		return phase, status_group
-
-def get_pod_affinity(obj, **kwargs):
-	affinities = []
-
-	for affinity in deep_get(obj, "spec#affinity", []):
-		atype = affinity
-		policy_regex = re.compile(r"^(ignored|preferred|required)DuringScheduling(Ignored|Preferred|Required)DuringExecution$")
-
-		for policy in deep_get(obj, f"spec#affinity#{atype}", ""):
-			tmp = policy_regex.match(policy)
-			if tmp is None:
-				scheduling = "Unknown"
-				execution = "Unknown"
-			else:
-				scheduling = tmp[1].capitalize()
-				execution = tmp[2]
-
-			selectors = ""
-			for item in deep_get(obj, f"spec#affinity#{atype}#{policy}", []):
-				topology = ""
-				if type(item) == dict:
-					items = [item]
-				elif type(item) == str:
-					items = deep_get(obj, f"spec#affinity#{atype}#{policy}#{item}", [])
-
-				for selector in items:
-					weight = deep_get(selector, f"weight", "")
-					if type(weight) == int:
-						weight = f"/{weight}"
-					topology = deep_get(selector, f"topologyKey", "")
-					# We're combining a few different policies, so the expressions can be in various places; not simultaneously though
-					selectors += make_set_expression(deep_get(selector, "labelSelector#matchExpressions", {}))
-					selectors += make_set_expression(deep_get(selector, "labelSelector#matchFields", {}))
-					selectors += make_set_expression(deep_get(selector, "preference#matchExpressions", {}))
-					selectors += make_set_expression(deep_get(selector, "preference#matchFields", {}))
-					selectors += make_set_expression(deep_get(selector, "matchExpressions", {}))
-					selectors += make_set_expression(deep_get(selector, "matchFields", {}))
-					affinities.append([atype, f"{scheduling}{weight}", execution, selectors, topology])
-
-	return affinities
-
-def get_pod_tolerations(obj, **kwargs):
-	tolerations = []
-
-	for toleration in deep_get_with_fallback(obj, ["spec#tolerations", "scheduling#tolerations"], []):
-		status_group = stgroup.OK
-
-		effect = deep_get(toleration, "effect", "All")
-		key = deep_get(toleration, "key", "All")
-		operator = deep_get(toleration, "operator", "Equal")
-
-		# According to spec only "Exists"
-		# is valid in combination with "All"
-		if key == "All" and operator != "Exists":
-			status_group = stgroup.NOT_OK
-
-		# Eviction timeout
-		toleration_seconds = deep_get(toleration, "tolerationSeconds")
-		if toleration_seconds is None:
-			timeout = "Never"
-		elif toleration_seconds <= 0:
-			timeout = "Immediately"
-		else:
-			timeout = str(toleration_seconds)
-
-		value = deep_get(toleration, "value", "")
-
-		# According to spec only an empty value
-		# is valid in combination with "Exists"
-		if operator == "Exists" and value != "":
-			status_group = stgroup.NOT_OK
-
-		tolerations.append([key, operator, value, effect, timeout])
-
-	return tolerations
-
 def set_cluster_context(uip, **kwargs):
 	global available_api_families
 
@@ -4793,269 +4443,6 @@ def set_cluster_context(uip, **kwargs):
 	# to a role that does not have access to a particular API)
 	if retval == True:
 		available_api_families = []
-
-def get_security_context(obj, **kwargs):
-	security_policies = []
-
-	tmp = [
-		("Run as User", deep_get_with_fallback(obj, ["spec#securityContext#runAsUser", "spec#template#spec#securityContext#runAsUser"])),
-		("Run as non-Root", deep_get_with_fallback(obj, ["spec#securityContext#runAsNonRoot", "spec#template#spec#securityContext#runAsNonRoot"])),
-		("Run as Group", deep_get_with_fallback(obj, ["spec#securityContext#runAsGroup", "spec#template#spec#securityContext#runAsGroup"])),
-		("FS Group", deep_get_with_fallback(obj, ["spec#securityContext#fsGroup", "spec#template#spec#securityContext#fsGroup"])),
-		("FS Group-change Policy", deep_get_with_fallback(obj, ["spec#securityContext#fsGroupChangePolicy", "spec#template#spec#securityContext#fsGroupChangePolicy"])),
-		("Allow Privilege Escalation", deep_get_with_fallback(obj, ["spec#securityContext#allowPrivilegeEscalation", "spec#template#spec#securityContext#allowPrivilegeEscalation"])),
-		("Capabilities",deep_get_with_fallback(obj, ["spec#securityContext#capabilities", "spec#template#spec#securityContext#capabilities"])),
-		("Privileged", deep_get_with_fallback(obj, ["spec#securityContext#privileged", "spec#template#spec#securityContext#privileged"])),
-		("Proc Mount", deep_get_with_fallback(obj, ["spec#securityContext#procMount", "spec#template#spec#securityContext#procMount"])),
-		("Read-only Root Filesystem", deep_get_with_fallback(obj, ["spec#securityContext#readOnlyRootFilesystem", "spec#template#spec#securityContext#readOnlyRootFilesystem"])),
-		("SELinux Options", deep_get_with_fallback(obj, ["spec#securityContext#seLinuxOptions", "spec#template#spec#securityContext#seLinuxOptions"])),
-		("Seccomp Profile", deep_get_with_fallback(obj, ["spec#securityContext#seccompProfile", "spec#template#spec#securityContext#seccompProfile"])),
-		("Windows Options", deep_get_with_fallback(obj, ["spec#securityContext#windowsOptions", "spec#template#spec#securityContext#windowsOptions"])),
-	]
-
-	for policy in tmp:
-		if policy[1] is not None:
-			security_policies.append([policy[0], str(policy[1])])
-
-	return security_policies
-
-def get_allowed_ips(obj, **kwargs):
-	allowed_ips = []
-
-	ip_mask_regex = re.compile(r"^(\d+\.\d+\.\d+\.\d+)\/(\d+)")
-
-	for addr in deep_get(obj, "spec#allowedIPs"):
-		if "/" in addr:
-			tmp = ip_mask_regex.match(addr)
-			if tmp is None:
-				raise ValueError(f"Could not parse {addr} as an address/address mask")
-			ip = tmp[1]
-			mask = tmp[2]
-			allowed_ips.append({
-				"lineattrs": widgetlineattrs.NORMAL,
-				"columns": [[(f"{ip}", ("windowwidget", "default")), ("/", ("windowwidget", "dim")), (f"{mask}", ("windowwidget", "default"))]],
-			})
-		else:
-			allowed_ips.append({
-				"lineattrs": widgetlineattrs.NORMAL,
-				"columns": [[(f"{addr}", ("windowwidget", "default"))]],
-			})
-
-	return allowed_ips
-
-def get_volume_properties(obj, **kwargs):
-	volume_properties = []
-
-	# First find out what kind of volume we're dealing with
-	pv_type = get_pv_type(obj)
-	if pv_type is None:
-		return volume_properties
-
-	properties = deep_get(known_pv_types, f"{pv_type}#properties", {})
-	for volume_property in properties:
-		default = deep_get(properties, f"{volume_property}#default", "")
-		path = deep_get(properties, f"{volume_property}#path", "")
-		value = deep_get(obj, f"spec#{pv_type}#{path}", default)
-		if type(value) == list:
-			value = ",".join(value)
-		elif type(value) == dict:
-			value = ",".join(f"{key}:{val}" for (key, val) in value.items())
-		elif type(value) in [int, float, bool]:
-			value = str(value)
-		elif type(value) == str:
-			value = value
-		else:
-			raise Exception(f"Unhandled type {type(value)} for {field}={value}")
-		volume_properties.append([volume_property, value])
-
-	return volume_properties
-
-def get_endpoint_slices(obj, **kwargs):
-	svcname = deep_get(obj, "metadata#name")
-	svcnamespace = deep_get(obj, "metadata#namespace")
-	# We need to find all Endpoint Slices in the same namespace as the service that have this service
-	# as its controller
-	vlist, status = kh.get_list_by_kind_namespace(("EndpointSlice", "discovery.k8s.io"), svcnamespace, label_selector = f"kubernetes.io/service-name={svcname}")
-	tmp = []
-	for item in vlist:
-		epsnamespace = deep_get(item, "metadata#namespace")
-		epsname = deep_get(item, "metadata#name")
-		tmp.append([epsnamespace, epsname])
-	return tmp
-
-def get_key_value(obj, **kwargs):
-	vlist = []
-	if "path" in kwargs:
-		path = deep_get(kwargs, "path", "")
-		d = deep_get(obj, path, {})
-
-		for _key in d:
-			_value = d[_key]
-			if type(_value) == list:
-				value = ",".join(_value)
-			elif type(_value) == dict:
-				value = ",".join(f"{key}:{val}" for (key, val) in _value.items())
-			elif type(_value) in [int, bool, float]:
-				value = str(_value)
-			elif type(_value) == str:
-				value = _value
-			else:
-				raise Exception(f"Unhandled type {type(_value)} for {field}={value}")
-			vlist.append([_key, value])
-
-	return vlist
-
-def get_list_as_list(obj, **kwargs):
-	vlist = []
-	if "path" in kwargs:
-		path = deep_get(kwargs, "path")
-		_regex = deep_get(kwargs, "regex")
-		if _regex is not None:
-			compiled_regex = re.compile(_regex)
-		items = deep_get(obj, path, [])
-		for item in items:
-			if _regex is not None:
-				tmp = compiled_regex.match(item)
-				vlist.append(tmp.groups())
-			else:
-				vlist.append([item])
-	elif "paths" in kwargs:
-		# lists that run out of elements will return ""
-		# strings will be treated as constants and thus returned for every row
-		paths = deep_get(kwargs, "paths", [])
-		maxlen = 0
-		for column in paths:
-			tmp = deep_get(obj, column)
-			if type(tmp) == list:
-				maxlen = max(len(tmp), maxlen)
-		for i in range(0, maxlen):
-			item = []
-			for column in paths:
-				tmp = deep_get(obj, column)
-				if type(tmp) == str:
-					item.append(tmp)
-				elif type(tmp) == list:
-					if len(tmp) > i:
-						item.append(tmp[i])
-					else:
-						item.append(" ")
-			vlist.append(item)
-
-	return vlist
-
-def get_list_fields(obj, **kwargs):
-	vlist = []
-
-	if "path" in kwargs and "fields" in kwargs:
-		path = deep_get(kwargs, "path")
-		fields = deep_get(kwargs, "fields", [])
-		pass_ref = deep_get(kwargs, "pass_ref", False)
-		override_types = deep_get(kwargs, "override_types", [])
-		for item in deep_get(obj, path, []):
-			tmp = []
-			for i in range(0, len(fields)):
-				field = fields[i]
-				default = ""
-				if type(field) == dict:
-					default = deep_get(field, "default", "")
-					field = deep_get(field, "name")
-				_value = deep_get(item, field, default)
-				if type(_value) == list or (i < len(fields) and i < len(override_types) and override_types[i] == "list"):
-					value = ", ".join(_value)
-				elif type(_value) == dict or (i < len(fields) and i < len(override_types) and override_types[i] == "dict"):
-					value = ", ".join(f"{key}:{val}" for (key, val) in _value.items())
-				elif type(_value) in [int, float, bool] or (i < len(fields) and i < len(override_types) and override_types[i] == "str"):
-					value = str(_value)
-				elif type(_value) == str:
-					if i < len(fields) and i < len(override_types) and override_types[i] == "timestamp":
-						if _value is None:
-							value = "<unset>"
-						else:
-							timestamp = timestamp_to_datetime(_value)
-							value = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
-					elif i < len(fields) and i < len(override_types) and override_types[i] == "age":
-						if _value is None:
-							value = "<unset>"
-						else:
-							timestamp = timestamp_to_datetime(_value)
-							value = iktlib.seconds_to_age(get_since(timestamp))
-					else:
-						value = _value
-				else:
-					raise Exception(f"Unhandled type {type(_value)} for {field}={value}")
-				tmp.append(value)
-			if pass_ref == True:
-				vlist.append({"fields": tmp, "ref": item})
-			else:
-				vlist.append(tmp)
-	return vlist
-
-def get_strings_from_string(obj, **kwargs):
-	vlist = []
-	if "path" in kwargs:
-		path = deep_get(kwargs, "path")
-		tmp = deep_get(obj, path, [])
-		if tmp is not None and len(tmp) > 0:
-			for line in split_msg(tmp):
-				vlist.append([line])
-	return vlist
-
-def get_resource_list(obj, **kwargs):
-	vlist = []
-
-	for res in deep_get(obj, "status#capacity", {}):
-		capacity = deep_get(obj, f"status#capacity#{res}", "")
-		allocatable = deep_get(obj, f"status#allocatable#{res}", "")
-		vlist.append([res, allocatable, capacity])
-	return vlist
-
-def get_package_version_list(obj, **kwargs):
-	name_path = deep_get(kwargs, "name_path", "")
-	hostname = deep_get(obj, name_path)
-	hostname = deep_get(kwargs, "name", hostname)
-	try:
-		package_versions = get_package_versions(hostname)
-	except ValueError:
-		package_versions = None
-	return package_versions
-
-def get_image_list(obj, **kwargs):
-	vlist = []
-	path = deep_get(kwargs, "path", "")
-
-	for image in deep_get(obj, path, []):
-		name = ""
-		for name in deep_get(image, "names", []):
-			# This is the preferred name
-			if "@sha256:" not in name:
-				break
-
-		if len(name) == 0:
-			continue
-		size = disksize_to_human(deep_get(image, "sizeBytes", 0))
-		vlist.append([name, size])
-	return natsorted(vlist)
-
-def get_resources(obj, **kwargs):
-	resources = []
-
-	for limit in list(deep_get(obj, "spec#resources#limits", {})):
-		if limit == "cpu":
-			resources.append(("CPU", "Limit", deep_get(obj, "spec#resources#limits#cpu")))
-		elif limit == "memory":
-			resources.append(("CPU", "Limit", deep_get(obj, "spec#resources#limits#memory")))
-		elif limit.startswith("hugepages-"):
-			resources.append((f"H{limit[1:]}", "Limit", deep_get(obj, "spec#resources#limits#" + limit)))
-
-	for request in list(deep_get(obj, "spec#resources#requests", {})):
-		if request == "cpu":
-			resources.append(("CPU", "Limit", deep_get(obj, "spec#resources#requests#cpu")))
-		elif request == "memory":
-			resources.append(("CPU", "Limit", deep_get(obj, "spec#resources#requests#memory")))
-		elif request.startswith("hugepages-"):
-			resources.append((f"H{request[1:]}", "Limit", deep_get(obj, "spec#resources#requests#" + request)))
-
-	return resources
 
 def get_containers(containers = [], container_statuses = []):
 	container_dict = {}
@@ -5275,44 +4662,6 @@ def listgetter_join_dicts_to_list(obj, **kwargs):
 
 	return vlist, 200
 
-def get_events_by_kind_name_namespace(kind, name, namespace):
-	events = []
-	vlist, status = kh.get_list_by_kind_namespace(("Event", "events.k8s.io"), "")
-	for obj in vlist:
-		__involved_kind = deep_get_with_fallback(obj, ["regarding#kind", "involvedObject#kind"])
-		__involved_api_version = deep_get_with_fallback(obj, ["regarding#apiVersion", "involvedObject#apiVersion"])
-		involved_kind = kh.kind_api_version_to_kind(__involved_kind, __involved_api_version)
-		involved_name = deep_get_with_fallback(obj, ["regarding#name", "involvedObject#name"])
-		ev_name = deep_get(obj, "metadata#name")
-		ev_namespace = deep_get(obj, "metadata#namespace", "")
-		last_seen = datetime_to_timestamp(__get_timestamp_with_fallback(obj, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]))
-		status = deep_get(obj, "type", "")
-		reason = deep_get(obj, "reason", "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
-		src_component = deep_get(obj, "reportingController", "")
-		if len(src_component) == 0:
-			src_component = deep_get_with_fallback(obj, ["deprecatedSource#component", "source#component"], "")
-		src_host = deep_get(obj, "reportingInstance", "")
-		if len(src_host) == 0:
-			src_host = deep_get_with_fallback(obj, ["deprecatedSource#host", "source#host"], "")
-		if len(src_component) == 0:
-			source = src_host
-		elif len(src_host) == 0:
-			source = src_component
-		else:
-			source = f"{src_host}/{src_component}"
-		first_seen = datetime_to_timestamp(__get_timestamp_with_fallback(obj, ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]))
-
-		count = deep_get_with_fallback(obj, ["series#count", "deprecatedCount", "count"], "")
-		if count is None:
-			count = ""
-		else:
-			count = str(count)
-		message = deep_get(obj, "message", "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
-		if kind == involved_kind and name == involved_name and ev_namespace == namespace:
-			event = (ev_namespace, ev_name, last_seen, status, reason, source, first_seen, count, message)
-			events.append(event)
-	return events
-
 def get_pod_info(**kwargs):
 	vlist = deep_get(kwargs, "_vlist")
 	extra_vars = deep_get(kwargs, "extra_vars", {"show_kind": "", "show_evicted": True})
@@ -5357,13 +4706,13 @@ def get_pod_info(**kwargs):
 		controller = format_controller(controller, show_kind)
 
 		pod_ip = deep_get(obj, "status#podIP", "<unset>")
-		status, status_group = get_pod_status(obj)
+		status, status_group = datagetter.get_pod_status(obj)
 		pod_restarts, restarted_at = get_pod_restarts_total(obj)
 		if restarted_at == -1:
 			last_restart = -1
 		else:
 			last_restart = get_since(restarted_at)
-		tolerations = get_pod_tolerations(obj)
+		tolerations = itemgetters.get_pod_tolerations(kh, obj)
 		containers = get_containers(deep_get(obj, "spec#initContainers", []), deep_get(obj, "status#initContainerStatuses", []))
 		containers += get_containers(deep_get(obj, "spec#containers", []), deep_get(obj, "status#containerStatuses", []))
 
@@ -7943,7 +7292,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			"widget": "windowwidget",
 			"title": "Security Context Policies:",
 			"headers": ["Policy:", "Value:"],
-			"itemgetter": get_security_context,
+			"itemgetter": itemgetters.get_security_context,
 			"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
 		}
 
@@ -7956,7 +7305,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			"widget": "windowwidget",
 			"title": "Conditions:",
 			"headers": ["Type:", "Status:", "Last Probe:", "Last Transition:", "Message:"],
-			"itemgetter": get_conditions,
+			"itemgetter": itemgetters.get_conditions,
 		}
 
 	# Always include the shortcut for events unless overriden
@@ -7975,7 +7324,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			},
 			"title": "Events:",
 			"headers": ["Namespace:", "Name:", "Last Seen:", "Status:", "Reason:", "Source:", "First Seen:", "Count:", "Message:"],
-			"itemgetter": get_events,
+			"itemgetter": itemgetters.get_events,
 		}
 
 	# Always include the shortcut for YAML dump, unless overridden
@@ -8446,17 +7795,20 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					w_title = deep_get(value, "title", "")
 					w_headers = deep_get(value, "headers")
 					w_itemgetter = deep_get(value, "itemgetter")
+					if w_itemgetter is not None:
+						if type(w_itemgetter) == str:
+							w_itemgetter = deep_get(itemgetter_allowlist, w_itemgetter)
 					w_itemgetter_args = deep_get(value, "itemgetter_args", {})
 					w_selectable = deep_get(value, "selectable", False)
 					w_kind = deep_get(value, "kind", view)
 					if "_slow_task_msg" in w_itemgetter_args:
 						w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = deep_get(w_itemgetter_args, "_slow_task_msg"))
-					w_items = w_itemgetter(obj, **w_itemgetter_args)
+					w_items = w_itemgetter(kh, obj, **w_itemgetter_args)
 
 					# If the first element is an integer we assume that we've been provided
 					# a pre-formatted list. Otherwise we apply formatting if available.
 					# If not available we try to provide some sensible defaults.
-					if w_items is not None and len(w_items) > 0 and (type(w_items[0]) == dict or type(w_items[0]) == list and type(w_items[0][0]) != int):
+					if w_items is not None and len(w_items) > 0 and (type(w_items[0]) == dict or type(w_items[0]) in [list, tuple] and type(w_items[0][0]) != int):
 						tmp_items = []
 						w_formatting = deep_get(value, "formatting", [("windowwidget", "default")])
 						lineattrs = widgetlineattrs.NORMAL
@@ -11224,24 +10576,6 @@ listgetter_allowlist = {
 	"listgetter_namespaced_resources": listgetter_namespaced_resources,
 	"listgetter_path": listgetter_path,
 	"listgetter_policy_rules": listgetter_policy_rules,
-}
-
-# Itemgetters acceptable for direct use in view files
-itemgetter_allowlist = {
-	"get_allowed_ips": get_allowed_ips,
-	"get_endpoint_slices": get_endpoint_slices,
-	"get_image_list": get_image_list,
-	"get_key_value": get_key_value,
-	"get_list_as_list": get_list_as_list,
-	"get_list_fields": get_list_fields,
-	"get_package_version_list": get_package_version_list,
-	"get_pod_affinity": get_pod_affinity,
-	"get_pod_tolerations": get_pod_tolerations,
-	"get_resource_list": get_resource_list,
-	"get_resources": get_resources,
-	"get_strings_from_string": get_strings_from_string,
-	"get_svc_port_target_endpoints": get_svc_port_target_endpoints,
-	"get_volume_properties": get_volume_properties,
 }
 
 # These views are always defined internally and cannot be disabled
