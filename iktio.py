@@ -74,9 +74,11 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 		return True
 
 	if checksum_type in ["md5"]:
-		m = hashlib.md5()
+		m = hashlib.md5() # nosec
+		iktprint([("Warning:", "warning"), (" use of MD5 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
 	elif checksum_type in ["sha", "sha1"]:
-		m = hashlib.sha1()
+		m = hashlib.sha1() # nosec
+		iktprint([("Warning:", "warning"), (" use of SHA1 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
 	elif checksum_type in ["sha224"]:
 		m = hashlib.sha224()
 	elif checksum_type in ["sha256"]:
