@@ -34,7 +34,7 @@ from ansible_helper import ansible_configuration, ansible_set_vars, ansible_run_
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import iktlib
-from iktlib import deep_get, join_tuple_list, execute_command, execute_command_with_response
+from iktlib import deep_get, iktconfig, join_tuple_list, execute_command, execute_command_with_response
 
 from kubernetes_helper import kubectl_get_version
 
@@ -53,8 +53,6 @@ from iktprint import iktprint, iktinput, iktinput_password, init_iktprint
 import about
 PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
-
-iktconfig = None
 
 def request_ansible_password():
 	# Check whether ansible_password is defined or not
@@ -162,9 +160,11 @@ def run_playbooks(playbooks, hosts = None, extra_values = {}):
 def populate_playbooks_from_paths(paths):
 	playbooks = []
 
+	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+
 	for playbookpath in paths:
 		# Only process playbooks
-		tmp = re.match(r"(.*)\.ya?ml$", os.path.basename(playbookpath))
+		tmp = yaml_regex.match(os.path.basename(playbookpath))
 		if tmp is None:
 			raise Exception(f"The playbook filename “{os.path.basename(playbookpath)}“ does not end with .yaml or .yml; this is most likely a programming error.")
 
@@ -670,8 +670,10 @@ def add_nodes(options = [], args = None):
 		sys.exit(errno.BADMSG)
 
 	kubeadm_version = ""
+	kubeadm_version_regex = re.compile(r"^(.*?): (.*)")
+
 	for line in tmp:
-		tmp = re.match(r"^(.*?): (.*)", line)
+		tmp = kubeadm_version_regex.match(line)
 		if tmp is None:
 			continue
 		if tmp[1] == "kubeadm":
@@ -1223,7 +1225,6 @@ def get_programname(callname):
 	return callname, callnames[callname]
 
 def main():
-	global iktconfig
 	global programname
 	argv = sys.argv
 
@@ -1231,7 +1232,6 @@ def main():
 	programname, commandline = get_programname(os.path.basename(argv[0]))
 
 	command, options, args = parse_commandline(programname, about.tool_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, argv, commandline)
-	iktconfig = iktlib.read_iktconfig()
 
 	# Used by the ansible module
 	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)

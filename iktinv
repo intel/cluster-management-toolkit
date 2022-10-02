@@ -23,7 +23,7 @@ from ansible_helper import ansible_configuration, ansible_get_inventory_pretty, 
 from ansible_helper import ANSIBLE_INVENTORY
 
 import iktlib
-from iktlib import deep_get
+from iktlib import deep_get, iktconfig
 
 HOMEDIR = str(Path.home())
 IKTDIR = f"{HOMEDIR}/.ikt"
@@ -40,8 +40,6 @@ PROGRAMAUTHORS = "Written by David Weinehall."
 THEME_DIRNAME = "themes"
 THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
 THEME_PATH = f"{THEMEDIR}/default.yaml"
-
-iktconfig = None
 
 def set_host_vars(options = [], args = None):
 	hostvars = []
@@ -748,8 +746,6 @@ commandline = {
 }
 
 def main():
-	global iktconfig
-
 	init_iktprint(THEME_PATH)
 	command, options, args = parse_commandline(about.inventory_program_name, about.inventory_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline, default_command = "inventory", theme = THEME_PATH)
 
@@ -758,7 +754,6 @@ def main():
 		command = inventory
 		commandname = "inventory"
 
-	iktconfig = iktlib.read_iktconfig()
 	# Used by the ansible module
 	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)
 	ansible_configuration.ansible_user = deep_get(iktconfig, "Ansible#ansible_user")

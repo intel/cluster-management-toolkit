@@ -16,7 +16,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
 import iktlib
-from iktlib import deep_get
+from iktlib import deep_get, iktconfig
 
 from iktprint import iktprint
 
@@ -141,8 +141,6 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 # fetch_urls is a list of tuples:
 # (URL to file or archive, file to extract, URL to checksum, type of checksum)
 def download_files(directory, fetch_urls, permissions = 0o644):
-	iktconfig = iktlib.read_iktconfig()
-
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
 	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
 	retval = True

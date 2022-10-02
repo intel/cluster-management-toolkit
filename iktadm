@@ -33,7 +33,7 @@ from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 from iktio import download_files, get_local_hostname, scan_and_add_ssh_keys
 import iktlib
-from iktlib import deep_get, execute_command, execute_command_with_response
+from iktlib import deep_get, execute_command, execute_command_with_response, iktconfig
 
 from kubernetes_helper import kubectl_get_version
 
@@ -58,8 +58,6 @@ PROGRAMAUTHORS = "Written by David Weinehall."
 THEME_DIRNAME = "themes"
 THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
 THEME_PATH = f"{THEMEDIR}/default.yaml"
-
-iktconfig = None
 
 DEFAULT_CNI = "cilium"
 
@@ -414,8 +412,9 @@ def check_version_from_url(url, version_regex):
 			check_and_print_status(download_files(td, [(url, "version.txt", None, None)], permissions = 0o600))
 			with open(f"{td}/version.txt") as f:
 				versionoutput = f.read().splitlines()
+				_version_regex = re.compile(version_regex)
 				for line in versionoutput:
-					tmp = re.match(version_regex, line)
+					tmp = _version_regex.match(line)
 					if tmp is not None:
 						version = tmp.groups()
 						break
@@ -434,8 +433,9 @@ def check_version_from_executable(command, args, version_regex):
 
 		if result is not None:
 			versionoutput = result.splitlines()
+			_version_regex = re.compile(version_regex)
 			for line in versionoutput:
-				tmp = re.match(version_regex, line)
+				tmp = _version_regex.match(line)
 				if tmp is not None:
 					version = tmp.groups()
 					break
@@ -782,11 +782,13 @@ def check_deb_versions(deb_packages):
 	args = ["/usr/bin/apt-cache", "policy"] + deb_packages
 	response = execute_command_with_response(args)
 	split_response = response.splitlines()
+	installed_regex = re.compile(r"\s*Installed: (.*)")
+	candidate_regex = re.compile(r"\s*Candidate: (.*)")
 	for line in split_response:
 		if line.endswith(":"):
 			package = line[:-1]
 		elif line.startswith("  Installed: "):
-			tmp = re.match(r"\s*Installed: (.*)", line)
+			tmp = installed_regex.match(line)
 			if tmp is not None:
 				if tmp[1] == "(none)":
 					installed_version = "<none>"
@@ -795,7 +797,7 @@ def check_deb_versions(deb_packages):
 			else:
 				installed_version = "<none>"
 		elif line.startswith("  Candidate: "):
-			tmp = re.match(r"\s*Candidate: (.*)", line)
+			tmp = candidate_regex.match(line)
 			if tmp is not None and tmp[1] != installed_version:
 				if tmp[1] == "(none)":
 					if installed_version == "<none>":
@@ -930,6 +932,8 @@ def __playbook_paths_from_path(path):
 
 	playbook_paths = []
 
+	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+
 	# Populate list of playbooks
 	for filename in os.listdir(path):
 		# Don't process backups, etc.
@@ -937,7 +941,7 @@ def __playbook_paths_from_path(path):
 			continue
 
 		# Only process playbooks
-		tmp = re.match(r"(.*)\.ya?ml$", filename)
+		tmp = yaml_regex.match(filename)
 		if tmp is None:
 			continue
 
@@ -949,9 +953,11 @@ def __playbook_paths_from_path(path):
 def populate_playbooks_from_paths(paths):
 	playbooks = []
 
+	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+
 	for playbookpath in paths:
 		# Only process playbooks
-		tmp = re.match(r"(.*)\.ya?ml$", os.path.basename(playbookpath))
+		tmp = yaml_regex.match(os.path.basename(playbookpath))
 		if tmp is None:
 			raise Exception(f"The playbook filename “{os.path.basename(playbookpath)}“ does not end with .yaml or .yml; this is most likely a programming error.")
 
@@ -973,6 +979,8 @@ def populate_playbooks_from_paths(paths):
 def populate_playbooks_from_dir(path):
 	playbook_paths = []
 
+	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+
 	# Populate list of playbooks
 	for filename in os.listdir(path):
 		# Don't process backups, etc.
@@ -980,7 +988,7 @@ def populate_playbooks_from_dir(path):
 			continue
 
 		# Only process playbooks
-		tmp = re.match(r"(.*)\.ya?ml$", filename)
+		tmp = yaml_regex.match(filename)
 		if tmp is None:
 			continue
 
@@ -2442,8 +2450,10 @@ def preflight_check(options = [], args = None):
 
 	sudoer = True
 
+	sudo_msg_regex = re.compile(r"^User ([^\s]+) is not allowed to run sudo on.*")
+
 	for line in result.splitlines():
-		tmp = re.match(r"^User ([^\s]+) is not allowed to run sudo on.*", line)
+		tmp = sudo_msg_regex.match(line)
 		if tmp is not None:
 			iktprint([("  Error:", "error"), (f" {user} ", "path"), ("is not in ", "default"), ("/etc/sudoers", "path"), (" or ", "default"), ("/etc/sudoers.d\n", "path")], stderr = True)
 			error += 1
@@ -2458,8 +2468,10 @@ def preflight_check(options = [], args = None):
 		result = execute_command_with_response(args)
 		passwordless_sudo = False
 
+		sudo_permissions_regex = re.compile(r"^\s*\(ALL\s*:\s*ALL\)\s*NOPASSWD:\s*ALL\s*$")
+
 		for line in result.splitlines():
-			tmp = re.match(r"^\s*\(ALL\s*:\s*ALL\)\s*NOPASSWD:\s*ALL\s*$", line)
+			tmp = sudo_permissions_compile.match(line)
 			if tmp is not None:
 				iktprint([("  OK\n", "emphasis")])
 				passwordless_sudo = True
@@ -2473,8 +2485,10 @@ def preflight_check(options = [], args = None):
 	args = ["/usr/bin/ssh", "-G", "localhost"]
 	result = execute_command_with_response(args)
 
+	hashknownhosts_regex = re.compile(r"^hashknownhosts\s+yes$")
+
 	for line in result.splitlines():
-		tmp = re.match(r"^hashknownhosts\s+yes$", line)
+		tmp = hashknownhosts_regex.match(line)
 		if tmp is not None:
 			iktprint([("  Warning:", "warning"), (" ssh", "command"), (" known_hosts hashing is enabled; this may cause issues with ", "default"), ("paramiko\n", "command")], stderr = True)
 			warning += 1
@@ -2543,11 +2557,13 @@ def troubleshoot(options = [], args = None):
 	# but most not be newer
 	critical = False
 
+	version_regex = re.compile(r"^v(\d+)\.(\d+)\..*")
+
 	for node in vlist:
 		node_name = deep_get(node, "metadata#name")
 		kubelet_version = deep_get(node, "status#nodeInfo#kubeletVersion")
 		kubeproxy_version = deep_get(node, "status#nodeInfo#kubeProxyVersion")
-		tmp = re.match(r"^v(\d+)\.(\d+)\..*", kubelet_version)
+		tmp = version_regex.match(kubelet_version)
 
 		kubelet_major_version = None
 		kubelet_minor_version = None
@@ -2560,7 +2576,7 @@ def troubleshoot(options = [], args = None):
 			iktprint([("Error:", "error"), (" Failed to extract ", "default"), ("kubelet", "programname"), (" version on node ", "default"), (f"{node_name}", "hostname")], stderr = True)
 			critical = True
 
-		tmp = re.match(r"^v(\d+)\.(\d+)\..*", kubeproxy_version)
+		tmp = version_regex.match(kubeproxy_version)
 		if tmp is not None:
 			kubeproxy_major_version = int(tmp[1])
 			kubeproxy_minor_version = int(tmp[2])
@@ -2956,7 +2972,6 @@ commandline = {
 def main():
 	init_iktprint(THEME_PATH)
 	command, options, args = parse_commandline(about.admin_program_name, about.admin_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline)
-	iktconfig = iktlib.read_iktconfig()
 
 	# Used by the ansible module
 	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)

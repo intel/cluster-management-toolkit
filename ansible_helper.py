@@ -10,13 +10,11 @@ import sys
 import yaml
 
 import iktlib
-from iktlib import deep_get
+from iktlib import deep_get, iktconfig
 from iktprint import iktprint
 
 ansible_bin_path = None
 ansible_results = {}
-
-iktconfig = None
 
 active_task = ""
 suffix = 0
@@ -33,9 +31,6 @@ ANSIBLE_PLAYBOOK_DIR = f"{IKTDIR}/{ANSIBLE_PLAYBOOK_DIRNAME}"
 ANSIBLE_INVENTORY = f"{ANSIBLE_DIR}/inventory.yaml"
 ANSIBLE_LOG_DIR = f"{ANSIBLE_DIR}/logs"
 ANSIBLE_TMP_INVENTORY = f"{ANSIBLE_DIR}/tmp_inventory.yaml"
-
-if iktconfig is None:
-	iktconfig = iktlib.read_iktconfig()
 
 class ansible_configuration:
 	ansible_user = None
@@ -165,9 +160,11 @@ def ansible_get_inventory_pretty(groups = None, highlight = False, include_group
 
 	if highlight == True and len(dump) > 0:
 		i = 0
+		list_regex = re.compile(r"^(\s*)((- )+)(.*)")
+		key_value_regex = re.compile(r"(.*?)(:)(.*)")
 		for i in range(0, len(dump)):
 			# Is it a list?
-			tmp = re.match(r"^(\s*)((- )+)(.*)", dump[i])
+			tmp = list_regex.match(dump[i])
 			if tmp is not None:
 				indent = tmp[1]
 				listmarker = tmp[2]
@@ -176,7 +173,7 @@ def ansible_get_inventory_pretty(groups = None, highlight = False, include_group
 				continue
 
 			# Is it key: value?
-			tmp = re.match(r"(.*?)(:)(.*)", dump[i])
+			tmp = key_value_regex.match(dump[i])
 			if tmp is not None:
 				key = tmp[1]
 				separator = tmp[2]
@@ -685,11 +682,13 @@ def ansible_remove_groups(inventory, groups, force = False):
 def ansible_get_logs():
 	logs = []
 
+	timestamp_regex = re.compile(r"^(\d\d\d\d-\d\d-\d\d_\d\d:\d\d:\d\d\.\d+)_(.*)")
+
 	for item in os.listdir(ANSIBLE_LOG_DIR):
 		#if os.path.isdir(item) == False:
 		#	continue
 
-		tmp = re.match(r"^(\d\d\d\d-\d\d-\d\d_\d\d:\d\d:\d\d\.\d+)_(.*)", item)
+		tmp = timestamp_regex.match(item)
 		if tmp is not None:
 			date = datetime.strptime(tmp[1], "%Y-%m-%d_%H:%M:%S.%f")
 			full_name = item

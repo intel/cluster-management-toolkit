@@ -50,13 +50,15 @@ from logparser import logparser, logparser_initialised, loglevel, lvl_to_letter_
 import curses_helper
 from iktio import get_local_hostname
 import iktlib
-from iktlib import split_msg, deep_get, deep_get_list, deep_get_with_fallback, deep_set, stgroup, versiontuple, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp
+from iktlib import deep_get, deep_get_list, deep_get_with_fallback, deep_set, iktconfig, stgroup, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp, split_msg, versiontuple
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
 
 import datagetter
 from datagetter import datagetter_allowlist
 import objgetter
 from objgetter import objgetter_allowlist
+import formatter as formatters
+from formatter import formatter_allowlist
 
 from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results, get_playbook_path
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -81,8 +83,6 @@ import about
 
 PROGRAMDESCRIPTION = "UI for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
-
-iktconfig = None
 
 # If the user passes an object (and optionally namespace for that object)
 # on the command line, they're stored here
@@ -156,8 +156,10 @@ def get_package_versions(hostname):
 
 	package_versions = []
 
+	package_version_regex = re.compile(r"^(.*?): (.*)")
+
 	for line in tmp:
-		tmp = re.match(r"^(.*?): (.*)", line)
+		tmp = package_version_regex.match(line)
 		if tmp is None:
 			continue
 		package = tmp[1]
@@ -1112,8 +1114,10 @@ def get_metrics_list(**kwargs):
 	# metrics are on the form:
 	# aggregator_openapi_v2_regeneration_count{apiservice="*",reason="startup"} 0
 	# apiserver_requested_deprecated_apis{group="autoscaling",removed_release="1.25",resource="horizontalpodautoscalers",subresource="",version="v2beta1"} 1
+	metrics_regex = re.compile(r"^(\S+?){(.*)}\s\d+$")
+
 	for line in metrics:
-		tmp = re.match(r"^(\S+?){(.*)}\s\d+$", line)
+		tmp = metrics_regex.match(line)
 		if tmp is None:
 			continue
 		metric = tmp[1]
@@ -1473,8 +1477,9 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 		if len(value) > 0:
 			if type(value) == str:
 				value = [value]
+			compiled_regex = re.compile(_regex)
 			for item in value:
-				tmp = re.match(_regex, item)
+				tmp = compiled_regex.match(item)
 				groups = []
 				if tmp is not None:
 					for group in tmp.groups():
@@ -3129,10 +3134,12 @@ def format_controller(controller, show_kind):
 def get_controller_from_owner_references(owner_references):
 	controller = (("", ""), "")
 	if owner_references is not None:
+		api_group_regex = re.compile(r"(.*)/.*")
+
 		for owr in owner_references:
 			if deep_get(owr, "controller", False) == True:
 				api_version = deep_get(owr, "apiVersion", "")
-				tmp = re.match(r"(.*)/.*", api_version)
+				tmp = api_group_regex.match(api_version)
 				if tmp is not None:
 					api_group = tmp[1]
 				else:
@@ -4376,8 +4383,10 @@ def get_inventory_list(**kwargs):
 
 			# Get all interfaces with global scope
 			output = subprocess.check_output(["/usr/sbin/ip", "-o", "addr", "show", "scope", "global"]).decode("utf-8")
+			iface_addr_regex = re.compile(r"^\d+: (.*?)\s+inet6? (.*?)/\d+ .*")
+
 			for line in output.splitlines():
-				tmp = re.match(r"^\d+: (.*?)\s+inet6? (.*?)/\d+ .*", line)
+				tmp = iface_addr_regex.match(line)
 				if tmp is not None:
 					iface = tmp[1]
 					addr = tmp[2]
@@ -4702,8 +4711,10 @@ def get_pod_affinity(obj, **kwargs):
 
 	for affinity in deep_get(obj, "spec#affinity", []):
 		atype = affinity
+		policy_regex = re.compile(r"^(ignored|preferred|required)DuringScheduling(Ignored|Preferred|Required)DuringExecution$")
+
 		for policy in deep_get(obj, f"spec#affinity#{atype}", ""):
-			tmp = re.match(r"^(ignored|preferred|required)DuringScheduling(Ignored|Preferred|Required)DuringExecution$", policy)
+			tmp = policy_regex.match(policy)
 			if tmp is None:
 				scheduling = "Unknown"
 				execution = "Unknown"
@@ -4811,9 +4822,11 @@ def get_security_context(obj, **kwargs):
 def get_allowed_ips(obj, **kwargs):
 	allowed_ips = []
 
+	ip_mask_regex = re.compile(r"^(\d+\.\d+\.\d+\.\d+)\/(\d+)")
+
 	for addr in deep_get(obj, "spec#allowedIPs"):
 		if "/" in addr:
-			tmp = re.match(r"^(\d+\.\d+\.\d+\.\d+)\/(\d+)", addr)
+			tmp = ip_mask_regex.match(addr)
 			if tmp is None:
 				raise ValueError(f"Could not parse {addr} as an address/address mask")
 			ip = tmp[1]
@@ -4897,10 +4910,12 @@ def get_list_as_list(obj, **kwargs):
 	if "path" in kwargs:
 		path = deep_get(kwargs, "path")
 		_regex = deep_get(kwargs, "regex")
+		if _regex is not None:
+			compiled_regex = re.compile(_regex)
 		items = deep_get(obj, path, [])
 		for item in items:
 			if _regex is not None:
-				tmp = re.match(_regex, item)
+				tmp = compiled_regex.match(item)
 				vlist.append(tmp.groups())
 			else:
 				vlist.append([item])
@@ -6146,13 +6161,12 @@ def genericlistloop(stdscr, view):
 			pattern = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, "Tag '%s' matching: " % (uip.sortcolumn)).rstrip().lower()
 			if pattern is None or pattern == "":
 				continue
+			compiled_pattern = re.compile(pattern)
 
 			# XXX: This should search the specified sortcolumn, not always in name
 			for item in uip.sorted_list:
 				try:
-					#Exact match
-					#tmp = re.match(r"%s$" % pattern, item.name):
-					tmp = re.match(pattern, item.name)
+					tmp = compiled_pattern.match(item.name)
 
 					if tmp is not None and len(tmp[0]) > 0:
 						if item not in tagged_items:
@@ -6167,13 +6181,12 @@ def genericlistloop(stdscr, view):
 			pattern = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, "Untag '%s' matching: " % (uip.sortcolumn)).rstrip().lower()
 			if pattern is None or pattern == "":
 				continue
+			compiled_pattern = re.compile(pattern)
 
 			# XXX: This should search the specified sortcolumn, not always in name
 			for item in uip.sorted_list:
 				try:
-					#Exact match
-					#tmp = re.match(r"%s$" % pattern, item.name):
-					tmp = re.match(pattern, item.name)
+					tmp = compiled_pattern.match(item.name)
 
 					if tmp is not None and len(tmp[0]) > 0:
 						if item in tagged_items:
@@ -6649,6 +6662,9 @@ def clusteroverviewloop(stdscr, view):
 
 	nodeinfo = None
 
+	load_regex = re.compile(r"(\d+\.\d+) (\d+\.\d+) (\d+\.\d+) (\d+)/(\d+) (\d+)")
+	stat_regex = re.compile(r"[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) (\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)")
+
 	while True:
 		uip.countdown_to_update()
 
@@ -6675,7 +6691,7 @@ def clusteroverviewloop(stdscr, view):
 					with open("/proc/loadavg", "r") as f:
 						loadavg = f.readline()
 
-					tmp = re.match(r"([0-9]+\.[0-9]+) ([0-9]+\.[0-9]+) ([0-9]+\.[0-9]+) ([0-9]+)/([0-9]+) ([0-9]+)", loadavg)
+					tmp = load_regex.match(loadavg)
 					if tmp is not None:
 						avg1min = tmp[1]
 						avg5min = tmp[2]
@@ -6720,7 +6736,7 @@ def clusteroverviewloop(stdscr, view):
 				# cpu  30175835 25947 13018006 435764225 200633 0   3229829 0     0     0
 				# ...  normal   niced system   idle      iowait irq softirq steal guest guest_nice
 				#      1        2     3        4         5      6   7       8     9     10
-				tmp = re.match(r"[A-Za-z]+ +([0-9]+) +([0-9]+) +([0-9]+) +([0-9]+) ([0-9]+) +([0-9]+) +([0-9]+) +([0-9]+) +([0-9]+) ([0-9]+)", stat)
+				tmp = stat_regex.match(stat)
 				if tmp is not None:
 					cputimeuser = int(tmp[1])
 					cputimeusernice = int(tmp[2])
@@ -7146,29 +7162,12 @@ def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
 	else:
 		dataformat = "Empty"
 
-	if dataformat in ["YAML", "JSON"]:
-		formatter = iktlib.format_yaml
-	elif dataformat == "TOML":
-		formatter = iktlib.format_toml
-	elif dataformat == "CRT":
-		formatter = iktlib.format_crt
-	elif dataformat == "XML":
-		formatter = iktlib.format_xml
-	elif dataformat == "INI":
-		formatter = iktlib.format_ini
-	elif dataformat == "FluentBit":
-		formatter = iktlib.format_fluentbit
-	elif dataformat == "CaddyFile":
-		formatter = iktlib.format_caddyfile
-	elif dataformat == "NGINX":
-		formatter = iktlib.format_nginx
-	else:
-		formatter = iktlib.format_none
+	formatter = formatters.map_dataformat(dataformat)
 
 	return dataformat, formatter
 
 def identify_formatter(dataformat, kind = None, obj = None, path = None):
-	formatter = iktlib.format_none
+	formatter = formatters.format_none
 
 	if dataformat is None:
 		if kind is not None and obj is not None and path is not None:
@@ -7218,8 +7217,9 @@ def check_cni_updates(cni, current_version):
 			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
 			if result is not None:
 				versionoutput = result.stdout.splitlines()
+				version_regex = re.compile(r"^cilium image \(default\): (.*)")
 				for line in versionoutput:
-					tmp = re.match(r"^cilium image \(default\): (.*)", line)
+					tmp = version_regex.match(line)
 					if tmp is not None:
 						candidate_version = tmp[1]
 						break
@@ -7693,9 +7693,9 @@ def decode_and_view_data(stdscr, **kwargs):
 	else:
 		raise Exception(f"Trying to export unknown vtype: {vtype}")
 	if title.endswith((".crt", "tls.key", ".pem", "CAKey")) or type(obj) == str and obj.startswith(("-----BEGIN", "-----END")):
-		formatter = iktlib.format_crt
+		formatter = formatters.format_crt
 	else:
-		formatter = iktlib.format_none
+		formatter = formatters.format_none
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
 def decode_and_view_file_templates(stdscr, **kwargs):
@@ -7718,18 +7718,7 @@ def decode_and_view_file_templates(stdscr, **kwargs):
 	content = deep_get(file, "content")
 	title = name
 	if encoding == "":
-		if title.endswith((".yml", ".yaml", ".json")):
-			formatter = iktlib.format_yaml
-		elif title.endswith((".toml")):
-			formatter = iktlib.format_toml
-		elif title.endswith((".crt", "tls.key", ".pem", "CAKey")):
-			formatter = iktlib.format_crt
-		elif title.endswith((".xml")):
-			formatter = iktlib.format_xml
-		elif title.endswith((".ini")):
-			formatter = iktlib.format_ini
-		else:
-			formatter = iktlib.format_none
+		formatter = formatters.map_dataformat(title)
 		return resourceinfodispatch(stdscr, content, ("__ResourceView", ""), title = title, formatter = formatter)
 	else:
 		vtype, value = decode_value(content)
@@ -7739,10 +7728,7 @@ def decode_and_view_file_templates(stdscr, **kwargs):
 			obj = base64.b64decode(value).decode("utf-8")
 		elif vtype.startswith(("base64-binary", "gzip")):
 			return
-		if title.endswith((".crt", "tls.key", ".pem", "CAKey")):
-			formatter = iktlib.format_crt
-		else:
-			formatter = iktlib.format_none
+		formatter = formatters.map_dataformat(title)
 		return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 	return
 
@@ -7856,7 +7842,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		formatter = deep_get(obj, formatter_path)
 	elif formatter is not None:
 		if type(formatter) == str:
-			formatter = deep_get(formatter_allowlist, formatter)
+			_formatter = deep_get(formatter_allowlist, formatter)
+			if _formatter is None:
+				raise ValueError(f"{formatter} is not in formatter_allowlist")
+			formatter = _formatter
 	obj_path = deep_get(kwargs, "obj_path")
 	title = None
 	if obj_path is not None:
@@ -8768,6 +8757,8 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 	uip.refresh_statusbar()
 	curses.doupdate()
 
+	facility_regex = re.compile(r"^.*/(.*)")
+
 	while True:
 		uip.countdown_to_update()
 
@@ -9300,7 +9291,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						facility_extended, _facility = _facility
 					if _facility is None:
 						_facility = ""
-					tmp = re.match(r"^.*/(.*)", _facility)
+					tmp = facility_regex.match(_facility)
 					if tmp is not None:
 						facility = tmp[1]
 						latest_facility_len = len(facility)
@@ -9997,18 +9988,21 @@ def view_obj(stdscr, **kwargs):
 	if title_path is not None:
 		title = deep_get(obj, title_path)
 	path = deep_get(kwargs, "path")
-	formatter = deep_get(kwargs, "formatter", iktlib.format_yaml)
+	formatter = deep_get(kwargs, "formatter", formatters.format_yaml)
 	if path is not None:
 		if deep_get(kwargs, "include_root", False) == True:
 			obj = [{f"{path.rsplit('#')[-1]}": deep_get(obj, path)}]
-		elif formatter == iktlib.format_yaml:
+		elif formatter == formatters.format_yaml:
 			obj = [deep_get(obj, path)]
 		else:
 			obj = deep_get(obj, path)
 	else:
 		obj = [obj]
 	if type(formatter) == str:
-		formatter = deep_get(formatter_allowlist, formatter)
+		_formatter = deep_get(formatter_allowlist, formatter)
+		if _formatter is None:
+			raise ValueError(f"{formatter} is not in formatter_allowlist")
+		formatter = _formatter
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
 def view_yaml(stdscr, **kwargs):
@@ -10032,7 +10026,7 @@ def view_yaml(stdscr, **kwargs):
 	else:
 		obj = [obj]
 	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
-	formatter = iktlib.format_yaml
+	formatter = formatters.format_yaml
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
 def view_pod_logs(stdscr, **kwargs):
@@ -10072,8 +10066,8 @@ def view_last_applied_configuration(stdscr, **kwargs):
 	else:
 		return
 	title = deep_get(kwargs, "title")
-	# themearrays = iktlib.format_yaml([data])
-	formatter = iktlib.format_yaml
+	# themearrays = formatters.format_yaml([data])
+	formatter = formatters.format_yaml
 	return resourceinfodispatch(stdscr, [data], ("__ResourceView", ""), title = title, formatter = formatter)
 
 def delete_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
@@ -10278,6 +10272,8 @@ def diff_resource_configuration(uip, items = [], action = {}, values = {}, kind 
 	if len(result.stdout) == 0:
 		return
 
+	diff_regex = re.compile(r"^(\s*)(.*)")
+
 	for line in result.stdout.splitlines():
 		if line.startswith("+"):
 			formatting = ("windowwidget", "diffplus")
@@ -10294,7 +10290,7 @@ def diff_resource_configuration(uip, items = [], action = {}, values = {}, kind 
 		# if a different indent is configured we have to modify this
 		if indent != 2:
 			prefix = line[0]
-			tmp = re.match(r"^(\s*)(.*)", line[1:])
+			tmp = diff_regex.match(line[1:])
 			if tmp is not None and len(tmp[1]) % 2 == 0:
 				line = prefix + "".ljust(int(len(tmp[1]) / 2) * indent) + tmp[2]
 
@@ -10711,11 +10707,13 @@ def __populate_playbooklist(path, action_list = {}):
 	if action_list is None:
 		action_list = {}
 
+	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+
 	for filename in os.listdir(path):
 		if filename.startswith(("~", ".")):
 			continue
 
-		tmp = re.match(r"(.*)\.ya?ml$", filename)
+		tmp = yaml_regex.match(filename)
 		if tmp is None:
 			continue
 
@@ -11171,19 +11169,6 @@ activatedfun_allowlist = {
 	"resourceinfodispatch_with_lookup_on_activation": resourceinfodispatch_with_lookup_on_activation,
 }
 
-# Formatters acceptable for direct use in view files
-formatter_allowlist = {
-	"iktlib.format_caddyfile": iktlib.format_caddyfile,
-	"iktlib.format_crt": iktlib.format_crt,
-	"iktlib.format_fluentbit": iktlib.format_fluentbit,
-	"iktlib.format_ini": iktlib.format_ini,
-	"iktlib.format_nginx": iktlib.format_nginx,
-	"iktlib.format_none": iktlib.format_none,
-	"iktlib.format_toml": iktlib.format_toml,
-	"iktlib.format_xml": iktlib.format_xml,
-	"iktlib.format_yaml": iktlib.format_yaml,
-}
-
 # Generators acceptable for direct use in view files
 generator_allowlist = {
 	"generator_mem": generator_mem,
@@ -11385,6 +11370,8 @@ def populate_views():
 
 	view_files = []
 
+	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+
 	for view_dir in view_dirs:
 		if view_dir.startswith("{HOME}"):
 			view_dir = view_dir.replace("{HOME}", HOMEDIR, 1)
@@ -11399,7 +11386,7 @@ def populate_views():
 				continue
 
 			if len(available_api_families) > 0:
-				tmp = re.match("^(.*)\.ya?ml$", filename)
+				tmp = yaml_regex.match(filename)
 				tmp = tmp[1]
 				if "." in tmp:
 					kind, api_family = tmp.split(".", 1)
@@ -12017,7 +12004,6 @@ def customise_listviews():
 def main():
 	defaultthemefile = f"{THEMEDIR}/{DEFAULT_THEME}"
 
-	global iktconfig
 	global initial_name
 	global initial_namespace
 	global initial_container
@@ -12026,7 +12012,6 @@ def main():
 	global defaultview
 	global available_api_families
 
-	iktconfig = iktlib.read_iktconfig()
 	themefile = deep_get(iktconfig, "Global#theme")
 	if themefile is None or len(themefile) == 0:
 		themefile = defaultthemefile

@@ -53,6 +53,9 @@ class KubernetesHelper:
 		if name is None:
 			return False
 
+		name_regex = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
+		portname_regex = re.compile(r".*[a-z].*")
+
 		if rtype in ["dns-subdomain", "dns-label"]:
 			if rtype == "dns-label":
 				maxlen = 63
@@ -72,7 +75,7 @@ class KubernetesHelper:
 					invalid = True
 					break
 
-				tmp = re.match(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", label)
+				tmp = name_regex.match(label)
 				if tmp is None:
 					break
 		elif rtype in ["path-segment"]:
@@ -87,11 +90,11 @@ class KubernetesHelper:
 			if "--" in name:
 				invalid = True
 			# As is any port-name that doesn't contain any character in [a-z]
-			if re.match(r".*[a-z].*", name.lower()) is None:
+			if portname_regex.match(name.lower()) is None:
 				invalid = True
 			# A portname can be at most 15 characters long
 			# and cannot start or end with "-"
-			tmp = re.match(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", name.lower())
+			tmp = name_regex.match(name.lower())
 			maxlen = 15
 
 		return invalid == False and tmp is not None and len(name) <= maxlen
@@ -139,12 +142,14 @@ class KubernetesHelper:
 				}
 			__clusters[cluster]["contexts"].append(name)
 
+		clustername_regex = re.compile(r"admin.*@")
+
 		# If we find a context that mentions admin, pick that one,
 		# otherwise just find the first context for each cluster
 		for cluster in __clusters:
 			for context in __clusters[cluster]["contexts"]:
 				# We don't want to risk matches where the *cluster* is named admin
-				tmp = re.match(r"admin.*@", context)
+				tmp = clustername_regex.match(context)
 				if tmp is not None:
 					clusters.append((cluster, context))
 					continue
@@ -197,12 +202,13 @@ class KubernetesHelper:
 		ca_certs = None
 
 		# OK, we have a user and a cluster to look for
+		host_and_port_regex = re.compile(r"https?://(.*):(\d+)")
 
 		for cluster in deep_get(kubeconfig, "clusters", []):
 			if deep_get(cluster, "name") != cluster_name:
 				continue
 
-			tmp = re.match(r"https?://(.*):(\d+)", cluster["cluster"]["server"])
+			tmp = host_and_port_regex.match(cluster["cluster"]["server"])
 			if tmp is not None:
 				control_plane_ip = tmp[1]
 				control_plane_port = tmp[2]
@@ -428,8 +434,10 @@ class KubernetesHelper:
 	def get_node_roles(self, node):
 		roles = []
 
+		node_role_regex = re.compile(r"^node-role\.kubernetes\.io/(.*)")
+
 		for label in deep_get(node, "metadata#labels", {}).items():
-			tmp = re.match(r"^node-role\.kubernetes\.io/(.*)", label[0])
+			tmp = node_role_regex.match(label[0])
 
 			if tmp is None:
 				continue
