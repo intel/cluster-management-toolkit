@@ -23,3 +23,273 @@ listview:
       header: "Status:"
       path: "status#status"
       type: "str"
+infoview:
+  name: "Istio Operator Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields:
+        - "components_header"
+        - "base_header"
+        - "base_enabled"
+        - "base_enable_crd_templates"
+        - "base_validation_url"
+        - "cni_header"
+        - "cni_enabled"
+        - "istiod_remote_header"
+        - "istiod_remote_enabled"
+        - "istiod_remote_injection_url"
+        - "pilot_header"
+        - "pilot_enabled"
+        - "pilot_autoscale_enabled"
+        - "pilot_autoscale_min"
+        - "pilot_autoscale_max"
+        - "pilot_configmap"
+        - "pilot_cpu_utilization_header"
+        - "pilot_cpu_target_average_utilization"
+        - "pilot_deployment_labels"
+        - "pilot_protocol_sniffing_header"
+        - "pilot_protocol_sniffing_inbound"
+        - "pilot_protocol_sniffing_outbound"
+        - "pilot_image"
+        - "pilot_keepalive"
+        - "pilot_node_selector"
+        - "pilot_env"
+        - "pilot_replica_count"
+        - "pilot_trace_sampling"
+        - "hub"
+        - "mesh_config_header"
+        - "mesh_config_access_log_file"
+        - "mesh_config_default_config_header"
+        - "mesh_config_default_config_proxy_metadata"
+        - "mesh_config_enable_prometheus_merge"
+        - "profile"
+        - "tag"
+    rows:
+      base_header:
+        header: [["  Base:", ["main", "infoheader"]]]
+        type: "str"
+      base_enable_crd_templates:
+        header: [["    Enable CRD Templates:", ["main", "infoheader"]]]
+        path: "spec#values#base#enableCRDTemplates"
+        type: "bool"
+      base_enabled:
+        header: [["    Enabled:", ["main", "infoheader"]]]
+        path: "spec#components#base#enabled"
+        type: "bool"
+      base_validation_url:
+        header: [["    Validation URL:", ["main", "infoheader"]]]
+        path: "spec#values#base#validationURL"
+        type: "str"
+      cni_enabled:
+        header: [["    Enabled:", ["main", "infoheader"]]]
+        path: "spec#components#cni#enabled"
+        type: "bool"
+      cni_header:
+        header: [["  CNI:", ["main", "infoheader"]]]
+        type: "str"
+      components_header:
+        header: [["Components:", ["main", "infoheader"]]]
+        type: "str"
+      hub:
+        header: [["Hub:", ["main", "infoheader"]]]
+        path: "spec#hub"
+        type: "str"
+      istiod_remote_enabled:
+        header: [["    Enabled:", ["main", "infoheader"]]]
+        path: "spec#components#istiodRemote#enabled"
+        type: "bool"
+      istiod_remote_header:
+        header: [["  Istiod Remote:", ["main", "infoheader"]]]
+        type: "str"
+      istiod_remote_injection_url:
+        header: [["    Injection URL:", ["main", "infoheader"]]]
+        path: "spec#values#istiodRemote#injectionURL"
+        type: "str"
+      mesh_config_access_log_file:
+        header: [["  Access Log File:", ["main", "infoheader"]]]
+        path: "spec#meshConfig#accessLogFile"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      mesh_config_default_config_proxy_metadata:
+        header: [["    Proxy Metadata:", ["main", "infoheader"]]]
+        path: "spec#meshConfig#defaultConfig#proxyMetadata"
+        type: "raw"
+      mesh_config_default_config_header:
+        header: [["  Default Config:", ["main", "infoheader"]]]
+        type: "str"
+      mesh_config_enable_prometheus_merge:
+        header: [["  Enable Prometheus Merge:", ["main", "infoheader"]]]
+        path: "spec#meshConfig#enablePrometheusMerge"
+        type: "bool"
+      mesh_config_header:
+        header: [["Mesh Config:", ["main", "infoheader"]]]
+        type: "str"
+      pilot_autoscale_enabled:
+        header: [["    Autoscale Enabled:", ["main", "infoheader"]]]
+        path: "spec#values#pilot#autoscaleEnabled"
+        type: "bool"
+      pilot_autoscale_max:
+        header: [["    Autoscale Max:", ["main", "infoheader"]]]
+        path: "spec#values#pilot#autoscaleMax"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: numerical
+      pilot_autoscale_min:
+        header: [["    Autoscale Min:", ["main", "infoheader"]]]
+        path: "spec#values#pilot#autoscaleMin"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: numerical
+      pilot_configmap:
+        header: [["    ConfigMap:", ["main", "infoheader"]]]
+        path: "spec#values#pilot#configMap"
+        type: "bool"
+      pilot_cpu_target_average_utilization:
+        header: [["      Target Average Utilization:", ["main", "infoheader"]]]
+        path: "spec#values#pilot#cpu#targetAverageUtilization"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: numerical
+      pilot_cpu_utilization_header:
+        header: [["    CPU Utilization:", ["main", "infoheader"]]]
+        type: "str"
+      pilot_deployment_labels:
+        header: [["    Deployment Labels:", ["main", "infoheader"]]]
+        path: "spec#components#pilot#deploymentLabels"
+        type: "raw"
+        formatter: "list"
+      pilot_enabled:
+        header: [["    Enabled:", ["main", "infoheader"]]]
+        path: "spec#components#pilot#enabled"
+        type: "bool"
+      pilot_env:
+        header: [["    Env:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#values#pilot#env"
+          pathtype: "key_value"
+        formatter: list
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue_log"
+      pilot_header:
+        header: [["  Pilot:", ["main", "infoheader"]]]
+        type: "str"
+      pilot_image:
+        header: [["    Image:", ["main", "infoheader"]]]
+        path: "spec#values#pilot#image"
+        type: "str"
+      pilot_keepalive:
+        header: [["    Keepalive Max Server Connection Age:", ["main", "infoheader"]]]
+        path: "spec#values#pilot#keepaliveMaxServerConnectionAge"
+        type: "str"
+        formatter: "numerical_with_units"
+      pilot_node_selector:
+        header: [["    Node Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#values#pilot#nodeSelector"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      pilot_protocol_sniffing_header:
+        header: [["    Protocol Sniffing:", ["main", "infoheader"]]]
+        type: "str"
+      pilot_protocol_sniffing_inbound:
+        header: [["      Inbound:", ["main", "infoheader"]]]
+        path: "spec#values#pilot#enableProtocolSniffingForInbound"
+        type: "bool"
+      pilot_protocol_sniffing_outbound:
+        header: [["      Outbound:", ["main", "infoheader"]]]
+        path: "spec#values#pilot#enableProtocolSniffingForOutbound"
+        type: "bool"
+      pilot_replica_count:
+        header: [["    Replica Count:", ["main", "infoheader"]]]
+        path: "spec#values#pilot#replicaCount"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: numerical
+      pilot_trace_sampling:
+        header: [["    Trace Sampling:", ["main", "infoheader"]]]
+        path: "spec#values#pilot#traceSampling"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: numerical
+      profile:
+        header: [["Profile:", ["main", "infoheader"]]]
+        path: "spec#profile"
+        type: "str"
+      tag:
+        header: [["Tag:", ["main", "infoheader"]]]
+        path: "spec#tag"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "Show egress gateways":
+      key: "e"
+      modifier: "shift"
+      helptext: "Show egress gateways"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Egress Gateways"
+        _pass_obj: true
+        path: "spec#components#egressGateways"
+        include_root: true
+    "Show ingress gateways":
+      key: "i"
+      modifier: "shift"
+      helptext: "Show ingress gateways"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Ingress Gateways"
+        _pass_obj: true
+        path: "spec#components#ingressGateways"
+        include_root: true
+    "Show gateway config values":
+      key: "g"
+      helptext: "Show gateway config values"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Gateway config values"
+        _pass_obj: true
+        path: "spec#values#gateways"
+    "Show global config values":
+      key: "g"
+      modifier: "shift"
+      helptext: "Show global config values"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Global config values"
+        _pass_obj: true
+        path: "spec#values#global"
+    "Show telemetry config values":
+      key: "t"
+      modifier: "shift"
+      helptext: "Show telemetry config values"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Telemetry config values"
+        _pass_obj: true
+        path: "spec#values#telemetry"
