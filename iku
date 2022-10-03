@@ -8716,7 +8716,7 @@ def view_yaml(stdscr, **kwargs):
 	if path is not None:
 		include_root = deep_get(kwargs, "include_root", False)
 		if deep_get(kwargs, "include_root", False) == True:
-			obj = {f"{path.rsplit('#')[-1]}": deep_get(obj, path)}
+			_obj = {f"{path.rsplit('#')[-1]}": deep_get(obj, path)}
 		else:
 			_obj = deep_get(obj, path)
 		if _obj is None:
