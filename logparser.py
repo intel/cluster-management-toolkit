@@ -1685,6 +1685,8 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 			elif type(remnants) == list:
 				remnants = _remnants + remnants
 
+	if facility.startswith("\"") and facility.endswith("\""):
+		facility = facility[1:-1]
 	return facility, severity, message, remnants
 
 # For messages along the lines of:
