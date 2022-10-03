@@ -68,7 +68,7 @@ from ansible_helper import ansible_configuration, ansible_get_inventory_dict, an
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
-from kubernetes_helper import KubernetesHelper, update_api_status as kh_update_api_status
+from kubernetes_helper import KubernetesHelper, get_node_status, update_api_status as kh_update_api_status
 
 HOMEDIR = str(Path.home())
 IKTDIR = os.path.join(HOMEDIR, ".ikt")
@@ -3683,59 +3683,6 @@ class NodeInfo:
 		self.taints = taints
 	def __repr__(self):
 		return repr((self.name, self.ref, self.status, self.status_group, self.age, self.kubernetes_roles, self.kubelet_version, self.internal_ips, self.os, self.kernel, self.container_runtime, self.cpu, self.mem, self.taints))
-
-def get_node_status(node):
-	status = "Unknown"
-	status_group = stgroup.UNKNOWN
-	taints = []
-	full_taints = []
-
-	for condition in deep_get(node, "status#conditions", []):
-		if deep_get(condition, "type") == "Ready":
-			condition_status = deep_get(condition, "status")
-			if condition_status == "True":
-				status = "Ready"
-				status_group = stgroup.OK
-			elif condition_status == "Unknown":
-				status = "Unreachable"
-				status_group = stgroup.NOT_OK
-			else:
-				status = "NotReady"
-				status_group = stgroup.NOT_OK
-
-	for nodetaint in deep_get(node, "spec#taints", []):
-		key = deep_get(nodetaint, "key")
-		if key == "node-role.kubernetes.io/master":
-			key = "node-role.kubernetes.io/control-plane"
-		effect = deep_get(nodetaint, "effect")
-		full_taints.append((key, effect))
-
-		# Control Plane having scheduling disabled
-		# is expected behaviour and does not need
-		# any form of highlighting
-		if deep_get(nodetaint, "effect") == "NoSchedule":
-			if key == "node-role.kubernetes.io/control-plane":
-				taints.append(("control-plane", effect))
-				continue
-
-			if key.startswith("node.kubernetes.io/"):
-				key = key[len("node.kubernetes.io/"):]
-
-			taints.append((key, effect))
-
-			# If status is already "worse" than OK,
-			# we don't override it.
-			# Scheduling being disabled is not an error,
-			# but it's worth highlighting
-			if status_group == stgroup.OK:
-				status_group = stgroup.ADMIN
-		else:
-			if key.startswith("node.kubernetes.io/"):
-				key = key[len("node.kubernetes.io/"):]
-
-			taints.append((key, effect))
-
-	return status, status_group, taints, full_taints
 
 def get_node_addresses(name, addresses):
 	iips = []

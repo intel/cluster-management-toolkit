@@ -2095,6 +2095,59 @@ def kubectl_get_version():
 
 	return kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version
 
+def get_node_status(node):
+	status = "Unknown"
+	status_group = stgroup.UNKNOWN
+	taints = []
+	full_taints = []
+
+	for condition in deep_get(node, "status#conditions", []):
+		if deep_get(condition, "type") == "Ready":
+			condition_status = deep_get(condition, "status")
+			if condition_status == "True":
+				status = "Ready"
+				status_group = stgroup.OK
+			elif condition_status == "Unknown":
+				status = "Unreachable"
+				status_group = stgroup.NOT_OK
+			else:
+				status = "NotReady"
+				status_group = stgroup.NOT_OK
+
+	for nodetaint in deep_get(node, "spec#taints", []):
+		key = deep_get(nodetaint, "key")
+		if key == "node-role.kubernetes.io/master":
+			key = "node-role.kubernetes.io/control-plane"
+		effect = deep_get(nodetaint, "effect")
+		full_taints.append((key, effect))
+
+		# Control Plane having scheduling disabled
+		# is expected behaviour and does not need
+		# any form of highlighting
+		if deep_get(nodetaint, "effect") == "NoSchedule":
+			if key == "node-role.kubernetes.io/control-plane":
+				taints.append(("control-plane", effect))
+				continue
+
+			if key.startswith("node.kubernetes.io/"):
+				key = key[len("node.kubernetes.io/"):]
+
+			taints.append((key, effect))
+
+			# If status is already "worse" than OK,
+			# we don't override it.
+			# Scheduling being disabled is not an error,
+			# but it's worth highlighting
+			if status_group == stgroup.OK:
+				status_group = stgroup.ADMIN
+		else:
+			if key.startswith("node.kubernetes.io/"):
+				key = key[len("node.kubernetes.io/"):]
+
+			taints.append((key, effect))
+
+	return status, status_group, taints, full_taints
+
 class KubernetesHelper:
 	tmp_ca_certs_file = None
 	tmp_cert_file = None

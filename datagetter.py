@@ -4,6 +4,7 @@
 import re
 
 from iktlib import deep_get, stgroup
+from kubernetes_helper import get_node_status
 
 def datagetter_container_status(kh, obj, path, default):
 	if obj is None:
