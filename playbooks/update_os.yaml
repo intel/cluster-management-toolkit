@@ -1,4 +1,4 @@
-- hosts: selection:!nas
+- hosts: "selection:!nas"
   vars:
     metadata:
       description: "Update the Operating System"
@@ -6,23 +6,23 @@
       allow_on_control_plane: "single"
       category: "Administration"
   gather_subset:
-  - '!min'
-  - '!all'
-  - 'distribution'
+  - "!min"
+  - "!all"
+  - "distribution"
   become: true
   become_user: "root"
   tasks:
   - name: "Updating package cache"
-    ansible.builtin.apt: update_cache=yes force_apt_get=yes
-    when: ansible_os_family == 'Debian'
+    ansible.builtin.apt: "update_cache=yes force_apt_get=yes"
+    when: "ansible_os_family == 'Debian'"
   - name: "Upgrading all packages"
-    ansible.builtin.apt: upgrade=safe force_apt_get=yes
-    when: ansible_os_family == 'Debian'
+    ansible.builtin.apt: "upgrade=safe force_apt_get=yes"
+    when: "ansible_os_family == 'Debian'"
   - name: "Updating package cache"
-    ansible.builtin.dnf: update_cache=yes
-    when: ansible_os_family == 'RedHat'
-  - name: "Upgrading all packages"
+    ansible.builtin.dnf: "update_cache=yes"
+    when: "ansible_os_family == 'RedHat'"
+  - name: "Upgrading all packages"  # noqa package-latest
     ansible.builtin.dnf:
-      name: '*'
+      name: "*"
       state: "latest"
-    when: ansible_os_family == 'RedHat'
+    when: "ansible_os_family == 'RedHat'"

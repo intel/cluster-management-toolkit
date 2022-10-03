@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "Ping nodes by fetching /proc/{loadavg,meminfo,stat}"
@@ -11,12 +11,12 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Fetching /proc/loadavg"
-    command: cat /proc/loadavg
+  - name: "Fetching /proc/loadavg"  # noqa fqcn-builtins
+    command: "cat /proc/loadavg"
     changed_when: false
-  - name: "Fetching /proc/meminfo"
-    command: cat /proc/meminfo
+  - name: "Fetching /proc/meminfo"  # noqa fqcn-builtins
+    command: "cat /proc/meminfo"
     changed_when: false
-  - name: "Fetching /proc/stat"
-    command: cat /proc/stat
+  - name: "Fetching /proc/stat"  # noqa fqcn-builtins
+    command: "cat /proc/stat"
     changed_when: false

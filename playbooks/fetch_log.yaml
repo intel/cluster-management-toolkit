@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     unit: "kubelet"
     logpath: "/home/tao/.ikt/ansible/logs"
@@ -13,7 +13,9 @@
       read_only: true
   gather_facts: false
   become: true
-  become_user: root
+  become_user: "root"
   tasks:
-  - name: "Fetching a journald log"
-    shell: journalctl -u "{{ unit }}" --no-pager -n 1000
+  - name: "Fetching a journald log"  # noqa command-instead-of-shell fqcn-builtins
+    shell: |
+      journalctl -u '{{ unit }}' --no-pager -n 1000
+    changed_when: false

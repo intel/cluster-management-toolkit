@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "Uptime"
@@ -6,6 +6,6 @@
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Checking uptime"
-    command: /usr/bin/uptime
+  - name: "Checking uptime"  # noqa fqcn-builtins
+    command: "/usr/bin/uptime"
     changed_when: false

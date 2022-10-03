@@ -1,4 +1,4 @@
-- hosts: selection:!nas
+- hosts: "selection"
   vars:
     metadata:
       description: "Add Kubernetes repository"
@@ -36,9 +36,9 @@
       playbook_types:
       - "internal"
   gather_subset:
-  - '!min'
-  - '!all'
-  - 'distribution'
+  - "!min"
+  - "!all"
+  - "distribution"
   become: true
   become_user: "root"
   tasks:
@@ -47,7 +47,7 @@
       path: "/usr/local/keyrings"
       state: "directory"
       mode: "0755"
-    when: ansible_os_family == 'Debian'
+    when: "ansible_os_family == 'Debian'"
   - name: "Fetching Kubernetes repository key"
     ansible.builtin.get_url:
       url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
@@ -57,30 +57,30 @@
       use_proxy: "{{ use_proxy }}"
     environment:
       https_proxy: "{{ https_proxy }}"
-    when: ansible_os_family == 'Debian'
+    when: "ansible_os_family == 'Debian'"
   - name: "Configuring package repository for Kubernetes"
     ansible.builtin.template:
       src: "templates/etc/apt/sources.list.d/kubernetes.list.j2"
       dest: "/etc/apt/sources.list.d/kubernetes.list"
       mode: "0644"
-    when: ansible_os_family == 'Debian'
+    when: "ansible_os_family == 'Debian'"
   - name: "Configuring package repository proxy for Kubernetes"
     ansible.builtin.template:
       src: "templates/etc/apt/apt.conf.d/01proxy-kubernetes.j2"
       dest: "/etc/apt/apt.conf.d/01proxy-kubernetes"
       mode: "0644"
-    when: (ansible_os_family == 'Debian') and (use_proxy == "yes")
+    when: "(ansible_os_family == 'Debian') and (use_proxy == 'yes')"
   - name: "Updating package cache"
-    ansible.builtin.apt: update_cache=yes force_apt_get=yes
-    when: ansible_os_family == 'Debian'
+    ansible.builtin.apt: "update_cache=yes force_apt_get=yes"
+    when: "ansible_os_family == 'Debian'"
   - name: "Configuring package repository for Kubernetes"
     ansible.builtin.template:
       src: "templates/etc/yum.repos.d/kubernetes.repo.j2"
       dest: "/etc/yum.repos.d/kubernetes.repo"
       mode: "0644"
-    when: ansible_os_family == 'RedHat'
+    when: "ansible_os_family == 'RedHat'"
   - name: "Installing dnf-plugin-versionlock"
     ansible.builtin.dnf:
       update_cache: true
       name: "dnf-plugin-versionlock"
-    when: ansible_os_family == 'RedHat'
+    when: "ansible_os_family == 'RedHat'"

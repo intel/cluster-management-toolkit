@@ -1,4 +1,4 @@
-- hosts: selection:!nodes:!controlplane:!nas
+- hosts: "selection:!nodes:!controlplane:!nas"
   vars:
     metadata:
       description: "Setup Kubernetes node"
@@ -14,127 +14,132 @@
       - "nodes"
       category: "Setup"
   gather_subset:
-  - '!min'
-  - '!all'
-  - 'distribution'
+  - "!min"
+  - "!all"
+  - "distribution"
   become: true
   become_user: "root"
   tasks:
   - name: "Updating package cache"
-    ansible.builtin.apt: update_cache=yes force_apt_get=yes
-    when: ansible_os_family == 'Debian'
+    ansible.builtin.apt: "update_cache=yes force_apt_get=yes"
+    when: "ansible_os_family == 'Debian'"
   - name: "Gathering package facts"
     ansible.builtin.package_facts:
       manager: "apt"
-    when: ansible_os_family == 'Debian'
-  - name: "Unmarking packages as held"
-    shell: apt-mark unhold kubeadm kubelet kubectl || true
-    when: ansible_os_family == 'Debian'
+    when: "ansible_os_family == 'Debian'"
+  - name: "Unmarking packages as held"  # noqa fqcn-builtins
+    shell: |
+      apt-mark unhold kubeadm kubelet kubectl || true
+    when: "ansible_os_family == 'Debian'"
   - name: "Installing Kubernetes packages"
     ansible.builtin.apt:
       pkg:
-      - kubelet={{ control_plane_k8s_version }}
-      - kubeadm={{ control_plane_k8s_version }}
-      - kubectl={{ control_plane_k8s_version }}
+      - "kubelet={{ control_plane_k8s_version }}"
+      - "kubeadm={{ control_plane_k8s_version }}"
+      - "kubectl={{ control_plane_k8s_version }}"
       force_apt_get: true
-    when: ansible_os_family == 'Debian'
-  - name: "Marking packages as held"
-    shell: apt-mark hold kubeadm kubelet kubectl || true
-    when: ansible_os_family == 'Debian'
-  - name: "Installing containerd"
+    when: "ansible_os_family == 'Debian'"
+  - name: "Marking packages as held"  # noqa fqcn-builtins
+    shell: |
+      apt-mark hold kubeadm kubelet kubectl || true
+    when: "ansible_os_family == 'Debian'"
+  - name: "Installing containerd"  # noqa package-latest
     ansible.builtin.apt:
       name: "containerd"
       state: "latest"
       force_apt_get: true
-    when: (ansible_os_family == 'Debian') and (cri == 'containerd')
-  - name: "Installing runc"
+    when: "(ansible_os_family == 'Debian') and (cri == 'containerd')"
+  - name: "Installing runc"  # noqa package-latest
     ansible.builtin.apt:
       name: "runc"
       state: "latest"
       force_apt_get: true
-    when: (ansible_os_family == 'Debian') and (cri == 'containerd')
+    when: "(ansible_os_family == 'Debian') and (cri == 'containerd')"
   - name: "Configuring crictl"
     ansible.builtin.template:
       dest: "/etc/crictl.yaml"
       src: "templates/etc/crictl.yaml.j2"
       mode: "0644"
       force: true
-    when: cri == 'containerd'
+    when: "cri == 'containerd'"
   - name: "Creating /etc/containerd"
     ansible.builtin.file:
       path: "/etc/containerd"
       state: "directory"
       mode: "0755"
-    when: cri == 'containerd'
+    when: "cri == 'containerd'"
   - name: "Configuring containerd"
     ansible.builtin.template:
       dest: "/etc/containerd/config.toml"
       src: "templates/etc/containerd/config.toml.j2"
       mode: "0644"
-    when: cri == 'containerd'
+    when: "cri == 'containerd'"
   - name: "Creating /etc/systemd/system/kubelet.service.d"
     ansible.builtin.file:
       path: "/etc/systemd/system/kubelet.service.d"
       state: "directory"
       mode: "0755"
-    when: cri == 'containerd'
+    when: "cri == 'containerd'"
   - name: "Configuring containerd-cri"
     ansible.builtin.template:
       dest: "/etc/systemd/system/kubelet.service.d/containerd-cri.conf"
       src: "templates/etc/systemd/system/kubelet.service.d/containerd-cri.conf.j2"
       mode: "0644"
       force: true
-    when: cri == 'containerd'
+    when: "cri == 'containerd'"
   - name: "Creating /etc/systemd/system/containerd.service.d"
     ansible.builtin.file:
       path: "/etc/systemd/system/containerd.service.d"
       state: "directory"
       mode: "0755"
-    when: cri == 'containerd'
+    when: "cri == 'containerd'"
   - name: "Configuring containerd/http-proxy.conf"
     ansible.builtin.template:
       dest: "/etc/systemd/system/containerd.service.d/http-proxy.conf"
       src: "templates/etc/systemd/system/containerd.service.d/http-proxy.conf.j2"
       mode: "0644"
       force: true
-    when: cri == 'containerd'
+    when: "cri == 'containerd'"
   - name: "Configuring containerd/ip_forward.conf"
     ansible.builtin.template:
       dest: "/etc/systemd/system/containerd.service.d/ip-forward.conf"
       src: "templates/etc/systemd/system/containerd.service.d/ip-forward.conf.j2"
       mode: "0644"
       force: true
-    when: cri == 'containerd'
+    when: "cri == 'containerd'"
   - name: "Restarting Containerd"
     ansible.builtin.systemd:
       name: "containerd"
       daemon_reload: true
       state: "restarted"
-    when: cri == 'containerd'
+    when: "cri == 'containerd'"
   - name: "Gathering package facts"
     ansible.builtin.package_facts:
-      manager: rpm
-    when: ansible_os_family == 'RedHat'
-  - name: "Unmarking packages as held"
-    shell: dnf versionlock delete kubeadm kubelet kubectl || true
-    when: ansible_os_family == 'RedHat'
+      manager: "rpm"
+    when: "ansible_os_family == 'RedHat'"
+  - name: "Unmarking packages as held"  # noqa fqcn-builtins
+    shell: |
+      dnf versionlock delete kubeadm kubelet kubectl || true
+    when: "ansible_os_family == 'RedHat'"
   - name: "Installing Kubernetes packages"
     ansible.builtin.dnf:
       pkg:
-      - kubelet-{{ control_plane_k8s_version }}
-      - kubeadm-{{ control_plane_k8s_version }}
-      - kubectl-{{ control_plane_k8s_version }}
+      - "kubelet-{{ control_plane_k8s_version }}"
+      - "kubeadm-{{ control_plane_k8s_version }}"
+      - "kubectl-{{ control_plane_k8s_version }}"
       disable_excludes: "kubernetes"
-    when: ansible_os_family == 'RedHat'
-  - name: "Marking packages as held"
-    shell: dnf versionlock add kubeadm kubelet kubectl || true
-    when: ansible_os_family == 'RedHat'
+    when: "ansible_os_family == 'RedHat'"
+  - name: "Marking packages as held"  # noqa fqcn-builtins
+    shell: |
+      dnf versionlock add kubeadm kubelet kubectl || true
+    when: "ansible_os_family == 'RedHat'"
   - name: "Enabling kubelet"
     ansible.builtin.systemd:
       name: "kubelet"
       enabled: true
       state: "started"
-    when: ansible_os_family == 'RedHat'
-  - name: "Joining node to the cluster"
+    when: "ansible_os_family == 'RedHat'"
+  - name: "Joining node to the cluster"  # noqa fqcn-builtins
     shell: |
       kubeadm join "{{ control_plane_ip }}:{{ control_plane_port }}" --token "{{ join_token }}" --discovery-token-ca-cert-hash "sha256:{{ ca_cert_hash }}"
+    changed_when: false

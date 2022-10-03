@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "Setup a Kubernetes control plane using kubeadm"
@@ -7,13 +7,13 @@
       - "internal"
       category: "Setup"
   gather_subset:
-  - '!min'
-  - '!all'
-  - 'distribution'
+  - "!min"
+  - "!all"
+  - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Checking if cluster is already running"
+  - name: "Checking if cluster is already running"  # noqa fqcn-builtins
     shell: |
       lsof -i -P -n | grep 6443.*LISTEN > /dev/null
     register: "port_check"
@@ -24,8 +24,8 @@
       name: "kubelet"
       enabled: true
       state: "started"
-    when: ansible_os_family == 'RedHat'
-  - name: "Pulling Kubernetes images"
+    when: "ansible_os_family == 'RedHat'"
+  - name: "Pulling Kubernetes images"  # noqa fqcn-builtins
     shell: |
       if [ -n "{{ https_proxy }}" ]; then
         export https_proxy={{ https_proxy }}
@@ -33,10 +33,10 @@
         export https_proxy=
       fi
       kubeadm config images pull
-    when: port_check.rc == 1
-  - name: "Initialising Kubernetes cluster"
-    command: kubeadm init --skip-token-print --pod-network-cidr={{ pod_network_cidr }}
-    when: port_check.rc == 1
-  - name: "Creating permanent join token"
-    command: kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command
-    when: port_check.rc == 1
+    when: "port_check.rc == 1"
+  - name: "Initialising Kubernetes cluster"  # noqa fqcn-builtins
+    command: "kubeadm init --skip-token-print --pod-network-cidr={{ pod_network_cidr }}"
+    when: "port_check.rc == 1"
+  - name: "Creating permanent join token"  # noqa fqcn-builtins
+    command: "kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command"
+    when: "port_check.rc == 1"

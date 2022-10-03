@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "Delete node from cluster"
@@ -7,7 +7,7 @@
       category: "Administration"
   gather_facts: false
   tasks:
-  - name: "Deleting node from cluster"
+  - name: "Deleting node from cluster"  # noqa fqcn-builtins risky-shell-pipe
     shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
       minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/")"
@@ -19,4 +19,5 @@
         kubectl drain --disable-eviction=true --delete-local-data --force --grace-period=0 --ignore-daemonsets ${nodes}
       fi
       kubectl delete node ${nodes}
-    delegate_to: localhost
+    delegate_to: "localhost"
+    changed_when: false

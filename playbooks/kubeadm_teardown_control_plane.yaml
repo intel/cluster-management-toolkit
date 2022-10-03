@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "Tear down kubeadm cluster"
@@ -10,7 +10,8 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Tearing down Kubernetes"
+  - name: "Tearing down Kubernetes"  # noqa fqcn-builtins
     shell: |
       kubeadm version > /dev/null 2> /dev/null && kubeadm reset -f
       killall -q kube-apiserver || true
+    changed_when: false

@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "Tear down container network interfaces (CNI)"
@@ -9,7 +9,7 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Tearing down container network interfaces"
+  - name: "Tearing down container network interfaces"  # noqa fqcn-builtins risky-shell-pipe
     shell: |
       for network in $(cat /proc/net/dev | grep -E "^antrea|^genev" | cut -f 1 -d:); do
         ifconfig "${network}" down || ip link set dev "${network}" down || true
@@ -33,10 +33,12 @@
         ifconfig "${network}" down || ip link set dev "${network}" down || true
       done
       killall -q weaver || true
-  - name: "Removing leftover network configurations"
+    changed_when: false
+  - name: "Removing leftover network configurations"  # noqa fqcn-builtins deprecated-command-syntax
     shell: |
       rm -rf /etc/cni /opt/cni /var/lib/cni /var/lib/weave
       iptables -F
       iptables -t nat -F
       iptables -t mangle -F
       iptables -X
+    changed_when: false

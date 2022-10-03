@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "Execute command"
@@ -10,5 +10,6 @@
       category: "Administration"
   gather_facts: false
   tasks:
-  - name: "Executing command"
+  - name: "Executing command"  # noqa command-instead-of-shell fqcn-builtins
     shell: "{{ command }}"
+    changed_when: false

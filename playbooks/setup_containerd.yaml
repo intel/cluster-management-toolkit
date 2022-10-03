@@ -1,4 +1,4 @@
-- hosts: selection:!nas
+- hosts: "selection:!nas"
   vars:
     metadata:
       description: "Setup Containerd"
@@ -10,27 +10,27 @@
       requires_cluster_info: true
       category: "Setup"
   gather_subset:
-  - '!min'
-  - '!all'
-  - 'distribution'
+  - "!min"
+  - "!all"
+  - "distribution"
   become: true
   become_user: "root"
   tasks:
   - name: "Updating package cache"
-    ansible.builtin.apt: update_cache=yes force_apt_get=yes
-    when: ansible_os_family == 'Debian'
-  - name: "Installing containerd"
+    ansible.builtin.apt: "update_cache=yes force_apt_get=yes"
+    when: "ansible_os_family == 'Debian'"
+  - name: "Installing containerd"  # noqa package-latest
     ansible.builtin.apt:
       name: "containerd"
       state: "latest"
       force_apt_get: true
-    when: ansible_os_family == 'Debian'
-  - name: "Installing runc"
+    when: "ansible_os_family == 'Debian'"
+  - name: "Installing runc"  # noqa package-latest
     ansible.builtin.apt:
       name: "runc"
       state: "latest"
       force_apt_get: true
-    when: ansible_os_family == 'Debian'
+    when: "ansible_os_family == 'Debian'"
   - name: "Configuring crictl"
     ansible.builtin.template:
       dest: "/etc/crictl.yaml"

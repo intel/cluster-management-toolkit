@@ -1,5 +1,4 @@
-# description: listgpus:List GPUs
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "List GPUs"
@@ -7,6 +6,7 @@
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Listing GPUs"
-    shell: lspci -nn | grep -E "VGA|Display"
+  - name: "Listing GPUs"  # noqa fqcn-builtins risky-shell-pipe
+    shell: |
+      lspci -nn | grep -E "VGA|Display"
     changed_when: false

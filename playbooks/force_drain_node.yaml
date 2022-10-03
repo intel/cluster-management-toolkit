@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "Drain node (No grace period)"
@@ -9,7 +9,7 @@
       category: "Scheduling"
   gather_facts: false
   tasks:
-  - name: "Draining node (No grace period)"
+  - name: "Draining node (No grace period)"  # noqa fqcn-builtins risky-shell-pipe
     shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
       minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/")"
@@ -20,4 +20,5 @@
       else
         kubectl drain --disable-eviction=true --delete-local-data --force --grace-period=0 --ignore-daemonsets ${nodes}
       fi
-    delegate_to: localhost
+    delegate_to: "localhost"
+    changed_when: false

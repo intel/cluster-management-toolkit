@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "List Network Adapters"
@@ -6,7 +6,7 @@
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Listing Network Adapters"
+  - name: "Listing Network Adapters"  # noqa fqcn-builtins risky-shell-pipe var-spacing
     shell: |
       get_speeds()
       {

@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "Drain node"
@@ -8,8 +8,9 @@
       category: "Scheduling"
   gather_facts: false
   tasks:
-  - name: "Draining node"
+  - name: "Draining node"  # noqa fqcn-builtins
     shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
       kubectl drain --delete-local-data --ignore-daemonsets ${nodes}
-    delegate_to: localhost
+    delegate_to: "localhost"
+    changed_when: false

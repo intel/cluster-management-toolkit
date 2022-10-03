@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "Purge kubeadm"
@@ -7,32 +7,34 @@
       - "internal"
       category: "Administration"
   gather_subset:
-  - '!min'
-  - '!all'
-  - 'distribution'
+  - "!min"
+  - "!all"
+  - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Unmarking packages as held"
-    shell: apt-mark unhold "{{ item }}" || true
+  - name: "Unmarking packages as held"  # noqa fqcn-builtins
+    shell: |
+      apt-mark unhold "{{ item }}" || true
     loop: "{{ held_packages }}"
-    when: ansible_os_family == 'Debian'
+    when: "ansible_os_family == 'Debian'"
   - name: "Removing Kubernetes packages"
     ansible.builtin.apt:
       name: "{{ packages }}"
       force_apt_get: true
       state: "absent"
       purge: true
-    when: ansible_os_family == 'Debian'
-  - name: "Unmarking packages as held"
-    shell: dnf versionlock delete "{{ item }}" || true
+    when: "ansible_os_family == 'Debian'"
+  - name: "Unmarking packages as held"  # noqa fqcn-builtins
+    shell: |
+      dnf versionlock delete "{{ item }}" || true
     loop: "{{ held_packages }}"
-    when: ansible_os_family == 'RedHat'
+    when: "ansible_os_family == 'RedHat'"
   - name: "Removing Kubernetes packages"
     ansible.builtin.dnf:
       name: "{{ packages }}"
       state: "absent"
-    when: ansible_os_family == 'RedHat'
+    when: "ansible_os_family == 'RedHat'"
   - name: "Removing directories"
     ansible.builtin.file:
       path: "{{ item }}"

@@ -1,4 +1,4 @@
-- hosts: selection:&nodes:!controlplane:!nas
+- hosts: "selection:&nodes:!controlplane:!nas"
   vars:
     metadata:
       description: "Remove Kubernetes node from cluster"
@@ -15,20 +15,21 @@
       - "nodes"
       category: "Administration"
   gather_subset:
-  - '!min'
-  - '!all'
-  - 'distribution'
+  - "!min"
+  - "!all"
+  - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Tearing down Kubernetes"
+  - name: "Tearing down Kubernetes"  # noqa fqcn-builtins
     shell: |
       if kubeadm version > /dev/null 2> /dev/null; then
         kubeadm reset -f
       fi
-  - name: "Unmarking packages as held"
-    shell: apt-mark unhold kubeadm kubectl kubelet || true
-    when: ansible_os_family == 'Debian'
+    changed_when: false
+  - name: "Unmarking packages as held"  # noqa fqcn-builtins
+    shell: "apt-mark unhold kubeadm kubectl kubelet || true"
+    when: "ansible_os_family == 'Debian'"
   - name: "Removing Kubernetes packages"
     ansible.builtin.apt:
       pkg:
@@ -39,10 +40,11 @@
       force_apt_get: true
       state: "absent"
       purge: true
-    when: ansible_os_family == 'Debian'
-  - name: "Unmarking packages as held"
-    shell: dnf versionlock delete kubeadm kubelet kubectl || true
-    when: ansible_os_family == 'RedHat'
+    when: "ansible_os_family == 'Debian'"
+  - name: "Unmarking packages as held"  # noqa fqcn-builtins
+    shell: |
+      dnf versionlock delete kubeadm kubelet kubectl || true
+    when: "ansible_os_family == 'RedHat'"
   - name: "Removing Kubernetes packages"
     ansible.builtin.dnf:
       pkg:
@@ -51,4 +53,4 @@
       - "kubelet"
       - "kubernetes-cni"
       state: "absent"
-    when: ansible_os_family == 'RedHat'
+    when: "ansible_os_family == 'RedHat'"

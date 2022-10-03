@@ -1,5 +1,5 @@
 # XXX: This won't work with multiple controlplanes; we need to fetch from the first controlplane
-- hosts: selection:&controlplane
+- hosts: "selection:&controlplane"
   vars:
     metadata:
       description: "Copy /etc/kubernetes/admin.conf from control plane to .kube on localhost"
@@ -8,14 +8,14 @@
       category: "Setup"
   gather_facts: false
   become: true
-  become_user: root
+  become_user: "root"
   tasks:
   - name: "Creating .kube if it doesn't exist"
     ansible.builtin.file:
       path: "~/.kube"
       state: "directory"
       mode: "0700"
-    delegate_to: localhost
+    delegate_to: "localhost"
   - name: "Copying /etc/kubernetes/admin.conf from control plane to localhost"
     ansible.builtin.fetch:
       src: "/etc/kubernetes/admin.conf"

@@ -1,4 +1,4 @@
-- hosts: selection
+- hosts: "selection"
   vars:
     metadata:
       description: "Show NVidia information"
@@ -6,7 +6,7 @@
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Showing NVidia information"
+  - name: "Showing NVidia information"  # noqa fqcn-builtins risky-shell-pipe
     shell: |
       if [ -x /usr/bin/nvidia-smi ]; then
         nvidia-smi | sed -e '/^\s*$/q'

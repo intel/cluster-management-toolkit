@@ -1,4 +1,4 @@
-- hosts: selection:!nas
+- hosts: "selection:!nas"
   vars:
     metadata:
       description: "Install custom packages"
@@ -14,36 +14,38 @@
         variable: "packages"
       category: "Administration"
   gather_subset:
-  - '!min'
-  - '!all'
-  - 'distribution'
+  - "!min"
+  - "!all"
+  - "distribution"
   become: true
   become_user: "root"
   tasks:
   - name: "Updating package cache"
-    ansible.builtin.apt: update_cache=yes force_apt_get=yes
-    when: ansible_os_family == 'Debian'
+    ansible.builtin.apt: "update_cache=yes force_apt_get=yes"
+    when: "ansible_os_family == 'Debian'"
   - name: "Installing custom packages"
     ansible.builtin.apt:
       pkg: "{{ packages }}"
       force_apt_get: true
       # allow downgrading packages
       force: true
-    when: ansible_os_family == 'Debian'
-  - name: "Marking packages as held"
-    shell: apt-mark hold "{{ item }}" || true
+    when: "ansible_os_family == 'Debian'"
+  - name: "Marking packages as held"  # noqa fqcn-builtins
+    shell: |
+      apt-mark hold "{{ item }}" || true
     loop: "{{ vars['held_packages'] }}"
-    when: ansible_os_family == 'Debian'
+    when: "ansible_os_family == 'Debian'"
   - name: "Updating package cache"
-    ansible.builtin.dnf: update_cache=yes
-    when: ansible_os_family == 'RedHat'
+    ansible.builtin.dnf: "update_cache=yes"
+    when: "ansible_os_family == 'RedHat'"
   - name: "Installing custom packages"
     ansible.builtin.dnf:
       pkg: "{{ packages }}"
       allow_downgrade: true
       disable_excludes: "kubernetes"
-    when: ansible_os_family == 'RedHat'
-  - name: "Marking packages as held"
-    shell: dnf versionlock add "{{ item }}" || true
+    when: "ansible_os_family == 'RedHat'"
+  - name: "Marking packages as held"  # noqa fqcn-builtins
+    shell: |
+      dnf versionlock add "{{ item }}" || true
     loop: "{{ vars['held_packages'] }}"
-    when: ansible_os_family == 'RedHat'
+    when: "ansible_os_family == 'RedHat'"
