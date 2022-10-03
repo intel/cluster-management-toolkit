@@ -135,7 +135,7 @@ def datagetter_regex_split_to_tuples(kh, obj, paths, default):
 
 	return list_fields, {}
 
-def get_pod_status(pod):
+def get_pod_status(kh, pod):
 	if deep_get(pod, "metadata#deletionTimestamp") is not None:
 		status = "Terminating"
 		status_group = stgroup.PENDING
@@ -228,7 +228,7 @@ def datagetter_pod_status(kh, obj, path, default):
 	if obj is None:
 		return default
 
-	status, status_group = get_pod_status(obj)
+	status, status_group = get_pod_status(kh, obj)
 
 	return status, {"status_group": status_group}
 

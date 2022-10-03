@@ -4129,7 +4129,7 @@ def get_pod_info(**kwargs):
 		controller = format_controller(controller, show_kind)
 
 		pod_ip = deep_get(obj, "status#podIP", "<unset>")
-		status, status_group = datagetter.get_pod_status(obj)
+		status, status_group = datagetter.get_pod_status(kh, obj)
 		pod_restarts, restarted_at = get_pod_restarts_total(obj)
 		if restarted_at == -1:
 			last_restart = -1
