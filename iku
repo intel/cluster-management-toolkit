@@ -48,7 +48,7 @@ except ModuleNotFoundError:
 
 from logparser import logparser, logparser_initialised, loglevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
-from iktio import get_local_hostname
+from iktio import get_local_hostname, which
 import iktlib
 from iktlib import deep_get, deep_get_list, deep_get_with_fallback, deep_set, disksize_to_human, get_package_versions, iktconfig, make_set_expression, make_set_expression_list, stgroup, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp, split_msg, versiontuple
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
@@ -105,29 +105,6 @@ namespace = ""
 defaultview = ""
 
 kh = None
-
-# Behaves roughly as which(1)
-def which(commandname):
-	cpath = None
-
-	# Did we get a full path, or just a command name?
-	fpath, fname = os.path.split(commandname)
-
-	# If we got a path we just verify whether commandname
-	# exists and is executable
-	if fpath:
-		if os.path.isfile(commandname) and os.access(commandname, os.X_OK):
-			cpath = commandname
-		return cpath
-
-	# If we just got a command name we check if it's in the path
-	for path in os.environ["PATH"].split(os.pathsep):
-		tmp = os.path.join(path, commandname)
-		if os.path.isfile(tmp) and os.access(tmp, os.X_OK):
-			cpath = tmp
-			break
-
-	return cpath
 
 def init_kubernetes_client():
 	global kh

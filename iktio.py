@@ -20,6 +20,25 @@ from iktlib import deep_get, iktconfig
 
 from iktprint import iktprint
 
+def which(commandname):
+	cpath = None
+
+	# Did we get a full path, or just a command name?
+	fpath, fname = os.path.split(commandname)
+
+	# If we got a path we just verify whether commandname
+	# exists and is executable
+	if fpath:
+		tmp = commandname
+	else:
+		# If not we check if there's a command by this name in path
+		tmp = shutils.which(commandname)
+
+	if os.path.isfile(tmp) and os.access(tmp, os.X_OK):
+		cpath = tmp
+
+	return cpath
+
 def get_local_hostname():
 	try:
 		with open("/etc/hostname", "r") as f:

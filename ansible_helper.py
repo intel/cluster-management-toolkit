@@ -13,7 +13,6 @@ import iktlib
 from iktlib import deep_get, iktconfig
 from iktprint import iktprint
 
-ansible_bin_path = None
 ansible_results = {}
 
 active_task = ""
@@ -36,27 +35,6 @@ class ansible_configuration:
 	ansible_user = None
 	ansible_password = None
 	save_logs = False
-
-# Behaves roughly as which(1)
-def which(commandname):
-	global ansible_bin_path
-
-	# Did we get a full path, or just a command name?
-	fpath, fname = os.path.split(commandname)
-
-	# If we got a path we just verify whether commandname
-	# exists and is executable
-	if fpath:
-		if os.path.isfile(commandname) and os.access(commandname, os.X_OK):
-			ansible_bin_path = commandname
-		return
-
-	for path in os.environ["PATH"].split(os.pathsep):
-		tmp = os.path.join(path, commandname)
-		if os.path.isfile(tmp) and os.access(tmp, os.X_OK):
-			ansible_bin_path = tmp
-			break
-	return
 
 # Used by Ansible
 try:

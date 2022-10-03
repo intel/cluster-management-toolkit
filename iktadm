@@ -13,7 +13,6 @@ import os
 from pathlib import Path
 import re
 import shutil
-from shutil import which
 import socket
 import subprocess
 import sys
@@ -31,7 +30,7 @@ from commandparser import parse_commandline
 from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_set_vars, ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
-from iktio import download_files, get_local_hostname, scan_and_add_ssh_keys
+from iktio import download_files, get_local_hostname, scan_and_add_ssh_keys, which
 import iktlib
 from iktlib import deep_get, execute_command, execute_command_with_response, iktconfig
 
@@ -422,11 +421,7 @@ def check_version_from_url(url, version_regex):
 
 def check_version_from_executable(command, args, version_regex):
 	version = None
-	# If command is just a command try to find it in path
-	if "/" not in command:
-		cpath = which(command)
-	else:
-		cpath = command
+	cpath = which(command)
 
 	if cpath is not None and len(cpath) > 0:
 		result = execute_command_with_response([cpath] + args)
@@ -1977,12 +1972,6 @@ def setup_control_plane(options = [], args = None):
 	update_installation_info(version = requested_version)
 
 	iktprint([("\nControl plane setup successful", "success")])
-
-def __check_path(args):
-	return os.path.exists(args[0])
-
-def __which(args):
-	return which(args[0]) is not None
 
 def __get_node_info(kh = None):
 	if not os.path.isfile(f"{HOMEDIR}/.kube/config"):
