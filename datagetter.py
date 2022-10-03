@@ -248,9 +248,9 @@ def datagetter_api_support(kh, obj, path, default):
 	try:
 		kind = kh.guess_kind((kind, api_family))
 		available_views.append("Known")
-		if available_apis[kind]["list"] == True:
+		if deep_get(available_apis[kind], "list", False) == True:
 			available_views.append("List")
-		if available_apis[kind]["info"] == True:
+		if deep_get(available_apis[kind], "info", False) == True:
 			available_views.append("Info")
 	except NameError:
 		pass
