@@ -18,3 +18,11 @@
   - name: "glog"
   - name: "ts_8601"
   - name: "json"
+    options:
+      severities:
+      - "severity"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "http2: server: error"
+      loglevel: "warning"
