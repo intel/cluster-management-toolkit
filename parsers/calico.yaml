@@ -5,8 +5,24 @@
     container_type: "init_container"
     image_name: "/calico/cni"
   parser_rules:
+  - name: "ts_8601"
+  - name: "glog"
   - name: "key_value"
   - name: "json_line"
+  - name: "custom_splitter"
+    options:
+      regex: '^\[([A-Z]+)\]\[\d+\] (\S+) ([^:]+): (.*)'
+      severity:
+        field: 1
+        transform: "str"
+      facility:
+        fields:
+        - 2
+        - 3
+        separators:
+        - ":"
+      message:
+        field: 4
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"
