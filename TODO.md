@@ -2,11 +2,13 @@
 ## All
 * When running either ikt or iku, check whether .ssh/id_ecdsa.pub is in authorized_keys
   in .ikt/ansible/inventory.yaml; if not, add it
+* Rewrite command_parser to treat options passed before a command as global,
+  and to allow options interspersed with arguments
+* Add `--dry-run` support for more commands
 
 ## iku
 * Try to find other things we can simplify in the views
 * Make themearrays treat lists as tuples; this would make it possible to remove special casing for views
-* Add an allowlist for all acceptable calls instead of using eval
 * Move field_templates and built-in views to views
 * Modify generator_list; ideally every list element should be typed;
   this way we'd be able to use, for instance:
@@ -29,7 +31,7 @@ iktinv:
 
 iktadm:
 * Add command to import kube-config (requires cluster-name--unless unique) and a path
-* Pass cluster_name to kubeadm init
+* Pass cluster_name to kubeadm init using ClusterConfiguration + clusterName
 * prepare_passwordless_ansible won't work on localhost; we're not passing the password,
   and the password might not be the same on the remote system and the local system anyway
 
