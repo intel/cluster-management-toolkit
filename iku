@@ -15,7 +15,6 @@ from curses import wrapper
 import curses.textpad
 from datetime import datetime, timezone
 import errno
-from functools import reduce
 from getpass import getuser
 import http.client
 # ujson is much faster than json,
@@ -33,7 +32,6 @@ import subprocess
 from subprocess import PIPE, STDOUT
 import sys
 import tempfile
-import time
 import yaml
 
 try:
@@ -50,8 +48,8 @@ from logparser import logparser, logparser_initialised, loglevel, lvl_to_letter_
 import curses_helper
 from iktio import get_local_hostname, which
 import iktlib
-from iktlib import deep_get, deep_get_list, deep_get_with_fallback, deep_set, disksize_to_human, get_package_versions, iktconfig, make_set_expression, make_set_expression_list, stgroup, timestamp_to_datetime, datetime_to_timestamp, get_since, none_timestamp, split_msg, versiontuple
-from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, color, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
+from iktlib import deep_get, deep_get_with_fallback, deep_set, disksize_to_human, get_package_versions, iktconfig, make_set_expression_list, stgroup, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple
+from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
 
 import datagetter
 from datagetter import datagetter_allowlist
@@ -120,7 +118,7 @@ def gather_cluster_info():
 	join_token = kh.get_join_token()
 	ca_cert_hash = kh.get_ca_cert_hash()
 	control_plane_ip, control_plane_port = kh.get_control_plane_address()
-	control_plane_node, control_plane_name = get_control_plane()
+	_control_plane_node, control_plane_name = get_control_plane()
 
 	# This is tricky: we get this from the Debian package;
 	# since we cannot assume that we're running iku on the [main] control plane
@@ -131,7 +129,7 @@ def gather_cluster_info():
 		if package == "kubeadm":
 			control_plane_k8s_version = version
 	if len(control_plane_k8s_version) == 0:
-		sys.exit(f"Failed to get kubeadm version from control plane “{control_plane_name}“ (retval: {retval}); aborting.")
+		sys.exit(f"Failed to get kubeadm version from control plane “{control_plane_name}“; aborting.")
 
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", None)
 	https_proxy = deep_get(iktconfig, "Network#https_proxy", None)
@@ -1276,9 +1274,9 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						_regexes_key = deep_get(_path, "key#regex", [])
 						_regexes_value = deep_get(_path, "value#regex", [])
 						if type(_regexes_key) == str:
-						       _regexes_key = [_regexes_key]
+							_regexes_key = [_regexes_key]
 						if type(_regexes_value) == str:
-						       _regexes_value = [_regexes_value]
+							_regexes_value = [_regexes_value]
 						_key = transform_filter(deep_get(_path, "key#transform", {}), _key)
 						_value = transform_filter(deep_get(_path, "value#transform", {}), _value)
 						# A regex for key/value is required to capture only one group;
@@ -5332,7 +5330,7 @@ def clusteroverviewloop(stdscr, view):
 			if islocal == True:
 				# FIXME: handle non-existance
 				if os.path.exists("/proc/loadavg"):
-					with open("/proc/loadavg", "r") as f:
+					with open("/proc/loadavg", "r", encoding = "utf-8") as f:
 						loadavg = f.readline()
 
 					tmp = load_regex.match(loadavg)
@@ -5344,7 +5342,7 @@ def clusteroverviewloop(stdscr, view):
 						tasks = tmp[5]
 
 				if os.path.exists("/proc/meminfo"):
-					with open("/proc/meminfo", "r") as f:
+					with open("/proc/meminfo", "r", encoding = "utf-8") as f:
 						for tmp in f:
 							values = tmp.split()
 							if values[0] == "MemTotal:":
@@ -5374,7 +5372,7 @@ def clusteroverviewloop(stdscr, view):
 					threads = 42
 
 				if os.path.exists("/proc/stat"):
-					with open("/proc/stat", "r") as f:
+					with open("/proc/stat", "r", encoding = "utf-8") as f:
 						stat = f.readline()
 
 				# cpu  30175835 25947 13018006 435764225 200633 0   3229829 0     0     0
@@ -6385,10 +6383,10 @@ def export_data(stdscr, **kwargs):
 	vtype, value = decode_value(value)
 
 	if vtype.startswith("string"):
-		with open(filename, "w") as f:
+		with open(filename, "w", encoding = "utf-8") as f:
 			f.write(value)
 	elif vtype.startswith("base64-utf-8"):
-		with open(filename, "w") as f:
+		with open(filename, "w", encoding = "utf-8") as f:
 			f.write(base64.b64decode(value).decode("utf-8"))
 	elif vtype.startswith(("base64-binary", "gzip")):
 		with open(filename, "wb") as f:
@@ -8242,7 +8240,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"File “{filename}“ already exists; overwrite?:", default = False) == False:
 					continue
 
-			with open(filename, "w") as f:
+			with open(filename, "w", encoding = "utf-8") as f:
 				for y in range(0, uip.loglen):
 					# Even when the log is raw we want the first timestamp
 					if y >= len(timestamps):
@@ -8852,7 +8850,7 @@ def create_resource_from_url(uip, items = [], action = {}, values = {}, kind = N
 
 def __summarise_resources(path):
 	resources = []
-	with open(path, "r") as f:
+	with open(path, "r", encoding = "utf-8") as f:
 		dicts = yaml.safe_load_all(f)
 		for d in dicts:
 			kind, api_group = kh.kind_api_version_to_kind(deep_get(d, "kind"), deep_get(d, "apiVersion"))
@@ -9373,7 +9371,7 @@ def __populate_playbooklist(path, action_list = {}):
 		playbookpath = f"{path}/{filename}"
 		description = None
 
-		with open(playbookpath) as f:
+		with open(playbookpath, encoding = "utf-8") as f:
 			try:
 				d = yaml.safe_load(f)
 			except Exception as e:
@@ -10034,7 +10032,7 @@ def populate_views(force_refresh = False):
 		has_listview = False
 		has_infoview = False
 
-		with open(view_file, "r") as f:
+		with open(view_file, "r", encoding = "utf-8") as f:
 			try:
 				d = yaml.safe_load(f)
 			except yaml.parser.ParserError:

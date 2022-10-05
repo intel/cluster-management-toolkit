@@ -2218,7 +2218,7 @@ class KubernetesHelper:
 			config_path = str(Path.home()) + "/.kube/config"
 
 		try:
-			with open(config_path, "r") as f:
+			with open(config_path, "r", encoding = "utf-8") as f:
 				kubeconfig = yaml.safe_load(f)
 		except FileNotFoundError:
 			return []
@@ -2279,7 +2279,7 @@ class KubernetesHelper:
 			config_path = str(Path.home()) + "/.kube/config"
 
 		try:
-			with open(config_path, "r") as f:
+			with open(config_path, "r", encoding = "utf-8") as f:
 				kubeconfig = yaml.safe_load(f)
 		except FileNotFoundError:
 			return False
@@ -2430,7 +2430,7 @@ class KubernetesHelper:
 
 		yaml_str = yaml.safe_dump(kubeconfig, default_flow_style = False)
 
-		with open(config_path, "w") as f:
+		with open(config_path, "w", encoding = "utf-8") as f:
 			f.write(yaml_str)
 
 		return True
@@ -2686,7 +2686,7 @@ class KubernetesHelper:
 	# (such as from owner references), we have to guess
 	def guess_kind(self, kind):
 		# If we already have a tuple, don't guess
-		if type(kind) == tuple:
+		if isinstance(kind, tuple):
 			if kind in kubernetes_resources:
 				return kind
 

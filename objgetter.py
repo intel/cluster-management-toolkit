@@ -30,12 +30,12 @@ def objgetter_ansible_facts(obj):
 def objgetter_ansible_log(obj):
 	tmpobj = {}
 
-	with open(f"{obj}/metadata.yaml", "r") as f:
+	with open(f"{obj}/metadata.yaml", "r", encoding = "utf-8") as f:
 		tmpobj = yaml.safe_load(f)
 		tmpobj["log_path"] = obj
 
 	try:
-		with open(tmpobj["playbook_path"], "r") as f:
+		with open(tmpobj["playbook_path"], "r", encoding = "utf-8") as f:
 			playbook = yaml.safe_load(f)[0]
 			tmpobj["name"] = deep_get(playbook, "vars#metadata#description")
 			tmpobj["playbook_types"] = deep_get(playbook, "vars#metadata#playbook_types", ["<any>"])
@@ -50,7 +50,7 @@ def objgetter_ansible_log(obj):
 	for path in natsorted(os.listdir(obj)):
 		if path == "metadata.yaml":
 			continue
-		with open(f"{obj}/{path}", "r") as f:
+		with open(f"{obj}/{path}", "r", encoding = "utf-8") as f:
 			logs.append({
 				"index": path.split("-")[0],
 				"log": yaml.safe_load(f)

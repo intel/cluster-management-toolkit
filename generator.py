@@ -9,13 +9,13 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 	array = []
 	totallen = 0
 
-	if type(field_separators) != list:
+	if not isinstance(field_separators, list):
 		raise Exception(f"field_separators should be a list of (context, style) tuple, not a single tuple; {field_separators}")
 
-	if type(field_colors) != list:
+	if not isinstance(field_colors, list):
 		raise Exception(f"field_colors should be a list of (context, style) tuple, not a single tuple; {field_colors}")
 
-	if type(items) is not list:
+	if not isinstance(items, list):
 		items = [items]
 
 	elcount = 0
@@ -32,7 +32,7 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 			break
 
 		# Treat all types as tuples no matter if they are; since tuples consist of 2+ elements we add None
-		if type(item) is not tuple:
+		if not isinstance(item, tuple):
 			item = (item, None)
 
 		for i in range(0, len(item)):
@@ -61,7 +61,7 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 
 			# OK, we know now that we'll be appending the field, so do the prefix
 			if field_prefixes is not None and i < len(field_prefixes):
-				if type(field_prefixes[i]) == tuple:
+				if isinstance(field_prefixes[i], tuple):
 					totallen += themearray_len([field_prefixes[i]])
 					array.append(field_prefixes[i])
 				else:
@@ -72,7 +72,7 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 			totallen += len(string)
 			# And now the suffix
 			if field_suffixes is not None and i < len(field_suffixes):
-				if type(field_suffixes[i]) == tuple:
+				if isinstance(field_suffixes[i], tuple):
 					totallen += themearray_len([field_suffixes[i]])
 					array.append(field_suffixes[i])
 				else:
@@ -101,24 +101,26 @@ def map_value(value, references = None, selected = False, default_field_color = 
 	field_colors = None
 
 	if value in substitutions:
-		if type(value) in [bool, int]:
+		# We don't need to check for bool, since it's a subclass of int
+		if isinstance(value, int):
 			substitutions[f"__{str(value)}"]
 		else:
 			value = substitutions[value]
+
 		# If the substitution is a dict it's a themearray; typically either a separator or a string
-		if type(value) == dict:
+		if isinstance(value, dict):
 			context = deep_get(value, "context", "main")
 			attr_ref = deep_get(value, "type")
 			return ((context, attr_ref), selected), themearray_to_string([(context, attr_ref)])
 
 	# OK, so we want to output output_value, but compare using reference_value
-	if type(value) == tuple and len(ranges) > 0:
+	if isinstance(value, tuple) and len(ranges) > 0:
 		output_value, reference_value = value
 	else:
 		output_value = value
 		reference_value = value
 
-	if type(reference_value) in [int, float] and len(ranges) > 0:
+	if isinstance(reference_value, (int, float)) and len(ranges) > 0:
 		default_index = -1
 		for i in range(0, len(ranges)):
 			if deep_get(ranges[i], "default", False) == True:
@@ -134,7 +136,7 @@ def map_value(value, references = None, selected = False, default_field_color = 
 		if field_colors is None and default_index != -1:
 			field_colors = deep_get(ranges[default_index], "field_colors")
 		string = str(output_value)
-	elif type(reference_value) in [str, bool] or len(ranges) == 0:
+	elif isinstance(reference_value, (str, bool)) or len(ranges) == 0:
 		string = str(output_value)
 		_string = string
 		if match_case is False:
@@ -220,7 +222,7 @@ def format_numerical_with_units(string, ftype, selected, non_units = set("012345
 def generator_age_raw(value, selected):
 	if value == -1:
 		string = ""
-	elif type(value) == str:
+	elif isinstance(value, str):
 		string = value
 	else:
 		string = iktlib.seconds_to_age(value, negative_is_skew = True)
@@ -248,10 +250,10 @@ def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting)
 	if items is None:
 		items = []
 
-	if type(items) == str and items in ["<unset>", "<none>"]:
+	if isinstance(items, str) and items in ["<unset>", "<none>"]:
 		return format_list([items], fieldlen, pad, ralign, selected)
 
-	if type(items) in [str, tuple]:
+	if isinstance(items, (str, tuple)):
 		items = [items]
 
 	separator_lookup = {}
@@ -367,7 +369,7 @@ def generator_list(obj, field, fieldlen, pad, ralign, selected, **formatting):
 
 def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	items = getattr(obj, field)
-	if type(items) == tuple:
+	if isinstance(items, tuple):
 		items = [items]
 
 	item_separator = deep_get(formatting, "item_separator")

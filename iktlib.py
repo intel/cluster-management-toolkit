@@ -219,7 +219,7 @@ def seconds_to_age(seconds, negative_is_skew = False):
 	age = ""
 	fields = 0
 
-	if isinstance(seconds, int):
+	if not isinstance(seconds, int):
 		return ""
 
 	if seconds < -1:

@@ -28,10 +28,11 @@ ANSIBLE_LOG_DIR = f"{ANSIBLE_DIR}/logs"
 ANSIBLE_TMP_INVENTORY = f"{ANSIBLE_DIR}/tmp_inventory.yaml"
 
 class ansible_configuration:
-	ansible_user = None
+	ansible_forks = 5
 	ansible_password = None
-	save_logs = False
+	ansible_user = None
 	disable_strict_host_key_checking = False
+	save_logs = False
 
 # Used by Ansible
 try:

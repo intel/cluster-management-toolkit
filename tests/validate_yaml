@@ -1,6 +1,10 @@
 #! /usr/bin/env python3
 
 import json
+import os
+import sys
+import yaml
+
 try:
 	import jsonschema
 except ModuleNotFoundError:
@@ -10,10 +14,6 @@ try:
 	from natsort import natsorted
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
-
-import os
-import yaml
-import sys
 
 validate_yaml_version = "0.2"
 
@@ -64,7 +64,7 @@ def validate_file(yaml_path, schema_path):
 	if not os.path.isfile(schema_path):
 		sys.exit(f"schema {schema_path} does not exist or is not a file; aborting.")
 
-	with open(schema_path, "r") as f:
+	with open(schema_path, "r", encoding = "utf-8") as f:
 		try:
 			schema = json.load(f)
 		except json.decoder.JSONDecodeError as e:
@@ -72,7 +72,7 @@ def validate_file(yaml_path, schema_path):
 			sys.exit(f"\njson.decoder.JSONDecodeError: {e}")
 
 	try:
-		with open(yaml_path, "r") as f:
+		with open(yaml_path, "r", encoding = "utf-8") as f:
 			yaml_data = yaml.safe_load(f)
 	except yaml.scanner.ScannerError as e:
 		sys.exit(f"ScannerError: {str(e)}\n\ninvalid YAML; aborting.")
@@ -135,9 +135,9 @@ def main():
 			if i < len(sys.argv):
 				resume_from = sys.argv[i]
 				if not os.path.isfile(resume_from):
-					sys.exit(f"The --resume-from PATH has to be a file")
+					sys.exit("The --resume-from PATH has to be a file")
 			else:
-				sys.exit(f"Too few arguments; --resume-from requires a PATH")
+				sys.exit("Too few arguments; --resume-from requires a PATH")
 		else:
 			# If schema hasn't been set this is the schema to use;
 			# either an alias {views,themes,parsers} or a full path
@@ -148,7 +148,7 @@ def main():
 				else:
 					schema_path = schema
 					if not os.path.isfile(schema_path) or not schema_path.lower().endswith(".json"):
-						sys.exit(f"SCHEMA has to be a path to a JSON schema file or one of {{parsers,themes,views}}")
+						sys.exit("SCHEMA has to be a path to a JSON schema file or one of {parsers,themes,views}")
 			else:
 				# This is a path to validate
 				yaml_paths.append((sys.argv[i], schema_path))
@@ -172,7 +172,6 @@ def main():
 			]
 
 	count = 0
-	successful = 0
 	fail = 0
 	skip = 0
 
@@ -207,7 +206,7 @@ def main():
 		count += 1
 
 	if no_summary == False:
-		print(f"\nSummary:")
+		print("\nSummary:")
 		if abort_on_fail == False:
 			print(f"     fail: {fail}")
 		print(f"     skip: {skip}")

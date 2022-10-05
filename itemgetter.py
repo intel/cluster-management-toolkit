@@ -113,13 +113,14 @@ def get_key_value(kh, obj, **kwargs):
 
 		for _key in d:
 			_value = d[_key]
-			if type(_value) == list:
+			if isinstance(_value, list):
 				value = ",".join(_value)
-			elif type(_value) == dict:
+			elif isinstance(_value, dict):
 				value = ",".join(f"{key}:{val}" for (key, val) in _value.items())
-			elif type(_value) in [int, bool, float]:
+			# We don't need to check for bool, since it's a subclass of int
+			elif isinstance(_value, (int, float)):
 				value = str(_value)
-			elif type(_value) == str:
+			elif isinstance(_value, str):
 				value = _value
 			else:
 				raise TypeError(f"Unhandled type {type(_value)} for {field}={value}")
@@ -148,15 +149,15 @@ def get_list_as_list(kh, obj, **kwargs):
 		maxlen = 0
 		for column in paths:
 			tmp = deep_get(obj, column)
-			if type(tmp) == list:
+			if isinstance(tmp, list):
 				maxlen = max(len(tmp), maxlen)
 		for i in range(0, maxlen):
 			item = []
 			for column in paths:
 				tmp = deep_get(obj, column)
-				if type(tmp) == str:
+				if isinstance(tmp, str):
 					item.append(tmp)
-				elif type(tmp) == list:
+				elif isinstance(tmp, list):
 					if len(tmp) > i:
 						item.append(tmp[i])
 					else:
@@ -178,17 +179,18 @@ def get_list_fields(kh, obj, **kwargs):
 			for i in range(0, len(fields)):
 				field = fields[i]
 				default = ""
-				if type(field) == dict:
+				if isinstance(field, dict):
 					default = deep_get(field, "default", "")
 					field = deep_get(field, "name")
 				_value = deep_get(item, field, default)
-				if type(_value) == list or (i < len(fields) and i < len(override_types) and override_types[i] == "list"):
+				if isinstance(_value, list) or (i < len(fields) and i < len(override_types) and override_types[i] == "list"):
 					value = ", ".join(_value)
-				elif type(_value) == dict or (i < len(fields) and i < len(override_types) and override_types[i] == "dict"):
+				elif isinstance(_value, dict) or (i < len(fields) and i < len(override_types) and override_types[i] == "dict"):
 					value = ", ".join(f"{key}:{val}" for (key, val) in _value.items())
-				elif type(_value) in [int, float, bool] or (i < len(fields) and i < len(override_types) and override_types[i] == "str"):
+				# We don't need to check for bool, since it's a subclass of int
+				elif isinstance(_value, (int, float)) or (i < len(fields) and i < len(override_types) and override_types[i] == "str"):
 					value = str(_value)
-				elif type(_value) == str:
+				elif isinstance(_value, str):
 					if i < len(fields) and i < len(override_types) and override_types[i] == "timestamp":
 						if _value is None:
 							value = "<unset>"
@@ -241,14 +243,14 @@ def get_pod_affinity(kh, obj, **kwargs):
 			selectors = ""
 			for item in deep_get(obj, f"spec#affinity#{atype}#{policy}", []):
 				topology = ""
-				if type(item) == dict:
+				if isinstance(item, dict):
 					items = [item]
-				elif type(item) == str:
+				elif isinstance(item, str):
 					items = deep_get(obj, f"spec#affinity#{atype}#{policy}#{item}", [])
 
 				for selector in items:
 					weight = deep_get(selector, f"weight", "")
-					if type(weight) == int:
+					if isinstance(weight, int):
 						weight = f"/{weight}"
 					topology = deep_get(selector, f"topologyKey", "")
 					# We're combining a few different policies, so the expressions can be in various places; not simultaneously though
@@ -434,13 +436,14 @@ def get_volume_properties(kh, obj, **kwargs):
 		default = deep_get(properties, f"{volume_property}#default", "")
 		path = deep_get(properties, f"{volume_property}#path", "")
 		value = deep_get(obj, f"spec#{pv_type}#{path}", default)
-		if type(value) == list:
+		if isinstance(value, list):
 			value = ",".join(value)
-		elif type(value) == dict:
+		elif isinstance(value, dict):
 			value = ",".join(f"{key}:{val}" for (key, val) in value.items())
-		elif type(value) in [int, float, bool]:
+		# We don't need to check for bool, since it's a subclass of int
+		elif isinstance(value, (int, float)):
 			value = str(value)
-		elif type(value) == str:
+		elif isinstance(value, str):
 			value = value
 		else:
 			raise Exception(f"Unhandled type {type(value)} for {field}={value}")

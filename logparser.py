@@ -2337,7 +2337,7 @@ def init_parser_list():
 			parser_files.append(os.path.join(parser_dir, filename))
 
 	for parser_file in parser_files:
-		with open(parser_file, "r") as f:
+		with open(parser_file, "r", encoding = "utf-8") as f:
 			try:
 				d = yaml.safe_load(f)
 			except yaml.parser.ParserError:

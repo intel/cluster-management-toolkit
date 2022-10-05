@@ -293,7 +293,7 @@ def remove_groups(options = [], args = None):
 
 def get_cluster_name():
 	if os.path.exists(f"{HOMEDIR}/.kube/config"):
-		with open(f"{HOMEDIR}/.kube/config", "r") as f:
+		with open(f"{HOMEDIR}/.kube/config", "r", encoding = "utf-8") as f:
 			d1 = yaml.safe_load(f)
 	else:
 		return None
@@ -353,7 +353,7 @@ def rebuild_inventory(options = [], args = None):
 
 	# Finally import the hostkey into authorized_keys
 	pubkey = None
-	with open(f"{HOMEDIR}/.ssh/id_ecdsa.pub", "r") as f:
+	with open(f"{HOMEDIR}/.ssh/id_ecdsa.pub", "r", encoding = "utf-8") as f:
 		tmp = f.readlines()
 		if tmp is not None and len(tmp) > 0:
 			pubkey = tmp[0]

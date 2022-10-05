@@ -164,7 +164,7 @@ def populate_playbooks_from_paths(paths):
 
 		playbookname = tmp[1]
 		description = None
-		with open(playbookpath) as f:
+		with open(playbookpath, encoding = "utf-8") as f:
 			d = yaml.safe_load(f)
 			description = [(deep_get(d[0], "vars#metadata#description"), "play")]
 
@@ -409,7 +409,7 @@ def prepare_hosts(options, args):
 			sys.exit(errno.ENOENT)
 		else:
 			hosts_raw = None
-			with open(hostfile, "r") as f:
+			with open(hostfile, "r", encoding = "utf-8") as f:
 				hosts_raw = f.readlines()
 
 			if hosts_raw is None:
@@ -534,7 +534,7 @@ def add_nodes(options, args):
 			sys.exit(errno.ENOENT)
 		else:
 			hosts_raw = None
-			with open(hostfile, "r") as f:
+			with open(hostfile, "r", encoding = "utf-8") as f:
 				hosts_raw = f.readlines()
 
 			if hosts_raw is None:
@@ -628,7 +628,7 @@ def add_nodes(options, args):
 			sys.exit(errno.EINTR)
 		else:
 			ca_cert = ""
-			with open(ca_cert_path) as f:
+			with open(ca_cert_path, encoding = "utf-8") as f:
 				ca_cert = f.read()
 			ca_cert_hash = ""
 			if len(ca_cert) > 0:

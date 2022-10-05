@@ -16,7 +16,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 import iktlib
-from iktlib import deep_get, stgroup, stgroup_mapping
+from iktlib import deep_get, stgroup_mapping
 from logparser import loglevel, loglevel_to_name
 
 theme = {}
@@ -51,45 +51,41 @@ color = {
 __pairs = {
 }
 
+color_map = {
+	"black": curses.COLOR_BLACK,
+	"red": curses.COLOR_RED,
+	"green": curses.COLOR_GREEN,
+	"yellow": curses.COLOR_YELLOW,
+	"blue": curses.COLOR_BLUE,
+	"magenta": curses.COLOR_MAGENTA,
+	"cyan": curses.COLOR_CYAN,
+	"white": curses.COLOR_WHITE,
+}
+
 def get_theme_ref():
 	return theme
 
 def __color_name_to_curses_color(color, color_type):
-	if type(color) == list:
+	if isinstance(color, list):
 		col, attr = color
-		if type(attr) != str:
-			raise ValueError(f"Invalid color attribute used in theme; attribute has to be a string and one of: normal, bright")
-		if type(col) == str:
+		if not isinstance(attr, str):
+			raise ValueError("Invalid color attribute used in theme; attribute has to be a string and one of: normal, bright")
+		if isinstance(col, str):
 			col = col.lower()
 	else:
 		col = color.lower()
 
-	if type(col) != str:
-		raise ValueError(f"Invalid color type used in theme; color has to be a string and one of: black, red, green, yellow, blue, magenta, cyan, white")
+	if not isinstance(col, str):
+		raise ValueError(f"Invalid color type used in theme; color has to be a string and one of: {', '.join(color_map.keys())}")
 
 	if attr == "bright":
 		attr = 8
 	else:
 		attr = 0
 
-	if col == "black":
-		color = curses.COLOR_BLACK
-	elif col == "red":
-		color = curses.COLOR_RED
-	elif col == "green":
-		color = curses.COLOR_GREEN
-	elif col == "yellow":
-		color = curses.COLOR_YELLOW
-	elif col == "blue":
-		color = curses.COLOR_BLUE
-	elif col == "magenta":
-		color = curses.COLOR_MAGENTA
-	elif col == "cyan":
-		color = curses.COLOR_CYAN
-	elif col == "white":
-		color = curses.COLOR_WHITE
-	else:
-		raise ValueError(f"Invalid {color_type} color {col} used in theme; valid colors are: black, red, green, yellow, blue, magenta, cyan, white")
+	color = deep_get(color_map, col)
+	if color is None:
+		raise ValueError(f"Invalid {color_type} color {col} used in theme; valid colors are: {', '.join(color_map.keys())}")
 	return color + attr
 
 def __convert_color_pair(color_pair):
@@ -108,7 +104,7 @@ def init_pair(pair, color_pair, color_nr):
 		curses.init_pair(color_nr, fg, bg)
 		if fg == bg:
 			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
-	except Exception as e:
+	except (curses.error, ValueError) as e:
 		if str(e) in ["init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."]:
 			# Most likely we failed due to the terminal only
 			# supporting colours 0-7. If "bright black" was
@@ -118,7 +114,7 @@ def init_pair(pair, color_pair, color_nr):
 				fg = curses.COLOR_BLUE
 				bright_black_remapped = True
 			if fg & 7 == bg & 7:
-				raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg}; bright black remapped: {bright_black_remapped})")
+				raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg}; bright black remapped: {bright_black_remapped})") from e
 			curses.init_pair(color_nr, fg & 7, bg & 7)
 		else:
 			raise
@@ -136,22 +132,32 @@ def read_theme(configthemefile, defaultthemefile):
 		print(f"{os.path.basename(sys.argv[0])}: couldn't load theme “{themefile}”; exiting.", file = sys.stderr)
 		sys.exit(errno.ENOENT)
 
-	with open(themefile) as f:
+	with open(themefile, encoding = "utf-8") as f:
 		theme = yaml.safe_load(f)
 
 def init_curses():
 	color_last = 1
 
 	# First we set the colour palette
-	if "colors" in theme:
-		for col, curses_col in [("black", curses.COLOR_BLACK), ("red", curses.COLOR_RED), ("green", curses.COLOR_GREEN), ("yellow", curses.COLOR_YELLOW), ("blue", curses.COLOR_BLUE), ("magenta", curses.COLOR_MAGENTA), ("cyan", curses.COLOR_CYAN), ("white", curses.COLOR_WHITE)]:
-			r, g, b = theme["colors"][col]
+	for col, curses_col in color_map.items():
+		rgb = deep_get(theme, f"colors#{col}")
+		if rgb is None:
+			continue
+		r, g, b = rgb
+		try:
 			curses.init_color(curses_col, r, g, b)
+		except curses.error as e:
+			if str(e) == "init_extended_color() returned ERR":
+			# Most likely remapping the palette isn't supported (16-color xterm?);
+			# just ignore the remap attempt
+				pass
+			else:
+				raise
 
 	# Next we need to define all necessary colour pairs;
 	# most of them come in selected and unselected variants
 	for pair in theme["color_pairs_curses"]:
-		if type(theme["color_pairs_curses"][pair]) == list:
+		if isinstance(theme["color_pairs_curses"][pair], list):
 			unselected = __convert_color_pair(theme["color_pairs_curses"][pair])
 			selected = unselected
 		else:
@@ -367,6 +373,8 @@ def percentagebar(win, y, minx, maxx, total, subsets):
 	return win
 
 def __notification(stdscr, y, x, message, formatting):
+	del stdscr
+
 	height = 3
 	width = 2 + len(message)
 	ypos = y - height // 2
@@ -447,12 +455,13 @@ def inputwrapper(keypress):
 	if keypress == 27:	# ESCAPE
 		ignoreinput = True
 		return 7
-	else:
-		return keypress
+	return keypress
 
 # Show a one line high pad the width of the current pad with a border
 # and specified title in the middle of the screen
 def inputbox(stdscr, y, x, height, width, title):
+	del height
+
 	# Show the cursor
 	curses.curs_set(True)
 
@@ -460,7 +469,7 @@ def inputbox(stdscr, y, x, height, width, title):
 	ignoreinput = False
 
 	win = curses.newwin(3, width, y, x)
-	col, __discard = attr_to_curses("windowwidget", "boxdrawing")
+	col, _discard = attr_to_curses("windowwidget", "boxdrawing")
 	win.attrset(col)
 	win.clear()
 	_ls = theme["boxdrawing"].get("vline_left", curses.ACS_VLINE)
@@ -508,7 +517,8 @@ def confirmationbox(stdscr, y, x, title = "", default = False):
 	ignoreinput = False
 	retval = default
 
-	question = "Are you sure [%s]: " % ("Y/n" if default else "y/N")
+	default_option = "Y/n" if default else "y/N"
+	question = f"Are you sure [{default_option}]: "
 	height = 3
 	width = 2 + max(len(question), len(title))
 	ypos = y - height // 2
@@ -537,14 +547,18 @@ def confirmationbox(stdscr, y, x, title = "", default = False):
 		c = stdscr.getch()
 		if c == 27:	# ESCAPE
 			break
-		elif c == ord(""):
+
+		if c == ord(""):
 			sys.exit()
-		elif c == curses.KEY_ENTER or c == 10 or c == 13:
+
+		if c in [curses.KEY_ENTER, 10, 13]:
 			break
-		elif c == ord("y") or c == ord("Y"):
+
+		if c in [ord("y"), ord("Y")]:
 			retval = True
 			break
-		elif c == ord("n") or c == ord("N"):
+
+		if c in [ord("n"), ord("N")]:
 			retval = False
 			break
 
@@ -566,6 +580,8 @@ def move_yoffset_rel(yoffset, maxyoffset, movement):
 	return yoffset
 
 def move_cur_with_offset(curypos, listlen, yoffset, maxcurypos, maxyoffset, movement, wraparound = False):
+	del listlen
+
 	newcurypos = curypos + movement
 	newyoffset = yoffset
 
@@ -610,11 +626,11 @@ def addstr(win, string, y = -1, x = -1, attribute = curses.A_NORMAL):
 
 def addarray(win, array, y = -1, x = -1):
 	# This way we can print a single (string, attr) too
-	if type(array) == tuple:
+	if isinstance(array, tuple):
 		array = [array]
 
 	for string, attr in array:
-		if type(attr) == tuple:
+		if isinstance(attr, tuple):
 			raise TypeError(f"addarray() called with attr: {attr} (type: tuple); must be integer")
 		y, x = addstr(win, string, y, x, attr)
 	return y, x
@@ -628,7 +644,7 @@ def addarray(win, array, y = -1, x = -1):
 # (context, theme_ref, selected),
 def addthemearray(win, array, y = -1, x = -1, selected = False):
 	for item in array:
-		if type(item) != tuple:
+		if not isinstance(item, tuple):
 			raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
 
 		if len(item) == 3:
@@ -637,7 +653,7 @@ def addthemearray(win, array, y = -1, x = -1, selected = False):
 			_p1, _p2 = item
 			_selected = selected
 
-		if type(_p2) == tuple:
+		if isinstance(_p2, tuple):
 			string = _p1
 			if len(_p2) == 3:
 				context, _p3, _selected = _p2
@@ -653,7 +669,7 @@ def addthemearray(win, array, y = -1, x = -1, selected = False):
 			attr = _p2
 			y, x = addstr(win, string, y, x, attr)
 		else:
-			if type(_p1) == tuple:
+			if isinstance(_p1, tuple):
 				context, attr_ref = _p1
 				_selected = _p2
 			else:
@@ -674,9 +690,9 @@ class widgetlineattrs:
 	INVALID = 8		# Invalid items are not selectable; to be used for parse error etc.
 
 def __attr_to_curses(attr, selected = False):
-	if type(attr) == list:
+	if isinstance(attr, list):
 		col, attr = attr
-		if type(attr) == str:
+		if isinstance(attr, str):
 			attr = [attr]
 		else:
 			attr = list(attr)
@@ -699,8 +715,8 @@ def __attr_to_curses(attr, selected = False):
 
 	try:
 		key = color[col][selected]
-	except KeyError:
-		raise KeyError(f"__attr_to_curses: (color: {col}, selected: {selected}) not found")
+	except KeyError as e:
+		raise KeyError(f"__attr_to_curses: (color: {col}, selected: {selected}) not found") from e
 	return key, attr
 
 def __attr_to_curses_merged(attr, selected = False):
@@ -713,7 +729,7 @@ def attr_to_curses(context, attr, selected = False):
 	# the colour lookup table, or a list, in which case the first entry is the colour,
 	# and the second entry is a curses attribute; recognised attributes (dim, normal, bold, underline)
 	attr = theme[context][attr]
-	if type(attr) == dict:
+	if isinstance(attr, dict):
 		if selected == True:
 			attr = attr["selected"]
 		else:
@@ -726,7 +742,7 @@ def attr_to_curses_merged(context, attr, selected = False):
 	# the colour lookup table, or a list, in which case the first entry is the colour,
 	# and the second entry is a curses attribute; recognised attributes (dim, normal, bold, underline)
 	attr = theme[context][attr]
-	if type(attr) == dict:
+	if isinstance(attr, dict):
 		if selected == True:
 			attr = attr["selected"]
 		else:
@@ -739,34 +755,34 @@ def themearray_to_string(themearray):
 	string = ""
 
 	for fragment in themearray:
-		if type(fragment) != tuple:
-			raise ValueError(f"themearray_to_string() called with an invalid themearray: \"{themearray}\"; element: \"{fragment}\" has invalid type {type(fragment)}; expected tuple")
+		if not isinstance(fragment, tuple):
+			raise ValueError(f"themearray_to_string() called with an invalid themearray: “{themearray}“; element: “{fragment}“ has invalid type {type(fragment)}; expected tuple")
 		# (string, attributes)
-		if type(fragment[0]) == str and type(fragment[1]) == int:
+		if isinstance(fragment[0], str) and type(fragment[1]) == int:
 			string += fragment[0]
 		# (context, string)
 		# (context, string, selected)
-		elif type(fragment[0]) == str and type(fragment[1]) == str and (len(fragment) == 2 or len(fragment) == 3 and type(fragment[2]) == bool):
+		elif isinstance(fragment[0], str) and isinstance(fragment[1], str) and (len(fragment) == 2 or len(fragment) == 3 and isinstance(fragment[2], bool)):
 			themed_tuple = deep_get(theme, f"{fragment[0]}#{fragment[1]}")
 			if themed_tuple is None:
-				raise KeyError(f"The theme key-pair context: \"{fragment[0]}\", key: \"{fragment[1]}\" does not exist")
+				raise KeyError(f"The theme key-pair context: “{fragment[0]}“, key: “{fragment[1]}“ in the themearray “{themearray}“ does not exist")
 			string += themed_tuple[0][0]
 		# ((string, (context, theme)), selected)
-		elif type(fragment[0]) == tuple and type(fragment[1]) == bool:
+		elif isinstance(fragment[0], tuple) and isinstance(fragment[1], bool):
 			# ((context, string), selected)
-			if type(fragment[0][1]) == str:
+			if isinstance(fragment[0][1], str):
 				themed_tuple = deep_get(theme, f"{fragment[0][0]}#{fragment[0][1]}")
 				if themed_tuple is None:
-					raise KeyError(f"The theme key-pair context: \"{fragment[0][0]}\", key: \"{fragment[0][1]}\" does not exist")
+					raise KeyError(f"The theme key-pair context: “{fragment[0][0]}“, key: “{fragment[0][1]}“ does not exist")
 				string += themed_tuple[0][0]
 			# ((string, (context, theme)), selected)
 			else:
 				string += fragment[0][0]
 		# (string, (context, theme))
-		elif type(fragment[0]) == str and type(fragment[1]) == tuple:
+		elif isinstance(fragment[0], str) and isinstance(fragment[1], tuple):
 			string += fragment[0]
 		else:
-			raise ValueError(f"themearray_to_string() called with invalid themearray: \"{themearray}\"; cannot parse element: \"{fragment}\"")
+			raise ValueError(f"themearray_to_string() called with invalid themearray: “{themearray}“; cannot parse element: “{fragment}“")
 	return string
 
 # XXX: If we ever turn themearray to a proper object reuse this
@@ -787,9 +803,9 @@ def themearray_to_strarray(key, context = "main", selected = False):
 def strarray_extract_string(strarray):
 	string = ""
 	for _string, _attr in strarray:
-		if type(_string) == str and type(_attr) == str:
+		if isinstance(_string, str) and isinstance(_attr, str):
 			tmp = theme[_string][_attr][0]
-			if type(tmp) == list:
+			if isinstance(tmp, list):
 				tmp = tmp[0]
 			string += tmp
 		else:
@@ -813,7 +829,7 @@ def strarray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
 		linebreaklen = 0
 
 	while True:
-		if type(_strarray[i]) == tuple and len(_strarray[i]) == 2 and type(_strarray[i][1]) == str:
+		if isinstance(_strarray[i], tuple) and len(_strarray[i]) == 2 and isinstance(_strarray[i][1], str):
 			_strarray[i] = themearray_to_strarray(_strarray[i][1], _strarray[i][0])[0]
 		_string, _attr = _strarray[i]
 
@@ -824,9 +840,10 @@ def strarray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
 			tmpstrarray = []
 			tmplen = 0
 			break
+
 		# If this fragment fits (and we need room for a linebreak character),
 		# add it and continue
-		elif len(_string) + tmplen < (maxwidth - linebreaklen):
+		if len(_string) + tmplen < (maxwidth - linebreaklen):
 			tmpstrarray.append((_string, _attr))
 			tmplen += len(_string)
 			i += 1
@@ -853,11 +870,11 @@ def themearray_extract_string(key, context = "main", selected = False):
 def themearray_get_string(themearray):
 	string = ""
 
-	if type(themearray) == tuple:
+	if isinstance(themearray, tuple):
 		themearray = [themearray]
 
 	# If this is just a string, return it
-	if type(themearray) == str:
+	if isinstance(themearray, str):
 		string = themearray
 	else:
 		for item in themearray:
@@ -866,13 +883,13 @@ def themearray_get_string(themearray):
 			# item being a tuple, it's a themed string
 			_p1, _p2 = item
 			if len(item) == 2:
-				if type(_p1) == str:
-					if type(_p2) == str:
+				if isinstance(_p1, str):
+					if isinstance(_p2, str):
 						string += themearray_extract_string(_p2, context = _p1)
-					elif type(_p2) == tuple:
+					elif isinstance(_p2, tuple):
 						string += _p1
 				else:
-					raise Exception("type(item)={type(item)\nlen(item)={len(item)}\nitem={item}")
+					raise Exception(f"type(item)={type(item)}\nlen(item)={len(item)}\nitem={item}")
 
 	return string
 
@@ -899,8 +916,8 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 	listpadheight = len(items)
 
 	# This is only used by helptexts
-	if type(items[0]) != dict:
-		if type(items[0][0]) != int:
+	if not isinstance(items[0], dict):
+		if not type(items[0][0]) == int:
 			tmpitems = []
 			for item in items:
 				tmpitems.append({
@@ -924,9 +941,9 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 	if headers is not None:
 		if len(headers) != columns:
 			raise ValueError(f"Mismatch: Number of headers passed to windowwidget ({len(headers)}) does not match number of columns ({columns})")
-		else:
-			for i in range(0, columns):
-				lengths[i] = len(headers[i])
+
+		for i in range(0, columns):
+			lengths[i] = len(headers[i])
 
 	tagprefix = themearray_extract_string("tag", context = "separators")
 
@@ -1037,14 +1054,14 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			headerarray.append(((headers[i].ljust(lengths[i] + extrapad)), attr_to_curses_merged("windowwidget", "header")))
 
 	# Move to preselection
-	if type(preselection) == str:
+	if isinstance(preselection, str):
 		if preselection != "":
 			for y in range(0, len(items)):
 				if items[y]["columns"][0][0][0] == preselection:
 					curypos, yoffset = move_cur_with_offset(0, height, yoffset, maxcurypos, maxyoffset, y)
 					break
 		tagged_items = set()
-	elif type(preselection) == set:
+	elif isinstance(preselection, set):
 		tagged_items = preselection
 
 	while selection == None:
@@ -1101,8 +1118,8 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 
 			addthemearray(listpad, linearray, y = y, x = 0)
 
-		upperarrow, lowerarrow, vdragger = scrollbar_vertical(win, width - 1, scrollbarypos, height - 2, listpadheight, yoffset, attr_to_curses_merged("windowwidget", "boxdrawing"))
-		leftarrow, rightarrow, hdragger = scrollbar_horizontal(win, height - 1, 1, width - 2, listpadwidth, xoffset, attr_to_curses_merged("windowwidget", "boxdrawing"))
+		_upperarrow, _lowerarrow, _vdragger = scrollbar_vertical(win, width - 1, scrollbarypos, height - 2, listpadheight, yoffset, attr_to_curses_merged("windowwidget", "boxdrawing"))
+		_leftarrow, _rightarrow, _hdragger = scrollbar_horizontal(win, height - 1, 1, width - 2, listpadwidth, xoffset, attr_to_curses_merged("windowwidget", "boxdrawing"))
 
 		if headers is not None:
 			addthemearray(headerpad, headerarray, y = 0, x = 0)
@@ -1223,7 +1240,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -10)
 		elif c == curses.KEY_NPAGE:
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +10)
-		elif (c == curses.KEY_ENTER or c == 10 or c == 13) and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.UNSELECTABLE) == 0 and confirm == False:
+		elif c in [curses.KEY_ENTER, 10, 13] and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.UNSELECTABLE) == 0 and confirm == False:
 			if deep_get(items[yoffset + curypos], "retval") is None:
 				selection = items[yoffset + curypos]["columns"]
 			else:
@@ -1551,9 +1568,12 @@ class UIProps:
 		self.reset_update_delay()
 
 	def update_timestamp(self, ypos, xpos, ralign = False):
+		del ypos
+
 		_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
 		_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
-		lastupdatestr = "%s" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+		_lastupdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+		lastupdatestr = f"{_lastupdate}"
 		if ralign:
 			xpos -= len(lastupdatestr)
 			if self.borders == True:
@@ -1566,6 +1586,7 @@ class UIProps:
 	def draw_winheader(self):
 		_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
 		_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
+		_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
 		if self.windowheader != "":
 			winheaderarray = [("separators", "mainheader_prefix")]
 			winheaderarray.append((f"{self.windowheader}", ("main", "header")))
@@ -1904,19 +1925,19 @@ class UIProps:
 			x = curx
 		try:
 			win.addstr(y, x, string, attribute)
-		except Exception as e:
-			raise Exception(f"{e}\n  y: {y}\n  x: {x}\n  string: |{string}|\n  length: {len(string)}\n  attribute: {attribute}")
+		except TypeError as e:
+			raise TypeError(f"{e}\n  y: {y}\n  x: {x}\n  string: |{string}|\n  length: {len(string)}\n  attribute: {attribute}")
 
 		cury, curx = win.getyx()
 		return cury, curx
 
 	def addarray(self, win, array, y = -1, x = -1):
 		# This way we can print a single (string, attr) too
-		if type(array) == tuple:
+		if isinstance(array, tuple):
 			array = [array]
 
 		for string, attr in array:
-			if type(attr) == tuple:
+			if isinstance(attr, tuple):
 				raise TypeError(f"addarray() called with attr: {attr} (type: tuple); must be integer")
 			y, x = self.addstr(win, string, y, x, attr)
 		return y, x
@@ -1930,7 +1951,7 @@ class UIProps:
 	# (context, theme_ref, selected),
 	def addthemearray(self, win, array, y = -1, x = -1, selected = False):
 		for item in array:
-			if type(item) != tuple:
+			if not isinstance(item, tuple):
 				raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
 
 			if len(item) == 3:
@@ -1939,7 +1960,7 @@ class UIProps:
 				_p1, _p2 = item
 				_selected = selected
 
-			if type(_p2) == tuple:
+			if isinstance(_p2, tuple):
 				string = _p1
 				if len(_p2) == 3:
 					context, _p3, _selected = _p2
@@ -1955,7 +1976,7 @@ class UIProps:
 				attr = _p2
 				y, x = self.addstr(win, string, y, x, attr)
 			else:
-				if type(_p1) == tuple:
+				if isinstance(_p1, tuple):
 					context, attr_ref = _p1
 					_selected = _p2
 				else:
@@ -2032,8 +2053,6 @@ class UIProps:
 		elif newcurypos < self.mincurypos:
 			newyoffset = max(self.yoffset + (newcurypos - self.mincurypos), 0)
 			newcurypos = self.mincurypos
-		else:
-			newoffset = self.yoffset
 
 		self.curypos = newcurypos
 		self.yoffset = newyoffset
@@ -2211,7 +2230,7 @@ class UIProps:
 			if self.sortkey1 == "age" or self.sortkey1 == "seen":
 				tmp2 = [iktlib.seconds_to_age(tmp2)]
 			else:
-				if type(tmp2) in [list, tuple]:
+				if isinstance(tmp2, (list, tuple)):
 					tmp2 = map(str, tmp2)
 				else:
 					tmp2 = [str(tmp2)]
@@ -2240,7 +2259,7 @@ class UIProps:
 			if self.sortkey1 == "age" or self.sortkey1 == "seen":
 				tmp2 = [iktlib.seconds_to_age(tmp2)]
 			else:
-				if type(tmp2) in [list, tuple]:
+				if isinstance(tmp2, (list, tuple)):
 					tmp2 = map(str, tmp2)
 				else:
 					tmp2 = [str(tmp2)]
@@ -2279,7 +2298,8 @@ class UIProps:
 				first_match = y
 				match_count = 1
 				break
-			elif sorted_list[y].name.startswith(name):
+
+			if sorted_list[y].name.startswith(name):
 				if first_match == None:
 					first_match = y
 				match_count += 1
@@ -2335,15 +2355,16 @@ class UIProps:
 			for f in self.field_list:
 				valid_fields.append(f)
 			raise ValueError(f"Invalid sortcolumn: {self.sortcolumn} does not exist in field_list:\nvalid fields are: {valid_fields}")
-		else:
-			sortkey1 = self.field_list[self.sortcolumn]["sortkey1"]
-			sortkey2 = self.field_list[self.sortcolumn]["sortkey2"]
-			return sortkey1, sortkey2
+
+		sortkey1 = self.field_list[self.sortcolumn]["sortkey1"]
+		sortkey2 = self.field_list[self.sortcolumn]["sortkey2"]
+		return sortkey1, sortkey2
 
 	def handle_mouse_events(self, win, sorted_list, activatedfun, extraref, data):
 		try:
-			eventid, x, y, z, bstate = curses.getmouse()
-		except curses.error as e:
+			_eventid, x, y, _z, bstate = curses.getmouse()
+		except curses.error:
+			# Most likely mouse isn't supported
 			return False
 
 		if win == self.listpad:
@@ -2522,7 +2543,7 @@ class UIProps:
 			return retval.RETURNONE
 		elif c == curses.KEY_MOUSE:
 			return self.handle_mouse_events(self.listpad, self.sorted_list, self.activatedfun, self.extraref, self.data)
-		elif (c == curses.KEY_ENTER or c == 10 or c == 13) and self.activatedfun is not None:
+		elif c in [curses.KEY_ENTER, 10, 13] and self.activatedfun is not None:
 			return self.enter_handler(self.activatedfun, self.extraref, self.data)
 		elif c == ord("M"):
 			# Toggle mouse support on/off to allow for copy'n'paste
@@ -2606,8 +2627,7 @@ class UIProps:
 			if self.logpad is not None:
 				if self.continuous_log:
 					return retval.MATCH
-				else:
-					self.move_yoffset_abs(0)
+				self.move_yoffset_abs(0)
 			elif self.listpad is not None:
 				self.move_cur_abs(0)
 			return retval.MATCH
@@ -2615,8 +2635,7 @@ class UIProps:
 			if self.logpad is not None:
 				if self.continuous_log:
 					return retval.MATCH
-				else:
-					self.move_yoffset_abs(-1)
+				self.move_yoffset_abs(-1)
 			elif self.listpad is not None:
 				self.move_cur_abs(-1)
 			return retval.MATCH
@@ -2674,7 +2693,7 @@ class UIProps:
 				if self.listpadheight < 2:
 					return retval.MATCH
 
-				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, "Search in '%s': " % (self.sortcolumn)).rstrip().lower()
+				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, f"Search in “{self.sortcolumn}“: ").rstrip().lower()
 				if searchkey is None or searchkey == "":
 					return retval.MATCH
 
@@ -2701,7 +2720,7 @@ class UIProps:
 				if self.listpadheight < 2:
 					return retval.MATCH
 
-				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, "Search in '%s': " % (self.sortcolumn)).rstrip().lower()
+				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, f"Search in “{self.sortcolumn}“: ").rstrip().lower()
 				if searchkey is None or searchkey == "":
 					return retval.MATCH
 

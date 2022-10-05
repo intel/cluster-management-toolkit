@@ -73,5 +73,5 @@ def init_iktprint(themefile):
 		print(f"Warning: themefile ”{themefile}” does not exist", file = sys.stderr)
 		return
 
-	with open(themefile) as f:
+	with open(themefile, encoding = "utf-8") as f:
 		theme = yaml.safe_load(f)
