@@ -13,17 +13,22 @@ def __str_representer(dumper, data):
 	return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
 def format_none(lines, **kwargs):
+	del kwargs
+
 	dumps = []
 
-	if type(lines) == str:
+	if isinstance(lines, str):
 		lines = split_msg(lines)
 
 	for line in lines:
 		dumps.append([(line, ("types", "generic"))])
 	return dumps
 
-def format_yaml_line(line, override_formatting = {}):
-	if type(override_formatting) == dict:
+def format_yaml_line(line, override_formatting = None):
+	if override_formatting is None:
+		override_formatting = {}
+
+	if isinstance(override_formatting, dict):
 		# Since we don't necessarily override all
 		# formatting we need to set defaults;
 		# doing it here instead of in the code makes
@@ -35,7 +40,7 @@ def format_yaml_line(line, override_formatting = {}):
 		list_format = ("separators", "yaml_list")
 		separator_format = ("types", "generic")
 		reference_format = ("types", "yaml_reference")
-	elif type(override_formatting) == tuple:
+	elif isinstance(override_formatting, tuple):
 		generic_format = override_formatting
 		comment_format = override_formatting
 		key_format = override_formatting
@@ -61,7 +66,7 @@ def format_yaml_line(line, override_formatting = {}):
 			return tmpline
 
 	if line.endswith(":"):
-		if type(override_formatting) == dict:
+		if isinstance(override_formatting, dict):
 			_key_format = deep_get(override_formatting, f"{line[:-1]}#key", key_format)
 		else:
 			_key_format = key_format
@@ -76,7 +81,7 @@ def format_yaml_line(line, override_formatting = {}):
 			reference = tmp[2]
 			separator = tmp[3]
 			value = tmp[4]
-			if type(override_formatting) == dict:
+			if isinstance(override_formatting, dict):
 				_key_format = deep_get(override_formatting, f"{key.strip()}#key", key_format)
 				if value.strip() in ["{", "["]:
 					_value_format = value_format
@@ -92,7 +97,7 @@ def format_yaml_line(line, override_formatting = {}):
 				(f"{value}", _value_format),
 			]
 		else:
-			if type(override_formatting) == dict:
+			if isinstance(override_formatting, dict):
 				_value_format = deep_get(override_formatting, f"{line}#value", value_format)
 			else:
 				_value_format = value_format
@@ -103,11 +108,14 @@ def format_yaml_line(line, override_formatting = {}):
 	return tmpline
 
 # Takes a list of yaml dictionaries and returns a single list of themearray
-def format_yaml(objects, override_formatting = {}, **kwargs):
+def format_yaml(objects, override_formatting = None, **kwargs):
+	if override_formatting is None:
+		override_formatting = {}
+
 	dumps = []
 	indent = deep_get(iktconfig, "Global#indent", 2)
 
-	if type(objects) == str:
+	if isinstance(objects, str):
 		objects = [objects]
 
 	generic_format = ("types", "generic")
@@ -119,7 +127,7 @@ def format_yaml(objects, override_formatting = {}, **kwargs):
 
 	for i in range(0, len(objects)):
 		obj = objects[i]
-		if type(obj) == dict:
+		if isinstance(obj, dict):
 			split_dump = yaml.dump(obj, default_flow_style = False, indent = indent, width = sys.maxsize).splitlines()
 		else:
 			split_dump = obj.splitlines()
@@ -175,7 +183,7 @@ def format_crt(lines, **kwargs):
 	if deep_get(kwargs, "raw", False) == True:
 		return format_none(lines)
 
-	if type(lines) == str:
+	if isinstance(lines, str):
 		lines = split_msg(lines)
 
 	for line in lines:
@@ -192,10 +200,8 @@ def format_caddyfile(lines, **kwargs):
 	if deep_get(kwargs, "raw", False) == True:
 		return format_none(lines)
 
-	if type(lines) == str:
+	if isinstance(lines, str):
 		lines = split_msg(lines)
-
-	i = 0
 
 	single_site = True
 	site = False
@@ -337,11 +343,10 @@ def format_nginx(lines, **kwargs):
 	if deep_get(kwargs, "raw", False) == True:
 		return format_none(lines)
 
-	if type(lines) == str:
+	if isinstance(lines, str):
 		lines = split_msg(lines)
 
 	key_regex = re.compile(r"^(\s*)(#.*$|}|\S+|$)(.+;|.+{|)(\s*#.*$|)")
-	tag_open_regex = re.compile(r"(\s*)(</|<!--|<\?|<)(.*)")
 
 	for line in lines:
 		dump = []
@@ -376,10 +381,10 @@ def format_nginx(lines, **kwargs):
 						(tmp[2], ("types", "nginx_key"))
 					]
 			if len(tmp[3]) > 0:
-					dump += [
-						(tmp[3][:-1], ("types", "nginx_value")),
-						(tmp[3][-1:], ("types", "generic")),	# block start / statement end
-					]
+				dump += [
+					(tmp[3][:-1], ("types", "nginx_value")),
+					(tmp[3][-1:], ("types", "generic")),	# block start / statement end
+				]
 			if len(tmp[4]) > 0:
 				dump += [
 					(tmp[4], ("types", "nginx_comment"))
@@ -399,7 +404,7 @@ def format_xml(lines, **kwargs):
 	if deep_get(kwargs, "raw", False) == True:
 		return format_none(lines)
 
-	if type(lines) == str:
+	if isinstance(lines, str):
 		lines = split_msg(lines)
 
 	escape_regex = re.compile(r"(\s*)(&)(.+?)(;)(.*)")
@@ -441,19 +446,20 @@ def format_xml(lines, **kwargs):
 						]
 						line = tmp[3]
 						continue
-					elif tmp[2] == "<!--":
+
+					if tmp[2] == "<!--":
 						comment = True
 						tmpline += [
 							(tmp[2], ("types", "xml_comment")),
 						]
 						line = tmp[3]
 						continue
-					else:
-						tmpline += [
-							(tmp[2], ("types", "xml_tag")),
-						]
-						line = tmp[3]
-						continue
+
+					tmpline += [
+						(tmp[2], ("types", "xml_tag")),
+					]
+					line = tmp[3]
+					continue
 
 				# Is this an escape?
 				tmp = escape_regex.match(line)
@@ -499,20 +505,21 @@ def format_xml(lines, **kwargs):
 							comment = False
 							tag_open = False
 						continue
-					elif tmp[2] == "?>":
+
+					if tmp[2] == "?>":
 						tmpline += [
 							(tmp[2], ("types", "xml_declaration")),
 						]
 						line = tmp[3]
 						tag_open = False
 						continue
-					else:
-						tmpline += [
-							(tmp[2], ("types", "xml_tag")),
-						]
-						line = tmp[3]
-						tag_open = False
-						continue
+
+					tmpline += [
+						(tmp[2], ("types", "xml_tag")),
+					]
+					line = tmp[3]
+					tag_open = False
+					continue
 
 				if tag_named == False and comment == False:
 					# Is this either "[<]tag", "[<]tag ", "[<]tag>" or "[<]tag/>"?
@@ -527,27 +534,27 @@ def format_xml(lines, **kwargs):
 				else:
 					# This *should* match all remaining cases
 					tmp = remainder_regex.match(line)
-					if tmp is not None:
-						if comment == True:
-							tmpline += [
-								(tmp[1], ("types", "xml_comment")),
-								(tmp[2], ("types", "xml_comment")),
-								(tmp[3], ("types", "xml_comment")),
-							]
-						else:
-							tmpline += [
-								(tmp[1], ("types", "xml_attribute_key")),
-							]
-
-							if len(tmp[2]) > 0:
-								tmpline += [
-									(tmp[2], ("types", "xml_content")),
-									(tmp[3], ("types", "xml_attribute_value")),
-								]
-						line = tmp[4] + tmp[5]
-						continue
-					else:
+					if tmp is None:
 						raise Exception(f"XML syntax highlighter failed to parse {line}")
+
+					if comment == True:
+						tmpline += [
+							(tmp[1], ("types", "xml_comment")),
+							(tmp[2], ("types", "xml_comment")),
+							(tmp[3], ("types", "xml_comment")),
+						]
+					else:
+						tmpline += [
+							(tmp[1], ("types", "xml_attribute_key")),
+						]
+
+						if len(tmp[2]) > 0:
+							tmpline += [
+								(tmp[2], ("types", "xml_content")),
+								(tmp[3], ("types", "xml_attribute_value")),
+							]
+					line = tmp[4] + tmp[5]
+					continue
 			if before == line:
 				raise Exception(f"XML syntax highlighter parse failure at line #{i + 1}:\n{lines}\nParsed fragments of line:\n{tmpline}\nUnparsed fragments of line:\n{line}")
 
@@ -572,7 +579,7 @@ def format_toml(lines, **kwargs):
 	if deep_get(kwargs, "raw", False) == True:
 		return format_none(lines)
 
-	if type(lines) == str:
+	if isinstance(lines, str):
 		lines = split_msg(lines)
 
 	key_value_regex = re.compile(r"^(\s*?)(.*)(\s*?=\s*?)(.*)")
@@ -600,46 +607,45 @@ def format_toml(lines, **kwargs):
 			]
 			dumps.append(tmpline)
 			continue
-		elif line.lstrip().startswith("[") and line.rstrip(" ").endswith("]"):
+
+		if line.lstrip().startswith("[") and line.rstrip(" ").endswith("]"):
 			tmpline += [
 				(line, ("types", "toml_table")),
 			]
 
 			dumps.append(tmpline)
 			continue
-		else:
-			tmp = key_value_regex.match(line)
-			if tmp is not None:
-				indentation = tmp[1]
-				key = tmp[2]
-				separator = tmp[3]
-				value = tmp[4]
-				if value.rstrip(" ").endswith("\"\"\""):
-					multiline_basic = True
-				elif value.rstrip(" ").endswith("'''"):
-					multiline_literal = True
+
+		tmp = key_value_regex.match(line)
+		if tmp is not None:
+			indentation = tmp[1]
+			key = tmp[2]
+			separator = tmp[3]
+			value = tmp[4]
+			if value.rstrip(" ").endswith("\"\"\""):
+				multiline_basic = True
+			elif value.rstrip(" ").endswith("'''"):
+				multiline_literal = True
+			else:
+				# Does this line end with a comment?
+				tmp = comment_end_regex.match(value)
+				if tmp is not None:
+					value = tmp[1]
+					comment = tmp[2]
 				else:
-					# Does this line end with a comment?
-					tmp = comment_end_regex.match(value)
-					if tmp is not None:
-						value = tmp[1]
-						comment = tmp[2]
-					else:
-						comment = ""
+					comment = ""
+			tmpline += [
+				(f"{indentation}", ("types", "generic")),
+				(f"{key}", ("types", "toml_key")),
+				(f"{separator}", ("types", "toml_key_separator")),
+				(f"{value}", ("types", "toml_value")),
+			]
+			if len(comment) > 0:
 				tmpline += [
-					(f"{indentation}", ("types", "generic")),
-					(f"{key}", ("types", "toml_key")),
-					(f"{separator}", ("types", "toml_key_separator")),
-					(f"{value}", ("types", "toml_value")),
+					(f"{comment}", ("types", "toml_comment")),
 				]
-				if len(comment) > 0:
-					tmpline += [
-						(f"{comment}", ("types", "toml_comment")),
-					]
-				dumps.append(tmpline)
-
-
-			# dumps.append([(line, ("types", "generic"))])
+			dumps.append(tmpline)
+		# dumps.append([(line, ("types", "generic"))])
 	return dumps
 
 def format_fluentbit(lines, **kwargs):
@@ -648,7 +654,7 @@ def format_fluentbit(lines, **kwargs):
 	if deep_get(kwargs, "raw", False) == True:
 		return format_none(lines)
 
-	if type(lines) == str:
+	if isinstance(lines, str):
 		lines = split_msg(lines)
 
 	key_value_regex = re.compile(r"^(\s*)(\S*)(\s*)(.*)")
@@ -690,7 +696,7 @@ def format_ini(lines, **kwargs):
 	if deep_get(kwargs, "raw", False) == True:
 		return format_none(lines)
 
-	if type(lines) == str:
+	if isinstance(lines, str):
 		lines = split_msg(lines)
 
 	key_value_regex = re.compile(r"^(\s*?)(.*)(\s*?=\s*?)(.*)")

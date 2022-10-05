@@ -1,14 +1,19 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.6)
+
+import errno
 from functools import partial
 import hashlib
 import os
-import paramiko
 from pathlib import Path
 import re
+import shutil
+import socket
 import sys
 import tarfile
 import tempfile
+
+import paramiko
 
 try:
 	import urllib3
@@ -20,11 +25,13 @@ from iktlib import deep_get, iktconfig
 
 from iktprint import iktprint
 
+HOMEDIR = str(Path.home())
+
 def which(commandname):
 	cpath = None
 
 	# Did we get a full path, or just a command name?
-	fpath, fname = os.path.split(commandname)
+	fpath, _fname = os.path.split(commandname)
 
 	# If we got a path we just verify whether commandname
 	# exists and is executable
@@ -32,16 +39,35 @@ def which(commandname):
 		tmp = commandname
 	else:
 		# If not we check if there's a command by this name in path
-		tmp = shutils.which(commandname)
+		tmp = shutil.which(commandname)
 
 	if os.path.isfile(tmp) and os.access(tmp, os.X_OK):
 		cpath = tmp
 
 	return cpath
 
+def mkdir_if_not_exists(directory, verbose = False):
+	if not os.path.exists(directory):
+		if verbose == True:
+			iktprint([("mkdir ", "programname"), (f"{directory}", "path")])
+		os.mkdir(directory)
+
+def copy_if_not_exists(src, dst, verbose = False):
+	if not os.path.exists(dst):
+		if verbose == True:
+			iktprint([("cp ", "programname"), (f"{src} ", "path"), (f"{dst}", "path")])
+		shutil.copy2(src, dst)
+
+def replace_symlink(src, dst, verbose = False):
+	if verbose == True:
+		iktprint([("ln ", "programname"), ("-s ", "option"), (f"{src} ", "path"), (f"{dst}", "path")])
+	if os.path.islink(dst):
+		os.remove(dst)
+	os.symlink(src, dst)
+
 def get_local_hostname():
 	try:
-		with open("/etc/hostname", "r") as f:
+		with open("/etc/hostname", "r", encoding = "utf-8") as f:
 			hostname = f.readline().strip()
 	except FileNotFoundError:
 		iktprint([("Critical: ", "critical"), (" “", "default"), ("/etc/hostname", "path"), ("“ not found; aborting.", "default")], stderr = True)
@@ -70,13 +96,12 @@ def scan_and_add_ssh_keys(hosts):
 		except socket.gaierror as e:
 			if str(e) in ["[Errno -3] Temporary failure in name resolution", "[Errno -2] Name or service not known"]:
 				continue
-			else:
-				raise socket.gaierror(f"{str(e)}\nhost: {host}")
+			raise socket.gaierror(f"{str(e)}\nhost: {host}")
 		try:
 			transport.connect()
 			key = transport.get_remote_server_key()
 			transport.close()
-		except SSHException:
+		except paramiko.SSHException:
 			iktprint([("Error:", "error"), (" Failed to get server key from remote host ", "default"), (host, "hostname"), ("; aborting.", "default")], stderr = True)
 			sys.exit(errno.EIO)
 
@@ -110,8 +135,6 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 		m = hashlib.blake2b()
 	elif checksum_type in ["blake2s"]:
 		m = hashlib.blake2s()
-	elif checksum_type in ["sha3"]:
-		m = hashlib.sha3()
 	elif checksum_type in ["sha3_224"]:
 		m = hashlib.sha3_224()
 	elif checksum_type in ["sha3_256"]:
@@ -136,20 +159,21 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 	match_checksum = None
 
 	for line in checksum.decode("utf-8").splitlines():
-		if filename is not None:
-			tmp = regex.match(line)
-			if tmp is not None:
-				if tmp[2] != filename:
-					continue
-				match_checksum = tmp[1]
-				break
-		else:
+		if filename is None:
 			match_checksum = line
+			break
+
+		tmp = regex.match(line)
+		if tmp is not None:
+			if tmp[2] != filename:
+				continue
+			match_checksum = tmp[1]
 			break
 
 	if match_checksum is None:
 		return False
-	elif m.hexdigest() != match_checksum:
+
+	if m.hexdigest() != match_checksum:
 		return False
 
 	return True
@@ -222,19 +246,18 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 					continue
 
 			if tarfile.is_tarfile(dl.name) == True:
-				with tempfile.TemporaryDirectory() as td:
-					with tarfile.open(dl.name, "r") as tf:
-						members = tf.getnames()
-						if filename not in members:
-							iktprint([("Critical: ", "critical"), (f"{filename} is not a part of archive; aborting.", "default")], stderr = True)
-							sys.exit(errno.ENOENT)
+				with tarfile.open(dl.name, "r") as tf:
+					members = tf.getnames()
+					if filename not in members:
+						iktprint([("Critical: ", "critical"), (f"{filename} is not a part of archive; aborting.", "default")], stderr = True)
+						sys.exit(errno.ENOENT)
 
-						tdt = tempfile.NamedTemporaryFile(delete = False)
-						with open(tdt.name, "wb", opener = partial(os.open, mode = 0o600)) as tdf:
-							with tf.extractfile(filename) as tff:
-								tdf.write(tff.read())
-						os.chmod(tdt.name, permissions)
-						os.rename(tdt.name, f"{directory}/{filename}")
+					tdt = tempfile.NamedTemporaryFile(delete = False)
+					with open(tdt.name, "wb", opener = partial(os.open, mode = 0o600)) as tdf:
+						with tf.extractfile(filename) as tff:
+							tdf.write(tff.read())
+					os.chmod(tdt.name, permissions)
+					os.rename(tdt.name, f"{directory}/{filename}")
 				os.remove(dl.name)
 			else:
 				os.chmod(dl.name, permissions)

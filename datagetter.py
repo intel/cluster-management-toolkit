@@ -3,10 +3,65 @@
 
 import re
 
-from iktlib import deep_get, stgroup
+from iktlib import deep_get, deep_get_with_fallback, stgroup, timestamp_to_datetime
 from kubernetes_helper import get_node_status
 
+def get_container_status(src_statuses, container):
+	reason = "UNKNOWN"
+	status_group = stgroup.UNKNOWN
+	restarts = 0
+	message = ""
+	age = -1
+
+	if src_statuses is None:
+		return reason, status_group, -1, message, -1
+
+	for container_status in src_statuses:
+		if deep_get(container_status, "name") == container:
+			restarts = deep_get(container_status, "restartCount")
+			running = deep_get(container_status, "state#running")
+			ts = deep_get_with_fallback(container_status, ["state#terminated#finishedAt", "lastState#terminated#finishedAt", "state#running#startedAt"], None)
+			age = timestamp_to_datetime(ts)
+
+			if deep_get(container_status, "ready") == False:
+				status_group = stgroup.NOT_OK
+
+				if running is not None:
+					reason = "Running"
+				elif deep_get(container_status, "state#terminated") is not None:
+					reason = deep_get(container_status, "state#terminated#reason", "ErrNotSet")
+					if deep_get(container_status, "state#terminated#exitCode") == 0:
+						status_group = stgroup.DONE
+
+					if deep_get(container_status, "state#terminated#message") is not None:
+						message = deep_get(container_status, "state#terminated#message", "").rstrip()
+				else:
+					reason = deep_get(container_status, "state#waiting#reason", "").rstrip()
+
+					if deep_get(container_status, "state#waiting#message") is not None:
+						message = deep_get(container_status, "state#waiting#message", "").rstrip()
+			else:
+				if running is None:
+					reason = deep_get(container_status, "state#terminated#reason", "").rstrip()
+
+					if deep_get(container_status, "state#terminated#message") is not None:
+						message = deep_get(container_status, "state#terminated#message", "").rstrip()
+
+					if deep_get(container_status, "state#terminated#exitCode") == 0:
+						status_group = stgroup.DONE
+					else:
+						status_group = stgroup.NOT_OK
+				else:
+					reason = "Running"
+					status_group = stgroup.OK
+			break
+
+	return reason, status_group, restarts, message, age
+
 def datagetter_container_status(kh, obj, path, default):
+	del kh
+	del path
+
 	if obj is None:
 		return default
 	status = deep_get(obj, "status")
@@ -31,12 +86,17 @@ def get_endpointslices_endpoints(obj):
 	return endpoints
 
 def datagetter_eps_endpoints(kh, obj, path, default):
+	del kh
+	del path
+
 	if obj is None:
 		return default
 
 	return get_endpointslices_endpoints(obj), {}
 
 def datagetter_metrics(kh, obj, path, default):
+	del kh
+
 	if obj is None or path is None:
 		return default
 
@@ -94,12 +154,17 @@ def get_endpoint_endpoints(subsets):
 	return endpoints
 
 def datagetter_endpoint_ips(kh, obj, path, default):
+	del kh
+	del default
+
 	subsets = deep_get(obj, path)
 	endpoints = get_endpoint_endpoints(subsets)
 	return endpoints, {}
 
 # Only for internal types for the time being
 def datagetter_regex_split_to_tuples(kh, obj, paths, default):
+	del kh
+
 	if obj is None or paths is None or len(paths) < 2:
 		return default
 
@@ -108,7 +173,7 @@ def datagetter_regex_split_to_tuples(kh, obj, paths, default):
 
 	list_fields = []
 
-	if type(paths[1]) == str:
+	if isinstance(paths[1], str):
 		for item in deep_get(obj, paths[1], []):
 			tmp = re.match(paths[0], item)
 			if tmp is not None:
@@ -158,7 +223,8 @@ def get_pod_status(kh, pod):
 				status = reason
 				status_group = stgroup.NOT_OK
 				break
-			elif condition_type == "ContainersReady" and condition_status == "False":
+
+			if condition_type == "ContainersReady" and condition_status == "False":
 				for container in deep_get(pod, "status#initContainerStatuses", []):
 					if deep_get(container, "ready") == False:
 						reason = deep_get(container, "state#waiting#reason", "").rstrip()
@@ -171,17 +237,15 @@ def get_pod_status(kh, pod):
 							return reason, status_group
 
 		return status, status_group
-	elif phase == "Running":
+
+	if phase == "Running":
 		status = "Running"
 		status_group = stgroup.OK
-		last_state = ""
-		exit_code = 0
 
 		# Any container failures?
 		for condition in deep_get(pod, "status#conditions", []):
 			condition_type = deep_get(condition, "type")
 			condition_status = deep_get(condition, "status")
-			ready = True
 
 			if condition_type == "Ready" and condition_status == "False":
 				status_group = stgroup.NOT_OK
@@ -192,14 +256,14 @@ def get_pod_status(kh, pod):
 				node_status = get_node_status(node)
 				if node_status[0] == "Unreachable":
 					status = "NodeUnreachable"
-				ready = False
 				break
-			elif condition_type == "ContainersReady" and condition_status == "False":
+
+			if condition_type == "ContainersReady" and condition_status == "False":
 				status_group = stgroup.NOT_OK
 
 				for container in deep_get(pod, "status#initContainerStatuses", []):
 					kind = "InitContainer"
-					status, status_group, restarts, message, age = get_container_status(deep_get(pod, "status#initContainerStatuses"), deep_get(container, "name"), kind)
+					status, status_group, _restarts, _message, _age = get_container_status(deep_get(pod, "status#initContainerStatuses"), deep_get(container, "name"))
 					# If we have a failed container,
 					# break here
 					if status_group == stgroup.NOT_OK:
@@ -207,25 +271,28 @@ def get_pod_status(kh, pod):
 
 				for container in deep_get(pod, "status#containerStatuses", []):
 					kind = "Container"
-					status, status_group, restarts, message, age = get_container_status(deep_get(pod, "status#containerStatuses"), deep_get(container, "name"), kind)
+					status, status_group, _restarts, _message, _age = get_container_status(deep_get(pod, "status#containerStatuses"), deep_get(container, "name"))
 					# If we have a failed container,
 					# break here
 					if status_group == stgroup.NOT_OK:
 						break
 
 		return status, status_group
-	elif phase == "Failed":
+
+	if phase == "Failed":
 		# Failed
 		status_group = stgroup.NOT_OK
 		status = deep_get(pod, "status#reason", phase).rstrip()
 		return status, status_group
-	else:
-		# Succeeded
-		status_group = stgroup.DONE
-		return phase, status_group
+
+	# Succeeded
+	status_group = stgroup.DONE
+	return phase, status_group
 
 # Only for internal types for the time being
 def datagetter_pod_status(kh, obj, path, default):
+	del path
+
 	if obj is None:
 		return default
 
@@ -235,13 +302,15 @@ def datagetter_pod_status(kh, obj, path, default):
 
 # Only for internal types for the time being
 def datagetter_api_support(kh, obj, path, default):
+	del path
+
 	if obj is None:
 		return default
 
 	kind = deep_get(obj, "spec#names#kind", "")
 	api_family = deep_get(obj, "spec#group", "")
 
-	available_apis, status, modified = kh.get_available_api_families()
+	available_apis, _status, _modified = kh.get_available_api_families()
 
 	available_views = []
 

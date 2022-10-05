@@ -3,12 +3,10 @@
 import errno
 import os
 from pathlib import Path
-import shutil
 import subprocess
-from subprocess import PIPE, STDOUT
 import sys
-import yaml
 
+from iktio import copy_if_not_exists, mkdir_if_not_exists, replace_symlink
 from iktlib import execute_command_with_response
 
 from commandparser import parse_commandline
@@ -32,30 +30,10 @@ IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
 IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
 
 THEME_PATH = f"{THEME_DIRNAME}/default.yaml"
-init_iktprint(THEME_PATH)
 
 import about
 PROGRAMDESCRIPTION = "Setup Intel Kubernetes Toolkit"
 PROGRAMAUTHORS = "Written by David Weinehall."
-
-def mkdir_if_not_exists(dir, verbose = False):
-	if verbose == True:
-		iktprint([("mkdir ", "programname"), (f"{dir}", "path")])
-	if not os.path.exists(dir):
-		os.mkdir(dir)
-
-def copy_if_not_exists(src, dst, verbose = False):
-	if verbose == True:
-		iktprint([("cp ", "programname"), (f"{src} ", "path"), (f"{dst}", "path")])
-	if not os.path.exists(dst):
-		shutil.copy2(src, dst)
-
-def replace_symlink(src, dst, verbose = False):
-	if verbose == True:
-		iktprint([("ln ", "programname"), ("-s ", "option"), (f"{src} ", "path"), (f"{dst}", "path")])
-	if os.path.islink(dst):
-		os.remove(dst)
-	os.symlink(src, dst)
 
 directories = [
 	BINDIR,
@@ -90,10 +68,10 @@ misc_symlinks = [
 
 def create_symlinks(verbose = False):
 	for src, dst in misc_symlinks:
-		replace_symlink(src, dst)
+		replace_symlink(src, dst, verbose = verbose)
 
 	for src, dst in executable_symlinks:
-		replace_symlink(src, dst)
+		replace_symlink(src, dst, verbose = verbose)
 
 configuration_files = [
 	(IKT_CONFIG_FILENAME, IKT_CONFIG_FILE)
@@ -107,7 +85,7 @@ packages_with_pip_fallback = {
 	"python3-ansible-runner": "ansible-runner",
 }
 
-packages = [
+packages_without_fallback = [
 	"ansible",
 	"python3-natsort",
 	"python3-openssl",
@@ -119,10 +97,13 @@ packages = [
 ]
 
 def install_software(packages, verbose = False):
+	del verbose
 	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + packages
 	subprocess.call(args)
 
 def install_software_with_pip_fallback(packages, verbose = False, dryrun = False):
+	del verbose
+
 	pkgs = set()
 	fallbacks = set()
 
@@ -147,16 +128,17 @@ def install_software_with_pip_fallback(packages, verbose = False, dryrun = False
 		args = ["/usr/bin/pip3", "install"] + list(fallbacks)
 		subprocess.call(args)
 
-	fallbacks.add("ansible-runner")
 	return list(pkgs), list(fallbacks)
 
-def install(options = [], args = None):
+def install(options, args):
+	del args
+
 	verbose = False
 	install_dependencies = True
 	confirm = True
 	allow_fallback = True
 
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt == "--verbose":
 			verbose = True
 		elif opt == "--no-dependencies":
@@ -177,25 +159,28 @@ def install(options = [], args = None):
 			pkgs, pkgs_fallback = install_software_with_pip_fallback(packages_with_pip_fallback, dryrun = True)
 			iktprint([("\n• ", "separator"), ("Install the following system software:", "action")])
 			iktprint([("  Note:", "warning"), (" this requires sudo permissions", "emphasis")])
-			for pkg in packages + pkgs:
+			for pkg in packages_without_fallback + pkgs:
 				iktprint([(f"    {pkg}", "path")])
 			for pkg in pkgs_fallback:
 				iktprint([(f"    {pkg}", "path"), (" (Using package from PIP)", "emphasis")])
 
-		iktprint([("\n• ", "separator"), (f"Create the following new directories", "action")])
+		iktprint([("\n• ", "separator"), ("Create the following new directories:", "action")])
 		for name in directories:
 			iktprint([(f"    {name}", "path")])
 		iktprint([("\n• ", "separator"), ("Install the following configuration files:", "action")])
 		for src, dst in configuration_files:
 			iktprint([(f"     {dst}", "path")])
-		iktprint([("\n• ", "separator"), (f"Create the following symlinks", "action")])
+		iktprint([("\n• ", "separator"), ("Create the following symlinks:", "action")])
 		for src, dst in misc_symlinks:
 			iktprint([(f"    {src}", "path"), (" ⇨ ", "emphasis"), (f"{dst}", "path")])
 		for src, dst in executable_symlinks:
 			iktprint([(f"    {src}", "path"), (" ⇨ ", "emphasis"), (f"{dst}", "path")])
 
 		if install_dependencies == True and allow_fallback == False and len(pkgs_fallback) > 0:
-			iktprint([("\n", "default"), ("Error:", "error"), (" Installation would require fallback to PIP, but “", "default"), ("--no-fallback", "option"), ("“ was specified; aborting.", "default")], stderr = True)
+			iktprint([("\n", "default"), ("Error:", "error"),
+				  (" Installation would require fallback to PIP, but “", "default"),
+				  ("--no-fallback", "option"),
+				  ("“ was specified; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
 		retval = iktinput([("\nInstall ", "default"), ("iKT", "programname"), ("? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
@@ -205,7 +190,7 @@ def install(options = [], args = None):
 
 	if install_dependencies == True:
 		install_software_with_pip_fallback(packages_with_pip_fallback, verbose = verbose)
-		install_software(packages, verbose = verbose)
+		install_software(packages_without_fallback, verbose = verbose)
 
 	create_directories(verbose = verbose)
 	copy_configuration_files(verbose = verbose)
@@ -245,9 +230,10 @@ commandline = {
 }
 
 def main():
-	global verbose
+	init_iktprint(THEME_PATH)
 
-	command, options, args = parse_commandline(about.install_program_name, about.install_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline, default_command = "__default", theme = THEME_PATH)
+	command, options, args = parse_commandline(about.install_program_name, about.install_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS,
+						   sys.argv, commandline, default_command = "__default", theme = THEME_PATH)
 
 	return command(options, args)
 

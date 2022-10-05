@@ -13,7 +13,10 @@ programauthors = None
 
 commandline = None
 
-def version(options = [], args = None):
+def version(options, args):
+	del options
+	del args
+
 	iktprint([(f"{programname} ", "programname"), (f"{programversion}", "version")])
 	iktprint([(f"{about.program_suite_full_name} ({about.program_suite_name}) ", "programname"), (f"{about.program_suite_version}", "version")])
 	print()
@@ -23,7 +26,10 @@ def version(options = [], args = None):
 	print(programauthors)
 	return 0
 
-def usage(options = [], args = None):
+def usage(options, args):
+	del options
+	del args
+
 	has_commands = False
 	has_options = False
 	has_args = False
@@ -36,7 +42,8 @@ def usage(options = [], args = None):
 	for key, value in commandline.items():
 		if key in ["__default", "extended_description"] or key.startswith("spacer"):
 			continue
-		elif key.startswith("__"):
+
+		if key.startswith("__"):
 			globaloptioncount += 1
 		else:
 			commandcount += 1
@@ -107,13 +114,12 @@ def usage(options = [], args = None):
 			if len(tmp) > 0:
 				indent = "  "
 			tmp2 = [(f"{indent}", "option")]
-			if type(option) == tuple:
-				i = 0
-				for i in range(0, len(option)):
+			if isinstance(option, tuple):
+				for _opt in option:
 					# The first string is the initial indentation
 					if len(tmp2) > 1:
 						tmp2.append((f"{separator}", "separator"))
-					tmp2.append((f"{option[i]}", "option"))
+					tmp2.append((f"{_opt}", "option"))
 			elif key.startswith("__"):
 				tmp2.append((f"  {option}", "option"))
 			else:
@@ -151,14 +157,14 @@ def usage(options = [], args = None):
 
 	return 0
 
-def __find_command(commandline, arg):
+def __find_command(__commandline, arg):
 	command = None
 	commandname = None
 	min_args = 0
 	max_args = 0
 	key = None
 
-	for key, value in commandline.items():
+	for key, value in __commandline.items():
 		if key == "extended_description":
 			continue
 
@@ -246,19 +252,21 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 				match = None
 				__key = key
 				for opt in deep_get(commandline, f"{__key}#options", {}):
-					if type(opt) is str and argv[i] == opt or type(opt) is tuple and argv[i] in opt:
+					if isinstance(opt, str) and argv[i] == opt or isinstance(opt, tuple) and argv[i] in opt:
 						match = opt
 						break
 				# Check global options
 				if match is None:
 					for opt in deep_get(commandline, "__global_options#options", {}):
-						if type(opt) is str and argv[i] == opt or type(opt) is tuple and argv[i] in opt:
+						if isinstance(opt, str) and argv[i] == opt or isinstance(opt, tuple) and argv[i] in opt:
 							__key = "__global_options"
 							match = opt
 							break
 
 				if match is None:
-					iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{commandname}", "command"), ("“ does not support option “", "default"), (f"{argv[i]}", "option"), ("“.", "default")], stderr = True)
+					iktprint([(f"{programname}", "programname"), (": “", "default"),
+						  (f"{commandname}", "command"),
+						  ("“ does not support option “", "default"), (f"{argv[i]}", "option"), ("“.", "default")], stderr = True)
 					iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 				else:
@@ -288,15 +296,21 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif len(args) < min_args and min_args != max_args:
-		iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{commandname}", "command"), (f"“ requires at least {min_args} arguments.", "default")], stderr = True)
+		iktprint([(f"{programname}", "programname"), (": “", "default"),
+			  (f"{commandname}", "command"),
+			  (f"“ requires at least {min_args} arguments.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif len(args) != min_args and min_args == max_args:
-		iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{commandname}", "command"), (f"“ requires exactly {min_args} arguments.", "default")], stderr = True)
+		iktprint([(f"{programname}", "programname"), (": “", "default"),
+			  (f"{commandname}", "command"),
+			  (f"“ requires exactly {min_args} arguments.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif len(args) > max_args:
-		iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{commandname}", "command"), (f"“ requires at most {max_args} arguments.", "default")], stderr = True)
+		iktprint([(f"{programname}", "programname"), (": “", "default"),
+			  (f"{commandname}", "command"),
+			  (f"“ requires at most {max_args} arguments.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 

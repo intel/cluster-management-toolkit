@@ -1,10 +1,9 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.6)
 from datetime import datetime
-from functools import partial, reduce
+from functools import partial
 import os
 from pathlib import Path
-import pwd
 import re
 import sys
 import yaml
@@ -14,9 +13,6 @@ from iktlib import deep_get, iktconfig
 from iktprint import iktprint
 
 ansible_results = {}
-
-active_task = ""
-suffix = 0
 
 HOMEDIR = str(Path.home())
 
@@ -35,12 +31,13 @@ class ansible_configuration:
 	ansible_user = None
 	ansible_password = None
 	save_logs = False
+	disable_strict_host_key_checking = False
 
 # Used by Ansible
 try:
 	import ansible_runner
 except ModuleNotFoundError:
-	sys.exit(f"ansible_runner not available; try (re-)running ikt-install")
+	sys.exit("ansible_runner not available; try (re-)running ikt-install")
 
 # If the ansible directory doesn't exist, create it
 if not os.path.exists(ANSIBLE_DIR):
@@ -81,7 +78,7 @@ def ansible_get_inventory_dict():
 	if not os.path.exists(ANSIBLE_INVENTORY):
 		return {}
 
-	with open(ANSIBLE_INVENTORY, "r") as f:
+	with open(ANSIBLE_INVENTORY, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 	return d
@@ -93,7 +90,7 @@ def ansible_get_inventory_pretty(groups = None, highlight = False, include_group
 	if not os.path.exists(ANSIBLE_INVENTORY):
 		return {}
 
-	with open(ANSIBLE_INVENTORY, "r") as f:
+	with open(ANSIBLE_INVENTORY, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 	# We want the entire inventory
@@ -170,7 +167,7 @@ def ansible_get_hosts_by_group(inventory, group):
 	if not os.path.exists(inventory):
 		return []
 
-	with open(inventory, "r") as f:
+	with open(inventory, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 		if d.get(group) is not None and d[group].get("hosts") is not None:
@@ -185,7 +182,7 @@ def ansible_get_groups(inventory):
 	if not os.path.exists(inventory):
 		return []
 
-	with open(inventory, "r") as f:
+	with open(inventory, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 		for group in d:
@@ -199,7 +196,7 @@ def ansible_get_groups_by_host(inventory, host):
 	#if not os.path.exists(inventory):
 	#	return []
 
-	#with open(inventory, "r") as f:
+	#with open(inventory, "r", encoding = "utf-8") as f:
 	#	d = yaml.safe_load(f)
 
 	for group in inventory:
@@ -244,7 +241,7 @@ def __ansible_create_inventory(inventory, overwrite = False):
 
 	yaml_str = yaml.safe_dump(d, default_flow_style = False).replace(r"''", '')
 
-	with open(inventory, "w", opener = partial(os.open, mode = 0o640)) as f:
+	with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 		f.write(yaml_str)
 
 def ansible_create_groups(inventory, groups):
@@ -256,7 +253,7 @@ def ansible_create_groups(inventory, groups):
 	if os.path.isfile(inventory) == False:
 		__ansible_create_inventory(inventory, overwrite = False)
 
-	with open(inventory, "r") as f:
+	with open(inventory, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 	for group in groups:
@@ -271,7 +268,7 @@ def ansible_create_groups(inventory, groups):
 		changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640)) as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -288,7 +285,7 @@ def ansible_delete_groups(inventory, group):
 	if os.path.isfile(inventory) == False:
 		__ansible_create_inventory(inventory, overwrite = False)
 
-	with open(inventory, "r") as f:
+	with open(inventory, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 	if d.get(group) is None:
@@ -301,7 +298,8 @@ def ansible_delete_groups(inventory, group):
 	# don't delete it, since it contains something unknown
 	if len(d[group]) > 2:
 		return False
-	elif len(d[group]) == 2:
+
+	if len(d[group]) == 2:
 		# The only acceptable groups (when deleting) are hosts and vars
 		if "hosts" in d[group] == False or "vars" in d[group] == False:
 			return False
@@ -325,7 +323,7 @@ def ansible_delete_groups(inventory, group):
 	d[group].pop("vars", None)
 	d.pop(group, None)
 
-	with open(inventory, "w", opener = partial(os.open, mode = 0o640)) as f:
+	with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 		yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 		f.write(yaml_str)
 
@@ -344,7 +342,7 @@ def ansible_set_vars(inventory, group, values):
 	if os.path.isfile(inventory) == False:
 		__ansible_create_inventory(inventory, overwrite = False)
 
-	with open(inventory, "r") as f:
+	with open(inventory, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 	# If the group doesn't exist we create it
@@ -363,7 +361,7 @@ def ansible_set_vars(inventory, group, values):
 		changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640)) as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -382,7 +380,7 @@ def ansible_set_groupvars(inventory, groups, groupvars):
 	if os.path.isfile(inventory) == False:
 		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
 
-	with open(inventory, "r") as f:
+	with open(inventory, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 	for group in groups:
@@ -402,7 +400,7 @@ def ansible_set_groupvars(inventory, groups, groupvars):
 			changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640)) as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -421,7 +419,7 @@ def ansible_set_hostvars(inventory, hosts, hostvars):
 	if os.path.isfile(inventory) == False:
 		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
 
-	with open(inventory, "r") as f:
+	with open(inventory, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 	for host in hosts:
@@ -438,7 +436,7 @@ def ansible_set_hostvars(inventory, hosts, hostvars):
 			changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640)) as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -457,7 +455,7 @@ def ansible_unset_groupvars(inventory, groups, groupvars):
 	if os.path.isfile(inventory) == False:
 		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
 
-	with open(inventory, "r") as f:
+	with open(inventory, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 	for group in groups:
@@ -482,7 +480,7 @@ def ansible_unset_groupvars(inventory, groups, groupvars):
 			d[group].pop("vars", None)
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640)) as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -501,7 +499,7 @@ def ansible_unset_hostvars(inventory, hosts, hostvars):
 	if os.path.isfile(inventory) == False:
 		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
 
-	with open(inventory, "r") as f:
+	with open(inventory, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 	for host in hosts:
@@ -521,7 +519,7 @@ def ansible_unset_hostvars(inventory, hosts, hostvars):
 			d["all"]["hosts"][host] = None
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640)) as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -544,10 +542,10 @@ def ansible_add_hosts(inventory, hosts, group = "", skip_all = False):
 		else:
 			__ansible_create_inventory(inventory, overwrite = False)
 
-			with open(inventory, "r") as f:
+			with open(inventory, "r", encoding = "utf-8") as f:
 				d = yaml.safe_load(f)
 	else:
-		with open(inventory, "r") as f:
+		with open(inventory, "r", encoding = "utf-8") as f:
 			d = yaml.safe_load(f)
 
 	for host in hosts:
@@ -570,7 +568,7 @@ def ansible_add_hosts(inventory, hosts, group = "", skip_all = False):
 		# nested groups, node vars or anything like that
 		#
 		# We don't want to overwrite groups
-		if group != "" and group != "all":
+		if group not in ["", "all"]:
 			if d.get(group) is None:
 				d[group] = {}
 				changed = True
@@ -584,7 +582,7 @@ def ansible_add_hosts(inventory, hosts, group = "", skip_all = False):
 				changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640)) as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -605,7 +603,7 @@ def ansible_remove_hosts(inventory, hosts, group = None):
 	if os.path.isfile(inventory) == False:
 		return False
 
-	with open(inventory, "r") as f:
+	with open(inventory, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 	for host in hosts:
@@ -617,7 +615,7 @@ def ansible_remove_hosts(inventory, hosts, group = None):
 				d[group]["hosts"] = None
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640)) as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -635,7 +633,7 @@ def ansible_remove_groups(inventory, groups, force = False):
 	if os.path.isfile(inventory) == False:
 		return False
 
-	with open(inventory, "r") as f:
+	with open(inventory, "r", encoding = "utf-8") as f:
 		d = yaml.safe_load(f)
 
 	for group in groups:
@@ -649,7 +647,7 @@ def ansible_remove_groups(inventory, groups, force = False):
 		changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640)) as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -669,7 +667,7 @@ def ansible_get_logs():
 		tmp = timestamp_regex.match(item)
 		if tmp is not None:
 			date = datetime.strptime(tmp[1], "%Y-%m-%d_%H:%M:%S.%f")
-			full_name = item
+			#full_name = item
 			name = tmp[2]
 			logs.append((item, name, f"{ANSIBLE_LOG_DIR}/{item}", date))
 		else:
@@ -684,13 +682,13 @@ def ansible_extract_failure(retval, error_msg_lines, skipped = False, unreachabl
 			if "Name or service not known" in line:
 				status = "COULD NOT RESOLVE"
 				break
-			elif "Permission denied" in line:
+			if "Permission denied" in line:
 				status = "PERMISSION DENIED"
 				break
-			elif "The module failed to execute correctly" in line:
+			if "The module failed to execute correctly" in line:
 				status = "MISSING INTERPRETER?"
 				break
-			elif "No route to host" in line:
+			if "No route to host" in line:
 				status = "NO ROUTE TO HOST"
 				break
 		if len(status) == 0:
@@ -728,8 +726,6 @@ def ansible_results_add(event):
 
 	if retval is None:
 		return 0
-
-	taskname = task
 
 	msg = deep_get(event, "event_data#res#msg", "")
 	msg_lines = []
@@ -818,7 +814,7 @@ def ansible_write_log(start_date, playbook, events):
 		"created_at": start_date,
 	}
 
-	with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/metadata.yaml", "w", opener = partial(os.open, mode = 0o640)) as f:
+	with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/metadata.yaml", "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 		f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
 
 	i = 0
@@ -900,7 +896,7 @@ def ansible_write_log(start_date, playbook, events):
 		else:
 			d["stdout_lines"] = ["<no output>"]
 
-		with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}", "w", opener = partial(os.open, mode = 0o640)) as f:
+		with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}", "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 			f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
 
 def ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval, unreachable = False, skipped = False):
@@ -938,12 +934,12 @@ def ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retv
 			iktprint([("<no output>", "none")])
 		iktprint([("", "default")])
 
-def ansible_print_play_results(retval, ansible_results):
-	if retval != 0 and len(ansible_results) == 0:
+def ansible_print_play_results(retval, __ansible_results):
+	if retval != 0 and len(__ansible_results) == 0:
 		iktprint([("Failed to execute playbook; retval: ", "error"), (f"{retval}", "errorvalue")], stderr = True)
 	else:
-		for host in ansible_results:
-			plays = ansible_results[host]
+		for host in __ansible_results:
+			plays = __ansible_results[host]
 			header_output = False
 
 			for play in plays:
@@ -975,8 +971,6 @@ def ansible_print_play_results(retval, ansible_results):
 
 def ansible_run_playbook(playbook, override_inventory = False):
 	global ansible_results
-	global active_task
-	global suffix
 
 	forks = ansible_configuration.ansible_forks
 
@@ -992,7 +986,7 @@ def ansible_run_playbook(playbook, override_inventory = False):
 
 	start_date = datetime.now()
 
-	runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventory)
+	runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventory, forks = forks)
 	retval = 0
 	if runner is not None:
 		for event in runner.events:
@@ -1058,19 +1052,19 @@ def ansible_run_playbook_on_selection(playbook, selection, values = None):
 
 	return ansible_run_playbook(playbook)
 
-def ansible_ping(inventory, selection = []):
+def ansible_ping(selection):
 	save_logs_tmp = ansible_configuration.save_logs
 	ansible_configuration.save_logs = False
 
 	host_status = []
 
-	if len(selection) == 0:
+	if selection is None:
 		selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
 
-	_retval, ansible_results = ansible_run_playbook_on_selection(f"{ANSIBLE_PLAYBOOK_DIR}/ping.yaml", selection = selection)
+	_retval, __ansible_results = ansible_run_playbook_on_selection(f"{ANSIBLE_PLAYBOOK_DIR}/ping.yaml", selection = selection)
 
-	for host in ansible_results:
-		for task in deep_get(ansible_results, host, []):
+	for host in __ansible_results:
+		for task in deep_get(__ansible_results, host, []):
 			unreachable = deep_get(task, "unreachable")
 			skipped = deep_get(task, "skipped")
 			stderr_lines = deep_get(task, "stderr_lines")

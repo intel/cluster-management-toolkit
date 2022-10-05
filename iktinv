@@ -508,7 +508,7 @@ def ping(options = [], args = None):
 	print("Please stand by, attempting to ping hosts")
 	print()
 
-	output = ansible_ping(inventory = ANSIBLE_INVENTORY, selection = selection)
+	output = ansible_ping(selection = selection)
 
 	if output is None or len(output) == 0:
 		raise Exception(f"Internal error; ansible -m ping failed")

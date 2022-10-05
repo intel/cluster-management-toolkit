@@ -79,10 +79,10 @@ def deep_set(dictionary, path, value, create_path = False):
 			if i == len(pathsplit) - 1:
 				ref[pathsplit[i]] = value
 				break
-			else:
-				ref = ref.get(pathsplit[i])
-				if ref is None or not isinstance(ref, dict):
-					raise Exception(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
+
+			ref = ref.get(pathsplit[i])
+			if ref is None or not isinstance(ref, dict):
+				raise Exception(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
 		elif create_path == True:
 			if i == len(pathsplit) - 1:
 				ref[pathsplit[i]] = value
@@ -99,18 +99,20 @@ def deep_get(dictionary, path, default = None):
 		result = default
 	return result
 
-def deep_get_recursive(dictionary, path_fragments, result = []):
+def deep_get_recursive(dictionary, path_fragments, result = None):
+	if result is None:
+		result = []
+
 	for i in range(0, len(path_fragments)):
 		tmp = deep_get(dictionary, path_fragments[i])
 		if i + 1 == len(path_fragments):
 			if tmp is None:
 				return result
-			else:
-				return tmp
+			return tmp
 
-		elif type(tmp) == dict:
+		if isinstance(tmp, dict):
 			result = deep_get_recursive(tmp, path_fragments[i + 1:len(path_fragments)], result)
-		elif type(tmp) == list:
+		elif isinstance(tmp, list):
 			for tmp2 in tmp:
 				result = deep_get_recursive(tmp2, path_fragments[i + 1:len(path_fragments)], result)
 
@@ -143,15 +145,15 @@ def read_iktconfig():
 	global iktconfig
 
 	if os.path.isfile(IKT_CONFIG_FILE) is False:
-		return
+		return None
 
 	# Read the base configuration file
-	with open(IKT_CONFIG_FILE) as f:
+	with open(IKT_CONFIG_FILE, encoding = "utf-8") as f:
 		iktconfig = yaml.safe_load(f)
 
 	# Now read ikt.yaml.d/* if available
 	if os.path.isdir(IKT_CONFIG_FILE_DIR) is False:
-		return
+		return None
 
 	for item in natsorted(os.listdir(IKT_CONFIG_FILE_DIR)):
 		# Only read entries that end with .y{,a}ml
@@ -161,7 +163,7 @@ def read_iktconfig():
 			continue
 
 		# Read the conflet files
-		with open(f"{IKT_CONFIG_FILE_DIR}/{item}") as f:
+		with open(f"{IKT_CONFIG_FILE_DIR}/{item}", encoding = "utf-8") as f:
 			moreiktconfig = yaml.safe_load(f)
 
 		# Handle config files without any values defined
@@ -186,7 +188,7 @@ def join_tuple_list(items, _tuple = "", item_prefix = None, item_suffix = None, 
 			_list.append(separator)
 		if item_prefix is not None:
 			_list.append(item_prefix)
-		if type(item) == tuple:
+		if isinstance(item, tuple):
 			_list.append(item)
 		else:
 			_list.append((item, _tuple))
@@ -217,7 +219,7 @@ def seconds_to_age(seconds, negative_is_skew = False):
 	age = ""
 	fields = 0
 
-	if type(seconds) != int:
+	if isinstance(seconds, int):
 		return ""
 
 	if seconds < -1:
@@ -262,7 +264,7 @@ def get_since(timestamp):
 	elif timestamp == -1 or timestamp == none_timestamp():
 		since = -1
 	# If the timestamp is an integer we assume it to already be in seconds
-	elif type(timestamp) == int:
+	elif isinstance(timestamp, int):
 		since = timestamp
 	else:
 		timediff = datetime.now(timezone.utc) - timestamp
@@ -282,7 +284,7 @@ def datetime_to_timestamp(timestamp):
 
 # Will take a timestamp and convert it to datetime
 def timestamp_to_datetime(timestamp, default = none_timestamp()):
-	if timestamp is None or type(timestamp) == int and timestamp == 0 or type(timestamp) == str and timestamp in ["", "None"]:
+	if timestamp is None or isinstance(timestamp, int) and timestamp == 0 or isinstance(timestamp, str) and timestamp in ["", "None"]:
 		return default
 
 	if timestamp == -1:
@@ -306,8 +308,6 @@ def timestamp_to_datetime(timestamp, default = none_timestamp()):
 		# For timestamp without timezone add one; all timestamps are assumed to be UTC
 		timestamp += "+0000"
 
-	dt = None
-
 	for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z",
 	            "%Y-%m-%d %H:%M:%S.%f%z",
 		    "%Y-%m-%dT%H:%M:%S%z",
@@ -321,9 +321,9 @@ def timestamp_to_datetime(timestamp, default = none_timestamp()):
 # This executes a command without capturing the output
 def execute_command(args, env = None, comparison = 0):
 	if env is None:
-		retval = subprocess.run(args)
+		retval = subprocess.run(args, check = False)
 	else:
-		retval = subprocess.run(args, env = env)
+		retval = subprocess.run(args, env = env, check = False)
 	return retval.returncode == comparison
 
 # This executes a command with the output captured
@@ -372,8 +372,6 @@ def get_package_versions(hostname):
 
 	if not os.path.isdir(ANSIBLE_PLAYBOOK_DIR):
 		return []
-
-	control_plane_k8s_version = ""
 
 	get_versions_path = get_playbook_path("get_versions.yaml")
 	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [hostname])

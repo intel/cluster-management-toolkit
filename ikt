@@ -6,7 +6,6 @@
 # Recommends: python3-ujson
 
 import errno
-from functools import reduce
 from getpass import getuser
 import hashlib
 import os
@@ -19,22 +18,17 @@ import yaml
 import paramiko
 
 try:
-	from natsort import natsorted
-except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
-
-try:
 	import OpenSSL
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
 from commandparser import parse_commandline
 
-from ansible_helper import ansible_configuration, ansible_set_vars, ansible_run_playbook_on_host_list, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_print_play_results
+from ansible_helper import ansible_configuration, ansible_run_playbook_on_host_list, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_print_play_results
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import iktlib
-from iktlib import deep_get, iktconfig, join_tuple_list, execute_command, execute_command_with_response
+from iktlib import deep_get, iktconfig, join_tuple_list, execute_command
 
 from kubernetes_helper import kubectl_get_version
 
@@ -205,7 +199,7 @@ def get_selection(selection, kind = None, default = None, skip_control_planes = 
 			all_items = True
 
 	# Kubernetes resources
-	if type(kind) == tuple:
+	if isinstance(kind, tuple):
 		from kubernetes_helper import KubernetesHelper
 		kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
 
@@ -232,7 +226,7 @@ def get_selection(selection, kind = None, default = None, skip_control_planes = 
 
 	return items1, non_existing, items2
 
-def cordon_nodes(options = [], args = None):
+def cordon_nodes(options, args):
 	include_control_planes = False
 	header = True
 
@@ -258,7 +252,7 @@ def cordon_nodes(options = [], args = None):
 		nodes += controlplanes
 
 	if len(non_existing) > 0:
-		iktprint([(f"Error: ", "error"), join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")), (" are not part of the cluster; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error"), join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")), (" are not part of the cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	if len(nodes) == 0:
@@ -285,7 +279,7 @@ def cordon_nodes(options = [], args = None):
 			iktprint([(f"  {message}", "error")], stderr = True)
 			sys.exit(errno.EINVAL)
 
-def drain_nodes(options = [], args = None):
+def drain_nodes(options, args):
 	include_control_planes = False
 	header = True
 
@@ -321,7 +315,7 @@ def drain_nodes(options = [], args = None):
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
 	if len(non_existing) > 0:
-		iktprint([(f"Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	if len(nodes) == 0:
@@ -333,7 +327,7 @@ def drain_nodes(options = [], args = None):
 	_args += nodes
 	execute_command(_args)
 
-def uncordon_nodes(options = [], args = None):
+def uncordon_nodes(options, args):
 	include_control_planes = False
 	header = True
 
@@ -359,7 +353,7 @@ def uncordon_nodes(options = [], args = None):
 		nodes += controlplanes
 
 	if len(non_existing) > 0:
-		iktprint([(f"Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	if len(nodes) == 0:
@@ -386,10 +380,7 @@ def uncordon_nodes(options = [], args = None):
 			iktprint([(f"  {message}", "error")], stderr = True)
 			sys.exit(errno.EINVAL)
 
-def setup_nodes(options = [], args = None):
-	return 0
-
-def prepare_hosts(options = [], args = None):
+def prepare_hosts(options, args):
 	ignore_existing = False
 	no_password = False
 	from_file = False
@@ -444,13 +435,13 @@ def prepare_hosts(options = [], args = None):
 
 	if len(nodes) > 0 or len(controlplanes) > 0:
 		if ignore_existing == False:
-			iktprint([(f"Error: ", "error")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; aborting.", "default")], stderr = True)
+			iktprint([("Error: ", "error")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; aborting.", "default")], stderr = True)
 			sys.exit(errno.EEXIST)
 		else:
-			iktprint([(f"Warning: ", "warning")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; ignoring them since “", "description"), ("--ignore-existing", "option"), ("“ was specified.", "default")], stderr = True)
+			iktprint([("Warning: ", "warning")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; ignoring them since “", "description"), ("--ignore-existing", "option"), ("“ was specified.", "default")], stderr = True)
 
 	if len(non_existing) == 0:
-		iktprint([(f"Error: ", "error"), (" no valid hosts specified; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error"), (" no valid hosts specified; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	# Check if the hosts are part of the inventory
@@ -504,7 +495,7 @@ def prepare_hosts(options = [], args = None):
 
 	iktprint([("\nHosts successfully prepared", "success")])
 
-def add_nodes(options = [], args = None):
+def add_nodes(options, args):
 	ignore_existing = False
 	ignore_non_existing = False
 	from_file = False
@@ -569,13 +560,13 @@ def add_nodes(options = [], args = None):
 
 	if len(nodes) > 0 or len(controlplanes) > 0:
 		if ignore_existing == False:
-			iktprint([(f"Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; aborting.", "default")], stderr = True)
+			iktprint([("Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; aborting.", "default")], stderr = True)
 			sys.exit(errno.EEXIST)
 		else:
-			iktprint([(f"Warning: ", "warning")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; ignoring them since “", "description"), ("--ignore-existing", "option"), ("“ was specified.", "default")], stderr = True)
+			iktprint([("Warning: ", "warning")] + join_tuple_list(nodes + controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are already part of the cluster; ignoring them since “", "description"), ("--ignore-existing", "option"), ("“ was specified.", "default")], stderr = True)
 
 	if len(non_existing) == 0:
-		iktprint([(f"Error: ", "error"), (" no valid hosts specified; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error"), (" no valid hosts specified; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	# Check if the hosts are part of the inventory
@@ -587,10 +578,10 @@ def add_nodes(options = [], args = None):
 
 	if len(not_in_inventory) > 0:
 		if ignore_non_existing == False:
-			iktprint([(f"Error: ", "error")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the inventory; aborting.", "default")], stderr = True)
+			iktprint([("Error: ", "error")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the inventory; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
-			iktprint([(f"Warning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the invetory; ignoring them since “", "description"), ("--ignore-non-existing", "option"), ("“ was specified.", "default")], stderr = True)
+			iktprint([("Warning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the invetory; ignoring them since “", "description"), ("--ignore-non-existing", "option"), ("“ was specified.", "default")], stderr = True)
 
 	show_configuration(non_existing)
 
@@ -724,7 +715,7 @@ def add_nodes(options = [], args = None):
 	#ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = non_existing, group = cluster_name, skip_all = True)
 	iktprint([("\nNodes successfully added", "success")])
 
-def remove_nodes(options = [], args = None):
+def remove_nodes(options, args):
 	force = False
 	purge = False
 
@@ -745,15 +736,15 @@ def remove_nodes(options = [], args = None):
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
 	if len(controlplanes) > 0 and args[0] != "ALL":
-		iktprint([(f"Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be removed using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be removed using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if len(non_existing) > 0:
 		if force == False:
-			iktprint([(f"Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
+			iktprint([("Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
-			iktprint([(f"Warning: ", "warning")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; attempting to purge them anyway since “", "description"), ("--force", "option"), ("“ was specified.", "default")], stderr = True)
+			iktprint([("Warning: ", "warning")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; attempting to purge them anyway since “", "description"), ("--force", "option"), ("“ was specified.", "default")], stderr = True)
 			nodes += non_existing
 
 	if len(nodes) == 0:
@@ -802,7 +793,7 @@ def remove_nodes(options = [], args = None):
 	# XXX: We need to get the cluster name to do this
 	#ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = cluster_name)
 
-def purge_hosts(options = [], args = None):
+def purge_hosts(options, args):
 	ignore_non_existing = False
 
 	selection = args[0].split(",")
@@ -824,11 +815,11 @@ def purge_hosts(options = [], args = None):
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
 	if len(controlplanes) > 0:
-		iktprint([(f"Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be removed using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be removed using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if len(nodes) > 0:
-		iktprint([(f"Error: ", "error")] + join_tuple_list(nodes, _tuple = "hostname", separator = (",", "separator")) + [(" are still node(s) in the cluster; please run ", "default"), (f"{about.tool_program_name}", "programname"), (" remove-node", "command"), (" first to remove them from the cluster; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error")] + join_tuple_list(nodes, _tuple = "hostname", separator = (",", "separator")) + [(" are still node(s) in the cluster; please run ", "default"), (f"{about.tool_program_name}", "programname"), (" remove-node", "command"), (" first to remove them from the cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.EBUSY)
 
 	hosts = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
@@ -841,13 +832,13 @@ def purge_hosts(options = [], args = None):
 
 	if len(not_in_inventory) > 0:
 		if ignore_non_existing == False:
-			iktprint([(f"Error: ", "error")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not in the inventory; aborting.", "default")], stderr = True)
+			iktprint([("Error: ", "error")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not in the inventory; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
-			iktprint([(f"Warning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not in the inventory; ignoring them since “", "description"), ("--ignore-non-existing", "option"), ("“ was specified.", "default")], stderr = True)
+			iktprint([("Warning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not in the inventory; ignoring them since “", "description"), ("--ignore-non-existing", "option"), ("“ was specified.", "default")], stderr = True)
 
 	if len(selection) == 0:
-		iktprint([(f"Error: ", "error"), (" none of the specified hosts are part of the inventory; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error"), (" none of the specified hosts are part of the inventory; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	iktprint([("\n• ", "separator"), ("Purging Kubernetes from the hosts", "action")])
@@ -880,7 +871,7 @@ def purge_hosts(options = [], args = None):
 
 	iktprint([("\nHosts successfully purged", "success")])
 
-def upgrade_nodes(options = [], args = None):
+def upgrade_nodes(options, args):
 	selection = args[0].split(",")
 
 	for opt, optarg in options:
@@ -894,11 +885,11 @@ def upgrade_nodes(options = [], args = None):
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
 	if len(controlplanes) > 0 and args[0] != "ALL":
-		iktprint([(f"Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be upgraded using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be upgraded using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if len(non_existing) > 0:
-		iktprint([(f"Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	if len(nodes) == 0:
@@ -934,7 +925,8 @@ def upgrade_nodes(options = [], args = None):
 
 	iktprint([("\nNode upgrade successful", "success")])
 
-def get_resource(options = [], args = None):
+"""
+def get_resource(options, args):
 	namespaces = ["default"]
 
 	for opt, optarg in options:
@@ -948,6 +940,7 @@ def get_resource(options = [], args = None):
 
 	# We might have to get the resources across multiple namespaces, so we need to do multiple requests
 	return
+"""
 
 ikt_commandline = {
 	"Cordon Node": {
