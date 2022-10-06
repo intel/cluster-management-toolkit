@@ -1498,6 +1498,8 @@ def __find_requested_version(distro, version = None):
 						break
 		else:
 			requested_version = versions[0][2]
+			if len(requested_version) == 0:
+				requested_version = versions[0][1]
 
 		if requested_version is None:
 			iktprint([("Error:", "error"), (" Could not find a matching kubeadm package for version ", "default"), (version, "version"), ("; aborting.", "default")], stderr = True)
