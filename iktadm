@@ -1121,17 +1121,17 @@ def __task_import_kube_config(installation_info):
 
 	for cluster in d1["clusters"]:
 		if cluster_name == cluster["name"]:
-			iktprint([("Error:", "error"), (" A cluster named ", "default"), (cluster_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.")], stderr = True)
+			iktprint([("Error:", "error"), (" A cluster named ", "default"), (cluster_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.", "default")], stderr = True)
 			return
 
 	for user in d1["users"]:
 		if admin_name == user["name"]:
-			iktprint([("Error:", "error"), (" A user named ", "default"), (admin_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.")], stderr = True)
+			iktprint([("Error:", "error"), (" A user named ", "default"), (admin_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.", "default")], stderr = True)
 			return
 
 	for context in d1["contexts"]:
 		if context_name == context["name"]:
-			iktprint([("Error:", "error"), (" A context named ", "default"), (context_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.")], stderr = True)
+			iktprint([("Error:", "error"), (" A context named ", "default"), (context_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.", "default")], stderr = True)
 			return
 
 	cad = d2["clusters"][0]["cluster"].get("certificate-authority-data")
