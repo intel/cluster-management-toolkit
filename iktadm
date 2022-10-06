@@ -2452,7 +2452,7 @@ def preflight_check(options = [], args = None):
 		result = execute_command_with_response(args)
 		passwordless_sudo = False
 
-		sudo_permissions_regex = re.compile(r"^\s*\(ALL\s*:\s*ALL\)\s*NOPASSWD:\s*ALL\s*$")
+		sudo_permissions_regex = re.compile(r"^\s*\(ALL(\s*:\s*ALL)?\)\s*NOPASSWD:\s*ALL\s*$")
 
 		for line in result.splitlines():
 			tmp = sudo_permissions_regex.match(line)
@@ -2463,6 +2463,7 @@ def preflight_check(options = [], args = None):
 
 		if passwordless_sudo == False:
 			iktprint([("  Error:", "error"), (f" {user} ", "path"), ("cannot perform passwordless sudo\n", "default")], stderr = True)
+			error += 1
 
 	iktprint([("[Checking whether ", "phase"), ("ssh", "command"), (" known_hosts hashing is enabled]", "phase")])
 	iktprint([("  Note:", "emphasis"), (" this test is not 100% reliable since ssh settings can vary based on target host\n", "default")])
