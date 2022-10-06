@@ -392,6 +392,8 @@ cni_data = {
 
 def substitute_string(string, substitutions):
 	for key, value in substitutions.items():
+		if string is None or value is None:
+			continue
 		string = string.replace(key, value)
 	return string
 
@@ -587,9 +589,11 @@ def setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 
 	check_and_print_status(download_files(directory, [(url, filename, checksum_url, checksum_type)], permissions = permissions))
 
+	cni_path = f"{directory}/{filename}"
+
 	if patch_cni is not None:
 		iktprint([("\n• ", "separator"), ("Patching “", "action"), (f"{cni}", "argument"), ("“ configuration", "action")])
-		patch_cni(f"{directory}/{filename}", pod_network_cidr)
+		patch_cni(cni_path, pod_network_cidr)
 
 	if filetype == "yaml":
 		args = ["/usr/bin/kubectl", "apply", f"--context=<<<context>>>", "-f", cni_path]
@@ -1189,7 +1193,7 @@ def __task_setup_kubeadm_cni(installation_info):
 	context_name = f"{admin_name}@{cluster_name}"
 
 	# If everything is successful so far we deploy the pod network
-	cni_path = setup_cni(cni, pod_network_cidr, context_name, cluster_name)
+	setup_cni(cni, pod_network_cidr, context_name, cluster_name)
 
 def __task_drain_control_planes(installation_info):
 	controlplanes = __selection_control_planes()
