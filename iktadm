@@ -2479,6 +2479,22 @@ def preflight_check(options = [], args = None):
 			warning += 1
 			break
 
+	iktprint([("[Checking whether ", "phase"), ("docker-ce / containerd.io", "path"), (" is installed instead of ", "phase"), ("docker.io / containerd", "path"), ("]", "phase")])
+	iktprint([("  Note:", "emphasis"), (" this is only an issue if you intend to use this host as a control plane or node\n", "default")])
+	deb_versions = check_deb_versions(["docker.io", "containerd", "docker-ce", "containerd.io"])
+	conflict = False
+	for package, version, installed_version, _candidate_versions in deb_versions:
+		if package in ["docker-ce", "containerd.io"]:
+			iktprint([("  Error:", "error"), (" docker-ce / containerd.io ", "path"), ("is installed; use ", "default"), ("docker.io / containerd", "path"), (" instead\n", "default")], stderr = True)
+			iktprint([("  ", "default"), ("Suggested fix:", "header")])
+			iktprint([("    sudo apt ", "programname"), ("install ", "command"), ("docker.io containerd docker-ce- containerd.io-\n", "argument")])
+			error += 1
+			conflict = True
+			break
+
+	if conflict == False:
+		iktprint([("  OK\n", "emphasis")])
+
 	iktprint([("Summary:", "header")])
 	iktprint([(f"  Errors: {error}", "error")])
 	iktprint([(f"Warnings: {warning}", "warning")])
