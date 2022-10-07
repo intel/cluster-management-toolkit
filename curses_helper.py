@@ -105,7 +105,7 @@ def init_pair(pair, color_pair, color_nr):
 		if fg == bg:
 			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 	except (curses.error, ValueError) as e:
-		if str(e) in ["init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."]:
+		if str(e) in ("init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
 			# Most likely we failed due to the terminal only
 			# supporting colours 0-7. If "bright black" was
 			# requested, we need to remap it. Fallback to blue;
@@ -318,8 +318,8 @@ def generate_heatmap(maxwidth, stgroups, selected):
 	tmp = ""
 
 	# Try to make minimise the colour changes
-	for i in range(0, len(stgroups)):
-		heat = stgroups[i]
+	for i, stgroup in enumerate(stgroups):
+		heat = stgroup
 		nextcolor = color_status_group(heat, False)
 		if selected == i:
 			sblock = selectedblock
@@ -551,14 +551,14 @@ def confirmationbox(stdscr, y, x, title = "", default = False):
 		if c == ord(""):
 			sys.exit()
 
-		if c in [curses.KEY_ENTER, 10, 13]:
+		if c in (curses.KEY_ENTER, 10, 13):
 			break
 
-		if c in [ord("y"), ord("Y")]:
+		if c in (ord("y"), ord("Y")):
 			retval = True
 			break
 
-		if c in [ord("n"), ord("N")]:
+		if c in (ord("n"), ord("N")):
 			retval = False
 			break
 
@@ -659,12 +659,12 @@ def addthemearray(win, array, y = -1, x = -1, selected = False):
 				context, _p3, _selected = _p2
 			else:
 				context, _p3 = _p2
-			if type(_p3) == int:
+			if type(_p3) == int: # pylint: disable=unidiomatic-typecheck
 				attr = _p3
 			else:
 				attr = attr_to_curses_merged(context, _p3, selected = _selected)
 			y, x = addstr(win, string, y, x, attr)
-		elif type(_p2) == int:
+		elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
 			string = _p1
 			attr = _p2
 			y, x = addstr(win, string, y, x, attr)
@@ -758,7 +758,7 @@ def themearray_to_string(themearray):
 		if not isinstance(fragment, tuple):
 			raise ValueError(f"themearray_to_string() called with an invalid themearray: “{themearray}“; element: “{fragment}“ has invalid type {type(fragment)}; expected tuple")
 		# (string, attributes)
-		if isinstance(fragment[0], str) and type(fragment[1]) == int:
+		if isinstance(fragment[0], str) and type(fragment[1]) == int: # pylint: disable=unidiomatic-typecheck
 			string += fragment[0]
 		# (context, string)
 		# (context, string, selected)
@@ -917,7 +917,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 
 	# This is only used by helptexts
 	if not isinstance(items[0], dict):
-		if not type(items[0][0]) == int:
+		if not type(items[0][0]) == int: # pylint: disable=unidiomatic-typecheck
 			tmpitems = []
 			for item in items:
 				tmpitems.append({
@@ -1240,7 +1240,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -10)
 		elif c == curses.KEY_NPAGE:
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +10)
-		elif c in [curses.KEY_ENTER, 10, 13] and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.UNSELECTABLE) == 0 and confirm == False:
+		elif c in (curses.KEY_ENTER, 10, 13) and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.UNSELECTABLE) == 0 and confirm == False:
 			if deep_get(items[yoffset + curypos], "retval") is None:
 				selection = items[yoffset + curypos]["columns"]
 			else:
@@ -1966,12 +1966,12 @@ class UIProps:
 					context, _p3, _selected = _p2
 				else:
 					context, _p3 = _p2
-				if type(_p3) == int:
+				if type(_p3) == int: # pylint: disable=unidiomatic-typecheck
 					attr = _p3
 				else:
 					attr = attr_to_curses_merged(context, _p3, selected = _selected)
 				y, x = self.addstr(win, string, y, x, attr)
-			elif type(_p2) == int:
+			elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
 				string = _p1
 				attr = _p2
 				y, x = self.addstr(win, string, y, x, attr)
@@ -2227,7 +2227,7 @@ class UIProps:
 		match = False
 		for y in range(pos, len(sorted_list)):
 			tmp2 = getattr(sorted_list[y], self.sortcolumn)
-			if self.sortkey1 == "age" or self.sortkey1 == "seen":
+			if self.sortkey1 in ("age", "seen"):
 				tmp2 = [iktlib.seconds_to_age(tmp2)]
 			else:
 				if isinstance(tmp2, (list, tuple)):
@@ -2256,7 +2256,7 @@ class UIProps:
 		match = False
 		for y in reversed(range(0, pos)):
 			tmp2 = getattr(sorted_list[y], self.sortcolumn)
-			if self.sortkey1 == "age" or self.sortkey1 == "seen":
+			if self.sortkey1 in ("age", "seen"):
 				tmp2 = [iktlib.seconds_to_age(tmp2)]
 			else:
 				if isinstance(tmp2, (list, tuple)):
@@ -2543,7 +2543,7 @@ class UIProps:
 			return retval.RETURNONE
 		elif c == curses.KEY_MOUSE:
 			return self.handle_mouse_events(self.listpad, self.sorted_list, self.activatedfun, self.extraref, self.data)
-		elif c in [curses.KEY_ENTER, 10, 13] and self.activatedfun is not None:
+		elif c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
 			return self.enter_handler(self.activatedfun, self.extraref, self.data)
 		elif c == ord("M"):
 			# Toggle mouse support on/off to allow for copy'n'paste
