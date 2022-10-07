@@ -59,14 +59,21 @@ import itemgetter as itemgetters
 from itemgetter import itemgetter_allowlist
 import objgetter
 from objgetter import objgetter_allowlist
-import formatter as formatters
-from formatter import formatter_allowlist
+import formatter as formatters # pylint: disable=wrong-import-order
+from formatter import formatter_allowlist # pylint: disable=wrong-import-order
 
 from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results, get_playbook_path
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
 from kubernetes_helper import KubernetesHelper, get_node_status, update_api_status as kh_update_api_status
+
+from iktprint import iktprint, init_iktprint
+
+import about
+
+PROGRAMDESCRIPTION = "UI for managing Kubernetes clusters"
+PROGRAMAUTHORS = "Written by David Weinehall."
 
 HOMEDIR = str(Path.home())
 IKTDIR = os.path.join(HOMEDIR, ".ikt")
@@ -78,13 +85,6 @@ THEME_DIRNAME = "themes"
 VIEW_DIRNAME = "views"
 THEMEDIR = os.path.join(IKTDIR, THEME_DIRNAME)
 DEFAULT_THEME = "default.yaml"
-
-from iktprint import iktprint, init_iktprint
-
-import about
-
-PROGRAMDESCRIPTION = "UI for managing Kubernetes clusters"
-PROGRAMAUTHORS = "Written by David Weinehall."
 
 # If the user passes an object (and optionally namespace for that object)
 # on the command line, they're stored here
@@ -105,8 +105,8 @@ defaultview = ""
 kh = None
 
 def init_kubernetes_client():
-	global kh
-	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+	global kh # pylint: disable=global-statement
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 override_tail_lines = None
 default_tail_lines = 4000
@@ -199,7 +199,7 @@ def processor_timestamp_with_age(obj, field):
 	values = getattr(obj, field)
 
 	if len(values) > 2 and len(deep_get(formatting, "field_colors", [])) < 2:
-		raise ValueError(f"Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
+		raise ValueError("Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
 	elif len(values) == 2:
 		if values[0] is None:
 			array = [
@@ -798,7 +798,7 @@ def __get_timestamp_with_fallback(obj, paths):
 latest_info = None
 
 def process_value(field_name, value, vtype, view, field_index, action, formatter, replace_quotes, _regex):
-	override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", f"Global#kind_format"], "mixed")
+	override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", "Global#kind_format"], "mixed")
 
 	if vtype == "str":
 		# We don't want any newlines, and extra trailing whitespace
@@ -888,7 +888,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 		if type(value) not in [list, tuple]:
 			raise Exception(f"Field {field_name}: type({value}) is {vtype}; for type {vtype} pathtype must be a multi-element type")
 		_values = []
-		override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", f"Global#kind_format"], "mixed")
+		override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", "Global#kind_format"], "mixed")
 		for i in range(0, len(value)):
 			if i < len(vtype):
 				_vtype = vtype[i]
@@ -1648,7 +1648,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 							tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
 
 						if vtype == "api_group":
-							override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", f"Global#kind_format"], "mixed")
+							override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", "Global#kind_format"], "mixed")
 							if override_kind == "skip" or override_kind == "mixed" and "." not in tmp:
 								tmp = ""
 							vtype = "kind"
@@ -3508,7 +3508,7 @@ def get_inventory_list(**kwargs):
 		output = ansible_ping()
 
 		if output is None or len(output) == 0:
-			sys.exit(f"Internal error; ansible_ping() failed")
+			sys.exit("Internal error; ansible_ping() failed")
 
 		for (host, _status) in output:
 			if host in deep_get(inventory, "all#hosts"):
@@ -3682,7 +3682,7 @@ def get_control_plane():
 		control_planes.append((vlist[0], deep_get(vlist[0], "metadata#name")))
 
 	if len(control_planes) > 1:
-		iktprint([(f"Warning: ", "warning"), ("multiple control planes not supported yet, found multiple; returning first entry:", "default")], stderr = True)
+		iktprint([("Warning:", "warning"), (" multiple control planes not supported yet, found multiple; returning first entry:", "default")], stderr = True)
 		for control_plane in control_planes:
 			print(f"  {control_plane[1]}")
 
@@ -3725,7 +3725,7 @@ def get_pod_restarts_total(pod):
 	return restarts, restarted_at
 
 def set_cluster_context(uip, **kwargs):
-	global force_refresh_api
+	global force_refresh_apis # pylint: disable=global-statement
 
 	selected = deep_get(kwargs, "selected")
 	name = getattr(selected, "name")
@@ -3735,7 +3735,7 @@ def set_cluster_context(uip, **kwargs):
 	# since we might have changed between different clusters (or switched
 	# to a role that does not have access to a particular API)
 	if retval == True:
-		force_refresh_api = True
+		force_refresh_apis = True
 
 def get_containers(containers = [], container_statuses = []):
 	container_dict = {}
@@ -4332,8 +4332,6 @@ def get_formatter(field):
 	return tmp_field
 
 def fieldgenerator(view, field_index, field_indexes, fields = {}, denylist = []):
-	global namespace
-
 	if field_indexes is None or len(field_indexes) == 0:
 		return None, None, None
 
@@ -4392,10 +4390,10 @@ def fieldgenerator(view, field_index, field_indexes, fields = {}, denylist = [])
 	return tmp_fields, field_names, sortcolumn
 
 def genericlistloop(stdscr, view):
-	global namespace
-	global initial_name
-	global initial_namespace
-	global latest_info
+	global namespace # pylint: disable=global-statement
+	global initial_name # pylint: disable=global-statement
+	global initial_namespace # pylint: disable=global-statement
+	global latest_info # pylint: disable=global-statement
 	denylist = deep_get(views, f"{view}#field_denylist", [])
 	field_indexes = deep_get(views, f"{view}#field_indexes", {})
 
@@ -5822,7 +5820,7 @@ def identify_formatter(dataformat, kind = None, obj = None, path = None):
 			else:
 				raise ValueError(f"We do not know how to auto-identify data for kind {kind}")
 		else:
-			raise ValueError(f"identify_formatter was called without dataformat and kind, obj, or path=None")
+			raise ValueError("identify_formatter was called without dataformat and kind, obj, or path=None")
 
 	return formatter
 
@@ -5992,7 +5990,7 @@ def cniloop(stdscr, view):
 				cni_status = _cni[0][2]
 			else:
 				cni = "<unknown>"
-				cnistr = [(f"Could not uniquely identify CNI ", ("main", "status_not_ok")), ("(", ("types", "generic")), ("Candidates: ", ("main", "infoheader"))]
+				cnistr = [("Could not uniquely identify CNI ", ("main", "status_not_ok")), ("(", ("types", "generic")), ("Candidates: ", ("main", "infoheader"))]
 				for i in range(0, len(_cni)):
 					cnistr += [(f"{_cni[i][0]}", ("types", "generic")), ("separators", "version"), (f"{_cni[i][1]}", ("types", "version"))]
 					if i < len(_cni) - 1:
@@ -6420,7 +6418,7 @@ def generate_helptext(view, viewtype, additional_helptexts = [], shortcuts = [])
 
 		if len(shortcuts) > 0:
 			for shortcut in shortcuts:
-				tmp = deep_get(shortcuts[shortcut], f"helptext")
+				tmp = deep_get(shortcuts[shortcut], "helptext")
 				if tmp is not None:
 					helptext.append(tmp)
 
@@ -6466,7 +6464,7 @@ def generate_helptext(view, viewtype, additional_helptexts = [], shortcuts = [])
 	return helptext
 
 def genericinfoloop(stdscr, obj, view, **kwargs):
-	global initial_container
+	global initial_container # pylint: disable=global-statement
 
 	# If obj is a tuple we got the object as obj[0]
 	# params as obj[1]
@@ -7145,7 +7143,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						if w_confirm == "path_exists":
 							w_confirm = os.path.exists(w_result)
 						else:
-							sys.exit(f"Unknown value for w_confirm; must be either boolean or path_exists")
+							sys.exit("Unknown value for w_confirm; must be either boolean or path_exists")
 					if w_confirm == True:
 						curses.doupdate()
 						w_confirmtitle = deep_get(value, "confirmtitle")
@@ -7160,7 +7158,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				elif widget == "executecommand":
 					selected = uip.get_selected()
 					w_kinds = deep_get_with_fallback(value, ["widget_args#kinds", "kinds"])
-					if (w_kinds is None):
+					if w_kinds is None:
 						continue
 					w_ref = None
 					if selected is not None:
@@ -7182,13 +7180,13 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						containername = w_ref["name"]
 					if w_command == [ "<ephemeral>" ]:
 						ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
-						msg = [(f"Creating ephemeral ", "action"), (ephemeral_image, "programname"), (" container sharing process namespace with ", "action"), (f"{containername}", "path")]
+						msg = [("Creating ephemeral ", "action"), (ephemeral_image, "programname"), (" container sharing process namespace with ", "action"), (f"{containername}", "path")]
 					elif w_command == [ "<dnsutils>" ]:
 						node_name = deep_get(obj, "metadata#name")
 						containername = None
-						msg = [(f"Opening dnsutils container on ", "action"), (node_name, "hostname")]
+						msg = [("Opening dnsutils container on ", "action"), (node_name, "hostname")]
 					else:
-						msg = [(f"Executing ", "action"), (w_command[0], "programname"), (" inside ", "action"), (containername, "path")]
+						msg = [("Executing ", "action"), (w_command[0], "programname"), (" inside ", "action"), (containername, "path")]
 					executecommand(uip.stdscr, obj, containername, msg, command = w_command, waitforkeypress = w_waitforkeypress)
 					changed = True
 			if "action" in value:
@@ -7226,7 +7224,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						if w_confirm == "path_exists":
 							w_confirm = os.path.exists(w_result)
 						else:
-							sys.exit(f"Unknown value for w_confirm; must be either boolean or path_exists")
+							sys.exit("Unknown value for w_confirm; must be either boolean or path_exists")
 					if w_confirm == True:
 						curses.doupdate()
 						w_confirmtitle = deep_get(value, "confirmtitle")
@@ -7330,7 +7328,7 @@ def log_add_line(timestamps, facilities, severities, messages, timestamp, facili
 	return timestamps, facilities, severities, messages
 
 def containerinfoloop(stdscr, container, kind, obj, **kwargs):
-	global override_tail_lines
+	global override_tail_lines # pylint: disable=global-statement
 
 	multilog_containers_full = deep_get(kwargs, "multilog_containers_full", [])
 	multilog_containers = deep_get(kwargs, "multilog_containers", [])
@@ -8116,7 +8114,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 		elif c == ord("P"):
 			parserlist = [{
 				"lineattrs": widgetlineattrs.NORMAL,
-				"columns": [[(f"<autodetect>", ("windowwidget", "default"))]],
+				"columns": [[("<autodetect>", ("windowwidget", "default"))]],
 				"retval": "<autodetect>",
 			}]
 			for parser in natsorted(get_parser_list()):
@@ -8283,7 +8281,7 @@ def do_command(stdscr, **kwargs):
 				elif type(tmp) == list:
 					args += tmp
 				else:
-					sys.exit(f"widget_args: command requested incorrect data type; only str and list are valid")
+					sys.exit("widget_args: command requested incorrect data type; only str and list are valid")
 
 	waitforkeypress = deep_get(kwargs, "waitforkeypress", False)
 
@@ -8296,7 +8294,7 @@ def do_command(stdscr, **kwargs):
 		print()
 
 	if which(args[0]) is None:
-		iktprint([(f"Error: ", "error"), ("“", "default"), (f"{args[0]}", "programname"), ("“ does not exist.\n", "default")], stderr = True)
+		iktprint([("Error:", "error"), (" “", "default"), (f"{args[0]}", "programname"), ("“ does not exist.\n", "default")], stderr = True)
 		waitforkeypress = True
 	else:
 		# Should we perhaps use subprocess.run here?
@@ -8325,7 +8323,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 			args = ["/usr/bin/kubectl", "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
 			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 			if result.returncode != 0:
-				iktprint([(f"Error: ", "error"), ("Failed to create debug image", "default")], stderr = True)
+				iktprint([("Error:", "error"), (" Failed to create debug image", "default")], stderr = True)
 			else:
 				output = result.stdout.decode('utf-8')
 				tmp = re.match(r"Creating debugging pod (\S+) with container (\S+) .*", output)
@@ -8340,7 +8338,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 				args = ["/usr/bin/kubectl", "wait", "--for=condition=ready", "--timeout=60s", "-n", "default", "pod", pod_name]
 				result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 				if result.returncode != 0:
-					iktprint([(f"Error: ", "error"), ("the pod failed to become ready before timeout.", "default")], stderr = True)
+					iktprint([("Error:", "error"), (" the pod failed to become ready before timeout.", "default")], stderr = True)
 				else:
 					# Attach to the debug container
 					# XXX: Should we perhaps use subprocess.run here?
@@ -8600,7 +8598,7 @@ def executecommand_multiple(stdscr, msg, command, items, waitforkeypress):
 
 	if waitforkeypress or retval > 0:
 		if retval > 0:
-			iktprint([(f"Error: ", "error")] + format_commandline(args) + [(" returned ", "default"), (f"{retval}", "errorvalue")], stderr = True)
+			iktprint([("Error: ", "error")] + format_commandline(args) + [(" returned ", "default"), (f"{retval}", "errorvalue")], stderr = True)
 		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
@@ -9525,7 +9523,7 @@ def populate_playbooklist(context = None, actions = [], action_list = {}, contro
 			if category == "__INVALID__":
 				actions.append({
 					"lineattrs": widgetlineattrs.SEPARATOR,
-					"columns": [[(f" INVALID ", ("windowwidget", "bright"))], [("", ("windowwidget", "default"))]],
+					"columns": [[(" INVALID ", ("windowwidget", "bright"))], [("", ("windowwidget", "default"))]],
 				})
 				currentcategory = category
 			else:
@@ -9550,9 +9548,6 @@ def populate_playbooklist(context = None, actions = [], action_list = {}, contro
 force_refresh_apis = False
 
 def format_selection_list(uip, refresh_apis = False):
-	global views
-	global force_refresh_apis
-
 	if force_refresh_apis == True:
 		refresh_apis = True
 
@@ -9649,7 +9644,7 @@ def format_selection_list(uip, refresh_apis = False):
 		if api_group == "":
 			items.append({
 				"lineattrs": lineattrs,
-				"columns": [[(f"{view}", ("windowwidget", "default"))], [(f"", ("windowwidget", "dim"))]],
+				"columns": [[(f"{view}", ("windowwidget", "default"))], [("", ("windowwidget", "dim"))]],
 				"retval": view,
 			})
 		else:
@@ -9663,8 +9658,7 @@ def format_selection_list(uip, refresh_apis = False):
 
 def selectwindow(stdscr, uip, refresh_apis = False):
 	# Ideally we want to return to the same selection
-	global defaultview
-	global force_refresh_apis
+	global defaultview # pylint: disable=global-statement
 
 	uip.refresh_all()
 	items = format_selection_list(uip, refresh_apis)
@@ -9977,7 +9971,7 @@ def map_key(view_file, shortcut, activatedfun, key, modifier):
 	return shortcut_key, help_key
 
 def populate_views(force_refresh = False):
-	global views
+	global views # pylint: disable=global-statement
 
 	_available_api_families, status, modified = kh.get_available_api_families(force_refresh = force_refresh)
 	available_api_families = set()
@@ -9987,7 +9981,7 @@ def populate_views(force_refresh = False):
 
 	viewdir = os.path.join(IKTDIR, VIEW_DIRNAME)
 	if not os.path.isdir(viewdir):
-		sys.exit(f"{viewdir} does not exist; please re-run {about.install_program_name}")
+		sys.exit(f"{viewdir} does not exist; please re-run {about.INSTALL_PROGRAM_NAME}")
 
 	# Get a full list of views from all view directories
 	# Start by adding files from the views directory
@@ -10541,43 +10535,43 @@ def list_views():
 		joined_fields = iktlib.join_tuple_list(fields, separator = (", ", "separator"))
 		iktprint([(f"{view.ljust(maxviewlen + 2)}{kind.ljust(maxkindlen + 2)}", "default")] + joined_fields)
 
-	iktprint([(f"\nList views can be customised to only show select fields by editing “", "default"), (IKT_CONFIG_FILE, "path"), ("“.\n", "default")])
-	iktprint([(f"Simply add “", "default"), ("field:", "emphasis"), ("“ followed by a list of the fields you want the list to a section named like", "default")])
+	iktprint([("\nList views can be customised to only show select fields by editing “", "default"), (IKT_CONFIG_FILE, "path"), ("“.\n", "default")])
+	iktprint([("Simply add “", "default"), ("field:", "emphasis"), ("“ followed by a list of the fields you want the list to a section named like", "default")])
 	iktprint([("the list view you want to customise.\n", "default")])
 
-	iktprint([(f"Note that the fields “", "default"), ("name", "emphasis"), ("“ and, if applicable “", "default"), ("namespace", "emphasis"), ("“, will unconditionally", "default")])
+	iktprint([("Note that the fields “", "default"), ("name", "emphasis"), ("“ and, if applicable “", "default"), ("namespace", "emphasis"), ("“, will unconditionally", "default")])
 	iktprint([("be included even if the list of fields doesn't include them; including them", "default")])
 	iktprint([("in the list will only allow reordering the fields.\n", "default")])
 
-	iktprint([(f"The fields in this list are those supported by ", "default"), (f"{about.ui_program_name}", "programname"), ("; it is NOT an exhaustive list", "default")])
+	iktprint([("The fields in this list are those supported by ", "default"), (f"{about.UI_PROGRAM_NAME}", "programname"), ("; it is NOT an exhaustive list", "default")])
 	iktprint([("of fields available in the resource.\n", "default")])
 
 	iktprint([("The highlighted field for each View is the default sortcolumn.", "default")])
 
 def usage(progname):
-	helptext = [(f"{about.ui_program_name} ", "programname")]
+	helptext = [(f"{about.UI_PROGRAM_NAME} ", "programname")]
 	helptext += helptexts.usage
 
 	iktprint(helptext)
 
 def version(progname):
-	iktprint([(f"{about.ui_program_name} ", "programname"), (f"{about.ui_program_version}", "version")])
-	iktprint([(f"{about.program_suite_full_name} ({about.program_suite_name}) ", "programname"), (f"{about.program_suite_version}", "version")])
+	iktprint([(f"{about.UI_PROGRAM_NAME} ", "programname"), (f"{about.UI_PROGRAM_VERSION}", "version")])
+	iktprint([(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"), (f"{about.PROGRAM_SUITE_VERSION}", "version")])
 	print()
-	print(about.copyright)
-	print(about.license)
+	print(about.COPYRIGHT)
+	print(about.LICENSE)
 	print()
 	print(PROGRAMAUTHORS)
 	return 0
 
 def set_default_view(view):
-	global defaultview
+	global defaultview # pylint: disable=global-statement
 
 	if defaultview == "":
 		defaultview = view
 	else:
-		iktprint([(about.ui_program_name, "programname"), (": ", "default"), ("VIEW", "argument"), (" can only be specified once.", "default")], stderr = True)
-		iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		iktprint([(about.UI_PROGRAM_NAME, "programname"), (": ", "default"), ("VIEW", "argument"), (" can only be specified once.", "default")], stderr = True)
+		iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 def checkforview(arg):
@@ -10640,12 +10634,12 @@ def customise_listviews():
 def main():
 	defaultthemefile = f"{THEMEDIR}/{DEFAULT_THEME}"
 
-	global initial_name
-	global initial_namespace
-	global initial_container
-	global read_only_mode
-	global namespace
-	global defaultview
+	global initial_name # pylint: disable=global-statement
+	global initial_namespace # pylint: disable=global-statement
+	global initial_container # pylint: disable=global-statement
+	global read_only_mode # pylint: disable=global-statement
+	global namespace # pylint: disable=global-statement
+	global defaultview # pylint: disable=global-statement
 
 	themefile = deep_get(iktconfig, "Global#theme")
 	if themefile is None or len(themefile) == 0:
@@ -10704,8 +10698,8 @@ def main():
 			version(os.path.basename(sys.argv[0]))
 			sys.exit(0)
 		elif arg.startswith("--"):
-			iktprint([(f"{about.ui_program_name}", "programname"), (": unrecognised option “", "default"), (f"{arg}", "option"), ("“.", "default")], stderr = True)
-			iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+			iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": unrecognised option “", "default"), (f"{arg}", "option"), ("“.", "default")], stderr = True)
+			iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		elif len(defaultview) == 0:
 			init_kubernetes_client()
@@ -10718,7 +10712,7 @@ def main():
 			tmp = checkforview(arg.lower())
 			if tmp is None:
 				iktprint([("Unsupported or unavailable view “", "default"), (f"{arg.lower()}", "command"), ("“;", "default")], stderr = True)
-				iktprint([("Use “", "default"), (f"{about.ui_program_name} ", "programname"), ("list-views", "command"), ("“ to list available views.", "default")], stderr = True)
+				iktprint([("Use “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("list-views", "command"), ("“ to list available views.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 			defaultview = tmp
 			y += 1
@@ -10732,7 +10726,7 @@ def main():
 					if "/" in tmp[1]:
 						print("%s: invalid syntax “%s %s”" % (os.path.basename(sys.argv[0]), os.path.basename(sys.argv[0]), " ".join(sys.argv[1:])), file = sys.stderr)
 						print("Format is either NAMESPACE/NAME or NAME NAMESPACE", file = sys.stderr)
-						iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+						iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 						sys.exit(errno.EINVAL)
 					else:
 						initial_namespace = tmp[1]
@@ -10743,22 +10737,22 @@ def main():
 				if "/" in arg:
 					print("%s: invalid syntax “%s %s”" % (os.path.basename(sys.argv[0]), os.path.basename(sys.argv[0]), " ".join(sys.argv[1:])), file = sys.stderr)
 					print("Format is either NAMESPACE/NAME or NAME NAMESPACE", file = sys.stderr)
-					iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+					iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 				else:
 					initial_namespace = arg
 			elif initial_container is None:
 				initial_container = arg
 			else:
-				iktprint([(f"{about.ui_program_name}", "programname"), (": unrecognised option “", "default"), (f"{arg}", "option"), ("“.", "default")], stderr = True)
-				iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+				iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": unrecognised option “", "default"), (f"{arg}", "option"), ("“.", "default")], stderr = True)
+				iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 		y += 1
 
 	if defaultview == "":
 		if initial_name is not None:
-			iktprint([(f"{about.ui_program_name}", "programname"), (": unsupported view “", "default"), (f"{initial_name}", "command"), ("“.", "default")], stderr = True)
-			iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+			iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": unsupported view “", "default"), (f"{initial_name}", "command"), ("“.", "default")], stderr = True)
+			iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
 		if tmpdefaultview is not None and tmpdefaultview != "":
@@ -10775,19 +10769,19 @@ def main():
 			tmp = re.match(r"^(.+):(.*)$", initial_name)
 			if tmp is not None:
 				if ":" in tmp[1]:
-					iktprint([(f"{about.ui_program_name}", "programname"), (": invalid syntax “", "default"), (f"{about.ui_program_name} ", "programname"), (f"{' '.join(sys.argv[1:])}", "argument"), ("”", "default")], stderr = True)
+					iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": invalid syntax “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), (f"{' '.join(sys.argv[1:])}", "argument"), ("”", "default")], stderr = True)
 					iktprint([("Format is either ", "default"), ("NAMESPACE/NAME:", "argument"), ("{", "separator"), ("CONTAINER", "argument"), (",", "separator"), ("CONFIGMAP", "argument"), ("}", "separator"), (" or ", "default"), ("NAME NAMESPACE ", "argument"), ("{", "separator"), ("CONTAINER", "argument"), (",", "separator"), ("CONFIGMAP", "argument"), ("}", "separator")], stderr = True)
-					iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+					iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 				else:
 					initial_name = tmp[1]
 					initial_container = tmp[2]
 
 	# Containers and Config Maps can have a third level (container/data)
-	if initial_container is not None and not (defaultview.lstrip("*") in ["Pods", "Config Maps"]):
-		iktprint([(f"{about.ui_program_name}", "programname"), (": invalid syntax “", "default"), (f"{about.ui_program_name} ", "programname"), (f"{' '.join(sys.argv[1:])}", "argument"), ("”", "default")], stderr = True)
-		iktprint([(f"CONTAINER", "argument"), ("/", "separator"), ("CONFIGMAP", "argument"), (" only makes sense in ", "default"), ("pod", "command"), ("/", "separator"), ("configmap", "command"), (" view.", "default")], stderr = True)
-		iktprint([("Try “", "default"), (f"{about.ui_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+	if initial_container is not None and defaultview.lstrip("*") not in ["Pods", "Config Maps"]:
+		iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": invalid syntax “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), (f"{' '.join(sys.argv[1:])}", "argument"), ("”", "default")], stderr = True)
+		iktprint([("CONTAINER", "argument"), ("/", "separator"), ("CONFIGMAP", "argument"), (" only makes sense in ", "default"), ("pod", "command"), ("/", "separator"), ("configmap", "command"), (" view.", "default")], stderr = True)
+		iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	# We don't need escape sequences, so cut down on the delay to 25ms

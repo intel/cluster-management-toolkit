@@ -201,7 +201,7 @@ def get_selection(selection, kind = None, default = None, skip_control_planes = 
 	# Kubernetes resources
 	if isinstance(kind, tuple):
 		from kubernetes_helper import KubernetesHelper
-		kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 		for node in vlist:
@@ -263,7 +263,7 @@ def cordon_nodes(options, args):
 		iktprint([("\n[Cordoning nodes]", "phase")])
 
 	from kubernetes_helper import KubernetesHelper
-	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
 		iktprint([(f"{node}:", "hostname")])
@@ -364,7 +364,7 @@ def uncordon_nodes(options, args):
 		iktprint([("\n[Uncordoning nodes]", "phase")])
 
 	from kubernetes_helper import KubernetesHelper
-	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
 		iktprint([(f"{node}:", "hostname")])
@@ -597,7 +597,7 @@ def add_nodes(options, args):
 
 	# Get variables that need to be available when setting up nodes
 	from kubernetes_helper import KubernetesHelper
-	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	join_token = kh.get_join_token()
 	if len(join_token) == 0:
@@ -736,7 +736,7 @@ def remove_nodes(options, args):
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
 	if len(controlplanes) > 0 and args[0] != "ALL":
-		iktprint([("Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be removed using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be removed using ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if len(non_existing) > 0:
@@ -815,11 +815,11 @@ def purge_hosts(options, args):
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
 	if len(controlplanes) > 0:
-		iktprint([("Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be removed using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be removed using ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if len(nodes) > 0:
-		iktprint([("Error: ", "error")] + join_tuple_list(nodes, _tuple = "hostname", separator = (",", "separator")) + [(" are still node(s) in the cluster; please run ", "default"), (f"{about.tool_program_name}", "programname"), (" remove-node", "command"), (" first to remove them from the cluster; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error")] + join_tuple_list(nodes, _tuple = "hostname", separator = (",", "separator")) + [(" are still node(s) in the cluster; please run ", "default"), (f"{about.TOOL_PROGRAM_NAME}", "programname"), (" remove-node", "command"), (" first to remove them from the cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.EBUSY)
 
 	hosts = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
@@ -885,7 +885,7 @@ def upgrade_nodes(options, args):
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
 	if len(controlplanes) > 0 and args[0] != "ALL":
-		iktprint([("Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be upgraded using ", "default"), (f"{about.admin_program_name}", "programname"), ("; aborting.", "default")], stderr = True)
+		iktprint([("Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be upgraded using ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if len(non_existing) > 0:
@@ -1154,7 +1154,7 @@ ikt_commandline = {
 		"description": [("Upgrade Kubernetes on ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
 		"extended_description": [
 			[("Upgrade Kubernetes on ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument"), (" to the version in use on the control-plane(s);", "description")],
-			[("run this on all nodes after running “", "description"), (f"{about.admin_program_name}", "programname"), (" upgrade-control-plane", "command"), ("“", "description")],
+			[("run this on all nodes after running “", "description"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" upgrade-control-plane", "command"), ("“", "description")],
 		],
 		"options": {
 			"--forks": {
@@ -1194,7 +1194,7 @@ ikt_commandline = {
 #	},
 	"extended_description": [
 		[("You can use “", "description"), ("ALL", "emphasis"), ("“ as a substitute for all resources in most cases;", "description")],
-		[("for instance “", "description"), (f"{about.tool_program_name}", "programname"), (" upgrade-node ", "command"), ("ALL", "emphasis"), ("“ will upgrade Kubernetes on all nodes", "description")],
+		[("for instance “", "description"), (f"{about.TOOL_PROGRAM_NAME}", "programname"), (" upgrade-node ", "command"), ("ALL", "emphasis"), ("“ will upgrade Kubernetes on all nodes", "description")],
 		[("", "default")],
 		[("Note that “", "description"), ("ALL", "emphasis"), ("“ excludes control planes when used on nodes; to include control planes", "description")],
 		[("you need to pass the “", "description"), ("--include-control-planes", "option"), ("“ option (where available)", "description")],
@@ -1213,7 +1213,7 @@ def get_programname(callname):
 	}
 
 	if callname not in callnames:
-		sys.exit(f"{about.tool_program_name} called with unknown name {callname}; aborting.")
+		sys.exit(f"{about.TOOL_PROGRAM_NAME} called with unknown name {callname}; aborting.")
 
 	return callname, callnames[callname]
 
@@ -1224,7 +1224,7 @@ def main():
 	init_iktprint(THEME_PATH)
 	programname, commandline = get_programname(os.path.basename(argv[0]))
 
-	command, options, args = parse_commandline(programname, about.tool_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, argv, commandline)
+	command, options, args = parse_commandline(programname, about.TOOL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, argv, commandline)
 
 	# Used by the ansible module
 	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)

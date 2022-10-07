@@ -36,6 +36,12 @@ from iktlib import deep_get, execute_command, execute_command_with_response, ikt
 
 from kubernetes_helper import kubectl_get_version
 
+from iktprint import iktinput, iktinput_password, iktprint, init_iktprint
+
+import about
+PROGRAMDESCRIPTION = "Setup or teardown a Kubernetes cluster"
+PROGRAMAUTHORS = "Written by David Weinehall."
+
 HOMEDIR = str(Path.home())
 BINDIR = f"{HOMEDIR}/bin"
 IKTDIR = f"{HOMEDIR}/.ikt"
@@ -47,12 +53,6 @@ IKT_CONFIG_FILENAME = "ikt.yaml"
 IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
 IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
 IKT_INSTALLATION_INFO = f"{IKTDIR}/installation_info.yaml"
-
-from iktprint import iktinput, iktinput_password, iktprint, init_iktprint
-
-import about
-PROGRAMDESCRIPTION = "Setup or teardown a Kubernetes cluster"
-PROGRAMAUTHORS = "Written by David Weinehall."
 
 THEME_DIRNAME = "themes"
 THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
@@ -318,7 +318,7 @@ def str_presenter(dumper, data):
 def patch_cni_flannel(cni_path, pod_network_cidr):
 	# Ideally we should patch this using a round-trip capable YAML parser,
 	# such as ruamel
-	sedstr = f's#^\(.*"\)Network": "10.244.0.0/16",$#\\1Network:": "{pod_network_cidr}",#'
+	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$#\\1Network:": "{pod_network_cidr}",#'
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	check_and_print_status(execute_command(args))
 
@@ -596,7 +596,7 @@ def setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 		patch_cni(cni_path, pod_network_cidr)
 
 	if filetype == "yaml":
-		args = ["/usr/bin/kubectl", "apply", f"--context=<<<context>>>", "-f", cni_path]
+		args = ["/usr/bin/kubectl", "apply", "--context=<<<context>>>", "-f", cni_path]
 	elif filetype == "installer":
 		args = deep_get(cni_data, f"{cni}#command")
 
@@ -1231,7 +1231,7 @@ def __task_uncordon_control_planes(installation_info):
 	controlplanes = __selection_control_planes()
 
 	from kubernetes_helper import KubernetesHelper
-	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for controlplane in controlplanes:
 		iktprint([(f"  {controlplane}:", "hostname")])
@@ -1341,11 +1341,11 @@ def __task_remove_kube_config(installation_info):
 		os.remove(f"{HOMEDIR}/.kube/config")
 		_dir = os.listdir(f"{HOMEDIR}/.kube")
 		try:
-			_dir.remove(f"cache")
+			_dir.remove("cache")
 		except ValueError:
 			pass
 		try:
-			_dir.remove(f"http-cache")
+			_dir.remove("http-cache")
 		except ValueError:
 			pass
 
@@ -1513,10 +1513,10 @@ def __find_requested_version(distro, version = None):
 
 	major, minor, patchrev = requested_version.split(".")
 	if int(minor) < 11:
-		iktprint([("Error:", "error"), (" Kubernetes versions older than ", "default"), ("1.11", "version"), (" are not supported by ", "default"), (f"{about.program_suite_name}", "programname"), ("; aborting.", "default")], stderr = True)
+		iktprint([("Error:", "error"), (" Kubernetes versions older than ", "default"), ("1.11", "version"), (" are not supported by ", "default"), (f"{about.PROGRAM_SUITE_NAME}", "programname"), ("; aborting.", "default")], stderr = True)
 		sys.exit(erro.EINVAL)
 	elif int(minor) < 18:
-		iktprint([("Warning:", "warning"), (" Kubernetes versions older than ", "default"), ("1.18", "version"), (" are not fully supported by ", "default"), (f"{about.program_suite_name}", "programname"), (". Some features may be missing or completely broken.", "default")], stderr = True)
+		iktprint([("Warning:", "warning"), (" Kubernetes versions older than ", "default"), ("1.18", "version"), (" are not fully supported by ", "default"), (f"{about.PROGRAM_SUITE_NAME}", "programname"), (". Some features may be missing or completely broken.", "default")], stderr = True)
 
 	return requested_version
 
@@ -1529,8 +1529,8 @@ def prepare_installation(options = [], args = None):
 		__list_phases(prepare_tasks)
 		sys.exit(0)
 	elif len(args) == 0:
-		iktprint([(f"{about.admin_program_name}", "programname"), (": “", "default"), ("prepare", "command"), ("“ requires at least 1 arguments.", "default")], stderr = True)
-		iktprint([("Try “", "default"), (f"{about.admin_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		iktprint([(f"{about.ADMIN_PROGRAM_NAME}", "programname"), (": “", "default"), ("prepare", "command"), ("“ requires at least 1 arguments.", "default")], stderr = True)
+		iktprint([("Try “", "default"), (f"{about.ADMIN_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	# Always require the user to specify the name of the cluster to operate against, even when resuming prepare;
@@ -1633,7 +1633,7 @@ def prepare_installation(options = [], args = None):
 			os.remove(IKT_INSTALLATION_INFO)
 			sys.exit(errno.EINTR)
 
-	iktprint([(f"\n[Preparing localhost and control plane(s)]", "phase")])
+	iktprint([("\n[Preparing localhost and control plane(s)]", "phase")])
 
 	run_tasks(tasks = prepare_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "prepared")
 
@@ -1651,8 +1651,8 @@ def prepare_installation(options = [], args = None):
 
 	iktprint([("\nControl plane preparation successful", "success")])
 	print("\nNext step:")
-	iktprint([("• ", "separator"), (f"{about.admin_program_name}", "programname"), (" setup-control-plane ", "command"), ("[", "separator"), ("CNI", "argument"), ("]", "separator"), (" [", "separator"), ("POD_NETWORK_CIDR", "argument"), ("]", "separator")])
-	iktprint([("\nSee “", "separator"), (f"{about.admin_program_name}", "programname"), (" help", "command"), ("“ for more information about valid ", "default"), ("CNI", "argument"), (" options.\n", "default")])
+	iktprint([("• ", "separator"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" setup-control-plane ", "command"), ("[", "separator"), ("CNI", "argument"), ("]", "separator"), (" [", "separator"), ("POD_NETWORK_CIDR", "argument"), ("]", "separator")])
+	iktprint([("\nSee “", "separator"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" help", "command"), ("“ for more information about valid ", "default"), ("CNI", "argument"), (" options.\n", "default")])
 
 def import_cluster(options = [], args = None):
 	global no_password
@@ -1669,7 +1669,7 @@ def import_cluster(options = [], args = None):
 			no_password = True
 
 	from kubernetes_helper import KubernetesHelper
-	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 	clusters = kh.list_clusters()
 	available_clusters = [tmp[0] for tmp in clusters]
 
@@ -1706,7 +1706,7 @@ def import_cluster(options = [], args = None):
 			iktprint([("\nAborting:", "error"), (" User stopped cluster import.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
-	iktprint([(f"\n[Importing cluster(s)]", "phase")])
+	iktprint([("\n[Importing cluster(s)]", "phase")])
 
 	# Since the clusters might use different versions of Kubernetes
 	# we always install the latest kubectl on localhost, so no need to adjust version
@@ -1906,7 +1906,7 @@ def setup_control_plane(options = [], args = None):
 		iktprint([("Error:", "error"), (" Invalid installation state; there is a partial or full installation already; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif state is None or state == "preparing":
-		iktprint([("Error:", "error"), (" The system is not prepared for installation yet; run ", "default"), (f"{about.admin_program_name}", "programname"), (" prepare", "command"), (" before continuing. Aborting.", "default")], stderr = True)
+		iktprint([("Error:", "error"), (" The system is not prepared for installation yet; run ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" prepare", "command"), (" before continuing. Aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if state == "prepared":
@@ -1982,7 +1982,7 @@ def __get_node_info(kh = None):
 	# when we don't use the Kubernetes helper
 	if kh is None:
 		from kubernetes_helper import KubernetesHelper
-		kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	node_statuses = []
 
@@ -2017,10 +2017,10 @@ def get_control_planes(fail_on_empty = True):
 	__clusterhosts = deep_get(inventory, f"{cluster_name}#hosts", {})
 	controlplanes = []
 	if len(__controlplanes) == 0 and fail_on_empty == True:
-		iktprint([("Error:", "error"), (" No control plane(s) defined in the inventory; rebuilding the inventory using “", "default"), (f"{about.inventory_program_name} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
+		iktprint([("Error:", "error"), (" No control plane(s) defined in the inventory; rebuilding the inventory using “", "default"), (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 	if len(__clusterhosts) == 0 and fail_on_empty == True:
-		iktprint([("Error:", "error"), (" The cluster ", "default"), (f"{cluster_name}", "hostname"), (" has no hosts in the inventory; rebuilding the inventory using “", "default"), (f"{about.inventory_program_name} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
+		iktprint([("Error:", "error"), (" The cluster ", "default"), (f"{cluster_name}", "hostname"), (" has no hosts in the inventory; rebuilding the inventory using “", "default"), (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	for controlplane in __controlplanes:
@@ -2058,7 +2058,7 @@ def teardown_control_plane(options = [], args = None):
 		iktprint([("Error:", "error"), (" Cannot determine installation state; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif state in ["preparing", "prepared", "torn_down"]:
-		iktprint([("Error:", "error"), (" The system has no installed cluster; try ", "default"), (f"{about.admin_program_name}", "programname"), (" purge-control-plane", "command"), ("; aborting.", "default")], stderr = True)
+		iktprint([("Error:", "error"), (" The system has no installed cluster; try ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" purge-control-plane", "command"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	for opt, optarg in options:
@@ -2207,7 +2207,7 @@ def upgrade_control_plane(options = [], args = None):
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
 	if state is None or state in ["<none>"]:
-		iktprint([("Error:", "error"), (" Unknown installation state; if you believe this is OK (such as when upgrading a cluster not installed using ", "default"), (f"{about.admin_program_name}", "programname"), (" you can try using the “", "default"), ("--override", "option"), ("“ option; aborting.", "default")], stderr = True)
+		iktprint([("Error:", "error"), (" Unknown installation state; if you believe this is OK (such as when upgrading a cluster not installed using ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" you can try using the “", "default"), ("--override", "option"), ("“ option; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if state is None or state in ["<none>", "preparing", "prepared", "installing", "tearing_down", "torn_down", "purging"]:
@@ -2307,7 +2307,7 @@ def upgrade_control_plane(options = [], args = None):
 				if int(version_tuple[1]) > int(installed_version_tuple[1]) and int(version_tuple[1]) <= int(requested_version_tuple[1]) and (major_minor not in minor_versions or minor_versions[major_minor] < version_tuple[2]):
 					minor_versions[major_minor] = version_tuple[2]
 			for version in minor_versions:
-				iktprint([("• ", "separator"), (f"{about.admin_program_name}", "programname"), (" upgrade-control-plane", "command"), (f" {version}.{minor_versions[version]}", "version")])
+				iktprint([("• ", "separator"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" upgrade-control-plane", "command"), (f" {version}.{minor_versions[version]}", "version")])
 			sys.exit(errno.EINVAL)
 		else:
 			upgrade_type = "minor"
@@ -2526,23 +2526,23 @@ def troubleshoot(options = [], args = None):
 	print()
 
 	if server_major_version != 1:
-		iktprint([("Critical:", "critical"), (f" {about.program_suite_name}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; aborting.", "default")], stderr = True)
+		iktprint([("Critical:", "critical"), (f" {about.PROGRAM_SUITE_NAME}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOTSUP)
 
 	if kubectl_minor_version > server_minor_version and kubectl_minor_version == server_minor_version + 1:
-		iktprint([("Note: ", "note"), ("The ", "default"), ("kubectl", "programname"), (f" version is one minor version newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
+		iktprint([("Note: ", "note"), ("The ", "default"), ("kubectl", "programname"), (" version is one minor version newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
 		iktprint([("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
 		note += 1
 	elif kubectl_minor_version > server_minor_version:
-		iktprint([("Warning: ", "warning"), ("The ", "default"), ("kubectl", "programname"), (f" version is more than one minor versions newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
+		iktprint([("Warning: ", "warning"), ("The ", "default"), ("kubectl", "programname"), (" version is more than one minor versions newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
 		iktprint([("         this might work, but it's generally recommended to keep the versions in sync.", "default")], stderr = True)
 		warning += 1
 	elif kubectl_minor_version < server_minor_version and kubectl_minor_version + 1 == server_minor_version:
-		iktprint([("Note: ", "note"), ("The ", "default"), ("kubectl", "programname"), (f" version is one minor version older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
+		iktprint([("Note: ", "note"), ("The ", "default"), ("kubectl", "programname"), (" version is one minor version older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
 		iktprint([("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
 		warning += 1
 	elif kubectl_minor_version < server_minor_version:
-		iktprint([("Error:", "error"), (" The ", "default"), ("kubectl", "programname"), (f" version is much older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
+		iktprint([("Error:", "error"), (" The ", "default"), ("kubectl", "programname"), (" version is much older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
 		iktprint([("       this is NOT supported and is likely to cause issues.", "default")], stderr = True)
 		error += 1
 
@@ -2555,7 +2555,7 @@ def troubleshoot(options = [], args = None):
 	iktprint([("\n[Checking kubelet & kube-proxy versions]", "phase")])
 
 	from kubernetes_helper import KubernetesHelper
-	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 
@@ -2592,29 +2592,29 @@ def troubleshoot(options = [], args = None):
 			critical = True
 
 		if kubelet_major_version is not None and kubelet_major_version != 1:
-			iktprint([(f"Critical:", "critical"), (f" {about.program_suite_name}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"), (" runs ", "default"), ("kubelet ", "programname"), ("version ", "default"), (f"{kubelet_version}", "version")], stderr = True)
+			iktprint([("Critical:", "critical"), (f" {about.PROGRAM_SUITE_NAME}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"), (" runs ", "default"), ("kubelet ", "programname"), ("version ", "default"), (f"{kubelet_version}", "version")], stderr = True)
 			critical = True
 
 		if kubeproxy_major_version is not None and kubeproxy_major_version != 1:
-			iktprint([(f"Critical:", "critical"), (f" {about.program_suite_name}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"), (" runs ", "default"), ("kube-proxy ", "programname"), ("version ", "default"), (f"{kubeproxy_version}", "version")], stderr = True)
+			iktprint([("Critical:", "critical"), (f" {about.PROGRAM_SUITE_NAME}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"), (" runs ", "default"), ("kube-proxy ", "programname"), ("version ", "default"), (f"{kubeproxy_version}", "version")], stderr = True)
 			critical = True
 
 		if kubelet_minor_version is not None and kubelet_minor_version > server_minor_version:
-			iktprint([(f"Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is newer than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([(f"       this is not supported.", "default")], stderr = True)
+			iktprint([("Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is newer than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
+			iktprint([("       this is not supported.", "default")], stderr = True)
 			error += 1
 		elif kubelet_minor_version is not None and kubelet_minor_version < server_minor_version and kubelet_minor_version + 2 >= server_minor_version:
-			iktprint([(f"Warning: ", "warning"), ("The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is a bit older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([(f"         this is supported, but not recommended.", "default")], stderr = True)
+			iktprint([("Warning: ", "warning"), ("The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is a bit older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
+			iktprint([("         this is supported, but not recommended.", "default")], stderr = True)
 			warning += 1
 		elif kubelet_minor_version is not None and kubelet_minor_version < server_minor_version:
-			iktprint([(f"Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is a much older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([(f"       this is not supported.", "default")], stderr = True)
+			iktprint([("Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is a much older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
+			iktprint([("       this is not supported.", "default")], stderr = True)
 			error += 1
 
 		if kubelet_minor_version is not None and kubeproxy_minor_version is not None and kubelet_minor_version != kubeproxy_minor_version:
-			iktprint([(f"Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is not the same as that of ", "default"), ("kube-proxy", "programname"), (" (", "default"), (f"{kubeproxy_major_version}.{kubeproxy_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([(f"       this is not supported.", "default")], stderr = True)
+			iktprint([("Error:", "error"), (" The version of ", "default"), ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"), (") on node ", "default"), (f"{node_name}", "hostname"), (" is not the same as that of ", "default"), ("kube-proxy", "programname"), (" (", "default"), (f"{kubeproxy_major_version}.{kubeproxy_minor_version}", "version"), (");", "default")], stderr = True)
+			iktprint([("       this is not supported.", "default")], stderr = True)
 			error += 1
 
 	if critical == True:
@@ -2662,7 +2662,7 @@ commandline = {
 	"Import Cluster": {
 		"command": ["import-cluster"],
 		"values": [("[", "separator"), ("CLUSTER_NAME", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
-		"description": [(f"Import existing cluster(s) and prepare them for use with {about.program_suite_name}", "description")],
+		"description": [(f"Import existing cluster(s) and prepare them for use with {about.PROGRAM_SUITE_NAME}", "description")],
 		"extended_description": [
 			[("If ", "description"), ("CLUSTER_NAME", "argument"), (",", "separator"), ("...", "argument"), (" is not specified all clusters in ", "description"), (f"{HOMEDIR}/.kube/config", "path")],
 			[(" will be imported", "description")],
@@ -2896,7 +2896,7 @@ commandline = {
 		"description": [("Purge configuration and installed software", "description")],
 		"extended_description": [
 			[("purge-control-plane", "command"), (" will run ", "description"), ("teardown-control-plane", "command"), (" first if necessary", "description")],
-			[("Software and configuration needed for ", "description"), (f"{about.program_suite_name}", "programname"), (" will not be purged", "description")],
+			[("Software and configuration needed for ", "description"), (f"{about.PROGRAM_SUITE_NAME}", "programname"), (" will not be purged", "description")],
 
 		],
 		"options": {
@@ -2978,7 +2978,7 @@ commandline = {
 
 def main():
 	init_iktprint(THEME_PATH)
-	command, options, args = parse_commandline(about.admin_program_name, about.admin_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline)
+	command, options, args = parse_commandline(about.ADMIN_PROGRAM_NAME, about.ADMIN_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline)
 
 	# Used by the ansible module
 	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)

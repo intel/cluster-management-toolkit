@@ -1,5 +1,9 @@
 #! /usr/bin/env python3
 
+"""
+This module contains helptexts for iku
+"""
+
 import about
 
 # Improve to handle embedded color codes; probably through storing the log messages
@@ -18,8 +22,8 @@ about = [
 	(0, [("   ████   ████   ◥███◣         ████         ", ("main", "logo_letter"))]),
 	(0, [("   ████   ████    ◥███◣        ████         ", ("main", "logo_letter"))]),
 	(0, [("", ("main", "about_text"))]),
-	(0, [(f" {about.program_suite_full_name} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{about.program_suite_version}", ("main", "about_version"))]),
-	(0, [(f" {about.ui_program_name} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{about.ui_program_version}", ("main", "about_version"))]),
+	(0, [(f" {about.PROGRAM_SUITE_FULL_NAME} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{about.PROGRAM_SUITE_VERSION}", ("main", "about_version"))]), # pylint: disable=line-too-long
+	(0, [(f" {about.UI_PROGRAM_NAME} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{about.UI_PROGRAM_VERSION}", ("main", "about_version"))]), # pylint: disable=line-too-long
 	(0, [("", ("main", "about_text"))]),
 	(0, [(" Copyright © 2019-2022 Intel Corporation", ("main", "about_text_highlight"))]),
 	(0, [("", ("main", "about_text"))]),
@@ -218,24 +222,24 @@ containerinfo = [
 	("[Shift] + [Tab]", "Jump to previous elevated severity"),
 ] + spacer + logmovement
 
-usage  = [("[", "separator"), ("COMMAND", "command"), ("]", "separator"), (" [", "separator"), ("OPTION", "option"), ("]", "separator"), ("...", "option"), (" [", "separator"), ("ARGUMENT", "argument"), ("]", "separator"), ("...\n", "argument")]
+usage  = [("[", "separator"), ("COMMAND", "command"), ("]", "separator"), (" [", "separator"), ("OPTION", "option"), ("]", "separator"), ("...", "option"), (" [", "separator"), ("ARGUMENT", "argument"), ("]", "separator"), ("...\n", "argument")] # pylint: disable=line-too-long
 usage += [("\n", "description")]
 usage += [("UI for managing Kubernetes clusters\n", "description")]
 usage += [("\n", "description")]
 usage += [("VIEW", "command"),
           ("                     start in ", "description"), ("VIEW\n", "command")]
 usage += [("VIEW ", "command"), ("NAME ", "argument"), ("[", "separator"), ("NAMESPACE", "argument"), ("]", "separator"),
-          ("    start in ", "description"), ("VIEW", "command"), (" for the object matching ", "description"), ("NAME", "argument"), (" and, optionally, ", "description"), ("NAMESPACE\n", "argument")]
+          ("    start in ", "description"), ("VIEW", "command"), (" for the object matching ", "description"), ("NAME", "argument"), (" and, optionally, ", "description"), ("NAMESPACE\n", "argument")] # pylint: disable=line-too-long
 usage += [("VIEW ", "command"), ("NAMESPACE/NAME", "argument"),
           ("      same as above; alternate syntax\n", "description")]
 usage += [("pod ", "command"), ("NAME NAMESPACE CONTAINER\n", "argument")]
-usage += [("pod ", "command"), ("[", "separator"), ("NAMESPACE/", "argument"), ("]", "separator"), ("NAME:", "argument"), ("[", "separator"), ("CONTAINER", "argument"), ("]\n", "separator")]
-usage += [("                         start in container info view matching ", "description"), ("NAME", "argument"), (", ", "description"), ("NAMESPACE", "argument"), (", ", "description"), ("CONTAINER", "argument"), (";\n", "description")]
-usage += [("                         if ", "description"), ("NAME", "argument"), (" has exactly one container, then ", "description"), ("NAME:", "argument"), (" opens that container\n", "description")]
+usage += [("pod ", "command"), ("[", "separator"), ("NAMESPACE/", "argument"), ("]", "separator"), ("NAME:", "argument"), ("[", "separator"), ("CONTAINER", "argument"), ("]\n", "separator")] # pylint: disable=line-too-long
+usage += [("                         start in container info view matching ", "description"), ("NAME", "argument"), (", ", "description"), ("NAMESPACE", "argument"), (", ", "description"), ("CONTAINER", "argument"), (";\n", "description")] # pylint: disable=line-too-long
+usage += [("                         if ", "description"), ("NAME", "argument"), (" has exactly one container, then ", "description"), ("NAME:", "argument"), (" opens that container\n", "description")] # pylint: disable=line-too-long
 usage += [("configmap ", "command"), ("NAME NAMESPACE CONFIGMAP\n", "argument")]
-usage += [("configmap ", "command"), ("[", "separator"), ("NAMESPACE/", "argument"), ("]", "separator"), ("NAME:", "argument"), ("[", "separator"), ("CONFIGMAP", "argument"), ("]\n", "separator")]
-usage += [("                         start in the configmap info view matching ", "description"), ("NAME", "argument"), (", ", "description"),  ("NAMESPACE", "argument"), (", ", "description"),  ("CONFIGMAP", "argument"), (";\n", "description")]
-usage += [("                         if ", "description"), ("NAME", "argument"), (" has exactly one configmap, then ", "description"), ("NAME:", "argument"), (" opens that configmap\n", "description")]
+usage += [("configmap ", "command"), ("[", "separator"), ("NAMESPACE/", "argument"), ("]", "separator"), ("NAME:", "argument"), ("[", "separator"), ("CONFIGMAP", "argument"), ("]\n", "separator")] # pylint: disable=line-too-long
+usage += [("                         start in the configmap info view matching ", "description"), ("NAME", "argument"), (", ", "description"),  ("NAMESPACE", "argument"), (", ", "description"),  ("CONFIGMAP", "argument"), (";\n", "description")] # pylint: disable=line-too-long
+usage += [("                         if ", "description"), ("NAME", "argument"), (" has exactly one configmap, then ", "description"), ("NAME:", "argument"), (" opens that configmap\n", "description")] # pylint: disable=line-too-long
 usage += [("\n", "description")]
 usage += [("  --read-only ", "option"),
           ("           disable all commands that modify state", "description")]

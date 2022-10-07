@@ -4,11 +4,16 @@
 # Requires: python3-natsort
 # Requires: python3-openssl
 
-from functools import reduce
+"""
+This program is used to query or modify the iKT inventory list
+
+For usage, see:
+	iktinv help
+"""
+
 import errno
 import os
 from pathlib import Path
-import re
 import sys
 import yaml
 
@@ -19,11 +24,21 @@ except ModuleNotFoundError:
 
 from commandparser import parse_commandline
 
-from ansible_helper import ansible_configuration, ansible_get_inventory_pretty, ansible_get_groups, ansible_get_groups_by_host, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_remove_groups, ansible_set_vars, ansible_set_hostvars, ansible_set_groupvars, ansible_unset_hostvars, ansible_unset_groupvars, ansible_create_groups, ansible_ping
+from ansible_helper import ansible_configuration, ansible_get_inventory_pretty, ansible_get_groups
+from ansible_helper import ansible_get_groups_by_host, ansible_get_hosts_by_group, ansible_add_hosts
+from ansible_helper import ansible_remove_hosts, ansible_remove_groups, ansible_set_vars
+from ansible_helper import ansible_set_hostvars, ansible_set_groupvars, ansible_unset_hostvars
+from ansible_helper import ansible_unset_groupvars, ansible_create_groups, ansible_ping
 from ansible_helper import ANSIBLE_INVENTORY
 
-import iktlib
+import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
+
+from iktprint import iktprint, init_iktprint
+
+import about
+PROGRAMDESCRIPTION = "Query or modify the host inventory"
+PROGRAMAUTHORS = "Written by David Weinehall."
 
 HOMEDIR = str(Path.home())
 IKTDIR = f"{HOMEDIR}/.ikt"
@@ -31,22 +46,28 @@ IKT_CONFIG_FILENAME = "ikt.yaml"
 IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
 IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
 
-from iktprint import iktprint, init_iktprint
-
-import about
-PROGRAMDESCRIPTION = f"Query or modify the host inventory"
-PROGRAMAUTHORS = "Written by David Weinehall."
-
 THEME_DIRNAME = "themes"
 THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
 THEME_PATH = f"{THEMEDIR}/default.yaml"
 
-def set_host_vars(options = [], args = None):
+def set_host_vars(options, args):
+	"""
+	Set host-specific variables
+
+		Parameters:
+			options (list[(str, str)]): Unused
+			args (list[str]): Comma-separated list of key:value pairs, followed by comma-separated list of hosts
+		Returns:
+			0
+	"""
+
+	del options
+
 	hostvars = []
 	hosts = []
 
 	if args is None or len(args) == 0:
-		raise Exception(f"Programming error; no hosts provided")
+		raise Exception("Programming error; no hosts provided")
 
 	hosts = args[1].split(",")
 	keyvals = args[0].split(",")
@@ -55,9 +76,12 @@ def set_host_vars(options = [], args = None):
 		try:
 			key, value = keyval.split(":")
 		except ValueError:
-			iktprint([(f"Error: ", "error"), ("Setting a variable requires a ", "default"), ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
+			iktprint([("Error: ", "error"), ("Setting a variable requires a ", "default"),
+				  ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
 			print()
-			iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+			iktprint([("Try “", "default"),
+				  (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("help", "command"),
+				  ("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		hostvars.append((key, value))
 
@@ -69,12 +93,24 @@ def set_host_vars(options = [], args = None):
 
 	return 0
 
-def set_group_vars(options = [], args = None):
+def set_group_vars(options, args):
+	"""
+	Set group-specific variables
+
+		Parameters:
+			options (list[(str, str)]): Unused
+			args (list[str]): Comma-separated list of key:value pairs, followed by comma-separated list of groups
+		Returns:
+			0
+	"""
+
+	del options
+
 	groupvars = []
 	groups = []
 
 	if args is None or len(args) == 0:
-		raise Exception(f"Programming error; no groups provided")
+		raise Exception("Programming error; no groups provided")
 
 	groups = args[1].split(",")
 	keyvals = args[0].split(",")
@@ -83,9 +119,12 @@ def set_group_vars(options = [], args = None):
 		try:
 			key, value = keyval.split(":")
 		except ValueError:
-			iktprint([(f"Error: ", "error"), ("Setting a variable requires a ", "default"), ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
+			iktprint([("Error: ", "error"), ("Setting a variable requires a ", "default"),
+				  ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
 			print()
-			iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+			iktprint([("Try “", "default"),
+				  (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("help", "command"),
+				  ("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		groupvars.append((key, value))
 
@@ -97,15 +136,37 @@ def set_group_vars(options = [], args = None):
 
 	return 0
 
-def set_global_vars(options = [], args = None):
-	return set_group_vars(args = [args[0], "all"])
+def set_global_vars(options, args):
+	"""
+	Set global variables
 
-def unset_host_vars(options = [], args = None):
+		Parameters:
+			options (list[(str, str)]): Unused
+			args (list[str]): Comma-separated list of key:value pairs
+		Returns:
+			Return value from set_group_vars()
+	"""
+
+	return set_group_vars(options = options, args = [args[0], "all"])
+
+def unset_host_vars(options, args):
+	"""
+	Unset host-specific variables
+
+		Parameters:
+			options (list[(str, str)]): Unused
+			args (list[str]): Comma-separated list of keys, followed by comma-separated list of hosts
+		Returns:
+			0
+	"""
+
+	del options
+
 	hostvars = []
 	hosts = []
 
 	if args is None or len(args) == 0:
-		raise Exception(f"Programming error; no hosts provided")
+		raise Exception("Programming error; no hosts provided")
 
 	hosts = args[1].split(",")
 	hostvars = args[0].split(",")
@@ -118,12 +179,24 @@ def unset_host_vars(options = [], args = None):
 
 	return 0
 
-def unset_group_vars(options = [], args = None):
+def unset_group_vars(options, args):
+	"""
+	Unset group-specific variables
+
+		Parameters:
+			options (list[(str, str)]): Unused
+			args (list[str]): Comma-separated list of keys, followed by comma-separated list of groups
+		Returns:
+			0
+	"""
+
+	del options
+
 	groupvars = []
 	groups = []
 
 	if args is None or len(args) == 0:
-		raise Exception(f"Programming error; no groups provided")
+		raise Exception("Programming error; no groups provided")
 
 	groups = args[1].split(",")
 	groupvars = args[0].split(",")
@@ -136,15 +209,34 @@ def unset_group_vars(options = [], args = None):
 
 	return 0
 
-def unset_global_vars(options = [], args = None):
-	return unset_group_vars(args = [args[0], "all"])
+def unset_global_vars(options, args):
+	"""
+	Unset global variables
 
-def add_groups(options = [], args = None):
+		Parameters:
+			options (list[(str, str)]): Unused
+			args (list[str]): Comma-separated list of keys
+		Returns:
+			Return value from unset_group_vars()
+	"""
+	return unset_group_vars(options = options, args = [args[0], "all"])
+
+def add_groups(options, args):
+	"""
+	Add groups
+
+		Parameters:
+			options (list[(str, str)]): List of opt, optarg
+			args (list[str]): Comma-separated list of groups
+		Returns:
+			0
+	"""
+
 	groups = []
 	groupvars = []
 
 	if args is None or len(args) == 0:
-		raise Exception(f"Programming error; no groups provided")
+		raise Exception("Programming error; no groups provided")
 
 	groups = args[0].split(",")
 
@@ -178,14 +270,24 @@ def add_groups(options = [], args = None):
 
 	return 0
 
-def add_hosts(options = [], args = None):
+def add_hosts(options, args):
+	"""
+	Add hosts
+
+		Parameters:
+			options (list[(str, str)]): List of opt, optarg
+			args (list[str]): Comma-separated list of hosts
+		Returns:
+			0
+	"""
+
 	groups = []
 	hostvars = []
 	hosts = []
 	groups = []
 
 	if args is None or len(args) == 0:
-		raise Exception(f"Programming error; no hosts provided")
+		raise Exception("Programming error; no hosts provided")
 
 	hosts = args[0].split(",")
 
@@ -200,9 +302,16 @@ def add_hosts(options = [], args = None):
 				hostvars.append((key, value))
 		elif opt == "--groups":
 			if len(groups) > 0:
-				iktprint([("Error: ", "error"), ("Invalid option; “", "default"), (f"{opt}", "option"), ("“ cannot be used with ", "default"), ("HOST", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("... ", "argument"), ("syntax.", "default")], stderr = True)
+				iktprint([("Error: ", "error"), ("Invalid option; “", "default"),
+					  (f"{opt}", "option"),
+					  ("“ cannot be used with ", "default"),
+					  ("HOST", "argument"), (",", "separator"), ("... ", "argument"),
+					  ("GROUP", "argument"), (",", "separator"), ("... ", "argument"),
+					  ("syntax.", "default")], stderr = True)
 				print()
-				iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+				iktprint([("Try “", "default"),
+					  (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("help", "command"),
+					  ("“ for more information.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 			groups = optarg.split(",")
 		else:
@@ -233,29 +342,48 @@ def add_hosts(options = [], args = None):
 	return 0
 
 def format_members(group, members):
+	"""
+	Format a list of group members as a themearray
+
+		Parameters:
+			group (str): The name of the group
+			members (list[str]): A list of hostnames
+		Returns:
+			formatted (list[(str, themeref)]): A themearray
+	"""
+
 	formatted = [(f"{group}: ", "default")]
 	i = 0
-	for i in range(0, len(members)):
+	for i, member in enumerate(members):
 		if i < len(members) - 1:
-			formatted += [(members[i], "yaml_key"), (", ", "separator")]
+			formatted += [(member, "yaml_key"), (", ", "separator")]
 		else:
-			formatted += [(members[i], "yaml_key")]
+			formatted += [(member, "yaml_key")]
 
 	return formatted
 
-def remove_groups(options = [], args = None):
+def remove_groups(options, args):
+	"""
+	Remove groups
+
+		Parameters:
+			options (list[(str, str)]): List of opt, optarg
+			args (list[str]): Comma-separated list of groups
+		Returns:
+			0
+	"""
+
 	groups = []
-	hostvars = []
 	extrahosts = []
 	forceneeded = False
 	force = False
 
 	if args is None or len(args) == 0:
-		raise Exception(f"Programming error; no groups provided")
+		raise Exception("Programming error; no groups provided")
 
 	groups = args[0].split(",")
 
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt == "--force":
 			force = True
 		else:
@@ -264,7 +392,9 @@ def remove_groups(options = [], args = None):
 	if "all" in groups:
 		iktprint([("Error: ", "error"), ("The group “", "default"), ("all", "argument"), ("“ cannot be removed.", "default")], stderr = True)
 		print()
-		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		iktprint([("Try “", "default"),
+			  (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("help", "command"),
+			  ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	for group in groups:
@@ -281,7 +411,9 @@ def remove_groups(options = [], args = None):
 		print()
 		iktprint([("Removing groups that still contain hosts requires specifying “", "default"), ("--force", "option"), ("“.", "default")], stderr = True)
 		print()
-		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		iktprint([("Try “", "default"),
+			  (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("help", "command"),
+			  ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	retval = ansible_remove_groups(inventory = ANSIBLE_INVENTORY, groups = groups, force = force)
@@ -292,6 +424,12 @@ def remove_groups(options = [], args = None):
 	return 0
 
 def get_cluster_name():
+	"""
+	Return the name of the cluster
+		Returns:
+			cluster_name (str): On success
+			None (None): On failure
+	"""
 	if os.path.exists(f"{HOMEDIR}/.kube/config"):
 		with open(f"{HOMEDIR}/.kube/config", "r", encoding = "utf-8") as f:
 			d1 = yaml.safe_load(f)
@@ -311,10 +449,22 @@ def get_cluster_name():
 
 	return cluster_name
 
-def rebuild_inventory(options = [], args = None):
+def rebuild_inventory(options, args):
+	"""
+	Build an inventory based on information from Kubernetes
+
+		Parameters:
+			options (list[(opt, optarg)]): A list of opt, optarg
+			args (list[str]): Unused
+		Returns:
+			0
+	"""
+
+	del args
+
 	force = False
 
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt == "--force":
 			force = True
 		else:
@@ -322,18 +472,20 @@ def rebuild_inventory(options = [], args = None):
 
 	# Is there a pre-existing inventory?
 	if os.path.isfile(ANSIBLE_INVENTORY) and force == False:
-		iktprint([("Error: ", "error"), ("Overwriting an existing inventory requires specifying “", "default"), ("--force", "option"), ("“.", "default")], stderr = True)
+		iktprint([("Error: ", "error"), ("Overwriting an existing inventory requires specifying “", "default"),
+			  ("--force", "option"), ("“.", "default")], stderr = True)
 		print()
-		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		iktprint([("Try “", "default"),
+			  (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("help", "command"),
+			  ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	from kubernetes_helper import KubernetesHelper
-
 	# We ideally want to iterate over all clusters here, but for now we only import the current-context
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 	cluster_name = get_cluster_name()
-	kh = KubernetesHelper(about.program_suite_name, about.program_suite_version, None)
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+	vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
 
 	for node in vlist:
 		roles = kh.get_node_roles(node)
@@ -369,8 +521,17 @@ def rebuild_inventory(options = [], args = None):
 
 	return 0
 
-def remove_hosts(options = [], args = None):
-	hostvars = []
+def remove_hosts(options, args):
+	"""
+	Remove hosts
+
+		Parameters:
+			options (list[(str, str)]): List of opt, optarg
+			args (list[str]): Comma-separated list of hosts
+		Returns:
+			0
+	"""
+
 	hosts = []
 	groups = ["all"]
 	extragroups = []
@@ -378,7 +539,7 @@ def remove_hosts(options = [], args = None):
 	force = False
 
 	if args is None or len(args) == 0:
-		raise Exception(f"Programming error; no hosts provided")
+		raise Exception("Programming error; no hosts provided")
 
 	hosts = args[0].split(",")
 
@@ -399,7 +560,7 @@ def remove_hosts(options = [], args = None):
 				hostgroups.remove("all")
 				extragroups.append((host, hostgroups))
 
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt == "--force":
 			force = True
 		else:
@@ -407,14 +568,20 @@ def remove_hosts(options = [], args = None):
 
 	if "all" in groups and forceneeded == True and (force == False or len(groups) > 1):
 		if forceneeded == True:
-			iktprint([("Error: ", "error"), (f"The following hosts are parts of other groups than “", "default"), ("all", "argument"), ("“:", "default")])
+			iktprint([("Error: ", "error"), ("The following hosts are parts of other groups than “", "default"), ("all", "argument"), ("“:", "default")])
 			for host, groups in extragroups:
 				iktprint(format_members(host, groups))
 		print()
-		iktprint([("Removing hosts from “", "default"), ("all", "argument"), ("“ requires specifying “", "default"), ("--force", "option"), ("“", "default")], stderr = True)
-		iktprint([(f"unless “", "default"), ("all", "argument"), ("“ is the only group or the hosts are not members of other groups.", "default")], stderr = True)
+		iktprint([("Removing hosts from “", "default"),
+			  ("all", "argument"),
+			  ("“ requires specifying “", "default"), ("--force", "option"), ("“", "default")], stderr = True)
+		iktprint([("unless “", "default"),
+			  ("all", "argument"),
+			  ("“ is the only group or the hosts are not members of other groups.", "default")], stderr = True)
 		print()
-		iktprint([("Try “", "default"), (f"{about.inventory_program_name} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		iktprint([("Try “", "default"),
+			  (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("help", "command"),
+			  ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	retval = True
@@ -431,11 +598,21 @@ def remove_hosts(options = [], args = None):
 
 	return 0
 
-def inventory(options = [], args = None):
+def inventory(options, args):
+	"""
+	Show the inventory
+
+		Parameters:
+			options (list[(str, str)]): List of opt, optarg
+			args (list[str]): Comma-separated list of groups (optional)
+		Returns:
+			0
+	"""
+
 	include_groupvars = False
 	include_hostvars = False
 
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt == "--include-vars":
 			include_groupvars = True
 			include_hostvars = True
@@ -452,10 +629,22 @@ def inventory(options = [], args = None):
 
 	return 0
 
-def list_groups(options = [], args = None):
+def list_groups(options, args):
+	"""
+	List groups
+
+		Parameters:
+			options (list[(str, str)]): List of opt, optarg
+			args (list[str]): Unused
+		Returns:
+			0
+	"""
+
+	del args
+
 	include_groupvars = False
 
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt == "--include-vars":
 			include_groupvars = True
 		else:
@@ -466,10 +655,22 @@ def list_groups(options = [], args = None):
 
 	return 0
 
-def list_hosts(options = [], args = None):
+def list_hosts(options, args):
+	"""
+	List hosts
+
+		Parameters:
+			options (list[(str, str)]): List of opt, optarg
+			args (list[str]): Unused
+		Returns:
+			0
+	"""
+
+	del args
+
 	include_hostvars = False
 
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt == "--include-vars":
 			include_hostvars = True
 		else:
@@ -482,7 +683,23 @@ def list_hosts(options = [], args = None):
 
 	return 0
 
-def ping(options = [], args = None):
+def ping(options, args):
+	"""
+	Ping hosts or groups of hosts
+	Default: ping all hosts
+	A well-formed inventory should not have groups with the same name as any of the hosts,
+	thus mixing group and host names should be OK; but if there are overlaps the group
+	are prioritised over the hostname
+
+		Parameters:
+			options (list[(str, str)]): Unused
+			args (list[str]): list of hosts or groups (optional)
+		Returns:
+			0
+	"""
+
+	del options
+
 	hoststatuses = []
 
 	if args is not None and len(args) > 0:
@@ -511,7 +728,7 @@ def ping(options = [], args = None):
 	output = ansible_ping(selection = selection)
 
 	if output is None or len(output) == 0:
-		raise Exception(f"Internal error; ansible -m ping failed")
+		raise Exception("Internal error; ansible -m ping failed")
 
 	maxlen = 0
 
@@ -584,7 +801,7 @@ commandline = {
 	"Add Hosts to Groups": {
 		"command": ["add-host", "add-hosts"],
 		"values": [("HOST", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Add ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" to ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Add ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" to ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
 	},
 	"Inventory": {
 		"command": ["inventory", "inv"],
@@ -626,7 +843,7 @@ commandline = {
 	"Ping": {
 		"command": ["ping"],
 		"values": [("[", "separator"), ("GROUP/HOST", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
-		"description": [("Ansible ping ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument"), (" or ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" (Default: “", "description"), ("all", "argument"), ("“)", "description")],
+		"description": [("Ansible ping ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument"), (" or ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" (Default: “", "description"), ("all", "argument"), ("“)", "description")], # pylint: disable=line-too-long
 		"min_args": 0,
 		"max_args": 1,
 		"callback": ping,
@@ -635,7 +852,7 @@ commandline = {
 		"command": ["rebuild-inventory"],
 		"description": [("Create inventory for an existing Kubernetes cluster", "description")],
 		"extended_description": [
-			[("In cases where the cluster has not been setup using ", "description"), (f"{about.inventory_program_name}", "programname")],
+			[("In cases where the cluster has not been setup using ", "description"), (f"{about.INVENTORY_PROGRAM_NAME}", "programname")],
 			[("this can be used to build a barebones inventory", "description")],
 			[("Note: ", "note"), ("This requires a running cluster", "description")],
 		],
@@ -681,7 +898,7 @@ commandline = {
 	"Remove Hosts": {
 		"command": ["remove-host", "remove-hosts"],
 		"values": [("HOST", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Remove ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" from ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"description": [("Remove ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" from ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
 	},
 	"Set Global Variables": {
 		"command": ["set-var", "set-vars"],
@@ -697,16 +914,16 @@ commandline = {
 	},
 	"Set Group Variables": {
 		"command": ["set-group-var", "set-group-vars"],
-		"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Set ", "description"), ("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument"), (" for ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
+		"description": [("Set ", "description"), ("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument"), (" for ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
 		"min_args": 2,
 		"max_args": 2,
 		"callback": set_group_vars,
 	},
 	"Set Host Variables": {
 		"command": ["set-host-var", "set-host-vars"],
-		"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("... ", "argument"), ("HOST", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Set ", "description"), ("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument"), (" for ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("... ", "argument"), ("HOST", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
+		"description": [("Set ", "description"), ("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument"), (" for ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
 		"min_args": 2,
 		"max_args": 2,
 		"callback": set_host_vars,
@@ -746,13 +963,17 @@ commandline = {
 }
 
 def main():
+	"""
+	Main function for the program
+	"""
+
 	init_iktprint(THEME_PATH)
-	command, options, args = parse_commandline(about.inventory_program_name, about.inventory_program_version, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline, default_command = "inventory", theme = THEME_PATH)
+	command, options, args = parse_commandline(about.INVENTORY_PROGRAM_NAME, about.INVENTORY_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS,
+						   sys.argv, commandline, default_command = "inventory", theme = THEME_PATH)
 
 	# iktinv was called without any parameters; assuming inventory
 	if command is None:
 		command = inventory
-		commandname = "inventory"
 
 	# Used by the ansible module
 	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)

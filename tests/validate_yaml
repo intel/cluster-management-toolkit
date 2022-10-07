@@ -1,4 +1,11 @@
 #! /usr/bin/env python3
+"""
+A checker that validates views, parser files, and themes
+for Intel Kubernetes Toolkit against a predefined schema
+
+For usage, see:
+	./tests/validate_yaml help
+"""
 
 import json
 import os
@@ -15,40 +22,62 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-validate_yaml_version = "0.2"
-
-verbose = 1
-abort_on_fail = False
-no_summary = None
+validate_yaml_version = "0.3"
 
 failed_files = []
 
 def usage():
-	print("validate_yaml [ARGUMENTS]\n")
-	print("Validate YAML files used by iKT\n")
+	"""
+	Display usage information for the program.
+	"""
+
+	print("validate_yaml [OPTION]... TYPE")
+	print("validate_yaml [OPTION]... TYPE PATH...")
+	print("validate_yaml [OPTION]... SCHEMA PATH...")
+	print("")
+	print("Validate YAML files used by iKT")
+	print("")
 	print("themes|views|parsers                 Validate all YAML-files in the default directory for the specified type")
 	print("themes|views|parsers|SCHEMA PATH...  Validate all YAML-files at PATH for the specified type")
 	print("                                     if PATH is a directory, or the specified file if PATH is a file")
 	print("")
 	print("If no arguments are specified all YAML-files will be validated")
-	print("If the schema isn't one of themes|views|parsers it'll be expected to be a path to a valid JSON schema file")
+	print("If SCHEMA isn't one of themes|views|parsers it's be expected to be a path to a valid JSON schema file")
 	print("")
-	print("Built-in paths are relative to the base directory of the iKT source code\n")
-	print("Note: No schemas are available to validate playbooks; use ansible-playbook to validate playbooks")
+	print("Built-in paths are relative to the base directory of the iKT source code")
 	print("")
+	print("Note: Validating Ansible playbooks is out of scope for this program; use ansible-lint")
+	print("")
+	print("Global Options:")
 	print("-A,--abort-on-failure  Stop validation immediately if one file fails; normally all files are validated")
 	print("-S,--summary           Show a summary even when using --quiet")
 	print("-N,--no-summary        Don't show a summary even when using --verbose")
 	print("-R,--resume-from PATH  After a failed validation run resume validation from this file")
 	print("-q,--quiet             Be less verbose")
 	print("-v,--verbose           Be more verbose")
+	print("")
 	print("help|--help            Display this help and exit")
 	print("version|--version      Output version information and exit")
 
 def version():
+	"""
+	Display version information for the program.
+	"""
+
 	print(f"validate_yaml {validate_yaml_version}")
 
-def validate_file(yaml_path, schema_path):
+def validate_file(yaml_path, schema_path, verbose = 0, abort_on_fail = False):
+	"""
+	Validate a YAML file against a JSON schema
+
+		Parameters:
+			yaml_path (str): A path to a YAML file
+			schema_path (str): A path to the JSON schema to validate the YAML file against
+
+		Returns:
+			fail (int): 0 on success, 1 on failure
+	"""
+
 	if not yaml_path.endswith((".yaml", ".yml")):
 		if verbose > 1:
 			print(f"\n{yaml_path} does not end in .yaml or .yml; skipping.\n")
@@ -101,9 +130,13 @@ def validate_file(yaml_path, schema_path):
 	return fail
 
 def main():
-	global no_summary
-	global verbose
-	global abort_on_fail
+	"""
+	Main function for the program
+	"""
+
+	abort_on_fail = False
+	verbose = 1
+	no_summary = None
 
 	i = 1
 	schema = None
@@ -195,7 +228,7 @@ def main():
 
 	for yaml_path, schema in natsorted(_yaml_paths):
 		try:
-			retval = validate_file(yaml_path, schema)
+			retval = validate_file(yaml_path, schema, verbose = verbose, abort_on_fail = abort_on_fail)
 		except KeyboardInterrupt:
 			sys.exit()
 

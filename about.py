@@ -1,24 +1,29 @@
 #! /usr/bin/env python3
 
-copyright = "Copyright © 2019-2022 Intel Corporation"
-license  = "This is free software; see the source for copying conditions.  There is NO\n"
-license += "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+"""
+This module holds version strings, copyright info, and license info
+for Intel Kubernetes Toolkit
+"""
 
-program_suite_name = "iKT"
-program_suite_full_name = "Intel Kubernetes Toolkit"
-program_suite_version = "0.1.9"
+COPYRIGHT = "Copyright © 2019-2022 Intel Corporation"
+LICENSE  = "This is free software; see the source for copying conditions.  There is NO\n"
+LICENSE += "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
 
-ui_program_name = "iku"
-ui_program_version = "0.2.3"
+PROGRAM_SUITE_NAME = "iKT"
+PROGRAM_SUITE_FULL_NAME = "Intel Kubernetes Toolkit"
+PROGRAM_SUITE_VERSION = "0.1.9"
 
-tool_program_name = "ikt"
-tool_program_version = "0.1.9"
+UI_PROGRAM_NAME = "iku"
+UI_PROGRAM_VERSION = "0.2.3"
 
-install_program_name = "ikt-install"
-install_program_version = "0.7"
+TOOL_PROGRAM_NAME = "ikt"
+TOOL_PROGRAM_VERSION = "0.1.9"
 
-admin_program_name = "iktadm"
-admin_program_version = "0.1.9"
+INSTALL_PROGRAM_NAME = "ikt-install"
+INSTALL_PROGRAM_VERSION = "0.7"
 
-inventory_program_name = "iktinv"
-inventory_program_version = "0.2"
+ADMIN_PROGRAM_NAME = "iktadm"
+ADMIN_PROGRAM_VERSION = "0.1.9"
+
+INVENTORY_PROGRAM_NAME = "iktinv"
+INVENTORY_PROGRAM_VERSION = "0.2"

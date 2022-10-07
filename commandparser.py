@@ -1,5 +1,9 @@
 #! /usr/bin/env python3
 
+"""
+This module parsers command line options and generate helptexts
+"""
+
 import errno
 import sys
 
@@ -14,20 +18,42 @@ programauthors = None
 
 commandline = None
 
-def version(options, args):
+def __version(options, args):
+	"""
+	Display version information
+
+		Parameters:
+			options (list[(str, str)]): Unused
+			args (dict): Unused
+
+		Returns:
+			0
+	"""
+
 	del options
 	del args
 
 	iktprint([(f"{programname} ", "programname"), (f"{programversion}", "version")])
-	iktprint([(f"{about.program_suite_full_name} ({about.program_suite_name}) ", "programname"), (f"{about.program_suite_version}", "version")])
+	iktprint([(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"), (f"{about.PROGRAM_SUITE_VERSION}", "version")])
 	print()
-	print(about.copyright)
-	print(about.license)
+	print(about.COPYRIGHT)
+	print(about.LICENSE)
 	print()
 	print(programauthors)
 	return 0
 
-def usage(options, args):
+def __usage(options, args):
+	"""
+	Display usage information
+
+		Parameters:
+			options (list[(str, str)]): Unused
+			args (dict): Unused
+
+		Returns:
+			0
+	"""
+
 	del options
 	del args
 
@@ -64,9 +90,9 @@ def usage(options, args):
 	if has_commands == True:
 		headerstring += [(" COMMAND", "command")]
 	if has_options == True:
-		headerstring += [(" [", "separator"), ("OPTIONS", "option"), ("]", "separator"), ("...", "option")]
+		headerstring += [(" [", "separator"), ("OPTION", "option"), ("]", "separator"), ("...", "option")]
 	if has_args == True:
-		headerstring += [(" [", "separator"), ("ARGUMENTS", "argument"), ("]", "separator"), ("...", "argument")]
+		headerstring += [(" [", "separator"), ("ARGUMENT", "argument"), ("]", "separator"), ("...", "argument")]
 
 	iktprint(headerstring)
 	print()
@@ -181,29 +207,39 @@ def __find_command(__commandline, arg):
 
 	return commandname, command, key, min_args, max_args
 
-commandlinedefaults = {
+COMMANDLINEDEFAULTS = {
 	"Help": {
 		"command": ["help", "--help"],
 		"description": [("Display this help and exit", "description")],
 		"min_args": 0,
 		"max_args": 0,
-		"callback": usage,
+		"callback": __usage,
 	},
 	"Version": {
 		"command": ["version", "--version"],
 		"description": [("Output version information and exit", "description")],
 		"min_args": 0,
 		"max_args": 0,
-		"callback": version,
+		"callback": __version,
 	},
 }
 
 def parse_commandline(__programname, __programversion, __programdescription, __programauthors, argv, __commandline, default_command = None, theme = None):
-	global commandline
-	global programname
-	global programversion
-	global programdescription
-	global programauthors
+	"""
+	Parse the command line
+
+		Parameters:
+			__programname (str): The name of the program (used in usage and version information, and in error messages)
+			__programversion (str): The version of the program (used in version information)
+			__programdescription (str): The description of the program (used in usage information)
+			__programauthors (str): The authors of the program (used in version information)
+	"""
+
+	global commandline  # pylint: disable=global-statement
+	global programname  # pylint: disable=global-statement
+	global programversion  # pylint: disable=global-statement
+	global programdescription  # pylint: disable=global-statement
+	global programauthors  # pylint: disable=global-statement
 
 	i = 1
 
@@ -212,7 +248,7 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 	programdescription = __programdescription
 	programauthors = __programauthors
 
-	commandline = {**__commandline, **commandlinedefaults}
+	commandline = {**__commandline, **COMMANDLINEDEFAULTS}
 
 	if theme is not None:
 		init_iktprint(theme)
