@@ -526,7 +526,7 @@ def __upgrade_cni(cni, upgradetype, context):
 			context (str): The cluster context
 	"""
 
-	if upgradetype not in ["CNI", "executable"]:
+	if upgradetype not in ("CNI", "executable"):
 		raise Exception(f"Unknown upgradetype {upgradetype}; this is a programming error.")
 
 	# FIXME: for now we hardcode this
@@ -819,7 +819,7 @@ def __task_check_and_create_ssh_key(installation_info):
 
 	if check_for_ssh_key() == False:
 		retval = iktinput([("Warning:", "warning"), (" No ssh key found in ", "default"), (f"{HOMEDIR}/.ssh", "path"), ("; create one now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" No ssh key available.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
@@ -1158,6 +1158,17 @@ def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False)
 	return retval, ansible_results
 
 def run_playbooks(playbooks, hosts = None, extra_values = None):
+	"""
+	Run a set of playbooks
+
+		Parameters:
+			playbooks (list[(description, playbookpath)]): A list of playbooks
+			hosts (str): The hosts to run the playbooks on
+			extra_values (dict): Variables to set before running the playbooks
+		Returns:
+			True on success, False on failure
+	"""
+
 	if len(playbooks) == 0 or hosts == None:
 		return True
 
@@ -1171,8 +1182,16 @@ def run_playbooks(playbooks, hosts = None, extra_values = None):
 
 	return retval == 0
 
-# Scan a directory and return an array of playbook paths
 def __playbook_paths_from_path(path):
+	"""
+	Scan a directory and return a list of playbook paths
+
+		Parameters:
+			path (str): A path to a directory
+		Returns:
+			list[str]: A list of paths
+	"""
+
 	if path is None:
 		raise Exception("No path passed to __playbook_paths_from_path; this is a programming error.")
 
@@ -1195,8 +1214,16 @@ def __playbook_paths_from_path(path):
 
 	return playbook_paths
 
-# Add all playbooks in the array
 def populate_playbooks_from_paths(paths):
+	"""
+	Populate a playbook list
+
+		Parameters:
+			paths (list[str]): A list of paths to playbooks
+		Returns:
+			list[(description, playbookpath)]: A playbook list for use with run_playbooks()
+	"""
+
 	playbooks = []
 
 	yaml_regex = re.compile(r"(.*)\.ya?ml$")
@@ -1223,6 +1250,15 @@ def populate_playbooks_from_paths(paths):
 
 # Add all playbooks in the directory
 def populate_playbooks_from_dir(path):
+	"""
+	Populate a playbook list from path
+
+		Parameters:
+			paths (list[str]): A directory to populate playbooks from
+		Returns:
+			list[(description, playbookpath)]: A playbook list for use with run_playbooks()
+	"""
+
 	playbook_paths = []
 
 	yaml_regex = re.compile(r"(.*)\.ya?ml$")
@@ -1264,13 +1300,36 @@ def __task_request_ansible_password(installation_info):
 			ansible_configuration.ansible_password = ansible_password
 
 def __run_playbooks_on_selection(playbooks, selection, extra_values = None):
+	"""
+	A helper that runs a playbook list on a selection
+
+		Parameters:
+			playbooks (list[(description, playbookpath)]): A playbook list
+			selection (list[str]): A list of hosts
+			extra_values (dict): A dict of values to set before running the playbook
+	"""
+
 	check_and_print_status(run_playbooks(playbooks, hosts = selection, extra_values = extra_values))
 
 def __selection_control_planes():
+	"""
+	Return a selection with all control planes
+
+		Returns:
+			(list[str]): A list of control planes
+	"""
+
 	__controlplanes = get_control_planes(fail_on_empty = False)
 	return [controlplane[0] for controlplane in __controlplanes]
 
 def __selection_localhost():
+	"""
+	Returns a list with the hostname of localhost
+
+		Returns:
+			(list[str]): A list with the hostname of localhost
+	"""
+
 	return [get_local_hostname()]
 
 # Run preparation playbooks on localhost
@@ -1567,7 +1626,7 @@ def __task_uncordon_control_planes(installation_info):
 	for controlplane in controlplanes:
 		iktprint([(f"  {controlplane}:", "hostname")])
 		message, status = kh.uncordon_node(controlplane)
-		if status in [200, 204]:
+		if status in (200, 204):
 			iktprint([("    Uncordoned", "success")])
 			print(message)
 		elif status == 42503:
@@ -1868,6 +1927,16 @@ purge_control_plane_tasks = [
 ]
 
 def run_tasks(tasks, phase, phase_skiplist, final_state):
+	"""
+	Run tasks
+
+		Parameters:
+			tasks list[(themestring, task)]: A list of tasks containing tuples of describing the task (in form of a themestr) and a function reference
+			phase (int): The installation phase
+			phase_skiplist (set(phase)): A set of phases to skip
+			final_state (str): The state to set if the task completes successfully
+	"""
+
 	installation_info = get_installation_info()
 
 	if isinstance(phase, int):
@@ -1883,6 +1952,18 @@ def run_tasks(tasks, phase, phase_skiplist, final_state):
 			update_installation_info(state = final_state, phase = "<done>")
 
 def __find_requested_version(distro, version = None):
+	"""
+	Based on a provided version, try to find a matching package;
+	Passing None will give the latest version, passing major, minor will give the latest patch revision of that version.
+	Passing an exact version will give that version.
+
+		Parameters:
+			distro (str): Currently only kubeadm is supported
+			version (str): The requested version string or version substring
+		Returns:
+			requested_version (str): The best matching package version
+	"""
+
 	requested_version = None
 
 	if distro == "kubeadm":
@@ -1927,6 +2008,14 @@ def __find_requested_version(distro, version = None):
 	return requested_version
 
 def prepare_installation(options, args):
+	"""
+	Install and configure pre-requisites for a control plane
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	global no_password # pylint: disable=global-statement
 	confirm = True
 
@@ -1950,7 +2039,7 @@ def prepare_installation(options, args):
 	phase = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
-	if state is not None and state not in ["<none>", "preparing", "prepared"]:
+	if state is not None and state not in ("<none>", "preparing", "prepared"):
 		iktprint([("Error:", "error"), (" Invalid installation state; the system cannot be in a configured or semi-configured state when running prepare; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
@@ -1966,7 +2055,7 @@ def prepare_installation(options, args):
 	controlplanes = [controlplane[0] for controlplane in __controlplanes]
 	if len(controlplanes) == 0 and "--control-plane" not in [tmp[0] for tmp in options]:
 		retval = iktinput([("\nWarning: ", "warning"), ("No control plane defined in the inventory; do you want to add ", "default"), (f"{hostname}", "hostname"), (" as control plane? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" No available control plane in inventory.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
@@ -2000,7 +2089,7 @@ def prepare_installation(options, args):
 		elif opt == "--save-ansible-logs":
 			ansible_configuration.save_logs = True
 		elif opt == "--cri":
-			if optarg in ["dockershim", "containerd", "manual"]:
+			if optarg in ("dockershim", "containerd", "manual"):
 				cri = optarg
 			else:
 				iktprint([("Error:", "error"), (" Unknown CRI “", "default"), (optarg, "argument"), ("“ specified; aborting.", "default")], stderr = True)
@@ -2033,7 +2122,7 @@ def prepare_installation(options, args):
 
 	if confirm == True:
 		retval = iktinput([("\nStart control plane preparation? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" User stopped control plane preparation.", "default")], stderr = True)
 			os.remove(IKT_INSTALLATION_INFO)
 			sys.exit(errno.EINTR)
@@ -2060,6 +2149,14 @@ def prepare_installation(options, args):
 	iktprint([("\nSee “", "separator"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" help", "command"), ("“ for more information about valid ", "default"), ("CNI", "argument"), (" options.\n", "default")])
 
 def import_cluster(options, args):
+	"""
+	Import an existing cluster to iKT
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	global no_password # pylint: disable=global-statement
 
 	# default options
@@ -2105,7 +2202,7 @@ def import_cluster(options, args):
 	if confirm == True:
 		retval = iktinput([("\nImport the following clusters? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" User stopped cluster import.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
@@ -2185,6 +2282,14 @@ def import_cluster(options, args):
 	iktprint([("\nCluster import successful", "success")])
 
 def check_for_updates(options, args):
+	"""
+	Check whether there are newer versions of packages that are related to the cluster
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	del args
 
 	# default options
@@ -2234,6 +2339,10 @@ def check_for_updates(options, args):
 	print()
 
 def show_configuration():
+	"""
+	Show cluster configuration
+	"""
+
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
@@ -2289,6 +2398,14 @@ def show_configuration():
 			iktprint([("            hostname: ", "action"), (f"{controlplane[0]} ", "emphasis"), ("(", "default"), (f"{controlplane[1]}", "emphasis"), (")", "default")])
 
 def setup_control_plane(options, args):
+	"""
+	Setup a control plane
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	confirm = True
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
@@ -2305,7 +2422,7 @@ def setup_control_plane(options, args):
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 	cni = installation_info[cluster_name]["cni"]
 
-	if state is not None and state in ["installed", "upgrading", "tearing_down", "torn_down", "purging"]:
+	if state is not None and state in ("installed", "upgrading", "tearing_down", "torn_down", "purging"):
 		iktprint([("Error:", "error"), (" Invalid installation state; there is a partial or full installation already; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif state is None or state == "preparing":
@@ -2356,7 +2473,7 @@ def setup_control_plane(options, args):
 
 	if confirm == True:
 		retval = iktinput([("\nStart installation? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" User stopped installation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
@@ -2412,6 +2529,15 @@ def __get_node_info(kh = None):
 	return node_statuses, kh
 
 def get_control_planes(fail_on_empty = True):
+	"""
+	Get a list of control planes defined in the inventory
+
+		Parameters:
+			fail_on_empty (bool): If True the action will fail if no control planes are defined in the inventory
+		Returns:
+			control_planes (list[str]): A list of control planes
+	"""
+
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
 	inventory = ansible_get_inventory_dict()
@@ -2434,6 +2560,14 @@ def get_control_planes(fail_on_empty = True):
 	return controlplanes
 
 def teardown_control_plane(options, args):
+	"""
+	Teardown an existing control plane
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	del args
 
 	confirm = True
@@ -2461,7 +2595,7 @@ def teardown_control_plane(options, args):
 	if state is None:
 		iktprint([("Error:", "error"), (" Cannot determine installation state; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
-	elif state in ["preparing", "prepared", "torn_down"]:
+	elif state in ("preparing", "prepared", "torn_down"):
 		iktprint([("Error:", "error"), (" The system has no installed cluster; try ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" purge-control-plane", "command"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
@@ -2492,7 +2626,7 @@ def teardown_control_plane(options, args):
 
 	if confirm == True:
 		retval = iktinput([("\nStart teardown? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" User stopped teardown.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
@@ -2504,6 +2638,14 @@ def teardown_control_plane(options, args):
 	iktprint([("\nCluster teardown successful", "success")])
 
 def purge_control_plane(options, args):
+	"""
+	Purge an existing control plane
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	confirm = True
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
@@ -2521,7 +2663,7 @@ def purge_control_plane(options, args):
 	phase = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
-	if state is None or state in ["preparing", "installing", "upgrading"]:
+	if state is None or state in ("preparing", "installing", "upgrading"):
 		iktprint([("Error:", "error"), (" Invalid installation state; there's no fully installed cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
@@ -2552,7 +2694,7 @@ def purge_control_plane(options, args):
 			raise Exception(f"Programming error; invalid option {opt}")
 
 	# If there's still an installed cluster or if the teardown hasn't finished, teardown the cluster before purging
-	if state in ["installed", "upgraded", "tearing_down"]:
+	if state in ("installed", "upgraded", "tearing_down"):
 		teardown_control_plane(options, args)
 		state = "torn_down"
 	else:
@@ -2560,7 +2702,7 @@ def purge_control_plane(options, args):
 
 		if confirm == True:
 			retval = iktinput([("\nStart purge? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-			if retval.lower() not in ["y", "yes"]:
+			if retval.lower() not in ("y", "yes"):
 				iktprint([("\nAborting:", "error"), (" User stopped purge.", "default")], stderr = True)
 				sys.exit(errno.EINTR)
 
@@ -2582,6 +2724,14 @@ def purge_control_plane(options, args):
 	iktprint([("\nNote: ", "note"), ("It's recommended to reboot the control plane(s) after purging the cluster\n", "default")])
 
 def upgrade_control_plane(options, args):
+	"""
+	Upgrade a control plane
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	confirm = True
 
 	# default options
@@ -2609,15 +2759,15 @@ def upgrade_control_plane(options, args):
 	phase = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
-	if state is None or state in ["<none>"]:
+	if state is None or state in ("<none>"):
 		iktprint([("Error:", "error"), (" Unknown installation state; if you believe this is OK (such as when upgrading a cluster not installed using ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" you can try using the “", "default"), ("--override", "option"), ("“ option; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	if state is None or state in ["<none>", "preparing", "prepared", "installing", "tearing_down", "torn_down", "purging"]:
+	if state is None or state in ("<none>", "preparing", "prepared", "installing", "tearing_down", "torn_down", "purging"):
 		iktprint([("Error:", "error"), (" Invalid installation state; Kubernetes does not seems to be fully installed; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	if state in ["installed", "upgraded"]:
+	if state in ("installed", "upgraded"):
 		phase = 0
 
 	if len(args) > 0:
@@ -2645,7 +2795,7 @@ def upgrade_control_plane(options, args):
 			update_cache = False
 		elif opt == "--reinstall":
 			allow_reinstall = True
-		elif opt in ["--override", "--list-tasks"]:
+		elif opt in ("--override", "--list-tasks"):
 			continue
 		elif opt == "--save-ansible-logs":
 			ansible_configuration.save_logs = True
@@ -2750,7 +2900,7 @@ def upgrade_control_plane(options, args):
 
 	if confirm == True:
 		retval = iktinput([("\nStart upgrade? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" User stopped upgrade.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
@@ -2766,6 +2916,14 @@ def upgrade_control_plane(options, args):
 	iktprint([("\nControl plane upgrade successful", "success")])
 
 def taint_control_plane(options, args):
+	"""
+	Taint a control plane
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	del options
 
 	node_statuses, kh = __get_node_info()
@@ -2798,6 +2956,14 @@ def taint_control_plane(options, args):
 		sys.exit(errno.ENOENT)
 
 def untaint_control_plane(options, args):
+	"""
+	Untaint a control plane
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	del options
 
 	node_statuses, kh = __get_node_info()
@@ -2830,6 +2996,14 @@ def untaint_control_plane(options, args):
 		sys.exit(errno.ENOENT)
 
 def preflight_check(options, args):
+	"""
+	Run preflight checks before creating a new cluster
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	del options
 	del args
 
@@ -2895,7 +3069,7 @@ def preflight_check(options, args):
 	deb_versions = check_deb_versions(["docker.io", "containerd", "docker-ce", "containerd.io"])
 	conflict = False
 	for package, _installed_version, _candidate_version, _all_versions in deb_versions:
-		if package in ["docker-ce", "containerd.io"]:
+		if package in ("docker-ce", "containerd.io"):
 			iktprint([("  Error:", "error"), (" docker-ce / containerd.io ", "path"), ("is installed; use ", "default"), ("docker.io / containerd", "path"), (" instead\n", "default")], stderr = True)
 			iktprint([("  ", "default"), ("Suggested fix:", "header")])
 			iktprint([("    sudo apt ", "programname"), ("install ", "command"), ("docker.io containerd docker-ce- containerd.io-\n", "argument")])
@@ -2912,6 +3086,14 @@ def preflight_check(options, args):
 	iktprint([(f"   Notes: {note}", "note")])
 
 def troubleshoot(options, args):
+	"""
+	Troubleshoot issues in a cluster
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	del options
 	del args
 
@@ -3405,6 +3587,10 @@ commandline = {
 }
 
 def main():
+	"""
+	Main function for the program
+	"""
+
 	init_iktprint(THEME_PATH)
 
 	command, options, args = parse_commandline(about.ADMIN_PROGRAM_NAME, about.ADMIN_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline)
