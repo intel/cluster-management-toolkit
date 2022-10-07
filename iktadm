@@ -463,6 +463,16 @@ def substitute_list(strlist, substitutions):
 	return [subst(s, s) for s in strlist]
 
 def check_version_from_url(url, version_regex):
+	"""
+	Given a URL download a text file and treat the first line that matches version_regex as a version number
+
+		Parameters:
+			url (str): A URL
+			version_regex (str): A regex
+		Returns:
+			version (str): The version number, or None in case of failure
+	"""
+
 	version = None
 	if url is not None:
 		with tempfile.TemporaryDirectory() as td:
@@ -478,6 +488,18 @@ def check_version_from_url(url, version_regex):
 	return version
 
 def check_version_from_executable(command, args, version_regex):
+	"""
+	Given a path to an executable, the arguments needed to show version information,
+	and a version_regex, return the executable version
+
+		Parameters:
+			command (str): A path to an executable
+			args (list[str]): A list of arguments necessary to show version information
+			version_regex (str): A regex
+		Returns:
+			version (str): The version number, or None in case of failure
+	"""
+
 	version = None
 	cpath = which(command)
 
@@ -495,6 +517,15 @@ def check_version_from_executable(command, args, version_regex):
 	return version
 
 def __upgrade_cni(cni, upgradetype, context):
+	"""
+	A helper that is used when upgrading a CNI; it can either upgrade the CNI itself or a helper executable
+
+		Parameters:
+			cni (str): The CNI to upgrade
+			upgradetype (str): Valid options CNI, executable
+			context (str): The cluster context
+	"""
+
 	if upgradetype not in ["CNI", "executable"]:
 		raise Exception(f"Unknown upgradetype {upgradetype}; this is a programming error.")
 
@@ -586,6 +617,14 @@ def __upgrade_cni(cni, upgradetype, context):
 			iktprint([("No newer version available.", "default")])
 
 def upgrade_cni(options, args):
+	"""
+	Upgrade the specified CNI to the latest version
+
+		Parameters:
+			options (list[(str, str)]): Unused
+			args (list[str]): The CNI to upgrade (optional; if not specified the CNI will be taken from installation_info.yaml)
+	"""
+
 	del options
 
 	if len(args) > 0:
@@ -607,7 +646,17 @@ def upgrade_cni(options, args):
 
 	iktprint([("\nCNI upgrade successful", "success")])
 
-def setup_cni(cni, pod_network_cidr, context_name, cluster_name):
+def __setup_cni(cni, pod_network_cidr, context_name, cluster_name):
+	"""
+	Setup a CNI
+
+		Parameters:
+			cni (str): The CNI to configure and install
+			pod_network_cidr (str): The CIDR of the pod network
+			context_name (str): The name of the cluster context
+			cluster_name (str): The name of the cluster
+	"""
+
 	if cni not in cni_data:
 		iktprint([("Error:", "error"), (f" {cni}", "argument"), (" is not a valid/supported CNI; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
@@ -672,6 +721,13 @@ def setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 	check_and_print_status(execute_command(substitute_list(args, substitutions)))
 
 def check_for_ssh_key():
+	"""
+	Check whether there's an existing public ssh key on the system already
+
+		Returns:
+			retval (bool): True if a key exists, False if no key exists
+	"""
+
 	retval = False
 	files = [file for file in glob(f"{HOMEDIR}/.ssh/*.pub") if os.path.isfile(file)]
 	for file in files:
@@ -681,6 +737,13 @@ def check_for_ssh_key():
 	return retval
 
 def create_ssh_key():
+	"""
+	Create a new ssh key (ECDSA-P521 format)
+
+		Returns:
+			retval (bool): True on success, False on failure
+	"""
+
 	if not os.path.exists(f"{HOMEDIR}/.ssh/id_ecdsa"):
 		args = ["/usr/bin/ssh-keygen", "-t", "ecdsa", "-b", "521", "-f", f"{HOMEDIR}/.ssh/id_ecdsa"]
 		retval = execute_command(args)
@@ -689,6 +752,14 @@ def create_ssh_key():
 	return retval
 
 def add_ssh_keys_to_authorized_keys():
+	"""
+	Add all public keys for this host to authorized keys on this host;
+	in other words, make the host able to SSH to itself
+
+		Returns:
+			retval (bool): True on success, False on failure
+	"""
+
 	pubkey = None
 	retval = False
 
@@ -736,6 +807,14 @@ def add_ssh_keys_to_authorized_keys():
 	return retval
 
 def __task_check_and_create_ssh_key(installation_info):
+	"""
+	An installer task that checks whether the system has an ssh-key,
+	and creates one if not
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	if check_for_ssh_key() == False:
@@ -747,6 +826,14 @@ def __task_check_and_create_ssh_key(installation_info):
 			check_and_print_status(create_ssh_key())
 
 def __task_scan_and_add_ssh_keys(installation_info):
+	"""
+	An installer task that scans all specified control planes for public ssh keys
+	and adds them to known hosts
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	controlplanes = get_control_planes()
@@ -759,6 +846,13 @@ def __task_scan_and_add_ssh_keys(installation_info):
 	scan_and_add_ssh_keys(hosts)
 
 def __task_add_ssh_keys_to_inventory(installation_info):
+	"""
+	An installer task that adds SSH keys to the iKT inventory
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	pubkey = None
@@ -793,6 +887,13 @@ def __task_add_ssh_keys_to_inventory(installation_info):
 	ansible_set_vars(ANSIBLE_INVENTORY, "all", __vars)
 
 def __task_check_and_add_ssh_keys_to_authorized_keys(installation_info):
+	"""
+	An installer task that adds SSH keys to authorized keys
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	add_ssh_keys_to_authorized_keys()
@@ -826,19 +927,50 @@ def install_ansible_posix():
 	return True
 
 def __task_check_and_install_ansible_posix(installation_info):
+	"""
+	An installer task that installs ansible-posix
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	check_and_print_status(install_ansible_posix())
 
 def update_apt_cache():
+	"""
+	Update the APT cache
+
+		Returns:
+			True on success, False on failure
+	"""
+
 	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "update"]
 	return execute_command(args)
 
 def deb_compare_versions(current_version, candidate_version):
+	"""
+	Compare two package versions
+
+		Returns:
+			True if current version < candidate version, else False
+	"""
+
 	args = ["/usr/bin/dpkg", "--compare-versions", current_version, "lt", candidate_version]
 	return execute_command(args, comparison = 1)
 
 def __get_theme(string, default):
+	"""
+	Return the suitable format reference for a particular string
+
+		Parameters:
+			string (str): A string to return the format reference for
+			default (str): The default format reference to use if there's no matching translation
+		Returns:
+			theme (str): A format reference
+	"""
+
 	translation = {
 		"<none>": "none",
 		"<unknown>": "unknown",
@@ -848,12 +980,30 @@ def __get_theme(string, default):
 extract_version_re = re.compile(r"^\s*.*?\s\|\s*(.*?)\s\|\s.*")
 
 def extract_version(line):
+	"""
+	Extract a version from an apt-cache madison entry
+
+		Parameters:
+			line (str): A package info line from apt-cache madison
+		Returns:
+			A version number
+	"""
+
 	tmp = extract_version_re.match(line)
 	if tmp is None:
 		raise Exception("Error: Failed to extract a version; this is (most likely) a programming error.")
 	return tmp[1]
 
 def check_deb_versions(deb_packages):
+	"""
+	Given a list of packages, return installed, candidate, and all available versions
+
+		Parameters:
+			deb_packages (list[str]): A list of packages to get versions for
+		Returns:
+			deb_versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
+	"""
+
 	deb_versions = []
 
 	args = ["/usr/bin/apt-cache", "policy"] + deb_packages
@@ -894,6 +1044,16 @@ def check_deb_versions(deb_packages):
 	return deb_versions
 
 def check_versions(deb_packages, version_checks):
+	"""
+	Check versions for all relevant software
+
+		Parameters:
+			deb_packages (list[str]): A list of debian packages
+			version_checks (list[(software, args, regex)]): A list of component, the command needed to check its version, and a regex to extract the version number
+		Returns:
+			(deb_versions, other_versions): A tuple of utput from check_deb_versions(), (software, installed_version, "")
+	"""
+
 	other_versions = []
 
 	# First check all Debian versions
@@ -942,11 +1102,6 @@ def check_versions(deb_packages, version_checks):
 		iktprint([(f"{software.ljust(slen + 2)}", "default"), (f"{installed_version.ljust(ilen + 2)}", iformat), (f"{candidate_version}", cformat)])
 
 	return deb_versions, other_versions
-
-def configure_system(configure_commands):
-	for string, cmd in configure_commands:
-		print(string)
-		check_and_print_status(cmd())
 
 def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False):
 	"""
@@ -1088,6 +1243,13 @@ def populate_playbooks_from_dir(path):
 	return populate_playbooks_from_paths(playbook_paths)
 
 def __task_request_ansible_password(installation_info):
+	"""
+	An installer task that requests the ansible password
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	# Check whether ansible_password is defined or not
@@ -1113,6 +1275,13 @@ def __selection_localhost():
 
 # Run preparation playbooks on localhost
 def __task_run_preparation_playbooks_on_localhost(installation_info):
+	"""
+	An installer task that runs preparation playbooks on localhost
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	selection = __selection_localhost()
@@ -1126,6 +1295,13 @@ def __task_run_preparation_playbooks_on_localhost(installation_info):
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
 def __task_run_preparation_playbooks_on_control_planes(installation_info):
+	"""
+	An installer task that runs preparation playbooks on control planes
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+	"""
+
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
 	selection = __selection_control_planes()
@@ -1141,6 +1317,13 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info):
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
 def __task_setup_bash_completion(installation_info):
+	"""
+	An installer task that sets up bash completion
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	args = ["/usr/bin/kubectl", "completion", "bash"]
@@ -1152,6 +1335,12 @@ def __task_setup_bash_completion(installation_info):
 		check_and_print_status(execute_command(args))
 
 def get_cluster_name():
+	"""
+	Return the name of the cluster
+
+		Returns:
+			cluster_name (str): The name of the cluster
+	"""
 	if os.path.exists(f"{HOMEDIR}/.kube/config"):
 		with open(f"{HOMEDIR}/.kube/config", "r", encoding = "utf-8") as f:
 			d1 = yaml.safe_load(f)
@@ -1172,6 +1361,13 @@ def get_cluster_name():
 	return cluster_name
 
 def __task_run_setup_playbooks_on_localhost(installation_info):
+	"""
+	An installer task that runs playbooks on localhost
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+	"""
+
 	cluster_name = installation_info["installation_target"]
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	selection = __selection_localhost()
@@ -1185,6 +1381,13 @@ def __task_run_setup_playbooks_on_localhost(installation_info):
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
 def __task_run_setup_playbooks_on_control_planes(installation_info):
+	"""
+	An installer task that runs playbooks on control planes
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+	"""
+
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
@@ -1199,6 +1402,13 @@ def __task_run_setup_playbooks_on_control_planes(installation_info):
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
 def __task_import_kube_config(installation_info):
+	"""
+	An installer task that merges a Kube config into ~/.kube/config
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+	"""
+
 	cluster_name = installation_info["installation_target"]
 	config_file_name = f"{HOMEDIR}/.kube/config.{cluster_name}"
 	admin_name = f"kubernetes-admin+{cluster_name}"
@@ -1282,6 +1492,13 @@ def __task_import_kube_config(installation_info):
 	check_and_print_status(True)
 
 def __task_setup_kubeadm_cni(installation_info):
+	"""
+	An installer task that sets up a CNI
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+	"""
+
 	cluster_name = installation_info["installation_target"]
 	cni = installation_info[cluster_name]["cni"]
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
@@ -1289,9 +1506,16 @@ def __task_setup_kubeadm_cni(installation_info):
 	context_name = f"{admin_name}@{cluster_name}"
 
 	# If everything is successful so far we deploy the pod network
-	setup_cni(cni, pod_network_cidr, context_name, cluster_name)
+	__setup_cni(cni, pod_network_cidr, context_name, cluster_name)
 
 def __task_drain_control_planes(installation_info):
+	"""
+	An installer task that drains control plains
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	controlplanes = __selection_control_planes()
@@ -1326,6 +1550,13 @@ def __task_drain_control_planes(installation_info):
 		check_and_print_status(execute_command(args + [controlplane]))
 
 def __task_uncordon_control_planes(installation_info):
+	"""
+	An installer task that uncordons control planes
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	controlplanes = __selection_control_planes()
@@ -1349,6 +1580,13 @@ def __task_uncordon_control_planes(installation_info):
 
 # Run pre-upgrade playbooks on localhost
 def __task_run_preupgrade_playbooks_on_localhost(installation_info):
+	"""
+	An installer task that runs pre-upgrade playbooks on localhost
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	selection = __selection_localhost()
@@ -1361,6 +1599,13 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info):
 
 # Run pre-upgrade playbooks on control planes
 def __task_run_preupgrade_playbooks_on_control_planes(installation_info):
+	"""
+	An installer task that runs pre-upgrade playbooks on control planes
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	selection = __selection_control_planes()
@@ -1370,6 +1615,13 @@ def __task_run_preupgrade_playbooks_on_control_planes(installation_info):
 
 # Run upgrade playbooks on control planes
 def __task_run_upgrade_playbooks_on_control_planes(installation_info):
+	"""
+	An installer task that runs upgrade playbooks on control planes
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+	"""
+
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
 	requested_version = installation_info[cluster_name]["requested_version"]
@@ -1384,6 +1636,13 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info):
 
 # Run post-upgrade playbooks on control planes
 def __task_run_postupgrade_playbooks_on_control_planes(installation_info):
+	"""
+	An installer task that runs post-upgrade playbooks on control planes
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	selection = __selection_control_planes()
@@ -1393,6 +1652,13 @@ def __task_run_postupgrade_playbooks_on_control_planes(installation_info):
 
 # Verify that the cluster has no nodes
 def __task_verify_that_cluster_has_no_nodes(installation_info):
+	"""
+	An installer task that verifies that no non-control plane nodes remain in the cluster
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+	"""
+
 	del installation_info
 
 	node_statuses, _kh = __get_node_info()
@@ -1407,6 +1673,13 @@ def __task_verify_that_cluster_has_no_nodes(installation_info):
 
 # Run teardown playbooks on control planes
 def __task_run_teardown_playbooks_on_control_planes(installation_info):
+	"""
+	An installer task that runs teardown playbooks on control planes
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+	"""
+
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
 	selection = __selection_control_planes()
@@ -1414,6 +1687,13 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info):
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
 def __task_remove_kube_config(installation_info):
+	"""
+	An installer task that removes a cluster configuration from ~/.kube/config
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+	"""
+
 	cluster_name = installation_info["installation_target"]
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
@@ -1472,6 +1752,13 @@ def __task_remove_kube_config(installation_info):
 
 # Run purge playbooks on control planes
 def __task_run_purge_playbooks_on_control_planes(installation_info):
+	"""
+	An installer task that runs purge playbooks on control planes
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+	"""
+
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
 	selection = __selection_control_planes()
@@ -1483,6 +1770,15 @@ def __task_run_purge_playbooks_on_control_planes(installation_info):
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
 def __validate_task_index(tasks, task):
+	"""
+	Helper that validates the installer task index
+		Parameters:
+			tasks (list[str]): A list of tasks
+			task (int): An integer index
+		Returns:
+			task (int): The integer index on success; exits if the task is out of range
+	"""
+
 	try:
 		task = int(task)
 	except ValueError as e:
@@ -1495,6 +1791,10 @@ def __validate_task_index(tasks, task):
 	return task
 
 def __list_phases(phases):
+	"""
+	Helper that lists installation phases
+	"""
+
 	for i, phase in enumerate(phases):
 		tmp = [(f"{str(i).rjust(2)}: ", "emphasis")]
 		tmp += phase[0]
