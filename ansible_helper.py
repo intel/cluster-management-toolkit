@@ -8,7 +8,7 @@ import re
 import sys
 import yaml
 
-import iktlib
+import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
 from iktprint import iktprint
 
@@ -27,12 +27,13 @@ ANSIBLE_INVENTORY = f"{ANSIBLE_DIR}/inventory.yaml"
 ANSIBLE_LOG_DIR = f"{ANSIBLE_DIR}/logs"
 ANSIBLE_TMP_INVENTORY = f"{ANSIBLE_DIR}/tmp_inventory.yaml"
 
-class ansible_configuration:
-	ansible_forks = 5
-	ansible_password = None
-	ansible_user = None
-	disable_strict_host_key_checking = False
-	save_logs = False
+ansible_configuration = {
+	"ansible_forks": 5,
+	"ansible_password": None,
+	"ansible_user": None,
+	"disable_strict_host_key_checking": False,
+	"save_logs": False,
+}
 
 # Used by Ansible
 try:
@@ -138,7 +139,7 @@ def ansible_get_inventory_pretty(groups = None, highlight = False, include_group
 		i = 0
 		list_regex = re.compile(r"^(\s*)((- )+)(.*)")
 		key_value_regex = re.compile(r"(.*?)(:)(.*)")
-		for i in range(0, len(dump)):
+		for i in range(0, len(dump)): # pylint: disable=consider-using-enumerate
 			# Is it a list?
 			tmp = list_regex.match(dump[i])
 			if tmp is not None:
@@ -231,13 +232,13 @@ def __ansible_create_inventory(inventory, overwrite = False):
 		}
 	}
 
-	if ansible_configuration.ansible_user is not None:
-		d["all"]["vars"]["ansible_user"] = ansible_configuration.ansible_user
+	if deep_get(ansible_configuration, "ansible_user") is not None:
+		d["all"]["vars"]["ansible_user"] = deep_get(ansible_configuration, "ansible_user")
 
-	if ansible_configuration.ansible_password is not None:
-		d["all"]["vars"]["ansible_ssh_pass"] = ansible_configuration.ansible_password
+	if deep_get(ansible_configuration, "ansible_password") is not None:
+		d["all"]["vars"]["ansible_ssh_pass"] = deep_get(ansible_configuration, "ansible_password")
 
-	if ansible_configuration.disable_strict_host_key_checking == True:
+	if deep_get(ansible_configuration, "disable_strict_host_key_checking") is not None:
 		d["all"]["vars"]["ansible_ssh_common_args"] = "-o StrictHostKeyChecking=no"
 
 	yaml_str = yaml.safe_dump(d, default_flow_style = False).replace(r"''", '')
@@ -275,6 +276,7 @@ def ansible_create_groups(inventory, groups):
 
 	return True
 
+# pylint: disable-next=too-many-return-statements
 def ansible_delete_groups(inventory, group):
 	if group == "":
 		return True
@@ -306,7 +308,7 @@ def ansible_delete_groups(inventory, group):
 			return False
 	elif len(d[group]) == 1:
 		# The only acceptable groups (when deleting) are hosts and vars
-		if "hosts" in d[group] is None and "vars" in d[group] is None:
+		if "hosts" in d[group] == False and "vars" in d[group] == False:
 			return False
 
 	if "hosts" in d[group] and d[group].get("hosts") is not None:
@@ -797,7 +799,8 @@ def ansible_delete_log(log):
 		os.rmdir(f"{ANSIBLE_LOG_DIR}/{log}")
 
 def ansible_write_log(start_date, playbook, events):
-	save_logs = ansible_configuration.save_logs
+	save_logs = deep_get(ansible_configuration, "save_logs", False)
+
 	if save_logs == False:
 		return
 
@@ -900,6 +903,7 @@ def ansible_write_log(start_date, playbook, events):
 		with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}", "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 			f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
 
+# pylint: disable-next=too-many-arguments
 def ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval, unreachable = False, skipped = False):
 	if unreachable == True:
 		iktprint([("• ", "separator"), (f"{task}", "error")], stderr = True)
@@ -971,9 +975,9 @@ def ansible_print_play_results(retval, __ansible_results):
 					break
 
 def ansible_run_playbook(playbook, override_inventory = False):
-	global ansible_results
+	global ansible_results # pylint: disable=global-statement
 
-	forks = ansible_configuration.ansible_forks
+	forks = deep_get(ansible_configuration, "ansible_forks")
 
 	# Flush previous results
 	ansible_results = {}
@@ -1046,7 +1050,7 @@ def ansible_run_playbook_on_selection(playbook, selection, values = None):
 	if "ansible_become_pass" in values and "ansible_ssh_pass" not in d["all"]["vars"]:
 		values["ansible_ssh_pass"] = values["ansible_become_pass"]
 	if "ansible_user" not in d["all"]["vars"]:
-		values["ansible_user"] = ansible_configuration.ansible_user
+		values["ansible_user"] = deep_get(ansible_configuration, "ansible_user")
 
 	if len(values) > 0:
 		ansible_set_vars(ANSIBLE_TMP_INVENTORY, group = "all", values = values)
@@ -1054,8 +1058,8 @@ def ansible_run_playbook_on_selection(playbook, selection, values = None):
 	return ansible_run_playbook(playbook)
 
 def ansible_ping(selection):
-	save_logs_tmp = ansible_configuration.save_logs
-	ansible_configuration.save_logs = False
+	save_logs_tmp = deep_get(ansible_configuration, "save_logs", False)
+	ansible_configuration["save_logs"] = False
 
 	host_status = []
 
@@ -1072,5 +1076,5 @@ def ansible_ping(selection):
 			retval = deep_get(task, "retval")
 			status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
 			host_status.append((host, status))
-	ansible_configuration.save_logs = save_logs_tmp
+	ansible_configuration["save_logs"] = save_logs_tmp
 	return host_status
