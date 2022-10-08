@@ -39,7 +39,7 @@ from ansible_helper import ansible_configuration, ansible_get_inventory_dict, an
 from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
-from iktio import download_files, get_local_hostname, mkdir_if_not_exists, scan_and_add_ssh_keys, which
+from iktio import download_files, get_local_hostname, mkdir_if_not_exists, scan_and_add_ssh_keys
 
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, execute_command, execute_command_with_response, iktconfig
@@ -501,9 +501,9 @@ def check_version_from_executable(command, args, version_regex):
 	"""
 
 	version = None
-	cpath = which(command)
+	cpath = shutil.which(command)
 
-	if cpath is not None and len(cpath) > 0:
+	if cpath is not None:
 		result = execute_command_with_response([cpath] + args)
 
 		if result is not None:

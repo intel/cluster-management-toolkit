@@ -1,9 +1,13 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.6)
 
+"""
+I/O helpers for Intel Kubernetes Toolkit
+"""
+
 import errno
-from functools import partial
 import hashlib
+import io
 import os
 from pathlib import Path
 import re
@@ -20,45 +24,49 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
-import iktlib
+import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
 
 from iktprint import iktprint
 
 HOMEDIR = str(Path.home())
 
-def which(commandname):
-	cpath = None
-
-	# Did we get a full path, or just a command name?
-	fpath, _fname = os.path.split(commandname)
-
-	# If we got a path we just verify whether commandname
-	# exists and is executable
-	if fpath:
-		tmp = commandname
-	else:
-		# If not we check if there's a command by this name in path
-		tmp = shutil.which(commandname)
-
-	if os.path.isfile(tmp) and os.access(tmp, os.X_OK):
-		cpath = tmp
-
-	return cpath
-
 def mkdir_if_not_exists(directory, verbose = False):
+	"""
+	Create a directory if it doesn't already exist
+		Parameters:
+			directory (str): The path to the directory to create
+			verbose (bool): Should extra debug messages be printed?
+	"""
+
 	if not os.path.exists(directory):
 		if verbose == True:
 			iktprint([("mkdir ", "programname"), (f"{directory}", "path")])
 		os.mkdir(directory)
 
 def copy_if_not_exists(src, dst, verbose = False):
+	"""
+	Copy a file if it doesn't already exist
+		Parameters:
+			src (str): The path to copy from
+			dst (str): The path to copy to
+			verbose (bool): Should extra debug messages be printed?
+	"""
+
 	if not os.path.exists(dst):
 		if verbose == True:
 			iktprint([("cp ", "programname"), (f"{src} ", "path"), (f"{dst}", "path")])
 		shutil.copy2(src, dst)
 
 def replace_symlink(src, dst, verbose = False):
+	"""
+	Replace as symlink (or create if it doesn't exist)
+		Parameters:
+			src (str): The path to link from
+			dst (str): The path to link to
+			verbose (bool): Should extra debug messages be printed?
+	"""
+
 	if verbose == True:
 		iktprint([("ln ", "programname"), ("-s ", "option"), (f"{src} ", "path"), (f"{dst}", "path")])
 	if os.path.islink(dst):
@@ -66,6 +74,13 @@ def replace_symlink(src, dst, verbose = False):
 	os.symlink(src, dst)
 
 def get_local_hostname():
+	"""
+	Get the hostname of localhost
+
+		Returns:
+			hostname (str): The hostname of localhost
+	"""
+
 	try:
 		with open("/etc/hostname", "r", encoding = "utf-8") as f:
 			hostname = f.readline().strip()
@@ -76,6 +91,13 @@ def get_local_hostname():
 	return hostname
 
 def scan_and_add_ssh_keys(hosts):
+	"""
+	Scan hosts and add their public ssh keys to .ssh/known_hosts
+
+		Parameters:
+			hosts (list[str]): A list of hostnames
+	"""
+
 	known_hosts = f"{HOMEDIR}/.ssh/known_hosts"
 
 	# Note: Paramiko seems to have issues if .ssh/known_hosts doesn't exist,
@@ -114,6 +136,16 @@ def scan_and_add_ssh_keys(hosts):
 		sys.exit(errno.EIO)
 
 def verify_checksum(checksum, checksum_type, data, filename = None):
+	"""
+	Checksum data against a checksum file
+
+		Parameters:
+			checksum (str): The downloaded checksum file
+			checksum_type (str): What hash should be used when calculating the checksum?
+			data (bytearray): The data to calculate the checksum of
+			filename (str): Used to identify the correct checksum entry in a file with multiple checksums (optional)
+	"""
+
 	if checksum_type is None:
 		return True
 
@@ -186,6 +218,18 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 # fetch_urls is a list of tuples:
 # (URL to file or archive, file to extract, URL to checksum, type of checksum)
 def download_files(directory, fetch_urls, permissions = 0o644):
+	"""
+	Download files; if the file is a tar file it can extract a file.
+	If checksum information is provided it can also fetch a checksum and compare against.
+
+		Parameters:
+			directory (str): The path to extract the file to
+			fetch_urls (list[(url, filename, checksum_url, checksum_type)]): url, filename, checksum_url, and checksum_type
+			permissions (int): File permissions (*PLEASE* use octal!)
+		Returns:
+			True on success, False on failure
+	"""
+
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
 	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
 	retval = True
@@ -231,39 +275,42 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 		if r1.status == 200:
 			# If we have a checksum we need to confirm that the downloaded file matches the checksum
 			if checksum is not None and verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)) == False:
-				iktprint([("Critical:", "error"), (" File downloaded from ", "description"), (f"{url}", "url"), (" did not match its expected checksum; aborting.", "description")], stderr = True)
+				iktprint([("Critical:", "error"),
+					  (" File downloaded from ", "description"),
+					  (f"{url}", "url"),
+					  (" did not match its expected checksum; aborting.", "description")], stderr = True)
 				retval = False
 				break
 
-			dl = tempfile.NamedTemporaryFile(delete = False)
-			with open(dl.name, "wb", opener = partial(os.open, mode = 0o600)) as f:
-				try:
-					f.write(r1.data)
-				except Exception as e:
-					iktprint([("Error: ", "error"), ("Could not write temporary file; exception:", "default")], stderr = True)
-					iktprint([(e, "warning")], stderr = True)
-					retval = False
-					continue
+			# NamedTemporaryFile with delete = False will create a temporary file owned by user with 0o600 permissions
+			with tempfile.NamedTemporaryFile(delete = False) as f:
+				# Get a fileobj of the downloaded data; this way we can check if it's a tarfile
+				data = io.BytesIO(r1.data)
 
-			if tarfile.is_tarfile(dl.name) == True:
-				with tarfile.open(dl.name, "r") as tf:
-					members = tf.getnames()
-					if filename not in members:
-						iktprint([("Critical: ", "critical"), (f"{filename} is not a part of archive; aborting.", "default")], stderr = True)
-						sys.exit(errno.ENOENT)
+				# Is the downloaded data a tarfile? If so we extract it to memory,
+				# then write it to our tempfile.
+				if tarfile.is_tarfile(data) == True:
+					# Make sure that we're back to the beginning of the BytesIO object
+					data.seek(0)
+					with tarfile.open(fileobj = data, mode = "r") as tf:
+						members = tf.getnames()
+						if filename not in members:
+							iktprint([("Critical: ", "critical"), (f"{filename} is not a part of archive; aborting.", "default")], stderr = True)
+							sys.exit(errno.ENOENT)
 
-					tdt = tempfile.NamedTemporaryFile(delete = False)
-					with open(tdt.name, "wb", opener = partial(os.open, mode = 0o600)) as tdf:
 						with tf.extractfile(filename) as tff:
-							tdf.write(tff.read())
-					os.chmod(tdt.name, permissions)
-					os.rename(tdt.name, f"{directory}/{filename}")
-				os.remove(dl.name)
-			else:
-				os.chmod(dl.name, permissions)
-				os.rename(dl.name, f"{directory}/{filename}")
+							f.write(tff.read())
+				else:
+					# If it's not a tarfile we just write the data directly to the tempfile.
+					f.write(r1.data)
+
+				# Here we change to the permissions we're supposed to use
+				os.chmod(f.name, permissions)
+				# Here we atomically move it in place
+				os.rename(f.name, f"{directory}/{filename}")
 		else:
-			iktprint([("Error: ", "error"), ("Failed to fetch URL ", "default"), (f"{url}", "url"), ("; HTTP code: ", "default"), (f"{r1.status}", "errorvalue")], stderr = True)
+			iktprint([("Error: ", "error"),
+				  ("Failed to fetch URL ", "default"), (f"{url}", "url"), ("; HTTP code: ", "default"), (f"{r1.status}", "errorvalue")], stderr = True)
 			retval = False
 			continue
 	pm.clear()
