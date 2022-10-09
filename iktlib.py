@@ -283,6 +283,29 @@ def datetime_to_timestamp(timestamp):
 		string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 	return string
 
+def reformat_timestamp(timestamp):
+	"""
+	Takes a timestamp in various formats and formats it the proper(tm) way; ISO-8601
+
+		Parameters:
+			timestamp (str): A timestamp str
+		Returns:
+			(str): A timestamp str in YYYY-MM-DD HH:MM:SS format
+	"""
+
+	if timestamp is not None:
+		for fmt in ("%Y-%m-%d %H:%M:%S.%f%z",
+			    "%Y-%m-%d %H:%M:%S%z",
+			    "%Y-%m-%dT%H:%M:%S.%f%z",
+			    "%Y-%m-%dT%H:%M:%S%z"):
+
+			try:
+				return datetime.strptime(timestamp, fmt).astimezone().strftime("%Y-%m-%d %H:%M:%S")
+			except ValueError:
+				pass
+
+	raise ValueError(f"Could not parse timestamp: {timestamp}")
+
 # Will take a timestamp and convert it to datetime
 def timestamp_to_datetime(timestamp, default = none_timestamp()):
 	if timestamp is None or isinstance(timestamp, int) and timestamp == 0 or isinstance(timestamp, str) and timestamp in ["", "None"]:

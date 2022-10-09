@@ -1,13 +1,30 @@
 #! /usr/bin/env python3
 
-from curses_helper import color_status_group, themearray_len, themearray_to_string
-from datetime import datetime, timezone
-import iktlib
-from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, stgroup
+# pylint: disable=too-many-arguments
 
-def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separators", "list"), field_separators = [("separators", "field")], field_colors = [("types", "generic")], ellipsise = -1, ellipsis = ("separators", "ellipsis"), field_prefixes = None, field_suffixes = None, mapping = {}):
+from datetime import datetime
+
+from curses_helper import color_status_group, themearray_len, themearray_to_string
+import iktlib
+from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, reformat_timestamp, stgroup, timestamp_to_datetime
+
+def format_list(items, fieldlen, pad, ralign, selected,
+		item_separator = ("separators", "list"),
+		field_separators = None,
+		field_colors = None,
+		ellipsise = -1,
+		ellipsis = ("separators", "ellipsis"),
+		field_prefixes = None,
+		field_suffixes = None,
+		mapping = None):
 	array = []
 	totallen = 0
+
+	if field_separators is None:
+		field_separators = [("separators", "field")]
+
+	if field_colors is None:
+		field_colors = [("types", "generic")]
 
 	if not isinstance(field_separators, list):
 		raise Exception(f"field_separators should be a list of (context, style) tuple, not a single tuple; {field_separators}")
@@ -17,6 +34,9 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 
 	if not isinstance(items, list):
 		items = [items]
+
+	if mapping is None:
+		mapping = {}
 
 	elcount = 0
 	skip_separator = True
@@ -87,9 +107,11 @@ def format_list(items, fieldlen, pad, ralign, selected, item_separator = ("separ
 # references is unused for now, but will eventually be used to compare against
 # reference values (such as using other paths to get the range, instead of getting
 # it static from formatting#mapping)
-def map_value(value, references = None, selected = False, default_field_color = ("types", "generic"), mapping = {}):
+def map_value(value, references = None, selected = False, default_field_color = ("types", "generic"), mapping = None):
+	del references
+
 	# If we lack a mapping, use the default color for this field
-	if len(mapping) == 0:
+	if mapping is None or len(mapping) == 0:
 		context, attr_ref = default_field_color
 		return (value, (context, attr_ref, selected)), value
 
@@ -103,7 +125,7 @@ def map_value(value, references = None, selected = False, default_field_color = 
 	if value in substitutions:
 		# We don't need to check for bool, since it's a subclass of int
 		if isinstance(value, int):
-			substitutions[f"__{str(value)}"]
+			value = substitutions[f"__{str(value)}"]
 		else:
 			value = substitutions[value]
 
@@ -125,7 +147,7 @@ def map_value(value, references = None, selected = False, default_field_color = 
 		for i in range(0, len(ranges)):
 			if deep_get(ranges[i], "default", False) == True:
 				if default_index != -1:
-					raise Exception(f"Field {field}: range cannot contain more than one default")
+					raise ValueError("Range cannot contain more than one default")
 				default_index = i
 				continue
 			_min = deep_get(ranges[i], "min")
@@ -142,7 +164,7 @@ def map_value(value, references = None, selected = False, default_field_color = 
 		if match_case is False:
 			matched = False
 			if string in _mapping and string.lower() in _mapping and string != string.lower():
-				raise Exception(f"Field {field}: when using match_case == False the mapping cannot contain keys that only differ in case")
+				raise ValueError("When using match_case == False the mapping cannot contain keys that only differ in case")
 			for key in _mapping:
 				if key.lower() == string.lower():
 					_string = key
@@ -153,7 +175,7 @@ def map_value(value, references = None, selected = False, default_field_color = 
 			_string = "__default"
 		field_colors = deep_get(_mapping, f"{_string}#field_colors")
 	else:
-		raise Exception(f"Unknown type {type(value)} for mapping/range")
+		raise TypeError(f"Unknown type {type(value)} for mapping/range")
 
 	attr_ref = None
 	if field_colors is not None:
@@ -173,17 +195,23 @@ def align_and_pad(array, pad, fieldlen, stringlen, ralign, selected):
 		array.append((("separators", "pad"), selected))
 	return array
 
-def format_numerical_with_units(string, ftype, selected, non_units = set("0123456789"), separator_lookup = {}):
+def format_numerical_with_units(string, ftype, selected, non_units = None, separator_lookup = None):
 	substring = ""
 	array = []
 	numeric = None
 	# This is necessary to be able to use pop
 	string = list(string)
 
+	if separator_lookup is None:
+		separator_lookup = {}
+
 	if "default" not in separator_lookup:
 		separator_lookup["default"] = ("types", "unit")
 
-	non_units = set(non_units)
+	if non_units is None:
+		non_units = set("0123456789")
+	else:
+		non_units = set(non_units)
 
 	while len(string) > 0:
 		char = string.pop(0)
@@ -239,6 +267,8 @@ def generator_age_raw(value, selected):
 	return array
 
 def generator_age(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	del formatting
+
 	value = getattr(obj, field)
 
 	array = generator_age_raw(value, selected)
@@ -257,8 +287,6 @@ def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting)
 		items = [items]
 
 	separator_lookup = {}
-
-	addresstype = None
 
 	separators = deep_get(formatting, "field_separators")
 	if len(separators) == 0:
@@ -308,7 +336,7 @@ def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting)
 def generator_basic(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 	string = str(value)
-	field_colors = deep_get(formatting, f"field_colors", [("types", "generic")])
+	field_colors = deep_get(formatting, "field_colors", [("types", "generic")])
 
 	if string == "None":
 		string = "<none>"
@@ -332,6 +360,8 @@ def generator_basic(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
 def generator_hex(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	del formatting
+
 	value = getattr(obj, field)
 	string = str(value)
 
@@ -365,7 +395,15 @@ def generator_list(obj, field, fieldlen, pad, ralign, selected, **formatting):
 
 	mapping = deep_get(formatting, "mapping", {})
 
-	return format_list(items, fieldlen, pad, ralign, selected, item_separator = item_separator, field_separators = field_separators, field_colors = field_colors, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes, mapping = mapping)
+	return format_list(items, fieldlen, pad, ralign, selected,
+			   item_separator = item_separator,
+			   field_separators = field_separators,
+			   field_colors = field_colors,
+			   ellipsise = ellipsise,
+			   ellipsis = ellipsis,
+			   field_prefixes = field_prefixes,
+			   field_suffixes = field_suffixes,
+			   mapping = mapping)
 
 def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	items = getattr(obj, field)
@@ -392,7 +430,16 @@ def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **fo
 	# XXX: Well, this works:ish, but it's ugly beyond belief
 	#      it would be solved so much better with a mapping that uses a secondary value
 	newitems = []
-	field_colors = [("main", "status_done"), ("main", "status_ok"), ("main", "status_pending"), ("main", "status_warning"), ("main", "status_admin"), ("main", "status_not_ok"), ("main", "status_unknown"), ("main", "status_crit"), ("types", "generic")]
+	field_colors = [
+		("main", "status_done"),
+		("main", "status_ok"),
+		("main", "status_pending"),
+		("main", "status_warning"),
+		("main", "status_admin"),
+		("main", "status_not_ok"),
+		("main", "status_unknown"),
+		("main", "status_crit"),
+		("types", "generic")]
 	field_separators = [("separators", "no_pad")]
 
 	for item, status in items:
@@ -417,15 +464,24 @@ def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **fo
 		else:
 			newitems.append(("", "", "", "", "", "", "", "", item))
 
-	return format_list(newitems, fieldlen, pad, ralign, selected, item_separator = item_separator, field_separators = field_separators, field_colors = field_colors, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
+	return format_list(newitems, fieldlen, pad, ralign, selected,
+			   item_separator = item_separator,
+			   field_separators = field_separators,
+			   field_colors = field_colors,
+			   ellipsise = ellipsise,
+			   ellipsis = ellipsis,
+			   field_prefixes = field_prefixes,
+			   field_suffixes = field_suffixes)
 
 def generator_mem(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	del formatting
+
 	free, total = getattr(obj, field)
 
 	if free is None and total is None:
 		return generator_basic(obj, field, fieldlen, pad, ralign, selected)
 
-	used = "{:0.1f}".format(100 - (100 * int(free) / int(total)))
+	used = f"{100 - (100 * int(free) / int(total)):0.1f}"
 
 	if float(used) < 80.0:
 		attribute = ("types", "watermark_low")
@@ -434,7 +490,7 @@ def generator_mem(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	else:
 		attribute = ("types", "watermark_high")
 
-	total = "{:0.1f}".format(int(total) / (1024 * 1024))
+	total = f"{int(total) / (1024 * 1024):0.1f}"
 	unit = "GiB"
 
 	array = [
@@ -451,6 +507,8 @@ def generator_mem(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
 def generator_mem_single(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	del formatting
+
 	value = getattr(obj, field)
 	string = str(value)
 
@@ -492,6 +550,8 @@ def generator_numerical_with_units(obj, field, fieldlen, pad, ralign, selected, 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
 def generator_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	del formatting
+
 	status = getattr(obj, field)
 	status_group = getattr(obj, "status_group")
 	attribute = color_status_group(status_group, selected)
@@ -504,7 +564,11 @@ def generator_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
 def generator_str_timestamp(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	string = processor_str_timestamp(obj, field)
+	del formatting
+
+	value = getattr(obj, field)
+
+	string = reformat_timestamp(value)
 
 	if len(string) == 0:
 		array = [(string, ("types", "generic", selected))]
@@ -514,6 +578,8 @@ def generator_str_timestamp(obj, field, fieldlen, pad, ralign, selected, **forma
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
 def generator_timestamp(obj, field, fieldlen, pad, ralign, selected, **formatting):
+	del formatting
+
 	value = getattr(obj, field)
 
 	string = datetime_to_timestamp(value)
@@ -530,19 +596,20 @@ def generator_timestamp_with_age(obj, field, fieldlen, pad, ralign, selected, **
 	values = getattr(obj, field)
 
 	if len(values) > 2 and len(deep_get(formatting, "field_colors", [])) < 2:
-		raise ValueError(f"Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
-	elif len(values) == 2:
+		raise ValueError("Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
+
+	if len(values) == 2:
 		if values[0] is None:
 			array = [
 				("<none>", ("types", "none", selected))
 			]
 		else:
 			timestamp_string = datetime_to_timestamp(values[0])
-			array = format_numerical_with_units(string, "timestamp", selected)
+			array = format_numerical_with_units(timestamp_string, "timestamp", selected)
 			array += [
 				(" (", ("types", "generic", selected))
 			]
-			array += _generator_age(values[1], selected)
+			array += generator_age_raw(values[1], selected)
 			array += [
 				(")", ("types", "generic", selected))
 			]
@@ -561,12 +628,12 @@ def generator_timestamp_with_age(obj, field, fieldlen, pad, ralign, selected, **
 						("<unset>", ("types", "none"), selected)
 					]
 					break
-				else:
-					timestamp = timestamp_to_datetime(values[i])
-					timestamp_string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
-					array += format_numerical_with_units(timestamp_string, "timestamp", selected)
+
+				timestamp = timestamp_to_datetime(values[i])
+				timestamp_string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+				array += format_numerical_with_units(timestamp_string, "timestamp", selected)
 			elif formatting["field_colors"][i] == ("types", "age"):
-				array += _generator_age(values[i], selected)
+				array += generator_age_raw(values[i], selected)
 			else:
 				array += [
 					(values[i], formatting["field_colors"][i], selected)

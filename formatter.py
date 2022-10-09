@@ -1,18 +1,44 @@
 #! /usr/bin/env python3
 
+"""
+Format text as themearrays
+"""
+
 import re
 import sys
 import yaml
 
-import iktlib
+import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig, split_msg
 
 def __str_representer(dumper, data):
+	"""
+	Reformat yaml with |-style str
+
+		Parameters:
+			dumper: Opaque type internal to python-yaml
+			data: Opaque type internal to python-yaml
+		Returns:
+			Opaque type internal to python-yaml
+	"""
+
 	if "\n" in data:
 		return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
 	return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
 def format_none(lines, **kwargs):
+	"""
+	Noop formatter; returns the text without syntax highlighting
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
 	del kwargs
 
 	dumps = []
@@ -25,6 +51,16 @@ def format_none(lines, **kwargs):
 	return dumps
 
 def format_yaml_line(line, override_formatting = None):
+	"""
+	Formats a single line of YAML
+
+		Parameters:
+			line (str): A string
+			override_formatting (dict): Overrides instead of default YAML-formatting
+		Returns:
+			themearray: A themearray
+	"""
+
 	if override_formatting is None:
 		override_formatting = {}
 
@@ -76,6 +112,7 @@ def format_yaml_line(line, override_formatting = None):
 		]
 	else:
 		tmp = re.match(r"^(.*?)(:\s*?)(&|\.|)(.*)", line)
+		# pylint: disable-next=line-too-long
 		if tmp is not None and (tmp[1].strip().startswith("\"") and tmp[1].strip().endswith("\"") or (not tmp[1].strip().startswith("\"") and not tmp[1].strip().endswith("\""))):
 			key = tmp[1]
 			reference = tmp[2]
@@ -107,8 +144,19 @@ def format_yaml_line(line, override_formatting = None):
 
 	return tmpline
 
-# Takes a list of yaml dictionaries and returns a single list of themearray
 def format_yaml(objects, override_formatting = None, **kwargs):
+	"""
+	YAML formatter; returns the text with syntax highlighting for YAML
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
 	if override_formatting is None:
 		override_formatting = {}
 
@@ -125,8 +173,7 @@ def format_yaml(objects, override_formatting = None, **kwargs):
 
 	yaml.add_representer(str, __str_representer)
 
-	for i in range(0, len(objects)):
-		obj = objects[i]
+	for i, obj in enumerate(objects):
 		if isinstance(obj, dict):
 			split_dump = yaml.dump(obj, default_flow_style = False, indent = indent, width = sys.maxsize).splitlines()
 		else:
@@ -161,7 +208,7 @@ def format_yaml(objects, override_formatting = None, **kwargs):
 
 	return dumps
 
-key_headers = [
+KEY_HEADERS = [
 	"-----BEGIN CERTIFICATE-----",
 	"-----END CERTIFICATE-----",
 	"-----BEGIN PUBLIC KEY-----",
@@ -176,8 +223,19 @@ key_headers = [
 	"-----END EC PRIVATE KEY-----",
 ]
 
-# Take a certificate and highlight the markup
 def format_crt(lines, **kwargs):
+	"""
+	CRT formatter; returns the text with syntax highlighting for certificates
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
 	dumps = []
 
 	if deep_get(kwargs, "raw", False) == True:
@@ -187,14 +245,25 @@ def format_crt(lines, **kwargs):
 		lines = split_msg(lines)
 
 	for line in lines:
-		if line in key_headers:
+		if line in KEY_HEADERS:
 			dumps.append([(line, ("types", "separator"))])
 		else:
 			dumps.append([(line, ("types", "generic"))])
 	return dumps
 
-# Take a CaddyFile and highlight the markup
 def format_caddyfile(lines, **kwargs):
+	"""
+	CaddyFile formatter; returns the text with syntax highlighting for CaddyFiles
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
 	dumps = []
 
 	if deep_get(kwargs, "raw", False) == True:
@@ -336,8 +405,19 @@ def format_caddyfile(lines, **kwargs):
 
 	return dumps
 
-# Take an NGINX file and apply syntax highlighting
 def format_nginx(lines, **kwargs):
+	"""
+	NGINX formatter; returns the text with syntax highlighting for NGINX
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
 	dumps = []
 
 	if deep_get(kwargs, "raw", False) == True:
@@ -394,8 +474,19 @@ def format_nginx(lines, **kwargs):
 			sys.exit(f"__format_nginx(): Couldn't match line={line}")
 	return dumps
 
-# Take an XML file and highlight the markup
 def format_xml(lines, **kwargs):
+	"""
+	XML formatter; returns the text with syntax highlighting for XML
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
 	dumps = []
 	tag_open = False
 	tag_named = False
@@ -535,7 +626,7 @@ def format_xml(lines, **kwargs):
 					# This *should* match all remaining cases
 					tmp = remainder_regex.match(line)
 					if tmp is None:
-						raise Exception(f"XML syntax highlighter failed to parse {line}")
+						raise SyntaxError(f"XML syntax highlighter failed to parse {line}")
 
 					if comment == True:
 						tmpline += [
@@ -556,15 +647,31 @@ def format_xml(lines, **kwargs):
 					line = tmp[4] + tmp[5]
 					continue
 			if before == line:
-				raise Exception(f"XML syntax highlighter parse failure at line #{i + 1}:\n{lines}\nParsed fragments of line:\n{tmpline}\nUnparsed fragments of line:\n{line}")
+				raise SyntaxError(f"XML syntax highlighter parse failure at line #{i + 1}:\n"
+						   "{lines}\n"
+						   "Parsed fragments of line:\n"
+						   "{tmpline}\n"
+						   "Unparsed fragments of line:\n"
+						   "{line}")
 
 		dumps.append(tmpline)
 		i += 1
 
 	return dumps
 
-# Takes a TOML file and returns a single list of themearray
 def format_toml(lines, **kwargs):
+	"""
+	TOML formatter; returns the text with syntax highlighting for TOML
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
 	# FIXME: necessary improvements:
 	# * Instead of only checking for lines that end with a comment for key = value,
 	#   and for full comment lines, check for lines that end with a comment
@@ -649,6 +756,18 @@ def format_toml(lines, **kwargs):
 	return dumps
 
 def format_fluentbit(lines, **kwargs):
+	"""
+	FluentBit formatter; returns the text with syntax highlighting for FluentBit
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
 	dumps = []
 
 	if deep_get(kwargs, "raw", False) == True:
@@ -689,8 +808,19 @@ def format_fluentbit(lines, **kwargs):
 		dumps.append(tmpline)
 	return dumps
 
-# Takes an INI file and returns a single list of themearray
 def format_ini(lines, **kwargs):
+	"""
+	INI formatter; returns the text with syntax highlighting for INI
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
 	dumps = []
 
 	if deep_get(kwargs, "raw", False) == True:
@@ -729,6 +859,15 @@ def format_ini(lines, **kwargs):
 	return dumps
 
 def map_dataformat(dataformat):
+	"""
+	Identify what formatter to use, based either on a file ending or an explicit dataformat tag
+
+		Parameters:
+			dataformat: The data format *or* the name of the file
+		Returns:
+			(function reference): The formatter to use
+	"""
+
 	if dataformat in ["YAML", "JSON"] or dataformat.endswith((".yml", ".yaml", ".json")):
 		formatter = format_yaml
 	elif dataformat == "TOML" or dataformat.endswith((".toml")):

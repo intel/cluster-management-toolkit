@@ -133,7 +133,7 @@ KNOWN_PV_TYPES = {
 		"type": "GlusterFS",
 		"description": "Glusterfs mount that lasts the lifetime of a pod",
 		"properties": {
-			"Path:": { "path", "path" },
+			"Path:": { "path": "path" },
 			"Endpoints:": { "path": "endpoints" },
 			"Endpoints Namespace:": { "path": "endpoints", "default": "<PVC namespace>" },
 			"Read Only:": { "path": "readOnly", "default": "False" },
@@ -195,7 +195,14 @@ KNOWN_PV_TYPES = {
 		"description": "Quobyte mount that lasts the lifetime of a pod",
 		"properties": {
 			"Volume Name:": { "path": "volume" },
-#			"Registry:": { "path": "registry", "processor": field_processor_str_to_list, "formatting": { "iskeyvalue": True, "field_separators": [("separators", "host")] } }, # str(host:port, host:port, ...)
+#			"Registry:": {
+#				"path": "registry",
+#				"processor": field_processor_str_to_list,
+#				"formatting": {
+#					"iskeyvalue": True,
+#					"field_separators": [("separators", "host")]
+#				}
+#			}, # str(host:port, host:port, ...)
 			"Read Only:": { "path": "readOnly", "default": "False" },
 			"Tenant:": { "path": "tenant" },
 			"User:": { "path": "user", "default": "<service account user>" },
@@ -439,8 +446,7 @@ def get_list_fields(kh, obj, **kwargs):
 		override_types = deep_get(kwargs, "override_types", [])
 		for item in deep_get(obj, path, []):
 			tmp = []
-			for i in range(0, len(fields)):
-				field = fields[i]
+			for i, field in enumerate(fields):
 				default = ""
 				if isinstance(field, dict):
 					default = deep_get(field, "default", "")

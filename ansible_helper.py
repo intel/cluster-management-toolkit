@@ -8,7 +8,6 @@ Helper for iKT to run Ansible playbooks
 from datetime import datetime
 from functools import partial
 import os
-from pathlib import Path
 import re
 import sys
 import typing # pylint: disable=unused-import
@@ -16,7 +15,7 @@ import yaml
 
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
-from iktpaths import HOMEDIR, IKTDIR
+from iktpaths import HOMEDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from iktpaths import ANSIBLE_INVENTORY, ANSIBLE_TMP_INVENTORY
 from iktprint import iktprint
@@ -1087,6 +1086,15 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection, values = No
 	return ansible_run_playbook(playbook)
 
 def ansible_ping(selection):
+	"""
+	Ping all selected hosts
+
+		Parameters:
+			selection (list[str]): A list of hostnames
+		Returns:
+			list[(hostname, status)]: The status of the pinged hosts
+	"""
+
 	save_logs_tmp = deep_get(ansible_configuration, "save_logs", False)
 	ansible_configuration["save_logs"] = False
 
@@ -1106,4 +1114,5 @@ def ansible_ping(selection):
 			status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
 			host_status.append((host, status))
 	ansible_configuration["save_logs"] = save_logs_tmp
+
 	return host_status

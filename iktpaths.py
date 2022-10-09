@@ -7,7 +7,6 @@ This file contains paths used by iKT
 
 import os
 from pathlib import Path
-import typing
 
 from ikttypes import FilePath
 
@@ -32,7 +31,7 @@ DEPLOYMENT_DIR = FilePath(os.path.join(IKTDIR, DEPLOYMENT_DIRNAME))
 
 THEME_DIRNAME = "themes"
 THEME_DIR = FilePath(os.path.join(IKTDIR, THEME_DIRNAME))
-DEFAULT_THEME_FILE = FilePath(os.path.join(THEME_DIRNAME, "default.yaml"))
+DEFAULT_THEME_FILE = FilePath(os.path.join(THEME_DIR, "default.yaml"))
 
 ANSIBLE_DIRNAME = "ansible"
 ANSIBLE_DIR = FilePath(os.path.join(IKTDIR, ANSIBLE_DIRNAME))

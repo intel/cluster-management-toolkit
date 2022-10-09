@@ -13,6 +13,7 @@ try:
 	import ujson as json
 except ModuleNotFoundError:
 	import json # type: ignore
+import os
 import re
 import sys
 import tempfile
@@ -2156,6 +2157,10 @@ def get_node_status(node):
 	return status, status_group, taints, full_taints
 
 class KubernetesHelper:
+	"""
+	A class used for interacting with a Kubernetes cluster
+	"""
+
 	tmp_ca_certs_file = None
 	tmp_cert_file = None
 	tmp_key_file = None
@@ -2199,7 +2204,6 @@ class KubernetesHelper:
 			if name in [".", ".."] or "/" in name or "%" in name:
 				invalid = True
 			tmp = ""
-			import os
 			maxlen = os.pathconf("/", "PC_NAME_MAX")
 		elif rtype in ["port-name"]:
 			# Any name containing adjacent "-" is invalid
@@ -2277,7 +2281,7 @@ class KubernetesHelper:
 		context_name = ""
 		cluster_name = ""
 		user_name = ""
-		namespace_name = ""
+		namespace_name = "" # pylint: disable=unused-variable
 
 		if config_path == None:
 			# Read kubeconfig
@@ -2387,7 +2391,7 @@ class KubernetesHelper:
 		self.control_plane_port = control_plane_port
 
 		if insecuretlsskipverify == False:
-			self.tmp_ca_certs_file = tempfile.NamedTemporaryFile()
+			self.tmp_ca_certs_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
 			self.tmp_ca_certs_file.write(ca_certs.encode("utf-8"))
 			self.tmp_ca_certs_file.flush()
 		else:
@@ -2395,8 +2399,8 @@ class KubernetesHelper:
 
 		# If we have a cert we also have a key
 		if cert is not None:
-			self.tmp_cert_file = tempfile.NamedTemporaryFile()
-			self.tmp_key_file = tempfile.NamedTemporaryFile()
+			self.tmp_cert_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
+			self.tmp_key_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
 
 			self.tmp_cert_file.write(cert.encode("utf-8"))
 			self.tmp_cert_file.flush()
@@ -2461,12 +2465,11 @@ class KubernetesHelper:
 		cni = []
 
 		# Is there a controller matching the kind we're looking for?
-		vlist, status = self.get_list_by_kind_namespace(controller_kind, "", field_selector = controller_selector)
+		vlist, _status = self.get_list_by_kind_namespace(controller_kind, "", field_selector = controller_selector)
 
 		if len(vlist) == 0:
 			return cni
 
-		cni_matches = 0
 		pod_matches = 0
 		cni_version = None
 		cni_status = ("<unknown>", stgroup.UNKNOWN, "Could not get status")
@@ -2486,7 +2489,7 @@ class KubernetesHelper:
 				else:
 					cni_status = ("Available", stgroup.OK, "")
 
-			vlist2, status = self.get_list_by_kind_namespace(("Pod", ""), "", label_selector = self.make_selector(deep_get(obj, "spec#selector#matchLabels")))
+			vlist2, _status = self.get_list_by_kind_namespace(("Pod", ""), "", label_selector = self.make_selector(deep_get(obj, "spec#selector#matchLabels")))
 
 			if vlist2 is not None and len(vlist2) > 0:
 				for obj2 in vlist2:
@@ -2586,13 +2589,13 @@ class KubernetesHelper:
 	def is_cluster_reachable(self):
 		return self.cluster_unreachable == False
 
-	def get_control_plane_address(self, cluster = ""):
+	def get_control_plane_address(self):
 		return self.control_plane_ip, self.control_plane_port
 
 	def get_join_token(self):
 		join_token = ""
 
-		vlist, status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
+		vlist, _status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
 
 		if len(vlist) == 0:
 			return join_token
@@ -2608,12 +2611,12 @@ class KubernetesHelper:
 				if age == -1 or newage < age:
 					try:
 						tmp1 = base64.b64decode(deep_get(secret, "data#token-id", "")).decode("utf-8")
-					except UnicodeDecodeError as e:
+					except UnicodeDecodeError:
 						tmp1 = secret.data.get("data#token-id", "")
 
 					try:
 						tmp2 = base64.b64decode(deep_get(secret, "data#token-secret", "")).decode("utf-8")
-					except UnicodeDecodeError as e:
+					except UnicodeDecodeError:
 						tmp2 = deep_get(secret, "data#token-secret", "")
 
 					if tmp1 != "" and tmp2 != "":
@@ -2625,7 +2628,7 @@ class KubernetesHelper:
 	def get_ca_cert_hash(self):
 		ca_cert_hash = ""
 
-		vlist, status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
+		vlist, _status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
 
 		if len(vlist) == 0:
 			return ca_cert_hash
@@ -2641,7 +2644,7 @@ class KubernetesHelper:
 				if age == -1 or newage < age:
 					try:
 						tmp1 = base64.b64decode(deep_get(secret, "data#ca.crt", "")).decode("utf-8")
-					except UnicodeDecodeError as e:
+					except UnicodeDecodeError:
 						tmp1 = deep_get(secret, "data#ca.crt", "")
 
 					if tmp1 != "":
@@ -2700,9 +2703,9 @@ class KubernetesHelper:
 
 			# We have a tuple, but it didn't have an entry in kubernetes_resources;
 			# it might be api + api_family instead though, but for that we need to scan
-			for _kind in kubernetes_resources:
-				if deep_get(kubernetes_resources[_kind], "api") == kind[0] and _kind[1] == kind[1]:
-					return _kind
+			for resource_kind, resource_data in kubernetes_resources.items():
+				if deep_get(resource_data, "api") == kind[0] and resource_kind[1] == kind[1]:
+					return resource_kind
 
 		# APIs are grouped in two: Kubernetes "native",
 		# and everything else, with native entries first.
@@ -2731,7 +2734,7 @@ class KubernetesHelper:
 
 		method = "GET"
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/api/v1"
-		data, message, status = self.__rest_helper_generic_json(method = method, url = url)
+		data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
 		if status == 200:
 			core_apis = json.loads(data)
@@ -2742,8 +2745,8 @@ class KubernetesHelper:
 			return kubernetes_resources, status, modified
 
 		# Flush the entire API list
-		for kind in kubernetes_resources:
-			kubernetes_resources[kind]["available"] = False
+		for _resource_kind, resource_data in kubernetes_resources.items():
+			resource_data["available"] = False
 
 		for api in deep_get(core_apis, "resources", []):
 			if "list" not in deep_get(api, "verbs", []):
@@ -2758,7 +2761,7 @@ class KubernetesHelper:
 		non_core_apis = {}
 
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis"
-		data, message, status = self.__rest_helper_generic_json(method = method, url = url)
+		data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
 		if status == 200:
 			non_core_apis = json.loads(data)
@@ -2768,9 +2771,6 @@ class KubernetesHelper:
 
 		# These are all API groups we know of
 		_api_groups = set(api_group for kind, api_group in kubernetes_resources)
-
-		# Now create a cross-section between known APIs and available APIs
-		api_groups = set()
 
 		for api_group in deep_get(non_core_apis, "groups", []):
 			name = deep_get(api_group, "name", "")
@@ -2788,13 +2788,13 @@ class KubernetesHelper:
 					# This shouldn't happen, but ignore it
 					continue
 				url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis/{_version}"
-				data, message, status = self.__rest_helper_generic_json(method = method, url = url)
+				data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
 				if status != 200:
 					# Could not get API info; this is worrying, but ignore it
 					continue
 				data = json.loads(data)
-				match = False
+
 				for resource in deep_get(data, "resources", []):
 					if "list" not in deep_get(resource, "verbs", []):
 						continue
@@ -2815,9 +2815,9 @@ class KubernetesHelper:
 	def get_list_of_namespaced_resources(self):
 		vlist = []
 
-		for resource in kubernetes_resources:
-			if deep_get(kubernetes_resources[resource], "namespaced", True) == True:
-				vlist.append(resource)
+		for resource_kind, resource_data in kubernetes_resources.items():
+			if deep_get(resource_data, "namespaced", True) == True:
+				vlist.append(resource_kind)
 		return vlist
 
 	def __rest_helper_generic_json(self, method = None, url = None, header_params = None, query_params = None, body = None, retries = 3, connect_timeout = 3.0):
@@ -2859,25 +2859,22 @@ class KubernetesHelper:
 			else:
 				result = self.pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
 			status = result.status
-		except urllib3.exceptions.MaxRetryError as e:
+		except urllib3.exceptions.MaxRetryError:
 			# No route to host doesn't have a HTTP response; make one up...
 			# 503 is Service Unavailable; this is generally temporary, but to distinguish it from a real 503
 			# we prefix it...
 			status = 42503
-		except urllib3.exceptions.ConnectTimeoutError as e:
+		except urllib3.exceptions.ConnectTimeoutError:
 			# Connection timed out; the API-server might not be available, suffer from too high load, or similar
 			# 504 is Gateway Timeout; using 42504 to indicate connection timeout thus seems reasonable
 			status = 42504
-
 		if status == 200:
 			# YAY, things went fine!
-			retval = True
 			d = result.data
 			data = d
 		elif status == 201:
 			# Created
 			# (Assuming we tried to create something this means success
-			retval = True
 			d = result.data
 			data = d
 		elif status == 204:
@@ -2970,12 +2967,10 @@ class KubernetesHelper:
 
 		status = None
 
-		retval = False
-
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
 			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
-			data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
+			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
 			if status in [200, 201, 204, 42503]:
 				break
 
@@ -3017,14 +3012,13 @@ class KubernetesHelper:
 		if namespaced == False:
 			namespace_part = ""
 
+		message = None
 		status = None
-
-		retval = False
 
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
 			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
-			data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
+			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
 			if status in [200, 204, 42503]:
 				break
 
@@ -3063,12 +3057,10 @@ class KubernetesHelper:
 
 		status = None
 
-		retval = False
-
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
 			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
-			data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
+			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
 			if status in [200, 204, 42503]:
 				break
 
@@ -3123,7 +3115,7 @@ class KubernetesHelper:
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
 			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
-			data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
+			data, _message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
 
 			# All fatal failures are handled in __rest_helper_generic
 			if status == 200:
@@ -3261,7 +3253,7 @@ class KubernetesHelper:
 
 		query_params = []
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/metrics"
-		data, message, status = self.__rest_helper_generic_json(method = "GET", url = url, query_params = query_params)
+		data, _message, status = self.__rest_helper_generic_json(method = "GET", url = url, query_params = query_params)
 		if status == 200:
 			msg = data.decode("utf-8").splitlines()
 		elif status == 204:
@@ -3276,7 +3268,7 @@ class KubernetesHelper:
 		return self.__rest_helper_get(kind, "", namespace, label_selector, field_selector)
 
 	def get_ref_by_kind_name_namespace(self, kind, name, namespace):
-		ref, status = self.__rest_helper_get(kind, name, namespace, "", "")
+		ref, _status = self.__rest_helper_get(kind, name, namespace, "", "")
 		return ref
 
 	def read_namespaced_pod_log(self, name, namespace, container = None, tail_lines = 0):
@@ -3304,7 +3296,7 @@ class KubernetesHelper:
 	# Namespace must be the namespace of the resource; the owner reference itself lacks namespace
 	# since owners have to reside in the same namespace as their owned resources
 	def get_ref_from_owr(self, owr, namespace):
-		ref, status = self.__rest_helper_get(deep_get(owr, "kind"), deep_get(owr, "name"), namespace)
+		ref, _status = self.__rest_helper_get(deep_get(owr, "kind"), deep_get(owr, "name"), namespace)
 		return ref
 
 	def get_events_by_kind_name_namespace(self, kind, name, namespace):

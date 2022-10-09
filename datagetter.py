@@ -1,6 +1,10 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.6)
 
+"""
+datagetters are used for data extraction that's too complext to be expressed by parameters to generic_infogetter
+"""
+
 import re
 
 from iktlib import deep_get, deep_get_with_fallback, stgroup, timestamp_to_datetime
@@ -201,6 +205,7 @@ def datagetter_regex_split_to_tuples(kh, obj, paths, default):
 
 	return list_fields, {}
 
+# pylint: disable-next=too-many-return-statements
 def get_pod_status(kh, pod):
 	if deep_get(pod, "metadata#deletionTimestamp") is not None:
 		status = "Terminating"
@@ -262,7 +267,6 @@ def get_pod_status(kh, pod):
 				status_group = stgroup.NOT_OK
 
 				for container in deep_get(pod, "status#initContainerStatuses", []):
-					kind = "InitContainer"
 					status, status_group, _restarts, _message, _age = get_container_status(deep_get(pod, "status#initContainerStatuses"), deep_get(container, "name"))
 					# If we have a failed container,
 					# break here
@@ -270,7 +274,6 @@ def get_pod_status(kh, pod):
 						break
 
 				for container in deep_get(pod, "status#containerStatuses", []):
-					kind = "Container"
 					status, status_group, _restarts, _message, _age = get_container_status(deep_get(pod, "status#containerStatuses"), deep_get(container, "name"))
 					# If we have a failed container,
 					# break here

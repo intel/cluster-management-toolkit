@@ -226,7 +226,19 @@ def populate_playbooks_from_paths(paths):
 
 	return playbooks
 
-def get_selection(selection, kind = None, default = None, skip_control_planes = True):
+def get_selection(selection, kind = None):
+	"""
+	Based on input parameters, split the node list into nodes, non-existing nodes, and control planes
+
+		Parameters:
+			selection (list[str]): A list of nodes, or ALL to select all nodes
+			kind (tuple): A Kubernetes kind; only supported for now is ("Node", "")
+			_or_
+			kind (str): For future use with playbooks, etc.
+		Returns:
+			(nodes, non_existing_nodes, controlplanes) (str, str, str): The nodes, non-existing nodes, and control planes
+	"""
+
 	all_items = False
 	items1 = []
 	non_existing = []
@@ -234,12 +246,10 @@ def get_selection(selection, kind = None, default = None, skip_control_planes = 
 	items2 = []
 
 	if kind is None:
-		raise Exception("Kind is None; this is a programming error")
+		raise Exception("kind is None; this is a programming error")
 
 	if selection is None:
-		if default is None:
-			raise Exception("Both selection and default is None; this is a programming error")
-		selection = default
+		raise ValueError("selection is None; this is a programming error")
 
 	if "ALL" in selection:
 		if len(selection) > 1:
@@ -259,11 +269,10 @@ def get_selection(selection, kind = None, default = None, skip_control_planes = 
 			if all_items == False and name not in selection:
 				continue
 
-			if kind == ("Node", "") and skip_control_planes == True:
-				node_roles = kh.get_node_roles(node)
-				if "control-plane" in node_roles:
-					items2.append(name)
-					continue
+			node_roles = kh.get_node_roles(node)
+			if "control-plane" in node_roles or "master" in node_roles:
+				items2.append(name)
+				continue
 
 			items1.append(name)
 	# str kinds are things such as playbooks; for now ikt doesn't use them
@@ -378,7 +387,12 @@ def drain_nodes(options, args):
 	if "ALL" not in selection:
 		include_control_planes = True
 
-	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+	_nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	nodes = []
+	nodes += _nodes
+	if include_control_planes == True:
+		nodes += controlplanes
 
 	if len(non_existing) > 0:
 		iktprint([("Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
@@ -817,8 +831,6 @@ def remove_nodes(options, args):
 	force = False
 	purge = False
 
-	selection = args[0].split(",")
-
 	for opt, optarg in options:
 		if opt == "--force":
 			force = True
@@ -986,8 +998,6 @@ def upgrade_nodes(options, args):
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): Options to use when executing this action
 	"""
-
-	selection = args[0].split(",")
 
 	for opt, optarg in options:
 		if opt == "--save-ansible-logs":

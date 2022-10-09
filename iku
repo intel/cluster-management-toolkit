@@ -175,12 +175,7 @@ def processor_str_timestamp(obj, field):
 	timestamp = ""
 
 	if value is not None:
-		for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y-%m-%d %H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z"]:
-			try:
-				timestamp = datetime.strptime(value, fmt).astimezone().strftime("%Y-%m-%d %H:%M:%S")
-				break
-			except ValueError:
-				pass
+		timestamp = iktlib.reformat_timestamp(value)
 
 	return timestamp
 
