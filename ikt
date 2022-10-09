@@ -5,6 +5,8 @@
 # Requires: python3-openssl
 # Recommends: python3-ujson
 
+# pylint: disable=line-too-long
+
 """
 This program is used to install, upgrade and uninstall nodes for Kubernetes clusters,
 and to perform various other tasks; eventually this is meant to have most of the
@@ -18,48 +20,41 @@ import errno
 from getpass import getuser
 import hashlib
 import os
-from pathlib import Path
 import re
-import socket
 import sys
 import yaml
-
-import paramiko
 
 try:
 	import OpenSSL
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
+from iktpaths import IKT_CONFIG_FILE, DEFAULT_THEME_FILE
+
 from commandparser import parse_commandline
 
 from ansible_helper import ansible_configuration, ansible_run_playbook_on_host_list, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_print_play_results
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
-import iktlib
+import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig, join_tuple_list, execute_command
 
 from kubernetes_helper import kubectl_get_version
 
-HOMEDIR = str(Path.home())
-IKTDIR = f"{HOMEDIR}/.ikt"
-IKT_CONFIG_FILENAME = "ikt.yaml"
-IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
-
-THEME_DIRNAME = "themes"
-THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
-THEME_PATH = f"{THEMEDIR}/default.yaml"
-
 from iktio import scan_and_add_ssh_keys
-from iktprint import iktprint, iktinput, iktinput_password, init_iktprint
+from iktprint import iktprint, iktinput, iktinput_password
 
 import about
 PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
 def request_ansible_password():
+	"""
+	Requests the ansible password
+	"""
+
 	# Check whether ansible_password is defined or not
-	if ansible_configuration.ansible_password == None:
+	if ansible_configuration["ansible_password"] == None:
 		iktprint([("Attention: ", "warning"), ("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
 		iktprint([("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
 		ansible_password = iktinput_password([("\nPassword: ", "default")])
@@ -67,9 +62,25 @@ def request_ansible_password():
 			iktprint([("\nError: ", "Error"), ("Empty password; aborting.")], stderr = True)
 			sys.exit(errno.EINVAL)
 		else:
-			ansible_configuration.ansible_password = ansible_password
+			ansible_configuration["ansible_password"] = ansible_password
 
-def run_playbook(playbookpath, hosts = None, extra_values = {}, quiet = False):
+def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False):
+	"""
+	Run a playbook
+
+		Parameters:
+			playbookpath (str): A path to the playbook to run
+			hosts (list[str]): A list of hosts to run the playbook on
+			extra_values (dict): A dict of values to set before running the playbook
+			quiet (bool): Unused
+		Returns:
+			retval (int): The return value from ansible_run_playbook_on_selection()
+			ansible_results (dict): A dict with the results from the run
+	"""
+
+	# Eventually we should be using this
+	del quiet
+
 	# Set necessary Ansible keys before running playbooks
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
 	if http_proxy is None:
@@ -88,6 +99,9 @@ def run_playbook(playbookpath, hosts = None, extra_values = {}, quiet = False):
 	if len(http_proxy) > 0 or len(https_proxy) > 0:
 		use_proxy = "yes"
 
+	if extra_values is None:
+		extra_values = {}
+
 	values = {
 		"http_proxy": http_proxy,
 		"https_proxy": https_proxy,
@@ -98,10 +112,7 @@ def run_playbook(playbookpath, hosts = None, extra_values = {}, quiet = False):
 	}
 	merged_values = { **values, **extra_values }
 
-	if hosts is None:
-		retval, ansible_results = ansible_run_playbook(playbookpath, values = merged_values)
-	else:
-		retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
+	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
 
 	ansible_print_play_results(retval, ansible_results)
 
@@ -115,6 +126,13 @@ def __format_none(string, fmt):
 	return __string
 
 def show_configuration(hosts):
+	"""
+	Show cluster configuration
+
+		Parameters:
+			hosts (list[str]): The hosts that will be affected
+	"""
+
 	# cluster_name =
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
 	if http_proxy is not None and http_proxy == "":
@@ -148,10 +166,24 @@ def show_configuration(hosts):
 	for host in hosts:
 		iktprint([("  • ", "separator"), (host, "hostname")])
 
-def run_playbooks(playbooks, hosts = None, extra_values = {}):
+def run_playbooks(playbooks, hosts = None, extra_values = None):
+	"""
+	Run a set of playbooks
+
+		Parameters:
+			playbooks (list[(description, playbookpath)]): A list of playbooks
+			hosts (str): The hosts to run the playbooks on
+			extra_values (dict): Variables to set before running the playbooks
+		Returns:
+			True on success, False on failure
+	"""
+
+	if len(playbooks) == 0 or hosts == None:
+		return True
+
 	for string, playbookpath in playbooks:
 		iktprint(string)
-		retval, ansible_results = run_playbook(playbookpath, hosts = hosts, extra_values = extra_values)
+		retval, _ansible_results = run_playbook(playbookpath, hosts = hosts, extra_values = extra_values)
 
 		# We don't want to continue executing playbooks if the first one failed
 		if retval != 0:
@@ -161,6 +193,15 @@ def run_playbooks(playbooks, hosts = None, extra_values = {}):
 
 # Add all playbooks in the array
 def populate_playbooks_from_paths(paths):
+	"""
+	Populate a playbook list
+
+		Parameters:
+			paths (list[str]): A list of paths to playbooks
+		Returns:
+			list[(description, playbookpath)]: A playbook list for use with run_playbooks()
+	"""
+
 	playbooks = []
 
 	yaml_regex = re.compile(r"(.*)\.ya?ml$")
@@ -209,10 +250,10 @@ def get_selection(selection, kind = None, default = None, skip_control_planes = 
 
 	# Kubernetes resources
 	if isinstance(kind, tuple):
-		from kubernetes_helper import KubernetesHelper
+		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+		vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
 		for node in vlist:
 			name = deep_get(node, "metadata#name")
 			if all_items == False and name not in selection:
@@ -236,10 +277,18 @@ def get_selection(selection, kind = None, default = None, skip_control_planes = 
 	return items1, non_existing, items2
 
 def cordon_nodes(options, args):
+	"""
+	Cordon nodes
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	include_control_planes = False
 	header = True
 
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt == "--include-control-planes":
 			include_control_planes = True
 		elif opt == "--no-header":
@@ -271,7 +320,7 @@ def cordon_nodes(options, args):
 	if header == True:
 		iktprint([("\n[Cordoning nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
@@ -289,6 +338,14 @@ def cordon_nodes(options, args):
 			sys.exit(errno.EINVAL)
 
 def drain_nodes(options, args):
+	"""
+	Drain nodes
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	include_control_planes = False
 	header = True
 
@@ -297,7 +354,7 @@ def drain_nodes(options, args):
 
 	_args = ["/usr/bin/kubectl", "drain"]
 
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt in ["--delete-emptydir-data", "--delete-local-data"]:
 			if kubectl_major_version >= 1 and kubectl_minor_version >= 20:
 				_args.append("--delete-emptydir-data")
@@ -337,10 +394,18 @@ def drain_nodes(options, args):
 	execute_command(_args)
 
 def uncordon_nodes(options, args):
+	"""
+	Uncordon nodes
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	include_control_planes = False
 	header = True
 
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt == "--include-control-planes":
 			include_control_planes = True
 		elif opt == "--no-header":
@@ -372,7 +437,7 @@ def uncordon_nodes(options, args):
 	if header == True:
 		iktprint([("\n[Uncordoning nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
@@ -390,6 +455,14 @@ def uncordon_nodes(options, args):
 			sys.exit(errno.EINVAL)
 
 def prepare_hosts(options, args):
+	"""
+	Install and configure pre-requisites for use as a node
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	ignore_existing = False
 	no_password = False
 	from_file = False
@@ -400,9 +473,9 @@ def prepare_hosts(options, args):
 		elif opt == "--no-password":
 			no_password = True
 		elif opt == "--save-ansible-logs":
-			ansible_configuration.save_logs = True
+			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
-			ansible_configuration.forks = optarg
+			ansible_configuration["forks"] = optarg
 		elif opt == "--from-file":
 			from_file = True
 		else:
@@ -477,7 +550,7 @@ def prepare_hosts(options, args):
 			iktprint([("\nAborting: ", "error"), ("User stopped host preparation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
-	iktprint([(f"\n[Preparing host(s)]", "phase")])
+	iktprint([("\n[Preparing host(s)]", "phase")])
 
 	scan_and_add_ssh_keys(non_existing)
 
@@ -491,8 +564,8 @@ def prepare_hosts(options, args):
 	playbooks = populate_playbooks_from_paths(prepare_playbooks)
 
 	extra_values = {
-		"ansible_become_pass": ansible_configuration.ansible_password,
-		"ansible_ssh_pass": ansible_configuration.ansible_password,
+		"ansible_become_pass": deep_get(ansible_configuration, "ansible_password"),
+		"ansible_ssh_pass": deep_get(ansible_configuration, "ansible_password"),
 	}
 
 	retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
@@ -505,6 +578,14 @@ def prepare_hosts(options, args):
 	iktprint([("\nHosts successfully prepared", "success")])
 
 def add_nodes(options, args):
+	"""
+	Add nodes to the cluster
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	ignore_existing = False
 	ignore_non_existing = False
 	from_file = False
@@ -517,11 +598,11 @@ def add_nodes(options, args):
 		elif opt == "--ignore-non-existing":
 			ignore_non_existing = True
 		elif opt == "--save-ansible-logs":
-			ansible_configuration.save_logs = True
+			ansible_configuration["save_logs"] = True
 		elif opt == "--ca-cert-path":
 			ca_cert_path = optarg
 		elif opt == "--forks":
-			ansible_configuration.forks = optarg
+			ansible_configuration["forks"] = optarg
 		elif opt == "--cri":
 			if optarg in ["dockershim", "containerd", "manual"]:
 				cri = optarg
@@ -605,7 +686,7 @@ def add_nodes(options, args):
 	iktprint([("\n[Adding nodes]", "phase")])
 
 	# Get variables that need to be available when setting up nodes
-	from kubernetes_helper import KubernetesHelper
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	join_token = kh.get_join_token()
@@ -667,7 +748,7 @@ def add_nodes(options, args):
 
 	if len(tmp) == 0:
 		iktprint([("Error: ", "error"), ("Failed to get package versions from control-plane at {control_plane_ip} (playbook returned no valid data); aborting.", "default")], stderr = True)
-		sys.exit(errno.BADMSG)
+		sys.exit(errno.EBADMSG)
 
 	kubeadm_version = ""
 	kubeadm_version_regex = re.compile(r"^(.*?): (.*)")
@@ -725,6 +806,14 @@ def add_nodes(options, args):
 	iktprint([("\nNodes successfully added", "success")])
 
 def remove_nodes(options, args):
+	"""
+	Remove nodes from the cluster
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	force = False
 	purge = False
 
@@ -736,9 +825,9 @@ def remove_nodes(options, args):
 		elif opt == "--purge":
 			purge = True
 		elif opt == "--save-ansible-logs":
-			ansible_configuration.save_logs = True
+			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
-			ansible_configuration.forks = optarg
+			ansible_configuration["forks"] = optarg
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -803,6 +892,14 @@ def remove_nodes(options, args):
 	#ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = cluster_name)
 
 def purge_hosts(options, args):
+	"""
+	Purge nodes from the cluster
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	ignore_non_existing = False
 
 	selection = args[0].split(",")
@@ -815,13 +912,13 @@ def purge_hosts(options, args):
 		if opt == "--ignore-non-existing":
 			ignore_non_existing = True
 		elif opt == "--save-ansible-logs":
-			ansible_configuration.save_logs = True
+			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
-			ansible_configuration.forks = optarg
+			ansible_configuration["forks"] = optarg
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
-	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+	nodes, _non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
 	if len(controlplanes) > 0:
 		iktprint([("Error: ", "error")] + join_tuple_list(controlplanes, _tuple = "hostname", separator = (",", "separator")) + [(" are control-plane(s) and should be removed using ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), ("; aborting.", "default")], stderr = True)
@@ -879,15 +976,24 @@ def purge_hosts(options, args):
 		sys.exit(errno.EINVAL)
 
 	iktprint([("\nHosts successfully purged", "success")])
+	return 0
 
 def upgrade_nodes(options, args):
+	"""
+	Upgrade nodes in the cluster
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
 	selection = args[0].split(",")
 
 	for opt, optarg in options:
 		if opt == "--save-ansible-logs":
-			ansible_configuration.save_logs = True
+			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
-			ansible_configuration.forks = optarg
+			ansible_configuration["forks"] = optarg
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -930,10 +1036,12 @@ def upgrade_nodes(options, args):
 		sys.exit(errno.EINVAL)
 
 	iktprint([("\n• ", "separator"), ("Uncordon nodes", "action")])
-	uncordon_nodes(args = [",".join(nodes)])
+	uncordon_nodes(options = [], args = [",".join(nodes)])
 
 	iktprint([("\nNode upgrade successful", "success")])
+	return 0
 
+# pylint: disable-next=pointless-string-statement
 """
 def get_resource(options, args):
 	namespaces = ["default"]
@@ -1211,6 +1319,17 @@ ikt_commandline = {
 }
 
 def get_programname(callname):
+	"""
+	Return the name that the program was called with;
+	the eventual intention here is that the behaviour can be different
+	depending on by what name the program was invoked
+
+		Parameters:
+			callname (str): The name that the program was invoked with
+		Returns:
+			(callname (str), commandline (list[str]))
+	"""
+
 	callnames = {
 		"ikt": ikt_commandline,		# main name
 		#"iktdep": dep_commandline,	# deployment shortcut
@@ -1226,26 +1345,28 @@ def get_programname(callname):
 
 	return callname, callnames[callname]
 
-def main():
-	global programname
+def main() -> int:
+	"""
+	Main function for the program
+	"""
+
 	argv = sys.argv
 
-	init_iktprint(THEME_PATH)
 	programname, commandline = get_programname(os.path.basename(argv[0]))
 
-	command, options, args = parse_commandline(programname, about.TOOL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, argv, commandline)
+	command, options, args = parse_commandline(programname, about.TOOL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, argv, commandline, theme = DEFAULT_THEME_FILE)
 
 	# Used by the ansible module
-	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)
+	ansible_configuration["ansible_forks"] = deep_get(iktconfig, "Ansible#forks", 5)
 	ansible_user = deep_get(iktconfig, "Ansible#ansible_user")
 	if ansible_user is None or len(ansible_user) == 0:
 		ansible_user = getuser()
-	ansible_configuration.ansible_user = ansible_user
+	ansible_configuration["ansible_user"] = ansible_user
 	ansible_password = deep_get(iktconfig, "Ansible#ansible_password")
 	if ansible_password is not None and len(ansible_password) > 0:
-		ansible_configuration.ansible_password = ansible_password
-	ansible_configuration.disable_strict_host_key_checking = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
-	ansible_configuration.save_logs = deep_get(iktconfig, "Ansible#save_logs", False)
+		ansible_configuration["ansible_password"] = ansible_password
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
+	ansible_configuration["save_logs"] = deep_get(iktconfig, "Ansible#save_logs", False)
 
 	return command(options, args)
 

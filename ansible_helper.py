@@ -1,31 +1,31 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.6)
+
+"""
+Helper for iKT to run Ansible playbooks
+"""
+
 from datetime import datetime
 from functools import partial
 import os
 from pathlib import Path
 import re
 import sys
+import typing # pylint: disable=unused-import
 import yaml
 
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
+from iktpaths import HOMEDIR, IKTDIR
+from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
+from iktpaths import ANSIBLE_INVENTORY, ANSIBLE_TMP_INVENTORY
 from iktprint import iktprint
+from ikttypes import FilePath
 
-ansible_results = {}
-
-HOMEDIR = str(Path.home())
+ansible_results = {} # type: ignore
 
 # Ansible
 ANSIBLE_TMP_GROUP = "selection"
-
-IKTDIR = f"{HOMEDIR}/.ikt"
-ANSIBLE_DIR = f"{IKTDIR}/ansible"
-ANSIBLE_PLAYBOOK_DIRNAME = "playbooks"
-ANSIBLE_PLAYBOOK_DIR = f"{IKTDIR}/{ANSIBLE_PLAYBOOK_DIRNAME}"
-ANSIBLE_INVENTORY = f"{ANSIBLE_DIR}/inventory.yaml"
-ANSIBLE_LOG_DIR = f"{ANSIBLE_DIR}/logs"
-ANSIBLE_TMP_INVENTORY = f"{ANSIBLE_DIR}/tmp_inventory.yaml"
 
 ansible_configuration = {
 	"ansible_forks": 5,
@@ -37,7 +37,7 @@ ansible_configuration = {
 
 # Used by Ansible
 try:
-	import ansible_runner
+	import ansible_runner # type: ignore
 except ModuleNotFoundError:
 	sys.exit("ansible_runner not available; try (re-)running ikt-install")
 
@@ -52,10 +52,18 @@ if not os.path.exists(ANSIBLE_DIR):
 if not os.path.exists(ANSIBLE_LOG_DIR):
 	os.mkdir(ANSIBLE_LOG_DIR)
 
-# Pass in the name of a playbook that exists in {ANSIBLE_PLAYBOOK_DIR};
-# returns the path to the drop-in playbook with the highest priority
-# (or the same playbook in case there is no override)
-def get_playbook_path(playbook):
+def get_playbook_path(playbook: FilePath) -> FilePath:
+	"""
+	Pass in the name of a playbook that exists in {ANSIBLE_PLAYBOOK_DIR};
+	returns the path to the drop-in playbook with the highest priority
+	(or the same playbook in case there is no override)
+
+		Parameters:
+			playbook (str): The name of the playbook to get the path to
+		Returns:
+			path (str): The playbook path with the highest priority
+	"""
+
 	path = ""
 
 	# Check if there's a local playbook overriding this one
@@ -74,9 +82,16 @@ def get_playbook_path(playbook):
 			break
 	if len(path) == 0:
 		path = f"{ANSIBLE_PLAYBOOK_DIR}/{playbook}"
-	return path
+	return FilePath(path)
 
 def ansible_get_inventory_dict():
+	"""
+        Get the iKT inventory and return it as a dict
+
+		Returns:
+			d (dict): A dictionary with an Ansible inventory
+	"""
+
 	if not os.path.exists(ANSIBLE_INVENTORY):
 		return {}
 
@@ -85,8 +100,20 @@ def ansible_get_inventory_dict():
 
 	return d
 
-# Returns a formatted version of the inventory
-def ansible_get_inventory_pretty(groups = None, highlight = False, include_groupvars = False, include_hostvars = False, include_hosts = True):
+def ansible_get_inventory_pretty(groups = None, highlight: bool = False, include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True): # pylint: disable=line-too-long
+	"""
+        Get the iKT inventory and return it neatly formatted
+
+		Parameters:
+			groups (list[str]): What groups to include
+			highlight (bool): Apply syntax highlighting?
+			include_groupvars (bool): Should group variables be included
+			include_hostvars (bool): Should host variables be included
+			include_hosts (bool): Should hosts be included
+		Returns:
+			dump (list[themearray]): A list of themearrays
+	"""
+
 	tmp = {}
 
 	if not os.path.exists(ANSIBLE_INVENTORY):
@@ -141,20 +168,20 @@ def ansible_get_inventory_pretty(groups = None, highlight = False, include_group
 		key_value_regex = re.compile(r"(.*?)(:)(.*)")
 		for i in range(0, len(dump)): # pylint: disable=consider-using-enumerate
 			# Is it a list?
-			tmp = list_regex.match(dump[i])
-			if tmp is not None:
-				indent = tmp[1]
-				listmarker = tmp[2]
-				item = tmp[4]
+			tmp2 = list_regex.match(dump[i])
+			if tmp2 is not None:
+				indent = tmp2[1]
+				listmarker = tmp2[2]
+				item = tmp2[4]
 				dump[i] = [(indent, "default"), (listmarker, "yaml_list"), (item, "yaml_value")]
 				continue
 
 			# Is it key: value?
-			tmp = key_value_regex.match(dump[i])
-			if tmp is not None:
-				key = tmp[1]
-				separator = tmp[2]
-				value = tmp[3]
+			tmp2 = key_value_regex.match(dump[i])
+			if tmp2 is not None:
+				key = tmp2[1]
+				separator = tmp2[2]
+				value = tmp2[3]
 				dump[i] = [(key, "yaml_key"), (separator, "yaml_key_separator"), (value, "yaml_value")]
 				continue
 
@@ -163,7 +190,7 @@ def ansible_get_inventory_pretty(groups = None, highlight = False, include_group
 
 	return dump
 
-def ansible_get_hosts_by_group(inventory, group):
+def ansible_get_hosts_by_group(inventory: FilePath, group: str):
 	hosts = []
 
 	if not os.path.exists(inventory):
@@ -178,7 +205,7 @@ def ansible_get_hosts_by_group(inventory, group):
 
 	return hosts
 
-def ansible_get_groups(inventory):
+def ansible_get_groups(inventory: FilePath):
 	groups = []
 
 	if not os.path.exists(inventory):
@@ -192,25 +219,26 @@ def ansible_get_groups(inventory):
 
 	return groups
 
-def ansible_get_groups_by_host(inventory, host):
+def ansible_get_groups_by_host(inventory_dict, host: str):
+	"""
+	Given an inventory, returns the groups a host belongs to
+
+		Parameters:
+			inventory_dict (dict): An Ansible inventory
+			host (str): The host to return groups for
+		Returns:
+			groups (list[str]): A list of groups
+	"""
+
 	groups = []
 
-	#if not os.path.exists(inventory):
-	#	return []
-
-	#with open(inventory, "r", encoding = "utf-8") as f:
-	#	d = yaml.safe_load(f)
-
-	for group in inventory:
-		if inventory[group].get("hosts") and host in inventory[group]["hosts"]:
+	for group in inventory_dict:
+		if inventory_dict[group].get("hosts") and host in inventory_dict[group]["hosts"]:
 			groups.append(group)
-	#	for group in d:
-	#		if d[group].get("hosts") and host in d[group]["hosts"]:
-	#			groups.append(group)
 
 	return groups
 
-def __ansible_create_inventory(inventory, overwrite = False):
+def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False):
 	# Don't create anything if the inventory exists;
 	# unless overwrite is set
 	if os.path.exists(inventory) and overwrite == False:
@@ -224,8 +252,8 @@ def __ansible_create_inventory(inventory, overwrite = False):
 	d = {
 		"all": {
 			"hosts": {},
-			# workaround for Ubuntu 18.04 and various other older operating systems
-			# that have python3 installed, but not as default
+			# Workaround for Ubuntu 18.04 and various other older operating systems
+			# that have python3 installed, but not as default.
 			"vars": {
 				"ansible_python_interpreter": "/usr/bin/python3",
 			}
@@ -233,21 +261,21 @@ def __ansible_create_inventory(inventory, overwrite = False):
 	}
 
 	if deep_get(ansible_configuration, "ansible_user") is not None:
-		d["all"]["vars"]["ansible_user"] = deep_get(ansible_configuration, "ansible_user")
+		d["all"]["vars"]["ansible_user"] = deep_get(ansible_configuration, "ansible_user") # type: ignore
 
 	if deep_get(ansible_configuration, "ansible_password") is not None:
-		d["all"]["vars"]["ansible_ssh_pass"] = deep_get(ansible_configuration, "ansible_password")
+		d["all"]["vars"]["ansible_ssh_pass"] = deep_get(ansible_configuration, "ansible_password") # type: ignore
 
 	if deep_get(ansible_configuration, "disable_strict_host_key_checking") is not None:
-		d["all"]["vars"]["ansible_ssh_common_args"] = "-o StrictHostKeyChecking=no"
+		d["all"]["vars"]["ansible_ssh_common_args"] = "-o StrictHostKeyChecking=no" # type: ignore
 
 	yaml_str = yaml.safe_dump(d, default_flow_style = False).replace(r"''", '')
 
 	with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
 		f.write(yaml_str)
 
-def ansible_create_groups(inventory, groups):
-	changed = False
+def ansible_create_groups(inventory: FilePath, groups):
+	changed: bool = False
 
 	if groups is None or len(groups) == 0:
 		return True
@@ -277,7 +305,7 @@ def ansible_create_groups(inventory, groups):
 	return True
 
 # pylint: disable-next=too-many-return-statements
-def ansible_delete_groups(inventory, group):
+def ansible_delete_groups(inventory: FilePath, group: str):
 	if group == "":
 		return True
 
@@ -333,7 +361,7 @@ def ansible_delete_groups(inventory, group):
 	return True
 
 # Set one or several values for a group
-def ansible_set_vars(inventory, group, values):
+def ansible_set_vars(inventory: FilePath, group: str, values):
 	changed = False
 
 	if group is None or group == "":
@@ -371,7 +399,7 @@ def ansible_set_vars(inventory, group, values):
 	return True
 
 # Set one or several vars for the specified groups
-def ansible_set_groupvars(inventory, groups, groupvars):
+def ansible_set_groupvars(inventory: FilePath, groups, groupvars):
 	changed = False
 
 	if groups is None or len(groups) == 0:
@@ -410,7 +438,7 @@ def ansible_set_groupvars(inventory, groups, groupvars):
 	return True
 
 # Set one or several vars for hosts in the group all
-def ansible_set_hostvars(inventory, hosts, hostvars):
+def ansible_set_hostvars(inventory: FilePath, hosts, hostvars):
 	changed = False
 
 	if hosts is None or len(hosts) == 0:
@@ -446,7 +474,7 @@ def ansible_set_hostvars(inventory, hosts, hostvars):
 	return True
 
 # Unset one or several vars in the specified groups
-def ansible_unset_groupvars(inventory, groups, groupvars):
+def ansible_unset_groupvars(inventory: FilePath, groups, groupvars):
 	changed = False
 
 	if groups is None or len(groups) == 0:
@@ -490,7 +518,7 @@ def ansible_unset_groupvars(inventory, groups, groupvars):
 	return True
 
 # Unset one or several vars for the specified host in the group all
-def ansible_unset_hostvars(inventory, hosts, hostvars):
+def ansible_unset_hostvars(inventory: FilePath, hosts, hostvars):
 	changed = False
 
 	if hosts is None or len(hosts) == 0:
@@ -530,7 +558,7 @@ def ansible_unset_hostvars(inventory, hosts, hostvars):
 
 # Add hosts to the ansible inventory
 # If the inventory doesn't exist, create it
-def ansible_add_hosts(inventory, hosts, group = "", skip_all = False):
+def ansible_add_hosts(inventory: FilePath, hosts, group: str = "", skip_all: bool = False):
 	changed = False
 
 	if hosts == []:
@@ -562,8 +590,8 @@ def ansible_add_hosts(inventory, hosts, group = "", skip_all = False):
 		if skip_all == False and group != "all":
 			if d["all"]["hosts"] is None:
 				d["all"]["hosts"] = {}
-			if not host in d["all"]["hosts"]:
-				d["all"]["hosts"][host] = ""
+			if host not in d["all"]["hosts"]: # type: ignore
+				d["all"]["hosts"][host] = "" # type: ignore
 				changed = True
 
 		# If the group doesn't exist,
@@ -592,7 +620,7 @@ def ansible_add_hosts(inventory, hosts, group = "", skip_all = False):
 	return True
 
 # Remove hosts from ansible groups
-def ansible_remove_hosts(inventory, hosts, group = None):
+def ansible_remove_hosts(inventory: FilePath, hosts, group: str = None):
 	changed = False
 
 	# Treat empty or zero-length hosts as a programming error
@@ -626,7 +654,7 @@ def ansible_remove_hosts(inventory, hosts, group = None):
 
 # Remove groups from the ansible inventory
 # force is needed to remove non-empty groups
-def ansible_remove_groups(inventory, groups, force = False):
+def ansible_remove_groups(inventory: FilePath, groups, force: bool = False):
 	changed = False
 
 	# Treat empty or zero-length groups as a programming error
@@ -677,7 +705,7 @@ def ansible_get_logs():
 			raise Exception(f"Could not parse {item}")
 	return logs
 
-def ansible_extract_failure(retval, error_msg_lines, skipped = False, unreachable = False):
+def ansible_extract_failure(retval: int, error_msg_lines, skipped: bool = False, unreachable: bool = False):
 	status = ""
 
 	if unreachable == True:
@@ -706,7 +734,7 @@ def ansible_extract_failure(retval, error_msg_lines, skipped = False, unreachabl
 
 	return status
 
-def ansible_results_add(event):
+def ansible_results_add(event) -> int:
 	host = deep_get(event, "event_data#host", "")
 	if len(host) == 0:
 		return 0
@@ -792,14 +820,14 @@ def ansible_results_add(event):
 
 	return retval
 
-def ansible_delete_log(log):
+def ansible_delete_log(log: str):
 	if os.path.exists(f"{ANSIBLE_LOG_DIR}/{log}"):
 		for filename in os.listdir(f"{ANSIBLE_LOG_DIR}/{log}"):
 			os.remove(f"{ANSIBLE_LOG_DIR}/{log}/{filename}")
 		os.rmdir(f"{ANSIBLE_LOG_DIR}/{log}")
 
-def ansible_write_log(start_date, playbook, events):
-	save_logs = deep_get(ansible_configuration, "save_logs", False)
+def ansible_write_log(start_date, playbook: str, events):
+	save_logs: bool = deep_get(ansible_configuration, "save_logs", False)
 
 	if save_logs == False:
 		return
@@ -807,7 +835,8 @@ def ansible_write_log(start_date, playbook, events):
 	playbook_name = playbook
 	if "/" in playbook_name:
 		tmp = re.match(r".*/(.*).yaml", playbook)
-		playbook_name = tmp[1]
+		if tmp is not None:
+			playbook_name = tmp[1]
 
 	directory_name = f"{start_date}_{playbook_name}".replace(" ", "_")
 	os.mkdir(f"{ANSIBLE_LOG_DIR}/{directory_name}")
@@ -904,7 +933,7 @@ def ansible_write_log(start_date, playbook, events):
 			f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
 
 # pylint: disable-next=too-many-arguments
-def ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval, unreachable = False, skipped = False):
+def ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval: int, unreachable: bool = False, skipped: bool = False):
 	if unreachable == True:
 		iktprint([("• ", "separator"), (f"{task}", "error")], stderr = True)
 	elif skipped == True:
@@ -939,7 +968,7 @@ def ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retv
 			iktprint([("<no output>", "none")])
 		iktprint([("", "default")])
 
-def ansible_print_play_results(retval, __ansible_results):
+def ansible_print_play_results(retval: int, __ansible_results):
 	if retval != 0 and len(__ansible_results) == 0:
 		iktprint([("Failed to execute playbook; retval: ", "error"), (f"{retval}", "errorvalue")], stderr = True)
 	else:
@@ -974,7 +1003,7 @@ def ansible_print_play_results(retval, __ansible_results):
 				if unreachable == True:
 					break
 
-def ansible_run_playbook(playbook, override_inventory = False):
+def ansible_run_playbook(playbook: FilePath, override_inventory: bool = False):
 	global ansible_results # pylint: disable=global-statement
 
 	forks = deep_get(ansible_configuration, "ansible_forks")
@@ -1008,7 +1037,7 @@ def ansible_run_playbook(playbook, override_inventory = False):
 
 # Execute a playbook on a list of hosts
 # by creating a temporary inventory
-def ansible_run_playbook_on_host_list(playbook, hosts, values = None):
+def ansible_run_playbook_on_host_list(playbook: FilePath, hosts, values = None):
 	# Remove old temporary inventory
 	if os.path.isfile(ANSIBLE_TMP_INVENTORY):
 		os.remove(ANSIBLE_TMP_INVENTORY)
@@ -1021,7 +1050,7 @@ def ansible_run_playbook_on_host_list(playbook, hosts, values = None):
 	return ansible_run_playbook(playbook, override_inventory = True)
 
 # Execute a playbook using ansible
-def ansible_run_playbook_on_selection(playbook, selection, values = None):
+def ansible_run_playbook_on_selection(playbook: FilePath, selection, values = None):
 	# Remove old temporary inventory
 	if os.path.isfile(ANSIBLE_TMP_INVENTORY):
 		os.remove(ANSIBLE_TMP_INVENTORY)

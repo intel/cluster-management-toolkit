@@ -1,24 +1,25 @@
 #! /usr/bin/env python3
+
+"""
+Helpers used by various components of iKT
+"""
+
 from datetime import datetime, timezone, timedelta, date
 from functools import reduce
 import os
-from pathlib import Path
 import re
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
 import yaml
 
+from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE_DIR
+from iktpaths import IKT_CONFIG_FILE
+
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
-
-HOMEDIR = str(Path.home())
-IKTDIR = f"{HOMEDIR}/.ikt"
-IKT_CONFIG_FILENAME = "ikt.yaml"
-IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
-IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
 
 iktconfig = {}
 
@@ -142,7 +143,7 @@ def deep_get_with_fallback(obj, paths, default = None, fallback_on_empty = False
 	return result
 
 def read_iktconfig():
-	global iktconfig
+	global iktconfig # pylint: disable=global-statement
 
 	if os.path.isfile(IKT_CONFIG_FILE) is False:
 		return None
@@ -367,8 +368,8 @@ def make_set_expression(expression_list):
 	return ", ".join(xlist)
 
 def get_package_versions(hostname):
-	import ansible_helper
-	from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ansible_run_playbook_on_selection, get_playbook_path
+	import ansible_helper # pylint: disable=unused-import,import-outside-toplevel
+	from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path # pylint: disable=import-outside-toplevel
 
 	if not os.path.isdir(ANSIBLE_PLAYBOOK_DIR):
 		return []

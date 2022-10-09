@@ -15,11 +15,13 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
+from ikttypes import FilePath
+
 import iktlib
 from iktlib import deep_get, stgroup_mapping
 from logparser import loglevel, loglevel_to_name
 
-theme = {}
+theme = {} # type: ignore
 
 mousemask = 0
 
@@ -119,7 +121,7 @@ def init_pair(pair, color_pair, color_nr):
 		else:
 			raise
 
-def read_theme(configthemefile, defaultthemefile):
+def read_theme(configthemefile: FilePath, defaultthemefile: FilePath):
 	global theme
 	themefile = None
 

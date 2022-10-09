@@ -15,6 +15,8 @@
 #
 # Return format is timestamp, facility, severity, message
 
+# pylint: disable=line-too-long
+
 import ast
 from collections import namedtuple
 from datetime import datetime
@@ -25,12 +27,12 @@ try:
 	import ujson as json
 	json_is_ujson = True
 except ModuleNotFoundError:
-	import json
+	import json # type: ignore
 	json_is_ujson = False
 import os
-from pathlib import Path
 import re
 import sys
+import typing # pylint: disable=unused-import
 import yaml
 
 try:
@@ -38,12 +40,11 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from iktlib import deep_get, iktconfig, deep_get_with_fallback
-import formatter as formatters
+from iktpaths import HOMEDIR, PARSER_DIR
 
-HOMEDIR = str(Path.home())
-IKTDIR = os.path.join(HOMEDIR, ".ikt")
-PARSER_DIRNAME = "parsers"
+import iktlib # pylint: disable=unused-import
+from iktlib import deep_get, iktconfig, deep_get_with_fallback
+import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
 
 class loglevel:
 	EMERG = 0
@@ -76,31 +77,31 @@ loglevel_mappings = {
 
 class logparser_configuration:
 	# Keep or strip timestamps in structured logs
-	pop_ts = True
+	pop_ts: bool = True
 	# Keep or strip severity in structured logs
-	pop_severity = True
+	pop_severity: bool = True
 	# Keep or strip facility in structured logs
-	pop_facility = True
+	pop_facility: bool = True
 	# msg="foo" or msg=foo => foo
-	msg_extract = True
+	msg_extract: bool = True
 	# If msg_extract is False,
 	# this decides whether or not to put msg="foo" first or not
 	# this also affects err="foo" and error="foo"
-	msg_first = True
+	msg_first: bool = True
 	# if msg_extract is True,
 	# this decides whether msg="foo\nbar" should be converted to:
 	# foo
 	# bar
 	# This does (currently) not affect "err=" and "error="
-	msg_linebreaks = True
+	msg_linebreaks: bool = True
 	# Should "* " be replaced with real bullets?
-	msg_realbullets = True
+	msg_realbullets: bool = True
 	# collector=foo => • foo
-	bullet_collectors = True
+	bullet_collectors: bool = True
 	# if msg_extract is True,
 	# this decides whether should be converted to:
 	# msg="Starting foo" version="(version=.*)" => Starting foo (version=.*)
-	merge_starting_version = True
+	merge_starting_version: bool = True
 
 def json_dumps(obj):
 	indent = 2
@@ -118,8 +119,8 @@ def loglevel_to_name(severity):
 	return loglevel_mappings[min(loglevel.DIFFSAME, severity)]
 
 def name_to_loglevel(name):
-	for severity in loglevel_mappings:
-		if loglevel_mappings[severity].lower() == name.lower():
+	for severity, severity_string in loglevel_mappings.items():
+		if severity_string.lower() == name.lower():
 			return severity
 	raise ValueError(f"Programming error! Loglevel {name} does not exist!")
 
@@ -459,55 +460,14 @@ def strip_iso_timestamp_with_tz(message):
 		message = tmp[2]
 	return message
 
-# Will split timestamp from messages that begin with timestamps of the form:
-# [10/Feb/2020:23:09:45 [+-]0000]<message>
-def split_dd_mmm_yyyy_timestamp(message, timestamp):
-	tmp = re.match(r"^\[(\d\d)/([A-Z][a-z][a-z])/(\d+):(\d\d:\d\d:\d\d) ([\+-])(\d\d)(\d\d)\](.*)", message)
-
-	if tmp is not None:
-		if timestamp is None:
-			year = tmp[3]
-			month = month_to_numerical(tmp[2])
-			day = tmp[1]
-			hms = tmp[4]
-			tzsign = tmp[5]
-			tzhour = tmp[6]
-			tzmin = tmp[7]
-
-			tmp_timestamp = f"{year}-{month}-{day} {hms}.000{tzsign}{tzhour}{tzmin}"
-			timestamp = datetime.strptime(tmp_timestamp, "%Y-%m-%d %H:%M:%S.%f%z")
-
-		message = tmp[8]
-
-	return message, timestamp
-
-# Will split timestamp from messages that begin with timestamps of the form:
-# Sat Feb 22 00:13:44 2020 <message>
-def split_wd_mmm_dd_hh_mm_ss_yyyy_timestamp(message, timestamp):
-	tmp = re.match(r"^[A-Z][a-z][a-z] ([A-Z][a-z][a-z]) *(\d*) (\d\d:\d\d:\d\d) (\d\d\d\d) (.*)", message)
-
-	if tmp is not None:
-		if timestamp is None:
-			year = tmp[4]
-			month = month_to_numerical(tmp[1])
-			day = tmp[2]
-			hms = tmp[3]
-			tmp_timestamp = f"{year}-{month}-{day} {hms}.000+0000"
-			timestamp = datetime.strptime(tmp_timestamp, "%Y-%m-%d %H:%M:%S.%f%z")
-		message = tmp[5]
-
-	return message, timestamp
-
 # http:
 # ::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -
 # 10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"
 # 10.244.0.1 - - [29/Jan/2022:10:33:50 +0000] "GET /v0/healthz/ HTTP/1.1" 200 3 "http://10.244.0.123:8000/v0/healthz" "kube-probe/1.23"
-def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
-	# pylint: disable=unused-argument
-	remnants = []
+def http(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True, options = None):
 	reformat_timestamps = deep_get(options, "reformat_timestamps", False)
 
-	ipaddress = None
+	ipaddress = ""
 
 	# First match the IP-address; it's either IPv4 or IPv6
 	tmp = re.match(r"^(([a-f0-9:]+:+)+[a-f0-9.]+?[a-f0-9])( - - .*)", message)
@@ -521,24 +481,24 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, opti
 			message = tmp[2]
 
 	# Short format
-	if ipaddress is not None:
+	if len(ipaddress) > 0:
 		tmp = re.match(r"( - - )"
-				"(\[)"
-				"(\d\d)"
-				"/"
-				"([A-Z][a-z][a-z])"
-				"/"
-				"(\d{4})"
-				" "
-				"(\d\d:\d\d:\d\d)"
-				"(\])"
-				"(\s\")"
-				"([A-Z]*?\s)"
-				"(\S*?)"
-				"(\s\S*?)"
-				"(\"\s)"
-				"(\d+?)"
-				"(\s+[\d-]+?$)", message)
+			       r"(\[)"
+			       r"(\d\d)"
+			       r"/"
+			       r"([A-Z][a-z][a-z])"
+			       r"/"
+			       r"(\d{4})"
+			       r" "
+			       r"(\d\d:\d\d:\d\d)"
+			       r"(\])"
+			       r"(\s\")"
+			       r"([A-Z]*?\s)"
+			       r"(\S*?)"
+			       r"(\s\S*?)"
+			       r"(\"\s)"
+			       r"(\d+?)"
+			       r"(\s+[\d-]+?$)", message)
 
 		if tmp is not None:
 			address1 = ipaddress
@@ -583,31 +543,31 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, opti
 
 			return message, severity, facility
 
-	if ipaddress is not None:
+	if len(ipaddress) > 0:
 		tmp = re.match(r"( - - )"
-				"(\[)"
-				"(\d\d)"
-				"/"
-				"([A-Z][a-z][a-z])"
-				"/"
-				"(\d{4})"
-				":"
-				"(\d\d:\d\d:\d\d)"
-				"(\s\+\d{4}|\s-\d{4})"
-				"(\])"
-				"(\s\")"
-				"([A-Z]*?\s)"
-				"(\S*?)"
-				"(\s\S*?)"
-				"(\"\s)"
-				"(\d+?)"
-				"(\s+\d+?\s\")"
-				"([^\"]*)"
-				"(\"\s\")"
-				"([^\"]*)"
-				"(\"$|\"\s\")"
-				"([^\"]*|$)"
-				"(\"$|$)", message)
+			       r"(\[)"
+			       r"(\d\d)"
+			       r"/"
+			       r"([A-Z][a-z][a-z])"
+			       r"/"
+			       r"(\d{4})"
+			       r":"
+			       r"(\d\d:\d\d:\d\d)"
+			       r"(\s\+\d{4}|\s-\d{4})"
+			       r"(\])"
+			       r"(\s\")"
+			       r"([A-Z]*?\s)"
+			       r"(\S*?)"
+			       r"(\s\S*?)"
+			       r"(\"\s)"
+			       r"(\d+?)"
+			       r"(\s+\d+?\s\")"
+			       r"([^\"]*)"
+			       r"(\"\s\")"
+			       r"([^\"]*)"
+			       r"(\"$|\"\s\")"
+			       r"([^\"]*|$)"
+			       r"(\"$|$)", message)
 
 		if tmp is not None:
 			address1 = ipaddress
@@ -666,7 +626,7 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, opti
 
 			return message, severity, facility
 
-	# Alternative format
+	# Alternate format
 	tmp = re.match(r"^\|\s+(\d{3})\s+\|\s+([0-9.]+)([^ ]*)\s+\|\s+([^:]*):(\d+?)\s+\|\s+([A-Z]+)\s+(.*)", message)
 
 	if tmp is not None:
@@ -703,26 +663,6 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg = True, opti
 
 	return f"{ipaddress}{message}", severity, facility
 
-# Will split messages of the format into ISO-8601 timestamp + message
-# 10.32.0.1 - - [22/Feb/2020:16:34:30 +0000] "GET / HTTP/1.1" 200 6 " [...]
-# 10.32.0.1 - [10.32.0.1] - - [10/Feb/2020:23:10:25 +0000] [...]
-def split_http_style(message, timestamp):
-	# For messages of the format
-	tmp = re.match(r"^(\d+\.\d+\.\d+\.\d+ - .*?) \[(\d\d)/([A-Z][a-z][a-z])/(\d+).(\d\d:\d\d:\d\d).*?\] (.*)", message)
-	if tmp is not None:
-		if timestamp is None:
-			year = tmp[4]
-			month = month_to_numerical(tmp[3])
-			day = tmp[2]
-			hms = tmp[5]
-			if "." in hms:
-				tmp_timestamp = f"{year}-{month}-{day} {hms}+0000"
-			else:
-				tmp_timestamp = f"{year}-{month}-{day} {hms}.000+0000"
-			timestamp = datetime.strptime(tmp_timestamp, "%Y-%m-%d %H:%M:%S.%f%z")
-		message = f"{tmp[1]} {tmp[6]}"
-	return message, timestamp
-
 # log messages of the format:
 # E0514 09:01:55.108028382       1 server_chttp2.cc:40]
 # I0511 14:31:10.500543       1 start.go:76]
@@ -750,7 +690,7 @@ def split_glog(message, severity = None, facility = None):
 
 		# We don't really care about the pid,
 		# but let's assign it just to document what it is
-		pid = tmp[2]
+		_pid = tmp[2]
 
 		facility = f"{(tmp[3])}"
 		message = f"{(tmp[4])}"
@@ -780,7 +720,7 @@ def __split_severity_facility_style(message, severity = loglevel.INFO, facility 
 
 	return message, severity, facility
 
-def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
+def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = None):
 	logentry = None
 	remnants = None
 
@@ -797,7 +737,7 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 
 	try:
 		logentry = json.loads(message)
-	except ValueError as e:
+	except ValueError:
 		pass
 
 	# Unfold Python dicts
@@ -811,7 +751,7 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 		if d is not None:
 			try:
 				logentry = json_dumps(d)
-			except ValueError as e:
+			except ValueError:
 				pass
 
 	if logentry is not None and type(logentry) == dict:
@@ -843,7 +783,8 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 				if type(_fac) == str:
 					facility = deep_get(logentry, _fac, "")
 					break
-				elif type(_fac) == dict:
+
+				if type(_fac) == dict:
 					_facilities = deep_get(_fac, "keys", [])
 					_separators = deep_get(_fac, "separators", [])
 					for i in range(0, len(_facilities)):
@@ -865,8 +806,8 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 					for __fac in deep_get(_fac, "keys", []):
 						if __fac == "":
 							continue
-						else:
-							logentry.pop(__fac, None)
+
+						logentry.pop(__fac, None)
 
 		if level is not None:
 			severity = str_to_severity(level)
@@ -924,7 +865,7 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 
 			if len(logentry) > 0:
 				if structseverity == loglevel.DEBUG:
-					override_formatting = ("logview", f"severity_debug")
+					override_formatting = ("logview", "severity_debug")
 				else:
 					override_formatting = {}
 					for _msg in versions:
@@ -963,7 +904,7 @@ def merge_message(message, remnants = None, severity = loglevel.INFO):
 
 	return message, remnants
 
-def split_json_style_raw(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}, merge_msg = False):
+def split_json_style_raw(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True, options = None, merge_msg = False):
 	global logparser_configuration
 
 	tmp_msg_first = logparser_configuration.msg_first
@@ -998,7 +939,7 @@ def split_json_style_raw(message, severity = loglevel.INFO, facility = "", fold_
 
 	return message, severity, facility, remnants
 
-def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
+def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = None):
 	remnants = []
 	tmp = message.split(" ", 2)
 
@@ -1015,7 +956,7 @@ def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True
 		_message, _severity, _facility, remnants = split_json_style_raw(message = msg, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_msg = True)
 		message = f"{tmp[0]} {event}"
 		if event in ["UpdatePod", "UpdateNamespace"]:
-			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [No changes]", ("logview", f"unchanged"))]
+			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [No changes]", ("logview", "unchanged"))]
 	elif event in ["UpdatePod", "UpdateNamespace"]:
 		tmp2 = re.match(r"^({.*})\s*({.*})", tmp[2])
 		if tmp2 is not None:
@@ -1023,8 +964,8 @@ def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True
 			old_str = json_dumps(old)
 			try:
 				new = json.loads(tmp2[2])
-			except ValueError as e:
-				message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [Error: could not parse JSON]", ("logview", f"severity_error"))]
+			except ValueError:
+				message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [Error: could not parse JSON]", ("logview", "severity_error"))]
 				remnants = [(tmp[2], severity)]
 				return message, severity, facility, remnants
 			new_str = json_dumps(new)
@@ -1041,23 +982,11 @@ def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True
 					remnants.append((el, loglevel.DIFFMINUS))
 				else:
 					remnants.append((formatters.format_yaml_line(el), loglevel.DIFFSAME))
-			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [State modified]", ("logview", f"modified"))]
+			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [State modified]", ("logview", "modified"))]
 	else:
 		sys.exit(f"json_event: Unknown EVENT type:\n{message}")
 
 	return message, severity, facility, remnants
-
-# log messages of the format:
-# 2020-05-14 08:25:24.481670: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcudart.so.10.1
-# This also handles facilities that lack a line#
-def split_tensorflow_style(message, timestamp, severity = loglevel.INFO, facility = ""):
-	tmp = re.match(r"^\d+-\d\d-\d\d \d\d:\d\d:\d\d\.\d+: ([A-Z]) (.+?:?\d*)\] (.*)", message)
-	if tmp is not None:
-		tmpseverity = letter_to_severity(tmp[1])
-		severity = min(tmpseverity, severity)
-		facility = tmp[2]
-		message = tmp[3]
-	return message, timestamp, severity, facility
 
 def split_angle_bracketed_facility(message, facility = ""):
 	tmp = re.match(r"^<(.+?)>\s?(.*)", message)
@@ -1085,28 +1014,6 @@ def replace_tabs(message):
 
 	return message
 
-# Basic (with ISO8601:ish timestamps):
-# Only split the lines and separate out timestamps
-def basic_8601(message, fold_msg = True):
-	# pylint: disable=unused-argument
-	facility = ""
-	severity = loglevel.INFO
-	remnants = []
-
-	# Some messages have double timestamps...
-	message, _timestamp = split_iso_timestamp(message, None)
-
-	return facility, severity, message, remnants
-
-# basic_8601 but with no removal of double timestamps
-def basic_8601_raw(message, fold_msg = True):
-	# pylint: disable=unused-argument
-	facility = ""
-	severity = loglevel.INFO
-	remnants = []
-
-	return facility, severity, message, remnants
-
 def strip_bracketed_pid(message):
 	tmp = re.match(r"^\[\d+\]\s*(.*)", message)
 	if tmp is not None:
@@ -1116,10 +1023,10 @@ def strip_bracketed_pid(message):
 def strip_ansicodes(message):
 	message = message.replace("\\x1b", "\x1b")
 	tmp = re.findall(r"("
-	                  "\x1b\[\d+m|"
-	                  "\x1b\[\d+;\d+m|"
-			  "\x1b\[\d+;\d+;\d+m|"
-			  ".*?)", message)
+	                 r"\x1b\[\d+m|"
+	                 r"\x1b\[\d+;\d+m|"
+			 r"\x1b\[\d+;\d+;\d+m|"
+			 r".*?)", message)
 	if tmp is not None:
 		message = "".join(item for item in tmp if not item.startswith("\x1b"))
 
@@ -1194,7 +1101,7 @@ def override_severity(message, severity, facility = None):
 
 	return message, severity
 
-def custom_override_severity(message, severity, overrides = []):
+def custom_override_severity(message, severity, overrides):
 	# FIXME: override_severity isn't implemented for strarrays yet
 	if type(message) == list:
 		return severity
@@ -1243,7 +1150,7 @@ def expand_event_objectmeta(message, severity, remnants = None, fold_msg = True)
 	indent = 2
 	depth = 0
 	escaped = False
-	quoted = False
+	quoted = False # pylint: disable=unused-variable
 	tmp = ""
 
 	for i in range(0, len(raw_message)):
@@ -1299,6 +1206,7 @@ def expand_event(message, severity, remnants = None, fold_msg = True):
 	eventend = None
 	refstart = None
 	refend = None
+
 	for i in range(0, len(raw_message)):
 		if message[i] == "(":
 			parendepth += 1
@@ -1314,8 +1222,7 @@ def expand_event(message, severity, remnants = None, fold_msg = True):
 				# Abort parsing; assume that this message is either malformed
 				# or that the parser is flawed
 				return message, remnants
-			else:
-				refend = i
+			refend = i
 		elif message[i] == ")":
 			parendepth -= 1
 			if parendepth == 0:
@@ -1323,9 +1230,9 @@ def expand_event(message, severity, remnants = None, fold_msg = True):
 					# Abort parsing; assume that this message is either malformed
 					# or that the parser is flawed
 					return message, remnants
-				else:
-					eventend = i
-					break
+
+				eventend = i
+				break
 
 	remnants = []
 	message = raw_message[0:eventstart]
@@ -1375,8 +1282,8 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 			if tmp2[1].startswith("”"):
 				if not tmp2[1].endswith("”"):
 					raise Exception(f"expand_header_key_value(): unbalanced quotes in item: {item}")
-				else:
-					res[tmp2[0]] = tmp2[1][1:-1]
+
+				res[tmp2[0]] = tmp2[1][1:-1]
 			else:
 				# Now we restore the quotation marks; fancy quotes should be paired,
 				# and since we cannot do that we shouldn't pretend that we did
@@ -1391,27 +1298,16 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 			for entry, value in res.items():
 				if severity > loglevel.INFO:
 					tmpseverity = loglevel.INFO
-				else:
-					tmpseverity = severity
 
-				# We have already extracted the message
-				if entry == "msg":
+				tmpseverity = severity
+
+				# We have already extracted the message and we already have a timestamp
+				if entry in ("msg", "ts", "time"):
 					continue
-				# We should already have a timestamp
-				elif entry in ["ts", "time"]:
-					continue
-				elif entry == "caller":
+
+				if entry in ("caller", "source", "Topic"):
 					if facility == "":
 						facility = value
-					continue
-				elif entry == "source":
-					if facility == "":
-						facility = value
-					continue
-				elif entry == "Topic":
-					if facility == "":
-						facility = value
-					continue
 				elif entry == "level":
 					# This is used as severity by prometheus
 					s = str_to_severity(value, -1)
@@ -1454,47 +1350,6 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 
 	return message, remnants
 
-# k8s-mlperf-image-classification-training/k8s-mlperf-image-classification-training
-# INFO:tensorflow:Done running local_init_op.
-# 2020-02-24 11:52:00.243943: W [...]
-# facilities:
-#	tensorflow/core/common_runtime/gpu/gpu_device.cc:971
-#	tensorflow:
-def mlperf_image_classification_training(message, fold_msg = True):
-	facility = ""
-	remnants = []
-
-	# INFO:tensorflow:Done running local_init_op.
-	# 2020-02-24 11:52:00.243943: W [...]
-	# 2020-02-24 11:51:47.827157: I
-	# Trim any leading superfluous timestamps;
-	# we've already got one, you see. Oh yes,
-	# it's very nice.
-	tmp = re.match(r"^([A-Z]) (.*?:\d+)] (.*)", message)
-	if tmp is not None:
-		severity = letter_to_severity(tmp[1])
-		facility = tmp[2]
-		message = tmp[3]
-	elif message.startswith("ERROR:"):
-		severity = loglevel.ERR
-		message = message[len("ERROR:"):]
-	elif message.startswith("WARNING:"):
-		severity = loglevel.WARNING
-		message = message[len("WARNING:"):]
-	elif message.startswith("NOTICE:"):
-		severity = loglevel.NOTICE
-		message = message[len("NOTICE:"):]
-	elif message.startswith("INFO:"):
-		severity = loglevel.INFO
-		message = message[len("INFO:"):]
-	elif message.startswith("DEBUG:"):
-		severity = loglevel.DEBUG
-		message = message[len("DEBUG:"):]
-	else:
-		severity = loglevel.INFO
-
-	return facility, severity, message, remnants
-
 def format_key_value(key, value, severity, force_severity = False):
 	if key in ["error", "err"]:
 		tmp = [(f"{key}", ("types", "key_error")), ("separators", "keyvalue_log"), (f"{value}", ("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
@@ -1507,7 +1362,7 @@ def format_key_value(key, value, severity, force_severity = False):
 # Severity: lvl=|level=
 # Timestamps: t=|ts=|time= (all of these are ignored)
 # Facility: subsys|caller|logger|source
-def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
+def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = None):
 	remnants = []
 
 	messages = options.get("messages", ["msg"])
@@ -1564,7 +1419,8 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 				if type(_fac) == str:
 					facility = deep_get(d, _fac, "")
 					break
-				elif type(_fac) == dict:
+
+				if type(_fac) == dict:
 					_facilities = deep_get(_fac, "keys", [])
 					_separators = deep_get(_fac, "separators", [])
 					for i in range(0, len(_facilities)):
@@ -1585,8 +1441,8 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 					for __fac in deep_get(_fac, "keys", []):
 						if __fac == "":
 							continue
-						else:
-							d.pop(__fac)
+
+						d.pop(__fac)
 
 		if fold_msg == False and len(d) == 2 and logparser_configuration.merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
 			severity = custom_override_severity(msg, severity, overrides = severity_overrides)
@@ -1636,7 +1492,7 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 						msg = deep_get_with_fallback(d, messages, "")
 						if len(msg) > 0:
 							force_severity = False
-							if not any(_err in errors for key in d):
+							if not any(key in errors for key in d):
 								force_severity = True
 							tmp.append(format_key_value("msg", msg, severity, force_severity = force_severity))
 						# Pop the first matching _msg
@@ -1692,14 +1548,13 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 # For messages along the lines of:
 # "Foo" "key"="value" "key"="value"
 # Foo key=value key=value
-def key_value_with_leading_message(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = {}):
+def key_value_with_leading_message(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = None):
 	global logparser_configuration
 	remnants = []
 
 	if fold_msg == True:
 		return facility, severity, message, remnants
 
-	rawmsg = message
 	# Split into substrings based on spaces
 	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
 	if tmp is not None and len(tmp) > 0:
@@ -1727,6 +1582,8 @@ def key_value_with_leading_message(message, severity = loglevel.INFO, facility =
 # Messages on the format:
 # <key>:<whitespace>...<value>
 def modinfo(message, fold_msg = True):
+	del fold_msg
+
 	facility = ""
 	severity = loglevel.INFO
 	remnants = []
@@ -1747,6 +1604,8 @@ def modinfo(message, fold_msg = True):
 # Messages on the format:
 # [timestamp] [severity] message
 def bracketed_timestamp_severity(message, fold_msg = True):
+	del fold_msg
+
 	facility = ""
 	severity = loglevel.INFO
 	remnants = []
@@ -1761,6 +1620,8 @@ def bracketed_timestamp_severity(message, fold_msg = True):
 	return facility, severity, message, remnants
 
 def directory(message, fold_msg = True, severity = loglevel.INFO, facility = ""):
+	del fold_msg
+
 	remnants = []
 
 	tmp = re.match(r"^(total)\s+(\d+)$", message)
@@ -1771,125 +1632,125 @@ def directory(message, fold_msg = True, severity = loglevel.INFO, facility = "")
 	if tmp is None:
 		# This is unlikely to be a directory match
 		return facility, severity, message, remnants
-	else:
-		etype = tmp[1]
-		permissions = tmp[2]
-		space1 = tmp[3]
-		linkcount = tmp[4]
-		space2 = tmp[5]
-		owner = tmp[6]
-		space3 = tmp[7]
-		group = tmp[8]
-		space4 = tmp[9]
-		size = tmp[10] + tmp[11]
-		space5 = tmp[12]
-		month = tmp[13]
-		space6 = tmp[14]
-		day = tmp[15]
-		space7 = tmp[16]
-		yearortime = tmp[17]
-		space8 = tmp[18]
-		name = tmp[19]
-		suffix = tmp[20]
 
-		_message = [
-			(f"{etype}", ("types", "dir_type")),
-			(f"{permissions}", ("types", "dir_permissions")),
-			(f"{space1}", ("types", "generic")),
-			(f"{linkcount}", ("types", "dir_linkcount")),
-			(f"{space2}", ("types", "generic")),
-			(f"{owner}", ("types", "dir_owner")),
-			(f"{space3}", ("types", "generic")),
-			(f"{group}", ("types", "dir_group")),
-			(f"{space4}", ("types", "generic")),
-			(f"{size}", ("types", "dir_size")),
-			(f"{space5}", ("types", "generic")),
-			(f"{month}", ("types", "dir_date")),
-			(f"{space6}", ("types", "generic")),
-			(f"{day}", ("types", "dir_date")),
-			(f"{space7}", ("types", "generic")),
-			(f"{yearortime}", ("types", "dir_date")),
-			(f"{space8}", ("types", "generic")),
+	etype = tmp[1]
+	permissions = tmp[2]
+	space1 = tmp[3]
+	linkcount = tmp[4]
+	space2 = tmp[5]
+	owner = tmp[6]
+	space3 = tmp[7]
+	group = tmp[8]
+	space4 = tmp[9]
+	size = tmp[10] + tmp[11]
+	space5 = tmp[12]
+	month = tmp[13]
+	space6 = tmp[14]
+	day = tmp[15]
+	space7 = tmp[16]
+	yearortime = tmp[17]
+	space8 = tmp[18]
+	name = tmp[19]
+	suffix = tmp[20]
+
+	_message = [
+		(f"{etype}", ("types", "dir_type")),
+		(f"{permissions}", ("types", "dir_permissions")),
+		(f"{space1}", ("types", "generic")),
+		(f"{linkcount}", ("types", "dir_linkcount")),
+		(f"{space2}", ("types", "generic")),
+		(f"{owner}", ("types", "dir_owner")),
+		(f"{space3}", ("types", "generic")),
+		(f"{group}", ("types", "dir_group")),
+		(f"{space4}", ("types", "generic")),
+		(f"{size}", ("types", "dir_size")),
+		(f"{space5}", ("types", "generic")),
+		(f"{month}", ("types", "dir_date")),
+		(f"{space6}", ("types", "generic")),
+		(f"{day}", ("types", "dir_date")),
+		(f"{space7}", ("types", "generic")),
+		(f"{yearortime}", ("types", "dir_date")),
+		(f"{space8}", ("types", "generic")),
+	]
+	# regular file
+	if etype == "-":
+		_message += [
+			(f"{name}", ("types", "dir_file"))
 		]
-		# regular file
-		if etype == "-":
+	# block device
+	elif etype == "b":
+		_message += [
+			(f"{name}", ("types", "dir_dev"))
+		]
+	# character device
+	elif etype == "c":
+		_message += [
+			(f"{name}", ("types", "dir_dev"))
+		]
+	# sticky bit has precedence over the regular directory type
+	elif permissions.endswith("t"):
+		_message += [
+			(f"{name}", ("types", "dir_socket"))
+		]
+	# directory
+	elif etype == "d":
+		_message += [
+			(f"{name}", ("types", "dir_dir"))
+		]
+	# symbolic link
+	elif etype == "l":
+		tmp2 = re.match(r"(.+?)( -> )(.+)", name)
+		if tmp2 is None:
 			_message += [
-				(f"{name}", ("types", "dir_file"))
+				(f"{name}", ("types", "dir_symlink_name"))
 			]
-		# block device
-		elif etype == "b":
+		else:
 			_message += [
-				(f"{name}", ("types", "dir_dev"))
+				(f"{tmp2[1]}", ("types", "dir_symlink_name")),
+				(f"{tmp2[2]}", ("types", "dir_symlink_link"))
 			]
-		# character device
-		elif etype == "c":
-			_message += [
-				(f"{name}", ("types", "dir_dev"))
-			]
-		# sticky bit has precedence over the regular directory type
-		elif permissions.endswith("t"):
-			_message += [
-				(f"{name}", ("types", "dir_socket"))
-			]
-		# directory
-		elif etype == "d":
-			_message += [
-				(f"{name}", ("types", "dir_dir"))
-			]
-		# symbolic link
-		elif etype == "l":
-			tmp2 = re.match(r"(.+?)( -> )(.+)", name)
-			if tmp2 is None:
-				_message += [
-					(f"{name}", ("types", "dir_symlink_name"))
-				]
-			else:
-				_message += [
-					(f"{tmp2[1]}", ("types", "dir_symlink_name")),
-					(f"{tmp2[2]}", ("types", "dir_symlink_link"))
-				]
-				# There's no suffix for devices or regular files,
-				# but we can distinguish the two based on the file size;
-				# the size for devices isn't really a size per se,
-				# but rather major, minor (a normal size never has a comma)
-				if len(suffix) == 0:
-					if "," in size:
-						_message += [
-							(f"{tmp2[3]}", ("types", "dir_dev")),
-						]
-					else:
-						_message += [
-							(f"{tmp2[3]}", ("types", "dir_file")),
-						]
-				elif suffix == "|":
+			# There's no suffix for devices or regular files,
+			# but we can distinguish the two based on the file size;
+			# the size for devices isn't really a size per se,
+			# but rather major, minor (a normal size never has a comma)
+			if len(suffix) == 0:
+				if "," in size:
 					_message += [
-						(f"{tmp2[3]}", ("types", "dir_pipe")),
-					]
-				elif suffix == "=":
-					_message += [
-						(f"{tmp2[3]}", ("types", "dir_socket")),
-					]
-				elif suffix == "/":
-					_message += [
-						(f"{tmp2[3]}", ("types", "dir_dir")),
+						(f"{tmp2[3]}", ("types", "dir_dev")),
 					]
 				else:
-					raise Exception("Unhandled suffix {suffix} in line {message}")
-		# pipe
-		elif etype == "p":
-			_message += [
-				(f"{name}", ("types", "dir_pipe"))
-			]
-		# socket
-		elif etype == "s":
-			_message += [
-				(f"{name}", ("types", "dir_socket"))
-			]
+					_message += [
+						(f"{tmp2[3]}", ("types", "dir_file")),
+					]
+			elif suffix == "|":
+				_message += [
+					(f"{tmp2[3]}", ("types", "dir_pipe")),
+				]
+			elif suffix == "=":
+				_message += [
+					(f"{tmp2[3]}", ("types", "dir_socket")),
+				]
+			elif suffix == "/":
+				_message += [
+					(f"{tmp2[3]}", ("types", "dir_dir")),
+				]
+			else:
+				raise Exception("Unhandled suffix {suffix} in line {message}")
+	# pipe
+	elif etype == "p":
+		_message += [
+			(f"{name}", ("types", "dir_pipe"))
+		]
+	# socket
+	elif etype == "s":
+		_message += [
+			(f"{name}", ("types", "dir_socket"))
+		]
 
-		if len(suffix) > 0:
-			_message += [
-				(f"{suffix}", ("types", "dir_suffix"))
-			]
+	if len(suffix) > 0:
+		_message += [
+			(f"{suffix}", ("types", "dir_suffix"))
+		]
 
 	return facility, severity, _message, remnants
 
@@ -1900,6 +1761,8 @@ def directory(message, fold_msg = True, severity = loglevel.INFO, facility = "")
 #   msg: ==> ** Starting NGINX setup **
 #   remnants: []
 def facility_hh_mm_ss_ms_severity(message, severity = loglevel.INFO, fold_msg = True):
+	del fold_msg
+
 	facility = ""
 	remnants = []
 
@@ -1916,6 +1779,8 @@ def facility_hh_mm_ss_ms_severity(message, severity = loglevel.INFO, fold_msg = 
 #   msg: [     0.000384s] linkerd2_proxy::rt: Using single-threaded proxy runtime
 #   remnants: []
 def seconds_severity_facility(message, fold_msg = True):
+	del fold_msg
+
 	facility = ""
 	severity = loglevel.INFO
 	remnants = []
@@ -1934,7 +1799,7 @@ def substitute_bullets(message, prefix):
 		message = message[0:len(prefix)].replace("*", "•") + message[len(prefix):]
 	return message
 
-def python_traceback_scanner(message, fold_msg = True, options = {}):
+def python_traceback_scanner(message, fold_msg = True, options = None):
 	# pylint: disable=unused-argument
 	timestamp = None
 	facility = ""
@@ -1971,13 +1836,15 @@ def python_traceback_scanner(message, fold_msg = True, options = {}):
 	return processor, (timestamp, facility, severity, remnants)
 
 def python_traceback(message, fold_msg = True):
+	del fold_msg
+
 	remnants = []
 	if message == "Traceback (most recent call last):":
 		remnants = [(message, ("logview", "severity_error"))]
 		message = ["start_block", python_traceback_scanner]
 	return message, remnants
 
-def json_line_scanner(message, fold_msg = True, options = {}):
+def json_line_scanner(message, fold_msg = True, options = None):
 	# pylint: disable=unused-argument
 	allow_empty_lines = deep_get(options, "allow_empty_lines", True)
 	timestamp = None
@@ -2000,7 +1867,9 @@ def json_line_scanner(message, fold_msg = True, options = {}):
 
 	return processor, (timestamp, facility, severity, remnants)
 
-def json_line(message, fold_msg = True, options = {}):
+def json_line(message, fold_msg = True, options = None):
+	del fold_msg
+
 	remnants = []
 	matched = False
 
@@ -2037,7 +1906,9 @@ def json_line(message, fold_msg = True, options = {}):
 		message = ["start_block", json_line_scanner, options]
 	return message, remnants
 
-def yaml_line_scanner(message, fold_msg = True, options = {}):
+def yaml_line_scanner(message, fold_msg = True, options = None):
+	del fold_msg
+
 	timestamp = None
 	facility = None
 	severity = loglevel.INFO
@@ -2085,13 +1956,15 @@ def yaml_line_scanner(message, fold_msg = True, options = {}):
 
 	return processor, (timestamp, facility, severity, remnants)
 
-def yaml_line(message, fold_msg = True, options = {}):
+def yaml_line(message, fold_msg = True, options = None):
+	del fold_msg
+
 	remnants = []
 	matched = False
 
 	block_start = deep_get(options, "block_start", [{
 		"matchtype": "regex",
-		"matchkey": "\S+?: \S.*|\S+?:$",
+		"matchkey": r"\S+?: \S.*|\S+?:$",
 		"matchline": "any",
 		"format_block_start": False,
 	}])
@@ -2124,7 +1997,9 @@ def yaml_line(message, fold_msg = True, options = {}):
 		message = ["start_block", yaml_line_scanner, options]
 	return message, remnants
 
-def custom_splitter(message, severity = None, facility = "", fold_msg = True, options = {}):
+def custom_splitter(message, severity = None, facility = "", fold_msg = True, options = None):
+	del fold_msg
+
 	regex_pattern = deep_get(options, "regex", None)
 	severity_field = deep_get(options, "severity#field", None)
 	severity_transform = deep_get(options, "severity#transform", None)
@@ -2181,7 +2056,7 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 
 	return message, severity, facility
 
-def custom_parser(message, fold_msg = True, filters = [], options = {}):
+def custom_parser(message, fold_msg = True, filters = None, options = None):
 	facility = ""
 	severity = None
 	remnants = []
@@ -2303,21 +2178,18 @@ def custom_parser(message, fold_msg = True, filters = [], options = {}):
 
 	return facility, severity, message, remnants
 
-Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser")
+Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser_rules")
 parsers = []
-
-iktconfig = None
 
 def init_parser_list():
 	global parsers
-	global iktconfig
 
 	# Get a full list of parsers from all parser directories
 	# Start by adding files from the parsers directory
 
 	parser_dirs = []
 	parser_dirs += deep_get(iktconfig, "Pods#local_parsers", [])
-	parser_dirs.append(os.path.join(IKTDIR, PARSER_DIRNAME))
+	parser_dirs.append(PARSER_DIR)
 
 	parser_files = []
 
@@ -2353,7 +2225,11 @@ def init_parser_list():
 					pod_name = matchkey.get("pod_name", "")
 					container_name = matchkey.get("container_name", "")
 					image_name = matchkey.get("image_name", "")
-					image_regex = matchkey.get("image_regex", "")
+					image_regex_raw = matchkey.get("image_regex", "")
+					if len(image_regex_raw) > 0:
+						image_regex = re.compile(image_regex_raw)
+					else:
+						image_regex = None
 					container_type = matchkey.get("container_type", "container")
 					# We need at least one way of matching
 					if len(pod_name) == 0 and len(container_name) == 0 and len(image_name) == 0:
@@ -2393,20 +2269,19 @@ def init_parser_list():
 					else:
 						rules.append(rule)
 
-				parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser = ("custom", rules)))
+				parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser_rules = rules))
 
 	# Fallback entries
-	parsers.append(Parser(parser_name = "basic_8601_raw", show_in_selector = True, match_rules = [("raw", "", "", "container", "")], parser = basic_8601_raw))
+	parsers.append(Parser(parser_name = "basic_8601_raw", show_in_selector = True, match_rules = [("raw", "", "", "container", "")], parser_rules = []))
 	# This should always be last
-	parsers.append(Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("", "", "", "container", "")], parser = basic_8601))
+	parsers.append(Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("raw", "", "", "container", "")], parser_rules = ["ts_8601"]))
 
 def get_parser_list():
 	_parsers = set()
 	for parser in parsers:
 		if parser.show_in_selector == False:
 			continue
-		else:
-			_parsers.add(parser.parser_name)
+		_parsers.add(parser.parser_name)
 
 	return _parsers
 
@@ -2418,18 +2293,15 @@ def logparser_initialised(parser = None, message = "", fold_msg = True, line = 0
 	if parser == None:
 		raise Exception("logparser_initialised called with parser == None")
 
-	if type(parser.parser) == tuple and parser.parser[0] == "custom":
-		options = {
-			"__line": line,
-		}
-		pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1], options = options)
-	else:
-		pod_name, severity, message, remnants = parser.parser(message, fold_msg = fold_msg)
+	options = {
+		"__line": line,
+	}
+	pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser_rules, options = options)
 
 	if len(message) > 16383:
 		remnants = (message[0:16383], severity)
 		severity = loglevel.ERR
-		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes"
+		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)"
 
 	# The UI gets mightily confused by tabs, so replace them with spaces
 	# XXX: Doing this here doesn't make sense; at this point we don't know how long the line is.
@@ -2456,17 +2328,15 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 	if override_parser is not None:
 		# Any other timestamps (as found in the logs) are ignored
 		try:
+			parser = None
 			for parser in parsers:
 				if parser.parser_name == override_parser:
-					if type(parser.parser) == tuple and parser.parser[0] == "custom":
-						options = {
-							"__line": line,
-						}
-						pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1], options = options)
-					else:
-						pod_name, severity, message, remnants = parser.parser(message, fold_msg = fold_msg)
+					options = {
+						"__line": line,
+					}
+					pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser_rules, options = options)
 			return timestamp, pod_name, severity, message, remnants, ("<override>", str(override_parser)), parser
-		except Exception as e:
+		except Exception:
 			return timestamp, "", loglevel.ERR, f"Could not parse using {str(override_parser)}:", [(message, loglevel.INFO)], ("<override>", str(override_parser)), None
 
 	if image_name.startswith("docker-pullable://"):
@@ -2476,32 +2346,26 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 		uparser = None
 		lparser = None
 
-		for matchrule in parser.match_rules:
-			pod_prefix = matchrule[0]
-			container_prefix = matchrule[1]
-			image_prefix = matchrule[2]
-			_container_type = matchrule[3]
-			image_regex = matchrule[4]
+		for pod_prefix, container_prefix, image_prefix, _container_type, image_regex in parser.match_rules:
 			_image_name = image_name
 			if image_prefix.startswith("/"):
 				tmp = image_name.split("/", 1)
 				if len(tmp) == 2:
-					_image_name = "/" + tmp[1]
+					_image_name = f"/{tmp[1]}"
 
-			if len(image_regex) == 0:
+			if image_regex is None:
 				regex_match = True
 			else:
-				tmp = re.match(image_regex, _image_name)
+				tmp = image_regex(_image_name)
 				regex_match = tmp is not None
+
 			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and _image_name.startswith(image_prefix) and container_type  == _container_type and regex_match == True:
 				uparser = parser.parser_name
-				if type(parser.parser) == tuple and parser.parser[0] == "custom":
-					options = {
-						"__line": line,
-					}
-					pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser[1], options = options)
-				else:
-					pod_name, severity, message, remnants = parser.parser(message, fold_msg = fold_msg)
+				options = {
+					"__line": line,
+				}
+				pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser_rules, options = options)
+
 				_lparser = []
 				if len(pod_prefix) > 0:
 					_lparser.append(pod_prefix)
@@ -2515,15 +2379,15 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 		if lparser is not None:
 			break
 	if uparser is None and lparser is None or len(lparser) == 0:
-		pod_name, severity, message, remnants = basic_8601(message, fold_msg = fold_msg)
 		lparser = "<unknown format>"
 		uparser = "basic_8601"
-		parser = Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("", "", "", "container")], parser = basic_8601)
+		parser = Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("raw", "", "", "container", "")], parser_rules = ["ts_8601"])
+		pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser_rules, options = {})
 
 	if len(message) > 16383:
 		remnants = (message[0:16383], severity)
 		severity = loglevel.ERR
-		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes"
+		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)"
 
 	# The UI gets mightily confused by tabs, so replace them with spaces
 	# XXX: Doing this here doesn't make sense; at this point we don't know how long the line is.

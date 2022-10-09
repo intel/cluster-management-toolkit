@@ -15,6 +15,11 @@ yamllint:
 	done; \
 	yamllint ikt.yaml || /bin/true
 
+mypy:
+	@for file in $(python_executables) *.py; do \
+		mypy --ignore-missing-imports  $$file || true; \
+	done
+
 export_src:
 	git archive --format zip --output ~/ikt-$(shell date -I).zip origin/main
 

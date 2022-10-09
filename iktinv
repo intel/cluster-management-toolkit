@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
-# Requires: ansible
 # Requires: python3 (>= 3.6)
 # Requires: python3-natsort
-# Requires: python3-openssl
 
 """
 This program is used to query or modify the iKT inventory list
@@ -13,14 +11,18 @@ For usage, see:
 
 import errno
 import os
-from pathlib import Path
 import sys
+import typing # pylint: disable=unused-import
 import yaml
 
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+
+from ikttypes import FilePath
+from iktpaths import HOMEDIR
+from iktpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
 
 from commandparser import parse_commandline
 
@@ -34,23 +36,13 @@ from ansible_helper import ANSIBLE_INVENTORY
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
 
-from iktprint import iktprint, init_iktprint
+from iktprint import iktprint
 
 import about
 PROGRAMDESCRIPTION = "Query or modify the host inventory"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
-HOMEDIR = str(Path.home())
-IKTDIR = f"{HOMEDIR}/.ikt"
-IKT_CONFIG_FILENAME = "ikt.yaml"
-IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
-IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
-
-THEME_DIRNAME = "themes"
-THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
-THEME_PATH = f"{THEMEDIR}/default.yaml"
-
-def set_host_vars(options, args):
+def set_host_vars(options, args) -> int:
 	"""
 	Set host-specific variables
 
@@ -93,7 +85,7 @@ def set_host_vars(options, args):
 
 	return 0
 
-def set_group_vars(options, args):
+def set_group_vars(options, args) -> int:
 	"""
 	Set group-specific variables
 
@@ -136,7 +128,7 @@ def set_group_vars(options, args):
 
 	return 0
 
-def set_global_vars(options, args):
+def set_global_vars(options, args) -> int:
 	"""
 	Set global variables
 
@@ -149,7 +141,7 @@ def set_global_vars(options, args):
 
 	return set_group_vars(options = options, args = [args[0], "all"])
 
-def unset_host_vars(options, args):
+def unset_host_vars(options, args) -> int:
 	"""
 	Unset host-specific variables
 
@@ -179,7 +171,7 @@ def unset_host_vars(options, args):
 
 	return 0
 
-def unset_group_vars(options, args):
+def unset_group_vars(options, args) -> int:
 	"""
 	Unset group-specific variables
 
@@ -209,7 +201,7 @@ def unset_group_vars(options, args):
 
 	return 0
 
-def unset_global_vars(options, args):
+def unset_global_vars(options, args) -> int:
 	"""
 	Unset global variables
 
@@ -221,7 +213,7 @@ def unset_global_vars(options, args):
 	"""
 	return unset_group_vars(options = options, args = [args[0], "all"])
 
-def add_groups(options, args):
+def add_groups(options, args) -> int:
 	"""
 	Add groups
 
@@ -362,7 +354,7 @@ def format_members(group, members):
 
 	return formatted
 
-def remove_groups(options, args):
+def remove_groups(options, args) -> int:
 	"""
 	Remove groups
 
@@ -430,8 +422,9 @@ def get_cluster_name():
 			cluster_name (str): On success
 			None (None): On failure
 	"""
-	if os.path.exists(f"{HOMEDIR}/.kube/config"):
-		with open(f"{HOMEDIR}/.kube/config", "r", encoding = "utf-8") as f:
+
+	if os.path.exists(KUBE_CONFIG_FILE):
+		with open(KUBE_CONFIG_FILE, "r", encoding = "utf-8") as f:
 			d1 = yaml.safe_load(f)
 	else:
 		return None
@@ -449,7 +442,7 @@ def get_cluster_name():
 
 	return cluster_name
 
-def rebuild_inventory(options, args):
+def rebuild_inventory(options, args) -> int:
 	"""
 	Build an inventory based on information from Kubernetes
 
@@ -505,7 +498,7 @@ def rebuild_inventory(options, args):
 
 	# Finally import the hostkey into authorized_keys
 	pubkey = None
-	with open(f"{HOMEDIR}/.ssh/id_ecdsa.pub", "r", encoding = "utf-8") as f:
+	with open(FilePath(f"{HOMEDIR}/.ssh/id_ecdsa.pub"), "r", encoding = "utf-8") as f:
 		tmp = f.readlines()
 		if tmp is not None and len(tmp) > 0:
 			pubkey = tmp[0]
@@ -521,7 +514,7 @@ def rebuild_inventory(options, args):
 
 	return 0
 
-def remove_hosts(options, args):
+def remove_hosts(options, args) -> int:
 	"""
 	Remove hosts
 
@@ -598,7 +591,7 @@ def remove_hosts(options, args):
 
 	return 0
 
-def inventory(options, args):
+def inventory(options, args) -> int:
 	"""
 	Show the inventory
 
@@ -629,7 +622,7 @@ def inventory(options, args):
 
 	return 0
 
-def list_groups(options, args):
+def list_groups(options, args) -> int:
 	"""
 	List groups
 
@@ -655,7 +648,7 @@ def list_groups(options, args):
 
 	return 0
 
-def list_hosts(options, args):
+def list_hosts(options, args) -> int:
 	"""
 	List hosts
 
@@ -962,24 +955,23 @@ commandline = {
 	},
 }
 
-def main():
+def main() -> int:
 	"""
 	Main function for the program
 	"""
 
-	init_iktprint(THEME_PATH)
 	command, options, args = parse_commandline(about.INVENTORY_PROGRAM_NAME, about.INVENTORY_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS,
-						   sys.argv, commandline, default_command = "inventory", theme = THEME_PATH)
+						   sys.argv, commandline, default_command = "inventory", theme = DEFAULT_THEME_FILE)
 
 	# iktinv was called without any parameters; assuming inventory
 	if command is None:
 		command = inventory
 
 	# Used by the ansible module
-	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)
-	ansible_configuration.ansible_user = deep_get(iktconfig, "Ansible#ansible_user")
-	ansible_configuration.ansible_password = deep_get(iktconfig, "Ansible#ansible_password")
-	ansible_configuration.disable_strict_host_key_checking = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
+	ansible_configuration["ansible_forks"] = deep_get(iktconfig, "Ansible#forks", 5)
+	ansible_configuration["ansible_user"] = deep_get(iktconfig, "Ansible#ansible_user")
+	ansible_configuration["ansible_password"] = deep_get(iktconfig, "Ansible#ansible_password")
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
 
 	return command(options, args)
 

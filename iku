@@ -5,9 +5,15 @@
 # Requires: python3-openssl
 # Recommends: python3-ujson
 
+# pylint: disable=line-too-long
+
+"""
+A curses-based UI for iKT
+"""
+
 import ast
 import base64
-from base64 import binascii
+import binascii
 import copy
 import csv
 import curses
@@ -22,10 +28,9 @@ import http.client
 try:
 	import ujson as json
 except ModuleNotFoundError:
-	import json
+	import json # type: ignore
 from operator import itemgetter
 import os
-from pathlib import Path
 import re
 import shutil
 import socket
@@ -33,6 +38,7 @@ import subprocess
 from subprocess import PIPE, STDOUT
 import sys
 import tempfile
+import typing
 import yaml
 
 try:
@@ -44,6 +50,10 @@ try:
 	import urllib3
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
+
+from ikttypes import FilePath
+from iktpaths import HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
+from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
 from logparser import logparser, logparser_initialised, loglevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
@@ -74,17 +84,6 @@ import about
 
 PROGRAMDESCRIPTION = "UI for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
-
-HOMEDIR = str(Path.home())
-IKTDIR = os.path.join(HOMEDIR, ".ikt")
-DEPLOYMENTDIR = f"{IKTDIR}/deployments"
-IKT_CONFIG_FILENAME = "ikt.yaml"
-IKT_CONFIG_FILE = os.path.join(IKTDIR, IKT_CONFIG_FILENAME)
-IKT_CONFIG_FILE_DIR = os.path.join(IKTDIR, f"{IKT_CONFIG_FILENAME}.d")
-THEME_DIRNAME = "themes"
-VIEW_DIRNAME = "views"
-THEMEDIR = os.path.join(IKTDIR, THEME_DIRNAME)
-DEFAULT_THEME = "default.yaml"
 
 # If the user passes an object (and optionally namespace for that object)
 # on the command line, they're stored here
@@ -203,17 +202,17 @@ def processor_timestamp_with_age(obj, field):
 	elif len(values) == 2:
 		if values[0] is None:
 			array = [
-				("<none>", ("types", "none", selected))
+				("<none>", ("types", "none"))
 			]
 		else:
 			timestamp_string = datetime_to_timestamp(values[0])
-			array = generators.format_numerical_with_units(string, "timestamp", selected)
+			array = generators.format_numerical_with_units(timestamp_string, "timestamp")
 			array += [
-				(" (", ("types", "generic", selected))
+				(" (", ("types", "generic"))
 			]
-			array += generators.generator_age_raw(values[1], selected)
+			array += generators.generator_age_raw(values[1])
 			array += [
-				(")", ("types", "generic", selected))
+				(")", ("types", "generic"))
 			]
 	else:
 		array = []
@@ -222,21 +221,21 @@ def processor_timestamp_with_age(obj, field):
 			# If there's no formatting for this field we assume that
 			# it's a generic string
 			if len(deep_get(formatting, "field_colors", [])) <= i:
-				formatting = ("types", "generic", selected)
+				formatting = ("types", "generic")
 				array += [values[i], formatting]
 			elif formatting["field_colors"][i] == "timestamp":
 				if values[i] is None:
 					array += [
-						("<none>", ("types", "none"), selected)
+						("<none>", ("types", "none"))
 					]
 				else:
 					timestamp_string = datetime_to_timestamp(values[0])
-					array += generators.format_numerical_with_units(string, "timestamp", selected)
+					array += generators.format_numerical_with_units(timestamp_string, "timestamp")
 			elif formatting["field_colors"][i] == "age":
-				array += generators.generator_age_raw(values[i], selected)
+				array += generators.generator_age_raw(values[i])
 			else:
 				array += [
-					(values[i], formatting["field_colors"][i], selected)
+					(values[i], formatting["field_colors"][i])
 				]
 
 	return themearray_to_string(array)
@@ -671,6 +670,7 @@ def get_pod_containers_list(**kwargs):
 			for container in deep_get(obj, "spec#containers"):
 				container_name = deep_get(container, "name")
 				reason, status_group, restarts, message, age = datagetter.get_container_status(deep_get(obj, "status#containerStatuses"), container_name)
+				container_status = None
 				for container_status in deep_get(obj, "status#containerStatuses", []):
 					if deep_get(container_status, "name") == container_name:
 						break
@@ -730,7 +730,7 @@ def normalise_cpu_usage_to_millicores(_cpu_usage):
 	elif _cpu_usage.endswith("n"):
 		cpu_usage = int(_cpu_usage[0:-1]) / 1000000
 	else:
-		raise ValueError(f"Unknown unit for CPU usage in {_mem}")
+		raise ValueError(f"Unknown unit for CPU usage in {_cpu_usage}")
 	return cpu_usage
 
 def normalise_mem_to_bytes(_mem):
@@ -3345,7 +3345,7 @@ def get_pod_resource_list(obj, **kwargs):
 						healthy = deep_get(condition, "status", "Unknown")
 						if healthy == "True":
 							status = "Healthy"
-						elif healhty == "False":
+						elif healthy == "False":
 							status = "Unhealthy"
 				rtype = resource_kind_to_rtype(kind)
 				resource_tuple = ("", "", name)
@@ -3379,7 +3379,7 @@ def get_pod_resource_list(obj, **kwargs):
 						healthy = deep_get(condition, "status", "Unknown")
 						if healthy == "True":
 							status = "Healthy"
-						elif healhty == "False":
+						elif healthy == "False":
 							status = "Unhealthy"
 				rtype = resource_kind_to_rtype(kind)
 				resource_tuple = ("", "", name)
@@ -3488,17 +3488,17 @@ def get_inventory_list(**kwargs):
 		ansible_add_hosts(ANSIBLE_INVENTORY, nodes, group = "nodes")
 
 	# This returns a YAML tree with the inventory of nodes
-	inventory = ansible_get_inventory_dict()
+	inventory_dict = ansible_get_inventory_dict()
 
-	if deep_get(inventory, "all#hosts") == {}:
+	if deep_get(inventory_dict, "all#hosts") == {}:
 		return vlist, status
 
 	# Before we ping the hosts their status is unknown
-	for host in deep_get(inventory, "all#hosts", []):
+	for host in deep_get(inventory_dict, "all#hosts", []):
 		# We don't want to risk overwriting hostvars
-		if deep_get(inventory, f"all#hosts#{host}") is None:
-			inventory["all"]["hosts"][host] = {}
-		inventory["all"]["hosts"][host]["status"] = "UNKNOWN"
+		if deep_get(inventory_dict, f"all#hosts#{host}") is None:
+			inventory_dict["all"]["hosts"][host] = {}
+		inventory_dict["all"]["hosts"][host]["status"] = "UNKNOWN"
 
 	# Do we want to ping the hosts?
 	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", "Lazy")
@@ -3511,13 +3511,13 @@ def get_inventory_list(**kwargs):
 			sys.exit("Internal error; ansible_ping() failed")
 
 		for (host, _status) in output:
-			if host in deep_get(inventory, "all#hosts"):
+			if host in deep_get(inventory_dict, "all#hosts"):
 				# We don't want to risk overwriting hostvars
-				if deep_get(inventory, f"all#hosts#{host}") is None:
-					inventory["all"]["hosts"][host] = {}
-				inventory["all"]["hosts"][host]["status"] = _status
+				if deep_get(inventory_dict, f"all#hosts#{host}") is None:
+					inventory_dict["all"]["hosts"][host] = {}
+				inventory_dict["all"]["hosts"][host]["status"] = _status
 
-	for host in deep_get(inventory, "all#hosts", []):
+	for host in deep_get(inventory_dict, "all#hosts", []):
 		# There's no point in trying gethostbyname() on hosts that cannot be resolved
 
 		# For now we don't do anything with external IPs; we should
@@ -3572,8 +3572,8 @@ def get_inventory_list(**kwargs):
 				for role in roles:
 					if len(role) > 0 and role not in ["control-plane", "node"]:
 						kubernetes_roles.append(role)
-		ansible_groups = ansible_get_groups_by_host(inventory, host)
-		_status = deep_get(inventory, f"all#hosts#{name}#status", "UNKNOWN")
+		ansible_groups = ansible_get_groups_by_host(inventory_dict, host)
+		_status = deep_get(inventory_dict, f"all#hosts#{name}#status", "UNKNOWN")
 		if control_plane_name == "":
 			kubernetes_roles = ["<unknown>"]
 		vlist.append({
@@ -3801,10 +3801,10 @@ def filter_list_entry(obj, caller_obj, filters = []):
 						break
 				elif rtype == "dictlist":
 					path = deep_get(rule, "path", "")
-					target_list = deep_get(obj, path, {})
+					target_dict = deep_get(obj, path, {})
 					key_value_matches = []
 					matched = False
-					for _dict in target_list:
+					for _dict in target_dict:
 						for key, value in deep_get(rule, "fields", {}).items():
 							if type(value) == dict:
 								if deep_get(value, "source", "object") == "caller":
@@ -4104,7 +4104,7 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 		if generator is None:
 			continue
 		elif type(generator) == str:
-			generator = deep_get(generator_allowlist, generator, generator_basic)
+			generator = deep_get(generator_allowlist, generator, generators.generator_basic)
 
 		fieldlen = field_list[field]["fieldlen"]
 		if i < len(field_list):
@@ -4637,6 +4637,7 @@ def genericlistloop(stdscr, view):
 				actionfunc = None
 
 				# Map the description back to key
+				action = None
 				for action in actionlist:
 					description = deep_get(actionlist, f"{action}#description")
 					tmpdescription = ""
@@ -5874,7 +5875,7 @@ def check_cni_updates(cni, current_version):
 
 	return new_version, candidate_version
 
-def update_cni(cni, candidate_version, dry_run = False):
+def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False):
 	retval = True
 
 	if cni == "Unknown":
@@ -6060,258 +6061,13 @@ def cniloop(stdscr, view):
 			uip.force_update()
 		elif c == ord("U") and new_version == True:
 			# If we don't recognise the CNI or we don't support updates we cannot update it
-			if update_cni(cni, candidate_version, dry_run = True) == False:
+			if update_cni(uip.stdscr, cni, cni_version, candidate_version, dry_run = True) == False:
 				continue
 
 			# Try to download and install an update for weave
 			if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Update {cni} to version {candidate_version}:", default = False):
-				update_cni(cni, candidate_version)
+				update_cni(uip.stdscr, cni, cni_version, candidate_version)
 			uip.refresh_all()
-
-known_pv_types = {
-	"awsElasticBlockStore": {
-		"type": "AWS Elastic Block Storage",
-		"description": "Represents a Persistent Disk resource in AWS",
-		"properties": {
-			"Volume ID:": { "path": "volumeID" },
-			"Partition #:": { "path": "partition" },
-			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-			"Read Only:": { "path": "readyOnly", "default": False },
-		},
-	},
-	"azureDisk": {
-		"type": "Azure Disk",
-		"description": "Azure Data Disk mount on the host and bind mount to the pod",
-		"properties": {
-			"Disk Name:": { "path": "diskName" },
-			"Disk URI:": { "path": "diskURI" },
-			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-			"Read Only:": { "path": "readyOnly", "default": False },
-			"Caching Mode:": { "path": "cachingMode" },
-			"Kind:": { "path": "kind", "default": "shared" },
-		},
-	},
-	"azureFile": {
-		"type": "Azure File",
-		"description": "Azure File Service mount on the host and bind mount to the pod",
-		"properties": {
-			"Share Name:": { "path": "shareName" },
-			"Read Only:": { "path": "readyOnly", "default": False },
-			# These two should combine to a shortcut to a secret; needs formatting + helper
-			"Secret Name:": { "path": "secretName" },
-			"Secret Namespace:": { "path": "secretNamespace", "default": "<pod namespace>" },
-		},
-	},
-	"cephfs": {
-		"type": "Ceph",
-		"properties": {
-			"Path:": { "path": "path", "default": "/" },
-#			"Monitors:": { "path": "monitors", "processor": field_processor_list },
-			"Read Only:": { "path": "readOnly", "default": "False" },
-			"Rados User": { "path": "user", "default": "admin" },
-			# Should be a shortcut to a secret; needs formatting
-			#"Secret:": { "path": "secretRef" },
-			"Secret File:": { "path": "secretFile", "default": "/etc/ceph/user.secret" },
-		},
-	},
-	"cinder": {
-		# Deprecated
-		"type": "OpenStack Cinder Volume",
-		"properties": {
-			"Volume ID:": { "path": "volumeID" },
-			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-			"Read Only:": { "path": "readOnly", "default": "False" },
-			# Should be a shortcut to a secret; needs formatting
-			#"Secret:": { "path": "secretRef" },
-		},
-	},
-	"csi": {
-		"type": "External CSI Volume",
-		"description": "Storage managed by an external CSI volume driver",
-		"properties": {
-			"Volume Handle:": { "path": "volumeHandle" },
-			"Driver:": { "path": "driver" },
-			"Filesystem Type:": { "path": "fsType" },
-			#{ "path": "controllerExpandSecretRef" },
-			#{ "path": "controllerPublishSecretRef" },
-			#{ "path": "nodeExpandSecretRef" },
-			#{ "path": "nodePublishSecretRef" },
-			"Read Only:": { "path": "readOnly" },
-			#{ "path": "volumeAttributes" }, #dict(str, str)
-		},
-	},
-	"fc": {
-		"type": "Fibre Channel Volume",
-		"properties": {
-			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-#			"WorldWide Identifiers:": { "path": "wwids", "processor": field_processor_list },
-#			"Target WorldWide Names:": { "path": "targetWWNs", "processor": field_processor_list },
-			"Logical Unit Number:": { "path": "lun" },
-			"Read Only:": { "path": "readOnly", "default": "False" },
-		},
-	},
-	"flexVolume": {
-		"type": "FlexPersistentVolumeSource",
-		"description": "Generic persistent volume resource provisioned/attached using an exec based plugin",
-		"properties": {
-			"Driver:": { "path": "driver" },
-			"Filesystem Type:": { "path": "fsType", "default": "<script dependent>" },
-			"Read Only:": { "path": "readOnly", "default": "False" },
-			# Should be a shortcut to a secret; needs formatting
-			#"Secret:": { "path": "secretRef" },
-			"Options": { "path": "options", "default": {} },
-		},
-	},
-	"flocker": {
-		"type": "Flocker Volume",
-		"description": "Flocker Volume mounted by the Flocker agent",
-		"properties": {
-			"Dataset Name:": { "path": "datasetName" },
-			"Dataset UUID:": { "path": "datasetUUID" },
-		},
-	},
-	"gcePersistentDisk": {
-		"type": "GCE Persistent Disk",
-		"description": "Google Compute Engine Persistent Disk resource",
-		"properties": {
-			"PD Name:": { "path": "pdName" },
-			"Partition:": { "path": "partition" },
-			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-			"Read Only:": { "path": "readOnly", "default": "False" },
-		},
-	},
-	"glusterfs": {
-		"type": "GlusterFS",
-		"description": "Glusterfs mount that lasts the lifetime of a pod",
-		"properties": {
-			"Path:": { "path", "path" },
-			"Endpoints:": { "path": "endpoints" },
-			"Endpoints Namespace:": { "path": "endpoints", "default": "<PVC namespace>" },
-			"Read Only:": { "path": "readOnly", "default": "False" },
-		},
-	},
-	"hostPath": {
-		# Only works in single-node clusters
-		"type": "Host Path",
-		"description": "Host path mapped into a pod",
-		"properties": {
-			"Path:": { "path": "path" },
-			"Host Path Type:": { "path": "type", "default": "" },
-		},
-	},
-	"iscsi": {
-		"type": "iSCSI Disk",
-		"properties": {
-			"iSCSI Qualified Name:": { "path": "iqn" },
-			"Logical Unit Number:": { "path": "lun" },
-			"Target Portal:": { "path": "targetPortal" },
-#			"Target Portals:": { "path": "targetPortals", "processor": field_processor_list },
-			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-			"Chap Auth Discovery:": { "path": "chapAuthDiscovery" },
-			"Chap Auth Session:": { "path": "chapAuthSession" },
-			"iSCSI Initiator:": { "path": "initiatorName" },
-			"iSCSI Interface:": { "path": "iscsiInterface", "default": "tcp" },
-			"Read Only:": { "path": "readOnly", "default": "False" },
-			# Should be a shortcut to a secret; needs formatting
-			#"Secret:": { "path": "secretRef" },
-		},
-	},
-	"local": {
-		"type": "Local",
-		"description": "Directly-attached storage with node affinity",
-		"properties": {
-			"Path:": { "path": "path" },
-			"Filesystem Type:": { "path": "fsType", "default": "<auto-detect>" },
-		},
-	},
-	"nfs": {
-		"type": "NFS",
-		"description": "NFS mount that lasts the lifetime of a pod",
-		"properties": {
-			"Server:": { "path": "server" },
-			"Path:": { "path": "path" },
-			"Read Only:": { "path": "readOnly", "default": "False" },
-		},
-	},
-	"portworxVolume": {
-		"type": "Portworx volume",
-		"properties": {
-			"Volume ID:": { "path": "volumeID" },
-			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-			"Read Only:": { "path": "readOnly", "default": "False" },
-		},
-	},
-	"quobyte": {
-		"type": "Quobyte Mount",
-		"description": "Quobyte mount that lasts the lifetime of a pod",
-		"properties": {
-			"Volume Name:": { "path": "volume" },
-#			"Registry:": { "path": "registry", "processor": field_processor_str_to_list, "formatting": { "iskeyvalue": True, "field_separators": [("separators", "host")] } }, # str(host:port, host:port, ...)
-			"Read Only:": { "path": "readOnly", "default": "False" },
-			"Tenant:": { "path": "tenant" },
-			"User:": { "path": "user", "default": "<service account user>" },
-			"Group:": { "path": "group", "default": None },
-		},
-	},
-	"rbd": {
-		"type": "RBD",
-		"description": "Rados Block Device mount that lasts the lifetime of a pod",
-		"properties": {
-			"Image:": { "path": "image" },
-			"Pool:": { "path": "pool", "default": "rbd" },
-			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-#			"Monitors:": { "path": "monitors", "processor": field_processor_list },
-			"Read Only:": { "path": "readOnly" },
-			"Rados User": { "path": "user", "default": "admin" },
-			"Keyring:": { "path": "keyring", "default": "/etc/ceph/keyring" },
-			# Should be a shortcut to a secret; needs formatting
-			#"Secret:": { "path": "secretRef" },
-		},
-	},
-	"scaleIO": {
-		# Deprecated
-		"type": "Persistent ScaleIO Volume",
-		"properties": {
-			"Volume Name:": { "path": "volumeName" },
-			"Gateway:": { "path": "gateway" },
-			"Storage Pool:": { "path": "storagePool" },
-			"Storage System:": { "path": "system" },
-			"Storage Mode:": { "path": "storageMode", "default": "ThinProvisioned" },
-			"Filesystem Type:": { "path": "fsType", "default": "xfs" },
-			"Protection Domain:": { "path": "protectionDomain" },
-			"SSL Enabled:": { "path": "sslEnabled", "default": "False" },
-			"Read Only:": { "path": "readOnly" },
-			# Should be a shortcut to a secret; needs formatting
-			#"Secret:": { "path": "secretRef" },
-		},
-	},
-	"storageos": {
-		"type": "Persistent StorageOS Volume",
-		"properties": {
-			"Volume Name:": { "path": "volumeName" },
-			"Volume Namespace:": { "path": "volumeNamespace", "default": "<pod namespace>" },
-			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-			"Read Only:": { "path": "readOnly" },
-			# Should be a shortcut to a secret; needs formatting
-			#"Secret:": { "path": "secretRef" },
-		},
-	},
-	"vsphereVolume": {
-		"type": "vSphere Volume",
-		"properties": {
-			"Volume Path:": { "path": "volumePath" },
-			"Filesystem Type:": { "path": "fsType", "default": "ext4" },
-			"Storage Policy ID:": { "path": "storagePolicyID" },
-			"Storage Policy Name:": { "path": "storagePolicyName" },
-		},
-	},
-}
-
-def get_pv_type(obj):
-	for pv_type, pv_data in known_pv_types.items():
-		if pv_type in deep_get(obj, "spec", []):
-			return pv_type
-	return None
 
 def decode_and_view_data(stdscr, **kwargs):
 	if "selected" not in kwargs:
@@ -7442,6 +7198,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			else:
 				container_type = "container"
 				splitmsg = []
+				image_id = None
 				for namespace, podname, containername, image_id in multilog_containers_full:
 					if len(multilog_containers) == 1:
 						facility_extended = None
@@ -9711,7 +9468,7 @@ listviewactions = {
 		"queryfunc": "filechooser",
 		"extravars": {
 			"listgetter": list_configuration_files,
-			"basedir": DEPLOYMENTDIR,
+			"basedir": DEPLOYMENT_DIR,
 		},
 		#"confirmfunc":
 		#"confirmstring": "The following changes will be performed:",
@@ -9724,7 +9481,7 @@ listviewactions = {
 		"queryfunc": "filechooser",
 		"extravars": {
 			"listgetter": list_configuration_files,
-			"basedir": DEPLOYMENTDIR,
+			"basedir": DEPLOYMENT_DIR,
 		},
 	},
 	"Apply configuration from URL": {
@@ -9755,7 +9512,7 @@ listviewactions = {
 		"queryfunc": "filechooser",
 		"extravars": {
 			"listgetter": list_configuration_files,
-			"basedir": DEPLOYMENTDIR,
+			"basedir": DEPLOYMENT_DIR,
 		},
 	},
 }
@@ -9979,7 +9736,7 @@ def populate_views(force_refresh = False):
 		if deep_get(_available_api_families[kind], "available", False) == True:
 			available_api_families.add(kind)
 
-	viewdir = os.path.join(IKTDIR, VIEW_DIRNAME)
+	viewdir = os.path.join(VIEW_DIR)
 	if not os.path.isdir(viewdir):
 		sys.exit(f"{viewdir} does not exist; please re-run {about.INSTALL_PROGRAM_NAME}")
 
@@ -10632,7 +10389,9 @@ def customise_listviews():
 		views[inv_name]["field_denylist"] = ["status"]
 
 def main():
-	defaultthemefile = f"{THEMEDIR}/{DEFAULT_THEME}"
+	"""
+	Main function for the program
+	"""
 
 	global initial_name # pylint: disable=global-statement
 	global initial_namespace # pylint: disable=global-statement
@@ -10641,13 +10400,15 @@ def main():
 	global namespace # pylint: disable=global-statement
 	global defaultview # pylint: disable=global-statement
 
+	defaultthemefile = DEFAULT_THEME_FILE
+
 	themefile = deep_get(iktconfig, "Global#theme")
 	if themefile is None or len(themefile) == 0:
 		themefile = defaultthemefile
 	elif themefile.startswith("{HOME}/"):
-		themefile = f"{HOMEDIR}/{themefile[len('{HOME}/'):]}"
+		themefile = FilePath(os.path.join(HOMEDIR, themefile[len("{HOME}/"):]))
 	elif "/" not in themefile:
-		themefile = f"{THEMEDIR}/{themefile}"
+		themefile = FilePath(os.path.join(THEME_DIR, themefile))
 	read_theme(themefile, defaultthemefile)
 	init_iktprint(themefile)
 
@@ -10658,14 +10419,14 @@ def main():
 	curses_configuration.mousescroll_up = deep_get(iktconfig, "Mouse#scrollup", 0)
 	curses_configuration.mousescroll_down = deep_get(iktconfig, "Mouse#scrolldown", 0)
 	# Used by the ansible module
-	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)
+	ansible_configuration["ansible_forks"] = deep_get(iktconfig, "Ansible#forks", 5)
 	ansible_user = deep_get(iktconfig, "Ansible#ansible_user")
 	if ansible_user is None or len(ansible_user) == 0:
 		ansible_user = getuser()
-	ansible_configuration.ansible_user = ansible_user
-	ansible_configuration.ansible_password = deep_get(iktconfig, "Ansible#ansible_password")
-	ansible_configuration.disable_strict_host_key_checking = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
-	ansible_configuration.save_logs = deep_get(iktconfig, "Ansible#save_logs", True)
+	ansible_configuration["ansible_user"] = ansible_user
+	ansible_configuration["ansible_password"] = deep_get(iktconfig, "Ansible#ansible_password")
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
+	ansible_configuration["save_logs"] = deep_get(iktconfig, "Ansible#save_logs", True)
 
 	y = 1
 

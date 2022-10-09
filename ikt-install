@@ -11,64 +11,52 @@ For usage, see:
 
 import errno
 import os
-from pathlib import Path
 import subprocess
 import sys
+import typing # pylint: disable=unused-import
+
+from ikttypes import FilePath
+from iktpaths import BINDIR, IKTDIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR
+from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
+from iktpaths import DEFAULT_THEME_FILE
+from iktpaths import ANSIBLE_PLAYBOOK_DIRNAME, IKT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
 
 from iktio import copy_if_not_exists, mkdir_if_not_exists, replace_symlink
 from iktlib import execute_command_with_response
 
 from commandparser import parse_commandline
-from iktprint import iktprint, iktinput, init_iktprint
+from iktprint import iktprint, iktinput
 
 import about
 PROGRAMDESCRIPTION = "Setup Intel Kubernetes Toolkit"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
-HOMEDIR = str(Path.home())
-BINDIR = f"{HOMEDIR}/bin"
-IKTDIR = f"{HOMEDIR}/.ikt"
-DEPLOYMENTDIR = f"{IKTDIR}/deployments"
-THEME_DIRNAME = "themes"
-THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
-ANSIBLE_DIR = f"{IKTDIR}/ansible"
-ANSIBLE_PLAYBOOK_DIRNAME = "playbooks"
-ANSIBLE_LOG_DIR = f"{ANSIBLE_DIR}/logs"
-IKT_HOOKS_DIR = f"{IKTDIR}/hooks"
-PARSER_DIRNAME = "parsers"
-VIEW_DIRNAME = "views"
-
-IKT_CONFIG_FILENAME = "ikt.yaml"
-IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
-IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
-
-THEME_PATH = f"{THEME_DIRNAME}/default.yaml"
 
 DIRECTORIES = [
 	BINDIR,
 	IKTDIR,
-	DEPLOYMENTDIR,
+	DEPLOYMENT_DIR,
 	ANSIBLE_DIR,
 	ANSIBLE_LOG_DIR,
 	IKT_CONFIG_FILE_DIR,
 	IKT_HOOKS_DIR,
-	f"{IKT_HOOKS_DIR}/pre-upgrade.d",
-	f"{IKT_HOOKS_DIR}/post-upgrade.d",
+	FilePath(os.path.join(IKT_HOOKS_DIR, "pre-upgrade.d")),
+	FilePath(os.path.join(IKT_HOOKS_DIR, "post-upgrade.d")),
 ]
 
 EXECUTABLE_SYMLINKS = [
 	# Python
-	(f"{os.getcwd()}/iktadm", f"{BINDIR}/iktadm"),
-	(f"{os.getcwd()}/iktinv", f"{BINDIR}/iktinv"),
-	(f"{os.getcwd()}/ikt", f"{BINDIR}/ikt"),
-	(f"{os.getcwd()}/iku", f"{BINDIR}/iku"),
+	(FilePath(os.path.join(os.getcwd(), "iktadm")), FilePath(os.path.join(BINDIR, "iktadm"))),
+	(FilePath(os.path.join(os.getcwd(), "iktinv")), FilePath(os.path.join(BINDIR, "iktinv"))),
+	(FilePath(os.path.join(os.getcwd(), "ikt")), FilePath(os.path.join(BINDIR, "ikt"))),
+	(FilePath(os.path.join(os.getcwd(), "iku")), FilePath(os.path.join(BINDIR, "iku"))),
 ]
 
 MISC_SYMLINKS = [
-	(f"{os.getcwd()}/{ANSIBLE_PLAYBOOK_DIRNAME}", f"{IKTDIR}/{ANSIBLE_PLAYBOOK_DIRNAME}"),
-	(f"{os.getcwd()}/{THEME_DIRNAME}", f"{IKTDIR}/{THEME_DIRNAME}"),
-	(f"{os.getcwd()}/{PARSER_DIRNAME}", f"{IKTDIR}/{PARSER_DIRNAME}"),
-	(f"{os.getcwd()}/{VIEW_DIRNAME}", f"{IKTDIR}/{VIEW_DIRNAME}")
+	(FilePath(os.path.join(os.getcwd(), ANSIBLE_PLAYBOOK_DIRNAME)), ANSIBLE_PLAYBOOK_DIR),
+	(FilePath(os.path.join(os.getcwd(), THEME_DIRNAME)), THEME_DIR),
+	(FilePath(os.path.join(os.getcwd(), PARSER_DIRNAME)), PARSER_DIR),
+	(FilePath(os.path.join(os.getcwd(), VIEW_DIRNAME)), VIEW_DIR)
 ]
 
 PACKAGES_WITH_PIP_FALLBACK = {
@@ -90,7 +78,7 @@ CONFIGURATION_FILES = [
 	(IKT_CONFIG_FILENAME, IKT_CONFIG_FILE)
 ]
 
-def create_directories(directories, verbose = False):
+def create_directories(directories, verbose: bool = False):
 	"""
 	Batch create directories
 	If a directory already exists it is silently ignored
@@ -103,7 +91,7 @@ def create_directories(directories, verbose = False):
 	for directory in directories:
 		mkdir_if_not_exists(directory, verbose = verbose)
 
-def create_symlinks(symlinks, verbose = False):
+def create_symlinks(symlinks, verbose: bool = False):
 	"""
 	Batch create symlinks
 	If a symlink already exists it is *replaced*
@@ -116,7 +104,7 @@ def create_symlinks(symlinks, verbose = False):
 	for src, dst in symlinks:
 		replace_symlink(src, dst, verbose = verbose)
 
-def copy_files(files, verbose = False):
+def copy_files(files, verbose: bool = False):
 	"""
 	Batch copy files
 	If a file already exists it is silently ignored
@@ -129,7 +117,7 @@ def copy_files(files, verbose = False):
 	for src, dst in files:
 		copy_if_not_exists(src, dst, verbose = verbose)
 
-def install_software(packages, verbose = False):
+def install_software(packages, verbose: bool = False):
 	"""
 	Batch install Debian packages
 
@@ -142,7 +130,7 @@ def install_software(packages, verbose = False):
 	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + packages
 	subprocess.call(args)
 
-def install_software_with_pip_fallback(packages, verbose = False, dryrun = False):
+def install_software_with_pip_fallback(packages, verbose: bool = False, dryrun: bool = False):
 	"""
 	Batch install Debian packages with pip fallback
 	This function tries to install a Python module from a Debian package;
@@ -189,10 +177,10 @@ def install(options, args):
 
 	del args
 
-	verbose = False
-	install_dependencies = True
-	confirm = True
-	allow_fallback = True
+	verbose: bool = False
+	install_dependencies: bool = True
+	confirm: bool = True
+	allow_fallback: bool = True
 
 	for opt, _optarg in options:
 		if opt == "--verbose":
@@ -290,10 +278,8 @@ def main():
 	Main function for the program
 	"""
 
-	init_iktprint(THEME_PATH)
-
 	command, options, args = parse_commandline(about.INSTALL_PROGRAM_NAME, about.INSTALL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS,
-						   sys.argv, COMMANDLINE, default_command = "__default", theme = THEME_PATH)
+						   sys.argv, COMMANDLINE, default_command = "__default", theme = DEFAULT_THEME_FILE)
 
 	return command(options, args)
 

@@ -6,6 +6,7 @@ This module parsers command line options and generate helptexts
 
 import errno
 import sys
+import typing
 
 import about
 from iktlib import deep_get
@@ -18,7 +19,7 @@ programauthors = None
 
 commandline = None
 
-def __version(options, args):
+def __version(options, args) -> int:
 	"""
 	Display version information
 
@@ -42,7 +43,9 @@ def __version(options, args):
 	print(programauthors)
 	return 0
 
-def __usage(options, args):
+def __usage(options, args) -> int:
+	assert commandline is not None
+
 	"""
 	Display usage information
 
@@ -224,7 +227,7 @@ COMMANDLINEDEFAULTS = {
 	},
 }
 
-def parse_commandline(__programname, __programversion, __programdescription, __programauthors, argv, __commandline, default_command = None, theme = None):
+def parse_commandline(__programname: str, __programversion: str, __programdescription: str, __programauthors: str, argv, __commandline, default_command = None, theme = None):
 	"""
 	Parse the command line
 
@@ -257,7 +260,7 @@ def parse_commandline(__programname, __programversion, __programdescription, __p
 	command = None
 	key = None
 	options = []
-	args = []
+	args = [] # type: ignore
 	min_args = 0
 	max_args = 0
 

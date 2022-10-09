@@ -24,14 +24,15 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
+from ikttypes import FilePath
+from iktpaths import HOMEDIR
+
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
 
 from iktprint import iktprint
 
-HOMEDIR = str(Path.home())
-
-def mkdir_if_not_exists(directory, verbose = False):
+def mkdir_if_not_exists(directory: FilePath, verbose = False):
 	"""
 	Create a directory if it doesn't already exist
 		Parameters:
@@ -44,7 +45,7 @@ def mkdir_if_not_exists(directory, verbose = False):
 			iktprint([("mkdir ", "programname"), (f"{directory}", "path")])
 		os.mkdir(directory)
 
-def copy_if_not_exists(src, dst, verbose = False):
+def copy_if_not_exists(src: FilePath, dst: FilePath, verbose = False):
 	"""
 	Copy a file if it doesn't already exist
 		Parameters:
@@ -58,7 +59,7 @@ def copy_if_not_exists(src, dst, verbose = False):
 			iktprint([("cp ", "programname"), (f"{src} ", "path"), (f"{dst}", "path")])
 		shutil.copy2(src, dst)
 
-def replace_symlink(src, dst, verbose = False):
+def replace_symlink(src: FilePath, dst: FilePath, verbose = False):
 	"""
 	Replace as symlink (or create if it doesn't exist)
 		Parameters:
@@ -73,7 +74,7 @@ def replace_symlink(src, dst, verbose = False):
 		os.remove(dst)
 	os.symlink(src, dst)
 
-def get_local_hostname():
+def get_local_hostname() -> str:
 	"""
 	Get the hostname of localhost
 
@@ -98,7 +99,7 @@ def scan_and_add_ssh_keys(hosts):
 			hosts (list[str]): A list of hostnames
 	"""
 
-	known_hosts = f"{HOMEDIR}/.ssh/known_hosts"
+	known_hosts = FilePath(os.path.join(HOMEDIR, ".ssh", "known_hosts"))
 
 	# Note: Paramiko seems to have issues if .ssh/known_hosts doesn't exist,
 	# so "touch" the file just in case.

@@ -19,7 +19,6 @@ import errno
 from getpass import getuser
 from glob import glob
 import os
-from pathlib import Path
 import re
 import shutil
 import socket
@@ -33,11 +32,16 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run ikt-install?")
 
+from ikttypes import FilePath
+from iktpaths import HOMEDIR, BINDIR
+from iktpaths import DEPLOYMENT_DIR, IKT_HOOKS_DIR
+from iktpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
+from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE, IKT_INSTALLATION_INFO_FILE
+
 from commandparser import parse_commandline
 
 from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_set_vars
 from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results
-from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 from iktio import download_files, get_local_hostname, mkdir_if_not_exists, scan_and_add_ssh_keys
 
@@ -51,22 +55,6 @@ from iktprint import iktinput, iktinput_password, iktprint, init_iktprint
 import about
 PROGRAMDESCRIPTION = "Setup or teardown a Kubernetes cluster"
 PROGRAMAUTHORS = "Written by David Weinehall."
-
-HOMEDIR = str(Path.home())
-BINDIR = f"{HOMEDIR}/bin"
-IKTDIR = f"{HOMEDIR}/.ikt"
-IKT_HOOKS_DIR = f"{IKTDIR}/hooks"
-DEPLOYMENTDIR = f"{IKTDIR}/deployments"
-ANSIBLE_PLAYBOOK_DIRNAME = "playbooks"
-PLAYBOOKDIR = f"{IKTDIR}/{ANSIBLE_PLAYBOOK_DIRNAME}"
-IKT_CONFIG_FILENAME = "ikt.yaml"
-IKT_CONFIG_FILE = f"{IKTDIR}/{IKT_CONFIG_FILENAME}"
-IKT_CONFIG_FILE_DIR = f"{IKTDIR}/{IKT_CONFIG_FILENAME}.d"
-IKT_INSTALLATION_INFO = f"{IKTDIR}/installation_info.yaml"
-
-THEME_DIRNAME = "themes"
-THEMEDIR = f"{IKTDIR}/{THEME_DIRNAME}"
-THEME_PATH = f"{THEMEDIR}/default.yaml"
 
 DEFAULT_CNI = "cilium"
 DEFAULT_POD_NETWORK_CIDR = "10.244.0.0/16"
@@ -232,7 +220,7 @@ def get_installation_info(cluster_name = None):
 	info = None
 
 	try:
-		with open(IKT_INSTALLATION_INFO, "r", encoding = "utf-8") as f:
+		with open(IKT_INSTALLATION_INFO_FILE, "r", encoding = "utf-8") as f:
 			info = yaml.safe_load(f)
 	except FileNotFoundError:
 		pass
@@ -313,7 +301,7 @@ def update_installation_info(cluster_name = None, distro = None, version = None,
 	if cri is not None:
 		info[cluster_name]["cri"] = cri
 
-	with open(IKT_INSTALLATION_INFO, "w", encoding = "utf-8") as f:
+	with open(IKT_INSTALLATION_INFO_FILE, "w", encoding = "utf-8") as f:
 		f.write(yaml.dump(info, default_flow_style = False, sort_keys = False))
 
 	return info
@@ -580,11 +568,11 @@ def __upgrade_cni(cni, upgradetype, context):
 			download_checksum_url = substitute_string(download_checksum_url, substitutions)
 
 			if upgradetype == "CNI":
-				mkdir_if_not_exists(f"{DEPLOYMENTDIR}")
-				directory = f"{DEPLOYMENTDIR}/cni"
+				mkdir_if_not_exists(DEPLOYMENT_DIR)
+				directory = FilePath(os.path.join(DEPLOYMENT_DIR, "cni"))
 				permissions = 0o644
 			elif upgradetype == "executable":
-				directory = f"{BINDIR}"
+				directory = BINDIR
 				permissions = 0o755
 			mkdir_if_not_exists(directory)
 			check_and_print_status(download_files(directory, [(download_url, command_filename, download_checksum_url, download_checksum_type)], permissions = permissions))
@@ -692,11 +680,11 @@ def __setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 	if filetype is None:
 		raise Exception(f"type for {cni} is missing; this is a programming error.")
 	if filetype == "yaml":
-		mkdir_if_not_exists(f"{DEPLOYMENTDIR}")
-		directory = f"{DEPLOYMENTDIR}/cni"
+		mkdir_if_not_exists(DEPLOYMENT_DIR)
+		directory = FilePath(os.path.join(DEPLOYMENT_DIR, "cni"))
 		permissions = 0o644
 	elif filetype == "installer":
-		directory = f"{BINDIR}"
+		directory = BINDIR
 		permissions = 0o755
 	mkdir_if_not_exists(directory)
 
@@ -729,7 +717,7 @@ def check_for_ssh_key():
 	"""
 
 	retval = False
-	files = [file for file in glob(f"{HOMEDIR}/.ssh/*.pub") if os.path.isfile(file)]
+	files = [file for file in glob(os.path.join(HOMEDIR, ".ssh", "*.pub")) if os.path.isfile(file)]
 	for file in files:
 		if os.path.isfile(file) and os.path.isfile(file[:-len(".pub")]):
 			retval = True
@@ -1289,7 +1277,7 @@ def __task_request_ansible_password(installation_info):
 	del installation_info
 
 	# Check whether ansible_password is defined or not
-	if ansible_configuration.ansible_password == None and no_password == False:
+	if deep_get(ansible_configuration, "ansible_password") is None and no_password == False:
 		iktprint([("Attention: ", "warning"), ("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
 		iktprint([("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
 		ansible_password = iktinput_password([("\nPassword: ", "default")])
@@ -1297,7 +1285,7 @@ def __task_request_ansible_password(installation_info):
 			iktprint([("\nError: ", "Error"), ("Empty password; aborting.")], stderr = True)
 			sys.exit(errno.EINVAL)
 		else:
-			ansible_configuration.ansible_password = ansible_password
+			ansible_configuration["ansible_password"] = ansible_password
 
 def __run_playbooks_on_selection(playbooks, selection, extra_values = None):
 	"""
@@ -1348,8 +1336,8 @@ def __task_run_preparation_playbooks_on_localhost(installation_info):
 	extra_values = {
 		"packages": prepare_targets["localhost"].get("deb_packages", []),
 		"held_packages": prepare_targets["localhost"].get("deb_packages_held", []),
-		"ansible_become_pass": ansible_configuration.ansible_password,
-		"ansible_ssh_pass": ansible_configuration.ansible_password,
+		"ansible_become_pass": deep_get(ansible_configuration, "ansible_password"),
+		"ansible_ssh_pass": deep_get(ansible_configuration, "ansible_password"),
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -1369,8 +1357,8 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info):
 	extra_values = {
 		"packages": prepare_targets[distro].get("deb_packages", []),
 		"held_packages": prepare_targets[distro].get("deb_packages_held", []),
-		"ansible_become_pass": ansible_configuration.ansible_password,
-		"ansible_ssh_pass": ansible_configuration.ansible_password,
+		"ansible_become_pass": deep_get(ansible_configuration, "ansible_password"),
+		"ansible_ssh_pass": deep_get(ansible_configuration, "ansible_password"),
 		"cri": cri,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
@@ -2087,7 +2075,7 @@ def prepare_installation(options, args):
 			else:
 				phase = __validate_task_index(prepare_tasks, phase)
 		elif opt == "--save-ansible-logs":
-			ansible_configuration.save_logs = True
+			ansible_configuration["save_logs"] = True
 		elif opt == "--cri":
 			if optarg in ("dockershim", "containerd", "manual"):
 				cri = optarg
@@ -2124,7 +2112,7 @@ def prepare_installation(options, args):
 		retval = iktinput([("\nStart control plane preparation? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" User stopped control plane preparation.", "default")], stderr = True)
-			os.remove(IKT_INSTALLATION_INFO)
+			os.remove(IKT_INSTALLATION_INFO_FILE)
 			sys.exit(errno.EINTR)
 
 	iktprint([("\n[Preparing localhost and control plane(s)]", "phase")])
@@ -2243,8 +2231,8 @@ def import_cluster(options, args):
 		__task_request_ansible_password(None)
 
 		extra_values = {
-			"ansible_become_pass": ansible_configuration.ansible_password,
-			"ansible_ssh_pass": ansible_configuration.ansible_password,
+			"ansible_become_pass": deep_get(ansible_configuration, "ansible_password"),
+			"ansible_ssh_pass": deep_get(ansible_configuration, "ansible_password"),
 		}
 
 		install_ansible_posix()
@@ -2449,7 +2437,7 @@ def setup_control_plane(options, args):
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
 		elif opt == "--save-ansible-logs":
-			ansible_configuration.save_logs = True
+			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
 			confirm = False
 		else:
@@ -2577,7 +2565,7 @@ def teardown_control_plane(options, args):
 		__list_phases(teardown_control_plane_tasks)
 		sys.exit(0)
 
-	if not os.path.exists(IKT_INSTALLATION_INFO):
+	if not os.path.exists(IKT_INSTALLATION_INFO_FILE):
 		iktprint([("Error:", "error"), (" Could not find reliable installation information. Aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
@@ -2616,7 +2604,7 @@ def teardown_control_plane(options, args):
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
 		elif opt == "--save-ansible-logs":
-			ansible_configuration.save_logs = True
+			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
 			confirm = False
 		else:
@@ -2653,7 +2641,7 @@ def purge_control_plane(options, args):
 		__list_phases(purge_control_plane_tasks)
 		sys.exit(0)
 
-	if not os.path.exists(IKT_INSTALLATION_INFO):
+	if not os.path.exists(IKT_INSTALLATION_INFO_FILE):
 		iktprint([("Error:", "error"), (" Could not find reliable installation information. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
@@ -2687,7 +2675,7 @@ def purge_control_plane(options, args):
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
 		elif opt == "--save-ansible-logs":
-			ansible_configuration.save_logs = True
+			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
 			confirm = False
 		else:
@@ -2717,7 +2705,7 @@ def purge_control_plane(options, args):
 	installation_info = update_installation_info(state = "purging", phase = 0)
 
 	run_tasks(tasks = purge_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "purged")
-	os.remove(IKT_INSTALLATION_INFO)
+	os.remove(IKT_INSTALLATION_INFO_FILE)
 
 	iktprint([("\nCluster purge successful", "success")])
 
@@ -2744,10 +2732,10 @@ def upgrade_control_plane(options, args):
 		__list_phases(upgrade_control_plane_tasks)
 		sys.exit(0)
 	elif "--override" in [tmp[0] for tmp in options]:
-		if os.path.isfile(IKT_INSTALLATION_INFO) == True:
-			iktprint([("Warning: ", "warning"), ("Overriding ", "default"), (f"{IKT_INSTALLATION_INFO}", "path"), ("; this may cause issues.", "default")], stderr = True)
+		if os.path.isfile(IKT_INSTALLATION_INFO_FILE) == True:
+			iktprint([("Warning: ", "warning"), ("Overriding ", "default"), (f"{IKT_INSTALLATION_INFO_FILE}", "path"), ("; this may cause issues.", "default")], stderr = True)
 		else:
-			iktprint([("Note: ", "note"), (f"{IKT_INSTALLATION_INFO}", "path"), (" does not exist; rebuilding.", "default")])
+			iktprint([("Note: ", "note"), (f"{IKT_INSTALLATION_INFO_FILE}", "path"), (" does not exist; rebuilding.", "default")])
 		rebuild_installation_info(state = "upgrading")
 
 	installation_info = get_installation_info()
@@ -2798,7 +2786,7 @@ def upgrade_control_plane(options, args):
 		elif opt in ("--override", "--list-tasks"):
 			continue
 		elif opt == "--save-ansible-logs":
-			ansible_configuration.save_logs = True
+			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
 			confirm = False
 		else:
@@ -3591,21 +3579,21 @@ def main():
 	Main function for the program
 	"""
 
-	init_iktprint(THEME_PATH)
+	init_iktprint(DEFAULT_THEME_FILE)
 
 	command, options, args = parse_commandline(about.ADMIN_PROGRAM_NAME, about.ADMIN_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline)
 
 	# Used by the ansible module
-	ansible_configuration.ansible_forks = deep_get(iktconfig, "Ansible#forks", 5)
+	ansible_configuration["ansible_forks"] = deep_get(iktconfig, "Ansible#forks", 5)
 	ansible_user = deep_get(iktconfig, "Ansible#ansible_user")
 	if ansible_user is None or len(ansible_user) == 0:
 		ansible_user = getuser()
-	ansible_configuration.ansible_user = ansible_user
+	ansible_configuration["ansible_user"] = ansible_user
 	ansible_password = deep_get(iktconfig, "Ansible#ansible_password")
 	if ansible_password is not None and len(ansible_password) > 0:
-		ansible_configuration.ansible_password = ansible_password
-	ansible_configuration.disable_strict_host_key_checking = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
-	ansible_configuration.save_logs = deep_get(iktconfig, "Ansible#save_logs", False)
+		ansible_configuration["ansible_password"] = ansible_password
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
+	ansible_configuration["save_logs"] = deep_get(iktconfig, "Ansible#save_logs", False)
 	return command(options, args)
 
 if __name__ == "__main__":

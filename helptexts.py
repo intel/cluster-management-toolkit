@@ -4,7 +4,7 @@
 This module contains helptexts for iku
 """
 
-import about
+from about import PROGRAM_SUITE_FULL_NAME, PROGRAM_SUITE_VERSION, UI_PROGRAM_NAME, UI_PROGRAM_VERSION
 
 # Improve to handle embedded color codes; probably through storing the log messages
 # as a list of lines
@@ -22,8 +22,8 @@ about = [
 	(0, [("   ████   ████   ◥███◣         ████         ", ("main", "logo_letter"))]),
 	(0, [("   ████   ████    ◥███◣        ████         ", ("main", "logo_letter"))]),
 	(0, [("", ("main", "about_text"))]),
-	(0, [(f" {about.PROGRAM_SUITE_FULL_NAME} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{about.PROGRAM_SUITE_VERSION}", ("main", "about_version"))]), # pylint: disable=line-too-long
-	(0, [(f" {about.UI_PROGRAM_NAME} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{about.UI_PROGRAM_VERSION}", ("main", "about_version"))]), # pylint: disable=line-too-long
+	(0, [(f" {PROGRAM_SUITE_FULL_NAME} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{PROGRAM_SUITE_VERSION}", ("main", "about_version"))]), # pylint: disable=line-too-long
+	(0, [(f" {UI_PROGRAM_NAME} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{UI_PROGRAM_VERSION}", ("main", "about_version"))]),
 	(0, [("", ("main", "about_text"))]),
 	(0, [(" Copyright © 2019-2022 Intel Corporation", ("main", "about_text_highlight"))]),
 	(0, [("", ("main", "about_text"))]),

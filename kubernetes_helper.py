@@ -1,13 +1,18 @@
+#! /usr/bin/env python3
+# Requires: python3 (>= 3.6)
+
+"""
+Kubernetes helpers used by iKT
+"""
+
 import base64
-from functools import reduce
 import hashlib
 # ujson is much faster than json,
 # but it might not be available
 try:
 	import ujson as json
 except ModuleNotFoundError:
-	import json
-from pathlib import Path
+	import json # type: ignore
 import re
 import sys
 import tempfile
@@ -23,6 +28,8 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
+# from ikttypes import FilePath
+from iktpaths import KUBE_CONFIG_FILE
 from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, execute_command_with_response, get_since, stgroup, timestamp_to_datetime, versiontuple
 
 # A list of all K8s resources we have some knowledge about
@@ -2212,10 +2219,9 @@ class KubernetesHelper:
 	def list_contexts(self, config_path = None):
 		contexts = []
 
-		# If config_path == None we use ${HOME}/.kube/config
 		if config_path == None:
 			# Read kubeconfig
-			config_path = str(Path.home()) + "/.kube/config"
+			config_path = KUBE_CONFIG_FILE
 
 		try:
 			with open(config_path, "r", encoding = "utf-8") as f:
@@ -2273,10 +2279,9 @@ class KubernetesHelper:
 		user_name = ""
 		namespace_name = ""
 
-		# If config_path == None we use ${HOME}/.kube/config
 		if config_path == None:
 			# Read kubeconfig
-			config_path = str(Path.home()) + "/.kube/config"
+			config_path = KUBE_CONFIG_FILE
 
 		try:
 			with open(config_path, "r", encoding = "utf-8") as f:
@@ -2331,7 +2336,7 @@ class KubernetesHelper:
 			try:
 				ca_certs = base64.b64decode(ccac).decode("utf-8")
 			except UnicodeDecodeError as e:
-				raise Exception("failed to decode certificate-authority-data: {e}")
+				raise Exception("failed to decode certificate-authority-data: {e}") from e
 			break
 
 		if control_plane_ip is None or control_plane_port is None:
@@ -2351,7 +2356,7 @@ class KubernetesHelper:
 					try:
 						cert = base64.b64decode(ccd).decode("utf-8")
 					except UnicodeDecodeError as e:
-						raise Exception(f"failed to decode client-certificate-data: {e}")
+						raise Exception(f"failed to decode client-certificate-data: {e}") from e
 
 				# key
 				ckd = deep_get(user, "user#client-key-data")
@@ -2359,7 +2364,7 @@ class KubernetesHelper:
 					try:
 						key = base64.b64decode(ckd).decode("utf-8")
 					except UnicodeDecodeError as e:
-						raise Exception(f"failed to decode client-key-data: {e}")
+						raise Exception(f"failed to decode client-key-data: {e}") from e
 
 				self.token = deep_get(user, "user#token")
 				break
@@ -2711,8 +2716,6 @@ class KubernetesHelper:
 
 	# This returns a list of API families known by both kubernetes_helper and the API server
 	def get_available_api_families(self, force_refresh = False):
-		global kubernetes_resources
-
 		modified = False
 
 		# If the list isn't empty, but the cluster is unreachable, return it unchanged
@@ -2817,9 +2820,12 @@ class KubernetesHelper:
 				vlist.append(resource)
 		return vlist
 
-	def __rest_helper_generic_json(self, method = None, url = None, header_params = None, query_params = [], body = None, retries = 3, connect_timeout = 3.0):
+	def __rest_helper_generic_json(self, method = None, url = None, header_params = None, query_params = None, body = None, retries = 3, connect_timeout = 3.0):
 		data = None
 		message = ""
+
+		if query_params is None:
+			query_params = []
 
 		if self.cluster_unreachable == True:
 			status = 42503
@@ -2881,7 +2887,7 @@ class KubernetesHelper:
 			d = json.loads(result.data)
 			# Bad request
 			# The feature might be disabled, or the pod is waiting to start/terminated
-			message = f"400: Bad Request; " + deep_get(d, "message", "")
+			message = "400: Bad Request; " + deep_get(d, "message", "")
 		elif status == 401:
 			# Unauthorized
 			message = f"401: Unauthorized; method: {method}, URL: {url}, header_params: {header_params}"
@@ -2926,8 +2932,11 @@ class KubernetesHelper:
 
 		return data, message, status
 
-	def __rest_helper_post(self, kind, name = "", namespace = "", body = {}):
+	def __rest_helper_post(self, kind, name = "", namespace = "", body = None):
 		method = "POST"
+
+		if body is None or len(body) == 0:
+			raise Exception("__rest_helper_post called with empty body; this is most likely a programming error")
 
 		header_params = {
 			"Content-Type": "application/json",
@@ -2939,7 +2948,7 @@ class KubernetesHelper:
 			namespace_part = f"namespaces/{namespace}/"
 
 		if kind is None:
-			raise Exception("__rest_helper_patch called with kind None")
+			raise Exception("__rest_helper_post called with kind None; this is most likely a programming error")
 
 		kind = self.guess_kind(kind)
 
@@ -2972,13 +2981,16 @@ class KubernetesHelper:
 
 		return message, status
 
-	def __rest_helper_patch(self, kind, name, namespace = "", body = {}):
+	def __rest_helper_patch(self, kind, name, namespace = "", body = None):
 		method = "PATCH"
 
 		header_params = {
 			"Content-Type": "application/strategic-merge-patch+json",
 			"User-Agent": f"{self.programname} v{self.programversion}",
 		}
+
+		if body is None or len(body) == 0:
+			raise Exception("__rest_helper_patch called with empty body; this is most likely a programming error")
 
 		namespace_part = ""
 		if namespace is not None and namespace != "":
@@ -3018,8 +3030,11 @@ class KubernetesHelper:
 
 		return message, status
 
-	def __rest_helper_delete(self, kind, name, namespace = "", query_params = []):
+	def __rest_helper_delete(self, kind, name, namespace = "", query_params = None):
 		method = "DELETE"
+
+		if query_params is None:
+			query_params = []
 
 		namespace_part = ""
 		if namespace is not None and namespace != "":
@@ -3059,21 +3074,10 @@ class KubernetesHelper:
 
 		return message, status
 
-	def __rest_helper_generic_protobuf(self, method = None, url = None, query_params = []):
-		header_params["Accept"] = "application/vnd.kubernetes.protobuf"
-		if self.token is not None:
-			header_params["Authorization"] = f"Bearer {self.token}"
-		# Do we support this version of Kubernetes protobuf?
-		expected_signature = b"k8s\x00"
-		if result.data[0:4] != expected_signature:
-			sys.exit(f"protobuf format not supported")
-		sys.exit(f"Protobuf support not implemented yet;\n{result.data}")
-
 	# On failure this function should always return [] for list requests, and None for other requests;
 	# this way lists the result can be handled unconditionally in for loops
 	def __rest_helper_get(self, kind, name = "", namespace = "", label_selector = "", field_selector = ""):
 		vlist = None
-		use_protobuf = False
 
 		if kind is None:
 			raise Exception("__rest_helper_get API called with kind None")
@@ -3119,22 +3123,12 @@ class KubernetesHelper:
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
 			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
-			if use_protobuf == True:
-				data, message, status = self.__rest_helper_generic_protobuf(method = method, url = url, query_params = query_params)
-			else:
-				data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
+			data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
 
 			# All fatal failures are handled in __rest_helper_generic
 			if status == 200:
 				# Success
-				if use_protobuf == True:
-					# Do we support this version of Kubernetes protobuf?
-					expected_signature = b"k8s\x00"
-					if data[0:4] != expected_signature:
-						sys.exit(f"protobuf format not supported")
-					sys.exit(f"Protobuf support not implemented yet;\n{result.data}")
-				else:
-					d = json.loads(data)
+				d = json.loads(data)
 
 				# If name is set this is a read request, not a list request
 				if name != "":
@@ -3142,10 +3136,12 @@ class KubernetesHelper:
 				else:
 					vlist = d["items"]
 				break
-			elif status in [204, 400, 403, 503]:
+
+			if status in [204, 400, 403, 503]:
 				# We didn't get any data, but we might not want to fail
 				continue
-			elif status == 404:
+
+			if status == 404:
 				# We didn't get any data, but we might not want to fail
 
 				# page not found (API not available or possibly programming error)
@@ -3155,7 +3151,8 @@ class KubernetesHelper:
 				# otherwise we give up and return an empty list
 				if i < len(api_family) - 1:
 					continue
-			#elif status == 410:
+
+			#if status == 410:
 				# XXX: Should be handled when we implement support for update events
 
 				# Gone
