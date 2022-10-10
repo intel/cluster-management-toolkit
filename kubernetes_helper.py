@@ -3174,10 +3174,21 @@ class KubernetesHelper:
 			"status": {},
 		}
 
-		body = json.dumps(data).encode('utf-8')
+		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_post(kind, body = body)
 
 	def taint_node(self, node, taints, new_taint):
+		"""
+		Apply or remove taint for a node
+
+			Parameters:
+				node (str): The node to (un)taint
+				taints (str): The current taints
+				new_taint (str): The modified or new taint
+			Returns:
+				the return value from __rest_helper_patch
+		"""
+
 		kind = ("Node", "")
 		if new_taint is None:
 			return "", 200
@@ -3216,30 +3227,60 @@ class KubernetesHelper:
 				"taints": taints
 			}
 		}
-		body = json.dumps(data).encode('utf-8')
+		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_patch(kind, node, body = body)
 
 	def cordon_node(self, node):
+		"""
+		Cordon a Node
+
+			Parameters:
+				node (str): The node to cordon
+			Returns:
+				the return value from __rest_helper_patch
+		"""
+
 		kind = ("Node", "")
 		data = {
 			"spec": {
 				"unschedulable": True
 			}
 		}
-		body = json.dumps(data).encode('utf-8')
+		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_patch(kind, node, body = body)
 
 	def uncordon_node(self, node):
+		"""
+		Uncordon a Node
+
+			Parameters:
+				node (str): The node to uncordon
+			Returns:
+a				the return value from __rest_helper_patch
+		"""
+
 		kind = ("Node", "")
 		data = {
 			"spec": {
 				"unschedulable": None
 			}
 		}
-		body = json.dumps(data).encode('utf-8')
+		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_patch(kind, node, body = body)
 
 	def delete_obj_by_kind_name_namespace(self, kind, name, namespace, force = False):
+		"""
+		Delete an object
+
+			Parameters:
+				kind ((kind, api_family)): Kind of object to delete
+				name (str): The name of the object
+				namespace (str): The namespace of the object (or "")
+				force (bool): True = no grace period
+			Returns:
+				the return value from __rest_helper_delete
+		"""
+
 		query_params = []
 
 		if force == True:
