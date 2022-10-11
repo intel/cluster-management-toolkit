@@ -2928,16 +2928,28 @@ def taint_control_plane(options, args):
 				iktprint([("Tainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
-			_message, _status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/control-plane", "NoSchedule"))
-			iktprint([("  Tainted", "success")])
+			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/control-plane", None, None, "NoSchedule"))
+			if status == 304:
+				iktprint([("  Not modified", "none")])
+			elif status == 200:
+				iktprint([("  Tainted", "success")])
+			else:
+				iktprint([("  Failed to modify taint", "error"), (f"; HTTP error {status}; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
 
 		if "master" in node["roles"] and (len(args) == 0 or node["name"] in args):
 			if first == True:
 				iktprint([("Tainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
-			_message, _status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/master", "NoSchedule"))
-			iktprint([("  Tainted", "success")])
+			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/master", None,  None, "NoSchedule"))
+			if status == 304:
+				iktprint([("  Not modified", "none")])
+			elif status == 200:
+				iktprint([("  Tainted", "success")])
+			else:
+				iktprint([("  Failed to modify taint", "error"), (f"; HTTP error {status}; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
 
 	if first == True:
 		iktprint([("Warning:", "warning"), (" No matching control planes found. Aborting.", "default")], stderr = True)
@@ -2968,16 +2980,28 @@ def untaint_control_plane(options, args):
 				iktprint([("Untainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
-			_message, _status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/control-plane", None))
-			iktprint([("  Untainted", "success")])
+			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/control-plane", None,  None, None))
+			if status == 304:
+				iktprint([("  Not modified", "none")])
+			elif status == 200:
+				iktprint([("  Untainted", "success")])
+			else:
+				iktprint([("  Failed to modify taint", "error"), (f"; HTTP error {status}; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
 
 		if "master" in node["roles"] and (len(args) == 0 or node["name"] in args):
 			if first == True:
 				iktprint([("Untainting control plane(s):", "header")])
 				first = False
 			iktprint([(node["name"], "hostname")])
-			_message, _status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/master", None))
-			iktprint([("  Untainted", "success")])
+			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/master", None, None, None))
+			if status == 304:
+				iktprint([("  Not modified", "none")])
+			elif status == 200:
+				iktprint([("  Untainted", "success")])
+			else:
+				iktprint([("  Failed to modify taint", "error"), (f"; HTTP error {status}; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
 
 	if first == True:
 		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)

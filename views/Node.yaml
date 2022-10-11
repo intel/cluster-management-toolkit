@@ -106,7 +106,7 @@ listview:
         - subpath: "key"
           transform:
             "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
-          regex: ["^[^/]*/(.*)"]
+          regex: ["^[^/]*/(.*)", "(.*)"]
         - "effect"
       formatter: "list"
       formatting:
@@ -114,7 +114,7 @@ listview:
         - type: "key"
         - type: "value"
         field_separators:
-        - type: "keyvalue"
+        - type: "keyvalue_taint"
         mapping:
           mappings:
             NoSchedule:
@@ -309,7 +309,7 @@ infoview:
           - type: "generic"
           field_separators:
           - type: "keyvalue"
-          - type: "field"
+          - type: "keyvalue_taint"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:

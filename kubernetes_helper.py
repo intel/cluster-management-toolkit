@@ -5,6 +5,8 @@
 Kubernetes helpers used by iKT
 """
 
+# pylint: disable=line-too-long
+
 import base64
 import hashlib
 # ujson is much faster than json,
@@ -2107,7 +2109,7 @@ def get_node_status(node):
 	status = "Unknown"
 	status_group = stgroup.UNKNOWN
 	taints = []
-	full_taints = []
+	full_taints = deep_get(node, "spec#taints", [])
 
 	for condition in deep_get(node, "status#conditions", []):
 		if deep_get(condition, "type") == "Ready":
@@ -2127,7 +2129,6 @@ def get_node_status(node):
 		if key == "node-role.kubernetes.io/master":
 			key = "node-role.kubernetes.io/control-plane"
 		effect = deep_get(nodetaint, "effect")
-		full_taints.append((key, effect))
 
 		# Control Plane having scheduling disabled
 		# is expected behaviour and does not need
@@ -2156,6 +2157,23 @@ def get_node_status(node):
 
 	return status, status_group, taints, full_taints
 
+def make_selector(selector_dict):
+	selectors = []
+
+	if selector_dict is not None:
+		for key, value in selector_dict.items():
+			selectors.append(f"{key}={value}")
+
+	return ",".join(selectors)
+
+def get_image_version(image, default = "<undefined>"):
+	image_version = default
+	image_version = image.split("@")[0]
+	image_version = image_version.split("/")[-1]
+	image_version = image_version.split(":")[-1]
+	return image_version
+
+# pylint: disable-next=too-many-instance-attributes,too-many-public-methods
 class KubernetesHelper:
 	"""
 	A class used for interacting with a Kubernetes cluster
@@ -2444,22 +2462,6 @@ class KubernetesHelper:
 
 		return True
 
-	def make_selector(self, selector_dict):
-		selectors = []
-
-		if selector_dict is not None:
-			for key, value in selector_dict.items():
-				selectors.append(f"{key}={value}")
-
-		return ",".join(selectors)
-
-	def get_image_version(self, image, default = "<undefined>"):
-		image_version = default
-		image_version = image.split("@")[0]
-		image_version = image_version.split("/")[-1]
-		image_version = image_version.split(":")[-1]
-		return image_version
-
 	# CNI detection helpers
 	def __identify_cni(self, cni_name, controller_kind, controller_selector, container_name):
 		cni = []
@@ -2489,14 +2491,14 @@ class KubernetesHelper:
 				else:
 					cni_status = ("Available", stgroup.OK, "")
 
-			vlist2, _status = self.get_list_by_kind_namespace(("Pod", ""), "", label_selector = self.make_selector(deep_get(obj, "spec#selector#matchLabels")))
+			vlist2, _status = self.get_list_by_kind_namespace(("Pod", ""), "", label_selector = make_selector(deep_get(obj, "spec#selector#matchLabels")))
 
 			if vlist2 is not None and len(vlist2) > 0:
 				for obj2 in vlist2:
 					# Try to get the version
 					for container in deep_get(obj2, "status#containerStatuses", []):
 						if deep_get(container, "name", "") == container_name:
-							image_version = self.get_image_version(deep_get(container, "image", ""))
+							image_version = get_image_version(deep_get(container, "image", ""))
 
 							if image_version != "<undefined>":
 								if cni_version is None:
@@ -2820,6 +2822,7 @@ class KubernetesHelper:
 				vlist.append(resource_kind)
 		return vlist
 
+	# pylint: disable-next=too-many-arguments
 	def __rest_helper_generic_json(self, method = None, url = None, header_params = None, query_params = None, body = None, retries = 3, connect_timeout = 3.0):
 		data = None
 		message = ""
@@ -3068,6 +3071,8 @@ class KubernetesHelper:
 
 	# On failure this function should always return [] for list requests, and None for other requests;
 	# this way lists the result can be handled unconditionally in for loops
+
+	# pylint: disable-next=too-many-arguments
 	def __rest_helper_get(self, kind, name = "", namespace = "", label_selector = "", field_selector = ""):
 		vlist = None
 
@@ -3177,54 +3182,82 @@ class KubernetesHelper:
 		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_post(kind, body = body)
 
-	def taint_node(self, node, taints, new_taint):
+	def taint_node(self, node, taints, new_taint, overwrite = False):
 		"""
-		Apply or remove taint for a node
+		Apply a new taint, replace an existing taint, or remove a taint for a node
 
 			Parameters:
-				node (str): The node to (un)taint
+				node (str): The node to taint
 				taints (str): The current taints
-				new_taint (str): The modified or new taint
+				new_taint ((key, value, old_effect, new_effect): The modified or new taint
+				overwrite (bool): If overwrite is set, modify the taint, otherwise return
 			Returns:
 				the return value from __rest_helper_patch
 		"""
 
 		kind = ("Node", "")
 		if new_taint is None:
-			return "", 200
+			return "", 304
 
-		key, effect = new_taint
-		match = None
+		key, value, old_effect, new_effect = new_taint
+		modified_taints = []
+		modified = False
 
-		for i, taint in enumerate(taints):
-			if taint["key"] == key:
-				# If the key is in taints and has the correct effect already, do nothing
-				if taint["effect"] == effect:
-					return "", 200
-				match = i
-				break
+		for taint in taints:
+			# If the taint isn't the one to modify we keep it
+			if deep_get(taint, "key") != key:
+				modified_taints.append(taint)
+				continue
 
-		if match is not None:
-			if effect is None:
-				taints.pop(match)
-			else:
-				taints[match] = {
+			_old_value = deep_get(taint, "value")
+			_old_effect = deep_get(taint, "effect")
+
+			# Do we want to *remove* the taint?
+			if new_effect is None:
+				# If old_effect is None we remove taints matching this key or key=value
+				# If old_effect is not None we remove taints matching key=value:effect
+				# value is None: remove all taints for key
+				# value == value: remove the taint for this key=value
+				if (old_effect is None or _old_effect == old_effect) and (value is None or _old_value == value):
+					modified = True
+					continue
+
+			if _old_effect == new_effect:
+				if overwrite == False:
+					# We already have the right taint,
+					# and we don't want to overwrite it
+					return "", 42304
+
+				tmp = {
 					"key": key,
-					"effect": effect
+					"effect": new_effect,
 				}
-		else:
-			# If the key isn't in taints and removal is requested, do nothing
-			if effect is None:
-				return "", 200
 
-			taints.append({
+				if value is not None:
+					tmp["value"] = value
+				modified_taints.append(tmp)
+				modified = True
+				continue
+
+			# Same key, but different effect; we keep the taint
+			modified_taints.append(taint)
+
+		if modified == False:
+			if new_effect is None:
+				return "", 304
+
+			tmp = {
 				"key": key,
-				"effect": effect
-			})
+				"effect": new_effect,
+			}
+
+			if value is not None:
+				tmp["value"] = value
+			modified_taints.append(tmp)
 
 		data = {
 			"spec": {
-				"taints": taints
+				"taints": modified_taints
 			}
 		}
 		body = json.dumps(data).encode("utf-8")

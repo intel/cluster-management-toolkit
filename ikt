@@ -39,7 +39,7 @@ from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig, join_tuple_list, execute_command
 
-from kubernetes_helper import kubectl_get_version
+from kubernetes_helper import get_node_status, kubectl_get_version
 
 from iktio import scan_and_add_ssh_keys
 from iktprint import iktprint, iktinput, iktinput_password
@@ -466,6 +466,163 @@ def uncordon_nodes(options, args):
 		else:
 			iktprint([("\nAPI call returned error:", "error")], stderr = True)
 			iktprint([(f"  {message}", "error")], stderr = True)
+			sys.exit(errno.EINVAL)
+
+def taint_nodes(options, args):
+	"""
+	Taint nodes
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
+	include_control_planes = False
+	overwrite = False
+	header = True
+
+	for opt, _optarg in options:
+		if opt == "--include-control-planes":
+			include_control_planes = True
+		elif opt == "--no-header":
+			header = False
+		elif opt == "--overwrite":
+			overwrite = True
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
+
+	selection = args[0].split(",")
+	taint, taint_new_effect = args[1].split("=")
+	if ":" in taint:
+		taint_key, taint_value = taint.split(":")
+	else:
+		taint_key = taint
+		taint_value = None
+
+	if taint_new_effect not in ["NoSchedule", "PreferNoSchedule", "NoExecute"]:
+		iktprint([("Error: ", "error"), ("invalid effect; valid effects are: ", "default"), ("NoSchedule", "argument"), (", ", "default"), ("PreferNoSchedule", "argument"), (", and ", "default"), ("NoExecute", "argument"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	# It's OK to specify control planes individually
+	if "ALL" not in selection:
+		include_control_planes = True
+
+	_nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	nodes = []
+	nodes += _nodes
+	if include_control_planes == True:
+		nodes += controlplanes
+
+	if len(non_existing) > 0:
+		iktprint([("Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	if len(nodes) == 0:
+		iktprint([("Error: ", "error"), ("No nodes available; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	if header == True:
+		iktprint([("\n[Tainting nodes]", "phase")])
+
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+	for node in nodes:
+		node_info = kh.get_ref_by_kind_name_namespace(("Node", ""), node, "")
+		status, _status_group, _taints, full_taints = get_node_status(node_info)
+		if status == "Unknown":
+			iktprint([("Critical:", "critical"), (" Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
+			sys.exit(errno.ENXIO)
+
+		iktprint([(node, "hostname")])
+		_message, status = kh.taint_node(node, full_taints, (taint_key, taint_value, None, taint_new_effect), overwrite = overwrite)
+		if status == 304:
+			iktprint([("  Not modified", "none")])
+		elif status == 42304:
+			iktprint([("  Warning:", "warning"), (" Ignoring request; node already has taint(s) with matching effect; use “", "default"), ("--overwrite", "option"), ("“ to override", "default")])
+		elif status == 200:
+			iktprint([("  Tainted", "success")])
+		else:
+			iktprint([("  Failed to modify taint", "error"), (f"; HTTP error {status}; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+
+def untaint_nodes(options, args):
+	"""
+	Untaint nodes
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
+	include_control_planes = False
+	header = True
+
+	for opt, _optarg in options:
+		if opt == "--include-control-planes":
+			include_control_planes = True
+		elif opt == "--no-header":
+			header = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
+
+	selection = args[0].split(",")
+	taint = args[1]
+	if "=" in taint:
+		taint, taint_old_effect = taint.split("=")
+	else:
+		taint_old_effect = None
+	if ":" in taint:
+		taint_key, taint_value = taint.split(":")
+	else:
+		taint_key = taint
+		taint_value = None
+
+	if taint_old_effect is not None and taint_old_effect not in ["NoSchedule", "PreferNoSchedule", "NoExecute"]:
+		iktprint([("Error: ", "error"), ("invalid effect; valid effects are: ", "default"), ("NoSchedule", "argument"), (", ", "default"), ("PreferNoSchedule", "argument"), (", and ", "default"), ("NoExecute", "argument"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	# It's OK to specify control planes individually
+	if "ALL" not in selection:
+		include_control_planes = True
+
+	_nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+
+	nodes = []
+	nodes += _nodes
+	if include_control_planes == True:
+		nodes += controlplanes
+
+	if len(non_existing) > 0:
+		iktprint([("Error: ", "error")] + join_tuple_list(non_existing, _tuple = "hostname", separator = (",", "separator")) + [(" are not part of the cluster; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	if len(nodes) == 0:
+		iktprint([("Error: ", "error"), ("No nodes available; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	if header == True:
+		iktprint([("\n[Untainting nodes]", "phase")])
+
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+	for node in nodes:
+		node_info = kh.get_ref_by_kind_name_namespace(("Node", ""), node, "")
+		status, _status_group, _taints, full_taints = get_node_status(node_info)
+		if status == "Unknown":
+			iktprint([("Critical:", "critical"), (" Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
+			sys.exit(errno.ENXIO)
+
+		iktprint([(node, "hostname")])
+		_message, status = kh.taint_node(node, full_taints, (taint_key, taint_value, taint_old_effect, None))
+		if status == 304:
+			iktprint([("  Not modified", "none")])
+		elif status == 200:
+			iktprint([("  Untainted", "success")])
+		else:
+			iktprint([("  Failed to modify taint", "error"), (f"; HTTP error {status}; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
 def prepare_hosts(options, args):
@@ -1143,6 +1300,41 @@ ikt_commandline = {
 		"min_args": 1,
 		"max_args": 1,
 		"callback": uncordon_nodes,
+	},
+	"Taint Node": {
+		"command": ["taint"],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL ", "argument"), ("KEY", "argument"), ("[:", "separator"), ("VALUE", "argument"), ("]=", "separator"), ("EFFECT", "argument")],
+		"description": [("Add the taint ", "description"), ("KEY", "argument"), ("[:", "separator"), ("VALUE", "argument"), ("]", "separator"), (" with the effect ", "description"), ("EFFECT", "argument"), (" to ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"extended_description": [
+			[("Valid values for ", "description"), ("EFFECT", "argument"), (" are: ", "description"), ("NoSchedule", "argument"), (", ", "separator"), ("PreferNoSchedule", "argument"), (",", "separator"), (" and ", "description"), ("NoExecute", "argument")],
+		],
+		"options": {
+			"--include-control-planes": {
+				"description": [("Include control planes when ALL is used", "description")],
+			},
+			"--overwrite": {
+				"description": [("Allow taints to be overwritten (by default conflicting taints are ignored)", "description")],
+			}
+		},
+		"min_args": 2,
+		"max_args": 2,
+		"callback": taint_nodes,
+	},
+	"Untaint Node": {
+		"command": ["untaint"],
+		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL ", "argument"), ("KEY", "argument"), ("[:", "separator"), ("VALUE", "argument"), ("][=", "separator"), ("EFFECT", "argument"), ("]", "separator")],
+		"description": [("Remove the taint ", "description"), ("KEY", "argument"), ("[:", "separator"), ("VALUE", "argument"), ("]", "separator"), (" with the effect ", "description"), ("EFFECT", "argument"), (" from ", "description"), ("NODE", "argument"), (",", "separator"), ("...", "argument")],
+		"extended_description": [
+			[("If ", "description"), ("EFFECT", "argument"), (" is not specified, all taints matching ", "description"), ("KEY", "argument"), ("[:", "separator"), ("VALUE", "argument"), ("]", "separator"), (" will be removed", "description")],
+		],
+		"options": {
+			"--include-control-planes": {
+				"description": [("Include control planes when ALL is used", "description")],
+			},
+		},
+		"min_args": 2,
+		"max_args": 2,
+		"callback": untaint_nodes,
 	},
 	"Prepare Host": {
 		"command": ["prepare"],

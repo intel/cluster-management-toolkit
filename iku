@@ -75,7 +75,7 @@ from ansible_helper import ansible_configuration, ansible_get_inventory_dict, an
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
-from kubernetes_helper import KubernetesHelper, get_node_status, update_api_status as kh_update_api_status
+from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, make_selector, update_api_status as kh_update_api_status
 
 from iktprint import iktprint, init_iktprint
 
@@ -549,7 +549,7 @@ def __get_container_info(obj, container_type, spec_path, status_path):
 	for container in deep_get(obj, spec_path, []):
 		container_name = deep_get(container, "name")
 		container_image = deep_get(container, "image")
-		image_version = kh.get_image_version(container_image)
+		image_version = get_image_version(container_image)
 
 		# To get the image ID we need to cross-reference container_image against status#{status_path}->image"
 		image_id = None
@@ -1355,7 +1355,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 							if type(ls_value) == list:
 								ls_value = deep_get_with_fallback(obj, ls_value)
 							_lookup_selector[ls_key] = ls_value
-						lookup_selector = kh.make_selector(_lookup_selector)
+						lookup_selector = make_selector(_lookup_selector)
 
 					try:
 						if len(lookup_name) == 0:
@@ -3422,7 +3422,7 @@ def get_pod_resource_list(obj, **kwargs):
 			selector = deep_get(item, "spec#selector", {})
 			if len(selector) == 0:
 				continue
-			_vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = kh.make_selector(selector), field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}")
+			_vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = make_selector(selector), field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}")
 			if len(_vlist2) > 0:
 				ref = item
 				name = deep_get(item, "metadata#name")
@@ -3739,14 +3739,14 @@ def get_containers(containers = [], container_statuses = []):
 	for container in containers:
 		container_name = deep_get(container, "name")
 		container_image = deep_get(container, "image")
-		image_version = kh.get_image_version(container_image)
+		image_version = get_image_version(container_image)
 		container_dict[container_name] = image_version
 
 	for container in container_statuses:
 		container_name = deep_get(container, "name")
 		container_image = deep_get(container, "image")
 		if container_dict[container_name] == "<undefined>":
-			image_version = kh.get_image_version(container_image, "<undefined>")
+			image_version = get_image_version(container_image, "<undefined>")
 			container_list.append([container_name, image_version])
 		else:
 			container_list.append([container_name, container_dict[container_name]])
@@ -4910,7 +4910,7 @@ def genericlistloop(stdscr, view):
 				for i in range(0, len(labels)):
 					if i in tagged_labels:
 						selectors[labels[i][0]] = labels[i][1]
-				label_selector = kh.make_selector(selectors)
+				label_selector = make_selector(selectors)
 				uip.force_update()
 			tagged_items.clear()
 			uip.refresh_all()
@@ -6494,7 +6494,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				_label_selector_path = deep_get(listgetter_args, "_label_selector_path")
 				_label_selector_key_values = deep_get(listgetter_args, "_label_selector_key_values")
 				if _label_selector_path is not None:
-					listgetter_args["label_selector"] = kh.make_selector(deep_get(obj, _label_selector_path))
+					listgetter_args["label_selector"] = make_selector(deep_get(obj, _label_selector_path))
 				elif _label_selector_key_values is not None:
 					label_selectors = {}
 					for label_key, label_value in _label_selector_key_values:
@@ -6502,7 +6502,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							label_selectors[label_key] = label_value
 						elif type(label_value) == list:
 							label_selectors[label_key] = deep_get_with_fallback(obj, label_value)
-					listgetter_args["label_selector"] = kh.make_selector(label_selectors)
+					listgetter_args["label_selector"] = make_selector(label_selectors)
 				_field_selector = deep_get(listgetter_args, "_field_selector", {})
 				if len(_field_selector) > 0:
 					field_selectors = {}
@@ -6511,7 +6511,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							field_selectors[field_key] = deep_get_with_fallback(obj, field_value)
 						else:
 							field_selectors[field_key] = field_value
-					listgetter_args["field_selector"] = kh.make_selector(field_selectors)
+					listgetter_args["field_selector"] = make_selector(field_selectors)
 				if _kind is None:
 					_kind = deep_get(obj, _kind_path)
 				if _api_family is None:
