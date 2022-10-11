@@ -37,7 +37,7 @@ import subprocess
 from subprocess import PIPE, STDOUT
 import sys
 import tempfile
-import typing
+import typing # pylint: disable=unused-import
 import yaml
 
 try:
@@ -391,7 +391,7 @@ def update_field_widths(field_dict, field_names, objects):
 				processor = default_processor.get(generator)
 
 			if processor is not None:
-				if processor in [processor_list, processor_list_with_status]:
+				if processor in (processor_list, processor_list_with_status):
 					tmp = processor(obj, field_name, item_separator = item_separator, field_separators = field_separators, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
 				else:
 					tmp = processor(obj, field_name)
@@ -432,9 +432,9 @@ def get_hpa_metrics(obj, **kwargs):
 		api_group = ""
 		object_name = ""
 
-		if metric_name in ["resource", "containerResource"]:
+		if metric_name in ("resource", "containerResource"):
 			name = deep_get(metric, f"{metric_name}#name")
-		elif metric_name in ["pods", "object", "external"]:
+		elif metric_name in ("pods", "object", "external"):
 			name = deep_get(metric, f"{metric_name}#metric#name")
 			api_version = ""
 			if metric_type == "Object":
@@ -687,7 +687,7 @@ def get_pod_containers_list(**kwargs):
 def get_sidecar_rule_list(obj, **kwargs):
 	vlist = []
 
-	for traffic_type, items in [("Ingress", deep_get(obj, "spec#ingress", [])), ("Egress", deep_get(obj, "spec#egress", []))]:
+	for traffic_type, items in (("Ingress", deep_get(obj, "spec#ingress", [])), ("Egress", deep_get(obj, "spec#egress", []))):
 		for item in items:
 			pport = deep_get(item, "port#number", "")
 			name = deep_get(item, "port#name", "")
@@ -803,8 +803,8 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 			value = value.replace("\\\"", "“")
 		elif replace_quotes == "same":
 			value = value.replace("\\\"", "\"")
-	elif vtype in ["float", "int", "bool"]:
-		if action == "sum" and type(value) in [list, tuple]:
+	elif vtype in ("float", "int", "bool"):
+		if action == "sum" and type(value) in (list, tuple):
 			value = sum(value)
 
 		if type(value) == tuple:
@@ -830,7 +830,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 		else:
 			tmp = normalise_mem_to_bytes(value)
 		value = normalise_mem_bytes_to_str(tmp)
-	elif vtype in ["regex_to_tuples", "regex_to_list"]:
+	elif vtype in ("regex_to_tuples", "regex_to_list"):
 		_values = []
 		if len(value) > 0:
 			if type(value) == str:
@@ -855,7 +855,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 			value = []
 		value = str(len(value))
 	elif vtype == "timestamp":
-		if action in ["earliest", "latest"] and type(value) in [list, tuple]:
+		if action in ("earliest", "latest") and type(value) in (list, tuple):
 			tmp = None
 			for tmp1 in value:
 				if tmp1 is None:
@@ -879,7 +879,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 		if formatter == "age":
 			value = get_since(value)
 	elif type(vtype) == list:
-		if type(value) not in [list, tuple]:
+		if type(value) not in (list, tuple):
 			raise Exception(f"Field {field_name}: type({value}) is {vtype}; for type {vtype} pathtype must be a multi-element type")
 		_values = []
 		override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", "Global#kind_format"], "mixed")
@@ -888,7 +888,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 				_vtype = vtype[i]
 			else:
 				_vtype = "raw"
-			if _vtype in ["raw", "name"]:
+			if _vtype in ("raw", "name"):
 				_values.append(value[i])
 			elif _vtype == "kind":
 				if override_kind == "skip":
@@ -2660,7 +2660,7 @@ class StrategyInfo:
 		self.operator = operator
 		self.target = target
 	def __repr__(self):
-		return repr((self.operator, self.rule, self.operator, self.target))
+		return repr((self.strategy, self.name, self.operator, self.target))
 
 def get_strategy_info(**kwargs):
 	obj = deep_get(kwargs, "_obj")
@@ -3499,7 +3499,7 @@ def get_inventory_list(**kwargs):
 
 	if ping_hosts == "Always" or (ping_hosts == "Lazy" and latest_info in ["Inventory", "*Inventory"]):
 		# ping all nodes and update their status accordingly
-		output = ansible_ping()
+		output = ansible_ping(None)
 
 		if output is None or len(output) == 0:
 			sys.exit("Internal error; ansible_ping() failed")
@@ -4757,7 +4757,7 @@ def genericlistloop(stdscr, view):
 
 			tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
 			if status == 200:
-				for ns in [deep_get(item, "metadata#name") for item in tmp]:
+				for ns in (deep_get(item, "metadata#name") for item in tmp):
 					namespace_list.append({
 						"lineattrs": widgetlineattrs.NORMAL,
 						"columns": [[(f"{ns}", ("windowwidget", "default"))]],
@@ -6710,10 +6710,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				for item in uip.info:
 					# If we're dealing with a config map we're interested in non-binary types
 					# If we're dealing with a pod we're interested in containers
-					if hasattr(item, "type") and item.type in ["[container]", "[init_container]"]:
+					if hasattr(item, "type") and item.type in ("[container]", "[init_container]"):
 						name = item.ref["name"]
 						ikind = item.type
-					elif view == ("ConfigMap", "") and item.type in [rtype[4] for rtype in cmdata_format]:
+					elif view == ("ConfigMap", "") and item.type in (rtype[4] for rtype in cmdata_format):
 						name = item.data
 						ikind = deep_get(viewref, "listpad#on_activation#kind", "")
 						if type(ikind) == str:
@@ -6849,7 +6849,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					# If the first element is an integer we assume that we've been provided
 					# a pre-formatted list. Otherwise we apply formatting if available.
 					# If not available we try to provide some sensible defaults.
-					if w_items is not None and len(w_items) > 0 and (type(w_items[0]) == dict or type(w_items[0]) in [list, tuple] and type(w_items[0][0]) != int):
+					if w_items is not None and len(w_items) > 0 and (type(w_items[0]) == dict or type(w_items[0]) in (list, tuple) and type(w_items[0][0]) != int):
 						tmp_items = []
 						w_formatting = deep_get(value, "formatting", [("windowwidget", "default")])
 						lineattrs = widgetlineattrs.NORMAL
@@ -6927,7 +6927,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 					w_waitforkeypress = deep_get_with_fallback(value, ["widget_args#waitforkeypress", "waitforkeypress"], False)
 					if not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
-						containername = w_ref["name"]
+						containername = deep_get(w_ref, "name", "")
 					if w_command == [ "<ephemeral>" ]:
 						ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
 						msg = [("Creating ephemeral ", "action"), (ephemeral_image, "programname"), (" container sharing process namespace with ", "action"), (f"{containername}", "path")]
@@ -7311,7 +7311,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						if _block_state != "end_block_not_processed":
 							_logentries.append(_logentry)
 
-						if _block_state in ["end_block", "end_block_not_processed"]:
+						if _block_state in ("end_block", "end_block_not_processed"):
 							# OK, we've got a block; start by appending the first line
 							if len(_logentries) > 0:
 								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, _logentries[0][3], facility_extended)
@@ -8154,9 +8154,9 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 	if kind in infoviews:
 		return genericinfoloop(stdscr, obj, kind, **kwargs)
 	# Exceptions
-	elif kind in [("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")]:
+	elif kind in (("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")):
 		# Do not try to open pending containers
-		if deep_get(info, "status#phase") in ["Pending", "Failed"]:
+		if deep_get(info, "status#phase") in ("Pending", "Failed"):
 			return None
 		return containerinfoloop(stdscr, obj, kind, info)
 	else:
@@ -8635,7 +8635,7 @@ def create_resource_from_file(uip, items = [], action = {}, values = {}, kind = 
 		confirm_buttons = [[ord("y"), ord("Y"), ord("n"), ord("N")], [("[", ("windowwidget", "default")), ("Y", ("windowwidget", "highlight")), ("es", ("windowwidget", "default")), ("]", ("windowwidget", "default"))], [("[", ("windowwidget", "default")), ("N", ("windowwidget", "highlight")), ("o", ("windowwidget", "default")), ("]", ("windowwidget", "default"))]]
 		confirm_press, tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, resource_list, headers = headers, title = title, confirm = True, confirm_buttons = confirm_buttons, cursor = False)
 
-		if confirm_press in [ord("y"), ord("Y")]:
+		if confirm_press in (ord("y"), ord("Y")):
 			args = ["/usr/bin/kubectl", "create", "-f", resource_path]
 	elif rtype == "Kustomization":
 		args = ["/usr/bin/kubectl", "create", "-k", resource_path]
@@ -9165,7 +9165,7 @@ def __populate_playbooklist(path, action_list = {}):
 
 			# Sanity check
 			if queryfunc is not None:
-				if queryfunc not in ["string", "yesno", "filechooser"]:
+				if queryfunc not in ("string", "yesno", "filechooser"):
 					raise Exception(f"unknown queryfunc “{queryfunc}“ provided")
 
 			confirm = deep_get(d[0], "vars#metadata#confirm", False)
@@ -9683,23 +9683,23 @@ key_mappings = {
 }
 
 def map_key(view_file, shortcut, activatedfun, key, modifier):
-	if len(modifier) > 0 and modifier not in ["ctrl", "shift"]:
+	if len(modifier) > 0 and modifier not in ("ctrl", "shift"):
 		sys.exit(f"View-file {view_file} is invalid: unknown modifier {modifier}; valid modifiers are shift, ctrl; aborting")
 
-	if key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and len(modifier) == 0:
+	if key in ("f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12") and len(modifier) == 0:
 		shortcut_key = deep_get(key_mappings, key)
 		help_key = f"[{key.upper()}]"
-	elif key in ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"] and modifier == "shift":
+	elif key in ("f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12") and modifier == "shift":
 		_key = key[0] + str(int(key[1:]) + 12)
 		num = int(key[1:]) + 12
 		shortcut_key = deep_get(key_mappings, _key)
 		help_key = f"[Shift] + [{key.upper()}] / [{key[0].upper()}{num}]"
-	elif key in ["f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24"] and len(modifier) == 0:
+	elif key in ("f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24") and len(modifier) == 0:
 		num = int(key[1:]) - 12
 		_key = key[0] + str(num)
 		shortcut_key = deep_get(key_mappings, key)
 		help_key = f"[Shift] + [{key[0].upper()}{num}] / [{key.upper()}]"
-	elif key in ["enter", "return"]:
+	elif key in ("enter", "return"):
 		if len(modifier) > 0:
 			help_key = "[Enter]"
 			shortcut_key = [curses.KEY_ENTER, 10, 13]
@@ -9785,7 +9785,7 @@ def populate_views(force_refresh = False):
 
 			kind = deep_get(d, "kind", "<missing>")
 			default_command = deep_get(d, "default_command", "<missing>")
-			if kind is None or default_command is None or "<missing>" in [kind, default_command]:
+			if kind is None or default_command is None or "<missing>" in (kind, default_command):
 				sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None:\n"
 					 f"kind: {kind}\n"
 					 f"default_command: {default_command}\n"
@@ -9848,7 +9848,7 @@ def populate_views(force_refresh = False):
 					else:
 						field_indexes = copy.deepcopy(_indexes)
 
-				if name is None or group is None or "<missing>" in [name, group]:
+				if name is None or group is None or "<missing>" in (name, group):
 					sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing, empty or None:\n"
 						  "listview:\n"
 						 f"  name: {name}\n"
@@ -9923,7 +9923,7 @@ def populate_views(force_refresh = False):
 					query = deep_get(_shortcuts[shortcut], "query")
 					read_only = deep_get(_shortcuts[shortcut], "read_only", False)
 
-					if key is None or helptext is None or action is None or "<missing>" in [key, helptext, action]:
+					if key is None or helptext is None or action is None or "<missing>" in (key, helptext, action):
 						sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
 							 f"key: {key}\n"
 							 f"helptext: {helptext}\n"
@@ -10136,13 +10136,13 @@ def populate_views(force_refresh = False):
 							w_formatting.append((context, attr))
 					w_sortcolumn = deep_get(_shortcuts[shortcut], "sortcolumn", {})
 
-					if key is None or helptext is None or action is None or "<missing>" in [key, helptext]:
+					if key is None or helptext is None or action is None or "<missing>" in (key, helptext):
 						sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
 							 f"key: {key}\n"
 							 f"helptext: {helptext}\n"
 							  "Aborting.")
 
-					if widget is None and "<missing>" in [action]:
+					if widget is None and "<missing>" in (action):
 						sys.exit(f"View-file {view_file} is invalid: at least one of [widget, action] needs to be specified.\n"
 							  "Aborting.")
 
@@ -10427,7 +10427,7 @@ def main():
 	while y < len(sys.argv):
 		arg = sys.argv[y]
 
-		if arg in ["list-views"]:
+		if arg in ("list-views"):
 			# Customises the list views
 			iktprint([("Stand by, updating list of supported views...\n", "default")])
 
@@ -10446,14 +10446,14 @@ def main():
 			init_kubernetes_client()
 			list_namespaces()
 			sys.exit(0)
-		elif arg in ["help", "--help"]:
+		elif arg in ("help", "--help"):
 			usage(os.path.basename(sys.argv[0]))
 			sys.exit(0)
-		elif arg in ["version", "--version"]:
+		elif arg in ("version", "--version"):
 			version(os.path.basename(sys.argv[0]))
 			sys.exit(0)
 		elif arg.startswith("--"):
-			iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": unrecognised option “", "default"), (f"{arg}", "option"), ("“.", "default")], stderr = True)
+			iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": unrecognised option", "default")], stderr = True)
 			iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		elif len(defaultview) == 0:
@@ -10479,8 +10479,7 @@ def main():
 				tmp = re.match(r"^(.+)/(.+)$", arg)
 				if tmp is not None:
 					if "/" in tmp[1]:
-						print("%s: invalid syntax “%s %s”" % (os.path.basename(sys.argv[0]), os.path.basename(sys.argv[0]), " ".join(sys.argv[1:])), file = sys.stderr)
-						print("Format is either NAMESPACE/NAME or NAME NAMESPACE", file = sys.stderr)
+						iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": invalid syntax; format is either NAMESPACE/NAME or NAME NAMESPACE", "default")], stderr = True)
 						iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 						sys.exit(errno.EINVAL)
 					else:
@@ -10490,8 +10489,7 @@ def main():
 					initial_name = arg
 			elif initial_namespace is None:
 				if "/" in arg:
-					print("%s: invalid syntax “%s %s”" % (os.path.basename(sys.argv[0]), os.path.basename(sys.argv[0]), " ".join(sys.argv[1:])), file = sys.stderr)
-					print("Format is either NAMESPACE/NAME or NAME NAMESPACE", file = sys.stderr)
+					iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": invalid syntax; format is either NAMESPACE/NAME or NAME NAMESPACE", "default")], stderr = True)
 					iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 				else:
@@ -10499,7 +10497,7 @@ def main():
 			elif initial_container is None:
 				initial_container = arg
 			else:
-				iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": unrecognised option “", "default"), (f"{arg}", "option"), ("“.", "default")], stderr = True)
+				iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": unrecognised option", "default")], stderr = True)
 				iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 		y += 1
@@ -10524,7 +10522,7 @@ def main():
 			tmp = re.match(r"^(.+):(.*)$", initial_name)
 			if tmp is not None:
 				if ":" in tmp[1]:
-					iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": invalid syntax “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), (f"{' '.join(sys.argv[1:])}", "argument"), ("”", "default")], stderr = True)
+					iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": invalid syntax;", "default")], stderr = True)
 					iktprint([("Format is either ", "default"), ("NAMESPACE/NAME:", "argument"), ("{", "separator"), ("CONTAINER", "argument"), (",", "separator"), ("CONFIGMAP", "argument"), ("}", "separator"), (" or ", "default"), ("NAME NAMESPACE ", "argument"), ("{", "separator"), ("CONTAINER", "argument"), (",", "separator"), ("CONFIGMAP", "argument"), ("}", "separator")], stderr = True)
 					iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
@@ -10533,8 +10531,8 @@ def main():
 					initial_container = tmp[2]
 
 	# Containers and Config Maps can have a third level (container/data)
-	if initial_container is not None and defaultview.lstrip("*") not in ["Pods", "Config Maps"]:
-		iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": invalid syntax “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), (f"{' '.join(sys.argv[1:])}", "argument"), ("”", "default")], stderr = True)
+	if initial_container is not None and defaultview.lstrip("*") not in ("Pods", "Config Maps"):
+		iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": invalid syntax;", "default")], stderr = True)
 		iktprint([("CONTAINER", "argument"), ("/", "separator"), ("CONFIGMAP", "argument"), (" only makes sense in ", "default"), ("pod", "command"), ("/", "separator"), ("configmap", "command"), (" view.", "default")], stderr = True)
 		iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
@@ -10544,7 +10542,7 @@ def main():
 
 	init_kubernetes_client()
 	iktprint([("Checking available Kubernetes APIs\n", "default")])
-	available_api_families, status, modified = kh.get_available_api_families()
+	_available_api_families, _status, _modified = kh.get_available_api_families()
 
 	# Customises the list views if necessary
 	if len(infoviews) == 0:
