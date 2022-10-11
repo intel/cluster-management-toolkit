@@ -2195,7 +2195,7 @@ class KubernetesHelper:
 		name_regex = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
 		portname_regex = re.compile(r".*[a-z].*")
 
-		if rtype in ["dns-subdomain", "dns-label"]:
+		if rtype in ("dns-subdomain", "dns-label"):
 			if rtype == "dns-label":
 				maxlen = 63
 				if "." in name:
@@ -2217,13 +2217,13 @@ class KubernetesHelper:
 				tmp = name_regex.match(label)
 				if tmp is None:
 					break
-		elif rtype in ["path-segment"]:
+		elif rtype in ("path-segment"):
 			# XXX: Are there any other requirements? maxlen or similar?
-			if name in [".", ".."] or "/" in name or "%" in name:
+			if name in (".", "..") or "/" in name or "%" in name:
 				invalid = True
 			tmp = ""
 			maxlen = os.pathconf("/", "PC_NAME_MAX")
-		elif rtype in ["port-name"]:
+		elif rtype in ("port-name"):
 			# Any name containing adjacent "-" is invalid
 			if "--" in name:
 				invalid = True
@@ -2533,7 +2533,7 @@ class KubernetesHelper:
 		cni += self.__identify_cni("canal", ("DaemonSet", "apps"), "metadata.name=canal", "calico-node")
 		# Calico:
 		# Since canal is a combination of Calico and Flannel we need to skip Calico if Canal is detected
-		if "canal" not in [cni_name for cni_name, cni_version, cni_status in cni]:
+		if "canal" not in (cni_name for cni_name, cni_version, cni_status in cni):
 			cni += self.__identify_cni("calico", ("Deployment", "apps"), "metadata.name=calico-kube-controllers", "calico-kube-controllers")
 		# Cilium:
 		cni += self.__identify_cni("cilium", ("Deployment", "apps"), "metadata.name=cilium-operator", "cilium-operator")
@@ -2974,7 +2974,7 @@ class KubernetesHelper:
 		for i in range(0, len(api_family)):
 			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
 			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
-			if status in [200, 201, 204, 42503]:
+			if status in (200, 201, 204, 42503):
 				break
 
 		return message, status
@@ -3022,7 +3022,7 @@ class KubernetesHelper:
 		for i in range(0, len(api_family)):
 			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
 			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
-			if status in [200, 204, 42503]:
+			if status in (200, 204, 42503):
 				break
 
 		return message, status
@@ -3064,7 +3064,7 @@ class KubernetesHelper:
 		for i in range(0, len(api_family)):
 			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
 			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
-			if status in [200, 204, 42503]:
+			if status in (200, 204, 42503):
 				break
 
 		return message, status
@@ -3134,7 +3134,7 @@ class KubernetesHelper:
 					vlist = d["items"]
 				break
 
-			if status in [204, 400, 403, 503]:
+			if status in (204, 400, 403, 503):
 				# We didn't get any data, but we might not want to fail
 				continue
 

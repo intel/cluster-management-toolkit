@@ -951,13 +951,13 @@ def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True
 
 	event = tmp[1]
 
-	if event in ["AddPod", "DeletePod", "AddNamespace", "DeleteNamespace"] or (event in ["UpdatePod", "UpdateNamespace"] and not "} {" in tmp[2]):
+	if event in ("AddPod", "DeletePod", "AddNamespace", "DeleteNamespace") or (event in ("UpdatePod", "UpdateNamespace") and not "} {" in tmp[2]):
 		msg = tmp[2]
 		_message, _severity, _facility, remnants = split_json_style_raw(message = msg, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_msg = True)
 		message = f"{tmp[0]} {event}"
-		if event in ["UpdatePod", "UpdateNamespace"]:
+		if event in ("UpdatePod", "UpdateNamespace"):
 			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [No changes]", ("logview", "unchanged"))]
-	elif event in ["UpdatePod", "UpdateNamespace"]:
+	elif event in ("UpdatePod", "UpdateNamespace"):
 		tmp2 = re.match(r"^({.*})\s*({.*})", tmp[2])
 		if tmp2 is not None:
 			old = json.loads(tmp2[1])
@@ -1161,7 +1161,7 @@ def expand_event_objectmeta(message, severity, remnants = None, fold_msg = True)
 				escaped = True
 			else:
 				escaped = False
-		elif raw_message[i] in ["{", ",", "}"]:
+		elif raw_message[i] in ("{", ",", "}"):
 			if raw_message[i] != "}":
 				tmp += raw_message[i]
 			else:
@@ -1334,7 +1334,7 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 				# Should we highlight this too?
 				#elif entry == "cluster-version":
 				#	tmpseverity = loglevel.NOTICE
-				elif entry in ["version", "git-commit"]:
+				elif entry in ("version", "git-commit"):
 					tmpseverity = loglevel.NOTICE
 				elif entry == "Workflow":
 					if message.startswith("Syncing Workflow") and value in message:
@@ -1351,7 +1351,7 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 	return message, remnants
 
 def format_key_value(key, value, severity, force_severity = False):
-	if key in ["error", "err"]:
+	if key in ("error", "err"):
 		tmp = [(f"{key}", ("types", "key_error")), ("separators", "keyvalue_log"), (f"{value}", ("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 	elif force_severity == True:
 		tmp = [(f"{key}", ("types", "key")), ("separators", "keyvalue_log"), (f"{value}", ("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
@@ -2248,16 +2248,16 @@ def init_parser_list():
 				for rule in parser_rules:
 					if type(rule) == dict:
 						rule_name = rule.get("name")
-						if rule_name in ["colon_severity", "directory", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"]:
+						if rule_name in ("colon_severity", "directory", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"):
 							rules.append(rule_name)
-						elif rule_name in ["http", "json", "json_with_leading_message", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"]:
+						elif rule_name in ("http", "json", "json_with_leading_message", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"):
 							rules.append((rule_name, rule.get("options", {})))
 						elif rule_name == "substitute_bullets":
 							prefix = rule.get("prefix", "* ")
 							rules.append((rule_name, prefix))
 						elif rule_name == "override_severity":
 							rules.append((rule_name, deep_get(rule, "overrides", [])))
-						elif rule_name in ["bracketed_severity", "bracketed_timestamp_severity_facility"]:
+						elif rule_name in ("bracketed_severity", "bracketed_timestamp_severity_facility"):
 							_loglevel = rule.get("default_loglevel", "info")
 							try:
 								default_loglevel = name_to_loglevel(_loglevel)

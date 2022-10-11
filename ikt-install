@@ -228,7 +228,7 @@ def install(options, args):
 			sys.exit(errno.EINVAL)
 
 		retval = iktinput([("\nInstall ", "default"), ("iKT", "programname"), ("? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" User stopped installation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 

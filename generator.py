@@ -255,10 +255,10 @@ def generator_age_raw(value, selected):
 	else:
 		string = iktlib.seconds_to_age(value, negative_is_skew = True)
 
-	if string in ["<none>", "<unset>", "<unknown>"]:
+	if string in ("<none>", "<unset>", "<unknown>"):
 		formatting = ("types", "none", selected)
 		array = [(string, formatting, selected)]
-	elif string in ["<clock skew detected>"]:
+	elif string in ("<clock skew detected>"):
 		formatting = ("main", "status_not_ok", selected)
 		array = [(string, formatting, selected)]
 	else:
@@ -280,7 +280,7 @@ def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting)
 	if items is None:
 		items = []
 
-	if isinstance(items, str) and items in ["<unset>", "<none>"]:
+	if isinstance(items, str) and items in ("<unset>", "<none>"):
 		return format_list([items], fieldlen, pad, ralign, selected)
 
 	if isinstance(items, (str, tuple)):
@@ -341,13 +341,13 @@ def generator_basic(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	if string == "None":
 		string = "<none>"
 
-	if string in ["<none>", "<unknown>"]:
+	if string in ("<none>", "<unknown>"):
 		formatting = ("types", "none", selected)
-	elif string in ["<default>"]:
+	elif string in ("<default>"):
 		formatting = ("types", "default", selected)
-	elif string in ["<undefined>"]:
+	elif string in ("<undefined>"):
 		formatting = ("types", "undefined", selected)
-	elif string in ["<unset>"]:
+	elif string in ("<unset>"):
 		formatting = ("types", "unset", selected)
 	else:
 		context, attr_ref = field_colors[0]
@@ -535,7 +535,7 @@ def generator_numerical(obj, field, fieldlen, pad, ralign, selected, **formattin
 def generator_numerical_with_units(obj, field, fieldlen, pad, ralign, selected, **formatting):
 	value = getattr(obj, field)
 
-	if value in ["<none>", "<unset>", "<unknown>"]:
+	if value in ("<none>", "<unset>", "<unknown>"):
 		formatting = ("types", "none", selected)
 		array = [(value, formatting, selected)]
 		return align_and_pad(array, pad, fieldlen, len(value), ralign, selected)

@@ -123,9 +123,9 @@ def deep_get_list(dictionary, paths, default = None, fallback_on_empty = False):
 	for path in paths:
 		result = deep_get_recursive(dictionary, path.split("#"))
 
-		if result is not None and not (type(result) in [list, str, dict] and len(result) == 0 and fallback_on_empty == True):
+		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True):
 			break
-	if result is None or type(result) in [list, str, dict] and len(result) == 0 and fallback_on_empty == True:
+	if result is None or type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True:
 		result = default
 	return result
 
@@ -136,9 +136,9 @@ def deep_get_with_fallback(obj, paths, default = None, fallback_on_empty = False
 	result = None
 	for path in paths:
 		result = deep_get(obj, path)
-		if result is not None and not (type(result) in [list, str, dict] and len(result) == 0 and fallback_on_empty == True):
+		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True):
 			break
-	if result is None or type(result) in [list, str, dict] and len(result) == 0 and fallback_on_empty == True:
+	if result is None or type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True:
 		result = default
 	return result
 
@@ -308,7 +308,7 @@ def reformat_timestamp(timestamp):
 
 # Will take a timestamp and convert it to datetime
 def timestamp_to_datetime(timestamp, default = none_timestamp()):
-	if timestamp is None or isinstance(timestamp, int) and timestamp == 0 or isinstance(timestamp, str) and timestamp in ["", "None"]:
+	if timestamp is None or isinstance(timestamp, int) and timestamp == 0 or isinstance(timestamp, str) and timestamp in ("", "None"):
 		return default
 
 	if timestamp == -1:
@@ -377,7 +377,7 @@ def make_set_expression_list(expression_list):
 
 			tmp = deep_get(expression, "values", [])
 			values = ",".join(tmp)
-			if len(values) > 0 and operator not in ["Gt", "Lt"]:
+			if len(values) > 0 and operator not in ("Gt", "Lt"):
 				values = f"[{values}]"
 
 			expressions.append((key, operator, values))

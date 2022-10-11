@@ -120,7 +120,7 @@ def format_yaml_line(line, override_formatting = None):
 			value = tmp[4]
 			if isinstance(override_formatting, dict):
 				_key_format = deep_get(override_formatting, f"{key.strip()}#key", key_format)
-				if value.strip() in ["{", "["]:
+				if value.strip() in ("{", "["):
 					_value_format = value_format
 				else:
 					_value_format = deep_get(override_formatting, f"{key.strip()}#value", value_format)
@@ -191,7 +191,7 @@ def format_yaml(objects, override_formatting = None, **kwargs):
 			# This allows us to use the yaml formatter for json too
 			if first == True:
 				first = False
-				if line in ["|", "|-"]:
+				if line in ("|", "|-"):
 					continue
 			if len(line) == 0:
 				continue
@@ -868,7 +868,7 @@ def map_dataformat(dataformat):
 			(function reference): The formatter to use
 	"""
 
-	if dataformat in ["YAML", "JSON"] or dataformat.endswith((".yml", ".yaml", ".json")):
+	if dataformat in ("YAML", "JSON") or dataformat.endswith((".yml", ".yaml", ".json")):
 		formatter = format_yaml
 	elif dataformat == "TOML" or dataformat.endswith((".toml")):
 		formatter = format_toml

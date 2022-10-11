@@ -737,7 +737,7 @@ def ping(options, args):
 			status_group = "critical"
 		elif status == "MISSING INTERPRETER?":
 			status_group = "warning"
-		elif status in ["UNKNOWN", "UNKNOWN ERROR"]:
+		elif status in ("UNKNOWN", "UNKNOWN ERROR"):
 			status_group = "unknown"
 
 		hoststatuses.append((host, status, status_group))

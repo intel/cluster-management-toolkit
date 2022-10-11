@@ -117,7 +117,7 @@ def scan_and_add_ssh_keys(hosts):
 		try:
 			transport = paramiko.Transport(host)
 		except socket.gaierror as e:
-			if str(e) in ["[Errno -3] Temporary failure in name resolution", "[Errno -2] Name or service not known"]:
+			if str(e) in ("[Errno -3] Temporary failure in name resolution", "[Errno -2] Name or service not known"):
 				continue
 			raise socket.gaierror(f"{str(e)}\nhost: {host}")
 		try:
@@ -150,35 +150,35 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 	if checksum_type is None:
 		return True
 
-	if checksum_type in ["md5"]:
+	if checksum_type in ("md5"):
 		m = hashlib.md5() # nosec
 		iktprint([("Warning:", "warning"), (" use of MD5 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
-	elif checksum_type in ["sha", "sha1"]:
+	elif checksum_type in ("sha", "sha1"):
 		m = hashlib.sha1() # nosec
 		iktprint([("Warning:", "warning"), (" use of SHA1 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
-	elif checksum_type in ["sha224"]:
+	elif checksum_type in ("sha224"):
 		m = hashlib.sha224()
-	elif checksum_type in ["sha256"]:
+	elif checksum_type in ("sha256"):
 		m = hashlib.sha256()
-	elif checksum_type in ["sha384"]:
+	elif checksum_type in ("sha384"):
 		m = hashlib.sha384()
-	elif checksum_type in ["sha512"]:
+	elif checksum_type in ("sha512"):
 		m = hashlib.sha512()
-	elif checksum_type in ["blake2b"]:
+	elif checksum_type in ("blake2b"):
 		m = hashlib.blake2b()
-	elif checksum_type in ["blake2s"]:
+	elif checksum_type in ("blake2s"):
 		m = hashlib.blake2s()
-	elif checksum_type in ["sha3_224"]:
+	elif checksum_type in ("sha3_224"):
 		m = hashlib.sha3_224()
-	elif checksum_type in ["sha3_256"]:
+	elif checksum_type in ("sha3_256"):
 		m = hashlib.sha3_256()
-	elif checksum_type in ["sha3_384"]:
+	elif checksum_type in ("sha3_384"):
 		m = hashlib.sha3_384()
-	elif checksum_type in ["sha3_512"]:
+	elif checksum_type in ("sha3_512"):
 		m = hashlib.sha3_512()
-	elif checksum_type in ["shake_128"]:
+	elif checksum_type in ("shake_128"):
 		m = hashlib.shake_128()
-	elif checksum_type in ["shake_256"]:
+	elif checksum_type in ("shake_256"):
 		m = hashlib.shake_256()
 	else:
 		return False

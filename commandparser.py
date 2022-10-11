@@ -6,7 +6,7 @@ This module parsers command line options and generate helptexts
 
 import errno
 import sys
-import typing
+import typing # pylint: disable=unused-import
 
 import about
 from iktlib import deep_get
@@ -44,8 +44,6 @@ def __version(options, args) -> int:
 	return 0
 
 def __usage(options, args) -> int:
-	assert commandline is not None
-
 	"""
 	Display usage information
 
@@ -60,9 +58,11 @@ def __usage(options, args) -> int:
 	del options
 	del args
 
-	has_commands = False
-	has_options = False
-	has_args = False
+	assert commandline is not None
+
+	has_commands: bool = False
+	has_options: bool = False
+	has_args: bool = False
 
 	maxlen = 0
 	commands = []
@@ -70,7 +70,7 @@ def __usage(options, args) -> int:
 	globaloptioncount = 0
 
 	for key, value in commandline.items():
-		if key in ["__default", "extended_description"] or key.startswith("spacer"):
+		if key in ("__default", "extended_description") or key.startswith("spacer"):
 			continue
 
 		if key.startswith("__"):
@@ -108,7 +108,7 @@ def __usage(options, args) -> int:
 		print("Global Options:")
 
 	for key, value in commandline.items():
-		if key in ["__default", "extended_description"]:
+		if key in ("__default", "extended_description"):
 			continue
 
 		if key.startswith("spacer"):
@@ -227,6 +227,7 @@ COMMANDLINEDEFAULTS = {
 	},
 }
 
+# pylint: disable-next=line-too-long
 def parse_commandline(__programname: str, __programversion: str, __programdescription: str, __programauthors: str, argv, __commandline, default_command = None, theme = None):
 	"""
 	Parse the command line

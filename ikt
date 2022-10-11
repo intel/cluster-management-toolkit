@@ -335,7 +335,7 @@ def cordon_nodes(options, args):
 	for node in nodes:
 		iktprint([(f"{node}:", "hostname")])
 		message, status = kh.cordon_node(node)
-		if status in [200, 204]:
+		if status in (200, 204):
 			iktprint([("  Cordoned", "success")])
 			print(message)
 		elif status == 42503:
@@ -364,7 +364,7 @@ def drain_nodes(options, args):
 	_args = ["/usr/bin/kubectl", "drain"]
 
 	for opt, _optarg in options:
-		if opt in ["--delete-emptydir-data", "--delete-local-data"]:
+		if opt in ("--delete-emptydir-data", "--delete-local-data"):
 			if kubectl_major_version >= 1 and kubectl_minor_version >= 20:
 				_args.append("--delete-emptydir-data")
 			else:
@@ -457,7 +457,7 @@ def uncordon_nodes(options, args):
 	for node in nodes:
 		iktprint([(f"{node}:", "hostname")])
 		message, status = kh.uncordon_node(node)
-		if status in [200, 204]:
+		if status in (200, 204):
 			iktprint([("  Uncordoned", "success")])
 			print(message)
 		elif status == 42503:
@@ -499,7 +499,7 @@ def taint_nodes(options, args):
 		taint_key = taint
 		taint_value = None
 
-	if taint_new_effect not in ["NoSchedule", "PreferNoSchedule", "NoExecute"]:
+	if taint_new_effect not in ("NoSchedule", "PreferNoSchedule", "NoExecute"):
 		iktprint([("Error: ", "error"), ("invalid effect; valid effects are: ", "default"), ("NoSchedule", "argument"), (", ", "default"), ("PreferNoSchedule", "argument"), (", and ", "default"), ("NoExecute", "argument"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
@@ -579,7 +579,7 @@ def untaint_nodes(options, args):
 		taint_key = taint
 		taint_value = None
 
-	if taint_old_effect is not None and taint_old_effect not in ["NoSchedule", "PreferNoSchedule", "NoExecute"]:
+	if taint_old_effect is not None and taint_old_effect not in ("NoSchedule", "PreferNoSchedule", "NoExecute"):
 		iktprint([("Error: ", "error"), ("invalid effect; valid effects are: ", "default"), ("NoSchedule", "argument"), (", ", "default"), ("PreferNoSchedule", "argument"), (", and ", "default"), ("NoExecute", "argument"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
@@ -706,7 +706,7 @@ def prepare_hosts(options, args):
 
 	if len(not_in_inventory) > 0:
 		retval = iktinput([("\nWarning: ", "warning")] + join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) + [(" are not defined in the inventory; do you want to add them now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting: ", "error"), ("Nodes not added to the inventory.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 		else:
@@ -717,7 +717,7 @@ def prepare_hosts(options, args):
 	confirm = True
 	if confirm == True:
 		retval = iktinput([("\nStart host preparation? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting: ", "error"), ("User stopped host preparation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
@@ -775,7 +775,7 @@ def add_nodes(options, args):
 		elif opt == "--forks":
 			ansible_configuration["forks"] = optarg
 		elif opt == "--cri":
-			if optarg in ["dockershim", "containerd", "manual"]:
+			if optarg in ("dockershim", "containerd", "manual"):
 				cri = optarg
 			else:
 				iktprint([("Error: ", "error"), ("Unknown CRI “", "default"), (optarg, "argument"), ("“ specified; aborting.", "default")], stderr = True)
@@ -849,7 +849,7 @@ def add_nodes(options, args):
 	confirm = True
 	if confirm == True:
 		retval = iktinput([("\nStart node setup? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting: ", "error"), ("User stopped node setup.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
@@ -863,7 +863,7 @@ def add_nodes(options, args):
 	join_token = kh.get_join_token()
 	if len(join_token) == 0:
 		retval = iktinput([("Error: ", "error"), ("No join token found; create a one now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting: ", "error"), ("No join token available.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
@@ -884,7 +884,7 @@ def add_nodes(options, args):
 		if len(ca_cert_path) == 0:
 			ca_cert_path = "/etc/kubernetes/pki/ca.crt"
 		retval = iktinput([("Warning: ", "warning"), ("Could not find ", "default"), ("ca.crt", "path"), (" or a certificate-controller-token secret; try to use ", "default"), (ca_cert_path, "path"), ("? No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
-		if retval.lower() not in ["y", "yes"]:
+		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting: ", "error"), ("No CA certificate available.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 		else:

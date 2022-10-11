@@ -2008,7 +2008,7 @@ def prepare_installation(options, args):
 	confirm = True
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
-	if "--list-tasks" in [tmp[0] for tmp in options]:
+	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(prepare_tasks)
 		sys.exit(0)
 	elif len(args) == 0:
@@ -2041,7 +2041,7 @@ def prepare_installation(options, args):
 
 	__controlplanes = get_control_planes(fail_on_empty = False)
 	controlplanes = [controlplane[0] for controlplane in __controlplanes]
-	if len(controlplanes) == 0 and "--control-plane" not in [tmp[0] for tmp in options]:
+	if len(controlplanes) == 0 and "--control-plane" not in (tmp[0] for tmp in options):
 		retval = iktinput([("\nWarning: ", "warning"), ("No control plane defined in the inventory; do you want to add ", "default"), (f"{hostname}", "hostname"), (" as control plane? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" No available control plane in inventory.", "default")], stderr = True)
@@ -2397,7 +2397,7 @@ def setup_control_plane(options, args):
 	confirm = True
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
-	if "--list-tasks" in [tmp[0] for tmp in options]:
+	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(setup_control_plane_tasks)
 		sys.exit(0)
 
@@ -2561,7 +2561,7 @@ def teardown_control_plane(options, args):
 	confirm = True
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
-	if "--list-tasks" in [tmp[0] for tmp in options]:
+	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(teardown_control_plane_tasks)
 		sys.exit(0)
 
@@ -2637,7 +2637,7 @@ def purge_control_plane(options, args):
 	confirm = True
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
-	if "--list-tasks" in [tmp[0] for tmp in options]:
+	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(purge_control_plane_tasks)
 		sys.exit(0)
 
@@ -2728,10 +2728,10 @@ def upgrade_control_plane(options, args):
 	requested_version = None
 
 	# We don't need a cluster name for --list-tasks or --override, so check this first of all
-	if "--list-tasks" in [tmp[0] for tmp in options]:
+	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(upgrade_control_plane_tasks)
 		sys.exit(0)
-	elif "--override" in [tmp[0] for tmp in options]:
+	elif "--override" in (tmp[0] for tmp in options):
 		if os.path.isfile(IKT_INSTALLATION_INFO_FILE) == True:
 			iktprint([("Warning: ", "warning"), ("Overriding ", "default"), (f"{IKT_INSTALLATION_INFO_FILE}", "path"), ("; this may cause issues.", "default")], stderr = True)
 		else:

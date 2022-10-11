@@ -907,7 +907,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 						_values.append("")
 				else:
 					_values.append("")
-			elif _vtype in ["skip"]:
+			elif _vtype in ("skip"):
 				_values.append("")
 			else:
 				raise Exception(f"Field {field_name}: type[{i}] ({vtype}) is unknown")
@@ -1196,7 +1196,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 					if deep_get(_path, "sorted", False) == True and tmp is not None:
 						tmp = natsorted(tmp)
 
-					if tmp is not None and tmp in ["None", ["None"]] and deep_get(_path, "none_str_as_none", False) == True:
+					if tmp is not None and tmp in ("None", ["None"]) and deep_get(_path, "none_str_as_none", False) == True:
 						tmp = default
 
 					# Just return the list, unless a subset has been requested
@@ -1397,10 +1397,10 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 					if tmp is None:
 						tmp = []
 
-					if type(tmp) in [bool, int, str]:
+					if type(tmp) in (bool, int, str):
 						tmp = [tmp]
 
-					if type(tmp) in [list]:
+					if type(tmp) in (list):
 						for _tmp in tmp:
 							if _tmp in substitutions:
 								value.append(substitutions.get(_tmp))
@@ -1503,7 +1503,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						else:
 							__values.append(mpaths[i])
 					_values.append((tuple(__values), "raw"))
-				elif ptype in ["items", "appenditems"]:
+				elif ptype in ("items", "appenditems"):
 					if len(subpath) > 0:
 						if len(subpaths) > 0:
 							raise ValueError(f"Field {name}: when using action: 'items' exactly one of subpath and subpaths must be specified")
@@ -1537,7 +1537,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 							else:
 								_default = default
 
-							if (vtype in ["int", "float"] or action in ["sum"]) and type(default) not in [int, float]:
+							if (vtype in ("int", "float") or action in ("sum")) and type(default) not in (int, float):
 								_default = 0
 
 							if type(subpaths[i]) == dict:
@@ -1592,7 +1592,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 					if len(value) == 0:
 						value = default
 					if value is not None:
-						if action in ["sum", "latest", "earliest"]:
+						if action in ("sum", "latest", "earliest"):
 							_values.append((value, vtype))
 						else:
 							for tmp in value:
@@ -1632,7 +1632,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 						else:
 							_default = default
 
-						if vtype in ["int", "float"] and type(default) not in [int, float]:
+						if vtype in ("int", "float") and type(default) not in (int, float):
 							_default = 0
 
 						# This is a literal string, not a path
@@ -2288,7 +2288,7 @@ def listgetter_policy_rules(obj, **kwargs):
 			verbs_delete = "delete" in verbs
 			verbs_misc = []
 			for verb in verbs:
-				if verb not in ["*", "get", "list", "watch", "create", "update", "patch", "delete"]:
+				if verb not in ("*", "get", "list", "watch", "create", "update", "patch", "delete"):
 					verbs_misc.append(verb)
 
 		vlist.append({
@@ -2462,7 +2462,7 @@ def format_controller(controller, show_kind):
 			controller = (f"{controller[0][0]}.{controller[0][1]}", f"{controller[1]}")
 		elif show_kind == "mixed":
 			# Strip the API group for standard controllers, but show for custom controllers
-			if controller[0] in [("StatefulSet", "apps"), ("ReplicaSet", "apps"), ("DaemonSet", "apps"), ("Job", "batch"), ("CronJob", "batch"), ("Node", "")]:
+			if controller[0] in (("StatefulSet", "apps"), ("ReplicaSet", "apps"), ("DaemonSet", "apps"), ("Job", "batch"), ("CronJob", "batch"), ("Node", "")):
 				controller = (f"{controller[0][0]}", f"{controller[1]}")
 			else:
 				controller = (f"{controller[0][0]}.{controller[0][1]}", f"{controller[1]}")
@@ -2843,10 +2843,10 @@ def get_pv_from_pvc_name(pvc_name):
 def get_pv_status(pv):
 	phase = deep_get(pv, "status#phase")
 
-	if phase in ["Bound", "Available"]:
+	if phase in ("Bound", "Available"):
 		reason = phase
 		status_group = stgroup.OK
-	elif phase in ["Released", "Pending"]:
+	elif phase in ("Released", "Pending"):
 		reason = phase
 		status_group = stgroup.PENDING
 	else:
@@ -3497,7 +3497,7 @@ def get_inventory_list(**kwargs):
 	# Do we want to ping the hosts?
 	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", "Lazy")
 
-	if ping_hosts == "Always" or (ping_hosts == "Lazy" and latest_info in ["Inventory", "*Inventory"]):
+	if ping_hosts == "Always" or (ping_hosts == "Lazy" and latest_info in ("Inventory", "*Inventory")):
 		# ping all nodes and update their status accordingly
 		output = ansible_ping(None)
 
@@ -3564,7 +3564,7 @@ def get_inventory_list(**kwargs):
 				roles = kh.get_node_roles(node)
 
 				for role in roles:
-					if len(role) > 0 and role not in ["control-plane", "node"]:
+					if len(role) > 0 and role not in ("control-plane", "node"):
 						kubernetes_roles.append(role)
 		ansible_groups = ansible_get_groups_by_host(inventory_dict, host)
 		_status = deep_get(inventory_dict, f"all#hosts#{name}#status", "UNKNOWN")
@@ -4195,12 +4195,12 @@ def get_formatting(field, formatting, default):
 
 	for item in items:
 		context = None
-		if formatting in ["item_separator", "field_separators", "ellipsis", "field_prefixes", "field_suffixes"]:
+		if formatting in ("item_separator", "field_separators", "ellipsis", "field_prefixes", "field_suffixes"):
 			context = "separators"
 		elif formatting == "field_colors":
 			context = "types"
 		# field_prefixes/suffixes can be either a list of a list of lists
-		if type(item) == tuple or formatting not in ["field_prefixes", "field_suffixes"]:
+		if type(item) == tuple or formatting not in ("field_prefixes", "field_suffixes"):
 			context = deep_get(item, "context", context)
 			ftype = deep_get(item, "type")
 			if ftype is None or context is None:
@@ -4690,9 +4690,9 @@ def genericlistloop(stdscr, view):
 							file_list = []
 							for item in tmp_file_list:
 								realpath, filename, ptype = item
-								if ptype in ["File", "Configuration File", "Kustomization"]:
+								if ptype in ("File", "Configuration File", "Kustomization"):
 									formatting = ("windowwidget", "default")
-								elif ptype in ["<dir>"]:
+								elif ptype in ("<dir>"):
 									formatting = ("windowwidget", "highlight")
 								else:
 									raise Exception(f"Unknown ptype {ptype}")
@@ -4712,10 +4712,10 @@ def genericlistloop(stdscr, view):
 							for item in tmp_file_list:
 								realpath, filename, ptype = item
 								if filename == selected_entry:
-									if ptype in ["<dir>"]:
+									if ptype in ("<dir>"):
 										basedir = realpath
 										uip.refresh_all()
-									elif ptype in ["File", "Configuration File", "Kustomization"]:
+									elif ptype in ("File", "Configuration File", "Kustomization"):
 										selected_file = realpath
 										selected_ptype = ptype
 										basedir = None
@@ -5111,9 +5111,9 @@ def genericlistloop(stdscr, view):
 							file_list = []
 							for item in tmp_file_list:
 								realpath, filename, ptype = item
-								if ptype in ["File", "Configuration File", "Kustomization"]:
+								if ptype in ("File", "Configuration File", "Kustomization"):
 									formatting = ("windowwidget", "default")
-								elif ptype in ["<dir>"]:
+								elif ptype in ("<dir>"):
 									formatting = ("windowwidget", "highlight")
 								else:
 									raise Exception(f"Unknown ptype {ptype}")
@@ -5133,10 +5133,10 @@ def genericlistloop(stdscr, view):
 							for item in tmp_file_list:
 								realpath, filename, ptype = item
 								if filename == selected_entry:
-									if ptype in ["<dir>"]:
+									if ptype in ("<dir>"):
 										basedir = realpath
 										uip.refresh_all()
-									elif ptype in ["File", "Configuration File", "Kustomization"]:
+									elif ptype in ("File", "Configuration File", "Kustomization"):
 										selected_file = realpath
 										selected_ptype = ptype
 										basedir = None

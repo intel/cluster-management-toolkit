@@ -694,7 +694,7 @@ def get_svc_port_target_endpoints(kh, obj, **kwargs):
 		name = deep_get(port, "name", "")
 		svcport = deep_get(port, "port", "")
 		protocol = deep_get(port, "protocol", "")
-		if stype in ["NodePort", "LoadBalancer"]:
+		if stype in ("NodePort", "LoadBalancer"):
 			node_port = deep_get(port, "nodePort", "Auto Allocate")
 		else:
 			node_port = "N/A"
