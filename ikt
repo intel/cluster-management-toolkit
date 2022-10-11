@@ -33,7 +33,7 @@ from iktpaths import IKT_CONFIG_FILE, DEFAULT_THEME_FILE
 
 from commandparser import parse_commandline
 
-from ansible_helper import ansible_configuration, ansible_run_playbook_on_host_list, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_print_play_results
+from ansible_helper import ansible_configuration, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_print_play_results
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import iktlib # pylint: disable=unused-import
@@ -905,7 +905,7 @@ def add_nodes(options, args):
 	control_plane_ip, control_plane_port = kh.get_control_plane_address()
 	# Now that we have the IP address of the API-server we can use that to get the package
 	# version for kubeadm
-	retval, ansible_results = ansible_run_playbook_on_host_list(f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml", hosts = [control_plane_ip])
+	retval, ansible_results = ansible_run_playbook_on_selection(f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml", selection = [control_plane_ip])
 	if len(ansible_results) == 0:
 		iktprint([("Error: ", "error"), ("Failed to get package versions from control-plane at {control_plane_ip} (retval: {retval}); aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)

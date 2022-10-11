@@ -190,6 +190,16 @@ def ansible_get_inventory_pretty(groups = None, highlight: bool = False, include
 	return dump
 
 def ansible_get_hosts_by_group(inventory: FilePath, group: str):
+	"""
+	Get the list of hosts belonging to a group
+
+		Parameters:
+			inventory (FilePath): The inventory to use
+			group (str): The group to return hosts for
+		Returns:
+			hosts (list[str]): A list of hosts
+	"""
+
 	hosts = []
 
 	if not os.path.exists(inventory):
@@ -205,6 +215,15 @@ def ansible_get_hosts_by_group(inventory: FilePath, group: str):
 	return hosts
 
 def ansible_get_groups(inventory: FilePath):
+	"""
+	Get the list of groups in the inventory
+
+		Parameters:
+			inventory (FilePath): The inventory to use
+		Returns:
+			groups (list[str]): A list of groups
+	"""
+
 	groups = []
 
 	if not os.path.exists(inventory):
@@ -238,6 +257,14 @@ def ansible_get_groups_by_host(inventory_dict, host: str):
 	return groups
 
 def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False):
+	"""
+	Create a new inventory at the path given if no inventory exists
+
+		Parameters:
+			inventory (FilePath): A path where to create a new inventory (if non-existing)
+			overwrite (bool): True: Overwrite the existing inventory
+	"""
+
 	# Don't create anything if the inventory exists;
 	# unless overwrite is set
 	if os.path.exists(inventory) and overwrite == False:
@@ -274,6 +301,16 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False):
 		f.write(yaml_str)
 
 def ansible_create_groups(inventory: FilePath, groups):
+	"""
+	Create new groups
+
+		Parameters:
+			inventory (FilePath): The path to the inventory
+			groups (list[str]): The groups to create
+		Returns:
+			(bool): True on success, False on failure
+	"""
+
 	changed: bool = False
 
 	if groups is None or len(groups) == 0:
@@ -303,64 +340,18 @@ def ansible_create_groups(inventory: FilePath, groups):
 
 	return True
 
-# pylint: disable-next=too-many-return-statements
-def ansible_delete_groups(inventory: FilePath, group: str):
-	if group == "":
-		return True
-
-	# Don't try to remove the "all" group; it's always needed
-	if group == "all":
-		return False
-
-	if os.path.isfile(inventory) == False:
-		__ansible_create_inventory(inventory, overwrite = False)
-
-	with open(inventory, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
-
-	if d.get(group) is None:
-		return True
-
-	# A group is counted as empty if it has hosts and/or vars as members,
-	# but nothing else
-
-	# If the group has more than 2 members,
-	# don't delete it, since it contains something unknown
-	if len(d[group]) > 2:
-		return False
-
-	if len(d[group]) == 2:
-		# The only acceptable groups (when deleting) are hosts and vars
-		if "hosts" in d[group] == False or "vars" in d[group] == False:
-			return False
-	elif len(d[group]) == 1:
-		# The only acceptable groups (when deleting) are hosts and vars
-		if "hosts" in d[group] == False and "vars" in d[group] == False:
-			return False
-
-	if "hosts" in d[group] and d[group].get("hosts") is not None:
-		if len(d[group]["hosts"]) > 0:
-			return False
-
-	if "vars" in d[group] and d[group].get("vars") is not None:
-		if len(d[group]["vars"]) > 0:
-			return False
-
-	# At this point we know that the group exists and has at most 2 empty members,
-	# those being hosts and vars; thus it's acceptable to delete it
-
-	d[group].pop("hosts", None)
-	d[group].pop("vars", None)
-	d.pop(group, None)
-
-	with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
-		yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
-		f.write(yaml_str)
-
-	return True
-
-# Set one or several values for a group
 def ansible_set_vars(inventory: FilePath, group: str, values):
+	"""
+	Set one or several values for a group
+
+		Parameters:
+			inventory (FilePath): The path to the inventory
+			group (str): The group to set variables for
+			values (dict): The values to set
+		Returns:
+			(bool): True on success, False on failure
+	"""
+
 	changed = False
 
 	if group is None or group == "":
@@ -397,8 +388,18 @@ def ansible_set_vars(inventory: FilePath, group: str, values):
 
 	return True
 
-# Set one or several vars for the specified groups
 def ansible_set_groupvars(inventory: FilePath, groups, groupvars):
+	"""
+	Set one or several vars for the specified groups
+
+		Parameters:
+			inventory (FilePath): The path to the inventory
+			groups (list[str]): The groups to set variables for
+			groupvars (dict): The values to set
+		Returns:
+			(bool): True on success, False on failure
+	"""
+
 	changed = False
 
 	if groups is None or len(groups) == 0:
@@ -438,6 +439,17 @@ def ansible_set_groupvars(inventory: FilePath, groups, groupvars):
 
 # Set one or several vars for hosts in the group all
 def ansible_set_hostvars(inventory: FilePath, hosts, hostvars):
+	"""
+	Set one or several vars for the specified hosts
+
+		Parameters:
+			inventory (FilePath): The path to the inventory
+			groups (list[str]): The hosts to set variables for
+			hostvars (dict): The values to set
+		Returns:
+			(bool): True on success, False on failure
+	"""
+
 	changed = False
 
 	if hosts is None or len(hosts) == 0:
@@ -474,6 +486,17 @@ def ansible_set_hostvars(inventory: FilePath, hosts, hostvars):
 
 # Unset one or several vars in the specified groups
 def ansible_unset_groupvars(inventory: FilePath, groups, groupvars):
+	"""
+	Unset one or several vars for the specified groups
+
+		Parameters:
+			inventory (FilePath): The path to the inventory
+			groups (list[str]): The groups to unset variables for
+			groupvars (dict): The values to set
+		Returns:
+			(bool): True on success, False on failure
+	"""
+
 	changed = False
 
 	if groups is None or len(groups) == 0:
@@ -518,6 +541,17 @@ def ansible_unset_groupvars(inventory: FilePath, groups, groupvars):
 
 # Unset one or several vars for the specified host in the group all
 def ansible_unset_hostvars(inventory: FilePath, hosts, hostvars):
+	"""
+	Unset one or several vars for the specified hosts
+
+		Parameters:
+			inventory (FilePath): The path to the inventory
+			groups (list[str]): The hosts to unset variables for
+			hostvars (dict): The values to set
+		Returns:
+			(bool): True on success, False on failure
+	"""
+
 	changed = False
 
 	if hosts is None or len(hosts) == 0:
@@ -555,9 +589,19 @@ def ansible_unset_hostvars(inventory: FilePath, hosts, hostvars):
 
 	return True
 
-# Add hosts to the ansible inventory
-# If the inventory doesn't exist, create it
 def ansible_add_hosts(inventory: FilePath, hosts, group: str = "", skip_all: bool = False):
+	"""
+	Add hosts to the ansible inventory; if the inventory doesn't exist, create it
+
+		Parameters:
+			inventory (FilePath): The path to the inventory
+			hosts (list[str]): The hosts to add to the inventory
+			group (str): The group to add the hosts to
+			skip_all (bool): If True we don't create a new inventory if it doesn't exist
+		Returns:
+			(bool): True on success, False on failure
+	"""
+
 	changed = False
 
 	if hosts == []:
@@ -598,7 +642,7 @@ def ansible_add_hosts(inventory: FilePath, hosts, group: str = "", skip_all: boo
 		# nested groups, node vars or anything like that
 		#
 		# We don't want to overwrite groups
-		if group not in ["", "all"]:
+		if group not in ("", "all"):
 			if d.get(group) is None:
 				d[group] = {}
 				changed = True
@@ -620,6 +664,17 @@ def ansible_add_hosts(inventory: FilePath, hosts, group: str = "", skip_all: boo
 
 # Remove hosts from ansible groups
 def ansible_remove_hosts(inventory: FilePath, hosts, group: str = None):
+	"""
+	Remove hosts from the inventory
+
+		Parameters:
+			inventory (FilePath): The inventory to use
+			hosts (list[str]): The hosts to remove
+			group (str): The group to remove the hosts from
+		Returns:
+			(bool): True on success, False on failure
+	"""
+
 	changed = False
 
 	# Treat empty or zero-length hosts as a programming error
@@ -651,9 +706,18 @@ def ansible_remove_hosts(inventory: FilePath, hosts, group: str = None):
 
 	return True
 
-# Remove groups from the ansible inventory
-# force is needed to remove non-empty groups
 def ansible_remove_groups(inventory: FilePath, groups, force: bool = False):
+	"""
+	Remove groups from the inventory
+
+		Parameters:
+			inventory (FilePath): The inventory to use
+			groups (list[str]): The groups to remove
+			force (bool): Force allows for removal of non-empty groups
+		Returns:
+			(bool): True on success, False on failure
+	"""
+
 	changed = False
 
 	# Treat empty or zero-length groups as a programming error
@@ -683,12 +747,17 @@ def ansible_remove_groups(inventory: FilePath, groups, force: bool = False):
 
 	return True
 
-# Returns a list of all available logs
-# (full_name, name, date, path)
 def ansible_get_logs():
+	"""
+	Returns a list of all available logs
+
+		Returns:
+			logs (tuple(full_name, name, date, path)): A list of full name, name, date, and path to logs
+	"""
+
 	logs = []
 
-	timestamp_regex = re.compile(r"^(\d\d\d\d-\d\d-\d\d_\d\d:\d\d:\d\d\.\d+)_(.*)")
+	timestamp_regex = re.compile(r"^(\d{4}-\d\d-\d\d_\d\d:\d\d:\d\d\.\d+)_(.*)")
 
 	for item in os.listdir(ANSIBLE_LOG_DIR):
 		#if os.path.isdir(item) == False:
@@ -704,7 +773,19 @@ def ansible_get_logs():
 			raise Exception(f"Could not parse {item}")
 	return logs
 
-def ansible_extract_failure(retval: int, error_msg_lines, skipped: bool = False, unreachable: bool = False):
+def ansible_extract_failure(retval: int, error_msg_lines, skipped: bool = False, unreachable: bool = False) -> str:
+	"""
+	Given error information from an ansible run, return a suitable error message
+
+		Parameters:
+			retval (int): The retval from the run
+			error_msg_lines (list[str]): A list of error messages
+			skipped (bool): Was the task skipped?
+			unreachable (bool): Was the target unreachable?
+		Returns:
+			status (str): A status string
+	"""
+
 	status = ""
 
 	if unreachable == True:
@@ -734,6 +815,15 @@ def ansible_extract_failure(retval: int, error_msg_lines, skipped: bool = False,
 	return status
 
 def ansible_results_add(event) -> int:
+	"""
+	Add the result of an Ansible play to the ansible results
+
+		Parameters:
+			event (dict): The output from the run
+		Returns:
+			(int): 0 on success, -1 if host is unreachable, retval on other failure
+	"""
+
 	host = deep_get(event, "event_data#host", "")
 	if len(host) == 0:
 		return 0
@@ -820,12 +910,28 @@ def ansible_results_add(event) -> int:
 	return retval
 
 def ansible_delete_log(log: str):
+	"""
+	Delete a log file
+
+		Parameters:
+			log (str): The name of the log to delete
+	"""
+
 	if os.path.exists(f"{ANSIBLE_LOG_DIR}/{log}"):
 		for filename in os.listdir(f"{ANSIBLE_LOG_DIR}/{log}"):
 			os.remove(f"{ANSIBLE_LOG_DIR}/{log}/{filename}")
 		os.rmdir(f"{ANSIBLE_LOG_DIR}/{log}")
 
 def ansible_write_log(start_date, playbook: str, events):
+	"""
+	Save an Ansible log entry to a file
+
+		Parameters:
+			start_date (date): A timestamp in the format YYYY-MM-DD_HH:MM:SS.ssssss
+			playbook (str): The name of the playbook
+			events (list[dict]): The list of Ansible runs
+	"""
+
 	save_logs: bool = deep_get(ansible_configuration, "save_logs", False)
 
 	if save_logs == False:
@@ -850,6 +956,7 @@ def ansible_write_log(start_date, playbook: str, events):
 		f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
 
 	i = 0
+
 	for event in events:
 		host = deep_get(event, "event_data#host", "")
 		if len(host) == 0:
@@ -932,7 +1039,20 @@ def ansible_write_log(start_date, playbook: str, events):
 			f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
 
 # pylint: disable-next=too-many-arguments
-def ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval: int, unreachable: bool = False, skipped: bool = False):
+def ansible_print_task_results(task: str, msg_lines, stdout_lines, stderr_lines, retval: int, unreachable: bool = False, skipped: bool = False):
+	"""
+	Pretty-print the result of an Ansible task run
+
+		Parameters:
+			task (str): The name of the task
+			msg_lines (list[str]): msg from tasks that does not split the output into stdout & stderr
+			stdout_lines (list[str]): output from stdout
+			stderr_lines (list[str]): output from stderr
+			retval (int): The return value from the task
+			unreachable (bool): Was the host unreachable?
+			skipped (bool): Was the task skipped?
+	"""
+
 	if unreachable == True:
 		iktprint([("• ", "separator"), (f"{task}", "error")], stderr = True)
 	elif skipped == True:
@@ -968,6 +1088,14 @@ def ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retv
 		iktprint([("", "default")])
 
 def ansible_print_play_results(retval: int, __ansible_results):
+	"""
+	Pretty-print the result of an Ansible play
+
+		Parameters:
+			retval (int): The return value from the play
+			__ansible_results (opaque): The data from a playbook run
+	"""
+
 	if retval != 0 and len(__ansible_results) == 0:
 		iktprint([("Failed to execute playbook; retval: ", "error"), (f"{retval}", "errorvalue")], stderr = True)
 	else:
@@ -1003,6 +1131,16 @@ def ansible_print_play_results(retval: int, __ansible_results):
 					break
 
 def ansible_run_playbook(playbook: FilePath, override_inventory: bool = False):
+	"""
+	Run a playbook
+
+		Parameters:
+			playbook (FilePath): The playbook to run
+			override_inventory (bool): Should another inventory than the default be used
+		Returns:
+			(retval(bool), ansible_results(dict)): The return value and results from the run
+	"""
+
 	global ansible_results # pylint: disable=global-statement
 
 	forks = deep_get(ansible_configuration, "ansible_forks")
@@ -1034,22 +1172,18 @@ def ansible_run_playbook(playbook: FilePath, override_inventory: bool = False):
 
 	return retval, ansible_results
 
-# Execute a playbook on a list of hosts
-# by creating a temporary inventory
-def ansible_run_playbook_on_host_list(playbook: FilePath, hosts, values = None):
-	# Remove old temporary inventory
-	if os.path.isfile(ANSIBLE_TMP_INVENTORY):
-		os.remove(ANSIBLE_TMP_INVENTORY)
-
-	ansible_add_hosts(ANSIBLE_TMP_INVENTORY, hosts, group = "selection", skip_all = False)
-
-	if values is not None and len(values) > 0:
-		ansible_set_vars(ANSIBLE_TMP_INVENTORY, group = "all", values = values)
-
-	return ansible_run_playbook(playbook, override_inventory = True)
-
-# Execute a playbook using ansible
 def ansible_run_playbook_on_selection(playbook: FilePath, selection, values = None):
+	"""
+	Run a playbook on selected nodes
+
+		Parameters:
+			playbook (FilePath): The playbook to run
+			selection (list[str]): The hosts to run the play on
+			values (dict): Extra values to set for the hosts
+		Returns:
+			The result from ansible_run_playbook()
+	"""
+
 	# Remove old temporary inventory
 	if os.path.isfile(ANSIBLE_TMP_INVENTORY):
 		os.remove(ANSIBLE_TMP_INVENTORY)
