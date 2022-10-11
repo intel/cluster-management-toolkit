@@ -1143,7 +1143,7 @@ def expand_event_objectmeta(message, severity, remnants = None, fold_msg = True)
 			if curlydepth < 0:
 				# Abort parsing; assume that this message is either malformed
 				# or that the parser is flawed
-				return message, remnants
+				return severity, message, remnants
 
 	message = None
 	remnants = []
@@ -2272,9 +2272,9 @@ def init_parser_list():
 				parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser_rules = rules))
 
 	# Fallback entries
-	parsers.append(Parser(parser_name = "basic_8601_raw", show_in_selector = True, match_rules = [("raw", "", "", "container", "")], parser_rules = []))
+	parsers.append(Parser(parser_name = "basic_8601_raw", show_in_selector = True, match_rules = [("raw", "", "", "container", None)], parser_rules = []))
 	# This should always be last
-	parsers.append(Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("raw", "", "", "container", "")], parser_rules = ["ts_8601"]))
+	parsers.append(Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("raw", "", "", "container", None)], parser_rules = ["ts_8601"]))
 
 def get_parser_list():
 	_parsers = set()
@@ -2318,6 +2318,7 @@ def logparser_initialised(parser = None, message = "", fold_msg = True, line = 0
 # with similar ordering (YYYY MM DD HH MM SS, with several choices for separators and whitespace,
 # include none, accepted)
 #	2020-02-16T22:03:08.736292621Z
+# pylint: disable-next=too-many-arguments
 def logparser(pod_name, container_name, image_name, message, fold_msg = True, override_parser = None, container_type = "container", line = 0):
 	# First extract the Kubernetes timestamp
 	message, timestamp = split_iso_timestamp(message, None)
@@ -2327,17 +2328,14 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 
 	if override_parser is not None:
 		# Any other timestamps (as found in the logs) are ignored
-		try:
-			parser = None
-			for parser in parsers:
-				if parser.parser_name == override_parser:
-					options = {
-						"__line": line,
-					}
-					pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser_rules, options = options)
-			return timestamp, pod_name, severity, message, remnants, ("<override>", str(override_parser)), parser
-		except Exception:
-			return timestamp, "", loglevel.ERR, f"Could not parse using {str(override_parser)}:", [(message, loglevel.INFO)], ("<override>", str(override_parser)), None
+		parser = None
+		for parser in parsers:
+			if parser.parser_name == override_parser:
+				options = {
+					"__line": line,
+				}
+				pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser_rules, options = options)
+		return timestamp, pod_name, severity, message, remnants, ("<override>", str(override_parser)), parser
 
 	if image_name.startswith("docker-pullable://"):
 		image_name = image_name[len("docker-pullable://"):]
@@ -2356,7 +2354,7 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 			if image_regex is None:
 				regex_match = True
 			else:
-				tmp = image_regex(_image_name)
+				tmp = image_regex.match(_image_name)
 				regex_match = tmp is not None
 
 			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and _image_name.startswith(image_prefix) and container_type  == _container_type and regex_match == True:
@@ -2381,7 +2379,7 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 	if uparser is None and lparser is None or len(lparser) == 0:
 		lparser = "<unknown format>"
 		uparser = "basic_8601"
-		parser = Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("raw", "", "", "container", "")], parser_rules = ["ts_8601"])
+		parser = Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("raw", "", "", "container", None)], parser_rules = ["ts_8601"])
 		pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser_rules, options = {})
 
 	if len(message) > 16383:
