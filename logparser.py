@@ -15,6 +15,10 @@
 #
 # Return format is timestamp, facility, severity, message
 
+"""
+Log parsers for iku
+"""
+
 # pylint: disable=line-too-long
 
 import ast
@@ -47,6 +51,9 @@ from iktlib import deep_get, iktconfig, deep_get_with_fallback
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
 
 class loglevel:
+	"""
+	Loglevels used by iKT
+	"""
 	EMERG = 0
 	ALERT = 1
 	CRIT = 2
@@ -76,6 +83,9 @@ loglevel_mappings = {
 }
 
 class logparser_configuration:
+	"""
+	Various configuration options used by the logparsers
+	"""
 	# Keep or strip timestamps in structured logs
 	pop_ts: bool = True
 	# Keep or strip severity in structured logs
@@ -103,13 +113,36 @@ class logparser_configuration:
 	# msg="Starting foo" version="(version=.*)" => Starting foo (version=.*)
 	merge_starting_version: bool = True
 
-def json_dumps(obj):
-	indent = 2
-	if json_is_ujson:
-		string = json.dumps(obj, indent = indent, escape_forward_slashes = False)
-	else:
-		string = json.dumps(obj, indent = indent)
-	return string
+if json_is_ujson:
+	def json_dumps(obj) -> str:
+		"""
+		Dump JSON object to text format; ujson version
+
+			Parameters:
+				obj (dict): The JSON object to dump
+			Returns:
+				str: The serialized JSON object
+		"""
+
+		indent = 2
+		return json.dumps(obj, indent = indent, escape_forward_slashes = False)
+else:
+	def json_dumps(obj) -> str:
+		"""
+		Dump JSON object to text format; ujson version
+
+			Parameters:
+				obj (dict): The JSON object to dump
+			Returns:
+				str: The serialized JSON object
+		"""
+
+		"""
+		Dump JSON object to text format; json version
+		"""
+
+		indent = 2
+		return json.dumps(obj, indent = indent)
 
 def get_loglevel_names():
 	# Ugly way of removing duplicate values from dict
@@ -125,7 +158,7 @@ def name_to_loglevel(name):
 	raise ValueError(f"Programming error! Loglevel {name} does not exist!")
 
 def month_to_numerical(month):
-	months = [ "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" ]
+	months = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
 	month = str(month.lower()[0:3]).zfill(2)
 
 	y = 1
@@ -150,7 +183,7 @@ def letter_to_severity(letter, default = None):
 
 	return severities.get(letter, default)
 
-# Used by Kialo; anything else?
+# Used by Kiali; anything else?
 def str_3letter_to_severity(string, default = None):
 	severities = {
 		"ERR": loglevel.ERR,
@@ -465,6 +498,8 @@ def strip_iso_timestamp_with_tz(message):
 # 10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"
 # 10.244.0.1 - - [29/Jan/2022:10:33:50 +0000] "GET /v0/healthz/ HTTP/1.1" 200 3 "http://10.244.0.123:8000/v0/healthz" "kube-probe/1.23"
 def http(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True, options = None):
+	del fold_msg
+
 	reformat_timestamps = deep_get(options, "reformat_timestamps", False)
 
 	ipaddress = ""
@@ -521,11 +556,11 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True
 			separator5 = tmp[12]
 			statuscode = tmp[13]
 			_statuscode = int(statuscode)
-			if _statuscode >= 100 and _statuscode < 300:
+			if 100 <= _statuscode < 300:
 				severity = loglevel.NOTICE
-			if _statuscode >= 300 and _statuscode < 400:
+			elif 300 <= _statuscode < 400:
 				severity = loglevel.WARNING
-			if _statuscode >= 400:
+			else:
 				severity = loglevel.ERR
 			separator6 = tmp[14]
 			message = [
@@ -591,11 +626,11 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True
 			separator5 = tmp[13]
 			statuscode = tmp[14]
 			_statuscode = int(statuscode)
-			if _statuscode >= 100 and _statuscode < 300:
+			if 100 <= _statuscode < 300:
 				severity = loglevel.NOTICE
-			if _statuscode >= 300 and _statuscode < 400:
+			elif 300 <= _statuscode < 400:
 				severity = loglevel.WARNING
-			if _statuscode >= 400:
+			else:
 				severity = loglevel.ERR
 			separator6 = tmp[15]
 			address4 = tmp[16]
@@ -632,11 +667,11 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True
 	if tmp is not None:
 		statuscode = tmp[1]
 		_statuscode = int(statuscode)
-		if _statuscode >= 100 and _statuscode < 300:
+		if 100 <= _statuscode < 300:
 			severity = loglevel.NOTICE
-		if _statuscode >= 300 and _statuscode < 400:
+		elif 300 <= _statuscode < 400:
 			severity = loglevel.WARNING
-		if _statuscode >= 400:
+		else:
 			severity = loglevel.ERR
 		duration = tmp[2]
 		unit = tmp[3]
@@ -787,12 +822,12 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 				if type(_fac) == dict:
 					_facilities = deep_get(_fac, "keys", [])
 					_separators = deep_get(_fac, "separators", [])
-					for i in range(0, len(_facilities)):
+					for i, _fac in enumerate(_facilities):
 						# This is to allow prefixes/suffixes
-						if _facilities[i] != "":
-							if _facilities[i] not in logentry:
+						if _fac != "":
+							if _fac not in logentry:
 								break
-							facility += str(deep_get(logentry, _facilities[i], ""))
+							facility += str(deep_get(logentry, _fac, ""))
 						if i < len(_separators):
 							facility += _separators[i]
 
@@ -905,6 +940,8 @@ def merge_message(message, remnants = None, severity = loglevel.INFO):
 	return message, remnants
 
 def split_json_style_raw(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True, options = None, merge_msg = False):
+	# This warning seems incorrect
+	# pylint: disable-next=global-variable-not-assigned
 	global logparser_configuration
 
 	tmp_msg_first = logparser_configuration.msg_first
@@ -1002,6 +1039,7 @@ def split_colon_facility(message, facility = ""):
 		message = tmp[2]
 	return message, facility
 
+# XXX: This function is broken; this needs to be done in curses_helper
 def replace_tabs(message):
 	if type(message) is str:
 		message = message.replace("\t", " ")
@@ -1009,7 +1047,7 @@ def replace_tabs(message):
 		if type(message[1]) is tuple:
 			message = (message[0].replace("\t", " "), message[1])
 	elif type(message) is list:
-		for i in range(0, len(message)):
+		for i, _msg in enumerate(message):
 			message[i] = replace_tabs(message[i])
 
 	return message
@@ -1109,7 +1147,7 @@ def custom_override_severity(message, severity, overrides):
 	for override in overrides:
 		override_type = deep_get(override, "matchtype", "")
 		override_pattern = deep_get(override, "matchkey", "")
-		override_severity = name_to_loglevel(deep_get(override, "loglevel", ""))
+		override_loglevel = name_to_loglevel(deep_get(override, "loglevel", ""))
 
 		if override_type == "startswith":
 			if not message.startswith(override_pattern):
@@ -1118,13 +1156,13 @@ def custom_override_severity(message, severity, overrides):
 			if not message.endswith(override_pattern):
 				continue
 		elif override_type == "regex":
-			tmp = re.match(override_pattern, message)
+			tmp = override_pattern.match(message)
 			if tmp is None:
 				continue
 		else:
 			raise Exception(f"Unknown override_type '{override_type}'; this is a programming error.")
 
-		severity = override_severity
+		severity = override_loglevel
 		break
 
 	return severity
@@ -1153,22 +1191,19 @@ def expand_event_objectmeta(message, severity, remnants = None, fold_msg = True)
 	quoted = False # pylint: disable=unused-variable
 	tmp = ""
 
-	for i in range(0, len(raw_message)):
-		if raw_message[i] == "\"" and escaped == False:
+	for i, raw_msg in enumerate(raw_message):
+		if raw_msg == "\"" and escaped == False:
 			quoted = True
-		elif raw_message[i] == "\\":
-			if escaped == False:
-				escaped = True
-			else:
-				escaped = False
-		elif raw_message[i] in ("{", ",", "}"):
-			if raw_message[i] != "}":
-				tmp += raw_message[i]
+		elif raw_msg == "\\":
+			escaped = not escaped
+		elif raw_msg in ("{", ",", "}"):
+			if raw_msg != "}":
+				tmp += raw_msg
 			else:
 				if tmp == "":
-					tmp += raw_message[i]
+					tmp += raw_msg
 					depth -= 1
-					if i < len(raw_message) - 1:
+					if i < len(raw_msg) - 1:
 						continue
 
 			# OK, this isn't an escaped curly brace or comma,
@@ -1186,13 +1221,13 @@ def expand_event_objectmeta(message, severity, remnants = None, fold_msg = True)
 				else:
 					remnants.append(([("".ljust(indent * depth) + tmp, ("types", "yaml_value"))], severity))
 			tmp = ""
-			if raw_message[i] == "{":
+			if raw_msg == "{":
 				depth += 1
-			elif raw_message[i] == "}":
-				tmp += raw_message[i]
+			elif raw_msg == "}":
+				tmp += raw_msg
 				depth -= 1
 			continue
-		tmp += raw_message[i]
+		tmp += raw_msg
 	return severity, message, remnants
 
 def expand_event(message, severity, remnants = None, fold_msg = True):
@@ -1247,8 +1282,8 @@ def expand_event(message, severity, remnants = None, fold_msg = True):
 		if _severity < severity:
 			severity = _severity
 	remnants.append(([(" ".ljust(indent) + raw_message[eventstart:refstart], ("types", "yaml_reference"))], severity))
-	for key_value in raw_message[refstart:refend].split(", "):
-		key, value = key_value.split(":", 1)
+	for _key_value in raw_message[refstart:refend].split(", "):
+		key, value = _key_value.split(":", 1)
 		remnants.append(([(" ".ljust(indent * 2) + key, ("types", "yaml_key")), ("separators", "yaml_key_separator"), (f" {value}", ("types", "yaml_value"))], severity))
 	remnants.append(([(" ".ljust(indent * 1) + raw_message[refend:eventend], ("types", "yaml_reference"))], severity))
 	remnants.append(([(raw_message[eventend:eventend + 3], ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (raw_message[eventend + 3:len(raw_message)], ("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
@@ -1423,12 +1458,12 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 				if type(_fac) == dict:
 					_facilities = deep_get(_fac, "keys", [])
 					_separators = deep_get(_fac, "separators", [])
-					for i in range(0, len(_facilities)):
+					for i, _fac in enumerate(_facilities):
 						# This is to allow prefixes/suffixes
-						if _facilities[i] != "":
-							if _facilities[i] not in d:
+						if _fac != "":
+							if _fac not in d:
 								break
-							facility += str(deep_get(d, _facilities[i], ""))
+							facility += str(deep_get(d, _fac, ""))
 						if i < len(_separators):
 							facility += _separators[i]
 		if logparser_configuration.pop_facility == True:
@@ -1505,17 +1540,17 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 							if len(value) > 0:
 								tmp.append(format_key_value(key, value, severity))
 
-			for item in d:
+			for d_key, d_value in d.items():
 				if fold_msg == False:
-					if item == "collector" and logparser_configuration.bullet_collectors == True:
-						tmp.append(f"• {d[item]}")
-					elif item in versions:
-						tmp.append(format_key_value(item, d[item], loglevel.NOTICE, force_severity = True))
+					if d_key == "collector" and logparser_configuration.bullet_collectors == True:
+						tmp.append(f"• {d_value}")
+					elif d_key in versions:
+						tmp.append(format_key_value(item, d_value, loglevel.NOTICE, force_severity = True))
 					else:
-						__severity = custom_override_severity(d[item], severity, overrides = severity_overrides)
-						tmp.append(format_key_value(item, d[item], __severity, force_severity = (__severity != severity)))
+						__severity = custom_override_severity(d_value, severity, overrides = severity_overrides)
+						tmp.append(format_key_value(d_key, d_value, __severity, force_severity = (__severity != severity)))
 				else:
-					tmp.append(f"{item}={d[item]}")
+					tmp.append(f"{d_key}={d_value}")
 
 			if fold_msg == True:
 				message = " ".join(tmp)
@@ -1549,6 +1584,8 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 # "Foo" "key"="value" "key"="value"
 # Foo key=value key=value
 def key_value_with_leading_message(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = None):
+	# This warning seems incorrect
+	# pylint: disable-next=global-variable-not-assigned
 	global logparser_configuration
 	remnants = []
 
@@ -1894,7 +1931,7 @@ def json_line(message, fold_msg = True, options = None):
 				if message.startswith(matchkey):
 					matched = True
 			elif matchtype == "regex":
-				tmp = re.match(matchkey, message)
+				tmp = matchkey.match(message)
 				if tmp is not None:
 					matched = True
 
@@ -1937,7 +1974,7 @@ def yaml_line_scanner(message, fold_msg = True, options = None):
 			if message.startswith(matchkey):
 				matched = False
 		elif matchtype == "regex":
-			tmp = re.match(matchkey, message)
+			tmp = matchkey.match(message)
 			if tmp is not None:
 				matched = False
 
@@ -1964,7 +2001,7 @@ def yaml_line(message, fold_msg = True, options = None):
 
 	block_start = deep_get(options, "block_start", [{
 		"matchtype": "regex",
-		"matchkey": r"\S+?: \S.*|\S+?:$",
+		"matchkey": re.compile(r"\S+?: \S.*|\S+?:$"),
 		"matchline": "any",
 		"format_block_start": False,
 	}])
@@ -1985,7 +2022,7 @@ def yaml_line(message, fold_msg = True, options = None):
 				if message.startswith(matchkey):
 					matched = True
 			elif matchtype == "regex":
-				tmp = re.match(matchkey, message)
+				tmp = matchkey.match(message)
 				if tmp is not None:
 					matched = True
 
@@ -2000,7 +2037,7 @@ def yaml_line(message, fold_msg = True, options = None):
 def custom_splitter(message, severity = None, facility = "", fold_msg = True, options = None):
 	del fold_msg
 
-	regex_pattern = deep_get(options, "regex", None)
+	compiled_regex = deep_get(options, "regex", None)
 	severity_field = deep_get(options, "severity#field", None)
 	severity_transform = deep_get(options, "severity#transform", None)
 	severity_overrides = deep_get(options, "severity#overrides", [])
@@ -2013,10 +2050,10 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 		return message, severity, facility
 
 	# The bare minimum for these rules is
-	if regex_pattern is None or message_field is None:
+	if compiled_regex is None or message_field is None:
 		raise Exception("parser rule is missing regex or message field")
 
-	tmp = re.match(regex_pattern, message)
+	tmp = compiled_regex.match(message)
 	if tmp is not None:
 		group_count = len(tmp.groups())
 		if message_field > group_count:
@@ -2182,6 +2219,8 @@ Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser_r
 parsers = []
 
 def init_parser_list():
+	# This pylint warning seems incorrect--does it not handle namedtuple.append()?
+	# pylint: disable-next=global-variable-not-assigned
 	global parsers
 
 	# Get a full list of parsers from all parser directories
@@ -2251,12 +2290,35 @@ def init_parser_list():
 						if rule_name in ("colon_severity", "directory", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"):
 							rules.append(rule_name)
 						elif rule_name in ("http", "json", "json_with_leading_message", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"):
-							rules.append((rule_name, rule.get("options", {})))
+							options = {}
+							for key, value in deep_get(rule, "options", {}).items():
+								if key == "regex":
+									regex = deep_get(rule, "options#regex", "")
+									value = re.compile(regex)
+								options[key] = value
+							rules.append((rule_name, options))
 						elif rule_name == "substitute_bullets":
 							prefix = rule.get("prefix", "* ")
 							rules.append((rule_name, prefix))
 						elif rule_name == "override_severity":
-							rules.append((rule_name, deep_get(rule, "overrides", [])))
+							overrides = []
+							for override in deep_get(rule, "overrides", []):
+								matchtype = deep_get(override, "matchtype")
+								matchkey = deep_get(override, "matchkey")
+								_loglevel = deep_get(override, "loglevel")
+
+								if matchtype is None or matchkey is None or _loglevel is None:
+									raise ValueError(f"Incorrect override rule in Parser {parser_file}; every override must define matchtype, matchkey, and loglevel")
+
+								if matchtype == "regex":
+									regex = deep_get(override, "matchkey", "")
+									matchkey = re.compile(regex)
+								overrides.append({
+									"matchtype": matchtype,
+									"matchkey": matchkey,
+									"loglevel": _loglevel,
+								})
+							rules.append((rule_name, overrides))
 						elif rule_name in ("bracketed_severity", "bracketed_timestamp_severity_facility"):
 							_loglevel = rule.get("default_loglevel", "info")
 							try:
