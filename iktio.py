@@ -7,7 +7,6 @@ I/O helpers for Intel Kubernetes Toolkit
 
 import errno
 import hashlib
-import io
 import os
 from pathlib import Path
 import re
@@ -285,30 +284,30 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 
 			# NamedTemporaryFile with delete = False will create a temporary file owned by user with 0o600 permissions
 			with tempfile.NamedTemporaryFile(delete = False) as f:
-				# Get a fileobj of the downloaded data; this way we can check if it's a tarfile
-				data = io.BytesIO(r1.data)
+				f.write(r1.data)
 
-				# Is the downloaded data a tarfile? If so we extract it to memory,
-				# then write it to our tempfile.
-				if tarfile.is_tarfile(data) == True:
-					# Make sure that we're back to the beginning of the BytesIO object
-					data.seek(0)
-					with tarfile.open(fileobj = data, mode = "r") as tf:
+				# We'd prefer to do this using BytesIO, but tarfile only supports it from Python 3.9+
+				if tarfile.is_tarfile(f.name) == True:
+					with tarfile.open(name = f.name, mode = "r") as tf:
 						members = tf.getnames()
 						if filename not in members:
 							iktprint([("Critical: ", "critical"), (f"{filename} is not a part of archive; aborting.", "default")], stderr = True)
 							sys.exit(errno.ENOENT)
 
-						with tf.extractfile(filename) as tff:
-							f.write(tff.read())
-				else:
-					# If it's not a tarfile we just write the data directly to the tempfile.
-					f.write(r1.data)
+						with tempfile.NamedTemporaryFile(delete = False) as f2:
+							with tf.extractfile(filename) as tff:
+								f2.write(tff.read())
 
-				# Here we change to the permissions we're supposed to use
-				os.chmod(f.name, permissions)
-				# Here we atomically move it in place
-				os.rename(f.name, f"{directory}/{filename}")
+							# Here we change to the permissions we're supposed to use
+							os.chmod(f2.name, permissions)
+							# Here we atomically move it in place
+							os.rename(f2.name, f"{directory}/{filename}")
+							os.remove(f.name)
+				else:
+					# Here we change to the permissions we're supposed to use
+					os.chmod(f.name, permissions)
+					# Here we atomically move it in place
+					os.rename(f.name, f"{directory}/{filename}")
 		else:
 			iktprint([("Error: ", "error"),
 				  ("Failed to fetch URL ", "default"), (f"{url}", "url"), ("; HTTP code: ", "default"), (f"{r1.status}", "errorvalue")], stderr = True)

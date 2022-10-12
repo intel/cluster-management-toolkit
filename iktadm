@@ -14,7 +14,6 @@ For usage, see:
 	iktadm help
 """
 
-import base64
 import errno
 from getpass import getuser
 from glob import glob
@@ -320,22 +319,6 @@ def check_and_print_status(retval):
 		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-def weave_urlgetter(pod_network_cidr):
-	"""
-	A wrapper that will base64-encode the output of "kubectl version" and attach it to a URL for downloading weave
-
-		Parameters:
-			pod_network_cidr (str): The CIDR to use for the pod network
-		Returns:
-			url (str): A URL to use to download the weave version suitable for the installed version of Kubernetes
-	"""
-
-	args = ["/usr/bin/kubectl", "version"]
-	kubectl_version = execute_command_with_response(args).encode("ascii")
-	version_base64 = base64.urlsafe_b64encode(kubectl_version).decode("ascii")
-	url = f"https://cloud.weave.works/k8s/net?k8s-version=\"{version_base64}\"&env.IPALLOC_RANGE={pod_network_cidr}"
-	return url
-
 def patch_cni_flannel(cni_path, pod_network_cidr):
 	"""
 	Patch the configuration for Flannel
@@ -413,7 +396,7 @@ cni_data = {
 		"filename": "kube-router.yaml",
 	},
 	"weave": {
-		"urlgetter": weave_urlgetter,
+		"url": "https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s-1.11.yaml",
 		"type": "yaml",
 		"filename": "weave.yaml",
 	},
@@ -447,8 +430,9 @@ def substitute_list(strlist, substitutions):
 			list[str]: The list of strings with substitutions performed
 	"""
 
-	subst = substitutions.get
-	return [subst(s, s) for s in strlist]
+	for key, value in substitutions.items():
+		strlist = [s.replace(key, value) for s in strlist]
+	return strlist
 
 def check_version_from_url(url, version_regex):
 	"""
@@ -656,10 +640,7 @@ def __setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 
 	url = deep_get(cni_data, f"{cni}#url")
 	if url is None:
-		urlgetter = deep_get(cni_data, f"{cni}#urlgetter")
-		if urlgetter is None:
-			raise Exception(f"Both URL and URL getter for {cni} are empty; this is a programming error.")
-		url = urlgetter(pod_network_cidr)
+		raise Exception(f"URL for {cni} is empty; this is a programming error.")
 
 	checksum_url = deep_get(cni_data, f"{cni}#checksum_url")
 	checksum_type = deep_get(cni_data, f"{cni}#checksum_type")
