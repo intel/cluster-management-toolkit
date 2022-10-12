@@ -5,6 +5,9 @@ listview:
   name: "Jobs"
   group: "Workloads"
   field_indexes:
+    Wide:
+      fields: ["namespace", "name", "controller", "completions", "duration", "state", "age", "completion_time_with_age", "completion_mode", "containers_template"]
+      sortcolumn: "state"
     Normal:
       fields: ["namespace", "name", "controller", "completions", "duration", "state", "age", "completion_time", "completion_mode", "containers_template"]
       sortcolumn: "state"
@@ -33,6 +36,21 @@ listview:
       path: "status#completionTime"
       type: "timestamp"
       formatter: "timestamp"
+    completion_time_with_age:
+      header: "Completion Time:"
+      paths:
+      - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
+        pathtype: "timestamp_with_age"
+      formatter: "timestamp_with_age"
+      formatting:
+        field_colors:
+        # This is a meta-type, indicating where the timestamp goes
+        - type: "timestamp"
+        - type: "generic"
+        - type: "generic"
+        # This is a meta-type, indicating where the age goes
+        - type: "age"
+        - type: "generic"
     containers_template:
       header: "Containers:"
       paths:
@@ -123,6 +141,8 @@ infoview:
   name: "Job Info"
   infopad:
     row_indexes:
+      Wide:
+        fields: ["controller", "label_selector", "completions", "completion_time_with_age", "completion_mode", "parallelism", "state"]
       Normal:
         fields: ["controller", "label_selector", "completions", "completion_time", "completion_mode", "parallelism", "state"]
     rows:

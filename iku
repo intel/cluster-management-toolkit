@@ -188,7 +188,7 @@ def processor_timestamp(obj, field):
 	string = value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 	return string
 
-def processor_timestamp_with_age(obj, field):
+def processor_timestamp_with_age(obj, field, formatting):
 	values = getattr(obj, field)
 
 	if len(values) > 2 and len(deep_get(formatting, "field_colors", [])) < 2:
@@ -204,7 +204,7 @@ def processor_timestamp_with_age(obj, field):
 			array += [
 				(" (", ("types", "generic"))
 			]
-			array += generators.generator_age_raw(values[1])
+			array += generators.generator_age_raw(values[1], False)
 			array += [
 				(")", ("types", "generic"))
 			]
@@ -217,16 +217,16 @@ def processor_timestamp_with_age(obj, field):
 			if len(deep_get(formatting, "field_colors", [])) <= i:
 				formatting = ("types", "generic")
 				array += [values[i], formatting]
-			elif formatting["field_colors"][i] == "timestamp":
+			elif formatting["field_colors"][i] == ("types", "timestamp"):
 				if values[i] is None:
 					array += [
 						("<none>", ("types", "none"))
 					]
 				else:
-					timestamp_string = datetime_to_timestamp(values[0])
-					array += generators.format_numerical_with_units(timestamp_string, "timestamp")
-			elif formatting["field_colors"][i] == "age":
-				array += generators.generator_age_raw(values[i])
+					# timestamp_string = datetime_to_timestamp(values[0])
+					array += generators.format_numerical_with_units(values[i], "timestamp", None)
+			elif formatting["field_colors"][i] == ("types", "age"):
+				array += generators.generator_age_raw(values[i], None)
 			else:
 				array += [
 					(values[i], formatting["field_colors"][i])
@@ -382,6 +382,7 @@ def update_field_widths(field_dict, field_names, objects):
 		ellipsis = field_dict[field_name].get("ellipsis", ("separators", "ellipsis"))
 		field_prefixes = field_dict[field_name].get("field_prefixes", None)
 		field_suffixes = field_dict[field_name].get("field_suffixes", None)
+		formatting = deep_get(field_dict, f"{field_name}#formatting", {})
 
 		for obj in objects:
 			generator = field_dict[field_name].get("generator")
@@ -393,6 +394,8 @@ def update_field_widths(field_dict, field_names, objects):
 			if processor is not None:
 				if processor in (processor_list, processor_list_with_status):
 					tmp = processor(obj, field_name, item_separator = item_separator, field_separators = field_separators, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
+				elif processor == processor_timestamp_with_age:
+					tmp = processor(obj, field_name, formatting)
 				else:
 					tmp = processor(obj, field_name)
 			else:
@@ -907,7 +910,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 						_values.append("")
 				else:
 					_values.append("")
-			elif _vtype in ("skip"):
+			elif _vtype == "skip":
 				_values.append("")
 			else:
 				raise Exception(f"Field {field_name}: type[{i}] ({vtype}) is unknown")
@@ -1400,7 +1403,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 					if type(tmp) in (bool, int, str):
 						tmp = [tmp]
 
-					if type(tmp) in (list):
+					if isinstance(type(tmp), list):
 						for _tmp in tmp:
 							if _tmp in substitutions:
 								value.append(substitutions.get(_tmp))
@@ -1488,6 +1491,8 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 							elif end_time_index == -1:
 								end_time_index = i
 								end_time = iktlib.deep_get_with_fallback(obj, mpaths[i], default = None)
+							else:
+								raise ValueError(f"{field_name} received too many timestamp paths; the view file is most likely malformed")
 					if end_time is None or start_time is None:
 						end_time = None
 						duration = -1
@@ -1537,7 +1542,7 @@ def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", fil
 							else:
 								_default = default
 
-							if (vtype in ("int", "float") or action in ("sum")) and type(default) not in (int, float):
+							if (vtype in ("int", "float") or action in ["sum"]) and type(default) not in (int, float):
 								_default = 0
 
 							if type(subpaths[i]) == dict:
@@ -4692,7 +4697,7 @@ def genericlistloop(stdscr, view):
 								realpath, filename, ptype = item
 								if ptype in ("File", "Configuration File", "Kustomization"):
 									formatting = ("windowwidget", "default")
-								elif ptype in ("<dir>"):
+								elif ptype == "<dir>":
 									formatting = ("windowwidget", "highlight")
 								else:
 									raise Exception(f"Unknown ptype {ptype}")
@@ -4712,7 +4717,7 @@ def genericlistloop(stdscr, view):
 							for item in tmp_file_list:
 								realpath, filename, ptype = item
 								if filename == selected_entry:
-									if ptype in ("<dir>"):
+									if ptype == "<dir>":
 										basedir = realpath
 										uip.refresh_all()
 									elif ptype in ("File", "Configuration File", "Kustomization"):
@@ -5113,7 +5118,7 @@ def genericlistloop(stdscr, view):
 								realpath, filename, ptype = item
 								if ptype in ("File", "Configuration File", "Kustomization"):
 									formatting = ("windowwidget", "default")
-								elif ptype in ("<dir>"):
+								elif ptype == "<dir>":
 									formatting = ("windowwidget", "highlight")
 								else:
 									raise Exception(f"Unknown ptype {ptype}")
@@ -5133,7 +5138,7 @@ def genericlistloop(stdscr, view):
 							for item in tmp_file_list:
 								realpath, filename, ptype = item
 								if filename == selected_entry:
-									if ptype in ("<dir>"):
+									if ptype == "<dir>":
 										basedir = realpath
 										uip.refresh_all()
 									elif ptype in ("File", "Configuration File", "Kustomization"):
@@ -10142,7 +10147,7 @@ def populate_views(force_refresh = False):
 							 f"helptext: {helptext}\n"
 							  "Aborting.")
 
-					if widget is None and "<missing>" in (action):
+					if widget is None and "<missing>" == action:
 						sys.exit(f"View-file {view_file} is invalid: at least one of [widget, action] needs to be specified.\n"
 							  "Aborting.")
 
@@ -10427,7 +10432,7 @@ def main():
 	while y < len(sys.argv):
 		arg = sys.argv[y]
 
-		if arg in ("list-views"):
+		if arg == "list-views":
 			# Customises the list views
 			iktprint([("Stand by, updating list of supported views...\n", "default")])
 

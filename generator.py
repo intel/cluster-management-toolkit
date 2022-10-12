@@ -187,12 +187,20 @@ def map_value(value, references = None, selected = False, default_field_color = 
 	return (string, formatting), string
 
 def align_and_pad(array, pad, fieldlen, stringlen, ralign, selected):
-	if ralign:
-		array = [("".ljust(fieldlen - stringlen), ("types", "generic", selected))] + array
+	if selected is None:
+		if ralign:
+			array = [("".ljust(fieldlen - stringlen), ("types", "generic"))] + array
+		else:
+			array.append(("".ljust(fieldlen - stringlen), ("types", "generic")))
+		if pad > 0:
+			array.append(("separators", "pad"))
 	else:
-		array.append(("".ljust(fieldlen - stringlen), ("types", "generic", selected)))
-	if pad > 0:
-		array.append((("separators", "pad"), selected))
+		if ralign:
+			array = [("".ljust(fieldlen - stringlen), ("types", "generic", selected))] + array
+		else:
+			array.append(("".ljust(fieldlen - stringlen), ("types", "generic", selected)))
+		if pad > 0:
+			array.append((("separators", "pad"), selected))
 	return array
 
 def format_numerical_with_units(string, ftype, selected, non_units = None, separator_lookup = None):
@@ -221,7 +229,10 @@ def format_numerical_with_units(string, ftype, selected, non_units = None, separ
 		elif numeric == True:
 			# Do we need to flush?
 			if not char in non_units:
-				array.append((substring, ("types", ftype), selected))
+				if selected is None:
+					array.append((substring, ("types", ftype)))
+				else:
+					array.append((substring, ("types", ftype), selected))
 				substring = ""
 				numeric = False
 
@@ -230,17 +241,26 @@ def format_numerical_with_units(string, ftype, selected, non_units = None, separ
 			# Do we need to flush?
 			if char in non_units:
 				formatting = deep_get_with_fallback(separator_lookup, [substring, "default"])
-				array.append((substring, formatting, selected))
+				if selected is None:
+					array.append((substring, formatting))
+				else:
+					array.append((substring, formatting, selected))
 				substring = ""
 				numeric = True
 			substring += char
 
 		if len(string) == 0:
 			if numeric == True:
-				array.append((substring, ("types", ftype), selected))
+				if selected is None:
+					array.append((substring, ("types", ftype)))
+				else:
+					array.append((substring, ("types", ftype), selected))
 			else:
 				formatting = deep_get_with_fallback(separator_lookup, [substring, "default"])
-				array.append((substring, formatting, selected))
+				if selected is None:
+					array.append((substring, formatting))
+				else:
+					array.append((substring, formatting, selected))
 
 	if len(array) == 0:
 		array = [("", ("types", "generic", selected))]
@@ -258,7 +278,7 @@ def generator_age_raw(value, selected):
 	if string in ("<none>", "<unset>", "<unknown>"):
 		formatting = ("types", "none", selected)
 		array = [(string, formatting, selected)]
-	elif string in ("<clock skew detected>"):
+	elif string == "<clock skew detected>":
 		formatting = ("main", "status_not_ok", selected)
 		array = [(string, formatting, selected)]
 	else:
@@ -343,11 +363,11 @@ def generator_basic(obj, field, fieldlen, pad, ralign, selected, **formatting):
 
 	if string in ("<none>", "<unknown>"):
 		formatting = ("types", "none", selected)
-	elif string in ("<default>"):
+	elif string == "<default>":
 		formatting = ("types", "default", selected)
-	elif string in ("<undefined>"):
+	elif string == "<undefined>":
 		formatting = ("types", "undefined", selected)
-	elif string in ("<unset>"):
+	elif string == "<unset>":
 		formatting = ("types", "unset", selected)
 	else:
 		context, attr_ref = field_colors[0]

@@ -2217,13 +2217,13 @@ class KubernetesHelper:
 				tmp = name_regex.match(label)
 				if tmp is None:
 					break
-		elif rtype in ("path-segment"):
+		elif rtype == "path-segment":
 			# XXX: Are there any other requirements? maxlen or similar?
 			if name in (".", "..") or "/" in name or "%" in name:
 				invalid = True
 			tmp = ""
 			maxlen = os.pathconf("/", "PC_NAME_MAX")
-		elif rtype in ("port-name"):
+		elif rtype == "port-name":
 			# Any name containing adjacent "-" is invalid
 			if "--" in name:
 				invalid = True
