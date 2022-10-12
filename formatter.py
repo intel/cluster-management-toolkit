@@ -500,7 +500,8 @@ def format_xml(lines, **kwargs):
 
 	escape_regex = re.compile(r"(\s*)(&)(.+?)(;)(.*)")
 	content_regex = re.compile(r"(.*?)(<.*|&.*)")
-	tag_open_regex = re.compile(r"(.+?)(\s*>|\s*\?>|\s*$|\s+.*)")
+	tag_open_regex = re.compile(r"(\s*)(</|<!--|<\?|<)(.*)")
+	tag_named_regex = re.compile(r"(.+?)(\s*>|\s*\?>|\s*$|\s+.*)")
 	tag_close_regex = re.compile(r"(\s*)(/>|\?>|-->|>)(.*)")
 	remainder_regex = re.compile(r"(\s*.+?)(=|)(\".+?\"|)(\s*$|\s*/>|\s*\?>|\s*-->|\s*>|\s+)(.*|)")
 
@@ -614,7 +615,7 @@ def format_xml(lines, **kwargs):
 
 				if tag_named == False and comment == False:
 					# Is this either "[<]tag", "[<]tag ", "[<]tag>" or "[<]tag/>"?
-					tmp = tag_open_regex.match(line)
+					tmp = tag_named_regex.match(line)
 					if tmp is not None:
 						tmpline += [
 							(tmp[1], ("types", "xml_tag")),
