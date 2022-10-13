@@ -909,13 +909,16 @@ def themearray_get_length(themearray):
 #	"columns": strarray, ...,
 #	"retval": the value to return if this items is selected (any type is allowed)
 # }
-def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", preselection = "", cursor = True, taggable = False, confirm = False, confirm_buttons = [], **kwargs):
+def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", preselection = "", cursor = True, taggable = False, confirm = False, confirm_buttons = None, **kwargs):
 	stdscr.refresh()
 	global ignoreinput
 	ignoreinput = False
 
 	padwidth = 2
 	listpadheight = len(items)
+
+	if confirm_buttons is None:
+		confirm_buttons = []
 
 	# This is only used by helptexts
 	if not isinstance(items[0], dict):
@@ -1477,7 +1480,7 @@ class UIProps:
 
 	# Default behaviour:
 	# timestamps enabled, no automatic updates, default sortcolumn = "status"
-	def init_window(self, field_list, view = None, windowheader = "", timestamp = True, update_delay = -1, sortcolumn = "status", sortorder_reverse = False, reversible = True, helptext = None, activatedfun = None, on_activation = {}, extraref = None, data = None):
+	def init_window(self, field_list, view = None, windowheader = "", timestamp = True, update_delay = -1, sortcolumn = "status", sortorder_reverse = False, reversible = True, helptext = None, activatedfun = None, on_activation = None, extraref = None, data = None):
 		self.field_list = field_list
 		self.searchkey = ""
 		self.sortcolumn = sortcolumn
@@ -1499,10 +1502,14 @@ class UIProps:
 		self.logpad = None
 		self.helptext = helptext
 
+		if on_activation is None:
+			on_activation = {}
+
 		self.activatedfun = activatedfun
 		self.on_activation = on_activation
 		self.extraref = extraref
 		self.data = data
+
 
 	def reinit_window(self, field_list, sortcolumn):
 		self.field_list = field_list
