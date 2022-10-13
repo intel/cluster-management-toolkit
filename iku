@@ -235,7 +235,7 @@ def processor_timestamp_with_age(obj, field, formatting):
 	return themearray_to_string(array)
 
 # For the list processor to work we need to know the length of all the separators
-def processor_list(obj, field, item_separator = ("separators", "list"), field_separators = [("separators", "field")], ellipsise = -1, ellipsis = ("separators", "ellipsis"), field_prefixes = None, field_suffixes = None):
+def processor_list(obj, field, item_separator, field_separators, ellipsise, ellipsis, field_prefixes, field_suffixes):
 	items = getattr(obj, field)
 
 	strings = []
@@ -292,7 +292,7 @@ def processor_list(obj, field, item_separator = ("separators", "list"), field_se
 	return vstring
 
 # For the list processor to work we need to know the length of all the separators
-def processor_list_with_status(obj, field, item_separator = ("separators", "list"), field_separators = [("separators", "field")], ellipsise = -1, ellipsis = ("separators", "ellipsis"), field_prefixes = None, field_suffixes = None):
+def processor_list_with_status(obj, field, item_separator, field_separators, ellipsise, ellipsis, field_prefixes, field_suffixes):
 	items = getattr(obj, field)
 
 	strings = []
@@ -399,13 +399,13 @@ def update_field_widths(field_dict, field_names, objects):
 				else:
 					tmp = processor(obj, field_name)
 			else:
-				tmp = str(getattr(obj, field_name))
+				tmp = getattr(obj, field_name)
 
-			tmplen = max(field_dict[field_name].get("fieldlen", 0), len(str(tmp)))
+			tmplen = max(len(str(tmp)), field_dict[field_name].get("fieldlen", 0))
 
-			field_dict[field_name]["fieldlen"] = max(len(str(tmp)), field_dict[field_name]["fieldlen"])
+			field_dict[field_name]["fieldlen"] = tmplen
 
-		field_dict[field_name]["fieldlen"] = max(field_dict[field_name]["fieldlen"], len(field_dict[field_name]["header"]))
+		field_dict[field_name]["fieldlen"] = max(tmplen, len(field_dict[field_name]["header"]))
 
 		linelen += field_dict[field_name].get("fieldlen") + themearray_len([("separators", "pad")])
 		pos = linelen
@@ -1043,7 +1043,7 @@ def when_filter(when_path, item, key = None, value = None):
 
 	return True
 
-def transform_list(vlist, transform = {}):
+def transform_list(vlist, transform):
 	sort = deep_get(transform, "sorted", False)
 	key_regexes = deep_get(transform, "key#regex", [])
 	key_groups = deep_get(transform, "key#groups", [])
@@ -1135,7 +1135,7 @@ def transform_list(vlist, transform = {}):
 	else:
 		return result
 
-def get_obj(obj, field_dict, field_names, field_index = "normal", view = "", filters = {}):
+def get_obj(obj, field_dict, field_names, field_index, view, filters):
 	d = {}
 
 	# fields both specify formatting and where to get the data from; here we're only concerned with the data
@@ -1779,7 +1779,7 @@ def generic_infogetter(**kwargs):
 
 	field_dict = deep_get(kwargs, "_field_dict", {})
 	field_names = deep_get(kwargs, "_field_names", [])
-	field_index = deep_get(kwargs, "_field_index", "normal")
+	field_index = deep_get(kwargs, "_field_index", "Normal")
 	filters = deep_get(kwargs, "_filters", {})
 	extra_data = deep_get(kwargs, "extra_data", {})
 
@@ -1811,7 +1811,7 @@ def get_device_model(obj, device):
 # Takes a list and splits it into four lists;
 # exacts, strings starting _and_ ending with "*", strings starting with "*",
 # and strings ending with "*"
-def split_matchlist(matchlist, exacts = [], prefixes = [], suffixes = [], ins = []):
+def split_matchlist(matchlist, exacts, prefixes, suffixes, ins):
 	tmp_exacts = []
 	tmp_prefixes = []
 	tmp_suffixes = []
@@ -1835,7 +1835,7 @@ def split_matchlist(matchlist, exacts = [], prefixes = [], suffixes = [], ins = 
 		tmp_ins = ins
 	return tmp_exacts, tuple(tmp_prefixes), tuple(tmp_suffixes), tmp_ins
 
-def check_matchlists(item, exacts = [], prefixes = (), suffixes = (), ins = []):
+def check_matchlists(item, exacts, prefixes, suffixes, ins):
 	if item in exacts:
 		return True
 	for _in in ins:
@@ -1847,7 +1847,7 @@ def check_matchlists(item, exacts = [], prefixes = (), suffixes = (), ins = []):
 
 # Takes an unprocessed matchlist, splits it into individual matchlists, and checks for matches
 def check_matchlist(item, matchlist):
-	exacts, prefixes, suffixes, ins = split_matchlist(matchlist)
+	exacts, prefixes, suffixes, ins = split_matchlist(matchlist, exacts = [], prefixes = [], suffixes = [], ins = [])
 	return check_matchlists(item, exacts = exacts, prefixes = prefixes, suffixes = suffixes, ins = ins)
 
 def listgetter_ansible_volumes(obj, **kwargs):
@@ -1960,7 +1960,10 @@ def get_netpol_rule_list(obj, **kwargs):
 			ports.append((deep_get(port, "port", ""), deep_get(port, "protocol", "")))
 		pod_label_selector = deep_get(item, "podSelector#matchLabels", {})
 		namespace_label_selector = deep_get(item, "namespaceSelector#matchLabels", {})
-		for source in deep_get(item, "from", []):
+
+		from_rules = deep_get(item, "from", [])
+
+		for source in from_rules:
 			ipblock = deep_get(source, "cidr")
 			ipblock_exceptions = deep_get(source, "except")
 			vlist.append({
@@ -1971,7 +1974,8 @@ def get_netpol_rule_list(obj, **kwargs):
 				"pod_label_selector": pod_label_selector,
 				"namespace_label_selector": namespace_label_selector,
 			})
-		else:
+
+		if len(from_rules) == 0:
 			vlist.append({
 				"policy_type": policy_type,
 				"ipblock": "",
@@ -1988,7 +1992,10 @@ def get_netpol_rule_list(obj, **kwargs):
 			ports.append((deep_get(port, "port", ""), deep_get(port, "protocol", "")))
 		pod_label_selector = deep_get(item, "podSelector#matchLabels", {})
 		namespace_label_selector = deep_get(item, "namespaceSelector#matchLabels", {})
-		for source in deep_get(item, "to", []):
+
+		to_rules = deep_get(item, "to", [])
+
+		for source in to_rules:
 			ipblock = deep_get(source, "cidr")
 			ipblock_exceptions = deep_get(source, "except")
 			vlist.append({
@@ -1999,7 +2006,8 @@ def get_netpol_rule_list(obj, **kwargs):
 				"pod_label_selector": pod_label_selector,
 				"namespace_label_selector": namespace_label_selector,
 			})
-		else:
+
+		if len(to_rules) == 0:
 			vlist.append({
 				"policy_type": policy_type,
 				"ipblock": "",
@@ -2441,7 +2449,7 @@ def get_sas_info(**kwargs):
 
 	return info
 
-def get_name_by_kind_from_owner_references(owner_references = [], kind = ""):
+def get_name_by_kind_from_owner_references(owner_references, kind):
 	for owr in owner_references:
 		if deep_get(owr, "kind", "") == kind:
 			name = deep_get(owr, "name")
@@ -2449,7 +2457,7 @@ def get_name_by_kind_from_owner_references(owner_references = [], kind = ""):
 
 	return name
 
-def get_holder_kind_from_owner_references(owner_references = [], holder_name = ""):
+def get_holder_kind_from_owner_references(owner_references, holder_name):
 	holder_kind = ""
 
 	for owr in owner_references:
@@ -3636,7 +3644,7 @@ def get_node_addresses(name, addresses):
 
 	return name, iips, eips
 
-def get_node_info(vlist, extra_vars = {}):
+def get_node_info(vlist, extra_vars):
 	info = []
 
 	if vlist == []:
@@ -3736,7 +3744,7 @@ def set_cluster_context(uip, **kwargs):
 	if retval == True:
 		force_refresh_apis = True
 
-def get_containers(containers = [], container_statuses = []):
+def get_containers(containers, container_statuses):
 	container_dict = {}
 
 	container_list = []
@@ -3759,7 +3767,7 @@ def get_containers(containers = [], container_statuses = []):
 	return container_list
 
 # Returns True if the item should be skipped
-def filter_list_entry(obj, caller_obj, filters = []):
+def filter_list_entry(obj, caller_obj, filters):
 	skip = False
 	for f in filters:
 		if deep_get(filters[f], "enabled", True) == False:
@@ -4005,8 +4013,8 @@ def get_pod_info(**kwargs):
 		else:
 			last_restart = get_since(restarted_at)
 		tolerations = itemgetters.get_pod_tolerations(kh, obj)
-		containers = get_containers(deep_get(obj, "spec#initContainers", []), deep_get(obj, "status#initContainerStatuses", []))
-		containers += get_containers(deep_get(obj, "spec#containers", []), deep_get(obj, "status#containerStatuses", []))
+		containers = get_containers(containers = deep_get(obj, "spec#initContainers", []), container_statuses = deep_get(obj, "status#initContainerStatuses", []))
+		containers += get_containers(containers = deep_get(obj, "spec#containers", []), container_statuses = deep_get(obj, "status#containerStatuses", []))
 
 		info.append(PodInfo(namespace, name, ref, status, status_group, nodename, pod_ip, age, pod_restarts, last_restart, controller, tolerations, containers))
 
@@ -4330,7 +4338,7 @@ def get_formatter(field):
 
 	return tmp_field
 
-def fieldgenerator(view, field_index, field_indexes, fields = {}, denylist = []):
+def fieldgenerator(view, field_index, field_indexes, fields, denylist):
 	if field_indexes is None or len(field_indexes) == 0:
 		return None, None, None
 
@@ -4365,7 +4373,7 @@ def fieldgenerator(view, field_index, field_indexes, fields = {}, denylist = [])
 		elif field in builtin_fields:
 			field_dict[field] = deep_get(builtin_fields, field, {})
 		else:
-			sys.exit(f"View {view}: field \"{field}\" cannot be found in view or builtin_fields\nView fields: {fields}\nfield_names: {field_names}")
+			sys.exit(f"View {view}: field “{field}“ cannot be found in view or builtin_fields\nView fields: {fields}\nfield_names: {field_names}")
 
 	tmp_fields = {}
 
@@ -4421,7 +4429,7 @@ def genericlistloop(stdscr, view):
 	if "helptext" in views[view]:
 		helptext = viewref["helptext"]
 	else:
-		helptext = generate_helptext(view, "listview", [])
+		helptext = generate_helptext(view, "listview", [], [])
 	if "activatedfun" in viewref:
 		activatedfun = viewref["activatedfun"]
 	else:
@@ -5271,7 +5279,6 @@ def genericlistloop(stdscr, view):
 				uip.force_update()
 
 def clusteroverviewloop(stdscr, view):
-	#field_list, sortcolumn = fieldgenerator(view)
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
@@ -5398,7 +5405,7 @@ def clusteroverviewloop(stdscr, view):
 
 			# Get the list of all nodes
 			vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
-			nodeinfo = get_node_info(vlist)
+			nodeinfo = get_node_info(vlist, extra_vars = {})
 			node_statuses = [s.status_group for s in nodeinfo]
 
 			# Get the list of all pods
@@ -5943,7 +5950,6 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 
 # FIXME
 def cniloop(stdscr, view):
-	#field_list, sortcolumn = fieldgenerator(view)
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
@@ -6147,7 +6153,7 @@ def export_data(stdscr, **kwargs):
 	else:
 		raise Exception(f"Trying to export unknown vtype: {vtype}")
 
-def generate_helptext(view, viewtype, additional_helptexts = [], shortcuts = []):
+def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
 	helptext = []
 
 	if viewtype == "infoview":
@@ -6410,7 +6416,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				_shortcut = [_shortcut]
 			for _sc in _shortcut:
 				if _sc in _shortcuts:
-					sys.exit(f"infoview {view}: The same keypress ({_sc}) is used for both \"{shortcut}\" and \"{_shortcuts[_sc]}\"; aborting.")
+					sys.exit(f"infoview {view}: The same keypress ({_sc}) is used for both “{shortcut}“ and “{_shortcuts[_sc]}“; aborting.")
 				else:
 					_shortcuts[_sc] = shortcut
 
@@ -6621,7 +6627,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						# Only add stuff if there's a path
 						if "path" in value or "paths" in value:
 							# Use generic_infogetter for this
-							data = get_obj(obj = obj, field_dict = {key: value}, field_names = [key])
+							data = get_obj(obj = obj, field_dict = {key: value}, field_names = [key], field_index = "Normal", view = "", filters = {})
 							_formatter = {key: get_formatter(value)}
 							_generator = deep_get(_formatter, f"{key}#generator")
 							if _generator is not None:
@@ -6991,7 +6997,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							"command": command
 						}
 					}
-					action_execute_command(uip, values = _values)
+					action_execute_command(uip, items = [], action = {}, values = _values, title = "")
 			else:
 				call = deep_get(value, "call")
 				call_name = None
@@ -8453,7 +8459,7 @@ def view_pod_logs(stdscr, **kwargs):
 
 	return containerinfoloop(stdscr, container = None, kind = None, obj = None, **multilog_args)
 
-def action_view_pod_logs(uip, items = [], action = {}, values = {}, kind = None, title = ""):
+def action_view_pod_logs(uip, items, action, values, kind, **kwargs):
 	return view_pod_logs(uip.stdscr, **values)
 
 def view_last_applied_configuration(stdscr, **kwargs):
@@ -8469,7 +8475,7 @@ def view_last_applied_configuration(stdscr, **kwargs):
 	formatter = formatters.format_yaml
 	return resourceinfodispatch(stdscr, [data], ("__ResourceView", ""), title = title, formatter = formatter)
 
-def delete_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def delete_resource(uip, items, action, values, kind, **kwargs):
 	success = True
 	force = deep_get(values, "__force", False)
 
@@ -8493,7 +8499,7 @@ def delete_resource(uip, items = [], action = {}, values = {}, kind = None, **kw
 			del win
 			break
 
-def force_delete_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def force_delete_resource(uip, items, action, values, kind, **kwargs):
 	values["__force"] = True
 	return delete_resource(uip, items = items, action = action, values = values, kind = kind)
 
@@ -8568,7 +8574,7 @@ def __edit_resource(kind, namespace, name):
 	result = subprocess.run(args, universal_newlines = True)
 	return result.returncode, args
 
-def apply_configuration_from_file(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def apply_configuration_from_file(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
 	resource_path, rtype = values["resource_path"]
@@ -8583,7 +8589,7 @@ def apply_configuration_from_file(uip, items = [], action = {}, values = {}, kin
 	result = subprocess.run(args, universal_newlines = True)
 	return result.returncode, args
 
-def apply_configuration_from_url(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def apply_configuration_from_url(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
 	resource_path = values["resource_url"]
@@ -8593,7 +8599,7 @@ def apply_configuration_from_url(uip, items = [], action = {}, values = {}, kind
 	return result.returncode, args
 
 # We should probably download and apply locally instead
-def create_resource_from_url(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def create_resource_from_url(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
 	resource_path, rtype = values["resource_url"]
@@ -8617,7 +8623,7 @@ def __summarise_resources(path):
 			resources.append((merged_kind, namespace, name))
 	return resources
 
-def create_resource_from_file(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def create_resource_from_file(uip, items, action, values, kind, **kwargs):
 	resource_path, rtype = values["resource_path"]
 	resource_list = []
 
@@ -8652,7 +8658,7 @@ def create_resource_from_file(uip, items = [], action = {}, values = {}, kind = 
 
 	return result, args
 
-def diff_resource_configuration(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 	resource_path, rtype = values["resource_path"]
 
 	if rtype == "Configuration File":
@@ -8740,7 +8746,7 @@ def edit_resource(stdscr, **kwargs):
 		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
-def restart_resource_rescale(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def restart_resource_rescale(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
 
@@ -8759,7 +8765,7 @@ def restart_resource_rescale(uip, items = [], action = {}, values = {}, kind = N
 		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
-def restart_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def restart_resource_rollout(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
 
@@ -8776,7 +8782,7 @@ def restart_resource_rollout(uip, items = [], action = {}, values = {}, kind = N
 		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
-def rescale_resource(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def rescale_resource(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
 
@@ -8797,7 +8803,7 @@ def rescale_resource(uip, items = [], action = {}, values = {}, kind = None, **k
 
 # Valid kinds:
 # ("Deployment", "apps")
-def pause_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def pause_resource_rollout(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
 
@@ -8816,7 +8822,7 @@ def pause_resource_rollout(uip, items = [], action = {}, values = {}, kind = Non
 
 # Valid kinds:
 # ("Deployment", "apps")
-def resume_resource_rollout(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def resume_resource_rollout(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
 
@@ -8835,7 +8841,7 @@ def resume_resource_rollout(uip, items = [], action = {}, values = {}, kind = No
 
 # Valid kinds:
 # ("Deployment", "apps")
-def stop_resource_rescale(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def stop_resource_rescale(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
 
@@ -8853,11 +8859,11 @@ def stop_resource_rescale(uip, items = [], action = {}, values = {}, kind = None
 		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
-def delete_logs(uip, items = [], action = {}, values = {}, kind = None, title = ""):
+def delete_logs(uip, items, action, values, kind, **kwargs):
 	for item in items:
 		ansible_delete_log(item)
 
-def action_execute_command(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def action_execute_command(uip, items, action, values, kind, **kwargs):
 	tmpargs = deep_get(values, "action_args#command", [])
 	if len(tmpargs) == 0:
 		return
@@ -8895,7 +8901,7 @@ def action_execute_command(uip, items = [], action = {}, values = {}, kind = Non
 		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
-def command_hosts(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def command_hosts(uip, items, action, values, kind, **kwargs):
 	values.pop("_tagged_items", None)
 	hosts = iktlib.join_tuple_list(items, _tuple = "hostname", separator = (", ", "separator"))
 	msg = [("Executing playbook “", "action"), (action.get("description"), "argument"), ("“ on the following hosts: ", "action")] + hosts + [("\n", "action")]
@@ -8950,11 +8956,11 @@ def command_hosts(uip, items = [], action = {}, values = {}, kind = None, **kwar
 		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
-def cordon_node(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def cordon_node(uip, items, action, values, kind, **kwargs):
 	for node in items:
 		kh.cordon_node(node)
 
-def uncordon_node(uip, items = [], action = {}, values = {}, kind = None, **kwargs):
+def uncordon_node(uip, items, action, values, kind, **kwargs):
 	for node in items:
 		kh.uncordon_node(node)
 
@@ -9099,7 +9105,7 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 
 	return actions, action_list
 
-def __populate_playbooklist(path, action_list = {}):
+def __populate_playbooklist(path, action_list):
 	if not os.path.isdir(path):
 		return
 
@@ -9223,7 +9229,7 @@ def __populate_playbooklist(path, action_list = {}):
 
 	return action_list
 
-def populate_playbooklist(context = None, actions = [], action_list = {}, control_plane_selected = False, single_item = False, cluster_available = True):
+def populate_playbooklist(context, actions, action_list, control_plane_selected, single_item = False, cluster_available = True):
 	local_playbooks = deep_get(iktconfig, "Ansible#local_playbooks", [])
 	for playbook_path in local_playbooks:
 		# Substitute {HOME}/ for {HOMEDIR}
@@ -9440,11 +9446,10 @@ def selectwindow(stdscr, uip, refresh_apis = False):
 	if selection != "":
 		defaultview = selection
 		return curses_helper.retval.RETURNFULL
-	else:
-		return curses_helper.retval.NOMATCH
+
+	return curses_helper.retval.NOMATCH
 
 def selectorloop(stdscr, view):
-	#field_list, sortcolumn = fieldgenerator(view)
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
@@ -9729,10 +9734,10 @@ def map_key(view_file, shortcut, activatedfun, key, modifier):
 def populate_views(force_refresh = False):
 	global views # pylint: disable=global-statement
 
-	_available_api_families, status, modified = kh.get_available_api_families(force_refresh = force_refresh)
+	tmp_available_api_families, _status, _modified = kh.get_available_api_families(force_refresh = force_refresh)
 	available_api_families = set()
-	for kind in _available_api_families:
-		if deep_get(_available_api_families[kind], "available", False) == True:
+	for kind in tmp_available_api_families:
+		if deep_get(tmp_available_api_families[kind], "available", False) == True:
 			available_api_families.add(kind)
 
 	viewdir = os.path.join(VIEW_DIR)
@@ -10000,7 +10005,7 @@ def populate_views(force_refresh = False):
 
 					for row in row_indexes:
 						if row not in infopad_rows:
-							sys.exit(f"View {name}: row \"{row}\" cannot be found in infoview\nInfoview rows: {infopad_rows}\nrow names: {row_indexes}")
+							sys.exit(f"View {name}: row “{row}“ cannot be found in infoview\nInfoview rows: {infopad_rows}\nrow names: {row_indexes}")
 						row_fields[row] = copy.deepcopy(deep_get(infopad_rows, row, {}))
 						# We need to reformat the header
 						_header = deep_get(infopad_rows, f"{row}#header", [["<unset>", ["types", "unset"]]])
@@ -10304,13 +10309,13 @@ def list_views():
 
 	iktprint([("The highlighted field for each View is the default sortcolumn.", "default")])
 
-def usage(progname):
+def usage():
 	helptext = [(f"{about.UI_PROGRAM_NAME} ", "programname")]
 	helptext += helptexts.usage
 
 	iktprint(helptext)
 
-def version(progname):
+def version():
 	iktprint([(f"{about.UI_PROGRAM_NAME} ", "programname"), (f"{about.UI_PROGRAM_VERSION}", "version")])
 	iktprint([(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"), (f"{about.PROGRAM_SUITE_VERSION}", "version")])
 	print()
@@ -10452,10 +10457,10 @@ def main():
 			list_namespaces()
 			sys.exit(0)
 		elif arg in ("help", "--help"):
-			usage(os.path.basename(sys.argv[0]))
+			usage()
 			sys.exit(0)
 		elif arg in ("version", "--version"):
-			version(os.path.basename(sys.argv[0]))
+			version()
 			sys.exit(0)
 		elif arg.startswith("--"):
 			iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": unrecognised option", "default")], stderr = True)
