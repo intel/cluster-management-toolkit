@@ -1,4 +1,9 @@
 #! /usr/bin/env python3
+
+"""
+curses-based UI for iKT
+"""
+
 # Before calling into this helper you need to call init_colors()
 
 import copy
@@ -26,12 +31,20 @@ theme = {} # type: ignore
 mousemask = 0
 
 class curses_configuration:
+	"""
+	Configuration options for the curses UI
+	"""
+
 	abouttext = None
 	mousescroll_enable = False
 	mousescroll_up = 0b10000000000000000
 	mousescroll_down = 0b1000000000000000000000000000
 
 class retval:
+	"""
+	Return values from the UI functions
+	"""
+
 	NOMATCH = 0	# No keypress matched/processed; further checks needed (if any)
 	MATCH = 1	# keypress matched/processed; no further action
 	RETURNONE = 2	# keypress matched/processed; return up one level
@@ -39,12 +52,19 @@ class retval:
 	RETURNDONE = 4	# We've done our Return One
 
 def set_mousemask(mask):
-	global mousemask
+	"""
+	Enable/disable mouse support
+	"""
+
+	global mousemask # pylint: disable=global-statement
 	curses.mousemask(mask)
 	mousemask = mask
 
 def get_mousemask():
-	global mousemask
+	"""
+	Get the default mouse mask
+	"""
+
 	return mousemask
 
 color = {
@@ -65,6 +85,10 @@ color_map = {
 }
 
 def get_theme_ref():
+	"""
+	Get a reference to the theme
+	"""
+
 	return theme
 
 def __color_name_to_curses_color(color, color_type):
@@ -122,7 +146,7 @@ def init_pair(pair, color_pair, color_nr):
 			raise
 
 def read_theme(configthemefile: FilePath, defaultthemefile: FilePath):
-	global theme
+	global theme # pylint: disable=global-statement
 	themefile = None
 
 	for item in [configthemefile, f"{configthemefile}.yaml", defaultthemefile]:
@@ -228,7 +252,23 @@ def window_tee_vline(win, x, start, end, attribute = None):
 	else:
 		win.addch(end, x, _btee)
 
+# pylint: disable-next=too-many-arguments
 def scrollbar_vertical(win, x, miny, maxy, height, yoffset, clear_color):
+	"""
+	Draw a vertical scroll bar
+
+		Parameters:
+			win (opaque): The curses window to operate on
+			x (int): The x-coordinate
+			miny (int): the starting point of the scroll bar
+			maxy (int): the ending point of the scroll bar
+			height (int): the height of the scrollable area
+			yoffset (int): the offset into the scrollable area
+		Returns:
+			((int, int), (int, int), (int, int)): A tuple with (y, x) for the upper and lower arrow,
+			as well as the midpoint of the dragger
+	"""
+
 	_arrowup = theme["boxdrawing"].get("arrowup", "▲")
 	_arrowdown = theme["boxdrawing"].get("arrowdown", "▼")
 	_scrollbar = theme["boxdrawing"].get("scrollbar", "▒")
@@ -266,7 +306,23 @@ def scrollbar_vertical(win, x, miny, maxy, height, yoffset, clear_color):
 	# (y, x Upper arrow), (y, x Lower arrow), (y, x, len vertical dragger)
 	return upperarrow, lowerarrow, vdragger
 
+# pylint: disable-next=too-many-arguments
 def scrollbar_horizontal(win, y, minx, maxx, width, xoffset, clear_color):
+	"""
+	Draw a horizontal scroll bar
+
+		Parameters:
+			win (opaque): The curses window to operate on
+			y (int): The y-coordinate
+			minx (int): the starting point of the scroll bar
+			maxx (int): the ending point of the scroll bar
+			width (int): the width of the scrollable area
+			xoffset (int): the offset into the scrollable area
+		Returns:
+			((int, int), (int, int), (int, int)): A tuple with (y, x) for the upper and lower arrow,
+			as well as the midpoint of the dragger
+	"""
+
 	_arrowleft = theme["boxdrawing"].get("arrowleft", "◀")
 	_arrowright = theme["boxdrawing"].get("arrowright", "▶")
 	_scrollbar = theme["boxdrawing"].get("scrollbar", "▒")
@@ -355,6 +411,7 @@ def generate_heatmap(maxwidth, stgroups, selected):
 
 	return array
 
+# pylint: disable-next=too-many-arguments
 def percentagebar(win, y, minx, maxx, total, subsets):
 	block = theme["boxdrawing"].get("smallblock", "■")
 	barwidth = maxx - minx - 3
@@ -406,11 +463,27 @@ def notice(stdscr, y, x, message):
 def alert(stdscr, y, x, message):
 	return __notification(stdscr, y, x, message, ("windowwidget", "alert"))
 
-# Usage: Initialise by calling with a reference to a variable set to None
-# Pass in progress in 0-100; once done clean up with:
-# stdscr.touchwin()
-# stdscr.refresh()
+
+# pylint: disable-next=too-many-arguments
 def progressbar(win, y, minx, maxx, progress, title = None):
+	"""
+	A progress bar;
+	Usage: Initialise by calling with a reference to a variable set to None
+	Pass in progress in 0-100; once done clean up with:
+	stdscr.touchwin()
+	stdscr.refresh()
+
+		Parameters:
+			win (opaque): The curses window to operate on
+			y (int): the y-coordinate
+			miny (int): the starting point of the progress bar
+			maxy (int): the ending point of the progress bar
+			progress (int): 0-100%
+			title (str): The title for the progress bar (None for an anonymous window)
+		Returns:
+			win (opaque): A reference to the progress bar window
+	"""
+
 	width = maxx - minx + 1
 
 	if progress < 0:
@@ -449,10 +522,8 @@ def progressbar(win, y, minx, maxx, progress, title = None):
 
 	return win
 
-ignoreinput = False
-
 def inputwrapper(keypress):
-	global ignoreinput
+	global ignoreinput # pylint: disable=global-statement
 
 	if keypress == 27:	# ESCAPE
 		ignoreinput = True
@@ -461,13 +532,14 @@ def inputwrapper(keypress):
 
 # Show a one line high pad the width of the current pad with a border
 # and specified title in the middle of the screen
+# pylint: disable-next=too-many-arguments
 def inputbox(stdscr, y, x, height, width, title):
 	del height
 
 	# Show the cursor
 	curses.curs_set(True)
 
-	global ignoreinput
+	global ignoreinput # pylint: disable=global-statement
 	ignoreinput = False
 
 	win = curses.newwin(3, width, y, x)
@@ -515,7 +587,7 @@ def inputbox(stdscr, y, x, height, width, title):
 # Show a confirmation box centered around y and x
 # with the specified default value and title
 def confirmationbox(stdscr, y, x, title = "", default = False):
-	global ignoreinput
+	global ignoreinput # pylint: disable=global-statement
 	ignoreinput = False
 	retval = default
 
@@ -581,6 +653,7 @@ def move_yoffset_rel(yoffset, maxyoffset, movement):
 	yoffset = min(maxyoffset, yoffset)
 	return yoffset
 
+# pylint: disable-next=too-many-arguments
 def move_cur_with_offset(curypos, listlen, yoffset, maxcurypos, maxyoffset, movement, wraparound = False):
 	del listlen
 
@@ -685,6 +758,10 @@ def addthemearray(win, array, y = -1, x = -1, selected = False):
 
 
 class widgetlineattrs:
+	"""
+	Special properties used by lines in windowwidgets
+	"""
+
 	NORMAL = 0		# No specific attributes
 	SEPARATOR = 1		# Separators start a new category; they are not selectable
 	DISABLED = 2		# Disabled items are not selectable, but aren't treated as a new category
@@ -898,6 +975,8 @@ def themearray_get_string(themearray):
 def themearray_get_length(themearray):
 	return len(themearray_get_string(themearray))
 
+ignoreinput = False
+
 # A generic window widget
 # items is a list of tuples, like so:
 # (widgetlineattr, strarray, strarray, ...)
@@ -909,9 +988,10 @@ def themearray_get_length(themearray):
 #	"columns": strarray, ...,
 #	"retval": the value to return if this items is selected (any type is allowed)
 # }
+# pylint: disable-next=too-many-arguments
 def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", preselection = "", cursor = True, taggable = False, confirm = False, confirm_buttons = None, **kwargs):
 	stdscr.refresh()
-	global ignoreinput
+	global ignoreinput # pylint: disable=global-statement
 	ignoreinput = False
 
 	padwidth = 2
@@ -1290,28 +1370,54 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 
 	if taggable == True:
 		return tagged_items
-	elif confirm == True:
+
+	if confirm == True:
 		return (confirm_press, selection)
-	else:
-		return selection
+
+	return selection
 
 label_headers = ["Label:", "Value:"]
 
 def get_labels(labels):
+	"""
+	Get labels
+
+		Parameters:
+			labels (str): A dict path
+		Returns:
+			None if no labels are found, list[(widgetlineattrs, themestr, themestr)] if labels are found
+	"""
+
 	if labels is None:
 		return None
 
 	rlabels = []
 	for label in labels:
-		rlabels.append((widgetlineattrs.NORMAL, [(label, attr_to_curses("windowwidget", "default"))], [(labels[label].replace("\n", "\\n"), attr_to_curses("windowwidget", "default"))]))
+		rlabels.append((widgetlineattrs.NORMAL,
+				[(label, attr_to_curses("windowwidget", "default"))],
+				[(labels[label].replace("\n", "\\n"), attr_to_curses("windowwidget", "default"))]))
 	return rlabels
 
 annotation_headers = ["Annotation:", "Value:"]
 
 def get_annotations(annotations):
+	"""
+	Get annotations
+
+		Parameters:
+			annotations (str): A dict path
+		Returns:
+			The return value from get_labels()
+	"""
+
 	return get_labels(annotations)
 
+# pylint: disable-next=too-many-instance-attributes,too-many-public-methods
 class UIProps:
+	"""
+	The class used for the iKT UI
+	"""
+
 	def __init__(self, stdscr):
 		self.stdscr = stdscr
 
@@ -1322,6 +1428,9 @@ class UIProps:
 		self.info = None
 		self.sorted_list = None
 		self.sortorder_reverse = False
+
+		# Used for searching
+		self.searchkey = ""
 
 		# Used for label list
 		self.labels = None
@@ -1370,13 +1479,15 @@ class UIProps:
 		self.infopadheight = 0
 		self.infopadwidth = 0
 		self.infopad = None
-		# For the list of pods
+		# For lists
 		self.headerpadminwidth = 0
 		self.headerpadypos = 0
 		self.headerpadxpos = 0
 		self.headerpadheight = 0
 		self.headerpadwidth = 0
 		self.headerpad = None
+		self.listlen = None
+		self.info = None
 		# This is a list of the xoffset for all headers in listviews
 		self.tabstops = []
 		self.listpadypos = 0
@@ -1384,6 +1495,8 @@ class UIProps:
 		self.listpadheight = 0
 		self.listpadwidth = 0
 		self.listpad = None
+		self.listpadminwidth = 0
+		self.reversible = True
 		# For logs with a timestamp column
 		self.tspadypos = 0
 		self.tspadxpos = 0
@@ -1397,8 +1510,16 @@ class UIProps:
 		self.logpadwidth = 0
 		self.logpad = None
 		self.loglen = 0
+		self.logpadminwidth = 0
 		self.statusbar = None
+		self.statusbarypos = None
 		self.continuous_log = False
+		self.match_index = None
+		self.search_matches = None
+		self.timestamps = None
+		self.facilities = None
+		self.severities = None
+		self.messages = None
 		# For checking clicks/drags of the scrollbars
 		self.leftarrow = -1, -1
 		self.rightarrow = -1, -1
@@ -1412,6 +1533,9 @@ class UIProps:
 		self.on_activation = {}
 		self.extraref = None
 		self.data = None
+
+		self.windowheader = None
+		self.view = None
 
 	def __del__(self):
 		if self.infopad is not None:
@@ -1472,14 +1596,15 @@ class UIProps:
 	def is_selected(self, selected):
 		if selected == None:
 			return False
-		else:
-			return self.selected == selected
+
+		return self.selected == selected
 
 	def get_selected(self):
 		return self.selected
 
 	# Default behaviour:
 	# timestamps enabled, no automatic updates, default sortcolumn = "status"
+	# pylint: disable-next=too-many-arguments
 	def init_window(self, field_list, view = None, windowheader = "", timestamp = True, update_delay = -1, sortcolumn = "status", sortorder_reverse = False, reversible = True, helptext = None, activatedfun = None, on_activation = None, extraref = None, data = None):
 		self.field_list = field_list
 		self.searchkey = ""
@@ -1678,6 +1803,7 @@ class UIProps:
 
 	# For generic information
 	# Pass -1 as width to the infopadminwidth
+	# pylint: disable-next=too-many-arguments
 	def init_infopad(self, height, width, ypos, xpos, labels = None, annotations = None):
 		self.infopadminwidth = self.maxx + 1
 		self.infopadypos = ypos
@@ -1719,6 +1845,7 @@ class UIProps:
 	# For (optionally) scrollable lists of information,
 	# optionally with a header
 	# Pass -1 as width to use listpadminwidth
+	# pylint: disable-next=too-many-arguments
 	def init_listpad(self, listheight, width, ypos, xpos, header = True):
 		self.listpadminwidth = self.maxx
 		if header == True:
@@ -1915,6 +2042,7 @@ class UIProps:
 		else:
 			self.statusbar = curses.newpad(2, self.maxx + 1)
 
+	# pylint: disable-next=too-many-arguments
 	def addstr(self, win, string, y = -1, x = -1, attribute = curses.A_NORMAL):
 		cury, curx = win.getyx()
 		winmaxy, winmaxx = win.getmaxyx()
@@ -1935,7 +2063,7 @@ class UIProps:
 		try:
 			win.addstr(y, x, string, attribute)
 		except TypeError as e:
-			raise TypeError(f"{e}\n  y: {y}\n  x: {x}\n  string: |{string}|\n  length: {len(string)}\n  attribute: {attribute}")
+			raise TypeError(f"{e}\n  y: {y}\n  x: {x}\n  string: |{string}|\n  length: {len(string)}\n  attribute: {attribute}") from e
 
 		cury, curx = win.getyx()
 		return cury, curx
@@ -1958,6 +2086,7 @@ class UIProps:
 	# (string, (context, curses_attr)),
 	# (context, theme_ref),
 	# (context, theme_ref, selected),
+	# pylint: disable-next=too-many-arguments
 	def addthemearray(self, win, array, y = -1, x = -1, selected = False):
 		for item in array:
 			if not isinstance(item, tuple):
@@ -2369,6 +2498,7 @@ class UIProps:
 		sortkey2 = self.field_list[self.sortcolumn]["sortkey2"]
 		return sortkey1, sortkey2
 
+	# pylint: disable-next=too-many-arguments,too-many-return-statements
 	def handle_mouse_events(self, win, sorted_list, activatedfun, extraref, data):
 		try:
 			_eventid, x, y, _z, bstate = curses.getmouse()
@@ -2543,6 +2673,7 @@ class UIProps:
 
 		return False
 
+	# pylint: disable-next=too-many-return-statements
 	def generic_keycheck(self, c):
 		if c == curses.KEY_RESIZE:
 			self.resize_window()
