@@ -161,7 +161,7 @@ clusteroverview = [
 	("[F1] / [Shift] + H", "Show this helptext"),
 	("[F2]", "Switch main view"),
 	("[F3]", "Switch main view (recheck available API resources)"),
-	("[Shift] + N", "Open info page for Node [Node context only]"),
+	("O", "Open info page for Node"),
 	("[Shift] + N", "Open info page for Namespace [Pod context only]"),
 	("[Shift] + P", "Open info page for Pod [Pod context only]"),
 	("[Shift] + V", "Show package versions"),

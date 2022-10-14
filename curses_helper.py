@@ -8,6 +8,7 @@ curses-based UI for iKT
 
 import copy
 import curses
+import curses.textpad
 from datetime import datetime
 import errno
 from operator import attrgetter
@@ -643,16 +644,6 @@ def confirmationbox(stdscr, y, x, title = "", default = False):
 
 	return retval
 
-def move_xoffset_rel(xoffset, maxxoffset, movement):
-	xoffset = max(0, xoffset + movement)
-	xoffset = min(maxxoffset, xoffset)
-	return xoffset
-
-def move_yoffset_rel(yoffset, maxyoffset, movement):
-	yoffset = max(0, yoffset + movement)
-	yoffset = min(maxyoffset, yoffset)
-	return yoffset
-
 # pylint: disable-next=too-many-arguments
 def move_cur_with_offset(curypos, listlen, yoffset, maxcurypos, maxyoffset, movement, wraparound = False):
 	del listlen
@@ -755,7 +746,6 @@ def addthemearray(win, array, y = -1, x = -1, selected = False):
 			strarray = themearray_to_strarray(attr_ref, context = context, selected = _selected)
 			y, x = addarray(win, strarray, y = y, x = x)
 	return y, x
-
 
 class widgetlineattrs:
 	"""
@@ -2276,7 +2266,7 @@ class UIProps:
 		pos = self.curypos + self.yoffset
 		y = 0
 		newpos = 0
-		current = None
+		current = ""
 		sortkey1, sortkey2 = self.get_sortkeys()
 		sortkey = sortkey2 if sortkey1 == "status_group" else sortkey1
 
@@ -2317,7 +2307,7 @@ class UIProps:
 		pos = self.curypos + self.yoffset
 		y = 0
 		newpos = 0
-		current = None
+		current = ""
 		sortkey1, sortkey2 = self.get_sortkeys()
 		sortkey = sortkey2 if sortkey1 == "status_group" else sortkey1
 
@@ -2365,11 +2355,17 @@ class UIProps:
 		match = False
 		for y in range(pos, len(sorted_list)):
 			tmp2 = getattr(sorted_list[y], self.sortcolumn)
-			if self.sortkey1 in ("age", "seen"):
+			if self.sortkey1 in ("age", "first_seen", "last_restart", "seen"):
 				tmp2 = [iktlib.seconds_to_age(tmp2)]
 			else:
 				if isinstance(tmp2, (list, tuple)):
-					tmp2 = map(str, tmp2)
+					if isinstance(tmp2[0], tuple):
+						tmp3 = []
+						for t in tmp2:
+							tmp3 += map(str, t)
+						tmp2 = tmp3
+					else:
+						tmp2 = map(str, tmp2)
 				else:
 					tmp2 = [str(tmp2)]
 			for part in tmp2:

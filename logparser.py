@@ -158,6 +158,15 @@ def name_to_loglevel(name):
 	raise ValueError(f"Programming error! Loglevel {name} does not exist!")
 
 def month_to_numerical(month):
+	"""
+	Convert a 3-letter month string to a numerical month
+
+		Parameters:
+			month (str): The month string
+		Returns:
+			int: The numerical value for the month
+	"""
+
 	months = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
 	month = str(month.lower()[0:3]).zfill(2)
 
@@ -206,18 +215,6 @@ def str_4letter_to_severity(string, default = None):
 
 def str_to_severity(string, default = None):
 	severities = {
-		"error": loglevel.ERR,
-		"warn": loglevel.WARNING,
-		"warning": loglevel.WARNING,
-		"notice": loglevel.NOTICE,
-		"info": loglevel.INFO,
-		"debug": loglevel.DEBUG,
-	}
-
-	return severities.get(string.lower(), default)
-
-def level_to_severity(level):
-	severities = {
 		"fatal": loglevel.CRIT,
 		"error": loglevel.ERR,
 		"eror": loglevel.ERR,
@@ -230,11 +227,7 @@ def level_to_severity(level):
 		"debu": loglevel.DEBUG,
 	}
 
-	severity = severities.get(level, None)
-	if severity is None:
-		raise Exception(f"Unknown loglevel {level}")
-
-	return severity
+	return severities.get(string.lower(), default)
 
 def lvl_to_letter_severity(lvl):
 	severities = {
@@ -310,27 +303,21 @@ def split_4letter_spaced_severity(message, severity = loglevel.INFO):
 
 def split_bracketed_severity(message, default = loglevel.INFO):
 	severities = {
-		"[FATAL]": loglevel.CRIT,
-		"[ERROR]": loglevel.ERR,
+		"[fatal]": loglevel.CRIT,
 		"[error]": loglevel.ERR,
-		"[ERR]": loglevel.ERR,
-		"[WARNING]": loglevel.WARNING,
-		"[Warning]": loglevel.WARNING,
+		"[err]": loglevel.ERR,
 		"[warning]": loglevel.WARNING,
-		"[WARN]": loglevel.WARNING,
-		"[NOTICE]": loglevel.NOTICE,
+		"[warn]": loglevel.WARNING,
 		"[notice]": loglevel.NOTICE,
-		"[INFO]": loglevel.INFO,
 		"[info]": loglevel.INFO,
-		"[System]": loglevel.INFO,	# mysql seems to have its own loglevels
-		"[Note]": loglevel.INFO,	# none of which makes every much sense
-		"[DEBUG]": loglevel.DEBUG,
+		"[system]": loglevel.INFO,	# MySQL seems to have its own loglevels
+		"[note]": loglevel.INFO,	# none of which makes every much sense
 		"[debug]": loglevel.DEBUG,
 	}
 
 	tmp = re.match(r"^(\[[A-Za-z]+?\]) ?(.*)", message)
 	if tmp is not None:
-		severity = severities.get(tmp[1])
+		severity = severities.get(tmp[1].lower())
 		if severity is not None:
 			message = tmp[2]
 		else:
@@ -384,7 +371,7 @@ def split_iso_timestamp(message, timestamp):
 		# 2020-02-07 13:12:24,224
 		# [2020-02-07 13:12:24.224]
 		# [2020-02-07 13:12:24,224]
-		tmp = re.match(r"^\[?(\d\d\d\d-\d\d-\d\d) (\d\d:\d\d:\d\d)(,|\.)(\d+)\]? ?(.*)", message)
+		tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)(,|\.)(\d+)\]? ?(.*)", message)
 		if tmp is not None:
 			if tmp_timestamp is None:
 				ymd = tmp[1]
@@ -396,7 +383,7 @@ def split_iso_timestamp(message, timestamp):
 			break
 
 		# 2020-02-07T13:12:24.224Z (Z = UTC)
-		tmp = re.match(r"^(\d\d\d\d-\d\d-\d\d)T(\d\d:\d\d:\d\d\.\d+)Z ?(.*)", message)
+		tmp = re.match(r"^(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d\.\d+)Z ?(.*)", message)
 		if tmp is not None:
 			if tmp_timestamp is None:
 				ymd = tmp[1]
@@ -407,7 +394,7 @@ def split_iso_timestamp(message, timestamp):
 
 		# 2020-02-13T12:06:18.011345 [+-]00:00 (+timezone)
 		# 2020-09-23T17:12:32.183967091[+-]03:00
-		tmp = re.match(r"^(\d\d\d\d-\d\d-\d\d)T(\d\d:\d\d:\d\d\.\d+) ?([\+-])(\d\d):(\d\d) ?(.*)", message)
+		tmp = re.match(r"^(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d\.\d+) ?([\+-])(\d\d):(\d\d) ?(.*)", message)
 		if tmp is not None:
 			if tmp_timestamp is None:
 				ymd = tmp[1]
@@ -422,7 +409,7 @@ def split_iso_timestamp(message, timestamp):
 		# 2020-02-13 12:06:18[+-]00:00 (+timezone)
 		# [2020-02-13 12:06:18 [+-]00:00] (+timezone)
 		# 2020-02-13T12:06:18[+-]0000 (+timezone)
-		tmp = re.match(r"^\[?(\d\d\d\d-\d\d-\d\d)[ T](\d\d:\d\d:\d\d) ?([\+-])(\d\d):?(\d\d)\]? ?(.*)", message)
+		tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d)[ T](\d\d:\d\d:\d\d) ?([\+-])(\d\d):?(\d\d)\]? ?(.*)", message)
 		if tmp is not None:
 			if tmp_timestamp is None:
 				ymd = tmp[1]
@@ -438,7 +425,7 @@ def split_iso_timestamp(message, timestamp):
 		# 2020-02-20 13:47:41.008416: (assume UTC)
 		# 2020/02/20 13:47:41.008416 (assume UTC)
 		# 2020-02-20 13:47:41.008416Z (Z = UTC)
-		tmp = re.match(r"^(\d\d\d\d)[-/](\d\d)[-/](\d\d) (\d\d:\d\d:\d\d\.\d+)[Z:]? ?(.*)", message)
+		tmp = re.match(r"^(\d{4})[-/](\d\d)[-/](\d\d) (\d\d:\d\d:\d\d\.\d+)[Z:]? ?(.*)", message)
 		if tmp is not None:
 			if tmp_timestamp is None:
 				year = tmp[1]
@@ -451,7 +438,7 @@ def split_iso_timestamp(message, timestamp):
 
 		# [2021-12-18T20:15:36Z]
 		# 2021-12-18T20:15:36Z
-		tmp = re.match(r"^\[?(\d\d\d\d-\d\d-\d\d)T(\d\d:\d\d:\d\d)Z\]? ?(.*)", message)
+		tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d)Z\]? ?(.*)", message)
 		if tmp is not None:
 			if tmp_timestamp is None:
 				ymd = tmp[1]
@@ -463,7 +450,7 @@ def split_iso_timestamp(message, timestamp):
 
 		# 2020-02-20 13:47:41 (assume UTC)
 		# 2020/02/20 13:47:41 (assume UTC)
-		tmp = re.match(r"^(\d\d\d\d)[-/](\d\d)[-/](\d\d) (\d\d:\d\d:\d\d) ?(.*)", message)
+		tmp = re.match(r"^(\d{4})[-/](\d\d)[-/](\d\d) (\d\d:\d\d:\d\d) ?(.*)", message)
 		if tmp is not None:
 			if tmp_timestamp is None:
 				year = tmp[1]
@@ -488,7 +475,7 @@ def strip_iso_timestamp(message):
 
 # 2020-02-20 13:47:01.531 GMT
 def strip_iso_timestamp_with_tz(message):
-	tmp = re.match(r"^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d\.\d\d\d [A-Z]{3}(\s+?|$)(.*)", message)
+	tmp = re.match(r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d\d\d [A-Z]{3}(\s+?|$)(.*)", message)
 	if tmp is not None:
 		message = tmp[2]
 	return message
@@ -1439,7 +1426,7 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 			for _sev in severities:
 				d.pop(_sev, None)
 		if level is not None:
-			severity = level_to_severity(level)
+			severity = str_to_severity(level)
 		else:
 			if severity is None:
 				severity = loglevel.INFO
@@ -2373,15 +2360,35 @@ def logparser_initialised(parser = None, message = "", fold_msg = True, line = 0
 
 	return timestamp, pod_name, severity, message, remnants
 
-# pod_name, container_name, and image_name are used to decide what parser to use;
-# this allows for different containers in the same pod to use different parsers,
-# and different versions of pod to use different parsers
-# "basic_8601" is for used unknown formats with ISO8601 timestamps, or other timestamps
-# with similar ordering (YYYY MM DD HH MM SS, with several choices for separators and whitespace,
-# include none, accepted)
-#	2020-02-16T22:03:08.736292621Z
 # pylint: disable-next=too-many-arguments
 def logparser(pod_name, container_name, image_name, message, fold_msg = True, override_parser = None, container_type = "container", line = 0):
+	"""
+	This (re-)initialises the parser; it will identify what parser rules to use
+	helped by pod_name, container_name, and image_name;
+	this allows for different containers in the same pod to use different parsers,
+	and different versions of a pod to use different parsers
+
+		Parameters:
+			pod_name (str): The name of the pod
+			container_name (str): The name of the container
+			image_name (str): The name of the image
+			message (str): A line to parse
+			fold_msg (bool): Should the message be folded (unmodified) or unfolded (expanded to multiple lines where possible)
+			override_parser (opaque): A reference to the parser rules to use instead of the autodetected parser
+			container_type (str): container or init_container
+			line (int): The line number
+		Returns:
+			(timestamp, pod_name, severity, message, remnants, (lparser, uparser), parser):
+				timestamp (datetime): A timestamp
+				pod_name: The name of the pod
+				severity (int): Loglevel
+				message (str): An unformatted string
+				remnants ((themarray, severity): Formatted remainders with severity
+				lparser (str): Subidentifiers to help explain what rules in the parser file are used
+				uparser (str): Name of the parser file used
+				parser (opaque): A reference to the parser rules that are used
+	"""
+
 	# First extract the Kubernetes timestamp
 	message, timestamp = split_iso_timestamp(message, None)
 
