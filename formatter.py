@@ -92,6 +92,7 @@ def format_yaml_line(line, override_formatting = None):
 		]
 		return tmpline
 	if line.lstrip(" ").startswith("- "):
+		# Safe
 		tmp = re.match(r"^(\s*?)- (.*)", line)
 		tmpline += [
 			(f"{tmp[1]}", generic_format),
@@ -111,6 +112,7 @@ def format_yaml_line(line, override_formatting = None):
 			(":", separator_format),
 		]
 	else:
+		# Safe
 		tmp = re.match(r"^(.*?)(:\s*?)(&|\.|)(.*)", line)
 		# pylint: disable-next=line-too-long
 		if tmp is not None and (tmp[1].strip().startswith("\"") and tmp[1].strip().endswith("\"") or (not tmp[1].strip().startswith("\"") and not tmp[1].strip().endswith("\""))):
@@ -275,12 +277,19 @@ def format_caddyfile(lines, **kwargs):
 	single_site = True
 	site = False
 
+	# XXX: DoS
 	block_open_regex = re.compile(r"(\s*)({)(.*)")
+	# XXX: DoS
 	snippet_regex = re.compile(r"(\s*)(\(.+?\))(.*)")
+	# XXX: DoS
 	site_regex = re.compile(r"(\s*)(.+?)(\s+{\s*$|$)")
+	# XXX: DoS
 	block_close_regex = re.compile(r"(\s*)(}\s*$)")
+	# XXX: DoS
 	matcher_regex = re.compile(r"(\s*)(@.*?|\*/.*?)(\s.*)")
+	# XXX: DoS
 	directive_regex = re.compile(r"(\s*)(.+?)(\s.*|$)")
+	# XXX: DoS
 	argument_regex = re.compile(r"(.*?)(\s{\s*$|$)")
 
 	for line in lines:
@@ -426,6 +435,7 @@ def format_nginx(lines, **kwargs):
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
+	# Safe
 	key_regex = re.compile(r"^(\s*)(#.*$|}|\S+|$)(.+;|.+{|)(\s*#.*$|)")
 
 	for line in lines:
@@ -498,11 +508,17 @@ def format_xml(lines, **kwargs):
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
+	# XXX: DoS
 	escape_regex = re.compile(r"(\s*)(&)(.+?)(;)(.*)")
+	# XXX: DoS
 	content_regex = re.compile(r"(.*?)(<.*|&.*)")
+	# XXX: DoS
 	tag_open_regex = re.compile(r"(\s*)(</|<!--|<\?|<)(.*)")
+	# Safe
 	tag_named_regex = re.compile(r"(.+?)(\s*>|\s*\?>|\s*$|\s+.*)")
+	# XXX: DoS
 	tag_close_regex = re.compile(r"(\s*)(/>|\?>|-->|>)(.*)")
+	# XXX: DoS
 	remainder_regex = re.compile(r"(\s*.+?)(=|)(\".+?\"|)(\s*$|\s*/>|\s*\?>|\s*-->|\s*>|\s+)(.*|)")
 
 	i = 0
@@ -690,7 +706,9 @@ def format_toml(lines, **kwargs):
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
+	# XXX: DoS
 	key_value_regex = re.compile(r"^(\s*?)(.*)(\s*?=\s*?)(.*)")
+	# Safe
 	comment_end_regex = re.compile(r"^(.*?)(#.*)")
 
 	for line in lines:
@@ -777,6 +795,7 @@ def format_fluentbit(lines, **kwargs):
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
+	# Safe
 	key_value_regex = re.compile(r"^(\s*)(\S*)(\s*)(.*)")
 
 	for line in lines:
@@ -830,6 +849,7 @@ def format_ini(lines, **kwargs):
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
+	# XXX: DoS
 	key_value_regex = re.compile(r"^(\s*?)(.*)(\s*?=\s*?)(.*)")
 
 	for line in lines:

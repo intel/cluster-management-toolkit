@@ -204,9 +204,14 @@ def populate_playbooks_from_paths(paths):
 
 	playbooks = []
 
-	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+	# Safe
+	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	for playbookpath in paths:
+		# Don't process backups, etc.
+		if filename.startswith(("~", ".")):
+			continue
+
 		# Only process playbooks
 		tmp = yaml_regex.match(os.path.basename(playbookpath))
 		if tmp is None:
@@ -922,6 +927,7 @@ def add_nodes(options, args):
 		sys.exit(errno.EBADMSG)
 
 	kubeadm_version = ""
+	# Safe
 	kubeadm_version_regex = re.compile(r"^(.*?): (.*)")
 
 	for line in tmp:

@@ -163,8 +163,10 @@ def ansible_get_inventory_pretty(groups = None, highlight: bool = False, include
 
 	if highlight == True and len(dump) > 0:
 		i = 0
+		# Safe
 		list_regex = re.compile(r"^(\s*)((- )+)(.*)")
-		key_value_regex = re.compile(r"(.*?)(:)(.*)")
+		# Safe
+		key_value_regex = re.compile(r"^(.*?)(:)(.*)")
 		for i in range(0, len(dump)): # pylint: disable=consider-using-enumerate
 			# Is it a list?
 			tmp2 = list_regex.match(dump[i])
@@ -757,6 +759,7 @@ def ansible_get_logs():
 
 	logs = []
 
+	# Safe
 	timestamp_regex = re.compile(r"^(\d{4}-\d\d-\d\d_\d\d:\d\d:\d\d\.\d+)_(.*)")
 
 	for item in os.listdir(ANSIBLE_LOG_DIR):
@@ -939,7 +942,9 @@ def ansible_write_log(start_date, playbook: str, events):
 
 	playbook_name = playbook
 	if "/" in playbook_name:
-		tmp = re.match(r".*/(.*).yaml", playbook)
+		tmp2 = os.path.basename(playbook_name)
+		# Safe
+		tmp = re.match(r"^(.*)\.ya?ml$", tmp2)
 		if tmp is not None:
 			playbook_name = tmp[1]
 

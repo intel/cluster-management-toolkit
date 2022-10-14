@@ -187,6 +187,7 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 	# If filename is supplied it's expected that the checksum file can contain
 	# more than one checksum, or at least that it contains a filename;
 	# if so we find the matching entry
+	# Safe
 	regex = re.compile(r"^([0-9a-f]+)\s+(\S+)$")
 	match_checksum = None
 

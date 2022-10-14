@@ -340,8 +340,10 @@ cni_upgrade_data = {
 	"cilium": {
 		"executable": {
 			"version_command": ["cilium", "--context", "<<<context>>>", "version"],
+			# Safe
 			"version_regex": r"^cilium-cli: (v)(\d+)(\.)(\d+)(\.)(\d+) .*$",
 			"candidate_version_url": "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
+			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz",
 			"checksum_url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz.sha256sum",
@@ -350,8 +352,10 @@ cni_upgrade_data = {
 		},
 		"CNI": {
 			"version_command": ["cilium", "--context", "<<<context>>>", "version"],
+			# Safe
 			"version_regex": r"^cilium image \(running\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"candidate_version_command": ["cilium", "--context", "<<<context>>>", "version"],
+			# Safe
 			"candidate_version_regex": r"^cilium image \(default\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"upgrade": ["cilium", "--context", "<<<context>>>", "upgrade"],
 			"install": ["cilium", "--context", "<<<context>>>", "install"],
@@ -946,8 +950,6 @@ def __get_theme(string, default):
 	}
 	return translation.get(string, default)
 
-extract_version_re = re.compile(r"^\s*.*?\s\|\s*(.*?)\s\|\s.*")
-
 def extract_version(line):
 	"""
 	Extract a version from an apt-cache madison entry
@@ -958,10 +960,10 @@ def extract_version(line):
 			A version number
 	"""
 
-	tmp = extract_version_re.match(line)
-	if tmp is None:
+	tmp = line.split("|")
+	if len(tmp) != 3:
 		raise Exception("Error: Failed to extract a version; this is (most likely) a programming error.")
-	return tmp[1]
+	return tmp[1].strip()
 
 def check_deb_versions(deb_packages):
 	"""
@@ -978,8 +980,10 @@ def check_deb_versions(deb_packages):
 	args = ["/usr/bin/apt-cache", "policy"] + deb_packages
 	response = execute_command_with_response(args)
 	split_response = response.splitlines()
-	installed_regex = re.compile(r"\s*Installed: (.*)")
-	candidate_regex = re.compile(r"\s*Candidate: (.*)")
+	# Safe
+	installed_regex = re.compile(r"^\s*Installed: (.*)")
+	# Safe
+	candidate_regex = re.compile(r"^\s*Candidate: (.*)")
 	for line in split_response:
 		if line.endswith(":"):
 			package = line[:-1]
@@ -1166,7 +1170,8 @@ def __playbook_paths_from_path(path):
 
 	playbook_paths = []
 
-	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+	# Safe
+	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	# Populate list of playbooks
 	for filename in os.listdir(path):
@@ -1195,13 +1200,18 @@ def populate_playbooks_from_paths(paths):
 
 	playbooks = []
 
-	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+	# Safe
+	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	for playbookpath in paths:
 		# Only process playbooks
 		tmp = yaml_regex.match(os.path.basename(playbookpath))
 		if tmp is None:
 			raise Exception(f"The playbook filename “{os.path.basename(playbookpath)}“ does not end with .yaml or .yml; this is most likely a programming error.")
+
+		# Don't process backups, etc.
+		if os.path.basename(playbookpath).startswith(("~", ".")):
+			continue
 
 		playbookname = tmp[1]
 		description = None
@@ -1230,7 +1240,8 @@ def populate_playbooks_from_dir(path):
 
 	playbook_paths = []
 
-	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+	# Safe
+	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	# Populate list of playbooks
 	for filename in os.listdir(path):
@@ -3012,6 +3023,7 @@ def preflight_check(options, args):
 
 	sudoer = True
 
+	# Safe
 	sudo_msg_regex = re.compile(r"^User ([^\s]+) is not allowed to run sudo on.*")
 
 	for line in result.splitlines():
@@ -3030,6 +3042,7 @@ def preflight_check(options, args):
 		result = execute_command_with_response(args)
 		passwordless_sudo = False
 
+		# Safe
 		sudo_permissions_regex = re.compile(r"^\s*\(ALL(\s*:\s*ALL)?\)\s*NOPASSWD:\s*ALL\s*$")
 
 		for line in result.splitlines():
@@ -3048,6 +3061,7 @@ def preflight_check(options, args):
 	args = ["/usr/bin/ssh", "-G", "localhost"]
 	result = execute_command_with_response(args)
 
+	# Safe
 	hashknownhosts_regex = re.compile(r"^hashknownhosts\s+yes$")
 
 	for line in result.splitlines():
@@ -3147,6 +3161,7 @@ def troubleshoot(options, args):
 	# but most not be newer
 	critical = False
 
+	# Safe
 	version_regex = re.compile(r"^v(\d+)\.(\d+)\..*")
 
 	for node in vlist:

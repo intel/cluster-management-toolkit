@@ -201,6 +201,7 @@ def join_tuple_list(items, _tuple = "", item_prefix = None, item_suffix = None, 
 def age_to_seconds(age):
 	seconds = 0
 
+	# Safe
 	tmp = re.match(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?", age)
 	if tmp is not None:
 		if len(tmp[0]) == 0:
@@ -321,10 +322,12 @@ def timestamp_to_datetime(timestamp, default = none_timestamp()):
 	rtimestamp = timestamp
 
 	# Some timestamps are weird
+	# Safe
 	tmp = re.match(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6})\d* ([+-]\d{4}) [A-Z]{3}$", timestamp)
 	if tmp is not None:
 		timestamp = f"{tmp[1]}{tmp[2]}"
 
+	# Safe
 	tmp = re.match(r"^(.+?) ?([+-]\d{4})$", timestamp)
 	if tmp is not None:
 		timestamp = f"{tmp[1]}{tmp[2]}"
@@ -415,6 +418,7 @@ def get_package_versions(hostname):
 
 	package_versions = []
 
+	# Safe
 	package_version_regex = re.compile(r"^(.*?): (.*)")
 
 	for line in tmp:

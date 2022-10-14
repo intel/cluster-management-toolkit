@@ -2192,8 +2192,10 @@ class KubernetesHelper:
 		if name is None:
 			return False
 
+		# Safe
 		name_regex = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
-		portname_regex = re.compile(r".*[a-z].*")
+		# Safe
+		portname_regex = re.compile(r"^.*[a-z].*")
 
 		if rtype in ("dns-subdomain", "dns-label"):
 			if rtype == "dns-label":
@@ -2272,26 +2274,25 @@ class KubernetesHelper:
 		for context in contexts:
 			name = context[1]
 			cluster = context[2]
+			authinfo = context[3]
 
+			# Add the first context we find for a cluster
 			if cluster not in __clusters:
 				__clusters[cluster] = {
-					"contexts": [],
+					"context": name,
+					"authinfo": authinfo,
 				}
-			__clusters[cluster]["contexts"].append(name)
+			else:
+				# Only override that entry if we find an admin
+				if "admin" in authinfo and "admin" not in __clusters[cluster]["authinfo"]:
+					__clusters[cluster]["context"] = name
+					__clusters[cluster]["authinfo"] = authinfo
 
-		clustername_regex = re.compile(r"admin.*@")
-
-		# If we find a context that mentions admin, pick that one,
+		# If we find a context where the authinfo mentions admin, pick that one,
 		# otherwise just find the first context for each cluster
-		for cluster in __clusters:
-			for context in __clusters[cluster]["contexts"]:
-				# We don't want to risk matches where the *cluster* is named admin
-				tmp = clustername_regex.match(context)
-				if tmp is not None:
-					clusters.append((cluster, context))
-					continue
-			# Nope, no context mentions admin
-			clusters.append((cluster, __clusters[cluster]["contexts"][0]))
+		for cluster, data in __clusters.items():
+			clusters.append((cluster, __clusters[cluster]["context"]))
+
 		return clusters
 
 	# Returns False if the context wasn't changed (for whatever reason)
@@ -2338,7 +2339,8 @@ class KubernetesHelper:
 		ca_certs = None
 
 		# OK, we have a user and a cluster to look for
-		host_and_port_regex = re.compile(r"https?://(.*):(\d+)")
+		# Safe
+		host_and_port_regex = re.compile(r"^https?://(.*):(\d+)")
 
 		for cluster in deep_get(kubeconfig, "clusters", []):
 			if deep_get(cluster, "name") != cluster_name:
@@ -2553,6 +2555,7 @@ class KubernetesHelper:
 	def get_node_roles(self, node):
 		roles = []
 
+		# Safe
 		node_role_regex = re.compile(r"^node-role\.kubernetes\.io/(.*)")
 
 		for label in deep_get(node, "metadata#labels", {}).items():
@@ -2671,7 +2674,8 @@ class KubernetesHelper:
 	def kind_api_version_to_kind(self, kind, api_version):
 		# The API group is anything before /, or the empty string if there's no "/"
 		if api_version is not None and "/" in api_version:
-			tmp = re.match(r"(.*)/.*", api_version)
+			# Safe
+			tmp = re.match(r"^(.*)/.*", api_version)
 			if tmp is None:
 				raise Exception(f"Could not extract API group from {api_version}")
 			api_group = tmp[1]

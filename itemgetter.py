@@ -269,6 +269,7 @@ def get_allowed_ips(kh, obj, **kwargs):
 
 	allowed_ips = []
 
+	# Safe
 	ip_mask_regex = re.compile(r"^(\d+\.\d+\.\d+\.\d+)\/(\d+)")
 
 	for addr in deep_get(obj, "spec#allowedIPs"):
@@ -503,6 +504,7 @@ def get_pod_affinity(kh, obj, **kwargs):
 
 	for affinity in deep_get(obj, "spec#affinity", []):
 		atype = affinity
+		# Safe
 		policy_regex = re.compile(r"^(ignored|preferred|required)DuringScheduling(Ignored|Preferred|Required)DuringExecution$")
 
 		for policy in deep_get(obj, f"spec#affinity#{atype}", ""):

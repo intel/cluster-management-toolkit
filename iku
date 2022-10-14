@@ -384,6 +384,8 @@ def update_field_widths(field_dict, field_names, objects):
 		field_suffixes = field_dict[field_name].get("field_suffixes", None)
 		formatting = deep_get(field_dict, f"{field_name}#formatting", {})
 
+		tmplen = 0
+
 		for obj in objects:
 			generator = field_dict[field_name].get("generator")
 			processor = field_dict[field_name].get("processor")
@@ -472,9 +474,12 @@ def get_metrics_list(**kwargs):
 	metrics, status = kh.get_metrics()
 
 	# metrics are on the form:
+	# apiserver_audit_event_total 0
 	# aggregator_openapi_v2_regeneration_count{apiservice="*",reason="startup"} 0
 	# apiserver_requested_deprecated_apis{group="autoscaling",removed_release="1.25",resource="horizontalpodautoscalers",subresource="",version="v2beta1"} 1
-	metrics_regex = re.compile(r"^(\S+?){(.*)}\s\d+$")
+
+	# Safe
+	metrics_regex = re.compile(r"^([^{]*){([^}]*)}\s\d+$")
 
 	for line in metrics:
 		tmp = metrics_regex.match(line)
@@ -537,6 +542,7 @@ class ContainerInfo:
 		return repr((self.name, self.ref, self.container_type, self.image_version, self.instances, self.image_id, self.pods, self.pod_references))
 
 def get_image_tuple(image):
+	# Safe
 	tmp = re.match(r"^(.*):(.*)", image)
 	if tmp is not None:
 		image_name = f"{tmp[1]}"
@@ -2489,7 +2495,8 @@ def format_controller(controller, show_kind):
 def get_controller_from_owner_references(owner_references):
 	controller = (("", ""), "")
 	if owner_references is not None:
-		api_group_regex = re.compile(r"(.*)/.*")
+		# Safe
+		api_group_regex = re.compile(r"^(.*)/.*")
 
 		for owr in owner_references:
 			if deep_get(owr, "controller", False) == True:
@@ -3549,7 +3556,8 @@ def get_inventory_list(**kwargs):
 
 			# Get all interfaces with global scope
 			output = subprocess.check_output(["/usr/sbin/ip", "-o", "addr", "show", "scope", "global"]).decode("utf-8")
-			iface_addr_regex = re.compile(r"^\d+: (.*?)\s+inet6? (.*?)/\d+ .*")
+			# Safe
+			iface_addr_regex = re.compile(r"^\d+:\s+([^\s]+)\s+inet6?\s+([^/]*)/")
 
 			for line in output.splitlines():
 				tmp = iface_addr_regex.match(line)
@@ -4160,6 +4168,7 @@ builtin_fields = {
 	},
 	"mem": {
 		"header": "Mem% / Total:",
+		# Safe
 		"path": (r"^(\d+).*", ["status#allocatable#memory", "status#capacity#memory"]),
 		"datagetter": datagetter.datagetter_regex_split_to_tuples,
 		"generator": generators.generator_mem,
@@ -5309,8 +5318,10 @@ def clusteroverviewloop(stdscr, view):
 
 	nodeinfo = None
 
-	load_regex = re.compile(r"(\d+\.\d+) (\d+\.\d+) (\d+\.\d+) (\d+)/(\d+) (\d+)")
-	stat_regex = re.compile(r"[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) (\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)")
+	# Safe
+	load_regex = re.compile(r"^(\d+\.\d+) (\d+\.\d+) (\d+\.\d+) (\d+)/(\d+) (\d+)")
+	# Safe
+	stat_regex = re.compile(r"^[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) (\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)$")
 
 	while True:
 		uip.countdown_to_update()
@@ -5864,6 +5875,7 @@ def check_cni_updates(cni, current_version):
 			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
 			if result is not None:
 				versionoutput = result.stdout.splitlines()
+				# Safe
 				version_regex = re.compile(r"^cilium image \(default\): (.*)")
 				for line in versionoutput:
 					tmp = version_regex.match(line)
@@ -5922,7 +5934,8 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 					for container in containers:
 						if container.get("name") == "weave":
 							tmp = container.get("image", "")
-							new_version = re.sub(r".*:", r"", tmp)
+							# Safe
+							new_version = re.sub(r"^.*:", r"", tmp)
 
 			if new_version != "" and versiontuple(current_version) < versiontuple(candidate_version):
 				f = tempfile.NamedTemporaryFile()
@@ -7161,6 +7174,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 	uip.refresh_statusbar()
 	curses.doupdate()
 
+	# Safe
 	facility_regex = re.compile(r"^.*/(.*)")
 
 	while True:
@@ -8088,7 +8102,8 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 				iktprint([("Error:", "error"), (" Failed to create debug image", "default")], stderr = True)
 			else:
 				output = result.stdout.decode('utf-8')
-				tmp = re.match(r"Creating debugging pod (\S+) with container (\S+) .*", output)
+				# Safe
+				tmp = re.match(r"^Creating debugging pod (\S+) with container (\S+) .*", output)
 				if tmp is not None:
 					pod_name = tmp[1]
 					container_name = tmp[2]
@@ -8677,6 +8692,7 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 	if len(result.stdout) == 0:
 		return
 
+	# Safe
 	diff_regex = re.compile(r"^(\s*)(.*)")
 
 	for line in result.stdout.splitlines():
@@ -9112,7 +9128,8 @@ def __populate_playbooklist(path, action_list):
 	if action_list is None:
 		action_list = {}
 
-	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+	# Safe
+	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	for filename in os.listdir(path):
 		if filename.startswith(("~", ".")):
@@ -9755,7 +9772,8 @@ def populate_views(force_refresh = False):
 
 	view_files = []
 
-	yaml_regex = re.compile(r"(.*)\.ya?ml$")
+	# Safe
+	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	for view_dir in view_dirs:
 		if view_dir.startswith("{HOME}"):
@@ -10486,7 +10504,8 @@ def main():
 			# After we've received a view we assume that non-flag arguments
 			# that follow are used as shortcuts to a specific item
 			if initial_name is None:
-				tmp = re.match(r"^(.+)/(.+)$", arg)
+				# Safe
+				tmp = re.match(r"^([^/]+)/(.+)$", arg)
 				if tmp is not None:
 					if "/" in tmp[1]:
 						iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": invalid syntax; format is either NAMESPACE/NAME or NAME NAMESPACE", "default")], stderr = True)
@@ -10529,7 +10548,8 @@ def main():
 		colon_allowlist = ["Roles", "Role Bindings", "Cluster Roles", "Cluster Role Bindings", "Logs"]
 
 		if defaultview.lstrip("*") not in colon_allowlist:
-			tmp = re.match(r"^(.+):(.*)$", initial_name)
+			# Safe
+			tmp = re.match(r"^([^:]+):(.*)$", initial_name)
 			if tmp is not None:
 				if ":" in tmp[1]:
 					iktprint([(f"{about.UI_PROGRAM_NAME}", "programname"), (": invalid syntax;", "default")], stderr = True)
