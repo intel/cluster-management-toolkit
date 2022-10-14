@@ -1620,7 +1620,7 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info):
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(upgrade_control_plane_targets["localhost"]["playbooks"])
 	extra_values = {
-		"packages": prepare_targets["localhost"].get("deb_packages", []),
+		"packages": upgrade_control_plane_targets["localhost"].get("deb_packages", []),
 		"held_packages": upgrade_control_plane_targets["localhost"].get("deb_packages_held", []),
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
@@ -1656,7 +1656,7 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info):
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(upgrade_control_plane_targets[distro]["playbooks"])
 	extra_values = {
-		"packages": prepare_targets[distro].get("deb_packages", []),
+		"packages": upgrade_control_plane_targets[distro].get("deb_packages", []),
 		"held_packages": upgrade_control_plane_targets[distro].get("deb_packages_held", []),
 		"requested_control_plane_k8s_version": requested_version,
 	}
