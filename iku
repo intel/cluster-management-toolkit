@@ -54,12 +54,12 @@ from ikttypes import FilePath
 from iktpaths import HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
-from logparser import logparser, logparser_initialised, loglevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
+from logparser import logparser, logparser_initialised, LogLevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 from iktio import get_local_hostname
 import iktlib
-from iktlib import deep_get, deep_get_with_fallback, deep_set, disksize_to_human, get_package_versions, iktconfig, make_set_expression_list, stgroup, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple
-from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, UIProps, widgetlineattrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
+from iktlib import clamp, deep_get, deep_get_with_fallback, deep_set, disksize_to_human, get_package_versions, iktconfig, make_set_expression_list, StatusGroup, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple
+from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
 
 import datagetter
 from datagetter import datagetter_allowlist
@@ -68,7 +68,9 @@ from generator import generator_allowlist
 import itemgetter as itemgetters
 from itemgetter import itemgetter_allowlist
 from objgetter import objgetter_allowlist
+# pylint: disable=deprecated-module
 import formatter as formatters # pylint: disable=wrong-import-order
+# pylint: disable=deprecated-module
 from formatter import formatter_allowlist # pylint: disable=wrong-import-order
 
 from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results, get_playbook_path
@@ -103,6 +105,10 @@ defaultview = ""
 kh = None
 
 def init_kubernetes_client():
+	"""
+	Initialise the Kubernetes client
+	"""
+
 	global kh # pylint: disable=global-statement
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
@@ -110,6 +116,10 @@ override_tail_lines = None
 default_tail_lines = 4000
 
 def gather_cluster_info():
+	"""
+	Gather information about the cluster necessary for running playbooks
+	"""
+
 	iktprint([("[Gathering cluster information]\n", "phase")])
 
 	# Set global variables that need to be available when executing playbooks
@@ -155,8 +165,17 @@ def gather_cluster_info():
 
 	print("\n\n")
 
-# Will take datetime and format it as (YYYY-MM-DD HH:MM:SS, field_colors)
 def format_timestamp(timestamp, localtimezone = False):
+	"""
+	Takes datetime and formats it as a YYYY-MM-DD HH:MM:SS themearray
+
+		Parameters:
+			timestamp (datetime): The timestamp
+			localtimezone (bool): IS the timestamp in local time
+		Returns:
+			(str, list[(themearray)]): A formatted timestamp
+	"""
+
 	array = []
 
 	if timestamp is None:
@@ -193,7 +212,8 @@ def processor_timestamp_with_age(obj, field, formatting):
 
 	if len(values) > 2 and len(deep_get(formatting, "field_colors", [])) < 2:
 		raise ValueError("Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
-	elif len(values) == 2:
+
+	if len(values) == 2:
 		if values[0] is None:
 			array = [
 				("<none>", ("types", "none"))
@@ -235,6 +255,7 @@ def processor_timestamp_with_age(obj, field, formatting):
 	return themearray_to_string(array)
 
 # For the list processor to work we need to know the length of all the separators
+# pylint: disable-next=too-many-arguments
 def processor_list(obj, field, item_separator, field_separators, ellipsise, ellipsis, field_prefixes, field_suffixes):
 	items = getattr(obj, field)
 
@@ -292,6 +313,7 @@ def processor_list(obj, field, item_separator, field_separators, ellipsise, elli
 	return vstring
 
 # For the list processor to work we need to know the length of all the separators
+# pylint: disable-next=too-many-arguments
 def processor_list_with_status(obj, field, item_separator, field_separators, ellipsise, ellipsis, field_prefixes, field_suffixes):
 	items = getattr(obj, field)
 
@@ -348,12 +370,12 @@ def processor_age(obj, field):
 def processor_mem(obj, field):
 	free, total = getattr(obj, field)
 
-	string = "{:0.1f}".format(100 - (100 * int(free) / int(total)))
+	string = f"{100 - (100 * int(free)) / int(total):0.1f}"
 	string += themearray_to_string([("separators", "percentage")])
 	string += " "
 	string += themearray_to_string([("separators", "fraction")])
 	string += " "
-	string += "{:0.1f}".format(int(total) / (1024 * 1024))
+	string += f"{int(total) / (1024 * 1024):0.1f}"
 	string += "GiB"
 
 	return string
@@ -396,6 +418,7 @@ def update_field_widths(field_dict, field_names, objects):
 			if processor is not None:
 				if processor in (processor_list, processor_list_with_status):
 					tmp = processor(obj, field_name, item_separator = item_separator, field_separators = field_separators, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
+				# pylint: disable-next=comparison-with-callable
 				elif processor == processor_timestamp_with_age:
 					tmp = processor(obj, field_name, formatting)
 				else:
@@ -418,6 +441,7 @@ def update_field_widths(field_dict, field_names, objects):
 
 	return linelen
 
+# pylint: disable-next=unused-argument
 def get_hpa_metrics(obj, **kwargs):
 	vlist = []
 	status = 200
@@ -432,7 +456,6 @@ def get_hpa_metrics(obj, **kwargs):
 			target_type = "AverageUtilization"
 		target_type_name = target_type[0].lower() + target_type[1:]
 
-		described_object = None
 		kind = ""
 		api_group = ""
 		object_name = ""
@@ -490,7 +513,7 @@ def get_metrics_list(**kwargs):
 			if metric not in deep_get(kwargs, "filter"):
 				continue
 
-		fields = ['{}'.format(x) for x in next(csv.reader([tmp[2]], delimiter = ",", quotechar = "\""))]
+		fields = [f"{x}" for x in next(csv.reader([tmp[2]], delimiter = ",", quotechar = "\""))]
 		if len(fields) == 0:
 			continue
 		d = {
@@ -498,7 +521,7 @@ def get_metrics_list(**kwargs):
 			"fields": {},
 		}
 		for field in fields:
-			key_value = ['{}'.format(x) for x in next(csv.reader([field], delimiter = "=", quotechar = "\""))]
+			key_value = [f"{x}" for x in next(csv.reader([field], delimiter = "=", quotechar = "\""))]
 			key, value = key_value
 			d["fields"][key] = value.strip("\"")
 
@@ -506,6 +529,7 @@ def get_metrics_list(**kwargs):
 
 	return vlist, status
 
+# pylint: disable-next=unused-argument
 def get_context_list(**kwargs):
 	vlist = []
 
@@ -529,6 +553,7 @@ def get_context_list(**kwargs):
 	return vlist, "Unknown"
 
 class ContainerInfo:
+	# pylint: disable-next=too-many-arguments
 	def __init__(self, name, ref, container_type, image_version, instances, image_id, pods, pod_references):
 		self.name = name
 		self.ref = ref
@@ -583,6 +608,7 @@ def __get_container_info(obj, container_type, spec_path, status_path):
 
 	return containers
 
+# pylint: disable-next=unused-argument
 def get_container_info(**kwargs):
 	info = []
 	containers = {}
@@ -638,6 +664,7 @@ def get_container_info(**kwargs):
 	return info
 
 class LogInfo:
+	# pylint: disable-next=too-many-arguments
 	def __init__(self, name, action, log_path, created_at, log_type):
 		self.name = name
 		self.action = action
@@ -647,6 +674,7 @@ class LogInfo:
 	def __repr__(self):
 		return repr((self.name, self.ref, self.created_at, self.log_type))
 
+# pylint: disable-next=unused-argument
 def get_log_info(**kwargs):
 	info = []
 
@@ -661,6 +689,7 @@ def get_log_info(**kwargs):
 
 	return info
 
+# pylint: disable-next=unused-argument
 def get_pod_containers_list(**kwargs):
 	vlist = []
 	_vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
@@ -693,6 +722,7 @@ def get_pod_containers_list(**kwargs):
 
 	return vlist, status
 
+# pylint: disable-next=unused-argument
 def get_sidecar_rule_list(obj, **kwargs):
 	vlist = []
 
@@ -800,6 +830,7 @@ def __get_timestamp_with_fallback(obj, paths):
 
 latest_info = None
 
+# pylint: disable-next=too-many-arguments
 def process_value(field_name, value, vtype, view, field_index, action, formatter, replace_quotes, _regex):
 	override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", "Global#kind_format"], "mixed")
 
@@ -1138,9 +1169,10 @@ def transform_list(vlist, transform):
 
 	if sort == True:
 		return natsorted(result)
-	else:
-		return result
 
+	return result
+
+# pylint: disable-next=too-many-arguments
 def get_obj(obj, field_dict, field_names, field_index, view, filters):
 	d = {}
 
@@ -1240,7 +1272,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							# then add everything as is except None until the end
 							if sortedvals[i] is None:
 								continue
-							elif type(sortedvals[i]) == int:
+							if type(sortedvals[i]) == int:
 								if firstnum is None:
 									firstnum = sortedvals[i]
 								else:
@@ -1422,8 +1454,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					if len(value) == 0:
 						if default is None:
 							continue
-						else:
-							value.append(default)
+						value.append(default)
 					for tmp in value:
 						_values.append((tmp, vtype))
 				elif ptype == "substitution":
@@ -1449,8 +1480,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					if len(value) == 0:
 						if default is None:
 							continue
-						else:
-							value.append(default)
+						value.append(default)
 					for tmp in value:
 						_values.append((tmp, vtype))
 				elif ptype == "timediff":
@@ -1518,8 +1548,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					if len(subpath) > 0:
 						if len(subpaths) > 0:
 							raise ValueError(f"Field {name}: when using action: 'items' exactly one of subpath and subpaths must be specified")
-						else:
-							subpaths = [subpath]
+						subpaths = [subpath]
 					value = []
 					items = []
 					for mpath in mpaths:
@@ -1674,15 +1703,15 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					tmp = kh.get_ref_by_kind_name_namespace((lookup_kind, lookup_api_family), value, "")
 					if lookup_status == "highlight":
 						if tmp is None:
-							status_group = stgroup.NOT_OK
+							status_group = StatusGroup.NOT_OK
 						else:
-							status_group = stgroup.OK
+							status_group = StatusGroup.OK
 						value = (value, status_group)
 					elif lookup_status == "message":
 						if tmp is None:
-							value = (deep_get(_path, "lookup#messages#not_ok"), stgroup.NEUTRAL)
+							value = (deep_get(_path, "lookup#messages#not_ok"), StatusGroup.NEUTRAL)
 						else:
-							value = (deep_get(_path, "lookup#messages#ok"), stgroup.NEUTRAL)
+							value = (deep_get(_path, "lookup#messages#ok"), StatusGroup.NEUTRAL)
 					_values.append((value, "raw"))
 				elif ptype == "dictfields":
 					subpaths = deep_get_with_fallback(_path, ["subpaths", "subpath"], [])
@@ -1716,7 +1745,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 				if type(value) == list and _vtype == "raw":
 					values += value
 					continue
-				elif type(value) == list and type(_vtype) == list:
+				if type(value) == list and type(_vtype) == list:
 					tmp = []
 					for _value in value:
 						tmp.append(process_value(name, _value, _vtype, view, field_index, action, formatter, replace_quotes, _regex))
@@ -1856,6 +1885,7 @@ def check_matchlist(item, matchlist):
 	exacts, prefixes, suffixes, ins = split_matchlist(matchlist, exacts = [], prefixes = [], suffixes = [], ins = [])
 	return check_matchlists(item, exacts = exacts, prefixes = prefixes, suffixes = suffixes, ins = ins)
 
+# pylint: disable-next=unused-argument
 def listgetter_ansible_volumes(obj, **kwargs):
 	info = []
 
@@ -1923,7 +1953,7 @@ def get_task_log(obj):
 	if len(stderr_lines) > 0:
 		field.append([("stderr:", curses.A_BOLD | curses.A_UNDERLINE)])
 		for line in stderr_lines:
-			field.append([(f"{line}", color_status_group(stgroup.NOT_OK, False))])
+			field.append([(f"{line}", color_status_group(StatusGroup.NOT_OK, False))])
 
 	if len(stdout_lines) > 0:
 		if len(field) > 0:
@@ -1939,7 +1969,7 @@ def get_task_log(obj):
 			field.append([("", curses.A_NORMAL)])
 		field.append([("msg:", curses.A_BOLD | curses.A_UNDERLINE)])
 		for line in msg_lines:
-			field.append([(f"{line}", color_status_group(stgroup.OK, False))])
+			field.append([(f"{line}", color_status_group(StatusGroup.OK, False))])
 
 	return field
 
@@ -1957,6 +1987,7 @@ def logpad_msg_getter(obj, **kwargs):
 
 	return messages
 
+# pylint: disable-next=unused-argument
 def get_netpol_rule_list(obj, **kwargs):
 	vlist = []
 	for item in deep_get(obj, "spec#ingress", []):
@@ -2025,6 +2056,7 @@ def get_netpol_rule_list(obj, **kwargs):
 
 	return vlist, 200
 
+# pylint: disable-next=unused-argument
 def get_virtsvc_rule_list(obj, **kwargs):
 	vlist = []
 
@@ -2049,6 +2081,7 @@ def get_virtsvc_rule_list(obj, **kwargs):
 	return vlist, 200
 
 class PromRulesInfo:
+	# pylint: disable-next=too-many-arguments
 	def __init__(self, group, ref, rtype, alertrecord, duration):
 		self.group = group
 		# The reference to the "true" resource object
@@ -2096,6 +2129,7 @@ def get_promrules_info(**kwargs):
 	return info
 
 class SVCMonEndpointsInfo:
+	# pylint: disable-next=too-many-arguments
 	def __init__(self, bearer_token_file, ref, port, target_port, interval, scheme, path, honor_labels, proxy_url):
 		self.bearer_token_file = bearer_token_file
 		# The reference to the "true" resource object
@@ -2132,6 +2166,7 @@ def get_svcmon_endpoints_info(**kwargs):
 	return info
 
 class LimitInfo:
+	# pylint: disable-next=too-many-arguments
 	def __init__(self, ltype, name, ref, lmin, lmax, default_request, default_limit, max_lr_ratio):
 		self.ltype = ltype
 		self.name = name
@@ -2241,6 +2276,7 @@ def listgetter_path(obj, **kwargs):
 		return obj, 200
 	return deep_get(obj, path), 200
 
+# pylint: disable-next=unused-argument
 def listgetter_policy_rules(obj, **kwargs):
 	vlist = []
 
@@ -2329,6 +2365,7 @@ def listgetter_policy_rules(obj, **kwargs):
 
 	return vlist, 200
 
+# pylint: disable-next=unused-argument
 def get_ingress_rule_list(obj, **kwargs):
 	vlist = []
 
@@ -2365,6 +2402,7 @@ def get_ingress_rule_list(obj, **kwargs):
 	return vlist, 200
 
 class ServiceAccountSecretInfo:
+	# pylint: disable-next=too-many-arguments
 	def __init__(self, kind, stype, namespace, name, ref):
 		self.kind = kind
 		self.type = stype
@@ -2553,30 +2591,31 @@ def get_subsets_info(**kwargs):
 
 		if expand_subsets == "None":
 			if len(ready_addresses) > 0:
-				subsets.append(SubsetsInfo(ready_addresses, ports, "Ready", stgroup.OK))
+				subsets.append(SubsetsInfo(ready_addresses, ports, "Ready", StatusGroup.OK))
 			if len(not_ready_addresses) > 0:
-				subsets.append(SubsetsInfo(not_ready_addresses, ports, "Not Ready", stgroup.NOT_OK))
+				subsets.append(SubsetsInfo(not_ready_addresses, ports, "Not Ready", StatusGroup.NOT_OK))
 		elif expand_subsets == "Port":
 			for port in ports:
 				if len(ready_addresses) > 0:
-					subsets.append(SubsetsInfo(ready_addresses, [port], "Ready", stgroup.OK))
+					subsets.append(SubsetsInfo(ready_addresses, [port], "Ready", StatusGroup.OK))
 				if len(not_ready_addresses) > 0:
-					subsets.append(SubsetsInfo(not_ready_addresses, [port], "Not Ready", stgroup.NOT_OK))
+					subsets.append(SubsetsInfo(not_ready_addresses, [port], "Not Ready", StatusGroup.NOT_OK))
 		elif expand_subsets == "Address":
 			for address in ready_addresses:
-				subsets.append(SubsetsInfo([address], ports, "Ready", stgroup.OK))
+				subsets.append(SubsetsInfo([address], ports, "Ready", StatusGroup.OK))
 			for address in not_ready_addresses:
-				subsets.append(SubsetsInfo([address], ports, "Not Ready", stgroup.NOT_OK))
+				subsets.append(SubsetsInfo([address], ports, "Not Ready", StatusGroup.NOT_OK))
 		elif expand_subsets == "Both":
 			for port in ports:
 				for address in ready_addresses:
-					subsets.append(SubsetsInfo([address], [port], "Ready", stgroup.OK))
+					subsets.append(SubsetsInfo([address], [port], "Ready", StatusGroup.OK))
 				for address in not_ready_addresses:
-					subsets.append(SubsetsInfo([address], [port], "Not Ready", stgroup.NOT_OK))
+					subsets.append(SubsetsInfo([address], [port], "Not Ready", StatusGroup.NOT_OK))
 
 	return subsets
 
 class EPSSubsetsInfo:
+	# pylint: disable-next=too-many-arguments
 	def __init__(self, addresstype, addresses, ports_eps, status, status_group, target_ref, topology):
 		self.addresstype = addresstype
 		self.addresses = addresses
@@ -2623,27 +2662,27 @@ def get_eps_subsets_info(**kwargs):
 				topology.append((key, value))
 
 		if len(ready_addresses) > 0:
-			subsets.append(EPSSubsetsInfo(addresstype, ready_addresses, ports, "Ready", stgroup.OK, target_ref, topology))
+			subsets.append(EPSSubsetsInfo(addresstype, ready_addresses, ports, "Ready", StatusGroup.OK, target_ref, topology))
 		if len(not_ready_addresses) > 0:
-			subsets.append(EPSSubsetsInfo(addresstype, not_ready_addresses, ports, "Not Ready", stgroup.NOT_OK, target_ref, topology))
+			subsets.append(EPSSubsetsInfo(addresstype, not_ready_addresses, ports, "Not Ready", StatusGroup.NOT_OK, target_ref, topology))
 
 	return subsets
 
 def cpu_usage_to_millicores(cpu_usage):
 	if cpu_usage == "0":
 		return float(cpu_usage)
-	elif cpu_usage.endswith("n"):
+	if cpu_usage.endswith("n"):
 		cpu_usage = f"{float(cpu_usage[:-1]) / 1000000:0.1f}"
 		return cpu_usage
-	elif cpu_usage.endswith("m"):
+	if cpu_usage.endswith("m"):
 		cpu_usage = f"{float(cpu_usage[:-1]) / 1000:0.1f}"
 		return cpu_usage
-	elif cpu_usage.endswith("u"):
+	if cpu_usage.endswith("u"):
 		cpu_usage = f"{float(cpu_usage[:-1]):0.1f}"
 		return cpu_usage
-	else:
-		raise Exception(f"Unknown cpu usage metrics: {cpu_usage}")
+	raise Exception(f"Unknown cpu usage metrics: {cpu_usage}")
 
+# pylint: disable-next=unused-argument
 def listgetter_configmap_data(obj, **kwargs):
 	vlist = []
 
@@ -2756,6 +2795,7 @@ def get_rq_item_info(**kwargs):
 	return info
 
 class KeyValueInfo:
+	# pylint: disable-next=too-many-arguments
 	def __init__(self, key, decoded_value, value, vtype, vlen):
 		self.key = key
 		self.decoded_value = decoded_value
@@ -2829,6 +2869,7 @@ def get_key_value_info(**kwargs):
 	return info
 
 class ResourceInfo:
+	# pylint: disable-next=too-many-arguments
 	def __init__(self, resource_tuple, ref, rtype, kind, status, status_group, restarts, message, age = -1):
 		self.resource_tuple = resource_tuple
 		# The reference to the "true" resource object
@@ -2865,13 +2906,13 @@ def get_pv_status(pv):
 
 	if phase in ("Bound", "Available"):
 		reason = phase
-		status_group = stgroup.OK
+		status_group = StatusGroup.OK
 	elif phase in ("Released", "Pending"):
 		reason = phase
-		status_group = stgroup.PENDING
+		status_group = StatusGroup.PENDING
 	else:
 		reason = deep_get(pv, "status#reason", "").strip()
-		status_group = stgroup.NOT_OK
+		status_group = StatusGroup.NOT_OK
 	return reason, status_group
 
 def get_pod_log_by_name_namespace_container(name, namespace, container, tail_lines = default_tail_lines):
@@ -2883,17 +2924,17 @@ def get_pod_log_by_name_namespace_container(name, namespace, container, tail_lin
 		internal_error = False
 	elif status == 400:
 		# Not successful; error in rawmsg
-		rawmsg = "%s CRITICAL: %s" % (datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), rawmsg)
+		rawmsg = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} CRITICAL: {rawmsg}"
 		internal_error = True
 	elif status == 500:
 		# Not successful; error in rawmsg
 		internal_error = True
 	else:
-		rawmsg = "%s CRITICAL: Failed to fetch log for pod (name: %s, namespace: %s, container: %s); Request Status: %s" % (datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), name, namespace, container, status)
+		rawmsg = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} CRITICAL: Failed to fetch log for pod (name: {name}, namespace: {namespace}, container: {container}); Request Status: {status}"
 		internal_error = True
 
 	if rawmsg.startswith("unable to retrieve container logs for"):
-		rawmsg = "%s CRITICAL: %s" % (datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), rawmsg)
+		rawmsg = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} CRITICAL: {rawmsg}"
 		internal_error = True
 
 	return rawmsg, internal_error
@@ -2994,6 +3035,7 @@ def get_resource_info_by_last_applied_configuration(obj, **kwargs):
 
 	return resource_info, status
 
+# pylint: disable-next=unused-argument
 def get_pod_resource_list(obj, **kwargs):
 	vlist = []
 
@@ -3485,6 +3527,7 @@ def get_pod_resource_list(obj, **kwargs):
 
 	return vlist, 200
 
+# pylint: disable-next=unused-argument
 def get_inventory_list(**kwargs):
 	vlist = []
 	nodes = []
@@ -3603,6 +3646,7 @@ def get_inventory_list(**kwargs):
 	return vlist, status
 
 class NodeInfo:
+	# pylint: disable-next=too-many-arguments
 	def __init__(self, name, ref, status, status_group, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel, container_runtime, cpu, mem, taints):
 		self.name = name
 		# The reference to the "true" resource object
@@ -3652,6 +3696,7 @@ def get_node_addresses(name, addresses):
 
 	return name, iips, eips
 
+# pylint: disable-next=unused-argument
 def get_node_info(vlist, extra_vars):
 	info = []
 
@@ -3704,6 +3749,7 @@ def get_control_plane():
 	return control_planes[0][0], control_planes[0][1]
 
 class PodInfo:
+	# pylint: disable-next=too-many-arguments
 	def __init__(self, namespace, name, ref, status, status_group, node, pod_ip, age, restarts, last_restart, controller, tolerations, containers):
 		self.namespace = namespace
 		self.name = name
@@ -3739,6 +3785,7 @@ def get_pod_restarts_total(pod):
 		restarted_at = -1
 	return restarts, restarted_at
 
+# pylint: disable-next=unused-argument
 def set_cluster_context(uip, **kwargs):
 	global force_refresh_apis # pylint: disable=global-statement
 
@@ -4094,6 +4141,7 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 	uip.addthemearray(headerpad, headerarray, y = 0, x = 0)
 	uip.tabstops = tabstops
 
+# pylint: disable-next=too-many-arguments
 def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable = False, is_tagged = False):
 	first = True
 
@@ -4118,7 +4166,7 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 		generator = field_list[field].get("generator")
 		if generator is None:
 			continue
-		elif type(generator) == str:
+		if type(generator) == str:
 			generator = deep_get(generator_allowlist, generator, generators.generator_basic)
 
 		fieldlen = field_list[field]["fieldlen"]
@@ -4488,6 +4536,7 @@ def genericlistloop(stdscr, view):
 				if type(listgetter) == str:
 					listgetter = deep_get(listgetter_allowlist, listgetter)
 
+				# pylint: disable-next=comparison-with-callable
 				if listgetter == generic_listgetter:
 					listgetter_args = deep_get(viewref, "listgetter_args", {})
 					listgetter_args["label_selector"] = label_selector
@@ -4596,18 +4645,18 @@ def genericlistloop(stdscr, view):
 
 		if retval == curses_helper.retval.MATCH:
 			continue
-		elif retval == curses_helper.retval.RETURNONE:
+		if retval == curses_helper.retval.RETURNONE:
 			return curses_helper.retval.RETURNDONE
-		elif retval == curses_helper.retval.RETURNFULL:
+		if retval == curses_helper.retval.RETURNFULL:
 			return retval
 
 		if c == curses.KEY_F2:
-			retval = selectwindow(stdscr, uip)
+			retval = selectwindow(uip)
 			if retval == curses_helper.retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
 		elif c == curses.KEY_F3:
-			retval = selectwindow(stdscr, uip, refresh_apis = True)
+			retval = selectwindow(uip, refresh_apis = True)
 			if retval == curses_helper.retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
@@ -4694,8 +4743,7 @@ def genericlistloop(stdscr, view):
 						string = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"{query}: ")
 						if string is None or string == "":
 							continue
-						else:
-							selection_vars[queryval] = string
+						selection_vars[queryval] = string
 					elif queryfunc == "confirm":
 						querydefault = False
 						if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"{query}?", default = querydefault) == False:
@@ -4719,7 +4767,7 @@ def genericlistloop(stdscr, view):
 								else:
 									raise Exception(f"Unknown ptype {ptype}")
 								file_list.append({
-									"lineattrs": widgetlineattrs.NORMAL,
+									"lineattrs": WidgetLineAttrs.NORMAL,
 									"columns": [[(f"{filename}", formatting)], [(f"{ptype}", ("windowwidget", "description"))]],
 									"retval": filename,
 								})
@@ -4771,7 +4819,7 @@ def genericlistloop(stdscr, view):
 			else:
 				preselection = namespace
 			namespace_list = [{
-				"lineattrs": widgetlineattrs.NORMAL,
+				"lineattrs": WidgetLineAttrs.NORMAL,
 				"columns": [[(f"{all_ns}", ("windowwidget", "default"))]],
 				"retval": all_ns,
 			}]
@@ -4781,7 +4829,7 @@ def genericlistloop(stdscr, view):
 			if status == 200:
 				for ns in (deep_get(item, "metadata#name") for item in tmp):
 					namespace_list.append({
-						"lineattrs": widgetlineattrs.NORMAL,
+						"lineattrs": WidgetLineAttrs.NORMAL,
 						"columns": [[(f"{ns}", ("windowwidget", "default"))]],
 						"retval": ns,
 					})
@@ -4815,7 +4863,7 @@ def genericlistloop(stdscr, view):
 				uip.move_cur_with_offset(1)
 		elif c == ord("T") and is_taggable == True:
 			# Tag by pattern
-			pattern = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, "Tag '%s' matching: " % (uip.sortcolumn)).rstrip().lower()
+			pattern = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"Tag “{(uip.sortcolumn).rstrip().lower()}“ matching: ")
 			if pattern is None or pattern == "":
 				continue
 			compiled_pattern = re.compile(pattern)
@@ -4835,7 +4883,7 @@ def genericlistloop(stdscr, view):
 				continue
 
 			# Untag by pattern
-			pattern = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, "Untag '%s' matching: " % (uip.sortcolumn)).rstrip().lower()
+			pattern = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"Untag “{(uip.sortcolumn).rstrip().lower()}“ matching: ")
 			if pattern is None or pattern == "":
 				continue
 			compiled_pattern = re.compile(pattern)
@@ -4881,7 +4929,7 @@ def genericlistloop(stdscr, view):
 				continue
 			for key, value in natsorted(labels):
 				labellist.append({
-					"lineattrs": widgetlineattrs.NORMAL,
+					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[(f"{key}", ("windowwidget", "default"))], [(f"{value}", ("windowwidget", "default"))]],
 				})
 			label_headers = ["Label:", "Value:"]
@@ -4922,7 +4970,7 @@ def genericlistloop(stdscr, view):
 				continue
 			for key, value in labels:
 				labellist.append({
-					"lineattrs": widgetlineattrs.NORMAL,
+					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[(f"{key}", ("windowwidget", "default"))], [(f"{value}", ("windowwidget", "default"))]],
 				})
 			label_headers = ["Label:", "Value:"]
@@ -4951,7 +4999,7 @@ def genericlistloop(stdscr, view):
 			preselection = set()
 			for i in range(0, len(groups)):
 				grouplist.append({
-					"lineattrs": widgetlineattrs.NORMAL,
+					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[(f"{groups[i]}", ("windowwidget", "default"))]],
 				})
 				if groups[i] in host_groups:
@@ -4991,7 +5039,7 @@ def genericlistloop(stdscr, view):
 				continue
 			for item in tagged_items:
 				taggeditemlist.append({
-					"lineattrs": widgetlineattrs.NORMAL,
+					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[("separators", "widgetbullet"), (f"{item.name}", ("windowwidget", "default"))]],
 				})
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, taggeditemlist, title = "Tagged items", cursor = False)
@@ -5115,8 +5163,7 @@ def genericlistloop(stdscr, view):
 						string = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"{query}: ")
 						if string is None or string == "":
 							continue
-						else:
-							selection_vars[queryval] = string
+						selection_vars[queryval] = string
 					elif queryfunc == "confirm":
 						querydefault = False
 						if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"{query}?", default = querydefault) == False:
@@ -5140,7 +5187,7 @@ def genericlistloop(stdscr, view):
 								else:
 									raise Exception(f"Unknown ptype {ptype}")
 								file_list.append({
-									"lineattrs": widgetlineattrs.NORMAL,
+									"lineattrs": WidgetLineAttrs.NORMAL,
 									"columns": [[(f"{filename}", formatting)], [(f"{ptype}", ("windowwidget", "description"))]],
 									"retval": filename,
 								})
@@ -5245,8 +5292,7 @@ def genericlistloop(stdscr, view):
 					string = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"{query}: ")
 					if string is None or string == "":
 						continue
-					else:
-						selection_vars = { queryval: string }
+					selection_vars = { queryval: string }
 				elif queryfunc == "confirm":
 					querydefault = False
 					if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"{query}?", default = querydefault) == False:
@@ -5287,19 +5333,245 @@ def genericlistloop(stdscr, view):
 			if force_update == True:
 				uip.force_update()
 
+def __switch_resource_map(**kwargs):
+	uip = deep_get(kwargs, "uip")
+	uip.refresh_all()
+	return curses_helper.retval.MATCH, {
+		"selected_heatmap": deep_get(kwargs, "next_resource_map")
+	}
+
+def __resource_map_cursor(**kwargs):
+	uip = deep_get(kwargs, "uip")
+	keypress = deep_get(kwargs, "__keypress")
+	selected = deep_get(kwargs, "selected")
+	info = deep_get(kwargs, "info")
+	status_len = len(info)
+	heatmap_width = deep_get(kwargs, "heatmap_width")
+
+	maxval = status_len - 1
+	oldval = selected
+
+	if keypress == curses.KEY_LEFT:
+		selected = clamp(oldval - 1, 0, maxval)
+		uip.refresh_all()
+	if keypress == curses.KEY_RIGHT:
+		selected = clamp(oldval + 1, 0, maxval)
+		uip.refresh_all()
+	elif keypress == curses.KEY_UP:
+		if (oldval - heatmap_width + 1) >= 0:
+			seleected = oldval - heatmap_width + 1
+	elif keypress == curses.KEY_DOWN:
+		if (oldval + heatmap_width + 1) < maxval:
+			selected = oldval + heatmap_width + 1
+	elif keypress == curses.KEY_HOME:
+		selected = max((oldval // (heatmap_width + 1)) * (heatmap_width + 1), 0)
+	elif keypress == curses.KEY_END:
+		selected = min((oldval // (heatmap_width + 1)) * (heatmap_width + 1) + heatmap_width, maxval)
+	elif keypress == curses.KEY_SHOME:
+		selected = oldval - (oldval // (heatmap_width + 1)) * (heatmap_width + 1)
+	elif keypress == curses.KEY_SEND:
+		tmp = oldval - (oldval // (heatmap_width + 1)) * (heatmap_width + 1) + (maxval + 1 // (heatmap_width + 1)) * (heatmap_width + 1)
+		if tmp < maxval + 1:
+			selected = tmp
+	elif keypress == ord("\t"):
+		if oldval < maxval:
+			for i in range(selected + 1, len(info)):
+				if info[i].status_group != StatusGroup.OK:
+					selected = i
+					uip.force_update()
+					break
+	elif keypress == curses.KEY_BTAB:
+		if oldval > 0:
+			for i in range(1, selected):
+				if info[selected - i].status_group != StatusGroup.OK:
+					selected -= i
+					uip.force_update()
+					break
+
+	return curses_helper.retval.MATCH, {
+		"selected": selected,
+	}
+
+def __open_reference(**kwargs):
+	uip = deep_get(kwargs, "uip")
+	keypress = deep_get(kwargs, "__keypress")
+	pod_name = deep_get(kwargs, "pod_name")
+	namespace = deep_get(kwargs, "namespace")
+	node = deep_get(kwargs, "node")
+
+	if keypress == ord("o"):
+		if node is None:
+			return curses_helper.retval.MATCH, {}
+		name = node
+		namespace = ""
+		kind = ("Node", "")
+	elif keypress == ord("N"):
+		if namespace is None:
+			return curses_helper.retval.MATCH, {}
+		name = namespace
+		namespace = ""
+		kind = ("Namespace", "")
+	else:
+		if pod_name is None:
+			return curses_helper.retval.MATCH, {}
+		name = pod_name
+		kind = ("Pod", "")
+
+	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
+	retval = resourceinfodispatch(uip.stdscr, ref, kind)
+	if retval is not None and retval == curses_helper.retval.RETURNFULL:
+		return retval, {}
+	uip.force_update()
+	return curses_helper.retval.MATCH, {}
+
+def __fetch_package_versions(**kwargs):
+	uip = deep_get(kwargs, "uip")
+	hostname = deep_get(kwargs, "hostname")
+
+	win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = "Fetching package versions...")
+	_package_versions = get_package_versions(hostname)
+	package_versions = []
+	for package, version in _package_versions:
+		if version == "N/A":
+			versionattr = ("windowwidget", "dim")
+		else:
+			versionattr = ("windowwidget", "default")
+		package_versions.append({
+			"lineattrs": WidgetLineAttrs.NORMAL,
+			"columns": [[(f"{package}", ("windowwidget", "default"))], [(f"{version}", versionattr)]],
+		})
+	uip.refresh_window()
+	uip.refresh_infopad()
+	uip.refresh_listpad()
+	uip.refresh_statusbar()
+	curses.doupdate()
+	if len(package_versions) == 0:
+		return curses_helper.retval.MATCH, {}
+	title = "Package Versions:"
+	headers = ["Package:", "Version:"]
+	curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, package_versions, title = title, headers = headers, cursor = False)
+	return curses_helper.retval.MATCH, {}
+
+clusteroverview_shortcuts = {
+	"__common_shortcuts": [
+		"Toggle mouse on/off",
+		"Toggle borders",
+		"Show this helptext",
+		"Switch main view",
+		"Switch main view (recheck available API resources)",
+		"Show information about the program",
+	],
+	"Open info page for Node": {
+		"helptext": ("O", "Open info page for Node"),
+		"shortcut": ord("o"),
+		"helpgroup": 2,
+		"action": "key_callback",
+		"action_call": __open_reference,
+	},
+	"Open info page for Namespace [Pod context only]": {
+		"helptext": ("[Shift] + N", "Open info page for Namespace [Pod context only]"),
+		"shortcut": ord("N"),
+		"helpgroup": 2,
+		"action": "key_callback",
+		"action_call": __open_reference,
+	},
+	"Open info page for Pod [Pod context only]": {
+		"helptext": ("[Shift] + P", "Open info page for Pod [Pod context only]"),
+		"shortcut": ord("P"),
+		"helpgroup": 2,
+		"action": "key_callback",
+		"action_call": __open_reference,
+	},
+	"Show package versions": {
+		"helptext": ("[Shift] + V", "Show package versions"),
+		"shortcut": ord("V"),
+		"helpgroup": 2,
+		"action": "key_callback",
+		"action_call": __fetch_package_versions,
+	},
+	"Move cursor up / down / left / right within resource map": {
+		"helptext": ("[Cursor keys]", "Move cursor up / down / left / right within resource map"),
+		"shortcut": [curses.KEY_LEFT, curses.KEY_RIGHT, curses.KEY_UP, curses.KEY_DOWN],
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __resource_map_cursor,
+	},
+	"Switch to previous resource map": {
+		"shortcut": curses.KEY_SLEFT,
+		"helptext": ("[Shift] + [Left]", "Switch to previous resource map"),
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __switch_resource_map,
+		"action_args": {
+			"next_resource_map": "Node",
+		}
+	},
+	"Switch to next resource map": {
+		"helptext": ("[Shift] + [Right]", "Switch to next resource map"),
+		"shortcut": curses.KEY_SRIGHT,
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __switch_resource_map,
+		"action_args": {
+			"next_resource_map": "Pod",
+		}
+	},
+	"Jump to first column of resource map": {
+		"helptext": ("[Home]", "Jump to first column of resource map"),
+		"shortcut": curses.KEY_HOME,
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __resource_map_cursor,
+	},
+	"Jump to last column of resource map": {
+		"helptext": ("[End]", "Jump to last column of resource map"),
+		"shortcut": curses.KEY_END,
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __resource_map_cursor,
+	},
+	"Jump to next elevated severity in resource map": {
+		"helptext": ("[Tab]", "Jump to next elevated severity in resource map"),
+		"shortcut": ord("\t"),
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __resource_map_cursor,
+	},
+	"Jump to first row of resource map": {
+		"helptext": ("[Shift] + [Home]", "Jump to first row of resource map"),
+		"shortcut": curses.KEY_SHOME,
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __resource_map_cursor,
+	},
+	"Jump to last row of resource map": {
+		"helptext": ("[Shift] + [End]", "Jump to last row of resource map"),
+		"shortcut": curses.KEY_SEND,
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __resource_map_cursor,
+	},
+	"Jump to previous elevated severity in resource map": {
+		"helptext": ("[Shift] + [Tab]", "Jump to previous elevated severity in resource map"),
+		"shortcut": curses.KEY_BTAB,
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __resource_map_cursor,
+	},
+}
+
 def clusteroverviewloop(stdscr, view):
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
 	windowheader = view
-	helptext = views[view]["helptext"]
 	activatedfun = views[view]["activatedfun"]
 	on_activation = deep_get(views[view], "on_activation", {})
 	update_delay = views[view].get("update_delay", -1)
 
 	sortorder_reverse = views[view].get("sortorder_reverse", False)
 
-	uip.init_window(field_list, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
+	uip.init_window(field_list, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, activatedfun = activatedfun, on_activation = on_activation)
 
 	infopadheight = 9
 
@@ -5479,7 +5751,7 @@ def clusteroverviewloop(stdscr, view):
 				(" Mem: ", ("main", "infoheader")),
 			]
 			memusagearray = [
-				("%s" % str(100 * memused // memtotal).rjust(3), ("types", "numerical")),
+				(str(100 * memused // memtotal).rjust(3), ("types", "numerical")),
 				("separators", "percentage"),
 			]
 			swaparray = [
@@ -5598,175 +5870,50 @@ def clusteroverviewloop(stdscr, view):
 		uip.refresh_statusbar()
 		curses.doupdate()
 
-		uip.stdscr.timeout(100)
-		c = uip.stdscr.getch()
+		if selected_heatmap == "Pod":
+			__node_name = podinfo[selected_pod].node
+			__pod_name = podinfo[selected_pod].name
+			__namespace = podinfo[selected_pod].namespace
+			__info = podinfo
+			__selected = selected_pod
+		else:
+			__node_name = nodeinfo[selected_node].name
+			__namespace = None
+			__pod_name = None
+			__info = nodeinfo
+			__selected = selected_node
 
-		if c == curses.KEY_RESIZE:
-			uip.resize_window()
-		elif c == ord(""):
-			sys.exit()
-		elif c == curses.KEY_F1 or c == ord("H"):
-			if helptext is not None:
-				curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, uip.helptext, title = "Help", cursor = False)
-			uip.refresh_all()
-		elif c == curses.KEY_F2:
-			retval = selectwindow(stdscr, uip)
-			if retval == curses_helper.retval.RETURNFULL:
-				return retval
-			uip.refresh_all()
-		elif c == curses.KEY_F3:
-			retval = selectwindow(stdscr, uip, refresh_apis = True)
-			if retval == curses_helper.retval.RETURNFULL:
-				return retval
-			uip.refresh_all()
-		elif c == ord("B"):
-			uip.toggle_borders()
-			uip.refresh_all()
-			uip.force_update()
-		elif c == curses.KEY_SRIGHT:
-			if selected_heatmap == "Node":
-				selected_heatmap = "Pod"
-			uip.refresh_all()
-		elif c == curses.KEY_SLEFT:
-			if selected_heatmap == "Pod":
-				selected_heatmap = "Node"
-			uip.refresh_all()
-		elif c == curses.KEY_LEFT:
-			if selected_heatmap == "Pod":
-				selected_pod = max(0, selected_pod - 1)
-			elif selected_heatmap == "Node":
-				selected_node = max(0, selected_node - 1)
-			uip.refresh_all()
-		elif c == curses.KEY_RIGHT:
-			if selected_heatmap == "Pod":
-				selected_pod = min(len(pod_statuses) - 1, selected_pod + 1)
-			elif selected_heatmap == "Node":
-				selected_node = min(len(node_statuses) - 1, selected_node + 1)
-			uip.refresh_all()
-		elif c == curses.KEY_UP:
-			if selected_heatmap == "Pod":
-				if (selected_pod - heatmap_width + 1) >= 0:
-					selected_pod -= heatmap_width + 1
-			elif selected_heatmap == "Node":
-				if (selected_node - heatmap_width + 1) >= 0:
-					selected_node -= heatmap_width + 1
-		elif c == curses.KEY_DOWN:
-			if selected_heatmap == "Pod":
-				if (selected_pod + heatmap_width + 1) < len(pod_statuses):
-					selected_pod += heatmap_width + 1
-			elif selected_heatmap == "Node":
-				if (selected_node + heatmap_width + 1) < len(node_statuses):
-					selected_node += heatmap_width + 1
-		elif c == curses.KEY_HOME:
-			if selected_heatmap == "Pod":
-				selected_pod = max((selected_pod // (heatmap_width + 1)) * (heatmap_width + 1), 0)
-			elif selected_heatmap == "Node":
-				selected_node = max((selected_node // (heatmap_width + 1)) * (heatmap_width + 1), 0)
-		elif c == curses.KEY_END:
-			if selected_heatmap == "Pod":
-				selected_pod = min((selected_pod // (heatmap_width + 1)) * (heatmap_width + 1) + heatmap_width, len(pod_statuses) - 1)
-			elif selected_heatmap == "Node":
-				selected_node = min((selected_node // (heatmap_width + 1)) * (heatmap_width + 1) + heatmap_width, len(node_statuses) - 1)
-		elif c == curses.KEY_SHOME:
-			if selected_heatmap == "Pod":
-				selected_pod = selected_pod - (selected_pod // (heatmap_width + 1)) * (heatmap_width + 1)
-			elif selected_heatmap == "Node":
-				selected_node = selected_node - (selected_node // (heatmap_width + 1)) * (heatmap_width + 1)
-		elif c == curses.KEY_SEND:
-			if selected_heatmap == "Pod":
-				tmp = selected_pod - (selected_pod // (heatmap_width + 1)) * (heatmap_width + 1) + (len(pod_statuses) // (heatmap_width + 1)) * (heatmap_width + 1)
-				if tmp < len(pod_statuses):
-					selected_pod = tmp
-			elif selected_heatmap == "Node":
-				tmp = selected_node - (selected_node // (heatmap_width + 1)) * (heatmap_width + 1) + (len(node_statuses) // (heatmap_width + 1)) * (heatmap_width + 1)
-				if tmp < len(node_statuses):
-					selected_node = tmp
-		elif c == ord("\t"):
-			if selected_heatmap == "Pod":
-				if selected_pod == len(podinfo) -1:
-					continue
+		# These are arguments that *might* be needed by the callbacks
+		input_args = {
+			"uip": uip,
+			"selectwindow": selectwindow,
+			"read_only": read_only_mode,
+			"hostname": control_plane_name,
+			"node": __node_name,
+			"pod_name": __pod_name,
+			"namespace": __namespace,
+			"selected_heatmap": selected_heatmap,
+			"info": __info,
+			"selected": __selected,
+			"heatmap_width": heatmap_width,
+		}
 
-				for i in range(selected_pod + 1, len(podinfo)):
-					if podinfo[i].status_group != stgroup.OK:
-						selected_pod = i
-						uip.force_update()
-						break
-			elif selected_heatmap == "Node":
-				if selected_node == len(nodeinfo) - 1:
-					continue
+		retval, return_args = uip.generic_inputhandler(clusteroverview_shortcuts, **input_args)
 
-				for i in range(selected_node + 1, len(nodeinfo)):
-					if nodeinfo[i].status_group != stgroup.OK:
-						selected_node = i
-						uip.force_update()
-						break
-		elif c == curses.KEY_BTAB:
+		if "selected" in return_args:
 			if selected_heatmap == "Pod":
-				if selected_pod == 0:
-					continue
+				selected_pod = deep_get(return_args, "selected")
+			else:
+				selected_node = deep_get(return_args, "selected")
+		if "selected_heatmap" in return_args:
+			selected_heatmap = deep_get(return_args, "selected_heatmap")
 
-				for i in range(1, selected_pod):
-					if podinfo[selected_pod - i].status_group != stgroup.OK:
-						selected_pod -= i
-						uip.force_update()
-						break
-			elif selected_heatmap == "Node":
-				if selected_node == 0:
-					continue
-
-				for i in range(1, selected_node):
-					if nodeinfo[selected_node - i].status_group != stgroup.OK:
-						selected_node -= i
-						uip.force_update()
-						break
-		elif c == ord("P"):
-			if selected_heatmap == "Pod":
-				retval = resourceinfodispatch(stdscr, podinfo[selected_pod].ref, ("Pod", ""))
-				if retval is not None and retval == curses_helper.retval.RETURNFULL:
-					return retval
-			uip.force_update()
-		elif c == ord("N"):
-			if selected_heatmap == "Pod":
-				ref = kh.get_ref_by_kind_name_namespace(("Namespace", ""), podinfo[selected_pod].namespace, "")
-				retval = resourceinfodispatch(stdscr, ref, ("Namespace", ""))
-				if retval is not None and retval == curses_helper.retval.RETURNFULL:
-					return retval
-			uip.force_update()
-		elif c == ord("o"):
-			if selected_heatmap == "Pod":
-				ref = kh.get_ref_by_kind_name_namespace(("Node", ""), podinfo[selected_pod].node, "")
-				retval = resourceinfodispatch(stdscr, ref, ("Node", ""))
-				if retval is not None and retval == curses_helper.retval.RETURNFULL:
-					return retval
-			elif selected_heatmap == "Node":
-				ref = kh.get_ref_by_kind_name_namespace(("Node", ""), nodeinfo[selected_node].name, "")
-				retval = resourceinfodispatch(stdscr, ref, ("Node", ""))
-				if retval is not None and retval == curses_helper.retval.RETURNFULL:
-					return retval
-			uip.force_update()
-		elif c == ord("V"):
-			win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = "Fetching package versions...")
-			_package_versions = get_package_versions(control_plane_name)
-			package_versions = []
-			for package, version in _package_versions:
-				if version == "N/A":
-					versionattr = ("windowwidget", "dim")
-				else:
-					versionattr = ("windowwidget", "default")
-				package_versions.append({
-					"lineattrs": widgetlineattrs.NORMAL,
-					"columns": [[(f"{package}", ("windowwidget", "default"))], [(f"{version}", versionattr)]],
-				})
-			uip.refresh_window()
-			uip.refresh_infopad()
-			uip.refresh_listpad()
-			uip.refresh_statusbar()
-			curses.doupdate()
-			if len(package_versions) == 0:
-				continue
-			title = "Package Versions:"
-			headers = ["Package:", "Version:"]
-			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, package_versions, title = title, headers = headers, cursor = False)
+		if retval == curses_helper.retval.MATCH:
+			continue
+		if retval == curses_helper.retval.RETURNONE:
+			return curses_helper.retval.RETURNDONE
+		if retval == curses_helper.retval.RETURNFULL:
+			return retval
 
 # These are based on attributes of the name of the cmdata
 cmdata_format = [
@@ -5894,7 +6041,7 @@ def check_cni_updates(cni, current_version):
 		cpath = shutil.which("cilium")
 		if cpath is not None:
 			args = [cpath, "version"]
-			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
+			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 			if result is not None:
 				versionoutput = result.stdout.splitlines()
 				# Safe
@@ -5920,7 +6067,8 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 
 	if cni == "Unknown":
 		return False
-	elif cni == "weave":
+
+	if cni == "weave":
 		# if dry_run == True:
 		#	return True
 		return False
@@ -5929,11 +6077,13 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 		# Get the Kubernetes version
 		# XXX: we can get this using the playbook
 		args = ["kubectl", "version", "-o", "yaml"]
-		result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
+		try:
+			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = True)
+		except CalledProcessError:
+			return False
+
 		kubeversionoutput = yaml.safe_load(result.stdout)
 		kubeversion = deep_get(kubeversionoutput, "serverVersion#major") + "." + deep_get(kubeversionoutput, "serverVersion#minor")
-
-		page = "/k8s/" + kubeversion + "/net.yaml"
 
 		# FIXME: We need some way to handle no_proxy
 		https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
@@ -5942,7 +6092,7 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 		else:
 			pm = urllib3.PoolManager()
 
-		r1 = pm.request("GET", weaveupdateaddr + page)
+		r1 = pm.request("GET", f"{weaveupdateaddr}/k8s/{kubeversion}/net.yaml")
 
 		if r1.status == 200:
 			# Try to get the new weave version, to do a final check
@@ -5983,18 +6133,50 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 
 	return retval
 
-# FIXME
+def __update_cni(uip, **kwargs):
+	cni = deep_get(kwargs, "cni")
+	cni_version = deep_get(kwargs, "cni_version")
+	candidate_version = deep_get(kwargs, "candidate_version")
+
+	# If we don't recognise the CNI or we don't support updates we cannot update it
+	if update_cni(uip.stdscr, cni, cni_version, candidate_version, dry_run = True) == False:
+		return curses_helper.retval.MATCH
+
+		# Try to download and install an update for weave
+		if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Update {cni} to version {candidate_version}:", default = False):
+			update_cni(uip.stdscr, cni, cni_version, candidate_version)
+		uip.refresh_all()
+	return curses_helper.retval.MATCH, {}
+
+cniloop_shortcuts = {
+	"__common_shortcuts": [
+		"Toggle mouse on/off",
+		"Toggle borders",
+		"Show this helptext",
+		"Switch main view",
+		"Switch main view (recheck available API resources)",
+		"Refresh information",
+		"Show information about the program",
+	],
+	"Update Cluster Network Interface": {
+		"shortcut": ord("U"),
+		"helptext": ("[Shift] + U", "Update Cluster Network Interface (if a newer candidate is available)"),
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __update_cni,
+	},
+}
+
 def cniloop(stdscr, view):
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
 	windowheader = view
-	helptext = views[view]["helptext"]
 	activatedfun = views[view]["activatedfun"]
 	on_activation = deep_get(views[view], "on_activation", {})
 	update_delay = views[view].get("update_delay", -1)
 
-	uip.init_window(None, windowheader = windowheader, update_delay = update_delay, sortcolumn = None, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
+	uip.init_window(None, windowheader = windowheader, update_delay = update_delay, sortcolumn = None, activatedfun = activatedfun, on_activation = on_activation)
 
 	# For generic information
 	infopad = uip.init_infopad(height = 9, width = -1, ypos = 1, xpos = 1)
@@ -6003,6 +6185,8 @@ def cniloop(stdscr, view):
 	statusbar = uip.init_statusbar()
 
 	candidate_version = ""
+
+	cni = None
 
 	while True:
 		uip.countdown_to_update()
@@ -6015,31 +6199,31 @@ def cniloop(stdscr, view):
 			uip.update_window()
 
 			# Try to figure out which CNI we're using, if any
-			_cni = kh.identify_cni()
+			_cnis = kh.identify_cni()
 
-			if len(_cni) == 0:
+			if len(_cnis) == 0:
 				cni = "<unknown>"
-				cnistr = [(f"{cni}", color_status_group(stgroup.UNKNOWN, False))]
+				cnistr = [(f"{cni}", color_status_group(StatusGroup.UNKNOWN, False))]
 				cni_version = "N/A"
-				cni_version_str = [(f"{cni_version}", color_status_group(stgroup.UNKNOWN, False))]
-				cni_status = ("N/A", stgroup.UNKNOWN)
-			elif len(_cni) == 1:
-				cni = _cni[0][0]
+				cni_version_str = [(f"{cni_version}", color_status_group(StatusGroup.UNKNOWN, False))]
+				cni_status = ("N/A", StatusGroup.UNKNOWN)
+			elif len(_cnis) == 1:
+				cni = _cnis[0][0]
 				cnistr = [(f"{cni}", ("types", "generic"))]
-				cni_version = _cni[0][1]
+				cni_version = _cnis[0][1]
 				cni_version_str = [(f"{cni_version}", ("types", "version"))]
-				cni_status = _cni[0][2]
+				cni_status = _cnis[0][2]
 			else:
 				cni = "<unknown>"
 				cnistr = [("Could not uniquely identify CNI ", ("main", "status_not_ok")), ("(", ("types", "generic")), ("Candidates: ", ("main", "infoheader"))]
-				for i in range(0, len(_cni)):
-					cnistr += [(f"{_cni[i][0]}", ("types", "generic")), ("separators", "version"), (f"{_cni[i][1]}", ("types", "version"))]
-					if i < len(_cni) - 1:
+				for i, _cni in enumerate(_cnis):
+					cnistr += [(f"{_cni[0]}", ("types", "generic")), ("separators", "version"), (f"{_cni[1]}", ("types", "version"))]
+					if i < len(_cnis) - 1:
 						cnistr.append(("separators", "list"))
 				cnistr.append((")", ("types", "generic")))
 				cni_version = "N/A"
-				cni_version_str = [(f"{cni_version[0]}", color_status_group(stgroup.UNKNOWN, False))]
-				cni_status = ("N/A", stgroup.UNKNOWN)
+				cni_version_str = [(f"{cni_version[0]}", color_status_group(StatusGroup.UNKNOWN, False))]
+				cni_status = ("N/A", StatusGroup.UNKNOWN)
 
 			cni_status_str = [(f"{cni_status[0]}", color_status_group(cni_status[1], False))]
 
@@ -6074,44 +6258,28 @@ def cniloop(stdscr, view):
 		uip.refresh_statusbar()
 		curses.doupdate()
 
-		uip.stdscr.timeout(100)
-		c = uip.stdscr.getch()
-		retval = uip.generic_keycheck(c)
+		# These are arguments that *might* be needed by the callbacks
+		input_args = {
+			"uip": uip,
+			"selectwindow": selectwindow,
+			"read_only": read_only_mode,
+			"cni": cni,
+			"cni_version": cni_version,
+			"candidate_version": candidate_version,
+		}
+
+		retval, return_args = uip.generic_inputhandler(cniloop_shortcuts, **input_args)
 
 		if retval == curses_helper.retval.MATCH:
 			continue
-		elif retval == curses_helper.retval.RETURNONE:
+		if retval == curses_helper.retval.RETURNONE:
 			return curses_helper.retval.RETURNDONE
-		elif retval == curses_helper.retval.RETURNFULL:
+		if retval == curses_helper.retval.RETURNFULL:
 			return retval
-
-		if c == curses.KEY_F2:
-			retval = selectwindow(stdscr, uip)
-			if retval == curses_helper.retval.RETURNFULL:
-				return retval
-			uip.refresh_all()
-		elif c == curses.KEY_F3:
-			retval = selectwindow(stdscr, uip, refresh_apis = True)
-			if retval == curses_helper.retval.RETURNFULL:
-				return retval
-			uip.refresh_all()
-		elif c == ord("B"):
-			uip.toggle_borders()
-			uip.refresh_all()
-			uip.force_update()
-		elif c == ord("U") and new_version == True:
-			# If we don't recognise the CNI or we don't support updates we cannot update it
-			if update_cni(uip.stdscr, cni, cni_version, candidate_version, dry_run = True) == False:
-				continue
-
-			# Try to download and install an update for weave
-			if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Update {cni} to version {candidate_version}:", default = False):
-				update_cni(uip.stdscr, cni, cni_version, candidate_version)
-			uip.refresh_all()
 
 def decode_and_view_data(stdscr, **kwargs):
 	if "selected" not in kwargs:
-		return
+		return None
 
 	bvalue = kwargs["selected"].value
 	title = kwargs["selected"].key
@@ -6121,8 +6289,9 @@ def decode_and_view_data(stdscr, **kwargs):
 		vtype = bvtype
 
 	if vtype == "empty" or vtype.startswith(("base64-binary", "gzip")):
-		return
-	elif vtype.startswith("string"):
+		return None
+
+	if vtype.startswith("string"):
 		obj = value
 	elif vtype.startswith("base64-utf-8"):
 		obj = base64.b64decode(value).decode("utf-8")
@@ -6137,10 +6306,10 @@ def decode_and_view_data(stdscr, **kwargs):
 def decode_and_view_file_templates(stdscr, **kwargs):
 	selection = deep_get(kwargs, "selection", {})
 	if len(selection) == 0:
-		return
+		return None
 	obj = deep_get(kwargs, "obj", {})
 	if len(obj) == 0:
-		return
+		return None
 	name_path = deep_get(kwargs, "name_path")
 	name = selection[1][name_path][0]
 	file_path = deep_get(kwargs, "file_path")
@@ -6149,25 +6318,25 @@ def decode_and_view_file_templates(stdscr, **kwargs):
 		if deep_get(file, "path", "") == name:
 			break
 	else:
-		return
+		return None
 	encoding = deep_get(file, "encoding", "")
 	content = deep_get(file, "content")
 	title = name
 	if encoding == "":
 		formatter = formatters.map_dataformat(title)
 		return resourceinfodispatch(stdscr, content, ("__ResourceView", ""), title = title, formatter = formatter)
-	else:
-		vtype, value = decode_value(content)
-		if vtype.startswith("string"):
-			obj = value
-		elif vtype.startswith("base64-utf-8"):
-			obj = base64.b64decode(value).decode("utf-8")
-		elif vtype.startswith(("base64-binary", "gzip")):
-			return
-		formatter = formatters.map_dataformat(title)
-		return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
-	return
 
+	vtype, value = decode_value(content)
+	if vtype.startswith("string"):
+		obj = value
+	elif vtype.startswith("base64-utf-8"):
+		obj = base64.b64decode(value).decode("utf-8")
+	elif vtype.startswith(("base64-binary", "gzip")):
+		return None
+	formatter = formatters.map_dataformat(title)
+	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
+
+# pylint: disable-next=unused-argument
 def export_data(stdscr, **kwargs):
 	if "selected" not in kwargs:
 		return
@@ -6573,6 +6742,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				if "_pass_obj" in listgetter_args:
 					listgetter_args["_obj"] = obj
 
+				# pylint: disable-next=comparison-with-callable
 				if listgetter == generic_listgetter:
 					vlist, status = listgetter(**listgetter_args)
 				else:
@@ -6728,10 +6898,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				else:
 					maxwidth = -1
 				_lines = strarray_wrap_line(message, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
-				for i in range(0, len(_lines)):
+				for i, _line in enumerate(_lines):
 					if y + yadd + i >= uip.logpadheight:
 						break
-					ypos, xpos = uip.addthemearray(logpad, _lines[i], y = y + yadd + i, x = 0, selected = current_match)
+					ypos, xpos = uip.addthemearray(logpad, _line, y = y + yadd + i, x = 0, selected = current_match)
 					maxx = max(maxx, xpos)
 				yadd += i
 			uip.resize_logpad(-1, maxx)
@@ -6771,15 +6941,17 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					# If name isn't set we skip
 					if name is None:
 						continue
+
 					# If we have an exact match we don't care about partial matches
-					elif name == initial_container:
+					if name == initial_container:
 						if view == ("ConfigMap", ""):
 							match = item.data
 						else:
 							match = item.ref
 						match_count = 1
 						break
-					elif name.startswith(initial_container):
+
+					if name.startswith(initial_container):
 						# Since the exact match might occur later than the partial we cannot abort
 						# on partial matches; instead just save the match and continue searching.
 						# If we get more than one partial match we ignore the partial matches.
@@ -6819,18 +6991,18 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 		if retval == curses_helper.retval.MATCH:
 			continue
-		elif retval == curses_helper.retval.RETURNONE:
+		if retval == curses_helper.retval.RETURNONE:
 			return curses_helper.retval.RETURNDONE
-		elif retval == curses_helper.retval.RETURNFULL:
+		if retval == curses_helper.retval.RETURNFULL:
 			return retval
 
 		if c == curses.KEY_F2:
-			retval = selectwindow(stdscr, uip)
+			retval = selectwindow(uip)
 			if retval == curses_helper.retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
 		elif c == curses.KEY_F3:
-			retval = selectwindow(stdscr, uip, refresh_apis = True)
+			retval = selectwindow(uip, refresh_apis = True)
 			if retval == curses_helper.retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
@@ -6898,7 +7070,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if w_items is not None and len(w_items) > 0 and (type(w_items[0]) == dict or type(w_items[0]) in (list, tuple) and type(w_items[0][0]) != int):
 						tmp_items = []
 						w_formatting = deep_get(value, "formatting", [("windowwidget", "default")])
-						lineattrs = widgetlineattrs.NORMAL
+						lineattrs = WidgetLineAttrs.NORMAL
 						# w_item is a line
 						for w_item in w_items:
 							ref = None
@@ -7109,6 +7281,7 @@ def eventdispatch(stdscr, **kwargs):
 	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	return resourceinfodispatch(stdscr, ref, kind)
 
+# pylint: disable-next=too-many-arguments
 def log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, message, facility_extended):
 	if timestamp is not None:
 		timestamps.append(timestamp.astimezone())
@@ -7302,7 +7475,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			merged_lines = 0
 
 			linecount = len(splitmsg)
-			linepercent = int(linecount * 0.01)
+			linepercent = int(linecount * 0.1)
 
 			progressbar = None
 			if linecount > 1000:
@@ -7320,8 +7493,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					if c == 27:	# ESCAPE
 						if reload == True:
 							break
-						else:
-							return curses_helper.retval.RETURNDONE
+						return curses_helper.retval.RETURNDONE
 
 				if type(_line) == tuple:
 					line, podname, containername, image, facility_extended = _line
@@ -7381,13 +7553,14 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						# We've got a block and it's been appended, so go on
 						i = j + 1
 						continue
-					elif _block_state == "end_block_not_processed":
+
+					if _block_state == "end_block_not_processed":
 						# We've got a block and it's been appended, but the last line needs processing again
 						i = j
 						continue
-					else:
-						message = remnants
-						remnants = None
+
+					message = remnants
+					remnants = None
 
 				# If this is a (themestr, severity) tuple, ignore the severity;
 				# it's only necessary for remnants since the severity is passed separarely
@@ -7680,14 +7853,14 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			uip.resize_logpad(uip.maxy - uip.logpadypos - 2, 0)
 			new_date = False
 			if timestamps is not None and len(timestamps) > 0:
-				current_datestamp = ("%s" % timestamps[0])[0:len("YYYY-MM-DD")]
+				current_datestamp = str(timestamps[0])[0:len("YYYY-MM-DD")]
 				new_date = True
 			yadd = 0
 			for y in range(0, min(uip.logpadheight, uip.loglen)):
 				if uip.yoffset + y >= len(timestamps):
 					timestamp = "".ljust(uip.tspadwidth)
 				else:
-					timestamp = ("%s" % timestamps[uip.yoffset + y]).ljust(uip.tspadwidth)
+					timestamp = str(timestamps[uip.yoffset + y]).ljust(uip.tspadwidth)
 					datestamp = timestamp[0:len("YYYY-MM-DD ")]
 					if current_datestamp is not None and type(timestamps[uip.yoffset + y]) == datetime and datestamp != current_datestamp:
 						current_datestamp = datestamp
@@ -7711,15 +7884,15 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				# FIXME
 				if only_new_dates == True:
 					if new_date == True:
-						tsthemearray = [(datestamp, ("types", datetype))]
+						tsthemearray = [(datestamp, ("logview", datetype))]
 						new_date = False
 						# If we do empty lines for new dates we need this
 						# uip.addstr(logpad, "", y = y + yadd, x = 0)
 						# yadd += 1
 				else:
-					tsthemearray = [(datestamp, ("types", datetype))]
+					tsthemearray = [(datestamp, ("logview", datetype))]
 
-				tsthemearray += [(hourstamp, ("types", "timestamp"))]
+				tsthemearray += [(hourstamp, ("logview", "timestamp"))]
 
 				new_date = False
 
@@ -7751,7 +7924,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						facility = ""
 
 				if uip.yoffset + y >= len(severities):
-					severity = loglevel.INFO
+					severity = LogLevel.INFO
 				else:
 					severity = severities[uip.yoffset + y]
 
@@ -7806,13 +7979,13 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				else:
 					maxwidth = -1
 				msgstrarrays = strarray_wrap_line(msgstrarray, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
-				for i in range(0, len(msgstrarrays)):
+				for i, msgstrarray in enumerate(msgstrarrays):
 					if y + yadd + i >= uip.logpadheight:
 						break
 					if i == 0:
 						uip.addthemearray(tspad, tsthemearray, y = y + yadd, x = 0)
-					cury, curx = uip.addthemearray(logpad, msgstrarrays[i], y = y + yadd + i, x = 0)
-					maxlen = max(maxlen, themearray_len(msgstrarrays[i]))
+					cury, curx = uip.addthemearray(logpad, msgstrarray, y = y + yadd + i, x = 0)
+					maxlen = max(maxlen, themearray_len(msgstrarray))
 				yadd += i
 			uip.resize_logpad(-1, maxlen)
 
@@ -7829,18 +8002,18 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 		if retval == curses_helper.retval.MATCH:
 			continue
-		elif retval == curses_helper.retval.RETURNONE:
+		if retval == curses_helper.retval.RETURNONE:
 			return curses_helper.retval.RETURNDONE
-		elif retval == curses_helper.retval.RETURNFULL:
+		if retval == curses_helper.retval.RETURNFULL:
 			return retval
 
 		if c == curses.KEY_F2:
-			retval = selectwindow(stdscr, uip)
+			retval = selectwindow(uip)
 			if retval == curses_helper.retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
 		elif c == curses.KEY_F3:
-			retval = selectwindow(stdscr, uip, refresh_apis = True)
+			retval = selectwindow(uip, refresh_apis = True)
 			if retval == curses_helper.retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
@@ -7911,13 +8084,13 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			uip.force_update()
 		elif c == ord("P"):
 			parserlist = [{
-				"lineattrs": widgetlineattrs.NORMAL,
+				"lineattrs": WidgetLineAttrs.NORMAL,
 				"columns": [[("<autodetect>", ("windowwidget", "default"))]],
 				"retval": "<autodetect>",
 			}]
 			for parser in natsorted(get_parser_list()):
 				parserlist.append({
-					"lineattrs": widgetlineattrs.NORMAL,
+					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[(f"{parser}", ("windowwidget", "default"))]],
 					"retval": parser,
 				})
@@ -7946,7 +8119,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				if lvl.startswith("Diff"):
 					continue
 				loglevellist.append({
-					"lineattrs": widgetlineattrs.NORMAL,
+					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[(f"{lvl}", ("windowwidget", "default"))]],
 					"retval": lvl,
 				})
@@ -7989,15 +8162,15 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 		elif c == ord("V"):
 			facilitylist = [
 				{
-					"lineattrs": widgetlineattrs.NORMAL,
+					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[("Full", ("windowwidget", "default"))]],
 					"retval": "Full",
 				}, {
-					"lineattrs": widgetlineattrs.NORMAL,
+					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[("Short", ("windowwidget", "default"))]],
 					"retval": "Short",
 				}, {
-					"lineattrs": widgetlineattrs.NORMAL,
+					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[("None", ("windowwidget", "default"))]],
 					"retval": "None",
 				}
@@ -8042,7 +8215,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					if y >= len(timestamps):
 						timestamp = "".ljust(uip.tspadwidth)
 					else:
-						timestamp = "%s" % (timestamps[y])
+						timestamp = str(timestamps[y])
 
 					if y >= len(facilities) or facilities[y] == "":
 						facility = ""
@@ -8050,7 +8223,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						facility = f"<{facilities[y]}> "
 
 					if uip.yoffset + y >= len(severities):
-						severity = f"{lvl_to_4letter_severity(loglevel.INFO)}: "
+						severity = f"{lvl_to_4letter_severity(LogLevel.INFO)}: "
 					else:
 						severity = f"{lvl_to_4letter_severity(severities[y])}: "
 
@@ -8102,6 +8275,7 @@ def do_command(stdscr, **kwargs):
 		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
+# pylint: disable-next=too-many-arguments
 def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 	# This should probably be done using connect_get_namespaced_pod_exec()
 	curses.endwin()
@@ -8201,14 +8375,15 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 
 	if kind in infoviews:
 		return genericinfoloop(stdscr, obj, kind, **kwargs)
+
 	# Exceptions
-	elif kind in (("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")):
+	if kind in (("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")):
 		# Do not try to open pending containers
 		if deep_get(info, "status#phase") in ("Pending", "Failed"):
 			return None
 		return containerinfoloop(stdscr, obj, kind, info)
-	else:
-		return None
+
+	return None
 
 def resourceinfodispatch_from_pod_resource_list(stdscr, obj, kind, info = None, **kwargs):
 	kind = deep_get(obj, "kind")
@@ -8424,7 +8599,7 @@ def view_obj(stdscr, **kwargs):
 	else:
 		obj = deep_get(kwargs, "obj")
 	if obj is None:
-		return
+		return None
 	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
 	title_path = deep_get(kwargs, "title_path")
 	if title_path is not None:
@@ -8434,6 +8609,7 @@ def view_obj(stdscr, **kwargs):
 	if path is not None:
 		if deep_get(kwargs, "include_root", False) == True:
 			obj = [{f"{path.rsplit('#')[-1]}": deep_get(obj, path)}]
+		# pylint: disable-next=comparison-with-callable
 		elif formatter == formatters.format_yaml:
 			obj = [deep_get(obj, path)]
 		else:
@@ -8454,7 +8630,7 @@ def view_yaml(stdscr, **kwargs):
 	else:
 		obj = deep_get(kwargs, "obj")
 	if obj is None:
-		return
+		return None
 	path = deep_get(kwargs, "path")
 	if path is not None:
 		include_root = deep_get(kwargs, "include_root", False)
@@ -8463,7 +8639,7 @@ def view_yaml(stdscr, **kwargs):
 		else:
 			_obj = deep_get(obj, path)
 		if _obj is None:
-			return
+			return None
 		obj = [_obj]
 	else:
 		obj = [obj]
@@ -8496,6 +8672,7 @@ def view_pod_logs(stdscr, **kwargs):
 
 	return containerinfoloop(stdscr, container = None, kind = None, obj = None, **multilog_args)
 
+# pylint: disable=unused-argument
 def action_view_pod_logs(uip, items, action, values, kind, **kwargs):
 	return view_pod_logs(uip.stdscr, **values)
 
@@ -8503,15 +8680,17 @@ def view_last_applied_configuration(stdscr, **kwargs):
 	obj = deep_get(kwargs, "obj")
 
 	last_applied_configuration = deep_get(obj, "metadata#annotations#kubectl.kubernetes.io/last-applied-configuration", {})
-	if last_applied_configuration is not None and len(last_applied_configuration) > 0:
-		data = json.loads(last_applied_configuration)
-	else:
-		return
+	if last_applied_configuration is None or len(last_applied_configuration) == 0:
+		return None
+
+	data = json.loads(last_applied_configuration)
+
 	title = deep_get(kwargs, "title")
 	# themearrays = formatters.format_yaml([data])
 	formatter = formatters.format_yaml
 	return resourceinfodispatch(stdscr, [data], ("__ResourceView", ""), title = title, formatter = formatter)
 
+# pylint: disable=unused-argument
 def delete_resource(uip, items, action, values, kind, **kwargs):
 	success = True
 	force = deep_get(values, "__force", False)
@@ -8536,6 +8715,7 @@ def delete_resource(uip, items, action, values, kind, **kwargs):
 			del win
 			break
 
+# pylint: disable=unused-argument
 def force_delete_resource(uip, items, action, values, kind, **kwargs):
 	values["__force"] = True
 	return delete_resource(uip, items = items, action = action, values = values, kind = kind)
@@ -8557,7 +8737,7 @@ def create_namespace(stdscr, **kwargs):
 	else:
 		msg = [("Creating namespace “", "default"), (name, "argument"), ("“", "default")]
 		iktprint(msg)
-		msg, status = kh.create_namespace(name)
+		msg, _status = kh.create_namespace(name)
 
 	print("\n")
 
@@ -8570,14 +8750,14 @@ def create_namespace(stdscr, **kwargs):
 # ("Deployment", "apps")
 def __pause_resource(kind, namespace, name):
 	args = ["/usr/bin/kubectl", "rollout", "pause", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
-	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
+	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 	return result
 
 # Valid kinds:
 # ("Deployment", "apps")
 def __resume_resource(kind, namespace, name):
 	args = ["/usr/bin/kubectl", "rollout", "resume", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
-	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
+	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 	return result
 
 # Valid kinds:
@@ -8586,7 +8766,7 @@ def __resume_resource(kind, namespace, name):
 # ("StatefulSet", apps")
 def __restart_resource(kind, namespace, name):
 	args = ["/usr/bin/kubectl", "rollout", "restart", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
-	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
+	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 	return result
 
 def __get_resource_scale(kind, namespace, name):
@@ -8600,7 +8780,7 @@ def __get_resource_scale(kind, namespace, name):
 # ("StatefulSet", apps")
 def __scale_replicas(kind, namespace, name, scale):
 	args = ["/usr/bin/kubectl", "scale", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}", f"--replicas={scale}"]
-	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
+	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 	return result
 
 def __edit_resource(kind, namespace, name):
@@ -8608,9 +8788,10 @@ def __edit_resource(kind, namespace, name):
 		args = ["/usr/bin/kubectl", "edit", f"{kind[0]}.{kind[1]}/{name}"]
 	else:
 		args = ["/usr/bin/kubectl", "edit", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
-	result = subprocess.run(args, universal_newlines = True)
+	result = subprocess.run(args, universal_newlines = True, check = False)
 	return result.returncode, args
 
+# pylint: disable=unused-argument
 def apply_configuration_from_file(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
@@ -8623,26 +8804,28 @@ def apply_configuration_from_file(uip, items, action, values, kind, **kwargs):
 	else:
 		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
 
-	result = subprocess.run(args, universal_newlines = True)
+	result = subprocess.run(args, universal_newlines = True, check = False)
 	return result.returncode, args
 
+# pylint: disable=unused-argument
 def apply_configuration_from_url(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
 	resource_path = values["resource_url"]
 
 	args = ["/usr/bin/kubectl", "apply", "-f", resource_path]
-	result = subprocess.run(args, universal_newlines = True)
+	result = subprocess.run(args, universal_newlines = True, check = False)
 	return result.returncode, args
 
 # We should probably download and apply locally instead
+# pylint: disable=unused-argument
 def create_resource_from_url(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
-	resource_path, rtype = values["resource_url"]
+	resource_path, _rtype = values["resource_url"]
 
 	args = ["/usr/bin/kubectl", "create", "-f", resource_path]
-	result = subprocess.run(args, universal_newlines = True)
+	result = subprocess.run(args, universal_newlines = True, check = False)
 	return result.returncode, args
 
 def __summarise_resources(path):
@@ -8660,6 +8843,7 @@ def __summarise_resources(path):
 			resources.append((merged_kind, namespace, name))
 	return resources
 
+# pylint: disable=unused-argument
 def create_resource_from_file(uip, items, action, values, kind, **kwargs):
 	resource_path, rtype = values["resource_path"]
 	resource_list = []
@@ -8672,7 +8856,7 @@ def create_resource_from_file(uip, items, action, values, kind, **kwargs):
 
 		for kind, namespace, name in resources:
 			resource_list.append({
-				"lineattrs": widgetlineattrs.NORMAL,
+				"lineattrs": WidgetLineAttrs.NORMAL,
 				"columns": [[(namespace, ("windowwidget", "default"))], [(name, ("windowwidget", "default"))], [(kind, ("windowwidget", "default"))]],
 			})
 
@@ -8681,7 +8865,7 @@ def create_resource_from_file(uip, items, action, values, kind, **kwargs):
 
 		uip.refresh_all()
 		confirm_buttons = [[ord("y"), ord("Y"), ord("n"), ord("N")], [("[", ("windowwidget", "default")), ("Y", ("windowwidget", "highlight")), ("es", ("windowwidget", "default")), ("]", ("windowwidget", "default"))], [("[", ("windowwidget", "default")), ("N", ("windowwidget", "highlight")), ("o", ("windowwidget", "default")), ("]", ("windowwidget", "default"))]]
-		confirm_press, tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, resource_list, headers = headers, title = title, confirm = True, confirm_buttons = confirm_buttons, cursor = False)
+		confirm_press, _tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, resource_list, headers = headers, title = title, confirm = True, confirm_buttons = confirm_buttons, cursor = False)
 
 		if confirm_press in (ord("y"), ord("Y")):
 			args = ["/usr/bin/kubectl", "create", "-f", resource_path]
@@ -8691,10 +8875,11 @@ def create_resource_from_file(uip, items, action, values, kind, **kwargs):
 		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
 
 	if len(args) > 0:
-		result = subprocess.run(args, universal_newlines = True).returncode
+		result = subprocess.run(args, universal_newlines = True, check = False).returncode
 
 	return result, args
 
+# pylint: disable=unused-argument
 def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 	resource_path, rtype = values["resource_path"]
 
@@ -8705,7 +8890,7 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 	else:
 		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
 
-	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True)
+	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 
 	indent = deep_get(iktconfig, "Global#indent", 4)
 
@@ -8738,30 +8923,30 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 				line = prefix + "".ljust(int(len(tmp[1]) / 2) * indent) + tmp[2]
 
 		diff.append({
-			"lineattrs": widgetlineattrs.NORMAL,
+			"lineattrs": WidgetLineAttrs.NORMAL,
 			"columns": [[(line, formatting)]],
 		})
 
-	tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, diff, title = "Diff between current and would be configuration:", cursor = False)
+	_tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, diff, title = "Diff between current and would be configuration:", cursor = False)
 
 def format_commandline(args, implicit_command = True):
 	strarray = []
 
 	command = implicit_command
 
-	for i in range(0, len(args)):
+	for i, arg in enumerate(args):
 		# The first argument is the program name
 		if i == 0:
-			strarray += [(args[i], "programname")]
+			strarray += [(arg, "programname")]
 		# This is an option
-		elif args[i].startswith(("-")):
-			strarray += [(f" {args[i]}", "option")]
+		elif arg.startswith(("-")):
+			strarray += [(f" {arg}", "option")]
 		# The first non-option argument is the command
 		elif command == False:
-			strarray += [(f" {args[i]}", "command")]
+			strarray += [(f" {arg}", "command")]
 			command = True
 		else:
-			strarray += [(f" {args[i]}", "argument")]
+			strarray += [(f" {arg}", "argument")]
 
 	return strarray
 
@@ -8784,6 +8969,7 @@ def edit_resource(stdscr, **kwargs):
 		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
+# pylint: disable=unused-argument
 def restart_resource_rescale(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
@@ -8803,6 +8989,7 @@ def restart_resource_rescale(uip, items, action, values, kind, **kwargs):
 		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
+# pylint: disable=unused-argument
 def restart_resource_rollout(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
@@ -8820,6 +9007,7 @@ def restart_resource_rollout(uip, items, action, values, kind, **kwargs):
 		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
+# pylint: disable=unused-argument
 def rescale_resource(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
@@ -8841,6 +9029,7 @@ def rescale_resource(uip, items, action, values, kind, **kwargs):
 
 # Valid kinds:
 # ("Deployment", "apps")
+# pylint: disable=unused-argument
 def pause_resource_rollout(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
@@ -8860,6 +9049,7 @@ def pause_resource_rollout(uip, items, action, values, kind, **kwargs):
 
 # Valid kinds:
 # ("Deployment", "apps")
+# pylint: disable=unused-argument
 def resume_resource_rollout(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
@@ -8879,6 +9069,7 @@ def resume_resource_rollout(uip, items, action, values, kind, **kwargs):
 
 # Valid kinds:
 # ("Deployment", "apps")
+# pylint: disable=unused-argument
 def stop_resource_rescale(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
 	subprocess.call("/usr/bin/clear") # nosec
@@ -8897,10 +9088,12 @@ def stop_resource_rescale(uip, items, action, values, kind, **kwargs):
 		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
+# pylint: disable=unused-argument
 def delete_logs(uip, items, action, values, kind, **kwargs):
 	for item in items:
 		ansible_delete_log(item)
 
+# pylint: disable=unused-argument
 def action_execute_command(uip, items, action, values, kind, **kwargs):
 	tmpargs = deep_get(values, "action_args#command", [])
 	if len(tmpargs) == 0:
@@ -8928,7 +9121,7 @@ def action_execute_command(uip, items, action, values, kind, **kwargs):
 	iktprint(msg)
 
 	try:
-		result = subprocess.run(args)
+		result = subprocess.run(args, check = False)
 		retval = result.returncode
 	except FileNotFoundError:
 		iktprint([("Error: ", "error"), ("command “", "default"), (f"{args[0]}", "programname"), ("“ not found", "default")])
@@ -8939,6 +9132,7 @@ def action_execute_command(uip, items, action, values, kind, **kwargs):
 		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
+# pylint: disable=unused-argument
 def command_hosts(uip, items, action, values, kind, **kwargs):
 	values.pop("_tagged_items", None)
 	hosts = iktlib.join_tuple_list(items, _tuple = "hostname", separator = (", ", "separator"))
@@ -8994,10 +9188,12 @@ def command_hosts(uip, items, action, values, kind, **kwargs):
 		input("\nPress Enter to continue...") # nosec
 	uip.stdscr.refresh()
 
+# pylint: disable=unused-argument
 def cordon_node(uip, items, action, values, kind, **kwargs):
 	for node in items:
 		kh.cordon_node(node)
 
+# pylint: disable=unused-argument
 def uncordon_node(uip, items, action, values, kind, **kwargs):
 	for node in items:
 		kh.uncordon_node(node)
@@ -9057,7 +9253,7 @@ def ssh_to_host(stdscr, **kwargs):
 		host = f"{sshuser}@{host}"
 	args.append(host)
 
-	subprocess.run(args)
+	subprocess.run(args, check = False)
 
 	stdscr.refresh()
 
@@ -9076,7 +9272,6 @@ def list_configuration_files(basedir):
 			# real path, display name, type
 			if filename.endswith((".yaml", ".yml")):
 				files.append((f"{basedir}/{filename}", filename, "Configuration File"))
-				ptype = "Configuration File"
 			elif os.path.isdir(f"{basedir}/{filename}"):
 				if os.path.isfile(f"{basedir}/{filename}/kustomization.yaml"):
 					files.append((f"{basedir}/{filename}", filename, "Kustomization"))
@@ -9092,6 +9287,7 @@ def list_configuration_files(basedir):
 
 	return plist
 
+# pylint: disable=unused-argument
 def populate_actionlist(context = None, action_list = None, control_plane_selected = False, single_item = False, cluster_available = True):
 	actions = []
 	order = []
@@ -9125,19 +9321,19 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 			continue
 		if singleoncontrolplane == True and control_plane_selected == True and single_item == False:
 			continue
-		elif allowoncontrolplane == False and control_plane_selected == True:
+		if allowoncontrolplane == False and control_plane_selected == True:
 			continue
 		if readonly == False and read_only_mode == True:
 			continue
 
 		if currentcategory != category:
 			actions.append({
-				"lineattrs": widgetlineattrs.SEPARATOR,
+				"lineattrs": WidgetLineAttrs.SEPARATOR,
 				"columns": [[(f" {category} ", ("windowwidget", "default"))], [("", ("windowwidget", "default"))]],
 			})
 			currentcategory = category
 		actions.append({
-			"lineattrs": widgetlineattrs.NORMAL,
+			"lineattrs": WidgetLineAttrs.NORMAL,
 			"columns": [[(f"{action}", ("windowwidget", "default"))], metadata],
 		})
 
@@ -9145,7 +9341,7 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 
 def __populate_playbooklist(path, action_list):
 	if not os.path.isdir(path):
-		return
+		return None
 
 	if action_list is None:
 		action_list = {}
@@ -9173,7 +9369,7 @@ def __populate_playbooklist(path, action_list):
 		with open(playbookpath, encoding = "utf-8") as f:
 			try:
 				d = yaml.safe_load(f)
-			except Exception as e:
+			except Exception:
 				# This entry could not be parsed; add a dummy entry
 				action_list[playbookname] = {
 					"description": playbookpath,
@@ -9268,6 +9464,7 @@ def __populate_playbooklist(path, action_list):
 
 	return action_list
 
+# pylint: disable-next=too-many-arguments
 def populate_playbooklist(context, actions, action_list, control_plane_selected, single_item = False, cluster_available = True):
 	local_playbooks = deep_get(iktconfig, "Ansible#local_playbooks", [])
 	for playbook_path in local_playbooks:
@@ -9299,21 +9496,22 @@ def populate_playbooklist(context, actions, action_list, control_plane_selected,
 		singleoncontrolplane = action_list[item[2]].get("single_on_control_plane", True)
 		readonly = action_list[item[2]].get("read_only", False)
 		comments = action_list[item[2]].get("comments", "")
-		lineattrs = widgetlineattrs.NORMAL
+		lineattrs = WidgetLineAttrs.NORMAL
 		if read_only_mode == True and readonly == False:
 			continue
 		if singleoncontrolplane == True and control_plane_selected == True and single_item == False:
 			continue
-		elif allowoncontrolplane == False and control_plane_selected == True:
+		if allowoncontrolplane == False and control_plane_selected == True:
 			continue
-		elif action_list[item[2]].get("requires_cluster_info", False) == True and cluster_available == False:
+
+		if action_list[item[2]].get("requires_cluster_info", False) == True and cluster_available == False:
 			metadata = []
 			if len(comments) > 0:
 				metadata.append((f"{comments},", ("windowwidget", "highlight")))
 			metadata.append(("<cluster not available>", ("windowwidget", "alert")))
-			lineattrs = widgetlineattrs.UNSELECTABLE
+			lineattrs = WidgetLineAttrs.UNSELECTABLE
 		elif category == "__INVALID__":
-			lineattrs = widgetlineattrs.UNSELECTABLE & widgetlineattrs.INVALID
+			lineattrs = WidgetLineAttrs.UNSELECTABLE & WidgetLineAttrs.INVALID
 			metadata = [(comments, ("windowwidget", "alert"))]
 		elif category == "__DISABLED__":
 			continue
@@ -9323,13 +9521,13 @@ def populate_playbooklist(context, actions, action_list, control_plane_selected,
 		if currentcategory != category:
 			if category == "__INVALID__":
 				actions.append({
-					"lineattrs": widgetlineattrs.SEPARATOR,
+					"lineattrs": WidgetLineAttrs.SEPARATOR,
 					"columns": [[(" INVALID ", ("windowwidget", "bright"))], [("", ("windowwidget", "default"))]],
 				})
 				currentcategory = category
 			else:
 				actions.append({
-					"lineattrs": widgetlineattrs.SEPARATOR,
+					"lineattrs": WidgetLineAttrs.SEPARATOR,
 					"columns": [[(f" {category} ", ("windowwidget", "default"))], [("", ("windowwidget", "default"))]],
 				})
 				currentcategory = category
@@ -9374,20 +9572,18 @@ def format_selection_list(uip, refresh_apis = False):
 		sys.exit(f"Invalid sortcolumn {sortcolumn} for Selector; aborting.")
 
 	if refresh_apis == True:
-		notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Refreshing list of available APIs")
+		_notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Refreshing list of available APIs")
 		# Repopulate the list of views, on the offhand chance that a view file has been added
 		populate_views(force_refresh = refresh_apis)
-		del notice
 		curses.doupdate()
-	available_api_families, status, modified = kh.get_available_api_families()
+	available_api_families, _status, _modified = kh.get_available_api_families()
 
 	items = []
 	order = []
 
 	# Find the correct sort order
-	for item in views:
+	for view_name, viewref in views.items():
 		kind = None
-		viewref = views[item]
 		if deep_get(viewref, "skip", False) == True:
 			continue
 		if hide_unavailable == True:
@@ -9399,7 +9595,7 @@ def format_selection_list(uip, refresh_apis = False):
 			if check_availability is not None:
 				if check_availability() == False:
 					continue
-		group = views[item].get("group")
+		group = deep_get(viewref, "group")
 		# XXX: Do override in a nicer manner; perhaps we want all "built-in" groups first?
 		if group == "Administration":
 			group = "0"
@@ -9410,15 +9606,16 @@ def format_selection_list(uip, refresh_apis = False):
 		elif "(Deprecated)" in group:
 			# This should ensure that all deprecated groups end up last, but still sorted
 			group = "ZZZZZ" + group
+
 		if kind is not None:
 			api_group = kind[1]
 		else:
 			api_group = ""
 
 		if group is None:
-			raise Exception(f"group shouldn't be None unless skip=True; view: {item}")
+			raise Exception(f"group shouldn't be None unless skip=True; view: {view_name}")
 
-		order.append((item, group, api_group))
+		order.append((view_name, group, api_group))
 
 	currentgroup = ""
 	for item in natsorted(order, key = itemgetter(sortkey1, sortkey2)):
@@ -9435,13 +9632,13 @@ def format_selection_list(uip, refresh_apis = False):
 
 		if currentgroup != group and categorise == True:
 			items.append({
-				"lineattrs": widgetlineattrs.SEPARATOR,
+				"lineattrs": WidgetLineAttrs.SEPARATOR,
 				"columns": [[(f" {group} ", ("windowwidget", "highlight"))], [("", ("windowwidget", "default"))]],
 			})
 			currentgroup = group
-		lineattrs = widgetlineattrs.NORMAL
+		lineattrs = WidgetLineAttrs.NORMAL
 		if kind is not None and kind != ("", "") and not kind[0].startswith("__") and (kind not in available_api_families or deep_get(available_api_families[kind], "available", False) == False):
-			lineattrs = widgetlineattrs.UNSELECTABLE
+			lineattrs = WidgetLineAttrs.UNSELECTABLE
 		if api_group == "":
 			items.append({
 				"lineattrs": lineattrs,
@@ -9457,7 +9654,7 @@ def format_selection_list(uip, refresh_apis = False):
 
 	return items
 
-def selectwindow(stdscr, uip, refresh_apis = False):
+def selectwindow(uip, refresh_apis = False):
 	# Ideally we want to return to the same selection
 	global defaultview # pylint: disable=global-statement
 
@@ -9497,7 +9694,7 @@ def selectorloop(stdscr, view):
 	uip.init_window(field_list = field_list, windowheader = windowheader, sortcolumn = sortcolumn)
 
 	while True:
-		retval = selectwindow(stdscr, uip)
+		retval = selectwindow(uip)
 		if retval == curses_helper.retval.RETURNFULL:
 			return retval
 
@@ -9681,7 +9878,6 @@ views_special = {
 		"fields": None,
 		"update_delay": 50,
 		"sortcolumn": None,
-		"helptext": helptexts.clusteroverview,
 		"activatedfun": None,
 		"listgetter": None,
 		"infogetter": None,
@@ -9694,7 +9890,6 @@ views_special = {
 		"viewfunc": cniloop,
 		"fields": None,
 		"sortcolumn": None,
-		"helptext": helptexts.cniinfo,
 		"activatedfun": None,
 		"listgetter": None,
 		"infogetter": None,
@@ -9775,8 +9970,8 @@ def populate_views(force_refresh = False):
 
 	tmp_available_api_families, _status, _modified = kh.get_available_api_families(force_refresh = force_refresh)
 	available_api_families = set()
-	for kind in tmp_available_api_families:
-		if deep_get(tmp_available_api_families[kind], "available", False) == True:
+	for kind, kind_data in tmp_available_api_families.items():
+		if deep_get(kind_data, "available", False) == True:
 			available_api_families.add(kind)
 
 	viewdir = os.path.join(VIEW_DIR)
@@ -9875,7 +10070,7 @@ def populate_views(force_refresh = False):
 
 				check_availability = deep_get(d, "listview#check_availability", None)
 				if check_availability is not None:
-					if type(check_availability) == str:
+					if isinstance(check_availability, str):
 						check_availability = deep_get(availability_checker_allowlist, check_availability)
 
 				sortcolumn = deep_get(d, "listview#sortcolumn")
@@ -9890,7 +10085,7 @@ def populate_views(force_refresh = False):
 					sys.exit(f"View-file {view_file} is invalid: field_indexes is either missing or empty for the list view. Aborting.")
 
 				for key in _indexes:
-					if type(_indexes[key]) == list:
+					if isinstance(_indexes[key], list):
 						field_indexes[key] = {}
 						field_indexes[key]["fields"] = copy.deepcopy(_indexes[key])
 						field_indexes[key]["sortcolumn"] = sortcolumn
@@ -10062,7 +10257,7 @@ def populate_views(force_refresh = False):
 
 				on_activation = deep_get(listpad, "on_activation")
 				activatedfun = deep_get(on_activation, "call")
-				if type(activatedfun) == str:
+				if isinstance(activatedfun, str):
 					_activatedfun = deep_get(activatedfun_allowlist, activatedfun)
 					if _activatedfun is None:
 						sys.exit(f"{activatedfun} is not in the activatedfun allow list")
@@ -10090,7 +10285,7 @@ def populate_views(force_refresh = False):
 				_indexes = deep_get(listpad, "field_indexes", {})
 
 				for key in _indexes:
-					if type(_indexes[key]) == list:
+					if isinstance(_indexes[key], list):
 						listpad_field_indexes[key] = {}
 						listpad_field_indexes[key]["fields"] = copy.deepcopy(_indexes[key])
 						listpad_field_indexes[key]["sortcolumn"] = sortcolumn
@@ -10175,7 +10370,7 @@ def populate_views(force_refresh = False):
 					w_selectable = deep_get(_shortcuts[shortcut], "selectable")
 					w_itemgetter = deep_get(_shortcuts[shortcut], "itemgetter")
 					if w_itemgetter is not None:
-						if type(w_itemgetter) == str:
+						if isinstance(w_itemgetter, str):
 							w_itemgetter = deep_get(itemgetter_allowlist, w_itemgetter)
 					w_itemgetter_args = deep_get(_shortcuts[shortcut], "itemgetter_args", {})
 					_w_formatting = deep_get(_shortcuts[shortcut], "formatting")
@@ -10376,12 +10571,12 @@ def set_default_view(view):
 		sys.exit(errno.EINVAL)
 
 def checkforview(arg):
-	for view in views:
-		if type(arg) == str:
-			if arg in deep_get(views[view], "commandline", []):
+	for view, viewref in views.items():
+		if isinstance(arg, str):
+			if arg in deep_get(viewref, "commandline", []):
 				return view
 		else:
-			if arg == deep_get(views[view], "kind", ("", "")):
+			if arg == deep_get(viewref, "kind", ("", "")):
 				return view
 
 	return None

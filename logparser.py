@@ -25,6 +25,7 @@ import ast
 from collections import namedtuple
 from datetime import datetime
 import difflib
+from enum import IntEnum
 # ujson is much faster than json,
 # but it might not be available
 try:
@@ -50,7 +51,7 @@ import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig, deep_get_with_fallback
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
 
-class loglevel:
+class LogLevel(IntEnum):
 	"""
 	Loglevels used by iKT
 	"""
@@ -68,18 +69,18 @@ class loglevel:
 	ALL = 255
 
 loglevel_mappings = {
-	loglevel.EMERG: "Emergency",
-	loglevel.ALERT: "Alert",
-	loglevel.CRIT: "Critical",
-	loglevel.ERR: "Error",
-	loglevel.WARNING: "Warning",
-	loglevel.NOTICE: "Notice",
-	loglevel.INFO: "Info",
-	loglevel.DEBUG: "Debug",
-	loglevel.DIFFPLUS: "Diffplus",
-	loglevel.DIFFMINUS: "Diffminus",
-	loglevel.DIFFSAME: "Diffsame",
-	loglevel.ALL: "Debug",
+	LogLevel.EMERG: "Emergency",
+	LogLevel.ALERT: "Alert",
+	LogLevel.CRIT: "Critical",
+	LogLevel.ERR: "Error",
+	LogLevel.WARNING: "Warning",
+	LogLevel.NOTICE: "Notice",
+	LogLevel.INFO: "Info",
+	LogLevel.DEBUG: "Debug",
+	LogLevel.DIFFPLUS: "Diffplus",
+	LogLevel.DIFFMINUS: "Diffminus",
+	LogLevel.DIFFSAME: "Diffsame",
+	LogLevel.ALL: "Debug",
 }
 
 class logparser_configuration:
@@ -145,21 +146,42 @@ else:
 		return json.dumps(obj, indent = indent)
 
 def get_loglevel_names():
-	# Ugly way of removing duplicate values from dict
+	"""
+	Ugly way of removing duplicate values from dict
+
+		Returns:
+			list[str]: The unique severities
+	"""
 	return list(dict.fromkeys(list(loglevel_mappings.values())))
 
-def loglevel_to_name(severity):
-	return loglevel_mappings[min(loglevel.DIFFSAME, severity)]
-
-def name_to_loglevel(name):
-	for severity, severity_string in loglevel_mappings.items():
-		if severity_string.lower() == name.lower():
-			return severity
-	raise ValueError(f"Programming error! Loglevel {name} does not exist!")
-
-def month_to_numerical(month):
+def loglevel_to_name(loglevel: LogLevel) -> str:
 	"""
-	Convert a 3-letter month string to a numerical month
+	Given a numerical loglevel, return its severity string
+
+		Parameters:
+			loglevel (int): The corresponding numerical loglevel
+		Returns:
+			severity (str): A severity string
+	"""
+	return loglevel_mappings[min(LogLevel.DIFFSAME, loglevel)]
+
+def name_to_loglevel(severity: str) -> LogLevel:
+	"""
+	Given a severity string, return its numerical number
+
+		Parameters:
+			name  (int): The corresponding numerical loglevel
+		Returns:
+			severity (str): A severity string
+	"""
+	for _severity, _severity_string in loglevel_mappings.items():
+		if _severity_string.lower() == severity.lower():
+			return _severity
+	raise ValueError(f"Programming error! Loglevel {severity} does not exist!")
+
+def month_to_numerical(month: str) -> str:
+	"""
+	Convert a 3-letter month string to a numerical month string
 
 		Parameters:
 			month (str): The month string
@@ -179,101 +201,101 @@ def month_to_numerical(month):
 	raise TypeError("No matching month")
 
 # Mainly used by glog
-def letter_to_severity(letter, default = None):
+def letter_to_severity(letter: str, default = None) -> LogLevel:
 	severities = {
-		"F": loglevel.EMERG,
-		"E": loglevel.ERR,
-		"W": loglevel.WARNING,
-		"N": loglevel.NOTICE,
-		"C": loglevel.NOTICE,	# Used by jupyter for the login token
-		"I": loglevel.INFO,
-		"D": loglevel.DEBUG,
+		"F": LogLevel.EMERG,
+		"E": LogLevel.ERR,
+		"W": LogLevel.WARNING,
+		"N": LogLevel.NOTICE,
+		"C": LogLevel.NOTICE,	# Used by jupyter for the login token
+		"I": LogLevel.INFO,
+		"D": LogLevel.DEBUG,
 	}
 
 	return severities.get(letter, default)
 
 # Used by Kiali; anything else?
-def str_3letter_to_severity(string, default = None):
+def str_3letter_to_severity(string: str, default = None) -> LogLevel:
 	severities = {
-		"ERR": loglevel.ERR,
-		"WRN": loglevel.WARNING,
-		"INF": loglevel.INFO,
+		"ERR": LogLevel.ERR,
+		"WRN": LogLevel.WARNING,
+		"INF": LogLevel.INFO,
 	}
 	return severities.get(string.upper(), default)
 
-def str_4letter_to_severity(string, default = None):
+def str_4letter_to_severity(string: str, default = None) -> LogLevel:
 	severities = {
-		"CRIT": loglevel.CRIT,
-		"FATA": loglevel.CRIT,
-		"ERRO": loglevel.ERR,
-		"WARN": loglevel.WARNING,
-		"NOTI": loglevel.NOTICE,
-		"INFO": loglevel.INFO,
-		"DEBU": loglevel.DEBUG,
+		"CRIT": LogLevel.CRIT,
+		"FATA": LogLevel.CRIT,
+		"ERRO": LogLevel.ERR,
+		"WARN": LogLevel.WARNING,
+		"NOTI": LogLevel.NOTICE,
+		"INFO": LogLevel.INFO,
+		"DEBU": LogLevel.DEBUG,
 	}
 	return severities.get(string.upper(), default)
 
-def str_to_severity(string, default = None):
+def str_to_severity(string: str, default = None) -> LogLevel:
 	severities = {
-		"fatal": loglevel.CRIT,
-		"error": loglevel.ERR,
-		"eror": loglevel.ERR,
-		"warning": loglevel.WARNING,
-		"warn": loglevel.WARNING,
-		"notice": loglevel.NOTICE,
-		"noti": loglevel.NOTICE,
-		"info": loglevel.INFO,
-		"debug": loglevel.DEBUG,
-		"debu": loglevel.DEBUG,
+		"fatal": LogLevel.CRIT,
+		"error": LogLevel.ERR,
+		"eror": LogLevel.ERR,
+		"warning": LogLevel.WARNING,
+		"warn": LogLevel.WARNING,
+		"notice": LogLevel.NOTICE,
+		"noti": LogLevel.NOTICE,
+		"info": LogLevel.INFO,
+		"debug": LogLevel.DEBUG,
+		"debu": LogLevel.DEBUG,
 	}
 
 	return severities.get(string.lower(), default)
 
-def lvl_to_letter_severity(lvl):
+def lvl_to_letter_severity(lvl: LogLevel) -> str:
 	severities = {
-		loglevel.CRIT: "C",
-		loglevel.ERR: "E",
-		loglevel.WARNING: "W",
-		loglevel.NOTICE: "N",
-		loglevel.INFO: "I",
-		loglevel.DEBUG: "D",
+		LogLevel.CRIT: "C",
+		LogLevel.ERR: "E",
+		LogLevel.WARNING: "W",
+		LogLevel.NOTICE: "N",
+		LogLevel.INFO: "I",
+		LogLevel.DEBUG: "D",
 	}
 
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
-def lvl_to_4letter_severity(lvl):
+def lvl_to_4letter_severity(lvl: LogLevel) -> str:
 	severities = {
-		loglevel.CRIT: "CRIT",
-		loglevel.ERR: "ERRO",
-		loglevel.WARNING: "WARN",
-		loglevel.NOTICE: "NOTI",
-		loglevel.INFO: "INFO",
-		loglevel.DEBUG: "DEBU",
+		LogLevel.CRIT: "CRIT",
+		LogLevel.ERR: "ERRO",
+		LogLevel.WARNING: "WARN",
+		LogLevel.NOTICE: "NOTI",
+		LogLevel.INFO: "INFO",
+		LogLevel.DEBUG: "DEBU",
 	}
 
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
 def lvl_to_word_severity(lvl):
 	severities = {
-		loglevel.CRIT: "CRITICAL",
-		loglevel.ERR: "ERROR",
-		loglevel.WARNING: "WARNING",
-		loglevel.NOTICE: "NOTICE",
-		loglevel.INFO: "INFO",
-		loglevel.DEBUG: "DEBUG",
+		LogLevel.CRIT: "CRITICAL",
+		LogLevel.ERR: "ERROR",
+		LogLevel.WARNING: "WARNING",
+		LogLevel.NOTICE: "NOTICE",
+		LogLevel.INFO: "INFO",
+		LogLevel.DEBUG: "DEBUG",
 	}
 
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
-def split_4letter_colon_severity(message, severity = loglevel.INFO):
+def split_4letter_colon_severity(message, severity = LogLevel.INFO):
 	severities = {
-		"CRIT: ": loglevel.CRIT,
-		"FATA: ": loglevel.CRIT,
-		"ERRO: ": loglevel.ERR,
-		"WARN: ": loglevel.WARNING,
-		"NOTI: ": loglevel.NOTICE,
-		"INFO: ": loglevel.INFO,
-		"DEBU: ": loglevel.DEBUG,
+		"CRIT: ": LogLevel.CRIT,
+		"FATA: ": LogLevel.CRIT,
+		"ERRO: ": LogLevel.ERR,
+		"WARN: ": LogLevel.WARNING,
+		"NOTI: ": LogLevel.NOTICE,
+		"INFO: ": LogLevel.INFO,
+		"DEBU: ": LogLevel.DEBUG,
 	}
 
 	_severity = severities.get(message[0:len("ERRO: ")], -1)
@@ -283,15 +305,15 @@ def split_4letter_colon_severity(message, severity = loglevel.INFO):
 
 	return message, severity
 
-def split_4letter_spaced_severity(message, severity = loglevel.INFO):
+def split_4letter_spaced_severity(message, severity = LogLevel.INFO):
 	severities = {
-		"CRIT": loglevel.CRIT,
-		"FATA": loglevel.CRIT,
-		"ERRO": loglevel.ERR,
-		"WARN": loglevel.WARNING,
-		"NOTI": loglevel.NOTICE,
-		"INFO": loglevel.INFO,
-		"DEBU": loglevel.DEBUG,
+		"CRIT": LogLevel.CRIT,
+		"FATA": LogLevel.CRIT,
+		"ERRO": LogLevel.ERR,
+		"WARN": LogLevel.WARNING,
+		"NOTI": LogLevel.NOTICE,
+		"INFO": LogLevel.INFO,
+		"DEBU": LogLevel.DEBUG,
 	}
 
 	tmp = re.match(r"\s*([a-zA-Z]{4})\s+(.*)", message)
@@ -301,18 +323,18 @@ def split_4letter_spaced_severity(message, severity = loglevel.INFO):
 
 	return message, severity
 
-def split_bracketed_severity(message, default = loglevel.INFO):
+def split_bracketed_severity(message, default = LogLevel.INFO):
 	severities = {
-		"[fatal]": loglevel.CRIT,
-		"[error]": loglevel.ERR,
-		"[err]": loglevel.ERR,
-		"[warning]": loglevel.WARNING,
-		"[warn]": loglevel.WARNING,
-		"[notice]": loglevel.NOTICE,
-		"[info]": loglevel.INFO,
-		"[system]": loglevel.INFO,	# MySQL seems to have its own loglevels
-		"[note]": loglevel.INFO,	# none of which makes every much sense
-		"[debug]": loglevel.DEBUG,
+		"[fatal]": LogLevel.CRIT,
+		"[error]": LogLevel.ERR,
+		"[err]": LogLevel.ERR,
+		"[warning]": LogLevel.WARNING,
+		"[warn]": LogLevel.WARNING,
+		"[notice]": LogLevel.NOTICE,
+		"[info]": LogLevel.INFO,
+		"[system]": LogLevel.INFO,	# MySQL seems to have its own loglevels
+		"[note]": LogLevel.INFO,	# none of which makes every much sense
+		"[debug]": LogLevel.DEBUG,
 	}
 
 	tmp = re.match(r"^(\[[A-Za-z]+?\]) ?(.*)", message)
@@ -327,15 +349,15 @@ def split_bracketed_severity(message, default = loglevel.INFO):
 
 	return message, severity
 
-def split_colon_severity(message, severity = loglevel.INFO):
+def split_colon_severity(message, severity = LogLevel.INFO):
 	severities = {
-		"CRITICAL:": loglevel.CRIT,
-		"ERROR:": loglevel.ERR,
-		"WARNING:": loglevel.WARNING,
-		"NOTICE:": loglevel.NOTICE,
-		"NOTE:": loglevel.NOTICE,
-		"INFO:": loglevel.INFO,
-		"DEBUG:": loglevel.DEBUG,
+		"CRITICAL:": LogLevel.CRIT,
+		"ERROR:": LogLevel.ERR,
+		"WARNING:": LogLevel.WARNING,
+		"NOTICE:": LogLevel.NOTICE,
+		"NOTE:": LogLevel.NOTICE,
+		"INFO:": LogLevel.INFO,
+		"DEBUG:": LogLevel.DEBUG,
 	}
 
 	tmp = re.match(r"^([A-Za-z]+?:) ?(.*)", message)
@@ -484,7 +506,7 @@ def strip_iso_timestamp_with_tz(message):
 # ::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -
 # 10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"
 # 10.244.0.1 - - [29/Jan/2022:10:33:50 +0000] "GET /v0/healthz/ HTTP/1.1" 200 3 "http://10.244.0.123:8000/v0/healthz" "kube-probe/1.23"
-def http(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True, options = None):
+def http(message, severity = LogLevel.INFO, facility = "", fold_msg: bool = True, options = None):
 	del fold_msg
 
 	reformat_timestamps = deep_get(options, "reformat_timestamps", False)
@@ -544,11 +566,11 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True
 			statuscode = tmp[13]
 			_statuscode = int(statuscode)
 			if 100 <= _statuscode < 300:
-				severity = loglevel.NOTICE
+				severity = LogLevel.NOTICE
 			elif 300 <= _statuscode < 400:
-				severity = loglevel.WARNING
+				severity = LogLevel.WARNING
 			else:
-				severity = loglevel.ERR
+				severity = LogLevel.ERR
 			separator6 = tmp[14]
 			message = [
 				(address1, ("logview", "hostname")),
@@ -614,11 +636,11 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True
 			statuscode = tmp[14]
 			_statuscode = int(statuscode)
 			if 100 <= _statuscode < 300:
-				severity = loglevel.NOTICE
+				severity = LogLevel.NOTICE
 			elif 300 <= _statuscode < 400:
-				severity = loglevel.WARNING
+				severity = LogLevel.WARNING
 			else:
-				severity = loglevel.ERR
+				severity = LogLevel.ERR
 			separator6 = tmp[15]
 			address4 = tmp[16]
 			separator7 = tmp[17]
@@ -655,11 +677,11 @@ def http(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True
 		statuscode = tmp[1]
 		_statuscode = int(statuscode)
 		if 100 <= _statuscode < 300:
-			severity = loglevel.NOTICE
+			severity = LogLevel.NOTICE
 		elif 300 <= _statuscode < 400:
-			severity = loglevel.WARNING
+			severity = LogLevel.WARNING
 		else:
-			severity = loglevel.ERR
+			severity = LogLevel.ERR
 		duration = tmp[2]
 		unit = tmp[3]
 		hostname = tmp[4]
@@ -722,18 +744,18 @@ def split_glog(message, severity = None, facility = None):
 		matched = True
 	else:
 		if severity is None:
-			severity = loglevel.INFO
+			severity = LogLevel.INFO
 
 	# If we have a logging error we return that as message and the rest as remnants
 	if loggingerror is not None:
 		remnants.insert(0, (message, severity))
 		message = loggingerror
-		severity = loglevel.ERR
+		severity = LogLevel.ERR
 
 	return message, severity, facility, remnants, matched
 
 # \tINFO\tcontrollers.Reaper\tstarting reconciliation\t{"reaper": "default/k8ssandra-cluster-a-reaper-k8ssandra"}
-def __split_severity_facility_style(message, severity = loglevel.INFO, facility = ""):
+def __split_severity_facility_style(message, severity = LogLevel.INFO, facility = ""):
 	tmp = re.match(r"^\s*([A-Z]+)\s+([a-zA-Z-\.]+)\s+(.*)", message)
 	if tmp is not None:
 		severity = str_to_severity(tmp[1], default = severity)
@@ -742,7 +764,7 @@ def __split_severity_facility_style(message, severity = loglevel.INFO, facility 
 
 	return message, severity, facility
 
-def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = None):
+def split_json_style(message, severity = LogLevel.INFO, facility = "", fold_msg = True, options = None):
 	logentry = None
 	remnants = None
 
@@ -839,7 +861,7 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 			if severity is not None:
 				msgseverity = severity
 			else:
-				msgseverity = loglevel.INFO
+				msgseverity = LogLevel.INFO
 			# Append all remaining fields to message
 			if msg == "":
 				message = str(logentry)
@@ -858,22 +880,22 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 					message = str(logentry)
 		# else return an expanded representation
 		else:
-			if severity is not None and severity == loglevel.DEBUG:
+			if severity is not None and severity == LogLevel.DEBUG:
 				structseverity = severity
 			else:
-				structseverity = loglevel.INFO
+				structseverity = LogLevel.INFO
 
 			if "err" not in logentry and "error" not in logentry:
 				if severity is not None:
 					msgseverity = severity
 				else:
-					msgseverity = loglevel.INFO
+					msgseverity = LogLevel.INFO
 			else:
 				msgseverity = structseverity
 			if severity is not None:
 				errorseverity = severity
 			else:
-				errorseverity = loglevel.ERR
+				errorseverity = LogLevel.ERR
 
 			if logparser_configuration.msg_extract == True:
 				message = msg
@@ -886,7 +908,7 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 				message = ""
 
 			if len(logentry) > 0:
-				if structseverity == loglevel.DEBUG:
+				if structseverity == LogLevel.DEBUG:
 					override_formatting = ("logview", "severity_debug")
 				else:
 					override_formatting = {}
@@ -917,7 +939,7 @@ def split_json_style(message, severity = loglevel.INFO, facility = "", fold_msg 
 
 	return message, severity, facility, remnants
 
-def merge_message(message, remnants = None, severity = loglevel.INFO):
+def merge_message(message, remnants = None, severity = LogLevel.INFO):
 	if remnants is not None:
 		remnants = [(message, severity)] + remnants
 	else:
@@ -926,7 +948,7 @@ def merge_message(message, remnants = None, severity = loglevel.INFO):
 
 	return message, remnants
 
-def split_json_style_raw(message, severity = loglevel.INFO, facility = "", fold_msg: bool = True, options = None, merge_msg = False):
+def split_json_style_raw(message, severity = LogLevel.INFO, facility = "", fold_msg: bool = True, options = None, merge_msg = False):
 	# This warning seems incorrect
 	# pylint: disable-next=global-variable-not-assigned
 	global logparser_configuration
@@ -963,7 +985,7 @@ def split_json_style_raw(message, severity = loglevel.INFO, facility = "", fold_
 
 	return message, severity, facility, remnants
 
-def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = None):
+def json_event(message, severity = LogLevel.INFO, facility = "", fold_msg = True, options = None):
 	remnants = []
 	tmp = message.split(" ", 2)
 
@@ -1001,11 +1023,11 @@ def json_event(message, severity = loglevel.INFO, facility = "", fold_msg = True
 				if y < 4:
 					continue
 				if el.startswith("+"):
-					remnants.append((el, loglevel.DIFFPLUS))
+					remnants.append((el, LogLevel.DIFFPLUS))
 				elif el.startswith("-"):
-					remnants.append((el, loglevel.DIFFMINUS))
+					remnants.append((el, LogLevel.DIFFMINUS))
 				else:
-					remnants.append((formatters.format_yaml_line(el), loglevel.DIFFSAME))
+					remnants.append((formatters.format_yaml_line(el), LogLevel.DIFFSAME))
 			message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [State modified]", ("logview", "modified"))]
 	else:
 		sys.exit(f"json_event: Unknown EVENT type:\n{message}")
@@ -1057,7 +1079,7 @@ def strip_ansicodes(message):
 
 	return message
 
-def split_bracketed_timestamp_severity_facility(message, default = loglevel.INFO):
+def split_bracketed_timestamp_severity_facility(message, default = LogLevel.INFO):
 	severity = default
 	facility = ""
 
@@ -1111,18 +1133,18 @@ def override_severity(message, severity, facility = None):
 	)
 
 	if message.startswith(override_notice):
-		severity = min(severity, loglevel.NOTICE)
+		severity = min(severity, LogLevel.NOTICE)
 	elif message.startswith(override_warning):
-		severity = min(severity, loglevel.WARNING)
+		severity = min(severity, LogLevel.WARNING)
 	elif message.startswith(override_err):
-		severity = min(severity, loglevel.ERR)
+		severity = min(severity, LogLevel.ERR)
 	elif message.startswith(override_alert):
-		severity = min(severity, loglevel.ALERT)
+		severity = min(severity, LogLevel.ALERT)
 	# Trace messages are annoying, set them to debug severity
 	elif message.startswith("Trace["):
-		severity = loglevel.DEBUG
+		severity = LogLevel.DEBUG
 	elif facility is not None and facility.startswith("trace.go"):
-		severity = loglevel.DEBUG
+		severity = LogLevel.DEBUG
 
 	return message, severity
 
@@ -1263,9 +1285,9 @@ def expand_event(message, severity, remnants = None, fold_msg = True):
 	tmp = re.match(r".*type: '([A-Z][a-z]+)' reason:.*", raw_message)
 	if tmp is not None:
 		if tmp[1] == "Normal":
-			_severity = loglevel.INFO
+			_severity = LogLevel.INFO
 		elif tmp[1] == "Warning":
-			_severity = loglevel.WARNING
+			_severity = LogLevel.WARNING
 		if _severity < severity:
 			severity = _severity
 	remnants.append(([(" ".ljust(indent) + raw_message[eventstart:refstart], ("types", "yaml_reference"))], severity))
@@ -1318,8 +1340,8 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 				message = header
 
 			for entry, value in res.items():
-				if severity > loglevel.INFO:
-					tmpseverity = loglevel.INFO
+				if severity > LogLevel.INFO:
+					tmpseverity = LogLevel.INFO
 
 				tmpseverity = severity
 
@@ -1355,15 +1377,15 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 					tmpseverity = severity
 				# Should we highlight this too?
 				#elif entry == "cluster-version":
-				#	tmpseverity = loglevel.NOTICE
+				#	tmpseverity = LogLevel.NOTICE
 				elif entry in ("version", "git-commit"):
-					tmpseverity = loglevel.NOTICE
+					tmpseverity = LogLevel.NOTICE
 				elif entry == "Workflow":
 					if message.startswith("Syncing Workflow") and value in message:
 						continue
 				elif entry == "component":
-					# this should have loglevel.INFO or lower severity
-					tmpseverity = max(loglevel.INFO, severity, tmpseverity)
+					# this should have LogLevel.INFO or lower severity
+					tmpseverity = max(LogLevel.INFO, severity, tmpseverity)
 
 				remnants.append(([(entry, ("types", "key")), ("separators", "keyvalue_log"), (value, ("types", "value"))], tmpseverity))
 			if len(message) == 0:
@@ -1384,7 +1406,7 @@ def format_key_value(key, value, severity, force_severity = False):
 # Severity: lvl=|level=
 # Timestamps: t=|ts=|time= (all of these are ignored)
 # Facility: subsys|caller|logger|source
-def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = None):
+def key_value(message, severity = LogLevel.INFO, facility = "", fold_msg = True, options = None):
 	remnants = []
 
 	messages = options.get("messages", ["msg"])
@@ -1429,7 +1451,7 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 			severity = str_to_severity(level)
 		else:
 			if severity is None:
-				severity = loglevel.INFO
+				severity = LogLevel.INFO
 
 		msg = deep_get_with_fallback(d, messages, "")
 		if msg.startswith("\"") and msg.endswith("\""):
@@ -1532,7 +1554,7 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 					if d_key == "collector" and logparser_configuration.bullet_collectors == True:
 						tmp.append(f"• {d_value}")
 					elif d_key in versions:
-						tmp.append(format_key_value(item, d_value, loglevel.NOTICE, force_severity = True))
+						tmp.append(format_key_value(item, d_value, LogLevel.NOTICE, force_severity = True))
 					else:
 						__severity = custom_override_severity(d_value, severity, overrides = severity_overrides)
 						tmp.append(format_key_value(d_key, d_value, __severity, force_severity = (__severity != severity)))
@@ -1570,7 +1592,7 @@ def key_value(message, severity = loglevel.INFO, facility = "", fold_msg = True,
 # For messages along the lines of:
 # "Foo" "key"="value" "key"="value"
 # Foo key=value key=value
-def key_value_with_leading_message(message, severity = loglevel.INFO, facility = "", fold_msg = True, options = None):
+def key_value_with_leading_message(message, severity = LogLevel.INFO, facility = "", fold_msg = True, options = None):
 	# This warning seems incorrect
 	# pylint: disable-next=global-variable-not-assigned
 	global logparser_configuration
@@ -1609,7 +1631,7 @@ def modinfo(message, fold_msg = True):
 	del fold_msg
 
 	facility = ""
-	severity = loglevel.INFO
+	severity = LogLevel.INFO
 	remnants = []
 
 	tmp = re.match(r"^([a-z][\S]*?):(\s+)(.+)", message)
@@ -1631,19 +1653,19 @@ def bracketed_timestamp_severity(message, fold_msg = True):
 	del fold_msg
 
 	facility = ""
-	severity = loglevel.INFO
+	severity = LogLevel.INFO
 	remnants = []
 
 	# Some messages have double timestamps...
 	message, _timestamp = split_iso_timestamp(message, None)
-	message, severity = split_bracketed_severity(message, default = loglevel.WARNING)
+	message, severity = split_bracketed_severity(message, default = LogLevel.WARNING)
 
 	if message.startswith(("XPU Manager:", "Build:", "Level Zero:")):
-		severity = loglevel.NOTICE
+		severity = LogLevel.NOTICE
 
 	return facility, severity, message, remnants
 
-def directory(message, fold_msg = True, severity = loglevel.INFO, facility = ""):
+def directory(message, fold_msg = True, severity = LogLevel.INFO, facility = ""):
 	del fold_msg
 
 	remnants = []
@@ -1780,11 +1802,11 @@ def directory(message, fold_msg = True, severity = loglevel.INFO, facility = "")
 
 # input: nginx 08:44:38.88 INFO  ==> ** Starting NGINX setup **
 # output:
-#   severity: loglevel.INFO
+#   severity: LogLevel.INFO
 #   facility: nginx
 #   msg: ==> ** Starting NGINX setup **
 #   remnants: []
-def facility_hh_mm_ss_ms_severity(message, severity = loglevel.INFO, fold_msg = True):
+def facility_hh_mm_ss_ms_severity(message, severity = LogLevel.INFO, fold_msg = True):
 	del fold_msg
 
 	facility = ""
@@ -1798,7 +1820,7 @@ def facility_hh_mm_ss_ms_severity(message, severity = loglevel.INFO, fold_msg = 
 
 # input: [     0.000384s]  INFO ThreadId(01) linkerd2_proxy::rt: Using single-threaded proxy runtime
 # output:
-#   severity: loglevel.INFO
+#   severity: LogLevel.INFO
 #   facility: ThreadId(01)
 #   msg: [     0.000384s] linkerd2_proxy::rt: Using single-threaded proxy runtime
 #   remnants: []
@@ -1806,7 +1828,7 @@ def seconds_severity_facility(message, fold_msg = True):
 	del fold_msg
 
 	facility = ""
-	severity = loglevel.INFO
+	severity = LogLevel.INFO
 	remnants = []
 
 	tmp = re.match(r"(\[\s*?\d+?\.\d+?s\])\s+([A-Z]+?)\s+(\S+?)\s(.*)", message)
@@ -1827,7 +1849,7 @@ def python_traceback_scanner(message, fold_msg = True, options = None):
 	# pylint: disable=unused-argument
 	timestamp = None
 	facility = ""
-	severity = loglevel.ERR
+	severity = LogLevel.ERR
 	message, _timestamp = split_iso_timestamp(message, None)
 	processor = ["block", python_traceback_scanner]
 
@@ -1873,7 +1895,7 @@ def json_line_scanner(message, fold_msg = True, options = None):
 	allow_empty_lines = deep_get(options, "allow_empty_lines", True)
 	timestamp = None
 	facility = ""
-	severity = loglevel.INFO
+	severity = LogLevel.INFO
 	message, _timestamp = split_iso_timestamp(message, None)
 
 	if message == "}".rstrip():
@@ -1935,7 +1957,7 @@ def yaml_line_scanner(message, fold_msg = True, options = None):
 
 	timestamp = None
 	facility = None
-	severity = loglevel.INFO
+	severity = LogLevel.INFO
 	message, _timestamp = split_iso_timestamp(message, None)
 	remnants = None
 	matched = True
@@ -2160,7 +2182,7 @@ def custom_parser(message, fold_msg = True, filters = None, options = None):
 						_message, severity, facility, remnants = split_json_style("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 						_severity = severity
 						if _severity is None:
-							_severity = loglevel.INFO
+							_severity = LogLevel.INFO
 						_message, remnants = merge_message(_message, remnants, severity = severity)
 						message = [(parts[0], ("logview", f"severity_{loglevel_to_name(_severity).lower()}"))]
 			elif _filter[0] == "json_event":
@@ -2198,7 +2220,7 @@ def custom_parser(message, fold_msg = True, filters = None, options = None):
 			break
 
 	if severity is None:
-		severity = loglevel.INFO
+		severity = LogLevel.INFO
 
 	return facility, severity, message, remnants
 
@@ -2349,7 +2371,7 @@ def logparser_initialised(parser = None, message = "", fold_msg = True, line = 0
 
 	if len(message) > 16383:
 		remnants = (message[0:16383], severity)
-		severity = loglevel.ERR
+		severity = LogLevel.ERR
 		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)"
 
 	# The UI gets mightily confused by tabs, so replace them with spaces
@@ -2453,7 +2475,7 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 
 	if len(message) > 16383:
 		remnants = (message[0:16383], severity)
-		severity = loglevel.ERR
+		severity = LogLevel.ERR
 		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)"
 
 	# The UI gets mightily confused by tabs, so replace them with spaces

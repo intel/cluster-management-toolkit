@@ -6,7 +6,7 @@ from datetime import datetime
 
 from curses_helper import color_status_group, themearray_len, themearray_to_string
 import iktlib
-from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, reformat_timestamp, stgroup, timestamp_to_datetime
+from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, reformat_timestamp, StatusGroup, timestamp_to_datetime
 
 def format_list(items, fieldlen, pad, ralign, selected,
 		item_separator = ("separators", "list"),
@@ -73,7 +73,7 @@ def format_list(items, fieldlen, pad, ralign, selected,
 				formatting = ("types", "none", selected)
 				formatted_string = (string, formatting)
 			elif string == "<not ready>":
-				formatting = color_status_group(stgroup.NOT_OK, selected)
+				formatting = color_status_group(StatusGroup.NOT_OK, selected)
 				formatted_string = (string, formatting)
 			else:
 				context, attr_ref = field_colors[min(i, len(field_colors) - 1)]
@@ -463,23 +463,23 @@ def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **fo
 	field_separators = [("separators", "no_pad")]
 
 	for item, status in items:
-		if status == stgroup.DONE:
+		if status == StatusGroup.DONE:
 			newitems.append((item))
-		if status == stgroup.OK:
+		if status == StatusGroup.OK:
 			newitems.append(("", item))
-		elif status == stgroup.PENDING:
+		elif status == StatusGroup.PENDING:
 			newitems.append(("", "", item))
-		elif status == stgroup.WARNING:
+		elif status == StatusGroup.WARNING:
 			newitems.append(("", "", "", item))
-		elif status == stgroup.ADMIN:
+		elif status == StatusGroup.ADMIN:
 			newitems.append(("", "", "", "", item))
-		elif status == stgroup.NOT_OK:
+		elif status == StatusGroup.NOT_OK:
 			newitems.append(("", "", "", "", "", item))
-		elif status == stgroup.UNKNOWN:
+		elif status == StatusGroup.UNKNOWN:
 			newitems.append(("", "", "", "", "", "", item))
-		elif status == stgroup.CRIT:
+		elif status == StatusGroup.CRIT:
 			newitems.append(("", "", "", "", "", "", "", item))
-		elif status == stgroup.NEUTRAL:
+		elif status == StatusGroup.NEUTRAL:
 			newitems.append(("", "", "", "", "", "", "", "", item))
 		else:
 			newitems.append(("", "", "", "", "", "", "", "", item))

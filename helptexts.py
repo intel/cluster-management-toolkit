@@ -154,37 +154,9 @@ spacer = [
 	("", ""),
 ]
 
-clusteroverview = [
-	("[Ctrl] + X", "Exit program"),
-	("[Shift] + M", "Toggle mouse on/off"),
-] + toggleborders + spacer + [
-	("[F1] / [Shift] + H", "Show this helptext"),
-	("[F2]", "Switch main view"),
-	("[F3]", "Switch main view (recheck available API resources)"),
-	("O", "Open info page for Node"),
-	("[Shift] + N", "Open info page for Namespace [Pod context only]"),
-	("[Shift] + P", "Open info page for Pod [Pod context only]"),
-	("[Shift] + V", "Show package versions"),
-] + spacer + [
-	("[Cursor keys]", "Move cursor up / down / left / right within resource map"),
-	("[Shift] + [Left]", "Switch to previous resource map"),
-	("[Shift] + [Right]", "Switch to next resource map"),
-	("[Home]", "Jump to first column of resource map"),
-	("[End]", "Jump to last column of resource map"),
-	("[Tab]", "Jump to next elevated severity in resource map"),
-	("[Shift] + [Tab]", "Jump to previous elevated severity in resource map"),
-	("[Shift] + [Home]", "Jump to first row of resource map"),
-	("[Shift] + [End]", "Jump to last row of resource map"),
-]
-
 configmapdata = infoviewheader_part1 + infoviewheader_part2 + spacer + [
 	("[Shift] + R", "Toggle syntax highlighting (default: On)"),
 ] + spacer + logmovement
-
-cniinfo = infoviewheader_part1 + infoviewheader_part2 + [
-	("", ""),
-	("[Shift] + U", "Update Cluster Network Interface (if a newer candidate is available)"),
-]
 
 containerinfo = [
 	("[ESC]", "Return to previous screen"),

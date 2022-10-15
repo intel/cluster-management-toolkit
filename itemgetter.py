@@ -12,7 +12,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from curses_helper import widgetlineattrs
+from curses_helper import WidgetLineAttrs
 
 import iktlib
 from iktlib import deep_get, deep_get_with_fallback, disksize_to_human, get_package_versions, get_since, make_set_expression, split_msg, timestamp_to_datetime
@@ -280,12 +280,12 @@ def get_allowed_ips(kh, obj, **kwargs):
 			ip = tmp[1]
 			mask = tmp[2]
 			allowed_ips.append({
-				"lineattrs": widgetlineattrs.NORMAL,
+				"lineattrs": WidgetLineAttrs.NORMAL,
 				"columns": [[(f"{ip}", ("windowwidget", "default")), ("/", ("windowwidget", "dim")), (f"{mask}", ("windowwidget", "default"))]],
 			})
 		else:
 			allowed_ips.append({
-				"lineattrs": widgetlineattrs.NORMAL,
+				"lineattrs": WidgetLineAttrs.NORMAL,
 				"columns": [[(f"{addr}", ("windowwidget", "default"))]],
 			})
 

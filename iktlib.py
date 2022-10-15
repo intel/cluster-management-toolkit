@@ -5,6 +5,7 @@ Helpers used by various components of iKT
 """
 
 from datetime import datetime, timezone, timedelta, date
+from enum import IntEnum
 from functools import reduce
 import os
 import re
@@ -23,7 +24,10 @@ except ModuleNotFoundError:
 
 iktconfig = {}
 
-class stgroup:
+class StatusGroup(IntEnum):
+	"""
+	Status groups used by iKT
+	"""
 	NEUTRAL = 8
 	DONE = 7
 	OK = 6
@@ -35,15 +39,18 @@ class stgroup:
 	CRIT = 0
 
 stgroup_mapping = {
-	stgroup.CRIT: "status_critical",
-	stgroup.UNKNOWN: "status_unknown",
-	stgroup.NOT_OK: "status_not_ok",
-	stgroup.ADMIN: "status_admin",
-	stgroup.WARNING: "status_warning",
-	stgroup.OK: "status_ok",
-	stgroup.PENDING: "status_pending",
-	stgroup.DONE: "status_done",
+	StatusGroup.CRIT: "status_critical",
+	StatusGroup.UNKNOWN: "status_unknown",
+	StatusGroup.NOT_OK: "status_not_ok",
+	StatusGroup.ADMIN: "status_admin",
+	StatusGroup.WARNING: "status_warning",
+	StatusGroup.OK: "status_ok",
+	StatusGroup.PENDING: "status_pending",
+	StatusGroup.DONE: "status_done",
 }
+
+def clamp(value, minval, maxval):
+	return min(maxval, max(minval, value))
 
 def none_timestamp():
 	return (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()

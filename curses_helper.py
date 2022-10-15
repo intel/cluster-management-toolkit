@@ -10,10 +10,13 @@ import copy
 import curses
 import curses.textpad
 from datetime import datetime
+from enum import IntFlag
 import errno
 from operator import attrgetter
 import os
 import sys
+import typing # pylint: disable=unused-import
+from typing import NoReturn
 import yaml
 
 try:
@@ -25,12 +28,13 @@ from ikttypes import FilePath
 
 import iktlib
 from iktlib import deep_get, stgroup_mapping
-from logparser import loglevel, loglevel_to_name
+from logparser import LogLevel, loglevel_to_name
 
 theme = {} # type: ignore
 
 mousemask = 0
 
+# pylint: disable-next=too-few-public-methods
 class curses_configuration:
 	"""
 	Configuration options for the curses UI
@@ -41,6 +45,7 @@ class curses_configuration:
 	mousescroll_up = 0b10000000000000000
 	mousescroll_down = 0b1000000000000000000000000000
 
+# pylint: disable-next=too-few-public-methods
 class retval:
 	"""
 	Return values from the UI functions
@@ -68,7 +73,7 @@ def get_mousemask():
 
 	return mousemask
 
-color = {
+__color = {
 }
 
 __pairs = {
@@ -201,7 +206,7 @@ def init_curses():
 			__pairs[selected] = curses.color_pair(color_last)
 			color_last += 1
 		selected_index = __pairs[selected]
-		color[pair] = (unselected_index, selected_index)
+		__color[pair] = (unselected_index, selected_index)
 
 def color_log_severity(severity, selected):
 	return ("logview", f"severity_{loglevel_to_name(severity).lower()}", selected)
@@ -590,7 +595,7 @@ def inputbox(stdscr, y, x, height, width, title):
 def confirmationbox(stdscr, y, x, title = "", default = False):
 	global ignoreinput # pylint: disable=global-statement
 	ignoreinput = False
-	retval = default
+	__retval = default
 
 	default_option = "Y/n" if default else "y/N"
 	question = f"Are you sure [{default_option}]: "
@@ -630,11 +635,11 @@ def confirmationbox(stdscr, y, x, title = "", default = False):
 			break
 
 		if c in (ord("y"), ord("Y")):
-			retval = True
+			__retval = True
 			break
 
 		if c in (ord("n"), ord("N")):
-			retval = False
+			__retval = False
 			break
 
 	del win
@@ -642,7 +647,7 @@ def confirmationbox(stdscr, y, x, title = "", default = False):
 	stdscr.noutrefresh()
 	curses.doupdate()
 
-	return retval
+	return __retval
 
 # pylint: disable-next=too-many-arguments
 def move_cur_with_offset(curypos, listlen, yoffset, maxcurypos, maxyoffset, movement, wraparound = False):
@@ -747,7 +752,7 @@ def addthemearray(win, array, y = -1, x = -1, selected = False):
 			y, x = addarray(win, strarray, y = y, x = x)
 	return y, x
 
-class widgetlineattrs:
+class WidgetLineAttrs(IntFlag):
 	"""
 	Special properties used by lines in windowwidgets
 	"""
@@ -783,7 +788,7 @@ def __attr_to_curses(attr, selected = False):
 		attr = curses.A_NORMAL
 
 	try:
-		key = color[col][selected]
+		key = __color[col][selected]
 	except KeyError as e:
 		raise KeyError(f"__attr_to_curses: (color: {col}, selected: {selected}) not found") from e
 	return key, attr
@@ -825,6 +830,7 @@ def themearray_to_string(themearray):
 
 	for fragment in themearray:
 		if not isinstance(fragment, tuple):
+			# pylint: disable-next=line-too-long
 			raise ValueError(f"themearray_to_string() called with an invalid themearray: “{themearray}“; element: “{fragment}“ has invalid type {type(fragment)}; expected tuple")
 		# (string, attributes)
 		if isinstance(fragment[0], str) and type(fragment[1]) == int: # pylint: disable=unidiomatic-typecheck
@@ -930,10 +936,7 @@ def strarray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
 	return strarrays
 
 def themearray_extract_string(key, context = "main", selected = False):
-	try:
-		strarray = themearray_to_strarray(key, context, selected)
-	except:
-		strarray = key
+	strarray = themearray_to_strarray(key, context, selected)
 	return strarray_extract_string(strarray)
 
 def themearray_get_string(themearray):
@@ -978,7 +981,7 @@ ignoreinput = False
 #	"columns": strarray, ...,
 #	"retval": the value to return if this items is selected (any type is allowed)
 # }
-# pylint: disable-next=too-many-arguments
+# pylint: disable-next=too-many-arguments,line-too-long
 def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", preselection = "", cursor = True, taggable = False, confirm = False, confirm_buttons = None, **kwargs):
 	stdscr.refresh()
 	global ignoreinput # pylint: disable=global-statement
@@ -996,7 +999,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			tmpitems = []
 			for item in items:
 				tmpitems.append({
-					"lineattrs": widgetlineattrs.NORMAL,
+					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[(item[0], ("windowwidget", "highlight"))], [(item[1], ("windowwidget", "default"))]],
 					"retval": None,
 				})
@@ -1131,45 +1134,45 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 	# Move to preselection
 	if isinstance(preselection, str):
 		if preselection != "":
-			for y in range(0, len(items)):
-				if items[y]["columns"][0][0][0] == preselection:
-					curypos, yoffset = move_cur_with_offset(0, height, yoffset, maxcurypos, maxyoffset, y)
+			for _y, item in enumerate(items):
+				if item["columns"][0][0][0] == preselection:
+					curypos, yoffset = move_cur_with_offset(0, height, yoffset, maxcurypos, maxyoffset, _y)
 					break
 		tagged_items = set()
 	elif isinstance(preselection, set):
 		tagged_items = preselection
 
 	while selection == None:
-		for y in range(0, len(items)):
+		for _y, item in enumerate(items):
 			if cursor == True:
-				_selected = (yoffset + curypos == y)
+				_selected = (yoffset + curypos == _y)
 			else:
 				_selected = False
 
-			lineattributes = items[y]["lineattrs"]
+			lineattributes = item["lineattrs"]
 			linearray = []
 
 			if taggable == True:
-				if y in tagged_items:
+				if _y in tagged_items:
 					linearray.append((f"{tagprefix}", ("windowwidget", "tag")))
 				else:
 					linearray.append(("".ljust(tagprefixlen), ("windowwidget", "tag")))
 
-			for x in range(0, columns):
+			for _x in range(0, columns):
 				strarray = []
 				length = 0
 				tmpstring = ""
 
-				for string, attribute in items[y]["columns"][x]:
+				for string, attribute in item["columns"][_x]:
 					tmpstring += string
 					length += len(string)
-					if lineattributes & (widgetlineattrs.INVALID) != 0:
+					if lineattributes & (WidgetLineAttrs.INVALID) != 0:
 						attribute = ("windowwidget", "alert")
 						strarray.append((string, attribute, _selected))
-					elif lineattributes & (widgetlineattrs.DISABLED | widgetlineattrs.UNSELECTABLE) != 0:
+					elif lineattributes & (WidgetLineAttrs.DISABLED | WidgetLineAttrs.UNSELECTABLE) != 0:
 						attribute = ("windowwidget", "dim")
 						strarray.append((string, attribute, _selected))
-					elif lineattributes & widgetlineattrs.SEPARATOR != 0:
+					elif lineattributes & WidgetLineAttrs.SEPARATOR != 0:
 						if attribute == ("windowwidget", "default"):
 							attribute = ("windowwidget", "highlight")
 						tpad = listpadwidth - len(string)
@@ -1185,15 +1188,17 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 						strarray.append((string, attribute, _selected))
 
 
-				if lineattributes & widgetlineattrs.SEPARATOR == 0:
-					padstring = "".ljust(lengths[x] - length + padwidth)
+				if lineattributes & WidgetLineAttrs.SEPARATOR == 0:
+					padstring = "".ljust(lengths[_x] - length + padwidth)
 					strarray.append((padstring, attribute, _selected))
 
 				linearray += strarray
 
-			addthemearray(listpad, linearray, y = y, x = 0)
+			addthemearray(listpad, linearray, y = _y, x = 0)
 
+		# pylint: disable-next=line-too-long
 		_upperarrow, _lowerarrow, _vdragger = scrollbar_vertical(win, width - 1, scrollbarypos, height - 2, listpadheight, yoffset, attr_to_curses_merged("windowwidget", "boxdrawing"))
+		# pylint: disable-next=line-too-long
 		_leftarrow, _rightarrow, _hdragger = scrollbar_horizontal(win, height - 1, 1, width - 2, listpadwidth, xoffset, attr_to_curses_merged("windowwidget", "boxdrawing"))
 
 		if headers is not None:
@@ -1245,7 +1250,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1, wraparound = True)
 				lineattributes = items[yoffset + curypos]["lineattrs"]
 				tmp_char = items[yoffset + curypos]["columns"][0][0][0].lstrip("*•◉")[0]
-				if tmp_char.lower() == chr(c).lower() and lineattributes & widgetlineattrs.DISABLED == 0:
+				if tmp_char.lower() == chr(c).lower() and lineattributes & WidgetLineAttrs.DISABLED == 0:
 					break
 				if (curypos + yoffset) == (oldcurypos + oldyoffset):
 					# While we're at the same position in the list we might not be at the same offsets
@@ -1259,7 +1264,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1, wraparound = True)
 				lineattributes = items[yoffset + curypos]["lineattrs"]
 				tmp_char = items[yoffset + curypos]["columns"][0][0][0].lstrip("*•◉")[0]
-				if tmp_char.lower() == chr(c).lower() and lineattributes & widgetlineattrs.DISABLED == 0:
+				if tmp_char.lower() == chr(c).lower() and lineattributes & WidgetLineAttrs.DISABLED == 0:
 					break
 				if (curypos + yoffset) == (oldcurypos + oldyoffset):
 					# While we're at the same position in the list we might not be at the same offsets
@@ -1268,28 +1273,28 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 					break
 		elif c == ord("\t") and cursor == True:
 			# Find next group
-			while items[yoffset + curypos]["lineattrs"] & widgetlineattrs.SEPARATOR == 0:
+			while items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR == 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
 				if (curypos + yoffset) == (maxcurypos + maxyoffset):
 					break
 				# OK, we found a group, now find the first not-group
-			while items[yoffset + curypos]["lineattrs"] & widgetlineattrs.SEPARATOR != 0:
+			while items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR != 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
 				if (curypos + yoffset) == (maxcurypos + maxyoffset):
 					break
 		elif c == curses.KEY_BTAB and cursor == True:
 			# Find previous group
-			while items[yoffset + curypos]["lineattrs"] & widgetlineattrs.SEPARATOR == 0:
+			while items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR == 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
 				if (curypos + yoffset) == 0:
 					break
 			# OK, we found a group, now find the previous not-group
-			while items[yoffset + curypos]["lineattrs"] & widgetlineattrs.SEPARATOR != 0:
+			while items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR != 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
 				if (curypos + yoffset) == 0:
 					break
 			# Finally find the first entry in that group
-			while (curypos + yoffset) > 0 and items[yoffset + curypos]["lineattrs"] & widgetlineattrs.SEPARATOR != 0:
+			while (curypos + yoffset) > 0 and items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR != 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
 				if (curypos + yoffset) == 0:
 					break
@@ -1315,7 +1320,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -10)
 		elif c == curses.KEY_NPAGE:
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +10)
-		elif c in (curses.KEY_ENTER, 10, 13) and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.UNSELECTABLE) == 0 and confirm == False:
+		elif c in (curses.KEY_ENTER, 10, 13) and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.UNSELECTABLE) == 0 and confirm == False:
 			if deep_get(items[yoffset + curypos], "retval") is None:
 				selection = items[yoffset + curypos]["columns"]
 			else:
@@ -1329,24 +1334,24 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 		if cursor == True:
 			# Find the last acceptable line
 			if (yoffset + curypos) == (maxcurypos + maxyoffset):
-				while items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				while items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
 					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
 			# We tried moving backwards; do we need to go farther?
 			if (yoffset + curypos) > (oldyoffset + oldcurypos):
-				while (yoffset + curypos) < len(items) and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				while (yoffset + curypos) < len(items) and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
 					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
-				if (yoffset + curypos) == len(items) and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				if (yoffset + curypos) == len(items) and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
 					yoffset = oldyoffset
 					curypos = oldcurypos
 			# Find the first acceptable line
 			elif (yoffset + curypos) == 0:
-				while items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				while items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
 					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
 			# We tried moving backwards; do we need to go farther?
 			elif (yoffset + curypos) < (oldyoffset + oldcurypos):
-				while (yoffset + curypos) > 0 and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				while (yoffset + curypos) > 0 and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
 					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
-				if (yoffset + curypos) == 0 and items[yoffset + curypos]["lineattrs"] & (widgetlineattrs.SEPARATOR | widgetlineattrs.DISABLED) != 0:
+				if (yoffset + curypos) == 0 and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
 					curypos = oldcurypos + oldyoffset
 					yoffset = 0
 
@@ -1375,7 +1380,7 @@ def get_labels(labels):
 		Parameters:
 			labels (str): A dict path
 		Returns:
-			None if no labels are found, list[(widgetlineattrs, themestr, themestr)] if labels are found
+			None if no labels are found, list[(WidgetLineAttrs, themestr, themestr)] if labels are found
 	"""
 
 	if labels is None:
@@ -1383,7 +1388,7 @@ def get_labels(labels):
 
 	rlabels = []
 	for label in labels:
-		rlabels.append((widgetlineattrs.NORMAL,
+		rlabels.append((WidgetLineAttrs.NORMAL,
 				[(label, attr_to_curses("windowwidget", "default"))],
 				[(labels[label].replace("\n", "\\n"), attr_to_curses("windowwidget", "default"))]))
 	return rlabels
@@ -1595,7 +1600,9 @@ class UIProps:
 	# Default behaviour:
 	# timestamps enabled, no automatic updates, default sortcolumn = "status"
 	# pylint: disable-next=too-many-arguments
-	def init_window(self, field_list, view = None, windowheader = "", timestamp = True, update_delay = -1, sortcolumn = "status", sortorder_reverse = False, reversible = True, helptext = None, activatedfun = None, on_activation = None, extraref = None, data = None):
+	def init_window(self, field_list, view = None, windowheader = "",
+			timestamp = True, update_delay = -1, sortcolumn = "status", sortorder_reverse = False, reversible = True,
+			helptext = None, activatedfun = None, on_activation = None, extraref = None, data = None):
 		self.field_list = field_list
 		self.searchkey = ""
 		self.sortcolumn = sortcolumn
@@ -1752,6 +1759,7 @@ class UIProps:
 		maxypos = self.maxcurypos + self.maxyoffset
 		if ycurpos != 0 or maxypos != 0:
 			curposarray = [
+				# pylint: disable-next=line-too-long
 				("Line: ", ("statusbar", "infoheader")), (f"{ycurpos + 1}".rjust(len(str(maxypos + 1))), ("statusbar", "highlight")), ("separators", "statusbar_fraction"), (f"{maxypos + 1}", ("statusbar", "highlight"))
 			]
 			xpos = self.maxx - themearray_get_length(curposarray) + 1
@@ -1829,7 +1837,9 @@ class UIProps:
 
 			# If there's no logpad and no listpad, then the infopad is responsible for scrollbars
 			if self.listpad is None and self.logpad is None and self.borders == True:
+				# pylint: disable-next=line-too-long
 				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.infopadypos, self.maxy - 3, self.infopadheight, self.yoffset, attr_to_curses_merged("main", "boxdrawing"))
+				# pylint: disable-next=line-too-long
 				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, self.infopadxpos, self.maxx - 1, self.infopadwidth - 1, self.xoffset, attr_to_curses_merged("main", "boxdrawing"))
 
 	# For (optionally) scrollable lists of information,
@@ -1894,7 +1904,9 @@ class UIProps:
 		if self.listpad is not None:
 			if self.borders == True:
 				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 3, maxx)
+				# pylint: disable-next=line-too-long
 				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, x = maxx + 1, miny = self.listpadypos, maxy = self.maxy - 3, height = self.listpadheight, yoffset = self.yoffset, clear_color = attr_to_curses_merged("main", "boxdrawing"))
+				# pylint: disable-next=line-too-long
 				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, y = self.maxy - 2, minx = self.listpadxpos, maxx = maxx, width = self.listpadwidth - 1, xoffset = self.xoffset, clear_color = attr_to_curses_merged("main", "boxdrawing"))
 			else:
 				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
@@ -1994,7 +2006,9 @@ class UIProps:
 				self.tspad.noutrefresh(0, 0, self.tspadypos, tspadxpos, self.maxy - 2, self.tspadwidth - 1)
 		if self.borders == True:
 			self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 3, self.maxx - 1)
+			# pylint: disable-next=line-too-long
 			self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.logpadypos, self.maxy - 3, self.loglen, self.yoffset, attr_to_curses_merged("main", "boxdrawing"))
+			# pylint: disable-next=line-too-long
 			self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, logpadxpos, self.maxx - 1, self.logpadwidth, self.xoffset, attr_to_curses_merged("main", "boxdrawing"))
 		else:
 			self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 2, self.maxx)
@@ -2192,10 +2206,10 @@ class UIProps:
 		if len(searchkey) == 0:
 			return
 
-		for y in range(0, len(messages)):
+		for y, msg in enumerate(messages):
 			# The messages can either be raw strings,
 			# or themearrays, so we need to flatten them to just text first
-			message = themearray_get_string(messages[y])
+			message = themearray_get_string(msg)
 			if searchkey in message:
 				self.search_matches.add(y)
 
@@ -2232,7 +2246,7 @@ class UIProps:
 
 		for severity in severities:
 			# We're only searching forward
-			if y > self.yoffset and severity < loglevel.NOTICE:
+			if y > self.yoffset and severity < LogLevel.NOTICE:
 				newoffset = y
 				break
 			y += 1
@@ -2252,7 +2266,7 @@ class UIProps:
 			# We're only searching backward
 			if y == self.yoffset:
 				break
-			if severity < loglevel.NOTICE:
+			if severity < LogLevel.NOTICE:
 				newoffset = y
 			y += 1
 
@@ -2423,17 +2437,17 @@ class UIProps:
 		unique_match = None
 		match_count = 0
 
-		for y in range(0, len(sorted_list)):
+		for y, listitem in enumerate(sorted_list):
 			if hasattr(sorted_list[0],  "namespace"):
-				if namespace is not None and sorted_list[y].namespace != namespace:
+				if namespace is not None and listitem.namespace != namespace:
 					continue
 
-			if sorted_list[y].name == name:
+			if listitem.name == name:
 				first_match = y
 				match_count = 1
 				break
 
-			if sorted_list[y].name.startswith(name):
+			if listitem.name.startswith(name):
 				if first_match == None:
 					first_match = y
 				match_count += 1
@@ -2530,7 +2544,7 @@ class UIProps:
 			# Here goes handling of dragging scrollbars
 		if bstate == curses.BUTTON1_DOUBLE_CLICKED and selections == True:
 			# double-clicks on list items
-			if activatedfun is not None and y >= cypos and y < min(cheight + cypos, cmaxy) and x >= cxpos and x < cmaxx:
+			if activatedfun is not None and cypos <= y < min(cheight + cypos, cmaxy) and cxpos <= x < cmaxx:
 				selected = sorted_list[ypos + cyoffset]
 				self.select(selected)
 				self.curypos = ypos
@@ -2543,20 +2557,20 @@ class UIProps:
 						kind = deep_get(on_activation, "kind", view)
 						on_activation.pop("kind", None)
 						if data is not None:
-							retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
+							_retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
 						else:
-							retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
+							_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 					else:
 						on_activation = copy.deepcopy(self.on_activation)
 						kind = deep_get(on_activation, "kind", self.view)
 						on_activation.pop("kind", None)
-						retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
-					if retval != None:
+						_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
+					if _retval != None:
 						self.force_update()
-					return retval
+					return _retval
 		elif bstate == curses.BUTTON1_CLICKED:
 			# clicks on list items
-			if y >= cypos and y < min(cheight + cypos, cmaxy) and x >= cxpos and x < cmaxx and selections == True:
+			if cypos <= y < min(cheight + cypos, cmaxy) and cxpos <= x < cmaxx and selections == True:
 				selected = self.get_selected()
 
 				# If we're clicking on something that isn't selected (or if nothing is selected), move here
@@ -2575,17 +2589,17 @@ class UIProps:
 							kind = deep_get(on_activation, "kind", view)
 							on_activation.pop("kind", None)
 							if data is not None:
-								retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
+								_retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
 							else:
-								retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
+								_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 						else:
 							on_activation = copy.deepcopy(self.on_activation)
 							kind = deep_get(on_activation, "kind", self.view)
 							on_activation.pop("kind", None)
-							retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
-						if retval != None:
+							_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
+						if _retval != None:
 							self.force_update()
-						return retval
+						return _retval
 			# clicks on the vertical scrollbar
 			elif (y, x) == (self.upperarrow):
 				if win == self.listpad:
@@ -2598,7 +2612,7 @@ class UIProps:
 				else:
 					self.move_yoffset_rel(1)
 			elif x == self.upperarrow[1]:
-				if y > self.upperarrow[0] and y < self.lowerarrow[0]:
+				if self.upperarrow[0] < y < self.lowerarrow[0]:
 					# Don't count the arrows
 					total = self.lowerarrow[0] - self.upperarrow[0] - 2
 					# Y-position on the bar
@@ -2615,7 +2629,7 @@ class UIProps:
 			elif (y, x) == (self.rightarrow):
 				self.move_xoffset_rel(1)
 			elif y == self.leftarrow[0]:
-				if x > self.leftarrow[1] and x < self.rightarrow[1]:
+				if self.leftarrow[1] < x < self.rightarrow[1]:
 					# Don't count the arrows
 					total = self.rightarrow[1] - self.leftarrow[1] - 2
 					# X-position on the bar
@@ -2655,17 +2669,17 @@ class UIProps:
 				kind = deep_get(on_activation, "kind", view)
 				on_activation.pop("kind", None)
 				if data is not None:
-					retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
+					_retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
 				else:
-					retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
+					_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 			else:
 				on_activation = copy.deepcopy(self.on_activation)
 				kind = deep_get(on_activation, "kind", self.view)
 				on_activation.pop("kind", None)
-				retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
-			if retval != None:
+				_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
+			if _retval != None:
 				self.force_update()
-			return retval
+			return _retval
 
 		return False
 
@@ -2912,7 +2926,8 @@ class UIProps:
 			if self.annotations is not None:
 				title = ""
 
-				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, self.annotations, headers = annotation_headers, title = title, cursor = False)
+				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, self.annotations,
+					     headers = annotation_headers, title = title, cursor = False)
 
 				self.refresh_all()
 				return retval.MATCH
@@ -2920,10 +2935,254 @@ class UIProps:
 			if self.labels is not None:
 				title = ""
 
-				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, self.labels, headers = label_headers, title = title, cursor = False)
+				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, self.labels,
+					     headers = label_headers, title = title, cursor = False)
 
 				self.refresh_all()
 				return retval.MATCH
 
 		# Nothing good enough for you, eh?
 		return retval.NOMATCH
+
+	# Shortcuts used in most view
+	def __exit_program(self, **kwargs) -> NoReturn:
+		__retval = deep_get(kwargs, "retval")
+
+		sys.exit(__retval)
+
+	def __refresh_information(self, **kwargs):
+		del kwargs
+
+		# XXX: We need to rate limit this somehow
+		self.force_update()
+		return retval.MATCH, {}
+
+	def __select_menu(self, **kwargs):
+		refresh_apis = deep_get(kwargs, "refresh_apis", False)
+		selectwindow = deep_get(kwargs, "selectwindow")
+
+		__retval = selectwindow(self, refresh_apis = refresh_apis)
+		if __retval == retval.RETURNFULL:
+			return __retval, {}
+		self.refresh_all()
+		return __retval, {}
+
+	def __show_about(self, **kwargs):
+		del kwargs
+
+		if curses_configuration.abouttext is not None:
+			windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, curses_configuration.abouttext, title = "About", cursor = False)
+		self.refresh_all()
+		return retval.MATCH, {}
+
+	def __show_help(self, **kwargs):
+		helptext = deep_get(kwargs, "helptext")
+
+		windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, helptext, title = "Help", cursor = False)
+		self.refresh_all()
+		return retval.MATCH, {}
+
+	def __toggle_mouse(self, **kwargs):
+		del kwargs
+
+		# Toggle mouse support on/off to allow for copy'n'paste
+		if get_mousemask() == 0:
+			set_mousemask(-1)
+		else:
+			set_mousemask(0)
+		self.statusbar.erase()
+		self.refresh_all()
+		return retval.MATCH, {}
+
+	def __toggle_borders(self, **kwargs):
+		del kwargs
+
+		self.toggle_borders()
+		self.refresh_all()
+		self.force_update()
+		return retval.MATCH, {}
+
+	def generate_helptext(self, shortcuts, **kwargs):
+		"""
+		Generate helptexts to use with generic_inputhandler()
+
+			Parameters:
+				shortcuts (dict): A dict of shortcuts
+				kwargs (dict): Additional parameters
+			Returns:
+				list[(str, str)]: A list of tuples of shortcut, description
+		"""
+
+		read_only_mode = deep_get(kwargs, "read_only", False)
+		subview = deep_get(kwargs, "subview", False)
+
+		# There are (up to) four helptext groups:
+		# Global
+		# Global F-keys
+		# Command
+		# Navigation keys
+		helptext_groups = [[], [], [], []]
+
+		for shortcut_name, shortcut_data in shortcuts.items():
+			read_only = deep_get(shortcut_data, "read_only", False)
+			if read_only_mode == True and read_only == False:
+				continue
+
+			helptext_group = deep_get(shortcut_data, "helpgroup")
+			if helptext_group is None:
+				raise ValueError(f"The shortcut {shortcut_name} has no helpgroup; this is a programming error.")
+			tmp = deep_get(shortcut_data, "helptext")
+			if tmp is None:
+				raise ValueError(f"The shortcut {shortcut_name} has no helptext; this is a programming error.")
+
+			helptext_groups[helptext_group].append(tmp)
+
+		helptext = []
+		if subview == True:
+			helptext.append(("[ESC]", "Return to previous screen"))
+
+		first = True
+		for helptexts in helptext_groups:
+			if len(helptexts) == 0:
+				continue
+			if first == False:
+				helptext.append(("", ""))
+			helptext += helptexts
+			first = False
+
+		return helptext
+
+	def generic_inputhandler(self, shortcuts, **kwargs):
+		"""
+		Generic inputhandler for views
+
+			Parameters:
+				shortcuts (dict): View-specific shortcuts
+				kwargs (dict): Additional parameters
+			Returns:
+				(int, dict): retval, return_args
+		"""
+
+		__common_shortcuts = {
+			"Exit program": {
+				"shortcut": [ord(""), ord("")],
+				"helptext": ("[Ctrl] + X", "Exit program"),
+				"helpgroup": 0,
+				"action": "key_callback",
+				"action_call": self.__exit_program,
+				"action_args": {
+					"retval": 0,
+				}
+			},
+			"Refresh information": {
+				"shortcut": curses.KEY_F5,
+				"helptext": ("[F5]", "Refresh information"),
+				"helpgroup": 1,
+				"action": "key_callback",
+				"action_call": self.__refresh_information,
+			},
+			"Show information about the program": {
+				"shortcut": curses.KEY_F12,
+				"helptext": ("[F12]", "Show information about the program"),
+				"helpgroup": 1,
+				"action": "key_callback",
+				"action_call": self.__show_about,
+			},
+			"Show this helptext": {
+				"shortcut": [curses.KEY_F1, ord("H")],
+				"helptext": ("[F1] / [Shift] + H", "Show this helptext"),
+				"helpgroup": 1,
+				"action": "key_callback",
+				"action_call": self.__show_help,
+			},
+			"Switch main view": {
+				"shortcut": curses.KEY_F2,
+				"helptext": ("[F2]", "Switch main view"),
+				"helpgroup": 1,
+				"action": "key_callback",
+				"action_call": self.__select_menu,
+			},
+			"Switch main view (recheck available API resources)": {
+				"shortcut": curses.KEY_F3,
+				"helptext": ("[F3]", "Switch main view (recheck available API resources)"),
+				"helpgroup": 1,
+				"action": "key_callback",
+				"action_call": self.__select_menu,
+				"action_args": {
+					"refresh_apis": True,
+				}
+			},
+			"Toggle mouse on/off": {
+				"shortcut": ord("M"),
+				"helptext": ("[Shift] + M", "Toggle mouse on/off"),
+				"helpgroup": 0,
+				"action": "key_callback",
+				"action_call": self.__toggle_mouse,
+			},
+			"Toggle borders": {
+				"shortcut": ord("B"),
+				"helptext": ("[Shift] + B", "Toggle borders on/off"),
+				"helpgroup": 0,
+				"action": "key_callback",
+				"action_call": self.__toggle_borders,
+			},
+		}
+
+		self.stdscr.timeout(100)
+		c = self.stdscr.getch()
+
+		# Default return value if we don't manage to match anything
+		__retval = retval.NOMATCH
+
+		if c == curses.KEY_RESIZE:
+			self.resize_window()
+			return retval.MATCH, {}
+
+		if c == 27:	# ESCAPE
+			del self
+			return retval.RETURNONE, {}
+
+		if c == curses.KEY_MOUSE:
+			return self.handle_mouse_events(self.listpad, self.sorted_list, self.activatedfun, self.extraref, self.data), {}
+
+		if c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
+			return self.enter_handler(self.activatedfun, self.extraref, self.data), {}
+
+		# First generate a list of all the shortcuts we should check
+		__shortcuts = {}
+
+		# We *always* add the shortcut to exit the program
+		__shortcuts["Exit program"] = __common_shortcuts["Exit program"]
+
+		# Now iterate the list of common shortcuts in the shortcuts dict
+		for shortcut_name in deep_get(shortcuts, "__common_shortcuts", []):
+			if shortcut_name not in __common_shortcuts:
+				raise ValueError(f"Common shortcut {shortcut_name} is not defined in __common_shortcuts; this is a programming error.")
+			__shortcuts[shortcut_name] = deep_get(__common_shortcuts, shortcut_name)
+
+		# Finally add all the remaining shortcuts
+		for shortcut_name, shortcut_data in shortcuts.items():
+			# We've already dealt with this
+			if shortcut_name == "__common_shortcuts":
+				continue
+			__shortcuts[shortcut_name] = shortcut_data
+
+		# Now generate helptext
+		helptext = self.generate_helptext(__shortcuts, **kwargs)
+
+		for shortcut_name, shortcut_data in __shortcuts.items():
+			keys = deep_get(shortcut_data, "shortcut", [])
+			if isinstance(keys, int):
+				keys = [keys]
+
+			if c in keys:
+				action = deep_get(shortcut_data, "action")
+				action_call = deep_get(shortcut_data, "action_call")
+				_action_args = deep_get(shortcut_data, "action_args", {})
+				action_args = {**kwargs, **_action_args}
+				action_args["__keypress"] = c
+				action_args["helptext"] = helptext
+				if action == "key_callback":
+					return action_call(**action_args)
+
+		return __retval, {}

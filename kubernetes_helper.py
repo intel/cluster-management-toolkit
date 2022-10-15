@@ -33,7 +33,7 @@ except ModuleNotFoundError:
 
 # from ikttypes import FilePath
 from iktpaths import KUBE_CONFIG_FILE
-from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, execute_command_with_response, get_since, stgroup, timestamp_to_datetime, versiontuple
+from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, execute_command_with_response, get_since, StatusGroup, timestamp_to_datetime, versiontuple
 
 # A list of all K8s resources we have some knowledge about
 kubernetes_resources = {
@@ -2107,7 +2107,7 @@ def kubectl_get_version():
 
 def get_node_status(node):
 	status = "Unknown"
-	status_group = stgroup.UNKNOWN
+	status_group = StatusGroup.UNKNOWN
 	taints = []
 	full_taints = deep_get(node, "spec#taints", [])
 
@@ -2116,13 +2116,13 @@ def get_node_status(node):
 			condition_status = deep_get(condition, "status")
 			if condition_status == "True":
 				status = "Ready"
-				status_group = stgroup.OK
+				status_group = StatusGroup.OK
 			elif condition_status == "Unknown":
 				status = "Unreachable"
-				status_group = stgroup.NOT_OK
+				status_group = StatusGroup.NOT_OK
 			else:
 				status = "NotReady"
-				status_group = stgroup.NOT_OK
+				status_group = StatusGroup.NOT_OK
 
 	for nodetaint in deep_get(node, "spec#taints", []):
 		key = deep_get(nodetaint, "key")
@@ -2147,8 +2147,8 @@ def get_node_status(node):
 			# we don't override it.
 			# Scheduling being disabled is not an error,
 			# but it's worth highlighting
-			if status_group == stgroup.OK:
-				status_group = stgroup.ADMIN
+			if status_group == StatusGroup.OK:
+				status_group = StatusGroup.ADMIN
 		else:
 			if key.startswith("node.kubernetes.io/"):
 				key = key[len("node.kubernetes.io/"):]
@@ -2476,22 +2476,22 @@ class KubernetesHelper:
 
 		pod_matches = 0
 		cni_version = None
-		cni_status = ("<unknown>", stgroup.UNKNOWN, "Could not get status")
+		cni_status = ("<unknown>", StatusGroup.UNKNOWN, "Could not get status")
 
 		# 2. Are there > 0 pods matching the label selector?
 		for obj in vlist:
 			if controller_kind == ("Deployment", "apps"):
-				cni_status = ("Unavailable", stgroup.NOT_OK)
+				cni_status = ("Unavailable", StatusGroup.NOT_OK)
 				for condition in deep_get(obj, "status#conditions"):
 					ctype = deep_get(condition, "type")
 					if ctype == "Available":
-						cni_status = (ctype, stgroup.OK)
+						cni_status = (ctype, StatusGroup.OK)
 						break
 			elif controller_kind == ("DaemonSet", "apps"):
 				if deep_get(obj, "status#numberUnavailable", 0) > deep_get(obj, "status#maxUnavailable", 0):
-					cni_status = ("Unavailable", stgroup.NOT_OK, "numberUnavailable > maxUnavailable")
+					cni_status = ("Unavailable", StatusGroup.NOT_OK, "numberUnavailable > maxUnavailable")
 				else:
-					cni_status = ("Available", stgroup.OK, "")
+					cni_status = ("Available", StatusGroup.OK, "")
 
 			vlist2, _status = self.get_list_by_kind_namespace(("Pod", ""), "", label_selector = make_selector(deep_get(obj, "spec#selector#matchLabels")))
 
