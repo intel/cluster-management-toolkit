@@ -73,23 +73,6 @@ def replace_symlink(src: FilePath, dst: FilePath, verbose = False):
 		os.remove(dst)
 	os.symlink(src, dst)
 
-def get_local_hostname() -> str:
-	"""
-	Get the hostname of localhost
-
-		Returns:
-			hostname (str): The hostname of localhost
-	"""
-
-	try:
-		with open("/etc/hostname", "r", encoding = "utf-8") as f:
-			hostname = f.readline().strip()
-	except FileNotFoundError:
-		iktprint([("Critical: ", "critical"), (" “", "default"), ("/etc/hostname", "path"), ("“ not found; aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOENT)
-
-	return hostname
-
 def scan_and_add_ssh_keys(hosts):
 	"""
 	Scan hosts and add their public ssh keys to .ssh/known_hosts

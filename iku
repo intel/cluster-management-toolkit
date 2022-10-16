@@ -56,7 +56,6 @@ from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
 from logparser import logparser, logparser_initialised, LogLevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
-from iktio import get_local_hostname
 import iktlib
 from iktlib import clamp, deep_get, deep_get_with_fallback, deep_set, disksize_to_human, get_package_versions, iktconfig, make_set_expression_list, StatusGroup, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
@@ -77,7 +76,7 @@ from ansible_helper import ansible_configuration
 from ansible_helper import ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars
 from ansible_helper import ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results, get_playbook_path
 from ansible_helper import ansible_extract_failure
-from ansible_helper import ansible_async_get_data, ansible_ping_async
+from ansible_helper import ansible_async_get_data, ansible_ping_async, ansible_run_playbook_on_selection_async
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
@@ -3575,6 +3574,8 @@ def get_inventory_list(**kwargs):
 		name = host
 		ips = []
 
+		# XXX: We should probably rewrite this to use getaddrinfo() instead,
+		#      to handle IPv6
 		try:
 			ips = [socket.gethostbyname(name)]
 		except socket.gaierror as e:
@@ -3584,7 +3585,7 @@ def get_inventory_list(**kwargs):
 				pass
 			else:
 				sys.exit(f"gethostbyname failed on {name}; {e}")
-		except Exception as e:
+		except OSError as e:
 			sys.exit(f"gethostbyname failed on {name}; {e}")
 
 		# This only happens if you run the command on one of the hosts in the inventory
@@ -4557,7 +4558,7 @@ def genericlistloop(stdscr, view):
 				vlist, async_cookie = async_cb(vlist, async_cookie)
 				if async_cookie is None:
 					uip.force_update()
-					# Retrigger 5 seconds; this might be revisited later
+					# Retrigger every 5 seconds; this might be revisited later
 					async_retrigger_timeout = 50
 			else:
 				if async_retrigger_timeout is not None and async_cb is not None:
@@ -5653,13 +5654,49 @@ def clusteroverviewloop(stdscr, view):
 
 	nodeinfo = None
 
-	# Safe
-	load_regex = re.compile(r"^(\d+\.\d+) (\d+\.\d+) (\d+\.\d+) (\d+)/(\d+) (\d+)")
+	# Get control plane node
+	control_plane_node, control_plane_name = get_control_plane()
+	control_plane_addresses = deep_get(control_plane_node, "status#addresses", [])
+	name, iips, eips = get_node_addresses(control_plane_name, control_plane_addresses)
+
+	hostname = socket.gethostname()
+	islocal = (hostname == name)
+	data_available = False
+	async_cookie = None
+	async_retrigger_timeout = 0
+
 	# Safe
 	stat_regex = re.compile(r"^[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) (\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)$")
 
+	loadavg_raw = []
+	meminfo_raw = []
+	stat_raw = []
+
 	while True:
 		uip.countdown_to_update()
+
+		if async_cookie is not None:
+			# We're waiting for results
+			__ansible_results = ansible_async_get_data(async_cookie)
+			if __ansible_results is not None:
+				#sys.exit(json.dumps(__ansible_results, indent = 2))
+				for __result in deep_get(__ansible_results, control_plane_name, []):
+					if __result["task"] == "Fetching /proc/loadavg":
+						loadavg_raw = deep_get(__result, "stdout_lines", [])
+					if __result["task"] == "Fetching /proc/meminfo":
+						meminfo_raw = deep_get(__result, "stdout_lines", [])
+					elif __result["task"] == "Fetching /proc/stat":
+						stat_raw = deep_get(__result, "stdout_lines", [])
+				async_cookie = None
+				uip.force_update()
+				# Retrigger every 5 seconds; this might be revisited later
+				async_retrigger_timeout = 50
+		else:
+			if islocal == False:
+				if async_retrigger_timeout == 0:
+					async_cookie = ansible_run_playbook_on_selection_async(f"{ANSIBLE_PLAYBOOK_DIR}/load_ping.yaml", selection = [control_plane_name])
+				else:
+					async_retrigger_timeout -= 1
 
 		if uip.is_update_triggered():
 			# The data in some fields might become shorter, so we need to trigger a clear
@@ -5668,68 +5705,57 @@ def clusteroverviewloop(stdscr, view):
 
 			uip.update_window()
 
-			# Get control plane node
-			control_plane_node, control_plane_name = get_control_plane()
-			control_plane_addresses = deep_get(control_plane_node, "status#addresses", [])
-			name, iips, eips = get_node_addresses(control_plane_name, control_plane_addresses)
-
-			# XXX: Once we can run Ansible jobs in the background we can replace this with the data from the load_ping playbook
-			# Check whether we're running local or not; if we're running local this is easy
-			hostname = get_local_hostname()
-			islocal = (hostname == name)
-
 			if islocal == True:
 				# FIXME: handle non-existance
 				if os.path.exists("/proc/loadavg"):
 					with open("/proc/loadavg", "r", encoding = "utf-8") as f:
-						loadavg = f.readline()
-
-					tmp = load_regex.match(loadavg)
-					if tmp is not None:
-						avg1min = tmp[1]
-						avg5min = tmp[2]
-						avg15min = tmp[3]
-						running = tmp[4]
-						tasks = tmp[5]
+						loadavg_raw = f.read()
 
 				if os.path.exists("/proc/meminfo"):
 					with open("/proc/meminfo", "r", encoding = "utf-8") as f:
-						for tmp in f:
-							values = tmp.split()
-							if values[0] == "MemTotal:":
-								memtotal = int(values[1])
-							elif values[0] == "MemFree:":
-								memfree = int(values[1])
-							elif values[0] == "MemShared:":
-								memshared = int(values[1])
-							elif values[0] == "Buffers:":
-								buffers = int(values[1])
-							elif values[0] == "Cached:":
-								memcached = int(values[1])
-							elif values[0] == "SwapTotal:":
-								swaptotal = int(values[1])
-							elif values[0] == "SwapFree:":
-								swapfree = int(values[1])
-							elif values[0] == "Shmem:":
-								memshared = int(values[1])
-							elif values[0] == "SReclaimable:":
-								sreclaimable = int(values[1])
-
-					# Total used mem; includes buffers and cache
-					memused = memtotal - memfree
-					memcached = memcached + sreclaimable - memshared
-					swapused = swaptotal - swapfree
-					# FIXME
-					threads = 42
+						meminfo_raw = f.read()
 
 				if os.path.exists("/proc/stat"):
 					with open("/proc/stat", "r", encoding = "utf-8") as f:
-						stat = f.readline()
+						stat_raw = f.read()
 
-				# cpu  30175835 25947 13018006 435764225 200633 0   3229829 0     0     0
-				# ...  normal   niced system   idle      iowait irq softirq steal guest guest_nice
-				#      1        2     3        4         5      6   7       8     9     10
-				tmp = stat_regex.match(stat)
+			if len(loadavg_raw) > 0:
+				avg1min, avg5min, avg15min, running, tasks = loadavg_raw[0].split()
+
+			if len(meminfo_raw) > 0:
+				for tmp in meminfo_raw:
+					values = tmp.split()
+					if values[0] == "MemTotal:":
+						memtotal = int(values[1])
+					elif values[0] == "MemFree:":
+						memfree = int(values[1])
+					elif values[0] == "MemShared:":
+						memshared = int(values[1])
+					elif values[0] == "Buffers:":
+						buffers = int(values[1])
+					elif values[0] == "Cached:":
+						memcached = int(values[1])
+					elif values[0] == "SwapTotal:":
+						swaptotal = int(values[1])
+					elif values[0] == "SwapFree:":
+						swapfree = int(values[1])
+					elif values[0] == "Shmem:":
+						memshared = int(values[1])
+					elif values[0] == "SReclaimable:":
+						sreclaimable = int(values[1])
+
+				# Total used mem; includes buffers and cache
+				memused = memtotal - memfree
+				memcached = memcached + sreclaimable - memshared
+				swapused = swaptotal - swapfree
+				# FIXME
+				threads = 42
+
+			# cpu  30175835 25947 13018006 435764225 200633 0   3229829 0     0     0
+			# ...  normal   niced system   idle      iowait irq softirq steal guest guest_nice
+			#      1        2     3        4         5      6   7       8     9     10
+			if len(stat_raw) > 0:
+				tmp = stat_regex.match(stat_raw[0])
 				if tmp is not None:
 					cputimeuser = int(tmp[1])
 					cputimeusernice = int(tmp[2])
@@ -5791,7 +5817,7 @@ def clusteroverviewloop(stdscr, view):
 		uip.addthemearray(infopad, internaliparray, y = 2, x = 0)
 		uip.addthemearray(infopad, externaliparray, y = 3, x = 0)
 
-		if islocal == True:
+		if len(loadavg_raw) > 0 and len(meminfo_raw) > 0 and len(stat_raw) > 0:
 			tasksarray = [
 				("Tasks: ", ("main", "infoheader")),
 				(f"{tasks}", ("types", "numerical")),
@@ -7879,30 +7905,27 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					("Format: ", ("statusbar", "infoheader")),
 				]
 
-			try:
-				if len(rawmsg) == 0 or parser[0] == "":
+			if len(rawmsg) == 0 or parser[0] == "":
+				statusarray2 += [
+					("Empty", ("main", "format_empty")),
+				]
+			elif parser[0] == "unknown":
+				statusarray2 += [
+					("Unknown", ("main", "format_unknown")),
+				]
+			elif raw_logs:
+				statusarray2 += [
+					("Raw", ("main", "format_raw")),
+				]
+			else:
+				if uip.maxx - uip.minx > 118:
 					statusarray2 += [
-						("Empty", ("main", "format_empty")),
-					]
-				elif parser[0] == "unknown":
-					statusarray2 += [
-						("Unknown", ("main", "format_unknown")),
-					]
-				elif raw_logs:
-					statusarray2 += [
-						("Raw", ("main", "format_raw")),
+						(f"{parser[0]}:{parser[1]}", ("statusbar", "highlight")),
 					]
 				else:
-					if uip.maxx - uip.minx > 118:
-						statusarray2 += [
-							(f"{parser[0]}:{parser[1]}", ("statusbar", "highlight")),
-						]
-					else:
-						statusarray2 += [
-							(f"{parser[0]}", ("statusbar", "highlight")),
-						]
-			except Exception as e:
-				sys.exit(f"[{parser}]; Exception: {e}")
+					statusarray2 += [
+						(f"{parser[0]}", ("statusbar", "highlight")),
+					]
 
 			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
 			uip.addthemearray(statusbar, statusarray2, y = 1, x = 0)
@@ -9431,7 +9454,7 @@ def __populate_playbooklist(path, action_list):
 		with open(playbookpath, encoding = "utf-8") as f:
 			try:
 				d = yaml.safe_load(f)
-			except Exception:
+			except yaml.YAMLError:
 				# This entry could not be parsed; add a dummy entry
 				action_list[playbookname] = {
 					"description": playbookpath,
