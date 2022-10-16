@@ -1126,7 +1126,6 @@
 							"enum": [
 								"generic_listgetter",
 								"get_context_list",
-								"get_inventory_list",
 								"get_metrics_list",
 								"get_pod_containers_list"
 							]
@@ -1137,6 +1136,18 @@
 				},
 				"listgetter_args": {
 					"$ref": "#/definitions/listgetter_args"
+				},
+				"listgetter_async": {
+					"description": "Function to use to get list entries asynchronously",
+					"oneOf": [
+						{
+							"enum": [
+								"get_inventory_list"
+							]
+						}, {
+							"type": "null"
+						}
+					]
 				},
 				"listview_args": {
 					"description": "Arguments to pass to the listview",

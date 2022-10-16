@@ -73,7 +73,11 @@ import formatter as formatters # pylint: disable=wrong-import-order
 # pylint: disable=deprecated-module
 from formatter import formatter_allowlist # pylint: disable=wrong-import-order
 
-from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars, ansible_ping, ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results, get_playbook_path
+from ansible_helper import ansible_configuration
+from ansible_helper import ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars
+from ansible_helper import ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results, get_playbook_path
+from ansible_helper import ansible_extract_failure
+from ansible_helper import ansible_async_get_data, ansible_ping_async
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
@@ -622,11 +626,10 @@ def get_container_info(**kwargs):
 		return info
 
 	for obj in vlist:
-		pod_reference = obj
 		tmp = __get_container_info(obj, "InitContainer", "spec#initContainers", "status#initContainerStatuses")
-		for key in tmp:
-			instances = tmp[key]["instances"]
-			pod_references = tmp[key]["pod_references"]
+		for key, value in tmp.items():
+			instances = value["instances"]
+			pod_references = value["pod_references"]
 			if key not in containers:
 				containers[key] = {}
 				containers[key]["instances"] = 0
@@ -635,9 +638,9 @@ def get_container_info(**kwargs):
 			containers[key]["instances"] += instances
 			containers[key]["pod_references"] += pod_references
 		tmp = __get_container_info(obj, "Container", "spec#containers", "status#containerStatuses")
-		for key in tmp:
-			instances = tmp[key]["instances"]
-			pod_references = tmp[key]["pod_references"]
+		for key, value in tmp.items():
+			instances = value["instances"]
+			pod_references = value["pod_references"]
 			if key not in containers:
 				containers[key] = {}
 				containers[key]["instances"] = 0
@@ -701,7 +704,7 @@ def get_pod_containers_list(**kwargs):
 			node_name = deep_get(obj, "spec#nodeName")
 			for container in deep_get(obj, "spec#containers"):
 				container_name = deep_get(container, "name")
-				reason, status_group, restarts, message, age = datagetter.get_container_status(deep_get(obj, "status#containerStatuses"), container_name)
+				reason, status_group, _restarts, _message, _age = datagetter.get_container_status(deep_get(obj, "status#containerStatuses"), container_name)
 				container_status = None
 				for container_status in deep_get(obj, "status#containerStatuses", []):
 					if deep_get(container_status, "name") == container_name:
@@ -1186,7 +1189,6 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 		if datagetter is not None:
 			if type(datagetter) == str:
 				datagetter = deep_get(datagetter_allowlist, datagetter)
-		converters = deep_get(field, "converters", [])
 		if "default" not in field:
 			default = ""
 		else:
@@ -1839,7 +1841,7 @@ def get_device_model(obj, device):
 		partitions = deep_get(obj, f"ansible_devices#{dev}#partitions", {})
 		model = deep_get(obj, f"ansible_devices#{dev}#model", "")
 		for partition in partitions:
-			if device in partitions:
+			if device in partition:
 				return model
 	return ""
 
@@ -3017,8 +3019,8 @@ def get_resource_info_by_last_applied_configuration(obj, **kwargs):
 			continue
 		data = json.loads(last_applied_configuration)
 		match = True
-		for key in configuration:
-			if key not in data or configuration[key] != data[key]:
+		for key, conf in configuration.items():
+			if key not in data or conf != data[key]:
 				match = False
 				break
 		if match == True:
@@ -3558,21 +3560,13 @@ def get_inventory_list(**kwargs):
 		inventory_dict["all"]["hosts"][host]["status"] = "UNKNOWN"
 
 	# Do we want to ping the hosts?
-	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", "Lazy")
+	ping_hosts = deep_get(iktconfig, "Inventory#ping_hosts", "Always")
 
-	if ping_hosts == "Always" or (ping_hosts == "Lazy" and latest_info in ("Inventory", "*Inventory")):
-		# ping all nodes and update their status accordingly
-		output = ansible_ping(None)
+	async_cookie = None
 
-		if output is None or len(output) == 0:
-			sys.exit("Internal error; ansible_ping() failed")
-
-		for (host, _status) in output:
-			if host in deep_get(inventory_dict, "all#hosts"):
-				# We don't want to risk overwriting hostvars
-				if deep_get(inventory_dict, f"all#hosts#{host}") is None:
-					inventory_dict["all"]["hosts"][host] = {}
-				inventory_dict["all"]["hosts"][host]["status"] = _status
+	if ping_hosts in ("Always", "Lazy"):
+		# Trigger an asynchronous host ping
+		async_cookie = ansible_ping_async(None)
 
 	for host in deep_get(inventory_dict, "all#hosts", []):
 		# There's no point in trying gethostbyname() on hosts that cannot be resolved
@@ -3643,7 +3637,43 @@ def get_inventory_list(**kwargs):
 			"status": _status,
 		})
 
-	return vlist, status
+	async_cb = get_inventory_list_async_cb
+
+	return vlist, status, async_cookie, async_cb
+
+# pylint: disable-next=unused-argument
+def get_inventory_list_async_cb(vlist, async_cookie, **kwargs):
+	retrigger = deep_get(kwargs, "retrigger", False)
+
+	if retrigger == True and async_cookie is None:
+		async_cookie = ansible_ping_async(None)
+		return vlist, async_cookie
+
+	if async_cookie is None:
+		return vlist, async_cookie
+
+	# If there's no new data yet (the run hasn't completed), return
+	__ansible_results = ansible_async_get_data(async_cookie)
+	if __ansible_results is None:
+		return vlist, async_cookie
+
+	host_status = {}
+
+	for host, result in __ansible_results.items():
+		for task in result:
+			unreachable = deep_get(task, "unreachable")
+			skipped = deep_get(task, "skipped")
+			stderr_lines = deep_get(task, "stderr_lines")
+			retval = deep_get(task, "retval")
+			status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
+			host_status[host] = status
+
+	# Update status
+	for i, host in enumerate(vlist):
+		vlist[i]["status"] = deep_get(host_status, host["name"], "UNKNOWN")
+	async_cookie = None
+
+	return vlist, async_cookie
 
 class NodeInfo:
 	# pylint: disable-next=too-many-arguments
@@ -3786,7 +3816,7 @@ def get_pod_restarts_total(pod):
 	return restarts, restarted_at
 
 # pylint: disable-next=unused-argument
-def set_cluster_context(uip, **kwargs):
+def set_cluster_context(stdscr, **kwargs):
 	global force_refresh_apis # pylint: disable=global-statement
 
 	selected = deep_get(kwargs, "selected")
@@ -4513,13 +4543,37 @@ def genericlistloop(stdscr, view):
 
 	vlist = None
 
+	async_cookie = None
+	async_cb = None
+	async_retrigger_timeout = None
+
 	while True:
 		uip.countdown_to_update()
+
+		if async_cb is not None:
+			if async_cookie is not None:
+				# Note: by default async_cb will be called every 100ms until it receives all data;
+				# make *SURE* that it only checks for new data and returns immediately if not
+				vlist, async_cookie = async_cb(vlist, async_cookie)
+				if async_cookie is None:
+					uip.force_update()
+					# Retrigger 5 seconds; this might be revisited later
+					async_retrigger_timeout = 50
+			else:
+				if async_retrigger_timeout is not None and async_cb is not None:
+					if async_retrigger_timeout == 0:
+						async_retrigger_timeout = None
+						vlist, async_cookie = async_cb(vlist, async_cookie, retrigger = True)
+					else:
+						async_retrigger_timeout -= 1
 
 		if uip.is_update_triggered():
 			uip.update_window()
 
-			if "listgetter" in viewref:
+			if deep_get(viewref, "listgetter_async") is not None:
+				listgetter_async = deep_get(viewref, "listgetter_async")
+				listgetter = None
+			elif "listgetter" in viewref:
 				listgetter = deep_get(viewref, "listgetter")
 			else:
 				listgetter = "kh.get_list_by_kind_namespace"
@@ -4532,21 +4586,25 @@ def genericlistloop(stdscr, view):
 			if "filters" in listview_args:
 				infogetter_extra_vars["_filters"] = deep_get(listview_args, "filters")
 
+			listgetter_args = deep_get(viewref, "listgetter_args", {})
+			listgetter_args["label_selector"] = label_selector
+
 			if listgetter is not None:
 				if type(listgetter) == str:
 					listgetter = deep_get(listgetter_allowlist, listgetter)
 
 				# pylint: disable-next=comparison-with-callable
 				if listgetter == generic_listgetter:
-					listgetter_args = deep_get(viewref, "listgetter_args", {})
-					listgetter_args["label_selector"] = label_selector
 					vlist, status = listgetter(deep_get(viewref, "kind"), namespace, **listgetter_args)
 				else:
-					listgetter_args = deep_get(viewref, "listgetter_args", {})
 					if kind[0].startswith("__"):
 						vlist, status = listgetter(**listgetter_args)
 					else:
 						vlist, status = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
+				infogetter_extra_vars["_vlist"] = vlist
+			elif listgetter_async is not None:
+				if async_cb is None:
+					vlist, status, async_cookie, async_cb = listgetter_async(**listgetter_args)
 				infogetter_extra_vars["_vlist"] = vlist
 			else:
 				status = "OK"
@@ -4641,6 +4699,11 @@ def genericlistloop(stdscr, view):
 
 		uip.stdscr.timeout(100)
 		c = uip.stdscr.getch()
+
+		# XXX: This is really ugly, but it's needed to ensure that we re-fetch all data when a force refresh is requested
+		if c == curses.KEY_F5:
+			async_cb = None
+
 		retval = uip.generic_keycheck(c)
 
 		if retval == curses_helper.retval.MATCH:
@@ -9198,8 +9261,7 @@ def uncordon_node(uip, items, action, values, kind, **kwargs):
 	for node in items:
 		kh.uncordon_node(node)
 
-nodeplaybooks = {
-}
+nodeplaybooks = {} # type: ignore
 
 def ssh_to_host(stdscr, **kwargs):
 	if "selected" in kwargs:
@@ -9757,7 +9819,7 @@ listviewactions = {
 	},
 }
 
-infoviews = {}
+infoviews = {} # type: ignore
 
 # These functions are used to check whether an API is available
 def is_cluster_reachable():
@@ -9839,7 +9901,6 @@ listgetter_allowlist = {
 	# Used by listview, listpad
 	"generic_listgetter": generic_listgetter,
 	"get_context_list": get_context_list,
-	"get_inventory_list": get_inventory_list,
 	"get_metrics_list": get_metrics_list,
 	"get_pod_containers_list": get_pod_containers_list,
 	# Used by listpad
@@ -9859,6 +9920,12 @@ listgetter_allowlist = {
 	"listgetter_namespaced_resources": listgetter_namespaced_resources,
 	"listgetter_path": listgetter_path,
 	"listgetter_policy_rules": listgetter_policy_rules,
+}
+
+# Asynchronous listgetters acceptable for direct use in view files
+listgetter_async_allowlist = {
+	# Used by listpad
+	"get_inventory_list": get_inventory_list,
 }
 
 # These views are always defined internally and cannot be disabled
@@ -10116,6 +10183,12 @@ def populate_views(force_refresh = False):
 					if listgetter is not None:
 						listgetter = deep_get(listgetter_allowlist, listgetter)
 
+				listgetter_async = None
+				if "listgetter_async" in deep_get(d, "listview"):
+					listgetter_async = deep_get(d, "listview#listgetter_async")
+					if listgetter_async is not None:
+						listgetter_async = deep_get(listgetter_async_allowlist, listgetter_async)
+
 				listgetter_args = deep_get(d, "listview#listgetter_args", {})
 
 				on_activation = deep_get(d, "listview#on_activation")
@@ -10141,6 +10214,7 @@ def populate_views(force_refresh = False):
 					"statusmsg": deep_get(d, "listview#statusmsg", {}),
 					"is_taggable": deep_get(d, "listview#is_taggable", True),
 					"listgetter": listgetter,
+					"listgetter_async": listgetter_async,
 					"listgetter_args": listgetter_args,
 					"reversible": reversible,
 					"infogetter": infogetter,

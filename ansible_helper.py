@@ -817,23 +817,25 @@ def ansible_extract_failure(retval: int, error_msg_lines, skipped: bool = False,
 
 	return status
 
-def ansible_results_add(event) -> int:
+def ansible_results_extract(event):
 	"""
-	Add the result of an Ansible play to the ansible results
+	Extract a result from an Ansible play
 
 		Parameters:
 			event (dict): The output from the run
 		Returns:
-			(int): 0 on success, -1 if host is unreachable, retval on other failure
+			(retval(int), result(dict)):
+				retval: 0 on success, -1 if host is unreachable, retval on other failure,
+				result: A dict
 	"""
 
 	host = deep_get(event, "event_data#host", "")
 	if len(host) == 0:
-		return 0
+		return 0, {}
 
 	task = deep_get(event, "event_data#task", "")
 	if len(task) == 0:
-		return 0
+		return 0, {}
 
 	ansible_facts = deep_get(event, "event_data#res#ansible_facts", {})
 
@@ -841,14 +843,14 @@ def ansible_results_add(event) -> int:
 	unreachable = deep_get(event, "event_data#res#unreachable", False)
 
 	if unreachable == True:
-		retval = -1
+		__retval = -1
 	elif skipped == True or deep_get(event, "event", "") == "runner_on_ok":
-		retval = 0
+		__retval = 0
 	else:
-		retval = deep_get(event, "event_data#res#rc")
+		__retval = deep_get(event, "event_data#res#rc")
 
-	if retval is None:
-		return 0
+	if __retval is None:
+		return 0, {}
 
 	msg = deep_get(event, "event_data#res#msg", "")
 	msg_lines = []
@@ -872,7 +874,7 @@ def ansible_results_add(event) -> int:
 		"task": task,
 		"start_date": start_date_timestamp,
 		"end_date": end_date_timestamp,
-		"retval": retval,
+		"retval": __retval,
 		"unreachable": unreachable,
 		"status": "UNKNOWN",
 		"skipped": skipped,
@@ -882,7 +884,7 @@ def ansible_results_add(event) -> int:
 		"ansible_facts": ansible_facts,
 	}
 
-	if unreachable == False and retval == 0:
+	if unreachable == False and __retval == 0:
 		d["status"] = "SUCCESS"
 
 	if len(msg_lines) > 0 or len(stdout_lines) > 0 or len(stderr_lines) > 0:
@@ -894,7 +896,7 @@ def ansible_results_add(event) -> int:
 		# XXX: Or can it be used to get a sequential log when there's both
 		# stdout and stderr?
 		if len(stdout_lines) == 0 and len(stderr_lines) == 0 and len(msg_lines) > 0:
-			if retval != 0:
+			if __retval != 0:
 				d["stderr_lines"] = msg_lines
 			else:
 				d["msg_lines"] = msg_lines
@@ -904,13 +906,29 @@ def ansible_results_add(event) -> int:
 	error_msg_lines = stderr_lines
 	if len(error_msg_lines) == 0:
 		error_msg_lines = msg_lines
-	d["status"] = ansible_extract_failure(retval, error_msg_lines, skipped = skipped, unreachable = unreachable)
+	d["status"] = ansible_extract_failure(__retval, error_msg_lines, skipped = skipped, unreachable = unreachable)
 
-	if host not in ansible_results:
-		ansible_results[host] = []
-	ansible_results[host].append(d)
+	return __retval, d
 
-	return retval
+def ansible_results_add(event) -> int:
+	"""
+	Add the result of an Ansible play to the ansible results
+
+		Parameters:
+			event (dict): The output from the run
+		Returns:
+			(int): 0 on success, -1 if host is unreachable, retval on other failure
+	"""
+
+	host = deep_get(event, "event_data#host", "")
+	__retval, d = ansible_results_extract(event)
+
+	if len(d) > 0:
+		if host not in ansible_results:
+			ansible_results[host] = []
+		ansible_results[host].append(d)
+
+	return __retval
 
 def ansible_delete_log(log: str):
 	"""
@@ -1177,6 +1195,25 @@ def ansible_run_playbook(playbook: FilePath, override_inventory: bool = False):
 
 	return retval, ansible_results
 
+def ansible_run_playbook_async(playbook: FilePath, inventory):
+	"""
+	Run a playbook asynchronously
+
+		Parameters:
+			playbook (FilePath): The playbook to run
+			inventory (dict): An inventory dict with selection as the list of hosts to run on
+
+		Returns:
+			runner: An ansible_runner.runner.Runner object
+	"""
+
+	forks = deep_get(ansible_configuration, "ansible_forks")
+
+	_thread, runner = ansible_runner.interface.run_async(json_mode = True, quiet = True, playbook = playbook, inventory = inventory,
+							     forks = forks, finished_callback = __ansible_run_async_finished_cb)
+
+	return runner
+
 def ansible_run_playbook_on_selection(playbook: FilePath, selection, values = None):
 	"""
 	Run a playbook on selected nodes
@@ -1224,6 +1261,54 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection, values = No
 
 	return ansible_run_playbook(playbook)
 
+def ansible_run_playbook_on_selection_async(playbook: FilePath, selection, values = None):
+	"""
+	Run a playbook on selected nodes
+
+		Parameters:
+			playbook (FilePath): The playbook to run
+			selection (list[str]): The hosts to run the play on
+			values (dict): Extra values to set for the hosts
+		Returns:
+			The result from ansible_run_playbook_async()
+	"""
+
+	# If ansible_ssh_pass system variable is not set, and ansible_sudo_pass is set,
+	# we set ansible_ssh_pass to ansible_become_pass; on systems where we already have a host key
+	# this will be ignored; the same goes for groups or hosts where ansible_ssh_pass is set,
+	# since group and host vars take precedence over system vars.
+	#
+	# This is mainly for the benefit of making the prepare_host task possible to run without
+	# encouraging permanent use of ansible_{ssh,sudo,become}_pass.
+	# Ideally these variables should only be needed once; when preparing the host; after that
+	# we'll use passwordless sudo and ssh hostkeys.
+	#
+	# Also, if ansible_user is not set ansible will implicitly use the local user. Pass this
+	# as ansible user to make scripts that tries to access ansible_user function properly.
+	d = ansible_get_inventory_dict()
+
+	if values is None:
+		values = {}
+
+	if "ansible_sudo_pass" in values and "ansible_become_pass" not in values:
+		values["ansible_become_pass"] = values["ansible_sudo_pass"]
+	if "ansible_become_pass" in values and "ansible_ssh_pass" not in d["all"]["vars"]:
+		values["ansible_ssh_pass"] = values["ansible_become_pass"]
+	if "ansible_user" not in d["all"]["vars"]:
+		values["ansible_user"] = deep_get(ansible_configuration, "ansible_user")
+
+	for key, value in values.items():
+		d["all"][key] = value
+
+	d["selection"] = {
+		"hosts": {}
+	}
+
+	for host in selection:
+		d["selection"]["hosts"][host] = ""
+
+	return ansible_run_playbook_async(playbook, d)
+
 def ansible_ping(selection):
 	"""
 	Ping all selected hosts
@@ -1255,3 +1340,58 @@ def ansible_ping(selection):
 	ansible_configuration["save_logs"] = save_logs_tmp
 
 	return host_status
+
+def ansible_ping_async(selection):
+	"""
+	Ping all selected hosts asynchronously
+
+		Parameters:
+			selection (list[str]): A list of hostnames
+		Returns:
+			list[(hostname, status)]: The status of the pinged hosts
+	"""
+
+	if selection is None:
+		selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+
+	return ansible_run_playbook_on_selection_async(f"{ANSIBLE_PLAYBOOK_DIR}/ping.yaml", selection = selection)
+
+def __ansible_run_async_finished_cb(kwargs):
+	# pylint: disable=global-variable-not-assigned
+	global finished_runs
+	finished_runs.add(kwargs)
+
+finished_runs = set() # type: ignore
+
+def ansible_async_get_data(async_cookie):
+	"""
+	Get the result from an asynchronous ansible play
+
+		Parameters:
+			async_cookie (ansible_runner.runner.Runner): The return value from ansible_run_playbook_async
+		Returns:
+			data (dict): The result of the run (in a format suitable for passing to ansible_print_play_results)
+	"""
+
+	if async_cookie is None or async_cookie not in finished_runs:
+		return None
+
+	finished_runs.remove(async_cookie)
+
+	async_results = {}
+	data = None
+
+	if async_cookie is not None:
+		for event in async_cookie.events:
+			host = deep_get(event, "event_data#host", "")
+
+			__retval, d = ansible_results_extract(event)
+
+			if len(d) > 0:
+				if host not in async_results:
+					async_results[host] = []
+				async_results[host].append(d)
+		if len(async_results) > 0:
+			data = async_results
+
+	return data
