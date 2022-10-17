@@ -3016,7 +3016,12 @@ def get_resource_info_by_last_applied_configuration(obj, **kwargs):
 		last_applied_configuration = deep_get(item, "metadata#annotations#kubectl.kubernetes.io/last-applied-configuration", {})
 		if last_applied_configuration is None or len(last_applied_configuration) == 0:
 			continue
-		data = json.loads(last_applied_configuration)
+		try:
+			data = json.loads(last_applied_configuration)
+		except json.decoder.JSONDecodeError:
+			# The data is malformed; skip the entry
+			continue
+
 		match = True
 		for key, conf in configuration.items():
 			if key not in data or conf != data[key]:
@@ -6131,9 +6136,13 @@ def check_cni_updates(cni, current_version):
 			return "<Version check failed>"
 
 		if r1.status == 200:
-			weavestatus = json.loads(r1.read())
-			if deep_get(weavestatus, "VersionCheck#Enabled", False) == True and deep_get(weavestatus, "VersionCheck#Success", False) == True:
-				candidate_version = deep_get(weavestatus, "VersionCheck#NewVersion", None)
+			try:
+				weavestatus = json.loads(r1.read())
+				if deep_get(weavestatus, "VersionCheck#Enabled", False) == True and deep_get(weavestatus, "VersionCheck#Success", False) == True:
+					candidate_version = deep_get(weavestatus, "VersionCheck#NewVersion", None)
+			except json.decoder.JSONDecodeError:
+				# We got a response, but the data is malformed
+				pass
 		conn.close()
 	elif cni == "cilium":
 		cpath = shutil.which("cilium")
@@ -8778,7 +8787,10 @@ def view_last_applied_configuration(stdscr, **kwargs):
 	if last_applied_configuration is None or len(last_applied_configuration) == 0:
 		return None
 
-	data = json.loads(last_applied_configuration)
+	try:
+		data = json.loads(last_applied_configuration)
+	except json.decoder.JSONDecodeError:
+		return None
 
 	title = deep_get(kwargs, "title")
 	# themearrays = formatters.format_yaml([data])

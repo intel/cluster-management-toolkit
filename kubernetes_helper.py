@@ -2743,7 +2743,12 @@ class KubernetesHelper:
 		data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
 		if status == 200:
-			core_apis = json.loads(data)
+			# Success
+			try:
+				core_apis = json.loads(data)
+			except json.decoder.JSONDecodeError:
+				# We got a response, but the data is malformed
+				return kubernetes_resources, 42422, False
 		else:
 			self.cluster_unreachable = True
 			# We couldn't get the core APIs; there's no use continuing
@@ -2770,7 +2775,12 @@ class KubernetesHelper:
 		data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
 		if status == 200:
-			non_core_apis = json.loads(data)
+			# Success
+			try:
+				non_core_apis = json.loads(data)
+			except json.decoder.JSONDecodeError:
+				# We got a response, but the data is malformed
+				pass
 		else:
 			# No non-core APIs found; this is a bit worrying, but OK...
 			pass
@@ -2799,7 +2809,11 @@ class KubernetesHelper:
 				if status != 200:
 					# Could not get API info; this is worrying, but ignore it
 					continue
-				data = json.loads(data)
+				try:
+					data = json.loads(data)
+				except json.decoder.JSONDecodeError:
+					# We got a response, but the data is malformed
+					continue
 
 				for resource in deep_get(data, "resources", []):
 					if "list" not in deep_get(resource, "verbs", []):
@@ -2888,10 +2902,14 @@ class KubernetesHelper:
 			# No Content
 			pass
 		elif status == 400:
-			d = json.loads(result.data)
 			# Bad request
 			# The feature might be disabled, or the pod is waiting to start/terminated
-			message = "400: Bad Request; " + deep_get(d, "message", "")
+			try:
+				d = json.loads(result.data)
+				message = "400: Bad Request; " + deep_get(d, "message", "")
+			except json.decoder.JSONDecodeError:
+				# We got a response, but the data is malformed
+				message = "400: Bad Request [return data invalid]"
 		elif status == 401:
 			# Unauthorized
 			message = f"401: Unauthorized; method: {method}, URL: {url}, header_params: {header_params}"
@@ -3129,7 +3147,11 @@ class KubernetesHelper:
 			# All fatal failures are handled in __rest_helper_generic
 			if status == 200:
 				# Success
-				d = json.loads(data)
+				try:
+					d = json.loads(data)
+				except json.decoder.JSONDecodeError:
+					# We got a response, but the data is malformed; skip the entry
+					continue
 
 				# If name is set this is a read request, not a list request
 				if name != "":

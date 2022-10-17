@@ -775,13 +775,11 @@ def split_json_style(message, severity = LogLevel.INFO, facility = "", fold_msg 
 	facilities = options.get("facilities", ["logger", "caller", "filename"])
 	versions = options.get("versions", [])
 
-	if "\\u0000" in message:
-		tmp = message.split("\\u0000")
-		message = "".join(tmp)
+	message = message.replace("\u0000", "")
 
 	try:
 		logentry = json.loads(message)
-	except ValueError:
+	except (json.decoder.JSONDecodeError, ValueError):
 		pass
 
 	# Unfold Python dicts
@@ -1006,12 +1004,18 @@ def json_event(message, severity = LogLevel.INFO, facility = "", fold_msg = True
 	elif event in ("UpdatePod", "UpdateNamespace"):
 		tmp2 = re.match(r"^({.*})\s*({.*})", tmp[2])
 		if tmp2 is not None:
-			old = json.loads(tmp2[1])
+			try:
+				old = json.loads(tmp2[1])
+			except (json.decoder.JSONDecodeError, ValueError):
+				message = [(f"{tmp[1]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [error: could not parse json]", ("logview", "severity_error"))]
+				remnants = [(tmp[2], severity)]
+				return message, severity, facility, remnants
+
 			old_str = json_dumps(old)
 			try:
 				new = json.loads(tmp2[2])
-			except ValueError:
-				message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [Error: could not parse JSON]", ("logview", "severity_error"))]
+			except (json.decoder.JSONDecodeError, ValueError):
+				message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [error: could not parse json]", ("logview", "severity_error"))]
 				remnants = [(tmp[2], severity)]
 				return message, severity, facility, remnants
 			new_str = json_dumps(new)
