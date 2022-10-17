@@ -31,9 +31,22 @@ iktinv:
 
 iktadm:
 * Add command to import kube-config (requires cluster-name--unless unique) and a path
-* Pass cluster_name to kubeadm init using ClusterConfiguration + clusterName
+* Pass cluster_name to `kubeadm init` using ClusterConfiguration + clusterName
 * prepare_passwordless_ansible won't work on localhost; we're not passing the password,
   and the password might not be the same on the remote system and the local system anyway
+* Add `pre-upgrade-check` that checks whether relevant config files (notably containerd)
+  are compatible with new settings. Also check whether the cluster currently uses
+  any APIs that are deprecated, and any deployments that are known to be unsupported on
+  newer versions of Kubernetes. Config-checks needs to check all nodes, not just
+  the control plane.
+* troubleshoot:
+  * Check that the config-files as installed/created at install time by iktadm/ikt
+    are in sync with what's on the machines in the cluster at present, and if not,
+    warn about the difference.
+    The differences *may* be intentional, so we cannot indiscriminately overwrite them,
+    but the user should at least be aware of the differences (we could even show a diff
+    if `--verbose` is passed) and provide a helpful message about what playbook to
+    run to update the files.
 
 logparser:
 * Rewrite key_value; the parser is overly complex at the moment; it needs to be simplified
@@ -45,5 +58,5 @@ logparser:
   for every line, so expanding tabs into spaces won't work properly)
 
 kubernetes_helper:
-* Replace drain_node with cordon, post evictions (or delete if PodDisruptionBudget causes issues)
+* Replace playbooks/drain_node.yaml with cordon_node() + post evictions (or delete if PodDisruptionBudget causes issues)
   for all non-DaemonSet pods
