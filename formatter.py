@@ -277,20 +277,20 @@ def format_caddyfile(lines, **kwargs):
 	single_site = True
 	site = False
 
-	# XXX: DoS
-	block_open_regex = re.compile(r"(\s*)({)(.*)")
-	# XXX: DoS
-	snippet_regex = re.compile(r"(\s*)(\(.+?\))(.*)")
-	# XXX: DoS
-	site_regex = re.compile(r"(\s*)(.+?)(\s+{\s*$|$)")
-	# XXX: DoS
-	block_close_regex = re.compile(r"(\s*)(}\s*$)")
-	# XXX: DoS
-	matcher_regex = re.compile(r"(\s*)(@.*?|\*/.*?)(\s.*)")
-	# XXX: DoS
-	directive_regex = re.compile(r"(\s*)(.+?)(\s.*|$)")
-	# XXX: DoS
-	argument_regex = re.compile(r"(.*?)(\s{\s*$|$)")
+	# Safe
+	block_open_regex = re.compile(r"^(\s*)({)(.*)")
+	# Safe
+	snippet_regex = re.compile(r"^(\s*)(\(.+?\))(.*)")
+	# Safe
+	site_regex = re.compile(r"^(\s*)(\S+?)(\s+{\s*$|$)")
+	# Safe
+	block_close_regex = re.compile(r"^(\s*)(}\s*$)")
+	# Safe
+	matcher_regex = re.compile(r"^(\s*)(@.*?|\*/.*?)(\s.*)")
+	# Safe
+	directive_regex = re.compile(r"^(\s*)(.+?)(\s.*|$)")
+	# Safe
+	argument_regex = re.compile(r"^(.*?)(\s{\s*$|$)")
 
 	for line in lines:
 		tmpline = []
@@ -508,18 +508,18 @@ def format_xml(lines, **kwargs):
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	# XXX: DoS
-	escape_regex = re.compile(r"(\s*)(&)(.+?)(;)(.*)")
-	# XXX: DoS
-	content_regex = re.compile(r"(.*?)(<.*|&.*)")
-	# XXX: DoS
-	tag_open_regex = re.compile(r"(\s*)(</|<!--|<\?|<)(.*)")
 	# Safe
-	tag_named_regex = re.compile(r"(.+?)(\s*>|\s*\?>|\s*$|\s+.*)")
-	# XXX: DoS
-	tag_close_regex = re.compile(r"(\s*)(/>|\?>|-->|>)(.*)")
-	# XXX: DoS
-	remainder_regex = re.compile(r"(\s*.+?)(=|)(\".+?\"|)(\s*$|\s*/>|\s*\?>|\s*-->|\s*>|\s+)(.*|)")
+	escape_regex = re.compile(r"^(\s*)(&)(.+?)(;)(.*)")
+	# Safe
+	content_regex = re.compile(r"^(.*?)(<.*|&.*)")
+	# Safe
+	tag_open_regex = re.compile(r"^(\s*)(</|<!--|<\?|<)(.*)")
+	# Safe
+	tag_named_regex = re.compile(r"^(.+?)(\s*>|\s*\?>|\s*$|\s+.*)")
+	# Safe
+	tag_close_regex = re.compile(r"^(\s*)(/>|\?>|-->|>)(.*)")
+	# Safe
+	remainder_regex = re.compile(r"^(\s*\S+?)(=|)(\"[^\"]+?\"|)(\s*$|\s*/>|\s*\?>|\s*-->|\s*>|\s+)(.*|)")
 
 	i = 0
 	for line in lines:
@@ -706,10 +706,10 @@ def format_toml(lines, **kwargs):
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	# XXX: DoS
-	key_value_regex = re.compile(r"^(\s*?)(.*)(\s*?=\s*?)(.*)")
 	# Safe
-	comment_end_regex = re.compile(r"^(.*?)(#.*)")
+	key_value_regex = re.compile(r"^(\s*)(\S+)(\s*=\s*)(\S+)")
+	# Safe
+	comment_end_regex = re.compile(r"^(.*)(#.*)")
 
 	for line in lines:
 		if len(line) == 0:
@@ -849,8 +849,8 @@ def format_ini(lines, **kwargs):
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	# XXX: DoS
-	key_value_regex = re.compile(r"^(\s*?)(.*)(\s*?=\s*?)(.*)")
+	# Safe
+	key_value_regex = re.compile(r"^(\s*)(\S+)(\s*=\s*)(\S+)")
 
 	for line in lines:
 		tmpline = []
