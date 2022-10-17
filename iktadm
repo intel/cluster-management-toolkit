@@ -2026,7 +2026,7 @@ def prepare_installation(options, args):
 	if phase == "<none>":
 		phase = 0
 
-	hostname = get_local_hostname()
+	hostname = socket.gethostname()
 
 	# default options
 	installation_info = update_installation_info(cluster_name = cluster_name, distro = distro, requested_version = requested_version, state = "preparing", phase = phase)

@@ -209,7 +209,7 @@ def populate_playbooks_from_paths(paths):
 
 	for playbookpath in paths:
 		# Don't process backups, etc.
-		if filename.startswith(("~", ".")):
+		if os.path.basename(playbookpath).startswith(("~", ".")):
 			continue
 
 		# Only process playbooks
@@ -497,7 +497,20 @@ def taint_nodes(options, args):
 			raise Exception(f"Programming error; invalid option {opt}")
 
 	selection = args[0].split(",")
-	taint, taint_new_effect = args[1].split("=")
+	taint = args[1]
+
+	if "=" not in taint:
+		iktprint([(f"{about.TOOL_PROGRAM_NAME}", "programname"), (": invalid syntax; the correct syntax is either “", "default"),
+			  (f"{about.TOOL_PROGRAM_NAME}", "programname"), (" taint ", "command"),
+			  ("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL ", "argument"),
+			  ("KEY", "argument"), ("=", "separator"), ("EFFECT", "argument"),
+			  ("“ or “", "default"),
+			  (f"{about.TOOL_PROGRAM_NAME}", "programname"), (" taint ", "command"),
+			  ("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL ", "argument"),
+			  ("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), ("=", "separator"), ("EFFECT", "argument"), ("“; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	taint, taint_new_effect = taint.split("=")
 	if ":" in taint:
 		taint_key, taint_value = taint.split(":")
 	else:
@@ -574,6 +587,7 @@ def untaint_nodes(options, args):
 
 	selection = args[0].split(",")
 	taint = args[1]
+
 	if "=" in taint:
 		taint, taint_old_effect = taint.split("=")
 	else:

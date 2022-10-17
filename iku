@@ -6203,7 +6203,7 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 		args = ["kubectl", "version", "-o", "yaml"]
 		try:
 			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = True)
-		except CalledProcessError:
+		except subprocess.CalledProcessError:
 			return False
 
 		kubeversionoutput = yaml.safe_load(result.stdout)
