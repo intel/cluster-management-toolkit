@@ -5709,40 +5709,46 @@ def clusteroverviewloop(stdscr, view):
 				# FIXME: handle non-existance
 				if os.path.exists("/proc/loadavg"):
 					with open("/proc/loadavg", "r", encoding = "utf-8") as f:
-						loadavg_raw = f.read()
+						loadavg_raw = f.readlines()
 
 				if os.path.exists("/proc/meminfo"):
 					with open("/proc/meminfo", "r", encoding = "utf-8") as f:
-						meminfo_raw = f.read()
+						meminfo_raw = f.readlines()
 
 				if os.path.exists("/proc/stat"):
 					with open("/proc/stat", "r", encoding = "utf-8") as f:
-						stat_raw = f.read()
+						stat_raw = f.readlines()
 
 			if len(loadavg_raw) > 0:
-				avg1min, avg5min, avg15min, running, tasks = loadavg_raw[0].split()
+				try:
+					avg1min, avg5min, avg15min, running, tasks = loadavg_raw[0].split()
+				except ValueError:
+					loadavg_raw = []
 
 			if len(meminfo_raw) > 0:
-				for tmp in meminfo_raw:
-					values = tmp.split()
-					if values[0] == "MemTotal:":
-						memtotal = int(values[1])
-					elif values[0] == "MemFree:":
-						memfree = int(values[1])
-					elif values[0] == "MemShared:":
-						memshared = int(values[1])
-					elif values[0] == "Buffers:":
-						buffers = int(values[1])
-					elif values[0] == "Cached:":
-						memcached = int(values[1])
-					elif values[0] == "SwapTotal:":
-						swaptotal = int(values[1])
-					elif values[0] == "SwapFree:":
-						swapfree = int(values[1])
-					elif values[0] == "Shmem:":
-						memshared = int(values[1])
-					elif values[0] == "SReclaimable:":
-						sreclaimable = int(values[1])
+				try:
+					for tmp in meminfo_raw:
+						values = tmp.split()
+						if values[0] == "MemTotal:":
+							memtotal = int(values[1])
+						elif values[0] == "MemFree:":
+							memfree = int(values[1])
+						elif values[0] == "MemShared:":
+							memshared = int(values[1])
+						elif values[0] == "Buffers:":
+							buffers = int(values[1])
+						elif values[0] == "Cached:":
+							memcached = int(values[1])
+						elif values[0] == "SwapTotal:":
+							swaptotal = int(values[1])
+						elif values[0] == "SwapFree:":
+							swapfree = int(values[1])
+						elif values[0] == "Shmem:":
+							memshared = int(values[1])
+						elif values[0] == "SReclaimable:":
+							sreclaimable = int(values[1])
+				except (IndexError, ValueError):
+					meminfo_raw = []
 
 				# Total used mem; includes buffers and cache
 				memused = memtotal - memfree
@@ -5774,6 +5780,8 @@ def clusteroverviewloop(stdscr, view):
 					cputimetotalguest = cputimeguest + cputimeguestnice
 					cputimetotal = cputimeuser + cputimeusernice + cputimetotalsystem + cputimetotalidle + cputimesteal + cputimetotalguest
 					cputimetotalused = cputimeuser + cputimeusernice + cputimetotalsystem + cputimesteal + cputimetotalguest
+				else:
+					stat_raw = []
 
 			# Get the list of all nodes
 			vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
