@@ -35,14 +35,14 @@ from ikttypes import FilePath
 from iktpaths import HOMEDIR, BINDIR
 from iktpaths import DEPLOYMENT_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
-from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE, IKT_INSTALLATION_INFO_FILE
+from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE, IKT_INSTALLATION_INFO_FILE, KUBE_CONFIG_FILE
 
 from commandparser import parse_commandline
 
 from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_set_vars
 from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results
 
-from iktio import download_files, get_local_hostname, mkdir_if_not_exists, scan_and_add_ssh_keys
+from iktio import download_files, mkdir_if_not_exists, scan_and_add_ssh_keys
 
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, execute_command, execute_command_with_response, iktconfig
@@ -1310,7 +1310,7 @@ def __selection_localhost():
 			(list[str]): A list with the hostname of localhost
 	"""
 
-	return [get_local_hostname()]
+	return [socket.gethostname()]
 
 # Run preparation playbooks on localhost
 def __task_run_preparation_playbooks_on_localhost(installation_info):
@@ -1380,8 +1380,8 @@ def get_cluster_name():
 		Returns:
 			cluster_name (str): The name of the cluster
 	"""
-	if os.path.exists(f"{HOMEDIR}/.kube/config"):
-		with open(f"{HOMEDIR}/.kube/config", "r", encoding = "utf-8") as f:
+	if os.path.exists(f"{KUBE_CONFIG_FILE}"):
+		with open(f"{KUBE_CONFIG_FILE}", "r", encoding = "utf-8") as f:
 			d1 = yaml.safe_load(f)
 	else:
 		return None
@@ -2999,6 +2999,21 @@ def untaint_control_plane(options, args):
 		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
+def check_security_disable_strict_host_key_checking(cluster_name, kubeconfig, iktconfig_dict, user, security, error, warning, note):
+	iktprint([("[Checking for insecure configuration options in ", "phase"), (f"{IKT_CONFIG_FILE}", "path"), ("]", "phase")])
+	disablestricthostkeychecking = deep_get(iktconfig_dict, "Nodes#disablestricthostkeychecking", False)
+	if disablestricthostkeychecking == False:
+		iktprint([("  OK\n", "emphasis")])
+	else:
+		iktprint([("  Warning:", "warning"), (" strict SSH host key checking is disabled; this is a potential security threat.", "emphasis")], stderr = True)
+		iktprint([("    If strict SSH host key checking is disabled other systems can impersonate the remote host", "default")], stderr = True)
+		iktprint([("    and thus perform Man in the Middle (MITM) attacks.", "default")], stderr = True)
+		iktprint([("    It is adviced that you enable strict SSH host key checking unless you're absolutely certain", "default")], stderr = True)
+		iktprint([("    that your network environment is safe.\n", "default")], stderr = True)
+		security += 1
+
+	return security, error, warning, note
+
 def preflight_check(options, args):
 	"""
 	Run preflight checks before creating a new cluster
@@ -3011,11 +3026,17 @@ def preflight_check(options, args):
 	del options
 	del args
 
+	security = 0
 	error = 0
 	warning = 0
 	note = 0
 
 	user = getuser()
+	cluster_name = get_cluster_name()
+	with open(f"{KUBE_CONFIG_FILE}", "r") as f:
+		kubeconfig = yaml.safe_load(f)
+
+	security, error, warning, note = check_security_disable_strict_host_key_checking(cluster_name, kubeconfig, iktconfig, user, security, error, warning, note)
 
 	iktprint([("[Checking whether ", "phase"), (f"{user}", "path"), (" is in ", "phase"), ("/etc/sudoers", "path"), (" or ", "default"), ("/etc/sudoers.d", "path"), ("]", "phase")])
 	args = ["/usr/bin/sudo", "-l"]
@@ -3088,6 +3109,7 @@ def preflight_check(options, args):
 		iktprint([("  OK\n", "emphasis")])
 
 	iktprint([("Summary:", "header")])
+	iktprint([("Security:", "critical"), (f" {security}", "error")])
 	iktprint([(f"  Errors: {error}", "error")])
 	iktprint([(f"Warnings: {warning}", "warning")])
 	iktprint([(f"   Notes: {note}", "note")])
@@ -3104,13 +3126,44 @@ def troubleshoot(options, args):
 	del options
 	del args
 
+	security = 0
 	error = 0
 	warning = 0
 	note = 0
 	total = 0
 
+	user = getuser()
+	cluster_name = get_cluster_name()
+	with open(f"{KUBE_CONFIG_FILE}", "r") as f:
+		kubeconfig = yaml.safe_load(f)
+
 	# First start with the really basic: does the cluster respond?
 	# Check no_proxy, perhaps?
+
+	# Is the iKT configuration secure?
+	security, error, warning, note = check_security_disable_strict_host_key_checking(cluster_name, kubeconfig, iktconfig, user, security, error, warning, note)
+
+	# Is the cluster configuration secure?
+	iktprint([("[Checking for insecure cluster configuration]", "phase")])
+
+	insecureskiptlsverify = False
+
+	for cluster in deep_get(kubeconfig, "clusters", []):
+		if deep_get(cluster, "name", "") == cluster_name:
+			insecureskiptlsverify = deep_get(cluster, "insecure-skip-tls-verify", False)
+			break
+
+	if insecureskiptlsverify == False:
+		iktprint([("  OK\n", "emphasis")])
+	else:
+		iktprint([("  Warning:", "critical"), (" TLS verification has been disabled in ", "emphasis"), (f"{KUBE_CONFIG_FILE}", "path"),
+			  ("; this is a potential security threat.", "emphasis")], stderr = True)
+		iktprint([("    If TLS verification is disabled other systems can impersonate the control plane", "default")], stderr = True)
+		iktprint([("    and thus perform Man in the Middle (MITM) attacks.", "default")], stderr = True)
+		iktprint([("    It is adviced that you remove the ", "default"), ("insecure-skip-tls-verify", "argument"), (" option from ", "default"),
+			  (f"{KUBE_CONFIG_FILE}", "path"), (",", "default")], stderr = True)
+		iktprint([("    unless you're absolutely certain that your network environment is safe.\n", "default")], stderr = True)
+		security += 1
 
 	# Is the version of kubectl within one version of the cluster version?
 	iktprint([("[Checking client/server version match]\n", "phase")])
@@ -3131,7 +3184,7 @@ def troubleshoot(options, args):
 		iktprint([("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
 		note += 1
 	elif kubectl_minor_version > server_minor_version:
-		iktprint([("Warning: ", "warning"), ("The ", "default"), ("kubectl", "programname"), (" version is more than one minor versions newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
+		iktprint([("Warning: ", "warning"), ("The ", "default"), ("kubectl", "programname"), (" version is more than one minor version newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
 		iktprint([("         this might work, but it's generally recommended to keep the versions in sync.", "default")], stderr = True)
 		warning += 1
 	elif kubectl_minor_version < server_minor_version and kubectl_minor_version + 1 == server_minor_version:
@@ -3245,7 +3298,7 @@ def troubleshoot(options, args):
 	if error + warning + note == total:
 		iktprint([("OK", "ok")])
 
-	total += error + warning + note
+	total += security + error + warning + note
 
 	# Check kube-controller-manager, kube-scheduler, and cloud-controller-manager;
 	# they should match, but can be up to one version older,
@@ -3256,6 +3309,7 @@ def troubleshoot(options, args):
 	print()
 
 	iktprint([("Summary:", "header")])
+	iktprint([("Security:", "critical"), (f" {security}", "error")])
 	iktprint([(f"  Errors: {error}", "error")])
 	iktprint([(f"Warnings: {warning}", "warning")])
 	iktprint([(f"   Notes: {note}", "note")])
