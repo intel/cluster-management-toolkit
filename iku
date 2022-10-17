@@ -6076,8 +6076,25 @@ cmdata_header = [
 
 def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
 	if len(data) > 0:
+		uudata = False
+
+		if "\n" not in data:
+			try:
+				decoded = base64.b64decode(data)
+				uudata = True
+			except binascii.Error:
+				pass
+
+		if uudata == True:
+			try:
+				data = decoded.decode("utf-8")
+			except UnicodeDecodeError:
+				# This is binary data
+				return "binary", formatters.format_binary
+
 		splitmsg = split_msg(data)
 		dataformat = ""
+
 		# We're in luck; there's an interpreter signature
 		# or other type of signature to help
 		if splitmsg[0].startswith(("#!", "-----")):

@@ -26,6 +26,9 @@ def __str_representer(dumper, data):
 		return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
 	return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
+def format_binary(lines, **kwargs):
+	return [([("Binary file; cannot view", ("types", "generic"))])]
+
 def format_none(lines, **kwargs):
 	"""
 	Noop formatter; returns the text without syntax highlighting
