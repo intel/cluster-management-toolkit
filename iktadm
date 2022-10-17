@@ -454,7 +454,7 @@ def check_version_from_url(url, version_regex):
 		with tempfile.TemporaryDirectory() as td:
 			check_and_print_status(download_files(td, [(url, "version.txt", None, None)], permissions = 0o600))
 			with open(f"{td}/version.txt", encoding = "utf-8") as f:
-				versionoutput = f.read().splitlines()
+				versionoutput = f.readlines()
 				_version_regex = re.compile(version_regex)
 				for line in versionoutput:
 					tmp = _version_regex.match(line)
