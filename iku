@@ -1601,6 +1601,8 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 												if group is not None:
 													tmp.append(group)
 											break
+										else:
+											tmp.append("")
 							else:
 								prefix = deep_get(_path, "prefix", [])
 								suffix = deep_get(_path, "suffix", [])
@@ -4572,6 +4574,8 @@ def genericlistloop(stdscr, view):
 						vlist, async_cookie = async_cb(vlist, async_cookie, retrigger = True)
 					else:
 						async_retrigger_timeout -= 1
+
+		listgetter_async = None
 
 		if uip.is_update_triggered():
 			uip.update_window()

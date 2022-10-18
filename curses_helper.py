@@ -815,7 +815,10 @@ def attr_to_curses_merged(context, attr, selected = False):
 	# that field can either be either a string, which in that case will be used directly against
 	# the colour lookup table, or a list, in which case the first entry is the colour,
 	# and the second entry is a curses attribute; recognised attributes (dim, normal, bold, underline)
-	attr = theme[context][attr]
+	try:
+		attr = theme[context][attr]
+	except KeyError:
+		sys.exit(f"KeyError; couldn't the tuple ({context}, {attr}) in theme")
 	if isinstance(attr, dict):
 		if selected == True:
 			attr = attr["selected"]
@@ -1547,7 +1550,11 @@ class UIProps:
 
 	def update_sorted_list(self):
 		sortkey1, sortkey2 = self.get_sortkeys()
-		self.sorted_list = natsorted(self.info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse)
+		try:
+			self.sorted_list = natsorted(self.info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse)
+		except TypeError:
+			# We couldn't sort the list; we should log and just keep the current sort order
+			raise
 
 	def update_info(self, info):
 		self.info = info
