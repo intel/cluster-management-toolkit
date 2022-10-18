@@ -7,8 +7,13 @@ datagetters are used for data extraction that's too complext to be expressed by 
 
 import re
 
+try:
+	from natsort import natsorted
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+
 from iktlib import deep_get, deep_get_with_fallback, StatusGroup, timestamp_to_datetime
-from kubernetes_helper import get_node_status
+from kubernetes_helper import get_node_status, kind_tuple_to_name
 
 def get_container_status(src_statuses, container):
 	reason = "UNKNOWN"
@@ -136,9 +141,73 @@ def datagetter_latest_version(kh, obj, path, default):
 		version = latest_api
 
 	message = ""
-	if old_version == version:
+
+	# Check if there's a deprecation message in the CRD
+	ref = kh.get_ref_by_kind_name_namespace("CustomResourceDefinition", kind_tuple_to_name(kind), "")
+
+	if ref is not None:
+		versions = {}
+		sorted_versions = []
+
+		for version in deep_get(ref, "spec#versions", []):
+			version_name = deep_get(version, "name", "")
+			deprecated = deep_get(version, "deprecated", False)
+			deprecation_message = deep_get(version, "deprecationWarning", "")
+			versions[version_name] = {
+				"deprecated": deprecated,
+				"deprecation_message": deprecation_message
+			}
+		# Kubernetes versions come in three different types
+		# vX, vXbetaX, and vXalphaX
+		version_regex = re.compile(r"^v(\d+)($|beta\d+|alpha\d+)$")
+		tmp_versions = []
+		for version in versions:
+			tmp = version_regex.match(version)
+			if tmp is None:
+				raise ParseError(f"Failed to parse version number {version}")
+			try:
+				major = int(tmp[1])
+			except ParseError:
+				raise ParseError(f"Failed to parse version number {version}")
+			if tmp[2] == "":
+				minor = 0
+				patch = 0
+			elif tmp[2].startswith("beta"):
+				minor = -1
+				try:
+					patch = int(tmp[2][len("beta"):])
+				except ParseError:
+					raise ParseError(f"Failed to parse version number {version}")
+			elif tmp[2].startswith("alpha"):
+				minor = -2
+				try:
+					patch = int(tmp[2][len("alpha"):])
+				except ParseError:
+					raise ParseError(f"Failed to parse version number {version}")
+			else:
+				raise ParseError(f"Failed to parse version number {version}")
+			tmp_versions.append((major, minor, patch))
+		sorted_versions = sorted(tmp_versions, reverse = True)
+		latest_major = f"v{sorted_versions[0][0]}"
+		if sorted_versions[0][1] == 0:
+			latest_minor = ""
+		elif sorted_versions[0][1] == -1:
+			latest_minor = f"beta{sorted_versions[0][2]}"
+		elif sorted_versions[0][1] == -2:
+			latest_minor = f"alpha{sorted_versions[0][2]}"
+		latest_version = f"{latest_major}{latest_minor}"
+
+		if deep_get(versions, f"{latest_version}#deprecated", False) == True:
+			message = deep_get(versions, f"{latest_version}#deprecation_message", "")
+			message = f"({message})"
+
+	else:
+		latest_version = version
+
+	if old_version == latest_version and message == "":
 		message = "(No newer version available; the API might be deprecated)"
-	return (group, version, f"{message}"), {}
+
+	return (group, latest_version, message), {}
 
 def get_endpoint_endpoints(subsets):
 	endpoints = []
