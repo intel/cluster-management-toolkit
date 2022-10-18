@@ -590,6 +590,11 @@ kubernetes_resources = {
 		"api": "ciliumnodes",
 		"namespaced": False,
 	},
+	# clone.kubevirt.io
+	("VirtualMachineClone", "clone.kubevirt.io"): {
+		"api_family": ["apis/clone.kubevirt.io/v1alpha1/"],
+		"api": "virtualmachineclone",
+	},
 	# cloudcredential.openshift.io
 	("CredentialsRequest", "cloudcredential.openshift.io"): {
 		"api_family": ["apis/cloudcredential.openshift.io/v1/"],
@@ -1043,6 +1048,11 @@ kubernetes_resources = {
 		"api_family": ["apis/etcd.database.coreos.com/v1beta2/"],
 		"api": "etcdclusters",
 	},
+	# export.kubevirt.io
+	("VirtualMachineExport", "export.kubevirt.io"): {
+		"api_family": ["apis/export.kubevirt.io/v1alpha1/"],
+		"api": "virtualmachineexports",
+	},
 	# extensions.istio.io
 	("WasmPlugin", "extensions.istio.io"): {
 		"api_family": ["apis/install.istio.io/v1alpha1/"],
@@ -1159,6 +1169,25 @@ kubernetes_resources = {
 	("IstioOperator", "install.istio.io"): {
 		"api_family": ["apis/install.istio.io/v1alpha1/"],
 		"api": "istiooperators",
+	},
+	# instancetype.kubevirt.io
+	("VirtualMachineClusterInstancetype", "instancetype.kubevirt.io"): {
+		"api_family": ["apis/instancetype.kubevirt.io/v1alpha2/"],
+		"api": "virtualmachineclusterinstancetypes",
+		"namespaced": False,
+	},
+	("VirtualMachineClusterPreference", "instancetype.kubevirt.io"): {
+		"api_family": ["apis/instancetype.kubevirt.io/v1alpha2/"],
+		"api": "virtualmachineclusterpreferences",
+		"namespaced": False,
+	},
+	("VirtualMachineInstancetype", "instancetype.kubevirt.io"): {
+		"api_family": ["apis/instancetype.kubevirt.io/v1alpha2/"],
+		"api": "virtualmachineinstancetypes",
+	},
+	("VirtualMachinePreference", "instancetype.kubevirt.io"): {
+		"api_family": ["apis/instancetype.kubevirt.io/v1alpha2/"],
+		"api": "virtualmachinepreferences",
 	},
 	# integreatly.org
 	("Grafana", "integreatly.org"): {
@@ -1323,6 +1352,8 @@ kubernetes_resources = {
 	("VirtualMachineInstancePreset", "kubevirt.io"): {
 		"api_family": ["apis/kubevirt.io/v1/"],
 		"api": "virtualmachineinstancepresets",
+		"deprecated": "kubevirt/v1",
+		"unavailable": "kubevirt/v2",
 	},
 	("VirtualMachineInstanceReplicaSet", "kubevirt.io"): {
 		"api_family": ["apis/kubevirt.io/v1/"],
@@ -1556,6 +1587,12 @@ kubernetes_resources = {
 	("WorkloadGroup", "networking.istio.io"): {
 		"api_family": ["apis/networking.istio.io/v1alpha3/"],
 		"api": "workloadgroups",
+	},
+	# nfd.k8s-sigs.io
+	("NodeFeatureRule", "nfd.k8s-sigs.io"): {
+		"api_family": ["apis/nfd.k8s-sigs.io/v1alpha1/"],
+		"api": "nodefeaturerules",
+		"namespaced": False,
 	},
 	# nodeinfo.volcano.sh
 	("Numatopology", "nodeinfo.volcano.sh"): {
@@ -2083,6 +2120,15 @@ kubernetes_resources = {
 		"api": "xgboostjobs",
 	},
 }
+
+def kind_tuple_to_name(kind):
+	name = ""
+
+	if kind in kubernetes_resources:
+		api = deep_get(kubernetes_resources[kind], "api", "")
+		name = f"{api}.{kind[1]}"
+		name = name.rstrip(".")
+	return name
 
 def update_api_status(kind, listview = False, infoview = False):
 	# There are other kind of views than just Kubernetes APIs; just ignore them
