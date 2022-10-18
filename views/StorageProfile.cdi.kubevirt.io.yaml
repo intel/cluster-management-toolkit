@@ -7,3 +7,63 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "Storage Profile Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "provisioner", "storage_class"]
+    rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      provisioner:
+        header: [["Provisioner:", ["main", "infoheader"]]]
+        path: "status#provisioner"
+        type: "str"
+      storage_class:
+        header: [["S", ["main", "infoheader_shortcut"]], ["torage Class:", ["main", "infoheader"]]]
+        path: "status#storageClass"
+        type: "str"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open Storage Class":
+      key: "s"
+      modifier: "shift"
+      helptext: "Open info page for Storage Class"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "status#storageClass"
+        kind: "StorageClass"
+        api_family: "storage.k8s.io"
