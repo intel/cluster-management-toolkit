@@ -278,6 +278,10 @@ def main():
 	Main function for the program
 	"""
 
+	# Before doing anything else, make sure that the user isn't running as root
+	if os.geteuid() == 0:
+		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
+
 	command, options, args = parse_commandline(about.INSTALL_PROGRAM_NAME, about.INSTALL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS,
 						   sys.argv, COMMANDLINE, default_command = "__default", theme = DEFAULT_THEME_FILE)
 

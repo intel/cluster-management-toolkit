@@ -1,12 +1,17 @@
 #! /usr/bin/env python3
 
+"""
+This generates elements for various more complex types
+"""
+
 # pylint: disable=too-many-arguments
 
 from datetime import datetime
 
 from curses_helper import color_status_group, themearray_len, themearray_to_string
 import iktlib
-from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, reformat_timestamp, StatusGroup, timestamp_to_datetime
+from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, reformat_timestamp, timestamp_to_datetime
+from ikttypes import StatusGroup
 
 def format_list(items, fieldlen, pad, ralign, selected,
 		item_separator = ("separators", "list"),

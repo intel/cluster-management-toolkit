@@ -592,6 +592,7 @@ def __upgrade_cni(cni, upgradetype, context):
 		else:
 			iktprint([("No newer version available.", "default")])
 
+# pylint: disable-next=unused-argument
 def upgrade_cni(options, args):
 	"""
 	Upgrade the specified CNI to the latest version
@@ -600,8 +601,6 @@ def upgrade_cni(options, args):
 			options (list[(str, str)]): Unused
 			args (list[str]): The CNI to upgrade (optional; if not specified the CNI will be taken from installation_info.yaml)
 	"""
-
-	del options
 
 	if len(args) > 0:
 		cni = args[0]
@@ -613,7 +612,7 @@ def upgrade_cni(options, args):
 		iktprint([("Upgrading ", "default"), (f"{cni}", "command"), (" is currently not supported; exiting.", "default")])
 		sys.exit(errno.ENOTSUP)
 
-	context_name = execute_command_with_response(["kubectl", "config", "current-context"]).splitlines()[0]
+	context_name = execute_command_with_response(["/usr/bin/kubectl", "config", "current-context"]).splitlines()[0]
 
 	iktprint([("\n[Upgrading CNI]", "phase")])
 
@@ -779,6 +778,7 @@ def add_ssh_keys_to_authorized_keys():
 
 	return retval
 
+# pylint: disable-next=unused-argument
 def __task_check_and_create_ssh_key(installation_info):
 	"""
 	An installer task that checks whether the system has an ssh-key,
@@ -788,8 +788,6 @@ def __task_check_and_create_ssh_key(installation_info):
 			installation_info (dict): A dict with installation information (Unused)
 	"""
 
-	del installation_info
-
 	if check_for_ssh_key() == False:
 		retval = iktinput([("Warning:", "warning"), (" No ssh key found in ", "default"), (f"{HOMEDIR}/.ssh", "path"), ("; create one now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
@@ -798,6 +796,7 @@ def __task_check_and_create_ssh_key(installation_info):
 		else:
 			check_and_print_status(create_ssh_key())
 
+# pylint: disable-next=unused-argument
 def __task_scan_and_add_ssh_keys(installation_info):
 	"""
 	An installer task that scans all specified control planes for public ssh keys
@@ -806,8 +805,6 @@ def __task_scan_and_add_ssh_keys(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	controlplanes = get_control_planes()
 	hosts = [controlplane[0] for controlplane in controlplanes]
@@ -818,6 +815,7 @@ def __task_scan_and_add_ssh_keys(installation_info):
 
 	scan_and_add_ssh_keys(hosts)
 
+# pylint: disable-next=unused-argument
 def __task_add_ssh_keys_to_inventory(installation_info):
 	"""
 	An installer task that adds SSH keys to the iKT inventory
@@ -825,8 +823,6 @@ def __task_add_ssh_keys_to_inventory(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	pubkey = None
 	d = ansible_get_inventory_dict()
@@ -859,6 +855,7 @@ def __task_add_ssh_keys_to_inventory(installation_info):
 	__vars["authorized_keys"] = __authorized_keys
 	ansible_set_vars(ANSIBLE_INVENTORY, "all", __vars)
 
+# pylint: disable-next=unused-argument
 def __task_check_and_add_ssh_keys_to_authorized_keys(installation_info):
 	"""
 	An installer task that adds SSH keys to authorized keys
@@ -866,8 +863,6 @@ def __task_check_and_add_ssh_keys_to_authorized_keys(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	add_ssh_keys_to_authorized_keys()
 
@@ -899,6 +894,7 @@ def install_ansible_posix():
 
 	return True
 
+# pylint: disable-next=unused-argument
 def __task_check_and_install_ansible_posix(installation_info):
 	"""
 	An installer task that installs ansible-posix
@@ -906,8 +902,6 @@ def __task_check_and_install_ansible_posix(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	check_and_print_status(install_ansible_posix())
 
@@ -1076,6 +1070,7 @@ def check_versions(deb_packages, version_checks):
 
 	return deb_versions, other_versions
 
+# pylint: disable-next=unused-argument
 def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False):
 	"""
 	Run a playbook
@@ -1089,9 +1084,6 @@ def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False)
 			retval (int): The return value from ansible_run_playbook_on_selection()
 			ansible_results (dict): A dict with the results from the run
 	"""
-
-	# Eventually we should be using this
-	del quiet
 
 	# Set necessary Ansible keys before running playbooks
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
@@ -1258,6 +1250,7 @@ def populate_playbooks_from_dir(path):
 
 	return populate_playbooks_from_paths(playbook_paths)
 
+# pylint: disable-next=unused-argument
 def __task_request_ansible_password(installation_info):
 	"""
 	An installer task that requests the ansible password
@@ -1265,8 +1258,6 @@ def __task_request_ansible_password(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	# Check whether ansible_password is defined or not
 	if deep_get(ansible_configuration, "ansible_password") is None and no_password == False:
@@ -1312,7 +1303,7 @@ def __selection_localhost():
 
 	return [socket.gethostname()]
 
-# Run preparation playbooks on localhost
+# pylint: disable-next=unused-argument
 def __task_run_preparation_playbooks_on_localhost(installation_info):
 	"""
 	An installer task that runs preparation playbooks on localhost
@@ -1320,8 +1311,6 @@ def __task_run_preparation_playbooks_on_localhost(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(prepare_targets["localhost"]["playbooks"])
@@ -1355,6 +1344,7 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info):
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
+# pylint: disable-next=unused-argument
 def __task_setup_bash_completion(installation_info):
 	"""
 	An installer task that sets up bash completion
@@ -1362,8 +1352,6 @@ def __task_setup_bash_completion(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	args = ["/usr/bin/kubectl", "completion", "bash"]
 	result = execute_command_with_response(args)
@@ -1547,6 +1535,7 @@ def __task_setup_kubeadm_cni(installation_info):
 	# If everything is successful so far we deploy the pod network
 	__setup_cni(cni, pod_network_cidr, context_name, cluster_name)
 
+# pylint: disable-next=unused-argument
 def __task_drain_control_planes(installation_info):
 	"""
 	An installer task that drains control plains
@@ -1554,8 +1543,6 @@ def __task_drain_control_planes(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	controlplanes = __selection_control_planes()
 
@@ -1588,6 +1575,7 @@ def __task_drain_control_planes(installation_info):
 	for controlplane in controlplanes:
 		check_and_print_status(execute_command(args + [controlplane]))
 
+# pylint: disable-next=unused-argument
 def __task_uncordon_control_planes(installation_info):
 	"""
 	An installer task that uncordons control planes
@@ -1595,8 +1583,6 @@ def __task_uncordon_control_planes(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	controlplanes = __selection_control_planes()
 
@@ -1617,7 +1603,7 @@ def __task_uncordon_control_planes(installation_info):
 			iktprint([(f"    {message}", "error")], stderr = True)
 			sys.exit(errno.EINVAL)
 
-# Run pre-upgrade playbooks on localhost
+# pylint: disable-next=unused-argument
 def __task_run_preupgrade_playbooks_on_localhost(installation_info):
 	"""
 	An installer task that runs pre-upgrade playbooks on localhost
@@ -1625,8 +1611,6 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(upgrade_control_plane_targets["localhost"]["playbooks"])
@@ -1636,7 +1620,7 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info):
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
-# Run pre-upgrade playbooks on control planes
+# pylint: disable-next=unused-argument
 def __task_run_preupgrade_playbooks_on_control_planes(installation_info):
 	"""
 	An installer task that runs pre-upgrade playbooks on control planes
@@ -1644,8 +1628,6 @@ def __task_run_preupgrade_playbooks_on_control_planes(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	selection = __selection_control_planes()
 	paths = __playbook_paths_from_path(os.path.join(IKT_HOOKS_DIR, "pre-upgrade.d"))
@@ -1673,7 +1655,7 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info):
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
-# Run post-upgrade playbooks on control planes
+# pylint: disable-next=unused-argument
 def __task_run_postupgrade_playbooks_on_control_planes(installation_info):
 	"""
 	An installer task that runs post-upgrade playbooks on control planes
@@ -1682,14 +1664,12 @@ def __task_run_postupgrade_playbooks_on_control_planes(installation_info):
 			installation_info (dict): A dict with installation information (Unused)
 	"""
 
-	del installation_info
-
 	selection = __selection_control_planes()
 	paths = __playbook_paths_from_path(os.path.join(IKT_HOOKS_DIR, "post-upgrade.d"))
 	playbooks = populate_playbooks_from_paths(paths)
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
-# Verify that the cluster has no nodes
+# pylint: disable-next=unused-argument
 def __task_verify_that_cluster_has_no_nodes(installation_info):
 	"""
 	An installer task that verifies that no non-control plane nodes remain in the cluster
@@ -1697,8 +1677,6 @@ def __task_verify_that_cluster_has_no_nodes(installation_info):
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
-
-	del installation_info
 
 	node_statuses, _kh = __get_node_info()
 
@@ -2261,6 +2239,7 @@ def import_cluster(options, args):
 
 	iktprint([("\nCluster import successful", "success")])
 
+# pylint: disable-next=unused-argument
 def check_for_updates(options, args):
 	"""
 	Check whether there are newer versions of packages that are related to the cluster
@@ -2269,8 +2248,6 @@ def check_for_updates(options, args):
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): Options to use when executing this action
 	"""
-
-	del args
 
 	# default options
 	update_cache = True
@@ -2539,6 +2516,7 @@ def get_control_planes(fail_on_empty = True):
 		controlplanes.append((controlplane, ip))
 	return controlplanes
 
+# pylint: disable-next=unused-argument
 def teardown_control_plane(options, args):
 	"""
 	Teardown an existing control plane
@@ -2547,8 +2525,6 @@ def teardown_control_plane(options, args):
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): Options to use when executing this action
 	"""
-
-	del args
 
 	confirm = True
 
@@ -2895,6 +2871,7 @@ def upgrade_control_plane(options, args):
 
 	iktprint([("\nControl plane upgrade successful", "success")])
 
+# pylint: disable-next=unused-argument
 def taint_control_plane(options, args):
 	"""
 	Taint a control plane
@@ -2903,8 +2880,6 @@ def taint_control_plane(options, args):
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): Options to use when executing this action
 	"""
-
-	del options
 
 	node_statuses, kh = __get_node_info()
 
@@ -2947,6 +2922,7 @@ def taint_control_plane(options, args):
 		iktprint([("Warning:", "warning"), (" No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
+# pylint: disable-next=unused-argument
 def untaint_control_plane(options, args):
 	"""
 	Untaint a control plane
@@ -2955,8 +2931,6 @@ def untaint_control_plane(options, args):
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): Options to use when executing this action
 	"""
-
-	del options
 
 	node_statuses, kh = __get_node_info()
 
@@ -2999,7 +2973,28 @@ def untaint_control_plane(options, args):
 		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-def check_security_disable_strict_host_key_checking(cluster_name, kubeconfig, iktconfig_dict, user, security, error, warning, note):
+# pylint: disable-next=too-many-arguments,unused-argument
+def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfig, iktconfig_dict, user: str, security: int, error: int, warning: int, note: int):
+	"""
+	This checks whether or not strict host key checking has been disabled in iktconfig
+
+		Parameters:
+			cluster_name (str): The name of the cluster
+			kubeconfig (dict)): The kubeconfig file
+			iktconfig_dict (dict): The iktconfig file
+			user (str): The user ikt is executing as
+			security (int): The current count of security level issues
+			error (int): The current count of error level issues
+			warning (int): The current count of warning level issues
+			note (int): The current count of note level issues
+		Returns:
+			security (int), error (int), warning (int), note (int):
+				The new count of security level issues
+				error: The new count of error level issues
+				warning: The new count of warning level issues
+				note: The new count of note level issues
+	"""
+
 	iktprint([("[Checking for insecure configuration options in ", "phase"), (f"{IKT_CONFIG_FILE}", "path"), ("]", "phase")])
 	disablestricthostkeychecking = deep_get(iktconfig_dict, "Nodes#disablestricthostkeychecking", False)
 	if disablestricthostkeychecking == False:
@@ -3014,6 +3009,7 @@ def check_security_disable_strict_host_key_checking(cluster_name, kubeconfig, ik
 
 	return security, error, warning, note
 
+# pylint: disable-next=unused-argument
 def preflight_check(options, args):
 	"""
 	Run preflight checks before creating a new cluster
@@ -3023,9 +3019,6 @@ def preflight_check(options, args):
 			args (list[str]): Options to use when executing this action
 	"""
 
-	del options
-	del args
-
 	security = 0
 	error = 0
 	warning = 0
@@ -3033,7 +3026,7 @@ def preflight_check(options, args):
 
 	user = getuser()
 	cluster_name = get_cluster_name()
-	with open(f"{KUBE_CONFIG_FILE}", "r") as f:
+	with open(f"{KUBE_CONFIG_FILE}", "r", encoding = "utf-8") as f:
 		kubeconfig = yaml.safe_load(f)
 
 	security, error, warning, note = check_security_disable_strict_host_key_checking(cluster_name, kubeconfig, iktconfig, user, security, error, warning, note)
@@ -3114,6 +3107,7 @@ def preflight_check(options, args):
 	iktprint([(f"Warnings: {warning}", "warning")])
 	iktprint([(f"   Notes: {note}", "note")])
 
+# pylint: disable-next=unused-argument
 def troubleshoot(options, args):
 	"""
 	Troubleshoot issues in a cluster
@@ -3123,9 +3117,6 @@ def troubleshoot(options, args):
 			args (list[str]): Options to use when executing this action
 	"""
 
-	del options
-	del args
-
 	security = 0
 	error = 0
 	warning = 0
@@ -3134,7 +3125,7 @@ def troubleshoot(options, args):
 
 	user = getuser()
 	cluster_name = get_cluster_name()
-	with open(f"{KUBE_CONFIG_FILE}", "r") as f:
+	with open(f"{KUBE_CONFIG_FILE}", "r", encoding = "utf-8") as f:
 		kubeconfig = yaml.safe_load(f)
 
 	# First start with the really basic: does the cluster respond?
@@ -3652,6 +3643,10 @@ def main():
 	"""
 	Main function for the program
 	"""
+
+	# Before doing anything else, make sure that the user isn't running as root
+	if os.geteuid() == 0:
+		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 
 	init_iktprint(DEFAULT_THEME_FILE)
 

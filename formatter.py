@@ -26,7 +26,18 @@ def __str_representer(dumper, data):
 		return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
 	return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
+# pylint: disable-next=unused-argument
 def format_binary(lines, **kwargs):
+	"""
+	Binary "formatter"; Just returns a message saying that binary views cannot be viewed
+
+		Parameters:
+			lines (opaque): Unused
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
 	return [([("Binary file; cannot view", ("types", "generic"))])]
 
 def format_none(lines, **kwargs):

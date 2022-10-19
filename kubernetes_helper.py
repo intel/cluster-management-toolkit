@@ -31,9 +31,10 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
-# from ikttypes import FilePath
+# from ikttypes import FilePath, StatusGroup
 from iktpaths import KUBE_CONFIG_FILE
-from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, execute_command_with_response, get_since, StatusGroup, timestamp_to_datetime, versiontuple
+from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, execute_command_with_response, get_since, timestamp_to_datetime, versiontuple
+from ikttypes import StatusGroup
 
 # A list of all K8s resources we have some knowledge about
 kubernetes_resources = {
@@ -2337,7 +2338,7 @@ class KubernetesHelper:
 		# If we find a context where the authinfo mentions admin, pick that one,
 		# otherwise just find the first context for each cluster
 		for cluster, data in __clusters.items():
-			clusters.append((cluster, __clusters[cluster]["context"]))
+			clusters.append((cluster, data["context"]))
 
 		return clusters
 

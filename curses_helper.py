@@ -24,11 +24,10 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import FilePath
+from ikttypes import FilePath, LogLevel, Retval, StatusGroup, loglevel_to_name, stgroup_mapping
 
 import iktlib
-from iktlib import deep_get, stgroup_mapping
-from logparser import LogLevel, loglevel_to_name
+from iktlib import deep_get
 
 theme = {} # type: ignore
 
@@ -45,18 +44,6 @@ class curses_configuration:
 	mousescroll_up = 0b10000000000000000
 	mousescroll_down = 0b1000000000000000000000000000
 
-# pylint: disable-next=too-few-public-methods
-class retval:
-	"""
-	Return values from the UI functions
-	"""
-
-	NOMATCH = 0	# No keypress matched/processed; further checks needed (if any)
-	MATCH = 1	# keypress matched/processed; no further action
-	RETURNONE = 2	# keypress matched/processed; return up one level
-	RETURNFULL = 3	# keypress matched/processed, callback called; return up entire callstack
-	RETURNDONE = 4	# We've done our Return One
-
 def set_mousemask(mask):
 	"""
 	Enable/disable mouse support
@@ -66,7 +53,7 @@ def set_mousemask(mask):
 	curses.mousemask(mask)
 	mousemask = mask
 
-def get_mousemask():
+def get_mousemask() -> int:
 	"""
 	Get the default mouse mask
 	"""
@@ -97,17 +84,17 @@ def get_theme_ref():
 
 	return theme
 
-def __color_name_to_curses_color(color, color_type):
+def __color_name_to_curses_color(color, color_type: str) -> int:
 	if isinstance(color, list):
 		col, attr = color
-		if not isinstance(attr, str):
+		if not isinstance(attr, str) or attr not in ["normal", "bright"]:
 			raise ValueError("Invalid color attribute used in theme; attribute has to be a string and one of: normal, bright")
 		if isinstance(col, str):
 			col = col.lower()
 	else:
 		col = color.lower()
 
-	if not isinstance(col, str):
+	if not isinstance(col, str) or col not in color_map:
 		raise ValueError(f"Invalid color type used in theme; color has to be a string and one of: {', '.join(color_map.keys())}")
 
 	if attr == "bright":
@@ -128,7 +115,7 @@ def __convert_color_pair(color_pair):
 
 	return (fg, bg)
 
-def init_pair(pair, color_pair, color_nr):
+def __init_pair(pair: str, color_pair, color_nr: int) -> None:
 	fg, bg = color_pair
 	bright_black_remapped = False
 
@@ -137,7 +124,7 @@ def init_pair(pair, color_pair, color_nr):
 		if fg == bg:
 			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 	except (curses.error, ValueError) as e:
-		if str(e) in ("init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
+		if str(e) in ("curses.init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
 			# Most likely we failed due to the terminal only
 			# supporting colours 0-7. If "bright black" was
 			# requested, we need to remap it. Fallback to blue;
@@ -151,7 +138,7 @@ def init_pair(pair, color_pair, color_nr):
 		else:
 			raise
 
-def read_theme(configthemefile: FilePath, defaultthemefile: FilePath):
+def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 	global theme # pylint: disable=global-statement
 	themefile = None
 
@@ -167,7 +154,7 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath):
 	with open(themefile, encoding = "utf-8") as f:
 		theme = yaml.safe_load(f)
 
-def init_curses():
+def init_curses() -> None:
 	color_last = 1
 
 	# First we set the colour palette
@@ -197,21 +184,21 @@ def init_curses():
 			selected = __convert_color_pair(theme["color_pairs_curses"][pair]["selected"])
 
 		if unselected not in __pairs:
-			init_pair(pair, unselected, color_last)
+			__init_pair(pair, unselected, color_last)
 			__pairs[unselected] = curses.color_pair(color_last)
 			color_last += 1
 		unselected_index = __pairs[unselected]
 		if selected not in __pairs:
-			init_pair(pair, selected, color_last)
+			__init_pair(pair, selected, color_last)
 			__pairs[selected] = curses.color_pair(color_last)
 			color_last += 1
 		selected_index = __pairs[selected]
 		__color[pair] = (unselected_index, selected_index)
 
-def color_log_severity(severity, selected):
+def color_log_severity(severity: LogLevel, selected: bool):
 	return ("logview", f"severity_{loglevel_to_name(severity).lower()}", selected)
 
-def color_status_group(status_group, selected = False):
+def color_status_group(status_group: StatusGroup, selected: bool = False):
 	return ("main", stgroup_mapping[status_group], selected)
 
 def window_tee_hline(win, y, start, end, attribute = None):
@@ -427,7 +414,8 @@ def percentagebar(win, y, minx, maxx, total, subsets):
 	ax = barpos
 	for subset in subsets:
 		rx = 0
-		pct, col = subset
+		pct, themeattr = subset
+		col = attr_to_curses_merged(themeattr[0], themeattr[1])
 		subsetwidth = int((pct / total) * barwidth)
 
 		while rx < subsetwidth and ax < barwidth:
@@ -595,7 +583,7 @@ def inputbox(stdscr, y, x, height, width, title):
 def confirmationbox(stdscr, y, x, title = "", default = False):
 	global ignoreinput # pylint: disable=global-statement
 	ignoreinput = False
-	__retval = default
+	retval = default
 
 	default_option = "Y/n" if default else "y/N"
 	question = f"Are you sure [{default_option}]: "
@@ -635,11 +623,11 @@ def confirmationbox(stdscr, y, x, title = "", default = False):
 			break
 
 		if c in (ord("y"), ord("Y")):
-			__retval = True
+			retval = True
 			break
 
 		if c in (ord("n"), ord("N")):
-			__retval = False
+			retval = False
 			break
 
 	del win
@@ -647,7 +635,7 @@ def confirmationbox(stdscr, y, x, title = "", default = False):
 	stdscr.noutrefresh()
 	curses.doupdate()
 
-	return __retval
+	return retval
 
 # pylint: disable-next=too-many-arguments
 def move_cur_with_offset(curypos, listlen, yoffset, maxcurypos, maxyoffset, movement, wraparound = False):
@@ -681,7 +669,7 @@ def move_cur_with_offset(curypos, listlen, yoffset, maxcurypos, maxyoffset, move
 				newyoffset = max(yoffset + movement + curypos, 0)
 	return newcurypos, newyoffset
 
-def addstr(win, string, y = -1, x = -1, attribute = curses.A_NORMAL):
+def __addstr(win, string, y = -1, x = -1, attribute = curses.A_NORMAL):
 	cury, curx = win.getyx()
 	winmaxy, winmaxx = win.getmaxyx()
 	newmaxy = max(y, winmaxy)
@@ -695,15 +683,15 @@ def addstr(win, string, y = -1, x = -1, attribute = curses.A_NORMAL):
 	cury, curx = win.getyx()
 	return cury, curx
 
-def addarray(win, array, y = -1, x = -1):
+def __addformattedarray(win, array, y = -1, x = -1):
 	# This way we can print a single (string, attr) too
 	if isinstance(array, tuple):
 		array = [array]
 
 	for string, attr in array:
 		if isinstance(attr, tuple):
-			raise TypeError(f"addarray() called with attr: {attr} (type: tuple); must be integer")
-		y, x = addstr(win, string, y, x, attr)
+			raise TypeError(f"__addformattedarray() called with attr: {attr} (type: tuple); must be integer")
+		y, x = __addstr(win, string, y, x, attr)
 	return y, x
 
 # addthemearray() takes an array as input.
@@ -734,11 +722,11 @@ def addthemearray(win, array, y = -1, x = -1, selected = False):
 				attr = _p3
 			else:
 				attr = attr_to_curses_merged(context, _p3, selected = _selected)
-			y, x = addstr(win, string, y, x, attr)
+			y, x = __addstr(win, string, y, x, attr)
 		elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
 			string = _p1
 			attr = _p2
-			y, x = addstr(win, string, y, x, attr)
+			y, x = __addstr(win, string, y, x, attr)
 		else:
 			if isinstance(_p1, tuple):
 				context, attr_ref = _p1
@@ -749,7 +737,7 @@ def addthemearray(win, array, y = -1, x = -1, selected = False):
 				_selected = selected
 
 			strarray = themearray_to_strarray(attr_ref, context = context, selected = _selected)
-			y, x = addarray(win, strarray, y = y, x = x)
+			y, x = __addformattedarray(win, strarray, y = y, x = x)
 	return y, x
 
 class WidgetLineAttrs(IntFlag):
@@ -890,7 +878,7 @@ def strarray_extract_string(strarray):
 			string += _string
 	return string
 
-def strarray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
+def themearray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
 	if maxwidth == -1 or len(strarray_extract_string(strarray)) < maxwidth:
 		return [strarray]
 
@@ -1230,6 +1218,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 		stdscr.timeout(100)
 		oldcurypos = curypos
 		oldyoffset = yoffset
+
 		c = stdscr.getch()
 		if c == 27:	# ESCAPE
 			selection = ""
@@ -1554,7 +1543,7 @@ class UIProps:
 			self.sorted_list = natsorted(self.info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse)
 		except TypeError:
 			# We couldn't sort the list; we should log and just keep the current sort order
-			raise
+			pass
 
 	def update_info(self, info):
 		self.info = info
@@ -1969,7 +1958,7 @@ class UIProps:
 		return self.tspad, self.logpad
 
 	# Pass -1 to keep the current height/width
-	# Calling this function directly isn't necessary; the pad never grows down, and self.addstr() calls this when x grows
+	# Calling this function directly isn't necessary; the pad never grows down, and self.__addstr() calls this when x grows
 	def resize_logpad(self, height, width):
 		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos)
 		if height != -1:
@@ -2054,7 +2043,7 @@ class UIProps:
 			self.statusbar = curses.newpad(2, self.maxx + 1)
 
 	# pylint: disable-next=too-many-arguments
-	def addstr(self, win, string, y = -1, x = -1, attribute = curses.A_NORMAL):
+	def __addstr(self, win, string, y = -1, x = -1, attribute = curses.A_NORMAL):
 		cury, curx = win.getyx()
 		winmaxy, winmaxx = win.getmaxyx()
 		newmaxy = max(y, winmaxy)
@@ -2079,15 +2068,15 @@ class UIProps:
 		cury, curx = win.getyx()
 		return cury, curx
 
-	def addarray(self, win, array, y = -1, x = -1):
+	def __addformattedarray(self, win, array, y = -1, x = -1):
 		# This way we can print a single (string, attr) too
 		if isinstance(array, tuple):
 			array = [array]
 
 		for string, attr in array:
 			if isinstance(attr, tuple):
-				raise TypeError(f"addarray() called with attr: {attr} (type: tuple); must be integer")
-			y, x = self.addstr(win, string, y, x, attr)
+				raise TypeError(f"__addformattedarray() called with attr: {attr} (type: tuple); must be integer")
+			y, x = self.__addstr(win, string, y, x, attr)
 		return y, x
 
 	# addthemearray() takes an array as input.
@@ -2119,11 +2108,11 @@ class UIProps:
 					attr = _p3
 				else:
 					attr = attr_to_curses_merged(context, _p3, selected = _selected)
-				y, x = self.addstr(win, string, y, x, attr)
+				y, x = self.__addstr(win, string, y, x, attr)
 			elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
 				string = _p1
 				attr = _p2
-				y, x = self.addstr(win, string, y, x, attr)
+				y, x = self.__addstr(win, string, y, x, attr)
 			else:
 				if isinstance(_p1, tuple):
 					context, attr_ref = _p1
@@ -2134,7 +2123,7 @@ class UIProps:
 					_selected = selected
 
 				strarray = themearray_to_strarray(attr_ref, context = context, selected = _selected)
-				y, x = self.addarray(win, strarray, y = y, x = x)
+				y, x = self.__addformattedarray(win, strarray, y = y, x = x)
 		return y, x
 
 	def move_xoffset_abs(self, position):
@@ -2694,10 +2683,10 @@ class UIProps:
 	def generic_keycheck(self, c):
 		if c == curses.KEY_RESIZE:
 			self.resize_window()
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == 27:	# ESCAPE
 			del self
-			return retval.RETURNONE
+			return Retval.RETURNONE
 		elif c == curses.KEY_MOUSE:
 			return self.handle_mouse_events(self.listpad, self.sorted_list, self.activatedfun, self.extraref, self.data)
 		elif c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
@@ -2710,23 +2699,23 @@ class UIProps:
 				set_mousemask(0)
 			self.statusbar.erase()
 			self.refresh_all()
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == ord("") or c == ord(""):
 			sys.exit()
 		elif c == curses.KEY_F1 or c == ord("H"):
 			if self.helptext is not None:
 				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, self.helptext, title = "Help", cursor = False)
 			self.refresh_all()
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_F12:
 			if curses_configuration.abouttext is not None:
 				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, curses_configuration.abouttext, title = "About", cursor = False)
 			self.refresh_all()
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_F5:
 			# We need to rate limit this somehow
 			self.force_update()
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == ord("r"):
 			# Reverse the sort order
 			if self.listpad is not None and self.reversible == True:
@@ -2737,89 +2726,89 @@ class UIProps:
 				self.prev_sortcolumn()
 			elif self.logpad is not None and self.continuous_log == False:
 				self.move_xoffset_rel(-(self.logpadminwidth // 2))
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_SRIGHT:
 			if self.listpad is not None:
 				self.next_sortcolumn()
 			elif self.logpad is not None and self.continuous_log == False:
 				self.move_xoffset_rel(self.logpadminwidth // 2)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_UP:
 			if self.listpad is not None:
 				self.move_cur_with_offset(-1)
 			elif self.logpad is not None and self.continuous_log == False:
 				self.move_yoffset_rel(-1)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_DOWN:
 			if self.listpad is not None:
 				self.move_cur_with_offset(1)
 			elif self.logpad is not None and self.continuous_log == False:
 				self.move_yoffset_rel(1)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_LEFT:
 			if self.logpad is not None and self.continuous_log:
-				return retval.MATCH
+				return Retval.MATCH
 
 			self.move_xoffset_rel(-1)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_RIGHT:
 			if self.logpad is not None and self.continuous_log:
-				return retval.MATCH
+				return Retval.MATCH
 
 			self.move_xoffset_rel(1)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_HOME:
 			if self.logpad is not None and self.continuous_log:
-				return retval.MATCH
+				return Retval.MATCH
 
 			self.move_xoffset_abs(0)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_END:
 			if self.logpad is not None and self.continuous_log:
-				return retval.MATCH
+				return Retval.MATCH
 
 			self.move_xoffset_abs(-1)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_SHOME:
 			if self.logpad is not None:
 				if self.continuous_log:
-					return retval.MATCH
+					return Retval.MATCH
 				self.move_yoffset_abs(0)
 			elif self.listpad is not None:
 				self.move_cur_abs(0)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_SEND:
 			if self.logpad is not None:
 				if self.continuous_log:
-					return retval.MATCH
+					return Retval.MATCH
 				self.move_yoffset_abs(-1)
 			elif self.listpad is not None:
 				self.move_cur_abs(-1)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_PPAGE:
 			if self.listpad is not None:
 				self.move_cur_with_offset(-10)
 			elif self.logpad is not None and self.continuous_log == False:
 				self.move_yoffset_rel(-(self.logpadheight - 2))
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_NPAGE:
 			if self.listpad is not None:
 				self.move_cur_with_offset(10)
 			elif self.logpad is not None and self.continuous_log == False:
 				self.move_yoffset_rel(self.logpadheight - 2)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == ord("\t"):
 			if self.listpad is not None:
 				self.next_by_sortkey(self.info)
 			elif self.logpad is not None and self.continuous_log == False:
 				self.next_line_by_severity(self.severities)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == curses.KEY_BTAB:
 			if self.listpad is not None:
 				self.prev_by_sortkey(self.info)
 			elif self.logpad is not None and self.continuous_log == False:
 				self.prev_line_by_severity(self.severities)
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == ord("§"):
 			# For listpads this jumps to the next column
 			if self.listpad is not None:
@@ -2832,7 +2821,7 @@ class UIProps:
 						if tabstop <= self.maxxoffset:
 							self.move_xoffset_abs(tabstop)
 						break
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == ord("½"):
 			# For listpads this jumps to the previous column
 			if self.listpad is not None:
@@ -2844,91 +2833,91 @@ class UIProps:
 					if curxoffset > tabstop:
 						self.move_xoffset_abs(tabstop)
 						break
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == ord("") or c == ord("/"):
 			if self.listpad is not None:
 				if self.listpadheight < 2:
-					return retval.MATCH
+					return Retval.MATCH
 
 				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, f"Search in “{self.sortcolumn}“: ").rstrip().lower()
 				if searchkey is None or searchkey == "":
-					return retval.MATCH
+					return Retval.MATCH
 
 				self.find_next_by_sortkey(self.info, searchkey)
 				self.searchkey = searchkey
 			elif self.logpad is not None:
 				if self.maxyoffset == 0 or self.continuous_log:
-					return retval.MATCH
+					return Retval.MATCH
 
 				self.refresh = True
 				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, "Find: ")
 				if searchkey is None or searchkey == "":
 					self.match_index = None
 					self.search_matches.clear()
-					return retval.MATCH
+					return Retval.MATCH
 
 				self.find_all_matches_by_searchkey(self.messages, searchkey)
 				self.find_next_match()
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == ord("?"):
 			self.search_matches.clear()
 
 			if self.listpad is not None:
 				if self.listpadheight < 2:
-					return retval.MATCH
+					return Retval.MATCH
 
 				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, f"Search in “{self.sortcolumn}“: ").rstrip().lower()
 				if searchkey is None or searchkey == "":
-					return retval.MATCH
+					return Retval.MATCH
 
 				self.find_prev_by_sortkey(self.info, searchkey)
 				self.searchkey = searchkey
 			elif self.logpad is not None:
 				if self.maxyoffset == 0 or self.continuous_log:
-					return retval.MATCH
+					return Retval.MATCH
 
 				self.refresh = True
 				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, "Find: ")
 				if searchkey is None or searchkey == "":
 					self.match_index = None
 					self.search_matches.clear()
-					return retval.MATCH
+					return Retval.MATCH
 
 				self.find_all_matches_by_searchkey(self.messages, searchkey)
 				self.find_next_match()
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == ord("n"):
 			if self.listpad is not None:
 				if self.listpadheight < 2:
-					return retval.MATCH
+					return Retval.MATCH
 
 				if self.searchkey is None or self.searchkey == "":
-					return retval.MATCH
+					return Retval.MATCH
 
 				self.find_next_by_sortkey(self.info, self.searchkey)
 			elif self.logpad is not None:
 				if self.maxyoffset == 0 or self.continuous_log == True or len(self.search_matches) == 0:
-					return retval.MATCH
+					return Retval.MATCH
 
 				self.refresh = True
 				self.find_next_match()
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == ord("p"):
 			if self.listpad is not None:
 				if self.listpadheight < 2:
-					return retval.MATCH
+					return Retval.MATCH
 
 				if self.searchkey is None or self.searchkey == "":
-					return retval.MATCH
+					return Retval.MATCH
 
 				self.find_prev_by_sortkey(self.info, self.searchkey)
 			elif self.logpad is not None:
 				if self.maxyoffset == 0 or self.continuous_log == True or len(self.search_matches) == 0:
-					return retval.MATCH
+					return Retval.MATCH
 
 				self.refresh = True
 				self.find_prev_match()
-			return retval.MATCH
+			return Retval.MATCH
 		elif c == ord("a"):
 			if self.annotations is not None:
 				title = ""
@@ -2937,7 +2926,7 @@ class UIProps:
 					     headers = annotation_headers, title = title, cursor = False)
 
 				self.refresh_all()
-				return retval.MATCH
+				return Retval.MATCH
 		elif c == ord("l"):
 			if self.labels is not None:
 				title = ""
@@ -2946,33 +2935,33 @@ class UIProps:
 					     headers = label_headers, title = title, cursor = False)
 
 				self.refresh_all()
-				return retval.MATCH
+				return Retval.MATCH
 
 		# Nothing good enough for you, eh?
-		return retval.NOMATCH
+		return Retval.NOMATCH
 
 	# Shortcuts used in most view
 	def __exit_program(self, **kwargs) -> NoReturn:
-		__retval = deep_get(kwargs, "retval")
+		retval = deep_get(kwargs, "retval")
 
-		sys.exit(__retval)
+		sys.exit(retval)
 
 	def __refresh_information(self, **kwargs):
 		del kwargs
 
 		# XXX: We need to rate limit this somehow
 		self.force_update()
-		return retval.MATCH, {}
+		return Retval.MATCH, {}
 
 	def __select_menu(self, **kwargs):
 		refresh_apis = deep_get(kwargs, "refresh_apis", False)
 		selectwindow = deep_get(kwargs, "selectwindow")
 
-		__retval = selectwindow(self, refresh_apis = refresh_apis)
-		if __retval == retval.RETURNFULL:
-			return __retval, {}
+		retval = selectwindow(self, refresh_apis = refresh_apis)
+		if retval == Retval.RETURNFULL:
+			return retval, {}
 		self.refresh_all()
-		return __retval, {}
+		return retval, {}
 
 	def __show_about(self, **kwargs):
 		del kwargs
@@ -2980,14 +2969,14 @@ class UIProps:
 		if curses_configuration.abouttext is not None:
 			windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, curses_configuration.abouttext, title = "About", cursor = False)
 		self.refresh_all()
-		return retval.MATCH, {}
+		return Retval.MATCH, {}
 
 	def __show_help(self, **kwargs):
 		helptext = deep_get(kwargs, "helptext")
 
 		windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, helptext, title = "Help", cursor = False)
 		self.refresh_all()
-		return retval.MATCH, {}
+		return Retval.MATCH, {}
 
 	def __toggle_mouse(self, **kwargs):
 		del kwargs
@@ -2999,7 +2988,7 @@ class UIProps:
 			set_mousemask(0)
 		self.statusbar.erase()
 		self.refresh_all()
-		return retval.MATCH, {}
+		return Retval.MATCH, {}
 
 	def __toggle_borders(self, **kwargs):
 		del kwargs
@@ -3007,7 +2996,7 @@ class UIProps:
 		self.toggle_borders()
 		self.refresh_all()
 		self.force_update()
-		return retval.MATCH, {}
+		return Retval.MATCH, {}
 
 	def generate_helptext(self, shortcuts, **kwargs):
 		"""
@@ -3067,7 +3056,7 @@ class UIProps:
 				shortcuts (dict): View-specific shortcuts
 				kwargs (dict): Additional parameters
 			Returns:
-				(int, dict): retval, return_args
+				(Retval, dict): retval, return_args
 		"""
 
 		__common_shortcuts = {
@@ -3139,15 +3128,15 @@ class UIProps:
 		c = self.stdscr.getch()
 
 		# Default return value if we don't manage to match anything
-		__retval = retval.NOMATCH
+		retval = Retval.NOMATCH
 
 		if c == curses.KEY_RESIZE:
 			self.resize_window()
-			return retval.MATCH, {}
+			return Retval.MATCH, {}
 
 		if c == 27:	# ESCAPE
 			del self
-			return retval.RETURNONE, {}
+			return Retval.RETURNONE, {}
 
 		if c == curses.KEY_MOUSE:
 			return self.handle_mouse_events(self.listpad, self.sorted_list, self.activatedfun, self.extraref, self.data), {}
@@ -3192,4 +3181,4 @@ class UIProps:
 				if action == "key_callback":
 					return action_call(**action_args)
 
-		return __retval, {}
+		return retval, {}

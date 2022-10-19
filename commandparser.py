@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 """
-This module parsers command line options and generate helptexts
+This module parses command line options and generate helptexts
 """
 
 import errno

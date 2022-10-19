@@ -25,7 +25,6 @@ import ast
 from collections import namedtuple
 from datetime import datetime
 import difflib
-from enum import IntEnum
 # ujson is much faster than json,
 # but it might not be available
 try:
@@ -47,41 +46,11 @@ except ModuleNotFoundError:
 
 from iktpaths import HOMEDIR, PARSER_DIR
 
+from ikttypes import LogLevel, loglevel_mappings, loglevel_to_name
+
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig, deep_get_with_fallback
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
-
-class LogLevel(IntEnum):
-	"""
-	Loglevels used by iKT
-	"""
-	EMERG = 0
-	ALERT = 1
-	CRIT = 2
-	ERR = 3
-	WARNING = 4
-	NOTICE = 5
-	INFO = 6
-	DEBUG = 7
-	DIFFPLUS = 8
-	DIFFMINUS = 9
-	DIFFSAME = 10
-	ALL = 255
-
-loglevel_mappings = {
-	LogLevel.EMERG: "Emergency",
-	LogLevel.ALERT: "Alert",
-	LogLevel.CRIT: "Critical",
-	LogLevel.ERR: "Error",
-	LogLevel.WARNING: "Warning",
-	LogLevel.NOTICE: "Notice",
-	LogLevel.INFO: "Info",
-	LogLevel.DEBUG: "Debug",
-	LogLevel.DIFFPLUS: "Diffplus",
-	LogLevel.DIFFMINUS: "Diffminus",
-	LogLevel.DIFFSAME: "Diffsame",
-	LogLevel.ALL: "Debug",
-}
 
 class logparser_configuration:
 	"""
@@ -130,16 +99,12 @@ if json_is_ujson:
 else:
 	def json_dumps(obj) -> str:
 		"""
-		Dump JSON object to text format; ujson version
+		Dump JSON object to text format; json version
 
 			Parameters:
 				obj (dict): The JSON object to dump
 			Returns:
 				str: The serialized JSON object
-		"""
-
-		"""
-		Dump JSON object to text format; json version
 		"""
 
 		indent = 2
@@ -153,17 +118,6 @@ def get_loglevel_names():
 			list[str]: The unique severities
 	"""
 	return list(dict.fromkeys(list(loglevel_mappings.values())))
-
-def loglevel_to_name(loglevel: LogLevel) -> str:
-	"""
-	Given a numerical loglevel, return its severity string
-
-		Parameters:
-			loglevel (int): The corresponding numerical loglevel
-		Returns:
-			severity (str): A severity string
-	"""
-	return loglevel_mappings[min(LogLevel.DIFFSAME, loglevel)]
 
 def name_to_loglevel(severity: str) -> LogLevel:
 	"""
@@ -946,6 +900,7 @@ def merge_message(message, remnants = None, severity = LogLevel.INFO):
 
 	return message, remnants
 
+# pylint: disable-next=too-many-arguments
 def split_json_style_raw(message, severity = LogLevel.INFO, facility = "", fold_msg: bool = True, options = None, merge_msg = False):
 	# This warning seems incorrect
 	# pylint: disable-next=global-variable-not-assigned
@@ -1303,6 +1258,7 @@ def expand_event(message, severity, remnants = None, fold_msg = True):
 
 	return severity, message, remnants
 
+# pylint: disable-next=too-many-nested-blocks
 def expand_header_key_value(message, severity, remnants = None, fold_msg = True):
 	if fold_msg == True or (remnants is not None and len(remnants) > 0):
 		return message, remnants
@@ -1312,6 +1268,7 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 	# Split into substrings based on spaces
 	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
 
+	# pylint: disable-next=too-many-nested-blocks
 	if tmp is not None and len(tmp) > 0:
 		if "=" not in tmp[0]:
 			header = f"{tmp[0]}: "
@@ -1427,6 +1384,7 @@ def key_value(message, severity = LogLevel.INFO, facility = "", fold_msg = True,
 	# split all key=value pairs
 	key_value_regex = re.compile(r"^(.*?)=(.*)")
 	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
+	# pylint: disable-next=too-many-nested-blocks
 	if tmp is not None:
 		d = {}
 		for item in tmp:
@@ -1492,6 +1450,7 @@ def key_value(message, severity = LogLevel.INFO, facility = "", fold_msg = True,
 
 						d.pop(__fac)
 
+		# pylint: disable-next=too-many-boolean-expressions
 		if fold_msg == False and len(d) == 2 and logparser_configuration.merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
 			severity = custom_override_severity(msg, severity, overrides = severity_overrides)
 			message = f"{msg} {version}"
@@ -1558,7 +1517,7 @@ def key_value(message, severity = LogLevel.INFO, facility = "", fold_msg = True,
 					if d_key == "collector" and logparser_configuration.bullet_collectors == True:
 						tmp.append(f"• {d_value}")
 					elif d_key in versions:
-						tmp.append(format_key_value(item, d_value, LogLevel.NOTICE, force_severity = True))
+						tmp.append(format_key_value(d_key, d_value, LogLevel.NOTICE, force_severity = True))
 					else:
 						__severity = custom_override_severity(d_value, severity, overrides = severity_overrides)
 						tmp.append(format_key_value(d_key, d_value, __severity, force_severity = (__severity != severity)))

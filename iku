@@ -50,15 +50,15 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
-from ikttypes import FilePath
+from ikttypes import FilePath, Retval, StatusGroup
 from iktpaths import HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
 from logparser import logparser, logparser_initialised, LogLevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import clamp, deep_get, deep_get_with_fallback, deep_set, disksize_to_human, get_package_versions, iktconfig, make_set_expression_list, StatusGroup, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple
-from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, strarray_wrap_line, attr_to_curses_merged, themearray_to_string, themearray_len
+from iktlib import clamp, deep_get, deep_get_with_fallback, deep_set, disksize_to_human, get_package_versions, iktconfig, make_set_expression_list, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple
+from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, themearray_wrap_line, themearray_to_string, themearray_len
 
 import datagetter
 from datagetter import datagetter_allowlist
@@ -100,7 +100,7 @@ initial_container = None
 read_only_mode = False
 
 # Namespace
-namespace = ""
+selected_namespace = ""
 
 # defaults
 defaultview = ""
@@ -4437,7 +4437,7 @@ def fieldgenerator(view, field_index, field_indexes, fields, denylist):
 	if field_indexes is None or len(field_indexes) == 0:
 		return None, None, None
 
-	if namespace != "" and "namespace" not in denylist:
+	if selected_namespace != "" and "namespace" not in denylist:
 		denylist.append("namespace")
 
 	field_names = deep_get(field_indexes, f"{field_index}#fields", [])
@@ -4492,7 +4492,7 @@ def fieldgenerator(view, field_index, field_indexes, fields, denylist):
 	return tmp_fields, field_names, sortcolumn
 
 def genericlistloop(stdscr, view):
-	global namespace # pylint: disable=global-statement
+	global selected_namespace # pylint: disable=global-statement
 	global initial_name # pylint: disable=global-statement
 	global initial_namespace # pylint: disable=global-statement
 	global latest_info # pylint: disable=global-statement
@@ -4605,12 +4605,12 @@ def genericlistloop(stdscr, view):
 
 				# pylint: disable-next=comparison-with-callable
 				if listgetter == generic_listgetter:
-					vlist, status = listgetter(deep_get(viewref, "kind"), namespace, **listgetter_args)
+					vlist, status = listgetter(deep_get(viewref, "kind"), selected_namespace, **listgetter_args)
 				else:
 					if kind[0].startswith("__"):
 						vlist, status = listgetter(**listgetter_args)
 					else:
-						vlist, status = listgetter(deep_get(viewref, "kind"), namespace, label_selector = label_selector)
+						vlist, status = listgetter(deep_get(viewref, "kind"), selected_namespace, label_selector = label_selector)
 				infogetter_extra_vars["_vlist"] = vlist
 			elif listgetter_async is not None:
 				if async_cb is None:
@@ -4656,8 +4656,13 @@ def genericlistloop(stdscr, view):
 				]
 			statusarray2 = [
 			]
+			if read_only_mode == True:
+				statusarray2 += [("Read Only Mode", ("statusbar", "highlight"))]
+
 			if view != "Contexts" and ("namespace" in denylist or "namespace" in field_names):
-				statusarray2 += [("Namespace: ", ("statusbar", "infoheader")), (f"{namespace if len(namespace) > 0 else '<All>'}", ("statusbar", "highlight"))]
+				if len(statusarray2) > 0:
+					statusarray2 += [("separators", "statusbar")]
+				statusarray2 += [("Namespace: ", ("statusbar", "infoheader")), (f"{selected_namespace if len(selected_namespace) > 0 else '<All>'}", ("statusbar", "highlight"))]
 
 			if len(statusarray2) > 0:
 				statusarray2 += [("separators", "statusbar")]
@@ -4701,7 +4706,7 @@ def genericlistloop(stdscr, view):
 		if unique_match is not None:
 			selected = uip.get_selected()
 			retval = uip.activatedfun(uip.stdscr, unique_match, kind)
-			if retval == curses_helper.retval.RETURNFULL:
+			if retval == Retval.RETURNFULL:
 				return retval
 			uip.force_update()
 			uip.refresh_all()
@@ -4716,21 +4721,21 @@ def genericlistloop(stdscr, view):
 
 		retval = uip.generic_keycheck(c)
 
-		if retval == curses_helper.retval.MATCH:
+		if retval == Retval.MATCH:
 			continue
-		if retval == curses_helper.retval.RETURNONE:
-			return curses_helper.retval.RETURNDONE
-		if retval == curses_helper.retval.RETURNFULL:
+		if retval == Retval.RETURNONE:
+			return Retval.RETURNDONE
+		if retval == Retval.RETURNFULL:
 			return retval
 
 		if c == curses.KEY_F2:
 			retval = selectwindow(uip)
-			if retval == curses_helper.retval.RETURNFULL:
+			if retval == Retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
 		elif c == curses.KEY_F3:
 			retval = selectwindow(uip, refresh_apis = True)
-			if retval == curses_helper.retval.RETURNFULL:
+			if retval == Retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
 		elif c == ord("B"):
@@ -4875,7 +4880,7 @@ def genericlistloop(stdscr, view):
 						continue
 
 				retval = actionfunc(uip, items = [], actions = actionlist[action], values = selection_vars, kind = kind)
-				if retval is not None and retval == curses_helper.retval.RETURNFULL:
+				if retval is not None and retval == Retval.RETURNFULL:
 					return retval
 
 				uip.force_update()
@@ -4887,16 +4892,15 @@ def genericlistloop(stdscr, view):
 				continue
 
 			all_ns = "<All>"
-			if namespace == "":
+			if selected_namespace == "":
 				preselection = all_ns
 			else:
-				preselection = namespace
+				preselection = selected_namespace
 			namespace_list = [{
 				"lineattrs": WidgetLineAttrs.NORMAL,
 				"columns": [[(f"{all_ns}", ("windowwidget", "default"))]],
 				"retval": all_ns,
 			}]
-
 
 			tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
 			if status == 200:
@@ -4909,14 +4913,15 @@ def genericlistloop(stdscr, view):
 
 			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, namespace_list, title = "Select Namespace", cursor = True, preselection = preselection)
 			selection = None
-			if tmpselection is not None and type(tmpselection[0]) == int:
+			if tmpselection is not None and type(tmpselection) == str:
 				selection = tmpselection
-			uip.refresh_all()
+
 			if selection is not None and len(selection) > 0:
 				if selection == all_ns:
-					namespace = ""
+					selected_namespace = ""
 				else:
-					namespace = selection
+					selected_namespace = selection
+
 			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, f"{view}#fields"), denylist = denylist)
 			uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
 			headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = 1, xpos = 1)
@@ -5296,7 +5301,7 @@ def genericlistloop(stdscr, view):
 				selection_vars["_tagged_items"] = list(tagged_items)
 				selection_vars["action_args"] = action_args
 				retval = actionfunc(uip, items, actionlist[action], values = selection_vars, kind = kind, title = title)
-				if retval is not None and retval == curses_helper.retval.RETURNFULL:
+				if retval is not None and retval == Retval.RETURNFULL:
 					return retval
 
 				uip.force_update()
@@ -5400,7 +5405,7 @@ def genericlistloop(stdscr, view):
 						deep_set(listview_args, var, not tmp)
 				elif action == "call" and action_call is not None:
 					retval = action_call(uip.stdscr, **action_args)
-					if retval is not None and retval == curses_helper.retval.RETURNFULL:
+					if retval is not None and retval == Retval.RETURNFULL:
 						return retval
 
 			if force_update == True:
@@ -5409,7 +5414,7 @@ def genericlistloop(stdscr, view):
 def __switch_resource_map(**kwargs):
 	uip = deep_get(kwargs, "uip")
 	uip.refresh_all()
-	return curses_helper.retval.MATCH, {
+	return Retval.MATCH, {
 		"selected_heatmap": deep_get(kwargs, "next_resource_map")
 	}
 
@@ -5461,7 +5466,7 @@ def __resource_map_cursor(**kwargs):
 					uip.force_update()
 					break
 
-	return curses_helper.retval.MATCH, {
+	return Retval.MATCH, {
 		"selected": selected,
 	}
 
@@ -5474,28 +5479,28 @@ def __open_reference(**kwargs):
 
 	if keypress == ord("o"):
 		if node is None:
-			return curses_helper.retval.MATCH, {}
+			return Retval.MATCH, {}
 		name = node
 		namespace = ""
 		kind = ("Node", "")
 	elif keypress == ord("N"):
 		if namespace is None:
-			return curses_helper.retval.MATCH, {}
+			return Retval.MATCH, {}
 		name = namespace
 		namespace = ""
 		kind = ("Namespace", "")
 	else:
 		if pod_name is None:
-			return curses_helper.retval.MATCH, {}
+			return Retval.MATCH, {}
 		name = pod_name
 		kind = ("Pod", "")
 
 	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	retval = resourceinfodispatch(uip.stdscr, ref, kind)
-	if retval is not None and retval == curses_helper.retval.RETURNFULL:
+	if retval is not None and retval == Retval.RETURNFULL:
 		return retval, {}
 	uip.force_update()
-	return curses_helper.retval.MATCH, {}
+	return Retval.MATCH, {}
 
 def __fetch_package_versions(**kwargs):
 	uip = deep_get(kwargs, "uip")
@@ -5519,11 +5524,11 @@ def __fetch_package_versions(**kwargs):
 	uip.refresh_statusbar()
 	curses.doupdate()
 	if len(package_versions) == 0:
-		return curses_helper.retval.MATCH, {}
+		return Retval.MATCH, {}
 	title = "Package Versions:"
 	headers = ["Package:", "Version:"]
 	curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, package_versions, title = title, headers = headers, cursor = False)
-	return curses_helper.retval.MATCH, {}
+	return Retval.MATCH, {}
 
 clusteroverview_shortcuts = {
 	"__common_shortcuts": [
@@ -5878,18 +5883,18 @@ def clusteroverviewloop(stdscr, view):
 			# low-priority (bold blue) / normal (green) / kernel (red) / virtualized (cyan)
 			# This is aggregate over all CPUs
 			curses_helper.percentagebar(infopad, 6, 6, uip.infopadwidth - 10, cputimetotal, [
-				(cputimeusernice, attr_to_curses_merged("types", "cputime_user_nice")),
-				(cputimeuser, attr_to_curses_merged("types", "cputime_user")),
-				(cputimetotalsystem, attr_to_curses_merged("types", "cputime_total_system")),
-				(cputimetotalguest, attr_to_curses_merged("types", "cputime_total_guest"))
+				(cputimeusernice, ("types", "cputime_user_nice")),
+				(cputimeuser, ("types", "cputime_user")),
+				(cputimetotalsystem, ("types", "cputime_total_system")),
+				(cputimetotalguest, ("types", "cputime_total_guest"))
 			])
 
 			# memory usage:
 			# used (green) / buffers (bold blue) / cache (yellow)
 			curses_helper.percentagebar(infopad, 7, 6, uip.infopadwidth - 10, memtotal, [
-				(memused - memcached - buffers, attr_to_curses_merged("types", "mem")),
-				(buffers, attr_to_curses_merged("types", "buffers")),
-				(memcached, attr_to_curses_merged("types", "cached"))
+				(memused - memcached - buffers, ("types", "mem")),
+				(buffers, ("types", "buffers")),
+				(memcached, ("types", "cached"))
 			])
 
 			# swap usage:
@@ -6014,11 +6019,11 @@ def clusteroverviewloop(stdscr, view):
 		if "selected_heatmap" in return_args:
 			selected_heatmap = deep_get(return_args, "selected_heatmap")
 
-		if retval == curses_helper.retval.MATCH:
+		if retval == Retval.MATCH:
 			continue
-		if retval == curses_helper.retval.RETURNONE:
-			return curses_helper.retval.RETURNDONE
-		if retval == curses_helper.retval.RETURNFULL:
+		if retval == Retval.RETURNONE:
+			return Retval.RETURNDONE
+		if retval == Retval.RETURNFULL:
 			return retval
 
 # These are based on attributes of the name of the cmdata
@@ -6204,7 +6209,7 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 
 		# Get the Kubernetes version
 		# XXX: we can get this using the playbook
-		args = ["kubectl", "version", "-o", "yaml"]
+		args = ["/usr/bin/kubectl", "version", "-o", "yaml"]
 		try:
 			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = True)
 		except subprocess.CalledProcessError:
@@ -6243,7 +6248,7 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 				f.flush()
 
 				# Apply the new configuration
-				args = ["kubectl" , "apply", "-f"]
+				args = ["/usr/bin/kubectl" , "apply", "-f"]
 				executecommand_multiple(stdscr, f"Updating weave to {new_version}", args, [ f.name ], True)
 				f.close()
 		pm.clear()
@@ -6268,13 +6273,13 @@ def __update_cni(uip, **kwargs):
 
 	# If we don't recognise the CNI or we don't support updates we cannot update it
 	if update_cni(uip.stdscr, cni, cni_version, candidate_version, dry_run = True) == False:
-		return curses_helper.retval.MATCH
+		return Retval.MATCH
 
 		# Try to download and install an update for weave
 		if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Update {cni} to version {candidate_version}:", default = False):
 			update_cni(uip.stdscr, cni, cni_version, candidate_version)
 		uip.refresh_all()
-	return curses_helper.retval.MATCH, {}
+	return Retval.MATCH, {}
 
 cniloop_shortcuts = {
 	"__common_shortcuts": [
@@ -6398,11 +6403,11 @@ def cniloop(stdscr, view):
 
 		retval, return_args = uip.generic_inputhandler(cniloop_shortcuts, **input_args)
 
-		if retval == curses_helper.retval.MATCH:
+		if retval == Retval.MATCH:
 			continue
-		if retval == curses_helper.retval.RETURNONE:
-			return curses_helper.retval.RETURNDONE
-		if retval == curses_helper.retval.RETURNFULL:
+		if retval == Retval.RETURNONE:
+			return Retval.RETURNDONE
+		if retval == Retval.RETURNFULL:
 			return retval
 
 def decode_and_view_data(stdscr, **kwargs):
@@ -6590,7 +6595,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	uip = UIProps(stdscr)
 
 	if view not in infoviews:
-		return curses_helper.retval.NOMATCH
+		return Retval.NOMATCH
 
 	viewref = infoviews[view]
 
@@ -6600,7 +6605,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	if objgetter is not None:
 		obj = objgetter(obj)
 		if obj is None or len(obj) == 0:
-			return curses_helper.retval.NOMATCH
+			return Retval.NOMATCH
 
 	# XXX: For now we don't support custom fields for the lists on the info pages
 	field_indexes = deep_get(viewref, "field_indexes", {})
@@ -6823,7 +6828,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						"columns": [[("Resource not available; it may have been deleted", ("types", "generic"))]],
 					}]
 					curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, errormsg, title = title, cursor = False)
-					return curses_helper.retval.RETURNDONE
+					return Retval.RETURNDONE
 
 			uip.update_window()
 
@@ -7025,7 +7030,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					maxwidth = uip.logpadminwidth + sideadjust
 				else:
 					maxwidth = -1
-				_lines = strarray_wrap_line(message, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
+				_lines = themearray_wrap_line(message, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
 				for i, _line in enumerate(_lines):
 					if y + yadd + i >= uip.logpadheight:
 						break
@@ -7107,7 +7112,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						retval = uip.activatedfun(uip.stdscr, deep_get(obj, f"data#{match}", ""), ikind, info = None, title = name, **on_activation_args)
 					else:
 						retval = uip.activatedfun(uip.stdscr, match, ikind, info = obj, **on_activation_args)
-					if retval == curses_helper.retval.RETURNFULL:
+					if retval == Retval.RETURNFULL:
 						return retval
 					uip.force_update()
 					uip.refresh_all()
@@ -7117,21 +7122,21 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		c = uip.stdscr.getch()
 		retval = uip.generic_keycheck(c)
 
-		if retval == curses_helper.retval.MATCH:
+		if retval == Retval.MATCH:
 			continue
-		if retval == curses_helper.retval.RETURNONE:
-			return curses_helper.retval.RETURNDONE
-		if retval == curses_helper.retval.RETURNFULL:
+		if retval == Retval.RETURNONE:
+			return Retval.RETURNDONE
+		if retval == Retval.RETURNFULL:
 			return retval
 
 		if c == curses.KEY_F2:
 			retval = selectwindow(uip)
-			if retval == curses_helper.retval.RETURNFULL:
+			if retval == Retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
 		elif c == curses.KEY_F3:
 			retval = selectwindow(uip, refresh_apis = True)
-			if retval == curses_helper.retval.RETURNFULL:
+			if retval == Retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
 		elif c == ord("B"):
@@ -7302,7 +7307,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				action_call = deep_get(value, "action_call")
 				if action == "call" and action_call is not None:
 					retval = action_call(uip.stdscr, **action_args)
-					if retval is not None and retval == curses_helper.retval.RETURNFULL:
+					if retval is not None and retval == Retval.RETURNFULL:
 						return retval
 				elif action == "execute":
 					_command = deep_get(action_args, "command", [])
@@ -7373,14 +7378,14 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				if call is not None and call_name is not None:
 					if kind is None or kind == ("", ""):
 						retval = call(uip.stdscr, **{"selected": call_name})
-						if retval is not None and retval == curses_helper.retval.RETURNFULL:
+						if retval is not None and retval == Retval.RETURNFULL:
 							return retval
 					elif len(kind) > 0:
 						if type(kind) == str:
 							kind = kh.guess_kind(kind)
 						ref = kh.get_ref_by_kind_name_namespace(kind, call_name, call_namespace)
 						retval = call(uip.stdscr, ref, kind)
-						if retval is not None and retval == curses_helper.retval.RETURNFULL:
+						if retval is not None and retval == Retval.RETURNFULL:
 							return retval
 					changed = True
 			if force_update == True:
@@ -7389,7 +7394,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 def eventdispatch(stdscr, **kwargs):
 	obj = deep_get(kwargs, "obj")
 	if obj is None:
-		return curses_helper.retval.RETURNDONE
+		return Retval.RETURNDONE
 
 	kind_path = deep_get(kwargs, "kind_path")
 	kind = deep_get_with_fallback(obj, kind_path)
@@ -7621,7 +7626,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					if c == 27:	# ESCAPE
 						if reload == True:
 							break
-						return curses_helper.retval.RETURNDONE
+						return Retval.RETURNDONE
 
 				if type(_line) == tuple:
 					line, podname, containername, image, facility_extended = _line
@@ -8011,7 +8016,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					if new_date == True:
 						tsthemearray = [(datestamp, ("logview", datetype))]
 						new_date = False
-						# If we do empty lines for new dates we need this
+						# If we do empty lines for new dates we need something like this
 						# uip.addstr(logpad, "", y = y + yadd, x = 0)
 						# yadd += 1
 				else:
@@ -8103,7 +8108,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					maxwidth = uip.maxx - uip.logpadxpos + sideadjust
 				else:
 					maxwidth = -1
-				msgstrarrays = strarray_wrap_line(msgstrarray, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
+				msgstrarrays = themearray_wrap_line(msgstrarray, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
 				for i, msgstrarray in enumerate(msgstrarrays):
 					if y + yadd + i >= uip.logpadheight:
 						break
@@ -8125,21 +8130,21 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 		c = uip.stdscr.getch()
 		retval = uip.generic_keycheck(c)
 
-		if retval == curses_helper.retval.MATCH:
+		if retval == Retval.MATCH:
 			continue
-		if retval == curses_helper.retval.RETURNONE:
-			return curses_helper.retval.RETURNDONE
-		if retval == curses_helper.retval.RETURNFULL:
+		if retval == Retval.RETURNONE:
+			return Retval.RETURNDONE
+		if retval == Retval.RETURNFULL:
 			return retval
 
 		if c == curses.KEY_F2:
 			retval = selectwindow(uip)
-			if retval == curses_helper.retval.RETURNFULL:
+			if retval == Retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
 		elif c == curses.KEY_F3:
 			retval = selectwindow(uip, refresh_apis = True)
-			if retval == curses_helper.retval.RETURNFULL:
+			if retval == Retval.RETURNFULL:
 				return retval
 			uip.refresh_all()
 		elif c == ord("B"):
@@ -8189,7 +8194,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					retval = resourceinfodispatch(stdscr, _obj.ref, ("__Container", ""))
 					uip.force_update()
 					break
-			if retval is not None and retval == curses_helper.retval.RETURNFULL:
+			if retval is not None and retval == Retval.RETURNFULL:
 				return retval
 		elif c == ord("R"):
 			if uip.continuous_log:
@@ -8460,7 +8465,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 def listviewdispatch(stdscr, **kwargs):
 	obj = deep_get(kwargs, "obj")
 	if obj is None:
-		return curses_helper.retval.RETURNDONE
+		return Retval.RETURNDONE
 
 	kind_path = deep_get(kwargs, "kind_path")
 	kind = deep_get(obj, kind_path)
@@ -8468,7 +8473,7 @@ def listviewdispatch(stdscr, **kwargs):
 	api_family = deep_get(obj, api_family_path, "")
 
 	if kind is None:
-		return curses_helper.retval.RETURNDONE
+		return Retval.RETURNDONE
 
 	view = checkforview((kind, api_family))
 
@@ -8479,7 +8484,7 @@ def listviewdispatch(stdscr, **kwargs):
 			viewfunc = genericlistloop
 		return viewfunc(stdscr, view)
 
-	return curses_helper.retval.RETURNDONE
+	return Retval.RETURNDONE
 
 # This dispatches to info views; as soon as one is added this function will
 # dispatch to that view.
@@ -9808,9 +9813,9 @@ def selectwindow(uip, refresh_apis = False):
 
 	if selection != "":
 		defaultview = selection
-		return curses_helper.retval.RETURNFULL
+		return Retval.RETURNFULL
 
-	return curses_helper.retval.NOMATCH
+	return Retval.NOMATCH
 
 def selectorloop(stdscr, view):
 	field_list, sortcolumn = (None, None)
@@ -9822,7 +9827,7 @@ def selectorloop(stdscr, view):
 
 	while True:
 		retval = selectwindow(uip)
-		if retval == curses_helper.retval.RETURNFULL:
+		if retval == Retval.RETURNFULL:
 			return retval
 
 listviewactions = {
@@ -10775,8 +10780,12 @@ def main():
 	global initial_namespace # pylint: disable=global-statement
 	global initial_container # pylint: disable=global-statement
 	global read_only_mode # pylint: disable=global-statement
-	global namespace # pylint: disable=global-statement
+	global selected_namespace # pylint: disable=global-statement
 	global defaultview # pylint: disable=global-statement
+
+	# Before doing anything else, make sure that the user isn't running as root
+	if os.geteuid() == 0:
+		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 
 	defaultthemefile = DEFAULT_THEME_FILE
 
@@ -10822,7 +10831,7 @@ def main():
 			list_views()
 			sys.exit(0)
 		elif arg == "--namespace":
-			namespace = sys.argv[y + 1]
+			selected_namespace = sys.argv[y + 1]
 			y += 1
 		elif arg == "--read-only":
 			read_only_mode = True
@@ -10936,7 +10945,7 @@ def main():
 		populate_views()
 		customise_listviews()
 
-	wrapper(setupui)
+	foo = wrapper(setupui)
 
 if __name__ == "__main__":
 	main()

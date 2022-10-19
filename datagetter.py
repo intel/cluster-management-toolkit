@@ -7,15 +7,26 @@ datagetters are used for data extraction that's too complext to be expressed by 
 
 import re
 
-try:
-	from natsort import natsorted
-except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
-
-from iktlib import deep_get, deep_get_with_fallback, StatusGroup, timestamp_to_datetime
+from iktlib import deep_get, deep_get_with_fallback, timestamp_to_datetime
+from ikttypes import StatusGroup
 from kubernetes_helper import get_node_status, kind_tuple_to_name
 
-def get_container_status(src_statuses, container):
+def get_container_status(src_statuses, container: str):
+	"""
+	Return the status for a container
+
+		Parameters:
+			src_statuses (dict): A reference to either status#containerStatuses, status#initContainerStatuses, or status#ephemeralContainerStatuses
+			container (str): The name of the container
+		Returns:
+			reason (str), status_group (StatusGroup), restarts (int), message (str), age (int):
+				reason: Reason for the status
+				status_group: Status group
+				restarts: How many times has the container been restarted
+				message: Status message, if any
+				age: Age of the container
+	"""
+
 	reason = "UNKNOWN"
 	status_group = StatusGroup.UNKNOWN
 	restarts = 0
@@ -67,18 +78,36 @@ def get_container_status(src_statuses, container):
 
 	return reason, status_group, restarts, message, age
 
+# pylint: disable-next=unused-argument
 def datagetter_container_status(kh, obj, path, default):
-	del kh
-	del path
+	"""
+	A datagetter that returns the status of a container
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The container object to get status for
+			path (str): Unused
+			default (opaque): Unused
+	"""
 
 	if obj is None:
-		return default
+		return "UNKNOWN", {"status_group": StatusGroup.UNKNOWN}
+
 	status = deep_get(obj, "status")
 	status_group = deep_get(obj, "status_group")
 
 	return status, {"status_group": status_group}
 
 def get_endpointslices_endpoints(obj):
+	"""
+	Get the endpoints for an endpoint slice
+
+		Parameters:
+			obj (dict): The endpoint slice object to return endpoints for
+		Returns:
+			endpoints (list[(str, StatusGroup)]): A list of tuples with the address and status for each endpoint
+	"""
+
 	endpoints = []
 
 	if deep_get(obj, "endpoints") is not None:
@@ -94,20 +123,43 @@ def get_endpointslices_endpoints(obj):
 		endpoints.append(("<none>", StatusGroup.UNKNOWN))
 	return endpoints
 
+# pylint: disable-next=unused-argument
 def datagetter_eps_endpoints(kh, obj, path, default):
-	del kh
-	del path
+	"""
+	A datagetter that returns the endpoints for an endpoint slice
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The endpoint slice object to return endpoints for
+			path (str): Unused
+			default (opaque): Unused
+		Returns:
+			The return value from get_endpointslices_endpoints and an empty dict
+	"""
 
 	if obj is None:
-		return default
+		return ("<none>", StatusGroup.UNKNOWN), {}
 
 	return get_endpointslices_endpoints(obj), {}
 
+# pylint: disable-next=unused-argument
 def datagetter_metrics(kh, obj, path, default):
-	del kh
+	"""
+	A datagetter that returns metrics for the specified path
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The object with metrics
+			path (str): The path to the metrics to get
+			default (opaque): Unused?
+		Returns:
+			result (tuple), {} (dict): A tuple with metrics and an empty dict
+	"""
 
 	if obj is None or path is None:
-		return default
+		if default is None:
+			default = []
+		return default, {}
 
 	result = []
 
@@ -119,13 +171,43 @@ def datagetter_metrics(kh, obj, path, default):
 	return result, {}
 
 def datagetter_deprecated_api(kh, obj, path, default):
+	"""
+	A datagetter that returns deprecated API information for the specified path
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The object with metrics
+			path (str): The path to the metrics to get
+			default (opaque): Unused?
+		Returns:
+			kind (str), api_family (str), metrics (tuple), extra_vars (dict): kind, API family, and metrics for the deprecated API
+	"""
+
 	result, extra_vars = datagetter_metrics(kh, obj, path, default)
 	kind = kh.guess_kind((result[0], result[1]))
 	return (kind[0], kind[1], result[2]), extra_vars
 
 def datagetter_latest_version(kh, obj, path, default):
+	"""
+	A datagetter that returns the latest available API for kind as passed in path
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The object to get the old API information from
+			path (list[kind_path, api_family_path, old_version_path)]: Paths to Kind, API-family, and the old version of the API
+			default: Unused?
+		Returns:
+			(group (str), latest_version (str), message (str)) (tuple(str, str, str), {} (dict):
+				group: new API-group (since it might change)
+				latest_version: The latest version of the API, or old_version if no newer version available
+				message: If the API is deprecated, the deprecation message (if one available), or a default message (if not)
+				{}: An empty dict
+	"""
+
 	if obj is None or path is None:
-		return default
+		if default is None:
+			default = ("", "", "")
+		return default, {}
 
 	# path is paths to kind, api_family
 	kind = deep_get(obj, path[0])
@@ -164,11 +246,11 @@ def datagetter_latest_version(kh, obj, path, default):
 		for version in versions:
 			tmp = version_regex.match(version)
 			if tmp is None:
-				raise ParseError(f"Failed to parse version number {version}")
+				raise ValueError(f"Failed to parse version number {version}")
 			try:
 				major = int(tmp[1])
-			except ParseError:
-				raise ParseError(f"Failed to parse version number {version}")
+			except ValueError as e:
+				raise ValueError(f"Failed to parse version number {version}") from e
 			if tmp[2] == "":
 				minor = 0
 				patch = 0
@@ -176,16 +258,16 @@ def datagetter_latest_version(kh, obj, path, default):
 				minor = -1
 				try:
 					patch = int(tmp[2][len("beta"):])
-				except ParseError:
-					raise ParseError(f"Failed to parse version number {version}")
+				except ValueError as e:
+					raise ValueError(f"Failed to parse version number {version}") from e
 			elif tmp[2].startswith("alpha"):
 				minor = -2
 				try:
 					patch = int(tmp[2][len("alpha"):])
-				except ParseError:
-					raise ParseError(f"Failed to parse version number {version}")
+				except ValueError as e:
+					raise ValueError(f"Failed to parse version number {version}") from e
 			else:
-				raise ParseError(f"Failed to parse version number {version}")
+				raise ValueError(f"Failed to parse version number {version}")
 			tmp_versions.append((major, minor, patch))
 		sorted_versions = sorted(tmp_versions, reverse = True)
 		latest_major = f"v{sorted_versions[0][0]}"
@@ -210,6 +292,15 @@ def datagetter_latest_version(kh, obj, path, default):
 	return (group, latest_version, message), {}
 
 def get_endpoint_endpoints(subsets):
+	"""
+	Get the endpoints for an endpoint
+
+		Parameters:
+			subsets (list[subset]): The subsets to return endpoints for
+		Returns:
+			endpoints (list[(str, StatusGroup)]): A list of tuples with the address and status for each endpoint
+	"""
+
 	endpoints = []
 
 	if subsets is None:
@@ -226,20 +317,41 @@ def get_endpoint_endpoints(subsets):
 
 	return endpoints
 
+# pylint: disable-next=unused-argument
 def datagetter_endpoint_ips(kh, obj, path, default):
-	del kh
-	del default
+	"""
+	A datagetter that returns the endpoints for an endpoint
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The endpoint object to return endpoints for
+			path (str): Unused
+			default (opaque): Unused
+		Returns:
+			The return value from get_endpointslices_endpoints and an empty dict
+	"""
 
 	subsets = deep_get(obj, path)
 	endpoints = get_endpoint_endpoints(subsets)
 	return endpoints, {}
 
-# Only for internal types for the time being
+# XXX: Can this be replaced with generic_listgetter()?
+# pylint: disable-next=unused-argument
 def datagetter_regex_split_to_tuples(kh, obj, paths, default):
-	del kh
+	"""
+	A datagetter that uses a regex to split a path into tuples
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The object to split into tuples
+			path (tuple(raw str, list[str]): The path(s) to split using the regex
+			default (opaque): Unused
+		Returns:
+			The return value from get_endpointslices_endpoints and an empty dict
+	"""
 
 	if obj is None or paths is None or len(paths) < 2:
-		return default
+		return default, {}
 
 	# paths is a tuple; the first item is a regex that specifies how to split,
 	# the second one is either a path to a list or a list of paths
@@ -275,20 +387,30 @@ def datagetter_regex_split_to_tuples(kh, obj, paths, default):
 	return list_fields, {}
 
 # pylint: disable-next=too-many-return-statements
-def get_pod_status(kh, pod):
-	if deep_get(pod, "metadata#deletionTimestamp") is not None:
+def get_pod_status(kh, obj):
+	"""
+	Get status for a Pod
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The pod object to return status for
+		Returns:
+			phase (str), status_group (StatusGroup): The phase and status group of the pod
+	"""
+
+	if deep_get(obj, "metadata#deletionTimestamp") is not None:
 		status = "Terminating"
 		status_group = StatusGroup.PENDING
 		return status, status_group
 
-	phase = deep_get(pod, "status#phase")
+	phase = deep_get(obj, "status#phase")
 
 	if phase == "Pending":
 		status = phase
 		status_group = StatusGroup.PENDING
 
 		# Any containers in ContainerCreating or similar?
-		for condition in deep_get(pod, "status#conditions", []):
+		for condition in deep_get(obj, "status#conditions", []):
 			condition_type = deep_get(condition, "type")
 			condition_status = deep_get(condition, "status")
 			reason = deep_get(condition, "reason", "")
@@ -299,12 +421,12 @@ def get_pod_status(kh, pod):
 				break
 
 			if condition_type == "ContainersReady" and condition_status == "False":
-				for container in deep_get(pod, "status#initContainerStatuses", []):
+				for container in deep_get(obj, "status#initContainerStatuses", []):
 					if deep_get(container, "ready") == False:
 						reason = deep_get(container, "state#waiting#reason", "").rstrip()
 						if reason is not None and len(reason) > 0:
 							return reason, status_group
-				for container in deep_get(pod, "status#containerStatuses", []):
+				for container in deep_get(obj, "status#containerStatuses", []):
 					if deep_get(container, "ready") == False:
 						reason = deep_get(container, "state#waiting#reason", "").rstrip()
 						if reason is not None and len(reason) > 0:
@@ -317,7 +439,7 @@ def get_pod_status(kh, pod):
 		status_group = StatusGroup.OK
 
 		# Any container failures?
-		for condition in deep_get(pod, "status#conditions", []):
+		for condition in deep_get(obj, "status#conditions", []):
 			condition_type = deep_get(condition, "type")
 			condition_status = deep_get(condition, "status")
 
@@ -325,7 +447,7 @@ def get_pod_status(kh, pod):
 				status_group = StatusGroup.NOT_OK
 				status = "NotReady"
 				# Can we get more info? Is the host available?
-				node_name = deep_get(pod, "spec#nodeName")
+				node_name = deep_get(obj, "spec#nodeName")
 				node = kh.get_ref_by_kind_name_namespace(("Node", ""), node_name, None)
 				node_status = get_node_status(node)
 				if node_status[0] == "Unreachable":
@@ -335,15 +457,15 @@ def get_pod_status(kh, pod):
 			if condition_type == "ContainersReady" and condition_status == "False":
 				status_group = StatusGroup.NOT_OK
 
-				for container in deep_get(pod, "status#initContainerStatuses", []):
-					status, status_group, _restarts, _message, _age = get_container_status(deep_get(pod, "status#initContainerStatuses"), deep_get(container, "name"))
+				for container in deep_get(obj, "status#initContainerStatuses", []):
+					status, status_group, _restarts, _message, _age = get_container_status(deep_get(obj, "status#initContainerStatuses"), deep_get(container, "name"))
 					# If we have a failed container,
 					# break here
 					if status_group == StatusGroup.NOT_OK:
 						break
 
-				for container in deep_get(pod, "status#containerStatuses", []):
-					status, status_group, _restarts, _message, _age = get_container_status(deep_get(pod, "status#containerStatuses"), deep_get(container, "name"))
+				for container in deep_get(obj, "status#containerStatuses", []):
+					status, status_group, _restarts, _message, _age = get_container_status(deep_get(obj, "status#containerStatuses"), deep_get(container, "name"))
 					# If we have a failed container,
 					# break here
 					if status_group == StatusGroup.NOT_OK:
@@ -354,30 +476,54 @@ def get_pod_status(kh, pod):
 	if phase == "Failed":
 		# Failed
 		status_group = StatusGroup.NOT_OK
-		status = deep_get(pod, "status#reason", phase).rstrip()
+		status = deep_get(obj, "status#reason", phase).rstrip()
 		return status, status_group
 
 	# Succeeded
 	status_group = StatusGroup.DONE
 	return phase, status_group
 
-# Only for internal types for the time being
+# XXX: Only for internal types for the time being
+# pylint: disable-next=unused-argument
 def datagetter_pod_status(kh, obj, path, default):
-	del path
+	"""
+	A datagetter that returns the status for a pod
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The pod object to return pod status for
+			path (str): Unused
+			default (opaque): Unused?
+		Returns:
+			The return value from get_endpointslices_endpoints and an empty dict
+	"""
 
 	if obj is None:
-		return default
+		return default, {}
 
 	status, status_group = get_pod_status(kh, obj)
 
 	return status, {"status_group": status_group}
 
 # Only for internal types for the time being
+# pylint: disable-next=unused-argument
 def datagetter_api_support(kh, obj, path, default):
-	del path
+	"""
+	A datagetter that returns the level of support that iKT has for an API
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The pod object to return pod status for
+			path (str): Unused
+			default (opaque): Unused?
+		Returns:
+			available_views (list[str]), {}:
+				available_views: A list with zero or more of "Known", "List", "Info"
+				{}: An empty dict
+	"""
 
 	if obj is None:
-		return default
+		return default, {}
 
 	kind = deep_get(obj, "spec#names#kind", "")
 	api_family = deep_get(obj, "spec#group", "")

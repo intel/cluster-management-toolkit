@@ -5,10 +5,11 @@
 * Rewrite command_parser to treat options passed before a command as global,
   and to allow options interspersed with arguments
 * Add `--dry-run` support for more commands
+* Is it possible to rewrite the generator/processor system in a way that processors
+  could be completely eliminated
 
 ## iku
 * Try to find other things we can simplify in the views
-* Make themearrays treat lists as tuples; this would make it possible to remove special casing for views
 * Move field_templates and built-in views to views
 * Modify generator_list; ideally every list element should be typed;
   this way we'd be able to use, for instance:
@@ -21,7 +22,6 @@
   Note: this would need quite a bit of a rewrite, but it would probably be healthy
   and hopefully cut down on the amount of special cases.
 * Audit and make a list of all necessary types
-* Show if we're running in read-only mode in the status bar
 * config map YAML-parser should handle single-line files (optionally unfolding)
 * Make generic_infogetter consistent WRT to paths:
   ["literal", ["path"], [["alternate1", "alternate2"]]]
@@ -60,3 +60,11 @@ logparser:
 kubernetes_helper:
 * Replace playbooks/drain_node.yaml with cordon_node() + post evictions (or delete if PodDisruptionBudget causes issues)
   for all non-DaemonSet pods
+
+curses_helper:
+* Make themearrays treat lists as tuples; this would make it possible to remove special casing for views
+* themearrays should only handle two types of fragments:
+  (("key", "value"), selected)--lookup of predefined strings, with selected being bool
+  (("str", ("key", "value")), selected)--str to be formatted, lookup to formatting, with selected being bool
+* themearrays can be flattened to a format that curses understands (flattening should do all lookups, etc);
+* flattened themearrays are then used to get the length of a themearray and the string without formatting
