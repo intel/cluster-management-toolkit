@@ -42,7 +42,6 @@ ANSIBLE_PLAYBOOK_DIR = os.path.join(IKTDIR, ANSIBLE_PLAYBOOK_DIRNAME)
 ANSIBLE_LOG_DIRNAME = "logs"
 ANSIBLE_LOG_DIR = FilePath(os.path.join(ANSIBLE_DIR, ANSIBLE_LOG_DIRNAME))
 ANSIBLE_INVENTORY = FilePath(os.path.join(ANSIBLE_DIR, "inventory.yaml"))
-ANSIBLE_TMP_INVENTORY = FilePath(os.path.join(ANSIBLE_DIR, "tmp_inventory.yaml"))
 
 IKT_HOOKS_DIRNAME = "hooks"
 IKT_HOOKS_DIR = FilePath(os.path.join(IKTDIR, IKT_HOOKS_DIRNAME))

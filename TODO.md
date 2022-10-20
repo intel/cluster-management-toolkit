@@ -1,16 +1,24 @@
 # TODO
+## Security
+* Everything in .ikt should be 0o600, with the directories 0o700;
+  similarly for .kube and the files there-in. Binaries in $HOME/bin
+  should be 755.
+* If $HOME has write permission for other users, refuse to install.
+
 ## All
 * When running either ikt or iku, check whether .ssh/id_ecdsa.pub is in authorized_keys
-  in .ikt/ansible/inventory.yaml; if not, add it
+  in .ikt/ansible/inventory.yaml; if not, add it.
 * Rewrite command_parser to treat options passed before a command as global,
-  and to allow options interspersed with arguments
-* Add `--dry-run` support for more commands
+  and to allow options interspersed with arguments.
+* Add `--dry-run` support for more commands.
 * Is it possible to rewrite the generator/processor system in a way that processors
-  could be completely eliminated
+  could be completely eliminated.
 
 ## iku
-* Try to find other things we can simplify in the views
-* Move field_templates and built-in views to views
+* In Node and Inventory Info view we should provide a way to list all logs
+  related to the host, and a shortcut to jump to that log.
+* Try to find other things we can simplify in the views.
+* Move field_templates and built-in views to views.
 * Modify generator_list; ideally every list element should be typed;
   this way we'd be able to use, for instance:
   [(kind, api_family), address, address, ...]
@@ -27,13 +35,13 @@
   ["literal", ["path"], [["alternate1", "alternate2"]]]
 
 iktinv:
-* Optionally limit rebuild-inventory to a subset of clusters
+* Optionally limit rebuild-inventory to a subset of clusters.
 
 iktadm:
-* Add command to import kube-config (requires cluster-name--unless unique) and a path
-* Pass cluster_name to `kubeadm init` using ClusterConfiguration + clusterName
+* Add command to import kube-config (requires cluster-name--unless unique) and a path.
+* Pass cluster_name to `kubeadm init` using ClusterConfiguration + clusterName.
 * prepare_passwordless_ansible won't work on localhost; we're not passing the password,
-  and the password might not be the same on the remote system and the local system anyway
+  and the password might not be the same on the remote system and the local system anyway.
 * Add `pre-upgrade-check` that checks whether relevant config files (notably containerd)
   are compatible with new settings. Also check whether the cluster currently uses
   any APIs that are deprecated, and any deployments that are known to be unsupported on
@@ -47,24 +55,26 @@ iktadm:
     but the user should at least be aware of the differences (we could even show a diff
     if `--verbose` is passed) and provide a helpful message about what playbook to
     run to update the files.
+  * Add a security warning about file permissions.
+  * Add a security warning ansible_pass being used in iktconfig.
 
 logparser:
 * Rewrite key_value; the parser is overly complex at the moment; it needs to be simplified
-  and have fewer special cases
-* Line too long shouldn't override severity
+  and have fewer special cases.
+* Line too long shouldn't override severity.
   | Ideally max line length should be a.) configurable, b.) trigger line splitting into remnants
 * We cannot replace tabs with spaces in the logparser; we need to do it in the printers instead;
   this way we know the real line length (due to facility etc. we might not have the same starting point
-  for every line, so expanding tabs into spaces won't work properly)
+  for every line, so expanding tabs into spaces won't work properly).
 
 kubernetes_helper:
 * Replace playbooks/drain_node.yaml with cordon_node() + post evictions (or delete if PodDisruptionBudget causes issues)
-  for all non-DaemonSet pods
+  for all non-DaemonSet pods.
 
 curses_helper:
-* Make themearrays treat lists as tuples; this would make it possible to remove special casing for views
+* Make themearrays treat lists as tuples; this would make it possible to remove special casing for views.
 * themearrays should only handle two types of fragments:
-  (("key", "value"), selected)--lookup of predefined strings, with selected being bool
-  (("str", ("key", "value")), selected)--str to be formatted, lookup to formatting, with selected being bool
+  (("key", "value"), selected)--lookup of predefined strings, with selected being bool.
+  (("str", ("key", "value")), selected)--str to be formatted, lookup to formatting, with selected being bool.
 * themearrays can be flattened to a format that curses understands (flattening should do all lookups, etc);
-* flattened themearrays are then used to get the length of a themearray and the string without formatting
+  flattened themearrays are then used to get the length of a themearray and the string without formatting.

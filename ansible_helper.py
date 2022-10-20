@@ -17,14 +17,11 @@ import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
 from iktpaths import HOMEDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
-from iktpaths import ANSIBLE_INVENTORY, ANSIBLE_TMP_INVENTORY
+from iktpaths import ANSIBLE_INVENTORY
 from iktprint import iktprint
 from ikttypes import FilePath
 
 ansible_results = {} # type: ignore
-
-# Ansible
-ANSIBLE_TMP_GROUP = "selection"
 
 ansible_configuration = {
 	"ansible_forks": 5,
@@ -299,7 +296,7 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False):
 
 	yaml_str = yaml.safe_dump(d, default_flow_style = False).replace(r"''", '')
 
-	with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+	with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 		f.write(yaml_str)
 
 def ansible_create_groups(inventory: FilePath, groups):
@@ -336,7 +333,7 @@ def ansible_create_groups(inventory: FilePath, groups):
 		changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -384,7 +381,7 @@ def ansible_set_vars(inventory: FilePath, group: str, values):
 		changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -433,7 +430,7 @@ def ansible_set_groupvars(inventory: FilePath, groups, groupvars):
 			changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -480,7 +477,7 @@ def ansible_set_hostvars(inventory: FilePath, hosts, hostvars):
 			changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -535,7 +532,7 @@ def ansible_unset_groupvars(inventory: FilePath, groups, groupvars):
 			d[group].pop("vars", None)
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -585,7 +582,7 @@ def ansible_unset_hostvars(inventory: FilePath, hosts, hostvars):
 			d["all"]["hosts"][host] = None
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -658,7 +655,7 @@ def ansible_add_hosts(inventory: FilePath, hosts, group: str = "", skip_all: boo
 				changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -702,7 +699,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts, group: str = None):
 				d[group]["hosts"] = None
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -743,7 +740,7 @@ def ansible_remove_groups(inventory: FilePath, groups, force: bool = False):
 		changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
 			f.write(yaml_str)
 
@@ -975,7 +972,7 @@ def ansible_write_log(start_date, playbook: str, events):
 		"created_at": start_date,
 	}
 
-	with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/metadata.yaml", "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+	with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/metadata.yaml", "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 		f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
 
 	i = 0
@@ -1058,7 +1055,7 @@ def ansible_write_log(start_date, playbook: str, events):
 		else:
 			d["stdout_lines"] = ["<no output>"]
 
-		with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}", "w", opener = partial(os.open, mode = 0o640), encoding = "utf-8") as f:
+		with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}", "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
 			f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
 
 # pylint: disable-next=too-many-arguments
@@ -1153,13 +1150,13 @@ def ansible_print_play_results(retval: int, __ansible_results):
 				if unreachable == True:
 					break
 
-def ansible_run_playbook(playbook: FilePath, override_inventory: bool = False):
+def ansible_run_playbook(playbook: FilePath, inventory = None):
 	"""
 	Run a playbook
 
 		Parameters:
 			playbook (FilePath): The playbook to run
-			override_inventory (bool): Should another inventory than the default be used
+			inventory (dict): An inventory dict with selection as the list of hosts to run on
 		Returns:
 			(retval(bool), ansible_results(dict)): The return value and results from the run
 	"""
@@ -1171,12 +1168,8 @@ def ansible_run_playbook(playbook: FilePath, override_inventory: bool = False):
 	# Flush previous results
 	ansible_results = {}
 
-	if override_inventory == True:
-		inventory = []
-	else:
+	if inventory is None:
 		inventory = [ANSIBLE_INVENTORY]
-	if os.path.exists(ANSIBLE_TMP_INVENTORY):
-		inventory.append(ANSIBLE_TMP_INVENTORY)
 
 	start_date = datetime.now()
 
@@ -1188,10 +1181,6 @@ def ansible_run_playbook(playbook: FilePath, override_inventory: bool = False):
 			if retval == 0 and _retval != 0:
 				retval = _retval
 		ansible_write_log(start_date, playbook, runner.events)
-
-	# Remove old temporary inventory
-	if os.path.isfile(ANSIBLE_TMP_INVENTORY):
-		os.remove(ANSIBLE_TMP_INVENTORY)
 
 	return retval, ansible_results
 
@@ -1226,12 +1215,6 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection, values = No
 			The result from ansible_run_playbook()
 	"""
 
-	# Remove old temporary inventory
-	if os.path.isfile(ANSIBLE_TMP_INVENTORY):
-		os.remove(ANSIBLE_TMP_INVENTORY)
-
-	ansible_add_hosts(ANSIBLE_TMP_INVENTORY, selection, group = "selection", skip_all = True)
-
 	# If ansible_ssh_pass system variable is not set, and ansible_sudo_pass is set,
 	# we set ansible_ssh_pass to ansible_become_pass; on systems where we already have a host key
 	# this will be ignored; the same goes for groups or hosts where ansible_ssh_pass is set,
@@ -1256,10 +1239,17 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection, values = No
 	if "ansible_user" not in d["all"]["vars"]:
 		values["ansible_user"] = deep_get(ansible_configuration, "ansible_user")
 
-	if len(values) > 0:
-		ansible_set_vars(ANSIBLE_TMP_INVENTORY, group = "all", values = values)
+	for key, value in values.items():
+		d["all"][key] = value
 
-	return ansible_run_playbook(playbook)
+	d["selection"] = {
+		"hosts": {}
+	}
+
+	for host in selection:
+		d["selection"]["hosts"][host] = ""
+
+	return ansible_run_playbook(playbook, d)
 
 def ansible_run_playbook_on_selection_async(playbook: FilePath, selection, values = None):
 	"""
