@@ -5736,7 +5736,7 @@ def clusteroverviewloop(stdscr, view):
 			if len(loadavg_raw) > 0:
 				try:
 					avg1min, avg5min, avg15min, tasks_running, _latest_pid = loadavg_raw[0].split()
-					running, tasks = running_tasks.split("/")
+					running, tasks = tasks_running.split("/")
 				except ValueError:
 					loadavg_raw = []
 
