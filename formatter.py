@@ -267,6 +267,75 @@ def format_crt(lines, **kwargs):
 			dumps.append([(line, ("types", "generic"))])
 	return dumps
 
+def format_haproxy(lines, **kwargs):
+	"""
+	HAProxy formatter; returns the text with syntax highlighting for HAProxy
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
+	dumps = []
+
+	if isinstance(lines, str):
+		lines = split_msg(lines)
+
+	if deep_get(kwargs, "raw", False) == True:
+		return format_none(lines)
+
+	# Safe
+	haproxy_section_regex = re.compile(r"^(\s*)(global|defaults|frontend|backend|listen|resolvers|mailers|peers)(\s*)(.*)")
+	# Safe
+	haproxy_setting_regex = re.compile(r"^(\s*)(\S+)(\s+)(.+)")
+
+	for line in lines:
+		# Is it whitespace?
+		if len(line.strip()) == 0:
+			dumps.append([(line, ("types", "generic"))])
+			continue
+
+		# Is it a new section?
+		tmp = haproxy_section_regex.match(line)
+		if tmp is not None:
+			whitespace1 = tmp[1]
+			section = tmp[2]
+			whitespace2 = tmp[3]
+			label = tmp[4]
+			tmpline = [
+				(whitespace1, ("types", "generic")),
+				(section, ("types", "haproxy_section")),
+				(whitespace2, ("types", "generic")),
+				(label, ("types", "haproxy_label")),
+			]
+			dumps.append(tmpline)
+			continue
+
+		# Is it settings?
+		tmp = haproxy_setting_regex.match(line)
+		if tmp is not None:
+			whitespace1 = tmp[1]
+			setting = tmp[2]
+			whitespace2 = tmp[3]
+			values = tmp[4]
+			tmpline = [
+				(whitespace1, ("types", "generic")),
+				(setting, ("types", "haproxy_setting")),
+				(whitespace2, ("types", "generic")),
+				(values, ("types", "generic")),
+			]
+			dumps.append(tmpline)
+			continue
+
+		# Unknown data; just append it unformatted
+		dumps.append([(line, ("types", "generic"))])
+
+	return dumps
+
 def format_caddyfile(lines, **kwargs):
 	"""
 	CaddyFile formatter; returns the text with syntax highlighting for CaddyFiles
@@ -425,6 +494,60 @@ def format_caddyfile(lines, **kwargs):
 					continue
 
 		dumps.append(tmpline)
+
+	return dumps
+
+def format_mosquitto(lines, **kwargs):
+	"""
+	Mosquitto formatter; returns the text with syntax highlighting for Mosquitto
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
+	dumps = []
+
+	if isinstance(lines, str):
+		lines = split_msg(lines)
+
+	if deep_get(kwargs, "raw", False) == True:
+		return format_none(lines)
+
+	# Safe
+	mosquitto_variable_regex = re.compile(r"^(\S+)(\s)(.+)")
+
+	for line in lines:
+		# Is it whitespace?
+		if len(line.strip()) == 0:
+			dumps.append([(line, ("types", "generic"))])
+			continue
+
+		# Is it a comment?
+		if line.startswith("#"):
+			dumps.append([(line, ("types", "mosquitto_comment"))])
+			continue
+
+		# Is it a variable + value?
+		tmp = mosquitto_variable_regex.match(line)
+		if tmp is not None:
+			variable = tmp[1]
+			whitespace = tmp[2]
+			value = tmp[3]
+			tmpline = [
+				(variable, ("types", "mosquitto_variable")),
+				(whitespace, ("types", "generic")),
+				(value, ("types", "generic")),
+			]
+			dumps.append(tmpline)
+			continue
+
+		# Unknown data; just append it unformatted
+		dumps.append([(line, ("types", "generic"))])
 
 	return dumps
 
@@ -915,8 +1038,12 @@ def map_dataformat(dataformat):
 		formatter = format_ini
 	elif dataformat == "FluentBit":
 		formatter = format_fluentbit
+	elif dataformat == "HAProxy" or dataformat == "haproxy.cfg":
+		formatter = format_haproxy
 	elif dataformat == "CaddyFile":
 		formatter = format_caddyfile
+	elif dataformat == "mosquitto" or dataformat == "mosquitto.conf":
+		formatter = format_mosquitto
 	elif dataformat == "NGINX":
 		formatter = format_nginx
 	else:
@@ -928,7 +1055,9 @@ formatter_allowlist = {
 	"format_caddyfile": format_caddyfile,
 	"format_crt": format_crt,
 	"format_fluentbit": format_fluentbit,
+	"format_haproxy": format_haproxy,
 	"format_ini": format_ini,
+	"format_mosquitto": format_mosquitto,
 	"format_nginx": format_nginx,
 	"format_none": format_none,
 	"format_toml": format_toml,

@@ -6036,8 +6036,10 @@ cmdata_format = [
 	("", "", "", ".crt", "CRT"),
 	("", "", "", ".pem", "CRT"),
 	("", "", "", "client-ca-file", "CRT"),
+	("", "", "haproxy.cfg", "haproxy.cfg", "HAProxy"),
 	("", "", "", ".ini", "INI"),
 	("", "", "", ".json", "JSON"),
+	("", "", "mosquitto.conf", "mosquitto.conf", "mosquitto"),
 	("", "", "", ".sh", "Shell Script"),
 	("", "", "", ".toml", "TOML"),
 	("", "", "", ".xml", "XML"),
@@ -10945,7 +10947,7 @@ def main():
 		populate_views()
 		customise_listviews()
 
-	foo = wrapper(setupui)
+	wrapper(setupui)
 
 if __name__ == "__main__":
 	main()

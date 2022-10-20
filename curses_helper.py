@@ -806,7 +806,7 @@ def attr_to_curses_merged(context, attr, selected = False):
 	try:
 		attr = theme[context][attr]
 	except KeyError:
-		sys.exit(f"KeyError; couldn't the tuple ({context}, {attr}) in theme")
+		sys.exit(f"KeyError; couldn't find the tuple ({context}, {attr}) in theme")
 	if isinstance(attr, dict):
 		if selected == True:
 			attr = attr["selected"]

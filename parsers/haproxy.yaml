@@ -1,0 +1,15 @@
+- name: "haproxy"
+  show_in_selector: false
+  matchkeys:
+  - container_name: "haproxy"
+    image_name: "/haproxytech/haproxy-alpine"
+  parser_rules:
+  - name: "custom_splitter"
+    options:
+      # Safe
+      regex: '^\[([A-Z]+)\]\s+\(\d+\)\s*:\s+(.*)'
+      severity:
+        field: 1
+        transform: "str"
+      message:
+        field: 2
