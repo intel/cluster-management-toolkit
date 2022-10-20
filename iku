@@ -5448,9 +5448,11 @@ def __resource_map_cursor(**kwargs):
 	elif keypress == curses.KEY_SHOME:
 		selected = oldval - (oldval // (heatmap_width + 1)) * (heatmap_width + 1)
 	elif keypress == curses.KEY_SEND:
-		tmp = oldval - (oldval // (heatmap_width + 1)) * (heatmap_width + 1) + (maxval // (heatmap_width + 1)) * (heatmap_width + 1)
-		if tmp <= maxval:
-			selected = tmp
+		rowwidth = heatmap_width + 1
+		if maxval > rowwidth:
+			selected = (rowwidth * (maxval // rowwidth)) + (oldval % rowwidth)
+			if selected > maxval:
+				selected -= rowwidth
 	elif keypress == ord("\t"):
 		if oldval < maxval:
 			for i in range(selected + 1, len(info)):
