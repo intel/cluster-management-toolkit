@@ -5735,7 +5735,8 @@ def clusteroverviewloop(stdscr, view):
 
 			if len(loadavg_raw) > 0:
 				try:
-					avg1min, avg5min, avg15min, running, tasks = loadavg_raw[0].split()
+					avg1min, avg5min, avg15min, tasks_running, _latest_pid = loadavg_raw[0].split()
+					running, tasks = running_tasks.split("/")
 				except ValueError:
 					loadavg_raw = []
 
@@ -5842,12 +5843,9 @@ def clusteroverviewloop(stdscr, view):
 		if len(loadavg_raw) > 0 and len(meminfo_raw) > 0 and len(stat_raw) > 0:
 			tasksarray = [
 				("Tasks: ", ("main", "infoheader")),
-				(f"{tasks}", ("types", "numerical")),
-				#(", ", ("types", "separator")),
-				#(f"{threads} ", ("types", "numerical")),
-				#("threads", ("types", "generic")),
-				("; ", ("types", "separator")),
-				(f"{running} ", ("types", "numerical")),
+				(f"{running}", ("types", "numerical")),
+				("separators", "fraction"),
+				(f"{tasks} ", ("types", "numerical")),
 				("running", ("types", "generic")),
 			]
 
