@@ -5436,10 +5436,10 @@ def __resource_map_cursor(**kwargs):
 		selected = clamp(oldval + 1, 0, maxval)
 		uip.refresh_all()
 	elif keypress == curses.KEY_UP:
-		if (oldval - heatmap_width + 1) >= 0:
-			seleected = oldval - heatmap_width + 1
+		if (oldval - (heatmap_width + 1)) >= 0:
+			selected = oldval - (heatmap_width + 1)
 	elif keypress == curses.KEY_DOWN:
-		if (oldval + heatmap_width + 1) < maxval:
+		if (oldval + heatmap_width + 1) <= maxval:
 			selected = oldval + heatmap_width + 1
 	elif keypress == curses.KEY_HOME:
 		selected = max((oldval // (heatmap_width + 1)) * (heatmap_width + 1), 0)
@@ -5448,8 +5448,8 @@ def __resource_map_cursor(**kwargs):
 	elif keypress == curses.KEY_SHOME:
 		selected = oldval - (oldval // (heatmap_width + 1)) * (heatmap_width + 1)
 	elif keypress == curses.KEY_SEND:
-		tmp = oldval - (oldval // (heatmap_width + 1)) * (heatmap_width + 1) + (maxval + 1 // (heatmap_width + 1)) * (heatmap_width + 1)
-		if tmp < maxval + 1:
+		tmp = oldval - (oldval // (heatmap_width + 1)) * (heatmap_width + 1) + (maxval // (heatmap_width + 1)) * (heatmap_width + 1)
+		if tmp <= maxval:
 			selected = tmp
 	elif keypress == ord("\t"):
 		if oldval < maxval:
