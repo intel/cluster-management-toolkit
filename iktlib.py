@@ -412,4 +412,70 @@ def get_package_versions(hostname):
 
 	return package_versions
 
+def __extract_version(line):
+	"""
+	Extract a version from an apt-cache madison entry
+
+		Parameters:
+			line (str): A package info line from apt-cache madison
+		Returns:
+			A version number
+	"""
+
+	tmp = line.split("|")
+	if len(tmp) != 3:
+		raise Exception("Error: Failed to extract a version; this is (most likely) a programming error.")
+	return tmp[1].strip()
+
+def check_deb_versions(deb_packages):
+	"""
+	Given a list of packages, return installed, candidate, and all available versions
+
+		Parameters:
+			deb_packages (list[str]): A list of packages to get versions for
+		Returns:
+			deb_versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
+	"""
+
+	deb_versions = []
+
+	args = ["/usr/bin/apt-cache", "policy"] + deb_packages
+	response = execute_command_with_response(args)
+	split_response = response.splitlines()
+	# Safe
+	installed_regex = re.compile(r"^\s*Installed: (.*)")
+	# Safe
+	candidate_regex = re.compile(r"^\s*Candidate: (.*)")
+	for line in split_response:
+		if line.endswith(":"):
+			package = line[:-1]
+		elif line.startswith("  Installed: "):
+			tmp = installed_regex.match(line)
+			if tmp is not None:
+				if tmp[1] == "(none)":
+					installed_version = "<none>"
+				else:
+					installed_version = tmp[1]
+			else:
+				installed_version = "<none>"
+		elif line.startswith("  Candidate: "):
+			tmp = candidate_regex.match(line)
+			if tmp is not None and tmp[1] != installed_version:
+				if tmp[1] == "(none)":
+					if installed_version == "<none>":
+						continue
+					candidate_version = "<none>"
+				else:
+					candidate_version = tmp[1]
+			else:
+				candidate_version = ""
+			# We have the current and candidate version now; get all the other versions of the same package
+			_args = ["/usr/bin/apt-cache", "madison", package]
+			_response = execute_command_with_response(_args)
+			_split_response = _response.splitlines()
+			all_versions = natsorted([__extract_version(line) for line in _split_response], reverse = True)
+			deb_versions.append((package, installed_version, candidate_version, all_versions))
+
+	return deb_versions
+
 read_iktconfig()

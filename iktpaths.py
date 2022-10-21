@@ -52,4 +52,5 @@ PARSER_DIR = FilePath(os.path.join(IKTDIR, PARSER_DIRNAME))
 VIEW_DIRNAME = "views"
 VIEW_DIR = FilePath(os.path.join(IKTDIR, VIEW_DIRNAME))
 
-KUBE_CONFIG_FILE = FilePath(f"{HOMEDIR}/.kube/config")
+KUBE_CONFIG_DIR = FilePath(os.path.join(HOMEDIR, ".kube"))
+KUBE_CONFIG_FILE = FilePath(os.path.join(KUBE_CONFIG_DIR, "config"))

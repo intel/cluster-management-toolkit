@@ -45,11 +45,13 @@ from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts,
 from iktio import download_files, mkdir_if_not_exists, scan_and_add_ssh_keys
 
 import iktlib # pylint: disable=unused-import
-from iktlib import deep_get, execute_command, execute_command_with_response, iktconfig
+from iktlib import check_deb_versions, deep_get, execute_command, execute_command_with_response, iktconfig
 
 from kubernetes_helper import kubectl_get_version
 
 from iktprint import iktinput, iktinput_password, iktprint, init_iktprint
+
+import checks
 
 import about
 PROGRAMDESCRIPTION = "Setup or teardown a Kubernetes cluster"
@@ -943,72 +945,6 @@ def __get_theme(string, default):
 		"<unknown>": "unknown",
 	}
 	return translation.get(string, default)
-
-def extract_version(line):
-	"""
-	Extract a version from an apt-cache madison entry
-
-		Parameters:
-			line (str): A package info line from apt-cache madison
-		Returns:
-			A version number
-	"""
-
-	tmp = line.split("|")
-	if len(tmp) != 3:
-		raise Exception("Error: Failed to extract a version; this is (most likely) a programming error.")
-	return tmp[1].strip()
-
-def check_deb_versions(deb_packages):
-	"""
-	Given a list of packages, return installed, candidate, and all available versions
-
-		Parameters:
-			deb_packages (list[str]): A list of packages to get versions for
-		Returns:
-			deb_versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
-	"""
-
-	deb_versions = []
-
-	args = ["/usr/bin/apt-cache", "policy"] + deb_packages
-	response = execute_command_with_response(args)
-	split_response = response.splitlines()
-	# Safe
-	installed_regex = re.compile(r"^\s*Installed: (.*)")
-	# Safe
-	candidate_regex = re.compile(r"^\s*Candidate: (.*)")
-	for line in split_response:
-		if line.endswith(":"):
-			package = line[:-1]
-		elif line.startswith("  Installed: "):
-			tmp = installed_regex.match(line)
-			if tmp is not None:
-				if tmp[1] == "(none)":
-					installed_version = "<none>"
-				else:
-					installed_version = tmp[1]
-			else:
-				installed_version = "<none>"
-		elif line.startswith("  Candidate: "):
-			tmp = candidate_regex.match(line)
-			if tmp is not None and tmp[1] != installed_version:
-				if tmp[1] == "(none)":
-					if installed_version == "<none>":
-						continue
-					candidate_version = "<none>"
-				else:
-					candidate_version = tmp[1]
-			else:
-				candidate_version = ""
-			# We have the current and candidate version now; get all the other versions of the same package
-			_args = ["/usr/bin/apt-cache", "madison", package]
-			_response = execute_command_with_response(_args)
-			_split_response = _response.splitlines()
-			all_versions = natsorted([extract_version(line) for line in _split_response], reverse = True)
-			deb_versions.append((package, installed_version, candidate_version, all_versions))
-
-	return deb_versions
 
 def check_versions(deb_packages, version_checks):
 	"""
@@ -2973,41 +2909,92 @@ def untaint_control_plane(options, args):
 		iktprint([("Warning: ", "warning"), ("No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-# pylint: disable-next=too-many-arguments,unused-argument
-def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfig, iktconfig_dict, user: str, security: int, error: int, warning: int, note: int):
+# pylint: disable=unused-argument,redefined-outer-name
+def run_checks(checks, **kwargs) -> None:
 	"""
-	This checks whether or not strict host key checking has been disabled in iktconfig
+	Run a batch of checks, and output the result.
+	The checks can return 4 different severities; critical, error, warning, and note.
 
 		Parameters:
-			cluster_name (str): The name of the cluster
-			kubeconfig (dict)): The kubeconfig file
-			iktconfig_dict (dict): The iktconfig file
-			user (str): The user ikt is executing as
-			security (int): The current count of security level issues
-			error (int): The current count of error level issues
-			warning (int): The current count of warning level issues
-			note (int): The current count of note level issues
-		Returns:
-			security (int), error (int), warning (int), note (int):
-				The new count of security level issues
-				error: The new count of error level issues
-				warning: The new count of warning level issues
-				note: The new count of note level issues
+			checks (list[dict]): A list with all checks to run
 	"""
 
-	iktprint([("[Checking for insecure configuration options in ", "phase"), (f"{IKT_CONFIG_FILE}", "path"), ("]", "phase")])
-	disablestricthostkeychecking = deep_get(iktconfig_dict, "Nodes#disablestricthostkeychecking", False)
-	if disablestricthostkeychecking == False:
-		iktprint([("  OK\n", "emphasis")])
-	else:
-		iktprint([("  Warning:", "warning"), (" strict SSH host key checking is disabled; this is a potential security threat.", "emphasis")], stderr = True)
-		iktprint([("    If strict SSH host key checking is disabled other systems can impersonate the remote host", "default")], stderr = True)
-		iktprint([("    and thus perform Man in the Middle (MITM) attacks.", "default")], stderr = True)
-		iktprint([("    It is adviced that you enable strict SSH host key checking unless you're absolutely certain", "default")], stderr = True)
-		iktprint([("    that your network environment is safe.\n", "default")], stderr = True)
-		security += 1
+	critical: int = 0
+	error: int = 0
+	warning: int = 0
+	note: int = 0
 
-	return security, error, warning, note
+	user = getuser()
+	cluster_name = get_cluster_name()
+	with open(f"{KUBE_CONFIG_FILE}", "r", encoding = "utf-8") as f:
+		kubeconfig = yaml.safe_load(f)
+
+	for check in checks:
+		call = deep_get(check, "call")
+		if call is not None:
+			critical, error, warning, note = call(cluster_name, kubeconfig, iktconfig, user, critical, error, warning, note, **kwargs)
+
+	iktprint([("Summary:", "header")])
+	iktprint([ ("Critical:", "critical"), (f" {critical}", "error")])
+	iktprint([(f"  Errors: {error}", "error")])
+	iktprint([(f"Warnings: {warning}", "warning")])
+	iktprint([(f"   Notes: {note}", "note")])
+
+security_audit_checks = [
+	{
+		"description": "Check whether strict host key checking has been disabled",
+		"call": checks.check_security_disable_strict_host_key_checking,
+	},
+	{
+		"description": "Check for insecure kube config options",
+		"call": checks.check_insecure_kube_config_options,
+	}, {
+		"description": "Check for insecure file permissions",
+		"call": checks.check_file_permissions,
+	},
+]
+
+# pylint: disable-next=unused-argument
+def audit(options, args):
+	"""
+	Run security audit checks
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
+	usergroup = ""
+
+	for opt, optarg in options:
+		if opt == "--usergroup":
+			usergroup = optarg
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
+
+	kwargs = {
+		"usergroup": usergroup
+	}
+
+	run_checks(security_audit_checks, **kwargs)
+
+	iktprint([("\nImportant:", "emphasis"),
+		  (" iktadm", "programname"), (" audit", "command"),
+		  (" currently only checks for a very limited set of issues;", "default")])
+	iktprint([("a perfect score is not a guarantee that your installation is secure", "default")])
+
+preflight_checks = [
+	{
+		"description": "Check whether the user can sudo without a password",
+		"call": checks.check_sudo_configuration,
+	}, {
+		"description": "Check whether SSH known_hosts hashing is enabled",
+		"call": checks.check_known_hosts_hashing,
+	}, {
+		"description": "Check whether docker-ce / containerd.io is installed instead of docker.io / containerd",
+		"call": checks.check_containerd_and_docker,
+	},
+]
 
 # pylint: disable-next=unused-argument
 def preflight_check(options, args):
@@ -3019,291 +3006,46 @@ def preflight_check(options, args):
 			args (list[str]): Options to use when executing this action
 	"""
 
-	security = 0
-	error = 0
-	warning = 0
-	note = 0
+	run_checks(preflight_checks)
 
-	user = getuser()
-	cluster_name = get_cluster_name()
-	with open(f"{KUBE_CONFIG_FILE}", "r", encoding = "utf-8") as f:
-		kubeconfig = yaml.safe_load(f)
+	iktprint([("\nImportant:", "emphasis"),
+		  (" iktadm", "programname"), (" preflight-check", "command"),
+		  (" currently only checks for a very limited set of issues;", "default")])
+	iktprint([("a perfect score is not a guarantee that installation will succeed", "default")])
 
-	security, error, warning, note = check_security_disable_strict_host_key_checking(cluster_name, kubeconfig, iktconfig, user, security, error, warning, note)
+troubleshoot_checks = [
+	# First start with the really basic: does the cluster respond?
+	# Check no_proxy, perhaps?
+	{
+		"description": "Check whether client / server versions match",
+		"call": checks.check_client_server_version_match,
+	}, {
+		"description": "Check kubelet and kube-proxy versions",
+		"call": checks.check_kubelet_and_kube_proxy_versions,
+	},
+	# Check kube-controller-manager, kube-scheduler, and cloud-controller-manager;
+	# they should match, but can be up to one version older,
+	# but must not be newer
 
-	iktprint([("[Checking whether ", "phase"), (f"{user}", "path"), (" is in ", "phase"), ("/etc/sudoers", "path"), (" or ", "default"), ("/etc/sudoers.d", "path"), ("]", "phase")])
-	args = ["/usr/bin/sudo", "-l"]
-	result = execute_command_with_response(args)
-
-	sudoer = True
-
-	# Safe
-	sudo_msg_regex = re.compile(r"^User ([^\s]+) is not allowed to run sudo on.*")
-
-	for line in result.splitlines():
-		tmp = sudo_msg_regex.match(line)
-		if tmp is not None:
-			iktprint([("  Error:", "error"), (f" {user} ", "path"), ("is not in ", "default"), ("/etc/sudoers", "path"), (" or ", "default"), ("/etc/sudoers.d\n", "path")], stderr = True)
-			error += 1
-			sudoer = False
-			break
-
-	if sudoer == True:
-		iktprint([("  OK\n", "emphasis")])
-
-		iktprint([("[Checking whether", "phase") ,(f" {user} ", "path"), ("can perform passwordless sudo]", "phase")])
-		args = ["/usr/bin/sudo", "-l"]
-		result = execute_command_with_response(args)
-		passwordless_sudo = False
-
-		# Safe
-		sudo_permissions_regex = re.compile(r"^\s*\(ALL(\s*:\s*ALL)?\)\s*NOPASSWD:\s*ALL\s*$")
-
-		for line in result.splitlines():
-			tmp = sudo_permissions_regex.match(line)
-			if tmp is not None:
-				iktprint([("  OK\n", "emphasis")])
-				passwordless_sudo = True
-				break
-
-		if passwordless_sudo == False:
-			iktprint([("  Error:", "error"), (f" {user} ", "path"), ("cannot perform passwordless sudo\n", "default")], stderr = True)
-			error += 1
-
-	iktprint([("[Checking whether ", "phase"), ("ssh", "command"), (" known_hosts hashing is enabled]", "phase")])
-	iktprint([("  Note:", "emphasis"), (" this test is not 100% reliable since ssh settings can vary based on target host\n", "default")])
-	args = ["/usr/bin/ssh", "-G", "localhost"]
-	result = execute_command_with_response(args)
-
-	# Safe
-	hashknownhosts_regex = re.compile(r"^hashknownhosts\s+yes$")
-
-	for line in result.splitlines():
-		tmp = hashknownhosts_regex.match(line)
-		if tmp is not None:
-			iktprint([("  Warning:", "warning"), (" ssh", "command"), (" known_hosts hashing is enabled; this may cause issues with ", "default"), ("paramiko\n", "command")], stderr = True)
-			warning += 1
-			break
-
-	iktprint([("[Checking whether ", "phase"), ("docker-ce / containerd.io", "path"), (" is installed instead of ", "phase"), ("docker.io / containerd", "path"), ("]", "phase")])
-	iktprint([("  Note:", "emphasis"), (" this is only an issue if you intend to use this host as a control plane or node\n", "default")])
-	deb_versions = check_deb_versions(["docker.io", "containerd", "docker-ce", "containerd.io"])
-	conflict = False
-	for package, _installed_version, _candidate_version, _all_versions in deb_versions:
-		if package in ("docker-ce", "containerd.io"):
-			iktprint([("  Error:", "error"), (" docker-ce / containerd.io ", "path"), ("is installed; use ", "default"), ("docker.io / containerd", "path"), (" instead\n", "default")], stderr = True)
-			iktprint([("  ", "default"), ("Suggested fix:", "header")])
-			iktprint([("    sudo apt ", "programname"), ("install ", "command"), ("docker.io containerd docker-ce- containerd.io-\n", "argument")])
-			error += 1
-			conflict = True
-			break
-
-	if conflict == False:
-		iktprint([("  OK\n", "emphasis")])
-
-	iktprint([("Summary:", "header")])
-	iktprint([("Security:", "critical"), (f" {security}", "error")])
-	iktprint([(f"  Errors: {error}", "error")])
-	iktprint([(f"Warnings: {warning}", "warning")])
-	iktprint([(f"   Notes: {note}", "note")])
+	# check whether role bindings and cluster role bindings refer to non-existing roles/cluster roles
+]
 
 # pylint: disable-next=unused-argument
 def troubleshoot(options, args):
 	"""
-	Troubleshoot issues in a cluster
+	Troubleshoot issues in the cluster
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): Options to use when executing this action
 	"""
 
-	security = 0
-	error = 0
-	warning = 0
-	note = 0
-	total = 0
+	run_checks(troubleshoot_checks)
 
-	user = getuser()
-	cluster_name = get_cluster_name()
-	with open(f"{KUBE_CONFIG_FILE}", "r", encoding = "utf-8") as f:
-		kubeconfig = yaml.safe_load(f)
-
-	# First start with the really basic: does the cluster respond?
-	# Check no_proxy, perhaps?
-
-	# Is the iKT configuration secure?
-	security, error, warning, note = check_security_disable_strict_host_key_checking(cluster_name, kubeconfig, iktconfig, user, security, error, warning, note)
-
-	# Is the cluster configuration secure?
-	iktprint([("[Checking for insecure cluster configuration]", "phase")])
-
-	insecureskiptlsverify = False
-
-	for cluster in deep_get(kubeconfig, "clusters", []):
-		if deep_get(cluster, "name", "") == cluster_name:
-			insecureskiptlsverify = deep_get(cluster, "insecure-skip-tls-verify", False)
-			break
-
-	if insecureskiptlsverify == False:
-		iktprint([("  OK\n", "emphasis")])
-	else:
-		iktprint([("  Warning:", "critical"), (" TLS verification has been disabled in ", "emphasis"), (f"{KUBE_CONFIG_FILE}", "path"),
-			  ("; this is a potential security threat.", "emphasis")], stderr = True)
-		iktprint([("    If TLS verification is disabled other systems can impersonate the control plane", "default")], stderr = True)
-		iktprint([("    and thus perform Man in the Middle (MITM) attacks.", "default")], stderr = True)
-		iktprint([("    It is adviced that you remove the ", "default"), ("insecure-skip-tls-verify", "argument"), (" option from ", "default"),
-			  (f"{KUBE_CONFIG_FILE}", "path"), (",", "default")], stderr = True)
-		iktprint([("    unless you're absolutely certain that your network environment is safe.\n", "default")], stderr = True)
-		security += 1
-
-	# Is the version of kubectl within one version of the cluster version?
-	iktprint([("[Checking client/server version match]\n", "phase")])
-
-	_kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version = kubectl_get_version()
-
-	iktprint([("       kubectl ", "programname"), ("version: ", "default"), (f"{kubectl_git_version}", "version")])
-	iktprint([("kube-apiserver ", "programname"), ("version: ", "default"), (f"{server_git_version}", "version")])
-
-	print()
-
-	if server_major_version != 1:
-		iktprint([("Critical:", "critical"), (f" {about.PROGRAM_SUITE_NAME}", "programname"), (" has not been tested for any other major version of Kubernetes than v1; aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOTSUP)
-
-	if kubectl_minor_version > server_minor_version and kubectl_minor_version == server_minor_version + 1:
-		iktprint([("Note: ", "note"), ("The ", "default"), ("kubectl", "programname"), (" version is one minor version newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
-		iktprint([("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
-		note += 1
-	elif kubectl_minor_version > server_minor_version:
-		iktprint([("Warning: ", "warning"), ("The ", "default"), ("kubectl", "programname"), (" version is more than one minor version newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
-		iktprint([("         this might work, but it's generally recommended to keep the versions in sync.", "default")], stderr = True)
-		warning += 1
-	elif kubectl_minor_version < server_minor_version and kubectl_minor_version + 1 == server_minor_version:
-		iktprint([("Note: ", "note"), ("The ", "default"), ("kubectl", "programname"), (" version is one minor version older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
-		iktprint([("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
-		warning += 1
-	elif kubectl_minor_version < server_minor_version:
-		iktprint([("Error:", "error"), (" The ", "default"), ("kubectl", "programname"), (" version is much older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
-		iktprint([("       this is NOT supported and is likely to cause issues.", "default")], stderr = True)
-		error += 1
-
-	total = error + warning + note
-
-	if total == 0:
-		iktprint([("OK", "ok")])
-
-	# Kubernetes API based checks
-	iktprint([("\n[Checking kubelet & kube-proxy versions]", "phase")])
-
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
-
-	vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
-
-	# Check kubelet and kube-proxy versions;
-	# they can be up to two minor versions older than kube-apiserver,
-	# but most not be newer
-	critical = False
-
-	# Safe
-	version_regex = re.compile(r"^v(\d+)\.(\d+)\..*")
-
-	for node in vlist:
-		node_name = deep_get(node, "metadata#name")
-		kubelet_version = deep_get(node, "status#nodeInfo#kubeletVersion")
-		kubeproxy_version = deep_get(node, "status#nodeInfo#kubeProxyVersion")
-		tmp = version_regex.match(kubelet_version)
-
-		kubelet_major_version = None
-		kubelet_minor_version = None
-		kubeproxy_major_version = None
-		kubeproxy_minor_version = None
-		if tmp is not None:
-			kubelet_major_version = int(tmp[1])
-			kubelet_minor_version = int(tmp[2])
-		else:
-			iktprint([("Error:", "error"), (" Failed to extract ", "default"), ("kubelet", "programname"), (" version on node ", "default"), (f"{node_name}", "hostname")], stderr = True)
-			critical = True
-
-		tmp = version_regex.match(kubeproxy_version)
-		if tmp is not None:
-			kubeproxy_major_version = int(tmp[1])
-			kubeproxy_minor_version = int(tmp[2])
-		else:
-			iktprint([("Error:", "error"), (" Failed to extract ", "default"), ("kube-proxy", "programname"), (" version on node ", "default"), (f"{node_name}", "hostname")], stderr = True)
-			critical = True
-
-		if kubelet_major_version is not None and kubelet_major_version != 1:
-			iktprint([("Critical:", "critical"), (f" {about.PROGRAM_SUITE_NAME}", "programname"),
-				  (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"),
-				  (" runs ", "default"), ("kubelet ", "programname"), ("version ", "default"), (f"{kubelet_version}", "version")], stderr = True)
-			critical = True
-
-		if kubeproxy_major_version is not None and kubeproxy_major_version != 1:
-			iktprint([("Critical:", "critical"), (f" {about.PROGRAM_SUITE_NAME}", "programname"),
-				  (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"),
-				  (" runs ", "default"), ("kube-proxy ", "programname"), ("version ", "default"), (f"{kubeproxy_version}", "version")], stderr = True)
-			critical = True
-
-		if kubelet_minor_version is not None and kubelet_minor_version > server_minor_version:
-			iktprint([("Error:", "error"), (" The version of ", "default"),
-				  ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
-				  (") on node ", "default"), (f"{node_name}", "hostname"),
-				  (" is newer than that of ", "default"),
-				  ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([("       this is not supported.", "default")], stderr = True)
-			error += 1
-		elif kubelet_minor_version is not None and server_minor_version - 2 <= kubelet_minor_version < server_minor_version:
-			iktprint([("Warning: ", "warning"), ("The version of ", "default"),
-				  ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
-				  (") on node ", "default"), (f"{node_name}", "hostname"),
-				  (" is a bit older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"),
-				  (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([("         this is supported, but not recommended.", "default")], stderr = True)
-			warning += 1
-		elif kubelet_minor_version is not None and kubelet_minor_version < server_minor_version:
-			iktprint([("Error:", "error"), (" The version of ", "default"),
-				  ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
-				  (") on node ", "default"), (f"{node_name}", "hostname"),
-				  (" is much older than that of ", "default"),
-				  ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([("       this is not supported.", "default")], stderr = True)
-			error += 1
-
-		if kubelet_minor_version is not None and kubeproxy_minor_version is not None and kubelet_minor_version != kubeproxy_minor_version:
-			iktprint([("Error:", "error"), (" The version of ", "default"),
-				  ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
-				  (") on node ", "default"), (f"{node_name}", "hostname"),
-				  (" is not the same as that of ", "default"),
-				  ("kube-proxy", "programname"), (" (", "default"), (f"{kubeproxy_major_version}.{kubeproxy_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([("       this is not supported.", "default")], stderr = True)
-			error += 1
-
-	if critical == True:
-		print()
-		iktprint([("Critical errors detected; aborting.", "emphasis")], stderr = True)
-		sys.exit(errno.EINVAL)
-
-	print()
-
-	if error + warning + note == total:
-		iktprint([("OK", "ok")])
-
-	total += security + error + warning + note
-
-	# Check kube-controller-manager, kube-scheduler, and cloud-controller-manager;
-	# they should match, but can be up to one version older,
-	# but most not be newer
-
-	# check whether role bindings and cluster role bindings refer to non-existing roles/cluster roles
-
-	print()
-
-	iktprint([("Summary:", "header")])
-	iktprint([("Security:", "critical"), (f" {security}", "error")])
-	iktprint([(f"  Errors: {error}", "error")])
-	iktprint([(f"Warnings: {warning}", "warning")])
-	iktprint([(f"   Notes: {note}", "note")])
+	iktprint([("\nImportant:", "emphasis"),
+		  (" iktadm", "programname"), (" troubleshoot", "command"),
+		  (" currently only checks for a very limited set of issues;", "default")])
+	iktprint([("a perfect score is not a guarantee that your cluster is problem free", "default")])
 
 commandline = {
 	"Check Versions": {
@@ -3619,6 +3361,26 @@ commandline = {
 		"max_args": 1,
 		"callback": untaint_control_plane,
 	},
+	"Audit": {
+		"command": ["audit"],
+		"description": [("Search for potential security issues in the cluster", "description")],
+		"extended_description": [
+			[("Note: ", "emphasis"), ("If the system is configured to use ", "description"), ("usergroups", "emphasis")],
+			[("(every user have their own group that only they belong to) ", "description")],
+			[("be sure to specify that group using the ", "description"), ("--usergroup ", "option"), ("USERGROUP", "argument"), (" option,", "description")],
+			[("to prevent the permission checker from complain about insecure permissions",  "description")],
+		],
+		"options": {
+			"--usergroup": {
+				"values": [("USERGROUP", "argument")],
+				"description": [("If your system uses usergroups, specify your usergroup here", "description")],
+				"requires_arg": True,
+			},
+		},
+		"min_args": 0,
+		"max_args": 0,
+		"callback": audit,
+	},
 	"Preflight Check": {
 		"command": ["preflight-check"],
 		"description": [("Check for potential pitfalls that may prevent installation from succeeding", "description")],
@@ -3628,7 +3390,7 @@ commandline = {
 	},
 	"Troubleshoot": {
 		"command": ["troubleshoot"],
-		"description": [("Search for potential issues in a cluster", "description")],
+		"description": [("Search for potential problems in the cluster", "description")],
 		"min_args": 0,
 		"max_args": 0,
 		"callback": troubleshoot,
