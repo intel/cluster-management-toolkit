@@ -11,13 +11,16 @@ This module requires init_iktprint() to have been executed first
 """
 
 import errno
+import os
 from pathlib import Path
 import re
 import sys
-import typing
+import typing # pylint: disable=unused-import
 
+from ikttypes import FilePath
 from iktpaths import BINDIR, IKTDIR
-from iktpaths import ANSIBLE_DIR, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
+from iktpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
+from iktpaths import DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import IKT_CONFIG_FILE, KUBE_CONFIG_FILE
 from iktlib import check_deb_versions, deep_get, execute_command_with_response
 from iktprint import iktprint
@@ -342,7 +345,7 @@ def check_containerd_and_docker(cluster_name: str, kubeconfig, iktconfig_dict, u
 
 	return critical, error, warning, note
 
-# pylint: disable-next=too-many-arguments,unused-argument
+# pylint: disable-next=too-many-arguments,unused-argument,line-too-long
 def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
 	"""
 	This checks whether the versions of kubelet and kube-proxy are acceptable
@@ -477,41 +480,171 @@ recommended_directory_permissions = [
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "critical",
-		"justification": [("If other users can create or overwrite files in ", "default"), (f"{BINDIR}", "path"), (" they can obtain elevated privileges", "default")]
+		"justification": [("If other users can create or overwrite files in ", "default"),
+				  (f"{BINDIR}", "path"),
+				  (" they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": IKTDIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "critical",
-		"justification": [("If other users can create or replace files in ", "default"), (f"{IKTDIR}", "path"), (" they may be able to obtain elevated privileges", "default")]
+		"justification": [("If other users can create or replace files in ", "default"),
+				  (f"{IKTDIR}", "path"),
+				  (" they may be able to obtain elevated privileges", "default")]
 	},
 	{
-		"path": ANSIBLE_PLAYBOOK_DIR,
+		"path": IKT_CONFIG_FILE_DIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "critical",
-		"justification": [("If other users can create or replace files in ", "default"), (f"{ANSIBLE_PLAYBOOK_DIR}", "path"), (" they can obtain elevated privileges", "default")]
+		"justification": [("If other users can create or replace files in ", "default"),
+				  (f"{IKT_CONFIG_FILE_DIR}", "path"),
+				  (" they may be able to obtain elevated privileges", "default")]
+	},
+	{
+		"path": ANSIBLE_DIR,
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"severity": "critical",
+		"justification": [("If other users can create or replace files in ", "default"),
+				  (f"{ANSIBLE_DIR}", "path"),
+				  (" they can obtain elevated privileges", "default")]
+	},
+	{
+		"path": IKT_HOOKS_DIR,
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"severity": "critical",
+		"justification": [("If other users can create or replace files in ", "default"),
+				  (f"{IKT_HOOKS_DIR}", "path"),
+				  (" they can obtain elevated privileges", "default")]
+	},
+	{
+		"path": DEPLOYMENT_DIR,
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"severity": "critical",
+		"justification": [("If other users can create or replace files in ", "default"),
+				  (f"{DEPLOYMENT_DIR}", "path"),
+				  (" they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": ANSIBLE_LOG_DIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "warning",
-		"justification": [("If others users can create or replace files in ", "default"), (f"{ANSIBLE_LOG_DIR}", "path"), (" they can spoof results from playbook runs", "default")]
+		"justification": [("If others users can create or replace files in ", "default"),
+				  (f"{ANSIBLE_LOG_DIR}", "path"),
+				  (" they can spoof results from playbook runs", "default")]
 	},
 	{
 		"path": KUBE_CONFIG_DIR,
 		"alertmask": 0o027,
 		"usergroup_alertmask": 0o077,
 		"severity": "critical",
-		"justification": [("If others users can read, create or replace files in ", "default"), (f"{KUBE_CONFIG_DIR}", "path"), (" they can obtain cluster access", "default")]
+		"justification": [("If others users can read, create or replace files in ", "default"),
+				  (f"{KUBE_CONFIG_DIR}", "path"),
+				  (" they can obtain cluster access", "default")]
+	},
+	{
+		"path": THEME_DIR,
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"severity": "error",
+		"justification": [("If others users can create or replace files in ", "default"),
+				  (f"{THEME_DIR}", "path"),
+				  (" they can cause ", "default"), ("iku", "command"), (" to malfunction", "default")]
+	},
+	{
+		"path": PARSER_DIR,
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"severity": "error",
+		"justification": [("If others users can create or replace files in ", "default"),
+				  (f"{PARSER_DIR}", "path"),
+				  (" they can cause ", "default"), ("iku", "command"), (" to malfunction and possibly hide signs of a compromised cluster", "default")]
+	},
+	{
+		"path": VIEW_DIR,
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"severity": "error",
+		"justification": [("If others users can create or replace files in ", "default"),
+				  (f"{VIEW_DIR}", "path"),
+				  (" they can cause ", "default"), ("iku", "command"), (" to malfunction and possibly hide signs of a compromised cluster", "default")]
 	},
 ]
 
 recommended_file_permissions = [
+	{
+		"path": FilePath(os.path.join(BINDIR, "iktadm")),
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"executable": True,
+		"severity": "critical",
+		"justification": [("If others users can modify executables they can obtain elevated privileges", "default")]
+	},
+	{
+		"path": FilePath(os.path.join(BINDIR, "iktinv")),
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"executable": True,
+		"severity": "critical",
+		"justification": [("If others users can modify executables they can obtain elevated privileges", "default")]
+	},
+	{
+		"path": FilePath(os.path.join(BINDIR, "ikt")),
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"executable": True,
+		"severity": "critical",
+		"justification": [("If others users can modify executables they can obtain elevated privileges", "default")]
+	},
+	{
+		"path": FilePath(os.path.join(BINDIR, "iku")),
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"executable": True,
+		"severity": "critical",
+		"justification": [("If others users can modify configlets they may be able to obtain elevated privileges", "default")]
+	},
+	{
+		"path": IKT_CONFIG_FILE_DIR,
+		"suffixes": (".yml", ".yaml"),
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"executable": False,
+		"severity": "critical",
+		"justification": [("If others users can modify configlets they may be able to obtain elevated privileges", "default")]
+	},
+	{
+		"path": ANSIBLE_PLAYBOOK_DIR,
+		"suffixes": (".yml", ".yaml"),
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"executable": False,
+		"severity": "critical",
+		"justification": [("If other users can modify playbooks they can obtain elevated privileges", "default")]
+	},
+	{
+		"path": ANSIBLE_INVENTORY,
+		"alertmask": 0o027,
+		"usergroup_alertmask": 0o077,
+		"severity": "critical",
+		"justification": [("If other users can read or modify the Ansible inventory they can obtain elevated privileges", "default")]
+	},
+	{
+		"path": KUBE_CONFIG_DIR,
+		"alertmask": 0o027,
+		"usergroup_alertmask": 0o077,
+		"executable": False,
+		"severity": "critical",
+		"justification": [("If others users can read or modify cluster configuration files they can obtain cluster access", "default")]
+	},
 ]
 
+# pylint: disable-next=too-many-arguments
 def __check_permissions(recommended_permissions, pathtype, user: str, usergroup: str, critical: int, error: int, warning: int, note: int):
 	issue = False
 
@@ -521,63 +654,96 @@ def __check_permissions(recommended_permissions, pathtype, user: str, usergroup:
 		usergroup_alertmask = deep_get(permissions, "usergroup_alertmask", 0o000)
 		severity = deep_get(permissions, "severity", "critical")
 		justification = deep_get(permissions, "justification", [("<no justification provided>", "emphasis")])
+		executable = deep_get(permissions, "executable", False)
+		suffixes = deep_get(permissions, "suffixes")
 
 		if len(usergroup) > 0:
 			alertmask = usergroup_alertmask
+		notemask = 0o000
+		if pathtype == "file" and executable == False:
+			notemask = 0o111
 
 		path_entry = Path(path)
+
 		if path_entry.exists():
-			try:
-				path_owner = path_entry.owner()
-			except KeyError:
-				iktprint([(f"CRITICAL:", "critical"), (" The owner of the {pathtype} {path} does not exist in the system database; aborting.", "default")], stderr = True)
-				sys.exit(errno.ENOENT)
-			try:
-				path_group = path_entry.group()
-			except KeyError:
-				iktprint([(f"Critical:", "critical"), (" The group of the {pathtype} {path} does not exist in the system database; aborting.", "default")], stderr = True)
-				sys.exit(errno.ENOENT)
-			path_stat = path_entry.stat()
-			path_permissions = path_stat.st_mode & 0o777
-			recommended_permissions = 0o777 & ~alertmask
+			# If this is a file, but we operate on files we should apply these tests for every matching file in this directory
+			if pathtype == "file" and path_entry.is_dir():
+				paths = path_entry.iterdir() # type: ignore
+			else:
+				paths = [path_entry] # type: ignore
 
-			if path_owner != user and path_owner != "root":
-				iktprint([("  ", "default"), (f"Critical:", severity), (f" The {pathtype} ", "default"), (f"{path}", "path"), (" is not owned by ", "default"),
-					  (user, "emphasis")], stderr = True)
-				iktprint([("  ", "default"), ("Justification: ", "emphasis"),
-					  ("if other users can overwrite files they may be able to achieve elevated privileges", "default")], stderr = True)
-				critical += 1
-				issue = True
+			for entry in paths:
+				if pathtype == "file":
+					if not entry.is_file() and not entry.is_symlink():
+						continue
 
-			if len(usergroup) > 0 and path_group != usergroup:
-				iktprint([("  ", "default"), (f"Critical:", severity), (f" The {pathtype} ", "default"), (f"{path}", "path"), (" does not belong to the user group for ", "default"),
-					  (user, "emphasis")], stderr = True)
-				iktprint([("  ", "default"), ("Justification: ", "emphasis")] + justification, stderr = True)
-				print()
-				critical += 1
-				issue = True
+					if suffixes is not None and not str(entry).endswith(suffixes):
+						continue
 
-			if path_permissions & alertmask != 0:
-				iktprint([("  ", "default"), (f"{severity.capitalize()}:", severity),
-					  (f" The permissions for the {pathtype} ", "default"),
-					  (f"{path}", "path"), (" are ", "default"), (f"{path_permissions:o}", "emphasis"), ("; the recommended permissions are ", "default"),
-					  (f"{recommended_permissions:o}", "emphasis"), (" (or stricter)", "default")],
-					  stderr = True)
-				iktprint([("  ", "default"), ("Justification: ", "emphasis")] + justification, stderr = True)
-				print()
+				try:
+					path_owner = entry.owner()
+				except KeyError:
+					iktprint([("Critical:", "critical"), (f" The owner of the {pathtype} ", "default"),
+						  (f"{entry}", "path"),
+						  (" does not exist in the system database; aborting.", "default")], stderr = True)
+					sys.exit(errno.ENOENT)
+				try:
+					path_group = entry.group()
+				except KeyError:
+					iktprint([("Critical:", "critical"), (f" The group of the {pathtype} ", "default"),
+						  (f"{entry}", "path"),
+						  (" does not exist in the system database; aborting.", "default")], stderr = True)
+					sys.exit(errno.ENOENT)
+				path_stat = entry.stat()
+				path_permissions = path_stat.st_mode & 0o777
+				recommended_permissions = 0o777 & ~(alertmask | notemask)
 
-				if severity == "critical":
+				if path_owner not in (user, "root"):
+					iktprint([("  ", "default"), ("Critical:", severity), (f" The {pathtype} ", "default"), (f"{entry}", "path"), (" is not owned by ", "default"),
+						  (user, "emphasis")], stderr = True)
+					iktprint([("  ", "default"), ("Justification: ", "emphasis"),
+						  ("if other users can overwrite files they may be able to achieve elevated privileges", "default")], stderr = True)
 					critical += 1
 					issue = True
-				elif severity == "error":
-					error += 1
+
+				if len(usergroup) > 0 and path_group != usergroup:
+					iktprint([("  ", "default"), ("Critical:", severity), (f" The {pathtype} ", "default"),
+						  (f"{entry}", "path"),
+						  (" does not belong to the user group for ", "default"),
+						  (user, "emphasis")], stderr = True)
+					iktprint([("  ", "default"), ("Justification: ", "emphasis")] + justification, stderr = True)
+					print()
+					critical += 1
 					issue = True
-				elif severity == "warning":
-					warning += 1
-					issue = True
-				elif severity == "note":
-					note += 1
-					issue = True
+
+				if path_permissions & alertmask != 0:
+					iktprint([("  ", "default"), (f"{severity.capitalize()}:", severity),
+						  (f" The permissions for the {pathtype} ", "default"),
+						  (f"{entry}", "path"),
+						  (" are ", "default"), (f"{path_permissions:03o}", "emphasis"), ("; the recommended permissions are ", "default"),
+						  (f"{recommended_permissions:03o}", "emphasis"), (" (or stricter)", "default")],
+						  stderr = True)
+					iktprint([("  ", "default"), ("Justification: ", "emphasis")] + justification, stderr = True)
+					print()
+
+					if severity == "critical":
+						critical += 1
+						issue = True
+					elif severity == "error":
+						error += 1
+						issue = True
+					elif severity == "warning":
+						warning += 1
+						issue = True
+					elif severity == "note":
+						note += 1
+						issue = True
+
+				if path_permissions & notemask != 0:
+					iktprint([("  ", "default"), ("Note:", "note"),
+						  (f" The permissions for the {pathtype} ", "default"),
+						  (f"{entry}", "path"), (" are ", "default"), (f"{path_permissions:03o}", "emphasis"),
+						  ("; this file isn't an executable and shouldn't have the executable bit set", "default")])
 		else:
 			iktprint([("  Warning:", "warning"), (f" the {pathtype} {path} does not exist; skipping.\n", "default")], stderr = True)
 			warning += 1
@@ -587,7 +753,7 @@ def __check_permissions(recommended_permissions, pathtype, user: str, usergroup:
 	return issue, critical, error, warning, note
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def check_file_permissions(cluster_name: str, kubeconfig, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
+def check_file_permissions(cluster_name: str, kubeconfig: dict, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
 	"""
 	This checks whether any files or directories have insecure permissions
 
