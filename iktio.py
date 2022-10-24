@@ -24,13 +24,194 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
-from ikttypes import FilePath, SecurityPolicy
+from ikttypes import FilePath, SecurityChecks, SecurityPolicy, SecurityStatus
 from iktpaths import HOMEDIR
 
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
 
 import iktprint
+
+# pylint: disable=too-many-arguments
+def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = None, checks = None, exit_on_critical: bool = False, message_on_error = False):
+	"""
+	Verifies that a path meets certain security criteria;
+	if the path fails to meet the criteria the function returns False and optionally
+	outputs an error message. Critical errors will either raise an exception or exit the program.
+
+		Parameters:
+			path (FilePath): The path to the file to verify
+			owner_allowlist (list[str]): A list of acceptable file owners;
+				 by default [user, "root"]
+			checks (list[SecurityChecks]): A list of checks that should be performed
+			exit_on_critical (bool): By default check_path return SecurityStatus if a critical criteria violation
+				is found; this flag can be used to exit the program instead if the violation is critical.
+			message_on_error (bool): If this is set to true an error message will be printed to the console.
+		Returns:
+			list[SecurityStatus]: [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
+	"""
+
+	violations = []
+
+	if checks is None:
+		# These are the default checks for a file
+		checks = [
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		]
+
+	user = getuser()
+
+	if parent_owner_allowlist is None:
+		owner_allowlist = [user, "root"]
+
+	if owner_allowlist is None:
+		owner_allowlist = [user, "root"]
+
+	path_entry = Path(path)
+	parent_entry = Path(PurePath(path).parent)
+
+	# This test isn't optional; if the parent directory doesn't exist it's always a failure
+	if not parent_entry.exists():
+		if message_on_error == True:
+			msg = [("Critical", "critical"), (": The parent of the target path ", "default"),
+			       (f"{path}", "path"),
+			       (" does not exist", "default")]
+			if exit_on_critical == True:
+				msg.append(("; aborting.", "default"))
+				iktprint.iktprint(msg, stderr = True)
+				sys.exit(errno.EINVAL)
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.PARENT_DOES_NOT_EXIST)
+		return violations
+
+	if not parent_entry.is_dir():
+		if message_on_error == True:
+			msg = [("Critical", "critical"), (": The parent of the target path ", "default"),
+			       (f"{path}", "path"),
+			       (" exists but is not a directory; this is either a configuration error or a security issue", "default")]
+			if exit_on_critical == True:
+				msg.append(("; aborting.", "default"))
+				iktprint.iktprint(msg, stderr = True)
+				sys.exit(errno.EINVAL)
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.PARENT_IS_NOT_DIR)
+		return violations
+
+	if SecurityChecks.PARENT_OWNER_IN_ALLOWLIST in checks and parent_entry.owner() not in parent_owner_allowlist:
+		if message_on_error == True:
+			msg = [("Critical", "critical"), (": The parent of the target path ", "default"),
+			       (f"{path}", "path"),
+			       (" is not owned by one of (", "default")] +\
+			       iktlib.join_tuple_list(parent_owner_allowlist, _tuple = "emphasis", separator = (", ", "separator")) + [(")", "default")]
+			if exit_on_critical == True:
+				msg.append(("; aborting.", "default"))
+				iktprint.iktprint(msg, stderr = True)
+				sys.exit(errno.EINVAL)
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.PARENT_OWNER_NOT_IN_ALLOWLIST)
+
+	parent_path_stat = parent_entry.stat()
+	parent_path_permissions = parent_path_stat.st_mode & 0o002
+	if SecurityChecks.PARENT_WORLD_WRITABLE in checks and parent_path_permissions != 0:
+		if message_on_error == True:
+			msg = [("Critical", "critical"), (": The parent of the target path ", "default"),
+			       (f"{path}", "path"),
+			       (" is world writable", "default")]
+			if exit_on_critical == True:
+				msg.append(("; aborting.", "default"))
+				iktprint.iktprint(msg, stderr = True)
+				sys.exit(errno.EINVAL)
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.PARENT_WORLD_WRITABLE)
+
+	# Are there any path shenanigans going on?
+	if SecurityChecks.PARENT_RESOLVES_TO_SELF in checks and parent_entry != parent_entry.resolve():
+		if message_on_error == True:
+			msg = [("Critical", "critical"), (": The parent of the target path ", "default"),
+			       (f"{path}", "path"),
+			       (" does not resolve to itself; this is either a configuration error or a security issue", "default")]
+			if exit_on_critical == True:
+				msg.append(("; aborting.", "default"))
+				iktprint.iktprint(msg, stderr = True)
+				sys.exit(errno.EINVAL)
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF)
+
+	if SecurityChecks.EXISTS in checks and not path_entry.exists():
+		violations.append(SecurityStatus.DOES_NOT_EXIST)
+		return violations
+
+	if SecurityChecks.OWNER_IN_ALLOWLIST in checks and path_entry.owner() not in owner_allowlist:
+		if message_on_error == True:
+			msg = [("Critical", "critical"), (": The target path ", "default"),
+			       (f"{path}", "path"),
+			       (" is not owned by one of (", "default")] +\
+			       iktlib.join_tuple_list(owner_allowlist, _tuple = "emphasis", separator = (", ", "separator")) + [(")", "default")]
+			if exit_on_critical == True:
+				msg.append(("; aborting.", "default"))
+				iktprint.iktprint(msg, stderr = True)
+				sys.exit(errno.EINVAL)
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.OWNER_NOT_IN_ALLOWLIST)
+
+	path_stat = path_entry.stat()
+	path_permissions = path_stat.st_mode & 0o002
+	if path_permissions != 0:
+		if message_on_error == True:
+			msg = [("Critical", "critical"), (": The target path ", "default"),
+			       (f"{path}", "path"),
+			       (" is world writable", "default")]
+			if exit_on_critical == True:
+				msg.append(("; aborting.", "default"))
+				iktprint.iktprint(msg, stderr = True)
+				sys.exit(errno.EINVAL)
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.WORLD_WRITABLE)
+
+	# Are there any path shenanigans going on?
+	if path_entry != path_entry.resolve():
+		if message_on_error == True:
+			msg = [("Critical", "critical"), (": The target path ", "default"),
+			       (f"{path}", "path"),
+			       (" does not resolve to itself; this is either a configuration error or a security issue", "default")]
+			if exit_on_critical == True:
+				msg.append(("; aborting.", "default"))
+				iktprint.iktprint(msg, stderr = True)
+				sys.exit(errno.EINVAL)
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.PATH_NOT_RESOLVING_TO_SELF)
+
+	if SecurityChecks.IS_FILE in checks and not path_entry.is_file():
+		if message_on_error == True:
+			msg = [("Error", "error"), (": The target path ", "default"),
+			       (f"{path}", "path"),
+			       (" exists but is not a file; this is either a configuration error or a security issue", "default")]
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.IS_NOT_FILE)
+
+	if SecurityChecks.IS_DIR in checks and not path_entry.is_dir():
+		if message_on_error == True:
+			msg = [("Error", "error"), (": The target path ", "default"),
+			       (f"{path}", "path"),
+			       (" exists but is not a directory; this is either a configuration error or a security issue", "default")]
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.IS_NOT_DIR)
+
+	if SecurityChecks.IS_SYMLINK in checks and not path_entry.is_symlink():
+		if message_on_error == True:
+			msg = [("Error", "error"), (": The target path ", "default"),
+			       (f"{path}", "path"),
+			       (" exists but is not a symlink; this is either a configuration error or a security issue", "default")]
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.IS_NOT_SYMLINK)
+
+	return violations
 
 def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
 	"""
@@ -231,50 +412,40 @@ def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: 
 			exit_on_failure (bool): True to exit on failure, False to return (when possible)
 	"""
 
-	user = getuser()
-
 	if verbose == True:
 		iktprint.iktprint([("Creating directory ", "default"), (f"{directory}", "path"), (" with permissions ", "default"), (f"{permissions:03o}", "emphasis")])
 
-	path = Path(directory)
+	user = getuser()
 
-	if path.exists() and not path.is_dir():
-		iktprint.iktprint([("Error", "error"), (": The path ", "default"),
-				   (f"{directory}", "path"),
-				   (" already exists but is not a file; aborting.", "default")], stderr = True)
+	violations = check_path(directory,
+			    message_on_error = verbose,
+			    parent_owner_allowlist = [user, "root"],
+			    owner_allowlist = [user],
+			    checks = [
+				SecurityChecks.PARENT_RESOLVES_TO_SELF,
+				SecurityChecks.RESOLVES_TO_SELF,
+				SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+				SecurityChecks.OWNER_IN_ALLOWLIST,
+				SecurityChecks.PARENT_PERMISSIONS,
+				SecurityChecks.PERMISSIONS,
+				SecurityChecks.EXISTS,
+				SecurityChecks.IS_DIR,
+			    ],
+			    exit_on_critical = exit_on_failure)
+
+	if SecurityStatus.PARENT_DOES_NOT_EXIST in violations:
+		sys.exit(errno.ENOENT)
+
+	if SecurityStatus.PARENT_IS_NOT_DIR in violations:
+		sys.exit(errno.EINVAL)
+
+	if SecurityStatus.DOES_NOT_EXIST not in violations and SecurityStatus.IS_NOT_DIR in violations:
 		sys.exit(errno.EEXIST)
 
-	# Ensure that the parent path is safe
-	path_parent = path.parent
-	path_parent_path = Path(path_parent)
-	path_parent_resolved = path_parent_path.resolve()
-
-	# Are there any path shenanigans going on?
-	if path_parent != path_parent_resolved:
-		iktprint.iktprint([("Critical", "critical"), (": The parent of target path ", "default"),
-				   (f"{directory}", "path"),
-				   (" does not resolve to itself; this is either a configuration error or a security issue.", "default")], stderr = True)
-		if exit_on_failure == True or not path.is_dir():
-			iktprint.iktprint([("Aborting.", "default")], stderr = True)
-			sys.exit(errno.EINVAL)
-		return
-
-	if path_parent_path.owner() not in ("root", user):
-		iktprint.iktprint([("Error", "error"), (": The parent of the target path ", "default"),
-				   (f"{directory}", "path"),
-				   (" is not owned by ", "default"), ("root", "emphasis"), (" or ", "default"), (user, "emphasis"), ("; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
-
-	path_parent_stat = path_parent_path.stat()
-	path_parent_permissions = path_parent_stat.st_mode & 0o002
-
-	if path_parent_permissions != 0:
-		iktprint.iktprint([("Critical", "critical"), (": The parent of the target path ", "default"),
-				   (f"{directory}", "path"),
-				   (" is world writable", "default"), ("; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
-
-	path.mkdir(mode = permissions, exist_ok = True)
+	# These are the only acceptable conditions where we'd try to create the directory
+	if len(violations) == 0 or violations == [SecurityStatus.DOES_NOT_EXIST]:
+		path = Path(directory)
+		path.mkdir(mode = permissions, exist_ok = True)
 
 def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False) -> None:
 	"""
@@ -421,7 +592,7 @@ def scan_and_add_ssh_keys(hosts):
 	try:
 		hostfile = paramiko.HostKeys(filename = known_hosts)
 	except IOError:
-		iktprint.iktprint([("Critical:", "critical"), (" Failed to open/read “", "default"), (known_hosts, "path"), ("“; aborting.", "default")], stderr = True)
+		iktprint.iktprint([("Critical", "critical"), (": Failed to open/read “", "default"), (known_hosts, "path"), ("“; aborting.", "default")], stderr = True)
 		sys.exit(errno.EIO)
 
 	for host in hosts:
@@ -446,7 +617,7 @@ def scan_and_add_ssh_keys(hosts):
 	try:
 		hostfile.save(filename = known_hosts)
 	except IOError:
-		iktprint.iktprint([("Critical:", "critical"), (" Failed to save modifications to “", "default"),
+		iktprint.iktprint([("Critical", "critical"), (": Failed to save modifications to “", "default"),
 				   (known_hosts, "path"),
 				   ("“; aborting.", "default")], stderr = True)
 		sys.exit(errno.EIO)
@@ -547,6 +718,43 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 			True on success, False on failure
 	"""
 
+	user = getuser()
+
+	# First check that the destination directory is safe; it has to be owned by the user,
+	# and other must not have write permissions; also path must resolve to itself to avoid
+	# symlink attacks, and it must be a directory
+	path = Path("directory")
+	resolved_path = path.resolve()
+	if path != resolved_path:
+		iktprint.iktprint([("Critical", "critical"), (": The target path ", "default"),
+				   (f"{directory}", "path"),
+				   (" does not resolve to itself; this is either a configuration error or a security issue; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	if path.owner() != user:
+		iktprint.iktprint([("Error", "error"), (": The target path ", "default"),
+				   (f"{directory}", "path"),
+				   (" is not owned by ", "default"), (user, "emphasis"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	path_stat = path.stat()
+	path_permissions = path_stat.st_mode & 0o002
+
+	if path_permissions != 0:
+		iktprint.iktprint([("Critical", "critical"), (": The target path ", "default"),
+				   (f"{directory}", "path"),
+				   (" is world writable", "default"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	if not path.is_dir():
+		iktprint.iktprint([("Error", "error"), (": The target path ", "default"),
+				   (f"{directory}", "path"),
+				   (" is not a directory", "default"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	# OK, the destination isn't a symlink and doesn't contain ".." or similar,
+	# it's owned by the user, and is an existing directory; we can safely continue
+
 	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
 	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
 	retval = True
@@ -592,8 +800,8 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 		if r1.status == 200:
 			# If we have a checksum we need to confirm that the downloaded file matches the checksum
 			if checksum is not None and verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)) == False:
-				iktprint.iktprint([("Critical:", "error"),
-					  (" File downloaded from ", "description"),
+				iktprint.iktprint([("Critical", "error"),
+					  (": File downloaded from ", "description"),
 					  (f"{url}", "url"),
 					  (" did not match its expected checksum; aborting.", "description")], stderr = True)
 				retval = False
@@ -608,7 +816,10 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 					with tarfile.open(name = f.name, mode = "r") as tf:
 						members = tf.getnames()
 						if filename not in members:
-							iktprint.iktprint([("Critical: ", "critical"), (f"{filename} is not a part of archive; aborting.", "default")], stderr = True)
+							iktprint.iktprint([("Critical", "critical"),
+									   (": ", "default"),
+									   (f"{filename}", "path"),
+									   (" is not a part of archive; aborting.", "default")], stderr = True)
 							sys.exit(errno.ENOENT)
 
 						with tempfile.NamedTemporaryFile(delete = False) as f2:

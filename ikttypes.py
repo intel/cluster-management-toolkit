@@ -10,6 +10,45 @@ from typing import NewType
 
 FilePath = NewType("FilePath", str)
 
+class SecurityStatus(Enum):
+	"""
+	Return values from check_path()
+	"""
+
+	OK = auto()
+	# Critical
+	WORLD_WRITABLE = auto()
+	PARENT_WORLD_WRITABLE = auto()
+	OWNER_NOT_IN_ALLOWLIST = auto()
+	PARENT_OWNER_NOT_IN_ALLOWLIST = auto()
+	PATH_NOT_RESOLVING_TO_SELF = auto()
+	PARENT_PATH_NOT_RESOLVING_TO_SELF = auto()
+	# Error
+	DOES_NOT_EXIST = auto()
+	PARENT_DOES_NOT_EXIST = auto()
+	IS_NOT_FILE = auto()
+	IS_NOT_DIR = auto()
+	IS_NOT_SYMLINK = auto()
+	PARENT_IS_NOT_DIR = auto()
+
+class SecurityChecks(Enum):
+	"""
+	Checks that can be performed by check_path()
+	"""
+
+	RESOLVES_TO_SELF = auto()
+	PARENT_RESOLVES_TO_SELF = auto()
+	WORLD_WRITABLE = auto()
+	PARENT_WORLD_WRITABLE = auto()
+	OWNER_IN_ALLOWLIST = auto()
+	PARENT_OWNER_IN_ALLOWLIST = auto()
+	PERMISSIONS = auto()
+	PARENT_PERMISSIONS = auto()
+	EXISTS = auto()
+	IS_FILE = auto()
+	IS_DIR = auto()
+	IS_SYMLINK = auto()
+
 class SecurityPolicy(Enum):
 	"""
 	Security policies used by iKT
