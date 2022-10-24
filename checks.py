@@ -521,6 +521,24 @@ recommended_directory_permissions = [
 				  (" they can obtain elevated privileges", "default")]
 	},
 	{
+		"path": FilePath(os.path.join(IKT_HOOKS_DIR, "pre-upgrade.d")),
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"severity": "critical",
+		"justification": [("If other users can create or replace files in ", "default"),
+				  (f"{os.path.join(IKT_HOOKS_DIR, 'pre-upgrade.d')}", "path"),
+				  (" they can obtain elevated privileges", "default")]
+	},
+	{
+		"path": FilePath(os.path.join(IKT_HOOKS_DIR, "post-upgrade.d")),
+		"alertmask": 0o022,
+		"usergroup_alertmask": 0o022,
+		"severity": "critical",
+		"justification": [("If other users can create or replace files in ", "default"),
+				  (f"{os.path.join(IKT_HOOKS_DIR, 'post-upgrade.d')}", "path"),
+				  (" they can obtain elevated privileges", "default")]
+	},
+	{
 		"path": DEPLOYMENT_DIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,

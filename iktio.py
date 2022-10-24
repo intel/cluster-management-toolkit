@@ -30,7 +30,7 @@ from iktpaths import HOMEDIR
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
 
-from iktprint import iktprint
+import iktprint
 
 def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
 	"""
@@ -221,47 +221,186 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 
 	return FilePath(tmp)
 
-def mkdir_if_not_exists(directory: FilePath, verbose = False):
+def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: bool = False, exit_on_failure: bool = False) -> None:
 	"""
 	Create a directory if it doesn't already exist
 		Parameters:
 			directory (str): The path to the directory to create
+			permissions (int): The file permissions to use
 			verbose (bool): Should extra debug messages be printed?
+			exit_on_failure (bool): True to exit on failure, False to return (when possible)
 	"""
 
-	if not os.path.exists(directory):
-		if verbose == True:
-			iktprint([("mkdir ", "programname"), (f"{directory}", "path")])
-		os.mkdir(directory)
+	user = getuser()
 
-def copy_if_not_exists(src: FilePath, dst: FilePath, verbose = False):
+	if verbose == True:
+		iktprint.iktprint([("Creating directory ", "default"), (f"{directory}", "path"), (" with permissions ", "default"), (f"{permissions:03o}", "emphasis")])
+
+	path = Path(directory)
+
+	if path.exists() and not path.is_dir():
+		iktprint.iktprint([("Error", "error"), (": The path ", "default"),
+				   (f"{directory}", "path"),
+				   (" already exists but is not a file; aborting.", "default")], stderr = True)
+		sys.exit(errno.EEXIST)
+
+	# Ensure that the parent path is safe
+	path_parent = path.parent
+	path_parent_path = Path(path_parent)
+	path_parent_resolved = path_parent_path.resolve()
+
+	# Are there any path shenanigans going on?
+	if path_parent != path_parent_resolved:
+		iktprint.iktprint([("Critical", "critical"), (": The parent of target path ", "default"),
+				   (f"{directory}", "path"),
+				   (" does not resolve to itself; this is either a configuration error or a security issue.", "default")], stderr = True)
+		if exit_on_failure == True or not path.is_dir():
+			iktprint.iktprint([("Aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+		return
+
+	if path_parent_path.owner() not in ("root", user):
+		iktprint.iktprint([("Error", "error"), (": The parent of the target path ", "default"),
+				   (f"{directory}", "path"),
+				   (" is not owned by ", "default"), ("root", "emphasis"), (" or ", "default"), (user, "emphasis"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	path_parent_stat = path_parent_path.stat()
+	path_parent_permissions = path_parent_stat.st_mode & 0o002
+
+	if path_parent_permissions != 0:
+		iktprint.iktprint([("Critical", "critical"), (": The parent of the target path ", "default"),
+				   (f"{directory}", "path"),
+				   (" is world writable", "default"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	path.mkdir(mode = permissions, exist_ok = True)
+
+def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False) -> None:
 	"""
 	Copy a file if it doesn't already exist
 		Parameters:
 			src (str): The path to copy from
 			dst (str): The path to copy to
 			verbose (bool): Should extra debug messages be printed?
+			exit_on_failure (bool): True to exit on failure, False to return (when possible)
 	"""
 
-	if not os.path.exists(dst):
-		if verbose == True:
-			iktprint([("cp ", "programname"), (f"{src} ", "path"), (f"{dst}", "path")])
-		shutil.copy2(src, dst)
+	user = getuser()
 
-def replace_symlink(src: FilePath, dst: FilePath, verbose = False):
+	if verbose == True:
+		iktprint.iktprint([("Copying file ", "default"), (f"{src}", "path"), (" to ", "default"), (f"{dst}", "path")])
+
+	dst_path_parent = PurePath(dst).parent
+	dst_path_parent_resolved = Path(dst_path_parent).resolve()
+
+	dst_path = Path(dst)
+
+	if dst_path.exists():
+		if verbose == True:
+			iktprint.iktprint([("Error", "error"), (": The target path ", "default"),
+					   (f"{dst}", "path"),
+					   (" already exists; refusing to overwrite.", "default")], stderr = True)
+		return
+
+	# Are there any path shenanigans going on?
+	if dst_path_parent != dst_path_parent_resolved:
+		iktprint.iktprint([("Critical", "critical"), (": The target path ", "default"),
+				   (f"{dst}", "path"),
+				   (" does not resolve to itself; this is either a configuration error or a security issue.", "default")], stderr = True)
+		if exit_on_failure == True:
+			iktprint.iktprint([("Aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+
+		iktprint.iktprint([("Refusing to copy file.", "default")], stderr = True)
+		return
+
+	dst_path_parent_path = Path(dst_path_parent)
+
+	if not dst_path_parent_path.is_dir():
+		iktprint.iktprint([("Error", "error"), (": The parent of the target path ", "default"),
+				   (f"{dst}", "path"),
+				   (" is not a directory; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	if dst_path_parent_path.owner() not in ("root", user):
+		iktprint.iktprint([("Error", "error"), (": The parent of the target path ", "default"),
+				   (f"{dst}", "path"),
+				   (" is not owned by ", "default"), ("root", "emphasis"), (" or ", "default"), (user, "emphasis"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	parent_path_stat = dst_path_parent_path.stat()
+	parent_path_permissions = parent_path_stat.st_mode & 0o002
+
+	if parent_path_permissions != 0:
+		iktprint.iktprint([("Critical", "critical"), (": The parent of the target path ", "default"),
+				   (f"{dst}", "path"),
+				   (" is world writable", "default"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	shutil.copy2(src, dst)
+
+def replace_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False) -> None:
 	"""
 	Replace as symlink (or create if it doesn't exist)
 		Parameters:
 			src (str): The path to link from
 			dst (str): The path to link to
 			verbose (bool): Should extra debug messages be printed?
+			exit_on_failure (bool): True to exit on failure, False to return (when possible)
 	"""
 
+	user = getuser()
+
 	if verbose == True:
-		iktprint([("ln ", "programname"), ("-s ", "option"), (f"{src} ", "path"), (f"{dst}", "path")])
-	if os.path.islink(dst):
-		os.remove(dst)
-	os.symlink(src, dst)
+		iktprint.iktprint([("Creating symbolic link ", "default"), (f"{dst}", "path"), (" pointing to ", "default"), (f"{src}", "path")])
+
+	dst_path_parent = PurePath(dst).parent
+	dst_path_parent_resolved = Path(dst_path_parent).resolve()
+
+	dst_path = Path(dst)
+	src_path = Path(src)
+
+	# Are there any path shenanigans going on?
+	if dst_path_parent != dst_path_parent_resolved:
+		iktprint.iktprint([("Critical", "critical"), (": The target path ", "default"),
+				   (f"{dst}", "path"),
+				   (" does not resolve to itself; this is either a configuration error or a security issue.", "default")], stderr = True)
+		if exit_on_failure == True:
+			iktprint.iktprint([("Aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+
+		iktprint.iktprint([("Refusing to create symlink.", "default")], stderr = True)
+		return
+
+	dst_path_parent_path = Path(dst_path_parent)
+
+	if not dst_path_parent_path.is_dir():
+		iktprint.iktprint([("Error", "error"), (": The parent of the target path ", "default"),
+				   (f"{dst}", "path"),
+				   (" is not a directory; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	if dst_path_parent_path.owner() not in ("root", user):
+		iktprint.iktprint([("Error", "error"), (": The parent of the target path ", "default"),
+				   (f"{dst}", "path"),
+				   (" is not owned by ", "default"), ("root", "emphasis"), (" or ", "default"), (user, "emphasis"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	parent_path_stat = dst_path_parent_path.stat()
+	parent_path_permissions = parent_path_stat.st_mode & 0o002
+
+	if parent_path_permissions != 0:
+		iktprint.iktprint([("Critical", "critical"), (": The parent of the target path ", "default"),
+				   (f"{dst}", "path"),
+				   (" is world writable", "default"), ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	# Since the parent path resolves safely, we can unlink dst_path if it's a symlink
+	if dst_path.is_symlink():
+		dst_path.unlink()
+
+	dst_path.symlink_to(src_path)
 
 def scan_and_add_ssh_keys(hosts):
 	"""
@@ -282,7 +421,7 @@ def scan_and_add_ssh_keys(hosts):
 	try:
 		hostfile = paramiko.HostKeys(filename = known_hosts)
 	except IOError:
-		iktprint([("Critical:", "critical"), (" Failed to open/read “", "default"), (known_hosts, "path"), ("“; aborting.", "default")], stderr = True)
+		iktprint.iktprint([("Critical:", "critical"), (" Failed to open/read “", "default"), (known_hosts, "path"), ("“; aborting.", "default")], stderr = True)
 		sys.exit(errno.EIO)
 
 	for host in hosts:
@@ -297,7 +436,9 @@ def scan_and_add_ssh_keys(hosts):
 			key = transport.get_remote_server_key()
 			transport.close()
 		except paramiko.SSHException:
-			iktprint([("Error:", "error"), (" Failed to get server key from remote host ", "default"), (host, "hostname"), ("; aborting.", "default")], stderr = True)
+			iktprint.iktprint([("Error:", "error"), (" Failed to get server key from remote host ", "default"),
+					   (host, "hostname"),
+					   ("; aborting.", "default")], stderr = True)
 			sys.exit(errno.EIO)
 
 		hostfile.add(hostname = host, key = key, keytype = key.get_name())
@@ -305,7 +446,9 @@ def scan_and_add_ssh_keys(hosts):
 	try:
 		hostfile.save(filename = known_hosts)
 	except IOError:
-		iktprint([("Critical:", "critical"), (" Failed to save modifications to “", "default"), (known_hosts, "path"), ("“; aborting.", "default")], stderr = True)
+		iktprint.iktprint([("Critical:", "critical"), (" Failed to save modifications to “", "default"),
+				   (known_hosts, "path"),
+				   ("“; aborting.", "default")], stderr = True)
 		sys.exit(errno.EIO)
 
 def verify_checksum(checksum, checksum_type, data, filename = None):
@@ -324,10 +467,10 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 
 	if checksum_type == "md5":
 		m = hashlib.md5() # nosec
-		iktprint([("Warning:", "warning"), (" use of MD5 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
+		iktprint.iktprint([("Warning:", "warning"), (" use of MD5 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
 	elif checksum_type in ("sha", "sha1"):
 		m = hashlib.sha1() # nosec
-		iktprint([("Warning:", "warning"), (" use of SHA1 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
+		iktprint.iktprint([("Warning:", "warning"), (" use of SHA1 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
 	elif checksum_type == "sha224":
 		m = hashlib.sha224()
 	elif checksum_type == "sha256":
@@ -427,7 +570,7 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 			elif checksum_url.startswith("https"):
 				r1 = spm.request("GET", checksum_url)
 			else:
-				iktprint([("Error:", "error"), (" Unknown or missing protocol; Checksum URL ", "description"), (f"{checksum_url}", "url")], stderr = True)
+				iktprint.iktprint([("Error:", "error"), (" Unknown or missing protocol; Checksum URL ", "description"), (f"{checksum_url}", "url")], stderr = True)
 				retval = False
 				break
 
@@ -442,14 +585,14 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 		elif url.startswith("https"):
 			r1 = spm.request("GET", url)
 		else:
-			iktprint([("Error:", "error"), (" Unknown or missing protocol; URL ", "description"), (f"{url}", "url")], stderr = True)
+			iktprint.iktprint([("Error:", "error"), (" Unknown or missing protocol; URL ", "description"), (f"{url}", "url")], stderr = True)
 			retval = False
 			continue
 
 		if r1.status == 200:
 			# If we have a checksum we need to confirm that the downloaded file matches the checksum
 			if checksum is not None and verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)) == False:
-				iktprint([("Critical:", "error"),
+				iktprint.iktprint([("Critical:", "error"),
 					  (" File downloaded from ", "description"),
 					  (f"{url}", "url"),
 					  (" did not match its expected checksum; aborting.", "description")], stderr = True)
@@ -465,7 +608,7 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 					with tarfile.open(name = f.name, mode = "r") as tf:
 						members = tf.getnames()
 						if filename not in members:
-							iktprint([("Critical: ", "critical"), (f"{filename} is not a part of archive; aborting.", "default")], stderr = True)
+							iktprint.iktprint([("Critical: ", "critical"), (f"{filename} is not a part of archive; aborting.", "default")], stderr = True)
 							sys.exit(errno.ENOENT)
 
 						with tempfile.NamedTemporaryFile(delete = False) as f2:
@@ -483,7 +626,7 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 					# Here we atomically move it in place
 					os.rename(f.name, f"{directory}/{filename}")
 		else:
-			iktprint([("Error: ", "error"),
+			iktprint.iktprint([("Error: ", "error"),
 				  ("Failed to fetch URL ", "default"), (f"{url}", "url"), ("; HTTP code: ", "default"), (f"{r1.status}", "errorvalue")], stderr = True)
 			retval = False
 			continue

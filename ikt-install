@@ -34,15 +34,15 @@ PROGRAMAUTHORS = "Written by David Weinehall."
 
 
 DIRECTORIES = [
-	BINDIR,
-	IKTDIR,
-	DEPLOYMENT_DIR,
-	ANSIBLE_DIR,
-	ANSIBLE_LOG_DIR,
-	IKT_CONFIG_FILE_DIR,
-	IKT_HOOKS_DIR,
-	FilePath(os.path.join(IKT_HOOKS_DIR, "pre-upgrade.d")),
-	FilePath(os.path.join(IKT_HOOKS_DIR, "post-upgrade.d")),
+	(BINDIR, 0o755),
+	(IKTDIR, 0o755),
+	(DEPLOYMENT_DIR, 0o755),
+	(ANSIBLE_DIR, 0o755),
+	(ANSIBLE_LOG_DIR, 0o755),
+	(IKT_CONFIG_FILE_DIR, 0o755),
+	(IKT_HOOKS_DIR, 0o755),
+	(FilePath(os.path.join(IKT_HOOKS_DIR, "pre-upgrade.d")), 0o755),
+	(FilePath(os.path.join(IKT_HOOKS_DIR, "post-upgrade.d")), 0o755),
 ]
 
 EXECUTABLE_SYMLINKS = [
@@ -89,8 +89,8 @@ def create_directories(directories, verbose: bool = False) -> None:
 			verbose (bool): Be more verbose
 	"""
 
-	for directory in directories:
-		mkdir_if_not_exists(directory, verbose = verbose)
+	for directory, permissions in directories:
+		mkdir_if_not_exists(directory, permissions = permissions, verbose = verbose)
 
 def create_symlinks(symlinks, verbose: bool = False) -> None:
 	"""
@@ -210,7 +210,7 @@ def install(options, args):
 				iktprint([(f"    {pkg}", "path"), (" (Using package from PIP)", "emphasis")])
 
 		iktprint([("\n• ", "separator"), ("Create the following new directories:", "action")])
-		for name in DIRECTORIES:
+		for name, permissions in DIRECTORIES:
 			iktprint([(f"    {name}", "path")])
 		iktprint([("\n• ", "separator"), ("Install the following configuration files:", "action")])
 		for src, dst in CONFIGURATION_FILES:
