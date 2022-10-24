@@ -60,6 +60,42 @@ Global:
   # or comment this out
   # defaultview: ""
 
+Security:
+  # Security policies
+  #
+  # There are 4 supported security policies for file resolution:
+  # STRICT (only permit exact path match, with the exception for
+  # /bin, /sbin, /usr/bin, /usr/sbin, which are treated as
+  # interchangeable due to some distros merging them);
+  # allowlist is ignored.
+  # ALLOWLIST_STRICT (also allow an additional list of paths,
+  # configurable through file_resolution_allowlist).
+  # ALLOWLIST_RELAXED (returns first successful match, even
+  # if the resolved full path does not equal path, as long as
+  # the path resolves to another file in a directory in the allowlist).
+  # RELAXED (returns first successful match, even if the resolved
+  # full path does not equal path, or if we have to do a lookup using
+  # shutil.which()).
+  #
+  # The system directories /bin, /sbin, /usr/bin, and /usr/sbin
+  # are treated as safe; no further checking is done.
+  # Files at other paths are checked to be owned by either root
+  # or the executing user, and that other users don't have write access
+  # to the files or their parent directory.
+  #
+  # file_resolution_policy: "ALLOWLIST_STRICT"
+
+  # Allowlist when using ALLOWLIST_STRICT or ALLOWLIST_RELAXED
+  #
+  # file_resolution_allowlist:
+  # - "/bin"
+  # - "/sbin"
+  # - "/usr/bin"
+  # - "/usr/sbin"
+  # - "/usr/local/bin"
+  # - "/usr/local/sbin"
+  # - "{HOME}/bin"
+
 Selector:
   # Hide unavailable APIs in the selector menu
   # the list of available APIs can be updated by accessing the selection

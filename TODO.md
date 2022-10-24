@@ -1,9 +1,4 @@
 # TODO
-## Security
-* Everything in .ikt should be 0o600, with the directories 0o700;
-  similarly for .kube and the files there-in. Binaries in $HOME/bin
-  should be 755.
-* If $HOME has write permission for other users, refuse to install.
 
 ## All
 * When running either ikt or iku, check whether .ssh/id_ecdsa.pub is in authorized_keys

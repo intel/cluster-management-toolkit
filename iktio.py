@@ -6,9 +6,10 @@ I/O helpers for Intel Kubernetes Toolkit
 """
 
 import errno
+from getpass import getuser
 import hashlib
 import os
-from pathlib import Path
+from pathlib import Path, PurePath
 import re
 import shutil
 import socket
@@ -23,13 +24,202 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
-from ikttypes import FilePath
+from ikttypes import FilePath, SecurityPolicy
 from iktpaths import HOMEDIR
 
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
 
 from iktprint import iktprint
+
+def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
+	"""
+	Path is the default path where the file expected to be found,
+	or if no such default path exists, just the base name of the file.
+
+	Path resolution occurs as follows:
+
+	1. If the file exists at the location, and meets the security criteria
+	   imposed by security_policy, it will be returned.
+
+	2. If not, and the security policy permits, the entries in fallback_allowlist
+	   will be used as parent for the filename to check for matches.
+
+	3. If no matches are found in step 2, and security_policy permits,
+	   path will be passed to shutil.which().
+
+		Parameters:
+			paths (list[FilePath]): A list of paths to the executable
+			security_policy (SecurityPolicy):
+				The policy to use when deciding whether or not
+				it's OK to use the file at the path.
+		Returns:
+			path (FilePath): A path to the executable
+		Exceptions:
+			FileNotFoundError: Raised whenever no executable could
+			be found that matched both path and security criteria
+			RuntimeError: The path loops
+	"""
+
+	# If security policy is STRICT, we require the resolved path
+	# to equal the path, with the exception that /bin is permitted
+	# to point to /usr/bin, and /sbin is permitted to point to
+	# /usr/sbin.
+	#
+	# If the security policy is ALLOWLIST and fallback_allowlist
+	# isn't empty, the policy is similar all paths in the fallback
+	# list will be tested one at a time with the basename from
+	# path.
+	#
+	# ALLOWLIST_STRICT behaves like STRICT once the path resolves,
+	# ALLOWLIST_RELAXED behaves like RELAXED once the path resolves.
+	#
+	# If the security policy is RELAXED, the path will be passed
+	# to shutil.which() and returned.
+
+	user = getuser()
+	path_entry = Path(path)
+	parent = PurePath(path).parent
+	resolved_path_entry = None
+
+	try:
+		resolved_path_entry = path_entry.resolve(strict = True)
+	except FileNotFoundError:
+		# no such file; keep searching unless we're using SecurityPolicy.STRICT
+		if security_policy == SecurityPolicy.STRICT:
+			raise
+	except RuntimeError as e:
+		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}") from e
+
+	if resolved_path_entry is not None:
+		resolved_parent = PurePath(str(resolved_path_entry))
+		wrong_owner = False
+		wrong_permissions = False
+
+		# Check ownership
+		if resolved_path_entry.owner() not in (user, "root") and resolved_parent not in ("/bin", "/sbin", "/usr/bin", "/usr/sbin"):
+			wrong_owner = True
+
+		# Check permissions; we don't know what groups are good and bad, but we can at least make sure that other doesn't have write access
+		path_stat = resolved_path_entry.stat()
+		path_permissions = path_stat.st_mode & 0o002
+		if path_permissions != 0:
+			wrong_permissions = True
+
+		# If the parent directory allows other to write we also skip
+		path_stat = Path(resolved_parent).stat()
+		path_permissions = path_stat.st_mode & 0o002
+		if path_permissions != 0:
+			wrong_permissions = True
+
+		if wrong_permissions == False and wrong_owner == False:
+			# If we get an exact match, or a symlinked system directory match, return the match
+			# pylint: disable-next=line-too-long
+			if str(path_entry) == str(resolved_path_entry) or (parent in ("/bin", "/sbin", "/usr/bin", "/usr/sbin") and resolved_parent in ("/bin", "/sbin", "/usr/bin", "/usr/sbin")):
+				return path
+
+			# Not a match, but the lookup resolves
+			if security_policy == SecurityPolicy.STRICT:
+				# We don't accept fallbacks, and while the path we used matched,
+				# it wasn't pointing where we expected it to
+				raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}")
+			if security_policy == SecurityPolicy.RELAXED:
+				# When the policy is relaxed we return the first
+				# successful match
+				return path
+
+	# Try the fallback options one by one
+	name = PurePath(path).name
+	tmp = None
+
+	tmp_allowlist = []
+	for directory in fallback_allowlist:
+		if directory.startswith("{HOME}"):
+			tmp_allowlist.append(directory.replace("{HOME}", HOMEDIR, count = 1))
+		else:
+			tmp_allowlist.append(directory)
+	fallback_allowlist = tmp_allowlist
+
+	for directory in fallback_allowlist:
+		path_entry = Path(f"{directory}/{name}")
+		resolved_path_entry = None
+		try:
+			resolved_path_entry = path_entry.resolve(strict = True)
+		except (FileNotFoundError, RuntimeError):
+			continue
+
+		# Check ownership
+		if resolved_path_entry.owner() not in (user, "root") and resolved_parent not in ("/bin", "/sbin", "/usr/bin", "/usr/sbin"):
+			continue
+
+		# Check permissions; we don't know what groups are good and bad, but we can at least make sure that other doesn't have write access
+		path_stat = resolved_path_entry.stat()
+		path_permissions = path_stat.st_mode & 0o002
+		if path_permissions != 0:
+			continue
+
+		# If the parent directory allows other to write we also skip
+		path_stat = Path(resolved_parent).stat()
+		path_permissions = path_stat.st_mode & 0o002
+		if path_permissions != 0:
+			continue
+
+		# The same policies as before (almost) applies
+		# pylint: disable-next=line-too-long
+		if str(path_entry) == str(resolved_path_entry) or (parent in ("/bin", "/sbin", "/usr/bin", "/usr/sbin") and resolved_parent in ("/bin", "/sbin", "/usr/bin", "/usr/sbin")):
+			return FilePath(os.path.join(directory, name))
+
+		if security_policy == SecurityPolicy.ALLOWLIST_STRICT:
+			# We don't accept fallbacks,
+			# and while the path we used matched it wasn't
+			# pointing where we expected it to
+			continue
+
+		if security_policy == SecurityPolicy.ALLOWLIST_RELAXED:
+			# When the policy is relaxed we return the first
+			# successful match if the resolved path is another file within the allowlist
+			if resolved_path_entry.parent in fallback_allowlist:
+				return FilePath(os.path.join(directory, name))
+			continue
+
+	tmp = None
+
+	if security_policy == SecurityPolicy.RELAXED:
+		tmp = shutil.which(name)
+
+	if tmp is None:
+		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}")
+
+	path_entry = Path(tmp)
+	try:
+		resolved_path_entry = path_entry.resolve(strict = True)
+	except (FileNotFoundError, RuntimeError) as e:
+		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}") from e
+
+	resolved_parent = PurePath(str(resolved_path_entry))
+
+	secure = True
+
+	# Check ownership
+	if resolved_path_entry.owner() not in (user, "root") and resolved_parent not in ("/bin", "/sbin", "/usr/bin", "/usr/sbin"):
+		secure = False
+
+	# Check permissions; we don't know what groups are good and bad, but we can at least make sure that other doesn't have write access
+	path_stat = resolved_path_entry.stat()
+	path_permissions = path_stat.st_mode & 0o002
+	if path_permissions != 0:
+		secure = False
+
+	# If the parent directory allows other to write we also skip
+	path_stat = Path(resolved_parent).stat()
+	path_permissions = path_stat.st_mode & 0o002
+	if path_permissions != 0:
+		secure = False
+
+	if secure == False:
+		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}")
+
+	return FilePath(tmp)
 
 def mkdir_if_not_exists(directory: FilePath, verbose = False):
 	"""

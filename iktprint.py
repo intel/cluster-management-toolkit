@@ -5,15 +5,36 @@
 Print themed strings to the console
 """
 
+import errno
 from getpass import getpass
 import os
+import subprocess
 import sys
+import typing # pylint: disable=unused-import
 import yaml
 
-from ikttypes import FilePath
+from ikttypes import FilePath, SecurityPolicy
+import iktio
 
 theme = None
 themepath = None
+
+def clear_screen() -> int:
+	"""
+	Clear the screen
+
+		Returns:
+			retval (int): 0 on success, errno on failure
+	"""
+
+	fallback_allowlist = ["/bin/clear", "/usr/bin/clear"]
+
+	try:
+		cpath = iktio.secure_which(FilePath("/usr/bin/clear"), fallback_allowlist = fallback_allowlist, security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	except FileNotFoundError:
+		return errno.ENOENT
+
+	return subprocess.run([cpath], check = False).returncode
 
 def __themearray_to_string(themearray):
 	if theme is None or themepath is None:

@@ -26,17 +26,19 @@ import http.client
 # but it might not be available
 try:
 	import ujson as json
+	# The exception raised by ujson when parsing fails is different
+	# from what json raises
+	DecodeException = ValueError
 except ModuleNotFoundError:
 	import json # type: ignore
+	DecodeException = json.decoder.JSONDecodeError # type: ignore
 from operator import itemgetter
 import os
 import re
-import shutil
 import socket
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
-import tempfile
 import typing # pylint: disable=unused-import
 import yaml
 
@@ -45,19 +47,16 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-try:
-	import urllib3
-except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
-
-from ikttypes import FilePath, Retval, StatusGroup
-from iktpaths import HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
+from ikttypes import FilePath, Retval, SecurityPolicy, StatusGroup
+from iktpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
+
+from iktio import secure_which
 
 from logparser import logparser, logparser_initialised, LogLevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import clamp, deep_get, deep_get_with_fallback, deep_set, disksize_to_human, get_package_versions, iktconfig, make_set_expression_list, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple
+from iktlib import clamp, deep_get, deep_get_with_fallback, deep_set, disksize_to_human, execute_command, get_package_versions, iktconfig, make_set_expression_list, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, themearray_wrap_line, themearray_to_string, themearray_len
 
 import datagetter
@@ -82,7 +81,7 @@ import helptexts
 
 from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, make_selector, update_api_status as kh_update_api_status
 
-from iktprint import iktprint, init_iktprint
+from iktprint import clear_screen, iktprint, init_iktprint
 
 import about
 
@@ -3020,7 +3019,7 @@ def get_resource_info_by_last_applied_configuration(obj, **kwargs):
 			continue
 		try:
 			data = json.loads(last_applied_configuration)
-		except json.decoder.JSONDecodeError:
+		except DecodeException:
 			# The data is malformed; skip the entry
 			continue
 
@@ -6142,9 +6141,26 @@ def identify_formatter(dataformat, kind = None, obj = None, path = None):
 
 	return formatter
 
-def check_cni_updates(cni, current_version):
+def check_cni_updates(cni: str, current_version: str) -> str:
+	"""
+	Check whether there are newer versions of the CNI available
+
+		Parameters:
+			cni (str): The CNI
+			current_version (str): The current version
+		Returns:
+			candidate_version (str): The newest available version
+	"""
+
 	candidate_version = None
-	new_version = False
+
+	tmp_security_policy = deep_get(iktconfig, "Security#file_resolution_policy", "ALLOWLIST_RELAXED")
+	try:
+		security_policy = SecurityPolicy[tmp_security_policy]
+	except KeyError:
+		security_policy = SecurityPolicy.STRICT
+
+	fallback_allowlist = deep_get(iktconfig, "Security#file_resolution_allowlist", ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"])
 
 	if cni == "weave":
 		# GET /report -H 'Accept: application/json'
@@ -6168,12 +6184,16 @@ def check_cni_updates(cni, current_version):
 				weavestatus = json.loads(r1.read())
 				if deep_get(weavestatus, "VersionCheck#Enabled", False) == True and deep_get(weavestatus, "VersionCheck#Success", False) == True:
 					candidate_version = deep_get(weavestatus, "VersionCheck#NewVersion", None)
-			except json.decoder.JSONDecodeError:
+			except DecodeException:
 				# We got a response, but the data is malformed
 				pass
 		conn.close()
 	elif cni == "cilium":
-		cpath = shutil.which("cilium")
+		try:
+			cpath = secure_which(FilePath(os.path.join(BINDIR, "cilium")), fallback_allowlist = fallback_allowlist, security_policy = security_policy)
+		except FileNotFoundError:
+			cpath = None
+
 		if cpath is not None:
 			args = [cpath, "version"]
 			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
@@ -6191,79 +6211,57 @@ def check_cni_updates(cni, current_version):
 
 	if candidate_version is not None:
 		if versiontuple(current_version) < versiontuple(candidate_version):
-			new_version = True
+			candidate_version = ""
 		else:
 			candidate_version = "No newer version found"
 
-	return new_version, candidate_version
+	return candidate_version
 
-def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False):
+def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False) -> bool:
+	"""
+	Update the CNI
+
+		Parameters:
+			stdscr (opaque): A curses stdscr reference
+			cni (str): The CNI
+			current_version (str): The current version
+			candidate_version (str): The candidate version
+			dry_run (bool): If True just verify that the update method is valid
+		Returns:
+			bool: True on success, False on failure
+	"""
+
+	tmp_security_policy = deep_get(iktconfig, "Security#file_resolution_policy", "ALLOWLIST_RELAXED")
+	try:
+		security_policy = SecurityPolicy[tmp_security_policy]
+	except KeyError:
+		security_policy = SecurityPolicy.STRICT
+
+	fallback_allowlist = deep_get(iktconfig, "Security#file_resolution_allowlist", ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"])
+
 	retval = True
 
 	if cni == "Unknown":
-		return False
-
-	if cni == "weave":
-		# if dry_run == True:
-		#	return True
-		return False
-		weaveupdateaddr = "https://cloud.weave.works"
-
-		# Get the Kubernetes version
-		# XXX: we can get this using the playbook
-		args = ["/usr/bin/kubectl", "version", "-o", "yaml"]
-		try:
-			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = True)
-		except subprocess.CalledProcessError:
-			return False
-
-		kubeversionoutput = yaml.safe_load(result.stdout)
-		kubeversion = deep_get(kubeversionoutput, "serverVersion#major") + "." + deep_get(kubeversionoutput, "serverVersion#minor")
-
-		# FIXME: We need some way to handle no_proxy
-		https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
-		if https_proxy is not None and https_proxy != "":
-			pm = urllib3.ProxyManager(https_proxy)
-		else:
-			pm = urllib3.PoolManager()
-
-		r1 = pm.request("GET", f"{weaveupdateaddr}/k8s/{kubeversion}/net.yaml")
-
-		if r1.status == 200:
-			# Try to get the new weave version, to do a final check
-			# whether we need to update or not
-			weaveupdate = yaml.safe_load(r1.data)
-			new_version = ""
-			for item in weaveupdate.get("items"):
-				if item.get("kind") == "DaemonSet":
-					containers = deep_get(item, "spec#template#spec#containers")
-
-					for container in containers:
-						if container.get("name") == "weave":
-							tmp = container.get("image", "")
-							# Safe
-							new_version = re.sub(r"^.*:", r"", tmp)
-
-			if new_version != "" and versiontuple(current_version) < versiontuple(candidate_version):
-				f = tempfile.NamedTemporaryFile()
-				f.write(r1.data)
-				f.flush()
-
-				# Apply the new configuration
-				args = ["/usr/bin/kubectl" , "apply", "-f"]
-				executecommand_multiple(stdscr, f"Updating weave to {new_version}", args, [ f.name ], True)
-				f.close()
-		pm.clear()
+		retval = False
+	elif cni == "weave":
+		# XXX: Currently we don't have any reliable update method for weave
+		retval = False
 	elif cni == "cilium":
-		cpath = shutil.which("cilium")
+		try:
+			cpath = secure_which(FilePath(os.path.join(BINDIR, "cilium")), fallback_allowlist = fallback_allowlist, security_policy = security_policy)
+		except FileNotFoundError:
+			cpath = None
+
 		if dry_run == True:
 			return cpath is not None
+
 		args = [cpath, "upgrade"]
 		curses.endwin()
-		subprocess.call("/usr/bin/clear") # nosec
+		_retval = clear_screen()
+
 		iktprint([("Updating Cilium:", "phase")])
 		print()
-		subprocess.call(args)
+		retval = execute_command(args)
 		input("\nPress Enter to continue...") # nosec
 
 	return retval
@@ -6370,7 +6368,7 @@ def cniloop(stdscr, view):
 				("Candidate version: ", ("main", "infoheader")),
 			]
 
-			new_version, candidate_version = check_cni_updates(cni, cni_version)
+			candidate_version = check_cni_updates(cni, cni_version)
 			candidateversionarray.append((f"{candidate_version}", ("types", "version")))
 
 
@@ -8364,7 +8362,24 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					else:
 						f.write(f"{timestamp}  {severity}{facility}{messages[y]}\n")
 
-def do_command(stdscr, **kwargs):
+def do_command(stdscr, **kwargs) -> None:
+	"""
+	Execute a command on localhost
+	XXX: This should be renamed
+
+		Parameters:
+			stdscr (opaque): A curses stdscr reference
+			kwargs (dict): Additional parameters
+	"""
+
+	tmp_security_policy = deep_get(iktconfig, "Security#file_resolution_policy", "ALLOWLIST_RELAXED")
+	try:
+		security_policy = SecurityPolicy[tmp_security_policy]
+	except KeyError:
+		security_policy = SecurityPolicy.STRICT
+
+	fallback_allowlist = deep_get(iktconfig, "Security#file_resolution_allowlist", ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"])
+
 	_args = deep_get(kwargs, "command")
 
 	if len(_args) == 0:
@@ -8391,17 +8406,18 @@ def do_command(stdscr, **kwargs):
 	msg = deep_get(kwargs, "msg", "")
 
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 	if len(msg) > 0:
 		iktprint(msg)
 		print()
 
-	if shutil.which(args[0]) is None:
+	try:
+		cpath = secure_which(FilePath(args[0]), fallback_allowlist = fallback_allowlist, security_policy = security_policy)
+	except FileNotFoundError:
 		iktprint([("Error:", "error"), (" “", "default"), (f"{args[0]}", "programname"), ("“ does not exist.\n", "default")], stderr = True)
 		waitforkeypress = True
 	else:
-		# Should we perhaps use subprocess.run here?
-		subprocess.call(args)
+		_retval = subprocess.run(args, check = False).returncode
 
 	if waitforkeypress:
 		input("\nPress Enter to continue...") # nosec
@@ -8409,9 +8425,14 @@ def do_command(stdscr, **kwargs):
 
 # pylint: disable-next=too-many-arguments
 def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
+	"""
+	Executes a command in a container
+	XXX: This should be renamed
+	"""
+
 	# This should probably be done using connect_get_namespaced_pod_exec()
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 	iktprint(msg)
 	print()
 	if obj is not None:
@@ -8421,7 +8442,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 		if command == ["<ephemeral>"]:
 			ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
 			args = ["/usr/bin/kubectl", "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image]
-			subprocess.call(args)
+			_result = subprocess.run(args, check = False)
 		elif command == ["<dnsutils>"]:
 			dnsutils_image = deep_get(iktconfig, "Debug#network_image", "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
 			args = ["/usr/bin/kubectl", "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
@@ -8446,17 +8467,15 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 					iktprint([("Error:", "error"), (" the pod failed to become ready before timeout.", "default")], stderr = True)
 				else:
 					# Attach to the debug container
-					# XXX: Should we perhaps use subprocess.run here?
 					args = ["/usr/bin/kubectl", "attach", "-n", "default", pod_name, "-c", container_name, "-i", "-t", "--pod-running-timeout=1m0s"]
-					subprocess.call(args)
+					_result = subprocess.run(args, check = False)
 
 				# Delete the pod
 				iktprint([("Forcibly deleting pod.", "default")])
 				message, status = kh.delete_obj_by_kind_name_namespace(("Pod", ""), pod_name, "default", force = True)
 		else:
-			# Should we perhaps use subprocess.run here?
 			args = ["/usr/bin/kubectl", "exec", obj_name, "-n", obj_namespace, "-i", "-t", "--container", container, "--"] + command
-			subprocess.call(args)
+			_result = subprocess.run(args, check = False).returncode
 	else:
 		sys.exit("Called execute command with obj=None")
 
@@ -8692,13 +8711,12 @@ def executecommand_multiple(stdscr, msg, command, items, waitforkeypress):
 	item = None
 
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 	print(msg + "\n")
 
 	for item in items:
 		args = command + [item]
-		# Should we perhaps use subprocess.run here?
-		retval = subprocess.call(args)
+		retval = subprocess.run(args, check = False).returncode
 		if retval != 0:
 			break
 
@@ -8817,7 +8835,7 @@ def view_last_applied_configuration(stdscr, **kwargs):
 
 	try:
 		data = json.loads(last_applied_configuration)
-	except json.decoder.JSONDecodeError:
+	except DecodeException:
 		return None
 
 	title = deep_get(kwargs, "title")
@@ -8860,7 +8878,7 @@ def create_namespace(stdscr, **kwargs):
 	name = deep_get(selection_vars, "namespace")
 
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 
 	# Verify that the name of the new namespace is valid
 	if kh.validate_name("dns-label", name) == False:
@@ -8929,7 +8947,7 @@ def __edit_resource(kind, namespace, name):
 # pylint: disable=unused-argument
 def apply_configuration_from_file(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 	resource_path, rtype = values["resource_path"]
 
 	if rtype == "Configuration File":
@@ -8945,7 +8963,7 @@ def apply_configuration_from_file(uip, items, action, values, kind, **kwargs):
 # pylint: disable=unused-argument
 def apply_configuration_from_url(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 	resource_path = values["resource_url"]
 
 	args = ["/usr/bin/kubectl", "apply", "-f", resource_path]
@@ -8956,7 +8974,7 @@ def apply_configuration_from_url(uip, items, action, values, kind, **kwargs):
 # pylint: disable=unused-argument
 def create_resource_from_url(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 	resource_path, _rtype = values["resource_url"]
 
 	args = ["/usr/bin/kubectl", "create", "-f", resource_path]
@@ -9094,7 +9112,7 @@ def edit_resource(stdscr, **kwargs):
 		return
 
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 	retval, args = __edit_resource(kind, namespace, name)
 
 	waitforkeypress = False
@@ -9107,7 +9125,7 @@ def edit_resource(stdscr, **kwargs):
 # pylint: disable=unused-argument
 def restart_resource_rescale(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 
 	for item in items:
 		namespace, name = item
@@ -9127,7 +9145,7 @@ def restart_resource_rescale(uip, items, action, values, kind, **kwargs):
 # pylint: disable=unused-argument
 def restart_resource_rollout(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 
 	for item in items:
 		namespace, name = item
@@ -9145,7 +9163,7 @@ def restart_resource_rollout(uip, items, action, values, kind, **kwargs):
 # pylint: disable=unused-argument
 def rescale_resource(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 
 	for item in items:
 		namespace, name = item
@@ -9167,7 +9185,7 @@ def rescale_resource(uip, items, action, values, kind, **kwargs):
 # pylint: disable=unused-argument
 def pause_resource_rollout(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 
 	for item in items:
 		namespace, name = item
@@ -9187,7 +9205,7 @@ def pause_resource_rollout(uip, items, action, values, kind, **kwargs):
 # pylint: disable=unused-argument
 def resume_resource_rollout(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 
 	for item in items:
 		namespace, name = item
@@ -9207,7 +9225,7 @@ def resume_resource_rollout(uip, items, action, values, kind, **kwargs):
 # pylint: disable=unused-argument
 def stop_resource_rescale(uip, items, action, values, kind, **kwargs):
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 
 	for item in items:
 		namespace, name = item
@@ -9251,7 +9269,7 @@ def action_execute_command(uip, items, action, values, kind, **kwargs):
 	msg = [("Executing “", "action"), (description, "argument"), ("“\n", "action")]
 
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 
 	iktprint(msg)
 
@@ -9274,7 +9292,7 @@ def command_hosts(uip, items, action, values, kind, **kwargs):
 	msg = [("Executing playbook “", "action"), (action.get("description"), "argument"), ("“ on the following hosts: ", "action")] + hosts + [("\n", "action")]
 
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 
 	if action.get("requires_cluster_info") == True:
 		gather_cluster_info()
@@ -9378,7 +9396,7 @@ def ssh_to_host(stdscr, **kwargs):
 	sshuser = deep_get(inventory, f"all#hosts#{host}#ansible_user", sshuser)
 
 	curses.endwin()
-	subprocess.call("/usr/bin/clear") # nosec
+	_retval = clear_screen()
 	iktprint(msg)
 
 	args = ["/usr/bin/ssh"]

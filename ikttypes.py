@@ -5,10 +5,19 @@
 This file contains custom types used to define types used by iKT
 """
 
-from enum import Enum, IntEnum
+from enum import auto, Enum, IntEnum
 from typing import NewType
 
 FilePath = NewType("FilePath", str)
+
+class SecurityPolicy(Enum):
+	"""
+	Security policies used by iKT
+	"""
+	STRICT = auto()
+	ALLOWLIST_STRICT = auto()
+	ALLOWLIST_RELAXED = auto()
+	RELAXED = auto()
 
 class LogLevel(IntEnum):
 	"""

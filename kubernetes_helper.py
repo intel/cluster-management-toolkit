@@ -13,8 +13,12 @@ import hashlib
 # but it might not be available
 try:
 	import ujson as json
+	# The exception raised by ujson when parsing fails is different
+	# from what json raises
+	DecodeException = ValueError
 except ModuleNotFoundError:
 	import json # type: ignore
+	DecodeException = json.decoder.JSONDecodeError # type: ignore
 import os
 import re
 import sys
@@ -2793,7 +2797,7 @@ class KubernetesHelper:
 			# Success
 			try:
 				core_apis = json.loads(data)
-			except json.decoder.JSONDecodeError:
+			except DecodeException:
 				# We got a response, but the data is malformed
 				return kubernetes_resources, 42422, False
 		else:
@@ -2825,7 +2829,7 @@ class KubernetesHelper:
 			# Success
 			try:
 				non_core_apis = json.loads(data)
-			except json.decoder.JSONDecodeError:
+			except DecodeException:
 				# We got a response, but the data is malformed
 				pass
 		else:
@@ -2858,7 +2862,7 @@ class KubernetesHelper:
 					continue
 				try:
 					data = json.loads(data)
-				except json.decoder.JSONDecodeError:
+				except DecodeException:
 					# We got a response, but the data is malformed
 					continue
 
@@ -2954,7 +2958,7 @@ class KubernetesHelper:
 			try:
 				d = json.loads(result.data)
 				message = "400: Bad Request; " + deep_get(d, "message", "")
-			except json.decoder.JSONDecodeError:
+			except DecodeException:
 				# We got a response, but the data is malformed
 				message = "400: Bad Request [return data invalid]"
 		elif status == 401:
@@ -3196,7 +3200,7 @@ class KubernetesHelper:
 				# Success
 				try:
 					d = json.loads(data)
-				except json.decoder.JSONDecodeError:
+				except DecodeException:
 					# We got a response, but the data is malformed; skip the entry
 					continue
 

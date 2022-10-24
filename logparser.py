@@ -30,9 +30,13 @@ import difflib
 try:
 	import ujson as json
 	json_is_ujson = True
+	# The exception raised by ujson when parsing fails is different
+	# from what json raises
+	DecodeException = ValueError
 except ModuleNotFoundError:
 	import json # type: ignore
 	json_is_ujson = False
+	DecodeException = json.decoder.JSONDecodeError # type: ignore
 import os
 import re
 import sys
@@ -733,7 +737,7 @@ def split_json_style(message, severity = LogLevel.INFO, facility = "", fold_msg 
 
 	try:
 		logentry = json.loads(message)
-	except (json.decoder.JSONDecodeError, ValueError):
+	except DecodeException:
 		pass
 
 	# Unfold Python dicts
@@ -961,7 +965,7 @@ def json_event(message, severity = LogLevel.INFO, facility = "", fold_msg = True
 		if tmp2 is not None:
 			try:
 				old = json.loads(tmp2[1])
-			except (json.decoder.JSONDecodeError, ValueError):
+			except DecodeException:
 				message = [(f"{tmp[1]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [error: could not parse json]", ("logview", "severity_error"))]
 				remnants = [(tmp[2], severity)]
 				return message, severity, facility, remnants
@@ -969,7 +973,7 @@ def json_event(message, severity = LogLevel.INFO, facility = "", fold_msg = True
 			old_str = json_dumps(old)
 			try:
 				new = json.loads(tmp2[2])
-			except (json.decoder.JSONDecodeError, ValueError):
+			except DecodeException:
 				message = [(f"{tmp[0]} {event}", ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (" [error: could not parse json]", ("logview", "severity_error"))]
 				remnants = [(tmp[2], severity)]
 				return message, severity, facility, remnants

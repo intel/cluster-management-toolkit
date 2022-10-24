@@ -11,12 +11,13 @@ For usage, see:
 
 import errno
 import os
+from pathlib import Path
 import subprocess
 import sys
 import typing # pylint: disable=unused-import
 
 from ikttypes import FilePath
-from iktpaths import BINDIR, IKTDIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR
+from iktpaths import BINDIR, HOMEDIR, IKTDIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE
 from iktpaths import ANSIBLE_PLAYBOOK_DIRNAME, IKT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
@@ -78,7 +79,7 @@ CONFIGURATION_FILES = [
 	(IKT_CONFIG_FILENAME, IKT_CONFIG_FILE)
 ]
 
-def create_directories(directories, verbose: bool = False):
+def create_directories(directories, verbose: bool = False) -> None:
 	"""
 	Batch create directories
 	If a directory already exists it is silently ignored
@@ -91,7 +92,7 @@ def create_directories(directories, verbose: bool = False):
 	for directory in directories:
 		mkdir_if_not_exists(directory, verbose = verbose)
 
-def create_symlinks(symlinks, verbose: bool = False):
+def create_symlinks(symlinks, verbose: bool = False) -> None:
 	"""
 	Batch create symlinks
 	If a symlink already exists it is *replaced*
@@ -104,7 +105,7 @@ def create_symlinks(symlinks, verbose: bool = False):
 	for src, dst in symlinks:
 		replace_symlink(src, dst, verbose = verbose)
 
-def copy_files(files, verbose: bool = False):
+def copy_files(files, verbose: bool = False) -> None:
 	"""
 	Batch copy files
 	If a file already exists it is silently ignored
@@ -117,7 +118,7 @@ def copy_files(files, verbose: bool = False):
 	for src, dst in files:
 		copy_if_not_exists(src, dst, verbose = verbose)
 
-def install_software(packages, verbose: bool = False):
+def install_software(packages, verbose: bool = False) -> None:
 	"""
 	Batch install Debian packages
 
@@ -128,7 +129,7 @@ def install_software(packages, verbose: bool = False):
 
 	del verbose
 	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + packages
-	subprocess.call(args)
+	_retval = subprocess.run(args, check = False).returncode
 
 def install_software_with_pip_fallback(packages, verbose: bool = False, dryrun: bool = False):
 	"""
@@ -161,11 +162,11 @@ def install_software_with_pip_fallback(packages, verbose: bool = False, dryrun: 
 
 	if len(pkgs) > 0 and dryrun == False:
 		args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + list(pkgs)
-		subprocess.call(args)
+		_retval = subprocess.run(args, check = False).returncode
 
 	if len(fallbacks) > 0 and dryrun == False:
 		args = ["/usr/bin/pip3", "install"] + list(fallbacks)
-		subprocess.call(args)
+		_retval = subprocess.run(args, check = False).returncode
 
 	return list(pkgs), list(fallbacks)
 
@@ -281,6 +282,13 @@ def main():
 	# Before doing anything else, make sure that the user isn't running as root
 	if os.geteuid() == 0:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
+
+	homepath = Path(HOMEDIR)
+	path_stat = homepath.stat()
+	path_permissions = path_stat.st_mode & 0o777
+
+	if path_permissions & 0o002:
+		sys.exit(f"CRITICAL: The destination directory {HOMEDIR} is world-writable; aborting.")
 
 	command, options, args = parse_commandline(about.INSTALL_PROGRAM_NAME, about.INSTALL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS,
 						   sys.argv, COMMANDLINE, default_command = "__default", theme = DEFAULT_THEME_FILE)
