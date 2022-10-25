@@ -32,8 +32,8 @@ from iktlib import deep_get, iktconfig
 
 import iktprint
 
-# pylint: disable=too-many-arguments
-def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = None, checks = None, exit_on_critical: bool = False, message_on_error = False):
+# pylint: disable=too-many-arguments,line-too-long
+def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = None, checks = None, exit_on_critical: bool = False, message_on_error: bool = False):
 	"""
 	Verifies that a path meets certain security criteria;
 	if the path fails to meet the criteria the function returns False and optionally
@@ -51,12 +51,18 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			list[SecurityStatus]: [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
 	"""
 
+	# This is most likely a security violation; treat it as such
+	if "\x00" in path:
+		stripped_path = path.replace("\x00", "<NUL>")
+		raise ValueError(f"Critical: the path {stripped_path} contains NUL-bytes (replaced here);\n"
+				  "this is either a programming error, a system error, file or memory corruption, or a deliberate attempt to bypass security; aborting.")
+
 	violations = []
 
 	if checks is None:
 		# These are the default checks for a file
 		checks = [
-			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
 			SecurityChecks.OWNER_IN_ALLOWLIST,
 			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
 			SecurityChecks.PERMISSIONS,
@@ -68,7 +74,7 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 	user = getuser()
 
 	if parent_owner_allowlist is None:
-		owner_allowlist = [user, "root"]
+		parent_owner_allowlist = [user, "root"]
 
 	if owner_allowlist is None:
 		owner_allowlist = [user, "root"]
@@ -130,8 +136,14 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.PARENT_WORLD_WRITABLE)
 
+	parent_entry_resolved = parent_entry.resolve()
+	parent_entry_systemdir = False
+	if str(parent_entry) in ("/bin", "/sbin", "/usr/bin", "/usr/sbin") and str(parent_entry_resolved) in ("/bin", "/sbin", "/usr/bin", "/usr/sbin"):
+		parent_entry_systemdir = True
+
 	# Are there any path shenanigans going on?
-	if SecurityChecks.PARENT_RESOLVES_TO_SELF in checks and parent_entry != parent_entry.resolve():
+	# If we're dealing with {/bin,/sbin,/usr/bin,/usr/sbin}/path => {/bin,/sbin,/usr/bin,/usr/sbin}/path the symlink is acceptable
+	if SecurityChecks.PARENT_RESOLVES_TO_SELF in checks and parent_entry != parent_entry_resolved and parent_entry_systemdir == False:
 		if message_on_error == True:
 			msg = [("Critical", "critical"), (": The parent of the target path ", "default"),
 			       (f"{path}", "path"),
@@ -174,19 +186,6 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.WORLD_WRITABLE)
 
-	# Are there any path shenanigans going on?
-	if path_entry != path_entry.resolve():
-		if message_on_error == True:
-			msg = [("Critical", "critical"), (": The target path ", "default"),
-			       (f"{path}", "path"),
-			       (" does not resolve to itself; this is either a configuration error or a security issue", "default")]
-			if exit_on_critical == True:
-				msg.append(("; aborting.", "default"))
-				iktprint.iktprint(msg, stderr = True)
-				sys.exit(errno.EINVAL)
-			iktprint.iktprint(msg, stderr = True)
-		violations.append(SecurityStatus.PATH_NOT_RESOLVING_TO_SELF)
-
 	if SecurityChecks.IS_FILE in checks and not path_entry.is_file():
 		if message_on_error == True:
 			msg = [("Error", "error"), (": The target path ", "default"),
@@ -210,6 +209,14 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			       (" exists but is not a symlink; this is either a configuration error or a security issue", "default")]
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_NOT_SYMLINK)
+
+	if SecurityChecks.IS_EXECUTABLE in checks and not os.access(path, os.X_OK):
+		if message_on_error == True:
+			msg = [("Warning", "warning"), (": The target path ", "default"),
+			       (f"{path}", "path"),
+			       (" exists but is not executable; skipping", "default")]
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.IS_NOT_EXECUTABLE)
 
 	return violations
 
@@ -242,72 +249,34 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 			RuntimeError: The path loops
 	"""
 
-	# If security policy is STRICT, we require the resolved path
-	# to equal the path, with the exception that /bin is permitted
-	# to point to /usr/bin, and /sbin is permitted to point to
-	# /usr/sbin.
-	#
+	violations = check_path(path,
+				checks = [
+					SecurityChecks.PARENT_RESOLVES_TO_SELF,
+					SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+					SecurityChecks.OWNER_IN_ALLOWLIST,
+					SecurityChecks.PARENT_PERMISSIONS,
+					SecurityChecks.PERMISSIONS,
+					SecurityChecks.EXISTS,
+					SecurityChecks.IS_FILE,
+					SecurityChecks.IS_EXECUTABLE,
+				])
+
+	# If we're using SecurityPolicy.STRICT we fail if we don't find a match here
+	if security_policy == SecurityPolicy.STRICT and len(violations) > 0:
+		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}")
+
 	# If the security policy is ALLOWLIST and fallback_allowlist
 	# isn't empty, the policy is similar all paths in the fallback
 	# list will be tested one at a time with the basename from
 	# path.
 	#
-	# ALLOWLIST_STRICT behaves like STRICT once the path resolves,
-	# ALLOWLIST_RELAXED behaves like RELAXED once the path resolves.
+	# ALLOWLIST_STRICT behaves like STRICT, except it allows the path to be any of the paths
+	# fallback allowlist
+	# ALLOWLIST_RELAXED is like ALLOWLIST_STRICT, but additionally allows the path not to
+	# resolve to itself (allowing for symlinks); the path can still not contain NUL or ".." though.
 	#
 	# If the security policy is RELAXED, the path will be passed
 	# to shutil.which() and returned.
-
-	user = getuser()
-	path_entry = Path(path)
-	parent = PurePath(path).parent
-	resolved_path_entry = None
-
-	try:
-		resolved_path_entry = path_entry.resolve(strict = True)
-	except FileNotFoundError:
-		# no such file; keep searching unless we're using SecurityPolicy.STRICT
-		if security_policy == SecurityPolicy.STRICT:
-			raise
-	except RuntimeError as e:
-		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}") from e
-
-	if resolved_path_entry is not None:
-		resolved_parent = PurePath(str(resolved_path_entry))
-		wrong_owner = False
-		wrong_permissions = False
-
-		# Check ownership
-		if resolved_path_entry.owner() not in (user, "root") and resolved_parent not in ("/bin", "/sbin", "/usr/bin", "/usr/sbin"):
-			wrong_owner = True
-
-		# Check permissions; we don't know what groups are good and bad, but we can at least make sure that other doesn't have write access
-		path_stat = resolved_path_entry.stat()
-		path_permissions = path_stat.st_mode & 0o002
-		if path_permissions != 0:
-			wrong_permissions = True
-
-		# If the parent directory allows other to write we also skip
-		path_stat = Path(resolved_parent).stat()
-		path_permissions = path_stat.st_mode & 0o002
-		if path_permissions != 0:
-			wrong_permissions = True
-
-		if wrong_permissions == False and wrong_owner == False:
-			# If we get an exact match, or a symlinked system directory match, return the match
-			# pylint: disable-next=line-too-long
-			if str(path_entry) == str(resolved_path_entry) or (parent in ("/bin", "/sbin", "/usr/bin", "/usr/sbin") and resolved_parent in ("/bin", "/sbin", "/usr/bin", "/usr/sbin")):
-				return path
-
-			# Not a match, but the lookup resolves
-			if security_policy == SecurityPolicy.STRICT:
-				# We don't accept fallbacks, and while the path we used matched,
-				# it wasn't pointing where we expected it to
-				raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}")
-			if security_policy == SecurityPolicy.RELAXED:
-				# When the policy is relaxed we return the first
-				# successful match
-				return path
 
 	# Try the fallback options one by one
 	name = PurePath(path).name
@@ -316,91 +285,66 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 	tmp_allowlist = []
 	for directory in fallback_allowlist:
 		if directory.startswith("{HOME}"):
-			tmp_allowlist.append(directory.replace("{HOME}", HOMEDIR, count = 1))
-		else:
-			tmp_allowlist.append(directory)
+			directory.replace("{HOME}", HOMEDIR, count = 1)
+
+		tmp_allowlist.append(directory)
+
 	fallback_allowlist = tmp_allowlist
 
 	for directory in fallback_allowlist:
-		path_entry = Path(f"{directory}/{name}")
-		resolved_path_entry = None
-		try:
-			resolved_path_entry = path_entry.resolve(strict = True)
-		except (FileNotFoundError, RuntimeError):
+		path = FilePath(os.path.join(directory, name))
+
+		violations = check_path(path,
+					checks = [
+						SecurityChecks.PARENT_RESOLVES_TO_SELF,
+						SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+						SecurityChecks.OWNER_IN_ALLOWLIST,
+						SecurityChecks.PARENT_PERMISSIONS,
+						SecurityChecks.PERMISSIONS,
+						SecurityChecks.EXISTS,
+						SecurityChecks.IS_FILE,
+						SecurityChecks.IS_EXECUTABLE,
+					])
+
+		if len(violations) > 0:
+			if security_policy == SecurityPolicy.ALLOWLIST_STRICT:
+				continue
+
+			if len(violations) == 1 and violations == [SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF]:
+				# When the policy is relaxed we return the match eve if the resolved path contains symlinks
+				return path
+
+			# Nope, this isn't acceptable even when relaxed
 			continue
 
-		# Check ownership
-		if resolved_path_entry.owner() not in (user, "root") and resolved_parent not in ("/bin", "/sbin", "/usr/bin", "/usr/sbin"):
-			continue
-
-		# Check permissions; we don't know what groups are good and bad, but we can at least make sure that other doesn't have write access
-		path_stat = resolved_path_entry.stat()
-		path_permissions = path_stat.st_mode & 0o002
-		if path_permissions != 0:
-			continue
-
-		# If the parent directory allows other to write we also skip
-		path_stat = Path(resolved_parent).stat()
-		path_permissions = path_stat.st_mode & 0o002
-		if path_permissions != 0:
-			continue
-
-		# The same policies as before (almost) applies
-		# pylint: disable-next=line-too-long
-		if str(path_entry) == str(resolved_path_entry) or (parent in ("/bin", "/sbin", "/usr/bin", "/usr/sbin") and resolved_parent in ("/bin", "/sbin", "/usr/bin", "/usr/sbin")):
-			return FilePath(os.path.join(directory, name))
-
-		if security_policy == SecurityPolicy.ALLOWLIST_STRICT:
-			# We don't accept fallbacks,
-			# and while the path we used matched it wasn't
-			# pointing where we expected it to
-			continue
-
-		if security_policy == SecurityPolicy.ALLOWLIST_RELAXED:
-			# When the policy is relaxed we return the first
-			# successful match if the resolved path is another file within the allowlist
-			if resolved_path_entry.parent in fallback_allowlist:
-				return FilePath(os.path.join(directory, name))
-			continue
+		return path
 
 	tmp = None
 
-	if security_policy == SecurityPolicy.RELAXED:
+	if security_policy in (SecurityPolicy.WHICH_STRICT, SecurityPolicy.WHICH_RELAXED):
 		tmp = shutil.which(name)
 
 	if tmp is None:
-		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}")
+		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {name}")
 
-	path_entry = Path(tmp)
-	try:
-		resolved_path_entry = path_entry.resolve(strict = True)
-	except (FileNotFoundError, RuntimeError) as e:
-		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}") from e
+	tmp = FilePath(tmp)
 
-	resolved_parent = PurePath(str(resolved_path_entry))
+	violations = check_path(tmp,
+				checks = [
+					SecurityChecks.PARENT_RESOLVES_TO_SELF,
+					SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+					SecurityChecks.OWNER_IN_ALLOWLIST,
+					SecurityChecks.PARENT_PERMISSIONS,
+					SecurityChecks.PERMISSIONS,
+					SecurityChecks.EXISTS,
+					SecurityChecks.IS_FILE,
+					SecurityChecks.IS_EXECUTABLE,
+				])
 
-	secure = True
+	if len(violations) == 0 or len(violations) == 1 and violations == [SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF] and security_policy == SecurityPolicy.WHICH_RELAXED:
+		return FilePath(tmp)
 
-	# Check ownership
-	if resolved_path_entry.owner() not in (user, "root") and resolved_parent not in ("/bin", "/sbin", "/usr/bin", "/usr/sbin"):
-		secure = False
-
-	# Check permissions; we don't know what groups are good and bad, but we can at least make sure that other doesn't have write access
-	path_stat = resolved_path_entry.stat()
-	path_permissions = path_stat.st_mode & 0o002
-	if path_permissions != 0:
-		secure = False
-
-	# If the parent directory allows other to write we also skip
-	path_stat = Path(resolved_parent).stat()
-	path_permissions = path_stat.st_mode & 0o002
-	if path_permissions != 0:
-		secure = False
-
-	if secure == False:
-		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}")
-
-	return FilePath(tmp)
+	raise FileNotFoundError(f"secure_which() could not find an acceptable match for {name}")
 
 def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: bool = False, exit_on_failure: bool = False) -> None:
 	"""
@@ -418,20 +362,19 @@ def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: 
 	user = getuser()
 
 	violations = check_path(directory,
-			    message_on_error = verbose,
-			    parent_owner_allowlist = [user, "root"],
-			    owner_allowlist = [user],
-			    checks = [
-				SecurityChecks.PARENT_RESOLVES_TO_SELF,
-				SecurityChecks.RESOLVES_TO_SELF,
-				SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-				SecurityChecks.OWNER_IN_ALLOWLIST,
-				SecurityChecks.PARENT_PERMISSIONS,
-				SecurityChecks.PERMISSIONS,
-				SecurityChecks.EXISTS,
-				SecurityChecks.IS_DIR,
-			    ],
-			    exit_on_critical = exit_on_failure)
+				message_on_error = verbose,
+				parent_owner_allowlist = [user, "root"],
+				owner_allowlist = [user],
+				checks = [
+					SecurityChecks.PARENT_RESOLVES_TO_SELF,
+					SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+					SecurityChecks.OWNER_IN_ALLOWLIST,
+					SecurityChecks.PARENT_PERMISSIONS,
+					SecurityChecks.PERMISSIONS,
+					SecurityChecks.EXISTS,
+					SecurityChecks.IS_DIR,
+				],
+				exit_on_critical = exit_on_failure)
 
 	if SecurityStatus.PARENT_DOES_NOT_EXIST in violations:
 		sys.exit(errno.ENOENT)

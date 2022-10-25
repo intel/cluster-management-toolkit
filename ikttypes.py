@@ -21,7 +21,6 @@ class SecurityStatus(Enum):
 	PARENT_WORLD_WRITABLE = auto()
 	OWNER_NOT_IN_ALLOWLIST = auto()
 	PARENT_OWNER_NOT_IN_ALLOWLIST = auto()
-	PATH_NOT_RESOLVING_TO_SELF = auto()
 	PARENT_PATH_NOT_RESOLVING_TO_SELF = auto()
 	# Error
 	DOES_NOT_EXIST = auto()
@@ -29,6 +28,7 @@ class SecurityStatus(Enum):
 	IS_NOT_FILE = auto()
 	IS_NOT_DIR = auto()
 	IS_NOT_SYMLINK = auto()
+	IS_NOT_EXECUTABLE = auto()
 	PARENT_IS_NOT_DIR = auto()
 
 class SecurityChecks(Enum):
@@ -36,7 +36,6 @@ class SecurityChecks(Enum):
 	Checks that can be performed by check_path()
 	"""
 
-	RESOLVES_TO_SELF = auto()
 	PARENT_RESOLVES_TO_SELF = auto()
 	WORLD_WRITABLE = auto()
 	PARENT_WORLD_WRITABLE = auto()
@@ -48,15 +47,24 @@ class SecurityChecks(Enum):
 	IS_FILE = auto()
 	IS_DIR = auto()
 	IS_SYMLINK = auto()
+	IS_EXECUTABLE = auto()
 
 class SecurityPolicy(Enum):
 	"""
 	Security policies used by iKT
 	"""
+	# Only allows exact matches
 	STRICT = auto()
+	# Only allows exact matches from any path in the allowlist
 	ALLOWLIST_STRICT = auto()
+	# Allows exact matches from any path in the allowlist,
+	# but path elements can be symlinks
 	ALLOWLIST_RELAXED = auto()
-	RELAXED = auto()
+	# Allows any match that shutil.which() returns,
+	# but only if the path resolves to itself
+	WHICH_STRICT = auto()
+	# Allows any match that shutil.which() returns
+	WHICH_RELAXED = auto()
 
 class LogLevel(IntEnum):
 	"""
