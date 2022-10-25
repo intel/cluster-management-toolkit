@@ -27,20 +27,18 @@ def clear_screen() -> int:
 			retval (int): 0 on success, errno on failure
 	"""
 
-	fallback_allowlist = ["/bin/clear", "/usr/bin/clear"]
-
 	try:
-		cpath = iktio.secure_which(FilePath("/usr/bin/clear"), fallback_allowlist = fallback_allowlist, security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+		cpath = iktio.secure_which(FilePath("/usr/bin/clear"), fallback_allowlist = [], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	except FileNotFoundError:
 		return errno.ENOENT
 
 	return subprocess.run([cpath], check = False).returncode
 
-def __themearray_to_string(themearray):
+def __themearray_to_string(themearray) -> str:
 	if theme is None or themepath is None:
 		sys.exit("iktinput() used without calling init_iktprint() first; this is a programming error.")
 
-	string = ""
+	string: str = ""
 	for _string, theme_attr_ref in themearray:
 		if theme is not None:
 			if theme_attr_ref in theme["term"]:
@@ -85,9 +83,11 @@ def iktinput(themearray) -> str:
 		sys.exit("iktinput() used without calling init_iktprint() first; this is a programming error.")
 
 	string = __themearray_to_string(themearray)
-	return input(string) # nosec
+	tmp = input(string) # nosec
+	tmp = tmp.replace("\x00", "<NUL>")
+	return tmp
 
-def iktinput_password(themearray):
+def iktinput_password(themearray) -> str:
 	"""
 	Print a themearray and input a password;
 	a themearray is a list of format strings of the format:
@@ -103,9 +103,11 @@ def iktinput_password(themearray):
 		sys.exit("iktinput_password() used without calling init_iktprint() first; this is a programming error.")
 
 	string = __themearray_to_string(themearray)
-	return getpass(string)
+	tmp = getpass(string)
+	tmp = tmp.replace("\x00", "<NUL>")
+	return tmp
 
-def iktprint(themearray, stderr: bool = False):
+def iktprint(themearray, stderr: bool = False) -> None:
 	"""
 	Print a themearray;
 	a themearray is a list of format strings of the format:
@@ -126,7 +128,7 @@ def iktprint(themearray, stderr: bool = False):
 	else:
 		print(string)
 
-def init_iktprint(themefile: FilePath):
+def init_iktprint(themefile: FilePath) -> None:
 	"""
 	Initialise iktprint
 

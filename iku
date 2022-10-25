@@ -6154,13 +6154,8 @@ def check_cni_updates(cni: str, current_version: str) -> str:
 
 	candidate_version = None
 
-	tmp_security_policy = deep_get(iktconfig, "Security#file_resolution_policy", "ALLOWLIST_RELAXED")
-	try:
-		security_policy = SecurityPolicy[tmp_security_policy]
-	except KeyError:
-		security_policy = SecurityPolicy.STRICT
-
-	fallback_allowlist = deep_get(iktconfig, "Security#file_resolution_allowlist", ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"])
+	security_policy = SecurityPolicy.ALLOWLIST_RELAXED
+	fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
 
 	if cni == "weave":
 		# GET /report -H 'Accept: application/json'
@@ -6231,13 +6226,8 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 			bool: True on success, False on failure
 	"""
 
-	tmp_security_policy = deep_get(iktconfig, "Security#file_resolution_policy", "ALLOWLIST_RELAXED")
-	try:
-		security_policy = SecurityPolicy[tmp_security_policy]
-	except KeyError:
-		security_policy = SecurityPolicy.STRICT
-
-	fallback_allowlist = deep_get(iktconfig, "Security#file_resolution_allowlist", ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"])
+	security_policy = SecurityPolicy.ALLOWLIST_RELAXED
+	fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
 
 	retval = True
 
@@ -8372,13 +8362,8 @@ def do_command(stdscr, **kwargs) -> None:
 			kwargs (dict): Additional parameters
 	"""
 
-	tmp_security_policy = deep_get(iktconfig, "Security#file_resolution_policy", "ALLOWLIST_RELAXED")
-	try:
-		security_policy = SecurityPolicy[tmp_security_policy]
-	except KeyError:
-		security_policy = SecurityPolicy.STRICT
-
-	fallback_allowlist = deep_get(iktconfig, "Security#file_resolution_allowlist", ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"])
+	security_policy = SecurityPolicy.ALLOWLIST_RELAXED
+	fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
 
 	_args = deep_get(kwargs, "command")
 

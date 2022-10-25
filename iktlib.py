@@ -48,6 +48,8 @@ def disksize_to_human(size):
 def split_msg(rawmsg):
 	# We only want "\n" to represent newlines
 	tmp = rawmsg.replace("\r\n", "\n")
+	# We also replace all \x00 with <NUL>
+	tmp = rawmsg.replace("\x00", "<NUL>")
 	return list(map(str.rstrip, tmp.splitlines()))
 
 def deep_set(dictionary, path, value, create_path = False):

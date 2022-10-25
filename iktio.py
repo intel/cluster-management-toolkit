@@ -155,6 +155,24 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF)
 
+	# Are there any path shenanigans going on?
+	# We first resolve the parent path, then check the rest; this way we can see if the target is a symlink and see
+	# where it ends up
+	name = path_entry.name
+	tmp_entry = Path(os.path.join(parent_entry_resolved, name))
+
+	if SecurityChecks.RESOLVES_TO_SELF in checks and tmp_entry != tmp_entry.resolve():
+		if message_on_error == True:
+			msg = [("Critical", "critical"), (": The target path ", "default"),
+			       (f"{path}", "path"),
+			       (" does not resolve to itself; this is either a configuration error or a security issue", "default")]
+			if exit_on_critical == True:
+				msg.append(("; aborting.", "default"))
+				iktprint.iktprint(msg, stderr = True)
+				sys.exit(errno.EINVAL)
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.PATH_NOT_RESOLVING_TO_SELF)
+
 	if SecurityChecks.EXISTS in checks and not path_entry.exists():
 		violations.append(SecurityStatus.DOES_NOT_EXIST)
 		return violations
@@ -186,6 +204,15 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.WORLD_WRITABLE)
 
+	if SecurityChecks.IS_SYMLINK in checks and not path_entry.is_symlink():
+		if message_on_error == True:
+			msg = [("Error", "error"), (": The target path ", "default"),
+			       (f"{path}", "path"),
+			       (" exists but is not a symlink; this is either a configuration error or a security issue", "default")]
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.IS_NOT_SYMLINK)
+
+	# is_file() returns True even if path is a symlink to a file rather than a file
 	if SecurityChecks.IS_FILE in checks and not path_entry.is_file():
 		if message_on_error == True:
 			msg = [("Error", "error"), (": The target path ", "default"),
@@ -194,6 +221,7 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_NOT_FILE)
 
+	# is_file() returns True even if path is a symlink to a file rather than a file
 	if SecurityChecks.IS_DIR in checks and not path_entry.is_dir():
 		if message_on_error == True:
 			msg = [("Error", "error"), (": The target path ", "default"),
@@ -201,14 +229,6 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			       (" exists but is not a directory; this is either a configuration error or a security issue", "default")]
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_NOT_DIR)
-
-	if SecurityChecks.IS_SYMLINK in checks and not path_entry.is_symlink():
-		if message_on_error == True:
-			msg = [("Error", "error"), (": The target path ", "default"),
-			       (f"{path}", "path"),
-			       (" exists but is not a symlink; this is either a configuration error or a security issue", "default")]
-			iktprint.iktprint(msg, stderr = True)
-		violations.append(SecurityStatus.IS_NOT_SYMLINK)
 
 	if SecurityChecks.IS_EXECUTABLE in checks and not os.access(path, os.X_OK):
 		if message_on_error == True:
@@ -249,9 +269,16 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 			RuntimeError: The path loops
 	"""
 
+	fully_resolved_paths = []
+
+	for allowed_path in fallback_allowlist:
+		if Path(allowed_path).resolve() == Path(allowed_path):
+			fully_resolved_paths.append(allowed_path)
+
 	violations = check_path(path,
 				checks = [
 					SecurityChecks.PARENT_RESOLVES_TO_SELF,
+					SecurityChecks.RESOLVES_TO_SELF,
 					SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
 					SecurityChecks.OWNER_IN_ALLOWLIST,
 					SecurityChecks.PARENT_PERMISSIONS,
@@ -262,25 +289,22 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 				])
 
 	# If we're using SecurityPolicy.STRICT we fail if we don't find a match here
-	if security_policy == SecurityPolicy.STRICT and len(violations) > 0:
+	if security_policy == SecurityPolicy.STRICT:
+		if len(violations) == 0:
+			return path
+
 		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}")
 
-	# If the security policy is ALLOWLIST and fallback_allowlist
-	# isn't empty, the policy is similar all paths in the fallback
-	# list will be tested one at a time with the basename from
-	# path.
+	# If the security policy is ALLOWLIST* and fallback_allowlist isn't empty,
+	# all paths in the fallback list will be tested one at a time with the basename from path,
+	# until a match is found (or the list reaches the end).
 	#
-	# ALLOWLIST_STRICT behaves like STRICT, except it allows the path to be any of the paths
-	# fallback allowlist
-	# ALLOWLIST_RELAXED is like ALLOWLIST_STRICT, but additionally allows the path not to
-	# resolve to itself (allowing for symlinks); the path can still not contain NUL or ".." though.
-	#
-	# If the security policy is RELAXED, the path will be passed
-	# to shutil.which() and returned.
+	# ALLOWLIST_STRICT behaves like STRICT, except with an allowlist
+	# ALLOWLIST_RELAXED additionally allows the path not to resolve to itself, as long as it resolves
+	# to a path in the allowlist that resolves to itself
 
 	# Try the fallback options one by one
 	name = PurePath(path).name
-	tmp = None
 
 	tmp_allowlist = []
 	for directory in fallback_allowlist:
@@ -297,6 +321,7 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 		violations = check_path(path,
 					checks = [
 						SecurityChecks.PARENT_RESOLVES_TO_SELF,
+						SecurityChecks.RESOLVES_TO_SELF,
 						SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
 						SecurityChecks.OWNER_IN_ALLOWLIST,
 						SecurityChecks.PARENT_PERMISSIONS,
@@ -310,39 +335,22 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 			if security_policy == SecurityPolicy.ALLOWLIST_STRICT:
 				continue
 
-			if len(violations) == 1 and violations == [SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF]:
-				# When the policy is relaxed we return the match eve if the resolved path contains symlinks
-				return path
+			if SecurityStatus.DOES_NOT_EXIST in violations:
+				continue
 
-			# Nope, this isn't acceptable even when relaxed
+			# IF the only violation is that the path doesn't resolve to
+			# itself, but it resolves to a path that otherwise has no violations
+			# and that is within the fallback_allowlist (and that entry in turn
+			# resolves to itself) we return the path if policy is relaxed.
+			# Since the behaviour of the called program might change if we call it
+			# by a different name we do not return the resolved path; we return
+			# the original path
+			if len({ SecurityStatus.PATH_NOT_RESOLVING_TO_SELF,
+			         SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF }.union(violations)) <= 2:
+				return path
 			continue
 
 		return path
-
-	tmp = None
-
-	if security_policy in (SecurityPolicy.WHICH_STRICT, SecurityPolicy.WHICH_RELAXED):
-		tmp = shutil.which(name)
-
-	if tmp is None:
-		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {name}")
-
-	tmp = FilePath(tmp)
-
-	violations = check_path(tmp,
-				checks = [
-					SecurityChecks.PARENT_RESOLVES_TO_SELF,
-					SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-					SecurityChecks.OWNER_IN_ALLOWLIST,
-					SecurityChecks.PARENT_PERMISSIONS,
-					SecurityChecks.PERMISSIONS,
-					SecurityChecks.EXISTS,
-					SecurityChecks.IS_FILE,
-					SecurityChecks.IS_EXECUTABLE,
-				])
-
-	if len(violations) == 0 or len(violations) == 1 and violations == [SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF] and security_policy == SecurityPolicy.WHICH_RELAXED:
-		return FilePath(tmp)
 
 	raise FileNotFoundError(f"secure_which() could not find an acceptable match for {name}")
 

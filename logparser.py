@@ -946,9 +946,6 @@ def json_event(message, severity = LogLevel.INFO, facility = "", fold_msg = True
 	remnants = []
 	tmp = message.split(" ", 2)
 
-	# At least events from weave seem to be able to end up with \0; remove them
-	message.replace("\0", "")
-
 	if not message.startswith("EVENT ") or len(tmp) < 3:
 		return message, severity, facility, remnants
 

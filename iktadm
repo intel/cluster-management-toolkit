@@ -480,13 +480,8 @@ def check_version_from_executable(command, args, version_regex):
 
 	version = None
 
-	tmp_security_policy = deep_get(iktconfig, "Security#file_resolution_policy", "ALLOWLIST_RELAXED")
-	try:
-		security_policy = SecurityPolicy[tmp_security_policy]
-	except KeyError:
-		security_policy = SecurityPolicy.STRICT
-
-	fallback_allowlist = deep_get(iktconfig, "Security#file_resolution_allowlist", ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"])
+	security_policy = SecurityPolicy.ALLOWLIST_RELAXED
+	fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
 
 	try:
 		cpath = secure_which(command, fallback_allowlist = fallback_allowlist, security_policy = security_policy)

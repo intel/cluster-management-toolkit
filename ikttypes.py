@@ -21,6 +21,7 @@ class SecurityStatus(Enum):
 	PARENT_WORLD_WRITABLE = auto()
 	OWNER_NOT_IN_ALLOWLIST = auto()
 	PARENT_OWNER_NOT_IN_ALLOWLIST = auto()
+	PATH_NOT_RESOLVING_TO_SELF = auto()
 	PARENT_PATH_NOT_RESOLVING_TO_SELF = auto()
 	# Error
 	DOES_NOT_EXIST = auto()
@@ -37,6 +38,7 @@ class SecurityChecks(Enum):
 	"""
 
 	PARENT_RESOLVES_TO_SELF = auto()
+	RESOLVES_TO_SELF = auto()
 	WORLD_WRITABLE = auto()
 	PARENT_WORLD_WRITABLE = auto()
 	OWNER_IN_ALLOWLIST = auto()
@@ -60,11 +62,6 @@ class SecurityPolicy(Enum):
 	# Allows exact matches from any path in the allowlist,
 	# but path elements can be symlinks
 	ALLOWLIST_RELAXED = auto()
-	# Allows any match that shutil.which() returns,
-	# but only if the path resolves to itself
-	WHICH_STRICT = auto()
-	# Allows any match that shutil.which() returns
-	WHICH_RELAXED = auto()
 
 class LogLevel(IntEnum):
 	"""
