@@ -150,7 +150,6 @@ def init_iktprint(themefile: FilePath) -> None:
 		SecurityChecks.PERMISSIONS,
 		SecurityChecks.EXISTS,
 		SecurityChecks.IS_DIR,
-		SecurityChecks.IS_SYMLINK,
 	]
 
 	theme_dir = FilePath(str(PurePath(themefile).parent))

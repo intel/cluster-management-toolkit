@@ -69,7 +69,6 @@ def objgetter_ansible_log(obj):
 		SecurityChecks.PERMISSIONS,
 		SecurityChecks.EXISTS,
 		SecurityChecks.IS_DIR,
-		SecurityChecks.IS_SYMLINK,
 	]
 
 	playbook_path = FilePath(tmpobj["playbook_path"])

@@ -2217,7 +2217,6 @@ def init_parser_list():
 		SecurityChecks.PERMISSIONS,
 		SecurityChecks.EXISTS,
 		SecurityChecks.IS_DIR,
-		SecurityChecks.IS_SYMLINK,
 	]
 
 	for parser_dir in parser_dirs:
