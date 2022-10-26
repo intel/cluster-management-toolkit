@@ -35,10 +35,10 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
-# from ikttypes import FilePath, StatusGroup
 from iktpaths import KUBE_CONFIG_FILE
 from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, execute_command_with_response, get_since, timestamp_to_datetime, versiontuple
 from ikttypes import DictPath, StatusGroup
+from iktio import secure_read_yaml, secure_write_yaml
 
 # A list of all K8s resources we have some knowledge about
 kubernetes_resources = {
@@ -2299,10 +2299,13 @@ class KubernetesHelper:
 			config_path = KUBE_CONFIG_FILE
 
 		try:
-			with open(config_path, "r", encoding = "utf-8") as f:
-				kubeconfig = yaml.safe_load(f)
+			kubeconfig = secure_read_yaml(config_path)
 		except FileNotFoundError:
+			# We can handle FileNotFoundError; other exceptions
+			# are security related, so we let them raise
 			return []
+		except yaml.parser.ParserError as e:
+			raise yaml.parser.ParserError(f"{config_path} is not valid YAML; aborting.") from e
 
 		current_context = deep_get(kubeconfig, DictPath("current-context"), "")
 
@@ -2347,6 +2350,7 @@ class KubernetesHelper:
 		return clusters
 
 	# Returns False if the context wasn't changed (for whatever reason)
+	# pylint: disable-next=too-many-return-statements
 	def set_context(self, config_path = None, name = None):
 		context_name = ""
 		cluster_name = ""
@@ -2358,8 +2362,7 @@ class KubernetesHelper:
 			config_path = KUBE_CONFIG_FILE
 
 		try:
-			with open(config_path, "r", encoding = "utf-8") as f:
-				kubeconfig = yaml.safe_load(f)
+			kubeconfig = secure_read_yaml(config_path)
 		except FileNotFoundError:
 			return False
 
@@ -2508,10 +2511,7 @@ class KubernetesHelper:
 		if context_name != current_context:
 			kubeconfig["current-context"] = context_name
 
-		yaml_str = yaml.safe_dump(kubeconfig, default_flow_style = False)
-
-		with open(config_path, "w", encoding = "utf-8") as f:
-			f.write(yaml_str)
+		secure_write_yaml(config_path, kubeconfig)
 
 		return True
 

@@ -11,6 +11,34 @@ from typing import NewType
 FilePath = NewType("FilePath", str)
 DictPath = NewType("DictPath", str)
 
+class FilePathAuditError(Exception):
+	"""
+	Exception raised when a security check fails on a FilePath
+
+		Attributes:
+			path: The path being audited
+			message: Additional information about the error
+	"""
+
+	def __init__(self, message: str, path: FilePath = None) -> None:
+		self.path = path
+		self.message = message
+		super().__init__(message)
+
+	def __str__(self) -> str:
+		if self.path is None:
+			path = "<omitted>"
+		else:
+			path = self.path
+		if len(self.message) == 0:
+			message = "No further details were provided"
+		else:
+			message = self.message
+
+		msg = f"Security policy violation for path {path}.  {message}"
+
+		return msg
+
 class SecurityStatus(Enum):
 	"""
 	Return values from check_path()

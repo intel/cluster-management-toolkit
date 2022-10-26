@@ -50,7 +50,9 @@ except ModuleNotFoundError:
 
 from iktpaths import HOMEDIR, PARSER_DIR
 
-from ikttypes import DictPath, LogLevel, loglevel_mappings, loglevel_to_name
+from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, loglevel_mappings, loglevel_to_name, SecurityChecks
+
+from iktio import check_path, secure_read_yaml
 
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig, deep_get_with_fallback
@@ -2205,12 +2207,35 @@ def init_parser_list():
 
 	parser_files = []
 
+	# The parsers directory itself may be a symlink. This is expected behaviour when installing from a git repo,
+	# but we only allow it if the rest of the path components are secure
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_DIR,
+		SecurityChecks.IS_SYMLINK,
+	]
+
 	for parser_dir in parser_dirs:
 		if parser_dir.startswith("{HOME}"):
 			parser_dir = parser_dir.replace("{HOME}", HOMEDIR, 1)
 
 		if not os.path.isdir(parser_dir):
 			continue
+
+		parser_dir = FilePath(parser_dir)
+
+		violations = check_path(parser_dir, checks = checks)
+		if len(violations) > 0:
+			violation_strings = []
+			for violation in violations:
+				violation_strings.append(str(violation))
+			violations_joined = ",".join(violation_strings)
+			raise FilePathAuditError(f"Violated rules: {violations_joined}", path = parser_dir)
 
 		for filename in natsorted(os.listdir(parser_dir)):
 			if filename.startswith(("~", ".")):
@@ -2220,91 +2245,103 @@ def init_parser_list():
 
 			parser_files.append(os.path.join(parser_dir, filename))
 
+	# We don't want to check that parent resolves to itself,
+	# because when we have an installation with links directly to the git repo
+	# the parsers directory will be a symlink
+	checks = [
+		SecurityChecks.RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_FILE,
+	]
+
 	for parser_file in parser_files:
-		with open(parser_file, "r", encoding = "utf-8") as f:
-			try:
-				d = yaml.safe_load(f)
-			except yaml.parser.ParserError:
-				sys.exit(f"Parser-file {parser_file} is invalid; aborting.")
+		try:
+			d = secure_read_yaml(parser_file, checks = checks)
+		except yaml.parser.ParserError as e:
+			raise yaml.parser.ParserError(f"{parser_file} is not valid YAML; aborting.") from e
 
-			for parser in d:
-				parser_name = parser.get("name", "")
-				if len(parser_name) == 0:
+		for parser in d:
+			parser_name = parser.get("name", "")
+			if len(parser_name) == 0:
+				continue
+			show_in_selector = parser.get("show_in_selector", False)
+			matchrules = []
+			for matchkey in parser.get("matchkeys"):
+				pod_name = matchkey.get("pod_name", "")
+				container_name = matchkey.get("container_name", "")
+				image_name = matchkey.get("image_name", "")
+				image_regex_raw = matchkey.get("image_regex", "")
+				if len(image_regex_raw) > 0:
+					image_regex = re.compile(image_regex_raw)
+				else:
+					image_regex = None
+				container_type = matchkey.get("container_type", "container")
+				# We need at least one way of matching
+				if len(pod_name) == 0 and len(container_name) == 0 and len(image_name) == 0:
 					continue
-				show_in_selector = parser.get("show_in_selector", False)
-				matchrules = []
-				for matchkey in parser.get("matchkeys"):
-					pod_name = matchkey.get("pod_name", "")
-					container_name = matchkey.get("container_name", "")
-					image_name = matchkey.get("image_name", "")
-					image_regex_raw = matchkey.get("image_regex", "")
-					if len(image_regex_raw) > 0:
-						image_regex = re.compile(image_regex_raw)
+				matchrule = (pod_name, container_name, image_name, container_type, image_regex)
+				matchrules.append(matchrule)
+
+			if len(matchrules) == 0:
+				continue
+
+			parser_rules = parser.get("parser_rules")
+			if parser_rules is None or len(parser_rules) == 0:
+				continue
+
+			rules = []
+			for rule in parser_rules:
+				if type(rule) == dict:
+					rule_name = rule.get("name")
+					if rule_name in ("colon_severity", "directory", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"):
+						rules.append(rule_name)
+					elif rule_name in ("http", "json", "json_with_leading_message", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"):
+						options = {}
+						for key, value in deep_get(rule, DictPath("options"), {}).items():
+							if key == "regex":
+								regex = deep_get(rule, DictPath("options#regex"), "")
+								value = re.compile(regex)
+							options[key] = value
+						rules.append((rule_name, options))
+					elif rule_name == "substitute_bullets":
+						prefix = rule.get("prefix", "* ")
+						rules.append((rule_name, prefix))
+					elif rule_name == "override_severity":
+						overrides = []
+						for override in deep_get(rule, DictPath("overrides"), []):
+							matchtype = deep_get(override, DictPath("matchtype"))
+							matchkey = deep_get(override, DictPath("matchkey"))
+							_loglevel = deep_get(override, DictPath("loglevel"))
+
+							if matchtype is None or matchkey is None or _loglevel is None:
+								raise ValueError(f"Incorrect override rule in Parser {parser_file}; every override must define matchtype, matchkey, and loglevel")
+
+							if matchtype == "regex":
+								regex = deep_get(override, DictPath("matchkey"), "")
+								matchkey = re.compile(regex)
+							overrides.append({
+								"matchtype": matchtype,
+								"matchkey": matchkey,
+								"loglevel": _loglevel,
+							})
+						rules.append((rule_name, overrides))
+					elif rule_name in ("bracketed_severity", "bracketed_timestamp_severity_facility"):
+						_loglevel = rule.get("default_loglevel", "info")
+						try:
+							default_loglevel = name_to_loglevel(_loglevel)
+						except ValueError:
+							sys.exit(f"Parser {parser_file} contains an invalid loglevel {_loglevel}; aborting.")
+						rules.append((rule_name, default_loglevel))
 					else:
-						image_regex = None
-					container_type = matchkey.get("container_type", "container")
-					# We need at least one way of matching
-					if len(pod_name) == 0 and len(container_name) == 0 and len(image_name) == 0:
-						continue
-					matchrule = (pod_name, container_name, image_name, container_type, image_regex)
-					matchrules.append(matchrule)
+						sys.exit(f"Parser {parser_file} has an unknown rule-type {rule}; aborting.")
+				else:
+					rules.append(rule)
 
-				if len(matchrules) == 0:
-					continue
-
-				parser_rules = parser.get("parser_rules")
-				if parser_rules is None or len(parser_rules) == 0:
-					continue
-
-				rules = []
-				for rule in parser_rules:
-					if type(rule) == dict:
-						rule_name = rule.get("name")
-						if rule_name in ("colon_severity", "directory", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"):
-							rules.append(rule_name)
-						elif rule_name in ("http", "json", "json_with_leading_message", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"):
-							options = {}
-							for key, value in deep_get(rule, DictPath("options"), {}).items():
-								if key == "regex":
-									regex = deep_get(rule, DictPath("options#regex"), "")
-									value = re.compile(regex)
-								options[key] = value
-							rules.append((rule_name, options))
-						elif rule_name == "substitute_bullets":
-							prefix = rule.get("prefix", "* ")
-							rules.append((rule_name, prefix))
-						elif rule_name == "override_severity":
-							overrides = []
-							for override in deep_get(rule, DictPath("overrides"), []):
-								matchtype = deep_get(override, DictPath("matchtype"))
-								matchkey = deep_get(override, DictPath("matchkey"))
-								_loglevel = deep_get(override, DictPath("loglevel"))
-
-								if matchtype is None or matchkey is None or _loglevel is None:
-									raise ValueError(f"Incorrect override rule in Parser {parser_file}; every override must define matchtype, matchkey, and loglevel")
-
-								if matchtype == "regex":
-									regex = deep_get(override, DictPath("matchkey"), "")
-									matchkey = re.compile(regex)
-								overrides.append({
-									"matchtype": matchtype,
-									"matchkey": matchkey,
-									"loglevel": _loglevel,
-								})
-							rules.append((rule_name, overrides))
-						elif rule_name in ("bracketed_severity", "bracketed_timestamp_severity_facility"):
-							_loglevel = rule.get("default_loglevel", "info")
-							try:
-								default_loglevel = name_to_loglevel(_loglevel)
-							except ValueError:
-								sys.exit(f"Parser {parser_file} contains an invalid loglevel {_loglevel}; aborting.")
-							rules.append((rule_name, default_loglevel))
-						else:
-							sys.exit(f"Parser {parser_file} has an unknown rule-type {rule}; aborting.")
-					else:
-						rules.append(rule)
-
-				parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser_rules = rules))
+			parsers.append(Parser(parser_name = parser_name, show_in_selector = show_in_selector, match_rules = matchrules, parser_rules = rules))
 
 	# Fallback entries
 	parsers.append(Parser(parser_name = "basic_8601_raw", show_in_selector = True, match_rules = [("raw", "", "", "container", None)], parser_rules = []))

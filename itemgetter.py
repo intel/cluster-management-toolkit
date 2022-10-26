@@ -548,7 +548,7 @@ def get_pod_tolerations(kh, obj, **kwargs):
 		else:
 			timeout = str(toleration_seconds)
 
-		value = deep_get(toleration, "value", "")
+		value = deep_get(toleration, DictPath("value"), "")
 		tolerations.append([key, operator, value, effect, timeout])
 
 	return tolerations
@@ -581,7 +581,7 @@ def get_resources(kh, obj, **kwargs):
 		elif request == "memory":
 			resources.append(("CPU", "Limit", deep_get(obj, DictPath("spec#resources#requests#memory"))))
 		elif request.startswith("hugepages-"):
-			resources.append((f"H{request[1:]}", "Limit", deep_get(obj, f"spec#resources#requests#{request}")))
+			resources.append((f"H{request[1:]}", "Limit", deep_get(obj, DictPath(f"spec#resources#requests#{request}"))))
 
 	return resources
 
@@ -608,11 +608,11 @@ def get_endpoint_ips(subsets):
 		if deep_get(subset, DictPath("notReadyAddresses")) is not None and len(deep_get(subset, DictPath("notReadyAddresses"))) > 0:
 			notready += 1
 
-		if deep_get(subset, "addresses") is None:
+		if deep_get(subset, DictPath("addresses")) is None:
 			continue
 
-		for address in deep_get(subset, "addresses", []):
-			endpoints.append(deep_get(address, "ip"))
+		for address in deep_get(subset, DictPath("addresses"), []):
+			endpoints.append(deep_get(address, DictPath("ip")))
 
 	if len(endpoints) == 0:
 		if notready > 0:
@@ -627,31 +627,57 @@ def get_security_context(kh, obj, **kwargs):
 
 	tmp = [
 		("Run as User",
-		 deep_get_with_fallback(obj, ["spec#securityContext#runAsUser", "spec#template#spec#securityContext#runAsUser"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#runAsUser"),
+			DictPath("spec#template#spec#securityContext#runAsUser")])),
 		("Run as non-Root",
-		 deep_get_with_fallback(obj, ["spec#securityContext#runAsNonRoot", "spec#template#spec#securityContext#runAsNonRoot"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#runAsNonRoot"),
+			DictPath("spec#template#spec#securityContext#runAsNonRoot")])),
 		("Run as Group",
-		 deep_get_with_fallback(obj, ["spec#securityContext#runAsGroup", "spec#template#spec#securityContext#runAsGroup"])),
+		deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#runAsGroup"),
+			DictPath("spec#template#spec#securityContext#runAsGroup")])),
 		("FS Group",
-		 deep_get_with_fallback(obj, ["spec#securityContext#fsGroup", "spec#template#spec#securityContext#fsGroup"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#fsGroup"),
+			DictPath("spec#template#spec#securityContext#fsGroup")])),
 		("FS Group-change Policy",
-		 deep_get_with_fallback(obj, ["spec#securityContext#fsGroupChangePolicy", "spec#template#spec#securityContext#fsGroupChangePolicy"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#fsGroupChangePolicy"),
+			DictPath("spec#template#spec#securityContext#fsGroupChangePolicy")])),
 		("Allow Privilege Escalation",
-		 deep_get_with_fallback(obj, ["spec#securityContext#allowPrivilegeEscalation", "spec#template#spec#securityContext#allowPrivilegeEscalation"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#allowPrivilegeEscalation"),
+			DictPath("spec#template#spec#securityContext#allowPrivilegeEscalation")])),
 		("Capabilities",
-		 deep_get_with_fallback(obj, ["spec#securityContext#capabilities", "spec#template#spec#securityContext#capabilities"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#capabilities"),
+			DictPath("spec#template#spec#securityContext#capabilities")])),
 		("Privileged",
-		 deep_get_with_fallback(obj, ["spec#securityContext#privileged", "spec#template#spec#securityContext#privileged"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#privileged"),
+			DictPath("spec#template#spec#securityContext#privileged")])),
 		("Proc Mount",
-		 deep_get_with_fallback(obj, ["spec#securityContext#procMount", "spec#template#spec#securityContext#procMount"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#procMount"),
+			DictPath("spec#template#spec#securityContext#procMount")])),
 		("Read-only Root Filesystem",
-		 deep_get_with_fallback(obj, ["spec#securityContext#readOnlyRootFilesystem", "spec#template#spec#securityContext#readOnlyRootFilesystem"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#readOnlyRootFilesystem"),
+			DictPath("spec#template#spec#securityContext#readOnlyRootFilesystem")])),
 		("SELinux Options",
-		 deep_get_with_fallback(obj, ["spec#securityContext#seLinuxOptions", "spec#template#spec#securityContext#seLinuxOptions"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#seLinuxOptions"),
+			DictPath("spec#template#spec#securityContext#seLinuxOptions")])),
 		("Seccomp Profile",
-		 deep_get_with_fallback(obj, ["spec#securityContext#seccompProfile", "spec#template#spec#securityContext#seccompProfile"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#seccompProfile"),
+			DictPath("spec#template#spec#securityContext#seccompProfile")])),
 		("Windows Options",
-		 deep_get_with_fallback(obj, ["spec#securityContext#windowsOptions", "spec#template#spec#securityContext#windowsOptions"])),
+		 deep_get_with_fallback(obj, [
+			DictPath("spec#securityContext#windowsOptions"),
+			DictPath("spec#template#spec#securityContext#windowsOptions")])),
 	]
 
 	for policy in tmp:
@@ -662,26 +688,26 @@ def get_security_context(kh, obj, **kwargs):
 
 # pylint: disable-next=unused-argument
 def get_svc_port_target_endpoints(kh, obj, **kwargs):
-	svcname = deep_get(obj, "metadata#name")
-	svcnamespace = deep_get(obj, "metadata#namespace")
+	svcname = deep_get(obj, DictPath("metadata#name"))
+	svcnamespace = deep_get(obj, DictPath("metadata#namespace"))
 	port_target_endpoints = []
-	stype = deep_get(obj, "spec#type")
-	cluster_ip = deep_get(obj, "spec#clusterIP")
+	stype = deep_get(obj, DictPath("spec#type"))
+	cluster_ip = deep_get(obj, DictPath("spec#clusterIP"))
 	endpoints = []
 
 	ref = kh.get_ref_by_kind_name_namespace(("Endpoints", ""), svcname, svcnamespace)
-	endpoints = get_endpoint_ips(deep_get(ref, "subsets"))
+	endpoints = get_endpoint_ips(deep_get(ref, DictPath("subsets")))
 
-	for port in deep_get(obj, "spec#ports", []):
-		name = deep_get(port, "name", "")
-		svcport = deep_get(port, "port", "")
-		protocol = deep_get(port, "protocol", "")
+	for port in deep_get(obj, DictPath("spec#ports"), []):
+		name = deep_get(port, DictPath("name"), "")
+		svcport = deep_get(port, DictPath("port"), "")
+		protocol = deep_get(port, DictPath("protocol"), "")
 		if stype in ("NodePort", "LoadBalancer"):
-			node_port = deep_get(port, "nodePort", "Auto Allocate")
+			node_port = deep_get(port, DictPath("nodePort"), "Auto Allocate")
 		else:
 			node_port = "N/A"
 		if cluster_ip is not None:
-			target_port = deep_get(port, "targetPort", "")
+			target_port = deep_get(port, DictPath("targetPort"), "")
 		else:
 			target_port = ""
 		endpointstr = f":{target_port}, ".join(endpoints)
@@ -709,11 +735,11 @@ def get_volume_properties(kh, obj, **kwargs):
 	if pv_type is None:
 		return volume_properties
 
-	properties = deep_get(KNOWN_PV_TYPES, f"{pv_type}#properties", {})
+	properties = deep_get(KNOWN_PV_TYPES, DictPath(f"{pv_type}#properties"), {})
 	for key in properties:
-		default = deep_get(properties, f"{key}#default", "")
-		path = deep_get(properties, f"{key}#path", "")
-		value = deep_get(obj, f"spec#{pv_type}#{path}", default)
+		default = deep_get(properties, DictPath(f"{key}#default"), "")
+		path = deep_get(properties, DictPath(f"{key}#path"), "")
+		value = deep_get(obj, DictPath(f"spec#{pv_type}#{path}"), default)
 		if isinstance(value, list):
 			value = ",".join(value)
 		elif isinstance(value, dict):

@@ -40,7 +40,10 @@ def get_container_status(src_statuses, container: str):
 		if deep_get(container_status, DictPath("name")) == container:
 			restarts = deep_get(container_status, DictPath("restartCount"))
 			running = deep_get(container_status, DictPath("state#running"))
-			ts = deep_get_with_fallback(container_status, [DictPath("state#terminated#finishedAt"), DictPath("lastState#terminated#finishedAt"), DictPath("state#running#startedAt")], None)
+			ts = deep_get_with_fallback(container_status, [
+				DictPath("state#terminated#finishedAt"),
+				DictPath("lastState#terminated#finishedAt"),
+				DictPath("state#running#startedAt")], None)
 			age = timestamp_to_datetime(ts)
 
 			if deep_get(container_status, DictPath("ready")) == False:

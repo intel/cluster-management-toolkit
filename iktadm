@@ -517,17 +517,17 @@ def __upgrade_cni(cni, upgradetype, context):
 
 	# FIXME: for now we hardcode this
 	arch = "amd64"
-	version_command = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#version_command")
-	version_command_regex = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#version_regex")
-	candidate_version_url = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#candidate_version_url")
-	candidate_version_command = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#candidate_version_command")
-	candidate_version_regex = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#candidate_version_regex")
-	download_url = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#url")
-	download_checksum_url = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#checksum_url")
-	download_checksum_type = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#checksum_type")
-	command_filename = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#filename")
-	install_command = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#install")
-	upgrade_command = deep_get(cni_upgrade_data, f"{cni}#{upgradetype}#upgrade")
+	version_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#version_command"))
+	version_command_regex = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#version_regex"))
+	candidate_version_url = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_url"))
+	candidate_version_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_command"))
+	candidate_version_regex = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_regex"))
+	download_url = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#url"))
+	download_checksum_url = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#checksum_url"))
+	download_checksum_type = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#checksum_type"))
+	command_filename = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#filename"))
+	install_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#install"))
+	upgrade_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#upgrade"))
 
 	version_substitutions = {
 		"<<<arch>>>": arch,
@@ -646,17 +646,17 @@ def __setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 		iktprint([("Error:", "error"), (f" {cni}", "argument"), (" is not a valid/supported CNI; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	version_url = deep_get(cni_data, f"{cni}#version_url")
-	version_regex = deep_get(cni_data, f"{cni}#version_regex")
+	version_url = deep_get(cni_data, DictPath(f"{cni}#version_url"))
+	version_regex = deep_get(cni_data, DictPath(f"{cni}#version_regex"))
 
 	version = check_version_from_url(version_url, version_regex)
 
-	url = deep_get(cni_data, f"{cni}#url")
+	url = deep_get(cni_data, DictPath(f"{cni}#url"))
 	if url is None:
 		raise Exception(f"URL for {cni} is empty; this is a programming error.")
 
-	checksum_url = deep_get(cni_data, f"{cni}#checksum_url")
-	checksum_type = deep_get(cni_data, f"{cni}#checksum_type")
+	checksum_url = deep_get(cni_data, DictPath(f"{cni}#checksum_url"))
+	checksum_type = deep_get(cni_data, DictPath(f"{cni}#checksum_type"))
 
 	# FIXME: for now we hardcode this
 	arch = "amd64"
@@ -668,9 +668,9 @@ def __setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 	url = substitute_string(url, substitutions)
 	checksum_url = substitute_string(checksum_url, substitutions)
 
-	filename = deep_get(cni_data, f"{cni}#filename")
-	patch_cni = deep_get(cni_data, f"{cni}#patch_cni", None)
-	filetype = deep_get(cni_data, f"{cni}#type")
+	filename = deep_get(cni_data, DictPath(f"{cni}#filename"))
+	patch_cni = deep_get(cni_data, DictPath(f"{cni}#patch_cni"), None)
+	filetype = deep_get(cni_data, DictPath(f"{cni}#type"))
 	if filetype is None:
 		raise Exception(f"type for {cni} is missing; this is a programming error.")
 	if filetype == "yaml":
@@ -693,7 +693,7 @@ def __setup_cni(cni, pod_network_cidr, context_name, cluster_name):
 	if filetype == "yaml":
 		args = ["/usr/bin/kubectl", "apply", "--context=<<<context>>>", "-f", cni_path]
 	elif filetype == "installer":
-		args = deep_get(cni_data, f"{cni}#command")
+		args = deep_get(cni_data, DictPath(f"{cni}#command"))
 
 	substitutions = {
 		"<<<cluster>>>": cluster_name,
@@ -836,7 +836,7 @@ def __task_add_ssh_keys_to_inventory(installation_info):
 
 	pubkey = None
 	d = ansible_get_inventory_dict()
-	__vars = deep_get(d, "all#vars", {})
+	__vars = deep_get(d, DictPath("all#vars"), {})
 	__authorized_keys = __vars.get("authorized_keys", [])
 	found_key = False
 
@@ -891,9 +891,9 @@ def install_ansible_posix():
 	result = execute_command_with_response(args)
 
 	if "COLLECTION_ACTION: invalid choice" in result or "ansible.posix" not in result:
-		http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
-		https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
-		no_proxy = deep_get(iktconfig, "Network#no_proxy", "")
+		http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
+		https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
+		no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), "")
 		env = {
 			"http_proxy": http_proxy,
 			"https_proxy": https_proxy,
@@ -1032,17 +1032,17 @@ def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False)
 	"""
 
 	# Set necessary Ansible keys before running playbooks
-	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
+	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
 	if http_proxy is None:
 		http_proxy = ""
-	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
 	if https_proxy is None:
 		https_proxy = ""
-	no_proxy = deep_get(iktconfig, "Network#no_proxy", "")
+	no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), "")
 	if no_proxy is None:
 		no_proxy = ""
-	insecure_registries = deep_get(iktconfig, "Docker#insecure_registries", [])
-	registry_mirrors = deep_get(iktconfig, "Containerd#registry_mirrors", [])
+	insecure_registries = deep_get(iktconfig, DictPath("Docker#insecure_registries"), [])
+	registry_mirrors = deep_get(iktconfig, DictPath("Containerd#registry_mirrors"), [])
 	retval = 0
 
 	use_proxy = "no"
@@ -1155,7 +1155,7 @@ def populate_playbooks_from_paths(paths):
 		description = None
 		with open(playbookpath, encoding = "utf-8") as f:
 			d = yaml.safe_load(f)
-			description = [(deep_get(d[0], "vars#metadata#description"), "play")]
+			description = [(deep_get(d[0], DictPath("vars#metadata#description")), "play")]
 
 		if description is None or len(description) == 0:
 			description = [("Running “", "play"), (playbookname, "programname"), ("“", "play")]
@@ -1206,7 +1206,7 @@ def __task_request_ansible_password(installation_info):
 	"""
 
 	# Check whether ansible_password is defined or not
-	if deep_get(ansible_configuration, "ansible_password") is None and no_password == False:
+	if deep_get(ansible_configuration, DictPath("ansible_password")) is None and no_password == False:
 		iktprint([("Attention: ", "warning"), ("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
 		iktprint([("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
 		ansible_password = iktinput_password([("\nPassword: ", "default")])
@@ -1263,8 +1263,8 @@ def __task_run_preparation_playbooks_on_localhost(installation_info):
 	extra_values = {
 		"packages": prepare_targets["localhost"].get("deb_packages", []),
 		"held_packages": prepare_targets["localhost"].get("deb_packages_held", []),
-		"ansible_become_pass": deep_get(ansible_configuration, "ansible_password"),
-		"ansible_ssh_pass": deep_get(ansible_configuration, "ansible_password"),
+		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
+		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -1284,8 +1284,8 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info):
 	extra_values = {
 		"packages": prepare_targets[distro].get("deb_packages", []),
 		"held_packages": prepare_targets[distro].get("deb_packages_held", []),
-		"ansible_become_pass": deep_get(ansible_configuration, "ansible_password"),
-		"ansible_ssh_pass": deep_get(ansible_configuration, "ansible_password"),
+		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
+		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 		"cri": cri,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
@@ -2132,7 +2132,7 @@ def import_cluster(options, args):
 		controlplane = None
 
 		for node in vlist:
-			node_name = deep_get(node, "metadata#name")
+			node_name = deep_get(node, DictPath("metadata#name"))
 			node_roles = kh.get_node_roles(node)
 			if "control-plane" in node_roles:
 				controlplane = node_name
@@ -2147,8 +2147,8 @@ def import_cluster(options, args):
 		__task_request_ansible_password(None)
 
 		extra_values = {
-			"ansible_become_pass": deep_get(ansible_configuration, "ansible_password"),
-			"ansible_ssh_pass": deep_get(ansible_configuration, "ansible_password"),
+			"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
+			"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 		}
 
 		install_ansible_posix()
@@ -2257,19 +2257,19 @@ def show_configuration():
 
 	controlplanes = get_control_planes()
 
-	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
+	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
 	if http_proxy is not None and http_proxy == "":
 		http_proxy = None
 	http_proxy_env = os.getenv("http_proxy")
 	if http_proxy_env is not None and http_proxy_env == "":
 		http_proxy_env = None
-	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
 	if https_proxy is not None and https_proxy == "":
 		https_proxy = None
 	https_proxy_env = os.getenv("https_proxy")
 	if https_proxy_env is not None and https_proxy_env == "":
 		https_proxy_env = None
-	no_proxy = deep_get(iktconfig, "Network#no_proxy", "")
+	no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), "")
 	if no_proxy is not None and no_proxy == "":
 		no_proxy = None
 	no_proxy_env = os.getenv("no_proxy")
@@ -2418,10 +2418,10 @@ def __get_node_info(kh = None):
 		sys.exit(errno.EINVAL)
 
 	for node in vlist:
-		node_name = deep_get(node, "metadata#name")
-		node_schedulable = not deep_get(node, "spec#unschedulable", False)
+		node_name = deep_get(node, DictPath("metadata#name"))
+		node_schedulable = not deep_get(node, DictPath("spec#unschedulable"), False)
 		node_roles = kh.get_node_roles(node)
-		node_taints = deep_get(node, "spec#taints", [])
+		node_taints = deep_get(node, DictPath("spec#taints"), [])
 		node_statuses.append({
 			"name": node_name,
 			"schedulable": node_schedulable,
@@ -2444,8 +2444,8 @@ def get_control_planes(fail_on_empty = True):
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
 	inventory = ansible_get_inventory_dict()
-	__controlplanes = deep_get(inventory, "controlplane#hosts", {})
-	__clusterhosts = deep_get(inventory, f"{cluster_name}#hosts", {})
+	__controlplanes = deep_get(inventory, DictPath("controlplane#hosts"), {})
+	__clusterhosts = deep_get(inventory, DictPath(f"{cluster_name}#hosts"), {})
 	controlplanes = []
 	if len(__controlplanes) == 0 and fail_on_empty == True:
 		iktprint([("Error:", "error"), (" No control plane(s) defined in the inventory; rebuilding the inventory using “", "default"), (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
@@ -3425,16 +3425,16 @@ def main():
 	command, options, args = parse_commandline(about.ADMIN_PROGRAM_NAME, about.ADMIN_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline)
 
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktconfig, "Ansible#forks", 5)
-	ansible_user = deep_get(iktconfig, "Ansible#ansible_user")
+	ansible_configuration["ansible_forks"] = deep_get(iktconfig, DictPath("Ansible#forks"), 5)
+	ansible_user = deep_get(iktconfig, DictPath("Ansible#ansible_user"))
 	if ansible_user is None or len(ansible_user) == 0:
 		ansible_user = getuser()
 	ansible_configuration["ansible_user"] = ansible_user
-	ansible_password = deep_get(iktconfig, "Ansible#ansible_password")
+	ansible_password = deep_get(iktconfig, DictPath("Ansible#ansible_password"))
 	if ansible_password is not None and len(ansible_password) > 0:
 		ansible_configuration["ansible_password"] = ansible_password
-	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
-	ansible_configuration["save_logs"] = deep_get(iktconfig, "Ansible#save_logs", False)
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
+	ansible_configuration["save_logs"] = deep_get(iktconfig, DictPath("Ansible#save_logs"), False)
 	return command(options, args)
 
 if __name__ == "__main__":

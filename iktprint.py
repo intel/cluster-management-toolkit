@@ -7,13 +7,12 @@ Print themed strings to the console
 
 import errno
 from getpass import getpass
-import os
+from pathlib import PurePath
 import subprocess
 import sys
 import typing # pylint: disable=unused-import
-import yaml
 
-from ikttypes import FilePath, SecurityPolicy
+from ikttypes import FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy
 import iktio
 
 theme = None
@@ -141,9 +140,44 @@ def init_iktprint(themefile: FilePath) -> None:
 
 	themepath = themefile
 
-	if os.path.isfile(themefile) is False:
+	# The parsers directory itself may be a symlink. This is expected behaviour when installing from a git repo,
+	# but we only allow it if the rest of the path components are secure
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_DIR,
+		SecurityChecks.IS_SYMLINK,
+	]
+
+	theme_dir = FilePath(str(PurePath(themefile).parent))
+
+	violations = iktio.check_path(theme_dir, checks = checks)
+	if len(violations) > 0:
+		violation_strings = []
+		for violation in violations:
+			violation_strings.append(str(violation))
+		violations_joined = ",".join(violation_strings)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = theme_dir)
+
+	# We don't want to check that parent resolves to itself,
+	# because when we have an installation with links directly to the git repo
+	# the themes directory will be a symlink
+	checks = [
+		SecurityChecks.RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_FILE,
+	]
+
+	try:
+		theme = iktio.secure_read_yaml(themefile, checks = checks)
+	except FileNotFoundError:
 		print(f"Warning: themefile ”{themefile}” does not exist", file = sys.stderr)
 		return
-
-	with open(themefile, encoding = "utf-8") as f:
-		theme = yaml.safe_load(f)

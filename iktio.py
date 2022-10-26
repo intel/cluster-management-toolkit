@@ -16,6 +16,7 @@ import socket
 import sys
 import tarfile
 import tempfile
+import yaml
 
 import paramiko
 
@@ -24,7 +25,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
-from ikttypes import DictPath, FilePath, SecurityChecks, SecurityPolicy, SecurityStatus
+from ikttypes import DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from iktpaths import HOMEDIR
 
 import iktlib # pylint: disable=unused-import
@@ -238,6 +239,111 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 		violations.append(SecurityStatus.IS_NOT_EXECUTABLE)
 
 	return violations
+
+def secure_write_string(path: FilePath, string: str) -> None:
+	"""
+	Write a string to a file in a safe manner
+
+		Parameters:
+			path (FilePath): The path to write to
+			string (str): The string to write
+		Raises:
+			ikttypes.FilePathAuditError
+	"""
+
+	violations = check_path(path,
+				checks = [
+					SecurityChecks.PARENT_RESOLVES_TO_SELF,
+					SecurityChecks.RESOLVES_TO_SELF,
+					SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+					SecurityChecks.OWNER_IN_ALLOWLIST,
+					SecurityChecks.PARENT_PERMISSIONS,
+					SecurityChecks.PERMISSIONS,
+					SecurityChecks.IS_FILE,
+				])
+
+	if len(violations) > 0:
+		violation_strings = []
+		for violation in violations:
+			violation_strings.append(str(violation))
+		violations_joined = ",".join(violation_strings)
+		sys.exit(f"{violations_joined=}")
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
+
+	# We have no default recourse if this write fails, so if the caller can handle the failure
+	# they have to capture the exception
+	with open(path, "w", encoding = "utf-8") as f:
+		f.write(string)
+
+def secure_write_yaml(path: FilePath, data) -> None:
+	"""
+	Dump a dict to a file in YAML-format in a safe manner
+
+		Parameters:
+			path (FilePath): The path to write to
+			data (dict): The dict to dump
+		Raises:
+			ikttypes.FilePathAuditError
+	"""
+
+	yaml_str = yaml.safe_dump(data, default_flow_style = False)
+	secure_write_string(path, yaml_str)
+
+def secure_read_string(path: FilePath, checks = None) -> str:
+	"""
+	Read a string from a file in a safe manner
+
+		Parameters:
+			path (FilePath): The path to read from
+		Returns:
+			string (str): The read string
+		Raises:
+			ikttypes.FilePathAuditError
+	"""
+
+	if checks is None:
+		checks = [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		]
+
+	violations = check_path(path, checks = checks)
+
+	if len(violations) > 0:
+		violation_strings = []
+		for violation in violations:
+			violation_strings.append(str(violation))
+		violations_joined = ",".join(violation_strings)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
+
+	# We have no default recourse if this write fails, so if the caller can handle the failure
+	# they have to capture the exception
+	with open(path, "r", encoding = "utf-8") as f:
+		string = f.read()
+
+	return string
+
+def secure_read_yaml(path: FilePath, checks = None):
+	"""
+	Read data in YAML-format from a file in a safe manner
+
+		Parameters:
+			path (FilePath): The path to read from
+		Returns:
+			yaml_data (yaml): The read YAML-data
+		Raises:
+			FileNotFoundError
+			ikttypes.FilePathAuditError
+	"""
+
+	string = secure_read_string(path, checks = checks)
+	return yaml.safe_load(string)
 
 def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
 	"""

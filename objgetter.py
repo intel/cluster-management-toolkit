@@ -7,17 +7,18 @@ for cases where the obj provided from the list view isn't sufficient
 """
 
 import os
+from pathlib import PurePath
 import sys
-import yaml
 
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import DictPath, FilePath
+from ikttypes import DictPath, FilePath, FilePathAuditError, SecurityChecks
 from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path
 from iktlib import deep_get
+from iktio import check_path, secure_read_yaml
 
 def objgetter_ansible_facts(obj):
 	"""
@@ -55,16 +56,50 @@ def objgetter_ansible_log(obj):
 
 	tmpobj = {}
 
-	with open(f"{obj}/metadata.yaml", "r", encoding = "utf-8") as f:
-		tmpobj = yaml.safe_load(f)
-		tmpobj["log_path"] = obj
+	tmpobj = secure_read_yaml(FilePath(f"{obj}/metadata.yaml"))
+	tmpobj["log_path"] = obj
 
+	# The playbook directory itself may be a symlink. This is expected behaviour when installing from a git repo,
+	# but we only allow it if the rest of the path components are secure
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_DIR,
+		SecurityChecks.IS_SYMLINK,
+	]
+
+	playbook_path = FilePath(tmpobj["playbook_path"])
+	playbook_dir = FilePath(str(PurePath(playbook_path).parent))
+
+	violations = check_path(playbook_dir, checks = checks)
+	if len(violations) > 0:
+		violation_strings = []
+		for violation in violations:
+			violation_strings.append(str(violation))
+		violations_joined = ",".join(violation_strings)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = playbook_dir)
+
+	# We don't want to check that parent resolves to itself,
+	# because when we have an installation with links directly to the git repo
+	# the playbooks directory will be a symlink
+	checks = [
+		SecurityChecks.RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_FILE,
+	]
 	try:
-		with open(tmpobj["playbook_path"], "r", encoding = "utf-8") as f:
-			playbook = yaml.safe_load(f)[0]
-			tmpobj["name"] = deep_get(playbook, DictPath("vars#metadata#description"))
-			tmpobj["playbook_types"] = deep_get(playbook, DictPath("vars#metadata#playbook_types"), ["<any>"])
-			tmpobj["category"] = deep_get(playbook, DictPath("vars#metadata#category"), "Uncategorized")
+		playbook = secure_read_yaml(playbook_path, checks = checks)
+		tmpobj["name"] = deep_get(playbook, DictPath("vars#metadata#description"))
+		tmpobj["playbook_types"] = deep_get(playbook, DictPath("vars#metadata#playbook_types"), ["<any>"])
+		tmpobj["category"] = deep_get(playbook, DictPath("vars#metadata#category"), "Uncategorized")
 	except FileNotFoundError:
 		tmpobj["name"] = "File not found"
 		tmpobj["playbook_types"] = ["Unavailable"]
@@ -74,11 +109,11 @@ def objgetter_ansible_log(obj):
 	for path in natsorted(os.listdir(obj)):
 		if path == "metadata.yaml":
 			continue
-		with open(f"{obj}/{path}", "r", encoding = "utf-8") as f:
-			logs.append({
-				"index": path.split("-")[0],
-				"log": yaml.safe_load(f)
-			})
+		log = secure_read_yaml(FilePath(f"{obj}/{path}"))
+		logs.append({
+			"index": path.split("-")[0],
+			"log": log
+		})
 	tmpobj["logs"] = logs
 
 	return tmpobj

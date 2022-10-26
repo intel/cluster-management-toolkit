@@ -174,7 +174,7 @@ def format_yaml(lines, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	override_formatting = deep_get(kwargs, "override_formatting", {})
+	override_formatting = deep_get(kwargs, DictPath("override_formatting"), {})
 
 	dumps = []
 	indent = deep_get(iktconfig, DictPath("Global#indent"), 2)

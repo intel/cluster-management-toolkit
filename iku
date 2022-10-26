@@ -212,7 +212,7 @@ def processor_timestamp(obj, field):
 def processor_timestamp_with_age(obj, field, formatting):
 	values = getattr(obj, field)
 
-	if len(values) > 2 and len(deep_get(formatting, "field_colors", [])) < 2:
+	if len(values) > 2 and len(deep_get(formatting, DictPath("field_colors"), [])) < 2:
 		raise ValueError("Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
 
 	if len(values) == 2:
@@ -222,7 +222,7 @@ def processor_timestamp_with_age(obj, field, formatting):
 			]
 		else:
 			timestamp_string = datetime_to_timestamp(values[0])
-			array = generators.format_numerical_with_units(timestamp_string, "timestamp")
+			array = generators.format_numerical_with_units(timestamp_string, "timestamp", False)
 			array += [
 				(" (", ("types", "generic"))
 			]
@@ -236,7 +236,7 @@ def processor_timestamp_with_age(obj, field, formatting):
 		for i in range(0, len(values)):
 			# If there's no formatting for this field we assume that
 			# it's a generic string
-			if len(deep_get(formatting, "field_colors", [])) <= i:
+			if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
 				formatting = ("types", "generic")
 				array += [values[i], formatting]
 			elif formatting["field_colors"][i] == ("types", "timestamp"):
@@ -406,7 +406,7 @@ def update_field_widths(field_dict, field_names, objects):
 		ellipsis = field_dict[field_name].get("ellipsis", ("separators", "ellipsis"))
 		field_prefixes = field_dict[field_name].get("field_prefixes", None)
 		field_suffixes = field_dict[field_name].get("field_suffixes", None)
-		formatting = deep_get(field_dict, f"{field_name}#formatting", {})
+		formatting = deep_get(field_dict, DictPath(f"{field_name}#formatting"), {})
 
 		tmplen = 0
 
@@ -448,12 +448,12 @@ def get_hpa_metrics(obj, **kwargs):
 	vlist = []
 	status = 200
 
-	for metric in deep_get(obj, "spec#metrics", []):
+	for metric in deep_get(obj, DictPath("spec#metrics"), []):
 		if "type" not in metric:
 			continue
-		metric_type = deep_get(metric, "type")
+		metric_type = deep_get(metric, DictPath("type"))
 		metric_name = metric_type[0].lower() + metric_type[1:]
-		target_type = deep_get(metric, f"{metric_name}#target#type", "")
+		target_type = deep_get(metric, DictPath(f"{metric_name}#target#type"), "")
 		if target_type == "Utilization":
 			target_type = "AverageUtilization"
 		target_type_name = target_type[0].lower() + target_type[1:]
@@ -463,20 +463,20 @@ def get_hpa_metrics(obj, **kwargs):
 		object_name = ""
 
 		if metric_name in ("resource", "containerResource"):
-			name = deep_get(metric, f"{metric_name}#name")
+			name = deep_get(metric, DictPath(f"{metric_name}#name"))
 		elif metric_name in ("pods", "object", "external"):
-			name = deep_get(metric, f"{metric_name}#metric#name")
+			name = deep_get(metric, DictPath(f"{metric_name}#metric#name"))
 			api_version = ""
 			if metric_type == "Object":
-				kind = deep_get(metric, f"{metric_name}#describedObject#kind")
-				api_version = deep_get(metric, f"{metric_name}#describedObject#apiVersion")
-				object_name = deep_get(metric, f"{metric_name}#describedObject#name")
+				kind = deep_get(metric, DictPath(f"{metric_name}#describedObject#kind"))
+				api_version = deep_get(metric, DictPath(f"{metric_name}#describedObject#apiVersion"))
+				object_name = deep_get(metric, DictPath(f"{metric_name}#describedObject#name"))
 			api_group = api_version.split("/")[0]
 		else:
 			metric_type += " (Unsupported)"
 
-		target_value = deep_get(metric, f"{metric_name}#target#{target_type_name}", "")
-		selector = deep_get(metric, f"{metric_name}#metric#selector#matchLabels", {})
+		target_value = deep_get(metric, DictPath(f"{metric_name}#target#{target_type_name}"), "")
+		selector = deep_get(metric, DictPath(f"{metric_name}#metric#selector#matchLabels"), {})
 
 		d = {
 			"metric_type": metric_type,
@@ -485,7 +485,7 @@ def get_hpa_metrics(obj, **kwargs):
 			"described_object_kind": kind,
 			"described_object_api_group": api_group,
 			# The autoscaler shares namespace with the described object
-			"described_object_namespace": deep_get(obj, "metadata#namespace", ""),
+			"described_object_namespace": deep_get(obj, DictPath("metadata#namespace"), ""),
 			"described_object_name": object_name,
 			"selector": selector,
 			"target_value": target_value,
@@ -511,8 +511,8 @@ def get_metrics_list(**kwargs):
 		if tmp is None:
 			continue
 		metric = tmp[1]
-		if deep_get(kwargs, "filter") is not None:
-			if metric not in deep_get(kwargs, "filter"):
+		if deep_get(kwargs, DictPath("filter")) is not None:
+			if metric not in deep_get(kwargs, DictPath("filter")):
 				continue
 
 		fields = [f"{x}" for x in next(csv.reader([tmp[2]], delimiter = ",", quotechar = "\""))]
@@ -582,16 +582,16 @@ def get_image_tuple(image):
 def __get_container_info(obj, container_type, spec_path, status_path):
 	containers = {}
 
-	for container in deep_get(obj, spec_path, []):
-		container_name = deep_get(container, "name")
-		container_image = deep_get(container, "image")
+	for container in deep_get(obj, DictPath(spec_path), []):
+		container_name = deep_get(container, DictPath("name"))
+		container_image = deep_get(container, DictPath("image"))
 		image_version = get_image_version(container_image)
 
 		# To get the image ID we need to cross-reference container_image against status#{status_path}->image"
 		image_id = None
-		for item in deep_get(obj, status_path, []):
-			if deep_get(item, "name", "") == container_name:
-				image_id = deep_get(item, "imageID")
+		for item in deep_get(obj, DictPath(status_path), []):
+			if deep_get(item, DictPath("name"), "") == container_name:
+				image_id = deep_get(item, DictPath("imageID"))
 		# This (most likely) means that the pod hasn't managed to instantiate a container
 		if image_id is None:
 			image_id = "<unknown>"
@@ -651,7 +651,7 @@ def get_container_info(**kwargs):
 		pod_references = containers[(name, container_type, image_version, image_id)]["pod_references"]
 		pods = []
 		for pod in pod_references:
-			pods.append((deep_get(pod, "metadata#namespace"), deep_get(pod, "metadata#name")))
+			pods.append((deep_get(pod, DictPath("metadata#namespace")), deep_get(pod, DictPath("metadata#name"))))
 		instances = containers[(name, container_type, image_version, image_id)]["instances"]
 		# This replaces ref
 		obj = {
@@ -697,18 +697,18 @@ def get_pod_containers_list(**kwargs):
 
 	if status == 200:
 		for obj in _vlist:
-			namespace = deep_get(obj, "metadata#namespace")
-			name = deep_get(obj, "metadata#name")
-			node_name = deep_get(obj, "spec#nodeName")
-			for container in deep_get(obj, "spec#containers"):
-				container_name = deep_get(container, "name")
-				reason, status_group, _restarts, _message, _age = datagetter.get_container_status(deep_get(obj, "status#containerStatuses"), container_name)
+			namespace = deep_get(obj, DictPath("metadata#namespace"))
+			name = deep_get(obj, DictPath("metadata#name"))
+			node_name = deep_get(obj, DictPath("spec#nodeName"))
+			for container in deep_get(obj, DictPath("spec#containers")):
+				container_name = deep_get(container, DictPath("name"))
+				reason, status_group, _restarts, _message, _age = datagetter.get_container_status(deep_get(obj, DictPath("status#containerStatuses")), container_name)
 				container_status = None
-				for container_status in deep_get(obj, "status#containerStatuses", []):
-					if deep_get(container_status, "name") == container_name:
+				for container_status in deep_get(obj, DictPath("status#containerStatuses"), []):
+					if deep_get(container_status, DictPath("name")) == container_name:
 						break
 				if container_status is not None:
-					image_id = deep_get(container_status, "imageID", "")
+					image_id = deep_get(container_status, DictPath("imageID"), "")
 				else:
 					image_id = "<unavailable>"
 				vlist.append({
@@ -7327,7 +7327,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							"command": command
 						}
 					}
-					action_execute_command(uip, items = [], action = {}, values = _values, title = "")
+					action_execute_command(uip, items = [], action = {}, values = _values, kind = None, title = "")
 			else:
 				call = deep_get(value, "call")
 				call_name = None

@@ -209,12 +209,12 @@ def align_and_pad(array, pad: int, fieldlen: int, stringlen: int, ralign: bool, 
 			array.append((("separators", "pad"), selected))
 	return array
 
-def format_numerical_with_units(string, ftype, selected: bool, non_units = None, separator_lookup = None):
+def format_numerical_with_units(string: str, ftype, selected: bool, non_units = None, separator_lookup = None):
 	substring = ""
 	array = []
 	numeric = None
 	# This is necessary to be able to use pop
-	string = list(string)
+	liststring = list(string)
 
 	if separator_lookup is None:
 		separator_lookup = {}
@@ -227,8 +227,8 @@ def format_numerical_with_units(string, ftype, selected: bool, non_units = None,
 	else:
 		non_units = set(non_units)
 
-	while len(string) > 0:
-		char = string.pop(0)
+	while len(liststring) > 0:
+		char = liststring.pop(0)
 		if numeric is None:
 			numeric = char in non_units
 			substring += char
@@ -255,7 +255,7 @@ def format_numerical_with_units(string, ftype, selected: bool, non_units = None,
 				numeric = True
 			substring += char
 
-		if len(string) == 0:
+		if len(liststring) == 0:
 			if numeric == True:
 				if selected is None:
 					array.append((substring, ("types", ftype)))
