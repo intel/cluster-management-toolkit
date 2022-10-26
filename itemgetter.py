@@ -14,6 +14,8 @@ except ModuleNotFoundError:
 
 from curses_helper import WidgetLineAttrs
 
+from ikttypes import DictPath
+
 import iktlib
 from iktlib import deep_get, deep_get_with_fallback, disksize_to_human, get_package_versions, get_since, make_set_expression, split_msg, timestamp_to_datetime
 
@@ -263,16 +265,14 @@ KNOWN_PV_TYPES = {
 	},
 }
 
+# pylint: disable-next=unused-argument
 def get_allowed_ips(kh, obj, **kwargs):
-	del kh
-	del kwargs
-
 	allowed_ips = []
 
 	# Safe
 	ip_mask_regex = re.compile(r"^(\d+\.\d+\.\d+\.\d+)\/(\d+)")
 
-	for addr in deep_get(obj, "spec#allowedIPs"):
+	for addr in deep_get(obj, DictPath("spec#allowedIPs")):
 		if "/" in addr:
 			tmp = ip_mask_regex.match(addr)
 			if tmp is None:
@@ -291,58 +291,55 @@ def get_allowed_ips(kh, obj, **kwargs):
 
 	return allowed_ips
 
+# pylint: disable-next=unused-argument
 def get_conditions(kh, obj, **kwargs):
-	del kh
-
 	condition_list = []
 
-	path = deep_get(kwargs, "path", "status#conditions")
+	path = deep_get(kwargs, DictPath("path"), "status#conditions")
 
-	for condition in deep_get(obj, path, []):
-		ctype = deep_get(condition, "type", "")
-		status = deep_get_with_fallback(condition, ["status", "phase"], "")
-		last_probe = deep_get(condition, "lastProbeTime")
+	for condition in deep_get(obj, DictPath(path), []):
+		ctype = deep_get(condition, DictPath("type"), "")
+		status = deep_get_with_fallback(condition, [DictPath("status"), DictPath("phase")], "")
+		last_probe = deep_get(condition, DictPath("lastProbeTime"))
 		if last_probe is None:
 			last_probe = "<unset>"
 		else:
 			timestamp = timestamp_to_datetime(last_probe)
 			last_probe = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
-		last_transition = deep_get(condition, "lastTransitionTime")
+		last_transition = deep_get(condition, DictPath("lastTransitionTime"))
 		if last_transition is None:
 			last_transition = "<unset>"
 		else:
 			timestamp = timestamp_to_datetime(last_transition)
 			last_transition = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
-		message = deep_get(condition, "message", "")
+		message = deep_get(condition, DictPath("message"), "")
 		condition_list.append({
 			"fields": [ctype, status, last_probe, last_transition, message],
 		})
 	return condition_list
 
+# pylint: disable-next=unused-argument
 def get_endpoint_slices(kh, obj, **kwargs):
-	del kwargs
-
-	svcname = deep_get(obj, "metadata#name")
-	svcnamespace = deep_get(obj, "metadata#namespace")
+	svcname = deep_get(obj, DictPath("metadata#name"))
+	svcnamespace = deep_get(obj, DictPath("metadata#namespace"))
 	# We need to find all Endpoint Slices in the same namespace as the service that have this service
 	# as its controller
 	vlist, _status = kh.get_list_by_kind_namespace(("EndpointSlice", "discovery.k8s.io"), svcnamespace, label_selector = f"kubernetes.io/service-name={svcname}")
 	tmp = []
 	for item in vlist:
-		epsnamespace = deep_get(item, "metadata#namespace")
-		epsname = deep_get(item, "metadata#name")
+		epsnamespace = deep_get(item, DictPath("metadata#namespace"))
+		epsname = deep_get(item, DictPath("metadata#name"))
 		tmp.append([epsnamespace, epsname])
 	return tmp
 
+# pylint: disable-next=unused-argument
 def get_events(kh, obj, **kwargs):
-	del kwargs
-
 	event_list = []
 
-	kind = deep_get(obj, "kind")
-	api_version = deep_get(obj, "apiVersion", "")
-	name = deep_get(obj, "metadata#name")
-	namespace = deep_get(obj, "metadata#namespace", "")
+	kind = deep_get(obj, DictPath("kind"))
+	api_version = deep_get(obj, DictPath("apiVersion"), "")
+	name = deep_get(obj, DictPath("metadata#name"))
+	namespace = deep_get(obj, DictPath("metadata#namespace"), "")
 	tmp = kh.get_events_by_kind_name_namespace(kh.kind_api_version_to_kind(kind, api_version), name, namespace)
 	for event in tmp:
 		event_list.append({
@@ -351,32 +348,30 @@ def get_events(kh, obj, **kwargs):
 
 	return event_list
 
+# pylint: disable-next=unused-argument
 def get_image_list(kh, obj, **kwargs):
-	del kh
-
 	vlist = []
-	path = deep_get(kwargs, "path", "")
+	path = deep_get(kwargs, DictPath("path"), "")
 
-	for image in deep_get(obj, path, []):
+	for image in deep_get(obj, DictPath(path), []):
 		name = ""
-		for name in deep_get(image, "names", []):
+		for name in deep_get(image, DictPath("names"), []):
 			# This is the preferred name
 			if "@sha256:" not in name:
 				break
 
 		if len(name) == 0:
 			continue
-		size = disksize_to_human(deep_get(image, "sizeBytes", 0))
+		size = disksize_to_human(deep_get(image, DictPath("sizeBytes"), 0))
 		vlist.append([name, size])
 	return natsorted(vlist)
 
+# pylint: disable-next=unused-argument
 def get_key_value(kh, obj, **kwargs):
-	del kh
-
 	vlist = []
 	if "path" in kwargs:
-		path = deep_get(kwargs, "path", "")
-		d = deep_get(obj, path, {})
+		path = deep_get(kwargs, DictPath("path"), "")
+		d = deep_get(obj, DictPath(path), {})
 
 		for _key in d:
 			_value = d[_key]
@@ -395,16 +390,15 @@ def get_key_value(kh, obj, **kwargs):
 
 	return vlist
 
+# pylint: disable-next=unused-argument
 def get_list_as_list(kh, obj, **kwargs):
-	del kh
-
 	vlist = []
 	if "path" in kwargs:
-		path = deep_get(kwargs, "path")
-		_regex = deep_get(kwargs, "regex")
+		path = deep_get(kwargs, DictPath("path"))
+		_regex = deep_get(kwargs, DictPath("regex"))
 		if _regex is not None:
 			compiled_regex = re.compile(_regex)
-		items = deep_get(obj, path, [])
+		items = deep_get(obj, DictPath(path), [])
 		for item in items:
 			if _regex is not None:
 				tmp = compiled_regex.match(item)
@@ -414,16 +408,16 @@ def get_list_as_list(kh, obj, **kwargs):
 	elif "paths" in kwargs:
 		# lists that run out of elements will return ""
 		# strings will be treated as constants and thus returned for every row
-		paths = deep_get(kwargs, "paths", [])
+		paths = deep_get(kwargs, DictPath("paths"), [])
 		maxlen = 0
 		for column in paths:
-			tmp = deep_get(obj, column)
+			tmp = deep_get(obj, DictPath(column))
 			if isinstance(tmp, list):
 				maxlen = max(len(tmp), maxlen)
 		for i in range(0, maxlen):
 			item = []
 			for column in paths:
-				tmp = deep_get(obj, column)
+				tmp = deep_get(obj, DictPath(column))
 				if isinstance(tmp, str):
 					item.append(tmp)
 				elif isinstance(tmp, list):
@@ -435,24 +429,23 @@ def get_list_as_list(kh, obj, **kwargs):
 
 	return vlist
 
+# pylint: disable-next=unused-argument
 def get_list_fields(kh, obj, **kwargs):
-	del kh
-
 	vlist = []
 
 	if "path" in kwargs and "fields" in kwargs:
-		path = deep_get(kwargs, "path")
-		fields = deep_get(kwargs, "fields", [])
-		pass_ref = deep_get(kwargs, "pass_ref", False)
-		override_types = deep_get(kwargs, "override_types", [])
-		for item in deep_get(obj, path, []):
+		path = deep_get(kwargs, DictPath("path"))
+		fields = deep_get(kwargs, DictPath("fields"), [])
+		pass_ref = deep_get(kwargs, DictPath("pass_ref"), False)
+		override_types = deep_get(kwargs, DictPath("override_types"), [])
+		for item in deep_get(obj, DictPath(path), []):
 			tmp = []
 			for i, field in enumerate(fields):
 				default = ""
 				if isinstance(field, dict):
-					default = deep_get(field, "default", "")
-					field = deep_get(field, "name")
-				_value = deep_get(item, field, default)
+					default = deep_get(field, DictPath("default"), "")
+					field = deep_get(field, DictPath("name"))
+				_value = deep_get(item, DictPath(field), default)
 				if isinstance(_value, list) or (i < len(fields) and i < len(override_types) and override_types[i] == "list"):
 					value = ", ".join(_value)
 				elif isinstance(_value, dict) or (i < len(fields) and i < len(override_types) and override_types[i] == "dict"):
@@ -484,30 +477,27 @@ def get_list_fields(kh, obj, **kwargs):
 				vlist.append(tmp)
 	return vlist
 
+# pylint: disable-next=unused-argument
 def get_package_version_list(kh, obj, **kwargs):
-	del kh
-
-	name_path = deep_get(kwargs, "name_path", "")
-	hostname = deep_get(obj, name_path)
-	hostname = deep_get(kwargs, "name", hostname)
+	name_path = deep_get(kwargs, DictPath("name_path"), "")
+	hostname = deep_get(obj, DictPath(name_path))
+	hostname = deep_get(kwargs, DictPath("name"), hostname)
 	try:
 		package_versions = get_package_versions(hostname)
 	except ValueError:
 		package_versions = None
 	return package_versions
 
+# pylint: disable-next=unused-argument
 def get_pod_affinity(kh, obj, **kwargs):
-	del kh
-	del kwargs
-
 	affinities = []
 
-	for affinity in deep_get(obj, "spec#affinity", []):
+	for affinity in deep_get(obj, DictPath("spec#affinity"), []):
 		atype = affinity
 		# Safe
 		policy_regex = re.compile(r"^(ignored|preferred|required)DuringScheduling(Ignored|Preferred|Required)DuringExecution$")
 
-		for policy in deep_get(obj, f"spec#affinity#{atype}", ""):
+		for policy in deep_get(obj, DictPath(f"spec#affinity#{atype}"), ""):
 			tmp = policy_regex.match(policy)
 			if tmp is None:
 				scheduling = "Unknown"
@@ -517,42 +507,40 @@ def get_pod_affinity(kh, obj, **kwargs):
 				execution = tmp[2]
 
 			selectors = ""
-			for item in deep_get(obj, f"spec#affinity#{atype}#{policy}", []):
+			for item in deep_get(obj, DictPath(f"spec#affinity#{atype}#{policy}"), []):
 				topology = ""
 				if isinstance(item, dict):
 					items = [item]
 				elif isinstance(item, str):
-					items = deep_get(obj, f"spec#affinity#{atype}#{policy}#{item}", [])
+					items = deep_get(obj, DictPath(f"spec#affinity#{atype}#{policy}#{item}"), [])
 
 				for selector in items:
-					weight = deep_get(selector, "weight", "")
+					weight = deep_get(selector, DictPath("weight"), "")
 					if isinstance(weight, int):
 						weight = f"/{weight}"
-					topology = deep_get(selector, "topologyKey", "")
+					topology = deep_get(selector, DictPath("topologyKey"), "")
 					# We're combining a few different policies, so the expressions can be in various places; not simultaneously though
-					selectors += make_set_expression(deep_get(selector, "labelSelector#matchExpressions", {}))
-					selectors += make_set_expression(deep_get(selector, "labelSelector#matchFields", {}))
-					selectors += make_set_expression(deep_get(selector, "preference#matchExpressions", {}))
-					selectors += make_set_expression(deep_get(selector, "preference#matchFields", {}))
-					selectors += make_set_expression(deep_get(selector, "matchExpressions", {}))
-					selectors += make_set_expression(deep_get(selector, "matchFields", {}))
+					selectors += make_set_expression(deep_get(selector, DictPath("labelSelector#matchExpressions"), {}))
+					selectors += make_set_expression(deep_get(selector, DictPath("labelSelector#matchFields"), {}))
+					selectors += make_set_expression(deep_get(selector, DictPath("preference#matchExpressions"), {}))
+					selectors += make_set_expression(deep_get(selector, DictPath("preference#matchFields"), {}))
+					selectors += make_set_expression(deep_get(selector, DictPath("matchExpressions"), {}))
+					selectors += make_set_expression(deep_get(selector, DictPath("matchFields"), {}))
 					affinities.append([atype, f"{scheduling}{weight}", execution, selectors, topology])
 
 	return affinities
 
+# pylint: disable-next=unused-argument
 def get_pod_tolerations(kh, obj, **kwargs):
-	del kh
-	del kwargs
-
 	tolerations = []
 
-	for toleration in deep_get_with_fallback(obj, ["spec#tolerations", "scheduling#tolerations"], []):
-		effect = deep_get(toleration, "effect", "All")
-		key = deep_get(toleration, "key", "All")
-		operator = deep_get(toleration, "operator", "Equal")
+	for toleration in deep_get_with_fallback(obj, [DictPath("spec#tolerations"), DictPath("scheduling#tolerations")], []):
+		effect = deep_get(toleration, DictPath("effect"), "All")
+		key = deep_get(toleration, DictPath("key"), "All")
+		operator = deep_get(toleration, DictPath("operator"), "Equal")
 
 		# Eviction timeout
-		toleration_seconds = deep_get(toleration, "tolerationSeconds")
+		toleration_seconds = deep_get(toleration, DictPath("tolerationSeconds"))
 		if toleration_seconds is None:
 			timeout = "Never"
 		elif toleration_seconds <= 0:
@@ -565,49 +553,44 @@ def get_pod_tolerations(kh, obj, **kwargs):
 
 	return tolerations
 
+# pylint: disable-next=unused-argument
 def get_resource_list(kh, obj, **kwargs):
-	del kh
-	del kwargs
-
 	vlist = []
 
-	for res in deep_get(obj, "status#capacity", {}):
-		capacity = deep_get(obj, f"status#capacity#{res}", "")
-		allocatable = deep_get(obj, f"status#allocatable#{res}", "")
+	for res in deep_get(obj, DictPath("status#capacity"), {}):
+		capacity = deep_get(obj, DictPath(f"status#capacity#{res}"), "")
+		allocatable = deep_get(obj, DictPath(f"status#allocatable#{res}"), "")
 		vlist.append([res, allocatable, capacity])
 	return vlist
 
+# pylint: disable-next=unused-argument
 def get_resources(kh, obj, **kwargs):
-	del kh
-	del kwargs
-
 	resources = []
 
-	for limit in list(deep_get(obj, "spec#resources#limits", {})):
+	for limit in list(deep_get(obj, DictPath("spec#resources#limits"), {})):
 		if limit == "cpu":
-			resources.append(("CPU", "Limit", deep_get(obj, "spec#resources#limits#cpu")))
+			resources.append(("CPU", "Limit", deep_get(obj, DictPath("spec#resources#limits#cpu"))))
 		elif limit == "memory":
-			resources.append(("CPU", "Limit", deep_get(obj, "spec#resources#limits#memory")))
+			resources.append(("CPU", "Limit", deep_get(obj, DictPath("spec#resources#limits#memory"))))
 		elif limit.startswith("hugepages-"):
-			resources.append((f"H{limit[1:]}", "Limit", deep_get(obj, "spec#resources#limits#" + limit)))
+			resources.append((f"H{limit[1:]}", "Limit", deep_get(obj, DictPath(f"spec#resources#limits#{limit}"))))
 
-	for request in list(deep_get(obj, "spec#resources#requests", {})):
+	for request in list(deep_get(obj, DictPath("spec#resources#requests"), {})):
 		if request == "cpu":
-			resources.append(("CPU", "Limit", deep_get(obj, "spec#resources#requests#cpu")))
+			resources.append(("CPU", "Limit", deep_get(obj, DictPath("spec#resources#requests#cpu"))))
 		elif request == "memory":
-			resources.append(("CPU", "Limit", deep_get(obj, "spec#resources#requests#memory")))
+			resources.append(("CPU", "Limit", deep_get(obj, DictPath("spec#resources#requests#memory"))))
 		elif request.startswith("hugepages-"):
-			resources.append((f"H{request[1:]}", "Limit", deep_get(obj, "spec#resources#requests#" + request)))
+			resources.append((f"H{request[1:]}", "Limit", deep_get(obj, f"spec#resources#requests#{request}")))
 
 	return resources
 
+# pylint: disable-next=unused-argument
 def get_strings_from_string(kh, obj, **kwargs):
-	del kh
-
 	vlist = []
 	if "path" in kwargs:
-		path = deep_get(kwargs, "path")
-		tmp = deep_get(obj, path, [])
+		path = deep_get(kwargs, DictPath("path"))
+		tmp = deep_get(obj, DictPath(path), [])
 		if tmp is not None and len(tmp) > 0:
 			for line in split_msg(tmp):
 				vlist.append([line])
@@ -622,7 +605,7 @@ def get_endpoint_ips(subsets):
 
 	for subset in subsets:
 		# Keep track of whether we have not ready addresses
-		if deep_get(subset, "notReadyAddresses") is not None and len(deep_get(subset, "notReadyAddresses")) > 0:
+		if deep_get(subset, DictPath("notReadyAddresses")) is not None and len(deep_get(subset, DictPath("notReadyAddresses"))) > 0:
 			notready += 1
 
 		if deep_get(subset, "addresses") is None:
@@ -638,10 +621,8 @@ def get_endpoint_ips(subsets):
 
 	return endpoints
 
+# pylint: disable-next=unused-argument
 def get_security_context(kh, obj, **kwargs):
-	del kh
-	del kwargs
-
 	security_policies = []
 
 	tmp = [
@@ -679,9 +660,8 @@ def get_security_context(kh, obj, **kwargs):
 
 	return security_policies
 
+# pylint: disable-next=unused-argument
 def get_svc_port_target_endpoints(kh, obj, **kwargs):
-	del kwargs
-
 	svcname = deep_get(obj, "metadata#name")
 	svcnamespace = deep_get(obj, "metadata#namespace")
 	port_target_endpoints = []
@@ -716,14 +696,12 @@ def get_svc_port_target_endpoints(kh, obj, **kwargs):
 
 def get_pv_type(obj):
 	for pv_type, _pv_data in KNOWN_PV_TYPES.items():
-		if pv_type in deep_get(obj, "spec", []):
+		if pv_type in deep_get(obj, DictPath("spec"), []):
 			return pv_type
 	return None
 
+# pylint: disable-next=unused-argument
 def get_volume_properties(kh, obj, **kwargs):
-	del kh
-	del kwargs
-
 	volume_properties = []
 
 	# First find out what kind of volume we're dealing with

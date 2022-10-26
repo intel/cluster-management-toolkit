@@ -38,7 +38,7 @@ except ModuleNotFoundError:
 # from ikttypes import FilePath, StatusGroup
 from iktpaths import KUBE_CONFIG_FILE
 from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, execute_command_with_response, get_since, timestamp_to_datetime, versiontuple
-from ikttypes import StatusGroup
+from ikttypes import DictPath, StatusGroup
 
 # A list of all K8s resources we have some knowledge about
 kubernetes_resources = {
@@ -2126,11 +2126,11 @@ kubernetes_resources = {
 	},
 }
 
-def kind_tuple_to_name(kind):
+def kind_tuple_to_name(kind) -> str:
 	name = ""
 
 	if kind in kubernetes_resources:
-		api = deep_get(kubernetes_resources[kind], "api", "")
+		api = deep_get(kubernetes_resources[kind], DictPath("api"), "")
 		name = f"{api}.{kind[1]}"
 		name = name.rstrip(".")
 	return name
@@ -2147,24 +2147,24 @@ def kubectl_get_version():
 	args = ["/usr/bin/kubectl", "version", "-oyaml"]
 	response = execute_command_with_response(args)
 	version_data = yaml.safe_load(response)
-	kubectl_major_version = int("".join(filter(str.isdigit, deep_get(version_data, "clientVersion#major"))))
-	kubectl_minor_version = int("".join(filter(str.isdigit, deep_get(version_data, "clientVersion#minor"))))
-	server_major_version = int("".join(filter(str.isdigit, deep_get(version_data, "serverVersion#major"))))
-	server_minor_version = int("".join(filter(str.isdigit, deep_get(version_data, "serverVersion#minor"))))
-	server_git_version = deep_get(version_data, "serverVersion#gitVersion")
-	kubectl_git_version = deep_get(version_data, "clientVersion#gitVersion")
+	kubectl_major_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("clientVersion#major")))))
+	kubectl_minor_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("clientVersion#minor")))))
+	server_major_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("serverVersion#major")))))
+	server_minor_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("serverVersion#minor")))))
+	server_git_version = deep_get(version_data, DictPath("serverVersion#gitVersion"))
+	kubectl_git_version = deep_get(version_data, DictPath("clientVersion#gitVersion"))
 
 	return kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version
 
-def get_node_status(node):
+def get_node_status(node: str):
 	status = "Unknown"
 	status_group = StatusGroup.UNKNOWN
 	taints = []
-	full_taints = deep_get(node, "spec#taints", [])
+	full_taints = deep_get(node, DictPath("spec#taints"), [])
 
-	for condition in deep_get(node, "status#conditions", []):
-		if deep_get(condition, "type") == "Ready":
-			condition_status = deep_get(condition, "status")
+	for condition in deep_get(node, DictPath("status#conditions"), []):
+		if deep_get(condition, DictPath("type")) == "Ready":
+			condition_status = deep_get(condition, DictPath("status"))
 			if condition_status == "True":
 				status = "Ready"
 				status_group = StatusGroup.OK
@@ -2175,16 +2175,16 @@ def get_node_status(node):
 				status = "NotReady"
 				status_group = StatusGroup.NOT_OK
 
-	for nodetaint in deep_get(node, "spec#taints", []):
-		key = deep_get(nodetaint, "key")
+	for nodetaint in deep_get(node, DictPath("spec#taints"), []):
+		key = deep_get(nodetaint, DictPath("key"))
 		if key == "node-role.kubernetes.io/master":
 			key = "node-role.kubernetes.io/control-plane"
-		effect = deep_get(nodetaint, "effect")
+		effect = deep_get(nodetaint, DictPath("effect"))
 
 		# Control Plane having scheduling disabled
 		# is expected behaviour and does not need
 		# any form of highlighting
-		if deep_get(nodetaint, "effect") == "NoSchedule":
+		if deep_get(nodetaint, DictPath("effect")) == "NoSchedule":
 			if key == "node-role.kubernetes.io/control-plane":
 				taints.append(("control-plane", effect))
 				continue
@@ -2208,7 +2208,7 @@ def get_node_status(node):
 
 	return status, status_group, taints, full_taints
 
-def make_selector(selector_dict):
+def make_selector(selector_dict) -> str:
 	selectors = []
 
 	if selector_dict is not None:
@@ -2217,7 +2217,7 @@ def make_selector(selector_dict):
 
 	return ",".join(selectors)
 
-def get_image_version(image, default = "<undefined>"):
+def get_image_version(image: str, default: str = "<undefined>") -> str:
 	image_version = default
 	image_version = image.split("@")[0]
 	image_version = image_version.split("/")[-1]
@@ -2304,14 +2304,14 @@ class KubernetesHelper:
 		except FileNotFoundError:
 			return []
 
-		current_context = deep_get(kubeconfig, "current-context", "")
+		current_context = deep_get(kubeconfig, DictPath("current-context"), "")
 
-		for context in deep_get(kubeconfig, "contexts", []):
-			name = deep_get(context, "name")
+		for context in deep_get(kubeconfig, DictPath("contexts"), []):
+			name = deep_get(context, DictPath("name"))
 			current = (name == current_context)
-			namespace = deep_get(context, "namespace", "default")
-			authinfo = deep_get(context, "context#user")
-			cluster = deep_get(context, "context#cluster")
+			namespace = deep_get(context, DictPath("namespace"), "default")
+			authinfo = deep_get(context, DictPath("context#user"))
+			cluster = deep_get(context, DictPath("context#cluster"))
 			contexts.append((current, name, cluster, authinfo, namespace))
 		return contexts
 
@@ -2363,7 +2363,7 @@ class KubernetesHelper:
 		except FileNotFoundError:
 			return False
 
-		current_context = deep_get(kubeconfig, "current-context", "")
+		current_context = deep_get(kubeconfig, DictPath("current-context"), "")
 
 		unchanged = True
 		# If we didn't get a context name we try current-context
@@ -2371,14 +2371,14 @@ class KubernetesHelper:
 			unchanged = False
 			name = current_context
 
-		for context in deep_get(kubeconfig, "contexts", []):
+		for context in deep_get(kubeconfig, DictPath("contexts"), []):
 			# If we still don't have a context name,
 			# pick the first match
-			if len(name) == 0 or deep_get(context, "name") == name:
-				context_name = deep_get(context, "name")
-				user_name = deep_get(context, "context#user", "")
-				cluster_name = deep_get(context, "context#cluster", "")
-				namespace_name = deep_get(context, "context#namespace", "")
+			if len(name) == 0 or deep_get(context, DictPath("name")) == name:
+				context_name = deep_get(context, DictPath("name"))
+				user_name = deep_get(context, DictPath("context#user"), "")
+				cluster_name = deep_get(context, DictPath("context#cluster"), "")
+				namespace_name = deep_get(context, DictPath("context#namespace"), "")
 				break
 
 		if unchanged == True and current_context == context_name:
@@ -2393,8 +2393,8 @@ class KubernetesHelper:
 		# Safe
 		host_and_port_regex = re.compile(r"^https?://(.*):(\d+)")
 
-		for cluster in deep_get(kubeconfig, "clusters", []):
-			if deep_get(cluster, "name") != cluster_name:
+		for cluster in deep_get(kubeconfig, DictPath("clusters"), []):
+			if deep_get(cluster, DictPath("name")) != cluster_name:
 				continue
 
 			tmp = host_and_port_regex.match(cluster["cluster"]["server"])
@@ -2402,12 +2402,12 @@ class KubernetesHelper:
 				control_plane_ip = tmp[1]
 				control_plane_port = tmp[2]
 
-			insecuretlsskipverify = deep_get(cluster, "cluster#insecure-skip-tls-verify", False)
+			insecuretlsskipverify = deep_get(cluster, DictPath("cluster#insecure-skip-tls-verify"), False)
 			if insecuretlsskipverify == True:
 				break
 
 			# ca_certs
-			ccac = deep_get(cluster, "cluster#certificate-authority-data")
+			ccac = deep_get(cluster, DictPath("cluster#certificate-authority-data"))
 			try:
 				ca_certs = base64.b64decode(ccac).decode("utf-8")
 			except UnicodeDecodeError as e:
@@ -2423,10 +2423,10 @@ class KubernetesHelper:
 		key = None
 		self.token = None
 
-		for user in deep_get(kubeconfig, "users", []):
-			if deep_get(user, "name") == user_name:
+		for user in deep_get(kubeconfig, DictPath("users"), []):
+			if deep_get(user, DictPath("name")) == user_name:
 				# cert
-				ccd = deep_get(user, "user#client-certificate-data")
+				ccd = deep_get(user, DictPath("user#client-certificate-data"))
 				if ccd is not None:
 					try:
 						cert = base64.b64decode(ccd).decode("utf-8")
@@ -2434,14 +2434,14 @@ class KubernetesHelper:
 						raise Exception(f"failed to decode client-certificate-data: {e}") from e
 
 				# key
-				ckd = deep_get(user, "user#client-key-data")
+				ckd = deep_get(user, DictPath("user#client-key-data"))
 				if ckd is not None:
 					try:
 						key = base64.b64decode(ckd).decode("utf-8")
 					except UnicodeDecodeError as e:
 						raise Exception(f"failed to decode client-key-data: {e}") from e
 
-				self.token = deep_get(user, "user#token")
+				self.token = deep_get(user, DictPath("user#token"))
 				break
 
 		# We don't have the cert or token needed to access the server
@@ -2533,25 +2533,25 @@ class KubernetesHelper:
 		for obj in vlist:
 			if controller_kind == ("Deployment", "apps"):
 				cni_status = ("Unavailable", StatusGroup.NOT_OK)
-				for condition in deep_get(obj, "status#conditions"):
-					ctype = deep_get(condition, "type")
+				for condition in deep_get(obj, DictPath("status#conditions")):
+					ctype = deep_get(condition, DictPath("type"))
 					if ctype == "Available":
 						cni_status = (ctype, StatusGroup.OK)
 						break
 			elif controller_kind == ("DaemonSet", "apps"):
-				if deep_get(obj, "status#numberUnavailable", 0) > deep_get(obj, "status#maxUnavailable", 0):
+				if deep_get(obj, DictPath("status#numberUnavailable"), 0) > deep_get(obj, DictPath("status#maxUnavailable"), 0):
 					cni_status = ("Unavailable", StatusGroup.NOT_OK, "numberUnavailable > maxUnavailable")
 				else:
 					cni_status = ("Available", StatusGroup.OK, "")
 
-			vlist2, _status = self.get_list_by_kind_namespace(("Pod", ""), "", label_selector = make_selector(deep_get(obj, "spec#selector#matchLabels")))
+			vlist2, _status = self.get_list_by_kind_namespace(("Pod", ""), "", label_selector = make_selector(deep_get(obj, DictPath("spec#selector#matchLabels"))))
 
 			if vlist2 is not None and len(vlist2) > 0:
 				for obj2 in vlist2:
 					# Try to get the version
-					for container in deep_get(obj2, "status#containerStatuses", []):
-						if deep_get(container, "name", "") == container_name:
-							image_version = get_image_version(deep_get(container, "image", ""))
+					for container in deep_get(obj2, DictPath("status#containerStatuses"), []):
+						if deep_get(container, DictPath("name"), "") == container_name:
+							image_version = get_image_version(deep_get(container, DictPath("image"), ""))
 
 							if image_version != "<undefined>":
 								if cni_version is None:
@@ -2609,7 +2609,7 @@ class KubernetesHelper:
 		# Safe
 		node_role_regex = re.compile(r"^node-role\.kubernetes\.io/(.*)")
 
-		for label in deep_get(node, "metadata#labels", {}).items():
+		for label in deep_get(node, DictPath("metadata#labels"), {}).items():
 			tmp = node_role_regex.match(label[0])
 
 			if tmp is None:
@@ -2622,7 +2622,7 @@ class KubernetesHelper:
 
 		return roles
 
-	def __close_certs(self):
+	def __close_certs(self) -> None:
 		if self.tmp_ca_certs_file is not None:
 			self.tmp_ca_certs_file.close()
 		if self.tmp_cert_file is not None:
@@ -2630,7 +2630,7 @@ class KubernetesHelper:
 		if self.tmp_key_file is not None:
 			self.tmp_key_file.close()
 
-	def __init__(self, programname, programversion, config_path = None):
+	def __init__(self, programname: str, programversion: str, config_path = None) -> None:
 		self.programname = programname
 		self.programversion = programversion
 		self.cluster_unreachable = True
@@ -2638,17 +2638,17 @@ class KubernetesHelper:
 
 		self.set_context(config_path = config_path)
 
-	def __del__(self):
+	def __del__(self) -> None:
 		self.__close_certs()
 		self.context_name = ""
 
-	def is_cluster_reachable(self):
+	def is_cluster_reachable(self) -> bool:
 		return self.cluster_unreachable == False
 
 	def get_control_plane_address(self):
 		return self.control_plane_ip, self.control_plane_port
 
-	def get_join_token(self):
+	def get_join_token(self) -> str:
 		join_token = ""
 
 		vlist, _status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
@@ -2660,20 +2660,20 @@ class KubernetesHelper:
 
 		# Find the newest bootstrap token
 		for secret in vlist:
-			name = deep_get(secret, "metadata#name")
+			name = deep_get(secret, DictPath("metadata#name"))
 			if name.startswith("bootstrap-token-"):
-				timestamp = timestamp_to_datetime(deep_get(secret, "metadata#creationTimestamp"))
+				timestamp = timestamp_to_datetime(deep_get(secret, DictPath("metadata#creationTimestamp")))
 				newage = get_since(timestamp)
 				if age == -1 or newage < age:
 					try:
-						tmp1 = base64.b64decode(deep_get(secret, "data#token-id", "")).decode("utf-8")
+						tmp1 = base64.b64decode(deep_get(secret, DictPath("data#token-id"), "")).decode("utf-8")
 					except UnicodeDecodeError:
 						tmp1 = secret.data.get("data#token-id", "")
 
 					try:
-						tmp2 = base64.b64decode(deep_get(secret, "data#token-secret", "")).decode("utf-8")
+						tmp2 = base64.b64decode(deep_get(secret, DictPath("data#token-secret"), "")).decode("utf-8")
 					except UnicodeDecodeError:
-						tmp2 = deep_get(secret, "data#token-secret", "")
+						tmp2 = deep_get(secret, DictPath("data#token-secret"), "")
 
 					if tmp1 != "" and tmp2 != "":
 						join_token = f"{tmp1}.{tmp2}"
@@ -2694,14 +2694,14 @@ class KubernetesHelper:
 
 		# Find the newest certificate-controller-token
 		for secret in vlist:
-			if deep_get(secret, "metadata#name").startswith("certificate-controller-token-"):
-				timestamp = timestamp_to_datetime(deep_get(secret, "metadata#creationTimestamp"))
+			if deep_get(secret, DictPath("metadata#name")).startswith("certificate-controller-token-"):
+				timestamp = timestamp_to_datetime(deep_get(secret, DictPath("metadata#creationTimestamp")))
 				newage = get_since(timestamp)
 				if age == -1 or newage < age:
 					try:
-						tmp1 = base64.b64decode(deep_get(secret, "data#ca.crt", "")).decode("utf-8")
+						tmp1 = base64.b64decode(deep_get(secret, DictPath("data#ca.crt"), "")).decode("utf-8")
 					except UnicodeDecodeError:
-						tmp1 = deep_get(secret, "data#ca.crt", "")
+						tmp1 = deep_get(secret, DictPath("data#ca.crt"), "")
 
 					if tmp1 != "":
 						ca_cert = tmp1
@@ -2716,13 +2716,12 @@ class KubernetesHelper:
 
 		return ca_cert_hash
 
-
-	def is_kind_namespaced(self, kind):
+	def is_kind_namespaced(self, kind) -> bool:
 		if kind not in kubernetes_resources:
 			raise ValueError(f"Kind {kind} not known; this is likely a programming error (possibly a typo)")
-		return deep_get(kubernetes_resources[kind], "namespaced", True)
+		return deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
 
-	def kind_api_version_to_kind(self, kind, api_version):
+	def kind_api_version_to_kind(self, kind, api_version: str):
 		# The API group is anything before /, or the empty string if there's no "/"
 		if api_version is not None and "/" in api_version:
 			# Safe
@@ -2734,11 +2733,11 @@ class KubernetesHelper:
 			api_group = ""
 		return kind, api_group
 
-	def get_latest_api(self, kind):
+	def get_latest_api(self, kind) -> str:
 		if kind not in kubernetes_resources:
 			raise Exception(f"Could not determine latest API; kind {kind} not found in kubernetes_resources")
 
-		latest_api = deep_get(kubernetes_resources[kind], "api_family")[0]
+		latest_api = deep_get(kubernetes_resources[kind], DictPath("api_family"))[0]
 		if latest_api.startswith("api/"):
 			latest_api = latest_api[len("api/"):]
 		elif latest_api.startswith("apis/"):
@@ -2761,7 +2760,7 @@ class KubernetesHelper:
 			# We have a tuple, but it didn't have an entry in kubernetes_resources;
 			# it might be api + api_family instead though, but for that we need to scan
 			for resource_kind, resource_data in kubernetes_resources.items():
-				if deep_get(resource_data, "api") == kind[0] and resource_kind[1] == kind[1]:
+				if deep_get(resource_data, DictPath("api")) == kind[0] and resource_kind[1] == kind[1]:
 					return resource_kind
 
 		# APIs are grouped in two: Kubernetes "native",
@@ -2783,7 +2782,7 @@ class KubernetesHelper:
 			return kubernetes_resources, 42503, modified
 
 		# It's fairly easy to check if the API-list is "fresh"; just check whether Pod is available
-		if force_refresh == False and deep_get(kubernetes_resources[("Pod", "")], "available", False) == True:
+		if force_refresh == False and deep_get(kubernetes_resources[("Pod", "")], DictPath("available"), False) == True:
 			return kubernetes_resources, 200, modified
 
 		# First get all core APIs
@@ -2810,12 +2809,12 @@ class KubernetesHelper:
 		for _resource_kind, resource_data in kubernetes_resources.items():
 			resource_data["available"] = False
 
-		for api in deep_get(core_apis, "resources", []):
-			if "list" not in deep_get(api, "verbs", []):
+		for api in deep_get(core_apis, DictPath("resources"), []):
+			if "list" not in deep_get(api, DictPath("verbs"), []):
 				# Ignore non-list APIs
 				continue
-			name = deep_get(api, "name", "")
-			kind = deep_get(api, "kind", "")
+			name = deep_get(api, DictPath("name"), "")
+			kind = deep_get(api, DictPath("kind"), "")
 			if (kind, "") in kubernetes_resources:
 				kubernetes_resources[(kind, "")]["available"] = True
 
@@ -2839,18 +2838,18 @@ class KubernetesHelper:
 		# These are all API groups we know of
 		_api_groups = set(api_group for kind, api_group in kubernetes_resources)
 
-		for api_group in deep_get(non_core_apis, "groups", []):
-			name = deep_get(api_group, "name", "")
+		for api_group in deep_get(non_core_apis, DictPath("groups"), []):
+			name = deep_get(api_group, DictPath("name"), "")
 			known_api_group = name in _api_groups
 			if known_api_group == False:
 				continue
 
-			versions = deep_get(api_group, "versions", [])
+			versions = deep_get(api_group, DictPath("versions"), [])
 
 			# Now we need to check what kinds this api_group supports
 			# and using what version
 			for version in versions:
-				_version = deep_get(version, "groupVersion")
+				_version = deep_get(version, DictPath("groupVersion"))
 				if _version is None:
 					# This shouldn't happen, but ignore it
 					continue
@@ -2866,10 +2865,10 @@ class KubernetesHelper:
 					# We got a response, but the data is malformed
 					continue
 
-				for resource in deep_get(data, "resources", []):
-					if "list" not in deep_get(resource, "verbs", []):
+				for resource in deep_get(data, DictPath("resources"), []):
+					if "list" not in deep_get(resource, DictPath("verbs"), []):
 						continue
-					kind = deep_get(resource, "kind", "")
+					kind = deep_get(resource, DictPath("kind"), "")
 					if len(kind) == 0:
 						continue
 					if (kind, name) in kubernetes_resources and f"apis/{_version}/" in kubernetes_resources[(kind, name)].get("api_family", ""):
@@ -2887,7 +2886,7 @@ class KubernetesHelper:
 		vlist = []
 
 		for resource_kind, resource_data in kubernetes_resources.items():
-			if deep_get(resource_data, "namespaced", True) == True:
+			if deep_get(resource_data, DictPath("namespaced"), True) == True:
 				vlist.append(resource_kind)
 		return vlist
 
@@ -2957,7 +2956,7 @@ class KubernetesHelper:
 			# The feature might be disabled, or the pod is waiting to start/terminated
 			try:
 				d = json.loads(result.data)
-				message = "400: Bad Request; " + deep_get(d, "message", "")
+				message = "400: Bad Request; " + deep_get(d, DictPath("message"), "")
 			except DecodeException:
 				# We got a response, but the data is malformed
 				message = "400: Bad Request [return data invalid]"
@@ -3005,7 +3004,7 @@ class KubernetesHelper:
 
 		return data, message, status
 
-	def __rest_helper_post(self, kind, name = "", namespace = "", body = None):
+	def __rest_helper_post(self, kind, name: str = "", namespace: str = "", body = None):
 		method = "POST"
 
 		if body is None or len(body) == 0:
@@ -3026,9 +3025,9 @@ class KubernetesHelper:
 		kind = self.guess_kind(kind)
 
 		if kind in kubernetes_resources:
-			api_family = deep_get(kubernetes_resources[kind], "api_family")
-			api = deep_get(kubernetes_resources[kind], "api")
-			namespaced = deep_get(kubernetes_resources[kind], "namespaced", True)
+			api_family = deep_get(kubernetes_resources[kind], DictPath("api_family"))
+			api = deep_get(kubernetes_resources[kind], DictPath("api"))
+			namespaced = deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
 		else:
 			raise Exception(f"kind unknown: {kind}")
 
@@ -3052,7 +3051,7 @@ class KubernetesHelper:
 
 		return message, status
 
-	def __rest_helper_patch(self, kind, name, namespace = "", body = None):
+	def __rest_helper_patch(self, kind, name: str, namespace: str = "", body = None):
 		method = "PATCH"
 
 		header_params = {
@@ -3073,9 +3072,9 @@ class KubernetesHelper:
 		kind = self.guess_kind(kind)
 
 		if kind in kubernetes_resources:
-			api_family = deep_get(kubernetes_resources[kind], "api_family")
-			api = deep_get(kubernetes_resources[kind], "api")
-			namespaced = deep_get(kubernetes_resources[kind], "namespaced", True)
+			api_family = deep_get(kubernetes_resources[kind], DictPath("api_family"))
+			api = deep_get(kubernetes_resources[kind], DictPath("api"))
+			namespaced = deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
 		else:
 			raise Exception(f"kind unknown: {kind}")
 
@@ -3100,7 +3099,7 @@ class KubernetesHelper:
 
 		return message, status
 
-	def __rest_helper_delete(self, kind, name, namespace = "", query_params = None):
+	def __rest_helper_delete(self, kind, name: str, namespace: str = "", query_params = None):
 		method = "DELETE"
 
 		if query_params is None:
@@ -3116,9 +3115,9 @@ class KubernetesHelper:
 		kind = self.guess_kind(kind)
 
 		if kind in kubernetes_resources:
-			api_family = deep_get(kubernetes_resources[kind], "api_family")
-			api = deep_get(kubernetes_resources[kind], "api")
-			namespaced = deep_get(kubernetes_resources[kind], "namespaced", True)
+			api_family = deep_get(kubernetes_resources[kind], DictPath("api_family"))
+			api = deep_get(kubernetes_resources[kind], DictPath("api"))
+			namespaced = deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
 		else:
 			raise Exception(f"kind unknown: {kind}")
 
@@ -3176,9 +3175,9 @@ class KubernetesHelper:
 		kind = self.guess_kind(kind)
 
 		if kind in kubernetes_resources:
-			api_family = deep_get(kubernetes_resources[kind], "api_family")
-			api = deep_get(kubernetes_resources[kind], "api")
-			namespaced = deep_get(kubernetes_resources[kind], "namespaced", True)
+			api_family = deep_get(kubernetes_resources[kind], DictPath("api_family"))
+			api = deep_get(kubernetes_resources[kind], DictPath("api"))
+			namespaced = deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
 		else:
 			raise Exception(f"kind unknown: {kind}")
 
@@ -3239,7 +3238,7 @@ class KubernetesHelper:
 
 		return vlist, status
 
-	def create_namespace(self, name):
+	def create_namespace(self, name: str):
 		kind = ("Namespace", "")
 
 		if name is None or len(name) == 0:
@@ -3259,7 +3258,7 @@ class KubernetesHelper:
 		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_post(kind, body = body)
 
-	def taint_node(self, node, taints, new_taint, overwrite = False):
+	def taint_node(self, node, taints, new_taint, overwrite: bool = False):
 		"""
 		Apply a new taint, replace an existing taint, or remove a taint for a node
 
@@ -3282,12 +3281,12 @@ class KubernetesHelper:
 
 		for taint in taints:
 			# If the taint isn't the one to modify we keep it
-			if deep_get(taint, "key") != key:
+			if deep_get(taint, DictPath("key")) != key:
 				modified_taints.append(taint)
 				continue
 
-			_old_value = deep_get(taint, "value")
-			_old_effect = deep_get(taint, "effect")
+			_old_value = deep_get(taint, DictPath("value"))
+			_old_effect = deep_get(taint, DictPath("effect"))
 
 			# Do we want to *remove* the taint?
 			if new_effect is None:
@@ -3378,7 +3377,7 @@ a				the return value from __rest_helper_patch
 		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_patch(kind, node, body = body)
 
-	def delete_obj_by_kind_name_namespace(self, kind, name, namespace, force = False):
+	def delete_obj_by_kind_name_namespace(self, kind, name: str, namespace: str, force: bool = False):
 		"""
 		Delete an object
 
@@ -3415,14 +3414,14 @@ a				the return value from __rest_helper_patch
 			msg = []
 		return msg, status
 
-	def get_list_by_kind_namespace(self, kind, namespace, label_selector = "", field_selector = ""):
+	def get_list_by_kind_namespace(self, kind, namespace: str, label_selector: str = "", field_selector: str = ""):
 		return self.__rest_helper_get(kind, "", namespace, label_selector, field_selector)
 
-	def get_ref_by_kind_name_namespace(self, kind, name, namespace):
+	def get_ref_by_kind_name_namespace(self, kind, name: str, namespace: str):
 		ref, _status = self.__rest_helper_get(kind, name, namespace, "", "")
 		return ref
 
-	def read_namespaced_pod_log(self, name, namespace, container = None, tail_lines = 0):
+	def read_namespaced_pod_log(self, name: str, namespace: str, container = None, tail_lines: int = 0):
 		query_params = []
 		if container is not None:
 			query_params.append(("container", container))
@@ -3446,45 +3445,51 @@ a				the return value from __rest_helper_patch
 
 	# Namespace must be the namespace of the resource; the owner reference itself lacks namespace
 	# since owners have to reside in the same namespace as their owned resources
-	def get_ref_from_owr(self, owr, namespace):
-		ref, _status = self.__rest_helper_get(deep_get(owr, "kind"), deep_get(owr, "name"), namespace)
+	def get_ref_from_owr(self, owr, namespace: str):
+		ref, _status = self.__rest_helper_get(deep_get(owr, DictPath("kind")), deep_get(owr, DictPath("name")), namespace)
 		return ref
 
-	def get_events_by_kind_name_namespace(self, kind, name, namespace):
+	def get_events_by_kind_name_namespace(self, kind, name: str, namespace: str):
 		events = []
 		vlist, status = self.get_list_by_kind_namespace(("Event", "events.k8s.io"), "")
 		for obj in vlist:
-			__involved_kind = deep_get_with_fallback(obj, ["regarding#kind", "involvedObject#kind"])
-			__involved_api_version = deep_get_with_fallback(obj, ["regarding#apiVersion", "involvedObject#apiVersion"])
+			__involved_kind = deep_get_with_fallback(obj, [DictPath("regarding#kind"), DictPath("involvedObject#kind")])
+			__involved_api_version = deep_get_with_fallback(obj, [DictPath("regarding#apiVersion"), DictPath("involvedObject#apiVersion")])
 			involved_kind = self.kind_api_version_to_kind(__involved_kind, __involved_api_version)
-			involved_name = deep_get_with_fallback(obj, ["regarding#name", "involvedObject#name"])
-			ev_name = deep_get(obj, "metadata#name")
-			ev_namespace = deep_get(obj, "metadata#namespace", "")
-			_last_seen = timestamp_to_datetime(deep_get_with_fallback(obj, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]))
+			involved_name = deep_get_with_fallback(obj, [DictPath("regarding#name"), DictPath("involvedObject#name")])
+			ev_name = deep_get(obj, DictPath("metadata#name"))
+			ev_namespace = deep_get(obj, DictPath("metadata#namespace"), "")
+			_last_seen = timestamp_to_datetime(deep_get_with_fallback(obj, [
+				DictPath("series#lastObservedTime"),
+				DictPath("deprecatedLastTimestamp"),
+				DictPath("lastTimestamp"),
+				DictPath("eventTime"),
+				DictPath("deprecatedFirstTimestamp"),
+				DictPath("firstTimestamp")]))
 			last_seen = datetime_to_timestamp(_last_seen)
-			status = deep_get(obj, "type", "")
-			reason = deep_get(obj, "reason", "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
-			src_component = deep_get(obj, "reportingController", "")
+			status = deep_get(obj, DictPath("type"), "")
+			reason = deep_get(obj, DictPath("reason"), "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
+			src_component = deep_get(obj, DictPath("reportingController"), "")
 			if len(src_component) == 0:
-				src_component = deep_get_with_fallback(obj, ["deprecatedSource#component", "source#component"], "")
-			src_host = deep_get(obj, "reportingInstance", "")
+				src_component = deep_get_with_fallback(obj, [DictPath("deprecatedSource#component"), DictPath("source#component")], "")
+			src_host = deep_get(obj, DictPath("reportingInstance"), "")
 			if len(src_host) == 0:
-				src_host = deep_get_with_fallback(obj, ["deprecatedSource#host", "source#host"], "")
+				src_host = deep_get_with_fallback(obj, [DictPath("deprecatedSource#host"), DictPath("source#host")], "")
 			if len(src_component) == 0:
 				source = src_host
 			elif len(src_host) == 0:
 				source = src_component
 			else:
 				source = f"{src_host}/{src_component}"
-			_first_seen = timestamp_to_datetime(deep_get_with_fallback(obj, ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]))
+			_first_seen = timestamp_to_datetime(deep_get_with_fallback(obj, [DictPath("eventTime"), DictPath("deprecatedFirstTimestamp"), DictPath("firstTimestamp")]))
 			first_seen = datetime_to_timestamp(_first_seen)
 
-			count = deep_get_with_fallback(obj, ["series#count", "deprecatedCount", "count"], "")
+			count = deep_get_with_fallback(obj, [DictPath("series#count"), DictPath("deprecatedCount"), DictPath("count")], "")
 			if count is None:
 				count = ""
 			else:
 				count = str(count)
-			message = deep_get(obj, "message", "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
+			message = deep_get(obj, DictPath("message"), "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
 			if kind == involved_kind and name == involved_name and ev_namespace == namespace:
 				event = (ev_namespace, ev_name, last_seen, status, reason, source, first_seen, count, message)
 				events.append(event)

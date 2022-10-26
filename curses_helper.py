@@ -24,7 +24,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import FilePath, LogLevel, Retval, StatusGroup, loglevel_to_name, stgroup_mapping
+from ikttypes import DictPath, FilePath, LogLevel, Retval, StatusGroup, loglevel_to_name, stgroup_mapping
 
 import iktlib
 from iktlib import deep_get
@@ -44,7 +44,7 @@ class curses_configuration:
 	mousescroll_up = 0b10000000000000000
 	mousescroll_down = 0b1000000000000000000000000000
 
-def set_mousemask(mask):
+def set_mousemask(mask: int) -> None:
 	"""
 	Enable/disable mouse support
 	"""
@@ -102,7 +102,7 @@ def __color_name_to_curses_color(color, color_type: str) -> int:
 	else:
 		attr = 0
 
-	color = deep_get(color_map, col)
+	color = deep_get(color_map, DictPath(col))
 	if color is None:
 		raise ValueError(f"Invalid {color_type} color {col} used in theme; valid colors are: {', '.join(color_map.keys())}")
 	return color + attr
@@ -159,7 +159,7 @@ def init_curses() -> None:
 
 	# First we set the colour palette
 	for col, curses_col in color_map.items():
-		rgb = deep_get(theme, f"colors#{col}")
+		rgb = deep_get(theme, DictPath(f"colors#{col}"))
 		if rgb is None:
 			continue
 		r, g, b = rgb
@@ -201,7 +201,7 @@ def color_log_severity(severity: LogLevel, selected: bool):
 def color_status_group(status_group: StatusGroup, selected: bool = False):
 	return ("main", stgroup_mapping[status_group], selected)
 
-def window_tee_hline(win, y, start, end, attribute = None):
+def window_tee_hline(win, y: int, start: int, end: int, attribute = None) -> None:
 	_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
 	_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
 	_hline = theme["boxdrawing"].get("hline", curses.ACS_HLINE)
@@ -223,7 +223,7 @@ def window_tee_hline(win, y, start, end, attribute = None):
 	else:
 		win.addch(y, end, _rtee)
 
-def window_tee_vline(win, x, start, end, attribute = None):
+def window_tee_vline(win, x: int, start: int, end: int, attribute = None) -> None:
 	_ttee = theme["boxdrawing"].get("ttee", curses.ACS_TTEE)
 	_btee = theme["boxdrawing"].get("btee", curses.ACS_BTEE)
 	_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
@@ -246,7 +246,7 @@ def window_tee_vline(win, x, start, end, attribute = None):
 		win.addch(end, x, _btee)
 
 # pylint: disable-next=too-many-arguments
-def scrollbar_vertical(win, x, miny, maxy, height, yoffset, clear_color):
+def scrollbar_vertical(win, x: int, miny: int, maxy: int, height: int, yoffset: int, clear_color):
 	"""
 	Draw a vertical scroll bar
 
@@ -277,20 +277,20 @@ def scrollbar_vertical(win, x, miny, maxy, height, yoffset, clear_color):
 
 	# We only need a scrollbar if we can actually scroll
 	if maxoffset > 0:
-		win.addch(miny, x, _arrowup, attr_to_curses_merged("main", "scrollbar_arrows"))
+		win.addch(miny, x, _arrowup, _attr_to_curses_merged("main", "scrollbar_arrows"))
 		upperarrow = miny, x
 		y = miny + 1
 		while y < maxy:
-			win.addch(y, x, _scrollbar, attr_to_curses_merged("main", "scrollbar"))
+			win.addch(y, x, _scrollbar, _attr_to_curses_merged("main", "scrollbar"))
 			y += 1
-		win.addch(maxy, x, _arrowdown, attr_to_curses_merged("main", "scrollbar_arrows"))
+		win.addch(maxy, x, _arrowdown, _attr_to_curses_merged("main", "scrollbar_arrows"))
 		lowerarrow = maxy, x
 		curpos = miny + 1 + int((maxy - miny) * (yoffset / (maxoffset)))
 		curpos = min(curpos, maxy - 3)
 		vdragger = curpos, x, 3
-		win.addch(curpos, x, _verticaldragger_upper, attr_to_curses_merged("main", "dragger"))
-		win.addch(curpos + 1, x, _verticaldragger_midpoint, attr_to_curses_merged("main", "dragger_midpoint"))
-		win.addch(curpos + 2, x, _verticaldragger_lower, attr_to_curses_merged("main", "dragger"))
+		win.addch(curpos, x, _verticaldragger_upper, _attr_to_curses_merged("main", "dragger"))
+		win.addch(curpos + 1, x, _verticaldragger_midpoint, _attr_to_curses_merged("main", "dragger_midpoint"))
+		win.addch(curpos + 2, x, _verticaldragger_lower, _attr_to_curses_merged("main", "dragger"))
 	# But we might need to cover up the lack of one if the window has been resized
 	else:
 		for y in range(miny, maxy + 1):
@@ -300,7 +300,7 @@ def scrollbar_vertical(win, x, miny, maxy, height, yoffset, clear_color):
 	return upperarrow, lowerarrow, vdragger
 
 # pylint: disable-next=too-many-arguments
-def scrollbar_horizontal(win, y, minx, maxx, width, xoffset, clear_color):
+def scrollbar_horizontal(win, y: int, minx: int, maxx: int, width: int, xoffset: int, clear_color):
 	"""
 	Draw a horizontal scroll bar
 
@@ -331,23 +331,23 @@ def scrollbar_horizontal(win, y, minx, maxx, width, xoffset, clear_color):
 
 	# We only need a scrollbar if we can actually scroll
 	if maxoffset > 0:
-		win.addch(y, minx, _arrowleft, attr_to_curses_merged("main", "scrollbar_arrows"))
+		win.addch(y, minx, _arrowleft, _attr_to_curses_merged("main", "scrollbar_arrows"))
 		leftarrow = y, minx
 
 		x = minx + 1
 		while x < maxx:
-			win.addch(y, x, _scrollbar, attr_to_curses_merged("main", "scrollbar"))
+			win.addch(y, x, _scrollbar, _attr_to_curses_merged("main", "scrollbar"))
 			x += 1
-		win.addch(y, maxx, _arrowright, attr_to_curses_merged("main", "scrollbar_arrows"))
+		win.addch(y, maxx, _arrowright, _attr_to_curses_merged("main", "scrollbar_arrows"))
 		rightarrow = y, maxx
 
 		curpos = minx + 1 + int((maxx - minx) * (xoffset / (maxoffset)))
 		curpos = min(curpos, maxx - 5)
-		win.addch(y, curpos, _horizontaldragger_left, attr_to_curses_merged("main", "dragger"))
-		win.addch(_horizontaldragger_left, attr_to_curses_merged("main", "dragger"))
-		win.addch(_horizontaldragger_midpoint, attr_to_curses_merged("main", "dragger_midpoint"))
-		win.addch(_horizontaldragger_right, attr_to_curses_merged("main", "dragger"))
-		win.addch(_horizontaldragger_right, attr_to_curses_merged("main", "dragger"))
+		win.addch(y, curpos, _horizontaldragger_left, _attr_to_curses_merged("main", "dragger"))
+		win.addch(_horizontaldragger_left, _attr_to_curses_merged("main", "dragger"))
+		win.addch(_horizontaldragger_midpoint, _attr_to_curses_merged("main", "dragger_midpoint"))
+		win.addch(_horizontaldragger_right, _attr_to_curses_merged("main", "dragger"))
+		win.addch(_horizontaldragger_right, _attr_to_curses_merged("main", "dragger"))
 		hdragger = y, curpos, 5
 	# But we might need to cover up the lack of one if the window has been resized
 	else:
@@ -358,7 +358,7 @@ def scrollbar_horizontal(win, y, minx, maxx, width, xoffset, clear_color):
 	return leftarrow, rightarrow, hdragger
 
 # This does not draw a heatmap; it only generates an array of string arrays
-def generate_heatmap(maxwidth, stgroups, selected):
+def generate_heatmap(maxwidth: int, stgroups, selected: int):
 	array = []
 	row = []
 	block = theme["boxdrawing"].get("smallblock", "■")
@@ -405,7 +405,7 @@ def generate_heatmap(maxwidth, stgroups, selected):
 	return array
 
 # pylint: disable-next=too-many-arguments
-def percentagebar(win, y, minx, maxx, total, subsets):
+def percentagebar(win, y: int, minx: int, maxx: int, total: int, subsets):
 	block = theme["boxdrawing"].get("smallblock", "■")
 	barwidth = maxx - minx - 3
 	barpos = minx + 1
@@ -415,7 +415,7 @@ def percentagebar(win, y, minx, maxx, total, subsets):
 	for subset in subsets:
 		rx = 0
 		pct, themeattr = subset
-		col = attr_to_curses_merged(themeattr[0], themeattr[1])
+		col = _attr_to_curses_merged(themeattr[0], themeattr[1])
 		subsetwidth = int((pct / total) * barwidth)
 
 		while rx < subsetwidth and ax < barwidth:
@@ -425,7 +425,7 @@ def percentagebar(win, y, minx, maxx, total, subsets):
 	win.addstr(y, maxx, "]")
 	return win
 
-def __notification(stdscr, y, x, message, formatting):
+def __notification(stdscr, y: int, x: int, message: str, formatting):
 	del stdscr
 
 	height = 3
@@ -446,20 +446,20 @@ def __notification(stdscr, y, x, message, formatting):
 	_bl = theme["boxdrawing"].get("llcorner", curses.ACS_LLCORNER)
 	_br = theme["boxdrawing"].get("lrcorner", curses.ACS_LRCORNER)
 	win.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
-	win.addstr(1, 1, message, attr_to_curses_merged(formatting[0], formatting[1]))
+	win.addstr(1, 1, message, _attr_to_curses_merged(formatting[0], formatting[1]))
 	win.noutrefresh()
 	curses.doupdate()
 	return win
 
-def notice(stdscr, y, x, message):
+def notice(stdscr, y: int, x: int, message: str):
 	return __notification(stdscr, y, x, message, ("windowwidget", "notice"))
 
-def alert(stdscr, y, x, message):
+def alert(stdscr, y: int, x: int, message: str):
 	return __notification(stdscr, y, x, message, ("windowwidget", "alert"))
 
 
 # pylint: disable-next=too-many-arguments
-def progressbar(win, y, minx, maxx, progress, title = None):
+def progressbar(win, y: int, minx: int, maxx: int, progress: int, title: str = None):
 	"""
 	A progress bar;
 	Usage: Initialise by calling with a reference to a variable set to None
@@ -502,21 +502,21 @@ def progressbar(win, y, minx, maxx, progress, title = None):
 		col, __discard = attr_to_curses("windowwidget", "default")
 		win.bkgd(" ", col)
 		if title is not None:
-			win.addstr(0, 1, title, attr_to_curses_merged("windowwidget", "title"))
+			win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
 
 	# progress is in % of the total length
 	for x in range(0, width - 2):
 		if x < (width * progress) // 100:
-			win.addch(1, x + 1, theme["boxdrawing"]["solidblock"], attr_to_curses_merged("main", "progressbar"))
+			win.addch(1, x + 1, theme["boxdrawing"]["solidblock"], _attr_to_curses_merged("main", "progressbar"))
 		else:
-			win.addch(1, x + 1, theme["boxdrawing"]["dimmedblock"], attr_to_curses_merged("main", "progressbar"))
+			win.addch(1, x + 1, theme["boxdrawing"]["dimmedblock"], _attr_to_curses_merged("main", "progressbar"))
 
 	win.noutrefresh()
 	curses.doupdate()
 
 	return win
 
-def inputwrapper(keypress):
+def inputwrapper(keypress: int) -> int:
 	global ignoreinput # pylint: disable=global-statement
 
 	if keypress == 27:	# ESCAPE
@@ -526,10 +526,8 @@ def inputwrapper(keypress):
 
 # Show a one line high pad the width of the current pad with a border
 # and specified title in the middle of the screen
-# pylint: disable-next=too-many-arguments
-def inputbox(stdscr, y, x, height, width, title):
-	del height
-
+# pylint: disable-next=too-many-arguments,unused-argument
+def inputbox(stdscr, y: int, x: int, height: int, width: int, title: str) -> str:
 	# Show the cursor
 	curses.curs_set(True)
 
@@ -549,12 +547,12 @@ def inputbox(stdscr, y, x, height, width, title):
 	_bl = theme["boxdrawing"].get("llcorner", curses.ACS_LLCORNER)
 	_br = theme["boxdrawing"].get("lrcorner", curses.ACS_LRCORNER)
 	win.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
-	win.addstr(0, 1, title, attr_to_curses_merged("windowwidget", "title"))
+	win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
 	win.noutrefresh()
 
 	inputarea = win.subwin(1, width - 2, y + 1, x + 1)
-	inputarea.bkgd(" ", attr_to_curses_merged("windowwidget", "title"))
-	inputarea.attrset(attr_to_curses_merged("windowwidget", "title"))
+	inputarea.bkgd(" ", _attr_to_curses_merged("windowwidget", "title"))
+	inputarea.attrset(_attr_to_curses_merged("windowwidget", "title"))
 	inputarea.noutrefresh()
 
 	tpad = curses.textpad.Textbox(inputarea)
@@ -580,7 +578,7 @@ def inputbox(stdscr, y, x, height, width, title):
 
 # Show a confirmation box centered around y and x
 # with the specified default value and title
-def confirmationbox(stdscr, y, x, title = "", default = False):
+def confirmationbox(stdscr, y: int, x: int, title: str = "", default: bool = False) -> bool:
 	global ignoreinput # pylint: disable=global-statement
 	ignoreinput = False
 	retval = default
@@ -605,8 +603,8 @@ def confirmationbox(stdscr, y, x, title = "", default = False):
 	_bl = theme["boxdrawing"].get("llcorner", curses.ACS_LLCORNER)
 	_br = theme["boxdrawing"].get("lrcorner", curses.ACS_LRCORNER)
 	win.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
-	win.addstr(0, 1, title, attr_to_curses_merged("windowwidget", "title"))
-	win.addstr(1, 1, question.ljust(width - 2), attr_to_curses_merged("windowwidget", "default"))
+	win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
+	win.addstr(1, 1, question.ljust(width - 2), _attr_to_curses_merged("windowwidget", "default"))
 	win.noutrefresh()
 	curses.doupdate()
 
@@ -637,10 +635,8 @@ def confirmationbox(stdscr, y, x, title = "", default = False):
 
 	return retval
 
-# pylint: disable-next=too-many-arguments
-def move_cur_with_offset(curypos, listlen, yoffset, maxcurypos, maxyoffset, movement, wraparound = False):
-	del listlen
-
+# pylint: disable-next=too-many-arguments,unused-argument
+def move_cur_with_offset(curypos: int, listlen: int, yoffset: int, maxcurypos: int, maxyoffset: int, movement: int, wraparound: bool = False):
 	newcurypos = curypos + movement
 	newyoffset = yoffset
 
@@ -669,7 +665,7 @@ def move_cur_with_offset(curypos, listlen, yoffset, maxcurypos, maxyoffset, move
 				newyoffset = max(yoffset + movement + curypos, 0)
 	return newcurypos, newyoffset
 
-def __addstr(win, string, y = -1, x = -1, attribute = curses.A_NORMAL):
+def __addstr(win, string: str, y: int = -1, x: int = -1, attribute: int = curses.A_NORMAL):
 	cury, curx = win.getyx()
 	winmaxy, winmaxx = win.getmaxyx()
 	newmaxy = max(y, winmaxy)
@@ -683,7 +679,7 @@ def __addstr(win, string, y = -1, x = -1, attribute = curses.A_NORMAL):
 	cury, curx = win.getyx()
 	return cury, curx
 
-def __addformattedarray(win, array, y = -1, x = -1):
+def __addformattedarray(win, array, y: int = -1, x: int = -1):
 	# This way we can print a single (string, attr) too
 	if isinstance(array, tuple):
 		array = [array]
@@ -701,7 +697,7 @@ def __addformattedarray(win, array, y = -1, x = -1):
 # (string, (context, curses_attr)),
 # (context, theme_ref),
 # (context, theme_ref, selected),
-def addthemearray(win, array, y = -1, x = -1, selected = False):
+def addthemearray(win, array, y: int = -1, x: int = -1, selected: bool = False):
 	for item in array:
 		if not isinstance(item, tuple):
 			raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
@@ -721,7 +717,7 @@ def addthemearray(win, array, y = -1, x = -1, selected = False):
 			if type(_p3) == int: # pylint: disable=unidiomatic-typecheck
 				attr = _p3
 			else:
-				attr = attr_to_curses_merged(context, _p3, selected = _selected)
+				attr = _attr_to_curses_merged(context, _p3, selected = _selected)
 			y, x = __addstr(win, string, y, x, attr)
 		elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
 			string = _p1
@@ -751,7 +747,7 @@ class WidgetLineAttrs(IntFlag):
 	UNSELECTABLE = 4	# Unselectable items are not selectable, but aren't skipped when navigating
 	INVALID = 8		# Invalid items are not selectable; to be used for parse error etc.
 
-def __attr_to_curses(attr, selected = False):
+def __attr_to_curses(attr, selected: bool = False):
 	if isinstance(attr, list):
 		col, attr = attr
 		if isinstance(attr, str):
@@ -781,16 +777,15 @@ def __attr_to_curses(attr, selected = False):
 		raise KeyError(f"__attr_to_curses: (color: {col}, selected: {selected}) not found") from e
 	return key, attr
 
-def __attr_to_curses_merged(attr, selected = False):
-	col, attr = __attr_to_curses(attr, selected)
-	return col | attr
-
-def attr_to_curses(context, attr, selected = False):
+def attr_to_curses(context, attr, selected: bool = False):
 	# <attr> is a string that references a field in the section <context> of the themes-file;
 	# that field can either be either a string, which in that case will be used directly against
 	# the colour lookup table, or a list, in which case the first entry is the colour,
 	# and the second entry is a curses attribute; recognised attributes (dim, normal, bold, underline)
-	attr = theme[context][attr]
+	try:
+		attr = theme[context][attr]
+	except KeyError as e:
+		raise KeyError(f"couldn't find the tuple ({context}, {attr}) in theme") from e
 	if isinstance(attr, dict):
 		if selected == True:
 			attr = attr["selected"]
@@ -798,15 +793,19 @@ def attr_to_curses(context, attr, selected = False):
 			attr = attr["unselected"]
 	return __attr_to_curses(attr, selected)
 
-def attr_to_curses_merged(context, attr, selected = False):
+def __attr_to_curses_merged(attr, selected: bool = False) -> int:
+	col, attr = __attr_to_curses(attr, selected)
+	return col | attr
+
+def _attr_to_curses_merged(context, attr, selected: bool = False) -> int:
 	# <attr> is a string that references a field in the section <context> of the themes-file;
 	# that field can either be either a string, which in that case will be used directly against
 	# the colour lookup table, or a list, in which case the first entry is the colour,
 	# and the second entry is a curses attribute; recognised attributes (dim, normal, bold, underline)
 	try:
 		attr = theme[context][attr]
-	except KeyError:
-		sys.exit(f"KeyError; couldn't find the tuple ({context}, {attr}) in theme")
+	except KeyError as e:
+		raise KeyError(f"couldn't find the tuple ({context}, {attr}) in theme") from e
 	if isinstance(attr, dict):
 		if selected == True:
 			attr = attr["selected"]
@@ -816,7 +815,7 @@ def attr_to_curses_merged(context, attr, selected = False):
 
 # XXX: If we ever turn themearray to a proper object reuse this
 # This extracts the string without formatting
-def themearray_to_string(themearray):
+def themearray_to_string(themearray) -> str:
 	string = ""
 
 	for fragment in themearray:
@@ -829,7 +828,7 @@ def themearray_to_string(themearray):
 		# (context, string)
 		# (context, string, selected)
 		elif isinstance(fragment[0], str) and isinstance(fragment[1], str) and (len(fragment) == 2 or len(fragment) == 3 and isinstance(fragment[2], bool)):
-			themed_tuple = deep_get(theme, f"{fragment[0]}#{fragment[1]}")
+			themed_tuple = deep_get(theme, DictPath(f"{fragment[0]}#{fragment[1]}"))
 			if themed_tuple is None:
 				raise KeyError(f"The theme key-pair context: “{fragment[0]}“, key: “{fragment[1]}“ in the themearray “{themearray}“ does not exist")
 			string += themed_tuple[0][0]
@@ -837,7 +836,7 @@ def themearray_to_string(themearray):
 		elif isinstance(fragment[0], tuple) and isinstance(fragment[1], bool):
 			# ((context, string), selected)
 			if isinstance(fragment[0][1], str):
-				themed_tuple = deep_get(theme, f"{fragment[0][0]}#{fragment[0][1]}")
+				themed_tuple = deep_get(theme, DictPath(f"{fragment[0][0]}#{fragment[0][1]}"))
 				if themed_tuple is None:
 					raise KeyError(f"The theme key-pair context: “{fragment[0][0]}“, key: “{fragment[0][1]}“ does not exist")
 				string += themed_tuple[0][0]
@@ -852,10 +851,10 @@ def themearray_to_string(themearray):
 	return string
 
 # XXX: If we ever turn themearray to a proper object reuse this
-def themearray_len(themearray):
+def themearray_len(themearray) -> int:
 	return len(themearray_to_string(themearray))
 
-def themearray_to_strarray(key, context = "main", selected = False):
+def themearray_to_strarray(key: str, context: str = "main", selected: bool = False):
 	array = theme[context][key]
 
 	strarray = []
@@ -866,7 +865,7 @@ def themearray_to_strarray(key, context = "main", selected = False):
 
 	return strarray
 
-def strarray_extract_string(strarray):
+def strarray_extract_string(strarray) -> str:
 	string = ""
 	for _string, _attr in strarray:
 		if isinstance(_string, str) and isinstance(_attr, str):
@@ -878,7 +877,7 @@ def strarray_extract_string(strarray):
 			string += _string
 	return string
 
-def themearray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
+def themearray_wrap_line(strarray, maxwidth: int = -1, wrap_marker: bool = True):
 	if maxwidth == -1 or len(strarray_extract_string(strarray)) < maxwidth:
 		return [strarray]
 
@@ -926,11 +925,11 @@ def themearray_wrap_line(strarray, maxwidth = -1, wrap_marker = True):
 
 	return strarrays
 
-def themearray_extract_string(key, context = "main", selected = False):
+def themearray_extract_string(key: str, context: str = "main", selected: bool = False) -> str:
 	strarray = themearray_to_strarray(key, context, selected)
 	return strarray_extract_string(strarray)
 
-def themearray_get_string(themearray):
+def themearray_get_string(themearray) -> str:
 	string = ""
 
 	if isinstance(themearray, tuple):
@@ -956,7 +955,7 @@ def themearray_get_string(themearray):
 
 	return string
 
-def themearray_get_length(themearray):
+def themearray_get_length(themearray) -> int:
 	return len(themearray_get_string(themearray))
 
 ignoreinput = False
@@ -1092,7 +1091,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 	win.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
 	col, __discard = attr_to_curses("windowwidget", "default")
 	win.bkgd(" ", col)
-	win.addstr(0, 1, title, attr_to_curses_merged("windowwidget", "title"))
+	win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
 	listpad = curses.newpad(listpadheight + 1, listpadwidth + 1)
 	col, __discard = attr_to_curses("windowwidget", "default")
 	listpad.bkgd(" ", col)
@@ -1120,7 +1119,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			extrapad = padwidth
 			if i == columns - 1:
 				extrapad = 0
-			headerarray.append(((headers[i].ljust(lengths[i] + extrapad)), attr_to_curses_merged("windowwidget", "header")))
+			headerarray.append(((headers[i].ljust(lengths[i] + extrapad)), _attr_to_curses_merged("windowwidget", "header")))
 
 	# Move to preselection
 	if isinstance(preselection, str):
@@ -1188,9 +1187,9 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			addthemearray(listpad, linearray, y = _y, x = 0)
 
 		# pylint: disable-next=line-too-long
-		_upperarrow, _lowerarrow, _vdragger = scrollbar_vertical(win, width - 1, scrollbarypos, height - 2, listpadheight, yoffset, attr_to_curses_merged("windowwidget", "boxdrawing"))
+		_upperarrow, _lowerarrow, _vdragger = scrollbar_vertical(win, width - 1, scrollbarypos, height - 2, listpadheight, yoffset, _attr_to_curses_merged("windowwidget", "boxdrawing"))
 		# pylint: disable-next=line-too-long
-		_leftarrow, _rightarrow, _hdragger = scrollbar_horizontal(win, height - 1, 1, width - 2, listpadwidth, xoffset, attr_to_curses_merged("windowwidget", "boxdrawing"))
+		_leftarrow, _rightarrow, _hdragger = scrollbar_horizontal(win, height - 1, 1, width - 2, listpadwidth, xoffset, _attr_to_curses_merged("windowwidget", "boxdrawing"))
 
 		if headers is not None:
 			addthemearray(headerpad, headerarray, y = 0, x = 0)
@@ -1198,7 +1197,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			if len(headers) > 0:
 				headerxoffset = xoffset
 			headerpad.noutrefresh(0, headerxoffset, headerpadypos, xpos + 1, headerpadypos, xpos + width - 2)
-			window_tee_hline(win, 2, 0, width - 1, attr_to_curses_merged("windowwidget", "boxdrawing"))
+			window_tee_hline(win, 2, 0, width - 1, _attr_to_curses_merged("windowwidget", "boxdrawing"))
 
 		listpad.noutrefresh(yoffset, xoffset, listpadypos, xpos + 1, ypos + height - 2, xpos + width - 2)
 
@@ -1210,7 +1209,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 				_, x = addthemearray(buttonpad, button, y = 0, x = x)
 				x += 1
 			buttonpad.noutrefresh(0, 0, buttonpadypos, xpos + 1, buttonpadypos, xpos + width - 2)
-			window_tee_hline(win, height - 3, 0, width - 1, attr_to_curses_merged("windowwidget", "boxdrawing"))
+			window_tee_hline(win, height - 3, 0, width - 1, _attr_to_curses_merged("windowwidget", "boxdrawing"))
 
 		win.noutrefresh()
 		curses.doupdate()
@@ -1226,7 +1225,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			break
 		elif c == ord(""):
 			sys.exit()
-		elif deep_get(kwargs, "KEY_F6", False) == True and c == curses.KEY_F6:
+		elif deep_get(kwargs, DictPath("KEY_F6"), False) == True and c == curses.KEY_F6:
 			# This is used to toggle categorised list on/off
 			selection = -c
 			break
@@ -1313,7 +1312,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 		elif c == curses.KEY_NPAGE:
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +10)
 		elif c in (curses.KEY_ENTER, 10, 13) and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.UNSELECTABLE) == 0 and confirm == False:
-			if deep_get(items[yoffset + curypos], "retval") is None:
+			if deep_get(items[yoffset + curypos], DictPath("retval")) is None:
 				selection = items[yoffset + curypos]["columns"]
 			else:
 				selection = items[yoffset + curypos]["retval"]
@@ -1524,7 +1523,7 @@ class UIProps:
 		self.windowheader = None
 		self.view = None
 
-	def __del__(self):
+	def __del__(self) -> None:
 		if self.infopad is not None:
 			del self.infopad
 		if self.listpad is not None:
@@ -1534,10 +1533,10 @@ class UIProps:
 		if self.logpad is not None:
 			del self.logpad
 
-	def set_extra_status(self, extra_status = None):
+	def set_extra_status(self, extra_status = None) -> None:
 		self.extra_status = extra_status
 
-	def update_sorted_list(self):
+	def update_sorted_list(self) -> None:
 		sortkey1, sortkey2 = self.get_sortkeys()
 		try:
 			self.sorted_list = natsorted(self.info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse)
@@ -1545,46 +1544,46 @@ class UIProps:
 			# We couldn't sort the list; we should log and just keep the current sort order
 			pass
 
-	def update_info(self, info):
+	def update_info(self, info) -> int:
 		self.info = info
 		self.listlen = len(self.info)
 
 		return self.listlen
 
-	def update_log_info(self, timestamps, facilities, severities, messages):
+	def update_log_info(self, timestamps, facilities, severities, messages) -> None:
 		self.timestamps = timestamps
 		self.facilities = facilities
 		self.severities = severities
 		self.messages = messages
 
-	def set_update_delay(self, delay):
+	def set_update_delay(self, delay: int) -> None:
 		self.update_delay = delay
 
-	def force_update(self):
+	def force_update(self) -> None:
 		self.update_count = 0
 		self.refresh = True
 
-	def disable_update(self):
+	def disable_update(self) -> None:
 		self.update_count = -1
 
-	def reset_update_delay(self):
+	def reset_update_delay(self) -> None:
 		self.update_count = self.update_delay
 
-	def countdown_to_update(self):
+	def countdown_to_update(self) -> None:
 		if self.update_count > 0:
 			self.update_count -= 1
 
-	def is_update_triggered(self):
+	def is_update_triggered(self) -> None:
 		return self.update_count == 0
 
-	def select(self, selection):
+	def select(self, selection) -> None:
 		self.selected = selection
 
-	def select_if_y(self, y, selection):
+	def select_if_y(self, y, selection) -> None:
 		if self.yoffset + self.curypos == y:
 			self.select(selection)
 
-	def is_selected(self, selected):
+	def is_selected(self, selected) -> bool:
 		if selected == None:
 			return False
 
@@ -1596,9 +1595,9 @@ class UIProps:
 	# Default behaviour:
 	# timestamps enabled, no automatic updates, default sortcolumn = "status"
 	# pylint: disable-next=too-many-arguments
-	def init_window(self, field_list, view = None, windowheader = "",
-			timestamp = True, update_delay = -1, sortcolumn = "status", sortorder_reverse = False, reversible = True,
-			helptext = None, activatedfun = None, on_activation = None, extraref = None, data = None):
+	def init_window(self, field_list, view = None, windowheader: str = "",
+			timestamp = True, update_delay: int = -1, sortcolumn: str = "status", sortorder_reverse: bool = False, reversible: bool = True,
+			helptext = None, activatedfun = None, on_activation = None, extraref = None, data = None) -> None:
 		self.field_list = field_list
 		self.searchkey = ""
 		self.sortcolumn = sortcolumn
@@ -1628,15 +1627,14 @@ class UIProps:
 		self.extraref = extraref
 		self.data = data
 
-
-	def reinit_window(self, field_list, sortcolumn):
+	def reinit_window(self, field_list, sortcolumn: str) -> None:
 		self.field_list = field_list
 		self.searchkey = ""
 		self.sortcolumn = sortcolumn
 		self.sortkey1, self.sortkey2 = self.get_sortkeys()
 		self.resize_window()
 
-	def update_window(self):
+	def update_window(self) -> None:
 		maxyx = self.stdscr.getmaxyx()
 		if self.maxy != (maxyx[0] - 1) or self.maxx != (maxyx[1] - 1):
 			self.resize_window()
@@ -1694,7 +1692,7 @@ class UIProps:
 
 		self.reset_update_delay()
 
-	def update_timestamp(self, ypos, xpos, ralign = False):
+	def update_timestamp(self, ypos: int, xpos: int, ralign: bool = False):
 		del ypos
 
 		_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
@@ -1706,7 +1704,7 @@ class UIProps:
 			if self.borders == True:
 				xpos -= 2
 		self.stdscr.addch(0, xpos, _rtee)
-		self.stdscr.addstr(lastupdatestr, attr_to_curses_merged("main", "last_update"))
+		self.stdscr.addstr(lastupdatestr, _attr_to_curses_merged("main", "last_update"))
 		if self.borders == True:
 			self.stdscr.addch(_ltee)
 
@@ -1729,7 +1727,7 @@ class UIProps:
 				self.stdscr.addstr(extra_msg, color_status_group(extra_status, False))
 			self.stdscr.addch(_ltee)
 
-	def refresh_window(self):
+	def refresh_window(self) -> None:
 		_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
 		_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
 		_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
@@ -1764,7 +1762,7 @@ class UIProps:
 		self.stdscr.noutrefresh()
 
 	# This should be called when a resize event is detected
-	def resize_window(self):
+	def resize_window(self) -> None:
 		self.stdscr.clear()
 		maxyx = self.stdscr.getmaxyx()
 		self.miny = 0
@@ -1782,7 +1780,7 @@ class UIProps:
 		self.resize_statusbar()
 		self.force_update()
 
-	def refresh_all(self):
+	def refresh_all(self) -> None:
 		self.stdscr.touchwin()
 		self.stdscr.noutrefresh()
 		if self.infopad:
@@ -1798,7 +1796,7 @@ class UIProps:
 	# For generic information
 	# Pass -1 as width to the infopadminwidth
 	# pylint: disable-next=too-many-arguments
-	def init_infopad(self, height, width, ypos, xpos, labels = None, annotations = None):
+	def init_infopad(self, height: int, width: int, ypos: int, xpos: int, labels = None, annotations = None):
 		self.infopadminwidth = self.maxx + 1
 		self.infopadypos = ypos
 		self.infopadxpos = xpos
@@ -1810,7 +1808,7 @@ class UIProps:
 		return self.infopad
 
 	# Pass -1 to keep the current height/width
-	def resize_infopad(self, height, width):
+	def resize_infopad(self, height: int, width: int) -> None:
 		self.infopadminwidth = self.maxx - self.infopadxpos
 		if height != -1:
 			self.infopadheight = height
@@ -1819,7 +1817,7 @@ class UIProps:
 			self.infopadwidth = max(width, self.infopadminwidth)
 		self.infopad.resize(max(self.infopadheight, self.maxy), self.infopadwidth)
 
-	def refresh_infopad(self):
+	def refresh_infopad(self) -> None:
 		if self.infopad is not None:
 			height = self.infopadheight
 			if self.borders == True:
@@ -1834,15 +1832,15 @@ class UIProps:
 			# If there's no logpad and no listpad, then the infopad is responsible for scrollbars
 			if self.listpad is None and self.logpad is None and self.borders == True:
 				# pylint: disable-next=line-too-long
-				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.infopadypos, self.maxy - 3, self.infopadheight, self.yoffset, attr_to_curses_merged("main", "boxdrawing"))
+				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.infopadypos, self.maxy - 3, self.infopadheight, self.yoffset, _attr_to_curses_merged("main", "boxdrawing"))
 				# pylint: disable-next=line-too-long
-				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, self.infopadxpos, self.maxx - 1, self.infopadwidth - 1, self.xoffset, attr_to_curses_merged("main", "boxdrawing"))
+				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, self.infopadxpos, self.maxx - 1, self.infopadwidth - 1, self.xoffset, _attr_to_curses_merged("main", "boxdrawing"))
 
 	# For (optionally) scrollable lists of information,
 	# optionally with a header
 	# Pass -1 as width to use listpadminwidth
 	# pylint: disable-next=too-many-arguments
-	def init_listpad(self, listheight, width, ypos, xpos, header = True):
+	def init_listpad(self, listheight: int, width: int, ypos: int, xpos: int, header: bool = True):
 		self.listpadminwidth = self.maxx
 		if header == True:
 			self.headerpadypos = ypos
@@ -1862,7 +1860,7 @@ class UIProps:
 		return self.headerpad, self.listpad
 
 	# Pass -1 to keep the current height/width
-	def resize_listpad(self, height, width):
+	def resize_listpad(self, height: int, width: int) -> None:
 		self.listpadminwidth = self.maxx
 		if height != -1:
 			self.listpadheight = height
@@ -1889,7 +1887,7 @@ class UIProps:
 		self.curypos = min(self.curypos, self.maxcurypos)
 		self.yoffset = min(self.yoffset, self.maxyoffset)
 
-	def refresh_listpad(self):
+	def refresh_listpad(self) -> None:
 		xpos = self.listpadxpos
 		maxx = self.maxx - 1
 		if self.borders == False:
@@ -1901,14 +1899,14 @@ class UIProps:
 			if self.borders == True:
 				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 3, maxx)
 				# pylint: disable-next=line-too-long
-				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, x = maxx + 1, miny = self.listpadypos, maxy = self.maxy - 3, height = self.listpadheight, yoffset = self.yoffset, clear_color = attr_to_curses_merged("main", "boxdrawing"))
+				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, x = maxx + 1, miny = self.listpadypos, maxy = self.maxy - 3, height = self.listpadheight, yoffset = self.yoffset, clear_color = _attr_to_curses_merged("main", "boxdrawing"))
 				# pylint: disable-next=line-too-long
-				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, y = self.maxy - 2, minx = self.listpadxpos, maxx = maxx, width = self.listpadwidth - 1, xoffset = self.xoffset, clear_color = attr_to_curses_merged("main", "boxdrawing"))
+				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, y = self.maxy - 2, minx = self.listpadxpos, maxx = maxx, width = self.listpadwidth - 1, xoffset = self.xoffset, clear_color = _attr_to_curses_merged("main", "boxdrawing"))
 			else:
 				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
 
 	# Recalculate the xpos of the log; this is needed when timestamps are toggled
-	def recalculate_logpad_xpos(self, tspadxpos = -1, timestamps = None):
+	def recalculate_logpad_xpos(self, tspadxpos: int = -1, timestamps = None) -> None:
 		if tspadxpos == -1:
 			if self.tspadxpos is None:
 				raise Exception("logpad is not initialised and no tspad xpos provided")
@@ -1934,7 +1932,7 @@ class UIProps:
 	# as the yoffset changes.  The pad is still variable width though.
 	#
 	# Pass -1 as width to use logpadminwidth
-	def init_logpad(self, width, ypos, xpos, timestamps = True):
+	def init_logpad(self, width: int, ypos: int, xpos: int, timestamps: bool = True):
 		self.match_index = None
 		self.search_matches = set()
 
@@ -1959,7 +1957,7 @@ class UIProps:
 
 	# Pass -1 to keep the current height/width
 	# Calling this function directly isn't necessary; the pad never grows down, and self.__addstr() calls this when x grows
-	def resize_logpad(self, height, width):
+	def resize_logpad(self, height: int, width: int) -> None:
 		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos)
 		if height != -1:
 			if self.borders == True:
@@ -1980,7 +1978,7 @@ class UIProps:
 		self.maxxoffset = max(0, self.logpadwidth - self.logpadminwidth)
 		self.yoffset = min(self.yoffset, self.maxyoffset)
 
-	def refresh_logpad(self):
+	def refresh_logpad(self) -> None:
 		if self.logpad is None:
 			return
 
@@ -2003,19 +2001,19 @@ class UIProps:
 		if self.borders == True:
 			self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 3, self.maxx - 1)
 			# pylint: disable-next=line-too-long
-			self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.logpadypos, self.maxy - 3, self.loglen, self.yoffset, attr_to_curses_merged("main", "boxdrawing"))
+			self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.logpadypos, self.maxy - 3, self.loglen, self.yoffset, _attr_to_curses_merged("main", "boxdrawing"))
 			# pylint: disable-next=line-too-long
-			self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, logpadxpos, self.maxx - 1, self.logpadwidth, self.xoffset, attr_to_curses_merged("main", "boxdrawing"))
+			self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, logpadxpos, self.maxx - 1, self.logpadwidth, self.xoffset, _attr_to_curses_merged("main", "boxdrawing"))
 		else:
 			self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 2, self.maxx)
 
-	def toggle_timestamps(self, timestamps = None):
+	def toggle_timestamps(self, timestamps = None) -> None:
 		if timestamps is None:
 			timestamps = self.tspadxpos == self.logpadxpos
 
 		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos, timestamps = timestamps)
 
-	def toggle_borders(self, borders = None):
+	def toggle_borders(self, borders = None) -> None:
 		if borders is None:
 			self.borders = not self.borders
 		else:
@@ -2028,13 +2026,13 @@ class UIProps:
 
 		return self.statusbar
 
-	def refresh_statusbar(self):
+	def refresh_statusbar(self) -> None:
 		if self.statusbar is not None:
 			col, __discard = attr_to_curses("statusbar", "default")
 			self.statusbar.bkgd(" ", col)
 			self.statusbar.noutrefresh(0, 0, self.statusbarypos, 0, self.maxy, self.maxx)
 
-	def resize_statusbar(self):
+	def resize_statusbar(self) -> None:
 		self.statusbarypos = self.maxy - 1
 		if self.statusbar is not None:
 			self.statusbar.erase()
@@ -2043,7 +2041,7 @@ class UIProps:
 			self.statusbar = curses.newpad(2, self.maxx + 1)
 
 	# pylint: disable-next=too-many-arguments
-	def __addstr(self, win, string, y = -1, x = -1, attribute = curses.A_NORMAL):
+	def __addstr(self, win, string: str, y: int = -1, x: int = -1, attribute: int = curses.A_NORMAL):
 		cury, curx = win.getyx()
 		winmaxy, winmaxx = win.getmaxyx()
 		newmaxy = max(y, winmaxy)
@@ -2068,7 +2066,7 @@ class UIProps:
 		cury, curx = win.getyx()
 		return cury, curx
 
-	def __addformattedarray(self, win, array, y = -1, x = -1):
+	def __addformattedarray(self, win, array, y: int = -1, x: int = -1):
 		# This way we can print a single (string, attr) too
 		if isinstance(array, tuple):
 			array = [array]
@@ -2087,7 +2085,7 @@ class UIProps:
 	# (context, theme_ref),
 	# (context, theme_ref, selected),
 	# pylint: disable-next=too-many-arguments
-	def addthemearray(self, win, array, y = -1, x = -1, selected = False):
+	def addthemearray(self, win, array, y: int = -1, x: int = -1, selected: bool = False):
 		for item in array:
 			if not isinstance(item, tuple):
 				raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
@@ -2107,7 +2105,7 @@ class UIProps:
 				if type(_p3) == int: # pylint: disable=unidiomatic-typecheck
 					attr = _p3
 				else:
-					attr = attr_to_curses_merged(context, _p3, selected = _selected)
+					attr = _attr_to_curses_merged(context, _p3, selected = _selected)
 				y, x = self.__addstr(win, string, y, x, attr)
 			elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
 				string = _p1
@@ -2126,7 +2124,7 @@ class UIProps:
 				y, x = self.__addformattedarray(win, strarray, y = y, x = x)
 		return y, x
 
-	def move_xoffset_abs(self, position):
+	def move_xoffset_abs(self, position: int) -> None:
 		if self.borders == True:
 			sideadjust = 0
 		else:
@@ -2140,7 +2138,7 @@ class UIProps:
 			self.xoffset = min(self.xoffset, self.maxxoffset - sideadjust)
 		self.refresh = True
 
-	def move_yoffset_abs(self, position):
+	def move_yoffset_abs(self, position: int) -> None:
 		if position == -1:
 			self.yoffset = self.maxyoffset
 		elif position == 0:
@@ -2150,7 +2148,7 @@ class UIProps:
 			self.yoffset = min(self.yoffset, self.maxyoffset)
 		self.refresh = True
 
-	def move_xoffset_rel(self, movement):
+	def move_xoffset_rel(self, movement: int) -> None:
 		if self.borders == True:
 			sideadjust = 0
 		else:
@@ -2159,12 +2157,12 @@ class UIProps:
 		self.xoffset = min(self.xoffset, self.maxxoffset - sideadjust)
 		self.refresh = True
 
-	def move_yoffset_rel(self, movement):
+	def move_yoffset_rel(self, movement: int) -> None:
 		self.yoffset = max(0, self.yoffset + movement)
 		self.yoffset = min(self.maxyoffset, self.yoffset)
 		self.refresh = True
 
-	def move_cur_abs(self, position):
+	def move_cur_abs(self, position: int) -> None:
 		if position == -1:
 			self.curypos = self.maxcurypos
 			self.yoffset = self.maxyoffset
@@ -2174,7 +2172,7 @@ class UIProps:
 		else:
 			raise Exception("FIXME")
 
-	def move_cur_with_offset(self, movement):
+	def move_cur_with_offset(self, movement: int) -> None:
 		newcurypos = self.curypos + movement
 		newyoffset = self.yoffset
 
@@ -2195,7 +2193,7 @@ class UIProps:
 		self.curypos = newcurypos
 		self.yoffset = newyoffset
 
-	def find_all_matches_by_searchkey(self, messages, searchkey):
+	def find_all_matches_by_searchkey(self, messages, searchkey: str) -> None:
 		self.match_index = None
 		self.search_matches.clear()
 
@@ -2209,7 +2207,7 @@ class UIProps:
 			if searchkey in message:
 				self.search_matches.add(y)
 
-	def find_next_match(self):
+	def find_next_match(self) -> None:
 		start = self.match_index
 		if start is None:
 			start = self.yoffset
@@ -2220,7 +2218,7 @@ class UIProps:
 					self.yoffset = min(y, self.maxyoffset)
 					break
 
-	def find_prev_match(self):
+	def find_prev_match(self) -> None:
 		end = self.match_index
 		if end is None:
 			end = self.yoffset
@@ -2233,7 +2231,7 @@ class UIProps:
 					break
 
 	# Find the next line that has severity > NOTICE
-	def next_line_by_severity(self, severities):
+	def next_line_by_severity(self, severities) -> None:
 		y = 0
 		newoffset = self.yoffset
 
@@ -2251,7 +2249,7 @@ class UIProps:
 		self.refresh = True
 
 	# Find the prev line that has severity > NOTICE
-	def prev_line_by_severity(self, severities):
+	def prev_line_by_severity(self, severities) -> None:
 		y = 0
 		newoffset = self.yoffset
 
@@ -2269,7 +2267,7 @@ class UIProps:
 		self.yoffset = newoffset
 		self.refresh = True
 
-	def next_by_sortkey(self, info):
+	def next_by_sortkey(self, info) -> None:
 		if self.sortkey1 is None:
 			return
 
@@ -2310,7 +2308,7 @@ class UIProps:
 		# If we don't match we'll just end up with the old pos
 		self.move_cur_with_offset(newpos)
 
-	def prev_by_sortkey(self, info):
+	def prev_by_sortkey(self, info) -> None:
 		if self.sortkey1 is None:
 			return
 
@@ -2356,7 +2354,7 @@ class UIProps:
 		else:
 			self.move_cur_with_offset(newpos)
 
-	def find_next_by_sortkey(self, info, searchkey):
+	def find_next_by_sortkey(self, info, searchkey: str) -> None:
 		pos = self.curypos + self.yoffset
 		offset = 0
 
@@ -2370,7 +2368,7 @@ class UIProps:
 			else:
 				if isinstance(tmp2, (list, tuple)):
 					if isinstance(tmp2[0], tuple):
-						tmp3 = []
+						tmp3 = [] # type: ignore
 						for t in tmp2:
 							tmp3 += map(str, t)
 						tmp2 = tmp3
@@ -2391,7 +2389,7 @@ class UIProps:
 		# If we don't match we'll just end up with the old pos
 		self.move_cur_with_offset(offset)
 
-	def find_prev_by_sortkey(self, info, searchkey):
+	def find_prev_by_sortkey(self, info, searchkey: str) -> None:
 		pos = self.curypos + self.yoffset
 		offset = 0
 
@@ -2423,7 +2421,7 @@ class UIProps:
 	# This function is used to find the first match based on command line input
 	# The sort order used will still be the default, to ensure that the partial
 	# match ends up being the first.
-	def goto_first_match_by_name_namespace(self, name, namespace):
+	def goto_first_match_by_name_namespace(self, name: str, namespace: str):
 		if self.info is None or len(self.info) == 0 or name is None or len(name) == 0 or hasattr(self.info[0], "name") == False:
 			return None
 
@@ -2455,7 +2453,7 @@ class UIProps:
 
 		return unique_match
 
-	def next_sortcolumn(self):
+	def next_sortcolumn(self) -> None:
 		if self.sortcolumn is None or self.sortcolumn == "":
 			return
 
@@ -2471,7 +2469,7 @@ class UIProps:
 
 		self.sortkey1, self.sortkey2 = self.get_sortkeys()
 
-	def prev_sortcolumn(self):
+	def prev_sortcolumn(self) -> None:
 		if self.sortcolumn is None or self.sortcolumn == "":
 			return
 
@@ -2485,7 +2483,7 @@ class UIProps:
 
 		self.sortkey1, self.sortkey2 = self.get_sortkeys()
 
-	def get_sortcolumn(self):
+	def get_sortcolumn(self) -> str:
 		return self.sortcolumn
 
 	def get_sortkeys(self):
@@ -2550,7 +2548,7 @@ class UIProps:
 						view = getattr(selected, extraref, self.view)
 
 						on_activation = copy.deepcopy(self.on_activation)
-						kind = deep_get(on_activation, "kind", view)
+						kind = deep_get(on_activation, DictPath("kind"), view)
 						on_activation.pop("kind", None)
 						if data is not None:
 							_retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
@@ -2558,7 +2556,7 @@ class UIProps:
 							_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 					else:
 						on_activation = copy.deepcopy(self.on_activation)
-						kind = deep_get(on_activation, "kind", self.view)
+						kind = deep_get(on_activation, DictPath("kind"), self.view)
 						on_activation.pop("kind", None)
 						_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 					if _retval != None:
@@ -2582,7 +2580,7 @@ class UIProps:
 							view = getattr(selected, extraref, self.view)
 
 							on_activation = copy.deepcopy(self.on_activation)
-							kind = deep_get(on_activation, "kind", view)
+							kind = deep_get(on_activation, DictPath("kind"), view)
 							on_activation.pop("kind", None)
 							if data is not None:
 								_retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
@@ -2590,7 +2588,7 @@ class UIProps:
 								_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 						else:
 							on_activation = copy.deepcopy(self.on_activation)
-							kind = deep_get(on_activation, "kind", self.view)
+							kind = deep_get(on_activation, DictPath("kind"), self.view)
 							on_activation.pop("kind", None)
 							_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 						if _retval != None:
@@ -2662,7 +2660,7 @@ class UIProps:
 				view = getattr(selected, extraref, self.view)
 
 				on_activation = copy.deepcopy(self.on_activation)
-				kind = deep_get(on_activation, "kind", view)
+				kind = deep_get(on_activation, DictPath("kind"), view)
 				on_activation.pop("kind", None)
 				if data is not None:
 					_retval = activatedfun(self.stdscr, selected.ref, kind, info = data, **on_activation)
@@ -2670,7 +2668,7 @@ class UIProps:
 					_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 			else:
 				on_activation = copy.deepcopy(self.on_activation)
-				kind = deep_get(on_activation, "kind", self.view)
+				kind = deep_get(on_activation, DictPath("kind"), self.view)
 				on_activation.pop("kind", None)
 				_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 			if _retval != None:
@@ -2680,7 +2678,7 @@ class UIProps:
 		return False
 
 	# pylint: disable-next=too-many-return-statements
-	def generic_keycheck(self, c):
+	def generic_keycheck(self, c: int) -> Retval:
 		if c == curses.KEY_RESIZE:
 			self.resize_window()
 			return Retval.MATCH
@@ -2942,20 +2940,19 @@ class UIProps:
 
 	# Shortcuts used in most view
 	def __exit_program(self, **kwargs) -> NoReturn:
-		retval = deep_get(kwargs, "retval")
+		retval = deep_get(kwargs, DictPath("retval"))
 
 		sys.exit(retval)
 
+	# pylint: disable-next=unused-argument
 	def __refresh_information(self, **kwargs):
-		del kwargs
-
 		# XXX: We need to rate limit this somehow
 		self.force_update()
 		return Retval.MATCH, {}
 
 	def __select_menu(self, **kwargs):
-		refresh_apis = deep_get(kwargs, "refresh_apis", False)
-		selectwindow = deep_get(kwargs, "selectwindow")
+		refresh_apis = deep_get(kwargs, DictPath("refresh_apis"), False)
+		selectwindow = deep_get(kwargs, DictPath("selectwindow"))
 
 		retval = selectwindow(self, refresh_apis = refresh_apis)
 		if retval == Retval.RETURNFULL:
@@ -2963,24 +2960,22 @@ class UIProps:
 		self.refresh_all()
 		return retval, {}
 
+	# pylint: disable-next=unused-argument
 	def __show_about(self, **kwargs):
-		del kwargs
-
 		if curses_configuration.abouttext is not None:
 			windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, curses_configuration.abouttext, title = "About", cursor = False)
 		self.refresh_all()
 		return Retval.MATCH, {}
 
 	def __show_help(self, **kwargs):
-		helptext = deep_get(kwargs, "helptext")
+		helptext = deep_get(kwargs, DictPath("helptext"))
 
 		windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, helptext, title = "Help", cursor = False)
 		self.refresh_all()
 		return Retval.MATCH, {}
 
+	# pylint: disable-next=unused-argument
 	def __toggle_mouse(self, **kwargs):
-		del kwargs
-
 		# Toggle mouse support on/off to allow for copy'n'paste
 		if get_mousemask() == 0:
 			set_mousemask(-1)
@@ -2990,9 +2985,8 @@ class UIProps:
 		self.refresh_all()
 		return Retval.MATCH, {}
 
+	# pylint: disable-next=unused-argument
 	def __toggle_borders(self, **kwargs):
-		del kwargs
-
 		self.toggle_borders()
 		self.refresh_all()
 		self.force_update()
@@ -3009,8 +3003,8 @@ class UIProps:
 				list[(str, str)]: A list of tuples of shortcut, description
 		"""
 
-		read_only_mode = deep_get(kwargs, "read_only", False)
-		subview = deep_get(kwargs, "subview", False)
+		read_only_mode = deep_get(kwargs, DictPath("read_only"), False)
+		subview = deep_get(kwargs, DictPath("subview"), False)
 
 		# There are (up to) four helptext groups:
 		# Global
@@ -3020,14 +3014,14 @@ class UIProps:
 		helptext_groups = [[], [], [], []]
 
 		for shortcut_name, shortcut_data in shortcuts.items():
-			read_only = deep_get(shortcut_data, "read_only", False)
+			read_only = deep_get(shortcut_data, DictPath("read_only"), False)
 			if read_only_mode == True and read_only == False:
 				continue
 
-			helptext_group = deep_get(shortcut_data, "helpgroup")
+			helptext_group = deep_get(shortcut_data, DictPath("helpgroup"))
 			if helptext_group is None:
 				raise ValueError(f"The shortcut {shortcut_name} has no helpgroup; this is a programming error.")
-			tmp = deep_get(shortcut_data, "helptext")
+			tmp = deep_get(shortcut_data, DictPath("helptext"))
 			if tmp is None:
 				raise ValueError(f"The shortcut {shortcut_name} has no helptext; this is a programming error.")
 
@@ -3151,10 +3145,10 @@ class UIProps:
 		__shortcuts["Exit program"] = __common_shortcuts["Exit program"]
 
 		# Now iterate the list of common shortcuts in the shortcuts dict
-		for shortcut_name in deep_get(shortcuts, "__common_shortcuts", []):
+		for shortcut_name in deep_get(shortcuts, DictPath("__common_shortcuts"), []):
 			if shortcut_name not in __common_shortcuts:
 				raise ValueError(f"Common shortcut {shortcut_name} is not defined in __common_shortcuts; this is a programming error.")
-			__shortcuts[shortcut_name] = deep_get(__common_shortcuts, shortcut_name)
+			__shortcuts[shortcut_name] = deep_get(__common_shortcuts, DictPath(shortcut_name))
 
 		# Finally add all the remaining shortcuts
 		for shortcut_name, shortcut_data in shortcuts.items():
@@ -3167,14 +3161,14 @@ class UIProps:
 		helptext = self.generate_helptext(__shortcuts, **kwargs)
 
 		for shortcut_name, shortcut_data in __shortcuts.items():
-			keys = deep_get(shortcut_data, "shortcut", [])
+			keys = deep_get(shortcut_data, DictPath("shortcut"), [])
 			if isinstance(keys, int):
 				keys = [keys]
 
 			if c in keys:
-				action = deep_get(shortcut_data, "action")
-				action_call = deep_get(shortcut_data, "action_call")
-				_action_args = deep_get(shortcut_data, "action_args", {})
+				action = deep_get(shortcut_data, DictPath("action"))
+				action_call = deep_get(shortcut_data, DictPath("action_call"))
+				_action_args = deep_get(shortcut_data, DictPath("action_args"), {})
 				action_args = {**kwargs, **_action_args}
 				action_args["__keypress"] = c
 				action_args["helptext"] = helptext

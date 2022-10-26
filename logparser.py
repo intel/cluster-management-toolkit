@@ -50,7 +50,7 @@ except ModuleNotFoundError:
 
 from iktpaths import HOMEDIR, PARSER_DIR
 
-from ikttypes import LogLevel, loglevel_mappings, loglevel_to_name
+from ikttypes import DictPath, LogLevel, loglevel_mappings, loglevel_to_name
 
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig, deep_get_with_fallback
@@ -467,7 +467,7 @@ def strip_iso_timestamp_with_tz(message):
 def http(message, severity = LogLevel.INFO, facility = "", fold_msg: bool = True, options = None):
 	del fold_msg
 
-	reformat_timestamps = deep_get(options, "reformat_timestamps", False)
+	reformat_timestamps = deep_get(options, DictPath("reformat_timestamps"), False)
 
 	ipaddress = ""
 
@@ -781,18 +781,18 @@ def split_json_style(message, severity = LogLevel.INFO, facility = "", fold_msg 
 		if facility == "":
 			for _fac in facilities:
 				if type(_fac) == str:
-					facility = deep_get(logentry, _fac, "")
+					facility = deep_get(logentry, DictPath(_fac), "")
 					break
 
 				if type(_fac) == dict:
-					_facilities = deep_get(_fac, "keys", [])
-					_separators = deep_get(_fac, "separators", [])
+					_facilities = deep_get(_fac, DictPath("keys"), [])
+					_separators = deep_get(_fac, DictPath("separators"), [])
 					for i, _fac in enumerate(_facilities):
 						# This is to allow prefixes/suffixes
 						if _fac != "":
 							if _fac not in logentry:
 								break
-							facility += str(deep_get(logentry, _fac, ""))
+							facility += str(deep_get(logentry, DictPath(_fac), ""))
 						if i < len(_separators):
 							facility += _separators[i]
 
@@ -803,7 +803,7 @@ def split_json_style(message, severity = LogLevel.INFO, facility = "", fold_msg 
 				elif type(_fac) == dict:
 					# This is a list, since the order of the facilities matter when outputting
 					# it doesn't matter when popping though
-					for __fac in deep_get(_fac, "keys", []):
+					for __fac in deep_get(_fac, DictPath("keys"), []):
 						if __fac == "":
 							continue
 
@@ -1114,9 +1114,9 @@ def custom_override_severity(message, severity, overrides):
 		return severity
 
 	for override in overrides:
-		override_type = deep_get(override, "matchtype", "")
-		override_pattern = deep_get(override, "matchkey", "")
-		override_loglevel = name_to_loglevel(deep_get(override, "loglevel", ""))
+		override_type = deep_get(override, DictPath("matchtype"), "")
+		override_pattern = deep_get(override, DictPath("matchkey"), "")
+		override_loglevel = name_to_loglevel(deep_get(override, DictPath("loglevel"), ""))
 
 		if override_type == "startswith":
 			if not message.startswith(override_pattern):
@@ -1375,7 +1375,7 @@ def key_value(message, severity = LogLevel.INFO, facility = "", fold_msg = True,
 	errors = options.get("errors", ["err", "error"])
 	timestamps = options.get("timestamps", ["t", "ts", "time"])
 	severities = options.get("severities", ["level", "lvl"])
-	severity_overrides = deep_get(options, "severity#overrides", [])
+	severity_overrides = deep_get(options, DictPath("severity#overrides"), [])
 	facilities = options.get("facilities", ["source", "subsys", "caller", "logger", "Topic"])
 	versions = options.get("versions", [])
 
@@ -1424,18 +1424,18 @@ def key_value(message, severity = LogLevel.INFO, facility = "", fold_msg = True,
 		if facility == "":
 			for _fac in facilities:
 				if type(_fac) == str:
-					facility = deep_get(d, _fac, "")
+					facility = deep_get(d, DictPath(_fac), "")
 					break
 
 				if type(_fac) == dict:
-					_facilities = deep_get(_fac, "keys", [])
-					_separators = deep_get(_fac, "separators", [])
+					_facilities = deep_get(_fac, DictPath("keys"), [])
+					_separators = deep_get(_fac, DictPath("separators"), [])
 					for i, _fac in enumerate(_facilities):
 						# This is to allow prefixes/suffixes
 						if _fac != "":
 							if _fac not in d:
 								break
-							facility += str(deep_get(d, _fac, ""))
+							facility += str(deep_get(d, DictPath(_fac), ""))
 						if i < len(_separators):
 							facility += _separators[i]
 		if logparser_configuration.pop_facility == True:
@@ -1445,7 +1445,7 @@ def key_value(message, severity = LogLevel.INFO, facility = "", fold_msg = True,
 				elif type(_fac) == dict:
 					# This is a list, since the order of the facilities matter when outputting
 					# it doesn't matter when popping though
-					for __fac in deep_get(_fac, "keys", []):
+					for __fac in deep_get(_fac, DictPath("keys"), []):
 						if __fac == "":
 							continue
 
@@ -1856,7 +1856,7 @@ def python_traceback(message, fold_msg = True):
 
 def json_line_scanner(message, fold_msg = True, options = None):
 	# pylint: disable=unused-argument
-	allow_empty_lines = deep_get(options, "allow_empty_lines", True)
+	allow_empty_lines = deep_get(options, DictPath("allow_empty_lines"), True)
 	timestamp = None
 	facility = ""
 	severity = LogLevel.INFO
@@ -1883,19 +1883,19 @@ def json_line(message, fold_msg = True, options = None):
 	remnants = []
 	matched = False
 
-	block_start = deep_get(options, "block_start", [{
+	block_start = deep_get(options, DictPath("block_start"), [{
 		"matchtype": "exact",
 		"matchkey": "{",
 		"matchline": "any",
 		"format_block_start": False,
 	}])
-	line = deep_get(options, "__line", 0)
+	line = deep_get(options, DictPath("__line"), 0)
 
 	for _bs in block_start:
 		matchtype = _bs["matchtype"]
 		matchkey = _bs["matchkey"]
 		matchline = _bs["matchline"]
-		format_block_start = deep_get(_bs, "format_block_start", False)
+		format_block_start = deep_get(_bs, DictPath("format_block_start"), False)
 		if matchline == "any" or matchline == "first" and line == 0:
 			if matchtype == "exact":
 				if message == matchkey:
@@ -1927,16 +1927,16 @@ def yaml_line_scanner(message, fold_msg = True, options = None):
 	matched = True
 
 	# If no block end is defined we continue until EOF
-	block_end = deep_get(options, "block_end")
+	block_end = deep_get(options, DictPath("block_end"))
 
 	format_block_end = False
 	process_block_end = True
 
 	for _be in block_end:
-		matchtype = deep_get(_be, "matchtype")
-		matchkey = deep_get(_be, "matchkey")
-		format_block_end = deep_get(_be, "format_block_end", False)
-		process_block_end = deep_get(_be, "process_block_end", True)
+		matchtype = deep_get(_be, DictPath("matchtype"))
+		matchkey = deep_get(_be, DictPath("matchkey"))
+		format_block_end = deep_get(_be, DictPath("format_block_end"), False)
+		process_block_end = deep_get(_be, DictPath("process_block_end"), True)
 		if matchtype == "empty":
 			if len(message.strip()) == 0:
 				matched = False
@@ -1972,21 +1972,21 @@ def yaml_line(message, fold_msg = True, options = None):
 	remnants = []
 	matched = False
 
-	block_start = deep_get(options, "block_start", [{
+	block_start = deep_get(options, DictPath("block_start"), [{
 		"matchtype": "regex",
 		"matchkey": re.compile(r"\S+?: \S.*|\S+?:$"),
 		"matchline": "any",
 		"format_block_start": False,
 	}])
-	line = deep_get(options, "__line", 0)
-	if deep_get(options, "eof") is None:
+	line = deep_get(options, DictPath("__line"), 0)
+	if deep_get(options, DictPath("eof")) is None:
 		options["eof"] = "end_block"
 
 	for _bs in block_start:
 		matchtype = _bs["matchtype"]
 		matchkey = _bs["matchkey"]
 		matchline = _bs["matchline"]
-		format_block_start = deep_get(_bs, "format_block_start", False)
+		format_block_start = deep_get(_bs, DictPath("format_block_start"), False)
 		if matchline == "any" or matchline == "first" and line == 0:
 			if matchtype == "exact":
 				if message == matchkey:
@@ -2010,13 +2010,13 @@ def yaml_line(message, fold_msg = True, options = None):
 def custom_splitter(message, severity = None, facility = "", fold_msg = True, options = None):
 	del fold_msg
 
-	compiled_regex = deep_get(options, "regex", None)
-	severity_field = deep_get(options, "severity#field", None)
-	severity_transform = deep_get(options, "severity#transform", None)
-	severity_overrides = deep_get(options, "severity#overrides", [])
-	facility_fields = deep_get_with_fallback(options, ["facility#fields", "facility#field"], None)
-	facility_separators = deep_get_with_fallback(options, ["facility#separators", "facility#separator"], "")
-	message_field = deep_get(options, "message#field", None)
+	compiled_regex = deep_get(options, DictPath("regex"), None)
+	severity_field = deep_get(options, DictPath("severity#field"), None)
+	severity_transform = deep_get(options, DictPath("severity#transform"), None)
+	severity_overrides = deep_get(options, DictPath("severity#overrides"), [])
+	facility_fields = deep_get_with_fallback(options, [DictPath("facility#fields"), DictPath("facility#field")], None)
+	facility_separators = deep_get_with_fallback(options, [DictPath("facility#separators"), DictPath("facility#separator")], "")
+	message_field = deep_get(options, DictPath("message#field"), None)
 
 	# This message is already formatted
 	if type(message) == list:
@@ -2200,7 +2200,7 @@ def init_parser_list():
 	# Start by adding files from the parsers directory
 
 	parser_dirs = []
-	parser_dirs += deep_get(iktconfig, "Pods#local_parsers", [])
+	parser_dirs += deep_get(iktconfig, DictPath("Pods#local_parsers"), [])
 	parser_dirs.append(PARSER_DIR)
 
 	parser_files = []
@@ -2264,9 +2264,9 @@ def init_parser_list():
 							rules.append(rule_name)
 						elif rule_name in ("http", "json", "json_with_leading_message", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"):
 							options = {}
-							for key, value in deep_get(rule, "options", {}).items():
+							for key, value in deep_get(rule, DictPath("options"), {}).items():
 								if key == "regex":
-									regex = deep_get(rule, "options#regex", "")
+									regex = deep_get(rule, DictPath("options#regex"), "")
 									value = re.compile(regex)
 								options[key] = value
 							rules.append((rule_name, options))
@@ -2275,16 +2275,16 @@ def init_parser_list():
 							rules.append((rule_name, prefix))
 						elif rule_name == "override_severity":
 							overrides = []
-							for override in deep_get(rule, "overrides", []):
-								matchtype = deep_get(override, "matchtype")
-								matchkey = deep_get(override, "matchkey")
-								_loglevel = deep_get(override, "loglevel")
+							for override in deep_get(rule, DictPath("overrides"), []):
+								matchtype = deep_get(override, DictPath("matchtype"))
+								matchkey = deep_get(override, DictPath("matchkey"))
+								_loglevel = deep_get(override, DictPath("loglevel"))
 
 								if matchtype is None or matchkey is None or _loglevel is None:
 									raise ValueError(f"Incorrect override rule in Parser {parser_file}; every override must define matchtype, matchkey, and loglevel")
 
 								if matchtype == "regex":
-									regex = deep_get(override, "matchkey", "")
+									regex = deep_get(override, DictPath("matchkey"), "")
 									matchkey = re.compile(regex)
 								overrides.append({
 									"matchtype": matchtype,

@@ -11,7 +11,7 @@ from datetime import datetime
 from curses_helper import color_status_group, themearray_len, themearray_to_string
 import iktlib
 from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, reformat_timestamp, timestamp_to_datetime
-from ikttypes import StatusGroup
+from ikttypes import DictPath, StatusGroup
 
 def format_list(items, fieldlen, pad, ralign, selected,
 		item_separator = ("separators", "list"),
@@ -22,7 +22,7 @@ def format_list(items, fieldlen, pad, ralign, selected,
 		field_prefixes = None,
 		field_suffixes = None,
 		mapping = None):
-	array = []
+	array = [] # type: ignore
 	totallen = 0
 
 	if field_separators is None:
@@ -75,11 +75,12 @@ def format_list(items, fieldlen, pad, ralign, selected,
 				array.append((field_separator, selected))
 
 			if string == "<none>":
-				formatting = ("types", "none", selected)
-				formatted_string = (string, formatting)
+				fmt = ("types", "none")
+				formatted_string = (string, fmt, selected)
 			elif string == "<not ready>":
-				formatting = color_status_group(StatusGroup.NOT_OK, selected)
-				formatted_string = (string, formatting)
+				context, attr_ref, selected = color_status_group(StatusGroup.NOT_OK, False)
+				fmt = (context, attr_ref)
+				formatted_string = (string, fmt, selected)
 			else:
 				context, attr_ref = field_colors[min(i, len(field_colors) - 1)]
 				formatted_string, __string = map_value(string, selected = selected, default_field_color = (context, attr_ref), mapping = mapping)
@@ -112,18 +113,18 @@ def format_list(items, fieldlen, pad, ralign, selected,
 # references is unused for now, but will eventually be used to compare against
 # reference values (such as using other paths to get the range, instead of getting
 # it static from formatting#mapping)
-def map_value(value, references = None, selected = False, default_field_color = ("types", "generic"), mapping = None):
-	del references
-
+# pylint: disable=unused-argument
+def map_value(value, references = None, selected: bool = False, default_field_color = ("types", "generic"), mapping = None):
 	# If we lack a mapping, use the default color for this field
 	if mapping is None or len(mapping) == 0:
 		context, attr_ref = default_field_color
-		return (value, (context, attr_ref, selected)), value
+		fmt = (context, attr_ref)
+		return (value, fmt, selected), value
 
-	substitutions = deep_get(mapping, "substitutions", {})
-	ranges = deep_get(mapping, "ranges", [])
-	match_case = deep_get(mapping, "match_case", True)
-	_mapping = deep_get(mapping, "mappings", {})
+	substitutions = deep_get(mapping, DictPath("substitutions"), {})
+	ranges = deep_get(mapping, DictPath("ranges"), [])
+	match_case = deep_get(mapping, DictPath("match_case"), True)
+	_mapping = deep_get(mapping, DictPath("mappings"), {})
 
 	field_colors = None
 
@@ -136,8 +137,8 @@ def map_value(value, references = None, selected = False, default_field_color = 
 
 		# If the substitution is a dict it's a themearray; typically either a separator or a string
 		if isinstance(value, dict):
-			context = deep_get(value, "context", "main")
-			attr_ref = deep_get(value, "type")
+			context = deep_get(value, DictPath("context"), "main")
+			attr_ref = deep_get(value, DictPath("type"))
 			return ((context, attr_ref), selected), themearray_to_string([(context, attr_ref)])
 
 	# OK, so we want to output output_value, but compare using reference_value
@@ -150,18 +151,18 @@ def map_value(value, references = None, selected = False, default_field_color = 
 	if isinstance(reference_value, (int, float)) and len(ranges) > 0:
 		default_index = -1
 		for i in range(0, len(ranges)):
-			if deep_get(ranges[i], "default", False) == True:
+			if deep_get(ranges[i], DictPath("default"), False) == True:
 				if default_index != -1:
 					raise ValueError("Range cannot contain more than one default")
 				default_index = i
 				continue
-			_min = deep_get(ranges[i], "min")
-			_max = deep_get(ranges[i], "max")
+			_min = deep_get(ranges[i], DictPath("min"))
+			_max = deep_get(ranges[i], DictPath("max"))
 			if (_min is None or reference_value >= _min) and (_max is None or reference_value < _max):
-				field_colors = deep_get(ranges[i], "field_colors")
+				field_colors = deep_get(ranges[i], DictPath("field_colors"))
 				break
 		if field_colors is None and default_index != -1:
-			field_colors = deep_get(ranges[default_index], "field_colors")
+			field_colors = deep_get(ranges[default_index], DictPath("field_colors"))
 		string = str(output_value)
 	elif isinstance(reference_value, (str, bool)) or len(ranges) == 0:
 		string = str(output_value)
@@ -178,20 +179,20 @@ def map_value(value, references = None, selected = False, default_field_color = 
 				_string = "__default"
 		elif _string not in _mapping and "__default" in _mapping:
 			_string = "__default"
-		field_colors = deep_get(_mapping, f"{_string}#field_colors")
+		field_colors = deep_get(_mapping, DictPath(f"{_string}#field_colors"))
 	else:
 		raise TypeError(f"Unknown type {type(value)} for mapping/range")
 
 	attr_ref = None
 	if field_colors is not None:
-		context = deep_get(field_colors[0], "context", "main")
-		attr_ref = deep_get(field_colors[0], "type")
+		context = deep_get(field_colors[0], DictPath("context"), "main")
+		attr_ref = deep_get(field_colors[0], DictPath("type"))
 	if attr_ref is None:
 		context, attr_ref = ("types", "generic")
-	formatting = (context, attr_ref, selected)
-	return (string, formatting), string
+	fmt = (context, attr_ref)
+	return (string, fmt, selected), string
 
-def align_and_pad(array, pad, fieldlen, stringlen, ralign, selected):
+def align_and_pad(array, pad: int, fieldlen: int, stringlen: int, ralign: bool, selected: bool):
 	if selected is None:
 		if ralign:
 			array = [("".ljust(fieldlen - stringlen), ("types", "generic"))] + array
@@ -208,7 +209,7 @@ def align_and_pad(array, pad, fieldlen, stringlen, ralign, selected):
 			array.append((("separators", "pad"), selected))
 	return array
 
-def format_numerical_with_units(string, ftype, selected, non_units = None, separator_lookup = None):
+def format_numerical_with_units(string, ftype, selected: bool, non_units = None, separator_lookup = None):
 	substring = ""
 	array = []
 	numeric = None
@@ -245,11 +246,11 @@ def format_numerical_with_units(string, ftype, selected, non_units = None, separ
 		else:
 			# Do we need to flush?
 			if char in non_units:
-				formatting = deep_get_with_fallback(separator_lookup, [substring, "default"])
+				fmt = deep_get_with_fallback(separator_lookup, [DictPath(substring), DictPath("default")])
 				if selected is None:
-					array.append((substring, formatting))
+					array.append((substring, fmt))
 				else:
-					array.append((substring, formatting, selected))
+					array.append((substring, fmt, selected))
 				substring = ""
 				numeric = True
 			substring += char
@@ -261,18 +262,18 @@ def format_numerical_with_units(string, ftype, selected, non_units = None, separ
 				else:
 					array.append((substring, ("types", ftype), selected))
 			else:
-				formatting = deep_get_with_fallback(separator_lookup, [substring, "default"])
+				fmt = deep_get_with_fallback(separator_lookup, [DictPath(substring), DictPath("default")])
 				if selected is None:
-					array.append((substring, formatting))
+					array.append((substring, fmt))
 				else:
-					array.append((substring, formatting, selected))
+					array.append((substring, fmt, selected))
 
 	if len(array) == 0:
-		array = [("", ("types", "generic", selected))]
+		array = [("", ("types", "generic"), selected)]
 
 	return array
 
-def generator_age_raw(value, selected):
+def generator_age_raw(value, selected: bool):
 	if value == -1:
 		string = ""
 	elif isinstance(value, str):
@@ -281,26 +282,25 @@ def generator_age_raw(value, selected):
 		string = iktlib.seconds_to_age(value, negative_is_skew = True)
 
 	if string in ("<none>", "<unset>", "<unknown>"):
-		formatting = ("types", "none", selected)
-		array = [(string, formatting, selected)]
+		fmt = ("types", "none", selected)
+		array = [(string, fmt, selected)]
 	elif string == "<clock skew detected>":
-		formatting = ("main", "status_not_ok", selected)
-		array = [(string, formatting, selected)]
+		fmt = ("main", "status_not_ok", selected)
+		array = [(string, fmt, selected)]
 	else:
 		array = format_numerical_with_units(string, "age", selected)
 
 	return array
 
-def generator_age(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	del formatting
-
+# pylint: disable=unused-argument
+def generator_age(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	value = getattr(obj, field)
 
 	array = generator_age_raw(value, selected)
 
 	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
 
-def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting):
+def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	items = getattr(obj, field, [])
 	if items is None:
 		items = []
@@ -313,7 +313,7 @@ def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting)
 
 	separator_lookup = {}
 
-	separators = deep_get(formatting, "field_separators")
+	separators = deep_get(formatting, DictPath("field_separators"))
 	if len(separators) == 0:
 		separators = [("separators", "ipv4address"), ("separators", "ipv6address"), ("separators", "ipmask")]
 
@@ -358,35 +358,35 @@ def generator_address(obj, field, fieldlen, pad, ralign, selected, **formatting)
 		vlist.append(tuple(_vlist))
 
 	return format_list(vlist, fieldlen, pad, ralign, selected, field_separators = field_separators, field_colors = field_colors)
-def generator_basic(obj, field, fieldlen, pad, ralign, selected, **formatting):
+
+def generator_basic(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	value = getattr(obj, field)
 	string = str(value)
-	field_colors = deep_get(formatting, "field_colors", [("types", "generic")])
+	field_colors = deep_get(formatting, DictPath("field_colors"), [("types", "generic")])
 
 	if string == "None":
 		string = "<none>"
 
 	if string in ("<none>", "<unknown>"):
-		formatting = ("types", "none", selected)
+		fmt = ("types", "none")
 	elif string == "<default>":
-		formatting = ("types", "default", selected)
+		fmt = ("types", "default")
 	elif string == "<undefined>":
-		formatting = ("types", "undefined", selected)
+		fmt = ("types", "undefined")
 	elif string == "<unset>":
-		formatting = ("types", "unset", selected)
+		fmt = ("types", "unset")
 	else:
 		context, attr_ref = field_colors[0]
-		formatting = (context, attr_ref, selected)
+		fmt = (context, attr_ref)
 
 	array = [
-		(string, formatting)
+		(string, fmt, selected)
 	]
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_hex(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	del formatting
-
+# pylint: disable=unused-argument
+def generator_hex(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	value = getattr(obj, field)
 	string = str(value)
 
@@ -394,31 +394,31 @@ def generator_hex(obj, field, fieldlen, pad, ralign, selected, **formatting):
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_list(obj, field, fieldlen, pad, ralign, selected, **formatting):
+def generator_list(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	items = getattr(obj, field)
 
-	item_separator = deep_get(formatting, "item_separator")
+	item_separator = deep_get(formatting, DictPath("item_separator"))
 	if item_separator is None:
 		item_separator = ("separators", "list")
 
-	field_separators = deep_get(formatting, "field_separators")
+	field_separators = deep_get(formatting, DictPath("field_separators"))
 	if field_separators is None:
 		field_separators = [("separators", "field")]
 
-	field_colors = deep_get(formatting, "field_colors")
+	field_colors = deep_get(formatting, DictPath("field_colors"))
 	if field_colors is None:
 		field_colors = [("types", "field")]
 
-	ellipsise = deep_get(formatting, "ellipsise", -1)
+	ellipsise = deep_get(formatting, DictPath("ellipsise"), -1)
 
-	ellipsis = deep_get(formatting, "ellipsis")
+	ellipsis = deep_get(formatting, DictPath("ellipsis"))
 	if ellipsis is None:
 		ellipsis = ("separators", "ellipsis")
 
-	field_prefixes = deep_get(formatting, "field_prefixes")
-	field_suffixes = deep_get(formatting, "field_suffixes")
+	field_prefixes = deep_get(formatting, DictPath("field_prefixes"))
+	field_suffixes = deep_get(formatting, DictPath("field_suffixes"))
 
-	mapping = deep_get(formatting, "mapping", {})
+	mapping = deep_get(formatting, DictPath("mapping"), {})
 
 	return format_list(items, fieldlen, pad, ralign, selected,
 			   item_separator = item_separator,
@@ -430,27 +430,27 @@ def generator_list(obj, field, fieldlen, pad, ralign, selected, **formatting):
 			   field_suffixes = field_suffixes,
 			   mapping = mapping)
 
-def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
+def generator_list_with_status(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	items = getattr(obj, field)
 	if isinstance(items, tuple):
 		items = [items]
 
-	item_separator = deep_get(formatting, "item_separator")
+	item_separator = deep_get(formatting, DictPath("item_separator"))
 	if item_separator is None:
 		item_separator = ("separators", "list")
 
-	field_separators = deep_get(formatting, "field_separators")
+	field_separators = deep_get(formatting, DictPath("field_separators"))
 	if field_separators is None:
 		field_separators = [("separators", "field")]
 
-	ellipsise = deep_get(formatting, "ellipsise", -1)
+	ellipsise = deep_get(formatting, DictPath("ellipsise"), -1)
 
-	ellipsis = deep_get(formatting, "ellipsis")
+	ellipsis = deep_get(formatting, DictPath("ellipsis"))
 	if ellipsis is None:
 		ellipsis = ("separators", "ellipsis")
 
-	field_prefixes = deep_get(formatting, "field_prefixes")
-	field_suffixes = deep_get(formatting, "field_prefixes")
+	field_prefixes = deep_get(formatting, DictPath("field_prefixes"))
+	field_suffixes = deep_get(formatting, DictPath("field_prefixes"))
 
 	# XXX: Well, this works:ish, but it's ugly beyond belief
 	#      it would be solved so much better with a mapping that uses a secondary value
@@ -498,9 +498,8 @@ def generator_list_with_status(obj, field, fieldlen, pad, ralign, selected, **fo
 			   field_prefixes = field_prefixes,
 			   field_suffixes = field_suffixes)
 
-def generator_mem(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	del formatting
-
+# pylint: disable=unused-argument
+def generator_mem(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	free, total = getattr(obj, field)
 
 	if free is None and total is None:
@@ -531,9 +530,8 @@ def generator_mem(obj, field, fieldlen, pad, ralign, selected, **formatting):
 
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
-def generator_mem_single(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	del formatting
-
+# pylint: disable=unused-argument
+def generator_mem_single(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	value = getattr(obj, field)
 	string = str(value)
 
@@ -541,7 +539,8 @@ def generator_mem_single(obj, field, fieldlen, pad, ralign, selected, **formatti
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_numerical(obj, field, fieldlen, pad, ralign, selected, **formatting):
+# pylint: disable=unused-argument
+def generator_numerical(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	value = getattr(obj, field)
 
 	if value == -1:
@@ -549,23 +548,23 @@ def generator_numerical(obj, field, fieldlen, pad, ralign, selected, **formattin
 	else:
 		string = str(value)
 
-	formatting = ("types", "timestamp", selected)
+	fmt = ("types", "timestamp")
 
 	array = [
-		(string, formatting)
+		(string, fmt, selected)
 	]
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_numerical_with_units(obj, field, fieldlen, pad, ralign, selected, **formatting):
+def generator_numerical_with_units(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	value = getattr(obj, field)
 
 	if value in ("<none>", "<unset>", "<unknown>"):
-		formatting = ("types", "none", selected)
-		array = [(value, formatting, selected)]
+		fmt = ("types", "none", selected)
+		array = [(value, fmt, selected)]
 		return align_and_pad(array, pad, fieldlen, len(value), ralign, selected)
 
-	if value == -1 and deep_get(formatting, "allow_signed") == False:
+	if value == -1 and deep_get(formatting, DictPath("allow_signed")) == False:
 		string = ""
 	else:
 		string = str(value)
@@ -574,9 +573,7 @@ def generator_numerical_with_units(obj, field, fieldlen, pad, ralign, selected, 
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	del formatting
-
+def generator_status(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	status = getattr(obj, field)
 	status_group = getattr(obj, "status_group")
 	attribute = color_status_group(status_group, selected)
@@ -588,9 +585,7 @@ def generator_status(obj, field, fieldlen, pad, ralign, selected, **formatting):
 
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
-def generator_str_timestamp(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	del formatting
-
+def generator_str_timestamp(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	value = getattr(obj, field)
 
 	string = reformat_timestamp(value)
@@ -602,9 +597,7 @@ def generator_str_timestamp(obj, field, fieldlen, pad, ralign, selected, **forma
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_timestamp(obj, field, fieldlen, pad, ralign, selected, **formatting):
-	del formatting
-
+def generator_timestamp(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	value = getattr(obj, field)
 
 	string = datetime_to_timestamp(value)
@@ -617,26 +610,26 @@ def generator_timestamp(obj, field, fieldlen, pad, ralign, selected, **formattin
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_timestamp_with_age(obj, field, fieldlen, pad, ralign, selected, **formatting):
+def generator_timestamp_with_age(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	values = getattr(obj, field)
 
-	if len(values) > 2 and len(deep_get(formatting, "field_colors", [])) < 2:
+	if len(values) > 2 and len(deep_get(formatting, DictPath("field_colors"), [])) < 2:
 		raise ValueError("Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
 
 	if len(values) == 2:
 		if values[0] is None:
 			array = [
-				("<none>", ("types", "none", selected))
+				("<none>", ("types", "none"), selected)
 			]
 		else:
 			timestamp_string = datetime_to_timestamp(values[0])
 			array = format_numerical_with_units(timestamp_string, "timestamp", selected)
 			array += [
-				(" (", ("types", "generic", selected))
+				(" (", ("types", "generic"), selected)
 			]
 			array += generator_age_raw(values[1], selected)
 			array += [
-				(")", ("types", "generic", selected))
+				(")", ("types", "generic"), selected)
 			]
 	else:
 		array = []
@@ -644,9 +637,9 @@ def generator_timestamp_with_age(obj, field, fieldlen, pad, ralign, selected, **
 		for i in range(0, len(values)):
 			# If there's no formatting for this field we assume that
 			# it's a generic string
-			if len(deep_get(formatting, "field_colors", [])) <= i:
-				formatting = ("types", "generic", selected)
-				array += [values[i], formatting]
+			if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
+				fmt = ("types", "generic")
+				array += [(values[i], fmt, selected)]
 			elif formatting["field_colors"][i] == ("types", "timestamp"):
 				if values[i] is None:
 					array += [
@@ -666,12 +659,13 @@ def generator_timestamp_with_age(obj, field, fieldlen, pad, ralign, selected, **
 
 	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
 
-def generator_value_mapper(obj, field, fieldlen, pad, ralign, selected, **formatting):
+def generator_value_mapper(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	value = getattr(obj, field)
 
-	default_field_color = deep_get(formatting, "field_colors", [("types", "generic")])[0]
+	default_field_color = deep_get(formatting, DictPath("field_colors"), [("types", "generic")])[0]
 
-	formatted_string, string = map_value(value, selected = selected, default_field_color = default_field_color, mapping = deep_get(formatting, "mapping", {}))
+	formatted_string, string = map_value(value, selected = selected,default_field_color = default_field_color,
+					     mapping = deep_get(formatting, DictPath("mapping"), {}))
 	array = [
 		formatted_string
 	]

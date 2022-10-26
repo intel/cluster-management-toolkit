@@ -8,7 +8,7 @@ datagetters are used for data extraction that's too complext to be expressed by 
 import re
 
 from iktlib import deep_get, deep_get_with_fallback, timestamp_to_datetime
-from ikttypes import StatusGroup
+from ikttypes import DictPath, StatusGroup
 from kubernetes_helper import get_node_status, kind_tuple_to_name
 
 def get_container_status(src_statuses, container: str):
@@ -37,37 +37,37 @@ def get_container_status(src_statuses, container: str):
 		return reason, status_group, -1, message, -1
 
 	for container_status in src_statuses:
-		if deep_get(container_status, "name") == container:
-			restarts = deep_get(container_status, "restartCount")
-			running = deep_get(container_status, "state#running")
-			ts = deep_get_with_fallback(container_status, ["state#terminated#finishedAt", "lastState#terminated#finishedAt", "state#running#startedAt"], None)
+		if deep_get(container_status, DictPath("name")) == container:
+			restarts = deep_get(container_status, DictPath("restartCount"))
+			running = deep_get(container_status, DictPath("state#running"))
+			ts = deep_get_with_fallback(container_status, [DictPath("state#terminated#finishedAt"), DictPath("lastState#terminated#finishedAt"), DictPath("state#running#startedAt")], None)
 			age = timestamp_to_datetime(ts)
 
-			if deep_get(container_status, "ready") == False:
+			if deep_get(container_status, DictPath("ready")) == False:
 				status_group = StatusGroup.NOT_OK
 
 				if running is not None:
 					reason = "Running"
-				elif deep_get(container_status, "state#terminated") is not None:
-					reason = deep_get(container_status, "state#terminated#reason", "ErrNotSet")
-					if deep_get(container_status, "state#terminated#exitCode") == 0:
+				elif deep_get(container_status, DictPath("state#terminated")) is not None:
+					reason = deep_get(container_status, DictPath("state#terminated#reason"), "ErrNotSet")
+					if deep_get(container_status, DictPath("state#terminated#exitCode")) == 0:
 						status_group = StatusGroup.DONE
 
-					if deep_get(container_status, "state#terminated#message") is not None:
-						message = deep_get(container_status, "state#terminated#message", "").rstrip()
+					if deep_get(container_status, DictPath("state#terminated#message")) is not None:
+						message = deep_get(container_status, DictPath("state#terminated#message"), "").rstrip()
 				else:
-					reason = deep_get(container_status, "state#waiting#reason", "").rstrip()
+					reason = deep_get(container_status, DictPath("state#waiting#reason"), "").rstrip()
 
-					if deep_get(container_status, "state#waiting#message") is not None:
-						message = deep_get(container_status, "state#waiting#message", "").rstrip()
+					if deep_get(container_status, DictPath("state#waiting#message")) is not None:
+						message = deep_get(container_status, DictPath("state#waiting#message"), "").rstrip()
 			else:
 				if running is None:
-					reason = deep_get(container_status, "state#terminated#reason", "").rstrip()
+					reason = deep_get(container_status, DictPath("state#terminated#reason"), "").rstrip()
 
-					if deep_get(container_status, "state#terminated#message") is not None:
-						message = deep_get(container_status, "state#terminated#message", "").rstrip()
+					if deep_get(container_status, DictPath("state#terminated#message")) is not None:
+						message = deep_get(container_status, DictPath("state#terminated#message"), "").rstrip()
 
-					if deep_get(container_status, "state#terminated#exitCode") == 0:
+					if deep_get(container_status, DictPath("state#terminated#exitCode")) == 0:
 						status_group = StatusGroup.DONE
 					else:
 						status_group = StatusGroup.NOT_OK
@@ -79,7 +79,7 @@ def get_container_status(src_statuses, container: str):
 	return reason, status_group, restarts, message, age
 
 # pylint: disable-next=unused-argument
-def datagetter_container_status(kh, obj, path, default):
+def datagetter_container_status(kh, obj, path: DictPath, default):
 	"""
 	A datagetter that returns the status of a container
 
@@ -93,8 +93,8 @@ def datagetter_container_status(kh, obj, path, default):
 	if obj is None:
 		return "UNKNOWN", {"status_group": StatusGroup.UNKNOWN}
 
-	status = deep_get(obj, "status")
-	status_group = deep_get(obj, "status_group")
+	status = deep_get(obj, DictPath("status"))
+	status_group = deep_get(obj, DictPath("status_group"))
 
 	return status, {"status_group": status_group}
 
@@ -110,10 +110,10 @@ def get_endpointslices_endpoints(obj):
 
 	endpoints = []
 
-	if deep_get(obj, "endpoints") is not None:
-		for endpoint in deep_get(obj, "endpoints", []):
-			for address in deep_get(endpoint, "addresses", []):
-				ready = deep_get(endpoint, "conditions#ready", False)
+	if deep_get(obj, DictPath("endpoints")) is not None:
+		for endpoint in deep_get(obj, DictPath("endpoints"), []):
+			for address in deep_get(endpoint, DictPath("addresses"), []):
+				ready = deep_get(endpoint, DictPath("conditions#ready"), False)
 				if ready == True:
 					status_group = StatusGroup.OK
 				else:
@@ -124,7 +124,7 @@ def get_endpointslices_endpoints(obj):
 	return endpoints
 
 # pylint: disable-next=unused-argument
-def datagetter_eps_endpoints(kh, obj, path, default):
+def datagetter_eps_endpoints(kh, obj, path: DictPath, default):
 	"""
 	A datagetter that returns the endpoints for an endpoint slice
 
@@ -164,13 +164,13 @@ def datagetter_metrics(kh, obj, path, default):
 	result = []
 
 	for field in path:
-		result.append(deep_get(obj, f"fields#{field}", ""))
+		result.append(deep_get(obj, DictPath(f"fields#{field}"), ""))
 
 	result = tuple(result)
 
 	return result, {}
 
-def datagetter_deprecated_api(kh, obj, path, default):
+def datagetter_deprecated_api(kh, obj, path: DictPath, default):
 	"""
 	A datagetter that returns deprecated API information for the specified path
 
@@ -187,7 +187,7 @@ def datagetter_deprecated_api(kh, obj, path, default):
 	kind = kh.guess_kind((result[0], result[1]))
 	return (kind[0], kind[1], result[2]), extra_vars
 
-def datagetter_latest_version(kh, obj, path, default):
+def datagetter_latest_version(kh, obj, path: DictPath, default):
 	"""
 	A datagetter that returns the latest available API for kind as passed in path
 
@@ -210,9 +210,9 @@ def datagetter_latest_version(kh, obj, path, default):
 		return default, {}
 
 	# path is paths to kind, api_family
-	kind = deep_get(obj, path[0])
-	api_family = deep_get(obj, path[1])
-	old_version = deep_get(obj, path[2])
+	kind = deep_get(obj, DictPath(path[0]))
+	api_family = deep_get(obj, DictPath(path[1]))
+	old_version = deep_get(obj, DictPath(path[2]))
 	kind = kh.guess_kind((kind, api_family))
 
 	latest_api = kh.get_latest_api(kind)
@@ -231,10 +231,10 @@ def datagetter_latest_version(kh, obj, path, default):
 		versions = {}
 		sorted_versions = []
 
-		for version in deep_get(ref, "spec#versions", []):
-			version_name = deep_get(version, "name", "")
-			deprecated = deep_get(version, "deprecated", False)
-			deprecation_message = deep_get(version, "deprecationWarning", "")
+		for version in deep_get(ref, DictPath("spec#versions"), []):
+			version_name = deep_get(version, DictPath("name"), "")
+			deprecated = deep_get(version, DictPath("deprecated"), False)
+			deprecation_message = deep_get(version, DictPath("deprecationWarning"), "")
 			versions[version_name] = {
 				"deprecated": deprecated,
 				"deprecation_message": deprecation_message
@@ -279,8 +279,8 @@ def datagetter_latest_version(kh, obj, path, default):
 			latest_minor = f"alpha{sorted_versions[0][2]}"
 		latest_version = f"{latest_major}{latest_minor}"
 
-		if deep_get(versions, f"{latest_version}#deprecated", False) == True:
-			message = deep_get(versions, f"{latest_version}#deprecation_message", "")
+		if deep_get(versions, DictPath(f"{latest_version}#deprecated"), False) == True:
+			message = deep_get(versions, DictPath(f"{latest_version}#deprecation_message"), "")
 			message = f"({message})"
 
 	else:
@@ -307,10 +307,10 @@ def get_endpoint_endpoints(subsets):
 		subsets = []
 
 	for subset in subsets:
-		for address in deep_get(subset, "addresses", []):
-			endpoints.append((deep_get(address, "ip"), StatusGroup.OK))
-		for address in deep_get(subset, "notReadyAddresses", []):
-			endpoints.append((deep_get(address, "ip"), StatusGroup.NOT_OK))
+		for address in deep_get(subset, DictPath("addresses"), []):
+			endpoints.append((deep_get(address, DictPath("ip")), StatusGroup.OK))
+		for address in deep_get(subset, DictPath("notReadyAddresses"), []):
+			endpoints.append((deep_get(address, DictPath("ip")), StatusGroup.NOT_OK))
 
 	if len(endpoints) == 0:
 		endpoints.append(("<none>", StatusGroup.UNKNOWN))
@@ -318,7 +318,7 @@ def get_endpoint_endpoints(subsets):
 	return endpoints
 
 # pylint: disable-next=unused-argument
-def datagetter_endpoint_ips(kh, obj, path, default):
+def datagetter_endpoint_ips(kh, obj, path: DictPath, default):
 	"""
 	A datagetter that returns the endpoints for an endpoint
 
@@ -331,7 +331,7 @@ def datagetter_endpoint_ips(kh, obj, path, default):
 			The return value from get_endpointslices_endpoints and an empty dict
 	"""
 
-	subsets = deep_get(obj, path)
+	subsets = deep_get(obj, DictPath(path))
 	endpoints = get_endpoint_endpoints(subsets)
 	return endpoints, {}
 
@@ -359,7 +359,7 @@ def datagetter_regex_split_to_tuples(kh, obj, paths, default):
 	list_fields = []
 
 	if isinstance(paths[1], str):
-		for item in deep_get(obj, paths[1], []):
+		for item in deep_get(obj, DictPath(paths[1]), []):
 			tmp = re.match(paths[0], item)
 			if tmp is not None:
 				# This handles ("").*("") | (""); we need to generalise this somehow
@@ -371,7 +371,7 @@ def datagetter_regex_split_to_tuples(kh, obj, paths, default):
 				list_fields.append(("", ""))
 	else:
 		for path in paths[1]:
-			item = deep_get(obj, path, "")
+			item = deep_get(obj, DictPath(path), "")
 			tmp = re.match(paths[0], str(item))
 			if tmp is not None:
 				# This handles ("").*("") | (""); we need to generalise this somehow
@@ -398,22 +398,22 @@ def get_pod_status(kh, obj):
 			phase (str), status_group (StatusGroup): The phase and status group of the pod
 	"""
 
-	if deep_get(obj, "metadata#deletionTimestamp") is not None:
+	if deep_get(obj, DictPath("metadata#deletionTimestamp")) is not None:
 		status = "Terminating"
 		status_group = StatusGroup.PENDING
 		return status, status_group
 
-	phase = deep_get(obj, "status#phase")
+	phase = deep_get(obj, DictPath("status#phase"))
 
 	if phase == "Pending":
 		status = phase
 		status_group = StatusGroup.PENDING
 
 		# Any containers in ContainerCreating or similar?
-		for condition in deep_get(obj, "status#conditions", []):
-			condition_type = deep_get(condition, "type")
-			condition_status = deep_get(condition, "status")
-			reason = deep_get(condition, "reason", "")
+		for condition in deep_get(obj, DictPath("status#conditions"), []):
+			condition_type = deep_get(condition, DictPath("type"))
+			condition_status = deep_get(condition, DictPath("status"))
+			reason = deep_get(condition, DictPath("reason"), "")
 
 			if condition_type == "PodScheduled" and condition_status == "False" and reason == "Unschedulable":
 				status = reason
@@ -421,14 +421,14 @@ def get_pod_status(kh, obj):
 				break
 
 			if condition_type == "ContainersReady" and condition_status == "False":
-				for container in deep_get(obj, "status#initContainerStatuses", []):
-					if deep_get(container, "ready") == False:
-						reason = deep_get(container, "state#waiting#reason", "").rstrip()
+				for container in deep_get(obj, DictPath("status#initContainerStatuses"), []):
+					if deep_get(container, DictPath("ready")) == False:
+						reason = deep_get(container, DictPath("state#waiting#reason"), "").rstrip()
 						if reason is not None and len(reason) > 0:
 							return reason, status_group
-				for container in deep_get(obj, "status#containerStatuses", []):
-					if deep_get(container, "ready") == False:
-						reason = deep_get(container, "state#waiting#reason", "").rstrip()
+				for container in deep_get(obj, DictPath("status#containerStatuses"), []):
+					if deep_get(container, DictPath("ready")) == False:
+						reason = deep_get(container, DictPath("state#waiting#reason"), "").rstrip()
 						if reason is not None and len(reason) > 0:
 							return reason, status_group
 
@@ -439,15 +439,15 @@ def get_pod_status(kh, obj):
 		status_group = StatusGroup.OK
 
 		# Any container failures?
-		for condition in deep_get(obj, "status#conditions", []):
-			condition_type = deep_get(condition, "type")
-			condition_status = deep_get(condition, "status")
+		for condition in deep_get(obj, DictPath("status#conditions"), []):
+			condition_type = deep_get(condition, DictPath("type"))
+			condition_status = deep_get(condition, DictPath("status"))
 
 			if condition_type == "Ready" and condition_status == "False":
 				status_group = StatusGroup.NOT_OK
 				status = "NotReady"
 				# Can we get more info? Is the host available?
-				node_name = deep_get(obj, "spec#nodeName")
+				node_name = deep_get(obj, DictPath("spec#nodeName"))
 				node = kh.get_ref_by_kind_name_namespace(("Node", ""), node_name, None)
 				node_status = get_node_status(node)
 				if node_status[0] == "Unreachable":
@@ -457,15 +457,18 @@ def get_pod_status(kh, obj):
 			if condition_type == "ContainersReady" and condition_status == "False":
 				status_group = StatusGroup.NOT_OK
 
-				for container in deep_get(obj, "status#initContainerStatuses", []):
-					status, status_group, _restarts, _message, _age = get_container_status(deep_get(obj, "status#initContainerStatuses"), deep_get(container, "name"))
+				for container in deep_get(obj, DictPath("status#initContainerStatuses"), []):
+					status, status_group, _restarts, _message, _age =\
+						get_container_status(deep_get(obj, DictPath("status#initContainerStatuses")), deep_get(container, DictPath("name")))
+
 					# If we have a failed container,
 					# break here
 					if status_group == StatusGroup.NOT_OK:
 						break
 
-				for container in deep_get(obj, "status#containerStatuses", []):
-					status, status_group, _restarts, _message, _age = get_container_status(deep_get(obj, "status#containerStatuses"), deep_get(container, "name"))
+				for container in deep_get(obj, DictPath("status#containerStatuses"), []):
+					status, status_group, _restarts, _message, _age =\
+						get_container_status(deep_get(obj, DictPath("status#containerStatuses")), deep_get(container, DictPath("name")))
 					# If we have a failed container,
 					# break here
 					if status_group == StatusGroup.NOT_OK:
@@ -476,7 +479,7 @@ def get_pod_status(kh, obj):
 	if phase == "Failed":
 		# Failed
 		status_group = StatusGroup.NOT_OK
-		status = deep_get(obj, "status#reason", phase).rstrip()
+		status = deep_get(obj, DictPath("status#reason"), phase).rstrip()
 		return status, status_group
 
 	# Succeeded
@@ -485,7 +488,7 @@ def get_pod_status(kh, obj):
 
 # XXX: Only for internal types for the time being
 # pylint: disable-next=unused-argument
-def datagetter_pod_status(kh, obj, path, default):
+def datagetter_pod_status(kh, obj, path: DictPath, default):
 	"""
 	A datagetter that returns the status for a pod
 
@@ -507,7 +510,7 @@ def datagetter_pod_status(kh, obj, path, default):
 
 # Only for internal types for the time being
 # pylint: disable-next=unused-argument
-def datagetter_api_support(kh, obj, path, default):
+def datagetter_api_support(kh, obj, path: DictPath, default):
 	"""
 	A datagetter that returns the level of support that iKT has for an API
 
@@ -525,8 +528,8 @@ def datagetter_api_support(kh, obj, path, default):
 	if obj is None:
 		return default, {}
 
-	kind = deep_get(obj, "spec#names#kind", "")
-	api_family = deep_get(obj, "spec#group", "")
+	kind = deep_get(obj, DictPath("spec#names#kind"), "")
+	api_family = deep_get(obj, DictPath("spec#group"), "")
 
 	available_apis, _status, _modified = kh.get_available_api_families()
 
@@ -535,9 +538,9 @@ def datagetter_api_support(kh, obj, path, default):
 	try:
 		kind = kh.guess_kind((kind, api_family))
 		available_views.append("Known")
-		if deep_get(available_apis[kind], "list", False) == True:
+		if deep_get(available_apis[kind], DictPath("list"), False) == True:
 			available_views.append("List")
-		if deep_get(available_apis[kind], "info", False) == True:
+		if deep_get(available_apis[kind], DictPath("info"), False) == True:
 			available_views.append("Info")
 	except NameError:
 		pass

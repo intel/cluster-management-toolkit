@@ -17,7 +17,7 @@ import re
 import sys
 import typing # pylint: disable=unused-import
 
-from ikttypes import FilePath
+from ikttypes import DictPath, FilePath
 from iktpaths import BINDIR, IKTDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
 from iktpaths import DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
@@ -57,7 +57,7 @@ def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfi
 	"""
 
 	iktprint([("[Checking for insecure configuration options in ", "phase"), (f"{IKT_CONFIG_FILE}", "path"), ("]", "phase")])
-	disablestricthostkeychecking = deep_get(iktconfig_dict, "Nodes#disablestricthostkeychecking", False)
+	disablestricthostkeychecking = deep_get(iktconfig_dict, DictPath("Nodes#disablestricthostkeychecking"), False)
 	if disablestricthostkeychecking == False:
 		iktprint([("  OK\n", "emphasis")])
 	else:
@@ -205,9 +205,9 @@ def check_insecure_kube_config_options(cluster_name: str, kubeconfig, iktconfig_
 
 	insecureskiptlsverify = False
 
-	for cluster in deep_get(kubeconfig, "clusters", []):
-		if deep_get(cluster, "name", "") == cluster_name:
-			insecureskiptlsverify = deep_get(cluster, "insecure-skip-tls-verify", False)
+	for cluster in deep_get(kubeconfig, DictPath("clusters"), []):
+		if deep_get(cluster, DictPath("name"), "") == cluster_name:
+			insecureskiptlsverify = deep_get(cluster, DictPath("insecure-skip-tls-verify"), False)
 			break
 
 	if insecureskiptlsverify == False:
@@ -387,9 +387,9 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig, iktconf
 	version_regex = re.compile(r"^v(\d+)\.(\d+)\..*")
 
 	for node in vlist:
-		node_name = deep_get(node, "metadata#name")
-		kubelet_version = deep_get(node, "status#nodeInfo#kubeletVersion")
-		kubeproxy_version = deep_get(node, "status#nodeInfo#kubeProxyVersion")
+		node_name = deep_get(node, DictPath("metadata#name"))
+		kubelet_version = deep_get(node, DictPath("status#nodeInfo#kubeletVersion"))
+		kubeproxy_version = deep_get(node, DictPath("status#nodeInfo#kubeProxyVersion"))
 		tmp = version_regex.match(kubelet_version)
 
 		kubelet_major_version = None
@@ -663,17 +663,17 @@ recommended_file_permissions = [
 ]
 
 # pylint: disable-next=too-many-arguments
-def __check_permissions(recommended_permissions, pathtype, user: str, usergroup: str, critical: int, error: int, warning: int, note: int):
+def __check_permissions(recommended_permissions, pathtype: str, user: str, usergroup: str, critical: int, error: int, warning: int, note: int):
 	issue = False
 
 	for permissions in recommended_permissions:
-		path = deep_get(permissions, "path")
-		alertmask = deep_get(permissions, "alertmask", 0o000)
-		usergroup_alertmask = deep_get(permissions, "usergroup_alertmask", 0o000)
-		severity = deep_get(permissions, "severity", "critical")
-		justification = deep_get(permissions, "justification", [("<no justification provided>", "emphasis")])
-		executable = deep_get(permissions, "executable", False)
-		suffixes = deep_get(permissions, "suffixes")
+		path = deep_get(permissions, DictPath("path"))
+		alertmask = deep_get(permissions, DictPath("alertmask"), 0o000)
+		usergroup_alertmask = deep_get(permissions, DictPath("usergroup_alertmask"), 0o000)
+		severity = deep_get(permissions, DictPath("severity"), "critical")
+		justification = deep_get(permissions, DictPath("justification"), [("<no justification provided>", "emphasis")])
+		executable = deep_get(permissions, DictPath("executable"), False)
+		suffixes = deep_get(permissions, DictPath("suffixes"))
 
 		if len(usergroup) > 0:
 			alertmask = usergroup_alertmask
@@ -771,7 +771,7 @@ def __check_permissions(recommended_permissions, pathtype, user: str, usergroup:
 	return issue, critical, error, warning, note
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def check_file_permissions(cluster_name: str, kubeconfig: dict, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
+def check_file_permissions(cluster_name: str, kubeconfig, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
 	"""
 	This checks whether any files or directories have insecure permissions
 
@@ -794,7 +794,7 @@ def check_file_permissions(cluster_name: str, kubeconfig: dict, iktconfig_dict, 
 
 	iktprint([("[Checking directory and file permissions]", "phase")])
 
-	usergroup = deep_get(kwargs, "usergroup", "")
+	usergroup = deep_get(kwargs, DictPath("usergroup"), "")
 
 	issue, critical, error, warning, note = __check_permissions(recommended_directory_permissions, "directory", user, usergroup, critical, error, warning, note)
 

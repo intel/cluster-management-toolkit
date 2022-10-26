@@ -24,11 +24,10 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
-from ikttypes import FilePath, SecurityChecks, SecurityPolicy, SecurityStatus
+from ikttypes import DictPath, FilePath, SecurityChecks, SecurityPolicy, SecurityStatus
 from iktpaths import HOMEDIR
 
 import iktlib # pylint: disable=unused-import
-from iktlib import deep_get, iktconfig
 
 import iktprint
 
@@ -524,7 +523,7 @@ def replace_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on
 
 	dst_path.symlink_to(src_path)
 
-def scan_and_add_ssh_keys(hosts):
+def scan_and_add_ssh_keys(hosts) -> None:
 	"""
 	Scan hosts and add their public ssh keys to .ssh/known_hosts
 
@@ -706,8 +705,8 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 	# OK, the destination isn't a symlink and doesn't contain ".." or similar,
 	# it's owned by the user, and is an existing directory; we can safely continue
 
-	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
-	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	http_proxy = iktlib.deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
+	https_proxy = iktlib.deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
 	retval = True
 
 	if http_proxy is not None and http_proxy != "":

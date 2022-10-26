@@ -20,7 +20,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import FilePath
+from ikttypes import DictPath, FilePath
 from iktpaths import HOMEDIR
 from iktpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
 
@@ -488,7 +488,7 @@ def rebuild_inventory(options, args) -> int:
 			groups = ["all", "nodes", cluster_name]
 
 		group = ""
-		hosts = [deep_get(node, "metadata#name")]
+		hosts = [deep_get(node, DictPath("metadata#name"))]
 		retval = True
 		for group in groups:
 			retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group, skip_all = False)
@@ -972,10 +972,10 @@ def main() -> int:
 		command = inventory
 
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktconfig, "Ansible#forks", 5)
-	ansible_configuration["ansible_user"] = deep_get(iktconfig, "Ansible#ansible_user")
-	ansible_configuration["ansible_password"] = deep_get(iktconfig, "Ansible#ansible_password")
-	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
+	ansible_configuration["ansible_forks"] = deep_get(iktconfig, DictPath("Ansible#forks"), 5)
+	ansible_configuration["ansible_user"] = deep_get(iktconfig, DictPath("Ansible#ansible_user"))
+	ansible_configuration["ansible_password"] = deep_get(iktconfig, DictPath("Ansible#ansible_password"))
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
 
 	return command(options, args)
 

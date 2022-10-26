@@ -31,7 +31,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run ikt-install?")
 
-from ikttypes import FilePath, SecurityPolicy
+from ikttypes import DictPath, FilePath, SecurityPolicy
 from iktpaths import HOMEDIR, BINDIR
 from iktpaths import DEPLOYMENT_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -42,7 +42,8 @@ from commandparser import parse_commandline
 from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_set_vars
 from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results
 
-from iktio import download_files, mkdir_if_not_exists, scan_and_add_ssh_keys, secure_which
+import iktio
+from iktio import download_files, mkdir_if_not_exists, scan_and_add_ssh_keys
 
 import iktlib # pylint: disable=unused-import
 from iktlib import check_deb_versions, deep_get, execute_command, execute_command_with_response, iktconfig
@@ -484,7 +485,7 @@ def check_version_from_executable(command, args, version_regex):
 	fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
 
 	try:
-		cpath = secure_which(command, fallback_allowlist = fallback_allowlist, security_policy = security_policy)
+		cpath = iktio.secure_which(command, fallback_allowlist = fallback_allowlist, security_policy = security_policy)
 	except FileNotFoundError:
 		cpath = None
 
@@ -922,7 +923,9 @@ def update_apt_cache():
 			True on success, False on failure
 	"""
 
-	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "update"]
+	sudo_path = iktio.secure_which(FilePath("sudo"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	apt_get_path = iktio.secure_which(FilePath("apt-get"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	args = [sudo_path, apt_get_path, "update"]
 	return execute_command(args)
 
 def deb_compare_versions(current_version, candidate_version):
@@ -2937,7 +2940,7 @@ def run_checks(checks, **kwargs) -> None:
 		kubeconfig = yaml.safe_load(f)
 
 	for check in checks:
-		call = deep_get(check, "call")
+		call = deep_get(check, DictPath("call"))
 		if call is not None:
 			critical, error, warning, note = call(cluster_name, kubeconfig, iktconfig, user, critical, error, warning, note, **kwargs)
 

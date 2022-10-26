@@ -15,7 +15,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import FilePath
+from ikttypes import DictPath, FilePath
 from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path
 from iktlib import deep_get
 
@@ -29,7 +29,7 @@ def objgetter_ansible_facts(obj):
 			obj (dict): An ansible facts object
 	"""
 
-	hostname = deep_get(obj, "name", "")
+	hostname = deep_get(obj, DictPath("name"), "")
 	get_facts_path = get_playbook_path(FilePath("get_facts.yaml"))
 	retval, ansible_results = ansible_run_playbook_on_selection(get_facts_path, [hostname])
 	if retval != 0:
@@ -37,9 +37,9 @@ def objgetter_ansible_facts(obj):
 
 	ar = {}
 
-	for result in deep_get(ansible_results, hostname, []):
-		if deep_get(result, "task", "") == "Gathering host facts":
-			ar = deep_get(result, "ansible_facts")
+	for result in deep_get(ansible_results, DictPath(hostname), []):
+		if deep_get(result, DictPath("task"), "") == "Gathering host facts":
+			ar = deep_get(result, DictPath("ansible_facts"))
 
 	return ar
 
@@ -62,9 +62,9 @@ def objgetter_ansible_log(obj):
 	try:
 		with open(tmpobj["playbook_path"], "r", encoding = "utf-8") as f:
 			playbook = yaml.safe_load(f)[0]
-			tmpobj["name"] = deep_get(playbook, "vars#metadata#description")
-			tmpobj["playbook_types"] = deep_get(playbook, "vars#metadata#playbook_types", ["<any>"])
-			tmpobj["category"] = deep_get(playbook, "vars#metadata#category", "Uncategorized")
+			tmpobj["name"] = deep_get(playbook, DictPath("vars#metadata#description"))
+			tmpobj["playbook_types"] = deep_get(playbook, DictPath("vars#metadata#playbook_types"), ["<any>"])
+			tmpobj["category"] = deep_get(playbook, DictPath("vars#metadata#category"), "Uncategorized")
 	except FileNotFoundError:
 		tmpobj["name"] = "File not found"
 		tmpobj["playbook_types"] = ["Unavailable"]

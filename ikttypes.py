@@ -9,6 +9,7 @@ from enum import auto, Enum, IntEnum
 from typing import NewType
 
 FilePath = NewType("FilePath", str)
+DictPath = NewType("DictPath", str)
 
 class SecurityStatus(Enum):
 	"""

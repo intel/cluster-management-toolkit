@@ -8,6 +8,8 @@ import re
 import sys
 import yaml
 
+from ikttypes import DictPath
+
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig, split_msg
 
@@ -40,6 +42,7 @@ def format_binary(lines, **kwargs):
 
 	return [([("Binary file; cannot view", ("types", "generic"))])]
 
+# pylint: disable=unused-argument
 def format_none(lines, **kwargs):
 	"""
 	Noop formatter; returns the text without syntax highlighting
@@ -52,8 +55,6 @@ def format_none(lines, **kwargs):
 		Returns:
 			list[themearray]: A list of themearrays
 	"""
-
-	del kwargs
 
 	dumps = []
 
@@ -118,7 +119,7 @@ def format_yaml_line(line, override_formatting = None):
 
 	if line.endswith(":"):
 		if isinstance(override_formatting, dict):
-			_key_format = deep_get(override_formatting, f"{line[:-1]}#key", key_format)
+			_key_format = deep_get(override_formatting, DictPath(f"{line[:-1]}#key"), key_format)
 		else:
 			_key_format = key_format
 		tmpline += [
@@ -135,11 +136,11 @@ def format_yaml_line(line, override_formatting = None):
 			separator = tmp[3]
 			value = tmp[4]
 			if isinstance(override_formatting, dict):
-				_key_format = deep_get(override_formatting, f"{key.strip()}#key", key_format)
+				_key_format = deep_get(override_formatting, DictPath(f"{key.strip()}#key"), key_format)
 				if value.strip() in ("{", "["):
 					_value_format = value_format
 				else:
-					_value_format = deep_get(override_formatting, f"{key.strip()}#value", value_format)
+					_value_format = deep_get(override_formatting, DictPath(f"{key.strip()}#value"), value_format)
 			else:
 				_key_format = key_format
 				_value_format = value_format
@@ -151,7 +152,7 @@ def format_yaml_line(line, override_formatting = None):
 			]
 		else:
 			if isinstance(override_formatting, dict):
-				_value_format = deep_get(override_formatting, f"{line}#value", value_format)
+				_value_format = deep_get(override_formatting, DictPath(f"{line}#value"), value_format)
 			else:
 				_value_format = value_format
 			tmpline += [
@@ -160,7 +161,7 @@ def format_yaml_line(line, override_formatting = None):
 
 	return tmpline
 
-def format_yaml(objects, override_formatting = None, **kwargs):
+def format_yaml(lines, **kwargs):
 	"""
 	YAML formatter; returns the text with syntax highlighting for YAML
 
@@ -173,23 +174,22 @@ def format_yaml(objects, override_formatting = None, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	if override_formatting is None:
-		override_formatting = {}
+	override_formatting = deep_get(kwargs, "override_formatting", {})
 
 	dumps = []
-	indent = deep_get(iktconfig, "Global#indent", 2)
+	indent = deep_get(iktconfig, DictPath("Global#indent"), 2)
 
-	if isinstance(objects, str):
-		objects = [objects]
+	if isinstance(lines, str):
+		lines = [lines]
 
 	generic_format = ("types", "generic")
 
-	if deep_get(kwargs, "raw", False) == True:
+	if deep_get(kwargs, DictPath("raw"), False) == True:
 		override_formatting = generic_format
 
 	yaml.add_representer(str, __str_representer)
 
-	for i, obj in enumerate(objects):
+	for i, obj in enumerate(lines):
 		if isinstance(obj, dict):
 			split_dump = yaml.dump(obj, default_flow_style = False, indent = indent, width = sys.maxsize).splitlines()
 		else:
@@ -217,7 +217,7 @@ def format_yaml(objects, override_formatting = None, **kwargs):
 				tmpline += [(" [...] (Truncated)", ("types", "yaml_key_error"))]
 			dumps.append(tmpline)
 
-		if i < len(objects) - 1:
+		if i < len(lines) - 1:
 			dumps.append([("", generic_format)])
 			dumps.append([("", generic_format)])
 			dumps.append([("", generic_format)])
@@ -254,7 +254,7 @@ def format_crt(lines, **kwargs):
 
 	dumps = []
 
-	if deep_get(kwargs, "raw", False) == True:
+	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -285,7 +285,7 @@ def format_haproxy(lines, **kwargs):
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	if deep_get(kwargs, "raw", False) == True:
+	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
 
 	# Safe
@@ -351,7 +351,7 @@ def format_caddyfile(lines, **kwargs):
 
 	dumps = []
 
-	if deep_get(kwargs, "raw", False) == True:
+	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -515,7 +515,7 @@ def format_mosquitto(lines, **kwargs):
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	if deep_get(kwargs, "raw", False) == True:
+	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
 
 	# Safe
@@ -566,7 +566,7 @@ def format_nginx(lines, **kwargs):
 
 	dumps = []
 
-	if deep_get(kwargs, "raw", False) == True:
+	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -639,7 +639,7 @@ def format_xml(lines, **kwargs):
 	tag_named = False
 	comment = False
 
-	if deep_get(kwargs, "raw", False) == True:
+	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -837,7 +837,7 @@ def format_toml(lines, **kwargs):
 	multiline_basic = False
 	multiline_literal = False
 
-	if deep_get(kwargs, "raw", False) == True:
+	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -926,7 +926,7 @@ def format_fluentbit(lines, **kwargs):
 
 	dumps = []
 
-	if deep_get(kwargs, "raw", False) == True:
+	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -980,7 +980,7 @@ def format_ini(lines, **kwargs):
 
 	dumps = []
 
-	if deep_get(kwargs, "raw", False) == True:
+	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -1016,7 +1016,7 @@ def format_ini(lines, **kwargs):
 		dumps.append(tmpline)
 	return dumps
 
-def map_dataformat(dataformat):
+def map_dataformat(dataformat: str):
 	"""
 	Identify what formatter to use, based either on a file ending or an explicit dataformat tag
 
@@ -1026,7 +1026,7 @@ def map_dataformat(dataformat):
 			(function reference): The formatter to use
 	"""
 
-	if dataformat in ("YAML", "JSON") or dataformat.endswith((".yml", ".yaml", ".json")):
+	if dataformat in {"YAML", "JSON"} or dataformat.endswith((".yml", ".yaml", ".json")):
 		formatter = format_yaml
 	elif dataformat == "TOML" or dataformat.endswith((".toml")):
 		formatter = format_toml
@@ -1038,11 +1038,11 @@ def map_dataformat(dataformat):
 		formatter = format_ini
 	elif dataformat == "FluentBit":
 		formatter = format_fluentbit
-	elif dataformat == "HAProxy" or dataformat == "haproxy.cfg":
+	elif dataformat in {"HAProxy", "haproxy.cfg"}:
 		formatter = format_haproxy
 	elif dataformat == "CaddyFile":
 		formatter = format_caddyfile
-	elif dataformat == "mosquitto" or dataformat == "mosquitto.conf":
+	elif dataformat == {"mosquitto", "mosquitto.conf"}:
 		formatter = format_mosquitto
 	elif dataformat == "NGINX":
 		formatter = format_nginx

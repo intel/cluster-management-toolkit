@@ -29,6 +29,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
+from ikttypes import DictPath
 from iktpaths import IKT_CONFIG_FILE, DEFAULT_THEME_FILE
 
 from commandparser import parse_commandline
@@ -82,17 +83,17 @@ def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False)
 	del quiet
 
 	# Set necessary Ansible keys before running playbooks
-	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
+	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
 	if http_proxy is None:
 		http_proxy = ""
-	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
 	if https_proxy is None:
 		https_proxy = ""
-	no_proxy = deep_get(iktconfig, "Network#no_proxy", "")
+	no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), "")
 	if no_proxy is None:
 		no_proxy = ""
-	insecure_registries = deep_get(iktconfig, "Docker#insecure_registries", [])
-	registry_mirrors = deep_get(iktconfig, "Containerd#registry_mirrors", [])
+	insecure_registries = deep_get(iktconfig, DictPath("Docker#insecure_registries"), [])
+	registry_mirrors = deep_get(iktconfig, DictPath("Containerd#registry_mirrors"), [])
 	retval = 0
 
 	use_proxy = "no"
@@ -134,19 +135,19 @@ def show_configuration(hosts):
 	"""
 
 	# cluster_name =
-	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
+	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
 	if http_proxy is not None and http_proxy == "":
 		http_proxy = None
 	http_proxy_env = os.getenv("http_proxy")
 	if http_proxy_env is not None and http_proxy_env == "":
 		http_proxy_env = None
-	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
 	if https_proxy is not None and https_proxy == "":
 		https_proxy = None
 	https_proxy_env = os.getenv("https_proxy")
 	if https_proxy_env is not None and https_proxy_env == "":
 		https_proxy_env = None
-	no_proxy = deep_get(iktconfig, "Network#no_proxy", "")
+	no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), "")
 	if no_proxy is not None and no_proxy == "":
 		no_proxy = None
 	no_proxy_env = os.getenv("no_proxy")
@@ -221,7 +222,7 @@ def populate_playbooks_from_paths(paths):
 		description = None
 		with open(playbookpath, encoding = "utf-8") as f:
 			d = yaml.safe_load(f)
-			description = [(deep_get(d[0], "vars#metadata#description"), "play")]
+			description = [(deep_get(d[0], DictPath("vars#metadata#description")), "play")]
 
 		if description is None or len(description) == 0:
 			description = [("Running “", "play"), (playbookname, "programname"), ("“", "play")]
@@ -270,7 +271,7 @@ def get_selection(selection, kind = None):
 
 		vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
 		for node in vlist:
-			name = deep_get(node, "metadata#name")
+			name = deep_get(node, DictPath("metadata#name"))
 			if all_items == False and name not in selection:
 				continue
 
@@ -754,8 +755,8 @@ def prepare_hosts(options, args):
 	playbooks = populate_playbooks_from_paths(prepare_playbooks)
 
 	extra_values = {
-		"ansible_become_pass": deep_get(ansible_configuration, "ansible_password"),
-		"ansible_ssh_pass": deep_get(ansible_configuration, "ansible_password"),
+		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
+		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 	}
 
 	retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
@@ -931,9 +932,9 @@ def add_nodes(options, args):
 
 	tmp = []
 
-	for result in deep_get(ansible_results, control_plane_ip, []):
-		if deep_get(result, "task", "") == "package versions":
-			tmp = deep_get(result, "msg_lines", [])
+	for result in deep_get(ansible_results, DictPath(control_plane_ip), []):
+		if deep_get(result, DictPath("task"), "") == "package versions":
+			tmp = deep_get(result, DictPath("msg_lines"), [])
 			break
 
 	if len(tmp) == 0:
@@ -1583,16 +1584,16 @@ def main() -> int:
 	command, options, args = parse_commandline(programname, about.TOOL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, argv, commandline, theme = DEFAULT_THEME_FILE)
 
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktconfig, "Ansible#forks", 5)
-	ansible_user = deep_get(iktconfig, "Ansible#ansible_user")
+	ansible_configuration["ansible_forks"] = deep_get(iktconfig, DictPath("Ansible#forks"), 5)
+	ansible_user = deep_get(iktconfig, DictPath("Ansible#ansible_user"))
 	if ansible_user is None or len(ansible_user) == 0:
 		ansible_user = getuser()
 	ansible_configuration["ansible_user"] = ansible_user
-	ansible_password = deep_get(iktconfig, "Ansible#ansible_password")
+	ansible_password = deep_get(iktconfig, DictPath("Ansible#ansible_password"))
 	if ansible_password is not None and len(ansible_password) > 0:
 		ansible_configuration["ansible_password"] = ansible_password
-	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, "Nodes#disablestricthostkeychecking", False)
-	ansible_configuration["save_logs"] = deep_get(iktconfig, "Ansible#save_logs", False)
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
+	ansible_configuration["save_logs"] = deep_get(iktconfig, DictPath("Ansible#save_logs"), False)
 
 	return command(options, args)
 

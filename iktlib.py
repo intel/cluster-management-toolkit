@@ -13,8 +13,10 @@ from subprocess import PIPE, STDOUT
 import sys
 import yaml
 
+from ikttypes import DictPath, FilePath, SecurityPolicy
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE_DIR
 from iktpaths import IKT_CONFIG_FILE
+import iktio
 
 try:
 	from natsort import natsorted
@@ -23,13 +25,40 @@ except ModuleNotFoundError:
 
 iktconfig = {}
 
-def clamp(value, minval, maxval):
+def clamp(value: int, minval: int, maxval: int) -> int:
+	"""
+	Clamp value inside the range minval, maxval
+
+		Parameters:
+			value (int): The value to clamp
+			minval (int): The minimum allowed value
+			maxval (int): The maximum allowed value
+		Returns:
+			int: The clamped value
+	"""
+
 	return min(maxval, max(minval, value))
 
 def none_timestamp():
+	"""
+	Return the timestamp used to represent None
+
+		Returns:
+			timestamp (datetime): A "None" timestamp
+	"""
+
 	return (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
 
-def disksize_to_human(size):
+def disksize_to_human(size: int) -> str:
+	"""
+	Given a disksize in bytes, convert it to a more readable format with size suffix
+
+		Parameters:
+			size (int): The disksize in bytes
+		Returns:
+			disksize (str): The human readable disksize with size suffix
+	"""
+
 	size_suffixes = [
 		" bytes",
 		"kiB",
@@ -38,21 +67,40 @@ def disksize_to_human(size):
 		"TiB",
 		"PiB",
 	]
-	for i in range(0, len(size_suffixes)):
+
+	for suffix in size_suffixes:
 		if size < 1024:
 			break
 		size = size // 1024
-	suffix = size_suffixes[i]
 	return f"{size}{suffix}"
 
-def split_msg(rawmsg):
+def split_msg(rawmsg: str):
+	"""
+	Split a string into a list of strings, strip NUL-bytes, and convert newlines
+
+		Parameters:
+			rawmsg (str): The string to split
+		Returns:
+			list[str]: A list of split strings
+	"""
+
 	# We only want "\n" to represent newlines
 	tmp = rawmsg.replace("\r\n", "\n")
 	# We also replace all \x00 with <NUL>
 	tmp = rawmsg.replace("\x00", "<NUL>")
 	return list(map(str.rstrip, tmp.splitlines()))
 
-def deep_set(dictionary, path, value, create_path = False):
+def deep_set(dictionary, path: DictPath, value, create_path: bool = False) -> None:
+	"""
+	Given a dictionary, a path into that dictionary, and a value, set the path to that value
+
+a		Parameters:
+			dictionary (dict): The dict to set the value in
+			path (DictPath): A dict path
+			value (any): The value to set
+			create_path (bool): If True the path will be created if it doesn't exist
+	"""
+
 	if dictionary is None or path is None or len(path) == 0:
 		raise Exception(f"deep_set: dictionary {dictionary} or path {path} invalid/unset")
 
@@ -73,7 +121,16 @@ def deep_set(dictionary, path, value, create_path = False):
 			else:
 				ref[pathsplit[i]] = {}
 
-def deep_get(dictionary, path, default = None):
+def deep_get(dictionary, path: DictPath, default = None):
+	"""
+	Given a dictionary and a path into that dictionary, get the value
+
+		Parameters:
+			dictionary (dict): The dict to get the value from
+			path (DictPath): A dict path
+			default (any): The default value to return if the dictionary, path is None, or result is None
+	"""
+
 	if dictionary is None:
 		return default
 	if path is None or len(path) == 0:
@@ -83,7 +140,7 @@ def deep_get(dictionary, path, default = None):
 		result = default
 	return result
 
-def deep_get_recursive(dictionary, path_fragments, result = None):
+def __deep_get_recursive(dictionary, path_fragments, result = None):
 	if result is None:
 		result = []
 
@@ -95,16 +152,16 @@ def deep_get_recursive(dictionary, path_fragments, result = None):
 			return tmp
 
 		if isinstance(tmp, dict):
-			result = deep_get_recursive(tmp, path_fragments[i + 1:len(path_fragments)], result)
+			result = __deep_get_recursive(tmp, path_fragments[i + 1:len(path_fragments)], result)
 		elif isinstance(tmp, list):
 			for tmp2 in tmp:
-				result = deep_get_recursive(tmp2, path_fragments[i + 1:len(path_fragments)], result)
+				result = __deep_get_recursive(tmp2, path_fragments[i + 1:len(path_fragments)], result)
 
 	return result
 
-def deep_get_list(dictionary, paths, default = None, fallback_on_empty = False):
+def deep_get_list(dictionary, paths, default = None, fallback_on_empty: bool = False):
 	for path in paths:
-		result = deep_get_recursive(dictionary, path.split("#"))
+		result = __deep_get_recursive(dictionary, DictPath(path.split("#")))
 
 		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True):
 			break
@@ -112,7 +169,17 @@ def deep_get_list(dictionary, paths, default = None, fallback_on_empty = False):
 		result = default
 	return result
 
-def deep_get_with_fallback(obj, paths, default = None, fallback_on_empty = False):
+def deep_get_with_fallback(obj, paths, default = None, fallback_on_empty: bool = False):
+	"""
+	Given a dictionary and a list of paths into that dictionary, get the value from the first path that has a value
+
+		Parameters:
+			dictionary (dict): The dict to get the value from
+			paths (list[DictPath]): A list of dict paths
+			default (any): The default value to return if the dictionary, path is None, or result is None
+			fallback_on_empty (bool): Should "" be treated as None?
+	"""
+
 	if paths is None:
 		return default
 
@@ -157,13 +224,27 @@ def read_iktconfig():
 	return iktconfig
 
 # Helper functions
-def versiontuple(ver):
+def versiontuple(ver: str):
 	filled = []
 	for point in ver.split("."):
 		filled.append(point.zfill(8))
 	return tuple(filled)
 
 def join_tuple_list(items, _tuple = "", item_prefix = None, item_suffix = None, separator = None):
+	"""
+	Given a list of strings or tuples, returns a list of tuples suitable to be used a themearray;
+	tuples will be added as is, strings will be paired up with _tuple.
+
+		Parameters:
+			items (list[str]): The list of strings to format
+			_tuple (str|(str, str)): Either a string or a tuple
+			item_prefix (tuple(str, str)|tuple(str, tuple(str, str))): A prefix to apply before each item
+			item_suffix (tuple(str, str)|tuple(str, tuple(str, str))): A suffix to apply after each item
+			separator (tuple(str, str)|tuple(str, tuple(str, str))): A separator to apply between each item
+		Returns:
+			(themearray): A list of themearray fragments with all items joined together
+	"""
+
 	_list = []
 	first = True
 
@@ -181,7 +262,7 @@ def join_tuple_list(items, _tuple = "", item_prefix = None, item_suffix = None, 
 		first = False
 	return _list
 
-def age_to_seconds(age):
+def age_to_seconds(age: str) -> int:
 	seconds = 0
 
 	# Safe
@@ -200,7 +281,7 @@ def age_to_seconds(age):
 
 	return seconds
 
-def seconds_to_age(seconds, negative_is_skew = False):
+def seconds_to_age(seconds: str, negative_is_skew: bool = False) -> str:
 	age = ""
 	fields = 0
 
@@ -243,7 +324,7 @@ def seconds_to_age(seconds, negative_is_skew = False):
 
 	return f"{sign}{age}"
 
-def get_since(timestamp):
+def get_since(timestamp) -> int:
 	if timestamp is None:
 		since = 0
 	elif timestamp == -1 or timestamp == none_timestamp():
@@ -258,7 +339,7 @@ def get_since(timestamp):
 	return since
 
 # Will take datetime and convert it to a timestamp
-def datetime_to_timestamp(timestamp):
+def datetime_to_timestamp(timestamp) -> str:
 	if timestamp is None or timestamp == none_timestamp():
 		string = ""
 	elif timestamp == datetime.fromtimestamp(0).astimezone():
@@ -267,7 +348,7 @@ def datetime_to_timestamp(timestamp):
 		string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 	return string
 
-def reformat_timestamp(timestamp):
+def reformat_timestamp(timestamp: str) -> str:
 	"""
 	Takes a timestamp in various formats and formats it the proper(tm) way; ISO-8601
 
@@ -329,7 +410,7 @@ def timestamp_to_datetime(timestamp, default = none_timestamp()):
 	raise ValueError(f"Could not parse timestamp: {rtimestamp}")
 
 # This executes a command without capturing the output
-def execute_command(args, env = None, comparison = 0):
+def execute_command(args, env = None, comparison: int = 0) -> bool:
 	if env is None:
 		retval = subprocess.run(args, check = False)
 	else:
@@ -346,7 +427,7 @@ def make_set_expression_list(expression_list):
 
 	if expression_list is not None:
 		for expression in expression_list:
-			operator = deep_get(expression, "operator", "")
+			operator = deep_get(expression, DictPath("operator"), "")
 			if operator == "In":
 				operator = "In "
 			elif operator == "NotIn":
@@ -359,9 +440,9 @@ def make_set_expression_list(expression_list):
 				operator = "> "
 			elif operator == "Lt":
 				operator = "< "
-			key = deep_get_with_fallback(expression, ["key", "scopeName"], "")
+			key = deep_get_with_fallback(expression, [DictPath("key"), DictPath("scopeName")], "")
 
-			tmp = deep_get(expression, "values", [])
+			tmp = deep_get(expression, DictPath("values"), [])
 			values = ",".join(tmp)
 			if len(values) > 0 and operator not in ("Gt", "Lt"):
 				values = f"[{values}]"
@@ -369,7 +450,7 @@ def make_set_expression_list(expression_list):
 			expressions.append((key, operator, values))
 	return expressions
 
-def make_set_expression(expression_list):
+def make_set_expression(expression_list) -> str:
 	vlist = make_set_expression_list(expression_list)
 	xlist = []
 	for key, operator, values in vlist:
@@ -377,13 +458,22 @@ def make_set_expression(expression_list):
 	return ", ".join(xlist)
 
 def get_package_versions(hostname):
+	"""
+	Returns a list of predefined packages for a host
+
+		Parameters:
+			hostname (str): The host to get package versions for
+		Returns:
+			package_versions (list[tuple(package (str), version (str))]): The list of package versions
+	"""
+
 	import ansible_helper # pylint: disable=unused-import,import-outside-toplevel
 	from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path # pylint: disable=import-outside-toplevel
 
 	if not os.path.isdir(ANSIBLE_PLAYBOOK_DIR):
 		return []
 
-	get_versions_path = get_playbook_path("get_versions.yaml")
+	get_versions_path = get_playbook_path(FilePath("get_versions.yaml"))
 	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [hostname])
 
 	if len(ansible_results) == 0:
@@ -391,9 +481,9 @@ def get_package_versions(hostname):
 
 	tmp = []
 
-	for result in deep_get(ansible_results, hostname, []):
-		if deep_get(result, "task", "") == "package versions":
-			tmp = deep_get(result, "msg_lines", [])
+	for result in deep_get(ansible_results, DictPath(hostname), []):
+		if deep_get(result, DictPath("task"), "") == "package versions":
+			tmp = deep_get(result, DictPath("msg_lines"), [])
 			break
 
 	if len(tmp) == 0:
@@ -414,14 +504,14 @@ def get_package_versions(hostname):
 
 	return package_versions
 
-def __extract_version(line):
+def __extract_version(line: str) -> str:
 	"""
 	Extract a version from an apt-cache madison entry
 
 		Parameters:
 			line (str): A package info line from apt-cache madison
 		Returns:
-			A version number
+			(str): A version number
 	"""
 
 	tmp = line.split("|")
@@ -441,7 +531,8 @@ def check_deb_versions(deb_packages):
 
 	deb_versions = []
 
-	args = ["/usr/bin/apt-cache", "policy"] + deb_packages
+	apt_cache_path = iktio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	args = [apt_cache_path, "policy"] + deb_packages
 	response = execute_command_with_response(args)
 	split_response = response.splitlines()
 	# Safe
@@ -472,7 +563,8 @@ def check_deb_versions(deb_packages):
 			else:
 				candidate_version = ""
 			# We have the current and candidate version now; get all the other versions of the same package
-			_args = ["/usr/bin/apt-cache", "madison", package]
+			apt_cache_path = iktio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+			_args = [apt_cache_path, "madison", package]
 			_response = execute_command_with_response(_args)
 			_split_response = _response.splitlines()
 			all_versions = natsorted([__extract_version(line) for line in _split_response], reverse = True)

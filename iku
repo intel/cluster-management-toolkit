@@ -47,7 +47,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import FilePath, Retval, SecurityPolicy, StatusGroup
+from ikttypes import DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
 from iktpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
@@ -141,12 +141,12 @@ def gather_cluster_info():
 	if len(control_plane_k8s_version) == 0:
 		sys.exit(f"Failed to get kubeadm version from control plane “{control_plane_name}“; aborting.")
 
-	http_proxy = deep_get(iktconfig, "Network#http_proxy", None)
-	https_proxy = deep_get(iktconfig, "Network#https_proxy", None)
-	no_proxy = deep_get(iktconfig, "Network#no_proxy", None)
-	insecure_registries = deep_get(iktconfig, "Docker#insecure_registries", [])
-	registry_mirrors = deep_get(iktconfig, "Containerd#registry_mirrors", [])
-	packages = deep_get(iktconfig, "Packages", {})
+	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), None)
+	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), None)
+	no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), None)
+	insecure_registries = deep_get(iktconfig, DictPath("Docker#insecure_registries"), [])
+	registry_mirrors = deep_get(iktconfig, DictPath("Containerd#registry_mirrors"), [])
+	packages = deep_get(iktconfig, DictPath("Packages"), {})
 
 	values = {
 		"control_plane_ip": control_plane_ip,
@@ -6177,8 +6177,8 @@ def check_cni_updates(cni: str, current_version: str) -> str:
 		if r1.status == 200:
 			try:
 				weavestatus = json.loads(r1.read())
-				if deep_get(weavestatus, "VersionCheck#Enabled", False) == True and deep_get(weavestatus, "VersionCheck#Success", False) == True:
-					candidate_version = deep_get(weavestatus, "VersionCheck#NewVersion", None)
+				if deep_get(weavestatus, DictPath("VersionCheck#Enabled"), False) == True and deep_get(weavestatus, DictPath("VersionCheck#Success"), False) == True:
+					candidate_version = deep_get(weavestatus, DictPath("VersionCheck#NewVersion"), None)
 			except DecodeException:
 				# We got a response, but the data is malformed
 				pass
@@ -6257,9 +6257,9 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 	return retval
 
 def __update_cni(uip, **kwargs):
-	cni = deep_get(kwargs, "cni")
-	cni_version = deep_get(kwargs, "cni_version")
-	candidate_version = deep_get(kwargs, "candidate_version")
+	cni = deep_get(kwargs, DictPath("cni"))
+	cni_version = deep_get(kwargs, DictPath("cni_version"))
+	candidate_version = deep_get(kwargs, DictPath("candidate_version"))
 
 	# If we don't recognise the CNI or we don't support updates we cannot update it
 	if update_cni(uip.stdscr, cni, cni_version, candidate_version, dry_run = True) == False:
@@ -6296,7 +6296,7 @@ def cniloop(stdscr, view):
 
 	windowheader = view
 	activatedfun = views[view]["activatedfun"]
-	on_activation = deep_get(views[view], "on_activation", {})
+	on_activation = deep_get(views[view], DictPath("on_activation"), {})
 	update_delay = views[view].get("update_delay", -1)
 
 	uip.init_window(None, windowheader = windowheader, update_delay = update_delay, sortcolumn = None, activatedfun = activatedfun, on_activation = on_activation)
@@ -6427,23 +6427,23 @@ def decode_and_view_data(stdscr, **kwargs):
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
 def decode_and_view_file_templates(stdscr, **kwargs):
-	selection = deep_get(kwargs, "selection", {})
+	selection = deep_get(kwargs, DictPath("selection"), {})
 	if len(selection) == 0:
 		return None
-	obj = deep_get(kwargs, "obj", {})
+	obj = deep_get(kwargs, DictPath("obj"), {})
 	if len(obj) == 0:
 		return None
-	name_path = deep_get(kwargs, "name_path")
+	name_path = deep_get(kwargs, DictPath("name_path"))
 	name = selection[1][name_path][0]
-	file_path = deep_get(kwargs, "file_path")
-	files = deep_get(obj, file_path)
+	file_path = deep_get(kwargs, DictPath("file_path"))
+	files = deep_get(obj, DictPath(file_path))
 	for file in files:
-		if deep_get(file, "path", "") == name:
+		if deep_get(file, DictPath("path"), "") == name:
 			break
 	else:
 		return None
-	encoding = deep_get(file, "encoding", "")
-	content = deep_get(file, "content")
+	encoding = deep_get(file, DictPath("encoding"), "")
+	content = deep_get(file, DictPath("content"))
 	title = name
 	if encoding == "":
 		formatter = formatters.map_dataformat(title)
@@ -6465,7 +6465,7 @@ def export_data(stdscr, **kwargs):
 		return
 
 	value = kwargs["selected"].value
-	filename = deep_get(kwargs, "result")
+	filename = deep_get(kwargs, DictPath("result"))
 	vtype, value = decode_value(value)
 
 	if vtype.startswith("string"):
@@ -6497,7 +6497,7 @@ def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
 		if "listpad" in viewref:
 			helptext += helptexts.togglewidth
 			helptext += helptexts.infoviewheader_part2
-			if deep_get(viewref, "activatedfun") is not None:
+			if deep_get(viewref, DictPath("activatedfun")) is not None:
 				helptext.append(("[Enter]", "Open info page for selected resource"))
 
 		if len(additional_helptexts) > 0:
@@ -6506,14 +6506,14 @@ def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
 
 		if len(shortcuts) > 0:
 			for shortcut in shortcuts:
-				tmp = deep_get(shortcuts[shortcut], "helptext")
+				tmp = deep_get(shortcuts[shortcut], DictPath("helptext"))
 				if tmp is not None:
 					helptext.append(tmp)
 
 		if "listpad" in viewref:
 			helptext += helptexts.spacer
 
-			if deep_get(viewref, "reversible", True) == False:
+			if deep_get(viewref, DictPath("reversible"), True) == False:
 				helptext += helptexts.irreversiblelistmovement
 			else:
 				helptext += helptexts.listmovement
@@ -6531,19 +6531,19 @@ def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
 			helptext += helptexts.openresource
 
 		if "shortcuts" in viewref:
-			for shortcut in deep_get(viewref, "shortcuts"):
-				read_only = deep_get(viewref, f"shortcuts#{shortcut}#read_only", False)
+			for shortcut in deep_get(viewref, DictPath("shortcuts")):
+				read_only = deep_get(viewref, DictPath(f"shortcuts#{shortcut}#read_only"), False)
 				if read_only_mode == True and read_only == False:
 					continue
-				tmp = deep_get(viewref, f"shortcuts#{shortcut}#helptext")
+				tmp = deep_get(viewref, DictPath(f"shortcuts#{shortcut}#helptext"))
 				if tmp is not None:
 					helptext.append(tmp)
 			helptext += helptexts.spacer
 
-		if deep_get(viewref, "is_taggable", True) == True:
+		if deep_get(viewref, DictPath("is_taggable"), True) == True:
 			helptext += helptexts.tagactions
 			helptext += helptexts.spacer
-			if deep_get(viewref, "labels", True) == True:
+			if deep_get(viewref, DictPath("labels"), True) == True:
 				helptext += helptexts.selectoractions
 				helptext += helptexts.spacer
 
@@ -6563,24 +6563,24 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		objparams = None
 
 	# If we're using the logpad this can be used to format the data
-	formatter_path = deep_get(kwargs, "formatter_path")
+	formatter_path = deep_get(kwargs, DictPath("formatter_path"))
 	# formatter_path has precedence over formatter, to allow ConfigMaps to work properly
-	formatter = deep_get(kwargs, "formatter")
+	formatter = deep_get(kwargs, DictPath("formatter"))
 	if formatter_path is not None:
-		formatter = deep_get(obj, formatter_path)
+		formatter = deep_get(obj, DictPath(formatter_path))
 	elif formatter is not None:
 		if type(formatter) == str:
-			_formatter = deep_get(formatter_allowlist, formatter)
+			_formatter = deep_get(formatter_allowlist, DictPath(formatter))
 			if _formatter is None:
 				raise ValueError(f"{formatter} is not in formatter_allowlist")
 			formatter = _formatter
-	obj_path = deep_get(kwargs, "obj_path")
+	obj_path = deep_get(kwargs, DictPath("obj_path"))
 	title = None
 	if obj_path is not None:
-		title_path = deep_get(kwargs, "title_path")
+		title_path = deep_get(kwargs, DictPath("title_path"))
 		if title_path is not None:
-			title = deep_get(obj, title_path)
-		obj = deep_get(obj, obj_path)
+			title = deep_get(obj, DictPath(title_path))
+		obj = deep_get(obj, DictPath(obj_path))
 
 	uip = UIProps(stdscr)
 
@@ -6591,61 +6591,61 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 	searchmatch = []
 
-	objgetter = deep_get(viewref, "objgetter")
+	objgetter = deep_get(viewref, DictPath("objgetter"))
 	if objgetter is not None:
 		obj = objgetter(obj)
 		if obj is None or len(obj) == 0:
 			return Retval.NOMATCH
 
 	# XXX: For now we don't support custom fields for the lists on the info pages
-	field_indexes = deep_get(viewref, "field_indexes", {})
+	field_indexes = deep_get(viewref, DictPath("field_indexes"), {})
 	field_index = "Normal"
 
-	field_denylist = deep_get(viewref, "field_denylist", [])
-	field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, "fields"), denylist = field_denylist)
+	field_denylist = deep_get(viewref, DictPath("field_denylist"), [])
+	field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, DictPath("fields")), denylist = field_denylist)
 
 	# If no window header has been specified that overrides the default, just use the view name with " Info" tacked on at the end
 	# XXX: The fallback should be removed once we use view files for all info views, since the title is mandatory there
-	windowheader = deep_get(viewref, "windowheader", f"{view[0]} Info")
+	windowheader = deep_get(viewref, DictPath("windowheader"), f"{view[0]} Info")
 	if title is not None:
 		windowheader = title
 	elif "title" in kwargs:
-		windowheader = deep_get(kwargs, "title")
+		windowheader = deep_get(kwargs, DictPath("title"))
 	elif "title_path" in kwargs:
-		windowheader = deep_get(obj, title_path, windowheader)
+		windowheader = deep_get(obj, DictPath(title_path), windowheader)
 
-	sortorder_reverse = deep_get(viewref, "sortorder_reverse", False)
-	reversible = deep_get(viewref, "reversible", True)
-	activatedfun = deep_get(viewref, "activatedfun")
-	on_activation = deep_get(viewref, "listpad#on_activation", {})
-	labels = deep_get(viewref, "labels", "metadata#labels")
-	annotations = deep_get(viewref, "annotations", "metadata#annotations")
-	extraref = deep_get(viewref, "extraref")
-	data = deep_get(viewref, "data", None)
-	name_path = deep_get(viewref, "name_path", "metadata#name")
-	namespace_path = deep_get(viewref, "namespace_path", "metadata#namespace")
-	creation_timestamp_path = deep_get(viewref, "creation_timestamp_path", "metadata#creationTimestamp")
+	sortorder_reverse = deep_get(viewref, DictPath("sortorder_reverse"), False)
+	reversible = deep_get(viewref, DictPath("reversible"), True)
+	activatedfun = deep_get(viewref, DictPath("activatedfun"))
+	on_activation = deep_get(viewref, DictPath("listpad#on_activation"), {})
+	labels = deep_get(viewref, "labels", DictPath("metadata#labels"))
+	annotations = deep_get(viewref, DictPath("annotations"), "metadata#annotations")
+	extraref = deep_get(viewref, DictPath("extraref"))
+	data = deep_get(viewref, DictPath("data"), None)
+	name_path = deep_get(viewref, DictPath("name_path"), "metadata#name")
+	namespace_path = deep_get(viewref, DictPath("namespace_path"), "metadata#namespace")
+	creation_timestamp_path = deep_get(viewref, DictPath("creation_timestamp_path"), "metadata#creationTimestamp")
 	if data is not None:
 		data = obj
-	viewoverride = deep_get(viewref, "viewoverride", view)
+	viewoverride = deep_get(viewref, DictPath("viewoverride"), view)
 	infopadheight = 0
 	if "infopad" in viewref:
 		# Number of fields added conditionally
-		if name_path is not None and len(name_path) > 0 and deep_get(obj, name_path) is not None:
+		if name_path is not None and len(name_path) > 0 and deep_get(obj, DictPath(name_path)) is not None:
 			infopadheight += 1
-		if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, namespace_path) is not None:
+		if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, DictPath(namespace_path)) is not None:
 			infopadheight += 1
-		if creation_timestamp_path is not None and len(creation_timestamp_path) > 0 and deep_get(obj, creation_timestamp_path) is not None:
+		if creation_timestamp_path is not None and len(creation_timestamp_path) > 0 and deep_get(obj, DictPath(creation_timestamp_path)) is not None:
 			infopadheight += 1
 		# Number of custom fields
-		infopadheight += len(deep_get(viewref, "infopad", {}))
+		infopadheight += len(deep_get(viewref, DictPath("infopad"), {}))
 		# If we *only* have an infopad, then it should cover at least the entire screen; if not it should be as big as needed;
 		# it doesn't really matter if we allocate an infopad larger than the screen, but this should be correct.
 		if "listpad" not in viewref and "logpad" not in viewref:
 			maxyx = stdscr.getmaxyx()
 			infopadheight = max(infopadheight, maxyx[0] - 3)
 
-	shortcuts = copy.deepcopy(deep_get(viewref, "shortcuts", {}))
+	shortcuts = copy.deepcopy(deep_get(viewref, DictPath("shortcuts"), {}))
 
 	# Shortcuts
 	# Always include the shortcut for namespaces, unless overriden
@@ -6653,7 +6653,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	#
 	# An override is necessary if metadata#namespace isn't the correct path
 	# or some other changes are necessary
-	if deep_get(shortcuts, "Namespace") is None and deep_get(obj, namespace_path) is not None:
+	if deep_get(shortcuts, DictPath("Namespace")) is None and deep_get(obj, DictPath(namespace_path)) is not None:
 		shortcuts["Namespace"] = {
 			"shortcut": ord("N"),
 			"helptext": ("[Shift] + N", "Open info page for Namespace"),
@@ -6664,7 +6664,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 	# Always include the shortcut for security contexts,
 	# unless the path returns None
-	if "securityContext" in deep_get(obj, "spec", {}) or "securityContext" in deep_get(obj, "spec#template#spec", {}):
+	if "securityContext" in deep_get(obj, DictPath("spec"), {}) or "securityContext" in deep_get(obj, DictPath("spec#template#spec"), {}):
 		shortcuts["Show Security Context"] = {
 			"shortcut": ord("x"),
 			"helptext": ("X", "Show security context information"),
@@ -6677,7 +6677,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 	# Always include the shortcut for conditions,
 	# unless the path returns None
-	if "conditions" in deep_get(obj, "status", {}):
+	if "conditions" in deep_get(obj, DictPath("status"), {}):
 		shortcuts["Show Resource Conditions"] = {
 			"shortcut": ord("c"),
 			"helptext": ("C", "Show resource conditions"),
@@ -6688,7 +6688,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		}
 
 	# Always include the shortcut for events unless overriden
-	if deep_get(viewref, "shortcuts#Show Events") is None:
+	if deep_get(viewref, DictPath("shortcuts#Show Events")) is None:
 		shortcuts["Show Events"] = {
 			"shortcut": ord("e"),
 			"helptext": ("E", "Show events"),
@@ -6707,7 +6707,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		}
 
 	# Always include the shortcut for YAML dump, unless overridden
-	if deep_get(viewref, "shortcuts#YAML") is None:
+	if deep_get(viewref, DictPath("shortcuts#YAML")) is None:
 		shortcuts["View YAML dump of resource"] = {
 			"shortcut": ord("y"),
 			"helptext": ("Y", "View YAML dump of resource"),
@@ -6720,7 +6720,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		}
 
 	# Always include the shortcut for last applied configuration, unless overridden
-	if deep_get(viewref, "shortcuts#Last Applied Configuration") is None:
+	if deep_get(viewref, DictPath("shortcuts#Last Applied Configuration")) is None:
 		shortcuts["Last Applied Configuration"] = {
 			"shortcut": ord("L"),
 			"helptext": ("[Shift] + L", "Show last applied configuration"),
@@ -6732,7 +6732,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			}
 		}
 
-	if deep_get(iktconfig, "Internal#sanity_check_views", False) == True:
+	if deep_get(iktconfig, DictPath("Internal#sanity_check_views"), False) == True:
 		sanity = True
 		_shortcuts = {}
 		for shortcut in shortcuts:
@@ -6749,9 +6749,9 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 	# Conditional helptexts
 	additional_helptexts = []
-	if deep_get(obj, labels) is not None:
+	if deep_get(obj, DictPath(labels)) is not None:
 		additional_helptexts += helptexts.labels
-	if deep_get(obj, annotations) is not None:
+	if deep_get(obj, DictPath(annotations)) is not None:
 		additional_helptexts += helptexts.annotations
 
 	helptext = generate_helptext(view, "infoview", additional_helptexts, shortcuts = shortcuts)
@@ -6760,7 +6760,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 	# For generic information
 	if infopadheight > 0:
-		infopad = uip.init_infopad(height = infopadheight, width = -1, ypos = 1, xpos = 1, labels = deep_get(obj, labels), annotations = deep_get(obj, annotations))
+		infopad = uip.init_infopad(height = infopadheight, width = -1, ypos = 1, xpos = 1, labels = deep_get(obj, DictPath(labels)), annotations = deep_get(obj, DictPath(annotations)))
 	else:
 		infopad = None
 
@@ -6770,7 +6770,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	# For lists
 	headerpad = None
 	listpad = None
-	if len(deep_get(viewref, "listpad", {})) > 0:
+	if len(deep_get(viewref, DictPath("listpad"), {})) > 0:
 		if infopadheight == 0:
 			headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = 1, xpos = 1)
 		else:
@@ -6778,7 +6778,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 	# For log pads; we cannot have both a logpad and a listpad simultaneously;
 	# at least not with the current implementation
-	logpad = deep_get(viewref, "logpad")
+	logpad = deep_get(viewref, DictPath("logpad"))
 	if logpad is not None:
 		if listpad is not None:
 			raise Exception("We cannot have listpad and logpad simultaneously")
@@ -6809,7 +6809,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 			# Refresh obj whenever we reload, unless this is a special view
 			if not view[0].startswith("__"):
-				obj = kh.get_ref_by_kind_name_namespace(view, deep_get(obj, "metadata#name"), deep_get(obj, "metadata#namespace"))
+				obj = kh.get_ref_by_kind_name_namespace(view, deep_get(obj, DictPath("metadata#name")), deep_get(obj, DictPath("metadata#namespace")))
 
 				if obj is None:
 					title = "Error!"
@@ -6823,16 +6823,16 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			uip.update_window()
 
 			if listpad is not None:
-				listgetter = deep_get(viewref, "listpad#listgetter")
-				listgetter_args = deep_get(viewref, "listpad#listgetter_args", {})
-				_kind = deep_get(listgetter_args, "_kind")
-				_kind_path = deep_get(listgetter_args, "_kind_path")
-				_api_family = deep_get(listgetter_args, "_api_family")
-				_api_family_path = deep_get(listgetter_args, "_api_family_path")
-				_label_selector_path = deep_get(listgetter_args, "_label_selector_path")
-				_label_selector_key_values = deep_get(listgetter_args, "_label_selector_key_values")
+				listgetter = deep_get(viewref, DictPath("listpad#listgetter"))
+				listgetter_args = deep_get(viewref, DictPath("listpad#listgetter_args"), {})
+				_kind = deep_get(listgetter_args, DictPath("_kind"))
+				_kind_path = deep_get(listgetter_args, DictPath("_kind_path"))
+				_api_family = deep_get(listgetter_args, DictPath("_api_family"))
+				_api_family_path = deep_get(listgetter_args, DictPath("_api_family_path"))
+				_label_selector_path = deep_get(listgetter_args, DictPath("_label_selector_path"))
+				_label_selector_key_values = deep_get(listgetter_args, DictPath("_label_selector_key_values"))
 				if _label_selector_path is not None:
-					listgetter_args["label_selector"] = make_selector(deep_get(obj, _label_selector_path))
+					listgetter_args["label_selector"] = make_selector(deep_get(obj, DictPath(_label_selector_path)))
 				elif _label_selector_key_values is not None:
 					label_selectors = {}
 					for label_key, label_value in _label_selector_key_values:
@@ -6841,7 +6841,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						elif type(label_value) == list:
 							label_selectors[label_key] = deep_get_with_fallback(obj, label_value)
 					listgetter_args["label_selector"] = make_selector(label_selectors)
-				_field_selector = deep_get(listgetter_args, "_field_selector", {})
+				_field_selector = deep_get(listgetter_args, DictPath("_field_selector"), {})
 				if len(_field_selector) > 0:
 					field_selectors = {}
 					for field_key, field_value in _field_selector.items():
@@ -6851,15 +6851,15 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							field_selectors[field_key] = field_value
 					listgetter_args["field_selector"] = make_selector(field_selectors)
 				if _kind is None:
-					_kind = deep_get(obj, _kind_path)
+					_kind = deep_get(obj, DictPath(_kind_path))
 				if _api_family is None:
-					_api_family = deep_get(obj, _api_family_path, "")
+					_api_family = deep_get(obj, DictPath(_api_family_path), "")
 				if _kind is not None:
 					_kind = kh.guess_kind((_kind, _api_family))
-				_namespace = deep_get(listgetter_args, "namespace")
-				_namespace_path = deep_get(listgetter_args, "_namespace_path", "")
+				_namespace = deep_get(listgetter_args, DictPath("namespace"))
+				_namespace_path = deep_get(listgetter_args, DictPath("_namespace_path"), "")
 				if _namespace is None:
-					_namespace = deep_get(obj, _namespace_path, "")
+					_namespace = deep_get(obj, DictPath(_namespace_path), "")
 				listgetter_args["kind"] = _kind
 				listgetter_args["namespace"] = _namespace
 				if "_pass_obj" in listgetter_args:
@@ -6871,9 +6871,9 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				else:
 					vlist, status = listgetter(obj, **listgetter_args)
 
-				infogetter = deep_get(viewref, "listpad#infogetter")
-				infogetter_filters = deep_get(viewref, "listpad#infogetter_filters", None)
-				infogetter_args = deep_get(viewref, "listpad#infogetter_args", {})
+				infogetter = deep_get(viewref, DictPath("listpad#infogetter"))
+				infogetter_filters = deep_get(viewref, DictPath("listpad#infogetter_filters"), None)
+				infogetter_args = deep_get(viewref, DictPath("listpad#infogetter_args"), {})
 
 				filters = None
 				if infogetter_filters is not None:
@@ -6881,7 +6881,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if infogetter_filters is not None:
 						for key, value in infogetter_filters:
 							filters.append((ast.literal_eval(key), ast.literal_eval(value)))
-				fields = deep_get(viewref, "fields", [])
+				fields = deep_get(viewref, DictPath("fields"), [])
 
 				infogetter_args.pop("_vlist", None)
 				infogetter_args["_vlist"] = vlist
@@ -6902,7 +6902,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				infogetter_args["_obj"] = obj
 
 				extra_data = {}
-				for key, value in deep_get(infogetter_args, "_extra_data", {}).items():
+				for key, value in deep_get(infogetter_args, DictPath("_extra_data"), {}).items():
 					if type(value) == list:
 						tmp = deep_get_with_fallback(obj, value)
 						extra_data[key] = tmp
@@ -6920,8 +6920,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				else:
 					formatted_obj = obj
 
-				infogetter = deep_get(viewref, "logpad#infogetter")
-				infogetter_args = deep_get(viewref, "logpad#infogetter_args", {})
+				infogetter = deep_get(viewref, DictPath("logpad#infogetter"))
+				infogetter_args = deep_get(viewref, DictPath("logpad#infogetter_args"), {})
 				if infogetter is not None:
 					messages = infogetter(formatted_obj, **infogetter_args)
 					uip.update_log_info(None, None, None, messages)
@@ -6932,23 +6932,23 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				if name_path is not None and len(name_path) > 0:
 					fieldarray = [
 						("Name:", ("main", "infoheader")),
-						(f" {deep_get(obj, name_path)}", ("types", "generic"))
+						(f" {deep_get(obj, DictPath(name_path))}", ("types", "generic"))
 					]
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 					y += 1
 
-				if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, namespace_path) is not None:
+				if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, DictPath(namespace_path)) is not None:
 					fieldarray = [
 						("N", ("main", "infoheader_shortcut")), ("amespace:", ("main", "infoheader")),
-						(f" {deep_get(obj, namespace_path)}", ("types", "namespace"))
+						(f" {deep_get(obj, DictPath(namespace_path))}", ("types", "namespace"))
 					]
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 					y += 1
 
-				for key, value in deep_get(viewref, "infopad", {}).items():
+				for key, value in deep_get(viewref, DictPath("infopad"), {}).items():
 					# If there's a header field, this is from a view file; otherwise it's an old-style field
 					fieldarray = []
-					header = deep_get(value, "header")
+					header = deep_get(value, DictPath("header"))
 
 					if header is not None:
 						fieldarray += header
@@ -6957,10 +6957,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							# Use generic_infogetter for this
 							data = get_obj(obj = obj, field_dict = {key: value}, field_names = [key], field_index = "Normal", view = "", filters = {})
 							_formatter = {key: get_formatter(value)}
-							_generator = deep_get(_formatter, f"{key}#generator")
+							_generator = deep_get(_formatter, DictPath(f"{key}#generator"))
 							if _generator is not None:
-								ralign = deep_get(_formatter, f"{key}#ralign")
-								formatting = deep_get(_formatter, f"{key}#formatting")
+								ralign = deep_get(_formatter, DictPath(f"{key}#ralign"))
+								formatting = deep_get(_formatter, DictPath(f"{key}#formatting"))
 								fieldarray += [(" ", ("types", "generic"))]
 								fieldarray += _generator(data, key, fieldlen = 0, pad = 0, ralign = ralign, selected = False, **formatting)
 						uip.addthemearray(infopad, fieldarray, y = y, x = 0)
@@ -6968,8 +6968,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						y += 1
 						continue
 
-				if creation_timestamp_path is not None and len(creation_timestamp_path) > 0 and deep_get(obj, creation_timestamp_path) is not None:
-					timestamp = deep_get(obj, creation_timestamp_path)
+				if creation_timestamp_path is not None and len(creation_timestamp_path) > 0 and deep_get(obj, DictPath(creation_timestamp_path)) is not None:
+					timestamp = deep_get(obj, DictPath(creation_timestamp_path))
 
 					if timestamp is None:
 						field = [("strings", "unset")]
@@ -7045,7 +7045,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			if len(uip.info) > 0:
 				match_count = 0
 
-				obj_path = deep_get(viewref, "listpad#on_activation#obj_path")
+				obj_path = deep_get(viewref, DictPath("listpad#on_activation#obj_path"))
 				for item in uip.info:
 					# If we're dealing with a config map we're interested in non-binary types
 					# If we're dealing with a pod we're interested in containers
@@ -7054,9 +7054,9 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						ikind = item.type
 					elif view == ("ConfigMap", "") and item.type in (rtype[4] for rtype in cmdata_format):
 						name = item.data
-						ikind = deep_get(viewref, "listpad#on_activation#kind", "")
+						ikind = deep_get(viewref, DictPath("listpad#on_activation#kind"), "")
 						if type(ikind) == str:
-							iapi_family = deep_get(viewref, "listpad#on_activation#api_family", "")
+							iapi_family = deep_get(viewref, DictPath("listpad#on_activation#api_family"), "")
 							ikind = kh.guess_kind((ikind, iapi_family))
 					else:
 						continue
@@ -7089,17 +7089,17 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 				if match is not None and match_count == 1:
 					on_activation_args = {}
-					formatter_path = deep_get(viewref, "listpad#on_activation#formatter_path")
-					if deep_get(viewref, "listpad#on_activation#formatter", "") == "identify":
+					formatter_path = deep_get(viewref, DictPath("listpad#on_activation#formatter_path"))
+					if deep_get(viewref, DictPath("listpad#on_activation#formatter"), "") == "identify":
 						formatter = identify_formatter(None, kind = view, obj = obj, path = match)
 						on_activation_args["formatter"] = formatter
 					else:
-						formatter = deep_get(viewref, "listpad#on_activation#formatter")
-						formatter_path = deep_get(viewref, "listpad#on_activation#formatter_path")
+						formatter = deep_get(viewref, DictPath("listpad#on_activation#formatter"))
+						formatter_path = deep_get(viewref, DictPath("listpad#on_activation#formatter_path"))
 						on_activation_args["formatter"] = formatter
 						on_activation_args["formatter_path"] = formatter_path
 					if view == ("ConfigMap", ""):
-						retval = uip.activatedfun(uip.stdscr, deep_get(obj, f"data#{match}", ""), ikind, info = None, title = name, **on_activation_args)
+						retval = uip.activatedfun(uip.stdscr, deep_get(obj, DictPath(f"data#{match}"), ""), ikind, info = None, title = name, **on_activation_args)
 					else:
 						retval = uip.activatedfun(uip.stdscr, match, ikind, info = obj, **on_activation_args)
 					if retval == Retval.RETURNFULL:
@@ -7143,7 +7143,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 			# Toggle field width
 			denylist = []
-			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, "fields"), denylist = denylist)
+			field_dict, field_names, sortcolumn = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, DictPath("fields")), denylist = denylist)
 			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
 			uip.resize_listpad(height = -1, width = -1)
 			uip.refresh_all()
@@ -8365,12 +8365,12 @@ def do_command(stdscr, **kwargs) -> None:
 	security_policy = SecurityPolicy.ALLOWLIST_RELAXED
 	fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
 
-	_args = deep_get(kwargs, "command")
+	_args = deep_get(kwargs, DictPath("command"))
 
 	if len(_args) == 0:
 		return
 
-	obj = deep_get(kwargs, "obj", {})
+	obj = deep_get(kwargs, DictPath("obj"), {})
 
 	args = []
 	for arg in _args:
@@ -8378,7 +8378,7 @@ def do_command(stdscr, **kwargs) -> None:
 			args.append(arg)
 		elif type(arg) == list:
 			for path in arg:
-				tmp = deep_get(obj, path)
+				tmp = deep_get(obj, DictPath(path))
 				if type(tmp) == str:
 					args.append(tmp)
 				elif type(tmp) == list:
@@ -8386,9 +8386,9 @@ def do_command(stdscr, **kwargs) -> None:
 				else:
 					sys.exit("widget_args: command requested incorrect data type; only str and list are valid")
 
-	waitforkeypress = deep_get(kwargs, "waitforkeypress", False)
+	waitforkeypress = deep_get(kwargs, DictPath("waitforkeypress"), False)
 
-	msg = deep_get(kwargs, "msg", "")
+	msg = deep_get(kwargs, DictPath("msg"), "")
 
 	curses.endwin()
 	_retval = clear_screen()

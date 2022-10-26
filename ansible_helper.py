@@ -19,7 +19,7 @@ from iktpaths import HOMEDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from iktpaths import ANSIBLE_INVENTORY
 from iktprint import iktprint
-from ikttypes import FilePath
+from ikttypes import DictPath, FilePath
 
 ansible_results = {} # type: ignore
 
@@ -63,7 +63,7 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 	path = ""
 
 	# Check if there's a local playbook overriding this one
-	local_playbooks = deep_get(iktconfig, "Ansible#local_playbooks", [])
+	local_playbooks = deep_get(iktconfig, DictPath("Ansible#local_playbooks"), [])
 	for playbook_path in local_playbooks:
 		# Substitute {HOME}/ for {HOMEDIR}
 		if playbook_path.startswith("{HOME}/"):
@@ -285,13 +285,13 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False):
 		}
 	}
 
-	if deep_get(ansible_configuration, "ansible_user") is not None:
-		d["all"]["vars"]["ansible_user"] = deep_get(ansible_configuration, "ansible_user") # type: ignore
+	if deep_get(ansible_configuration, DictPath("ansible_user")) is not None:
+		d["all"]["vars"]["ansible_user"] = deep_get(ansible_configuration, DictPath("ansible_user")) # type: ignore
 
-	if deep_get(ansible_configuration, "ansible_password") is not None:
-		d["all"]["vars"]["ansible_ssh_pass"] = deep_get(ansible_configuration, "ansible_password") # type: ignore
+	if deep_get(ansible_configuration, DictPath("ansible_password")) is not None:
+		d["all"]["vars"]["ansible_ssh_pass"] = deep_get(ansible_configuration, DictPath("ansible_password")) # type: ignore
 
-	if deep_get(ansible_configuration, "disable_strict_host_key_checking") is not None:
+	if deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking")) is not None:
 		d["all"]["vars"]["ansible_ssh_common_args"] = "-o StrictHostKeyChecking=no" # type: ignore
 
 	yaml_str = yaml.safe_dump(d, default_flow_style = False).replace(r"''", '')
@@ -826,41 +826,41 @@ def ansible_results_extract(event):
 				result: A dict
 	"""
 
-	host = deep_get(event, "event_data#host", "")
+	host = deep_get(event, DictPath("event_data#host"), "")
 	if len(host) == 0:
 		return 0, {}
 
-	task = deep_get(event, "event_data#task", "")
+	task = deep_get(event, DictPath("event_data#task"), "")
 	if len(task) == 0:
 		return 0, {}
 
-	ansible_facts = deep_get(event, "event_data#res#ansible_facts", {})
+	ansible_facts = deep_get(event, DictPath("event_data#res#ansible_facts"), {})
 
-	skipped = deep_get(event, "event", "") == "runner_on_skipped"
-	unreachable = deep_get(event, "event_data#res#unreachable", False)
+	skipped = deep_get(event, DictPath("event"), "") == "runner_on_skipped"
+	unreachable = deep_get(event, DictPath("event_data#res#unreachable"), False)
 
 	if unreachable == True:
 		__retval = -1
-	elif skipped == True or deep_get(event, "event", "") == "runner_on_ok":
+	elif skipped == True or deep_get(event, DictPath("event"), "") == "runner_on_ok":
 		__retval = 0
 	else:
-		__retval = deep_get(event, "event_data#res#rc")
+		__retval = deep_get(event, DictPath("event_data#res#rc"))
 
 	if __retval is None:
 		return 0, {}
 
-	msg = deep_get(event, "event_data#res#msg", "")
+	msg = deep_get(event, DictPath("event_data#res#msg"), "")
 	msg_lines = []
 	if len(msg) > 0:
 		msg_lines = msg.split("\n")
 
-	start_date_timestamp = deep_get(event, "event_data#start")
-	end_date_timestamp = deep_get(event, "event_data#end")
+	start_date_timestamp = deep_get(event, DictPath("event_data#start"))
+	end_date_timestamp = deep_get(event, DictPath("event_data#end"))
 
-	stdout = deep_get(event, "event_data#res#stdout", "")
-	stderr = deep_get(event, "event_data#res#stderr", "")
-	stdout_lines = deep_get(event, "event_data#res#stdout_lines", "")
-	stderr_lines = deep_get(event, "event_data#res#stderr_lines", "")
+	stdout = deep_get(event, DictPath("event_data#res#stdout"), "")
+	stderr = deep_get(event, DictPath("event_data#res#stderr"), "")
+	stdout_lines = deep_get(event, DictPath("event_data#res#stdout_lines"), "")
+	stderr_lines = deep_get(event, DictPath("event_data#res#stderr_lines"), "")
 
 	if len(stdout_lines) == 0 and len(stdout) > 0:
 		stdout_lines = stdout.split("\n")
@@ -917,7 +917,7 @@ def ansible_results_add(event) -> int:
 			(int): 0 on success, -1 if host is unreachable, retval on other failure
 	"""
 
-	host = deep_get(event, "event_data#host", "")
+	host = deep_get(event, DictPath("event_data#host"), "")
 	__retval, d = ansible_results_extract(event)
 
 	if len(d) > 0:
@@ -927,7 +927,7 @@ def ansible_results_add(event) -> int:
 
 	return __retval
 
-def ansible_delete_log(log: str):
+def ansible_delete_log(log: str) -> None:
 	"""
 	Delete a log file
 
@@ -940,7 +940,7 @@ def ansible_delete_log(log: str):
 			os.remove(f"{ANSIBLE_LOG_DIR}/{log}/{filename}")
 		os.rmdir(f"{ANSIBLE_LOG_DIR}/{log}")
 
-def ansible_write_log(start_date, playbook: str, events):
+def ansible_write_log(start_date, playbook: str, events) -> None:
 	"""
 	Save an Ansible log entry to a file
 
@@ -950,7 +950,7 @@ def ansible_write_log(start_date, playbook: str, events):
 			events (list[dict]): The list of Ansible runs
 	"""
 
-	save_logs: bool = deep_get(ansible_configuration, "save_logs", False)
+	save_logs: bool = deep_get(ansible_configuration, DictPath("save_logs"), False)
 
 	if save_logs == False:
 		return
@@ -978,23 +978,23 @@ def ansible_write_log(start_date, playbook: str, events):
 	i = 0
 
 	for event in events:
-		host = deep_get(event, "event_data#host", "")
+		host = deep_get(event, DictPath("event_data#host"), "")
 		if len(host) == 0:
 			continue
 
-		task = deep_get(event, "event_data#task", "")
+		task = deep_get(event, DictPath("event_data#task"), "")
 		if len(task) == 0:
 			continue
 
-		skipped = deep_get(event, "event", "") == "runner_on_skipped"
-		unreachable = deep_get(event, "event_data#res#unreachable", False)
+		skipped = deep_get(event, DictPath("event"), "") == "runner_on_skipped"
+		unreachable = deep_get(event, DictPath("event_data#res#unreachable"), False)
 
 		if unreachable == True:
 			retval = -1
-		elif skipped == True or deep_get(event, "event", "") == "runner_on_ok":
+		elif skipped == True or deep_get(event, DictPath("event"), "") == "runner_on_ok":
 			retval = 0
 		else:
-			retval = deep_get(event, "event_data#res#rc")
+			retval = deep_get(event, DictPath("event_data#res#rc"))
 
 		if retval is None:
 			continue
@@ -1003,18 +1003,18 @@ def ansible_write_log(start_date, playbook: str, events):
 		i += 1
 
 		filename = f"{i:02d}-{host}_{taskname}.yaml".replace(" ", "_").replace("/", "_")
-		msg = deep_get(event, "event_data#res#msg", "")
+		msg = deep_get(event, DictPath("event_data#res#msg"), "")
 		msg_lines = []
 		if len(msg) > 0:
 			msg_lines = msg.split("\n")
 
-		start_date_timestamp = deep_get(event, "event_data#start")
-		end_date_timestamp = deep_get(event, "event_data#end")
+		start_date_timestamp = deep_get(event, DictPath("event_data#start"))
+		end_date_timestamp = deep_get(event, DictPath("event_data#end"))
 
-		stdout = deep_get(event, "event_data#res#stdout", "")
-		stderr = deep_get(event, "event_data#res#stderr", "")
-		stdout_lines = deep_get(event, "event_data#res#stdout_lines", "")
-		stderr_lines = deep_get(event, "event_data#res#stderr_lines", "")
+		stdout = deep_get(event, DictPath("event_data#res#stdout"), "")
+		stderr = deep_get(event, DictPath("event_data#res#stderr"), "")
+		stdout_lines = deep_get(event, DictPath("event_data#res#stdout_lines"), "")
+		stderr_lines = deep_get(event, DictPath("event_data#res#stderr_lines"), "")
 
 		if len(stdout_lines) == 0 and len(stdout) > 0:
 			stdout_lines = stdout.split("\n")
@@ -1059,7 +1059,7 @@ def ansible_write_log(start_date, playbook: str, events):
 			f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
 
 # pylint: disable-next=too-many-arguments
-def ansible_print_task_results(task: str, msg_lines, stdout_lines, stderr_lines, retval: int, unreachable: bool = False, skipped: bool = False):
+def ansible_print_task_results(task: str, msg_lines, stdout_lines, stderr_lines, retval: int, unreachable: bool = False, skipped: bool = False) -> None:
 	"""
 	Pretty-print the result of an Ansible task run
 
@@ -1107,7 +1107,7 @@ def ansible_print_task_results(task: str, msg_lines, stdout_lines, stderr_lines,
 			iktprint([("<no output>", "none")])
 		iktprint([("", "default")])
 
-def ansible_print_play_results(retval: int, __ansible_results):
+def ansible_print_play_results(retval: int, __ansible_results) -> None:
 	"""
 	Pretty-print the result of an Ansible play
 
@@ -1124,11 +1124,11 @@ def ansible_print_play_results(retval: int, __ansible_results):
 			header_output = False
 
 			for play in plays:
-				task = deep_get(play, "task")
+				task = deep_get(play, DictPath("task"))
 
-				unreachable = deep_get(play, "unreachable", False)
-				skipped = deep_get(play, "skipped", False)
-				retval = deep_get(play, "retval")
+				unreachable = deep_get(play, DictPath("unreachable"), False)
+				skipped = deep_get(play, DictPath("skipped"), False)
+				retval = deep_get(play, DictPath("retval"))
 
 				if header_output == False:
 					header_output = True
@@ -1140,9 +1140,9 @@ def ansible_print_play_results(retval: int, __ansible_results):
 					else:
 						iktprint([(f"[{host}]", "error")])
 
-				msg_lines = deep_get(play, "msg_lines", "")
-				stdout_lines = deep_get(play, "stdout_lines", "")
-				stderr_lines = deep_get(play, "stderr_lines", "")
+				msg_lines = deep_get(play, DictPath("msg_lines"), "")
+				stdout_lines = deep_get(play, DictPath("stdout_lines"), "")
+				stderr_lines = deep_get(play, DictPath("stderr_lines"), "")
 				ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval, unreachable, skipped)
 				print()
 
@@ -1163,7 +1163,7 @@ def ansible_run_playbook(playbook: FilePath, inventory = None):
 
 	global ansible_results # pylint: disable=global-statement
 
-	forks = deep_get(ansible_configuration, "ansible_forks")
+	forks = deep_get(ansible_configuration, DictPath("ansible_forks"))
 
 	# Flush previous results
 	ansible_results = {}
@@ -1196,7 +1196,7 @@ def ansible_run_playbook_async(playbook: FilePath, inventory):
 			runner: An ansible_runner.runner.Runner object
 	"""
 
-	forks = deep_get(ansible_configuration, "ansible_forks")
+	forks = deep_get(ansible_configuration, DictPath("ansible_forks"))
 
 	_thread, runner = ansible_runner.interface.run_async(json_mode = True, quiet = True, playbook = playbook, inventory = inventory,
 							     forks = forks, finished_callback = __ansible_run_async_finished_cb)
@@ -1237,7 +1237,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection, values = No
 	if "ansible_become_pass" in values and "ansible_ssh_pass" not in d["all"]["vars"]:
 		values["ansible_ssh_pass"] = values["ansible_become_pass"]
 	if "ansible_user" not in d["all"]["vars"]:
-		values["ansible_user"] = deep_get(ansible_configuration, "ansible_user")
+		values["ansible_user"] = deep_get(ansible_configuration, DictPath("ansible_user"))
 
 	for key, value in values.items():
 		d["all"][key] = value
@@ -1285,7 +1285,7 @@ def ansible_run_playbook_on_selection_async(playbook: FilePath, selection, value
 	if "ansible_become_pass" in values and "ansible_ssh_pass" not in d["all"]["vars"]:
 		values["ansible_ssh_pass"] = values["ansible_become_pass"]
 	if "ansible_user" not in d["all"]["vars"]:
-		values["ansible_user"] = deep_get(ansible_configuration, "ansible_user")
+		values["ansible_user"] = deep_get(ansible_configuration, DictPath("ansible_user"))
 
 	for key, value in values.items():
 		d["all"][key] = value
@@ -1309,7 +1309,7 @@ def ansible_ping(selection):
 			list[(hostname, status)]: The status of the pinged hosts
 	"""
 
-	save_logs_tmp = deep_get(ansible_configuration, "save_logs", False)
+	save_logs_tmp = deep_get(ansible_configuration, DictPath("save_logs"), False)
 	ansible_configuration["save_logs"] = False
 
 	host_status = []
@@ -1320,11 +1320,11 @@ def ansible_ping(selection):
 	_retval, __ansible_results = ansible_run_playbook_on_selection(f"{ANSIBLE_PLAYBOOK_DIR}/ping.yaml", selection = selection)
 
 	for host in __ansible_results:
-		for task in deep_get(__ansible_results, host, []):
-			unreachable = deep_get(task, "unreachable")
-			skipped = deep_get(task, "skipped")
-			stderr_lines = deep_get(task, "stderr_lines")
-			retval = deep_get(task, "retval")
+		for task in deep_get(__ansible_results, DictPath(host), []):
+			unreachable = deep_get(task, DictPath("unreachable"))
+			skipped = deep_get(task, DictPath("skipped"))
+			stderr_lines = deep_get(task, DictPath("stderr_lines"))
+			retval = deep_get(task, DictPath("retval"))
 			status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
 			host_status.append((host, status))
 	ansible_configuration["save_logs"] = save_logs_tmp
@@ -1373,7 +1373,7 @@ def ansible_async_get_data(async_cookie):
 
 	if async_cookie is not None:
 		for event in async_cookie.events:
-			host = deep_get(event, "event_data#host", "")
+			host = deep_get(event, DictPath("event_data#host"), "")
 
 			__retval, d = ansible_results_extract(event)
 
