@@ -6,6 +6,7 @@ I/O helpers for Intel Kubernetes Toolkit
 """
 
 import errno
+from functools import partial
 from getpass import getuser
 import hashlib
 import os
@@ -29,7 +30,6 @@ from ikttypes import DictPath, FilePath, FilePathAuditError, SecurityChecks, Sec
 from iktpaths import HOMEDIR
 
 import iktlib # pylint: disable=unused-import
-
 import iktprint
 
 # pylint: disable=too-many-arguments,line-too-long
@@ -173,8 +173,9 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.PATH_NOT_RESOLVING_TO_SELF)
 
-	if SecurityChecks.EXISTS in checks and not path_entry.exists():
-		violations.append(SecurityStatus.DOES_NOT_EXIST)
+	if not path_entry.exists():
+		if SecurityChecks.EXISTS in checks:
+			violations.append(SecurityStatus.DOES_NOT_EXIST)
 		return violations
 
 	if SecurityChecks.OWNER_IN_ALLOWLIST in checks and path_entry.owner() not in owner_allowlist:
@@ -240,7 +241,94 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 
 	return violations
 
-def secure_write_string(path: FilePath, string: str) -> None:
+def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
+	"""
+	Remove a file
+
+		Parameters:
+			path (FilePath): The path to the file to remove
+		Raises:
+			ikttypes.FilePathAuditError
+			FileNotFoundError
+	"""
+
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_FILE,
+	]
+
+	violations = check_path(path, checks = checks)
+
+	ignoring_non_existing = False
+
+	if ignore_non_existing:
+		try:
+			violations.pop(SecurityStatus.DOES_NOT_EXIST)
+			ignoring_non_existing = True
+		except ValueError:
+			pass
+
+	if len(violations) > 0:
+		violation_strings = []
+		for violation in violations:
+			violation_strings.append(str(violation))
+		violations_joined = ",".join(violation_strings)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
+
+	if ignoring_non_existing == False:
+		Path(path).unlink()
+
+def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
+	"""
+	Remove a directory
+
+		Parameters:
+			path (FilePath): The path to the directory to remove
+			ignore_non_existing
+		Raises:
+			ikttypes.FilePathAuditError
+			FileNotFoundError
+	"""
+
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_DIR,
+	]
+
+	violations = check_path(path, checks = checks)
+
+	ignoring_non_existing = False
+
+	if ignore_non_existing:
+		try:
+			violations.pop(SecurityStatus.DOES_NOT_EXIST)
+			ignoring_non_existing = True
+		except ValueError:
+			pass
+
+	if len(violations) > 0:
+		violation_strings = []
+		for violation in violations:
+			violation_strings.append(str(violation))
+		violations_joined = ",".join(violation_strings)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
+
+	if ignoring_non_existing == False:
+		Path(path).rmdir()
+
+def secure_write_string(path: FilePath, string: str, permissions = None) -> None:
 	"""
 	Write a string to a file in a safe manner
 
@@ -251,43 +339,54 @@ def secure_write_string(path: FilePath, string: str) -> None:
 			ikttypes.FilePathAuditError
 	"""
 
-	violations = check_path(path,
-				checks = [
-					SecurityChecks.PARENT_RESOLVES_TO_SELF,
-					SecurityChecks.RESOLVES_TO_SELF,
-					SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-					SecurityChecks.OWNER_IN_ALLOWLIST,
-					SecurityChecks.PARENT_PERMISSIONS,
-					SecurityChecks.PERMISSIONS,
-					SecurityChecks.IS_FILE,
-				])
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.IS_FILE,
+	]
+
+	violations = check_path(path, checks = checks)
 
 	if len(violations) > 0:
 		violation_strings = []
 		for violation in violations:
 			violation_strings.append(str(violation))
 		violations_joined = ",".join(violation_strings)
-		sys.exit(f"{violations_joined=}")
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
 
 	# We have no default recourse if this write fails, so if the caller can handle the failure
 	# they have to capture the exception
-	with open(path, "w", encoding = "utf-8") as f:
-		f.write(string)
+	if permissions is None:
+		with open(path, "w", encoding = "utf-8") as f:
+			f.write(string)
+	else:
+		with open(path, "w", opener = partial(os.open, mode = permissions), encoding = "utf-8") as f:
+			f.write(string)
 
-def secure_write_yaml(path: FilePath, data) -> None:
+def secure_write_yaml(path: FilePath, data, permissions: int = None, replace_empty = False, replace_null = False, sort_keys = True) -> None:
 	"""
 	Dump a dict to a file in YAML-format in a safe manner
 
 		Parameters:
 			path (FilePath): The path to write to
 			data (dict): The dict to dump
+			permissions (int): File permissions (None uses system defaults)
+			replace_empty (bool): True strips empty strings
+			replace_null (bool): True strips null
 		Raises:
 			ikttypes.FilePathAuditError
 	"""
 
-	yaml_str = yaml.safe_dump(data, default_flow_style = False)
-	secure_write_string(path, yaml_str)
+	yaml_str = yaml.safe_dump(data, default_flow_style = False, sort_keys = sort_keys)
+	if replace_empty == True:
+		yaml_str = yaml_str.replace(r"''", "")
+	if replace_null == True:
+		yaml_str = yaml_str.replace(r"null", "")
+	secure_write_string(path, yaml_str, permissions = permissions)
 
 def secure_read_string(path: FilePath, checks = None) -> str:
 	"""

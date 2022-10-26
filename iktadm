@@ -40,17 +40,16 @@ from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE, IKT_INSTALLATION_INFO_
 from commandparser import parse_commandline
 
 from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_set_vars
-from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results
+from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results, populate_playbooks_from_paths
 
 import iktio
 from iktio import download_files, mkdir_if_not_exists, scan_and_add_ssh_keys
 
-import iktlib # pylint: disable=unused-import
-from iktlib import check_deb_versions, deep_get, execute_command, execute_command_with_response, iktconfig
+from iktlib import check_deb_versions, deep_get, execute_command, execute_command_with_response, iktconfig, read_iktconfig
 
 from kubernetes_helper import kubectl_get_version
 
-from iktprint import iktinput, iktinput_password, iktprint, init_iktprint
+from iktprint import iktinput, iktinput_password, iktprint
 
 import checks
 
@@ -1125,45 +1124,6 @@ def __playbook_paths_from_path(path):
 		playbook_paths.append(os.path.join(path, filename))
 
 	return playbook_paths
-
-def populate_playbooks_from_paths(paths):
-	"""
-	Populate a playbook list
-
-		Parameters:
-			paths (list[str]): A list of paths to playbooks
-		Returns:
-			list[(description, playbookpath)]: A playbook list for use with run_playbooks()
-	"""
-
-	playbooks = []
-
-	# Safe
-	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
-
-	for playbookpath in paths:
-		# Only process playbooks
-		tmp = yaml_regex.match(os.path.basename(playbookpath))
-		if tmp is None:
-			raise Exception(f"The playbook filename “{os.path.basename(playbookpath)}“ does not end with .yaml or .yml; this is most likely a programming error.")
-
-		# Don't process backups, etc.
-		if os.path.basename(playbookpath).startswith(("~", ".")):
-			continue
-
-		playbookname = tmp[1]
-		description = None
-		with open(playbookpath, encoding = "utf-8") as f:
-			d = yaml.safe_load(f)
-			description = [(deep_get(d[0], DictPath("vars#metadata#description")), "play")]
-
-		if description is None or len(description) == 0:
-			description = [("Running “", "play"), (playbookname, "programname"), ("“", "play")]
-
-		# If there's no description we fallback to just using the filename
-		playbooks.append(([("  • ", "separator")] + description, playbookpath))
-
-	return playbooks
 
 # Add all playbooks in the directory
 def populate_playbooks_from_dir(path):
@@ -3420,9 +3380,10 @@ def main():
 	if os.geteuid() == 0:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 
-	init_iktprint(DEFAULT_THEME_FILE)
+	# Then initialise the configuration file
+	read_iktconfig()
 
-	command, options, args = parse_commandline(about.ADMIN_PROGRAM_NAME, about.ADMIN_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline)
+	command, options, args = parse_commandline(about.ADMIN_PROGRAM_NAME, about.ADMIN_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline, theme = DEFAULT_THEME_FILE)
 
 	# Used by the ansible module
 	ansible_configuration["ansible_forks"] = deep_get(iktconfig, DictPath("Ansible#forks"), 5)

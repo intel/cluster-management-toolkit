@@ -10792,6 +10792,9 @@ def main():
 	if os.geteuid() == 0:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 
+	# Then initialise the configuration file
+	read_iktconfig()
+
 	defaultthemefile = DEFAULT_THEME_FILE
 
 	themefile = deep_get(iktconfig, "Global#theme")

@@ -11,9 +11,9 @@ For usage, see:
 
 import errno
 import os
+from pathlib import Path
 import sys
 import typing # pylint: disable=unused-import
-import yaml
 
 try:
 	from natsort import natsorted
@@ -23,6 +23,8 @@ except ModuleNotFoundError:
 from ikttypes import DictPath, FilePath
 from iktpaths import HOMEDIR
 from iktpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
+
+import iktio
 
 from commandparser import parse_commandline
 
@@ -34,7 +36,7 @@ from ansible_helper import ansible_unset_groupvars, ansible_create_groups, ansib
 from ansible_helper import ANSIBLE_INVENTORY
 
 import iktlib # pylint: disable=unused-import
-from iktlib import deep_get, iktconfig
+from iktlib import deep_get, iktconfig, read_iktconfig
 
 from iktprint import iktprint
 
@@ -423,10 +425,9 @@ def get_cluster_name():
 			None (None): On failure
 	"""
 
-	if os.path.exists(KUBE_CONFIG_FILE):
-		with open(KUBE_CONFIG_FILE, "r", encoding = "utf-8") as f:
-			d1 = yaml.safe_load(f)
-	else:
+	try:
+		d1 = iktio.secure_read_yaml(KUBE_CONFIG_FILE)
+	except FileNotFoundError:
 		return None
 
 	current_context = d1.get("current-context", None)
@@ -464,7 +465,7 @@ def rebuild_inventory(options, args) -> int:
 			raise Exception(f"Programming error; invalid option {opt}")
 
 	# Is there a pre-existing inventory?
-	if os.path.isfile(ANSIBLE_INVENTORY) and force == False:
+	if Path(ANSIBLE_INVENTORY).is_file() and force == False:
 		iktprint([("Error: ", "error"), ("Overwriting an existing inventory requires specifying “", "default"),
 			  ("--force", "option"), ("“.", "default")], stderr = True)
 		print()
@@ -963,6 +964,9 @@ def main() -> int:
 	# Before doing anything else, make sure that the user isn't running as root
 	if os.geteuid() == 0:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
+
+	# Then initialise the configuration file
+	read_iktconfig()
 
 	command, options, args = parse_commandline(about.INVENTORY_PROGRAM_NAME, about.INVENTORY_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS,
 						   sys.argv, commandline, default_command = "inventory", theme = DEFAULT_THEME_FILE)

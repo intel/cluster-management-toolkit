@@ -22,7 +22,6 @@ import hashlib
 import os
 import re
 import sys
-import yaml
 
 try:
 	import OpenSSL
@@ -34,11 +33,11 @@ from iktpaths import IKT_CONFIG_FILE, DEFAULT_THEME_FILE
 
 from commandparser import parse_commandline
 
-from ansible_helper import ansible_configuration, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts, ansible_print_play_results
+from ansible_helper import ansible_configuration, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts
+from ansible_helper import ansible_print_play_results, populate_playbooks_from_paths
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
-import iktlib # pylint: disable=unused-import
-from iktlib import deep_get, iktconfig, join_tuple_list, execute_command
+from iktlib import deep_get, execute_command, iktconfig, join_tuple_list, read_iktconfig
 
 from kubernetes_helper import get_node_status, kubectl_get_version
 
@@ -191,46 +190,6 @@ def run_playbooks(playbooks, hosts = None, extra_values = None):
 			break
 
 	return retval == 0
-
-# Add all playbooks in the array
-def populate_playbooks_from_paths(paths):
-	"""
-	Populate a playbook list
-
-		Parameters:
-			paths (list[str]): A list of paths to playbooks
-		Returns:
-			list[(description, playbookpath)]: A playbook list for use with run_playbooks()
-	"""
-
-	playbooks = []
-
-	# Safe
-	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
-
-	for playbookpath in paths:
-		# Don't process backups, etc.
-		if os.path.basename(playbookpath).startswith(("~", ".")):
-			continue
-
-		# Only process playbooks
-		tmp = yaml_regex.match(os.path.basename(playbookpath))
-		if tmp is None:
-			raise Exception(f"The playbook filename “{os.path.basename(playbookpath)}“ does not end with .yaml or .yml; this is most likely a programming error.")
-
-		playbookname = tmp[1]
-		description = None
-		with open(playbookpath, encoding = "utf-8") as f:
-			d = yaml.safe_load(f)
-			description = [(deep_get(d[0], DictPath("vars#metadata#description")), "play")]
-
-		if description is None or len(description) == 0:
-			description = [("Running “", "play"), (playbookname, "programname"), ("“", "play")]
-
-		# If there's no description we fallback to just using the filename
-		playbooks.append(([("  • ", "separator")] + description, playbookpath))
-
-	return playbooks
 
 def get_selection(selection, kind = None):
 	"""
@@ -1576,6 +1535,9 @@ def main() -> int:
 	# Before doing anything else, make sure that the user isn't running as root
 	if os.geteuid() == 0:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
+
+	# Then initialise the configuration file
+	read_iktconfig()
 
 	argv = sys.argv
 

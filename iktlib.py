@@ -6,16 +6,14 @@ Helpers used by various components of iKT
 
 from datetime import datetime, timezone, timedelta, date
 from functools import reduce
-import os
+from pathlib import Path
 import re
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
-import yaml
 
 from ikttypes import DictPath, FilePath, SecurityPolicy
-from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE_DIR
-from iktpaths import IKT_CONFIG_FILE
+from iktpaths import IKT_CONFIG_FILE, IKT_CONFIG_FILE_DIR
 import iktio
 
 try:
@@ -195,27 +193,27 @@ def deep_get_with_fallback(obj, paths, default = None, fallback_on_empty: bool =
 def read_iktconfig():
 	global iktconfig # pylint: disable=global-statement
 
-	if os.path.isfile(IKT_CONFIG_FILE) is False:
+	if not Path(IKT_CONFIG_FILE).is_file:
 		return None
 
 	# Read the base configuration file
-	with open(IKT_CONFIG_FILE, encoding = "utf-8") as f:
-		iktconfig = yaml.safe_load(f)
+	iktconfig = iktio.secure_read_yaml(IKT_CONFIG_FILE)
 
 	# Now read ikt.yaml.d/* if available
-	if os.path.isdir(IKT_CONFIG_FILE_DIR) is False:
+	if not Path(IKT_CONFIG_FILE_DIR).is_dir():
 		return None
 
-	for item in natsorted(os.listdir(IKT_CONFIG_FILE_DIR)):
+	for path in natsorted(Path(IKT_CONFIG_FILE_DIR).iterdir()):
+		filename = path.name
+
 		# Only read entries that end with .y{,a}ml
-		if item.startswith(("~", ".")):
+		if filename.startswith(("~", ".")):
 			continue
-		if not item.endswith((".yaml", ".yml")):
+		if not filename.endswith((".yaml", ".yml")):
 			continue
 
 		# Read the conflet files
-		with open(f"{IKT_CONFIG_FILE_DIR}/{item}", encoding = "utf-8") as f:
-			moreiktconfig = yaml.safe_load(f)
+		moreiktconfig = iktio.secure_read_yaml(FilePath(str(path)))
 
 		# Handle config files without any values defined
 		if moreiktconfig is not None:
@@ -470,9 +468,6 @@ def get_package_versions(hostname):
 	import ansible_helper # pylint: disable=unused-import,import-outside-toplevel
 	from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path # pylint: disable=import-outside-toplevel
 
-	if not os.path.isdir(ANSIBLE_PLAYBOOK_DIR):
-		return []
-
 	get_versions_path = get_playbook_path(FilePath("get_versions.yaml"))
 	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [hostname])
 
@@ -571,5 +566,3 @@ def check_deb_versions(deb_packages):
 			deb_versions.append((package, installed_version, candidate_version, all_versions))
 
 	return deb_versions
-
-read_iktconfig()

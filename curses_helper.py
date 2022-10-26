@@ -13,18 +13,18 @@ from datetime import datetime
 from enum import IntFlag
 import errno
 from operator import attrgetter
-import os
+from pathlib import Path, PurePath
 import sys
 import typing # pylint: disable=unused-import
 from typing import NoReturn
-import yaml
 
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import DictPath, FilePath, LogLevel, Retval, StatusGroup, loglevel_to_name, stgroup_mapping
+from iktio import check_path, secure_read_yaml
+from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping
 
 import iktlib
 from iktlib import deep_get
@@ -143,16 +143,50 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 	themefile = None
 
 	for item in [configthemefile, f"{configthemefile}.yaml", defaultthemefile]:
-		if os.path.isfile(item) is True:
+		if Path(item).is_file():
 			themefile = item
 			break
 
 	if themefile is None:
-		print(f"{os.path.basename(sys.argv[0])}: couldn't load theme “{themefile}”; exiting.", file = sys.stderr)
+		print(f"Error: could not find a valid theme file; aborting.", file = sys.stderr)
 		sys.exit(errno.ENOENT)
 
-	with open(themefile, encoding = "utf-8") as f:
-		theme = yaml.safe_load(f)
+	# The parsers directory itself may be a symlink. This is expected behaviour when installing from a git repo,
+	# but we only allow it if the rest of the path components are secure
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_DIR,
+	]
+
+	theme_dir = FilePath(str(PurePath(themefile).parent))
+
+	violations = check_path(theme_dir, checks = checks)
+	if len(violations) > 0:
+		violation_strings = []
+		for violation in violations:
+			violation_strings.append(str(violation))
+		violations_joined = ",".join(violation_strings)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = theme_dir)
+
+	# We don't want to check that parent resolves to itself,
+	# because when we have an installation with links directly to the git repo
+	# the themes directory will be a symlink
+	checks = [
+		SecurityChecks.RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_FILE,
+	]
+
+	theme = secure_read_yaml(FilePath(themefile), checks = checks)
 
 def init_curses() -> None:
 	color_last = 1

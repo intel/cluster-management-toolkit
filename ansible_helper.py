@@ -6,8 +6,7 @@ Helper for iKT to run Ansible playbooks
 """
 
 from datetime import datetime
-from functools import partial
-import os
+from pathlib import Path, PurePath
 import re
 import sys
 import typing # pylint: disable=unused-import
@@ -15,11 +14,12 @@ import yaml
 
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig
+from iktio import check_path, mkdir_if_not_exists, secure_read_yaml, secure_rm, secure_rmdir, secure_write_yaml
 from iktpaths import HOMEDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from iktpaths import ANSIBLE_INVENTORY
 from iktprint import iktprint
-from ikttypes import DictPath, FilePath
+from ikttypes import DictPath, FilePath, FilePathAuditError, SecurityChecks
 
 ansible_results = {} # type: ignore
 
@@ -37,16 +37,13 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ansible_runner not available; try (re-)running ikt-install")
 
-# If the ansible directory doesn't exist, create it
-if not os.path.exists(ANSIBLE_DIR):
-	try:
-		os.mkdir(ANSIBLE_DIR)
-	except FileNotFoundError:
-		sys.exit(f"{ANSIBLE_DIR} not found; did you forget to run ikt-install?")
+# Exit if the ansible directory doesn't exist
+if not Path(ANSIBLE_DIR).exists():
+	sys.exit(f"{ANSIBLE_DIR} not found; try (re-)running ikt-install")
 
-# If the ansible log directory doesn't exist, create it
-if not os.path.exists(ANSIBLE_LOG_DIR):
-	os.mkdir(ANSIBLE_LOG_DIR)
+# Exit if the ansible log directory doesn't exist
+if not Path(ANSIBLE_LOG_DIR).exists():
+	sys.exit(f"{ANSIBLE_LOG_DIR} not found; try (re-)running ikt-install")
 
 def get_playbook_path(playbook: FilePath) -> FilePath:
 	"""
@@ -68,17 +65,95 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 		# Substitute {HOME}/ for {HOMEDIR}
 		if playbook_path.startswith("{HOME}/"):
 			playbook_path = f"{HOMEDIR}/{playbook_path[len('{HOME}/'):]}"
+		playbook_path_entry = Path(playbook_path)
 		# Skip non-existing playbook paths
-		if not os.path.isdir(playbook_path):
+		if not playbook_path_entry.is_dir():
 			continue
 		# We can have multiple directories with local playbooks;
 		# the first match wins
-		if os.path.isfile(f"{playbook_path}/{playbook}") == True:
+		if Path(f"{playbook_path}/{playbook}").is_file() == True:
 			path = f"{playbook_path}/{playbook}"
 			break
 	if len(path) == 0:
 		path = f"{ANSIBLE_PLAYBOOK_DIR}/{playbook}"
 	return FilePath(path)
+
+# Add all playbooks in the array
+def populate_playbooks_from_paths(paths):
+	"""
+	Populate a playbook list
+
+		Parameters:
+			paths (list[str]): A list of paths to playbooks
+		Returns:
+			list[(description, playbookpath)]: A playbook list for use with run_playbooks()
+	"""
+
+	playbooks = []
+
+	# Safe
+	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
+
+	for playbookpath in paths:
+		playbookpath = FilePath(playbookpath)
+		pathname = PurePath(playbookpath).name
+		playbook_dir = FilePath(str(PurePath(playbookpath).parent))
+
+		# Don't process backups, etc.
+		if pathname.startswith(("~", ".")):
+			continue
+
+		# Only process playbooks
+		tmp = yaml_regex.match(pathname)
+		if tmp is None:
+			raise Exception(f"The playbook filename “{pathname}“ does not end with .yaml or .yml; this is most likely a programming error.")
+
+		playbookname = tmp[1]
+		description = None
+
+		# The playbook directory itself may be a symlink. This is expected behaviour when installing from a git repo,
+		# but we only allow it if the rest of the path components are secure
+		checks = [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_DIR,
+		]
+
+		violations = check_path(playbook_dir, checks = checks)
+		if len(violations) > 0:
+			violation_strings = []
+			for violation in violations:
+				violation_strings.append(str(violation))
+			violations_joined = ",".join(violation_strings)
+			raise FilePathAuditError(f"Violated rules: {violations_joined}", path = playbook_dir)
+
+		# We don't want to check that parent resolves to itself,
+		# because when we have an installation with links directly to the git repo
+		# the playbooks directory will be a symlink
+		checks = [
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		]
+
+		d = secure_read_yaml(playbookpath, checks = checks)
+		description = [(deep_get(d[0], DictPath("vars#metadata#description")), "play")]
+
+		if description is None or len(description) == 0:
+			description = [("Running “", "play"), (playbookname, "programname"), ("“", "play")]
+
+		# If there's no description we fallback to just using the filename
+		playbooks.append(([("  • ", "separator")] + description, playbookpath))
+
+	return playbooks
 
 def ansible_get_inventory_dict():
 	"""
@@ -88,11 +163,10 @@ def ansible_get_inventory_dict():
 			d (dict): A dictionary with an Ansible inventory
 	"""
 
-	if not os.path.exists(ANSIBLE_INVENTORY):
+	if not Path(ANSIBLE_INVENTORY).exists():
 		return {}
 
-	with open(ANSIBLE_INVENTORY, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(ANSIBLE_INVENTORY)
 
 	return d
 
@@ -112,11 +186,10 @@ def ansible_get_inventory_pretty(groups = None, highlight: bool = False, include
 
 	tmp = {}
 
-	if not os.path.exists(ANSIBLE_INVENTORY):
+	if not Path(ANSIBLE_INVENTORY).exists():
 		return {}
 
-	with open(ANSIBLE_INVENTORY, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(ANSIBLE_INVENTORY)
 
 	# We want the entire inventory
 	if groups is None or groups == []:
@@ -201,15 +274,14 @@ def ansible_get_hosts_by_group(inventory: FilePath, group: str):
 
 	hosts = []
 
-	if not os.path.exists(inventory):
+	if not Path(inventory).exists():
 		return []
 
-	with open(inventory, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(inventory)
 
-		if d.get(group) is not None and d[group].get("hosts") is not None:
-			for host in d[group]["hosts"]:
-				hosts.append(host)
+	if d.get(group) is not None and d[group].get("hosts") is not None:
+		for host in d[group]["hosts"]:
+			hosts.append(host)
 
 	return hosts
 
@@ -225,14 +297,13 @@ def ansible_get_groups(inventory: FilePath):
 
 	groups = []
 
-	if not os.path.exists(inventory):
+	if not Path(inventory).exists():
 		return []
 
-	with open(inventory, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(inventory)
 
-		for group in d:
-			groups.append(group)
+	for group in d:
+		groups.append(group)
 
 	return groups
 
@@ -255,7 +326,7 @@ def ansible_get_groups_by_host(inventory_dict, host: str):
 
 	return groups
 
-def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False):
+def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False) -> None:
 	"""
 	Create a new inventory at the path given if no inventory exists
 
@@ -266,12 +337,11 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False):
 
 	# Don't create anything if the inventory exists;
 	# unless overwrite is set
-	if os.path.exists(inventory) and overwrite == False:
+	if Path(inventory).exists() and overwrite == False:
 		return
 
 	# If the ansible directory doesn't exist, create it
-	if not os.path.exists(ANSIBLE_DIR):
-		os.mkdir(ANSIBLE_DIR)
+	mkdir_if_not_exists(ANSIBLE_DIR, permissions = 0o755, exit_on_failure = True)
 
 	# Create the basic yaml structure that we'll write later on
 	d = {
@@ -294,10 +364,7 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False):
 	if deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking")) is not None:
 		d["all"]["vars"]["ansible_ssh_common_args"] = "-o StrictHostKeyChecking=no" # type: ignore
 
-	yaml_str = yaml.safe_dump(d, default_flow_style = False).replace(r"''", '')
-
-	with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-		f.write(yaml_str)
+	secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True)
 
 def ansible_create_groups(inventory: FilePath, groups):
 	"""
@@ -315,11 +382,10 @@ def ansible_create_groups(inventory: FilePath, groups):
 	if groups is None or len(groups) == 0:
 		return True
 
-	if os.path.isfile(inventory) == False:
+	if not Path(inventory).is_file():
 		__ansible_create_inventory(inventory, overwrite = False)
 
-	with open(inventory, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(inventory)
 
 	for group in groups:
 		# Group already exists; ignore
@@ -333,9 +399,7 @@ def ansible_create_groups(inventory: FilePath, groups):
 		changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
-			f.write(yaml_str)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
 
@@ -359,11 +423,10 @@ def ansible_set_vars(inventory: FilePath, group: str, values):
 	if values is None or values == {}:
 		sys.exit("ansible_set_vars: values is empty or None; this is a programming error")
 
-	if os.path.isfile(inventory) == False:
+	if not Path(inventory).is_file():
 		__ansible_create_inventory(inventory, overwrite = False)
 
-	with open(inventory, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(inventory)
 
 	# If the group doesn't exist we create it
 	if d.get(group) is None:
@@ -381,9 +444,7 @@ def ansible_set_vars(inventory: FilePath, group: str, values):
 		changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
-			f.write(yaml_str)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
 
@@ -407,11 +468,10 @@ def ansible_set_groupvars(inventory: FilePath, groups, groupvars):
 	if groupvars is None or groupvars == []:
 		raise Exception("ansible_set_vars: groupvars is empty or None; this is a programming error")
 
-	if os.path.isfile(inventory) == False:
+	if not Path(inventory).is_file():
 		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
 
-	with open(inventory, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(inventory)
 
 	for group in groups:
 		# Silently ignore non-existing groups
@@ -430,9 +490,7 @@ def ansible_set_groupvars(inventory: FilePath, groups, groupvars):
 			changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
-			f.write(yaml_str)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
 
@@ -457,11 +515,10 @@ def ansible_set_hostvars(inventory: FilePath, hosts, hostvars):
 	if hostvars is None or hostvars == []:
 		raise Exception("ansible_set_vars: hostvars is empty or None; this is a programming error")
 
-	if os.path.isfile(inventory) == False:
+	if not Path(inventory).is_file():
 		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
 
-	with open(inventory, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(inventory)
 
 	for host in hosts:
 		# Silently ignore non-existing hosts
@@ -477,9 +534,7 @@ def ansible_set_hostvars(inventory: FilePath, hosts, hostvars):
 			changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
-			f.write(yaml_str)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
 
@@ -504,11 +559,10 @@ def ansible_unset_groupvars(inventory: FilePath, groups, groupvars):
 	if groupvars is None or groupvars == []:
 		raise Exception("ansible_set_vars: groupvars is empty or None; this is a programming error")
 
-	if os.path.isfile(inventory) == False:
+	if not Path(inventory).is_file():
 		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
 
-	with open(inventory, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(inventory)
 
 	for group in groups:
 		# Silently ignore non-existing groups
@@ -532,9 +586,7 @@ def ansible_unset_groupvars(inventory: FilePath, groups, groupvars):
 			d[group].pop("vars", None)
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
-			f.write(yaml_str)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
 
@@ -559,11 +611,10 @@ def ansible_unset_hostvars(inventory: FilePath, hosts, hostvars):
 	if hostvars is None or hostvars == []:
 		raise Exception("ansible_set_vars: hostvars is empty or None; this is a programming error")
 
-	if os.path.isfile(inventory) == False:
+	if not Path(inventory).is_file():
 		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
 
-	with open(inventory, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(inventory)
 
 	for host in hosts:
 		# Silently ignore non-existing hosts
@@ -582,9 +633,7 @@ def ansible_unset_hostvars(inventory: FilePath, hosts, hostvars):
 			d["all"]["hosts"][host] = None
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
-			f.write(yaml_str)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
 
@@ -608,18 +657,15 @@ def ansible_add_hosts(inventory: FilePath, hosts, group: str = "", skip_all: boo
 
 	# The inventory doesn't exist; if the user specified skip_all
 	# we don't mind, otherwise we need to create it
-	if os.path.isfile(inventory) == False:
+	if not Path(inventory).is_file():
 		if skip_all == True and group != "all":
 			d = {}
 			changed = True
 		else:
 			__ansible_create_inventory(inventory, overwrite = False)
-
-			with open(inventory, "r", encoding = "utf-8") as f:
-				d = yaml.safe_load(f)
+			d = secure_read_yaml(inventory)
 	else:
-		with open(inventory, "r", encoding = "utf-8") as f:
-			d = yaml.safe_load(f)
+		d = secure_read_yaml(inventory)
 
 	for host in hosts:
 		# All nodes go into the "hosts" group of the "all" group,
@@ -655,9 +701,7 @@ def ansible_add_hosts(inventory: FilePath, hosts, group: str = "", skip_all: boo
 				changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
-			f.write(yaml_str)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
 
@@ -684,11 +728,10 @@ def ansible_remove_hosts(inventory: FilePath, hosts, group: str = None):
 	if group is None or len(group) == 0:
 		raise Exception("None or zero-length group; this is a programming error")
 
-	if os.path.isfile(inventory) == False:
+	if not Path(inventory).is_file():
 		return False
 
-	with open(inventory, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(inventory)
 
 	for host in hosts:
 		if d[group].get("hosts") is not None:
@@ -699,9 +742,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts, group: str = None):
 				d[group]["hosts"] = None
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
-			f.write(yaml_str)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
 
@@ -723,11 +764,10 @@ def ansible_remove_groups(inventory: FilePath, groups, force: bool = False):
 	if groups is None or len(groups) == 0:
 		raise Exception("None or zero-length group; this is a programming error")
 
-	if os.path.isfile(inventory) == False:
+	if not Path(inventory).is_file():
 		return False
 
-	with open(inventory, "r", encoding = "utf-8") as f:
-		d = yaml.safe_load(f)
+	d = secure_read_yaml(inventory)
 
 	for group in groups:
 		if d.get(group) is None:
@@ -740,9 +780,7 @@ def ansible_remove_groups(inventory: FilePath, groups, force: bool = False):
 		changed = True
 
 	if changed == True:
-		with open(inventory, "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-			yaml_str = yaml.safe_dump(d, default_flow_style = False).replace("''", "").replace("null", "")
-			f.write(yaml_str)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
 
@@ -759,18 +797,15 @@ def ansible_get_logs():
 	# Safe
 	timestamp_regex = re.compile(r"^(\d{4}-\d\d-\d\d_\d\d:\d\d:\d\d\.\d+)_(.*)")
 
-	for item in os.listdir(ANSIBLE_LOG_DIR):
-		#if os.path.isdir(item) == False:
-		#	continue
-
-		tmp = timestamp_regex.match(item)
+	for path in Path(ANSIBLE_LOG_DIR).iterdir():
+		filename = str(path.name)
+		tmp = timestamp_regex.match(filename)
 		if tmp is not None:
 			date = datetime.strptime(tmp[1], "%Y-%m-%d_%H:%M:%S.%f")
-			#full_name = item
 			name = tmp[2]
-			logs.append((item, name, f"{ANSIBLE_LOG_DIR}/{item}", date))
+			logs.append((filename, name, str(path), date))
 		else:
-			raise Exception(f"Could not parse {item}")
+			raise Exception(f"Could not parse {filename}")
 	return logs
 
 def ansible_extract_failure(retval: int, error_msg_lines, skipped: bool = False, unreachable: bool = False) -> str:
@@ -935,10 +970,11 @@ def ansible_delete_log(log: str) -> None:
 			log (str): The name of the log to delete
 	"""
 
-	if os.path.exists(f"{ANSIBLE_LOG_DIR}/{log}"):
-		for filename in os.listdir(f"{ANSIBLE_LOG_DIR}/{log}"):
-			os.remove(f"{ANSIBLE_LOG_DIR}/{log}/{filename}")
-		os.rmdir(f"{ANSIBLE_LOG_DIR}/{log}")
+	logpath = Path(f"{ANSIBLE_LOG_DIR}/{log}")
+	if logpath.exists():
+		for file in logpath.iterdir():
+			secure_rm(FilePath(str(file)))
+		secure_rmdir(FilePath(str(logpath)))
 
 def ansible_write_log(start_date, playbook: str, events) -> None:
 	"""
@@ -957,14 +993,14 @@ def ansible_write_log(start_date, playbook: str, events) -> None:
 
 	playbook_name = playbook
 	if "/" in playbook_name:
-		tmp2 = os.path.basename(playbook_name)
+		tmp2 = str(PurePath(playbook_name).name)
 		# Safe
 		tmp = re.match(r"^(.*)\.ya?ml$", tmp2)
 		if tmp is not None:
 			playbook_name = tmp[1]
 
 	directory_name = f"{start_date}_{playbook_name}".replace(" ", "_")
-	os.mkdir(f"{ANSIBLE_LOG_DIR}/{directory_name}")
+	mkdir_if_not_exists(FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}"), exit_on_failure = True)
 
 	# Start by creating a file with metadata about the whole run
 	d = {
@@ -972,8 +1008,8 @@ def ansible_write_log(start_date, playbook: str, events) -> None:
 		"created_at": start_date,
 	}
 
-	with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/metadata.yaml", "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-		f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
+	metadata_path = FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}/metadata.yaml")
+	secure_write_yaml(metadata_path, d, permissions = 0o600, sort_keys = False)
 
 	i = 0
 
@@ -1055,8 +1091,8 @@ def ansible_write_log(start_date, playbook: str, events) -> None:
 		else:
 			d["stdout_lines"] = ["<no output>"]
 
-		with open(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}", "w", opener = partial(os.open, mode = 0o600), encoding = "utf-8") as f:
-			f.write(yaml.dump(d, default_flow_style = False, sort_keys = False))
+		logentry_path = FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}")
+		secure_write_yaml(logentry_path, d, permissions = 0o600, sort_keys = False)
 
 # pylint: disable-next=too-many-arguments
 def ansible_print_task_results(task: str, msg_lines, stdout_lines, stderr_lines, retval: int, unreachable: bool = False, skipped: bool = False) -> None:
