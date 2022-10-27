@@ -26,11 +26,128 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
-from ikttypes import DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
+from ikttypes import DictPath, FilePath, HostNameStatus, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from iktpaths import HOMEDIR
 
 import iktlib # pylint: disable=unused-import
 import iktprint
+
+# pylint: disable-next=too-many-return-statements
+def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
+	"""
+	Verifies that a FQDN / hostname is valid
+
+		Parameters:
+			fqdn (str): The FQDN / hostname to validate
+			message_on_error (bool): Should an error message be printed on error?
+		Returns:
+			result (HostNameStatus): The result of the validation; HostNameStatus.OK on success
+	"""
+
+	if fqdn is None or len(fqdn) == 0:
+		if message_on_error == True:
+			msg = [("Error", "error"), (": A FQDN or hostname cannot be empty.", "default")]
+			iktprint.iktprint(msg, stderr = True)
+		return HostNameStatus.DNS_SUBDOMAIN_EMPTY
+	if "\x00" in fqdn:
+		stripped_fqdn = fqdn.replace("\x00", "<NUL>")
+		msg = [("Critical", "critical"), (": the FQDN / hostname ", "default"),
+		       (stripped_fqdn, "hostname")]
+		msg += [(" contains NUL-bytes (replaced here);\n"
+			"this is either a programming error, a system error, file or memory corruption, "
+			"or a deliberate attempt to bypass security; aborting.", "default")]
+		iktprint.iktprint(msg, stderr = True)
+		sys.exit(errno.EINVAL)
+	if len(fqdn) > 253:
+		if message_on_error == True:
+			msg = [("Critical", "critical"), (": the FQDN / hostname ", "default"),
+			       (fqdn, "hostname")]
+			msg = [(" is invalid; ", "default"),
+			       ("a FQDN cannot be more than 253 characters long.", "default")]
+			iktprint.iktprint(msg, stderr = True)
+		return HostNameStatus.DNS_SUBDOMAIN_TOO_LONG
+	if fqdn != fqdn.lower():
+		if message_on_error == True:
+			msg = [("Error", "error"), (": The FQDN / hostname ", "default"),
+			       (fqdn, "hostname"),
+			       (" is invalid; ", "default"),
+			       ("a FQDN / hostname must be lowercase.", "default")]
+			iktprint.iktprint(msg, stderr = True)
+		return HostNameStatus.DNS_SUBDOMAIN_WRONG_CASE
+	if fqdn.startswith(".") or fqdn.endswith(".") or ".." in fqdn:
+		if message_on_error == True:
+			msg = [("Error", "error"), (": The FQDN / hostname ", "default"),
+			       (fqdn, "hostname"),
+			       (" is invalid; ", "default"),
+			       ("a FQDN / hostname cannot begin or end with “.“, and must not have consecutive “.“.", "default")]
+			iktprint.iktprint(msg, stderr = True)
+		return HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT
+
+	dnslabels = fqdn.split(".")
+	dnslabel_regex = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
+
+	for dnslabel in dnslabels:
+		if dnslabel.startswith("xn--"):
+			if message_on_error == True:
+				msg = [("Error", "error"), (": The DNS label ", "default"),
+				       (dnslabel, "hostname"),
+				       (" is invalid; ", "default"),
+			               ("a DNS label cannot start with the ACE prefix “xn--“.", "default")]
+				iktprint.iktprint(msg, stderr = True)
+			return HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA
+
+		# This indirectly checks non-IDNA labels for max length too
+		idna_dnslabel = dnslabel
+		try:
+			idna_dnslabel = dnslabel.encode("idna").decode("utf-8")
+		except UnicodeError as e:
+			if "label too long" in str(e):
+				if message_on_error == True:
+					msg = [("Error", "error"), (": the DNS label ", "default"),
+					       (dnslabel, "hostname"),
+					       (" is invalid; ", "default")]
+					msg += [("a DNS label cannot be more than 63 characters long.", "default")]
+					iktprint.iktprint(msg, stderr = True)
+				return HostNameStatus.DNS_LABEL_TOO_LONG
+			if "label empty or too long" in str(e):
+				if message_on_error == True:
+					msg = [("Error", "error"), (": the DNS label ", "default"),
+					       (dnslabel, "hostname"),
+					       (" is invalid; ", "default")]
+					msg += [("a decoded Punycode (IDNA) DNS label cannot be more than 63 characters long.", "default")]
+					iktprint.iktprint(msg, stderr = True)
+				return HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG
+			raise
+
+		tmp = dnslabel_regex.match(idna_dnslabel)
+
+		if tmp is None:
+			if message_on_error == True:
+				msg = [("Error", "error"), (": the DNS label ", "default"),
+				       (dnslabel, "hostname")]
+				if idna_dnslabel != dnslabel:
+					msg += [(" (Punycode: ", "default"),
+						(idna_dnslabel, "hostname"),
+						(")", "default")]
+				msg += [(" is invalid; a DNS label must be in the format ", "default"),
+				        ("[a-z0-9]([-a-z0-9]*[a-z0-9])?", "hostname"),
+				        (" after Punycode decoding.", "default")]
+				iktprint.iktprint(msg, stderr = True)
+			return HostNameStatus.DNS_LABEL_INVALID_CHARACTERS
+
+		if dnslabel.startswith("-") or dnslabel.endswith("-"):
+			if message_on_error == True:
+				msg = [("Error", "error"), (": The DNS label ", "default"),
+				       (dnslabel, "hostname")]
+				if idna_dnslabel != dnslabel:
+					msg += [(" (Punycode: ", "default"),
+						(idna_dnslabel, "hostname"),
+						(")", "default")]
+				msg += [(" is invalid; ", "default"),
+					("a DNS label cannot begin or end with “-“.", "default")]
+				iktprint.iktprint(msg, stderr = True)
+			return HostNameStatus.DNS_LABEL_INVALID_FORMAT
+	return HostNameStatus.OK
 
 # pylint: disable=too-many-arguments,line-too-long
 def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = None, checks = None, exit_on_critical: bool = False, message_on_error: bool = False):

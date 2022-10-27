@@ -20,6 +20,7 @@ import errno
 from getpass import getuser
 import hashlib
 import os
+from pathlib import Path
 import re
 import sys
 
@@ -28,7 +29,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
-from ikttypes import DictPath
+from ikttypes import DictPath, HostNameStatus
 from iktpaths import IKT_CONFIG_FILE, DEFAULT_THEME_FILE
 
 from commandparser import parse_commandline
@@ -38,10 +39,10 @@ from ansible_helper import ansible_print_play_results, populate_playbooks_from_p
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 from iktlib import deep_get, execute_command, iktconfig, join_tuple_list, read_iktconfig
+from iktio import scan_and_add_ssh_keys, secure_read_string, validate_fqdn
 
 from kubernetes_helper import get_node_status, kubectl_get_version
 
-from iktio import scan_and_add_ssh_keys
 from iktprint import iktprint, iktinput, iktinput_password
 
 import about
@@ -633,34 +634,31 @@ def prepare_hosts(options, args):
 
 	if from_file == True:
 		hostfile = args[0]
-		if not os.path.exists(hostfile):
+		hostfile_path = Path(hostfile)
+		if not hostfile_path.exists():
 			iktprint([("Error: ", "error"), (f"{hostfile}", "path"), (" does not exist; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
-		elif not os.path.isfile(hostfile):
+		if not hostfile_path.is_file():
 			iktprint([("Error: ", "error"), (f"{hostfile}", "path"), (" is not a file; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
+
+		hosts_raw = secure_read_string(hostfile)
+		hosts_raw = hosts_raw.splitlines()
+
+		if len(hosts_raw) == 1 and "," in hosts_raw[0]:
+			selection = hosts_raw[0].split(",")
 		else:
-			hosts_raw = None
-			with open(hostfile, "r", encoding = "utf-8") as f:
-				hosts_raw = f.readlines()
-
-			if hosts_raw is None:
-				iktprint([("Error: ", "error"), ("failed to read hostnames from ", "default"), (f"{hostfile}", "path"), ("; aborting.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-
-			# strip newlines
-			hosts_raw = [s.strip() for s in hosts_raw]
-
-			if len(hosts_raw) == 1 and "," in hosts_raw[0]:
-				selection = hosts_raw[0].split(",")
-			else:
-				selection = hosts_raw
+			selection = hosts_raw
 	else:
 		selection = args[0].split(",")
-
 		if "ALL" in selection:
 			iktprint([("Error: ", "error"), ("ALL", "hostname"), (" cannot be used with ", "default"), ("prepare", "command"), ("; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
+
+	# Validate FQDN/hostname list
+	retval = validate_fqdn(selection[0], message_on_error = True)
+	if retval != HostNameStatus.OK:
+		sys.exit(errno.EINVAL)
 
 	# Correlate the list of hosts with the nodes in the cluster
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
@@ -1322,8 +1320,8 @@ ikt_commandline = {
 		"description": [("Prepare ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" for use as a node in a Kubernetes cluster", "description")],
 		"extended_description": [
 			[("Note: ", "note"), ("HOST", "argument"), (" should be a resolvable hostname; using IP-addresses may cause issues.", "description")],
-			[("If the hosts intended for use as nodes in the cluster do not have a resolvable", "description")],
-			[("hostnames it's recommended to use ", "description"), ("/etc/hosts", "path"), (" for this purpose.", "description")],
+			[("If the hosts intended for use as nodes in the cluster do not have resolvable", "description")],
+			[("hostnames it is recommended to add them to ", "description"), ("/etc/hosts", "path"), (".", "default")],
 		],
 		"options": {
 			"--ignore-existing": {

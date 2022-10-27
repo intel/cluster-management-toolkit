@@ -39,6 +39,22 @@ class FilePathAuditError(Exception):
 
 		return msg
 
+class HostNameStatus(Enum):
+	"""
+	Return values from validate_hostname()
+	"""
+
+	OK = auto()
+	DNS_SUBDOMAIN_EMPTY = auto()
+	DNS_SUBDOMAIN_TOO_LONG = auto()
+	DNS_SUBDOMAIN_WRONG_CASE = auto()
+	DNS_SUBDOMAIN_INVALID_FORMAT = auto()
+	DNS_LABEL_STARTS_WITH_IDNA = auto()
+	DNS_LABEL_INVALID_FORMAT = auto()
+	DNS_LABEL_TOO_LONG = auto()
+	DNS_LABEL_PUNYCODE_TOO_LONG = auto()
+	DNS_LABEL_INVALID_CHARACTERS = auto()
+
 class SecurityStatus(Enum):
 	"""
 	Return values from check_path()
