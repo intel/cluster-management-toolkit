@@ -6,20 +6,20 @@ This file contains paths used by iKT
 """
 
 import os
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from ikttypes import FilePath
 
 HOMEDIR = FilePath(str(Path.home()))
 
 BIN_DIRNAME = "bin"
-BINDIR = FilePath(os.path.join(HOMEDIR, BIN_DIRNAME))
+BINDIR = FilePath(str(PurePath(HOMEDIR).joinpath(BIN_DIRNAME)))
 
 IKT_DIRNAME = ".ikt"
-IKTDIR = FilePath(os.path.join(HOMEDIR, IKT_DIRNAME))
+IKTDIR = FilePath(str(PurePath(HOMEDIR).joinpath(IKT_DIRNAME)))
 
 IKT_CONFIG_FILENAME = "ikt.yaml"
-IKT_CONFIG_FILE = FilePath(os.path.join(IKTDIR, IKT_CONFIG_FILENAME))
+IKT_CONFIG_FILE = FilePath(str(PurePath(IKTDIR).joinpath(IKT_CONFIG_FILENAME)))
 
 IKT_CONFIG_FILE_DIRNAME = f"{IKT_CONFIG_FILENAME}.d"
 IKT_CONFIG_FILE_DIR = FilePath(os.path.join(IKTDIR, IKT_CONFIG_FILE_DIRNAME))
@@ -54,3 +54,8 @@ VIEW_DIR = FilePath(os.path.join(IKTDIR, VIEW_DIRNAME))
 
 KUBE_CONFIG_DIR = FilePath(os.path.join(HOMEDIR, ".kube"))
 KUBE_CONFIG_FILE = FilePath(os.path.join(KUBE_CONFIG_DIR, "config"))
+
+SSH_DIR = FilePath(os.path.join(HOMEDIR, ".ssh"))
+
+BASH_COMPLETION_BASE_DIR = FilePath(os.path.join(HOMEDIR, ".local/share/bash-completion"))
+BASH_COMPLETION_DIR = FilePath(os.path.join(HOMEDIR, ".local/share/bash-completion/completions"))

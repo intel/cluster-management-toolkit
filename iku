@@ -51,7 +51,7 @@ from ikttypes import DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
 from iktpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
-from iktio import secure_which
+from iktio import secure_read_string, secure_read_yaml, secure_which
 
 from logparser import logparser, logparser_initialised, LogLevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
@@ -3779,7 +3779,7 @@ def get_control_plane():
 		control_planes.append((vlist[0], deep_get(vlist[0], "metadata#name")))
 
 	if len(control_planes) > 1:
-		iktprint([("Warning:", "warning"), (" multiple control planes not supported yet, found multiple; returning first entry:", "default")], stderr = True)
+		iktprint([("Warning", "warning"), (": Multiple control planes not supported yet, found multiple; returning first entry:", "default")], stderr = True)
 		for control_plane in control_planes:
 			print(f"  {control_plane[1]}")
 
@@ -5721,18 +5721,12 @@ def clusteroverviewloop(stdscr, view):
 			uip.update_window()
 
 			if islocal == True:
-				# FIXME: handle non-existance
-				if os.path.exists("/proc/loadavg"):
-					with open("/proc/loadavg", "r", encoding = "utf-8") as f:
-						loadavg_raw = f.readlines()
-
-				if os.path.exists("/proc/meminfo"):
-					with open("/proc/meminfo", "r", encoding = "utf-8") as f:
-						meminfo_raw = f.readlines()
-
-				if os.path.exists("/proc/stat"):
-					with open("/proc/stat", "r", encoding = "utf-8") as f:
-						stat_raw = f.readlines()
+				tmp = secure_read_string("/proc/loadavg")
+				loadavg_raw = tmp.splitlines()
+				tmp = secure_read_string("/proc/meminfo")
+				meminfo_raw = tmp.splitlines()
+				tmp = secure_read_string("/proc/stat")
+				stat_raw = tmp.splitlines()
 
 			if len(loadavg_raw) > 0:
 				try:
@@ -8399,7 +8393,7 @@ def do_command(stdscr, **kwargs) -> None:
 	try:
 		cpath = secure_which(FilePath(args[0]), fallback_allowlist = fallback_allowlist, security_policy = security_policy)
 	except FileNotFoundError:
-		iktprint([("Error:", "error"), (" “", "default"), (f"{args[0]}", "programname"), ("“ does not exist.\n", "default")], stderr = True)
+		iktprint([("Error", "error"), (": “", "default"), (f"{args[0]}", "programname"), ("“ does not exist.\n", "default")], stderr = True)
 		waitforkeypress = True
 	else:
 		_retval = subprocess.run(args, check = False).returncode
@@ -8433,7 +8427,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 			args = ["/usr/bin/kubectl", "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
 			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 			if result.returncode != 0:
-				iktprint([("Error:", "error"), (" Failed to create debug image", "default")], stderr = True)
+				iktprint([("Error", "error"), (": Failed to create debug image", "default")], stderr = True)
 			else:
 				output = result.stdout.decode('utf-8')
 				# Safe
@@ -8449,7 +8443,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 				args = ["/usr/bin/kubectl", "wait", "--for=condition=ready", "--timeout=60s", "-n", "default", "pod", pod_name]
 				result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 				if result.returncode != 0:
-					iktprint([("Error:", "error"), (" the pod failed to become ready before timeout.", "default")], stderr = True)
+					iktprint([("Error", "error"), (": The pod failed to become ready before timeout.", "default")], stderr = True)
 				else:
 					# Attach to the debug container
 					args = ["/usr/bin/kubectl", "attach", "-n", "default", pod_name, "-c", container_name, "-i", "-t", "--pod-running-timeout=1m0s"]
@@ -8707,7 +8701,7 @@ def executecommand_multiple(stdscr, msg, command, items, waitforkeypress):
 
 	if waitforkeypress or retval > 0:
 		if retval > 0:
-			iktprint([("Error: ", "error")] + format_commandline(args) + [(" returned ", "default"), (f"{retval}", "errorvalue")], stderr = True)
+			iktprint([("Error", "error"), (": ", "default")] + format_commandline(args) + [(" returned ", "default"), (f"{retval}", "errorvalue")], stderr = True)
 		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
@@ -9103,7 +9097,7 @@ def edit_resource(stdscr, **kwargs):
 	waitforkeypress = False
 	if waitforkeypress or retval > 0:
 		if retval > 0:
-			iktprint([("\nError: ", "error")] + format_commandline(args, implicit_command = False) + [(" returned ", "default"), (retval, "errorvalue")], stderr = True)
+			iktprint([("\nError", "error"), (": ", "default")] + format_commandline(args, implicit_command = False) + [(" returned ", "default"), (retval, "errorvalue")], stderr = True)
 		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
@@ -9262,7 +9256,7 @@ def action_execute_command(uip, items, action, values, kind, **kwargs):
 		result = subprocess.run(args, check = False)
 		retval = result.returncode
 	except FileNotFoundError:
-		iktprint([("Error: ", "error"), ("command “", "default"), (f"{args[0]}", "programname"), ("“ not found", "default")])
+		iktprint([("Error", "error"), (": Command “", "default"), (f"{args[0]}", "programname"), ("“ not found", "default")])
 		retval = 2
 
 	waitforkeypress = True
@@ -9503,101 +9497,100 @@ def __populate_playbooklist(path, action_list):
 		playbookpath = f"{path}/{filename}"
 		description = None
 
-		with open(playbookpath, encoding = "utf-8") as f:
-			try:
-				d = yaml.safe_load(f)
-			except yaml.YAMLError:
-				# This entry could not be parsed; add a dummy entry
-				action_list[playbookname] = {
-					"description": playbookpath,
-					"playbook": playbookpath,
-					"category": "__INVALID__",
-					"comments": "Failed to parse (Not valid YAML)",
-				}
-				continue
-
-			# Empty files are used to disable playbooks completely
-			if d is None or len(d) == 0:
-				action_list[playbookname] = {
-					"description": playbookpath,
-					"playbook": playbookpath,
-					"category": "__DISABLED__",
-				}
-				continue
-
-			if type(d) != list:
-				# This entry could not be parsed; add a dummy entry
-				action_list[playbookname] = {
-					"description": playbookpath,
-					"playbook": playbookpath,
-					"category": "__INVALID__",
-					"comments": "Failed to parse (Not a list of plays)",
-				}
-				continue
-
-			description = deep_get(d[0], "vars#metadata#description")
-
-			# Ignore all playbooks that lack a description;
-			# typically they are internal playbooks
-			if description is None:
-				continue
-
-			query = deep_get(d[0], "vars#metadata#query#string")
-			queryval = deep_get(d[0], "vars#metadata#query#variable")
-			queryfunc = deep_get(d[0], "vars#metadata#query#function")
-
-			# Sanity check
-			if queryfunc is not None:
-				if queryfunc not in ("string", "yesno", "filechooser"):
-					raise Exception(f"unknown queryfunc “{queryfunc}“ provided")
-
-			confirm = deep_get(d[0], "vars#metadata#confirm", False)
-			tmpallowoncontrolplane = deep_get(d[0], "vars#metadata#allow_on_control_plane")
-			if tmpallowoncontrolplane is None or tmpallowoncontrolplane == "always":
-				allowoncontrolplane = True
-				singleoncontrolplane = False
-			elif tmpallowoncontrolplane.lower() == "single":
-				allowoncontrolplane = True
-				singleoncontrolplane = True
-			elif tmpallowoncontrolplane.lower() == "never":
-				allowoncontrolplane = False
-				singleoncontrolplane = False
-			else:
-				raise Exception(f"{playbookpath}: Invalid values for allow-on-control-plane")
-
-			requiresclusterinfo = deep_get_with_fallback(d[0], ["vars#metadata#requires_cluster_info", "vars#metadata#requires-cluster-info"], False)
-			runbefore = deep_get_with_fallback(d[0], ["vars#metadata#run_before", "vars#metadata#run-before"], [])
-			runafter = deep_get_with_fallback(d[0], ["vars#metadata#run_after", "vars#metadata#run-after"], [])
-			addtogroups = deep_get_with_fallback(d[0], ["vars#metadata#add_to_groups", "vars#metadata#add-to-groups"], [])
-			removefromgroups = deep_get_with_fallback(d[0], ["vars#metadata#remove_from_groups", "vars#metadata#remove-from-groups"], [])
-			category = deep_get(d[0], "vars#metadata#category", "Uncategorized")
-			playbooktypes = deep_get_with_fallback(d[0], ["vars#metadata#playbook_types", "vars#metadata#playbook-types"], [])
-			comments = deep_get(d[0], "vars#metadata#comments", "")
-			readonly = deep_get_with_fallback(d[0], ["vars#metadata#read_only", "vars#metadata#read-only"], False)
-			extravars = {
-				"quiet": deep_get(d[0], "vars#metadata#quiet", False),
-			}
-
+		try:
+			d = secure_read_yaml(playbookpath, directory_is_symlink = True)
+		except yaml.YAMLError:
+			# This entry could not be parsed; add a dummy entry
 			action_list[playbookname] = {
-				"description": description,
+				"description": playbookpath,
 				"playbook": playbookpath,
-				"query": query,
-				"queryval": queryval,
-				"queryfunc": queryfunc,
-				"confirm": confirm,
-				"allow_on_control_plane": allowoncontrolplane,
-				"single_on_control_plane": singleoncontrolplane,
-				"requires_cluster_info": requiresclusterinfo,
-				"run_before": runbefore,
-				"run_after": runafter,
-				"add_to_groups": addtogroups,
-				"remove_from_groups": removefromgroups,
-				"category": category,
-				"playbook_types": playbooktypes,
-				"comments": comments,
-				"read_only": readonly,
-				"extravars": extravars,
+				"category": "__INVALID__",
+				"comments": "Failed to parse (Not valid YAML)",
 			}
+			continue
+
+		# Empty files are used to disable playbooks completely
+		if d is None or len(d) == 0:
+			action_list[playbookname] = {
+				"description": playbookpath,
+				"playbook": playbookpath,
+				"category": "__DISABLED__",
+			}
+			continue
+
+		if type(d) != list:
+			# This entry could not be parsed; add a dummy entry
+			action_list[playbookname] = {
+				"description": playbookpath,
+				"playbook": playbookpath,
+				"category": "__INVALID__",
+				"comments": "Failed to parse (Not a list of plays)",
+			}
+			continue
+
+		description = deep_get(d[0], "vars#metadata#description")
+
+		# Ignore all playbooks that lack a description;
+		# typically they are internal playbooks
+		if description is None:
+			continue
+
+		query = deep_get(d[0], "vars#metadata#query#string")
+		queryval = deep_get(d[0], "vars#metadata#query#variable")
+		queryfunc = deep_get(d[0], "vars#metadata#query#function")
+
+		# Sanity check
+		if queryfunc is not None:
+			if queryfunc not in ("string", "yesno", "filechooser"):
+				raise Exception(f"unknown queryfunc “{queryfunc}“ provided")
+
+		confirm = deep_get(d[0], "vars#metadata#confirm", False)
+		tmpallowoncontrolplane = deep_get(d[0], "vars#metadata#allow_on_control_plane")
+		if tmpallowoncontrolplane is None or tmpallowoncontrolplane == "always":
+			allowoncontrolplane = True
+			singleoncontrolplane = False
+		elif tmpallowoncontrolplane.lower() == "single":
+			allowoncontrolplane = True
+			singleoncontrolplane = True
+		elif tmpallowoncontrolplane.lower() == "never":
+			allowoncontrolplane = False
+			singleoncontrolplane = False
+		else:
+			raise Exception(f"{playbookpath}: Invalid values for allow-on-control-plane")
+
+		requiresclusterinfo = deep_get_with_fallback(d[0], ["vars#metadata#requires_cluster_info", "vars#metadata#requires-cluster-info"], False)
+		runbefore = deep_get_with_fallback(d[0], ["vars#metadata#run_before", "vars#metadata#run-before"], [])
+		runafter = deep_get_with_fallback(d[0], ["vars#metadata#run_after", "vars#metadata#run-after"], [])
+		addtogroups = deep_get_with_fallback(d[0], ["vars#metadata#add_to_groups", "vars#metadata#add-to-groups"], [])
+		removefromgroups = deep_get_with_fallback(d[0], ["vars#metadata#remove_from_groups", "vars#metadata#remove-from-groups"], [])
+		category = deep_get(d[0], "vars#metadata#category", "Uncategorized")
+		playbooktypes = deep_get_with_fallback(d[0], ["vars#metadata#playbook_types", "vars#metadata#playbook-types"], [])
+		comments = deep_get(d[0], "vars#metadata#comments", "")
+		readonly = deep_get_with_fallback(d[0], ["vars#metadata#read_only", "vars#metadata#read-only"], False)
+		extravars = {
+			"quiet": deep_get(d[0], "vars#metadata#quiet", False),
+		}
+
+		action_list[playbookname] = {
+			"description": description,
+			"playbook": playbookpath,
+			"query": query,
+			"queryval": queryval,
+			"queryfunc": queryfunc,
+			"confirm": confirm,
+			"allow_on_control_plane": allowoncontrolplane,
+			"single_on_control_plane": singleoncontrolplane,
+			"requires_cluster_info": requiresclusterinfo,
+			"run_before": runbefore,
+			"run_after": runafter,
+			"add_to_groups": addtogroups,
+			"remove_from_groups": removefromgroups,
+			"category": category,
+			"playbook_types": playbooktypes,
+			"comments": comments,
+			"read_only": readonly,
+			"extravars": extravars,
+		}
 
 	return action_list
 
@@ -10164,440 +10157,439 @@ def populate_views(force_refresh = False):
 		has_listview = False
 		has_infoview = False
 
-		with open(view_file, "r", encoding = "utf-8") as f:
-			try:
-				d = yaml.safe_load(f)
-			except yaml.parser.ParserError:
-				sys.exit(f"View-file {view_file} is invalid; aborting.")
+		try:
+			d = secure_read_yaml(view_file, directory_is_symlink = True)
+		except yaml.parser.ParserError:
+			sys.exit(f"View-file {view_file} is invalid; aborting.")
 
-			kind = deep_get(d, "kind", "<missing>")
-			default_command = deep_get(d, "default_command", "<missing>")
-			if kind is None or default_command is None or "<missing>" in (kind, default_command):
-				sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None:\n"
-					 f"kind: {kind}\n"
-					 f"default_command: {default_command}\n"
+		kind = deep_get(d, "kind", "<missing>")
+		default_command = deep_get(d, "default_command", "<missing>")
+		if kind is None or default_command is None or "<missing>" in (kind, default_command):
+			sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None:\n"
+				 f"kind: {kind}\n"
+				 f"default_command: {default_command}\n"
+				  "Aborting.")
+
+		api_family = deep_get(d, "api_family", "")
+		# Use a set to avoid duplicates
+		_command = set()
+		if not kind.startswith("__"):
+			# If there's a "." in the command it means the plural or singular is not unique without api_family;
+			# don't add the lowercase form of kind automagically
+			if "." not in default_command:
+				_command.add(kind.lower())
+		if len(deep_get(d, "command", [])) > 0:
+			_command = set.union(_command, set(deep_get(d, "command", [])))
+		# OK, we've got all commands we wanted; now we want the preferred form first
+		_command.discard(default_command)
+		_command = [default_command] + list(_command)
+		# Finally, now that we have a list, add variants with api_family suffixed
+		command = list(_command)
+		if len(api_family) > 0:
+			for item in _command:
+				command.append(f"{item}.{api_family}")
+
+		listview_entry = None
+
+		if "listview" not in d and "infoview" not in d:
+			sys.exit(f"View-file {view_file} lacks both listview and infoview; there might be typo somewhere")
+
+		if "listview" in d:
+			# Do we need to override kind?
+			if deep_get(d, "listview#kind") is not None:
+				kind = deep_get(d, "listview#kind")
+				api_family = deep_get(d, "listview#api_family", "")
+			name = deep_get(d, "listview#name", "<missing>")
+			group = deep_get(d, "listview#group")
+
+			check_availability = deep_get(d, "listview#check_availability", None)
+			if check_availability is not None:
+				if isinstance(check_availability, str):
+					check_availability = deep_get(availability_checker_allowlist, check_availability)
+
+			sortcolumn = deep_get(d, "listview#sortcolumn")
+			reversible = deep_get(d, "listview#reversible", True)
+			sortorder_reverse = deep_get(d, "listview#sortorder_reverse", False)
+			fields = deep_get(d, "listview#fields", {})
+
+			field_indexes = {}
+			_indexes = deep_get(d, "listview#field_indexes", {})
+
+			if len(_indexes) == 0:
+				sys.exit(f"View-file {view_file} is invalid: field_indexes is either missing or empty for the list view. Aborting.")
+
+			for key in _indexes:
+				if isinstance(_indexes[key], list):
+					field_indexes[key] = {}
+					field_indexes[key]["fields"] = copy.deepcopy(_indexes[key])
+					field_indexes[key]["sortcolumn"] = sortcolumn
+					field_indexes[key]["sortorder_reverse"] = sortorder_reverse
+				else:
+					field_indexes = copy.deepcopy(_indexes)
+
+			if name is None or group is None or "<missing>" in (name, group):
+				sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing, empty or None:\n"
+					  "listview:\n"
+					 f"  name: {name}\n"
+					 f"  group: {group}\n"
 					  "Aborting.")
 
-			api_family = deep_get(d, "api_family", "")
-			# Use a set to avoid duplicates
-			_command = set()
-			if not kind.startswith("__"):
-				# If there's a "." in the command it means the plural or singular is not unique without api_family;
-				# don't add the lowercase form of kind automagically
-				if "." not in default_command:
-					_command.add(kind.lower())
-			if len(deep_get(d, "command", [])) > 0:
-				_command = set.union(_command, set(deep_get(d, "command", [])))
-			# OK, we've got all commands we wanted; now we want the preferred form first
-			_command.discard(default_command)
-			_command = [default_command] + list(_command)
-			# Finally, now that we have a list, add variants with api_family suffixed
-			command = list(_command)
-			if len(api_family) > 0:
-				for item in _command:
-					command.append(f"{item}.{api_family}")
+			if name in views:
+				conflicting_kind = deep_get(views, f"{name}#kind")
+				sys.exit(f"Error when processing view-vile {view_file} for kind: {(kind, api_family)}; a view named {name} already exists (for the kind: {conflicting_kind})")
 
-			listview_entry = None
+			infogetter = generic_infogetter
+			if "infogetter" in deep_get(d, "listview"):
+				infogetter = deep_get(d, "listview#infogetter")
+				if infogetter is not None:
+					infogetter = deep_get(infogetter_allowlist, infogetter)
 
-			if "listview" not in d and "infoview" not in d:
-				sys.exit(f"View-file {view_file} lacks both listview and infoview; there might be typo somewhere")
+			listgetter = generic_listgetter
+			if "listgetter" in deep_get(d, "listview"):
+				listgetter = deep_get(d, "listview#listgetter")
+				if listgetter is not None:
+					listgetter = deep_get(listgetter_allowlist, listgetter)
 
-			if "listview" in d:
-				# Do we need to override kind?
-				if deep_get(d, "listview#kind") is not None:
-					kind = deep_get(d, "listview#kind")
-					api_family = deep_get(d, "listview#api_family", "")
-				name = deep_get(d, "listview#name", "<missing>")
-				group = deep_get(d, "listview#group")
+			listgetter_async = None
+			if "listgetter_async" in deep_get(d, "listview"):
+				listgetter_async = deep_get(d, "listview#listgetter_async")
+				if listgetter_async is not None:
+					listgetter_async = deep_get(listgetter_async_allowlist, listgetter_async)
 
-				check_availability = deep_get(d, "listview#check_availability", None)
-				if check_availability is not None:
-					if isinstance(check_availability, str):
-						check_availability = deep_get(availability_checker_allowlist, check_availability)
+			listgetter_args = deep_get(d, "listview#listgetter_args", {})
 
-				sortcolumn = deep_get(d, "listview#sortcolumn")
-				reversible = deep_get(d, "listview#reversible", True)
-				sortorder_reverse = deep_get(d, "listview#sortorder_reverse", False)
-				fields = deep_get(d, "listview#fields", {})
-
-				field_indexes = {}
-				_indexes = deep_get(d, "listview#field_indexes", {})
-
-				if len(_indexes) == 0:
-					sys.exit(f"View-file {view_file} is invalid: field_indexes is either missing or empty for the list view. Aborting.")
-
-				for key in _indexes:
-					if isinstance(_indexes[key], list):
-						field_indexes[key] = {}
-						field_indexes[key]["fields"] = copy.deepcopy(_indexes[key])
-						field_indexes[key]["sortcolumn"] = sortcolumn
-						field_indexes[key]["sortorder_reverse"] = sortorder_reverse
-					else:
-						field_indexes = copy.deepcopy(_indexes)
-
-				if name is None or group is None or "<missing>" in (name, group):
-					sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing, empty or None:\n"
-						  "listview:\n"
-						 f"  name: {name}\n"
-						 f"  group: {group}\n"
-						  "Aborting.")
-
-				if name in views:
-					conflicting_kind = deep_get(views, f"{name}#kind")
-					sys.exit(f"Error when processing view-vile {view_file} for kind: {(kind, api_family)}; a view named {name} already exists (for the kind: {conflicting_kind})")
-
-				infogetter = generic_infogetter
-				if "infogetter" in deep_get(d, "listview"):
-					infogetter = deep_get(d, "listview#infogetter")
-					if infogetter is not None:
-						infogetter = deep_get(infogetter_allowlist, infogetter)
-
-				listgetter = generic_listgetter
-				if "listgetter" in deep_get(d, "listview"):
-					listgetter = deep_get(d, "listview#listgetter")
-					if listgetter is not None:
-						listgetter = deep_get(listgetter_allowlist, listgetter)
-
-				listgetter_async = None
-				if "listgetter_async" in deep_get(d, "listview"):
-					listgetter_async = deep_get(d, "listview#listgetter_async")
-					if listgetter_async is not None:
-						listgetter_async = deep_get(listgetter_async_allowlist, listgetter_async)
-
-				listgetter_args = deep_get(d, "listview#listgetter_args", {})
-
-				on_activation = deep_get(d, "listview#on_activation")
-				if on_activation is None or "call" not in on_activation:
-					activatedfun = genericinfoloop
-				else:
-					activatedfun = deep_get(on_activation, "call")
-					if type(activatedfun) == str:
-						_activatedfun = deep_get(activatedfun_allowlist, activatedfun)
-						if _activatedfun is None:
-							sys.exit(f"{activatedfun} is not in the activatedfun allow list")
-						activatedfun = _activatedfun
-
-				listview_entry = {
-					"kind": (kind, api_family),
-					"commandline": command,
-					"group": group,
-					"check_availability": check_availability,
-					"field_indexes": field_indexes,
-					"fields": fields,
-					"activatedfun": activatedfun,
-					"listview_args": deep_get(d, "listview#listview_args", {}),
-					"statusmsg": deep_get(d, "listview#statusmsg", {}),
-					"is_taggable": deep_get(d, "listview#is_taggable", True),
-					"listgetter": listgetter,
-					"listgetter_async": listgetter_async,
-					"listgetter_args": listgetter_args,
-					"reversible": reversible,
-					"infogetter": infogetter,
-					"infogetter_args": deep_get(d, "listview#infogetter_args", {}),
-					"actions": deep_get(d, "listview#actions", {}),
-				}
-
-				shortcuts = {}
-
-				_shortcuts = deep_get(d, "listview#shortcuts", {})
-				for shortcut in _shortcuts:
-					# If the shortcut is empty we're disabling a default shortcut
-					if _shortcuts[shortcut] is None or len(_shortcuts[shortcut]) == 0:
-						shortcuts[shortcut] = {}
-						continue
-
-					key = deep_get(_shortcuts[shortcut], "key", "<missing>")
-					modifier = deep_get(_shortcuts[shortcut], "modifier", "")
-					helptext = deep_get(_shortcuts[shortcut], "helptext", "<missing>")
-					action = deep_get(_shortcuts[shortcut], "action", "<missing>")
-					action_args = deep_get(_shortcuts[shortcut], "action_args", {})
-					action_call = deep_get(_shortcuts[shortcut], "action_call")
-					queryfunc = deep_get(_shortcuts[shortcut], "queryfunc")
-					queryval = deep_get(_shortcuts[shortcut], "queryval")
-					query = deep_get(_shortcuts[shortcut], "query")
-					read_only = deep_get(_shortcuts[shortcut], "read_only", False)
-
-					if key is None or helptext is None or action is None or "<missing>" in (key, helptext, action):
-						sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
-							 f"key: {key}\n"
-							 f"helptext: {helptext}\n"
-							 f"action: {action}\n"
-							  "Aborting.")
-
-					key = key.lower()
-					modifier = modifier.lower()
-
-					shortcut_key, help_key = map_key(view_file, shortcut, activatedfun, key, modifier)
-
-					shortcuts[shortcut] = {
-						"shortcut": shortcut_key,
-						"helptext": (help_key, helptext),
-						"action": action,
-						"action_args": action_args,
-						"action_call": action_args,
-						"queryfunc": queryfunc,
-						"queryval": queryval,
-						"query": query,
-						"read_only": read_only
-					}
-					if action == "call":
-						_action_call = deep_get(action_call_allowlist, action_call)
-						if _action_call is None:
-							sys.exit(f"{action_call} is not in the action_call allow list")
-						shortcuts[shortcut]["action_call"] = _action_call
-
-				if len(shortcuts) > 0:
-					listview_entry["shortcuts"] = shortcuts
-
-				# Replace existing listviews with the same name
-				views.pop(name, None)
-
-				# Add the new view
-				has_listview = True
-				views[name] = listview_entry
-
-			infoview_entry = None
-
-			if "infoview" in d:
-				# Default kind and api_family unless overriden
-				kind = deep_get(d, "kind", "<missing>")
-				api_family = deep_get(d, "api_family", "")
-
-				# Do we need to override kind?
-				if deep_get(d, "infoview#kind") is not None:
-					kind = deep_get(d, "infoview#kind")
-					api_family = deep_get(d, "infoview#api_family", "")
-				name = deep_get(d, "infoview#name", "<missing>")
-				infopad = deep_get(d, "infoview#infopad", {})
-
-				row_indexes = {}
-				row_fields = {}
-
-				_indexes = deep_get(infopad, "row_indexes")
-
-				if _indexes is not None:
-					if len(_indexes) == 0:
-						sys.exit(f"View-file {view_file} is invalid: row_indexes is empty for the info view. Aborting.")
-
-					# We're not using row_indexes in the same way field_indexes are used; we don't support multiple profiles;
-					# since dicts are ordered by insertion we get the rows in the right order if we order by row_indexes,
-					# and we don't support resorting, so we don't need to include the row_indexes
-					row_indexes = copy.deepcopy(deep_get(_indexes, "Normal#fields", []))
-
-					# Rows need to be reformatted
-					infopad_rows = deep_get(infopad, "rows", {})
-
-					for row in row_indexes:
-						if row not in infopad_rows:
-							sys.exit(f"View {name}: row “{row}“ cannot be found in infoview\nInfoview rows: {infopad_rows}\nrow names: {row_indexes}")
-						row_fields[row] = copy.deepcopy(deep_get(infopad_rows, row, {}))
-						# We need to reformat the header
-						_header = deep_get(infopad_rows, f"{row}#header", [["<unset>", ["types", "unset"]]])
-						header = []
-						for string, formatting in _header:
-							header.append((string, tuple(formatting)))
-						row_fields[row]["header"] = header
-
-				name_path = deep_get(d, "infoview#infopad#name_path")
-				namespace_path = deep_get(d, "infoview#infopad#namespace_path", "")
-				creation_timestamp_path = deep_get(d, "infoview#infopad#creation_timestamp_path", "")
-
-				listpad = deep_get(d, "infoview#listpad", {})
-
-				on_activation = deep_get(listpad, "on_activation")
+			on_activation = deep_get(d, "listview#on_activation")
+			if on_activation is None or "call" not in on_activation:
+				activatedfun = genericinfoloop
+			else:
 				activatedfun = deep_get(on_activation, "call")
-				if isinstance(activatedfun, str):
+				if type(activatedfun) == str:
 					_activatedfun = deep_get(activatedfun_allowlist, activatedfun)
 					if _activatedfun is None:
 						sys.exit(f"{activatedfun} is not in the activatedfun allow list")
 					activatedfun = _activatedfun
-				override_kind = deep_get(on_activation, "kind")
-				override_api_family = deep_get(on_activation, "api_family", "")
-				on_activation_extraref = deep_get(on_activation, "extraref")
-				on_activation_data = deep_get(on_activation, "data")
-				if override_kind is None:
-					viewoverride = (kind, api_family)
-				else:
-					viewoverride = (override_kind, override_api_family)
-					on_activation["kind"] = viewoverride
-					on_activation.pop("api_family", "")
 
-				annotations = deep_get(d, "infoview#annotations")
+			listview_entry = {
+				"kind": (kind, api_family),
+				"commandline": command,
+				"group": group,
+				"check_availability": check_availability,
+				"field_indexes": field_indexes,
+				"fields": fields,
+				"activatedfun": activatedfun,
+				"listview_args": deep_get(d, "listview#listview_args", {}),
+				"statusmsg": deep_get(d, "listview#statusmsg", {}),
+				"is_taggable": deep_get(d, "listview#is_taggable", True),
+				"listgetter": listgetter,
+				"listgetter_async": listgetter_async,
+				"listgetter_args": listgetter_args,
+				"reversible": reversible,
+				"infogetter": infogetter,
+				"infogetter_args": deep_get(d, "listview#infogetter_args", {}),
+				"actions": deep_get(d, "listview#actions", {}),
+			}
 
-				sortcolumn = deep_get(listpad, "sortcolumn")
-				reversible = deep_get(listpad, "reversible", True)
-				sortorder_reverse = deep_get(listpad, "sortorder_reverse", False)
+			shortcuts = {}
 
-				listpad_fields = deep_get(listpad, "fields", {})
+			_shortcuts = deep_get(d, "listview#shortcuts", {})
+			for shortcut in _shortcuts:
+				# If the shortcut is empty we're disabling a default shortcut
+				if _shortcuts[shortcut] is None or len(_shortcuts[shortcut]) == 0:
+					shortcuts[shortcut] = {}
+					continue
 
-				listpad_field_indexes = {}
-				_indexes = deep_get(listpad, "field_indexes", {})
+				key = deep_get(_shortcuts[shortcut], "key", "<missing>")
+				modifier = deep_get(_shortcuts[shortcut], "modifier", "")
+				helptext = deep_get(_shortcuts[shortcut], "helptext", "<missing>")
+				action = deep_get(_shortcuts[shortcut], "action", "<missing>")
+				action_args = deep_get(_shortcuts[shortcut], "action_args", {})
+				action_call = deep_get(_shortcuts[shortcut], "action_call")
+				queryfunc = deep_get(_shortcuts[shortcut], "queryfunc")
+				queryval = deep_get(_shortcuts[shortcut], "queryval")
+				query = deep_get(_shortcuts[shortcut], "query")
+				read_only = deep_get(_shortcuts[shortcut], "read_only", False)
 
-				for key in _indexes:
-					if isinstance(_indexes[key], list):
-						listpad_field_indexes[key] = {}
-						listpad_field_indexes[key]["fields"] = copy.deepcopy(_indexes[key])
-						listpad_field_indexes[key]["sortcolumn"] = sortcolumn
-						listpad_field_indexes[key]["sortorder_reverse"] = sortorder_reverse
-					else:
-						listpad_field_indexes = copy.deepcopy(_indexes)
+				if key is None or helptext is None or action is None or "<missing>" in (key, helptext, action):
+					sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
+						 f"key: {key}\n"
+						 f"helptext: {helptext}\n"
+						 f"action: {action}\n"
+						  "Aborting.")
 
-				infoview_entry = {
-					"windowheader": name,
-					"field_indexes": listpad_field_indexes,
-					"fields": listpad_fields,
-					"activatedfun": activatedfun,
-					"viewoverride": viewoverride,
-					"extraref": on_activation_extraref,
-					"data": on_activation_data,
-					"infopad": row_fields,
-					"listpad": {},
-					"reversible": reversible,
-					"annotations": annotations,
-					"shortcuts": {},
+				key = key.lower()
+				modifier = modifier.lower()
+
+				shortcut_key, help_key = map_key(view_file, shortcut, activatedfun, key, modifier)
+
+				shortcuts[shortcut] = {
+					"shortcut": shortcut_key,
+					"helptext": (help_key, helptext),
+					"action": action,
+					"action_args": action_args,
+					"action_call": action_args,
+					"queryfunc": queryfunc,
+					"queryval": queryval,
+					"query": query,
+					"read_only": read_only
 				}
-				objgetter = deep_get(d, "infoview#infopad#objgetter")
-				if objgetter is not None:
-					infoview_entry["objgetter"] = deep_get(objgetter_allowlist, objgetter)
+				if action == "call":
+					_action_call = deep_get(action_call_allowlist, action_call)
+					if _action_call is None:
+						sys.exit(f"{action_call} is not in the action_call allow list")
+					shortcuts[shortcut]["action_call"] = _action_call
 
+			if len(shortcuts) > 0:
+				listview_entry["shortcuts"] = shortcuts
+
+			# Replace existing listviews with the same name
+			views.pop(name, None)
+
+			# Add the new view
+			has_listview = True
+			views[name] = listview_entry
+
+		infoview_entry = None
+
+		if "infoview" in d:
+			# Default kind and api_family unless overriden
+			kind = deep_get(d, "kind", "<missing>")
+			api_family = deep_get(d, "api_family", "")
+
+			# Do we need to override kind?
+			if deep_get(d, "infoview#kind") is not None:
+				kind = deep_get(d, "infoview#kind")
+				api_family = deep_get(d, "infoview#api_family", "")
+			name = deep_get(d, "infoview#name", "<missing>")
+			infopad = deep_get(d, "infoview#infopad", {})
+
+			row_indexes = {}
+			row_fields = {}
+
+			_indexes = deep_get(infopad, "row_indexes")
+
+			if _indexes is not None:
+				if len(_indexes) == 0:
+					sys.exit(f"View-file {view_file} is invalid: row_indexes is empty for the info view. Aborting.")
+
+				# We're not using row_indexes in the same way field_indexes are used; we don't support multiple profiles;
+				# since dicts are ordered by insertion we get the rows in the right order if we order by row_indexes,
+				# and we don't support resorting, so we don't need to include the row_indexes
+				row_indexes = copy.deepcopy(deep_get(_indexes, "Normal#fields", []))
+
+				# Rows need to be reformatted
+				infopad_rows = deep_get(infopad, "rows", {})
+
+				for row in row_indexes:
+					if row not in infopad_rows:
+						sys.exit(f"View {name}: row “{row}“ cannot be found in infoview\nInfoview rows: {infopad_rows}\nrow names: {row_indexes}")
+					row_fields[row] = copy.deepcopy(deep_get(infopad_rows, row, {}))
+					# We need to reformat the header
+					_header = deep_get(infopad_rows, f"{row}#header", [["<unset>", ["types", "unset"]]])
+					header = []
+					for string, formatting in _header:
+						header.append((string, tuple(formatting)))
+					row_fields[row]["header"] = header
+
+			name_path = deep_get(d, "infoview#infopad#name_path")
+			namespace_path = deep_get(d, "infoview#infopad#namespace_path", "")
+			creation_timestamp_path = deep_get(d, "infoview#infopad#creation_timestamp_path", "")
+
+			listpad = deep_get(d, "infoview#listpad", {})
+
+			on_activation = deep_get(listpad, "on_activation")
+			activatedfun = deep_get(on_activation, "call")
+			if isinstance(activatedfun, str):
+				_activatedfun = deep_get(activatedfun_allowlist, activatedfun)
+				if _activatedfun is None:
+					sys.exit(f"{activatedfun} is not in the activatedfun allow list")
+				activatedfun = _activatedfun
+			override_kind = deep_get(on_activation, "kind")
+			override_api_family = deep_get(on_activation, "api_family", "")
+			on_activation_extraref = deep_get(on_activation, "extraref")
+			on_activation_data = deep_get(on_activation, "data")
+			if override_kind is None:
+				viewoverride = (kind, api_family)
+			else:
+				viewoverride = (override_kind, override_api_family)
+				on_activation["kind"] = viewoverride
+				on_activation.pop("api_family", "")
+
+			annotations = deep_get(d, "infoview#annotations")
+
+			sortcolumn = deep_get(listpad, "sortcolumn")
+			reversible = deep_get(listpad, "reversible", True)
+			sortorder_reverse = deep_get(listpad, "sortorder_reverse", False)
+
+			listpad_fields = deep_get(listpad, "fields", {})
+
+			listpad_field_indexes = {}
+			_indexes = deep_get(listpad, "field_indexes", {})
+
+			for key in _indexes:
+				if isinstance(_indexes[key], list):
+					listpad_field_indexes[key] = {}
+					listpad_field_indexes[key]["fields"] = copy.deepcopy(_indexes[key])
+					listpad_field_indexes[key]["sortcolumn"] = sortcolumn
+					listpad_field_indexes[key]["sortorder_reverse"] = sortorder_reverse
+				else:
+					listpad_field_indexes = copy.deepcopy(_indexes)
+
+			infoview_entry = {
+				"windowheader": name,
+				"field_indexes": listpad_field_indexes,
+				"fields": listpad_fields,
+				"activatedfun": activatedfun,
+				"viewoverride": viewoverride,
+				"extraref": on_activation_extraref,
+				"data": on_activation_data,
+				"infopad": row_fields,
+				"listpad": {},
+				"reversible": reversible,
+				"annotations": annotations,
+				"shortcuts": {},
+			}
+			objgetter = deep_get(d, "infoview#infopad#objgetter")
+			if objgetter is not None:
+				infoview_entry["objgetter"] = deep_get(objgetter_allowlist, objgetter)
+
+			if len(listpad) > 0:
+				infoview_entry["listpad"]["on_activation"] = on_activation
+
+			if name_path is not None:
+				infoview_entry["name_path"] = name_path
+			if namespace_path is None or len(namespace_path) > 0:
+				infoview_entry["namespace_path"] = namespace_path
+			if creation_timestamp_path is None or len(creation_timestamp_path) > 0:
+				infoview_entry["creation_timestamp_path"] = creation_timestamp_path
+
+			list_listgetter = deep_get(listpad, "listgetter")
+			list_listgetter_args = deep_get(listpad, "listgetter_args", {})
+			list_infogetter = deep_get(listpad, "infogetter")
+			list_infogetter_args = deep_get(listpad, "infogetter_args")
+			if list_infogetter is None:
 				if len(listpad) > 0:
-					infoview_entry["listpad"]["on_activation"] = on_activation
+					raise Exception("View-file {view_file} is invalid: listpad specified, but no infogetter is provided")
+			else:
+				infoview_entry["listpad"]["infogetter"] = deep_get(infogetter_allowlist, list_infogetter)
+				if infoview_entry["listpad"]["infogetter"] is None:
+					raise Exception("View-file {view_file} is invalid: infogetter {list_infogetter} for listpad is not in infogetter_allowlist")
+				infoview_entry["listpad"]["infogetter_args"] = list_infogetter_args
+			if list_listgetter is None:
+				if len(listpad) > 0:
+					raise Exception("View-file {view_file} is invalid: listpad specified, but no listgetter is provided")
+			else:
+				infoview_entry["listpad"]["listgetter"] = deep_get(listgetter_allowlist, list_listgetter)
+				if infoview_entry["listpad"]["listgetter"] is None:
+					raise Exception("View-file {view_file} is invalid: listgetter {list_listgetter} for listpad is not in listgetter_allowlist")
+				infoview_entry["listpad"]["listgetter_args"] = list_listgetter_args
 
-				if name_path is not None:
-					infoview_entry["name_path"] = name_path
-				if namespace_path is None or len(namespace_path) > 0:
-					infoview_entry["namespace_path"] = namespace_path
-				if creation_timestamp_path is None or len(creation_timestamp_path) > 0:
-					infoview_entry["creation_timestamp_path"] = creation_timestamp_path
+			shortcuts = {}
 
-				list_listgetter = deep_get(listpad, "listgetter")
-				list_listgetter_args = deep_get(listpad, "listgetter_args", {})
-				list_infogetter = deep_get(listpad, "infogetter")
-				list_infogetter_args = deep_get(listpad, "infogetter_args")
-				if list_infogetter is None:
-					if len(listpad) > 0:
-						raise Exception("View-file {view_file} is invalid: listpad specified, but no infogetter is provided")
-				else:
-					infoview_entry["listpad"]["infogetter"] = deep_get(infogetter_allowlist, list_infogetter)
-					if infoview_entry["listpad"]["infogetter"] is None:
-						raise Exception("View-file {view_file} is invalid: infogetter {list_infogetter} for listpad is not in infogetter_allowlist")
-					infoview_entry["listpad"]["infogetter_args"] = list_infogetter_args
-				if list_listgetter is None:
-					if len(listpad) > 0:
-						raise Exception("View-file {view_file} is invalid: listpad specified, but no listgetter is provided")
-				else:
-					infoview_entry["listpad"]["listgetter"] = deep_get(listgetter_allowlist, list_listgetter)
-					if infoview_entry["listpad"]["listgetter"] is None:
-						raise Exception("View-file {view_file} is invalid: listgetter {list_listgetter} for listpad is not in listgetter_allowlist")
-					infoview_entry["listpad"]["listgetter_args"] = list_listgetter_args
+			_shortcuts = deep_get(d, "infoview#shortcuts", {})
+			for shortcut in _shortcuts:
+				# If the shortcut is empty we're disabling a default shortcut
+				if _shortcuts[shortcut] is None or len(_shortcuts[shortcut]) == 0:
+					shortcuts[shortcut] = {}
+					continue
 
-				shortcuts = {}
+				key = deep_get(_shortcuts[shortcut], "key", "<missing>")
+				modifier = deep_get(_shortcuts[shortcut], "modifier", "")
+				helptext = deep_get(_shortcuts[shortcut], "helptext", "<missing>")
+				action = deep_get(_shortcuts[shortcut], "action", "<missing>")
+				action_args = deep_get(_shortcuts[shortcut], "action_args", {})
+				action_call = deep_get(_shortcuts[shortcut], "action_call")
+				queryfunc = deep_get(_shortcuts[shortcut], "queryfunc")
+				queryval = deep_get(_shortcuts[shortcut], "queryval")
+				query = deep_get(_shortcuts[shortcut], "query")
+				widget = deep_get(_shortcuts[shortcut], "widget")
+				widget_args = deep_get(_shortcuts[shortcut], "widget_args")
+				inputtitle = deep_get(_shortcuts[shortcut], "inputtitle")
+				confirm = deep_get(_shortcuts[shortcut], "confirm")
+				confirmtitle = deep_get(_shortcuts[shortcut], "confirmtitle")
+				w_title = deep_get(_shortcuts[shortcut], "title")
+				w_headers = deep_get(_shortcuts[shortcut], "headers")
+				w_selectable = deep_get(_shortcuts[shortcut], "selectable")
+				w_itemgetter = deep_get(_shortcuts[shortcut], "itemgetter")
+				if w_itemgetter is not None:
+					if isinstance(w_itemgetter, str):
+						w_itemgetter = deep_get(itemgetter_allowlist, w_itemgetter)
+				w_itemgetter_args = deep_get(_shortcuts[shortcut], "itemgetter_args", {})
+				_w_formatting = deep_get(_shortcuts[shortcut], "formatting")
+				w_formatting = None
+				if _w_formatting is not None:
+					w_formatting = []
+					for context, attr in _w_formatting:
+						w_formatting.append((context, attr))
+				w_sortcolumn = deep_get(_shortcuts[shortcut], "sortcolumn", {})
 
-				_shortcuts = deep_get(d, "infoview#shortcuts", {})
-				for shortcut in _shortcuts:
-					# If the shortcut is empty we're disabling a default shortcut
-					if _shortcuts[shortcut] is None or len(_shortcuts[shortcut]) == 0:
-						shortcuts[shortcut] = {}
-						continue
+				if key is None or helptext is None or action is None or "<missing>" in (key, helptext):
+					sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
+						 f"key: {key}\n"
+						 f"helptext: {helptext}\n"
+						  "Aborting.")
 
-					key = deep_get(_shortcuts[shortcut], "key", "<missing>")
-					modifier = deep_get(_shortcuts[shortcut], "modifier", "")
-					helptext = deep_get(_shortcuts[shortcut], "helptext", "<missing>")
-					action = deep_get(_shortcuts[shortcut], "action", "<missing>")
-					action_args = deep_get(_shortcuts[shortcut], "action_args", {})
-					action_call = deep_get(_shortcuts[shortcut], "action_call")
-					queryfunc = deep_get(_shortcuts[shortcut], "queryfunc")
-					queryval = deep_get(_shortcuts[shortcut], "queryval")
-					query = deep_get(_shortcuts[shortcut], "query")
-					widget = deep_get(_shortcuts[shortcut], "widget")
-					widget_args = deep_get(_shortcuts[shortcut], "widget_args")
-					inputtitle = deep_get(_shortcuts[shortcut], "inputtitle")
-					confirm = deep_get(_shortcuts[shortcut], "confirm")
-					confirmtitle = deep_get(_shortcuts[shortcut], "confirmtitle")
-					w_title = deep_get(_shortcuts[shortcut], "title")
-					w_headers = deep_get(_shortcuts[shortcut], "headers")
-					w_selectable = deep_get(_shortcuts[shortcut], "selectable")
-					w_itemgetter = deep_get(_shortcuts[shortcut], "itemgetter")
-					if w_itemgetter is not None:
-						if isinstance(w_itemgetter, str):
-							w_itemgetter = deep_get(itemgetter_allowlist, w_itemgetter)
-					w_itemgetter_args = deep_get(_shortcuts[shortcut], "itemgetter_args", {})
-					_w_formatting = deep_get(_shortcuts[shortcut], "formatting")
-					w_formatting = None
-					if _w_formatting is not None:
-						w_formatting = []
-						for context, attr in _w_formatting:
-							w_formatting.append((context, attr))
-					w_sortcolumn = deep_get(_shortcuts[shortcut], "sortcolumn", {})
+				if widget is None and "<missing>" == action:
+					sys.exit(f"View-file {view_file} is invalid: at least one of [widget, action] needs to be specified.\n"
+						  "Aborting.")
 
-					if key is None or helptext is None or action is None or "<missing>" in (key, helptext):
-						sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
-							 f"key: {key}\n"
-							 f"helptext: {helptext}\n"
-							  "Aborting.")
+				key = key.lower()
+				modifier = modifier.lower()
 
-					if widget is None and "<missing>" == action:
-						sys.exit(f"View-file {view_file} is invalid: at least one of [widget, action] needs to be specified.\n"
-							  "Aborting.")
+				shortcut_key, help_key = map_key(view_file, shortcut, activatedfun, key, modifier)
 
-					key = key.lower()
-					modifier = modifier.lower()
+				shortcuts[shortcut] = {
+					"shortcut": shortcut_key,
+					"helptext": (help_key, helptext),
+					"action": action,
+					"action_args": action_args,
+					"action_call": action_args,
+					"queryfunc": queryfunc,
+					"queryval": queryval,
+					"query": query,
+					"widget": widget,
+					"widget_args": widget_args,
+					"inputtitle": inputtitle,
+					"confirm": confirm,
+					"confirmtitle": confirmtitle,
+					"title": w_title,
+					"headers": w_headers,
+					"itemgetter": w_itemgetter,
+					"itemgetter_args": w_itemgetter_args,
+					"selectable": w_selectable,
+					"formatting": w_formatting,
+					"sortcolumn": w_sortcolumn,
+				}
+				if action == "call":
+					_action_call = deep_get(action_call_allowlist, action_call)
+					if _action_call is None:
+						sys.exit(f"{action_call} is not in the action_call allow list")
+					shortcuts[shortcut]["action_call"] = _action_call
 
-					shortcut_key, help_key = map_key(view_file, shortcut, activatedfun, key, modifier)
+			logpad = deep_get(d, "infoview#logpad", {})
 
-					shortcuts[shortcut] = {
-						"shortcut": shortcut_key,
-						"helptext": (help_key, helptext),
-						"action": action,
-						"action_args": action_args,
-						"action_call": action_args,
-						"queryfunc": queryfunc,
-						"queryval": queryval,
-						"query": query,
-						"widget": widget,
-						"widget_args": widget_args,
-						"inputtitle": inputtitle,
-						"confirm": confirm,
-						"confirmtitle": confirmtitle,
-						"title": w_title,
-						"headers": w_headers,
-						"itemgetter": w_itemgetter,
-						"itemgetter_args": w_itemgetter_args,
-						"selectable": w_selectable,
-						"formatting": w_formatting,
-						"sortcolumn": w_sortcolumn,
-					}
-					if action == "call":
-						_action_call = deep_get(action_call_allowlist, action_call)
-						if _action_call is None:
-							sys.exit(f"{action_call} is not in the action_call allow list")
-						shortcuts[shortcut]["action_call"] = _action_call
+			if len(logpad) > 0:
+				if len(deep_get(infoview_entry, "listpad", {})) > 0:
+					sys.exit(f"View-file “{view_file}“ is invalid: listpad and logpad cannot be used concurrently.")
 
-				logpad = deep_get(d, "infoview#logpad", {})
+				log_infogetter = deep_get(logpad, "infogetter")
+				if log_infogetter is None:
+					if len(logpad) > 0:
+						raise Exception("View-file {view_file} is invalid: logpad specified, but no infogetter is provided")
+				logpad["infogetter"] = deep_get(infogetter_allowlist, log_infogetter)
+				infoview_entry["logpad"] = copy.deepcopy(logpad)
 
-				if len(logpad) > 0:
-					if len(deep_get(infoview_entry, "listpad", {})) > 0:
-						sys.exit(f"View-file “{view_file}“ is invalid: listpad and logpad cannot be used concurrently.")
+			if len(infoview_entry["listpad"]) == 0:
+				infoview_entry.pop("listpad")
 
-					log_infogetter = deep_get(logpad, "infogetter")
-					if log_infogetter is None:
-						if len(logpad) > 0:
-							raise Exception("View-file {view_file} is invalid: logpad specified, but no infogetter is provided")
-					logpad["infogetter"] = deep_get(infogetter_allowlist, log_infogetter)
-					infoview_entry["logpad"] = copy.deepcopy(logpad)
+			if len(shortcuts) > 0:
+				infoview_entry["shortcuts"] = shortcuts
 
-				if len(infoview_entry["listpad"]) == 0:
-					infoview_entry.pop("listpad")
+			# Replace existing listviews with the same name
+			infoviews.pop((kind, api_family), None)
 
-				if len(shortcuts) > 0:
-					infoview_entry["shortcuts"] = shortcuts
-
-				# Replace existing listviews with the same name
-				infoviews.pop((kind, api_family), None)
-
-				# Add the new view
-				infoviews[(kind, api_family)] = infoview_entry
-				has_infoview = True
+			# Add the new view
+			infoviews[(kind, api_family)] = infoview_entry
+			has_infoview = True
 		kh_update_api_status((kind, api_family), listview = has_listview, infoview = has_infoview)
 
 def setupui(stdscr):
@@ -10621,7 +10613,7 @@ def setupui(stdscr):
 				viewfunc = genericlistloop
 			viewfunc(stdscr, defaultview)
 		else:
-			iktprint([("Error: ", "error"), ("Unknown view “", "default"), (defaultview, "argument"), ("“; check “", "default"), (IKT_CONFIG_FILE, "path"), ("“ and all files in “", "default"), (IKT_CONFIG_FILE_DIR, "path"), ("“for typos.", "default")], stderr = True)
+			iktprint([("Error", "error"), (": Unknown view “", "default"), (defaultview, "argument"), ("“; check “", "default"), (IKT_CONFIG_FILE, "path"), ("“ and all files in “", "default"), (IKT_CONFIG_FILE_DIR, "path"), ("“for typos.", "default")], stderr = True)
 			sys.exit()
 
 def list_namespaces():
@@ -10630,9 +10622,9 @@ def list_namespaces():
 		namespaces = iktlib.join_tuple_list([deep_get(item, "metadata#name") for item in tmp], _tuple = "argument", separator = (", ", "separator"))
 		iktprint([("Valid namespaces: ", "default")] + namespaces + [(".", "separator")])
 	elif status in (42503, 42504):
-		iktprint([("Error: ", "error"), ("API-server unavailable", "default")], stderr = True)
+		iktprint([("Error", "error"), (": API-server unavailable", "default")], stderr = True)
 	else:
-		iktprint([("Error: ", "error"), ("API-server returned ", "default"), (status, "errorvalue")], stderr = True)
+		iktprint([("Error", "error"), (": API-server returned ", "default"), (status, "errorvalue")], stderr = True)
 
 def list_views():
 	viewfields = []
@@ -10754,10 +10746,10 @@ def customise_listviews():
 
 		for field in fields:
 			if field not in fields:
-				iktprint([("Error: ", "error"), ("“", "default"), (field, "option"), ("“ is not a valid field for the view “", "default"), (view, "argument"), ("“; aborting.", "default")], stderr = True)
+				iktprint([("Error", "error"), (": “", "default"), (field, "option"), ("“ is not a valid field for the view “", "default"), (view, "argument"), ("“; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 			elif field in custom_fields:
-				iktprint([("Warning: ", "warning"), ("“", "default"), (field, "option"), ("“ is specified twice (or more) for the view “", "default"), (view, "argument"), ("“; ignoring.", "default")], stderr = True)
+				iktprint([("Warning", "warning"), (": “", "default"), (field, "option"), ("“ is specified twice (or more) for the view “", "default"), (view, "argument"), ("“; ignoring.", "default")], stderr = True)
 				continue
 			custom_fields[field] = None
 		viewref["fields_custom"] = list(custom_fields)

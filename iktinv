@@ -11,7 +11,7 @@ For usage, see:
 
 import errno
 import os
-from pathlib import Path
+from pathlib import Path, PurePath
 import sys
 import typing # pylint: disable=unused-import
 
@@ -21,7 +21,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 from ikttypes import DictPath, FilePath
-from iktpaths import HOMEDIR
+from iktpaths import HOMEDIR, SSH_DIR
 from iktpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
 
 import iktio
@@ -70,7 +70,7 @@ def set_host_vars(options, args) -> int:
 		try:
 			key, value = keyval.split(":")
 		except ValueError:
-			iktprint([("Error: ", "error"), ("Setting a variable requires a ", "default"),
+			iktprint([("Error", "error"), (": Setting a variable requires a ", "default"),
 				  ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
 			print()
 			iktprint([("Try “", "default"),
@@ -113,7 +113,7 @@ def set_group_vars(options, args) -> int:
 		try:
 			key, value = keyval.split(":")
 		except ValueError:
-			iktprint([("Error: ", "error"), ("Setting a variable requires a ", "default"),
+			iktprint([("Error", "error"), (": Setting a variable requires a ", "default"),
 				  ("KEY", "argument"), (":", "separator"), ("VALUE ", "argument"), ("pair.", "default")], stderr = True)
 			print()
 			iktprint([("Try “", "default"),
@@ -236,7 +236,7 @@ def add_groups(options, args) -> int:
 
 	# We shouldn't try to add "all" (it may cause unexpected issues with variables)
 	if "all" in groups:
-		iktprint([("Warning: ", "warning"), ("ignoring attempt to add group “", "default"), ("all", "argument"), ("“.", "default")], stderr = True)
+		iktprint([("Warning", "warning"), (": Ignoring attempt to add group “", "default"), ("all", "argument"), ("“.", "default")], stderr = True)
 		groups.remove("all")
 		if len(groups) == 0:
 			return 0
@@ -296,7 +296,7 @@ def add_hosts(options, args):
 				hostvars.append((key, value))
 		elif opt == "--groups":
 			if len(groups) > 0:
-				iktprint([("Error: ", "error"), ("Invalid option; “", "default"),
+				iktprint([("Error", "error"), (": Invalid option; “", "default"),
 					  (f"{opt}", "option"),
 					  ("“ cannot be used with ", "default"),
 					  ("HOST", "argument"), (",", "separator"), ("... ", "argument"),
@@ -384,7 +384,7 @@ def remove_groups(options, args) -> int:
 			raise Exception(f"Programming error; invalid option {opt}")
 
 	if "all" in groups:
-		iktprint([("Error: ", "error"), ("The group “", "default"), ("all", "argument"), ("“ cannot be removed.", "default")], stderr = True)
+		iktprint([("Error", "error"), (": The group “", "default"), ("all", "argument"), ("“ cannot be removed.", "default")], stderr = True)
 		print()
 		iktprint([("Try “", "default"),
 			  (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("help", "command"),
@@ -399,7 +399,7 @@ def remove_groups(options, args) -> int:
 
 	if forceneeded == True and force == False:
 		if forceneeded == True:
-			iktprint([("Error: ", "error"), ("The following groups are non-empty:", "default")])
+			iktprint([("Error", "error"), (": The following groups are non-empty:", "default")])
 			for group, hosts in extrahosts:
 				iktprint(format_members(group, hosts))
 		print()
@@ -466,7 +466,7 @@ def rebuild_inventory(options, args) -> int:
 
 	# Is there a pre-existing inventory?
 	if Path(ANSIBLE_INVENTORY).is_file() and force == False:
-		iktprint([("Error: ", "error"), ("Overwriting an existing inventory requires specifying “", "default"),
+		iktprint([("Error", "error"), (": Overwriting an existing inventory requires specifying “", "default"),
 			  ("--force", "option"), ("“.", "default")], stderr = True)
 		print()
 		iktprint([("Try “", "default"),
@@ -499,13 +499,14 @@ def rebuild_inventory(options, args) -> int:
 
 	# Finally import the hostkey into authorized_keys
 	pubkey = None
-	with open(FilePath(f"{HOMEDIR}/.ssh/id_ecdsa.pub"), "r", encoding = "utf-8") as f:
-		tmp = f.readlines()
-		if tmp is not None and len(tmp) > 0:
-			pubkey = tmp[0]
 
-	if pubkey == None:
-		iktprint([("Error: ", "error"), ("Failed to read ", "default"), (f"{HOMEDIR}/.ssh/id_ecdsa.pub", "path"), ("; aborting.", "default")], stderr = True)
+	tmp = iktio.secure_read_string(FilePath(str(PurePath(SSH_DIR).joinpath("id_ecdsa.pub"))))
+	if tmp is not None:
+		tmplines = tmp.splitlines()
+		pubkey = tmplines[0]
+
+	if pubkey == None or len(pubkey) == 0:
+		iktprint([("Error", "error"), (": Failed to read ", "default"), (f"{HOMEDIR}/.ssh/id_ecdsa.pub", "path"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	values = {
@@ -562,7 +563,7 @@ def remove_hosts(options, args) -> int:
 
 	if "all" in groups and forceneeded == True and (force == False or len(groups) > 1):
 		if forceneeded == True:
-			iktprint([("Error: ", "error"), ("The following hosts are parts of other groups than “", "default"), ("all", "argument"), ("“:", "default")])
+			iktprint([("Error", "error"), (": The following hosts are parts of other groups than “", "default"), ("all", "argument"), ("“:", "default")])
 			for host, groups in extragroups:
 				iktprint(format_members(host, groups))
 		print()
@@ -708,7 +709,7 @@ def ping(options, args):
 				if group_or_host in _all:
 					selection.append(group_or_host)
 				else:
-					iktprint([("Warning: ", "warning"), ("Skipping unknown host or group “", "default"), (group_or_host, "argument"), ("“", "default")], stderr = True)
+					iktprint([("Warning", "warning"), (": Skipping unknown host or group “", "default"), (group_or_host, "argument"), ("“", "default")], stderr = True)
 			else:
 				selection += hosts
 		# Eliminate duplicates
@@ -848,7 +849,7 @@ commandline = {
 		"extended_description": [
 			[("In cases where the cluster has not been setup using ", "description"), (f"{about.INVENTORY_PROGRAM_NAME}", "programname")],
 			[("this can be used to build a barebones inventory", "description")],
-			[("Note: ", "note"), ("This requires a running cluster", "description")],
+			[("Note", "note"), (": This requires a running cluster", "description")],
 		],
 		"options": {
 			"--force": {
@@ -864,7 +865,7 @@ commandline = {
 		"values": [("GROUP", "argument"), (",", "separator"), ("...", "argument")],
 		"description": [("Remove ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument"), (" from inventory", "description")],
 		"extended_description": [
-			[("Note: ", "note"), ("Removing the group “", "description"), ("all", "argument"), ("“ is not permitted", "description")],
+			[("Note", "note"), (": Removing the group “", "description"), ("all", "argument"), ("“ is not permitted", "description")],
 		],
 		"options": {
 			"--force": {

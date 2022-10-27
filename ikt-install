@@ -203,7 +203,7 @@ def install(options, args):
 		if install_dependencies == True:
 			pkgs, pkgs_fallback = install_software_with_pip_fallback(PACKAGES_WITH_PIP_FALLBACK, dryrun = True)
 			iktprint([("\n• ", "separator"), ("Install the following system software:", "action")])
-			iktprint([("  Note:", "warning"), (" this requires sudo permissions", "emphasis")])
+			iktprint([("  Note", "warning"), (": This requires sudo permissions", "emphasis")])
 			for pkg in PACKAGES_WITHOUT_FALLBACK + pkgs:
 				iktprint([(f"    {pkg}", "path")])
 			for pkg in pkgs_fallback:
@@ -222,8 +222,8 @@ def install(options, args):
 			iktprint([(f"    {src}", "path"), (" ⇨ ", "emphasis"), (f"{dst}", "path")])
 
 		if install_dependencies == True and allow_fallback == False and len(pkgs_fallback) > 0:
-			iktprint([("\n", "default"), ("Error:", "error"),
-				  (" Installation would require fallback to PIP, but “", "default"),
+			iktprint([("\n", "default"), ("Error", "error"),
+				  (": Installation would require fallback to PIP, but “", "default"),
 				  ("--no-fallback", "option"),
 				  ("“ was specified; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)

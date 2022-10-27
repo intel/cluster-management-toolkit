@@ -445,16 +445,20 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 	if ignoring_non_existing == False:
 		Path(path).rmdir()
 
-def secure_write_string(path: FilePath, string: str, permissions = None) -> None:
+def secure_write_string(path: FilePath, string: str, permissions = None, write_mode = "w") -> None:
 	"""
 	Write a string to a file in a safe manner
 
 		Parameters:
 			path (FilePath): The path to write to
 			string (str): The string to write
+			write_type (str): [w, a, x, wb, ab, xb] Write, Append, Exclusive Write, text or binary
 		Raises:
 			ikttypes.FilePathAuditError
 	"""
+
+	if write_mode not in ("a", "ab", "w", "wb", "x", "xb"):
+		raise ValueError(f"Invalid write mode “{write_mode}“; permitted modes are “a(b)“ (append (binary)), “w(b)“ (write (binary)) and “x“ (exclusive write (binary))")
 
 	checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -478,10 +482,10 @@ def secure_write_string(path: FilePath, string: str, permissions = None) -> None
 	# We have no default recourse if this write fails, so if the caller can handle the failure
 	# they have to capture the exception
 	if permissions is None:
-		with open(path, "w", encoding = "utf-8") as f:
+		with open(path, write_mode, encoding = "utf-8") as f:
 			f.write(string)
 	else:
-		with open(path, "w", opener = partial(os.open, mode = permissions), encoding = "utf-8") as f:
+		with open(path, write_mode, opener = partial(os.open, mode = permissions), encoding = "utf-8") as f:
 			f.write(string)
 
 def secure_write_yaml(path: FilePath, data, permissions: int = None, replace_empty = False, replace_null = False, sort_keys = True) -> None:
@@ -505,12 +509,13 @@ def secure_write_yaml(path: FilePath, data, permissions: int = None, replace_emp
 		yaml_str = yaml_str.replace(r"null", "")
 	secure_write_string(path, yaml_str, permissions = permissions)
 
-def secure_read_string(path: FilePath, checks = None) -> str:
+def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool = False) -> str:
 	"""
 	Read a string from a file in a safe manner
 
 		Parameters:
 			path (FilePath): The path to read from
+			directory_is_symlink (bool): The directory that the path points to is a symlink
 		Returns:
 			string (str): The read string
 		Raises:
@@ -518,16 +523,52 @@ def secure_read_string(path: FilePath, checks = None) -> str:
 	"""
 
 	if checks is None:
-		checks = [
-			SecurityChecks.PARENT_RESOLVES_TO_SELF,
-			SecurityChecks.RESOLVES_TO_SELF,
-			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-			SecurityChecks.OWNER_IN_ALLOWLIST,
-			SecurityChecks.PARENT_PERMISSIONS,
-			SecurityChecks.PERMISSIONS,
-			SecurityChecks.EXISTS,
-			SecurityChecks.IS_FILE,
-		]
+		if directory_is_symlink == True:
+			parent_dir = FilePath(str(PurePath(path).parent))
+
+			# The directory itself may be a symlink. This is expected behaviour when installing from a git repo,
+			# but we only allow it if the rest of the path components are secure
+			checks = [
+				SecurityChecks.PARENT_RESOLVES_TO_SELF,
+				SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+				SecurityChecks.OWNER_IN_ALLOWLIST,
+				SecurityChecks.PARENT_PERMISSIONS,
+				SecurityChecks.PERMISSIONS,
+				SecurityChecks.EXISTS,
+				SecurityChecks.IS_DIR,
+			]
+
+			violations = check_path(parent_dir, checks = checks)
+			if len(violations) > 0:
+				violation_strings = []
+				for violation in violations:
+					violation_strings.append(str(violation))
+				violations_joined = ",".join(violation_strings)
+				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = parent_dir)
+
+			# We don't want to check that parent resolves to itself,
+			# because when we have an installation with links directly to the git repo
+			# the parsers directory will be a symlink
+			checks = [
+				SecurityChecks.RESOLVES_TO_SELF,
+				SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+				SecurityChecks.OWNER_IN_ALLOWLIST,
+				SecurityChecks.PARENT_PERMISSIONS,
+				SecurityChecks.PERMISSIONS,
+				SecurityChecks.EXISTS,
+				SecurityChecks.IS_FILE,
+			]
+		else:
+			checks = [
+				SecurityChecks.PARENT_RESOLVES_TO_SELF,
+				SecurityChecks.RESOLVES_TO_SELF,
+				SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+				SecurityChecks.OWNER_IN_ALLOWLIST,
+				SecurityChecks.PARENT_PERMISSIONS,
+				SecurityChecks.PERMISSIONS,
+				SecurityChecks.EXISTS,
+				SecurityChecks.IS_FILE,
+			]
 
 	violations = check_path(path, checks = checks)
 
@@ -545,12 +586,13 @@ def secure_read_string(path: FilePath, checks = None) -> str:
 
 	return string
 
-def secure_read_yaml(path: FilePath, checks = None):
+def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool = False):
 	"""
 	Read data in YAML-format from a file in a safe manner
 
 		Parameters:
 			path (FilePath): The path to read from
+			directory_is_symlink (bool): The directory that the path points to is a symlink
 		Returns:
 			yaml_data (yaml): The read YAML-data
 		Raises:
@@ -558,7 +600,7 @@ def secure_read_yaml(path: FilePath, checks = None):
 			ikttypes.FilePathAuditError
 	"""
 
-	string = secure_read_string(path, checks = checks)
+	string = secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
 	return yaml.safe_load(string)
 
 def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
@@ -716,8 +758,7 @@ def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: 
 
 	# These are the only acceptable conditions where we'd try to create the directory
 	if len(violations) == 0 or violations == [SecurityStatus.DOES_NOT_EXIST]:
-		path = Path(directory)
-		path.mkdir(mode = permissions, exist_ok = True)
+		Path(directory).mkdir(mode = permissions, exist_ok = True)
 
 def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False) -> None:
 	"""
@@ -879,7 +920,7 @@ def scan_and_add_ssh_keys(hosts) -> None:
 			key = transport.get_remote_server_key()
 			transport.close()
 		except paramiko.SSHException:
-			iktprint.iktprint([("Error:", "error"), (" Failed to get server key from remote host ", "default"),
+			iktprint.iktprint([("Error", "error"), (": Failed to get server key from remote host ", "default"),
 					   (host, "hostname"),
 					   ("; aborting.", "default")], stderr = True)
 			sys.exit(errno.EIO)
@@ -910,10 +951,10 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 
 	if checksum_type == "md5":
 		m = hashlib.md5() # nosec
-		iktprint.iktprint([("Warning:", "warning"), (" use of MD5 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
+		iktprint.iktprint([("Warning", "warning"), (": Use of MD5 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
 	elif checksum_type in ("sha", "sha1"):
 		m = hashlib.sha1() # nosec
-		iktprint.iktprint([("Warning:", "warning"), (" use of SHA1 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
+		iktprint.iktprint([("Warning", "warning"), (": Use of SHA1 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
 	elif checksum_type == "sha224":
 		m = hashlib.sha224()
 	elif checksum_type == "sha256":
@@ -1050,7 +1091,7 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 			elif checksum_url.startswith("https"):
 				r1 = spm.request("GET", checksum_url)
 			else:
-				iktprint.iktprint([("Error:", "error"), (" Unknown or missing protocol; Checksum URL ", "description"), (f"{checksum_url}", "url")], stderr = True)
+				iktprint.iktprint([("Error", "error"), (": Unknown or missing protocol; Checksum URL ", "default"), (f"{checksum_url}", "url")], stderr = True)
 				retval = False
 				break
 
@@ -1065,7 +1106,7 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 		elif url.startswith("https"):
 			r1 = spm.request("GET", url)
 		else:
-			iktprint.iktprint([("Error:", "error"), (" Unknown or missing protocol; URL ", "description"), (f"{url}", "url")], stderr = True)
+			iktprint.iktprint([("Error", "error"), (": Unknown or missing protocol; URL ", "default"), (f"{url}", "url")], stderr = True)
 			retval = False
 			continue
 
@@ -1073,9 +1114,9 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 			# If we have a checksum we need to confirm that the downloaded file matches the checksum
 			if checksum is not None and verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)) == False:
 				iktprint.iktprint([("Critical", "error"),
-					  (": File downloaded from ", "description"),
+					  (": File downloaded from ", "default"),
 					  (f"{url}", "url"),
-					  (" did not match its expected checksum; aborting.", "description")], stderr = True)
+					  (" did not match its expected checksum; aborting.", "default")], stderr = True)
 				retval = False
 				break
 
@@ -1109,8 +1150,8 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 					# Here we atomically move it in place
 					os.rename(f.name, f"{directory}/{filename}")
 		else:
-			iktprint.iktprint([("Error: ", "error"),
-				  ("Failed to fetch URL ", "default"), (f"{url}", "url"), ("; HTTP code: ", "default"), (f"{r1.status}", "errorvalue")], stderr = True)
+			iktprint.iktprint([("Error ", "error"),
+				  (": Failed to fetch URL ", "default"), (f"{url}", "url"), ("; HTTP code: ", "default"), (f"{r1.status}", "errorvalue")], stderr = True)
 			retval = False
 			continue
 	pm.clear()

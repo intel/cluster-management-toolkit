@@ -148,7 +148,7 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 			break
 
 	if themefile is None:
-		print(f"Error: could not find a valid theme file; aborting.", file = sys.stderr)
+		print("Error: could not find a valid theme file; aborting.", file = sys.stderr)
 		sys.exit(errno.ENOENT)
 
 	# The parsers directory itself may be a symlink. This is expected behaviour when installing from a git repo,

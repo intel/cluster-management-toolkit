@@ -37,7 +37,7 @@ except ModuleNotFoundError:
 	import json # type: ignore
 	json_is_ujson = False
 	DecodeException = json.decoder.JSONDecodeError # type: ignore
-import os
+from pathlib import Path
 import re
 import sys
 import typing # pylint: disable=unused-import
@@ -50,9 +50,9 @@ except ModuleNotFoundError:
 
 from iktpaths import HOMEDIR, PARSER_DIR
 
-from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, loglevel_mappings, loglevel_to_name, SecurityChecks
+from ikttypes import DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name
 
-from iktio import check_path, secure_read_yaml
+from iktio import secure_read_yaml
 
 import iktlib # pylint: disable=unused-import
 from iktlib import deep_get, iktconfig, deep_get_with_fallback
@@ -2207,59 +2207,26 @@ def init_parser_list():
 
 	parser_files = []
 
-	# The parsers directory itself may be a symlink. This is expected behaviour when installing from a git repo,
-	# but we only allow it if the rest of the path components are secure
-	checks = [
-		SecurityChecks.PARENT_RESOLVES_TO_SELF,
-		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-		SecurityChecks.OWNER_IN_ALLOWLIST,
-		SecurityChecks.PARENT_PERMISSIONS,
-		SecurityChecks.PERMISSIONS,
-		SecurityChecks.EXISTS,
-		SecurityChecks.IS_DIR,
-	]
-
 	for parser_dir in parser_dirs:
 		if parser_dir.startswith("{HOME}"):
 			parser_dir = parser_dir.replace("{HOME}", HOMEDIR, 1)
 
-		if not os.path.isdir(parser_dir):
+		if not Path(parser_dir).is_dir():
 			continue
 
 		parser_dir = FilePath(parser_dir)
 
-		violations = check_path(parser_dir, checks = checks)
-		if len(violations) > 0:
-			violation_strings = []
-			for violation in violations:
-				violation_strings.append(str(violation))
-			violations_joined = ",".join(violation_strings)
-			raise FilePathAuditError(f"Violated rules: {violations_joined}", path = parser_dir)
-
-		for filename in natsorted(os.listdir(parser_dir)):
-			if filename.startswith(("~", ".")):
+		for path in natsorted(Path(parser_dir).iterdir()):
+			if path.name.startswith(("~", ".")):
 				continue
-			if not filename.endswith((".yaml", ".yml")):
+			if not path.name.endswith((".yaml", ".yml")):
 				continue
 
-			parser_files.append(os.path.join(parser_dir, filename))
-
-	# We don't want to check that parent resolves to itself,
-	# because when we have an installation with links directly to the git repo
-	# the parsers directory will be a symlink
-	checks = [
-		SecurityChecks.RESOLVES_TO_SELF,
-		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-		SecurityChecks.OWNER_IN_ALLOWLIST,
-		SecurityChecks.PARENT_PERMISSIONS,
-		SecurityChecks.PERMISSIONS,
-		SecurityChecks.EXISTS,
-		SecurityChecks.IS_FILE,
-	]
+			parser_files.append(FilePath(str(path)))
 
 	for parser_file in parser_files:
 		try:
-			d = secure_read_yaml(parser_file, checks = checks)
+			d = secure_read_yaml(parser_file, directory_is_symlink = True)
 		except yaml.parser.ParserError as e:
 			raise yaml.parser.ParserError(f"{parser_file} is not valid YAML; aborting.") from e
 
