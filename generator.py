@@ -10,7 +10,7 @@ from datetime import datetime
 
 from curses_helper import color_status_group, themearray_len, themearray_to_string
 import iktlib
-from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, reformat_timestamp, timestamp_to_datetime
+from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, timestamp_to_datetime
 from ikttypes import DictPath, StatusGroup
 
 def format_list(items, fieldlen, pad, ralign, selected,
@@ -584,18 +584,6 @@ def generator_status(obj, field, fieldlen: int, pad: int, ralign: bool, selected
 	stringlen = len(status)
 
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
-
-def generator_str_timestamp(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
-	value = getattr(obj, field)
-
-	string = reformat_timestamp(value)
-
-	if len(string) == 0:
-		array = [(string, ("types", "generic", selected))]
-	else:
-		array = format_numerical_with_units(string, "timestamp", selected)
-
-	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
 def generator_timestamp(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	value = getattr(obj, field)

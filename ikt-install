@@ -19,7 +19,6 @@ import typing # pylint: disable=unused-import
 from ikttypes import FilePath
 from iktpaths import BINDIR, HOMEDIR, IKTDIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
-from iktpaths import DEFAULT_THEME_FILE
 from iktpaths import ANSIBLE_PLAYBOOK_DIRNAME, IKT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
 
 from iktio import copy_if_not_exists, mkdir_if_not_exists, replace_symlink
@@ -291,7 +290,7 @@ def main():
 		sys.exit(f"CRITICAL: The destination directory {HOMEDIR} is world-writable; aborting.")
 
 	command, options, args = parse_commandline(about.INSTALL_PROGRAM_NAME, about.INSTALL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS,
-						   sys.argv, COMMANDLINE, default_command = "__default", theme = DEFAULT_THEME_FILE)
+						   sys.argv, COMMANDLINE, default_command = "__default", theme = FilePath(os.path.join(os.getcwd(), "themes", "default.yaml")))
 
 	return command(options, args)
 

@@ -43,8 +43,9 @@ from ansible_helper import ansible_configuration, ansible_get_inventory_dict, an
 from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results, populate_playbooks_from_paths
 
 import iktio
-from iktio import download_files, mkdir_if_not_exists
-from iktio import scan_and_add_ssh_keys, secure_read_string, secure_read_yaml, secure_rm, secure_write_string, secure_write_yaml
+from iktio import mkdir_if_not_exists
+from iktio import secure_read_string, secure_read_yaml, secure_rm, secure_write_string, secure_write_yaml
+from networkio import download_files, scan_and_add_ssh_keys
 
 from iktlib import check_deb_versions, deep_get, execute_command, execute_command_with_response, iktconfig, read_iktconfig
 

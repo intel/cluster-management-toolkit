@@ -1607,7 +1607,7 @@ class UIProps:
 		if self.update_count > 0:
 			self.update_count -= 1
 
-	def is_update_triggered(self) -> None:
+	def is_update_triggered(self) -> bool:
 		return self.update_count == 0
 
 	def select(self, selection) -> None:

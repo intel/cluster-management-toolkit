@@ -1,4 +1,6 @@
 #! /usr/bin/env python3
+# Requires: python3 (>= 3.6)
+
 # The parser takes one line of input at a time;
 # for messages that need multi-line parsing you need to
 # return remnants and if necessary tweak multiline_parser
