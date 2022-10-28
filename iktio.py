@@ -11,7 +11,6 @@ from getpass import getuser
 import os
 from pathlib import Path, PurePath
 import re
-import shutil
 import sys
 import yaml
 
@@ -441,6 +440,7 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 		Parameters:
 			path (FilePath): The path to write to
 			string (str): The string to write
+			permissions (int): File permissions (None uses system defaults)
 			write_type (str): [w, a, x, wb, ab, xb] Write, Append, Exclusive Write, text or binary
 		Raises:
 			ikttypes.FilePathAuditError
@@ -711,7 +711,7 @@ def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: 
 	Create a directory if it doesn't already exist
 		Parameters:
 			directory (str): The path to the directory to create
-			permissions (int): The file permissions to use
+			permissions (int): File permissions (None uses system defaults)
 			verbose (bool): Should extra debug messages be printed?
 			exit_on_failure (bool): True to exit on failure, False to return (when possible)
 	"""
@@ -749,7 +749,7 @@ def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: 
 	if len(violations) == 0 or violations == [SecurityStatus.DOES_NOT_EXIST]:
 		Path(directory).mkdir(mode = permissions, exist_ok = True)
 
-def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False) -> None:
+def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False, permissions = None) -> None:
 	"""
 	Copy a file if it doesn't already exist
 		Parameters:
@@ -757,6 +757,7 @@ def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit
 			dst (str): The path to copy to
 			verbose (bool): Should extra debug messages be printed?
 			exit_on_failure (bool): True to exit on failure, False to return (when possible)
+			permissions (int): The file permissions to use (None to use system defaults)
 	"""
 
 	user = getuser()
@@ -811,7 +812,17 @@ def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit
 				   (" is world writable", "default"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	shutil.copy2(src, dst)
+	# We don't need to inspect the content, so open it in binary mode
+	with open(src, "rb") as fr:
+		content = fr.read()
+		# We shouldn't need "xb", since we've already checked that dst doesn't exist,
+		# but better be safe than sorry
+		if permissions is None:
+			with open(dst, "xb") as fw:
+				fw.write(content)
+		else:
+			with open(dst, "xb", opener = partial(os.open, mode = permissions)) as fw:
+				fw.write(content)
 
 def replace_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False) -> None:
 	"""

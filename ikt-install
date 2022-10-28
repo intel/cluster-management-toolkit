@@ -75,7 +75,7 @@ PACKAGES_WITHOUT_FALLBACK = [
 ]
 
 CONFIGURATION_FILES = [
-	(IKT_CONFIG_FILENAME, IKT_CONFIG_FILE)
+	(IKT_CONFIG_FILENAME, IKT_CONFIG_FILE, 0o644)
 ]
 
 def create_directories(directories, verbose: bool = False) -> None:
@@ -114,8 +114,8 @@ def copy_files(files, verbose: bool = False) -> None:
 			verbose (bool): Be more verbose
 	"""
 
-	for src, dst in files:
-		copy_if_not_exists(src, dst, verbose = verbose)
+	for src, dst, permissions in files:
+		copy_if_not_exists(src, dst, verbose = verbose, permissions = permissions)
 
 def install_software(packages, verbose: bool = False) -> None:
 	"""
@@ -212,7 +212,7 @@ def install(options, args):
 		for name, _permissions in DIRECTORIES:
 			iktprint([(f"    {name}", "path")])
 		iktprint([("\n• ", "separator"), ("Install the following configuration files:", "action")])
-		for src, dst in CONFIGURATION_FILES:
+		for src, dst, _permissions in CONFIGURATION_FILES:
 			iktprint([(f"     {dst}", "path")])
 		iktprint([("\n• ", "separator"), ("Create the following symlinks:", "action")])
 		for src, dst in MISC_SYMLINKS:
