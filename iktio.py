@@ -592,6 +592,23 @@ def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool =
 	string = secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
 	return yaml.safe_load(string)
 
+def secure_read_yaml_all(path: FilePath, checks = None, directory_is_symlink: bool = False):
+	"""
+	Read all dicts in YAML-format from a file in a safe manner
+
+		Parameters:
+			path (FilePath): The path to read from
+			directory_is_symlink (bool): The directory that the path points to is a symlink
+		Returns:
+			dicts (list[dict]): A list of dicts
+		Raises:
+			FileNotFoundError
+			ikttypes.FilePathAuditError
+	"""
+
+	string = secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
+	return yaml.safe_load_all(string)
+
 def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
 	"""
 	Path is the default path where the file expected to be found,

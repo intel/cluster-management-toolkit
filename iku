@@ -2430,8 +2430,8 @@ def get_sas_info(**kwargs):
 		info.append(ServiceAccountSecretInfo(("Secret", ""), "Mountable", snamespace, secret_name, ref))
 
 	for secret in deep_get(obj, DictPath("imagePullSecrets"), []):
-		deep_set(ref, "kind", "Secret", create_path = True)
-		deep_set(ref, "apiVersion", "", create_path = True)
+		deep_set(ref, DictPath("kind"), "Secret", create_path = True)
+		deep_set(ref, DictPath("apiVersion"), "", create_path = True)
 		snamespace = deep_get(secret, DictPath("namespace"), deep_get(obj, DictPath("metadata#namespace")))
 		secret_name = deep_get(secret, DictPath("name"))
 
@@ -2444,8 +2444,8 @@ def get_sas_info(**kwargs):
 
 	# Get all Role Bindings that bind to this ServiceAccount
 	for ref in vlist:
-		deep_set(ref, "kind", "RoleBinding", create_path = True)
-		deep_set(ref, "apiVersion", "rbac.authorization.k8s.io/", create_path = True)
+		deep_set(ref, DictPath("kind"), "RoleBinding", create_path = True)
+		deep_set(ref, DictPath("apiVersion"), "rbac.authorization.k8s.io/", create_path = True)
 		for subject in deep_get(ref, DictPath("subjects"), []):
 			subjectkind = deep_get(subject, DictPath("kind"), "")
 			subjectname = deep_get(subject, DictPath("name"), "")
@@ -2468,8 +2468,8 @@ def get_sas_info(**kwargs):
 
 	# Get all Cluster Role Bindings that bind to this ServiceAccount
 	for ref in vlist:
-		deep_set(ref, "kind", "ClusterRoleBinding", create_path = True)
-		deep_set(ref, "apiVersion", "rbac.authorization.k8s.io/", create_path = True)
+		deep_set(ref, DictPath("kind"), "ClusterRoleBinding", create_path = True)
+		deep_set(ref, DictPath("apiVersion"), "rbac.authorization.k8s.io/", create_path = True)
 		for subject in deep_get(ref, DictPath("subjects"), []):
 			subjectkind = deep_get(subject, DictPath("kind"), "")
 			subjectname = deep_get(subject, DictPath("name"), "")
@@ -4888,7 +4888,7 @@ def genericlistloop(stdscr, view):
 					if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Perform “{description}“?", default = False) == False:
 						continue
 
-				retval = actionfunc(uip, items = [], actions = actionlist[action], values = selection_vars, kind = kind)
+				retval = actionfunc(uip, items = [], action = actionlist[action], values = selection_vars, kind = kind)
 				if retval is not None and retval == Retval.RETURNFULL:
 					return retval
 
@@ -5411,7 +5411,7 @@ def genericlistloop(stdscr, view):
 					var = deep_get(action_args, DictPath("var"))
 					if var is not None:
 						tmp = deep_get(listview_args, DictPath(var))
-						deep_set(listview_args, var, not tmp)
+						deep_set(listview_args, DictPath(var), not tmp)
 				elif action == "call" and action_call is not None:
 					retval = action_call(uip.stdscr, **action_args)
 					if retval is not None and retval == Retval.RETURNFULL:
@@ -6473,14 +6473,13 @@ def export_data(stdscr, **kwargs):
 	vtype, value = decode_value(value)
 
 	if vtype.startswith("string"):
-		with open(filename, "w", encoding = "utf-8") as f:
-			f.write(value)
+		secure_write_string(filename, value)
 	elif vtype.startswith("base64-utf-8"):
-		with open(filename, "w", encoding = "utf-8") as f:
-			f.write(base64.b64decode(value).decode("utf-8"))
+		tmp = base64.b64decode(value).decode("utf-8")
+		secure_write_string(filename, tmp)
 	elif vtype.startswith(("base64-binary", "gzip")):
-		with open(filename, "wb") as f:
-			f.write(base64.b64decode(value))
+		tmp = base64.b64decode(value)
+		secure_write_string(filename, tmp, write_mode = "wb")
 	else:
 		raise Exception(f"Trying to export unknown vtype: {vtype}")
 
@@ -8333,28 +8332,31 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"File “{filename}“ already exists; overwrite?:", default = False) == False:
 					continue
 
-			with open(filename, "w", encoding = "utf-8") as f:
-				for y in range(0, uip.loglen):
-					# Even when the log is raw we want the first timestamp
-					if y >= len(timestamps):
-						timestamp = "".ljust(uip.tspadwidth)
-					else:
-						timestamp = str(timestamps[y])
+			data = ""
 
-					if y >= len(facilities) or facilities[y] == "":
-						facility = ""
-					else:
-						facility = f"<{facilities[y]}> "
+			for y in range(0, uip.loglen):
+				# Even when the log is raw we want the first timestamp
+				if y >= len(timestamps):
+					timestamp = "".ljust(uip.tspadwidth)
+				else:
+					timestamp = str(timestamps[y])
 
-					if uip.yoffset + y >= len(severities):
-						severity = f"{lvl_to_4letter_severity(LogLevel.INFO)}: "
-					else:
-						severity = f"{lvl_to_4letter_severity(severities[y])}: "
+				if y >= len(facilities) or facilities[y] == "":
+					facility = ""
+				else:
+					facility = f"<{facilities[y]}> "
 
-					if raw_logs:
-						f.write(f"{timestamp}  {messages[y]}\n")
-					else:
-						f.write(f"{timestamp}  {severity}{facility}{messages[y]}\n")
+				if uip.yoffset + y >= len(severities):
+					severity = f"{lvl_to_4letter_severity(LogLevel.INFO)}: "
+				else:
+					severity = f"{lvl_to_4letter_severity(severities[y])}: "
+
+				if raw_logs:
+					data += f"{timestamp}  {messages[y]}\n"
+				else:
+					data += f"{timestamp}  {severity}{facility}{messages[y]}\n"
+
+			secure_write_string(filename, data)
 
 def do_command(stdscr, **kwargs) -> None:
 	"""
@@ -8419,6 +8421,14 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 	XXX: This should be renamed
 	"""
 
+	try:
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	except FileNotFoundError:
+		iktprint([("Critical", "critical"), (": Could not find ", "default"),
+			  ("kubectl", "path"),
+			  ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
 	# This should probably be done using connect_get_namespaced_pod_exec()
 	curses.endwin()
 	_retval = clear_screen()
@@ -8430,11 +8440,11 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 		# This is a request to create a new ephemeral container
 		if command == ["<ephemeral>"]:
 			ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
-			args = ["/usr/bin/kubectl", "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image]
+			args = [kubectl_path, "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image]
 			_result = subprocess.run(args, check = False)
 		elif command == ["<dnsutils>"]:
 			dnsutils_image = deep_get(iktconfig, "Debug#network_image", "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
-			args = ["/usr/bin/kubectl", "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
+			args = [kubectl_path, "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
 			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 			if result.returncode != 0:
 				iktprint([("Error", "error"), (": Failed to create debug image", "default")], stderr = True)
@@ -8450,20 +8460,20 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 
 				# Wait for the pod to be ready
 				iktprint([("Waiting for debug pod to be ready (timeout: 60s).", "default")])
-				args = ["/usr/bin/kubectl", "wait", "--for=condition=ready", "--timeout=60s", "-n", "default", "pod", pod_name]
+				args = [kubectl_path, "wait", "--for=condition=ready", "--timeout=60s", "-n", "default", "pod", pod_name]
 				result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 				if result.returncode != 0:
 					iktprint([("Error", "error"), (": The pod failed to become ready before timeout.", "default")], stderr = True)
 				else:
 					# Attach to the debug container
-					args = ["/usr/bin/kubectl", "attach", "-n", "default", pod_name, "-c", container_name, "-i", "-t", "--pod-running-timeout=1m0s"]
+					args = [kubectl_path, "attach", "-n", "default", pod_name, "-c", container_name, "-i", "-t", "--pod-running-timeout=1m0s"]
 					_result = subprocess.run(args, check = False)
 
 				# Delete the pod
 				iktprint([("Forcibly deleting pod.", "default")])
 				message, status = kh.delete_obj_by_kind_name_namespace(("Pod", ""), pod_name, "default", force = True)
 		else:
-			args = ["/usr/bin/kubectl", "exec", obj_name, "-n", obj_namespace, "-i", "-t", "--container", container, "--"] + command
+			args = [kubectl_path, "exec", obj_name, "-n", obj_namespace, "-i", "-t", "--container", container, "--"] + command
 			_result = subprocess.run(args, check = False).returncode
 	else:
 		sys.exit("Called execute command with obj=None")
@@ -8891,14 +8901,30 @@ def create_namespace(stdscr, **kwargs):
 # Valid kinds:
 # ("Deployment", "apps")
 def __pause_resource(kind, namespace, name):
-	args = ["/usr/bin/kubectl", "rollout", "pause", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
+	try:
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	except FileNotFoundError:
+		iktprint([("Critical", "critical"), (": Could not find ", "default"),
+			  ("kubectl", "path"),
+			  ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	args = [kubectl_path, "rollout", "pause", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 	return result
 
 # Valid kinds:
 # ("Deployment", "apps")
 def __resume_resource(kind, namespace, name):
-	args = ["/usr/bin/kubectl", "rollout", "resume", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
+	try:
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	except FileNotFoundError:
+		iktprint([("Critical", "critical"), (": Could not find ", "default"),
+			  ("kubectl", "path"),
+			  ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	args = [kubectl_path, "rollout", "resume", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 	return result
 
@@ -8907,7 +8933,15 @@ def __resume_resource(kind, namespace, name):
 # ("Deployment", "apps")
 # ("StatefulSet", apps")
 def __restart_resource(kind, namespace, name):
-	args = ["/usr/bin/kubectl", "rollout", "restart", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
+	try:
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	except FileNotFoundError:
+		iktprint([("Critical", "critical"), (": Could not find ", "default"),
+			  ("kubectl", "path"),
+			  ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	args = [kubectl_path, "rollout", "restart", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 	return result
 
@@ -8921,28 +8955,52 @@ def __get_resource_scale(kind, namespace, name):
 # ("ReplicationController", "")
 # ("StatefulSet", apps")
 def __scale_replicas(kind, namespace, name, scale):
-	args = ["/usr/bin/kubectl", "scale", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}", f"--replicas={scale}"]
+	try:
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	except FileNotFoundError:
+		iktprint([("Critical", "critical"), (": Could not find ", "default"),
+			  ("kubectl", "path"),
+			  ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	args = [kubectl_path, "scale", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}", f"--replicas={scale}"]
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 	return result
 
 def __edit_resource(kind, namespace, name):
+	try:
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	except FileNotFoundError:
+		iktprint([("Critical", "critical"), (": Could not find ", "default"),
+			  ("kubectl", "path"),
+			  ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
 	if namespace is None:
-		args = ["/usr/bin/kubectl", "edit", f"{kind[0]}.{kind[1]}/{name}"]
+		args = [kubectl_path, "edit", f"{kind[0]}.{kind[1]}/{name}"]
 	else:
-		args = ["/usr/bin/kubectl", "edit", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
+		args = [kubectl_path, "edit", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
 	result = subprocess.run(args, universal_newlines = True, check = False)
 	return result.returncode, args
 
 # pylint: disable=unused-argument
 def apply_configuration_from_file(uip, items, action, values, kind, **kwargs):
+	try:
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	except FileNotFoundError:
+		iktprint([("Critical", "critical"), (": Could not find ", "default"),
+			  ("kubectl", "path"),
+			  ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
 	curses.endwin()
 	_retval = clear_screen()
 	resource_path, rtype = values["resource_path"]
 
 	if rtype == "Configuration File":
-		args = ["/usr/bin/kubectl", "apply", "-f", resource_path]
+		args = [kubectl_path, "apply", "-f", resource_path]
 	elif rtype == "Kustomization":
-		args = ["/usr/bin/kubectl", "apply", "-k", resource_path]
+		args = [kubectl_path, "apply", "-k", resource_path]
 	else:
 		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
 
@@ -8950,39 +9008,95 @@ def apply_configuration_from_file(uip, items, action, values, kind, **kwargs):
 	return result.returncode, args
 
 # pylint: disable=unused-argument
-def apply_configuration_from_url(uip, items, action, values, kind, **kwargs):
+def __apply_or_create_configuration_from_url(resource_url, create = False):
+	"""
+	Given a URL, apply or create it using kubectl apply/create
+
+		Parameters:
+			resource_url (str): The URL to the the resource to apply
+			create (bool): True to create configuration, False to apply configuration
+		Returns:
+			retval (Retval): Always returns Retval.MATCH
+		Exits:
+			If kubectl is missing
+	"""
+
 	curses.endwin()
 	_retval = clear_screen()
-	resource_path = values["resource_url"]
 
-	args = ["/usr/bin/kubectl", "apply", "-f", resource_path]
-	result = subprocess.run(args, universal_newlines = True, check = False)
-	return result.returncode, args
+	try:
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+		args = [kubectl_path, "apply", "-f", resource_url]
+		result = subprocess.run(args, universal_newlines = True, check = False)
+	except FileNotFoundError:
+		iktprint([("Critical", "critical"), (": Could not find ", "default"),
+			  ("kubectl", "path"),
+			  ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+	return Retval.MATCH
+
+# pylint: disable=unused-argument
+def apply_configuration_from_url(uip, items, action, values, kind, **kwargs):
+	"""
+	Given a URL, apply it using kubectl apply
+
+		Parameters:
+			uip (opaque): Unused
+			items (list): Unused
+			action (dict): Unused
+			values (dict): For passing values
+			kind (tuple(str, str)): Unused
+		Returns:
+			retval (Retval): Always returns Retval.MATCH
+		Exits:
+			errno.ENOENT: If kubectl is missing
+	"""
+
+	resource_url = deep_get(values, "resource_url", "")
+
+	if not resource_url.startswith(("http://", "https://")):
+		return Retval.MATCH
+
+	return __apply_or_create_configuration_from_url(resource_url)
 
 # We should probably download and apply locally instead
 # pylint: disable=unused-argument
 def create_resource_from_url(uip, items, action, values, kind, **kwargs):
-	curses.endwin()
-	_retval = clear_screen()
-	resource_path, _rtype = values["resource_url"]
+	"""
+	Given a URL, create it using kubectl create
 
-	args = ["/usr/bin/kubectl", "create", "-f", resource_path]
-	result = subprocess.run(args, universal_newlines = True, check = False)
-	return result.returncode, args
+		Parameters:
+			uip (opaque): Unused
+			items (list): Unused
+			action (dict): Unused
+			values (dict): For passing values
+			kind (tuple(str, str)): Unused
+		Returns:
+			retval (Retval): Always returns Retval.MATCH
+		Exits:
+			errno.ENOENT: If kubectl is missing
+	"""
+
+	resource_url = deep_get(values, "resource_url", "")
+
+	if not resource_url.startswith(("http://", "https://")):
+		return Retval.MATCH
+
+	return __apply_or_create_configuration_from_url(resource_url, create = True)
 
 def __summarise_resources(path):
 	resources = []
-	with open(path, "r", encoding = "utf-8") as f:
-		dicts = yaml.safe_load_all(f)
-		for d in dicts:
-			kind, api_group = kh.kind_api_version_to_kind(deep_get(d, "kind"), deep_get(d, "apiVersion"))
-			if api_group == "":
-				merged_kind = kind
-			else:
-				merged_kind = f"{kind}.{api_group}"
-			name = deep_get(d, "metadata#name")
-			namespace = deep_get(d, "metadata#namespace", "")
-			resources.append((merged_kind, namespace, name))
+	dicts = secure_read_yaml_all(path)
+	for d in dicts:
+		kind, api_group = kh.kind_api_version_to_kind(deep_get(d, "kind"), deep_get(d, "apiVersion"))
+		if api_group == "":
+			merged_kind = kind
+		else:
+			merged_kind = f"{kind}.{api_group}"
+		name = deep_get(d, "metadata#name")
+		namespace = deep_get(d, "metadata#namespace", "")
+		resources.append((merged_kind, namespace, name))
+
 	return resources
 
 # pylint: disable=unused-argument
@@ -8992,6 +9106,14 @@ def create_resource_from_file(uip, items, action, values, kind, **kwargs):
 
 	result = 0
 	args = []
+
+	try:
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	except FileNotFoundError:
+		iktprint([("Critical", "critical"), (": Could not find ", "default"),
+			  ("kubectl", "path"),
+			  ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
 	if rtype == "Configuration File":
 		resources = __summarise_resources(resource_path)
@@ -9010,25 +9132,33 @@ def create_resource_from_file(uip, items, action, values, kind, **kwargs):
 		confirm_press, _tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, resource_list, headers = headers, title = title, confirm = True, confirm_buttons = confirm_buttons, cursor = False)
 
 		if confirm_press in (ord("y"), ord("Y")):
-			args = ["/usr/bin/kubectl", "create", "-f", resource_path]
+			args = [kubectl_path, "create", "-f", resource_path]
 	elif rtype == "Kustomization":
-		args = ["/usr/bin/kubectl", "create", "-k", resource_path]
+		args = [kubectl_path, "create", "-k", resource_path]
 	else:
 		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
 
 	if len(args) > 0:
 		result = subprocess.run(args, universal_newlines = True, check = False).returncode
 
-	return result, args
+	return Retval.MATCH
 
 # pylint: disable=unused-argument
 def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 	resource_path, rtype = values["resource_path"]
 
+	try:
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	except FileNotFoundError:
+		iktprint([("Critical", "critical"), (": Could not find ", "default"),
+			  ("kubectl", "path"),
+			  ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
 	if rtype == "Configuration File":
-		args = ["/usr/bin/kubectl", "diff", "-f", resource_path]
+		args = [kubectl_path, "diff", "-f", resource_path]
 	elif rtype == "Kustomization":
-		args = ["/usr/bin/kubectl", "diff", "-k", resource_path]
+		args = [kubectl_path, "diff", "-k", resource_path]
 	else:
 		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
 
@@ -9039,7 +9169,7 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 	diff = []
 
 	if len(result.stdout) == 0:
-		return
+		return Retval.MATCH
 
 	# Safe
 	diff_regex = re.compile(r"^(\s*)(.*)")
@@ -9070,6 +9200,7 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 		})
 
 	_tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, diff, title = "Diff between current and would be configuration:", cursor = False)
+	return Retval.MATCH
 
 def format_commandline(args, implicit_command = True):
 	strarray = []
@@ -9344,15 +9475,15 @@ nodeplaybooks = {} # type: ignore
 
 def ssh_to_host(stdscr, **kwargs):
 	if "selected" in kwargs:
-		selected = deep_get(kwargs, "selected")
+		selected = deep_get(kwargs, DictPath("selected"))
 		if type(selected) == tuple:
 			host = selected[0]
 		elif type(selected) == str:
 			host = selected
 		else:
 			ref = getattr(selected, "ref")
-			_kind = deep_get(ref, "kind", "")
-			_api_group = deep_get(ref, "api_group", "")
+			_kind = deep_get(ref, DictPath("kind"), "")
+			_api_group = deep_get(ref, DictPath("api_group"), "")
 			try:
 				kind = kh.guess_kind((_kind, _api_group))
 			except NameError:
@@ -9362,12 +9493,12 @@ def ssh_to_host(stdscr, **kwargs):
 			if kind != ("Node", ""):
 				# If this isn't a Node object, return
 				return
-			host = deep_get(ref, "name", "")
+			host = deep_get(ref, DictPath("name"), "")
 	elif "obj" in kwargs:
-		obj = deep_get(kwargs, "obj")
-		name_path = deep_get(kwargs, "name_path")
-		name = deep_get(obj, name_path)
-		host = deep_get(kwargs, "name", name)
+		obj = deep_get(kwargs, DictPath("obj"))
+		name_path = deep_get(kwargs, DictPath("name_path"))
+		name = deep_get(obj, DictPath(name_path))
+		host = deep_get(kwargs, DictPath("name"), name)
 
 	if host is None or len(host) == 0:
 		return
@@ -9380,19 +9511,27 @@ def ssh_to_host(stdscr, **kwargs):
 	# thus we get these in ascending over of priority
 	# if no user is specified we assume that we're to use the user we're running as;
 	# but really, ansible
-	sshuser = deep_get(iktconfig, "Ansible#ansible_user")
-	sshuser = deep_get(inventory, "all#vars#ansible_user", sshuser)
-	sshuser = deep_get(inventory, f"all#hosts#{host}#ansible_user", sshuser)
+	sshuser = deep_get(iktconfig, DictPath("Ansible#ansible_user"))
+	sshuser = deep_get(inventory, DictPath("all#vars#ansible_user"), sshuser)
+	sshuser = deep_get(inventory, DictPath(f"all#hosts#{host}#ansible_user"), sshuser)
 
 	curses.endwin()
 	_retval = clear_screen()
 	iktprint(msg)
 
-	args = ["/usr/bin/ssh"]
+	try:
+		ssh_path = secure_which(FilePath("/usr/bin/ssh"), fallback_allowlist = [])
+	except FileNotFoundError:
+		# Once we have support for logging we should probably just log an error
+		# and return here instead
+		iktprint([("Critical", "critical"), (": Could not find ", "default"),
+			  ("ssh", "path"),
+			  ("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
 	if sshuser is not None:
 		host = f"{sshuser}@{host}"
-	args.append(host)
+	args = [ssh_path, host]
 
 	subprocess.run(args, check = False)
 

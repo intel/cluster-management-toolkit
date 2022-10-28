@@ -890,20 +890,27 @@ def add_nodes(options, args):
 	if len(ca_cert_hash) == 0:
 		if len(ca_cert_path) == 0:
 			ca_cert_path = "/etc/kubernetes/pki/ca.crt"
-		retval = iktinput([("Warning", "warning"), (": Could not find ", "default"), ("ca.crt", "path"), (" or a certificate-controller-token secret; try to use ", "default"), (ca_cert_path, "path"), ("? No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([("Warning", "warning"), (": Could not find ", "default"),
+				   ("ca.crt", "path"),
+				   (" or a certificate-controller-token secret; try to use ", "default"),
+				   (ca_cert_path, "path"),
+				   ("? No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting", "error"), (": No CA certificate available.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 		else:
 			ca_cert = ""
-			with open(ca_cert_path, encoding = "utf-8") as f:
-				ca_cert = f.read()
 			ca_cert_hash = ""
-			if len(ca_cert) > 0:
-				x509obj = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, ca_cert)
-				pubkey = x509obj.get_pubkey()
-				pubkeyasn1 = OpenSSL.crypto.dump_publickey(OpenSSL.crypto.FILETYPE_ASN1, pubkey)
-				ca_cert_hash = hashlib.sha256(pubkeyasn1).hexdigest()
+
+			try:
+				ca_cert = secure_read_string(ca_cert_path)
+				if len(ca_cert) > 0:
+					x509obj = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, ca_cert)
+					pubkey = x509obj.get_pubkey()
+					pubkeyasn1 = OpenSSL.crypto.dump_publickey(OpenSSL.crypto.FILETYPE_ASN1, pubkey)
+					ca_cert_hash = hashlib.sha256(pubkeyasn1).hexdigest()
+			except FileNotFoundError:
+				pass
 
 			if len(ca_cert_hash) == 0:
 				iktprint([("\nAborting", "error"), (": No CA certificate available.", "default")], stderr = True)
