@@ -23,6 +23,7 @@ import os
 import re
 import sys
 import tempfile
+from typing import Any, AnyStr, cast, Dict, List, Optional, Sequence, Tuple, Union
 import yaml
 
 try:
@@ -37,11 +38,11 @@ except ModuleNotFoundError:
 
 from iktpaths import KUBE_CONFIG_FILE
 from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, execute_command_with_response, get_since, timestamp_to_datetime, versiontuple
-from ikttypes import DictPath, StatusGroup
+from ikttypes import DictPath, FilePath, StatusGroup
 from iktio import secure_read_yaml, secure_write_yaml
 
 # A list of all K8s resources we have some knowledge about
-kubernetes_resources = {
+kubernetes_resources: Dict[Any, Any] = {
 	# core API
 	# ComponentStatus is deprecated
 	("ComponentStatus", ""): {
@@ -2126,7 +2127,7 @@ kubernetes_resources = {
 	},
 }
 
-def kind_tuple_to_name(kind) -> str:
+def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
 	name = ""
 
 	if kind in kubernetes_resources:
@@ -2135,14 +2136,14 @@ def kind_tuple_to_name(kind) -> str:
 		name = name.rstrip(".")
 	return name
 
-def update_api_status(kind, listview = False, infoview = False):
+def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: bool = False) -> None:
 	# There are other kind of views than just Kubernetes APIs; just ignore them
 	if kind not in kubernetes_resources:
 		return
 	kubernetes_resources[kind]["list"] = listview
 	kubernetes_resources[kind]["info"] = infoview
 
-def kubectl_get_version():
+def kubectl_get_version() -> Tuple[int, int, str, int, int, str]:
 	# Check kubectl version
 	args = ["/usr/bin/kubectl", "version", "-oyaml"]
 	response = execute_command_with_response(args)
@@ -2151,12 +2152,12 @@ def kubectl_get_version():
 	kubectl_minor_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("clientVersion#minor")))))
 	server_major_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("serverVersion#major")))))
 	server_minor_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("serverVersion#minor")))))
-	server_git_version = deep_get(version_data, DictPath("serverVersion#gitVersion"))
-	kubectl_git_version = deep_get(version_data, DictPath("clientVersion#gitVersion"))
+	server_git_version = str(deep_get(version_data, DictPath("serverVersion#gitVersion")))
+	kubectl_git_version = str(deep_get(version_data, DictPath("clientVersion#gitVersion")))
 
 	return kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version
 
-def get_node_status(node: str):
+def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]], List[Tuple[str, str]]]:
 	status = "Unknown"
 	status_group = StatusGroup.UNKNOWN
 	taints = []
@@ -2208,7 +2209,16 @@ def get_node_status(node: str):
 
 	return status, status_group, taints, full_taints
 
-def make_selector(selector_dict) -> str:
+def make_selector(selector_dict: Dict) -> str:
+	"""
+	Given a selector dict entry, create a selector list
+
+		Parameters:
+			selector_dict (dict): The dict with selectors
+		Returns:
+			selector_str (str): The selector string
+	"""
+
 	selectors = []
 
 	if selector_dict is not None:
@@ -2218,10 +2228,23 @@ def make_selector(selector_dict) -> str:
 	return ",".join(selectors)
 
 def get_image_version(image: str, default: str = "<undefined>") -> str:
-	image_version = default
+	"""
+	Given the version of a container image, return its version
+
+		Parameters:
+			image (str): The name of the image
+			default (str): The string to return if extracting the image version fails
+		Returns:
+			image_version (str): THe extracted image version
+	"""
+
 	image_version = image.split("@")[0]
 	image_version = image_version.split("/")[-1]
 	image_version = image_version.split(":")[-1]
+
+	# If we didn't manage to do any splitting it means there wasn't a version; return default instead
+	if image_version == image:
+		image_version = default
 	return image_version
 
 # pylint: disable-next=too-many-instance-attributes,too-many-public-methods
@@ -2236,7 +2259,7 @@ class KubernetesHelper:
 	programname = ""
 	programversion = ""
 
-	def validate_name(self, rtype, name):
+	def validate_name(self, rtype: str, name: str) -> bool:
 		invalid = False
 		tmp = None
 
@@ -2269,12 +2292,11 @@ class KubernetesHelper:
 
 				tmp = name_regex.match(label)
 				if tmp is None:
-					break
+					invalid = True
 		elif rtype == "path-segment":
 			# XXX: Are there any other requirements? maxlen or similar?
 			if name in (".", "..") or "/" in name or "%" in name:
 				invalid = True
-			tmp = ""
 			maxlen = os.pathconf("/", "PC_NAME_MAX")
 		elif rtype == "port-name":
 			# Any name containing adjacent "-" is invalid
@@ -2286,12 +2308,27 @@ class KubernetesHelper:
 			# A portname can be at most 15 characters long
 			# and cannot start or end with "-"
 			tmp = name_regex.match(name.lower())
+			if tmp is None:
+				invalid = True
 			maxlen = 15
 
-		return invalid == False and tmp is not None and len(name) <= maxlen
+		return invalid == False and len(name) <= maxlen
 
-	# Returns a list of (current [current-context], name [context], cluster, authinfo [user], namespace)
-	def list_contexts(self, config_path = None):
+	def list_contexts(self, config_path: Optional[FilePath] = None) -> List[Tuple[bool, str, str, str, str]]:
+		"""
+		Given the path to a kubeconfig file, returns the available contexts
+
+			Parameters:
+				config_path (FilePath): The path to the kubeconfig file
+			Returns:
+				contexts (list[(current, name, cluster, authinfo, namespace)]):
+					current (bool): Is this the current context?
+					name (str): The name of the context
+					cluster (str): The name of the cluster
+					authinfo (str): The name of the user
+					namespace (str): The name of the namespace
+		"""
+
 		contexts = []
 
 		if config_path == None:
@@ -2299,7 +2336,7 @@ class KubernetesHelper:
 			config_path = KUBE_CONFIG_FILE
 
 		try:
-			kubeconfig = secure_read_yaml(config_path)
+			kubeconfig = secure_read_yaml(FilePath(str(config_path)))
 		except FileNotFoundError:
 			# We can handle FileNotFoundError; other exceptions
 			# are security related, so we let them raise
@@ -2318,9 +2355,19 @@ class KubernetesHelper:
 			contexts.append((current, name, cluster, authinfo, namespace))
 		return contexts
 
-	# Returns a list of (cluster, context),
-	# with only one context per cluster (priority given to contexts with admin in the username)
-	def list_clusters(self, config_path = None):
+	def list_clusters(self, config_path: Optional[FilePath] = None) -> List[Tuple[str, str]]:
+		"""
+		Returns a list of (cluster, context)
+		with only one context per cluster, priority given to contexts with admin in the username
+
+			Parameters:
+				config_path (FilePath): The path to the kubeconfig file
+			Returns:
+				clusters (list[(cluster, context)]):
+					cluster (str): The name of the cluster
+					context (str): The name of the context
+		"""
+
 		contexts = self.list_contexts(config_path = config_path)
 		__clusters = {}
 		clusters = []
@@ -2349,9 +2396,18 @@ class KubernetesHelper:
 
 		return clusters
 
-	# Returns False if the context wasn't changed (for whatever reason)
 	# pylint: disable-next=too-many-return-statements
-	def set_context(self, config_path = None, name = None):
+	def set_context(self, config_path: Optional[FilePath] = None, name: Optional[str] = None) -> bool:
+		"""
+		Change context
+
+			Parameters:
+				config_path (FilePath): The path to the kubeconfig file
+				name (str): The context to change to
+			Returns:
+				status (bool): True on success, False on failure
+		"""
+
 		context_name = ""
 		cluster_name = ""
 		user_name = ""
@@ -2360,6 +2416,8 @@ class KubernetesHelper:
 		if config_path == None:
 			# Read kubeconfig
 			config_path = KUBE_CONFIG_FILE
+
+		config_path = FilePath(str(config_path))
 
 		try:
 			kubeconfig = secure_read_yaml(config_path)
@@ -2373,6 +2431,7 @@ class KubernetesHelper:
 		if name is None or len(name) == 0:
 			unchanged = False
 			name = current_context
+		name = str(name)
 
 		for context in deep_get(kubeconfig, DictPath("contexts"), []):
 			# If we still don't have a context name,
@@ -2465,6 +2524,7 @@ class KubernetesHelper:
 		self.control_plane_port = control_plane_port
 
 		if insecuretlsskipverify == False:
+			ca_certs = str(ca_certs)
 			self.tmp_ca_certs_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
 			self.tmp_ca_certs_file.write(ca_certs.encode("utf-8"))
 			self.tmp_ca_certs_file.flush()
@@ -2473,6 +2533,8 @@ class KubernetesHelper:
 
 		# If we have a cert we also have a key
 		if cert is not None:
+			key = str(key)
+
 			self.tmp_cert_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
 			self.tmp_key_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
 
@@ -2485,7 +2547,7 @@ class KubernetesHelper:
 			if insecuretlsskipverify == False:
 				self.pool_manager = urllib3.PoolManager(
 					cert_reqs = "CERT_REQUIRED",
-					ca_certs = self.tmp_ca_certs_file.name,
+					ca_certs = self.tmp_ca_certs_file.name, # type: ignore
 					cert_file = self.tmp_cert_file.name,
 					key_file = self.tmp_key_file.name)
 			else:
@@ -2498,7 +2560,7 @@ class KubernetesHelper:
 			if insecuretlsskipverify == False:
 				self.pool_manager = urllib3.PoolManager(
 					cert_reqs = "CERT_REQUIRED",
-					ca_certs = self.tmp_ca_certs_file.name)
+					ca_certs = self.tmp_ca_certs_file.name) # type: ignore
 			else:
 				self.pool_manager = urllib3.PoolManager(
 					cert_reqs = "CERT_NONE",
@@ -2516,8 +2578,8 @@ class KubernetesHelper:
 		return True
 
 	# CNI detection helpers
-	def __identify_cni(self, cni_name, controller_kind, controller_selector, container_name):
-		cni = []
+	def __identify_cni(self, cni_name: str, controller_kind: Tuple[str, str], controller_selector: str, container_name: str) -> List[Tuple[str, str, Tuple[str, StatusGroup, str]]]:
+		cni: List[Tuple[str, str, Tuple[str, StatusGroup, str]]] = []
 
 		# Is there a controller matching the kind we're looking for?
 		vlist, _status = self.get_list_by_kind_namespace(controller_kind, "", field_selector = controller_selector)
@@ -2532,11 +2594,11 @@ class KubernetesHelper:
 		# 2. Are there > 0 pods matching the label selector?
 		for obj in vlist:
 			if controller_kind == ("Deployment", "apps"):
-				cni_status = ("Unavailable", StatusGroup.NOT_OK)
+				cni_status = ("Unavailable", StatusGroup.NOT_OK, "")
 				for condition in deep_get(obj, DictPath("status#conditions")):
 					ctype = deep_get(condition, DictPath("type"))
 					if ctype == "Available":
-						cni_status = (ctype, StatusGroup.OK)
+						cni_status = (ctype, StatusGroup.OK, "")
 						break
 			elif controller_kind == ("DaemonSet", "apps"):
 				if deep_get(obj, DictPath("status#numberUnavailable"), 0) > deep_get(obj, DictPath("status#maxUnavailable"), 0):
@@ -2576,7 +2638,7 @@ class KubernetesHelper:
 
 		return cni
 
-	def identify_cni(self):
+	def identify_cni(self) -> List[Tuple[str, str, Tuple[str, StatusGroup, str]]]:
 		cni = []
 
 		# We're gonna have to do some sleuthing here
@@ -2603,7 +2665,7 @@ class KubernetesHelper:
 
 		return cni
 
-	def get_node_roles(self, node):
+	def get_node_roles(self, node: Dict) -> List[str]:
 		roles = []
 
 		# Safe
@@ -2630,7 +2692,7 @@ class KubernetesHelper:
 		if self.tmp_key_file is not None:
 			self.tmp_key_file.close()
 
-	def __init__(self, programname: str, programversion: str, config_path = None) -> None:
+	def __init__(self, programname: str, programversion: str, config_path: Optional[FilePath] = None) -> None:
 		self.programname = programname
 		self.programversion = programversion
 		self.cluster_unreachable = True
@@ -2645,7 +2707,7 @@ class KubernetesHelper:
 	def is_cluster_reachable(self) -> bool:
 		return self.cluster_unreachable == False
 
-	def get_control_plane_address(self):
+	def get_control_plane_address(self) -> Tuple[str, str]:
 		return self.control_plane_ip, self.control_plane_port
 
 	def get_join_token(self) -> str:
@@ -2681,7 +2743,7 @@ class KubernetesHelper:
 
 		return join_token
 
-	def get_ca_cert_hash(self):
+	def get_ca_cert_hash(self) -> str:
 		ca_cert_hash = ""
 
 		vlist, _status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
@@ -2709,19 +2771,28 @@ class KubernetesHelper:
 
 		# we have the CA cert; now to extract the public key and hash it
 		if ca_cert != "":
-			x509obj = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, ca_cert)
+			x509obj = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, ca_cert) # type: ignore
 			pubkey = x509obj.get_pubkey()
-			pubkeyasn1 = OpenSSL.crypto.dump_publickey(OpenSSL.crypto.FILETYPE_ASN1, pubkey)
+			pubkeyasn1 = OpenSSL.crypto.dump_publickey(OpenSSL.crypto.FILETYPE_ASN1, pubkey) # type: ignore
 			ca_cert_hash = hashlib.sha256(pubkeyasn1).hexdigest()
 
 		return ca_cert_hash
 
-	def is_kind_namespaced(self, kind) -> bool:
+	def is_kind_namespaced(self, kind: Tuple[str, str]) -> bool:
+		"""
+		Is this kind namespaced?
+
+			Parameters:
+				kind ((str, str)): The kind
+			Returns:
+				is_namespaced (bool): True if namespaced, False if not
+		"""
+
 		if kind not in kubernetes_resources:
 			raise ValueError(f"Kind {kind} not known; this is likely a programming error (possibly a typo)")
 		return deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
 
-	def kind_api_version_to_kind(self, kind, api_version: str):
+	def kind_api_version_to_kind(self, kind: str, api_version: str) -> Tuple[str, str]:
 		# The API group is anything before /, or the empty string if there's no "/"
 		if api_version is not None and "/" in api_version:
 			# Safe
@@ -2733,7 +2804,7 @@ class KubernetesHelper:
 			api_group = ""
 		return kind, api_group
 
-	def get_latest_api(self, kind) -> str:
+	def get_latest_api(self, kind: Tuple[str, str]) -> str:
 		if kind not in kubernetes_resources:
 			raise Exception(f"Could not determine latest API; kind {kind} not found in kubernetes_resources")
 
@@ -2748,7 +2819,7 @@ class KubernetesHelper:
 
 	# In cases where we get a kind that doesn't include the API group
 	# (such as from owner references), we have to guess
-	def guess_kind(self, kind):
+	def guess_kind(self, kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
 		# If we already have a tuple, don't guess
 		if isinstance(kind, tuple):
 			if kind in kubernetes_resources:
@@ -2769,12 +2840,12 @@ class KubernetesHelper:
 		# as we get a match.
 		for _kind, _api_group in kubernetes_resources:
 			if kind == _kind:
-				return _kind, _api_group
+				return str(_kind), str(_api_group)
 
 		raise NameError(f"Couldn't guess kubernetes resource for kind: {kind}")
 
 	# This returns a list of API families known by both kubernetes_helper and the API server
-	def get_available_api_families(self, force_refresh = False):
+	def get_available_api_families(self, force_refresh: bool = False) -> Tuple[Dict, int, bool]:
 		modified = False
 
 		# If the list isn't empty, but the cluster is unreachable, return it unchanged
@@ -2790,12 +2861,12 @@ class KubernetesHelper:
 
 		method = "GET"
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/api/v1"
-		data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
+		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
-		if status == 200:
+		if status == 200 and raw_data is not None:
 			# Success
 			try:
-				core_apis = json.loads(data)
+				core_apis = json.loads(raw_data)
 			except DecodeException:
 				# We got a response, but the data is malformed
 				return kubernetes_resources, 42422, False
@@ -2822,12 +2893,12 @@ class KubernetesHelper:
 		non_core_apis = {}
 
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis"
-		data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
+		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
-		if status == 200:
+		if status == 200 and raw_data is not None:
 			# Success
 			try:
-				non_core_apis = json.loads(data)
+				non_core_apis = json.loads(raw_data)
 			except DecodeException:
 				# We got a response, but the data is malformed
 				pass
@@ -2854,13 +2925,13 @@ class KubernetesHelper:
 					# This shouldn't happen, but ignore it
 					continue
 				url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis/{_version}"
-				data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
+				raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
-				if status != 200:
+				if status != 200 or raw_data is None:
 					# Could not get API info; this is worrying, but ignore it
 					continue
 				try:
-					data = json.loads(data)
+					data = json.loads(raw_data)
 				except DecodeException:
 					# We got a response, but the data is malformed
 					continue
@@ -2882,7 +2953,14 @@ class KubernetesHelper:
 		modified = True
 		return kubernetes_resources, status, modified
 
-	def get_list_of_namespaced_resources(self):
+	def get_list_of_namespaced_resources(self) -> List[Tuple[str, str]]:
+		"""
+		Returns a list of all namespaced resources
+
+			Returns:
+				vlist (List[(kind, api_family)]): A list of namespaced kinds
+		"""
+
 		vlist = []
 
 		for resource_kind, resource_data in kubernetes_resources.items():
@@ -2891,17 +2969,15 @@ class KubernetesHelper:
 		return vlist
 
 	# pylint: disable-next=too-many-arguments
-	def __rest_helper_generic_json(self, method = None, url = None, header_params = None, query_params = None, body = None, retries = 3, connect_timeout = 3.0):
-		data = None
-		message = ""
-
+	def __rest_helper_generic_json(self, method: Optional[str] = None, url: Optional[str] = None, header_params: Optional[Dict] = None,
+				       query_params: Optional[Sequence[Optional[Tuple[str, Any]]]] = None, body: Optional[Dict] = None,
+				       retries: int = 3, connect_timeout: float = 3.0) -> Tuple[Union[AnyStr, None], str, int]:
 		if query_params is None:
 			query_params = []
 
 		if self.cluster_unreachable == True:
-			status = 42503
 			message = "Cluster Unreachable"
-			return data, message, status
+			return None, "", 42503
 
 		if header_params is None:
 			header_params = {
@@ -2922,7 +2998,10 @@ class KubernetesHelper:
 		if retries == 0:
 			_retries = False
 		else:
-			_retries = urllib3.Retry(retries)
+			_retries = urllib3.Retry(retries) # type: ignore
+
+		data = None
+		message = ""
 
 		try:
 			if body is not None:
@@ -2941,13 +3020,11 @@ class KubernetesHelper:
 			status = 42504
 		if status == 200:
 			# YAY, things went fine!
-			d = result.data
-			data = d
+			data = result.data
 		elif status == 201:
 			# Created
 			# (Assuming we tried to create something this means success
-			d = result.data
-			data = d
+			data = result.data
 		elif status == 204:
 			# No Content
 			pass
@@ -3002,9 +3079,10 @@ class KubernetesHelper:
 		else:
 			raise Exception(f"Unhandled error: {result.status}; method: {method}, URL: {url}; header_params: {header_params}")
 
+		#sys.exit(f"{data=}\n{message=}\n{status=}")
 		return data, message, status
 
-	def __rest_helper_post(self, kind, name: str = "", namespace: str = "", body = None):
+	def __rest_helper_post(self, kind: Tuple[str, str], name: str = "", namespace: str = "", body = None) -> Tuple[str, int]:
 		method = "POST"
 
 		if body is None or len(body) == 0:
@@ -3040,7 +3118,7 @@ class KubernetesHelper:
 		if namespaced == False:
 			namespace_part = ""
 
-		status = None
+		status = 42503
 
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
@@ -3051,7 +3129,7 @@ class KubernetesHelper:
 
 		return message, status
 
-	def __rest_helper_patch(self, kind, name: str, namespace: str = "", body = None):
+	def __rest_helper_patch(self, kind: Tuple[str, str], name: str, namespace: str = "", body = None) -> Tuple[str, int]:
 		method = "PATCH"
 
 		header_params = {
@@ -3087,8 +3165,8 @@ class KubernetesHelper:
 		if namespaced == False:
 			namespace_part = ""
 
-		message = None
-		status = None
+		message = ""
+		status = 42503
 
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
@@ -3099,7 +3177,7 @@ class KubernetesHelper:
 
 		return message, status
 
-	def __rest_helper_delete(self, kind, name: str, namespace: str = "", query_params = None):
+	def __rest_helper_delete(self, kind: Tuple[str, str], name: str, namespace: str = "", query_params: Optional[Sequence[Optional[Tuple[str, Any]]]] = None) -> Tuple[str, int]:
 		method = "DELETE"
 
 		if query_params is None:
@@ -3130,7 +3208,7 @@ class KubernetesHelper:
 		if namespaced == False:
 			namespace_part = ""
 
-		status = None
+		status = 42503
 
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
@@ -3145,9 +3223,8 @@ class KubernetesHelper:
 	# this way lists the result can be handled unconditionally in for loops
 
 	# pylint: disable-next=too-many-arguments
-	def __rest_helper_get(self, kind, name = "", namespace = "", label_selector = "", field_selector = ""):
-		vlist = None
-
+	def __rest_helper_get(self, kind: Tuple[str, str], name: str = "", namespace: str = "",
+			      label_selector: str = "", field_selector: str = "") -> Tuple[Union[Optional[Dict], List[Optional[Dict]]], int]:
 		if kind is None:
 			raise Exception("__rest_helper_get API called with kind None")
 
@@ -3157,10 +3234,10 @@ class KubernetesHelper:
 
 			# If name is not set this is a list request, so return an empty list instead of None
 			if name == "":
-				vlist = []
-			return vlist, status
+				return [], status
+			return None, status
 
-		query_params = []
+		query_params: List[Optional[Tuple[str, Any]]] = []
 		if field_selector != "":
 			query_params.append(("fieldSelector", field_selector))
 		if label_selector != "":
@@ -3187,28 +3264,26 @@ class KubernetesHelper:
 		if namespaced == False:
 			namespace_part = ""
 
-		status = None
+		status = 42503
 
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
 			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
-			data, _message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
+			raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
 
 			# All fatal failures are handled in __rest_helper_generic
-			if status == 200:
+			if status == 200 and raw_data is not None:
 				# Success
 				try:
-					d = json.loads(data)
+					d = json.loads(raw_data)
 				except DecodeException:
 					# We got a response, but the data is malformed; skip the entry
 					continue
 
 				# If name is set this is a read request, not a list request
 				if name != "":
-					vlist = d
-				else:
-					vlist = d["items"]
-				break
+					return d, status
+				return d["items"], status
 
 			if status in (204, 400, 403, 503):
 				# We didn't get any data, but we might not want to fail
@@ -3233,12 +3308,12 @@ class KubernetesHelper:
 				# retry without &resourceVersion=xxxxx
 
 		# If name is not set this is a list request, so return an empty list instead of None
-		if name == "" and vlist is None:
-			vlist = []
+		if name == "":
+			return [], status
 
-		return vlist, status
+		return None, status
 
-	def create_namespace(self, name: str):
+	def create_namespace(self, name: str) -> Tuple[str, int]:
 		kind = ("Namespace", "")
 
 		if name is None or len(name) == 0:
@@ -3258,7 +3333,7 @@ class KubernetesHelper:
 		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_post(kind, body = body)
 
-	def taint_node(self, node, taints, new_taint, overwrite: bool = False):
+	def taint_node(self, node: str, taints: List[Dict], new_taint: Tuple[str, str, str, str], overwrite: bool = False) -> Tuple[str, int]:
 		"""
 		Apply a new taint, replace an existing taint, or remove a taint for a node
 
@@ -3339,7 +3414,7 @@ class KubernetesHelper:
 		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_patch(kind, node, body = body)
 
-	def cordon_node(self, node):
+	def cordon_node(self, node: str) -> Tuple[str, int]:
 		"""
 		Cordon a Node
 
@@ -3358,7 +3433,7 @@ class KubernetesHelper:
 		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_patch(kind, node, body = body)
 
-	def uncordon_node(self, node):
+	def uncordon_node(self, node: str) -> Tuple[str, int]:
 		"""
 		Uncordon a Node
 
@@ -3377,7 +3452,7 @@ a				the return value from __rest_helper_patch
 		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_patch(kind, node, body = body)
 
-	def delete_obj_by_kind_name_namespace(self, kind, name: str, namespace: str, force: bool = False):
+	def delete_obj_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, force: bool = False) -> Tuple[str, int]:
 		"""
 		Delete an object
 
@@ -3390,22 +3465,25 @@ a				the return value from __rest_helper_patch
 				the return value from __rest_helper_delete
 		"""
 
-		query_params = []
+		query_params: List[Optional[Tuple[str, Any]]] = []
 
 		if force == True:
 			query_params.append(("gracePeriodSeconds", 0))
 
 		return self.__rest_helper_delete(kind, name, namespace, query_params = query_params)
 
-	def get_metrics(self):
+	def get_metrics(self) -> Tuple[List, int]:
 		if self.cluster_unreachable == True:
 			return [], 42503
 
-		query_params = []
+		query_params: List[Optional[Tuple[str, Any]]] = []
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/metrics"
 		data, _message, status = self.__rest_helper_generic_json(method = "GET", url = url, query_params = query_params)
-		if status == 200:
-			msg = data.decode("utf-8").splitlines()
+		if status == 200 and data is not None:
+			if isinstance(data, bytes):
+				msg = data.decode("utf-8").splitlines()
+			elif isinstance(data, str):
+				msg = data.splitlines()
 		elif status == 204:
 			# No Content; pretend that everything is fine
 			msg = []
@@ -3417,12 +3495,13 @@ a				the return value from __rest_helper_patch
 	def get_list_by_kind_namespace(self, kind, namespace: str, label_selector: str = "", field_selector: str = ""):
 		return self.__rest_helper_get(kind, "", namespace, label_selector, field_selector)
 
-	def get_ref_by_kind_name_namespace(self, kind, name: str, namespace: str):
+	def get_ref_by_kind_name_namespace(self, kind, name: str, namespace: str) -> Dict:
 		ref, _status = self.__rest_helper_get(kind, name, namespace, "", "")
+		ref = cast(dict, ref)
 		return ref
 
-	def read_namespaced_pod_log(self, name: str, namespace: str, container = None, tail_lines: int = 0):
-		query_params = []
+	def read_namespaced_pod_log(self, name: str, namespace: str, container: Optional[str] = None, tail_lines: int = 0) -> Tuple[str, int]:
+		query_params: List[Optional[Tuple[str, Any]]] = []
 		if container is not None:
 			query_params.append(("container", container))
 		if tail_lines is not None:
@@ -3433,8 +3512,11 @@ a				the return value from __rest_helper_patch
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/api/v1/namespaces/{namespace}/pods/{name}/log"
 		data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
 
-		if status == 200:
-			msg = data.decode("utf-8")
+		if status == 200 and data is not None:
+			if isinstance(data, bytes):
+				msg = data.decode("utf-8")
+			elif isinstance(data, str):
+				msg = data
 		elif status == 204:
 			# No Content
 			msg = "No Content"
@@ -3445,11 +3527,12 @@ a				the return value from __rest_helper_patch
 
 	# Namespace must be the namespace of the resource; the owner reference itself lacks namespace
 	# since owners have to reside in the same namespace as their owned resources
-	def get_ref_from_owr(self, owr, namespace: str):
+	def get_ref_from_owr(self, owr: Dict, namespace: str) -> Dict:
 		ref, _status = self.__rest_helper_get(deep_get(owr, DictPath("kind")), deep_get(owr, DictPath("name")), namespace)
+		ref = cast(dict, ref)
 		return ref
 
-	def get_events_by_kind_name_namespace(self, kind, name: str, namespace: str):
+	def get_events_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str) -> List[Tuple[str, str, str, str, str, str, str, int, str]]:
 		events = []
 		vlist, status = self.get_list_by_kind_namespace(("Event", "events.k8s.io"), "")
 		for obj in vlist:
@@ -3491,6 +3574,6 @@ a				the return value from __rest_helper_patch
 				count = str(count)
 			message = deep_get(obj, DictPath("message"), "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
 			if kind == involved_kind and name == involved_name and ev_namespace == namespace:
-				event = (ev_namespace, ev_name, last_seen, status, reason, source, first_seen, count, message)
+				event = (str(ev_namespace), str(ev_name), last_seen, status, str(reason), str(source), first_seen, count, message)
 				events.append(event)
 		return events

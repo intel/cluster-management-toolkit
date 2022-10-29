@@ -269,6 +269,14 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 	max_args = 0
 
 	while i < len(argv):
+		if "\x00" in argv[i]:
+			iktprint([(f"{programname}", "programname"), (": argument “", "default"),
+				  (argv[i].replace("\x00", "<NUL>"), "command"),
+				  ("“ contains NUL-bytes (replaced here);\n", "default"),
+				  ("this is either a programming error, a system error, file or memory corruption, ", "default"),
+				  ("or a deliberate attempt to bypass security; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+
 		# Have we got a command to execute?
 		if command is None:
 			commandname, command, key, min_args, max_args = __find_command(commandline, argv[i])

@@ -961,7 +961,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 			raise Exception(f"Unknown value type {vtype}; the view file is probably invalid")
 	return value
 
-def transform_filter(transformations, value):
+def transform_filter(transformations, value: DictPath):
 	if value in transformations:
 		value = deep_get(transformations, value)
 	return value
@@ -977,17 +977,17 @@ def when_filter(when_path, item, key = None, value = None):
 	for when_condition in when_conditions:
 		# These apply to the key
 		if _key is None:
-			key = deep_get(when_condition, "key")
+			key = deep_get(when_condition, DictPath("key"))
 
 		# These don't make sense when using when#key, since we already know the key
-		when_key_eq = deep_get(when_condition, "key_eq")
-		when_key_ne = deep_get(when_condition, "key_ne")
-		when_key_in = deep_get(when_condition, "key_in")
-		when_key_notin = deep_get(when_condition, "key_notin")
-		when_key_startswith = deep_get(when_condition, "key_startswith")
-		when_key_notstartswith = deep_get(when_condition, "key_notstartswith")
-		when_key_endswith = deep_get(when_condition, "key_endswith")
-		when_key_notendswith = deep_get(when_condition, "key_notendswith")
+		when_key_eq = deep_get(when_condition, DictPath("key_eq"))
+		when_key_ne = deep_get(when_condition, DictPath("key_ne"))
+		when_key_in = deep_get(when_condition, DictPath("key_in"))
+		when_key_notin = deep_get(when_condition, DictPath("key_notin"))
+		when_key_startswith = deep_get(when_condition, DictPath("key_startswith"))
+		when_key_notstartswith = deep_get(when_condition, DictPath("key_notstartswith"))
+		when_key_endswith = deep_get(when_condition, DictPath("key_endswith"))
+		when_key_notendswith = deep_get(when_condition, DictPath("key_notendswith"))
 		if when_key_eq is not None and when_key_eq != key:
 			return False
 		if when_key_ne is not None and when_key_eq == key:
@@ -1007,29 +1007,29 @@ def when_filter(when_path, item, key = None, value = None):
 
 		# Check for none
 		if _value is None:
-			value = deep_get(item, key)
+			value = deep_get(item, DictPath(key))
 
 		# These check whether the key has a value
-		when_none = deep_get(when_condition, "none")
-		when_notnone = deep_get(when_condition, "notnone")
+		when_none = deep_get(when_condition, DictPath("none"))
+		when_notnone = deep_get(when_condition, DictPath("notnone"))
 
 		# All these check the value
-		when_eq = deep_get(when_condition, "eq")
-		when_ne = deep_get(when_condition, "ne")
-		when_lt = deep_get(when_condition, "lt")
-		when_lte = deep_get(when_condition, "lte")
-		when_gt = deep_get(when_condition, "gt")
-		when_gte = deep_get(when_condition, "gte")
-		when_in = deep_get(when_condition, "in")
-		when_notin = deep_get(when_condition, "notin")
-		when_missing = deep_get(when_condition, "missing")
-		when_notmissing = deep_get(when_condition, "notmissing")
+		when_eq = deep_get(when_condition, DictPath("eq"))
+		when_ne = deep_get(when_condition, DictPath("ne"))
+		when_lt = deep_get(when_condition, DictPath("lt"))
+		when_lte = deep_get(when_condition, DictPath("lte"))
+		when_gt = deep_get(when_condition, DictPath("gt"))
+		when_gte = deep_get(when_condition, DictPath("gte"))
+		when_in = deep_get(when_condition, DictPath("in"))
+		when_notin = deep_get(when_condition, DictPath("notin"))
+		when_missing = deep_get(when_condition, DictPath("missing"))
+		when_notmissing = deep_get(when_condition, DictPath("notmissing"))
 
 		# These check dict values
-		when_isdict = deep_get(when_condition, "isdict")
-		when_notisdict = deep_get(when_condition, "notisdict")
-		when_dicthaskey = deep_get(when_condition, "dicthaskey")
-		when_notdicthaskey = deep_get(when_condition, "notdicthaskey")
+		when_isdict = deep_get(when_condition, DictPath("isdict"))
+		when_notisdict = deep_get(when_condition, DictPath("notisdict"))
+		when_dicthaskey = deep_get(when_condition, DictPath("dicthaskey"))
+		when_notdicthaskey = deep_get(when_condition, DictPath("notdicthaskey"))
 
 		# Check for existance
 		if when_missing is not None and when_missing in item:
@@ -3083,7 +3083,7 @@ def get_pod_resource_list(obj, **kwargs):
 			"status": status,
 			"restarts": restarts,
 			"message": message,
-			"age": get_since(age),
+			"age": age,
 		})
 
 	if "node" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
@@ -4475,16 +4475,16 @@ def fieldgenerator(view, field_index: str, field_indexes, fields, denylist):
 	field_dict = {}
 	for field in field_names:
 		if field in fields:
-			field_dict[field] = deep_get(fields, field, {})
+			field_dict[field] = deep_get(fields, DictPath(field), {})
 		elif field in builtin_fields:
-			field_dict[field] = deep_get(builtin_fields, field, {})
+			field_dict[field] = deep_get(builtin_fields, DictPath(field), {})
 		else:
 			sys.exit(f"View {view}: field “{field}“ cannot be found in view or builtin_fields\nView fields: {fields}\nfield_names: {field_names}")
 
 	tmp_fields = {}
 
 	for field_name in field_dict:
-		field = deep_get(field_dict, field_name)
+		field = deep_get(field_dict, DictPath(field_name))
 
 		# This is a custom field, so we need to construct one that's usable here
 		tmp_fields[field_name] = copy.deepcopy(field_dict[field_name])
@@ -5428,12 +5428,12 @@ def __switch_resource_map(**kwargs):
 	}
 
 def __resource_map_cursor(**kwargs):
-	uip = deep_get(kwargs, "uip")
-	keypress = deep_get(kwargs, "__keypress")
-	selected = deep_get(kwargs, "selected")
-	info = deep_get(kwargs, "info")
+	uip = deep_get(kwargs, DictPath("uip"))
+	keypress = deep_get(kwargs, DictPath("__keypress"))
+	selected = deep_get(kwargs, DictPath("selected"))
+	info = deep_get(kwargs, DictPath("info"))
 	status_len = len(info)
-	heatmap_width = deep_get(kwargs, "heatmap_width")
+	heatmap_width = deep_get(kwargs, DictPath("heatmap_width"))
 
 	maxval = status_len - 1
 	oldval = selected
@@ -5482,11 +5482,11 @@ def __resource_map_cursor(**kwargs):
 	}
 
 def __open_reference(**kwargs):
-	uip = deep_get(kwargs, "uip")
-	keypress = deep_get(kwargs, "__keypress")
-	pod_name = deep_get(kwargs, "pod_name")
-	namespace = deep_get(kwargs, "namespace")
-	node = deep_get(kwargs, "node")
+	uip = deep_get(kwargs, DictPath("uip"))
+	keypress = deep_get(kwargs, DictPath("__keypress"))
+	pod_name = deep_get(kwargs, DictPath("pod_name"))
+	namespace = deep_get(kwargs, DictPath("namespace"))
+	node = deep_get(kwargs, DictPath("node"))
 
 	if keypress == ord("o"):
 		if node is None:
@@ -5514,8 +5514,8 @@ def __open_reference(**kwargs):
 	return Retval.MATCH, {}
 
 def __fetch_package_versions(**kwargs):
-	uip = deep_get(kwargs, "uip")
-	hostname = deep_get(kwargs, "hostname")
+	uip = deep_get(kwargs, DictPath("uip"))
+	hostname = deep_get(kwargs, DictPath("hostname"))
 
 	win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = "Fetching package versions...")
 	_package_versions = get_package_versions(hostname)
@@ -5655,7 +5655,7 @@ def clusteroverviewloop(stdscr, view):
 
 	windowheader = view
 	activatedfun = views[view]["activatedfun"]
-	on_activation = deep_get(views[view], "on_activation", {})
+	on_activation = deep_get(views[view], DictPath("on_activation"), {})
 	update_delay = views[view].get("update_delay", -1)
 
 	sortorder_reverse = views[view].get("sortorder_reverse", False)
@@ -5681,7 +5681,7 @@ def clusteroverviewloop(stdscr, view):
 
 	# Get control plane node
 	control_plane_node, control_plane_name = get_control_plane()
-	control_plane_addresses = deep_get(control_plane_node, "status#addresses", [])
+	control_plane_addresses = deep_get(control_plane_node, DictPath("status#addresses"), [])
 	name, iips, eips = get_node_addresses(control_plane_name, control_plane_addresses)
 
 	hostname = socket.gethostname()
@@ -6246,7 +6246,7 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 		except FileNotFoundError:
 			cpath = None
 
-		if dry_run == True:
+		if dry_run == True or cpath is None:
 			return cpath is not None
 
 		args = [cpath, "upgrade"]
@@ -7161,7 +7161,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			uip.force_update()
 
 		for key, value in shortcuts.items():
-			shortcut_keys = deep_get(value, "shortcut")
+			shortcut_keys = deep_get(value, DictPath("shortcut"))
 			if shortcut_keys is None:
 				continue
 
@@ -7171,23 +7171,23 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			if c not in shortcut_keys:
 				continue
 
-			widget = deep_get(value, "widget")
-			force_update = deep_get(value, "force_update", True)
+			widget = deep_get(value, DictPath("widget"))
+			force_update = deep_get(value, DictPath("force_update"), True)
 			changed = False
 			tmpselection = None
 			if widget is not None:
 				if widget == "windowwidget":
-					w_title = deep_get(value, "title", "")
-					w_headers = deep_get(value, "headers")
-					w_itemgetter = deep_get(value, "itemgetter")
+					w_title = deep_get(value, DictPath("title"), "")
+					w_headers = deep_get(value, DictPath("headers"))
+					w_itemgetter = deep_get(value, DictPath("itemgetter"))
 					if w_itemgetter is not None:
 						if type(w_itemgetter) == str:
-							w_itemgetter = deep_get(itemgetter_allowlist, w_itemgetter)
-					w_itemgetter_args = deep_get(value, "itemgetter_args", {})
-					w_selectable = deep_get(value, "selectable", False)
-					w_kind = deep_get(value, "kind", view)
+							w_itemgetter = deep_get(itemgetter_allowlist, DictPath(w_itemgetter))
+					w_itemgetter_args = deep_get(value, DictPath("itemgetter_args"), {})
+					w_selectable = deep_get(value, DictPath("selectable"), False)
+					w_kind = deep_get(value, DictPath("kind"), view)
 					if "_slow_task_msg" in w_itemgetter_args:
-						w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = deep_get(w_itemgetter_args, "_slow_task_msg"))
+						w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = deep_get(w_itemgetter_args, DictPath("_slow_task_msg")))
 					w_items = w_itemgetter(kh, obj, **w_itemgetter_args)
 
 					# If the first element is an integer we assume that we've been provided
@@ -7195,14 +7195,14 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					# If not available we try to provide some sensible defaults.
 					if w_items is not None and len(w_items) > 0 and (type(w_items[0]) == dict or type(w_items[0]) in (list, tuple) and type(w_items[0][0]) != int):
 						tmp_items = []
-						w_formatting = deep_get(value, "formatting", [("windowwidget", "default")])
+						w_formatting = deep_get(value, DictPath("formatting"), [("windowwidget", "default")])
 						lineattrs = WidgetLineAttrs.NORMAL
 						# w_item is a line
 						for w_item in w_items:
 							ref = None
 							if type(w_item) == dict:
-								ref = deep_get(w_item, "ref")
-								w_item = deep_get(w_item, "fields")
+								ref = deep_get(w_item, DictPath("ref"))
+								w_item = deep_get(w_item, DictPath("fields"))
 							# w_item[i] is a column
 							tmp = []
 							for i in range(0, len(w_item)):
@@ -7216,12 +7216,12 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						w_items = tmp_items
 
 					if w_items is not None and len(w_items) > 0:
-						w_sortcolumn = deep_get(value, "sortcolumn")
+						w_sortcolumn = deep_get(value, DictPath("sortcolumn"))
 						tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items = w_items, headers = w_headers, title = w_title, cursor = w_selectable)
 						changed = True
 				elif widget == "inputbox":
 					selected = uip.get_selected()
-					w_title = deep_get(value, "inputtitle", "")
+					w_title = deep_get(value, DictPath("inputtitle"), "")
 					w_result = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, w_title)
 					if w_result is None or len(w_result) == 0 or w_title == "" or len(selected.value) == 0:
 						continue
@@ -7232,7 +7232,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					uip.refresh_statusbar()
 					curses.doupdate()
 					# Check this condition before confirming
-					w_confirm = deep_get(value, "confirm", False)
+					w_confirm = deep_get(value, DictPath("confirm"), False)
 					if type(w_confirm) == str:
 						if w_confirm == "path_exists":
 							w_confirm = os.path.exists(w_result)
@@ -7240,11 +7240,11 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							sys.exit("Unknown value for w_confirm; must be either boolean or path_exists")
 					if w_confirm == True:
 						curses.doupdate()
-						w_confirmtitle = deep_get(value, "confirmtitle")
+						w_confirmtitle = deep_get(value, DictPath("confirmtitle"))
 						if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = w_confirmtitle, default = False) == False:
 							continue
 				elif widget == "command":
-					w_args = deep_get(value, "widget_args", {})
+					w_args = deep_get(value, DictPath("widget_args"), {})
 					if "_pass_obj" in w_args:
 						w_args["obj"] = obj
 					do_command(uip.stdscr, **w_args)
@@ -7257,7 +7257,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					w_ref = None
 					if selected is not None:
 						w_ref = getattr(selected, "ref", None)
-					if w_kinds != ["<native>"] and [deep_get(w_ref, "kind", ""), deep_get(w_ref, "api_group", "")] not in w_kinds and w_kinds != [("", "")]:
+					if w_kinds != ["<native>"] and [deep_get(w_ref, DictPath("kind"), ""), deep_get(w_ref, DictPath("api_group"), "")] not in w_kinds and w_kinds != [("", "")]:
 						continue
 
 					w_inputtitle = deep_get_with_fallback(value, ["widget_args#inputtitle", "inputtitle"])
@@ -7271,12 +7271,12 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 
 					w_waitforkeypress = deep_get_with_fallback(value, ["widget_args#waitforkeypress", "waitforkeypress"], False)
 					if not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
-						containername = deep_get(w_ref, "name", "")
+						containername = deep_get(w_ref, DictPath("name"), "")
 					if w_command == [ "<ephemeral>" ]:
-						ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
+						ephemeral_image = deep_get(iktconfig, DictPath("Debug#ephemeral_image"), "busybox")
 						msg = [("Creating ephemeral ", "action"), (ephemeral_image, "programname"), (" container sharing process namespace with ", "action"), (f"{containername}", "path")]
 					elif w_command == [ "<dnsutils>" ]:
-						node_name = deep_get(obj, "metadata#name")
+						node_name = deep_get(obj, DictPath("metadata#name"))
 						containername = None
 						msg = [("Opening dnsutils container on ", "action"), (node_name, "hostname")]
 					else:
@@ -7285,8 +7285,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					changed = True
 			if "action" in value:
 				selected = uip.get_selected()
-				action = deep_get(value, "action", "")
-				action_args = deep_get(value, "action_args", {})
+				action = deep_get(value, DictPath("action"), "")
+				action_args = deep_get(value, DictPath("action_args"), {})
 				if "_pass_obj" in action_args:
 					action_args["obj"] = obj
 				if "_pass_result" in action_args and selected is not None:
@@ -7297,13 +7297,13 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					action_args["selected_obj"] = getattr(selected, "ref", None)
 				if tmpselection is not None:
 					action_args["selection"] = tmpselection
-				action_call = deep_get(value, "action_call")
+				action_call = deep_get(value, DictPath("action_call"))
 				if action == "call" and action_call is not None:
 					retval = action_call(uip.stdscr, **action_args)
 					if retval is not None and retval == Retval.RETURNFULL:
 						return retval
 				elif action == "execute":
-					_command = deep_get(action_args, "command", [])
+					_command = deep_get(action_args, DictPath("command"), [])
 					# replace paths with data
 					if len(_command) > 0:
 						command = []
@@ -7313,7 +7313,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							else:
 								command.append(_cmd)
 					# Check this condition before confirming
-					w_confirm = deep_get(value, "confirm", False)
+					w_confirm = deep_get(value, DictPath("confirm"), False)
 					if type(w_confirm) == str:
 						if w_confirm == "path_exists":
 							w_confirm = os.path.exists(w_result)
@@ -7321,7 +7321,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							sys.exit("Unknown value for w_confirm; must be either boolean or path_exists")
 					if w_confirm == True:
 						curses.doupdate()
-						w_confirmtitle = deep_get(value, "confirmtitle")
+						w_confirmtitle = deep_get(value, DictPath("confirmtitle"))
 						if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = w_confirmtitle, default = False) == False:
 							continue
 					_values = {}
@@ -7332,17 +7332,17 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					}
 					action_execute_command(uip, items = [], action = {}, values = _values, kind = None, title = "")
 			else:
-				call = deep_get(value, "call")
+				call = deep_get(value, DictPath("call"))
 				call_name = None
-				owner_references_path = deep_get(value, "owner_references_path")
-				owner_references_kind = deep_get(value, "owner_references_kind")
-				holder_identity_path = deep_get(value, "holder_identity_path")
+				owner_references_path = deep_get(value, DictPath("owner_references_path"))
+				owner_references_kind = deep_get(value, DictPath("owner_references_kind"))
+				holder_identity_path = deep_get(value, DictPath("holder_identity_path"))
 				if owner_references_path is not None:
-					owner_reference = deep_get(obj, owner_references_path, [])
+					owner_reference = deep_get(obj, DictPath(owner_references_path), [])
 					if holder_identity_path is not None:
 						if len(owner_reference) == 0:
 							continue
-						call_name = deep_get(obj, holder_identity_path)
+						call_name = deep_get(obj, DictPath(holder_identity_path))
 						kind = get_holder_kind_from_owner_references(owner_reference, call_name)
 					elif owner_references_kind is not None:
 						call_name = get_name_by_kind_from_owner_references(owner_reference, owner_references_kind)
@@ -7352,21 +7352,21 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if kind == ("", "") or len(call_name) == 0:
 						continue
 				else:
-					call_name_path = deep_get(value, "name_path")
-					kind = deep_get(value, "kind")
+					call_name_path = deep_get(value, DictPath("name_path"))
+					kind = deep_get(value, DictPath("kind"))
 					if kind is None:
-						kind_path = deep_get(value, "kind_path", "")
+						kind_path = deep_get(value, DictPath("kind_path"), "")
 						if type(kind_path) == tuple:
-							kind = (deep_get(obj, kind_path[0]), deep_get(obj, kind_path[1]))
+							kind = (deep_get(obj, DictPath(kind_path[0])), deep_get(obj, DictPath(kind_path[1])))
 						else:
-							kind = deep_get(obj, kind_path)
+							kind = deep_get(obj, DictPath(kind_path))
 					if call_name_path is not None:
-						call_name = deep_get(obj, call_name_path)
+						call_name = deep_get(obj, DictPath(call_name_path))
 
-				call_namespace_path = deep_get(value, "namespace_path")
+				call_namespace_path = deep_get(value, DictPath("namespace_path"))
 				call_namespace = ""
 				if call_namespace_path is not None:
-					call_namespace = deep_get(obj, call_namespace_path)
+					call_namespace = deep_get(obj, DictPath(call_namespace_path))
 
 				if call is not None and call_name is not None:
 					if kind is None or kind == ("", ""):
@@ -7385,13 +7385,13 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				uip.force_update()
 
 def eventdispatch(stdscr, **kwargs):
-	obj = deep_get(kwargs, "obj")
+	obj = deep_get(kwargs, DictPath("obj"))
 	if obj is None:
 		return Retval.RETURNDONE
 
-	kind_path = deep_get(kwargs, "kind_path")
+	kind_path = deep_get(kwargs, DictPath("kind_path"))
 	kind = deep_get_with_fallback(obj, kind_path)
-	api_version_path = deep_get(kwargs, "api_version_path")
+	api_version_path = deep_get(kwargs, DictPath("api_version_path"))
 	api_version = deep_get_with_fallback(obj, api_version_path, "")
 	# Is this a core API?
 	if "/" not in api_version:
@@ -7400,9 +7400,9 @@ def eventdispatch(stdscr, **kwargs):
 		api_family = api_version.split("/")[0]
 	kind = (kind, api_family)
 
-	name_path = deep_get(kwargs, "name_path")
+	name_path = deep_get(kwargs, DictPath("name_path"))
 	name = deep_get_with_fallback(obj, name_path)
-	namespace_path = deep_get(kwargs, "namespace_path")
+	namespace_path = deep_get(kwargs, DictPath("namespace_path"))
 	namespace = deep_get_with_fallback(obj, namespace_path + ["metadata#namespace"], "")
 	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	return resourceinfodispatch(stdscr, ref, kind)
@@ -7425,9 +7425,9 @@ def log_add_line(timestamps, facilities, severities, messages, timestamp, facili
 def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 	global override_tail_lines # pylint: disable=global-statement
 
-	multilog_containers_full = deep_get(kwargs, "multilog_containers_full", [])
-	multilog_containers = deep_get(kwargs, "multilog_containers", [])
-	all_same_namespace = deep_get(kwargs, "all_same_namespace", False)
+	multilog_containers_full = deep_get(kwargs, DictPath("multilog_containers_full"), [])
+	multilog_containers = deep_get(kwargs, DictPath("multilog_containers"), [])
+	all_same_namespace = deep_get(kwargs, DictPath("all_same_namespace"), False)
 	multilog_prefix = ["namespace", "podname", "container"]
 	facility_extended = None
 
@@ -7446,19 +7446,19 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 	# Number of lines of log to show by default
 	if override_tail_lines is None:
-		override_tail_lines = deep_get(iktconfig, "Pods#logsize", default_tail_lines)
+		override_tail_lines = deep_get(iktconfig, DictPath("Pods#logsize"), default_tail_lines)
 
 	tail_lines = override_tail_lines
 
 	uip.continuous_log = False
-	merge_repeats = deep_get(iktconfig, "Pods#merge_repeated_messages", False)
+	merge_repeats = deep_get(iktconfig, DictPath("Pods#merge_repeated_messages"), False)
 	saved_merge_repeats = merge_repeats
 	raw_logs = False
-	tmp_log_level = deep_get(iktconfig, "Pods#loglevel", "Info")
+	tmp_log_level = deep_get(iktconfig, DictPath("Pods#loglevel"), "Info")
 	log_level = name_to_loglevel(tmp_log_level)
-	show_borders = deep_get(iktconfig, "Pods#show_borders", True)
+	show_borders = deep_get(iktconfig, DictPath("Pods#show_borders"), True)
 	uip.toggle_borders(show_borders)
-	show_timestamps = deep_get(iktconfig, "Pods#show_timestamps", True)
+	show_timestamps = deep_get(iktconfig, DictPath("Pods#show_timestamps"), True)
 	uip.toggle_timestamps(show_timestamps)
 	# Currently not working properly
 	compact_timestamps = False
@@ -7468,7 +7468,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 	highlight_new_dates = False
 	wrap_lines = False
 	# Show severity as text
-	severity_prefix = deep_get(iktconfig, "Pods#severity_prefix", [])
+	severity_prefix = deep_get(iktconfig, DictPath("Pods#severity_prefix"), [])
 	# Backwards compatibility
 	if type(severity_prefix) is bool:
 		if severity_prefix == False:
@@ -7478,12 +7478,12 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 	# This decides whether or not compound log messages,
 	# such as Python dicts and JSON, should be expanded
-	fold_msg = deep_get(iktconfig, "Pods#fold_msg", True)
+	fold_msg = deep_get(iktconfig, DictPath("Pods#fold_msg"), True)
 	saved_fold_msg = fold_msg
 
 	# This decides whether or not to show the facility,
 	# and if so how it is to be displayed
-	show_facility = deep_get(iktconfig, "Pods#show_facility", "Full")
+	show_facility = deep_get(iktconfig, DictPath("Pods#show_facility"), "Full")
 	override_parser = None
 	_parser = None
 
@@ -7512,20 +7512,20 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				pod_info = get_pod_info(**{"_vlist": [obj]})[0]
 				podname = pod_info.name
 				namespace = pod_info.namespace
-				containername = deep_get(container, "name")
+				containername = deep_get(container, DictPath("name"))
 
 				if kind == ("InitContainer", ""):
-					src_statuses = deep_get(pod_info.ref, "status#initContainerStatuses", [])
+					src_statuses = deep_get(pod_info.ref, DictPath("status#initContainerStatuses"), [])
 					container_type = "init_container"
 				else:
-					src_statuses = deep_get(pod_info.ref, "status#containerStatuses", [])
+					src_statuses = deep_get(pod_info.ref, DictPath("status#containerStatuses"), [])
 					container_type = "container"
 				container_status = None
 				for container_status in src_statuses:
-					if deep_get(container_status, "name") == containername:
+					if deep_get(container_status, DictPath("name")) == containername:
 						break
 				if container_status is not None:
-					image = deep_get(container_status, "imageID", "")
+					image = deep_get(container_status, DictPath("imageID"), "")
 				else:
 					image = "<unavailable>"
 
@@ -7668,7 +7668,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 							# We got something indicating that this isn't a valid block; abort
 							break
 					else:
-						if len(_logentries) > 0 and deep_get(options, "eof", "break") == "end_block":
+						if len(_logentries) > 0 and deep_get(options, DictPath("eof"), "break") == "end_block":
 							for _timestamp, _facility, _severity, _message in _logentries:
 								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, _timestamp, "".ljust(len(facility)), severity, _message, facility_extended)
 							_block_state = "end_block"
@@ -7758,18 +7758,18 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			if len(multilog_containers) == 0:
 				containertypearray = f" [Type: {kind[0]}]"
 				if kind == ("InitContainer", ""):
-					src_statuses = deep_get(pod_info.ref, "status#initContainerStatuses")
+					src_statuses = deep_get(pod_info.ref, DictPath("status#initContainerStatuses"))
 				else:
-					src_statuses = deep_get(pod_info.ref, "status#containerStatuses")
+					src_statuses = deep_get(pod_info.ref, DictPath("status#containerStatuses"))
 
 				if src_statuses is None or len(src_statuses) == 0:
 					break
 
 				for container_status in src_statuses:
-					if deep_get(container_status, "name") == containername:
+					if deep_get(container_status, DictPath("name")) == containername:
 						break
 
-				status, status_group, restarts, message, age = datagetter.get_container_status(src_statuses, containername)
+				status, status_group, restarts, message, _age = datagetter.get_container_status(src_statuses, containername)
 				containerarray = [
 					("Container: ", ("main", "infoheader")),
 					(f"{containername}{containertypearray}", ("types", "generic"))
@@ -7790,16 +7790,16 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				]
 				containeridarray = [
 					("Container ID: ", ("main", "infoheader")),
-					(f"{deep_get(container_status, 'containerID')}", ("types", "generic")),
+					(f"{deep_get(container_status, DictPath('containerID'))}", ("types", "generic")),
 				]
-				image_name, image_version = get_image_tuple(deep_get(container_status, "image"))
+				image_name, image_version = get_image_tuple(deep_get(container_status, DictPath("image")))
 				imagearray = [
 					("Image: ", ("main", "infoheader")),
 					(f"{image_name}", ("types", "generic")),
 					("separators", "version"),
 					(f"{image_version}", ("types", "version")),
 				]
-				image_id = deep_get(container_status, "imageID")
+				image_id = deep_get(container_status, DictPath("imageID"))
 				imageidarray = [
 					("I", ("main", "infoheader_shortcut")),
 					("mage ID: ", ("main", "infoheader")),
@@ -8424,6 +8424,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
+		curses.endwin()
 		iktprint([("Critical", "critical"), (": Could not find ", "default"),
 			  ("kubectl", "path"),
 			  ("; aborting.", "default")], stderr = True)
@@ -8435,15 +8436,15 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 	iktprint(msg)
 	print()
 	if obj is not None:
-		obj_name = deep_get(obj, "metadata#name")
-		obj_namespace = deep_get(obj, "metadata#namespace")
+		obj_name = deep_get(obj, DictPath("metadata#name"))
+		obj_namespace = deep_get(obj, DictPath("metadata#namespace"))
 		# This is a request to create a new ephemeral container
 		if command == ["<ephemeral>"]:
-			ephemeral_image = deep_get(iktconfig, "Debug#ephemeral_image", "busybox")
+			ephemeral_image = deep_get(iktconfig, DictPath("Debug#ephemeral_image"), "busybox")
 			args = [kubectl_path, "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image]
 			_result = subprocess.run(args, check = False)
 		elif command == ["<dnsutils>"]:
-			dnsutils_image = deep_get(iktconfig, "Debug#network_image", "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
+			dnsutils_image = deep_get(iktconfig, DictPath("Debug#network_image"), "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
 			args = [kubectl_path, "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
 			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 			if result.returncode != 0:
@@ -8483,14 +8484,14 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 	stdscr.refresh()
 
 def listviewdispatch(stdscr, **kwargs):
-	obj = deep_get(kwargs, "obj")
+	obj = deep_get(kwargs, DictPath("obj"))
 	if obj is None:
 		return Retval.RETURNDONE
 
-	kind_path = deep_get(kwargs, "kind_path")
-	kind = deep_get(obj, kind_path)
-	api_family_path = deep_get(kwargs, "api_family_path")
-	api_family = deep_get(obj, api_family_path, "")
+	kind_path = deep_get(kwargs, DictPath("kind_path"))
+	kind = deep_get(obj, DictPath(kind_path))
+	api_family_path = deep_get(kwargs, DictPath("api_family_path"))
+	api_family = deep_get(obj, DictPath(api_family_path), "")
 
 	if kind is None:
 		return Retval.RETURNDONE
@@ -8513,9 +8514,9 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 		return None
 
 	if kind == ("", ""):
-		kind = deep_get(obj, "kind", "")
+		kind = deep_get(obj, DictPath("kind"), "")
 		if type(kind) == str:
-			api_version = deep_get(obj, "apiVersion", "")
+			api_version = deep_get(obj, DictPath("apiVersion"), "")
 			# Is this a core API?
 			if "/" not in api_version:
 				api_family = ""
@@ -8529,29 +8530,29 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 	# Exceptions
 	if kind in (("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")):
 		# Do not try to open pending containers
-		if deep_get(info, "status#phase") in ("Pending", "Failed"):
+		if deep_get(info, DictPath("status#phase")) in ("Pending", "Failed"):
 			return None
 		return containerinfoloop(stdscr, obj, kind, info)
 
 	return None
 
 def resourceinfodispatch_from_pod_resource_list(stdscr, obj, kind, info = None, **kwargs):
-	kind = deep_get(obj, "kind")
-	api_family = deep_get(obj, "api_group", "")
-	obj = deep_get(obj, "ref")
+	kind = deep_get(obj, DictPath("kind"))
+	api_family = deep_get(obj, DictPath("api_group"), "")
+	obj = deep_get(obj, DictPath("ref"))
 	return resourceinfodispatch(stdscr, obj, (kind, api_family), info, **kwargs)
 
 # Do not pass both direct and _path versions at the same time
 def resourceinfodispatch_with_lookup(stdscr, **kwargs):
-	obj = deep_get(kwargs, "obj")
+	obj = deep_get(kwargs, DictPath("obj"))
 	if obj is None:
 		if "selected_obj" in kwargs:
-			obj = deep_get(kwargs, "selected_obj")
+			obj = deep_get(kwargs, DictPath("selected_obj"))
 		elif "selected" in kwargs:
-			selected = deep_get(kwargs, "selected")
+			selected = deep_get(kwargs, DictPath("selected"))
 			if "_selected_objs" in kwargs:
 				obj = {}
-				for key, attribute in deep_get(kwargs, "_selected_objs", []).items():
+				for key, attribute in deep_get(kwargs, DictPath("_selected_objs"), []).items():
 					if type(attribute) == list:
 						tmp = getattr(selected, attribute[0])
 						if tmp is not None:
@@ -8563,20 +8564,20 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 			else:
 				obj = selected
 
-	selection = deep_get(kwargs, "selection")
+	selection = deep_get(kwargs, DictPath("selection"))
 
-	name = deep_get(kwargs, "name")
-	namespace = deep_get(kwargs, "namespace")
+	name = deep_get(kwargs, DictPath("name"))
+	namespace = deep_get(kwargs, DictPath("namespace"))
 
-	name_path = deep_get(kwargs, "name_path")
+	name_path = deep_get(kwargs, DictPath("name_path"))
 	if name_path is not None and type(name_path) == str:
 		name_path = [name_path]
-	namespace_path = deep_get(kwargs, "namespace_path", "")
+	namespace_path = deep_get(kwargs, DictPath("namespace_path"), "")
 	if namespace_path is not None and type(namespace_path) == str:
 		namespace_path = [namespace_path]
 
-	kind = deep_get(kwargs, "kind")
-	kind_path = deep_get(kwargs, "kind_path")
+	kind = deep_get(kwargs, DictPath("kind"))
+	kind_path = deep_get(kwargs, DictPath("kind_path"))
 	if kind_path is not None and type(kind_path) == str:
 		kind_path = [kind_path]
 
@@ -8585,12 +8586,12 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	if api_group_path is not None and type(api_group_path) == str:
 		api_group_path = [api_group_path]
 
-	api_version_path = deep_get(kwargs, "api_version_path")
+	api_version_path = deep_get(kwargs, DictPath("api_version_path"))
 	if api_version_path is not None and type(api_version_path) == str:
 		api_version_path = [api_version_path]
 
-	owner_reference_path = deep_get(kwargs, "owner_reference_path")
-	holder_identity_path = deep_get(kwargs, "holder_identity_path")
+	owner_reference_path = deep_get(kwargs, DictPath("owner_reference_path"))
+	holder_identity_path = deep_get(kwargs, DictPath("holder_identity_path"))
 
 	# When name_path or namespace_path are integers they reference
 	# fields in selected
@@ -8620,26 +8621,26 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 
 	holder_identity = None
 	if holder_identity_path is not None:
-		holder_identity = deep_get(obj, holder_identity_path)
+		holder_identity = deep_get(obj, DictPath(holder_identity_path))
 
 	if owner_reference_path is not None and obj is not None:
 		# Search for a controller, or the first reference that matches the kind if specified
-		for ref in deep_get(obj, owner_reference_path, []):
-			ref_name = deep_get(ref, "name")
+		for ref in deep_get(obj, DictPath(owner_reference_path), []):
+			ref_name = deep_get(ref, DictPath("name"))
 
 			# We only want to dispatch if there's an owner reference
 			# that matches the holder identity
 			if holder_identity is not None and ref_name != holder_identity:
 				continue
 
-			ref_kind = deep_get(ref, "kind")
-			ref_api_version = deep_get(ref, "apiVersion")
+			ref_kind = deep_get(ref, DictPath("kind"))
+			ref_api_version = deep_get(ref, DictPath("apiVersion"))
 			if "/" in ref_api_version:
 				ref_api_family = ref_api_version.split("/")[0]
 			else:
 				ref_api_family = ""
 			ref_kind = (ref_kind, ref_api_family)
-			if deep_get(ref, "controller", False) == True:
+			if deep_get(ref, DictPath("controller"), False) == True:
 				controller = (ref_kind, ref_name)
 			elif kind is not None and kind == ref_kind or holder_identity is not None:
 				if non_controller is None:
@@ -8686,10 +8687,10 @@ def listgetter_namespaced_resources(obj, **kwargs):
 	vlist = []
 	status = 200
 
-	namespaced_resources = deep_get(kwargs, "resources", kh.get_list_of_namespaced_resources())
+	namespaced_resources = deep_get(kwargs, DictPath("resources"), kh.get_list_of_namespaced_resources())
 
 	kind = ("Namespace", "")
-	namespace = deep_get(obj, "metadata#name")
+	namespace = deep_get(obj, DictPath("metadata#name"))
 
 	for kind in namespaced_resources:
 		_vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
@@ -8726,8 +8727,8 @@ def executecommand_multiple(stdscr, msg, command, items, waitforkeypress):
 	stdscr.refresh()
 
 def __run_playbook(playbookpath, nodes, values = None):
-	http_proxy = deep_get(iktconfig, "Network#http_proxy", "")
-	https_proxy = deep_get(iktconfig, "Network#https_proxy", "")
+	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
+	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
 	use_proxy = "no"
 	if (http_proxy is not None and len(http_proxy) > 0) or (https_proxy is not None and len(https_proxy) > 0):
 		use_proxy = "yes"
@@ -8742,51 +8743,51 @@ def run_playbook(playbook, nodes, values = None):
 	return __run_playbook(playbook.get("playbook"), nodes, values = values)
 
 def view_obj(stdscr, **kwargs):
-	selection = deep_get(kwargs, "selection")
+	selection = deep_get(kwargs, DictPath("selection"))
 	if selection is not None:
 		obj = selection
 	else:
-		obj = deep_get(kwargs, "obj")
+		obj = deep_get(kwargs, DictPath("obj"))
 	if obj is None:
 		return None
 	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
-	title_path = deep_get(kwargs, "title_path")
+	title_path = deep_get(kwargs, DictPath("title_path"))
 	if title_path is not None:
-		title = deep_get(obj, title_path)
-	path = deep_get(kwargs, "path")
-	formatter = deep_get(kwargs, "formatter", formatters.format_yaml)
+		title = deep_get(obj, DictPath(title_path))
+	path = deep_get(kwargs, DictPath("path"))
+	formatter = deep_get(kwargs, DictPath("formatter"), formatters.format_yaml)
 	if path is not None:
-		if deep_get(kwargs, "include_root", False) == True:
-			obj = [{f"{path.rsplit('#')[-1]}": deep_get(obj, path)}]
+		if deep_get(kwargs, DictPath("include_root"), False) == True:
+			obj = [{f"{path.rsplit('#')[-1]}": deep_get(obj, DictPath(path))}]
 		# pylint: disable-next=comparison-with-callable
 		elif formatter == formatters.format_yaml:
-			obj = [deep_get(obj, path)]
+			obj = [deep_get(obj, DictPath(path))]
 		else:
-			obj = deep_get(obj, path)
+			obj = deep_get(obj, DictPath(path))
 	else:
 		obj = [obj]
 	if type(formatter) == str:
-		_formatter = deep_get(formatter_allowlist, formatter)
+		_formatter = deep_get(formatter_allowlist, DictPath(formatter))
 		if _formatter is None:
 			raise ValueError(f"{formatter} is not in formatter_allowlist")
 		formatter = _formatter
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
 def view_yaml(stdscr, **kwargs):
-	selection = deep_get(kwargs, "selection")
+	selection = deep_get(kwargs, DictPath("selection"))
 	if selection is not None:
 		obj = selection
 	else:
-		obj = deep_get(kwargs, "obj")
+		obj = deep_get(kwargs, DictPath("obj"))
 	if obj is None:
 		return None
-	path = deep_get(kwargs, "path")
+	path = deep_get(kwargs, DictPath("path"))
 	if path is not None:
-		include_root = deep_get(kwargs, "include_root", False)
-		if deep_get(kwargs, "include_root", False) == True:
-			_obj = {f"{path.rsplit('#')[-1]}": deep_get(obj, path)}
+		include_root = deep_get(kwargs, DictPath("include_root"), False)
+		if deep_get(kwargs, DictPath("include_root"), False) == True:
+			_obj = {f"{path.rsplit('#')[-1]}": deep_get(obj, DictPath(path))}
 		else:
-			_obj = deep_get(obj, path)
+			_obj = deep_get(obj, DictPath(path))
 		if _obj is None:
 			return None
 		obj = [_obj]
@@ -8799,8 +8800,8 @@ def view_yaml(stdscr, **kwargs):
 def view_pod_logs(stdscr, **kwargs):
 	containers = []
 	containers_full = []
-	items = deep_get(kwargs, "_tagged_items", [])
-	selected = deep_get(kwargs, "selected")
+	items = deep_get(kwargs, DictPath("_tagged_items"), [])
+	selected = deep_get(kwargs, DictPath("selected"))
 	if selected is not None:
 		items = [selected]
 	namespaces = set()
@@ -8826,9 +8827,9 @@ def action_view_pod_logs(uip, items, action, values, kind, **kwargs):
 	return view_pod_logs(uip.stdscr, **values)
 
 def view_last_applied_configuration(stdscr, **kwargs):
-	obj = deep_get(kwargs, "obj")
+	obj = deep_get(kwargs, DictPath("obj"))
 
-	last_applied_configuration = deep_get(obj, "metadata#annotations#kubectl.kubernetes.io/last-applied-configuration", {})
+	last_applied_configuration = deep_get(obj, DictPath("metadata#annotations#kubectl.kubernetes.io/last-applied-configuration"), {})
 	if last_applied_configuration is None or len(last_applied_configuration) == 0:
 		return None
 
@@ -8837,7 +8838,7 @@ def view_last_applied_configuration(stdscr, **kwargs):
 	except DecodeException:
 		return None
 
-	title = deep_get(kwargs, "title")
+	title = deep_get(kwargs, DictPath("title"))
 	# themearrays = formatters.format_yaml([data])
 	formatter = formatters.format_yaml
 	return resourceinfodispatch(stdscr, [data], ("__ResourceView", ""), title = title, formatter = formatter)
@@ -8845,7 +8846,7 @@ def view_last_applied_configuration(stdscr, **kwargs):
 # pylint: disable=unused-argument
 def delete_resource(uip, items, action, values, kind, **kwargs):
 	success = True
-	force = deep_get(values, "__force", False)
+	force = deep_get(values, DictPath("__force"), False)
 
 	for item in items:
 		namespace, name = item
@@ -8873,8 +8874,8 @@ def force_delete_resource(uip, items, action, values, kind, **kwargs):
 	return delete_resource(uip, items = items, action = action, values = values, kind = kind)
 
 def create_namespace(stdscr, **kwargs):
-	selection_vars = deep_get(kwargs, "selection_vars")
-	name = deep_get(selection_vars, "namespace")
+	selection_vars = deep_get(kwargs, DictPath("selection_vars"))
+	name = deep_get(selection_vars, DictPath("namespace"))
 
 	curses.endwin()
 	_retval = clear_screen()
@@ -8904,6 +8905,7 @@ def __pause_resource(kind, namespace, name):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
+		curses.endwin()
 		iktprint([("Critical", "critical"), (": Could not find ", "default"),
 			  ("kubectl", "path"),
 			  ("; aborting.", "default")], stderr = True)
@@ -8919,6 +8921,7 @@ def __resume_resource(kind, namespace, name):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
+		curses.endwin()
 		iktprint([("Critical", "critical"), (": Could not find ", "default"),
 			  ("kubectl", "path"),
 			  ("; aborting.", "default")], stderr = True)
@@ -8936,6 +8939,7 @@ def __restart_resource(kind, namespace, name):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
+		curses.endwin()
 		iktprint([("Critical", "critical"), (": Could not find ", "default"),
 			  ("kubectl", "path"),
 			  ("; aborting.", "default")], stderr = True)
@@ -8947,7 +8951,7 @@ def __restart_resource(kind, namespace, name):
 
 def __get_resource_scale(kind, namespace, name):
 	obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
-	return deep_get(obj, "status#replicas")
+	return deep_get(obj, DictPath("status#replicas"))
 
 # Valid kinds:
 # ("Deployment", "apps")
@@ -8958,6 +8962,7 @@ def __scale_replicas(kind, namespace, name, scale):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
+		curses.endwin()
 		iktprint([("Critical", "critical"), (": Could not find ", "default"),
 			  ("kubectl", "path"),
 			  ("; aborting.", "default")], stderr = True)
@@ -8971,6 +8976,7 @@ def __edit_resource(kind, namespace, name):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
+		curses.endwin()
 		iktprint([("Critical", "critical"), (": Could not find ", "default"),
 			  ("kubectl", "path"),
 			  ("; aborting.", "default")], stderr = True)
@@ -8988,6 +8994,7 @@ def apply_configuration_from_file(uip, items, action, values, kind, **kwargs):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
+		curses.endwin()
 		iktprint([("Critical", "critical"), (": Could not find ", "default"),
 			  ("kubectl", "path"),
 			  ("; aborting.", "default")], stderr = True)
@@ -9029,6 +9036,7 @@ def __apply_or_create_configuration_from_url(resource_url, create = False):
 		args = [kubectl_path, "apply", "-f", resource_url]
 		result = subprocess.run(args, universal_newlines = True, check = False)
 	except FileNotFoundError:
+		curses.endwin()
 		iktprint([("Critical", "critical"), (": Could not find ", "default"),
 			  ("kubectl", "path"),
 			  ("; aborting.", "default")], stderr = True)
@@ -9052,7 +9060,7 @@ def apply_configuration_from_url(uip, items, action, values, kind, **kwargs):
 			errno.ENOENT: If kubectl is missing
 	"""
 
-	resource_url = deep_get(values, "resource_url", "")
+	resource_url = deep_get(values, DictPath("resource_url"), "")
 
 	if not resource_url.startswith(("http://", "https://")):
 		return Retval.MATCH
@@ -9077,7 +9085,7 @@ def create_resource_from_url(uip, items, action, values, kind, **kwargs):
 			errno.ENOENT: If kubectl is missing
 	"""
 
-	resource_url = deep_get(values, "resource_url", "")
+	resource_url = deep_get(values, DictPath("resource_url"), "")
 
 	if not resource_url.startswith(("http://", "https://")):
 		return Retval.MATCH
@@ -9088,13 +9096,13 @@ def __summarise_resources(path):
 	resources = []
 	dicts = secure_read_yaml_all(path)
 	for d in dicts:
-		kind, api_group = kh.kind_api_version_to_kind(deep_get(d, "kind"), deep_get(d, "apiVersion"))
+		kind, api_group = kh.kind_api_version_to_kind(deep_get(d, DictPath("kind")), deep_get(d, DictPath("apiVersion")))
 		if api_group == "":
 			merged_kind = kind
 		else:
 			merged_kind = f"{kind}.{api_group}"
-		name = deep_get(d, "metadata#name")
-		namespace = deep_get(d, "metadata#namespace", "")
+		name = deep_get(d, DictPath("metadata#name"))
+		namespace = deep_get(d, DictPath("metadata#namespace"), "")
 		resources.append((merged_kind, namespace, name))
 
 	return resources
@@ -9110,6 +9118,7 @@ def create_resource_from_file(uip, items, action, values, kind, **kwargs):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
+		curses.endwin()
 		iktprint([("Critical", "critical"), (": Could not find ", "default"),
 			  ("kubectl", "path"),
 			  ("; aborting.", "default")], stderr = True)
@@ -9150,6 +9159,7 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
+		curses.endwin()
 		iktprint([("Critical", "critical"), (": Could not find ", "default"),
 			  ("kubectl", "path"),
 			  ("; aborting.", "default")], stderr = True)
@@ -9164,7 +9174,7 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 
-	indent = deep_get(iktconfig, "Global#indent", 4)
+	indent = deep_get(iktconfig, DictPath("Global#indent"), 4)
 
 	diff = []
 
@@ -9224,10 +9234,10 @@ def format_commandline(args, implicit_command = True):
 	return strarray
 
 def edit_resource(stdscr, **kwargs):
-	obj = deep_get(kwargs, "obj")
-	kind = deep_get(kwargs, "kind")
-	name = deep_get(obj, "metadata#name")
-	namespace = deep_get(obj, "metadata#namespace", "")
+	obj = deep_get(kwargs, DictPath("obj"))
+	kind = deep_get(kwargs, DictPath("kind"))
+	name = deep_get(obj, DictPath("metadata#name"))
+	namespace = deep_get(obj, DictPath("metadata#namespace"), "")
 	if name is None:
 		return
 
@@ -9368,7 +9378,7 @@ def delete_logs(uip, items, action, values, kind, **kwargs):
 
 # pylint: disable=unused-argument
 def action_execute_command(uip, items, action, values, kind, **kwargs):
-	tmpargs = deep_get(values, "action_args#command", [])
+	tmpargs = deep_get(values, DictPath("action_args#command"), [])
 	if len(tmpargs) == 0:
 		return
 
@@ -9524,6 +9534,7 @@ def ssh_to_host(stdscr, **kwargs):
 	except FileNotFoundError:
 		# Once we have support for logging we should probably just log an error
 		# and return here instead
+		curses.endwin()
 		iktprint([("Critical", "critical"), (": Could not find ", "default"),
 			  ("ssh", "path"),
 			  ("; aborting.", "default")], stderr = True)
@@ -9572,12 +9583,12 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 	actions = []
 	order = []
 	for item in action_list:
-		context_types = deep_get(action_list, f"{item}#context_types")
+		context_types = deep_get(action_list, DictPath(f"{item}#context_types"))
 		if context is not None and context_types != [] and context not in context_types:
 			continue
 
-		description = deep_get(action_list, f"{item}#description")
-		category = deep_get(action_list, f"{item}#category", "")
+		description = deep_get(action_list, DictPath(f"{item}#description"))
+		category = deep_get(action_list, DictPath(f"{item}#category"), "")
 		name = item
 		order.append((description, category, name))
 
@@ -9585,11 +9596,11 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 	for item in natsorted(order, key = itemgetter(1, 0)):
 		action = item[0]
 		category = item[1]
-		allowoncontrolplane = deep_get(action_list, f"{item[2]}#allow_on_control_plane", True)
-		singleoncontrolplane = deep_get(action_list, f"{item[2]}#single_on_control_plane", False)
-		singleonly = deep_get(action_list, f"{item[2]}#single_only", False)
-		readonly = deep_get(action_list, f"{item[2]}#read_only", False)
-		metadata = deep_get(action_list, f"{item[2]}#metadata", [])
+		allowoncontrolplane = deep_get(action_list, DictPath(f"{item[2]}#allow_on_control_plane"), True)
+		singleoncontrolplane = deep_get(action_list, DictPath(f"{item[2]}#single_on_control_plane"), False)
+		singleonly = deep_get(action_list, DictPath(f"{item[2]}#single_only"), False)
+		readonly = deep_get(action_list, DictPath(f"{item[2]}#read_only"), False)
+		metadata = deep_get(action_list, DictPath(f"{item[2]}#metadata"), [])
 		tmp = []
 		for _str, _fmt in metadata:
 			if type(_fmt) == list:
@@ -9677,24 +9688,24 @@ def __populate_playbooklist(path, action_list):
 			}
 			continue
 
-		description = deep_get(d[0], "vars#metadata#description")
+		description = deep_get(d[0], DictPath("vars#metadata#description"))
 
 		# Ignore all playbooks that lack a description;
 		# typically they are internal playbooks
 		if description is None:
 			continue
 
-		query = deep_get(d[0], "vars#metadata#query#string")
-		queryval = deep_get(d[0], "vars#metadata#query#variable")
-		queryfunc = deep_get(d[0], "vars#metadata#query#function")
+		query = deep_get(d[0], DictPath("vars#metadata#query#string"))
+		queryval = deep_get(d[0], DictPath("vars#metadata#query#variable"))
+		queryfunc = deep_get(d[0], DictPath("vars#metadata#query#function"))
 
 		# Sanity check
 		if queryfunc is not None:
 			if queryfunc not in ("string", "yesno", "filechooser"):
 				raise Exception(f"unknown queryfunc “{queryfunc}“ provided")
 
-		confirm = deep_get(d[0], "vars#metadata#confirm", False)
-		tmpallowoncontrolplane = deep_get(d[0], "vars#metadata#allow_on_control_plane")
+		confirm = deep_get(d[0], DictPath("vars#metadata#confirm"), False)
+		tmpallowoncontrolplane = deep_get(d[0], DictPath("vars#metadata#allow_on_control_plane"))
 		if tmpallowoncontrolplane is None or tmpallowoncontrolplane == "always":
 			allowoncontrolplane = True
 			singleoncontrolplane = False
@@ -9712,9 +9723,9 @@ def __populate_playbooklist(path, action_list):
 		runafter = deep_get_with_fallback(d[0], ["vars#metadata#run_after", "vars#metadata#run-after"], [])
 		addtogroups = deep_get_with_fallback(d[0], ["vars#metadata#add_to_groups", "vars#metadata#add-to-groups"], [])
 		removefromgroups = deep_get_with_fallback(d[0], ["vars#metadata#remove_from_groups", "vars#metadata#remove-from-groups"], [])
-		category = deep_get(d[0], "vars#metadata#category", "Uncategorized")
+		category = deep_get(d[0], DictPath("vars#metadata#category"), "Uncategorized")
 		playbooktypes = deep_get_with_fallback(d[0], ["vars#metadata#playbook_types", "vars#metadata#playbook-types"], [])
-		comments = deep_get(d[0], "vars#metadata#comments", "")
+		comments = deep_get(d[0], DictPath("vars#metadata#comments"), "")
 		readonly = deep_get_with_fallback(d[0], ["vars#metadata#read_only", "vars#metadata#read-only"], False)
 		extravars = {
 			"quiet": deep_get(d[0], DictPath("vars#metadata#quiet"), False),
@@ -10755,15 +10766,19 @@ def setupui(stdscr):
 	curses_helper.init_curses()
 
 	while True:
-		if views.get(defaultview) is not None:
-			if "viewfunc" in views[defaultview]:
-				viewfunc = views[defaultview]["viewfunc"]
-			else:
+		if deep_get(views, DictPath(defaultview)) is not None:
+			viewfunc = deep_get(views, DictPath(f"{defaultview}#viewfunc"))
+			if viewfunc is None:
 				viewfunc = genericlistloop
 			viewfunc(stdscr, defaultview)
 		else:
-			iktprint([("Error", "error"), (": Unknown view “", "default"), (defaultview, "argument"), ("“; check “", "default"), (IKT_CONFIG_FILE, "path"), ("“ and all files in “", "default"), (IKT_CONFIG_FILE_DIR, "path"), ("“for typos.", "default")], stderr = True)
-			sys.exit()
+			curses.endwin()
+			iktprint([("Error", "error"), (": Unknown view “", "default"), (defaultview, "argument"), ("“; check “", "default"),
+				  (IKT_CONFIG_FILE, "path"),
+				  ("“ and all files in “", "default"),
+				  (IKT_CONFIG_FILE_DIR, "path"),
+				  ("“ for typos.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
 
 def list_namespaces():
 	tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
@@ -10840,7 +10855,7 @@ def usage():
 
 	iktprint(helptext)
 
-def version():
+def version() -> int:
 	iktprint([(f"{about.UI_PROGRAM_NAME} ", "programname"), (f"{about.UI_PROGRAM_VERSION}", "version")])
 	iktprint([(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"), (f"{about.PROGRAM_SUITE_VERSION}", "version")])
 	print()
@@ -10850,7 +10865,7 @@ def version():
 	print(PROGRAMAUTHORS)
 	return 0
 
-def set_default_view(view):
+def set_default_view(view: str):
 	global defaultview # pylint: disable=global-statement
 
 	if defaultview == "":
@@ -10860,7 +10875,7 @@ def set_default_view(view):
 		iktprint([("Try “", "default"), (f"{about.UI_PROGRAM_NAME} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-def checkforview(arg):
+def checkforview(arg: str):
 	for view, viewref in views.items():
 		if isinstance(arg, str):
 			if arg in deep_get(viewref, DictPath("commandline"), []):

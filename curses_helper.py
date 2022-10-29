@@ -649,6 +649,7 @@ def confirmationbox(stdscr, y: int, x: int, title: str = "", default: bool = Fal
 			break
 
 		if c == ord(""):
+			curses.endwin()
 			sys.exit()
 
 		if c in (curses.KEY_ENTER, 10, 13):
@@ -1258,6 +1259,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			confirm_press = c
 			break
 		elif c == ord(""):
+			curses.endwin()
 			sys.exit()
 		elif deep_get(kwargs, DictPath("KEY_F6"), False) == True and c == curses.KEY_F6:
 			# This is used to toggle categorised list on/off
@@ -2733,6 +2735,7 @@ class UIProps:
 			self.refresh_all()
 			return Retval.MATCH
 		elif c == ord("") or c == ord(""):
+			curses.endwin()
 			sys.exit()
 		elif c == curses.KEY_F1 or c == ord("H"):
 			if self.helptext is not None:
@@ -2976,6 +2979,7 @@ class UIProps:
 	def __exit_program(self, **kwargs) -> NoReturn:
 		retval = deep_get(kwargs, DictPath("retval"))
 
+		curses.endwin()
 		sys.exit(retval)
 
 	# pylint: disable-next=unused-argument

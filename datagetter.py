@@ -6,12 +6,13 @@ datagetters are used for data extraction that's too complext to be expressed by 
 """
 
 import re
+from typing import Dict, List, Tuple
 
-from iktlib import deep_get, deep_get_with_fallback, timestamp_to_datetime
+from iktlib import deep_get, deep_get_with_fallback, get_since, none_timestamp, timestamp_to_datetime
 from ikttypes import DictPath, StatusGroup
 from kubernetes_helper import get_node_status, kind_tuple_to_name
 
-def get_container_status(src_statuses, container: str):
+def get_container_status(src_statuses: List[Dict], container: str) -> Tuple[str, StatusGroup, int, str, int]:
 	"""
 	Return the status for a container
 
@@ -43,8 +44,8 @@ def get_container_status(src_statuses, container: str):
 			ts = deep_get_with_fallback(container_status, [
 				DictPath("state#terminated#finishedAt"),
 				DictPath("lastState#terminated#finishedAt"),
-				DictPath("state#running#startedAt")], None)
-			age = timestamp_to_datetime(ts)
+				DictPath("state#running#startedAt")], "")
+			age = get_since(timestamp_to_datetime(ts))
 
 			if deep_get(container_status, DictPath("ready")) == False:
 				status_group = StatusGroup.NOT_OK

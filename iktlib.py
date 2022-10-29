@@ -6,11 +6,12 @@ Helpers used by various components of iKT
 
 from datetime import datetime, timezone, timedelta, date
 from functools import reduce
-from pathlib import Path
+from pathlib import Path, PurePath
 import re
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ikttypes import DictPath, FilePath, SecurityPolicy
 from iktpaths import IKT_CONFIG_FILE, IKT_CONFIG_FILE_DIR
@@ -37,7 +38,7 @@ def clamp(value: int, minval: int, maxval: int) -> int:
 
 	return min(maxval, max(minval, value))
 
-def none_timestamp():
+def none_timestamp() -> datetime:
 	"""
 	Return the timestamp used to represent None
 
@@ -72,7 +73,7 @@ def disksize_to_human(size: int) -> str:
 		size = size // 1024
 	return f"{size}{suffix}"
 
-def split_msg(rawmsg: str):
+def split_msg(rawmsg: str) -> List[str]:
 	"""
 	Split a string into a list of strings, strip NUL-bytes, and convert newlines
 
@@ -88,7 +89,7 @@ def split_msg(rawmsg: str):
 	tmp = rawmsg.replace("\x00", "<NUL>")
 	return list(map(str.rstrip, tmp.splitlines()))
 
-def deep_set(dictionary, path: DictPath, value, create_path: bool = False) -> None:
+def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = False) -> None:
 	"""
 	Given a dictionary, a path into that dictionary, and a value, set the path to that value
 
@@ -110,7 +111,7 @@ a		Parameters:
 				ref[pathsplit[i]] = value
 				break
 
-			ref = ref.get(pathsplit[i])
+			ref = deep_get(ref, DictPath(pathsplit[i]))
 			if ref is None or not isinstance(ref, dict):
 				raise Exception(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
 		elif create_path == True:
@@ -119,14 +120,16 @@ a		Parameters:
 			else:
 				ref[pathsplit[i]] = {}
 
-def deep_get(dictionary, path: DictPath, default = None):
+def deep_get(dictionary: Dict, path: DictPath, default: Any = None) -> Any:
 	"""
 	Given a dictionary and a path into that dictionary, get the value
 
 		Parameters:
 			dictionary (dict): The dict to get the value from
 			path (DictPath): A dict path
-			default (any): The default value to return if the dictionary, path is None, or result is None
+			default (Any): The default value to return if the dictionary, path is None, or result is None
+		Returns:
+			result (Any): The value from the path
 	"""
 
 	if dictionary is None:
@@ -138,12 +141,13 @@ def deep_get(dictionary, path: DictPath, default = None):
 		result = default
 	return result
 
-def __deep_get_recursive(dictionary, path_fragments, result = None):
+def __deep_get_recursive(dictionary: Dict, path_fragments: List[str], result: Union[List, None] = None) -> Optional[List[Any]]:
 	if result is None:
 		result = []
 
 	for i in range(0, len(path_fragments)):
-		tmp = deep_get(dictionary, path_fragments[i])
+		path_fragment = DictPath(path_fragments[i])
+		tmp = deep_get(dictionary, path_fragment)
 		if i + 1 == len(path_fragments):
 			if tmp is None:
 				return result
@@ -157,9 +161,21 @@ def __deep_get_recursive(dictionary, path_fragments, result = None):
 
 	return result
 
-def deep_get_list(dictionary, paths, default = None, fallback_on_empty: bool = False):
+def deep_get_list(dictionary: Dict, paths: List[DictPath], default: Optional[List[Any]] = None, fallback_on_empty: bool = False) -> Optional[List[Any]]:
+	"""
+	Given a dictionary and a list of paths into that dictionary, get all values
+
+		Parameters:
+			dictionary (dict): The dict to get the values from
+			path (List[DictPath]): A list of dict paths
+			default (List[Any]): The default value to return if the dictionary, paths, or results are None
+			fallback_on_empty (bool): Should "" be treated as None?
+		Returns:
+			result (List[Any]): The values from the paths
+	"""
+
 	for path in paths:
-		result = __deep_get_recursive(dictionary, DictPath(path.split("#")))
+		result = __deep_get_recursive(dictionary, path.split("#"))
 
 		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True):
 			break
@@ -167,7 +183,7 @@ def deep_get_list(dictionary, paths, default = None, fallback_on_empty: bool = F
 		result = default
 	return result
 
-def deep_get_with_fallback(obj, paths, default = None, fallback_on_empty: bool = False):
+def deep_get_with_fallback(obj: Dict, paths: List[DictPath], default: Optional[Any] = None, fallback_on_empty: bool = False) -> Any:
 	"""
 	Given a dictionary and a list of paths into that dictionary, get the value from the first path that has a value
 
@@ -190,10 +206,17 @@ def deep_get_with_fallback(obj, paths, default = None, fallback_on_empty: bool =
 		result = default
 	return result
 
-def read_iktconfig():
+def read_iktconfig() -> Optional[Dict]:
+	"""
+	Read ikt.yaml and ikt.yaml.d/*.yaml and update the global iktconfig dict
+
+		Returns:
+			iktconfig (Dict): A reference to the global iktconfig dict
+	"""
+
 	global iktconfig # pylint: disable=global-statement
 
-	if not Path(IKT_CONFIG_FILE).is_file:
+	if not Path(IKT_CONFIG_FILE).is_file():
 		return None
 
 	# Read the base configuration file
@@ -201,10 +224,10 @@ def read_iktconfig():
 
 	# Now read ikt.yaml.d/* if available
 	if not Path(IKT_CONFIG_FILE_DIR).is_dir():
-		return None
+		return iktconfig
 
 	for path in natsorted(Path(IKT_CONFIG_FILE_DIR).iterdir()):
-		filename = path.name
+		filename = PurePath(str(path)).name
 
 		# Only read entries that end with .y{,a}ml
 		if filename.startswith(("~", ".")):
@@ -222,13 +245,23 @@ def read_iktconfig():
 	return iktconfig
 
 # Helper functions
-def versiontuple(ver: str):
+def versiontuple(ver: str) -> Tuple[str, ...]:
+	"""
+	Split a version string into a tuple
+
+		Parameters:
+			ver (str): The version string to split
+		Returns:
+			result (tuple[str, ...]): A variable-length tuple with one string per version component
+	"""
+
 	filled = []
 	for point in ver.split("."):
 		filled.append(point.zfill(8))
 	return tuple(filled)
 
-def join_tuple_list(items, _tuple = "", item_prefix = None, item_suffix = None, separator = None):
+def join_tuple_list(items: List[Union[str, Tuple[str, str]]], _tuple: Union[str, Tuple[str, str]] = "",
+		    item_prefix: Optional[Tuple[str, str]] = None, item_suffix: Optional[Tuple[str, str]] = None, separator: Optional[Tuple[str, str]] = None):
 	"""
 	Given a list of strings or tuples, returns a list of tuples suitable to be used a themearray;
 	tuples will be added as is, strings will be paired up with _tuple.
@@ -243,7 +276,7 @@ def join_tuple_list(items, _tuple = "", item_prefix = None, item_suffix = None, 
 			(themearray): A list of themearray fragments with all items joined together
 	"""
 
-	_list = []
+	_list: List[Tuple[str, Union[str, Tuple[str, str]]]] = []
 	first = True
 
 	for item in items:
@@ -261,6 +294,15 @@ def join_tuple_list(items, _tuple = "", item_prefix = None, item_suffix = None, 
 	return _list
 
 def age_to_seconds(age: str) -> int:
+	"""
+	Given a time in X1dX2hX3mX4s, convert it to seconds
+
+		Parameters:
+			age (str): A string in age format
+		Returns:
+			seconds (int): The number of seconds
+	"""
+
 	seconds = 0
 
 	# Safe
@@ -280,6 +322,16 @@ def age_to_seconds(age: str) -> int:
 	return seconds
 
 def seconds_to_age(seconds: str, negative_is_skew: bool = False) -> str:
+	"""
+	Given a time in seconds, convert it to X1dX2hX3mX4s
+
+		Parameters:
+			seconds (str): The number of seconds
+			negative_is_skew (bool): Should a negative timestamp return a clock skew warning (default: -age)
+		Returns:
+			age (str): The age string
+	"""
+
 	age = ""
 	fields = 0
 
@@ -322,7 +374,17 @@ def seconds_to_age(seconds: str, negative_is_skew: bool = False) -> str:
 
 	return f"{sign}{age}"
 
-def get_since(timestamp) -> int:
+def get_since(timestamp: Optional[Union[int, datetime]]) -> int:
+	"""
+	Given either a datetime, or an integer, returns how old that
+	timestamp is in seconds
+
+		Parameters:
+			timestamp (Union[datetime, int]): A time in the past
+		Returns:
+			since (int): The number of seconds, 0 if timestamp is None, or -1 if the none_timestamp() was provided
+	"""
+
 	if timestamp is None:
 		since = 0
 	elif timestamp == -1 or timestamp == none_timestamp():
@@ -337,7 +399,17 @@ def get_since(timestamp) -> int:
 	return since
 
 # Will take datetime and convert it to a timestamp
-def datetime_to_timestamp(timestamp) -> str:
+def datetime_to_timestamp(timestamp: datetime) -> str:
+	"""
+	Given a timestamp in datetime format,
+	convert it to a string
+
+		Parameters:
+			timestamp (datetime): The timestamp in datetime
+		Returns:
+			string (str): The timestamp in string format
+	"""
+
 	if timestamp is None or timestamp == none_timestamp():
 		string = ""
 	elif timestamp == datetime.fromtimestamp(0).astimezone():
@@ -370,12 +442,22 @@ def reformat_timestamp(timestamp: str) -> str:
 	raise ValueError(f"Could not parse timestamp: {timestamp}")
 
 # Will take a timestamp and convert it to datetime
-def timestamp_to_datetime(timestamp, default = none_timestamp()):
+def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) -> datetime:
+	"""
+	Takes a timestamp and converts it to datetime
+
+		Parameters:
+			timestamp (str): The timestamp string to convert
+			default (datetime): The value to return if timestamp is None, 0, "", or "None"
+		Returns:
+			timestamp (Union[int, datetime]): -1 if the timestamp was -1, datetime otherwise
+	"""
+
 	if timestamp is None or isinstance(timestamp, int) and timestamp == 0 or isinstance(timestamp, str) and timestamp in ("", "None"):
 		return default
 
 	if timestamp == -1:
-		return -1
+		return none_timestamp()
 
 	# Timestamps that end with Z are already in UTC; strip that
 	if timestamp.endswith("Z"):
@@ -408,7 +490,18 @@ def timestamp_to_datetime(timestamp, default = none_timestamp()):
 	raise ValueError(f"Could not parse timestamp: {rtimestamp}")
 
 # This executes a command without capturing the output
-def execute_command(args, env = None, comparison: int = 0) -> bool:
+def execute_command(args: List[Union[FilePath, str]], env: Dict = None, comparison: int = 0) -> bool:
+	"""
+	Executes a command
+
+		Parameters:
+			args (list[str]): The commandline
+			env (dict): Environment variables to set
+			comparison (int): The value to compare retval to
+		Returns:
+			retval.returncode == comparison (bool): True if retval.returncode == comparison, False otherwise
+	"""
+
 	if env is None:
 		retval = subprocess.run(args, check = False)
 	else:
@@ -416,11 +509,28 @@ def execute_command(args, env = None, comparison: int = 0) -> bool:
 	return retval.returncode == comparison
 
 # This executes a command with the output captured
-def execute_command_with_response(args):
+def execute_command_with_response(args: List[str]) -> str:
+	"""
+	Executes a command and returns stdout
+
+		Parameters:
+			args (list[str]): The commandline
+		Returns:
+			stdout (str): The stdout from the execution
+	"""
 	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 	return result.stdout.decode("utf-8")
 
-def make_set_expression_list(expression_list):
+def make_set_expression_list(expression_list: Dict) -> List[Tuple[str, str, str]]:
+	"""
+	Create a list of set expressions (key, operator, values)
+
+		Parameters:
+			expression_list (dict): The dict to extract the data from
+		Returns:
+			expressions (list[(key, operator, values)])
+	"""
+
 	expressions = []
 
 	if expression_list is not None:
@@ -445,17 +555,26 @@ def make_set_expression_list(expression_list):
 			if len(values) > 0 and operator not in ("Gt", "Lt"):
 				values = f"[{values}]"
 
-			expressions.append((key, operator, values))
+			expressions.append((str(key), str(operator), values))
 	return expressions
 
-def make_set_expression(expression_list) -> str:
+def make_set_expression(expression_list: Dict) -> str:
+	"""
+	Join set expressions data into one single string
+
+		Parameters:
+			expression_list (dict): The dict to extract the data from
+		Returns:
+			string (str): The set expressions joined into one string
+	"""
+
 	vlist = make_set_expression_list(expression_list)
 	xlist = []
 	for key, operator, values in vlist:
 		xlist.append(f"{key} {operator}{values}")
 	return ", ".join(xlist)
 
-def get_package_versions(hostname):
+def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
 	"""
 	Returns a list of predefined packages for a host
 
@@ -490,11 +609,11 @@ def get_package_versions(hostname):
 	package_version_regex = re.compile(r"^(.*?): (.*)")
 
 	for line in tmp:
-		tmp = package_version_regex.match(line)
-		if tmp is None:
+		tmp2 = package_version_regex.match(line)
+		if tmp2 is None:
 			continue
-		package = tmp[1]
-		version = tmp[2]
+		package = tmp2[1]
+		version = tmp2[2]
 		package_versions.append((package, version))
 
 	return package_versions
@@ -514,7 +633,7 @@ def __extract_version(line: str) -> str:
 		raise Exception("Error: Failed to extract a version; this is (most likely) a programming error.")
 	return tmp[1].strip()
 
-def check_deb_versions(deb_packages):
+def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, List[str]]]:
 	"""
 	Given a list of packages, return installed, candidate, and all available versions
 
@@ -562,7 +681,13 @@ def check_deb_versions(deb_packages):
 			_args = [apt_cache_path, "madison", package]
 			_response = execute_command_with_response(_args)
 			_split_response = _response.splitlines()
-			all_versions = natsorted([__extract_version(line) for line in _split_response], reverse = True)
-			deb_versions.append((package, installed_version, candidate_version, all_versions))
+			all_versions = []
+			for version in _split_response:
+				if "amd64 Packages" in version:
+					all_versions.append(__extract_version(version))
+			natsorted_versions = []
+			for natsorted_version in natsorted(all_versions, reverse = True):
+				natsorted_versions.append(str(natsorted_version))
+			deb_versions.append((package, installed_version, candidate_version, natsorted_versions))
 
 	return deb_versions
