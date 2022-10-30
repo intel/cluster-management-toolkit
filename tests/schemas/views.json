@@ -34,18 +34,41 @@
 				"description": "[context]/type lookup to a fg/bg pair in the theme file",
 				"type": "object",
 				"properties": {
-					"type": {
-						"description": "The name of the colour pair",
+					"context": {
+						"description": "The context for the the colour pair",
 						"type": "string",
 						"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
 					},
-					"context": {
-						"description": "The context for the the colour pair",
+					"type": {
+						"description": "The name of the colour pair",
 						"type": "string",
 						"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
 					}
 				},
 				"required": [ "type" ],
+				"additionalProperties": false
+			},
+			"minItems": 1
+		},
+		"field_colors_mandatory_context": {
+			"description": "Colours to use when outputting the field (No default context)",
+			"type": "array",
+			"items": {
+				"description": "context/type lookup to a fg/bg pair in the theme file",
+				"type": "object",
+				"properties": {
+					"context": {
+						"description": "The context for the the colour pair",
+						"type": "string",
+						"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+					},
+					"type": {
+						"description": "The name of the colour pair",
+						"type": "string",
+						"pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+					}
+				},
+				"required": [ "context", "type" ],
 				"additionalProperties": false
 			},
 			"minItems": 1
@@ -207,7 +230,7 @@
 									"type": "object",
 									"properties": {
 										"field_colors": {
-											"$ref": "#/definitions/field_colors"
+											"$ref": "#/definitions/field_colors_mandatory_context"
 										}
 									},
 									"additionalProperties": false
@@ -215,7 +238,7 @@
 								"^__default$": {
 									"properties": {
 										"field_colors": {
-											"$ref": "#/definitions/field_colors"
+											"$ref": "#/definitions/field_colors_mandatory_context"
 										}
 									},
 									"additionalProperties": false
@@ -234,7 +257,7 @@
 										"type": "boolean"
 									},
 									"field_colors": {
-										"$ref": "#/definitions/field_colors"
+										"$ref": "#/definitions/field_colors_mandatory_context"
 									},
 									"max": {
 										"description": "Upper value in the range",
