@@ -6,9 +6,9 @@ This file contains helpers that provide an obj for use in info views,
 for cases where the obj provided from the list view isn't sufficient
 """
 
-import os
-from pathlib import PurePath
+from pathlib import Path, PurePath
 import sys
+from typing import Dict
 
 try:
 	from natsort import natsorted
@@ -20,7 +20,7 @@ from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path
 from iktlib import deep_get
 from iktio import check_path, secure_read_yaml
 
-def objgetter_ansible_facts(obj):
+def objgetter_ansible_facts(obj: Dict) -> Dict:
 	"""
 	Get an obj by using ansible facts
 
@@ -44,7 +44,7 @@ def objgetter_ansible_facts(obj):
 
 	return ar
 
-def objgetter_ansible_log(obj):
+def objgetter_ansible_log(obj: Dict) -> Dict:
 	"""
 	Get an obj from an ansible log entry
 
@@ -91,7 +91,6 @@ def objgetter_ansible_log(obj):
 		SecurityChecks.OWNER_IN_ALLOWLIST,
 		SecurityChecks.PARENT_PERMISSIONS,
 		SecurityChecks.PERMISSIONS,
-		SecurityChecks.EXISTS,
 		SecurityChecks.IS_FILE,
 	]
 	try:
@@ -105,12 +104,13 @@ def objgetter_ansible_log(obj):
 		tmpobj["category"] = "Unavailable"
 
 	logs = []
-	for path in natsorted(os.listdir(obj)):
-		if path == "metadata.yaml":
+	for path in natsorted(Path(str(obj)).iterdir()):
+		filename = str(PurePath(str(path)).name)
+		if filename == "metadata.yaml":
 			continue
-		log = secure_read_yaml(FilePath(f"{obj}/{path}"))
+		log = secure_read_yaml(FilePath(str(path)))
 		logs.append({
-			"index": path.split("-")[0],
+			"index": filename.split("-", maxsplit = 1)[0],
 			"log": log
 		})
 	tmpobj["logs"] = logs

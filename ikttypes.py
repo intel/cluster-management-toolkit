@@ -6,7 +6,21 @@ This file contains custom types used to define types used by iKT
 """
 
 from enum import auto, Enum, IntEnum
-from typing import NewType
+from typing import NamedTuple, NewType
+
+class ThemeRef(NamedTuple):
+	context: str
+	attr_ref: str
+
+class ThemeString(NamedTuple):
+	string: str
+	themeref: ThemeRef
+
+class ANSIThemeString(NamedTuple):
+	string: str
+	themeref: str
+
+# Note: A ThemeArray is Sequence[Union[ThemeRef, ThemeString]]
 
 FilePath = NewType("FilePath", str)
 DictPath = NewType("DictPath", str)

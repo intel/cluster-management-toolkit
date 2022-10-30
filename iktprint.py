@@ -10,9 +10,9 @@ from getpass import getpass
 from pathlib import PurePath
 import subprocess
 import sys
-import typing # pylint: disable=unused-import
+from typing import List
 
-from ikttypes import FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy
+from ikttypes import ANSIThemeString, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy
 import iktio
 
 theme = None
@@ -35,7 +35,7 @@ def clear_screen() -> int:
 
 def __themearray_to_string(themearray) -> str:
 	if theme is None or themepath is None:
-		sys.exit("iktinput() used without calling init_iktprint() first; this is a programming error.")
+		sys.exit("__themearray_to_string() used without calling init_iktprint() first; this is a programming error.")
 
 	string: str = ""
 	for _string, theme_attr_ref in themearray:
@@ -66,7 +66,7 @@ def themearray_len(themearray) -> int:
 
 	return len("".join([_str for _str, _format in themearray]))
 
-def iktinput(themearray) -> str:
+def iktinput(themearray: List[ANSIThemeString]) -> str:
 	"""
 	Print a themearray and input a string;
 	a themearray is a list of format strings of the format:
@@ -86,7 +86,7 @@ def iktinput(themearray) -> str:
 	tmp = tmp.replace("\x00", "<NUL>")
 	return tmp
 
-def iktinput_password(themearray) -> str:
+def iktinput_password(themearray: List[ANSIThemeString]) -> str:
 	"""
 	Print a themearray and input a password;
 	a themearray is a list of format strings of the format:
@@ -103,7 +103,8 @@ def iktinput_password(themearray) -> str:
 
 	string = __themearray_to_string(themearray)
 	tmp = getpass(string)
-	tmp = tmp.replace("\x00", "<NUL>")
+	if tmp is not None:
+		tmp = tmp.replace("\x00", "<NUL>")
 	return tmp
 
 def iktprint(themearray, stderr: bool = False) -> None:

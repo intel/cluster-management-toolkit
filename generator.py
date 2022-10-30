@@ -78,8 +78,7 @@ def format_list(items, fieldlen, pad, ralign, selected,
 				fmt = ("types", "none")
 				formatted_string = (string, fmt, selected)
 			elif string == "<not ready>":
-				context, attr_ref, selected = color_status_group(StatusGroup.NOT_OK, False)
-				fmt = (context, attr_ref)
+				fmt = color_status_group(StatusGroup.NOT_OK)
 				formatted_string = (string, fmt, selected)
 			else:
 				context, attr_ref = field_colors[min(i, len(field_colors) - 1)]
@@ -282,10 +281,10 @@ def generator_age_raw(value, selected: bool):
 		string = iktlib.seconds_to_age(value, negative_is_skew = True)
 
 	if string in ("<none>", "<unset>", "<unknown>"):
-		fmt = ("types", "none", selected)
+		fmt = ("types", "none")
 		array = [(string, fmt, selected)]
 	elif string == "<clock skew detected>":
-		fmt = ("main", "status_not_ok", selected)
+		fmt = ("main", "status_not_ok")
 		array = [(string, fmt, selected)]
 	else:
 		array = format_numerical_with_units(string, "age", selected)
@@ -524,7 +523,7 @@ def generator_mem(obj, field, fieldlen: int, pad: int, ralign: bool, selected: b
 		(("separators", "fraction"), selected),
 		(" ", attribute, selected),
 		(total, ("types", "numerical"), selected),
-		(unit, ("types", "unit", selected)),
+		(unit, ("types", "unit"), selected),
 	]
 	stringlen = themearray_len(array)
 
@@ -560,7 +559,7 @@ def generator_numerical_with_units(obj, field, fieldlen: int, pad: int, ralign: 
 	value = getattr(obj, field)
 
 	if value in ("<none>", "<unset>", "<unknown>"):
-		fmt = ("types", "none", selected)
+		fmt = ("types", "none")
 		array = [(value, fmt, selected)]
 		return align_and_pad(array, pad, fieldlen, len(value), ralign, selected)
 
@@ -576,10 +575,10 @@ def generator_numerical_with_units(obj, field, fieldlen: int, pad: int, ralign: 
 def generator_status(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	status = getattr(obj, field)
 	status_group = getattr(obj, "status_group")
-	attribute = color_status_group(status_group, selected)
+	attribute = color_status_group(status_group)
 
 	array = [
-		(status, attribute)
+		(status, attribute, selected)
 	]
 	stringlen = len(status)
 
@@ -590,9 +589,9 @@ def generator_timestamp(obj, field, fieldlen: int, pad: int, ralign: bool, selec
 
 	string = datetime_to_timestamp(value)
 	if value is None:
-		array = [(string, ("types", "generic", selected))]
+		array = [(string, ("types", "generic"), selected)]
 	elif value == datetime.fromtimestamp(0).astimezone():
-		array = [(string, ("types", "generic", selected))]
+		array = [(string, ("types", "generic"), selected)]
 	else:
 		array = format_numerical_with_units(string, "timestamp", selected)
 

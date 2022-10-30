@@ -25,13 +25,14 @@ import socket
 import subprocess
 import sys
 import tempfile
+from typing import cast, List, Optional
 
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run ikt-install?")
 
-from ikttypes import DictPath, FilePath, SecurityPolicy
+from ikttypes import ANSIThemeString, DictPath, FilePath, SecurityPolicy
 from iktpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR
 from iktpaths import DEPLOYMENT_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -47,7 +48,8 @@ from iktio import mkdir_if_not_exists
 from iktio import secure_read_string, secure_read_yaml, secure_rm, secure_write_string, secure_write_yaml
 from networkio import download_files, scan_and_add_ssh_keys
 
-from iktlib import check_deb_versions, deep_get, execute_command, execute_command_with_response, iktconfig, read_iktconfig
+import iktlib
+from iktlib import check_deb_versions, deep_get, execute_command, execute_command_with_response, read_iktconfig
 
 from kubernetes_helper import kubectl_get_version
 
@@ -68,10 +70,10 @@ prepare_targets = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
 		"playbooks": [
-			f"{ANSIBLE_PLAYBOOK_DIR}/prepare_passwordless_ansible.yaml",
-			f"{ANSIBLE_PLAYBOOK_DIR}/install_packages.yaml",
-			f"{ANSIBLE_PLAYBOOK_DIR}/prepare_control_plane.yaml",
-			f"{ANSIBLE_PLAYBOOK_DIR}/add_kubernetes_repo.yaml",
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_passwordless_ansible.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("install_packages.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_control_plane.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
 		],
 		"deb_packages": [
 			"docker.io",
@@ -80,9 +82,9 @@ prepare_targets = {
 	"localhost": {
 		"pretty_name": [("host system", "programname")],
 		"playbooks": [
-			f"{ANSIBLE_PLAYBOOK_DIR}/prepare_passwordless_ansible.yaml",
-			f"{ANSIBLE_PLAYBOOK_DIR}/add_kubernetes_repo.yaml",
-			f"{ANSIBLE_PLAYBOOK_DIR}/install_packages.yaml",
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_passwordless_ansible.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("install_packages.yaml"))),
 		],
 		"deb_packages": [
 			"ansible",
@@ -96,9 +98,9 @@ setup_control_plane_targets = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
 		"playbooks": [
-			f"{ANSIBLE_PLAYBOOK_DIR}/install_packages.yaml",
-			f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_setup_control_plane.yaml",
-			f"{ANSIBLE_PLAYBOOK_DIR}/fetch_kube_config.yaml",
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("install_packages.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_setup_control_plane.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("fetch_kube_config.yaml"))),
 		],
 		"deb_packages": [
 			"kubeadm",
@@ -115,7 +117,7 @@ setup_control_plane_targets = {
 	"localhost": {
 		"pretty_name": [("host system", "programname")],
 		"playbooks": [
-			f"{ANSIBLE_PLAYBOOK_DIR}/install_packages.yaml",
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("install_packages.yaml"))),
 		],
 		"deb_packages": [
 			"kubectl",
@@ -130,13 +132,13 @@ upgrade_control_plane_targets = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
 		"playbooks": [
-			f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_upgrade_control_plane.yaml",
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_upgrade_control_plane.yaml"))),
 		],
 	},
 	"localhost": {
 		"pretty_name": [("host system", "programname")],
 		"playbooks": [
-			f"{ANSIBLE_PLAYBOOK_DIR}/install_packages.yaml",
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("install_packages.yaml"))),
 		],
 		"deb_packages": [
 			"kubectl",
@@ -151,8 +153,8 @@ teardown_control_plane_targets = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
 		"playbooks": [
-			f"{ANSIBLE_PLAYBOOK_DIR}/teardown_cni.yaml",
-			f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_teardown_control_plane.yaml",
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("teardown_cni.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_teardown_control_plane.yaml"))),
 		],
 	},
 }
@@ -161,7 +163,7 @@ purge_control_plane_targets = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
 		"playbooks": [
-			f"{ANSIBLE_PLAYBOOK_DIR}/kubeadm_purge.yaml",
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_purge.yaml"))),
 		],
 		"deb_packages": [
 			"kubeadm",
@@ -177,7 +179,7 @@ purge_control_plane_targets = {
 	},
 }
 
-def rebuild_installation_info(state = None):
+def rebuild_installation_info(state: Optional[str] = None) -> None:
 	"""
 	If the installation info file doesn't exist, but a cluster already exists and it's part of the inventory,
 	this function will try to rebuild the installation info file
@@ -791,11 +793,12 @@ def __task_check_and_create_ssh_key(installation_info) -> None:
 	"""
 
 	if check_for_ssh_key() == False:
-		retval = iktinput([("Warning", "warning"), (": No ssh key found in ", "default"),
-				   (f"{HOMEDIR}/.ssh", "path"),
-				   ("; create one now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("Warning", "warning"), ANSIThemeString(": No ssh key found in ", "default"),
+				   ANSIThemeString(f"{HOMEDIR}/.ssh", "path"),
+				   ANSIThemeString("; create one now? (No will abort the installation) [y/", "default"),
+				   ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
-			iktprint([("\nAborting:", "error"), (" No ssh key available.", "default")], stderr = True)
+			iktprint([ANSIThemeString("\nAborting:", "error"), ANSIThemeString(" No ssh key available.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
 			check_and_print_status(create_ssh_key())
@@ -888,9 +891,9 @@ def install_ansible_posix():
 	result = execute_command_with_response(args)
 
 	if "COLLECTION_ACTION: invalid choice" in result or "ansible.posix" not in result:
-		http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
-		https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
-		no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), "")
+		http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
+		https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
+		no_proxy = deep_get(iktlib.iktconfig, DictPath("Network#no_proxy"), "")
 		env = {
 			"http_proxy": http_proxy,
 			"https_proxy": https_proxy,
@@ -1029,17 +1032,17 @@ def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False)
 	"""
 
 	# Set necessary Ansible keys before running playbooks
-	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
+	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
 	if http_proxy is None:
 		http_proxy = ""
-	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
+	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
 	if https_proxy is None:
 		https_proxy = ""
-	no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), "")
+	no_proxy = deep_get(iktlib.iktconfig, DictPath("Network#no_proxy"), "")
 	if no_proxy is None:
 		no_proxy = ""
-	insecure_registries = deep_get(iktconfig, DictPath("Docker#insecure_registries"), [])
-	registry_mirrors = deep_get(iktconfig, DictPath("Containerd#registry_mirrors"), [])
+	insecure_registries = deep_get(iktlib.iktconfig, DictPath("Docker#insecure_registries"), [])
+	registry_mirrors = deep_get(iktlib.iktconfig, DictPath("Containerd#registry_mirrors"), [])
 	retval = 0
 
 	use_proxy = "no"
@@ -1077,7 +1080,7 @@ def run_playbooks(playbooks, hosts = None, extra_values = None):
 			True on success, False on failure
 	"""
 
-	if len(playbooks) == 0 or hosts == None:
+	if len(playbooks) == 0 or hosts is None:
 		return True
 
 	for string, playbookpath in playbooks:
@@ -1144,9 +1147,9 @@ def __task_request_ansible_password(installation_info):
 	if deep_get(ansible_configuration, DictPath("ansible_password")) is None and no_password == False:
 		iktprint([("Attention", "warning"), (": To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
 		iktprint([("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
-		ansible_password = iktinput_password([("\nPassword: ", "default")])
+		ansible_password = iktinput_password([ANSIThemeString("\nPassword: ", "default")])
 		if len(ansible_password) == 0:
-			iktprint([("\nError", "Error"), (": Empty password; aborting.")], stderr = True)
+			iktprint([ANSIThemeString("\nError", "Error"), ANSIThemeString(": Empty password; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		else:
 			ansible_configuration["ansible_password"] = ansible_password
@@ -1194,7 +1197,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info) -> None:
 	"""
 
 	selection = __selection_localhost()
-	playbooks = populate_playbooks_from_paths(prepare_targets["localhost"]["playbooks"])
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets["localhost"]["playbooks"]))
 	extra_values = {
 		"packages": prepare_targets["localhost"].get("deb_packages", []),
 		"held_packages": prepare_targets["localhost"].get("deb_packages_held", []),
@@ -1214,7 +1217,7 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info) -> Non
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
 	selection = __selection_control_planes()
-	playbooks = populate_playbooks_from_paths(prepare_targets[distro]["playbooks"])
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets[distro]["playbooks"]))
 	cri = installation_info[cluster_name]["cri"]
 	extra_values = {
 		"packages": prepare_targets[distro].get("deb_packages", []),
@@ -1279,7 +1282,7 @@ def __task_run_setup_playbooks_on_localhost(installation_info) -> None:
 	cluster_name = installation_info["installation_target"]
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	selection = __selection_localhost()
-	playbooks = populate_playbooks_from_paths(setup_control_plane_targets["localhost"]["playbooks"])
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets["localhost"]["playbooks"]))
 	extra_values = {
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
@@ -1300,7 +1303,7 @@ def __task_run_setup_playbooks_on_control_planes(installation_info) -> None:
 	distro = installation_info[cluster_name]["distro"]
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	selection = __selection_control_planes()
-	playbooks = populate_playbooks_from_paths(setup_control_plane_targets[distro]["playbooks"])
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets[distro]["playbooks"]))
 	extra_values = {
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
@@ -1491,7 +1494,7 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info) -> None:
 	"""
 
 	selection = __selection_localhost()
-	playbooks = populate_playbooks_from_paths(upgrade_control_plane_targets["localhost"]["playbooks"])
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], upgrade_control_plane_targets["localhost"]["playbooks"]))
 	extra_values = {
 		"packages": upgrade_control_plane_targets["localhost"].get("deb_packages", []),
 		"held_packages": upgrade_control_plane_targets["localhost"].get("deb_packages_held", []),
@@ -1525,7 +1528,7 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info) -> None:
 	distro = installation_info[cluster_name]["distro"]
 	requested_version = installation_info[cluster_name]["requested_version"]
 	selection = __selection_control_planes()
-	playbooks = populate_playbooks_from_paths(upgrade_control_plane_targets[distro]["playbooks"])
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], upgrade_control_plane_targets[distro]["playbooks"]))
 	extra_values = {
 		"packages": upgrade_control_plane_targets[distro].get("deb_packages", []),
 		"held_packages": upgrade_control_plane_targets[distro].get("deb_packages_held", []),
@@ -1578,7 +1581,7 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info) -> None:
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
 	selection = __selection_control_planes()
-	playbooks = populate_playbooks_from_paths(teardown_control_plane_targets[distro]["playbooks"])
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], teardown_control_plane_targets[distro]["playbooks"]))
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
 def __task_remove_kube_config(installation_info) -> None:
@@ -1658,7 +1661,7 @@ def __task_run_purge_playbooks_on_control_planes(installation_info) -> None:
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
 	selection = __selection_control_planes()
-	playbooks = populate_playbooks_from_paths(purge_control_plane_targets[distro]["playbooks"])
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], purge_control_plane_targets[distro]["playbooks"]))
 	extra_values = {
 		"packages": purge_control_plane_targets[distro].get("deb_packages", []),
 		"held_packages": purge_control_plane_targets[distro].get("deb_packages_held", []),
@@ -1893,9 +1896,11 @@ def prepare_installation(options, args):
 	__controlplanes = get_control_planes(fail_on_empty = False)
 	controlplanes = [controlplane[0] for controlplane in __controlplanes]
 	if len(controlplanes) == 0 and "--control-plane" not in (tmp[0] for tmp in options):
-		retval = iktinput([("\nWarning", "warning"), (": No control plane defined in the inventory; do you want to add ", "default"), (f"{hostname}", "hostname"), (" as control plane? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nWarning", "warning"), ANSIThemeString(": No control plane defined in the inventory; do you want to add ", "default"),
+				   ANSIThemeString(f"{hostname}", "hostname"), ANSIThemeString(" as control plane? (No will abort the installation) [y/", "default"),
+				   ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
-			iktprint([("\nAborting:", "error"), (" No available control plane in inventory.", "default")], stderr = True)
+			iktprint([ANSIThemeString("\nAborting:", "error"), ANSIThemeString(" No available control plane in inventory.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = "controlplane", skip_all = False)
@@ -1960,13 +1965,13 @@ def prepare_installation(options, args):
 	show_configuration()
 
 	if confirm == True:
-		retval = iktinput([("\nStart control plane preparation? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nStart control plane preparation? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
-			iktprint([("\nAborting:", "error"), (" User stopped control plane preparation.", "default")], stderr = True)
+			iktprint([ANSIThemeString("\nAborting:", "error"), ANSIThemeString(" User stopped control plane preparation.", "default")], stderr = True)
 			os.remove(IKT_INSTALLATION_INFO_FILE)
 			sys.exit(errno.EINTR)
 
-	iktprint([("\n[Preparing localhost and control plane(s)]", "phase")])
+	iktprint([ANSIThemeString("\n[Preparing localhost and control plane(s)]", "phase")])
 
 	run_tasks(tasks = prepare_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "prepared")
 
@@ -2039,10 +2044,10 @@ def import_cluster(options, args):
 		iktprint([(cluster_name, "hostname"), ("".ljust(pad + 2 - len(cluster_name)), "default"), (context, "default")])
 
 	if confirm == True:
-		retval = iktinput([("\nImport the following clusters? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nImport the following clusters? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 
 		if retval.lower() not in ("y", "yes"):
-			iktprint([("\nAborting:", "error"), (" User stopped cluster import.", "default")], stderr = True)
+			iktprint([ANSIThemeString("\nAborting:", "error"), ANSIThemeString(" User stopped cluster import.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
 	iktprint([("\n[Importing cluster(s)]", "phase")])
@@ -2192,19 +2197,19 @@ def show_configuration():
 
 	controlplanes = get_control_planes()
 
-	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
+	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
 	if http_proxy is not None and http_proxy == "":
 		http_proxy = None
 	http_proxy_env = os.getenv("http_proxy")
 	if http_proxy_env is not None and http_proxy_env == "":
 		http_proxy_env = None
-	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
+	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
 	if https_proxy is not None and https_proxy == "":
 		https_proxy = None
 	https_proxy_env = os.getenv("https_proxy")
 	if https_proxy_env is not None and https_proxy_env == "":
 		https_proxy_env = None
-	no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), "")
+	no_proxy = deep_get(iktlib.iktconfig, DictPath("Network#no_proxy"), "")
 	if no_proxy is not None and no_proxy == "":
 		no_proxy = None
 	no_proxy_env = os.getenv("no_proxy")
@@ -2310,7 +2315,7 @@ def setup_control_plane(options, args):
 	show_configuration()
 
 	if confirm == True:
-		retval = iktinput([("\nStart installation? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nStart installation? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" User stopped installation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
@@ -2462,7 +2467,7 @@ def teardown_control_plane(options, args):
 	show_configuration()
 
 	if confirm == True:
-		retval = iktinput([("\nStart teardown? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nStart teardown? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" User stopped teardown.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
@@ -2538,7 +2543,7 @@ def purge_control_plane(options, args):
 		show_configuration()
 
 		if confirm == True:
-			retval = iktinput([("\nStart purge? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+			retval = iktinput([ANSIThemeString("\nStart purge? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 			if retval.lower() not in ("y", "yes"):
 				iktprint([("\nAborting:", "error"), (" User stopped purge.", "default")], stderr = True)
 				sys.exit(errno.EINTR)
@@ -2738,12 +2743,12 @@ def upgrade_control_plane(options, args):
 	show_configuration()
 
 	if confirm == True:
-		retval = iktinput([("\nStart upgrade? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nStart upgrade? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
-			iktprint([("\nAborting:", "error"), (" User stopped upgrade.", "default")], stderr = True)
+			iktprint([ANSIThemeString("\nAborting:", "error"), ANSIThemeString(" User stopped upgrade.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
-	iktprint([("\n[Upgrading control plane]", "phase")])
+	iktprint([ANSIThemeString("\n[Upgrading control plane]", "phase")])
 
 	run_tasks(tasks = upgrade_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "upgraded")
 	values = {
@@ -2878,7 +2883,7 @@ def run_checks(checks, **kwargs) -> None:
 	for check in checks:
 		call = deep_get(check, DictPath("call"))
 		if call is not None:
-			critical, error, warning, note = call(cluster_name, kubeconfig, iktconfig, user, critical, error, warning, note, **kwargs)
+			critical, error, warning, note = call(cluster_name, kubeconfig, iktlib.iktconfig, user, critical, error, warning, note, **kwargs)
 
 	iktprint([("Summary:", "header")])
 	iktprint([ ("Critical:", "critical"), (f" {critical}", "error")])
@@ -2993,7 +2998,7 @@ def troubleshoot(options, args):
 		  (" currently only checks for a very limited set of issues;", "default")])
 	iktprint([("a perfect score is not a guarantee that your cluster is problem free.", "default")])
 
-commandline = {
+COMMANDLINE = {
 	"Check Versions": {
 		"command": ["check-versions", "cv"],
 		"description": [("Update the package cache and show software versions", "description")],
@@ -3348,7 +3353,7 @@ commandline = {
 	},
 }
 
-def main():
+def main() -> None:
 	"""
 	Main function for the program
 	"""
@@ -3360,19 +3365,21 @@ def main():
 	# Then initialise the configuration file
 	read_iktconfig()
 
-	command, options, args = parse_commandline(about.ADMIN_PROGRAM_NAME, about.ADMIN_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, commandline, theme = DEFAULT_THEME_FILE)
+	command, options, args = parse_commandline(about.ADMIN_PROGRAM_NAME, about.ADMIN_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
+						   COMMANDLINE, theme = DEFAULT_THEME_FILE)
 
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktconfig, DictPath("Ansible#forks"), 5)
-	ansible_user = deep_get(iktconfig, DictPath("Ansible#ansible_user"))
+	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 5)
+	ansible_user = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_user"))
 	if ansible_user is None or len(ansible_user) == 0:
 		ansible_user = getuser()
 	ansible_configuration["ansible_user"] = ansible_user
-	ansible_password = deep_get(iktconfig, DictPath("Ansible#ansible_password"))
+	ansible_password = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_password"))
 	if ansible_password is not None and len(ansible_password) > 0:
 		ansible_configuration["ansible_password"] = ansible_password
-	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
-	ansible_configuration["save_logs"] = deep_get(iktconfig, DictPath("Ansible#save_logs"), False)
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktlib.iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
+	ansible_configuration["save_logs"] = deep_get(iktlib.iktconfig, DictPath("Ansible#save_logs"), False)
+
 	return command(options, args)
 
 if __name__ == "__main__":

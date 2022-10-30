@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 import re
 import sys
-import typing # pylint: disable=unused-import
+from typing import Dict, Generator, List, Tuple, Union
 
 from ikttypes import DictPath, FilePath
 from iktpaths import BINDIR, IKTDIR
@@ -34,8 +34,9 @@ import about
 # .ssh/authorized_keys should be 644, 640, or 600
 # .ssh/
 
-# pylint: disable-next=too-many-arguments,unused-argument,line-too-long
-def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfig, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
+# pylint: disable-next=too-many-arguments,unused-argument
+def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict, user: str,
+						    critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[int, int, int, int]:
 	"""
 	This checks whether or not strict host key checking has been disabled in iktconfig
 
@@ -49,11 +50,11 @@ def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfi
 			note (int): The current count of note severity security issues
 			kwargs (dict): Additional parameters
 		Returns:
-			critical (int), error (int), warning (int), note (int):
-				critical: The new count of critical severity security issues
-				error: The new count of error severity security issues
-				warning: The new count of warning severity security issues
-				note: The new count of note severity security issues
+			(critical, error, warning, note):
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
 	"""
 
 	iktprint([("[Checking for insecure configuration options in ", "phase"), (f"{IKT_CONFIG_FILE}", "path"), ("]", "phase")])
@@ -71,7 +72,8 @@ def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfi
 	return critical, error, warning, note
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def check_sudo_configuration(cluster_name: str, kubeconfig, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
+def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict, user: str,
+			     critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[int, int, int, int]:
 	"""
 	This checks whether the user is in /etc/sudoers or /etc/sudoers.d,
 	and whether the user can sudo without a password
@@ -86,11 +88,11 @@ def check_sudo_configuration(cluster_name: str, kubeconfig, iktconfig_dict, user
 			note (int): The current count of note severity security issues
 			kwargs (dict): Additional parameters
 		Returns:
-			critical (int), error (int), warning (int), note (int):
-				critical: The new count of critical severity security issues
-				error: The new count of error severity security issues
-				warning: The new count of warning severity security issues
-				note: The new count of note severity security issues
+			(critical, error, warning, note):
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
 	"""
 
 	iktprint([("[Checking whether ", "phase"),
@@ -143,7 +145,8 @@ def check_sudo_configuration(cluster_name: str, kubeconfig, iktconfig_dict, user
 	return critical, error, warning, note
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def check_known_hosts_hashing(cluster_name: str, kubeconfig, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
+def check_known_hosts_hashing(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict, user: str,
+			      critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[int, int, int, int]:
 	"""
 	This checks whether ssh known_hosts hashing is enabled
 
@@ -157,11 +160,11 @@ def check_known_hosts_hashing(cluster_name: str, kubeconfig, iktconfig_dict, use
 			note (int): The current count of note severity security issues
 			kwargs (dict): Additional parameters
 		Returns:
-			critical (int), error (int), warning (int), note (int):
-				critical: The new count of critical severity security issues
-				error: The new count of error severity security issues
-				warning: The new count of warning severity security issues
-				note: The new count of note severity security issues
+			(critical, error, warning, note):
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
 	"""
 
 	iktprint([("[Checking whether ", "phase"), ("ssh", "command"), (" known_hosts hashing is enabled]", "phase")])
@@ -185,7 +188,8 @@ def check_known_hosts_hashing(cluster_name: str, kubeconfig, iktconfig_dict, use
 	return critical, error, warning, note
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def check_insecure_kube_config_options(cluster_name: str, kubeconfig, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
+def check_insecure_kube_config_options(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict, user: str,
+				       critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[int, int, int, int]:
 	"""
 	This checks whether .kube/config has insecure options
 
@@ -199,11 +203,11 @@ def check_insecure_kube_config_options(cluster_name: str, kubeconfig, iktconfig_
 			note (int): The current count of note severity security issues
 			kwargs (dict): Additional parameters
 		Returns:
-			critical (int), error (int), warning (int), note (int):
-				critical: The new count of critical severity security issues
-				error: The new count of error severity security issues
-				warning: The new count of warning severity security issues
-				note: The new count of note severity security issues
+			(critical, error, warning, note):
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
 	"""
 
 	iktprint([("[Checking for insecure ", "phase"), (f"{KUBE_CONFIG_FILE}", "path"), (" options]", "phase")])
@@ -230,7 +234,8 @@ def check_insecure_kube_config_options(cluster_name: str, kubeconfig, iktconfig_
 	return critical, error, warning, note
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def check_client_server_version_match(cluster_name: str, kubeconfig, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
+def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict, user: str,
+				      critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[int, int, int, int]:
 	"""
 	This checks whether the versions of the various Kubernetes match properly
 
@@ -244,11 +249,11 @@ def check_client_server_version_match(cluster_name: str, kubeconfig, iktconfig_d
 			note (int): The current count of note severity security issues
 			kwargs (dict): Additional parameters
 		Returns:
-			critical (int), error (int), warning (int), note (int):
-				critical: The new count of critical severity security issues
-				error: The new count of error severity security issues
-				warning: The new count of warning severity security issues
-				note: The new count of note severity security issues
+			(critical, error, warning, note):
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
 	"""
 
 	mismatch = False
@@ -307,7 +312,8 @@ def check_client_server_version_match(cluster_name: str, kubeconfig, iktconfig_d
 	return critical, error, warning, note
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def check_containerd_and_docker(cluster_name: str, kubeconfig, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
+def check_containerd_and_docker(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict, user: str,
+				critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[int, int, int, int]:
 	"""
 	This checks whether docker-ce / containerd.io is installed instead of docker.io / containerd
 
@@ -321,11 +327,11 @@ def check_containerd_and_docker(cluster_name: str, kubeconfig, iktconfig_dict, u
 			note (int): The current count of note severity security issues
 			kwargs (dict): Additional parameters
 		Returns:
-			critical (int), error (int), warning (int), note (int):
-				critical: The new count of critical severity security issues
-				error: The new count of error severity security issues
-				warning: The new count of warning severity security issues
-				note: The new count of note severity security issues
+			(critical, error, warning, note):
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
 	"""
 
 	iktprint([("[Checking whether ", "phase"),
@@ -351,8 +357,9 @@ def check_containerd_and_docker(cluster_name: str, kubeconfig, iktconfig_dict, u
 
 	return critical, error, warning, note
 
-# pylint: disable-next=too-many-arguments,unused-argument,line-too-long
-def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
+# pylint: disable-next=too-many-arguments,unused-argument
+def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict, user: str,
+					  critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[int, int, int, int]:
 	"""
 	This checks whether the versions of kubelet and kube-proxy are acceptable
 
@@ -366,11 +373,11 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig, iktconf
 			note (int): The current count of note severity security issues
 			kwargs (dict): Additional parameters
 		Returns:
-			critical (int), error (int), warning (int), note (int):
-				critical: The new count of critical severity security issues
-				error: The new count of error severity security issues
-				warning: The new count of warning severity security issues
-				note: The new count of note severity security issues
+			(critical, error, warning, note):
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
 	"""
 
 	# Check kubelet and kube-proxy versions;
@@ -669,7 +676,28 @@ recommended_file_permissions = [
 ]
 
 # pylint: disable-next=too-many-arguments
-def __check_permissions(recommended_permissions, pathtype: str, user: str, usergroup: str, critical: int, error: int, warning: int, note: int):
+def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user: str,
+			usergroup: str, critical: int, error: int, warning: int, note: int) -> Tuple[bool, int, int, int, int]:
+	"""
+	Check permissions for a path
+		Parameters:
+			recommended_permissions (list[dict]): A dict with the path to check, the recommended permissions, severity, justification, etc.
+			pathtype (str): The type of the path
+			user (str): The user to check against
+			usergroup (str): The usergroup to check against
+			critical (int): The current count of critical severity security issues
+			error (int): The current count of error severity security issues
+			warning (int): The current count of warning severity security issues
+			note (int): The current count of note severity security issues
+		Returns:
+			(issue, critical, error, warning, note):
+				issue (bool): Found a security issue
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
+	"""
+
 	issue = False
 
 	for permissions in recommended_permissions:
@@ -691,10 +719,12 @@ def __check_permissions(recommended_permissions, pathtype: str, user: str, userg
 
 		if path_entry.exists():
 			# If this is a file, but we operate on files we should apply these tests for every matching file in this directory
+			paths: Union[List[Path], Generator[Path, None, None]] = []
+
 			if pathtype == "file" and path_entry.is_dir():
-				paths = path_entry.iterdir() # type: ignore
+				paths = path_entry.iterdir()
 			else:
-				paths = [path_entry] # type: ignore
+				paths = [path_entry]
 
 			for entry in paths:
 				if pathtype == "file":
@@ -777,7 +807,8 @@ def __check_permissions(recommended_permissions, pathtype: str, user: str, userg
 	return issue, critical, error, warning, note
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def check_file_permissions(cluster_name: str, kubeconfig, iktconfig_dict, user: str, critical: int, error: int, warning: int, note: int, **kwargs):
+def check_file_permissions(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict, user: str,
+			   critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[int, int, int, int]:
 	"""
 	This checks whether any files or directories have insecure permissions
 

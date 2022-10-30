@@ -14,9 +14,8 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-import typing # pylint: disable=unused-import
 
-from ikttypes import FilePath
+from ikttypes import ANSIThemeString, FilePath
 from iktpaths import BINDIR, HOMEDIR, IKTDIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIRNAME, IKT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
@@ -45,7 +44,7 @@ DIRECTORIES = [
 ]
 
 EXECUTABLE_SYMLINKS = [
-	# Python
+	# These are Python scripts
 	(FilePath(os.path.join(os.getcwd(), "iktadm")), FilePath(os.path.join(BINDIR, "iktadm"))),
 	(FilePath(os.path.join(os.getcwd(), "iktinv")), FilePath(os.path.join(BINDIR, "iktinv"))),
 	(FilePath(os.path.join(os.getcwd(), "ikt")), FilePath(os.path.join(BINDIR, "ikt"))),
@@ -169,7 +168,7 @@ def install_software_with_pip_fallback(packages, verbose: bool = False, dryrun: 
 
 	return list(pkgs), list(fallbacks)
 
-def install(options, args):
+def install(options, args) -> None:
 	"""
 	Create directories, install configuration files, create symlinks,
 	and optionally install packages necessary to run iKT
@@ -227,7 +226,8 @@ def install(options, args):
 				  ("“ was specified; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
-		retval = iktinput([("\nInstall ", "default"), ("iKT", "programname"), ("? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nInstall ", "default"), ANSIThemeString("iKT", "programname"),
+				   ANSIThemeString("? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting:", "error"), (" User stopped installation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
@@ -273,7 +273,7 @@ COMMANDLINE = {
 	},
 }
 
-def main():
+def main() -> None:
 	"""
 	Main function for the program
 	"""
@@ -289,8 +289,8 @@ def main():
 	if path_permissions & 0o002:
 		sys.exit(f"CRITICAL: The destination directory {HOMEDIR} is world-writable; aborting.")
 
-	command, options, args = parse_commandline(about.INSTALL_PROGRAM_NAME, about.INSTALL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS,
-						   sys.argv, COMMANDLINE, default_command = "__default", theme = FilePath(os.path.join(os.getcwd(), "themes", "default.yaml")))
+	command, options, args = parse_commandline(about.INSTALL_PROGRAM_NAME, about.INSTALL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
+						   COMMANDLINE, default_command = "__default", theme = FilePath(os.path.join(os.getcwd(), "themes", "default.yaml")))
 
 	return command(options, args)
 

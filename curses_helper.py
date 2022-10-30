@@ -15,8 +15,7 @@ import errno
 from operator import attrgetter
 from pathlib import Path, PurePath
 import sys
-import typing # pylint: disable=unused-import
-from typing import NoReturn
+from typing import Dict, List, Optional, NoReturn, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -29,7 +28,7 @@ from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, Retval, S
 import iktlib
 from iktlib import deep_get
 
-theme = {} # type: ignore
+theme: Dict = {}
 
 mousemask = 0
 
@@ -77,45 +76,43 @@ color_map = {
 	"white": curses.COLOR_WHITE,
 }
 
-def get_theme_ref():
+def get_theme_ref() -> Dict:
 	"""
 	Get a reference to the theme
 	"""
 
 	return theme
 
-def __color_name_to_curses_color(color, color_type: str) -> int:
-	if isinstance(color, list):
-		col, attr = color
-		if not isinstance(attr, str) or attr not in ["normal", "bright"]:
-			raise ValueError("Invalid color attribute used in theme; attribute has to be a string and one of: normal, bright")
-		if isinstance(col, str):
-			col = col.lower()
-	else:
-		col = color.lower()
+def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int:
+	col, attr = color
+
+	if not isinstance(attr, str) or attr not in ["normal", "bright"]:
+		raise ValueError("Invalid color attribute used in theme; attribute has to be a string and one of: normal, bright")
+	if isinstance(col, str):
+		col = col.lower()
 
 	if not isinstance(col, str) or col not in color_map:
 		raise ValueError(f"Invalid color type used in theme; color has to be a string and one of: {', '.join(color_map.keys())}")
 
 	if attr == "bright":
-		attr = 8
+		curses_attr = 8
 	else:
-		attr = 0
+		curses_attr = 0
 
-	color = deep_get(color_map, DictPath(col))
-	if color is None:
+	curses_color = deep_get(color_map, DictPath(col))
+	if curses_color is None:
 		raise ValueError(f"Invalid {color_type} color {col} used in theme; valid colors are: {', '.join(color_map.keys())}")
-	return color + attr
+	return curses_color + curses_attr
 
-def __convert_color_pair(color_pair):
+def __convert_color_pair(color_pair: Tuple[Tuple[str, str], Tuple[str, str]]) -> Tuple[int, int]:
 	fg, bg = color_pair
 
-	fg = __color_name_to_curses_color(fg, "foreground")
-	bg = __color_name_to_curses_color(bg, "background")
+	curses_fg = __color_name_to_curses_color(fg, "foreground")
+	curses_bg = __color_name_to_curses_color(bg, "background")
 
-	return (fg, bg)
+	return (curses_fg, curses_bg)
 
-def __init_pair(pair: str, color_pair, color_nr: int) -> None:
+def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 	fg, bg = color_pair
 	bright_black_remapped = False
 
@@ -229,13 +226,13 @@ def init_curses() -> None:
 		selected_index = __pairs[selected]
 		__color[pair] = (unselected_index, selected_index)
 
-def color_log_severity(severity: LogLevel, selected: bool):
+def color_log_severity(severity: LogLevel, selected: bool) -> Tuple[str, str, bool]:
 	return ("logview", f"severity_{loglevel_to_name(severity).lower()}", selected)
 
-def color_status_group(status_group: StatusGroup, selected: bool = False):
-	return ("main", stgroup_mapping[status_group], selected)
+def color_status_group(status_group: StatusGroup) -> Tuple[str, str]:
+	return ("main", stgroup_mapping[status_group])
 
-def window_tee_hline(win, y: int, start: int, end: int, attribute = None) -> None:
+def window_tee_hline(win: curses.window, y: int, start: int, end: int, attribute: int = None) -> None:
 	_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
 	_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
 	_hline = theme["boxdrawing"].get("hline", curses.ACS_HLINE)
@@ -257,7 +254,7 @@ def window_tee_hline(win, y: int, start: int, end: int, attribute = None) -> Non
 	else:
 		win.addch(y, end, _rtee)
 
-def window_tee_vline(win, x: int, start: int, end: int, attribute = None) -> None:
+def window_tee_vline(win: curses.window, x: int, start: int, end: int, attribute: int = None) -> None:
 	_ttee = theme["boxdrawing"].get("ttee", curses.ACS_TTEE)
 	_btee = theme["boxdrawing"].get("btee", curses.ACS_BTEE)
 	_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
@@ -280,7 +277,7 @@ def window_tee_vline(win, x: int, start: int, end: int, attribute = None) -> Non
 		win.addch(end, x, _btee)
 
 # pylint: disable-next=too-many-arguments
-def scrollbar_vertical(win, x: int, miny: int, maxy: int, height: int, yoffset: int, clear_color):
+def scrollbar_vertical(win: curses.window, x: int, miny: int, maxy: int, height: int, yoffset: int, clear_color: int) -> Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int, int]]:
 	"""
 	Draw a vertical scroll bar
 
@@ -334,7 +331,7 @@ def scrollbar_vertical(win, x: int, miny: int, maxy: int, height: int, yoffset: 
 	return upperarrow, lowerarrow, vdragger
 
 # pylint: disable-next=too-many-arguments
-def scrollbar_horizontal(win, y: int, minx: int, maxx: int, width: int, xoffset: int, clear_color):
+def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width: int, xoffset: int, clear_color: int) -> Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int, int]]:
 	"""
 	Draw a horizontal scroll bar
 
@@ -392,54 +389,53 @@ def scrollbar_horizontal(win, y: int, minx: int, maxx: int, width: int, xoffset:
 	return leftarrow, rightarrow, hdragger
 
 # This does not draw a heatmap; it only generates an array of string arrays
-def generate_heatmap(maxwidth: int, stgroups, selected: int):
+def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) -> List[List[Tuple[str, Tuple[str, str], bool]]]:
 	array = []
 	row = []
 	block = theme["boxdrawing"].get("smallblock", "■")
 	selectedblock = theme["boxdrawing"].get("block", "█")
 	x = 0
 
-	color = -1
+	color = color_status_group(stgroups[0])
 	tmp = ""
 
 	# Try to make minimise the colour changes
 	for i, stgroup in enumerate(stgroups):
 		heat = stgroup
-		nextcolor = color_status_group(heat, False)
+		nextcolor = color_status_group(heat)
 		if selected == i:
 			sblock = selectedblock
 		else:
 			sblock = block
 
 		if x > maxwidth:
-			row.append((tmp, color))
+			row.append((tmp, color, False))
 			x = 0
 			array.append(row)
-			color = -1
 			row = []
 
 		# If we have a new colour we need a new element in the array,
 		# otherwise we just extend the current element
-		if color == -1:
+		if x == 0:
 			color = nextcolor
 			tmp = f"{sblock}"
 		elif nextcolor == color:
 			tmp += f"{sblock}"
 		elif nextcolor != color:
-			row.append((tmp, color))
+			row.append((tmp, color, False))
 			tmp = f"{sblock}"
 			color = nextcolor
 
 		x += 1
 		if i == len(stgroups) - 1:
-			row.append((tmp, color))
+			row.append((tmp, color, False))
 			array.append(row)
 			break
 
 	return array
 
 # pylint: disable-next=too-many-arguments
-def percentagebar(win, y: int, minx: int, maxx: int, total: int, subsets):
+def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, Tuple[str, str]]]) -> curses.window:
 	block = theme["boxdrawing"].get("smallblock", "■")
 	barwidth = maxx - minx - 3
 	barpos = minx + 1
@@ -459,9 +455,8 @@ def percentagebar(win, y: int, minx: int, maxx: int, total: int, subsets):
 	win.addstr(y, maxx, "]")
 	return win
 
-def __notification(stdscr, y: int, x: int, message: str, formatting):
-	del stdscr
-
+# pylint: disable=unused-argument
+def __notification(stdscr: Optional[curses.window], y: int, x: int, message: str, formatting) -> curses.window:
 	height = 3
 	width = 2 + len(message)
 	ypos = y - height // 2
@@ -485,15 +480,15 @@ def __notification(stdscr, y: int, x: int, message: str, formatting):
 	curses.doupdate()
 	return win
 
-def notice(stdscr, y: int, x: int, message: str):
+def notice(stdscr: Optional[curses.window], y: int, x: int, message: str) -> curses.window:
 	return __notification(stdscr, y, x, message, ("windowwidget", "notice"))
 
-def alert(stdscr, y: int, x: int, message: str):
+def alert(stdscr: Optional[curses.window], y: int, x: int, message: str) -> curses.window:
 	return __notification(stdscr, y, x, message, ("windowwidget", "alert"))
 
 
 # pylint: disable-next=too-many-arguments
-def progressbar(win, y: int, minx: int, maxx: int, progress: int, title: str = None):
+def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int, title: str = None) -> curses.window:
 	"""
 	A progress bar;
 	Usage: Initialise by calling with a reference to a variable set to None
@@ -561,11 +556,12 @@ def inputwrapper(keypress: int) -> int:
 # Show a one line high pad the width of the current pad with a border
 # and specified title in the middle of the screen
 # pylint: disable-next=too-many-arguments,unused-argument
-def inputbox(stdscr, y: int, x: int, height: int, width: int, title: str) -> str:
+def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, title: str) -> str:
+	global ignoreinput # pylint: disable=global-statement
+
 	# Show the cursor
 	curses.curs_set(True)
 
-	global ignoreinput # pylint: disable=global-statement
 	ignoreinput = False
 
 	win = curses.newwin(3, width, y, x)
@@ -612,8 +608,9 @@ def inputbox(stdscr, y: int, x: int, height: int, width: int, title: str) -> str
 
 # Show a confirmation box centered around y and x
 # with the specified default value and title
-def confirmationbox(stdscr, y: int, x: int, title: str = "", default: bool = False) -> bool:
+def confirmationbox(stdscr: curses.window, y: int, x: int, title: str = "", default: bool = False) -> bool:
 	global ignoreinput # pylint: disable=global-statement
+
 	ignoreinput = False
 	retval = default
 
@@ -671,7 +668,7 @@ def confirmationbox(stdscr, y: int, x: int, title: str = "", default: bool = Fal
 	return retval
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def move_cur_with_offset(curypos: int, listlen: int, yoffset: int, maxcurypos: int, maxyoffset: int, movement: int, wraparound: bool = False):
+def move_cur_with_offset(curypos: int, listlen: int, yoffset: int, maxcurypos: int, maxyoffset: int, movement: int, wraparound: bool = False) -> Tuple[int, int]:
 	newcurypos = curypos + movement
 	newyoffset = yoffset
 
@@ -700,7 +697,7 @@ def move_cur_with_offset(curypos: int, listlen: int, yoffset: int, maxcurypos: i
 				newyoffset = max(yoffset + movement + curypos, 0)
 	return newcurypos, newyoffset
 
-def __addstr(win, string: str, y: int = -1, x: int = -1, attribute: int = curses.A_NORMAL):
+def __addstr(win: curses.window, string: str, y: int = -1, x: int = -1, attribute: int = curses.A_NORMAL) -> Tuple[int, int]:
 	cury, curx = win.getyx()
 	winmaxy, winmaxx = win.getmaxyx()
 	newmaxy = max(y, winmaxy)
@@ -714,7 +711,7 @@ def __addstr(win, string: str, y: int = -1, x: int = -1, attribute: int = curses
 	cury, curx = win.getyx()
 	return cury, curx
 
-def __addformattedarray(win, array, y: int = -1, x: int = -1):
+def __addformattedarray(win: curses.window, array: List[Tuple[str, int]], y: int = -1, x: int = -1) -> Tuple[int, int]:
 	# This way we can print a single (string, attr) too
 	if isinstance(array, tuple):
 		array = [array]
@@ -732,14 +729,38 @@ def __addformattedarray(win, array, y: int = -1, x: int = -1):
 # (string, (context, curses_attr)),
 # (context, theme_ref),
 # (context, theme_ref, selected),
-def addthemearray(win, array, y: int = -1, x: int = -1, selected: bool = False):
+def addthemearray(win: curses.window,
+		  array,
+#		  array: List[Union[
+#				Tuple[str, Tuple[str, str]],
+#				Tuple[str, Tuple[str, str], bool],
+#				Tuple[str, Tuple[str, int]],
+#				Tuple[str, str],
+#				Tuple[str, str, bool]]
+#			 ],
+		  y: int = -1, x: int = -1, selected: bool = False) -> Tuple[int, int]:
+	"""
+	Given a themed string in themearray format, output it to the screen
+
+		Parameters:
+			win (curses.window): The Curses window
+			array (themearray): The themearray to out
+			y (int): The y-coordinate to add the string at
+			x (int): The x-coordinate to add the string at
+			selected (bool): Should the selected version of the theming be used?
+		Returns:
+			(y, x):
+				y (int): The new y-coordinate
+				x (int): The new x-coordinate
+	"""
+
 	for item in array:
 		if not isinstance(item, tuple):
 			raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
 
 		if len(item) == 3:
 			_p1, _p2, _selected = item
-		else:
+		elif len(item) == 2:
 			_p1, _p2 = item
 			_selected = selected
 
@@ -812,11 +833,11 @@ def __attr_to_curses(attr, selected: bool = False):
 		raise KeyError(f"__attr_to_curses: (color: {col}, selected: {selected}) not found") from e
 	return key, attr
 
-def attr_to_curses(context, attr, selected: bool = False):
+def attr_to_curses(context: str, attr: str, selected: bool = False):
 	# <attr> is a string that references a field in the section <context> of the themes-file;
 	# that field can either be either a string, which in that case will be used directly against
 	# the colour lookup table, or a list, in which case the first entry is the colour,
-	# and the second entry is a curses attribute; recognised attributes (dim, normal, bold, underline)
+	# and the second entry is a curses attribute (in str format); recognised attributes (dim, normal, bold, underline)
 	try:
 		attr = theme[context][attr]
 	except KeyError as e:
@@ -828,11 +849,11 @@ def attr_to_curses(context, attr, selected: bool = False):
 			attr = attr["unselected"]
 	return __attr_to_curses(attr, selected)
 
-def __attr_to_curses_merged(attr, selected: bool = False) -> int:
-	col, attr = __attr_to_curses(attr, selected)
-	return col | attr
+def __attr_to_curses_merged(attr: str, selected: bool = False) -> int:
+	curses_col, curses_attr = __attr_to_curses(attr, selected)
+	return curses_col | curses_attr
 
-def _attr_to_curses_merged(context, attr, selected: bool = False) -> int:
+def _attr_to_curses_merged(context: str, attr: str, selected: bool = False) -> int:
 	# <attr> is a string that references a field in the section <context> of the themes-file;
 	# that field can either be either a string, which in that case will be used directly against
 	# the colour lookup table, or a list, in which case the first entry is the colour,
@@ -840,7 +861,7 @@ def _attr_to_curses_merged(context, attr, selected: bool = False) -> int:
 	try:
 		attr = theme[context][attr]
 	except KeyError as e:
-		raise KeyError(f"couldn't find the tuple ({context}, {attr}) in theme") from e
+		raise KeyError(f"Couldn't find the tuple ({context}, {attr}) in theme") from e
 	if isinstance(attr, dict):
 		if selected == True:
 			attr = attr["selected"]
@@ -850,37 +871,29 @@ def _attr_to_curses_merged(context, attr, selected: bool = False) -> int:
 
 # XXX: If we ever turn themearray to a proper object reuse this
 # This extracts the string without formatting
-def themearray_to_string(themearray) -> str:
+def themearray_to_string(themearray: List[Union[Tuple[str, Tuple[str, str]], Tuple[str, Tuple[str, str], bool], Tuple[str, Tuple[str, int]], Tuple[str, str], Tuple[str, str, bool]]]) -> str:
 	string = ""
 
 	for fragment in themearray:
 		if not isinstance(fragment, tuple):
 			# pylint: disable-next=line-too-long
 			raise ValueError(f"themearray_to_string() called with an invalid themearray: “{themearray}“; element: “{fragment}“ has invalid type {type(fragment)}; expected tuple")
-		# (string, attributes)
-		if isinstance(fragment[0], str) and type(fragment[1]) == int: # pylint: disable=unidiomatic-typecheck
+		# (string, curses_attr)
+		# (string, (context, theme_attr))
+		if isinstance(fragment[0], str) and type(fragment[1]) in (int, tuple):
 			string += fragment[0]
-		# (context, string)
-		# (context, string, selected)
-		elif isinstance(fragment[0], str) and isinstance(fragment[1], str) and (len(fragment) == 2 or len(fragment) == 3 and isinstance(fragment[2], bool)):
+		# (context, theme_attr)
+		elif len(fragment) == 2 and isinstance(fragment[0], str) and isinstance(fragment[1], str):
 			themed_tuple = deep_get(theme, DictPath(f"{fragment[0]}#{fragment[1]}"))
 			if themed_tuple is None:
 				raise KeyError(f"The theme key-pair context: “{fragment[0]}“, key: “{fragment[1]}“ in the themearray “{themearray}“ does not exist")
 			string += themed_tuple[0][0]
-		# ((string, (context, theme)), selected)
-		elif isinstance(fragment[0], tuple) and isinstance(fragment[1], bool):
-			# ((context, string), selected)
-			if isinstance(fragment[0][1], str):
-				themed_tuple = deep_get(theme, DictPath(f"{fragment[0][0]}#{fragment[0][1]}"))
-				if themed_tuple is None:
-					raise KeyError(f"The theme key-pair context: “{fragment[0][0]}“, key: “{fragment[0][1]}“ does not exist")
-				string += themed_tuple[0][0]
-			# ((string, (context, theme)), selected)
-			else:
-				string += fragment[0][0]
-		# (string, (context, theme))
-		elif isinstance(fragment[0], str) and isinstance(fragment[1], tuple):
-			string += fragment[0]
+		# ((context, theme_attr), selected)
+		elif len(fragment) == 2 and isinstance(fragment[0], tuple) and isinstance(fragment[1], bool):
+			themed_tuple = deep_get(theme, DictPath(f"{fragment[0][0]}#{fragment[0][1]}"))
+			if themed_tuple is None:
+				raise KeyError(f"The theme key-pair context: “{fragment[0][0]}“, key: “{fragment[0][1]}“ in the themearray “{themearray}“ does not exist")
+			string += themed_tuple[0][0]
 		else:
 			raise ValueError(f"themearray_to_string() called with invalid themearray: “{themearray}“; cannot parse element: “{fragment}“")
 	return string
@@ -1167,7 +1180,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 	elif isinstance(preselection, set):
 		tagged_items = preselection
 
-	while selection == None:
+	while selection is None:
 		for _y, item in enumerate(items):
 			if cursor == True:
 				_selected = (yoffset + curypos == _y)
@@ -1620,7 +1633,7 @@ class UIProps:
 			self.select(selection)
 
 	def is_selected(self, selected) -> bool:
-		if selected == None:
+		if selected is None:
 			return False
 
 		return self.selected == selected
@@ -1760,7 +1773,7 @@ class UIProps:
 			if self.extra_status is not None:
 				self.stdscr.addch(_vline)
 				extra_msg, extra_status = self.extra_status
-				self.stdscr.addstr(extra_msg, color_status_group(extra_status, False))
+				self.stdscr.addstr(extra_msg, color_status_group(extra_status))
 			self.stdscr.addch(_ltee)
 
 	def refresh_window(self) -> None:
@@ -2404,7 +2417,7 @@ class UIProps:
 			else:
 				if isinstance(tmp2, (list, tuple)):
 					if isinstance(tmp2[0], tuple):
-						tmp3 = [] # type: ignore
+						tmp3: List = []
 						for t in tmp2:
 							tmp3 += map(str, t)
 						tmp2 = tmp3
@@ -2478,7 +2491,7 @@ class UIProps:
 				break
 
 			if listitem.name.startswith(name):
-				if first_match == None:
+				if first_match is None:
 					first_match = y
 				match_count += 1
 
@@ -3080,7 +3093,7 @@ class UIProps:
 
 		return helptext
 
-	def generic_inputhandler(self, shortcuts, **kwargs):
+	def generic_inputhandler(self, shortcuts: Dict, **kwargs: Dict) -> Tuple[Retval, Dict]:
 		"""
 		Generic inputhandler for views
 

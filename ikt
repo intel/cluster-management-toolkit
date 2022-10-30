@@ -23,13 +23,14 @@ import os
 from pathlib import Path
 import re
 import sys
+from typing import Dict, List, Tuple
 
 try:
 	import OpenSSL
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
-from ikttypes import DictPath, HostNameStatus
+from ikttypes import ANSIThemeString, DictPath, HostNameStatus
 from iktpaths import IKT_CONFIG_FILE, DEFAULT_THEME_FILE
 
 from commandparser import parse_commandline
@@ -38,7 +39,8 @@ from ansible_helper import ansible_configuration, ansible_run_playbook_on_select
 from ansible_helper import ansible_print_play_results, populate_playbooks_from_paths
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
-from iktlib import deep_get, execute_command, iktconfig, join_tuple_list, read_iktconfig
+import iktlib
+from iktlib import deep_get, execute_command, join_tuple_list, read_iktconfig
 from iktio import secure_read_string, validate_fqdn
 from networkio import scan_and_add_ssh_keys
 
@@ -50,21 +52,23 @@ import about
 PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
-def request_ansible_password():
+def request_ansible_password() -> None:
 	"""
 	Requests the ansible password
 	"""
 
 	# Check whether ansible_password is defined or not
-	if ansible_configuration["ansible_password"] == None:
-		iktprint([("Attention: ", "warning"), ("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
-		iktprint([("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
-		ansible_password = iktinput_password([("\nPassword: ", "default")])
-		if len(ansible_password) == 0:
-			iktprint([("\nError", "Error"), (": Empty password; aborting.")], stderr = True)
+	if ansible_configuration["ansible_password"] is None:
+		iktprint([ANSIThemeString("Attention: ", "warning"), ANSIThemeString("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
+		iktprint([ANSIThemeString("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
+
+		ansible_password = iktinput_password([ANSIThemeString("\nPassword: ", "default")])
+
+		if ansible_password is None or len(ansible_password) == 0:
+			iktprint([ANSIThemeString("\nError", "Error"), ANSIThemeString(": Empty password; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
-		else:
-			ansible_configuration["ansible_password"] = ansible_password
+
+		ansible_configuration["ansible_password"] = ansible_password # type: ignore
 
 def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False):
 	"""
@@ -84,17 +88,17 @@ def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False)
 	del quiet
 
 	# Set necessary Ansible keys before running playbooks
-	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
+	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
 	if http_proxy is None:
 		http_proxy = ""
-	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
+	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
 	if https_proxy is None:
 		https_proxy = ""
-	no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), "")
+	no_proxy = deep_get(iktlib.iktconfig, DictPath("Network#no_proxy"), "")
 	if no_proxy is None:
 		no_proxy = ""
-	insecure_registries = deep_get(iktconfig, DictPath("Docker#insecure_registries"), [])
-	registry_mirrors = deep_get(iktconfig, DictPath("Containerd#registry_mirrors"), [])
+	insecure_registries = deep_get(iktlib.iktconfig, DictPath("Docker#insecure_registries"), [])
+	registry_mirrors = deep_get(iktlib.iktconfig, DictPath("Containerd#registry_mirrors"), [])
 	retval = 0
 
 	use_proxy = "no"
@@ -136,19 +140,19 @@ def show_configuration(hosts):
 	"""
 
 	# cluster_name =
-	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
+	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
 	if http_proxy is not None and http_proxy == "":
 		http_proxy = None
 	http_proxy_env = os.getenv("http_proxy")
 	if http_proxy_env is not None and http_proxy_env == "":
 		http_proxy_env = None
-	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
+	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
 	if https_proxy is not None and https_proxy == "":
 		https_proxy = None
 	https_proxy_env = os.getenv("https_proxy")
 	if https_proxy_env is not None and https_proxy_env == "":
 		https_proxy_env = None
-	no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), "")
+	no_proxy = deep_get(iktlib.iktconfig, DictPath("Network#no_proxy"), "")
 	if no_proxy is not None and no_proxy == "":
 		no_proxy = None
 	no_proxy_env = os.getenv("no_proxy")
@@ -701,10 +705,10 @@ def prepare_hosts(options, args):
 			not_in_inventory.append(host)
 
 	if len(not_in_inventory) > 0:
-		retval = iktinput([("\nWarning", "warning"), (": ", "default")] +\
+		retval = iktinput([ANSIThemeString("\nWarning", "warning"), ANSIThemeString(": ", "default")] +\
 				  join_tuple_list(not_in_inventory, _tuple = "hostname", separator = (",", "separator")) +\
-				  [(" are not defined in the inventory; do you want to add them now? (No will abort the installation) [y/", "default"),
-				   ("N", "emphasis"), ("]: ", "default")])
+				  [ANSIThemeString(" are not defined in the inventory; do you want to add them now? (No will abort the installation) [y/", "default"),
+				   ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting", "error"), (": Nodes not added to the inventory.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
@@ -715,7 +719,7 @@ def prepare_hosts(options, args):
 
 	confirm = True
 	if confirm == True:
-		retval = iktinput([("\nStart host preparation? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nStart host preparation? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting", "error"), (": User stopped host preparation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
@@ -855,7 +859,7 @@ def add_nodes(options, args):
 
 	confirm = True
 	if confirm == True:
-		retval = iktinput([("\nStart node setup? [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nStart node setup? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting", "error"), (": User stopped node setup.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
@@ -869,7 +873,7 @@ def add_nodes(options, args):
 
 	join_token = kh.get_join_token()
 	if len(join_token) == 0:
-		retval = iktinput([("Error", "error"), (": No join token found; create a one now? (No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("Error", "error"), ANSIThemeString(": No join token found; create a one now? (No will abort the installation) [y/", "default"), ANSIThemeString("N", "emphasis"), ("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting", "error"), (": No join token available.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
@@ -890,11 +894,11 @@ def add_nodes(options, args):
 	if len(ca_cert_hash) == 0:
 		if len(ca_cert_path) == 0:
 			ca_cert_path = "/etc/kubernetes/pki/ca.crt"
-		retval = iktinput([("Warning", "warning"), (": Could not find ", "default"),
-				   ("ca.crt", "path"),
-				   (" or a certificate-controller-token secret; try to use ", "default"),
-				   (ca_cert_path, "path"),
-				   ("? No will abort the installation) [y/", "default"), ("N", "emphasis"), ("]: ", "default")])
+		retval = iktinput([ANSIThemeString("Warning", "warning"), ANSIThemeString(": Could not find ", "default"),
+				   ANSIThemeString("ca.crt", "path"),
+				   ANSIThemeString(" or a certificate-controller-token secret; try to use ", "default"),
+				   ANSIThemeString(ca_cert_path, "path"),
+				   ANSIThemeString("? No will abort the installation) [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([("\nAborting", "error"), (": No CA certificate available.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
@@ -1261,7 +1265,7 @@ def get_resource(options, args):
 	return
 """
 
-ikt_commandline = {
+IKT_COMMANDLINE = {
 	"Cordon Node": {
 		"command": ["cordon"],
 		"values": [("NODE", "argument"), (",", "separator"), ("...", "argument"), ("|", "separator"), ("ALL", "argument")],
@@ -1555,7 +1559,7 @@ ikt_commandline = {
 	]
 }
 
-def get_programname(callname):
+def get_programname(callname: str) -> Tuple[str, Dict]:
 	"""
 	Return the name that the program was called with;
 	the eventual intention here is that the behaviour can be different
@@ -1564,17 +1568,17 @@ def get_programname(callname):
 		Parameters:
 			callname (str): The name that the program was invoked with
 		Returns:
-			(callname (str), commandline (list[str]))
+			(callname (str), commandline (List[str]))
 	"""
 
 	callnames = {
-		"ikt": ikt_commandline,		# main name
-		#"iktdep": dep_commandline,	# deployment shortcut
-		#"iktds": ds_commandline,	# daemon set shortcut
-		#"iktrs": rs_commandline,	# replica set shortcut
-		#"iktjob": job_commandline,	# job shortcut
-		#"iktnode": node_commandline,	# node shortcut
-		#"iktpod": pod_commandline,	# pod shortcut
+		"ikt": IKT_COMMANDLINE,		# main name
+		#"iktdep": DEP_COMMANDLINE,	# deployment shortcut
+		#"iktds": DS_COMMANDLINE,	# daemon set shortcut
+		#"iktrs": RS_COMMANDLINE,	# replica set shortcut
+		#"iktjob": JOB_COMMANDLINE,	# job shortcut
+		#"iktnode": NODE_COMMANDLINE,	# node shortcut
+		#"iktpod": POD_COMMANDLINE,	# pod shortcut
 	}
 
 	if callname not in callnames:
@@ -1594,23 +1598,22 @@ def main() -> int:
 	# Then initialise the configuration file
 	read_iktconfig()
 
-	argv = sys.argv
+	programname, commandline = get_programname(os.path.basename(sys.argv[0]))
 
-	programname, commandline = get_programname(os.path.basename(argv[0]))
-
-	command, options, args = parse_commandline(programname, about.TOOL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, argv, commandline, theme = DEFAULT_THEME_FILE)
+	command, options, args = parse_commandline(programname, about.TOOL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
+						   commandline, theme = DEFAULT_THEME_FILE)
 
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktconfig, DictPath("Ansible#forks"), 5)
-	ansible_user = deep_get(iktconfig, DictPath("Ansible#ansible_user"))
+	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 5)
+	ansible_user = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_user"))
 	if ansible_user is None or len(ansible_user) == 0:
 		ansible_user = getuser()
 	ansible_configuration["ansible_user"] = ansible_user
-	ansible_password = deep_get(iktconfig, DictPath("Ansible#ansible_password"))
+	ansible_password = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_password"))
 	if ansible_password is not None and len(ansible_password) > 0:
 		ansible_configuration["ansible_password"] = ansible_password
-	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
-	ansible_configuration["save_logs"] = deep_get(iktconfig, DictPath("Ansible#save_logs"), False)
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktlib.iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
+	ansible_configuration["save_logs"] = deep_get(iktlib.iktconfig, DictPath("Ansible#save_logs"), False)
 
 	return command(options, args)
 

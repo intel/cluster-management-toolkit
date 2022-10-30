@@ -9,11 +9,11 @@ from datetime import datetime
 from pathlib import Path, PurePath
 import re
 import sys
-import typing # pylint: disable=unused-import
+from typing import cast, Dict, List, Optional, Set, Tuple, Union
 import yaml
 
-import iktlib # pylint: disable=unused-import
-from iktlib import deep_get, iktconfig
+import iktlib
+from iktlib import deep_get
 from iktio import check_path, mkdir_if_not_exists, secure_read_yaml, secure_rm, secure_rmdir, secure_write_yaml
 from iktpaths import HOMEDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
@@ -21,7 +21,7 @@ from iktpaths import ANSIBLE_INVENTORY
 from iktprint import iktprint
 from ikttypes import DictPath, FilePath, FilePathAuditError, SecurityChecks
 
-ansible_results = {} # type: ignore
+ansible_results: Dict = {}
 
 ansible_configuration = {
 	"ansible_forks": 5,
@@ -60,7 +60,7 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 	path = ""
 
 	# Check if there's a local playbook overriding this one
-	local_playbooks = deep_get(iktconfig, DictPath("Ansible#local_playbooks"), [])
+	local_playbooks = deep_get(iktlib.iktconfig, DictPath("Ansible#local_playbooks"), [])
 	for playbook_path in local_playbooks:
 		# Substitute {HOME}/ for {HOMEDIR}
 		if playbook_path.startswith("{HOME}/"):
@@ -79,12 +79,12 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 	return FilePath(path)
 
 # Add all playbooks in the array
-def populate_playbooks_from_paths(paths):
+def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[Tuple[str, str]], FilePath]]:
 	"""
 	Populate a playbook list
 
 		Parameters:
-			paths (list[str]): A list of paths to playbooks
+			paths (list[FilePath]): A list of paths to playbooks
 		Returns:
 			list[(description, playbookpath)]: A playbook list for use with run_playbooks()
 	"""
@@ -155,7 +155,7 @@ def populate_playbooks_from_paths(paths):
 
 	return playbooks
 
-def ansible_get_inventory_dict():
+def ansible_get_inventory_dict() -> Dict:
 	"""
         Get the iKT inventory and return it as a dict
 
@@ -170,7 +170,8 @@ def ansible_get_inventory_dict():
 
 	return d
 
-def ansible_get_inventory_pretty(groups = None, highlight: bool = False, include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True): # pylint: disable=line-too-long
+# pylint: disable-next=line-too-long
+def ansible_get_inventory_pretty(groups: List[str] = None, highlight: bool = False, include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True) -> List[Tuple[str, str]]:
 	"""
         Get the iKT inventory and return it neatly formatted
 
@@ -187,7 +188,7 @@ def ansible_get_inventory_pretty(groups = None, highlight: bool = False, include
 	tmp = {}
 
 	if not Path(ANSIBLE_INVENTORY).exists():
-		return {}
+		return []
 
 	d = secure_read_yaml(ANSIBLE_INVENTORY)
 
@@ -195,7 +196,6 @@ def ansible_get_inventory_pretty(groups = None, highlight: bool = False, include
 	if groups is None or groups == []:
 		tmp = d
 	else:
-		tmp = {}
 		for group in groups:
 			item = d.pop(group, None)
 			if item is not None:
@@ -261,7 +261,7 @@ def ansible_get_inventory_pretty(groups = None, highlight: bool = False, include
 
 	return dump
 
-def ansible_get_hosts_by_group(inventory: FilePath, group: str):
+def ansible_get_hosts_by_group(inventory: FilePath, group: str) -> List[str]:
 	"""
 	Get the list of hosts belonging to a group
 
@@ -285,7 +285,7 @@ def ansible_get_hosts_by_group(inventory: FilePath, group: str):
 
 	return hosts
 
-def ansible_get_groups(inventory: FilePath):
+def ansible_get_groups(inventory: FilePath) -> List[str]:
 	"""
 	Get the list of groups in the inventory
 
@@ -307,7 +307,7 @@ def ansible_get_groups(inventory: FilePath):
 
 	return groups
 
-def ansible_get_groups_by_host(inventory_dict, host: str):
+def ansible_get_groups_by_host(inventory_dict: Dict, host: str) -> List[str]:
 	"""
 	Given an inventory, returns the groups a host belongs to
 
@@ -344,7 +344,7 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False) -> 
 	mkdir_if_not_exists(ANSIBLE_DIR, permissions = 0o755, exit_on_failure = True)
 
 	# Create the basic yaml structure that we'll write later on
-	d = {
+	d: Dict = {
 		"all": {
 			"hosts": {},
 			# Workaround for Ubuntu 18.04 and various other older operating systems
@@ -356,17 +356,17 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False) -> 
 	}
 
 	if deep_get(ansible_configuration, DictPath("ansible_user")) is not None:
-		d["all"]["vars"]["ansible_user"] = deep_get(ansible_configuration, DictPath("ansible_user")) # type: ignore
+		d["all"]["vars"]["ansible_user"] = deep_get(ansible_configuration, DictPath("ansible_user"))
 
 	if deep_get(ansible_configuration, DictPath("ansible_password")) is not None:
-		d["all"]["vars"]["ansible_ssh_pass"] = deep_get(ansible_configuration, DictPath("ansible_password")) # type: ignore
+		d["all"]["vars"]["ansible_ssh_pass"] = deep_get(ansible_configuration, DictPath("ansible_password"))
 
 	if deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking")) is not None:
-		d["all"]["vars"]["ansible_ssh_common_args"] = "-o StrictHostKeyChecking=no" # type: ignore
+		d["all"]["vars"]["ansible_ssh_common_args"] = "-o StrictHostKeyChecking=no"
 
 	secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True)
 
-def ansible_create_groups(inventory: FilePath, groups):
+def ansible_create_groups(inventory: FilePath, groups: List[str]) -> bool:
 	"""
 	Create new groups
 
@@ -403,7 +403,7 @@ def ansible_create_groups(inventory: FilePath, groups):
 
 	return True
 
-def ansible_set_vars(inventory: FilePath, group: str, values):
+def ansible_set_vars(inventory: FilePath, group: str, values: Dict) -> bool:
 	"""
 	Set one or several values for a group
 
@@ -448,14 +448,14 @@ def ansible_set_vars(inventory: FilePath, group: str, values):
 
 	return True
 
-def ansible_set_groupvars(inventory: FilePath, groups, groupvars):
+def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: List[Tuple[str, str]]) -> bool:
 	"""
 	Set one or several vars for the specified groups
 
 		Parameters:
 			inventory (FilePath): The path to the inventory
 			groups (list[str]): The groups to set variables for
-			groupvars (dict): The values to set
+			groupvars (list[(str, str)]): The values to set
 		Returns:
 			(bool): True on success, False on failure
 	"""
@@ -495,14 +495,14 @@ def ansible_set_groupvars(inventory: FilePath, groups, groupvars):
 	return True
 
 # Set one or several vars for hosts in the group all
-def ansible_set_hostvars(inventory: FilePath, hosts, hostvars):
+def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[Tuple[str, str]]) -> bool:
 	"""
 	Set one or several vars for the specified hosts
 
 		Parameters:
 			inventory (FilePath): The path to the inventory
 			groups (list[str]): The hosts to set variables for
-			hostvars (dict): The values to set
+			hostvars (list[(str, str)]): The values to set
 		Returns:
 			(bool): True on success, False on failure
 	"""
@@ -539,14 +539,14 @@ def ansible_set_hostvars(inventory: FilePath, hosts, hostvars):
 	return True
 
 # Unset one or several vars in the specified groups
-def ansible_unset_groupvars(inventory: FilePath, groups, groupvars):
+def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: List[str]) -> bool:
 	"""
 	Unset one or several vars for the specified groups
 
 		Parameters:
 			inventory (FilePath): The path to the inventory
 			groups (list[str]): The groups to unset variables for
-			groupvars (dict): The values to set
+			groupvars (list[(str]): The values to unset
 		Returns:
 			(bool): True on success, False on failure
 	"""
@@ -591,14 +591,14 @@ def ansible_unset_groupvars(inventory: FilePath, groups, groupvars):
 	return True
 
 # Unset one or several vars for the specified host in the group all
-def ansible_unset_hostvars(inventory: FilePath, hosts, hostvars):
+def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[str]) -> bool:
 	"""
 	Unset one or several vars for the specified hosts
 
 		Parameters:
 			inventory (FilePath): The path to the inventory
 			groups (list[str]): The hosts to unset variables for
-			hostvars (dict): The values to set
+			hostvars (list[(str]): The values to unset
 		Returns:
 			(bool): True on success, False on failure
 	"""
@@ -637,7 +637,7 @@ def ansible_unset_hostvars(inventory: FilePath, hosts, hostvars):
 
 	return True
 
-def ansible_add_hosts(inventory: FilePath, hosts, group: str = "", skip_all: bool = False):
+def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", skip_all: bool = False) -> bool:
 	"""
 	Add hosts to the ansible inventory; if the inventory doesn't exist, create it
 
@@ -655,11 +655,12 @@ def ansible_add_hosts(inventory: FilePath, hosts, group: str = "", skip_all: boo
 	if hosts == []:
 		return True
 
+	d: Dict = {}
+
 	# The inventory doesn't exist; if the user specified skip_all
 	# we don't mind, otherwise we need to create it
 	if not Path(inventory).is_file():
 		if skip_all == True and group != "all":
-			d = {}
 			changed = True
 		else:
 			__ansible_create_inventory(inventory, overwrite = False)
@@ -678,8 +679,9 @@ def ansible_add_hosts(inventory: FilePath, hosts, group: str = "", skip_all: boo
 		if skip_all == False and group != "all":
 			if d["all"]["hosts"] is None:
 				d["all"]["hosts"] = {}
-			if host not in d["all"]["hosts"]: # type: ignore
-				d["all"]["hosts"][host] = "" # type: ignore
+			if host not in cast(List, d["all"]["hosts"]):
+				d = cast(Dict, d)
+				d["all"]["hosts"][host] = ""
 				changed = True
 
 		# If the group doesn't exist,
@@ -706,7 +708,7 @@ def ansible_add_hosts(inventory: FilePath, hosts, group: str = "", skip_all: boo
 	return True
 
 # Remove hosts from ansible groups
-def ansible_remove_hosts(inventory: FilePath, hosts, group: str = None):
+def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[str] = None) -> bool:
 	"""
 	Remove hosts from the inventory
 
@@ -746,7 +748,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts, group: str = None):
 
 	return True
 
-def ansible_remove_groups(inventory: FilePath, groups, force: bool = False):
+def ansible_remove_groups(inventory: FilePath, groups: List[str], force: bool = False) -> bool:
 	"""
 	Remove groups from the inventory
 
@@ -784,7 +786,7 @@ def ansible_remove_groups(inventory: FilePath, groups, force: bool = False):
 
 	return True
 
-def ansible_get_logs():
+def ansible_get_logs() -> List[Tuple[str, str, FilePath, datetime]]:
 	"""
 	Returns a list of all available logs
 
@@ -803,12 +805,12 @@ def ansible_get_logs():
 		if tmp is not None:
 			date = datetime.strptime(tmp[1], "%Y-%m-%d_%H:%M:%S.%f")
 			name = tmp[2]
-			logs.append((filename, name, str(path), date))
+			logs.append((filename, name, FilePath(str(path)), date))
 		else:
 			raise Exception(f"Could not parse {filename}")
 	return logs
 
-def ansible_extract_failure(retval: int, error_msg_lines, skipped: bool = False, unreachable: bool = False) -> str:
+def ansible_extract_failure(retval: int, error_msg_lines: List[str], skipped: bool = False, unreachable: bool = False) -> str:
 	"""
 	Given error information from an ansible run, return a suitable error message
 
@@ -849,7 +851,7 @@ def ansible_extract_failure(retval: int, error_msg_lines, skipped: bool = False,
 
 	return status
 
-def ansible_results_extract(event):
+def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 	"""
 	Extract a result from an Ansible play
 
@@ -942,7 +944,7 @@ def ansible_results_extract(event):
 
 	return __retval, d
 
-def ansible_results_add(event) -> int:
+def ansible_results_add(event: Dict) -> int:
 	"""
 	Add the result of an Ansible play to the ansible results
 
@@ -976,7 +978,7 @@ def ansible_delete_log(log: str) -> None:
 			secure_rm(FilePath(str(file)))
 		secure_rmdir(FilePath(str(logpath)))
 
-def ansible_write_log(start_date, playbook: str, events) -> None:
+def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -> None:
 	"""
 	Save an Ansible log entry to a file
 
@@ -1095,7 +1097,8 @@ def ansible_write_log(start_date, playbook: str, events) -> None:
 		secure_write_yaml(logentry_path, d, permissions = 0o600, sort_keys = False)
 
 # pylint: disable-next=too-many-arguments
-def ansible_print_task_results(task: str, msg_lines, stdout_lines, stderr_lines, retval: int, unreachable: bool = False, skipped: bool = False) -> None:
+def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: List[str], stderr_lines: List[str], retval: int,
+			       unreachable: bool = False, skipped: bool = False) -> None:
 	"""
 	Pretty-print the result of an Ansible task run
 
@@ -1143,7 +1146,7 @@ def ansible_print_task_results(task: str, msg_lines, stdout_lines, stderr_lines,
 			iktprint([("<no output>", "none")])
 		iktprint([("", "default")])
 
-def ansible_print_play_results(retval: int, __ansible_results) -> None:
+def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 	"""
 	Pretty-print the result of an Ansible play
 
@@ -1186,7 +1189,7 @@ def ansible_print_play_results(retval: int, __ansible_results) -> None:
 				if unreachable == True:
 					break
 
-def ansible_run_playbook(playbook: FilePath, inventory = None):
+def ansible_run_playbook(playbook: FilePath, inventory: Dict = None) -> Tuple[int, Dict]:
 	"""
 	Run a playbook
 
@@ -1204,12 +1207,17 @@ def ansible_run_playbook(playbook: FilePath, inventory = None):
 	# Flush previous results
 	ansible_results = {}
 
+	inventories: Union[Dict, List[FilePath]] = []
+
 	if inventory is None:
-		inventory = [ANSIBLE_INVENTORY]
+		inventories = [ANSIBLE_INVENTORY]
+	else:
+		inventories = inventory
 
 	start_date = datetime.now()
 
-	runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventory, forks = forks)
+	runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventories, forks = forks)
+
 	retval = 0
 	if runner is not None:
 		for event in runner.events:
@@ -1220,7 +1228,7 @@ def ansible_run_playbook(playbook: FilePath, inventory = None):
 
 	return retval, ansible_results
 
-def ansible_run_playbook_async(playbook: FilePath, inventory):
+def ansible_run_playbook_async(playbook: FilePath, inventory: Dict) -> ansible_runner.runner.Runner:
 	"""
 	Run a playbook asynchronously
 
@@ -1239,7 +1247,7 @@ def ansible_run_playbook_async(playbook: FilePath, inventory):
 
 	return runner
 
-def ansible_run_playbook_on_selection(playbook: FilePath, selection, values = None):
+def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], values: Dict = None) -> Tuple[int, Dict]:
 	"""
 	Run a playbook on selected nodes
 
@@ -1287,7 +1295,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection, values = No
 
 	return ansible_run_playbook(playbook, d)
 
-def ansible_run_playbook_on_selection_async(playbook: FilePath, selection, values = None):
+def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[str], values: Dict = None) -> ansible_runner.runner.Runner:
 	"""
 	Run a playbook on selected nodes
 
@@ -1335,7 +1343,7 @@ def ansible_run_playbook_on_selection_async(playbook: FilePath, selection, value
 
 	return ansible_run_playbook_async(playbook, d)
 
-def ansible_ping(selection):
+def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 	"""
 	Ping all selected hosts
 
@@ -1353,7 +1361,7 @@ def ansible_ping(selection):
 	if selection is None:
 		selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
 
-	_retval, __ansible_results = ansible_run_playbook_on_selection(f"{ANSIBLE_PLAYBOOK_DIR}/ping.yaml", selection = selection)
+	_retval, __ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection)
 
 	for host in __ansible_results:
 		for task in deep_get(__ansible_results, DictPath(host), []):
@@ -1367,29 +1375,29 @@ def ansible_ping(selection):
 
 	return host_status
 
-def ansible_ping_async(selection):
+def ansible_ping_async(selection: List[str]) -> ansible_runner.runner.Runner:
 	"""
 	Ping all selected hosts asynchronously
 
 		Parameters:
 			selection (list[str]): A list of hostnames
 		Returns:
-			list[(hostname, status)]: The status of the pinged hosts
+			The result from ansible_run_playbook_async()
 	"""
 
 	if selection is None:
 		selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
 
-	return ansible_run_playbook_on_selection_async(f"{ANSIBLE_PLAYBOOK_DIR}/ping.yaml", selection = selection)
+	return ansible_run_playbook_on_selection_async(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection)
 
-def __ansible_run_async_finished_cb(kwargs):
-	# pylint: disable=global-variable-not-assigned
+def __ansible_run_async_finished_cb(runner_obj: ansible_runner.runner.Runner, **kwargs: Dict):
+	# pylint: disable-next=global-variable-not-assigned
 	global finished_runs
-	finished_runs.add(kwargs)
+	finished_runs.add(runner_obj)
 
-finished_runs = set() # type: ignore
+finished_runs: Set[ansible_runner.runner.Runner] = set()
 
-def ansible_async_get_data(async_cookie):
+def ansible_async_get_data(async_cookie: ansible_runner.runner.Runner) -> Optional[Dict]:
 	"""
 	Get the result from an asynchronous ansible play
 
@@ -1404,7 +1412,7 @@ def ansible_async_get_data(async_cookie):
 
 	finished_runs.remove(async_cookie)
 
-	async_results = {}
+	async_results: Dict = {}
 	data = None
 
 	if async_cookie is not None:

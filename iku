@@ -56,7 +56,7 @@ from iktio import secure_read_string, secure_read_yaml, secure_which
 from logparser import logparser, logparser_initialised, LogLevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import clamp, deep_get, deep_get_with_fallback, deep_set, disksize_to_human, execute_command, get_package_versions, iktconfig, make_set_expression_list, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple, read_iktconfig
+from iktlib import clamp, deep_get, deep_get_with_fallback, deep_set, disksize_to_human, execute_command, get_package_versions, make_set_expression_list, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple, read_iktconfig
 from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, themearray_wrap_line, themearray_to_string, themearray_len
 
 import datagetter
@@ -141,12 +141,12 @@ def gather_cluster_info():
 	if len(control_plane_k8s_version) == 0:
 		sys.exit(f"Failed to get kubeadm version from control plane “{control_plane_name}“; aborting.")
 
-	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), None)
-	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), None)
-	no_proxy = deep_get(iktconfig, DictPath("Network#no_proxy"), None)
-	insecure_registries = deep_get(iktconfig, DictPath("Docker#insecure_registries"), [])
-	registry_mirrors = deep_get(iktconfig, DictPath("Containerd#registry_mirrors"), [])
-	packages = deep_get(iktconfig, DictPath("Packages"), {})
+	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), None)
+	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), None)
+	no_proxy = deep_get(iktlib.iktconfig, DictPath("Network#no_proxy"), None)
+	insecure_registries = deep_get(iktlib.iktconfig, DictPath("Docker#insecure_registries"), [])
+	registry_mirrors = deep_get(iktlib.iktconfig, DictPath("Containerd#registry_mirrors"), [])
+	packages = deep_get(iktlib.iktconfig, DictPath("Packages"), {})
 
 	values = {
 		"control_plane_ip": control_plane_ip,
@@ -823,7 +823,7 @@ latest_info = None
 
 # pylint: disable-next=too-many-arguments
 def process_value(field_name, value, vtype, view, field_index, action, formatter, replace_quotes, _regex):
-	override_kind = deep_get_with_fallback(iktconfig, [
+	override_kind = deep_get_with_fallback(iktlib.iktconfig, [
 				DictPath(f"{view}#kind_format_{field_index}"),
 				DictPath(f"{view}#kind_format"),
 				DictPath(f"Global#kind_format_{field_index}"),
@@ -917,7 +917,7 @@ def process_value(field_name, value, vtype, view, field_index, action, formatter
 		if type(value) not in (list, tuple):
 			raise Exception(f"Field {field_name}: type({value}) is {vtype}; for type {vtype} pathtype must be a multi-element type")
 		_values = []
-		override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", "Global#kind_format"], "mixed")
+		override_kind = deep_get_with_fallback(iktlib.iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", "Global#kind_format"], "mixed")
 		for i in range(0, len(value)):
 			if i < len(vtype):
 				_vtype = vtype[i]
@@ -1678,7 +1678,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
 
 						if vtype == "api_group":
-							override_kind = deep_get_with_fallback(iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", "Global#kind_format"], "mixed")
+							override_kind = deep_get_with_fallback(iktlib.iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", "Global#kind_format"], "mixed")
 							if override_kind == "skip" or override_kind == "mixed" and "." not in tmp:
 								tmp = ""
 							vtype = "kind"
@@ -1915,9 +1915,9 @@ def listgetter_ansible_volumes(obj, **kwargs):
 			continue
 		device = os.path.basename(device)
 
-		if check_matchlist(mountpoint, deep_get(iktconfig, DictPath("Inventory#mountpoint_skiplist"), ["/boot/efi", "/var/lib/origin/*", "/run/*", "*@docker*"])):
+		if check_matchlist(mountpoint, deep_get(iktlib.iktconfig, DictPath("Inventory#mountpoint_skiplist"), ["/boot/efi", "/var/lib/origin/*", "/run/*", "*@docker*"])):
 			continue
-		if check_matchlist(device, deep_get(iktconfig, DictPath("Inventory#device_skiplist"), ["loop*"])):
+		if check_matchlist(device, deep_get(iktlib.iktconfig, DictPath("Inventory#device_skiplist"), ["loop*"])):
 			continue
 
 		model = get_device_model(obj, device)
@@ -1947,25 +1947,24 @@ def get_task_log(obj):
 		return field
 
 	if len(stderr_lines) > 0:
-		field.append([("stderr:", curses.A_BOLD | curses.A_UNDERLINE)])
+		field.append([("stderr:", ("main", "paragraphheader"))])
 		for line in stderr_lines:
-			field.append([(f"{line}", color_status_group(StatusGroup.NOT_OK, False))])
+			field.append([(f"{line}", color_status_group(StatusGroup.NOT_OK))])
 
 	if len(stdout_lines) > 0:
 		if len(field) > 0:
-			field.append([("", curses.A_NORMAL)])
-			field.append([("", curses.A_NORMAL)])
-		field.append([("stdout:", curses.A_BOLD | curses.A_UNDERLINE)])
+			field.append([("", ("main", "default"))])
+		field.append([("stdout:", ("main", "paragraphheader"))])
 		for line in stdout_lines:
-			field.append([(f"{line}", curses.A_NORMAL)])
+			field.append([(f"{line}", ("main", "default"))])
 
 	if len(msg_lines) > 0:
 		if len(field) > 0:
-			field.append([("", curses.A_NORMAL)])
-			field.append([("", curses.A_NORMAL)])
-		field.append([("msg:", curses.A_BOLD | curses.A_UNDERLINE)])
+			field.append([("", ("main", "default"))])
+			field.append([("", ("main", "default"))])
+		field.append([("msg:", ("main", "paragraphheader"))])
 		for line in msg_lines:
-			field.append([(f"{line}", color_status_group(StatusGroup.OK, False))])
+			field.append([(f"{line}", color_status_group(StatusGroup.OK))])
 
 	return field
 
@@ -2562,7 +2561,7 @@ def get_subsets_info(**kwargs):
 		return []
 
 	# Policy for subsets expansion
-	expand_subsets = deep_get(iktconfig, DictPath("Endpoints#expand_subsets"), "None")
+	expand_subsets = deep_get(iktlib.iktconfig, DictPath("Endpoints#expand_subsets"), "None")
 
 	for subset in deep_get(obj, DictPath("subsets"), []):
 		ready_addresses = []
@@ -3086,7 +3085,7 @@ def get_pod_resource_list(obj, **kwargs):
 			"age": age,
 		})
 
-	if "node" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+	if "node" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 		kind = ("Node", "")
 		rtype = resource_kind_to_rtype(kind)
 		name = deep_get(obj, DictPath("spec#nodeName"))
@@ -3127,15 +3126,15 @@ def get_pod_resource_list(obj, **kwargs):
 		owr_name = deep_get(owr, DictPath("name"), "")
 		is_controller = deep_get(owr, DictPath("controller"), False)
 		if is_controller == True:
-			if "controller" in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+			if "controller" in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 				continue
 			rtype = "[controller]"
 		elif owr_kind == ("CronJob", "batch"):
-			if "cronjob" in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+			if "cronjob" in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 				continue
 			rtype = "[cronjob]"
 		else:
-			if "owner_reference" in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+			if "owner_reference" in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 				continue
 			rtype = "[owner_reference]"
 
@@ -3176,7 +3175,7 @@ def get_pod_resource_list(obj, **kwargs):
 			"age": -1,
 		})
 
-	if "persistent_volume_claim" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+	if "persistent_volume_claim" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 		for volume in deep_get(obj, DictPath("spec#volumes"), []):
 			if deep_get(volume, DictPath("persistentVolumeClaim")) is None:
 				continue
@@ -3208,7 +3207,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "service_account" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("spec#serviceAccountName")) is not None:
+	if "service_account" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("spec#serviceAccountName")) is not None:
 		kind = ("ServiceAccount", "")
 		rtype = resource_kind_to_rtype(kind)
 
@@ -3232,7 +3231,7 @@ def get_pod_resource_list(obj, **kwargs):
 	for vol in deep_get(obj, DictPath("spec#volumes"), []):
 		status = ""
 
-		if deep_get(vol, DictPath("secret")) is not None and "secret" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+		if deep_get(vol, DictPath("secret")) is not None and "secret" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 			kind = ("Secret", "")
 			rtype = resource_kind_to_rtype(kind)
 			secret_name = deep_get(vol, DictPath("secret#secretName"))
@@ -3258,7 +3257,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-		if deep_get(vol, DictPath("configMap")) is not None and "config_map" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+		if deep_get(vol, DictPath("configMap")) is not None and "config_map" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 			kind = ("ConfigMap", "")
 			rtype = resource_kind_to_rtype(kind)
 			cm_name = deep_get(vol, DictPath("configMap#name"))
@@ -3288,7 +3287,7 @@ def get_pod_resource_list(obj, **kwargs):
 			})
 
 	for vol in deep_get(obj, DictPath("spec#imagePullSecrets"), []):
-		if "secret" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+		if "secret" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 			kind = ("Secret", "")
 			rtype = "[image_pull_secret]"
 			secret_name = deep_get(vol, DictPath("name"))
@@ -3308,7 +3307,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "event" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+	if "event" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 		#kind = ("Event", "events.k8s.io")
 		kind = ("Event", "")
 		rtype = resource_kind_to_rtype(kind)
@@ -3342,7 +3341,7 @@ def get_pod_resource_list(obj, **kwargs):
 					"age": seen,
 				})
 
-	if "pod_disruption_budget" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+	if "pod_disruption_budget" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 		# XXX: Are there are other means of specifying what pod to apply the PDB to than this?
 		if "app" in deep_get(obj, DictPath("metadata#labels"), {}):
 			kind = ("PodDisruptionBudget", "policy")
@@ -3367,7 +3366,7 @@ def get_pod_resource_list(obj, **kwargs):
 					"age": -1,
 				})
 
-	if "pod_metrics" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+	if "pod_metrics" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 		kind = ("PodMetrics", "metrics.k8s.io")
 		podmetrics = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
 		if podmetrics is not None:
@@ -3388,7 +3387,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "antrea_agent" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-agent":
+	if "antrea_agent" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-agent":
 		# OK, this pod is an antrea-agent, so we should look for one that matches it
 		kind = ("AntreaAgentInfo", "crd.antrea.io")
 		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
@@ -3422,7 +3421,7 @@ def get_pod_resource_list(obj, **kwargs):
 				})
 				break
 
-	if "antrea_controller" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-controller":
+	if "antrea_controller" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-controller":
 		# OK, this pod is an antrea-agent, so we should look for one that matches it
 		kind = ("AntreaControllerInfo", "crd.antrea.io")
 		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
@@ -3455,7 +3454,7 @@ def get_pod_resource_list(obj, **kwargs):
 				})
 				break
 
-	if "cilium_endpoint" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+	if "cilium_endpoint" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 		# Check if there's a matching cilium endpoint
 		kind = ("CiliumEndpoint", "cilium.io")
 		ref = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
@@ -3476,7 +3475,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "service" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+	if "service" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 		# Find service(s) that has a selector that points to this pod
 		kind = ("Service", "")
 		rtype = resource_kind_to_rtype(kind)
@@ -3505,7 +3504,7 @@ def get_pod_resource_list(obj, **kwargs):
 					"age": -1,
 				})
 
-	if "runtimeclass" not in deep_get(iktconfig, DictPath("Pods#filter_resources"), []):
+	if "runtimeclass" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
 		kind = ("RuntimeClass", "node.k8s.io")
 		name = deep_get(obj, DictPath("spec#runtimeClassName"))
 		ref = kh.get_ref_by_kind_name_namespace(kind, name, "")
@@ -3559,7 +3558,7 @@ def get_inventory_list(**kwargs):
 		inventory_dict["all"]["hosts"][host]["status"] = "UNKNOWN"
 
 	# Do we want to ping the hosts?
-	ping_hosts = deep_get(iktconfig, DictPath("Inventory#ping_hosts"), "Always")
+	ping_hosts = deep_get(iktlib.iktconfig, DictPath("Inventory#ping_hosts"), "Always")
 
 	async_cookie = None
 
@@ -5928,7 +5927,7 @@ def clusteroverviewloop(stdscr, view):
 			]
 			selectednodestatusarray = [
 				("Status: ", ("main", "infoheader")),
-				(f"{nodeinfo[selected_node].status}".ljust(heatmap_width), color_status_group(nodeinfo[selected_node].status_group, selected = False)),
+				(f"{nodeinfo[selected_node].status}".ljust(heatmap_width), color_status_group(nodeinfo[selected_node].status_group)),
 			]
 			selectednodetaintsarray = [
 				("Taints: ", ("main", "infoheader")),
@@ -5966,7 +5965,7 @@ def clusteroverviewloop(stdscr, view):
 			]
 			selectedpodstatusarray = [
 				("Status: ", ("main", "infoheader")),
-				(f"{podinfo[selected_pod].status}".ljust(heatmap_width), color_status_group(podinfo[selected_pod].status_group, selected = False)),
+				(f"{podinfo[selected_pod].status}".ljust(heatmap_width), color_status_group(podinfo[selected_pod].status_group)),
 			]
 			uip.addthemearray(listpad, selectedpodarray, y = 1, x = pod_heatmap_xpos + 1)
 			uip.addthemearray(listpad, selectedpodnamespacearray, y = 2, x = pod_heatmap_xpos + 1)
@@ -6330,9 +6329,9 @@ def cniloop(stdscr, view):
 
 			if len(_cnis) == 0:
 				cni = "<unknown>"
-				cnistr = [(f"{cni}", color_status_group(StatusGroup.UNKNOWN, False))]
+				cnistr = [(f"{cni}", color_status_group(StatusGroup.UNKNOWN))]
 				cni_version = "N/A"
-				cni_version_str = [(f"{cni_version}", color_status_group(StatusGroup.UNKNOWN, False))]
+				cni_version_str = [(f"{cni_version}", color_status_group(StatusGroup.UNKNOWN))]
 				cni_status = ("N/A", StatusGroup.UNKNOWN)
 			elif len(_cnis) == 1:
 				cni = _cnis[0][0]
@@ -6349,10 +6348,10 @@ def cniloop(stdscr, view):
 						cnistr.append(("separators", "list"))
 				cnistr.append((")", ("types", "generic")))
 				cni_version = "N/A"
-				cni_version_str = [(f"{cni_version[0]}", color_status_group(StatusGroup.UNKNOWN, False))]
+				cni_version_str = [(f"{cni_version[0]}", color_status_group(StatusGroup.UNKNOWN))]
 				cni_status = ("N/A", StatusGroup.UNKNOWN)
 
-			cni_status_str = [(f"{cni_status[0]}", color_status_group(cni_status[1], False))]
+			cni_status_str = [(f"{cni_status[0]}", color_status_group(cni_status[1]))]
 
 			versionarray = [
 				("Version: ", ("main", "infoheader")),
@@ -6735,7 +6734,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			}
 		}
 
-	if deep_get(iktconfig, DictPath("Internal#sanity_check_views"), False) == True:
+	if deep_get(iktlib.iktconfig, DictPath("Internal#sanity_check_views"), False) == True:
 		sanity = True
 		_shortcuts = {}
 		for shortcut in shortcuts:
@@ -7273,7 +7272,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
 						containername = deep_get(w_ref, DictPath("name"), "")
 					if w_command == [ "<ephemeral>" ]:
-						ephemeral_image = deep_get(iktconfig, DictPath("Debug#ephemeral_image"), "busybox")
+						ephemeral_image = deep_get(iktlib.iktconfig, DictPath("Debug#ephemeral_image"), "busybox")
 						msg = [("Creating ephemeral ", "action"), (ephemeral_image, "programname"), (" container sharing process namespace with ", "action"), (f"{containername}", "path")]
 					elif w_command == [ "<dnsutils>" ]:
 						node_name = deep_get(obj, DictPath("metadata#name"))
@@ -7446,19 +7445,19 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 	# Number of lines of log to show by default
 	if override_tail_lines is None:
-		override_tail_lines = deep_get(iktconfig, DictPath("Pods#logsize"), default_tail_lines)
+		override_tail_lines = deep_get(iktlib.iktconfig, DictPath("Pods#logsize"), default_tail_lines)
 
 	tail_lines = override_tail_lines
 
 	uip.continuous_log = False
-	merge_repeats = deep_get(iktconfig, DictPath("Pods#merge_repeated_messages"), False)
+	merge_repeats = deep_get(iktlib.iktconfig, DictPath("Pods#merge_repeated_messages"), False)
 	saved_merge_repeats = merge_repeats
 	raw_logs = False
-	tmp_log_level = deep_get(iktconfig, DictPath("Pods#loglevel"), "Info")
+	tmp_log_level = deep_get(iktlib.iktconfig, DictPath("Pods#loglevel"), "Info")
 	log_level = name_to_loglevel(tmp_log_level)
-	show_borders = deep_get(iktconfig, DictPath("Pods#show_borders"), True)
+	show_borders = deep_get(iktlib.iktconfig, DictPath("Pods#show_borders"), True)
 	uip.toggle_borders(show_borders)
-	show_timestamps = deep_get(iktconfig, DictPath("Pods#show_timestamps"), True)
+	show_timestamps = deep_get(iktlib.iktconfig, DictPath("Pods#show_timestamps"), True)
 	uip.toggle_timestamps(show_timestamps)
 	# Currently not working properly
 	compact_timestamps = False
@@ -7468,7 +7467,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 	highlight_new_dates = False
 	wrap_lines = False
 	# Show severity as text
-	severity_prefix = deep_get(iktconfig, DictPath("Pods#severity_prefix"), [])
+	severity_prefix = deep_get(iktlib.iktconfig, DictPath("Pods#severity_prefix"), [])
 	# Backwards compatibility
 	if type(severity_prefix) is bool:
 		if severity_prefix == False:
@@ -7478,12 +7477,12 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 	# This decides whether or not compound log messages,
 	# such as Python dicts and JSON, should be expanded
-	fold_msg = deep_get(iktconfig, DictPath("Pods#fold_msg"), True)
+	fold_msg = deep_get(iktlib.iktconfig, DictPath("Pods#fold_msg"), True)
 	saved_fold_msg = fold_msg
 
 	# This decides whether or not to show the facility,
 	# and if so how it is to be displayed
-	show_facility = deep_get(iktconfig, DictPath("Pods#show_facility"), "Full")
+	show_facility = deep_get(iktlib.iktconfig, DictPath("Pods#show_facility"), "Full")
 	override_parser = None
 	_parser = None
 
@@ -7776,7 +7775,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				]
 				statusarray = [
 					("Status: ", ("main", "infoheader")),
-					(f"{status}", color_status_group(status_group, False))
+					(f"{status}", color_status_group(status_group))
 				]
 				if message != "":
 					statusarray.append((f" ({message})", ("types", "generic")))
@@ -8440,11 +8439,11 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 		obj_namespace = deep_get(obj, DictPath("metadata#namespace"))
 		# This is a request to create a new ephemeral container
 		if command == ["<ephemeral>"]:
-			ephemeral_image = deep_get(iktconfig, DictPath("Debug#ephemeral_image"), "busybox")
+			ephemeral_image = deep_get(iktlib.iktconfig, DictPath("Debug#ephemeral_image"), "busybox")
 			args = [kubectl_path, "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image]
 			_result = subprocess.run(args, check = False)
 		elif command == ["<dnsutils>"]:
-			dnsutils_image = deep_get(iktconfig, DictPath("Debug#network_image"), "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
+			dnsutils_image = deep_get(iktlib.iktconfig, DictPath("Debug#network_image"), "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
 			args = [kubectl_path, "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
 			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 			if result.returncode != 0:
@@ -8727,8 +8726,8 @@ def executecommand_multiple(stdscr, msg, command, items, waitforkeypress):
 	stdscr.refresh()
 
 def __run_playbook(playbookpath, nodes, values = None):
-	http_proxy = deep_get(iktconfig, DictPath("Network#http_proxy"), "")
-	https_proxy = deep_get(iktconfig, DictPath("Network#https_proxy"), "")
+	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
+	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
 	use_proxy = "no"
 	if (http_proxy is not None and len(http_proxy) > 0) or (https_proxy is not None and len(https_proxy) > 0):
 		use_proxy = "yes"
@@ -9174,7 +9173,7 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 
-	indent = deep_get(iktconfig, DictPath("Global#indent"), 4)
+	indent = deep_get(iktlib.iktconfig, DictPath("Global#indent"), 4)
 
 	diff = []
 
@@ -9521,7 +9520,7 @@ def ssh_to_host(stdscr, **kwargs):
 	# thus we get these in ascending over of priority
 	# if no user is specified we assume that we're to use the user we're running as;
 	# but really, ansible
-	sshuser = deep_get(iktconfig, DictPath("Ansible#ansible_user"))
+	sshuser = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_user"))
 	sshuser = deep_get(inventory, DictPath("all#vars#ansible_user"), sshuser)
 	sshuser = deep_get(inventory, DictPath(f"all#hosts#{host}#ansible_user"), sshuser)
 
@@ -9756,7 +9755,7 @@ def __populate_playbooklist(path, action_list):
 
 # pylint: disable-next=too-many-arguments
 def populate_playbooklist(context, actions, action_list, control_plane_selected, single_item = False, cluster_available = True):
-	local_playbooks = deep_get(iktconfig, DictPath("Ansible#local_playbooks"), [])
+	local_playbooks = deep_get(iktlib.iktconfig, DictPath("Ansible#local_playbooks"), [])
 	for playbook_path in local_playbooks:
 		# Substitute {HOME}/ for {HOMEDIR}
 		if playbook_path.startswith("{HOME}/"):
@@ -9840,9 +9839,9 @@ def format_selection_list(uip, refresh_apis = False):
 	if force_refresh_apis == True:
 		refresh_apis = True
 
-	hide_unavailable = deep_get_with_fallback(iktconfig, [DictPath("Selector#hide_unavailable_apis"), DictPath("Global#hide_unavailable_apis")], True)
-	categorise = deep_get(iktconfig, DictPath("Selector#categorise"), True)
-	sortcolumn = deep_get(iktconfig, DictPath("Selector#sortcolumn"), "family")
+	hide_unavailable = deep_get_with_fallback(iktlib.iktconfig, [DictPath("Selector#hide_unavailable_apis"), DictPath("Global#hide_unavailable_apis")], True)
+	categorise = deep_get(iktlib.iktconfig, DictPath("Selector#categorise"), True)
+	sortcolumn = deep_get(iktlib.iktconfig, DictPath("Selector#sortcolumn"), "family")
 
 	if sortcolumn == "family":
 		if categorise == True:
@@ -9960,10 +9959,10 @@ def selectwindow(uip, refresh_apis = False):
 		if tmpselection is not None:
 			if type(tmpselection) == int and tmpselection < 0:
 				if tmpselection == -curses.KEY_F6:
-					if deep_get(iktconfig, DictPath("Selector")) is None:
-						deep_set(iktconfig, DictPath("Selector"), {})
-					categorise = not deep_get(iktconfig, DictPath("Selector#categorise"), True)
-					deep_set(iktconfig, DictPath("Selector#categorise"), categorise, create_path = True)
+					if deep_get(iktlib.iktconfig, DictPath("Selector")) is None:
+						deep_set(iktlib.iktconfig, DictPath("Selector"), {})
+					categorise = not deep_get(iktlib.iktconfig, DictPath("Selector#categorise"), True)
+					deep_set(iktlib.iktconfig, DictPath("Selector#categorise"), categorise, create_path = True)
 					items = format_selection_list(uip, refresh_apis)
 					uip.refresh_all()
 					continue
@@ -10242,7 +10241,7 @@ def map_key(view_file, shortcut, activatedfun, key, modifier):
 		if len(modifier) > 0:
 			help_key = "[Enter]"
 			shortcut_key = [curses.KEY_ENTER, 10, 13]
-		if len(modifier) > 0 or activatedfun == None:
+		if len(modifier) > 0 or activatedfun is None:
 			help_key = "[Enter]"
 			shortcut_key = [curses.KEY_ENTER, 10, 13]
 		else:
@@ -10276,7 +10275,7 @@ def populate_views(force_refresh = False):
 	# Get a full list of views from all view directories
 	# Start by adding files from the views directory
 	view_dirs = []
-	view_dirs += deep_get(iktconfig, DictPath("General#local_views"), [])
+	view_dirs += deep_get(iktlib.iktconfig, DictPath("General#local_views"), [])
 
 	views = {**views_special}
 
@@ -10758,7 +10757,7 @@ def setupui(stdscr):
 	# Disable CTRL+C, CTRL+Z, etc.
 	curses.raw()
 	# Enable mouse support
-	enable_mouse = deep_get(iktconfig, DictPath("Mouse#enable"), True)
+	enable_mouse = deep_get(iktlib.iktconfig, DictPath("Mouse#enable"), True)
 	if enable_mouse == True:
 		curses_helper.set_mousemask(-1)
 	else:
@@ -10897,7 +10896,7 @@ def customise_listviews():
 			continue
 
 		# OK, we've now (hopefully) skipped all views that don't have a list view
-		fields = deep_get(iktconfig, DictPath(f"{view}#fields"), [])
+		fields = deep_get(iktlib.iktconfig, DictPath(f"{view}#fields"), [])
 		if len(fields) == 0:
 			continue
 
@@ -10919,13 +10918,13 @@ def customise_listviews():
 		viewref["fields_custom"] = list(custom_fields)
 
 		# Next up it's time for the field denylist
-		if "denylist" in deep_get(iktconfig, DictPath(f"{view}"), {}):
-			denylist = deep_get(iktconfig, DictPath(f"{view}#fields"), [])
+		if "denylist" in deep_get(iktlib.iktconfig, DictPath(f"{view}"), {}):
+			denylist = deep_get(iktlib.iktconfig, DictPath(f"{view}#fields"), [])
 			viewref["field_denylist"] = denylist
 
 	# As a special case, the configuration option "Inventory#ping_hosts"
 	# modifies the denylist, but *only* if the field denylist is unset
-	ping_hosts = deep_get(iktconfig, DictPath("Inventory#ping_hosts"), "Lazy")
+	ping_hosts = deep_get(iktlib.iktconfig, DictPath("Inventory#ping_hosts"), "Lazy")
 	inv_name = "Inventory"
 	if inv_name not in views:
 		inv_name = "*Inventory"
@@ -10953,7 +10952,7 @@ def main():
 
 	defaultthemefile = DEFAULT_THEME_FILE
 
-	themefile = deep_get(iktconfig, DictPath("Global#theme"))
+	themefile = deep_get(iktlib.iktconfig, DictPath("Global#theme"))
 	if themefile is None or len(themefile) == 0:
 		themefile = defaultthemefile
 	elif themefile.startswith("{HOME}/"):
@@ -10963,21 +10962,21 @@ def main():
 	read_theme(themefile, defaultthemefile)
 	init_iktprint(themefile)
 
-	tmpdefaultview = deep_get(iktconfig, DictPath("Global#defaultview"), "")
+	tmpdefaultview = deep_get(iktlib.iktconfig, DictPath("Global#defaultview"), "")
 	curses_configuration.abouttext = helptexts.about
-	curses_configuration.mousescroll_enable = deep_get(iktconfig, DictPath("Mouse#enablescroll"), False)
+	curses_configuration.mousescroll_enable = deep_get(iktlib.iktconfig, DictPath("Mouse#enablescroll"), False)
 	# These values are ignored when scrolling is disabled, so the defaults don't matter
-	curses_configuration.mousescroll_up = deep_get(iktconfig, DictPath("Mouse#scrollup"), 0)
-	curses_configuration.mousescroll_down = deep_get(iktconfig, DictPath("Mouse#scrolldown"), 0)
+	curses_configuration.mousescroll_up = deep_get(iktlib.iktconfig, DictPath("Mouse#scrollup"), 0)
+	curses_configuration.mousescroll_down = deep_get(iktlib.iktconfig, DictPath("Mouse#scrolldown"), 0)
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktconfig, DictPath("Ansible#forks"), 5)
-	ansible_user = deep_get(iktconfig, DictPath("Ansible#ansible_user"))
+	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 5)
+	ansible_user = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_user"))
 	if ansible_user is None or len(ansible_user) == 0:
 		ansible_user = getuser()
 	ansible_configuration["ansible_user"] = ansible_user
-	ansible_configuration["ansible_password"] = deep_get(iktconfig, DictPath("Ansible#ansible_password"))
-	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
-	ansible_configuration["save_logs"] = deep_get(iktconfig, DictPath("Ansible#save_logs"), True)
+	ansible_configuration["ansible_password"] = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_password"))
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktlib.iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
+	ansible_configuration["save_logs"] = deep_get(iktlib.iktconfig, DictPath("Ansible#save_logs"), True)
 
 	y = 1
 

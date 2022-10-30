@@ -28,15 +28,15 @@ import iktio
 
 from commandparser import parse_commandline
 
-from ansible_helper import ansible_configuration, ansible_get_inventory_pretty, ansible_get_groups
+from ansible_helper import ansible_configuration, ansible_get_inventory_pretty, ansible_get_inventory_dict, ansible_get_groups
 from ansible_helper import ansible_get_groups_by_host, ansible_get_hosts_by_group, ansible_add_hosts
 from ansible_helper import ansible_remove_hosts, ansible_remove_groups, ansible_set_vars
 from ansible_helper import ansible_set_hostvars, ansible_set_groupvars, ansible_unset_hostvars
 from ansible_helper import ansible_unset_groupvars, ansible_create_groups, ansible_ping
 from ansible_helper import ANSIBLE_INVENTORY
 
-import iktlib # pylint: disable=unused-import
-from iktlib import deep_get, iktconfig, read_iktconfig
+import iktlib
+from iktlib import deep_get, read_iktconfig
 
 from iktprint import iktprint
 
@@ -505,7 +505,7 @@ def rebuild_inventory(options, args) -> int:
 		tmplines = tmp.splitlines()
 		pubkey = tmplines[0]
 
-	if pubkey == None or len(pubkey) == 0:
+	if pubkey is None or len(pubkey) == 0:
 		iktprint([("Error", "error"), (": Failed to read ", "default"), (f"{HOMEDIR}/.ssh/id_ecdsa.pub", "path"), ("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
@@ -541,6 +541,9 @@ def remove_hosts(options, args) -> int:
 	if len(args) > 1:
 		groups = args[1].split(",")
 
+		# This returns a YAML tree with the inventory of nodes
+		inventory_dict = ansible_get_inventory_dict()
+
 		# If the hosts are only members of "all"
 		# (or aren't in the inventory at all),
 		# it's OK to remove them without --force.
@@ -549,7 +552,7 @@ def remove_hosts(options, args) -> int:
 		# this means that if len(hostgroups) > 1
 		# we have auxilliary groups and --force is needed.
 		for host in hosts:
-			hostgroups = ansible_get_groups_by_host(inventory, host)
+			hostgroups = ansible_get_groups_by_host(inventory_dict, host)
 			if len(hostgroups) > 1:
 				forceneeded = True
 				hostgroups.remove("all")
@@ -756,7 +759,7 @@ def ping(options, args):
 
 	return 0
 
-commandline = {
+COMMANDLINE = {
 	"Add Groups": {
 		"command": ["add-group", "add-groups"],
 		"values": [("GROUP", "argument"), (",", "separator"), ("...", "argument")],
@@ -969,18 +972,18 @@ def main() -> int:
 	# Then initialise the configuration file
 	read_iktconfig()
 
-	command, options, args = parse_commandline(about.INVENTORY_PROGRAM_NAME, about.INVENTORY_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS,
-						   sys.argv, commandline, default_command = "inventory", theme = DEFAULT_THEME_FILE)
+	command, options, args = parse_commandline(about.INVENTORY_PROGRAM_NAME, about.INVENTORY_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
+						   COMMANDLINE, default_command = "inventory", theme = DEFAULT_THEME_FILE)
 
 	# iktinv was called without any parameters; assuming inventory
 	if command is None:
 		command = inventory
 
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktconfig, DictPath("Ansible#forks"), 5)
-	ansible_configuration["ansible_user"] = deep_get(iktconfig, DictPath("Ansible#ansible_user"))
-	ansible_configuration["ansible_password"] = deep_get(iktconfig, DictPath("Ansible#ansible_password"))
-	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
+	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 5)
+	ansible_configuration["ansible_user"] = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_user"))
+	ansible_configuration["ansible_password"] = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_password"))
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktlib.iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
 
 	return command(options, args)
 

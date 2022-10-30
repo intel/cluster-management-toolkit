@@ -6,6 +6,7 @@ Get items from lists for use in windowwidget
 
 import re
 import sys
+from typing import Any, cast, Dict, List, Optional, Tuple
 
 try:
 	from natsort import natsorted
@@ -18,6 +19,8 @@ from ikttypes import DictPath
 
 import iktlib
 from iktlib import deep_get, deep_get_with_fallback, disksize_to_human, get_package_versions, get_since, make_set_expression, split_msg, timestamp_to_datetime
+
+import kubernetes_helper
 
 KNOWN_PV_TYPES = {
 	"awsElasticBlockStore": {
@@ -266,7 +269,18 @@ KNOWN_PV_TYPES = {
 }
 
 # pylint: disable-next=unused-argument
-def get_allowed_ips(kh, obj, **kwargs):
+def get_allowed_ips(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Dict]:
+	"""
+	Get a list of allowed IP-addresses
+
+		Parameters:
+			kh (KubernetesHelper): Unused
+			obj (dict): The object to get data from
+			kwargs (dict): Unused
+		Returns:
+			list[dict]: A list of allowed IPs
+	"""
+
 	allowed_ips = []
 
 	# Safe
@@ -292,7 +306,18 @@ def get_allowed_ips(kh, obj, **kwargs):
 	return allowed_ips
 
 # pylint: disable-next=unused-argument
-def get_conditions(kh, obj, **kwargs):
+def get_conditions(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Dict]:
+	"""
+	Get a list of conditions
+
+		Parameters:
+			kh (KubernetesHelper): Unused
+			obj (dict): The object to get data from
+			kwargs (dict): Additional parameters
+		Returns:
+			list[dict]: A list of conditions
+	"""
+
 	condition_list = []
 
 	path = deep_get(kwargs, DictPath("path"), "status#conditions")
@@ -319,7 +344,18 @@ def get_conditions(kh, obj, **kwargs):
 	return condition_list
 
 # pylint: disable-next=unused-argument
-def get_endpoint_slices(kh, obj, **kwargs):
+def get_endpoint_slices(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str]]:
+	"""
+	Get a list of endpoint slices
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The object to get data from
+			kwargs (dict): Unused
+		Returns:
+			list[(str, str)]: A list of endpoint slices
+	"""
+
 	svcname = deep_get(obj, DictPath("metadata#name"))
 	svcnamespace = deep_get(obj, DictPath("metadata#namespace"))
 	# We need to find all Endpoint Slices in the same namespace as the service that have this service
@@ -329,11 +365,22 @@ def get_endpoint_slices(kh, obj, **kwargs):
 	for item in vlist:
 		epsnamespace = deep_get(item, DictPath("metadata#namespace"))
 		epsname = deep_get(item, DictPath("metadata#name"))
-		tmp.append([epsnamespace, epsname])
+		tmp.append((epsnamespace, epsname))
 	return tmp
 
 # pylint: disable-next=unused-argument
-def get_events(kh, obj, **kwargs):
+def get_events(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Dict]:
+	"""
+	Get a list of events
+
+		Parameters:
+			kh (KubernetesHelper): A reference to a KubernetesHelper object
+			obj (dict): The object to get data from
+			kwargs (dict): Unused
+		Returns:
+			list[dict]: A list of events
+	"""
+
 	event_list = []
 
 	kind = deep_get(obj, DictPath("kind"))
@@ -349,7 +396,18 @@ def get_events(kh, obj, **kwargs):
 	return event_list
 
 # pylint: disable-next=unused-argument
-def get_image_list(kh, obj, **kwargs):
+def get_image_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str]]:
+	"""
+	Get a list of container images
+
+		Parameters:
+			kh (KubernetesHelper): Unused
+			obj (dict): The object to get data from
+			kwargs (dict): Additional parameters
+		Returns:
+			list[dict]: A list of container images
+	"""
+
 	vlist = []
 	path = deep_get(kwargs, DictPath("path"), "")
 
@@ -362,12 +420,23 @@ def get_image_list(kh, obj, **kwargs):
 
 		if len(name) == 0:
 			continue
-		size = disksize_to_human(deep_get(image, DictPath("sizeBytes"), 0))
-		vlist.append([name, size])
-	return natsorted(vlist)
+		size = disksize_to_human(deep_get(image, DictPath("sizeBytes"), "0"))
+		vlist.append((name, size))
+	return cast(List[Tuple[str, str]], natsorted(vlist))
 
 # pylint: disable-next=unused-argument
-def get_key_value(kh, obj, **kwargs):
+def get_key_value(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, Any]]:
+	"""
+	Get a list of key/value data
+
+		Parameters:
+			kh (KubernetesHelper): Unused
+			obj (dict): The object to get data from
+			kwargs (dict): Additional parameters
+		Returns:
+			list[dict]: A list of key/value data
+	"""
+
 	vlist = []
 	if "path" in kwargs:
 		path = deep_get(kwargs, DictPath("path"), "")
@@ -386,13 +455,23 @@ def get_key_value(kh, obj, **kwargs):
 				value = _value
 			else:
 				raise TypeError(f"Unhandled type {type(_value)} for {_key}={value}")
-			vlist.append([_key, value])
-
+			vlist.append((_key, value))
 	return vlist
 
 # pylint: disable-next=unused-argument
-def get_list_as_list(kh, obj, **kwargs):
-	vlist = []
+def get_list_as_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Any]:
+	"""
+	Get data in list format
+
+		Parameters:
+			kh (KubernetesHelper): Unused
+			obj (dict): The object to get data from
+			kwargs (dict): Additional parameters
+		Returns:
+			list[dict]: A list of data
+	"""
+
+	vlist: List[Any] = []
 	if "path" in kwargs:
 		path = deep_get(kwargs, DictPath("path"))
 		_regex = deep_get(kwargs, DictPath("regex"))
@@ -402,7 +481,8 @@ def get_list_as_list(kh, obj, **kwargs):
 		for item in items:
 			if _regex is not None:
 				tmp = compiled_regex.match(item)
-				vlist.append(tmp.groups())
+				if tmp is not None:
+					vlist.append(tmp.groups())
 			else:
 				vlist.append([item])
 	elif "paths" in kwargs:
@@ -430,8 +510,8 @@ def get_list_as_list(kh, obj, **kwargs):
 	return vlist
 
 # pylint: disable-next=unused-argument
-def get_list_fields(kh, obj, **kwargs):
-	vlist = []
+def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Any]:
+	vlist: List[Any] = []
 
 	if "path" in kwargs and "fields" in kwargs:
 		path = deep_get(kwargs, DictPath("path"))
@@ -478,7 +558,7 @@ def get_list_fields(kh, obj, **kwargs):
 	return vlist
 
 # pylint: disable-next=unused-argument
-def get_package_version_list(kh, obj, **kwargs):
+def get_package_version_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> Optional[List[Tuple[str, str]]]:
 	name_path = deep_get(kwargs, DictPath("name_path"), "")
 	hostname = deep_get(obj, DictPath(name_path))
 	hostname = deep_get(kwargs, DictPath("name"), hostname)
@@ -489,8 +569,8 @@ def get_package_version_list(kh, obj, **kwargs):
 	return package_versions
 
 # pylint: disable-next=unused-argument
-def get_pod_affinity(kh, obj, **kwargs):
-	affinities = []
+def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str, str, str, str]]:
+	affinities: List[Tuple[str, str, str, str, str]] = []
 
 	for affinity in deep_get(obj, DictPath("spec#affinity"), []):
 		atype = affinity
@@ -526,13 +606,13 @@ def get_pod_affinity(kh, obj, **kwargs):
 					selectors += make_set_expression(deep_get(selector, DictPath("preference#matchFields"), {}))
 					selectors += make_set_expression(deep_get(selector, DictPath("matchExpressions"), {}))
 					selectors += make_set_expression(deep_get(selector, DictPath("matchFields"), {}))
-					affinities.append([atype, f"{scheduling}{weight}", execution, selectors, topology])
+					affinities.append((atype, f"{scheduling}{weight}", execution, selectors, topology))
 
 	return affinities
 
 # pylint: disable-next=unused-argument
-def get_pod_tolerations(kh, obj, **kwargs):
-	tolerations = []
+def get_pod_tolerations(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str, str, str, str]]:
+	tolerations: List[Tuple[str, str, str, str, str]] = []
 
 	for toleration in deep_get_with_fallback(obj, [DictPath("spec#tolerations"), DictPath("scheduling#tolerations")], []):
 		effect = deep_get(toleration, DictPath("effect"), "All")
@@ -549,23 +629,23 @@ def get_pod_tolerations(kh, obj, **kwargs):
 			timeout = str(toleration_seconds)
 
 		value = deep_get(toleration, DictPath("value"), "")
-		tolerations.append([key, operator, value, effect, timeout])
+		tolerations.append((key, operator, value, effect, timeout))
 
 	return tolerations
 
 # pylint: disable-next=unused-argument
-def get_resource_list(kh, obj, **kwargs):
-	vlist = []
+def get_resource_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str, str]]:
+	vlist: List[Tuple[str, str, str]] = []
 
 	for res in deep_get(obj, DictPath("status#capacity"), {}):
 		capacity = deep_get(obj, DictPath(f"status#capacity#{res}"), "")
 		allocatable = deep_get(obj, DictPath(f"status#allocatable#{res}"), "")
-		vlist.append([res, allocatable, capacity])
+		vlist.append((res, allocatable, capacity))
 	return vlist
 
 # pylint: disable-next=unused-argument
-def get_resources(kh, obj, **kwargs):
-	resources = []
+def get_resources(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str, str]]:
+	resources: List[Tuple[str, str, str]] = []
 
 	for limit in list(deep_get(obj, DictPath("spec#resources#limits"), {})):
 		if limit == "cpu":
@@ -586,7 +666,7 @@ def get_resources(kh, obj, **kwargs):
 	return resources
 
 # pylint: disable-next=unused-argument
-def get_strings_from_string(kh, obj, **kwargs):
+def get_strings_from_string(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[List[str]]:
 	vlist = []
 	if "path" in kwargs:
 		path = deep_get(kwargs, DictPath("path"))
@@ -596,7 +676,7 @@ def get_strings_from_string(kh, obj, **kwargs):
 				vlist.append([line])
 	return vlist
 
-def get_endpoint_ips(subsets):
+def get_endpoint_ips(subsets: List[Dict]) -> List[str]:
 	endpoints = []
 	notready = 0
 
@@ -622,7 +702,7 @@ def get_endpoint_ips(subsets):
 	return endpoints
 
 # pylint: disable-next=unused-argument
-def get_security_context(kh, obj, **kwargs):
+def get_security_context(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str]]:
 	security_policies = []
 
 	tmp = [
@@ -682,12 +762,12 @@ def get_security_context(kh, obj, **kwargs):
 
 	for policy in tmp:
 		if policy[1] is not None:
-			security_policies.append([policy[0], str(policy[1])])
+			security_policies.append((policy[0], str(policy[1])))
 
 	return security_policies
 
 # pylint: disable-next=unused-argument
-def get_svc_port_target_endpoints(kh, obj, **kwargs):
+def get_svc_port_target_endpoints(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str, str, str]]:
 	svcname = deep_get(obj, DictPath("metadata#name"))
 	svcnamespace = deep_get(obj, DictPath("metadata#namespace"))
 	port_target_endpoints = []
@@ -720,15 +800,15 @@ def get_svc_port_target_endpoints(kh, obj, **kwargs):
 
 	return port_target_endpoints
 
-def get_pv_type(obj):
+def get_pv_type(obj: Dict) -> Optional[str]:
 	for pv_type, _pv_data in KNOWN_PV_TYPES.items():
-		if pv_type in deep_get(obj, DictPath("spec"), []):
+		if pv_type in deep_get(obj, DictPath("spec"), {}):
 			return pv_type
 	return None
 
 # pylint: disable-next=unused-argument
-def get_volume_properties(kh, obj, **kwargs):
-	volume_properties = []
+def get_volume_properties(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str]]:
+	volume_properties: List[Tuple[str, str]] = []
 
 	# First find out what kind of volume we're dealing with
 	pv_type = get_pv_type(obj)
@@ -749,7 +829,7 @@ def get_volume_properties(kh, obj, **kwargs):
 			value = str(value)
 		else:
 			raise TypeError(f"Unhandled type {type(value)} for {key}={value}")
-		volume_properties.append([key, value])
+		volume_properties.append((key, value))
 
 	return volume_properties
 

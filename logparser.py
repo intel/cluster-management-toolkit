@@ -56,8 +56,8 @@ from ikttypes import DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_t
 
 from iktio import secure_read_yaml
 
-import iktlib # pylint: disable=unused-import
-from iktlib import deep_get, iktconfig, deep_get_with_fallback
+import iktlib
+from iktlib import deep_get, deep_get_with_fallback
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
 
 class logparser_configuration:
@@ -2204,7 +2204,7 @@ def init_parser_list():
 	# Start by adding files from the parsers directory
 
 	parser_dirs = []
-	parser_dirs += deep_get(iktconfig, DictPath("Pods#local_parsers"), [])
+	parser_dirs += deep_get(iktlib.iktconfig, DictPath("Pods#local_parsers"), [])
 	parser_dirs.append(PARSER_DIR)
 
 	parser_files = []
@@ -2332,7 +2332,7 @@ def logparser_initialised(parser = None, message = "", fold_msg = True, line = 0
 	# First extract the Kubernetes timestamp
 	message, timestamp = split_iso_timestamp(message, None)
 
-	if parser == None:
+	if parser is None:
 		raise Exception("logparser_initialised called with parser == None")
 
 	options = {

@@ -6,11 +6,11 @@ This module parses command line options and generate helptexts
 
 import errno
 import sys
-import typing # pylint: disable=unused-import
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import about
 
-from ikttypes import DictPath
+from ikttypes import DictPath, FilePath
 
 from iktlib import deep_get
 from iktprint import themearray_len, iktprint, init_iktprint
@@ -22,7 +22,8 @@ programauthors = None
 
 commandline = None
 
-def __version(options, args) -> int:
+# pylint: disable-next=unused-arguments
+def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Display version information
 
@@ -34,9 +35,6 @@ def __version(options, args) -> int:
 			0
 	"""
 
-	del options
-	del args
-
 	iktprint([(f"{programname} ", "programname"), (f"{programversion}", "version")])
 	iktprint([(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"), (f"{about.PROGRAM_SUITE_VERSION}", "version")])
 	print()
@@ -46,7 +44,8 @@ def __version(options, args) -> int:
 	print(programauthors)
 	return 0
 
-def __usage(options, args) -> int:
+# pylint: disable-next=unused-arguments
+def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Display usage information
 
@@ -57,9 +56,6 @@ def __usage(options, args) -> int:
 		Returns:
 			0
 	"""
-
-	del options
-	del args
 
 	assert commandline is not None
 
@@ -190,12 +186,12 @@ def __usage(options, args) -> int:
 
 	return 0
 
-def __find_command(__commandline, arg: str):
+def __find_command(__commandline: Dict, arg: str) -> Tuple[str, Optional[Callable[[Tuple[str, str], List[str]], None]], str, int, int]:
 	command = None
-	commandname = None
+	commandname = ""
 	min_args = 0
 	max_args = 0
-	key = None
+	key = ""
 
 	for key, value in __commandline.items():
 		if key == "extended_description":
@@ -231,7 +227,8 @@ COMMANDLINEDEFAULTS = {
 }
 
 # pylint: disable-next=line-too-long
-def parse_commandline(__programname: str, __programversion: str, __programdescription: str, __programauthors: str, argv, __commandline, default_command = None, theme = None):
+def parse_commandline(__programname: str, __programversion: str, __programdescription: str, __programauthors: str, argv: List[str],
+		      __commandline: Dict, default_command: str = None, theme: FilePath = None):
 	"""
 	Parse the command line
 
@@ -264,7 +261,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 	command = None
 	key = None
 	options = []
-	args = [] # type: ignore
+	args: List[str] = []
 	min_args = 0
 	max_args = 0
 

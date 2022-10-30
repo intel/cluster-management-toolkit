@@ -206,7 +206,7 @@ def deep_get_with_fallback(obj: Dict, paths: List[DictPath], default: Optional[A
 		result = default
 	return result
 
-def read_iktconfig() -> Optional[Dict]:
+def read_iktconfig() -> Dict:
 	"""
 	Read ikt.yaml and ikt.yaml.d/*.yaml and update the global iktconfig dict
 
@@ -217,7 +217,7 @@ def read_iktconfig() -> Optional[Dict]:
 	global iktconfig # pylint: disable=global-statement
 
 	if not Path(IKT_CONFIG_FILE).is_file():
-		return None
+		return {}
 
 	# Read the base configuration file
 	iktconfig = iktio.secure_read_yaml(IKT_CONFIG_FILE)
@@ -321,12 +321,12 @@ def age_to_seconds(age: str) -> int:
 
 	return seconds
 
-def seconds_to_age(seconds: str, negative_is_skew: bool = False) -> str:
+def seconds_to_age(seconds: int, negative_is_skew: bool = False) -> str:
 	"""
 	Given a time in seconds, convert it to X1dX2hX3mX4s
 
 		Parameters:
-			seconds (str): The number of seconds
+			seconds (int): The number of seconds
 			negative_is_skew (bool): Should a negative timestamp return a clock skew warning (default: -age)
 		Returns:
 			age (str): The age string

@@ -2331,7 +2331,7 @@ class KubernetesHelper:
 
 		contexts = []
 
-		if config_path == None:
+		if config_path is None:
 			# Read kubeconfig
 			config_path = KUBE_CONFIG_FILE
 
@@ -2413,7 +2413,7 @@ class KubernetesHelper:
 		user_name = ""
 		namespace_name = "" # pylint: disable=unused-variable
 
-		if config_path == None:
+		if config_path is None:
 			# Read kubeconfig
 			config_path = KUBE_CONFIG_FILE
 

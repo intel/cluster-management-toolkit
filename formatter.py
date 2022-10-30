@@ -6,12 +6,13 @@ Format text as themearrays
 
 import re
 import sys
+from typing import Callable, cast, Dict, List, Sequence, Union
 import yaml
 
-from ikttypes import DictPath
+from ikttypes import DictPath, ThemeRef, ThemeString
 
-import iktlib # pylint: disable=unused-import
-from iktlib import deep_get, iktconfig, split_msg
+import iktlib
+from iktlib import deep_get, split_msg
 
 def __str_representer(dumper, data):
 	"""
@@ -29,7 +30,7 @@ def __str_representer(dumper, data):
 	return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
 # pylint: disable-next=unused-argument
-def format_binary(lines, **kwargs):
+def format_binary(lines: bytes, **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	Binary "formatter"; Just returns a message saying that binary views cannot be viewed
 
@@ -40,10 +41,10 @@ def format_binary(lines, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	return [([("Binary file; cannot view", ("types", "generic"))])]
+	return [[ThemeString("Binary file; cannot view", ThemeRef("types", "generic"))]]
 
 # pylint: disable=unused-argument
-def format_none(lines, **kwargs):
+def format_none(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	Noop formatter; returns the text without syntax highlighting
 
@@ -56,16 +57,16 @@ def format_none(lines, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	dumps = []
+	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
 
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
 	for line in lines:
-		dumps.append([(line, ("types", "generic"))])
+		dumps.append([ThemeString(line, ThemeRef("types", "generic"))])
 	return dumps
 
-def format_yaml_line(line, override_formatting = None):
+def format_yaml_line(line: str, override_formatting: Dict = None) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Formats a single line of YAML
 
@@ -84,38 +85,41 @@ def format_yaml_line(line, override_formatting = None):
 		# formatting we need to set defaults;
 		# doing it here instead of in the code makes
 		# it easier to change the defaults of necessary
-		generic_format = ("types", "generic")
-		comment_format = ("types", "yaml_comment")
-		key_format = ("types", "yaml_key")
-		value_format = ("types", "yaml_value")
-		list_format = ("separators", "yaml_list")
-		separator_format = ("types", "generic")
-		reference_format = ("types", "yaml_reference")
+		generic_format = ThemeRef("types", "generic")
+		comment_format = ThemeRef("types", "yaml_comment")
+		key_format = ThemeRef("types", "yaml_key")
+		value_format = ThemeRef("types", "yaml_value")
+		list_format = ThemeRef("separators", "yaml_list")
+		separator_format = ThemeRef("types", "generic")
+		reference_format = ThemeRef("types", "yaml_reference")
 	elif isinstance(override_formatting, tuple):
+		override_formatting = cast(ThemeRef, override_formatting)
 		generic_format = override_formatting
 		comment_format = override_formatting
 		key_format = override_formatting
 		value_format = override_formatting
-		list_format = ("- ", override_formatting)
+		list_format = ThemeString("- ", override_formatting)
 		separator_format = override_formatting
 		reference_format = override_formatting
 
-	tmpline = []
+	tmpline: List[Union[ThemeRef, ThemeString]] = []
+
 	if line.lstrip(" ").startswith("#"):
 		tmpline += [
-			(line, comment_format),
+			ThemeString(line, comment_format),
 		]
 		return tmpline
 	if line.lstrip(" ").startswith("- "):
 		# Safe
 		tmp = re.match(r"^(\s*?)- (.*)", line)
-		tmpline += [
-			(f"{tmp[1]}", generic_format),
-			list_format,
-		]
-		line = tmp[2]
-		if len(line) == 0:
-			return tmpline
+		if tmp is not None:
+			tmpline += [
+				ThemeString(tmp[1], generic_format),
+				list_format,
+			]
+			line = tmp[2]
+			if len(line) == 0:
+				return tmpline
 
 	if line.endswith(":"):
 		if isinstance(override_formatting, dict):
@@ -123,8 +127,8 @@ def format_yaml_line(line, override_formatting = None):
 		else:
 			_key_format = key_format
 		tmpline += [
-			(f"{line[:-1]}", _key_format),
-			(":", separator_format),
+			ThemeRef(f"{line[:-1]}", _key_format),
+			ThemeString(":", separator_format),
 		]
 	else:
 		# Safe
@@ -145,10 +149,10 @@ def format_yaml_line(line, override_formatting = None):
 				_key_format = key_format
 				_value_format = value_format
 			tmpline += [
-				(f"{key}", _key_format),
-				(f"{separator}", separator_format),
-				(f"{reference}", reference_format),
-				(f"{value}", _value_format),
+				ThemeString(f"{key}", _key_format),
+				ThemeString(f"{separator}", separator_format),
+				ThemeString(f"{reference}", reference_format),
+				ThemeString(f"{value}", _value_format),
 			]
 		else:
 			if isinstance(override_formatting, dict):
@@ -156,12 +160,12 @@ def format_yaml_line(line, override_formatting = None):
 			else:
 				_value_format = value_format
 			tmpline += [
-				(f"{line}", _value_format),
+				ThemeString(f"{line}", _value_format),
 			]
 
 	return tmpline
 
-def format_yaml(lines, **kwargs):
+def format_yaml(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	YAML formatter; returns the text with syntax highlighting for YAML
 
@@ -176,13 +180,13 @@ def format_yaml(lines, **kwargs):
 
 	override_formatting = deep_get(kwargs, DictPath("override_formatting"), {})
 
-	dumps = []
-	indent = deep_get(iktconfig, DictPath("Global#indent"), 2)
+	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
+	indent = deep_get(iktlib.iktconfig, DictPath("Global#indent"), 2)
 
 	if isinstance(lines, str):
 		lines = [lines]
 
-	generic_format = ("types", "generic")
+	generic_format = ThemeRef("types", "generic")
 
 	if deep_get(kwargs, DictPath("raw"), False) == True:
 		override_formatting = generic_format
@@ -212,15 +216,15 @@ def format_yaml(lines, **kwargs):
 			if len(line) == 0:
 				continue
 
-			tmpline = format_yaml_line(line, override_formatting = override_formatting)
+			tmpline: List[Union[ThemeRef, ThemeString]] = format_yaml_line(line, override_formatting = override_formatting)
 			if truncated == True:
-				tmpline += [(" [...] (Truncated)", ("types", "yaml_key_error"))]
+				tmpline += [ThemeString(" [...] (Truncated)", ThemeRef("types", "yaml_key_error"))]
 			dumps.append(tmpline)
 
 		if i < len(lines) - 1:
-			dumps.append([("", generic_format)])
-			dumps.append([("", generic_format)])
-			dumps.append([("", generic_format)])
+			dumps.append([ThemeString("", generic_format)])
+			dumps.append([ThemeString("", generic_format)])
+			dumps.append([ThemeString("", generic_format)])
 
 	return dumps
 
@@ -239,7 +243,7 @@ KEY_HEADERS = [
 	"-----END EC PRIVATE KEY-----",
 ]
 
-def format_crt(lines, **kwargs):
+def format_crt(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	CRT formatter; returns the text with syntax highlighting for certificates
 
@@ -252,7 +256,7 @@ def format_crt(lines, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	dumps = []
+	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
 
 	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
@@ -262,12 +266,12 @@ def format_crt(lines, **kwargs):
 
 	for line in lines:
 		if line in KEY_HEADERS:
-			dumps.append([(line, ("types", "separator"))])
+			dumps.append([ThemeString(line, ThemeRef("types", "separator"))])
 		else:
-			dumps.append([(line, ("types", "generic"))])
+			dumps.append([ThemeString(line, ThemeRef("types", "generic"))])
 	return dumps
 
-def format_haproxy(lines, **kwargs):
+def format_haproxy(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	HAProxy formatter; returns the text with syntax highlighting for HAProxy
 
@@ -280,7 +284,7 @@ def format_haproxy(lines, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	dumps = []
+	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
 
 	if isinstance(lines, str):
 		lines = split_msg(lines)
@@ -296,7 +300,7 @@ def format_haproxy(lines, **kwargs):
 	for line in lines:
 		# Is it whitespace?
 		if len(line.strip()) == 0:
-			dumps.append([(line, ("types", "generic"))])
+			dumps.append([ThemeString(line, ThemeRef("types", "generic"))])
 			continue
 
 		# Is it a new section?
@@ -307,10 +311,10 @@ def format_haproxy(lines, **kwargs):
 			whitespace2 = tmp[3]
 			label = tmp[4]
 			tmpline = [
-				(whitespace1, ("types", "generic")),
-				(section, ("types", "haproxy_section")),
-				(whitespace2, ("types", "generic")),
-				(label, ("types", "haproxy_label")),
+				ThemeString(whitespace1, ThemeRef("types", "generic")),
+				ThemeString(section, ThemeRef("types", "haproxy_section")),
+				ThemeString(whitespace2, ThemeRef("types", "generic")),
+				ThemeString(label, ThemeRef("types", "haproxy_label")),
 			]
 			dumps.append(tmpline)
 			continue
@@ -323,20 +327,20 @@ def format_haproxy(lines, **kwargs):
 			whitespace2 = tmp[3]
 			values = tmp[4]
 			tmpline = [
-				(whitespace1, ("types", "generic")),
-				(setting, ("types", "haproxy_setting")),
-				(whitespace2, ("types", "generic")),
-				(values, ("types", "generic")),
+				ThemeString(whitespace1, ThemeRef("types", "generic")),
+				ThemeString(setting, ThemeRef("types", "haproxy_setting")),
+				ThemeString(whitespace2, ThemeRef("types", "generic")),
+				ThemeString(values, ThemeRef("types", "generic")),
 			]
 			dumps.append(tmpline)
 			continue
 
 		# Unknown data; just append it unformatted
-		dumps.append([(line, ("types", "generic"))])
+		dumps.append([ThemeString(line, ThemeRef("types", "generic"))])
 
 	return dumps
 
-def format_caddyfile(lines, **kwargs):
+def format_caddyfile(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	CaddyFile formatter; returns the text with syntax highlighting for CaddyFiles
 
@@ -349,7 +353,7 @@ def format_caddyfile(lines, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	dumps = []
+	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
 
 	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
@@ -376,12 +380,12 @@ def format_caddyfile(lines, **kwargs):
 	argument_regex = re.compile(r"^(.*?)(\s{\s*$|$)")
 
 	for line in lines:
-		tmpline = []
+		tmpline: List[Union[ThemeRef, ThemeString]] = []
 
 		# Empty line
 		if len(line) == 0 and len(tmpline) == 0:
 			tmpline = [
-				("", ("types", "xml_content")),
+				ThemeString("", ThemeRef("types", "xml_content")),
 			]
 
 		directive = False
@@ -391,7 +395,7 @@ def format_caddyfile(lines, **kwargs):
 			# Is this a comment?
 			if "#" in line:
 				tmpline += [
-					(line, ("types", "caddyfile_comment")),
+					ThemeString(line, ThemeRef("types", "caddyfile_comment")),
 				]
 				line = ""
 				continue
@@ -402,10 +406,10 @@ def format_caddyfile(lines, **kwargs):
 				block_depth += 1
 				if len(tmp[1]) > 0:
 					tmpline += [
-						(tmp[1], ("types", "caddyfile_block")),
+						ThemeString(tmp[1], ThemeRef("types", "caddyfile_block")),
 					]
 				tmpline += [
-					(tmp[2], ("types", "caddyfile_block")),
+					ThemeString(tmp[2], ThemeRef("types", "caddyfile_block")),
 				]
 				line = tmp[3]
 				if site == True:
@@ -417,10 +421,10 @@ def format_caddyfile(lines, **kwargs):
 			if tmp is not None:
 				if len(tmp[1]) > 0:
 					tmpline += [
-						(tmp[1], ("types", "caddyfile_snippet")),
+						ThemeString(tmp[1], ThemeRef("types", "caddyfile_snippet")),
 					]
 				tmpline += [
-					(tmp[2], ("types", "caddyfile_snippet")),
+					ThemeString(tmp[2], ThemeRef("types", "caddyfile_snippet")),
 				]
 				line = tmp[3]
 				continue
@@ -431,10 +435,10 @@ def format_caddyfile(lines, **kwargs):
 				if block_depth == 0 and site == False and (single_site == True or "{" in tmp[3]):
 					if len(tmp[1]) > 0:
 						tmpline += [
-							(tmp[1], ("types", "caddyfile_site")),
+							ThemeString(tmp[1], ThemeRef("types", "caddyfile_site")),
 						]
 					tmpline += [
-						(tmp[2], ("types", "caddyfile_site")),
+						ThemeString(tmp[2], ThemeRef("types", "caddyfile_site")),
 					]
 					line = tmp[3]
 					site = True
@@ -447,10 +451,10 @@ def format_caddyfile(lines, **kwargs):
 				block_depth -= 1
 				if len(tmp[1]) > 0:
 					tmpline += [
-						(tmp[1], ("types", "caddyfile_block")),
+						ThemeString(tmp[1], ThemeRef("types", "caddyfile_block")),
 					]
 				tmpline += [
-					(tmp[2], ("types", "caddyfile_block")),
+					ThemeString(tmp[2], ThemeRef("types", "caddyfile_block")),
 				]
 				line = ""
 				continue
@@ -460,10 +464,10 @@ def format_caddyfile(lines, **kwargs):
 			if tmp is not None:
 				if len(tmp[1]) > 0:
 					tmpline += [
-						(tmp[1], ("types", "caddyfile_matcher")),
+						ThemeString(tmp[1], ThemeRef("types", "caddyfile_matcher")),
 					]
 				tmpline += [
-					(tmp[2], ("types", "caddyfile_matcher")),
+					ThemeString(tmp[2], ThemeRef("types", "caddyfile_matcher")),
 				]
 				line = tmp[3]
 				continue
@@ -474,10 +478,10 @@ def format_caddyfile(lines, **kwargs):
 				if tmp is not None:
 					if len(tmp[1]) > 0:
 						tmpline += [
-							(tmp[1], ("types", "caddyfile_directive")),
+							ThemeString(tmp[1], ThemeRef("types", "caddyfile_directive")),
 						]
 					tmpline += [
-						(tmp[2], ("types", "caddyfile_directive")),
+						ThemeString(tmp[2], ThemeRef("types", "caddyfile_directive")),
 					]
 					line = tmp[3]
 					directive = True
@@ -488,7 +492,7 @@ def format_caddyfile(lines, **kwargs):
 				tmp = argument_regex.match(line)
 				if tmp is not None:
 					tmpline += [
-						(tmp[1], ("types", "caddyfile_argument")),
+						ThemeString(tmp[1], ThemeRef("types", "caddyfile_argument")),
 					]
 					line = tmp[2]
 					continue
@@ -497,7 +501,7 @@ def format_caddyfile(lines, **kwargs):
 
 	return dumps
 
-def format_mosquitto(lines, **kwargs):
+def format_mosquitto(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	Mosquitto formatter; returns the text with syntax highlighting for Mosquitto
 
@@ -510,7 +514,7 @@ def format_mosquitto(lines, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	dumps = []
+	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
 
 	if isinstance(lines, str):
 		lines = split_msg(lines)
@@ -524,12 +528,12 @@ def format_mosquitto(lines, **kwargs):
 	for line in lines:
 		# Is it whitespace?
 		if len(line.strip()) == 0:
-			dumps.append([(line, ("types", "generic"))])
+			dumps.append([ThemeString(line, ThemeRef("types", "generic"))])
 			continue
 
 		# Is it a comment?
 		if line.startswith("#"):
-			dumps.append([(line, ("types", "mosquitto_comment"))])
+			dumps.append([ThemeString(line, ThemeRef("types", "mosquitto_comment"))])
 			continue
 
 		# Is it a variable + value?
@@ -539,19 +543,19 @@ def format_mosquitto(lines, **kwargs):
 			whitespace = tmp[2]
 			value = tmp[3]
 			tmpline = [
-				(variable, ("types", "mosquitto_variable")),
-				(whitespace, ("types", "generic")),
-				(value, ("types", "generic")),
+				ThemeString(variable, ThemeRef("types", "mosquitto_variable")),
+				ThemeString(whitespace, ThemeRef("types", "generic")),
+				ThemeString(value, ThemeRef("types", "generic")),
 			]
 			dumps.append(tmpline)
 			continue
 
 		# Unknown data; just append it unformatted
-		dumps.append([(line, ("types", "generic"))])
+		dumps.append([ThemeString(line, ThemeRef("types", "generic"))])
 
 	return dumps
 
-def format_nginx(lines, **kwargs):
+def format_nginx(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	NGINX formatter; returns the text with syntax highlighting for NGINX
 
@@ -564,7 +568,7 @@ def format_nginx(lines, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	dumps = []
+	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
 
 	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
@@ -576,11 +580,11 @@ def format_nginx(lines, **kwargs):
 	key_regex = re.compile(r"^(\s*)(#.*$|}|\S+|$)(.+;|.+{|)(\s*#.*$|)")
 
 	for line in lines:
-		dump = []
+		dump: List[ThemeString] = []
 		if len(line.strip()) == 0:
 			if len(dump) == 0:
 				dump += [
-					("", ("types", "generic"))
+					ThemeString("", ThemeRef("types", "generic"))
 				]
 			dumps.append(dump)
 			continue
@@ -592,36 +596,36 @@ def format_nginx(lines, **kwargs):
 		if tmp is not None:
 			if len(tmp[1]) > 0:
 				dump += [
-					(tmp[1], ("types", "generic")),	# whitespace
+					ThemeString(tmp[1], ThemeRef("types", "generic")),	# whitespace
 				]
 			if len(tmp[2]) > 0:
 				if tmp[2] == "}":
 					dump += [
-						(tmp[2], ("types", "generic")),	# block end
+						ThemeString(tmp[2], ThemeRef("types", "generic")),	# block end
 					]
 				elif tmp[2].startswith("#"):
 					dump += [
-						(tmp[2], ("types", "nginx_comment"))
+						ThemeString(tmp[2], ThemeRef("types", "nginx_comment"))
 					]
 				else:
 					dump += [
-						(tmp[2], ("types", "nginx_key"))
+						ThemeString(tmp[2], ThemeRef("types", "nginx_key"))
 					]
 			if len(tmp[3]) > 0:
 				dump += [
-					(tmp[3][:-1], ("types", "nginx_value")),
-					(tmp[3][-1:], ("types", "generic")),	# block start / statement end
+					ThemeString(tmp[3][:-1], ThemeRef("types", "nginx_value")),
+					ThemeString(tmp[3][-1:], ThemeRef("types", "generic")),	# block start / statement end
 				]
 			if len(tmp[4]) > 0:
 				dump += [
-					(tmp[4], ("types", "nginx_comment"))
+					ThemeString(tmp[4], ThemeRef("types", "nginx_comment"))
 				]
 			dumps.append(dump)
 		else:
 			sys.exit(f"__format_nginx(): Couldn't match line={line}")
 	return dumps
 
-def format_xml(lines, **kwargs):
+def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	XML formatter; returns the text with syntax highlighting for XML
 
@@ -634,7 +638,8 @@ def format_xml(lines, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	dumps = []
+	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
+
 	tag_open = False
 	tag_named = False
 	comment = False
@@ -660,12 +665,12 @@ def format_xml(lines, **kwargs):
 
 	i = 0
 	for line in lines:
-		tmpline = []
+		tmpline: List[Union[ThemeRef, ThemeString]] = []
 
 		# Empty line
 		if len(line) == 0 and len(tmpline) == 0:
 			tmpline = [
-				("", ("types", "xml_content")),
+				ThemeString("", ThemeRef("types", "xml_content")),
 			]
 
 		while len(line) > 0:
@@ -680,14 +685,14 @@ def format_xml(lines, **kwargs):
 					# Don't add 0-length "indentation"
 					if len(tmp[1]) > 0:
 						tmpline += [
-							(tmp[1], ("types", "xml_declaration")),
+							ThemeString(tmp[1], ThemeRef("types", "xml_declaration")),
 						]
 
 					if tmp[2] == "<?":
 						# declaration tags are implicitly named
 						tag_named = True
 						tmpline += [
-							(tmp[2], ("types", "xml_declaration")),
+							ThemeString(tmp[2], ThemeRef("types", "xml_declaration")),
 						]
 						line = tmp[3]
 						continue
@@ -695,13 +700,13 @@ def format_xml(lines, **kwargs):
 					if tmp[2] == "<!--":
 						comment = True
 						tmpline += [
-							(tmp[2], ("types", "xml_comment")),
+							ThemeString(tmp[2], ThemeRef("types", "xml_comment")),
 						]
 						line = tmp[3]
 						continue
 
 					tmpline += [
-						(tmp[2], ("types", "xml_tag")),
+						ThemeString(tmp[2], ThemeRef("types", "xml_tag")),
 					]
 					line = tmp[3]
 					continue
@@ -710,10 +715,10 @@ def format_xml(lines, **kwargs):
 				tmp = escape_regex.match(line)
 				if tmp is not None:
 					tmpline += [
-						(tmp[1], ("types", "xml_content")),
-						(tmp[2], ("types", "xml_escape")),
-						(tmp[3], ("types", "xml_escape_data")),
-						(tmp[4], ("types", "xml_escape")),
+						ThemeString(tmp[1], ThemeRef("types", "xml_content")),
+						ThemeString(tmp[2], ThemeRef("types", "xml_escape")),
+						ThemeString(tmp[3], ThemeRef("types", "xml_escape_data")),
+						ThemeString(tmp[4], ThemeRef("types", "xml_escape")),
 					]
 					line = tmp[5]
 					continue
@@ -722,12 +727,12 @@ def format_xml(lines, **kwargs):
 				tmp = content_regex.match(line)
 				if tmp is not None:
 					tmpline += [
-						(tmp[1], ("types", "xml_content")),
+						ThemeString(tmp[1], ThemeRef("types", "xml_content")),
 					]
 					line = tmp[2]
 				else:
 					tmpline += [
-						(line, ("types", "xml_content")),
+						ThemeString(line, ThemeRef("types", "xml_content")),
 					]
 					line = ""
 			else:
@@ -737,13 +742,13 @@ def format_xml(lines, **kwargs):
 					# Don't add 0-length "indentation"
 					if len(tmp[1]) > 0:
 						tmpline += [
-							(tmp[1], ("types", "xml_comment")),
+							ThemeString(tmp[1], ThemeRef("types", "xml_comment")),
 						]
 
 					# > is ignored within comments
 					if tmp[2] == ">" and comment == True or tmp[2] == "-->":
 						tmpline += [
-							(tmp[2], ("types", "xml_comment")),
+							ThemeString(tmp[2], ThemeRef("types", "xml_comment")),
 						]
 						line = tmp[3]
 						if tmp[2] == "-->":
@@ -753,14 +758,14 @@ def format_xml(lines, **kwargs):
 
 					if tmp[2] == "?>":
 						tmpline += [
-							(tmp[2], ("types", "xml_declaration")),
+							ThemeString(tmp[2], ThemeRef("types", "xml_declaration")),
 						]
 						line = tmp[3]
 						tag_open = False
 						continue
 
 					tmpline += [
-						(tmp[2], ("types", "xml_tag")),
+						ThemeString(tmp[2], ThemeRef("types", "xml_tag")),
 					]
 					line = tmp[3]
 					tag_open = False
@@ -771,7 +776,7 @@ def format_xml(lines, **kwargs):
 					tmp = tag_named_regex.match(line)
 					if tmp is not None:
 						tmpline += [
-							(tmp[1], ("types", "xml_tag")),
+							ThemeString(tmp[1], ThemeRef("types", "xml_tag")),
 						]
 						line = tmp[2]
 						tag_named = True
@@ -784,19 +789,19 @@ def format_xml(lines, **kwargs):
 
 					if comment == True:
 						tmpline += [
-							(tmp[1], ("types", "xml_comment")),
-							(tmp[2], ("types", "xml_comment")),
-							(tmp[3], ("types", "xml_comment")),
+							ThemeString(tmp[1], ThemeRef("types", "xml_comment")),
+							ThemeString(tmp[2], ThemeRef("types", "xml_comment")),
+							ThemeString(tmp[3], ThemeRef("types", "xml_comment")),
 						]
 					else:
 						tmpline += [
-							(tmp[1], ("types", "xml_attribute_key")),
+							ThemeString(tmp[1], ThemeRef("types", "xml_attribute_key")),
 						]
 
 						if len(tmp[2]) > 0:
 							tmpline += [
-								(tmp[2], ("types", "xml_content")),
-								(tmp[3], ("types", "xml_attribute_value")),
+								ThemeString(tmp[2], ThemeRef("types", "xml_content")),
+								ThemeString(tmp[3], ThemeRef("types", "xml_attribute_value")),
 							]
 					line = tmp[4] + tmp[5]
 					continue
@@ -813,7 +818,7 @@ def format_xml(lines, **kwargs):
 
 	return dumps
 
-def format_toml(lines, **kwargs):
+def format_toml(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	TOML formatter; returns the text with syntax highlighting for TOML
 
@@ -833,7 +838,8 @@ def format_toml(lines, **kwargs):
 	# * Handle quoting and escaping of quotes; \''' shouldn't end a multiline, for instance.
 	# * XXX: should we highlight key=value for inline tables? Probably not
 	# * XXX: should we highlight different types (integer, string, etc.)? Almost certainly not.
-	dumps = []
+	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
+
 	multiline_basic = False
 	multiline_literal = False
 
@@ -848,13 +854,15 @@ def format_toml(lines, **kwargs):
 	# Safe
 	comment_end_regex = re.compile(r"^(.*)(#.*)")
 
+	tmpline: List[Union[ThemeRef, ThemeString]] = []
+
 	for line in lines:
 		if len(line) == 0:
 			continue
 
 		if multiline_basic == True or multiline_literal == True:
 			tmpline += [
-				(line, ("types", "toml_value")),
+				ThemeString(line, ThemeRef("types", "toml_value")),
 			]
 			dumps.append(tmpline)
 			if multiline_basic == True and line.lstrip(" ").endswith("\"\"\""):
@@ -866,14 +874,14 @@ def format_toml(lines, **kwargs):
 		tmpline = []
 		if line.lstrip().startswith("#"):
 			tmpline += [
-				(line, ("types", "toml_comment")),
+				ThemeString(line, ThemeRef("types", "toml_comment")),
 			]
 			dumps.append(tmpline)
 			continue
 
 		if line.lstrip().startswith("[") and line.rstrip(" ").endswith("]"):
 			tmpline += [
-				(line, ("types", "toml_table")),
+				ThemeString(line, ThemeRef("types", "toml_table")),
 			]
 
 			dumps.append(tmpline)
@@ -898,20 +906,20 @@ def format_toml(lines, **kwargs):
 				else:
 					comment = ""
 			tmpline += [
-				(f"{indentation}", ("types", "generic")),
-				(f"{key}", ("types", "toml_key")),
-				(f"{separator}", ("types", "toml_key_separator")),
-				(f"{value}", ("types", "toml_value")),
+				ThemeString(f"{indentation}", ThemeRef("types", "generic")),
+				ThemeString(f"{key}", ThemeRef("types", "toml_key")),
+				ThemeString(f"{separator}", ThemeRef("types", "toml_key_separator")),
+				ThemeString(f"{value}", ThemeRef("types", "toml_value")),
 			]
 			if len(comment) > 0:
 				tmpline += [
-					(f"{comment}", ("types", "toml_comment")),
+					ThemeString(f"{comment}", ThemeRef("types", "toml_comment")),
 				]
 			dumps.append(tmpline)
-		# dumps.append([(line, ("types", "generic"))])
+		# dumps.append([ThemeString(line, ThemeRef("types", "generic"))])
 	return dumps
 
-def format_fluentbit(lines, **kwargs):
+def format_fluentbit(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	FluentBit formatter; returns the text with syntax highlighting for FluentBit
 
@@ -924,7 +932,7 @@ def format_fluentbit(lines, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	dumps = []
+	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
 
 	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
@@ -938,15 +946,15 @@ def format_fluentbit(lines, **kwargs):
 	for line in lines:
 		if line.lstrip().startswith("#"):
 			tmpline = [
-				(line, ("types", "ini_comment")),
+				ThemeString(line, ThemeRef("types", "ini_comment")),
 			]
 		elif line.lstrip().startswith("[") and line.rstrip().endswith("]"):
 			tmpline = [
-				(line, ("types", "ini_section")),
+				ThemeString(line, ThemeRef("types", "ini_section")),
 			]
 		elif len(line.strip()) == 0:
 			tmpline = [
-				("", ("types", "generic")),
+				ThemeString("", ThemeRef("types", "generic")),
 			]
 		else:
 			tmp = key_value_regex.match(line)
@@ -957,15 +965,15 @@ def format_fluentbit(lines, **kwargs):
 				value = tmp[4]
 
 				tmpline = [
-					(f"{indentation}", ("types", "generic")),
-					(f"{key}", ("types", "ini_key")),
-					(f"{separator}", ("types", "ini_key_separator")),
-					(f"{value}", ("types", "ini_value")),
+					ThemeString(f"{indentation}", ThemeRef("types", "generic")),
+					ThemeString(f"{key}", ThemeRef("types", "ini_key")),
+					ThemeString(f"{separator}", ThemeRef("types", "ini_key_separator")),
+					ThemeString(f"{value}", ThemeRef("types", "ini_value")),
 				]
 		dumps.append(tmpline)
 	return dumps
 
-def format_ini(lines, **kwargs):
+def format_ini(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	INI formatter; returns the text with syntax highlighting for INI
 
@@ -978,7 +986,7 @@ def format_ini(lines, **kwargs):
 			list[themearray]: A list of themearrays
 	"""
 
-	dumps = []
+	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
 
 	if deep_get(kwargs, DictPath("raw"), False) == True:
 		return format_none(lines)
@@ -990,14 +998,14 @@ def format_ini(lines, **kwargs):
 	key_value_regex = re.compile(r"^(\s*)(\S+)(\s*=\s*)(\S+)")
 
 	for line in lines:
-		tmpline = []
+		tmpline: List[Union[ThemeRef, ThemeString]] = []
 		if line.lstrip().startswith(("#", ";")):
 			tmpline = [
-				(line, ("types", "ini_comment")),
+				ThemeString(line, ThemeRef("types", "ini_comment")),
 			]
 		elif line.lstrip().startswith("[") and line.rstrip().endswith("]"):
 			tmpline = [
-				(line, ("types", "ini_section")),
+				ThemeString(line, ThemeRef("types", "ini_section")),
 			]
 		else:
 			tmp = key_value_regex.match(line)
@@ -1008,15 +1016,15 @@ def format_ini(lines, **kwargs):
 				value = tmp[4]
 
 				tmpline = [
-					(f"{indentation}", ("types", "generic")),
-					(f"{key}", ("types", "ini_key")),
-					(f"{separator}", ("types", "ini_key_separator")),
-					(f"{value}", ("types", "ini_value")),
+					ThemeString(f"{indentation}", ThemeRef("types", "generic")),
+					ThemeString(f"{key}", ThemeRef("types", "ini_key")),
+					ThemeString(f"{separator}", ThemeRef("types", "ini_key_separator")),
+					ThemeString(f"{value}", ThemeRef("types", "ini_value")),
 				]
 		dumps.append(tmpline)
 	return dumps
 
-def map_dataformat(dataformat: str):
+def map_dataformat(dataformat: str) -> Callable[[Union[str, List[str]]], List[Sequence[Union[ThemeRef, ThemeString]]]]:
 	"""
 	Identify what formatter to use, based either on a file ending or an explicit dataformat tag
 
