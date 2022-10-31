@@ -15,7 +15,7 @@ import socket
 import sys
 import tarfile
 import tempfile
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import paramiko
 
@@ -169,7 +169,7 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 #
 # fetch_urls is a list of tuples:
 # (URL to file or archive, file to extract, URL to checksum, type of checksum)
-def download_files(directory: str, fetch_urls: List[Tuple[str, str, str, str]], permissions = 0o644) -> bool:
+def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str], Optional[str]]], permissions = 0o644) -> bool:
 	"""
 	Download files; if the file is a tar file it can extract a file.
 	If checksum information is provided it can also fetch a checksum and compare against.
@@ -275,7 +275,7 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, str, str]], 
 
 		if r1.status == 200:
 			# If we have a checksum we need to confirm that the downloaded file matches the checksum
-			if checksum is not None and verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)) == False:
+			if checksum is not None and checksum_type is not None and verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)) == False:
 				iktprint.iktprint([ANSIThemeString("Critical", "error"),
 						   ANSIThemeString(": File downloaded from ", "default"),
 						   ANSIThemeString(f"{url}", "url"),

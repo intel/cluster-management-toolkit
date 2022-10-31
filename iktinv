@@ -13,7 +13,7 @@ import errno
 import os
 from pathlib import Path, PurePath
 import sys
-import typing # pylint: disable=unused-import
+from typing import cast, List, Tuple
 
 try:
 	from natsort import natsorted
@@ -44,7 +44,7 @@ import about
 PROGRAMDESCRIPTION = "Query or modify the host inventory"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
-def set_host_vars(options, args) -> int:
+def set_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Set host-specific variables
 
@@ -87,7 +87,7 @@ def set_host_vars(options, args) -> int:
 
 	return 0
 
-def set_group_vars(options, args) -> int:
+def set_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Set group-specific variables
 
@@ -130,7 +130,7 @@ def set_group_vars(options, args) -> int:
 
 	return 0
 
-def set_global_vars(options, args) -> int:
+def set_global_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Set global variables
 
@@ -143,7 +143,7 @@ def set_global_vars(options, args) -> int:
 
 	return set_group_vars(options = options, args = [args[0], "all"])
 
-def unset_host_vars(options, args) -> int:
+def unset_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Unset host-specific variables
 
@@ -173,7 +173,7 @@ def unset_host_vars(options, args) -> int:
 
 	return 0
 
-def unset_group_vars(options, args) -> int:
+def unset_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Unset group-specific variables
 
@@ -203,7 +203,7 @@ def unset_group_vars(options, args) -> int:
 
 	return 0
 
-def unset_global_vars(options, args) -> int:
+def unset_global_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Unset global variables
 
@@ -215,7 +215,7 @@ def unset_global_vars(options, args) -> int:
 	"""
 	return unset_group_vars(options = options, args = [args[0], "all"])
 
-def add_groups(options, args) -> int:
+def add_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Add groups
 
@@ -265,7 +265,7 @@ def add_groups(options, args) -> int:
 
 	return 0
 
-def add_hosts(options, args):
+def add_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Add hosts
 
@@ -279,7 +279,6 @@ def add_hosts(options, args):
 	groups = []
 	hostvars = []
 	hosts = []
-	groups = []
 
 	if args is None or len(args) == 0:
 		raise Exception("Programming error; no hosts provided")
@@ -336,7 +335,7 @@ def add_hosts(options, args):
 
 	return 0
 
-def format_members(group, members):
+def format_members(group: str, members: List[str]) -> List[ANSIThemeString]:
 	"""
 	Format a list of group members as a themearray
 
@@ -344,20 +343,21 @@ def format_members(group, members):
 			group (str): The name of the group
 			members (list[str]): A list of hostnames
 		Returns:
-			formatted (list[(str, themeref)]): A themearray
+			formatted (list[ANSIThemeString]): A themearray
 	"""
 
-	formatted = [(f"{group}: ", "default")]
+	formatted = [ANSIThemeString(f"{group}: ", "default")]
 	i = 0
 	for i, member in enumerate(members):
 		if i < len(members) - 1:
-			formatted += [ANSIThemeString(member, "yaml_key"), ANSIThemeString(", ", "separator")]
+			formatted += [ANSIThemeString(member, "yaml_key"),
+				      ANSIThemeString(", ", "separator")]
 		else:
 			formatted += [ANSIThemeString(member, "yaml_key")]
 
 	return formatted
 
-def remove_groups(options, args) -> int:
+def remove_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Remove groups
 
@@ -446,7 +446,7 @@ def get_cluster_name():
 
 	return cluster_name
 
-def rebuild_inventory(options, args) -> int:
+def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Build an inventory based on information from Kubernetes
 
@@ -520,7 +520,7 @@ def rebuild_inventory(options, args) -> int:
 
 	return 0
 
-def remove_hosts(options, args) -> int:
+def remove_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Remove hosts
 
@@ -602,7 +602,7 @@ def remove_hosts(options, args) -> int:
 
 	return 0
 
-def inventory(options, args) -> int:
+def inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Show the inventory
 
@@ -633,7 +633,7 @@ def inventory(options, args) -> int:
 
 	return 0
 
-def list_groups(options, args) -> int:
+def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	List groups
 
@@ -659,7 +659,7 @@ def list_groups(options, args) -> int:
 
 	return 0
 
-def list_hosts(options, args) -> int:
+def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	List hosts
 
@@ -687,7 +687,7 @@ def list_hosts(options, args) -> int:
 
 	return 0
 
-def ping(options, args):
+def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Ping hosts or groups of hosts
 	Default: ping all hosts
@@ -718,7 +718,10 @@ def ping(options, args):
 				if group_or_host in _all:
 					selection.append(group_or_host)
 				else:
-					iktprint([("Warning", "warning"), (": Skipping unknown host or group “", "default"), (group_or_host, "argument"), ("“", "default")], stderr = True)
+					iktprint([ANSIThemeString("Warning", "warning"),
+						  ANSIThemeString(": Skipping unknown host or group “", "default"),
+						  ANSIThemeString(group_or_host, "argument"),
+						  ANSIThemeString("“", "default")], stderr = True)
 			else:
 				selection += hosts
 		# Eliminate duplicates
@@ -738,7 +741,7 @@ def ping(options, args):
 
 	# This needs to be improved; if there's a message we need to tell the difference
 	# between "Permission denied" and "No route to host"
-	for (host, status) in natsorted(output):
+	for (host, status) in cast(List[Tuple[str, str]], natsorted(output)):
 		maxlen = max(len(host), maxlen)
 		status_group = "error"
 
@@ -758,22 +761,35 @@ def ping(options, args):
 	maxlen = max(maxlen, len(header))
 
 	if len(hoststatuses) > 0:
-		iktprint([(header, "header"), (f"{''.ljust(maxlen - len(header))}  ", "default"), ("Status:", "header")])
+		iktprint([ANSIThemeString(header, "header"),
+			  ANSIThemeString(f"{''.ljust(maxlen - len(header))}  ", "default"),
+			  ANSIThemeString("Status:", "header")])
 
 		for hostname, status, status_group in hoststatuses:
-			iktprint([(f"{hostname.ljust(maxlen)}  ", "default"), (f"{status}", status_group)])
+			iktprint([ANSIThemeString(f"{hostname.ljust(maxlen)}  ", "default"),
+				  ANSIThemeString(f"{status}", status_group)])
 
 	return 0
 
 COMMANDLINE = {
 	"Add Groups": {
 		"command": ["add-group", "add-groups"],
-		"values": [("GROUP", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Add ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument"), (" to inventory", "description")],
+		"values": [ANSIThemeString("GROUP", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument")],
+		"description": [ANSIThemeString("Add ", "description"),
+				ANSIThemeString("GROUP", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument"),
+				ANSIThemeString(" to inventory", "description")],
 		"options": {
 			"--vars": {
-				"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument")],
-				"description": [("Set these group variables", "description")],
+				"values": [ANSIThemeString("KEY", "argument"),
+					   ANSIThemeString(":", "separator"),
+					   ANSIThemeString("VALUE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"description": [ANSIThemeString("Set these group variables", "description")],
 				"requires_arg": True,
 			},
 		},
@@ -783,17 +799,29 @@ COMMANDLINE = {
 	},
 	"Add Hosts to Inventory": {
 		"command": ["add-host", "add-hosts"],
-		"values": [("HOST", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Add ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" to inventory", "description")],
+		"values": [ANSIThemeString("HOST", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument")],
+		"description": [ANSIThemeString("Add ", "description"),
+				ANSIThemeString("HOST", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument"),
+				ANSIThemeString(" to inventory", "description")],
 		"options": {
 			"--groups": {
-				"values": [("GROUP", "argument"), (",", "separator"), ("...", "argument")],
-				"description": [("Add the hosts to these groups", "description")],
+				"values": [ANSIThemeString("GROUP", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"description": [ANSIThemeString("Add the hosts to these groups", "description")],
 				"requires_arg": True,
 			},
 			"--vars": {
-				"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument")],
-				"description": [("Set these host variables", "description")],
+				"values": [ANSIThemeString("KEY", "argument"),
+					   ANSIThemeString(":", "separator"),
+					   ANSIThemeString("VALUE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"description": [ANSIThemeString("Set these host variables", "description")],
 				"requires_arg": True,
 			},
 		},
@@ -804,16 +832,35 @@ COMMANDLINE = {
 	# This is purely for the benefit of the helptext generator
 	"Add Hosts to Groups": {
 		"command": ["add-host", "add-hosts"],
-		"values": [("HOST", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Add ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" to ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
+		"values": [ANSIThemeString("HOST", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("... ", "argument"),
+			   ANSIThemeString("GROUP", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument")],
+		"description": [ANSIThemeString("Add ", "description"),
+				ANSIThemeString("HOST", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument"),
+				ANSIThemeString(" to ", "description"),
+				ANSIThemeString("GROUP", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
 	},
 	"Inventory": {
 		"command": ["inventory", "inv"],
-		"values": [("[", "separator"), ("GROUP", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
-		"description": [("Show inventory, optionally limited to ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [ANSIThemeString("[", "separator"),
+			   ANSIThemeString("GROUP", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument"),
+			   ANSIThemeString("]", "separator")],
+		"description": [ANSIThemeString("Show inventory, optionally limited to ", "description"),
+				ANSIThemeString("GROUP", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument")],
 		"options": {
 			"--include-vars": {
-				"description": [("Show variables", "description")],
+				"description": [ANSIThemeString("Show variables", "description")],
 			},
 		},
 		"min_args": 0,
@@ -822,10 +869,10 @@ COMMANDLINE = {
 	},
 	"List Hosts": {
 		"command": ["list-hosts"],
-		"description": [("List all hosts", "description")],
+		"description": [ANSIThemeString("List all hosts", "description")],
 		"options": {
 			"--include-vars": {
-				"description": [("Show host variables", "description")],
+				"description": [ANSIThemeString("Show host variables", "description")],
 			},
 		},
 		"min_args": 0,
@@ -834,10 +881,10 @@ COMMANDLINE = {
 	},
 	"List Groups": {
 		"command": ["list-groups"],
-		"description": [("List all groups", "description")],
+		"description": [ANSIThemeString("List all groups", "description")],
 		"options": {
 			"--include-vars": {
-				"description": [("Show group variables", "description")],
+				"description": [ANSIThemeString("Show group variables", "description")],
 			},
 		},
 		"min_args": 0,
@@ -846,23 +893,40 @@ COMMANDLINE = {
 	},
 	"Ping": {
 		"command": ["ping"],
-		"values": [("[", "separator"), ("GROUP/HOST", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
-		"description": [("Ansible ping ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument"), (" or ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" (Default: “", "description"), ("all", "argument"), ("“)", "description")], # pylint: disable=line-too-long
+		"values": [ANSIThemeString("[", "separator"),
+			   ANSIThemeString("GROUP/HOST", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument"),
+			   ANSIThemeString("]", "separator")],
+		"description": [ANSIThemeString("Ansible ping ", "description"),
+				ANSIThemeString("GROUP", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument"),
+				ANSIThemeString(" or ", "description"),
+				ANSIThemeString("HOST", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument"),
+				ANSIThemeString(" (Default: “", "description"),
+				ANSIThemeString("all", "argument"),
+				ANSIThemeString("“)", "description")], # pylint: disable=line-too-long
 		"min_args": 0,
 		"max_args": 1,
 		"callback": ping,
 	},
 	"Rebuild Inventory": {
 		"command": ["rebuild-inventory"],
-		"description": [("Create inventory for an existing Kubernetes cluster", "description")],
+		"description": [ANSIThemeString("Create inventory for an existing Kubernetes cluster", "description")],
 		"extended_description": [
-			[("In cases where the cluster has not been setup using ", "description"), (f"{about.INVENTORY_PROGRAM_NAME}", "programname")],
-			[("this can be used to build a barebones inventory", "description")],
-			[("Note", "note"), (": This requires a running cluster", "description")],
+			[ANSIThemeString("In cases where the cluster has not been setup using ", "description"),
+			 ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME}", "programname")],
+			[ANSIThemeString("this can be used to build a barebones inventory", "description")],
+			[ANSIThemeString("Note", "note"), (": This requires a running cluster", "description")],
 		],
 		"options": {
 			"--force": {
-				"description": [("Allow an ", "description"), ("existing", "underline"), (" inventory to be overwritten", "description")],
+				"description": [ANSIThemeString("Allow an ", "description"),
+					        ANSIThemeString("existing", "underline"),
+						ANSIThemeString(" inventory to be overwritten", "description")],
 			},
 		},
 		"min_args": 0,
@@ -871,14 +935,25 @@ COMMANDLINE = {
 	},
 	"Remove Groups": {
 		"command": ["remove-group", "remove-groups"],
-		"values": [("GROUP", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Remove ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument"), (" from inventory", "description")],
+		"values": [ANSIThemeString("GROUP", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument")],
+		"description": [ANSIThemeString("Remove ", "description"),
+				ANSIThemeString("GROUP", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument"),
+				ANSIThemeString(" from inventory", "description")],
 		"extended_description": [
-			[("Note", "note"), (": Removing the group “", "description"), ("all", "argument"), ("“ is not permitted", "description")],
+			[ANSIThemeString("Note", "note"),
+			 ANSIThemeString(": Removing the group “", "description"),
+			 ANSIThemeString("all", "argument"),
+			 ANSIThemeString("“ is not permitted", "description")],
 		],
 		"options": {
 			"--force": {
-				"description": [("Allow removal of ", "description"), ("non-empty", "underline"), (" groups", "description")],
+				"description": [ANSIThemeString("Allow removal of ", "description"),
+						ANSIThemeString("non-empty", "underline"),
+						ANSIThemeString(" groups", "description")],
 			},
 		},
 		"min_args": 1,
@@ -887,11 +962,20 @@ COMMANDLINE = {
 	},
 	"Remove Hosts from ALL Groups": {
 		"command": ["remove-host", "remove-hosts"],
-		"values": [("HOST", "argument"), (",", "separator"), ("... ", "argument"), ("all", "argument")],
-		"description": [("Remove ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" from the inventory", "description")],
+		"values": [ANSIThemeString("HOST", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("... ", "argument"),
+			   ANSIThemeString("all", "argument")],
+		"description": [ANSIThemeString("Remove ", "description"),
+				ANSIThemeString("HOST", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument"),
+				ANSIThemeString(" from the inventory", "description")],
 		"options": {
 			"--force": {
-				"description": [("Allow ", "description"), ("complete", "underline"), (" removal of hosts from the inventory", "description")],
+				"description": [ANSIThemeString("Allow ", "description"),
+						ANSIThemeString("complete", "underline"),
+						ANSIThemeString(" removal of hosts from the inventory", "description")],
 			},
 		},
 		"min_args": 2,
@@ -901,16 +985,39 @@ COMMANDLINE = {
 	# This is purely for the benefit of the helptext generator
 	"Remove Hosts": {
 		"command": ["remove-host", "remove-hosts"],
-		"values": [("HOST", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Remove ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument"), (" from ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
+		"values": [ANSIThemeString("HOST", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("... ", "argument"),
+			   ANSIThemeString("GROUP", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument")],
+		"description": [ANSIThemeString("Remove ", "description"),
+				ANSIThemeString("HOST", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument"),
+				ANSIThemeString(" from ", "description"),
+				ANSIThemeString("GROUP", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
 	},
 	"Set Global Variables": {
 		"command": ["set-var", "set-vars"],
-		"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Set global ", "description"), ("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [ANSIThemeString("KEY", "argument"),
+			   ANSIThemeString(":", "separator"),
+			   ANSIThemeString("VALUE", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument")],
+		"description": [ANSIThemeString("Set global ", "description"),
+				ANSIThemeString("KEY", "argument"),
+				ANSIThemeString(":", "separator"),
+				ANSIThemeString("VALUE", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument")],
 		"extended_description": [
-			[("Setting global variables is equivalent to setting variables", "description")],
-			[("for the group “", "description"), ("all", "argument"), ("“", "description")],
+			[ANSIThemeString("Setting global variables is equivalent to setting variables", "description")],
+			[ANSIThemeString("for the group “", "description"),
+			 ANSIThemeString("all", "argument"),
+			 ANSIThemeString("“", "description")],
 		],
 		"min_args": 1,
 		"max_args": 1,
@@ -918,27 +1025,62 @@ COMMANDLINE = {
 	},
 	"Set Group Variables": {
 		"command": ["set-group-var", "set-group-vars"],
-		"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("... ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
-		"description": [("Set ", "description"), ("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument"), (" for ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
+		"values": [ANSIThemeString("KEY", "argument"),
+			   ANSIThemeString(":", "separator"),
+			   ANSIThemeString("VALUE", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("... ", "argument"),
+			   ANSIThemeString("GROUP", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
+		"description": [ANSIThemeString("Set ", "description"),
+				ANSIThemeString("KEY", "argument"),
+				ANSIThemeString(":", "separator"),
+				ANSIThemeString("VALUE", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument"),
+				ANSIThemeString(" for ", "description"),
+				ANSIThemeString("GROUP", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
 		"min_args": 2,
 		"max_args": 2,
 		"callback": set_group_vars,
 	},
 	"Set Host Variables": {
 		"command": ["set-host-var", "set-host-vars"],
-		"values": [("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("... ", "argument"), ("HOST", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
-		"description": [("Set ", "description"), ("KEY", "argument"), (":", "separator"), ("VALUE", "argument"), (",", "separator"), ("...", "argument"), (" for ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument")], # pylint: disable=line-too-long
+		"values": [ANSIThemeString("KEY", "argument"),
+			   ANSIThemeString(":", "separator"),
+			   ANSIThemeString("VALUE", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("... ", "argument"),
+			   ANSIThemeString("HOST", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
+		"description": [ANSIThemeString("Set ", "description"),
+				ANSIThemeString("KEY", "argument"),
+				ANSIThemeString(":", "separator"),
+				ANSIThemeString("VALUE", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument"),
+				ANSIThemeString(" for ", "description"),
+				ANSIThemeString("HOST", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
 		"min_args": 2,
 		"max_args": 2,
 		"callback": set_host_vars,
 	},
 	"Unset Global Variables": {
 		"command": ["unset-var", "unset-vars"],
-		"values": [("KEY", "argument")],
-		"description": [("Unset global ", "description"), ("KEY", "argument")],
+		"values": [ANSIThemeString("KEY", "argument")],
+		"description": [ANSIThemeString("Unset global ", "description"),
+				ANSIThemeString("KEY", "argument")],
 		"extended_description": [
-			[("Unsetting global variables is equivalent to unsetting variables", "description")],
-			[("for the group “", "description"), ("all", "argument"), ("“", "description")],
+			[ANSIThemeString("Unsetting global variables is equivalent to unsetting variables", "description")],
+			[ANSIThemeString("for the group “", "description"),
+			 ANSIThemeString("all", "argument"),
+			 ANSIThemeString("“", "description")],
 		],
 		"min_args": 1,
 		"max_args": 1,
@@ -946,23 +1088,39 @@ COMMANDLINE = {
 	},
 	"Unset Group Variables": {
 		"command": ["unset-group-var", "unset-group-vars"],
-		"values": [("KEY ", "argument"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Unset ", "description"), ("KEY", "argument"), (" for ", "description"), ("GROUP", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [ANSIThemeString("KEY ", "argument"),
+			   ANSIThemeString("GROUP", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument")],
+		"description": [ANSIThemeString("Unset ", "description"),
+				ANSIThemeString("KEY", "argument"),
+				ANSIThemeString(" for ", "description"),
+				ANSIThemeString("GROUP", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument")],
 		"min_args": 2,
 		"max_args": 2,
 		"callback": unset_group_vars,
 	},
 	"Unset Host Variables": {
 		"command": ["unset-host-var", "unset-host-vars"],
-		"values": [("KEY ", "argument"), ("HOST", "argument"), (",", "separator"), ("...", "argument")],
-		"description": [("Unset ", "description"), ("KEY", "argument"), (" for ", "description"), ("HOST", "argument"), (",", "separator"), ("...", "argument")],
+		"values": [ANSIThemeString("KEY ", "argument"),
+			   ANSIThemeString("HOST", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument")],
+		"description": [ANSIThemeString("Unset ", "description"),
+				ANSIThemeString("KEY", "argument"),
+				ANSIThemeString(" for ", "description"),
+				ANSIThemeString("HOST", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument")],
 		"min_args": 2,
 		"max_args": 2,
 		"callback": unset_host_vars,
 	},
 	"spacer1": {
 		"command": [""],
-		"description": [("", "default")],
+		"description": [ANSIThemeString("", "default")],
 	},
 }
 
