@@ -187,7 +187,7 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 	# First check that the destination directory is safe; it has to be owned by the user,
 	# and other must not have write permissions; also path must resolve to itself to avoid
 	# symlink attacks, and it must be a directory
-	path = Path("directory")
+	path = Path(directory)
 	resolved_path = path.resolve()
 	if path != resolved_path:
 		iktprint.iktprint([ANSIThemeString("Critical", "critical"),
