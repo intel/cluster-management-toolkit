@@ -25,7 +25,7 @@ import socket
 import subprocess
 import sys
 import tempfile
-from typing import cast, List, Optional
+from typing import cast, Dict, List, Optional
 
 try:
 	from natsort import natsorted
@@ -2892,20 +2892,43 @@ def run_checks(checks, **kwargs) -> None:
 	error: int = 0
 	warning: int = 0
 	note: int = 0
+	skip: int = 0
 
-	user = getuser()
-	cluster_name = get_cluster_name()
-	kubeconfig = secure_read_yaml(KUBE_CONFIG_FILE)
+	user = ""
+	cluster_name = ""
+	kubeconfig: Dict = {}
 
 	for check in checks:
+		preconditions = deep_get(check, DictPath("preconditions"), [])
+		if "user" in preconditions and len(user) == 0:
+			user = getuser()
+		if "clusterinfo" in preconditions and len(kubeconfig) == 0:
+			if not Path(KUBE_CONFIG_DIR).is_dir():
+				iktprint([ANSIThemeString(deep_get(check, DictPath("description"), ""), "phase")])
+				iktprint([ANSIThemeString("  Warning:", "warning"),
+					  ANSIThemeString(f" {KUBE_CONFIG_DIR} ", "path"),
+					  ANSIThemeString("does not exist; most likely there's no cluster; skipping.\n", "default")], stderr = True)
+				skip += 1
+				continue
+			if not Path(KUBE_CONFIG_FILE).is_file():
+				iktprint([ANSIThemeString(deep_get(check, DictPath("description"), ""), "phase")])
+				iktprint([ANSIThemeString("  Warning:", "warning"),
+					  ANSIThemeString(f" {KUBE_CONFIG_FILE} ", "path"),
+					  ANSIThemeString("does not exist; most likely there's no cluster; skipping.\n", "default")], stderr = True)
+				skip += 1
+				continue
+			kubeconfig = secure_read_yaml(KUBE_CONFIG_FILE)
+			cluster_name = get_cluster_name()
+
 		call = deep_get(check, DictPath("call"))
 		if call is not None:
 			critical, error, warning, note = call(cluster_name, kubeconfig, iktlib.iktconfig, user, critical, error, warning, note, **kwargs)
 
 	iktprint([ANSIThemeString("Summary:", "header")])
-	iktprint([ANSIThemeString("Critical:", "critical"), ANSIThemeString(f" {critical}", "error")])
+	iktprint([ANSIThemeString("Critical", "critical"), ANSIThemeString(f": {critical}", "error")])
 	iktprint([ANSIThemeString(f"  Errors: {error}", "error")])
 	iktprint([ANSIThemeString(f"Warnings: {warning}", "warning")])
+	iktprint([ANSIThemeString(f" Skipped: {skip}", "emphasis")])
 	iktprint([ANSIThemeString(f"   Notes: {note}", "note")])
 
 security_audit_checks = [
@@ -2916,9 +2939,15 @@ security_audit_checks = [
 	{
 		"description": "Check for insecure kube config options",
 		"call": checks.check_insecure_kube_config_options,
+		"preconditions": [
+			"clusterinfo",
+		],
 	}, {
 		"description": "Check for insecure file permissions",
 		"call": checks.check_file_permissions,
+		"preconditions": [
+			"user",
+		],
 	},
 ]
 
@@ -2955,6 +2984,9 @@ preflight_checks = [
 	{
 		"description": "Check whether the user can sudo without a password",
 		"call": checks.check_sudo_configuration,
+		"preconditions": [
+			"user",
+		],
 	}, {
 		"description": "Check whether SSH known_hosts hashing is enabled",
 		"call": checks.check_known_hosts_hashing,
@@ -2987,9 +3019,15 @@ troubleshoot_checks = [
 	{
 		"description": "Check whether client / server versions match",
 		"call": checks.check_client_server_version_match,
+		"preconditions": [
+			"clusterinfo",
+		],
 	}, {
 		"description": "Check kubelet and kube-proxy versions",
 		"call": checks.check_kubelet_and_kube_proxy_versions,
+		"preconditions": [
+			"clusterinfo",
+		],
 	},
 	# Check kube-controller-manager, kube-scheduler, and cloud-controller-manager;
 	# they should match, but can be up to one version older,

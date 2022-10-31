@@ -758,7 +758,7 @@ recommended_file_permissions = [
 		"justification": [ANSIThemeString("If other users can read or modify the Ansible inventory they can obtain elevated privileges", "default")]
 	},
 	{
-		"path": KUBE_CONFIG_DIR,
+		"path": KUBE_CONFIG_FILE,
 		"alertmask": 0o027,
 		"usergroup_alertmask": 0o077,
 		"executable": False,
@@ -854,8 +854,8 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 						  ANSIThemeString(" is not owned by ", "default"),
 						  ANSIThemeString(user, "emphasis")], stderr = True)
 					iktprint([ANSIThemeString("  ", "default"),
-						  ANSIThemeString("Justification: ", "emphasis"),
-						  ANSIThemeString("if other users can overwrite files they may be able to achieve elevated privileges", "default")], stderr = True)
+						  ANSIThemeString("Justification", "emphasis"),
+						  ANSIThemeString(": if other users can overwrite files they may be able to achieve elevated privileges", "default")], stderr = True)
 					critical += 1
 					issue = True
 
@@ -867,15 +867,15 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 						  ANSIThemeString(" does not belong to the user group for ", "default"),
 						  ANSIThemeString(user, "emphasis")], stderr = True)
 					iktprint([ANSIThemeString("  ", "default"),
-						  ANSIThemeString("Justification: ", "emphasis")] + justification, stderr = True)
+						  ANSIThemeString("Justification", "emphasis"), ANSIThemeString(": ", "default")] + justification, stderr = True)
 					print()
 					critical += 1
 					issue = True
 
 				if path_permissions & alertmask != 0:
 					iktprint([ANSIThemeString("  ", "default"),
-						  ANSIThemeString(f"{severity.capitalize()}:", severity),
-						  ANSIThemeString(f" The permissions for the {pathtype} ", "default"),
+						  ANSIThemeString(f"{severity.capitalize()}", severity),
+						  ANSIThemeString(f": The permissions for the {pathtype} ", "default"),
 						  ANSIThemeString(f"{entry}", "path"),
 						  ANSIThemeString(" are ", "default"),
 						  ANSIThemeString(f"{path_permissions:03o}", "emphasis"),
@@ -884,7 +884,7 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 						  ANSIThemeString(" (or stricter)", "default")],
 						  stderr = True)
 					iktprint([ANSIThemeString("  ", "default"),
-						  ANSIThemeString("Justification: ", "emphasis")] + justification, stderr = True)
+						  ANSIThemeString("Justification", "emphasis"), ANSIThemeString(": ", "default")] + justification, stderr = True)
 					print()
 
 					if severity == "critical":

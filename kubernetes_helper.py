@@ -39,7 +39,7 @@ except ModuleNotFoundError:
 from iktpaths import KUBE_CONFIG_FILE
 from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, execute_command_with_response, get_since, timestamp_to_datetime, versiontuple
 from ikttypes import DictPath, FilePath, StatusGroup
-from iktio import secure_read_yaml, secure_write_yaml
+from iktio import secure_read_yaml, secure_which, secure_write_yaml
 
 # A list of all K8s resources we have some knowledge about
 kubernetes_resources: Dict[Any, Any] = {
@@ -2144,10 +2144,32 @@ def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: b
 	kubernetes_resources[kind]["info"] = infoview
 
 def kubectl_get_version() -> Tuple[int, int, str, int, int, str]:
+	"""
+	Get kubectl & API-server version
+
+		Returns:
+			(kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version):
+				kubectl_major_version (int): Major client version
+				kubectl_minor_version (int): Minor client version
+				kubectl_git_version (str): Client GIT version
+				server_major_version (int): Major API-server version
+				server_minor_version (int): Minor API-server version
+				server_git_version (str): API-server GIT version
+	"""
 	# Check kubectl version
-	args = ["/usr/bin/kubectl", "version", "-oyaml"]
-	response = execute_command_with_response(args)
-	version_data = yaml.safe_load(response)
+	try:
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	except FileNotFoundError:
+		return -1, -1, "", -1, -1, ""
+
+	args = [kubectl_path, "version", "-oyaml"]
+
+	try:
+		response = execute_command_with_response(args)
+		version_data = yaml.safe_load(response)
+	except yaml.scanner.ScannerError:
+		return -1, -1, "", -1, -1, ""
+
 	kubectl_major_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("clientVersion#major")))))
 	kubectl_minor_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("clientVersion#minor")))))
 	server_major_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("serverVersion#major")))))
