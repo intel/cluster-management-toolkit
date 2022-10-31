@@ -15,6 +15,7 @@ import socket
 import sys
 import tarfile
 import tempfile
+from typing import List, Tuple
 
 import paramiko
 
@@ -22,14 +23,14 @@ import iktlib
 
 from iktpaths import SSH_DIR
 import iktprint
-from ikttypes import DictPath, FilePath
+from ikttypes import ANSIThemeString, DictPath, FilePath
 
 try:
 	import urllib3
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run ikt-install?")
 
-def scan_and_add_ssh_keys(hosts) -> None:
+def scan_and_add_ssh_keys(hosts: List[str]) -> None:
 	"""
 	Scan hosts and add their public ssh keys to .ssh/known_hosts
 
@@ -48,7 +49,10 @@ def scan_and_add_ssh_keys(hosts) -> None:
 	try:
 		hostfile = paramiko.HostKeys(filename = known_hosts)
 	except IOError:
-		iktprint.iktprint([("Critical", "critical"), (": Failed to open/read “", "default"), (known_hosts, "path"), ("“; aborting.", "default")], stderr = True)
+		iktprint.iktprint([ANSIThemeString("Critical", "critical"),
+				   ANSIThemeString(": Failed to open/read “", "default"),
+				   ANSIThemeString(known_hosts, "path"),
+				   ANSIThemeString("“; aborting.", "default")], stderr = True)
 		sys.exit(errno.EIO)
 
 	for host in hosts:
@@ -63,9 +67,10 @@ def scan_and_add_ssh_keys(hosts) -> None:
 			key = transport.get_remote_server_key()
 			transport.close()
 		except paramiko.SSHException:
-			iktprint.iktprint([("Error", "error"), (": Failed to get server key from remote host ", "default"),
-					   (host, "hostname"),
-					   ("; aborting.", "default")], stderr = True)
+			iktprint.iktprint([ANSIThemeString("Error", "error"),
+					   ANSIThemeString(": Failed to get server key from remote host ", "default"),
+					   ANSIThemeString(host, "hostname"),
+					   ANSIThemeString("; aborting.", "default")], stderr = True)
 			sys.exit(errno.EIO)
 
 		hostfile.add(hostname = host, key = key, keytype = key.get_name())
@@ -73,20 +78,23 @@ def scan_and_add_ssh_keys(hosts) -> None:
 	try:
 		hostfile.save(filename = known_hosts)
 	except IOError:
-		iktprint.iktprint([("Critical", "critical"), (": Failed to save modifications to “", "default"),
-				   (known_hosts, "path"),
-				   ("“; aborting.", "default")], stderr = True)
+		iktprint.iktprint([ANSIThemeString("Critical", "critical"),
+				   ANSIThemeString(": Failed to save modifications to “", "default"),
+				   ANSIThemeString(known_hosts, "path"),
+				   ANSIThemeString("“; aborting.", "default")], stderr = True)
 		sys.exit(errno.EIO)
 
-def verify_checksum(checksum, checksum_type, data, filename = None):
+def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filename: str = None) -> bool:
 	"""
 	Checksum data against a checksum file
 
 		Parameters:
-			checksum (str): The downloaded checksum file
+			checksum (bytes): The downloaded checksum file
 			checksum_type (str): What hash should be used when calculating the checksum?
 			data (bytearray): The data to calculate the checksum of
 			filename (str): Used to identify the correct checksum entry in a file with multiple checksums (optional)
+		Returns:
+			retval (bool): True if the checksum matches, False if the checksum does not match
 	"""
 
 	if checksum_type is None:
@@ -94,10 +102,10 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 
 	if checksum_type == "md5":
 		m = hashlib.md5() # nosec
-		iktprint.iktprint([("Warning", "warning"), (": Use of MD5 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
+		iktprint.iktprint([ANSIThemeString("Warning", "warning"), ANSIThemeString(": Use of MD5 checksums is ", "default"), ANSIThemeString("strongly", "emphasis"), ANSIThemeString(" discouraged", "default")], stderr = True)
 	elif checksum_type in ("sha", "sha1"):
 		m = hashlib.sha1() # nosec
-		iktprint.iktprint([("Warning", "warning"), (": Use of SHA1 checksums is ", "default"), ("strongly", "emphasis"), (" discouraged", "default")], stderr = True)
+		iktprint.iktprint([ANSIThemeString("Warning", "warning"), ANSIThemeString(": Use of SHA1 checksums is ", "default"), ANSIThemeString("strongly", "emphasis"), ANSIThemeString(" discouraged", "default")], stderr = True)
 	elif checksum_type == "sha224":
 		m = hashlib.sha224()
 	elif checksum_type == "sha256":
@@ -119,9 +127,9 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 	elif checksum_type == "sha3_512":
 		m = hashlib.sha3_512()
 	elif checksum_type == "shake_128":
-		m = hashlib.shake_128()
+		m = hashlib.shake_128() # type: ignore
 	elif checksum_type == "shake_256":
-		m = hashlib.shake_256()
+		m = hashlib.shake_256() # type: ignore
 	else:
 		return False
 
@@ -161,7 +169,7 @@ def verify_checksum(checksum, checksum_type, data, filename = None):
 #
 # fetch_urls is a list of tuples:
 # (URL to file or archive, file to extract, URL to checksum, type of checksum)
-def download_files(directory, fetch_urls, permissions = 0o644):
+def download_files(directory: str, fetch_urls: List[Tuple[str, str, str, str]], permissions = 0o644) -> bool:
 	"""
 	Download files; if the file is a tar file it can extract a file.
 	If checksum information is provided it can also fetch a checksum and compare against.
@@ -182,30 +190,38 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 	path = Path("directory")
 	resolved_path = path.resolve()
 	if path != resolved_path:
-		iktprint.iktprint([("Critical", "critical"), (": The target path ", "default"),
-				   (f"{directory}", "path"),
-				   (" does not resolve to itself; this is either a configuration error or a security issue; aborting.", "default")], stderr = True)
+		iktprint.iktprint([ANSIThemeString("Critical", "critical"),
+				   ANSIThemeString(": The target path ", "default"),
+				   ANSIThemeString(f"{directory}", "path"),
+				   ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if path.owner() != user:
-		iktprint.iktprint([("Error", "error"), (": The target path ", "default"),
-				   (f"{directory}", "path"),
-				   (" is not owned by ", "default"), (user, "emphasis"), ("; aborting.", "default")], stderr = True)
+		iktprint.iktprint([ANSIThemeString("Error", "error"),
+				   ANSIThemeString(": The target path ", "default"),
+				   ANSIThemeString(f"{directory}", "path"),
+				   ANSIThemeString(" is not owned by ", "default"),
+				   ANSIThemeString(user, "emphasis"),
+				   ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	path_stat = path.stat()
 	path_permissions = path_stat.st_mode & 0o002
 
 	if path_permissions != 0:
-		iktprint.iktprint([("Critical", "critical"), (": The target path ", "default"),
-				   (f"{directory}", "path"),
-				   (" is world writable", "default"), ("; aborting.", "default")], stderr = True)
+		iktprint.iktprint([ANSIThemeString("Critical", "critical"),
+				   ANSIThemeString(": The target path ", "default"),
+				   ANSIThemeString(f"{directory}", "path"),
+				   ANSIThemeString(" is world writable", "default"),
+				   ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if not path.is_dir():
-		iktprint.iktprint([("Error", "error"), (": The target path ", "default"),
-				   (f"{directory}", "path"),
-				   (" is not a directory", "default"), ("; aborting.", "default")], stderr = True)
+		iktprint.iktprint([ANSIThemeString("Error", "error"),
+				   ANSIThemeString(": The target path ", "default"),
+				   ANSIThemeString(f"{directory}", "path"),
+				   ANSIThemeString(" is not a directory", "default"),
+				   ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	# OK, the destination isn't a symlink and doesn't contain ".." or similar,
@@ -218,11 +234,11 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 	if http_proxy is not None and http_proxy != "":
 		pm = urllib3.ProxyManager(http_proxy)
 	else:
-		pm = urllib3.PoolManager()
+		pm = urllib3.PoolManager() # type: ignore
 	if https_proxy is not None and https_proxy != "":
 		spm = urllib3.ProxyManager(https_proxy)
 	else:
-		spm = urllib3.PoolManager()
+		spm = urllib3.PoolManager() # type: ignore
 
 	for url, filename, checksum_url, checksum_type in fetch_urls:
 		# If there's a checksum file, download it first
@@ -234,7 +250,9 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 			elif checksum_url.startswith("https"):
 				r1 = spm.request("GET", checksum_url)
 			else:
-				iktprint.iktprint([("Error", "error"), (": Unknown or missing protocol; Checksum URL ", "default"), (f"{checksum_url}", "url")], stderr = True)
+				iktprint.iktprint([ANSIThemeString("Error", "error"),
+						   ANSIThemeString(": Unknown or missing protocol; Checksum URL ", "default"),
+						   ANSIThemeString(f"{checksum_url}", "url")], stderr = True)
 				retval = False
 				break
 
@@ -249,17 +267,19 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 		elif url.startswith("https"):
 			r1 = spm.request("GET", url)
 		else:
-			iktprint.iktprint([("Error", "error"), (": Unknown or missing protocol; URL ", "default"), (f"{url}", "url")], stderr = True)
+			iktprint.iktprint([ANSIThemeString("Error", "error"),
+					   ANSIThemeString(": Unknown or missing protocol; URL ", "default"),
+					   ANSIThemeString(f"{url}", "url")], stderr = True)
 			retval = False
 			continue
 
 		if r1.status == 200:
 			# If we have a checksum we need to confirm that the downloaded file matches the checksum
 			if checksum is not None and verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)) == False:
-				iktprint.iktprint([("Critical", "error"),
-					  (": File downloaded from ", "default"),
-					  (f"{url}", "url"),
-					  (" did not match its expected checksum; aborting.", "default")], stderr = True)
+				iktprint.iktprint([ANSIThemeString("Critical", "error"),
+						   ANSIThemeString(": File downloaded from ", "default"),
+						   ANSIThemeString(f"{url}", "url"),
+						   ANSIThemeString(" did not match its expected checksum; aborting.", "default")], stderr = True)
 				retval = False
 				break
 
@@ -272,14 +292,14 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 					with tarfile.open(name = f.name, mode = "r") as tf:
 						members = tf.getnames()
 						if filename not in members:
-							iktprint.iktprint([("Critical", "critical"),
-									   (": ", "default"),
-									   (f"{filename}", "path"),
-									   (" is not a part of archive; aborting.", "default")], stderr = True)
+							iktprint.iktprint([ANSIThemeString("Critical", "critical"),
+									   ANSIThemeString(": ", "default"),
+									   ANSIThemeString(f"{filename}", "path"),
+									   ANSIThemeString(" is not a part of archive; aborting.", "default")], stderr = True)
 							sys.exit(errno.ENOENT)
 
 						with tempfile.NamedTemporaryFile(delete = False) as f2:
-							with tf.extractfile(filename) as tff:
+							with tf.extractfile(filename) as tff: # type: ignore
 								f2.write(tff.read())
 
 							# Here we change to the permissions we're supposed to use
@@ -293,8 +313,11 @@ def download_files(directory, fetch_urls, permissions = 0o644):
 					# Here we atomically move it in place
 					os.rename(f.name, f"{directory}/{filename}")
 		else:
-			iktprint.iktprint([("Error ", "error"),
-				  (": Failed to fetch URL ", "default"), (f"{url}", "url"), ("; HTTP code: ", "default"), (f"{r1.status}", "errorvalue")], stderr = True)
+			iktprint.iktprint([ANSIThemeString("Error ", "error"),
+					   ANSIThemeString(": Failed to fetch URL ", "default"),
+					   ANSIThemeString(f"{url}", "url"),
+					   ANSIThemeString("; HTTP code: ", "default"),
+					   ANSIThemeString(f"{r1.status}", "errorvalue")], stderr = True)
 			retval = False
 			continue
 	pm.clear()

@@ -6,36 +6,38 @@ This module contains helptexts for iku
 
 from about import PROGRAM_SUITE_FULL_NAME, PROGRAM_SUITE_VERSION, UI_PROGRAM_NAME, UI_PROGRAM_VERSION
 
+from ikttypes import ANSIThemeString, ThemeRef, ThemeString
+
 # Improve to handle embedded color codes; probably through storing the log messages
 # as a list of lines
 
 about = [
-	(0, [("", ("main", "about_text"))]),
-	(0, [("   ████   ", ("main", "logo_bullet")), ("████    ◢███◤  ████████████████   ", ("main", "logo_letter"))]),
-	(0, [("   ████   ", ("main", "logo_bullet")), ("████   ◢███◤         ████         ", ("main", "logo_letter"))]),
-	(0, [("          ████  ◢███◤          ████         ", ("main", "logo_letter"))]),
-	(0, [("   ████   ████ ◢███◤           ████         ", ("main", "logo_letter"))]),
-	(0, [("   ████   ████◢███◤            ████         ", ("main", "logo_letter"))]),
-	(0, [("   ████   ████◥███◣            ████         ", ("main", "logo_letter"))]),
-	(0, [("   ████   ████ ◥███◣           ████         ", ("main", "logo_letter"))]),
-	(0, [("   ████   ████  ◥███◣          ████         ", ("main", "logo_letter"))]),
-	(0, [("   ████   ████   ◥███◣         ████         ", ("main", "logo_letter"))]),
-	(0, [("   ████   ████    ◥███◣        ████         ", ("main", "logo_letter"))]),
-	(0, [("", ("main", "about_text"))]),
-	(0, [(f" {PROGRAM_SUITE_FULL_NAME} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{PROGRAM_SUITE_VERSION}", ("main", "about_version"))]), # pylint: disable=line-too-long
-	(0, [(f" {UI_PROGRAM_NAME} ", ("main", "about_text_highlight")), ("v", ("main", "about_text")), (f"{UI_PROGRAM_VERSION}", ("main", "about_version"))]),
-	(0, [("", ("main", "about_text"))]),
-	(0, [(" Copyright © 2019-2022 Intel Corporation", ("main", "about_text_highlight"))]),
-	(0, [("", ("main", "about_text"))]),
-	(0, [(" Author(s):", ("main", "about_text_highlight"))]),
-	(0, [(" David Weinehall", ("main", "about_text"))]),
-	(0, [("", ("main", "about_text"))]),
-	(0, [(" Testing:", ("main", "about_text_highlight"))]),
-	(0, [(" Valtteri Rantala", ("main", "about_text"))]),
-	(0, [(" Ukri Niemimuukko", ("main", "about_text"))]),
-	(0, [(" Eero Tamminen", ("main", "about_text"))]),
-	(0, [(" Alexey Fomenko", ("main", "about_text"))]),
-	(0, [("", ("main", "about_text"))]),
+	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
+	(0, [ThemeString("   ████   ", ThemeRef("main", "logo_bullet")), ThemeString("████    ◢███◤  ████████████████   ", ThemeRef("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ", ThemeRef("main", "logo_bullet")), ThemeString("████   ◢███◤         ████         ", ThemeRef("main", "logo_letter"))]),
+	(0, [ThemeString("          ████  ◢███◤          ████         ", ThemeRef("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████ ◢███◤           ████         ", ThemeRef("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████◢███◤            ████         ", ThemeRef("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████◥███◣            ████         ", ThemeRef("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████ ◥███◣           ████         ", ThemeRef("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████  ◥███◣          ████         ", ThemeRef("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████   ◥███◣         ████         ", ThemeRef("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████    ◥███◣        ████         ", ThemeRef("main", "logo_letter"))]),
+	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
+	(0, [ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeRef("main", "about_text_highlight")), ThemeString("v", ThemeRef("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION}", ThemeRef("main", "about_version"))]), # pylint: disable=line-too-long
+	(0, [ThemeString(f" {UI_PROGRAM_NAME} ", ThemeRef("main", "about_text_highlight")), ThemeString("v", ThemeRef("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeRef("main", "about_version"))]),
+	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
+	(0, [ThemeString(" Copyright © 2019-2022 Intel Corporation", ThemeRef("main", "about_text_highlight"))]),
+	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
+	(0, [ThemeString(" Author(s):", ThemeRef("main", "about_text_highlight"))]),
+	(0, [ThemeString(" David Weinehall", ThemeRef("main", "about_text"))]),
+	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
+	(0, [ThemeString(" Testing:", ThemeRef("main", "about_text_highlight"))]),
+	(0, [ThemeString(" Valtteri Rantala", ThemeRef("main", "about_text"))]),
+	(0, [ThemeString(" Ukri Niemimuukko", ThemeRef("main", "about_text"))]),
+	(0, [ThemeString(" Eero Tamminen", ThemeRef("main", "about_text"))]),
+	(0, [ThemeString(" Alexey Fomenko", ThemeRef("main", "about_text"))]),
+	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
 ]
 
 toggleborders = [
@@ -194,37 +196,56 @@ containerinfo = [
 	("[Shift] + [Tab]", "Jump to previous elevated severity"),
 ] + spacer + logmovement
 
-usage  = [("[", "separator"), ("COMMAND", "command"), ("]", "separator"), (" [", "separator"), ("OPTION", "option"), ("]", "separator"), ("...", "option"), (" [", "separator"), ("ARGUMENT", "argument"), ("]", "separator"), ("...\n", "argument")] # pylint: disable=line-too-long
-usage += [("\n", "description")]
-usage += [("UI for managing Kubernetes clusters\n", "description")]
-usage += [("\n", "description")]
-usage += [("VIEW", "command"),
-          ("                     start in ", "description"), ("VIEW\n", "command")]
-usage += [("VIEW ", "command"), ("NAME ", "argument"), ("[", "separator"), ("NAMESPACE", "argument"), ("]", "separator"),
-          ("    start in ", "description"), ("VIEW", "command"), (" for the object matching ", "description"), ("NAME", "argument"), (" and, optionally, ", "description"), ("NAMESPACE\n", "argument")] # pylint: disable=line-too-long
-usage += [("VIEW ", "command"), ("NAMESPACE/NAME", "argument"),
-          ("      same as above; alternate syntax\n", "description")]
-usage += [("pod ", "command"), ("NAME NAMESPACE CONTAINER\n", "argument")]
-usage += [("pod ", "command"), ("[", "separator"), ("NAMESPACE/", "argument"), ("]", "separator"), ("NAME:", "argument"), ("[", "separator"), ("CONTAINER", "argument"), ("]\n", "separator")] # pylint: disable=line-too-long
-usage += [("                         start in container info view matching ", "description"), ("NAME", "argument"), (", ", "description"), ("NAMESPACE", "argument"), (", ", "description"), ("CONTAINER", "argument"), (";\n", "description")] # pylint: disable=line-too-long
-usage += [("                         if ", "description"), ("NAME", "argument"), (" has exactly one container, then ", "description"), ("NAME:", "argument"), (" opens that container\n", "description")] # pylint: disable=line-too-long
-usage += [("configmap ", "command"), ("NAME NAMESPACE CONFIGMAP\n", "argument")]
-usage += [("configmap ", "command"), ("[", "separator"), ("NAMESPACE/", "argument"), ("]", "separator"), ("NAME:", "argument"), ("[", "separator"), ("CONFIGMAP", "argument"), ("]\n", "separator")] # pylint: disable=line-too-long
-usage += [("                         start in the configmap info view matching ", "description"), ("NAME", "argument"), (", ", "description"),  ("NAMESPACE", "argument"), (", ", "description"),  ("CONFIGMAP", "argument"), (";\n", "description")] # pylint: disable=line-too-long
-usage += [("                         if ", "description"), ("NAME", "argument"), (" has exactly one configmap, then ", "description"), ("NAME:", "argument"), (" opens that configmap\n", "description")] # pylint: disable=line-too-long
-usage += [("\n", "description")]
-usage += [("  --read-only ", "option"),
-          ("           disable all commands that modify state", "description")]
-usage += [("\n", "description")]
-usage += [("  --namespace ", "option"), ("NAMESPACE", "argument"),
-          ("  only show namespace ", "description"), ("NAMESPACE", "argument"), (" (valid for all namespaced views)\n", "description")]
-usage += [("\n", "description")]
-usage += [("list-views     ", "command"),
-          ("          list view information and exit\n", "description")]
-usage += [("list-namespaces", "command"),
-          ("          list valid namespaces and exit\n", "description")]
-usage += [("\n", "description")]
-usage += [("help", "command"), ("|", "separator"), ("--help", "command"),
-          ("              display this help and exit\n", "description")]
-usage += [("version", "command"), ("|", "separator"), ("--version", "command"),
-          ("        output version information and exit\n", "description")]
+usage  = [ANSIThemeString("[", "separator"), ANSIThemeString("COMMAND", "command"), ANSIThemeString("]", "separator"),
+	  ANSIThemeString(" [", "separator"), ANSIThemeString("OPTION", "option"), ANSIThemeString("]", "separator"), ANSIThemeString("...", "option"),
+	  ANSIThemeString(" [", "separator"), ANSIThemeString("ARGUMENT", "argument"), ANSIThemeString("]", "separator"), ANSIThemeString("...\n", "argument")]
+usage += [ANSIThemeString("\n", "description")]
+usage += [ANSIThemeString("UI for managing Kubernetes clusters\n", "description")]
+usage += [ANSIThemeString("\n", "description")]
+usage += [ANSIThemeString("VIEW", "command"),
+          ANSIThemeString("                     start in ", "description"), ANSIThemeString("VIEW\n", "command")]
+usage += [ANSIThemeString("VIEW ", "command"), ANSIThemeString("NAME ", "argument"),
+	  ANSIThemeString("[", "separator"), ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString("]", "separator"),
+          ANSIThemeString("    start in ", "description"), ANSIThemeString("VIEW", "command"),
+	  ANSIThemeString(" for the object matching ", "description"), ANSIThemeString("NAME", "argument"), ANSIThemeString(" and, optionally, ", "description"),
+	  ANSIThemeString("NAMESPACE\n", "argument")]
+usage += [ANSIThemeString("VIEW ", "command"), ANSIThemeString("NAMESPACE/NAME", "argument"),
+          ANSIThemeString("      same as above; alternate syntax\n", "description")]
+usage += [ANSIThemeString("pod ", "command"), ANSIThemeString("NAME NAMESPACE CONTAINER\n", "argument")]
+usage += [ANSIThemeString("pod ", "command"), ANSIThemeString("[", "separator"), ANSIThemeString("NAMESPACE/", "argument"), ANSIThemeString("]", "separator"),
+	  ANSIThemeString("NAME:", "argument"), ANSIThemeString("[", "separator"), ANSIThemeString("CONTAINER", "argument"), ANSIThemeString("]\n", "separator")]
+usage += [ANSIThemeString("                         start in container info view matching ", "description"),
+	  ANSIThemeString("NAME", "argument"), ANSIThemeString(", ", "description"),
+	  ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString(", ", "description"),
+	  ANSIThemeString("CONTAINER", "argument"), ANSIThemeString(";\n", "description")]
+usage += [ANSIThemeString("                         if ", "description"),
+	  ANSIThemeString("NAME", "argument"),
+	  ANSIThemeString(" has exactly one container, then ", "description"),
+	  ANSIThemeString("NAME:", "argument"), ANSIThemeString(" opens that container\n", "description")]
+usage += [ANSIThemeString("configmap ", "command"), ANSIThemeString("NAME NAMESPACE CONFIGMAP\n", "argument")]
+usage += [ANSIThemeString("configmap ", "command"), ANSIThemeString("[", "separator"), ANSIThemeString("NAMESPACE/", "argument"), ANSIThemeString("]", "separator"),
+	  ANSIThemeString("NAME:", "argument"), ANSIThemeString("[", "separator"), ANSIThemeString("CONFIGMAP", "argument"), ANSIThemeString("]\n", "separator")]
+usage += [ANSIThemeString("                         start in the configmap info view matching ", "description"),
+	  ANSIThemeString("NAME", "argument"), ANSIThemeString(", ", "description"),
+	  ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString(", ", "description"),
+	  ANSIThemeString("CONFIGMAP", "argument"), ANSIThemeString(";\n", "description")]
+usage += [ANSIThemeString("                         if ", "description"),
+	  ANSIThemeString("NAME", "argument"),
+	  ANSIThemeString(" has exactly one configmap, then ", "description"),
+	  ANSIThemeString("NAME:", "argument"), ANSIThemeString(" opens that configmap\n", "description")]
+usage += [ANSIThemeString("\n", "description")]
+usage += [ANSIThemeString("  --read-only ", "option"),
+          ANSIThemeString("           disable all commands that modify state", "description")]
+usage += [ANSIThemeString("\n", "description")]
+usage += [ANSIThemeString("  --namespace ", "option"), ANSIThemeString("NAMESPACE", "argument"),
+          ANSIThemeString("  only show namespace ", "description"), ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString(" (valid for all namespaced views)\n", "description")]
+usage += [ANSIThemeString("\n", "description")]
+usage += [ANSIThemeString("list-views     ", "command"),
+          ANSIThemeString("          list view information and exit\n", "description")]
+usage += [ANSIThemeString("list-namespaces", "command"),
+          ANSIThemeString("          list valid namespaces and exit\n", "description")]
+usage += [ANSIThemeString("\n", "description")]
+usage += [ANSIThemeString("help", "command"), ANSIThemeString("|", "separator"), ANSIThemeString("--help", "command"),
+          ANSIThemeString("              display this help and exit\n", "description")]
+usage += [ANSIThemeString("version", "command"), ANSIThemeString("|", "separator"), ANSIThemeString("--version", "command"),
+          ANSIThemeString("        output version information and exit\n", "description")]

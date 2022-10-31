@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import about
 
-from ikttypes import DictPath, FilePath
+from ikttypes import ANSIThemeString, DictPath, FilePath
 
 from iktlib import deep_get
 from iktprint import themearray_len, iktprint, init_iktprint
@@ -35,8 +35,8 @@ def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0
 	"""
 
-	iktprint([(f"{programname} ", "programname"), (f"{programversion}", "version")])
-	iktprint([(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"), (f"{about.PROGRAM_SUITE_VERSION}", "version")])
+	iktprint([ANSIThemeString(f"{programname} ", "programname"), ANSIThemeString(f"{programversion}", "version")])
+	iktprint([ANSIThemeString(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"), ANSIThemeString(f"{about.PROGRAM_SUITE_VERSION}", "version")])
 	print()
 	print(about.COPYRIGHT)
 	print(about.LICENSE)
@@ -88,13 +88,13 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	else:
 		has_options = True
 
-	headerstring = [(f"{programname}", "programname")]
+	headerstring = [ANSIThemeString(f"{programname}", "programname")]
 	if has_commands == True:
-		headerstring += [(" COMMAND", "command")]
+		headerstring += [ANSIThemeString(" COMMAND", "command")]
 	if has_options == True:
-		headerstring += [(" [", "separator"), ("OPTION", "option"), ("]", "separator"), ("...", "option")]
+		headerstring += [ANSIThemeString(" [", "separator"), ANSIThemeString("OPTION", "option"), ANSIThemeString("]", "separator"), ANSIThemeString("...", "option")]
 	if has_args == True:
-		headerstring += [(" [", "separator"), ("ARGUMENT", "argument"), ("]", "separator"), ("...", "argument")]
+		headerstring += [ANSIThemeString(" [", "separator"), ANSIThemeString("ARGUMENT", "argument"), ANSIThemeString("]", "separator"), ANSIThemeString("...", "argument")]
 
 	iktprint(headerstring)
 	print()
@@ -267,11 +267,11 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 
 	while i < len(argv):
 		if "\x00" in argv[i]:
-			iktprint([(f"{programname}", "programname"), (": argument “", "default"),
-				  (argv[i].replace("\x00", "<NUL>"), "command"),
-				  ("“ contains NUL-bytes (replaced here);\n", "default"),
-				  ("this is either a programming error, a system error, file or memory corruption, ", "default"),
-				  ("or a deliberate attempt to bypass security; aborting.", "default")], stderr = True)
+			iktprint([ANSIThemeString(f"{programname}", "programname"), ANSIThemeString(": argument “", "default"),
+				  ANSIThemeString(argv[i].replace("\x00", "<NUL>"), "command"),
+				  ANSIThemeString("“ contains NUL-bytes (replaced here);\n", "default"),
+				  ANSIThemeString("this is either a programming error, a system error, file or memory corruption, ", "default"),
+				  ANSIThemeString("or a deliberate attempt to bypass security; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
 		# Have we got a command to execute?
@@ -283,8 +283,8 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 					commandname, command, key, min_args, max_args = __find_command(commandline, default_command)
 
 				if command is None:
-					iktprint([(f"{programname}", "programname"), (": unrecognised command “", "default"), (f"{argv[i]}", "command"), ("“.", "default")], stderr = True)
-					iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+					iktprint([ANSIThemeString(f"{programname}", "programname"), ANSIThemeString(": unrecognised command “", "default"), ANSIThemeString(f"{argv[i]}", "command"), ANSIThemeString("“.", "default")], stderr = True)
+					iktprint([ANSIThemeString("Try “", "default"), ANSIThemeString(f"{programname} ", "programname"), ANSIThemeString("help", "command"), ANSIThemeString("“ for more information.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 
 				# If we defaulted we don't want to consume any options
@@ -341,32 +341,32 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 		commandname, command, key, min_args, max_args = __find_command(commandline, default_command)
 
 	if max_args == 0 and len(args) > 0:
-		iktprint([(f"{programname}", "programname"), (": “", "default"), (f"{commandname}", "command"), ("“ does not accept arguments.", "default")], stderr = True)
-		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		iktprint([ANSIThemeString(f"{programname}", "programname"), ANSIThemeString(": “", "default"), ANSIThemeString(f"{commandname}", "command"), ANSIThemeString("“ does not accept arguments.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Try “", "default"), ANSIThemeString(f"{programname} ", "programname"), ANSIThemeString("help", "command"), ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif len(args) < min_args and min_args != max_args:
-		iktprint([(f"{programname}", "programname"), (": “", "default"),
-			  (f"{commandname}", "command"),
-			  (f"“ requires at least {min_args} arguments.", "default")], stderr = True)
-		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		iktprint([ANSIThemeString(f"{programname}", "programname"), ANSIThemeString(": “", "default"),
+			  ANSIThemeString(f"{commandname}", "command"),
+			  ANSIThemeString(f"“ requires at least {min_args} arguments.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Try “", "default"), ANSIThemeString(f"{programname} ", "programname"), ANSIThemeString("help", "command"), ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif len(args) != min_args and min_args == max_args:
-		iktprint([(f"{programname}", "programname"), (": “", "default"),
-			  (f"{commandname}", "command"),
-			  (f"“ requires exactly {min_args} arguments.", "default")], stderr = True)
-		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		iktprint([ANSIThemeString(f"{programname}", "programname"), ANSIThemeString(": “", "default"),
+			  ANSIThemeString(f"{commandname}", "command"),
+			  ANSIThemeString(f"“ requires exactly {min_args} arguments.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Try “", "default"), ANSIThemeString(f"{programname} ", "programname"), ANSIThemeString("help", "command"), ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif len(args) > max_args:
-		iktprint([(f"{programname}", "programname"), (": “", "default"),
-			  (f"{commandname}", "command"),
-			  (f"“ requires at most {max_args} arguments.", "default")], stderr = True)
-		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		iktprint([ANSIThemeString(f"{programname}", "programname"), ANSIThemeString(": “", "default"),
+			  ANSIThemeString(f"{commandname}", "command"),
+			  ANSIThemeString(f"“ requires at most {max_args} arguments.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Try “", "default"), ANSIThemeString(f"{programname} ", "programname"), ANSIThemeString("help", "command"), ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	# The command was called without any command and no default was defined; this is an error
 	if command is None:
-		iktprint([(f"{programname}", "programname"), (": missing operand.", "default")], stderr = True)
-		iktprint([("Try “", "default"), (f"{programname} ", "programname"), ("help", "command"), ("“ for more information.", "default")], stderr = True)
+		iktprint([ANSIThemeString(f"{programname}", "programname"), ANSIThemeString(": missing operand.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Try “", "default"), ANSIThemeString(f"{programname} ", "programname"), ANSIThemeString("help", "command"), ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	else:
 		# Are there implicit options?

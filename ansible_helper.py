@@ -19,7 +19,7 @@ from iktpaths import HOMEDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from iktpaths import ANSIBLE_INVENTORY
 from iktprint import iktprint
-from ikttypes import DictPath, FilePath, FilePathAuditError, SecurityChecks
+from ikttypes import ANSIThemeString, DictPath, FilePath, FilePathAuditError, SecurityChecks
 
 ansible_results: Dict = {}
 
@@ -171,7 +171,7 @@ def ansible_get_inventory_dict() -> Dict:
 	return d
 
 # pylint: disable-next=line-too-long
-def ansible_get_inventory_pretty(groups: List[str] = None, highlight: bool = False, include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True) -> List[Tuple[str, str]]:
+def ansible_get_inventory_pretty(groups: List[str] = None, highlight: bool = False, include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True) -> List[List[ANSIThemeString]]:
 	"""
         Get the iKT inventory and return it neatly formatted
 
@@ -244,7 +244,7 @@ def ansible_get_inventory_pretty(groups: List[str] = None, highlight: bool = Fal
 				indent = tmp2[1]
 				listmarker = tmp2[2]
 				item = tmp2[4]
-				dump[i] = [(indent, "default"), (listmarker, "yaml_list"), (item, "yaml_value")]
+				dump[i] = [ANSIThemeString(indent, "default"), ANSIThemeString(listmarker, "yaml_list"), ANSIThemeString(item, "yaml_value")]
 				continue
 
 			# Is it key: value?
@@ -253,11 +253,11 @@ def ansible_get_inventory_pretty(groups: List[str] = None, highlight: bool = Fal
 				key = tmp2[1]
 				separator = tmp2[2]
 				value = tmp2[3]
-				dump[i] = [(key, "yaml_key"), (separator, "yaml_key_separator"), (value, "yaml_value")]
+				dump[i] = [ANSIThemeString(key, "yaml_key"), ANSIThemeString(separator, "yaml_key_separator"), ANSIThemeString(value, "yaml_value")]
 				continue
 
 			# Nope, then we'll use default format
-			dump[i] = [(dump[i], "default")]
+			dump[i] = [ANSIThemeString(dump[i], "default")]
 
 	return dump
 
@@ -1113,38 +1113,39 @@ def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: Li
 	"""
 
 	if unreachable == True:
-		iktprint([("• ", "separator"), (f"{task}", "error")], stderr = True)
+		iktprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "error")], stderr = True)
 	elif skipped == True:
-		iktprint([("• ", "separator"), (f"{task} [skipped]", "skip")], stderr = True)
-		iktprint([("", "default")])
+		iktprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task} [skipped]", "skip")], stderr = True)
+		iktprint([ANSIThemeString("", "default")])
 		return
 	elif retval != 0:
-		iktprint([("• ", "separator"), (f"{task}", "error"), (" (retval: ", "default"), (retval, "errorvalue"), (")", "default")], stderr = True)
+		iktprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "error"),
+			  ANSIThemeString(" (retval: ", "default"), ANSIThemeString(f"{retval}", "errorvalue"), ANSIThemeString(")", "default")], stderr = True)
 	else:
-		iktprint([("• ", "separator"), (f"{task}", "success")])
+		iktprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "success")])
 
 	if len(msg_lines) > 0:
-		iktprint([("msg:", "header")])
+		iktprint([ANSIThemeString("msg:", "header")])
 		for line in msg_lines:
-			iktprint([(line, "default")])
-		iktprint([("", "default")])
+			iktprint([ANSIThemeString(line, "default")])
+		iktprint([ANSIThemeString("", "default")])
 
 	if len(stdout_lines) > 0 or len(msg_lines) == 0 and len(stderr_lines) == 0:
-		iktprint([("stdout:", "header")])
+		iktprint([ANSIThemeString("stdout:", "header")])
 		for line in stdout_lines:
-			iktprint([(f"{line}", "default")])
+			iktprint([ANSIThemeString(f"{line}", "default")])
 		if len(stdout_lines) == 0:
-			iktprint([("<no output>", "none")])
-		iktprint([("", "default")])
+			iktprint([ANSIThemeString("<no output>", "none")])
+		iktprint([ANSIThemeString("", "default")])
 
 	# If retval isn't 0 we don't really care if stderr is empty
 	if len(stderr_lines) > 0 or retval != 0:
-		iktprint([("stderr:", "header")])
+		iktprint([ANSIThemeString("stderr:", "header")])
 		for line in stderr_lines:
-			iktprint([(f"{line}", "default")], stderr = True)
+			iktprint([ANSIThemeString(f"{line}", "default")], stderr = True)
 		if len(stderr_lines) == 0:
-			iktprint([("<no output>", "none")])
-		iktprint([("", "default")])
+			iktprint([ANSIThemeString("<no output>", "none")])
+		iktprint([ANSIThemeString("", "default")])
 
 def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 	"""
@@ -1156,7 +1157,7 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 	"""
 
 	if retval != 0 and len(__ansible_results) == 0:
-		iktprint([("Failed to execute playbook; retval: ", "error"), (f"{retval}", "errorvalue")], stderr = True)
+		iktprint([ANSIThemeString("Failed to execute playbook; retval: ", "error"), ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
 	else:
 		for host in __ansible_results:
 			plays = __ansible_results[host]
@@ -1173,11 +1174,11 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 					header_output = True
 
 					if unreachable == True:
-						iktprint([(f"[{host}]", "error")])
+						iktprint([ANSIThemeString(f"[{host}]", "error")])
 					elif retval == 0:
-						iktprint([(f"[{host}]", "success")])
+						iktprint([ANSIThemeString(f"[{host}]", "success")])
 					else:
-						iktprint([(f"[{host}]", "error")])
+						iktprint([ANSIThemeString(f"[{host}]", "error")])
 
 				msg_lines = deep_get(play, DictPath("msg_lines"), "")
 				stdout_lines = deep_get(play, DictPath("stdout_lines"), "")

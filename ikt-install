@@ -194,42 +194,42 @@ def install(options, args) -> None:
 			raise Exception(f"Programming error; invalid option {opt}")
 
 	if confirm == True:
-		iktprint([("Important:", "warning"), (" The following actions will be taken that will modify the system:", "default")])
+		iktprint([ANSIThemeString("Important:", "warning"), ANSIThemeString(" The following actions will be taken that will modify the system:", "default")])
 		pkgs = []
 		pkgs_fallback = []
 
 		if install_dependencies == True:
 			pkgs, pkgs_fallback = install_software_with_pip_fallback(PACKAGES_WITH_PIP_FALLBACK, dryrun = True)
-			iktprint([("\n• ", "separator"), ("Install the following system software:", "action")])
-			iktprint([("  Note", "warning"), (": This requires sudo permissions", "emphasis")])
+			iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString("Install the following system software:", "action")])
+			iktprint([ANSIThemeString("  Note", "warning"), ANSIThemeString(": This requires sudo permissions", "emphasis")])
 			for pkg in PACKAGES_WITHOUT_FALLBACK + pkgs:
-				iktprint([(f"    {pkg}", "path")])
+				iktprint([ANSIThemeString(f"    {pkg}", "path")])
 			for pkg in pkgs_fallback:
-				iktprint([(f"    {pkg}", "path"), (" (Using package from PIP)", "emphasis")])
+				iktprint([ANSIThemeString(f"    {pkg}", "path"), ANSIThemeString(" (Using package from PIP)", "emphasis")])
 
-		iktprint([("\n• ", "separator"), ("Create the following new directories:", "action")])
+		iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString("Create the following new directories:", "action")])
 		for name, _permissions in DIRECTORIES:
-			iktprint([(f"    {name}", "path")])
-		iktprint([("\n• ", "separator"), ("Install the following configuration files:", "action")])
+			iktprint([ANSIThemeString(f"    {name}", "path")])
+		iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString("Install the following configuration files:", "action")])
 		for src, dst, _permissions in CONFIGURATION_FILES:
-			iktprint([(f"     {dst}", "path")])
-		iktprint([("\n• ", "separator"), ("Create the following symlinks:", "action")])
+			iktprint([ANSIThemeString(f"     {dst}", "path")])
+		iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString("Create the following symlinks:", "action")])
 		for src, dst in MISC_SYMLINKS:
-			iktprint([(f"    {src}", "path"), (" ⇨ ", "emphasis"), (f"{dst}", "path")])
+			iktprint([ANSIThemeString(f"    {src}", "path"), ANSIThemeString(" ⇨ ", "emphasis"), ANSIThemeString(f"{dst}", "path")])
 		for src, dst in EXECUTABLE_SYMLINKS:
-			iktprint([(f"    {src}", "path"), (" ⇨ ", "emphasis"), (f"{dst}", "path")])
+			iktprint([ANSIThemeString(f"    {src}", "path"), ANSIThemeString(" ⇨ ", "emphasis"), ANSIThemeString(f"{dst}", "path")])
 
 		if install_dependencies == True and allow_fallback == False and len(pkgs_fallback) > 0:
-			iktprint([("\n", "default"), ("Error", "error"),
-				  (": Installation would require fallback to PIP, but “", "default"),
-				  ("--no-fallback", "option"),
-				  ("“ was specified; aborting.", "default")], stderr = True)
+			iktprint([ANSIThemeString("\n", "default"), ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": Installation would require fallback to PIP, but “", "default"),
+				  ANSIThemeString("--no-fallback", "option"),
+				  ANSIThemeString("“ was specified; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
 		retval = iktinput([ANSIThemeString("\nInstall ", "default"), ANSIThemeString("iKT", "programname"),
 				   ANSIThemeString("? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
-			iktprint([("\nAborting:", "error"), (" User stopped installation.", "default")], stderr = True)
+			iktprint([ANSIThemeString("\nAborting:", "error"), ANSIThemeString(" User stopped installation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
 	if install_dependencies == True:
@@ -244,32 +244,32 @@ COMMANDLINE = {
 	# Default command
 	"__global_options": {
 		"command": ["__global_options"],
-		"description": [("", "")],
+		"description": [ANSIThemeString("", "")],
 		"options": {
 			"--no-dependencies": {
-				"description": [("Do not install dependencies", "description")],
+				"description": [ANSIThemeString("Do not install dependencies", "description")],
 			},
 			"--no-fallback": {
-				"description": [("Do not use Python packages from PIP if no system package exist", "description")],
+				"description": [ANSIThemeString("Do not use Python packages from PIP if no system package exist", "description")],
 			},
 			"--verbose": {
-				"description": [("Be more verbose", "description")],
+				"description": [ANSIThemeString("Be more verbose", "description")],
 			},
 			"-Y": {
-				"description": [("Do not ask for confirmation before performing actions", "description")],
+				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
 			},
 		},
 	},
 	"__default": {
 		"command": ["__default"],
-		"description": [("", "")],
+		"description": [ANSIThemeString("", "")],
 		"min_args": 0,
 		"max_args": 0,
 		"callback": install,
 	},
 	"spacer1": {
 		"command": [""],
-		"description": [("", "")],
+		"description": [ANSIThemeString("", "")],
 	},
 }
 

@@ -17,7 +17,7 @@ import re
 import sys
 from typing import Dict, Generator, List, Tuple, Union
 
-from ikttypes import DictPath, FilePath
+from ikttypes import ANSIThemeString, DictPath, FilePath
 from iktpaths import BINDIR, IKTDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
 from iktpaths import DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
@@ -57,16 +57,16 @@ def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfi
 				note (int): The new count of note severity security issues
 	"""
 
-	iktprint([("[Checking for insecure configuration options in ", "phase"), (f"{IKT_CONFIG_FILE}", "path"), ("]", "phase")])
+	iktprint([ANSIThemeString("[Checking for insecure configuration options in ", "phase"), ANSIThemeString(f"{IKT_CONFIG_FILE}", "path"), ANSIThemeString("]", "phase")])
 	disablestricthostkeychecking = deep_get(iktconfig_dict, DictPath("Nodes#disablestricthostkeychecking"), False)
 	if disablestricthostkeychecking == False:
-		iktprint([("  OK\n", "emphasis")])
+		iktprint([ANSIThemeString("  OK\n", "emphasis")])
 	else:
-		iktprint([("  Warning", "warning"), (": strict SSH host key checking is disabled; this is a potential security threat.", "emphasis")], stderr = True)
-		iktprint([("    If strict SSH host key checking is disabled other systems can impersonate the remote host", "default")], stderr = True)
-		iktprint([("    and thus perform Man in the Middle (MITM) attacks.", "default")], stderr = True)
-		iktprint([("    It is strongly adviced that you enable strict SSH host key checking unless you're absolutely certain", "default")], stderr = True)
-		iktprint([("    that your network environment is safe.\n", "default")], stderr = True)
+		iktprint([ANSIThemeString("  Warning", "warning"), ANSIThemeString(": strict SSH host key checking is disabled; this is a potential security threat.", "emphasis")], stderr = True)
+		iktprint([ANSIThemeString("    If strict SSH host key checking is disabled other systems can impersonate the remote host", "default")], stderr = True)
+		iktprint([ANSIThemeString("    and thus perform Man in the Middle (MITM) attacks.", "default")], stderr = True)
+		iktprint([ANSIThemeString("    It is strongly adviced that you enable strict SSH host key checking unless you're absolutely certain", "default")], stderr = True)
+		iktprint([ANSIThemeString("    that your network environment is safe.\n", "default")], stderr = True)
 		error += 1
 
 	return critical, error, warning, note
@@ -95,9 +95,12 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, iktconfig_dict
 				note (int): The new count of note severity security issues
 	"""
 
-	iktprint([("[Checking whether ", "phase"),
-		  (f"{user}", "path"),
-		  (" is in ", "phase"), ("/etc/sudoers", "path"), (" or ", "default"), ("/etc/sudoers.d", "path"), ("]", "phase")])
+	iktprint([ANSIThemeString("[Checking whether ", "phase"),
+		  ANSIThemeString(f"{user}", "path"),
+		  ANSIThemeString(" is in ", "phase"),
+		  ANSIThemeString("/etc/sudoers", "path"),
+		  ANSIThemeString(" or ", "default"),
+		  ANSIThemeString("/etc/sudoers.d", "path"), ANSIThemeString("]", "phase")])
 	args = ["/usr/bin/sudo", "-l"]
 	result = execute_command_with_response(args)
 
@@ -109,18 +112,23 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, iktconfig_dict
 	for line in result.splitlines():
 		tmp = sudo_msg_regex.match(line)
 		if tmp is not None:
-			iktprint([("  Error", "error"),
-				  (": ", "default"),
-				  (user, "path"),
-				  (" is not in ", "default"), ("/etc/sudoers", "path"), (" or ", "default"), ("/etc/sudoers.d\n", "path")], stderr = True)
+			iktprint([ANSIThemeString("  Error", "error"),
+				  ANSIThemeString(": ", "default"),
+				  ANSIThemeString(user, "path"),
+				  ANSIThemeString(" is not in ", "default"),
+				  ANSIThemeString("/etc/sudoers", "path"),
+				  ANSIThemeString(" or ", "default"),
+				  ANSIThemeString("/etc/sudoers.d\n", "path")], stderr = True)
 			error += 1
 			sudoer = False
 			break
 
 	if sudoer == True:
-		iktprint([("  OK\n", "emphasis")])
+		iktprint([ANSIThemeString("  OK\n", "emphasis")])
 
-		iktprint([("[Checking whether", "phase") ,(f" {user} ", "path"), ("can perform passwordless sudo]", "phase")])
+		iktprint([ANSIThemeString("[Checking whether", "phase"),
+			  ANSIThemeString(f" {user} ", "path"),
+			  ANSIThemeString("can perform passwordless sudo]", "phase")])
 		args = ["/usr/bin/sudo", "-l"]
 		result = execute_command_with_response(args)
 		passwordless_sudo = False
@@ -131,15 +139,15 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, iktconfig_dict
 		for line in result.splitlines():
 			tmp = sudo_permissions_regex.match(line)
 			if tmp is not None:
-				iktprint([("  OK\n", "emphasis")])
+				iktprint([ANSIThemeString("  OK\n", "emphasis")])
 				passwordless_sudo = True
 				break
 
 		if passwordless_sudo == False:
-			iktprint([("  Error", "error"),
-				  (": ", "default"),
-				  (user, "path"),
-				  (" cannot perform passwordless sudo\n", "default")], stderr = True)
+			iktprint([ANSIThemeString("  Error", "error"),
+				  ANSIThemeString(": ", "default"),
+				  ANSIThemeString(user, "path"),
+				  ANSIThemeString(" cannot perform passwordless sudo\n", "default")], stderr = True)
 			error += 1
 
 	return critical, error, warning, note
@@ -167,8 +175,11 @@ def check_known_hosts_hashing(cluster_name: str, kubeconfig: Dict, iktconfig_dic
 				note (int): The new count of note severity security issues
 	"""
 
-	iktprint([("[Checking whether ", "phase"), ("ssh", "command"), (" known_hosts hashing is enabled]", "phase")])
-	iktprint([("  Note", "note"), (": this test is not 100% reliable since ssh settings can vary based on target host\n", "default")])
+	iktprint([ANSIThemeString("[Checking whether ", "phase"),
+		  ANSIThemeString("ssh", "command"),
+		  ANSIThemeString(" known_hosts hashing is enabled]", "phase")])
+	iktprint([ANSIThemeString("  Note", "note"),
+		  ANSIThemeString(": this test is not 100% reliable since ssh settings can vary based on target host\n", "default")])
 	args = ["/usr/bin/ssh", "-G", "localhost"]
 	result = execute_command_with_response(args)
 
@@ -178,10 +189,11 @@ def check_known_hosts_hashing(cluster_name: str, kubeconfig: Dict, iktconfig_dic
 	for line in result.splitlines():
 		tmp = hashknownhosts_regex.match(line)
 		if tmp is not None:
-			iktprint([("  Warning", "warning"),
-				  (": ", "default"),
-				  ("ssh", "command"),
-				  (" known_hosts hashing is enabled; this may cause issues with ", "default"), ("paramiko\n", "command")], stderr = True)
+			iktprint([ANSIThemeString("  Warning", "warning"),
+				  ANSIThemeString(": ", "default"),
+				  ANSIThemeString("ssh", "command"),
+				  ANSIThemeString(" known_hosts hashing is enabled; this may cause issues with ", "default"),
+				  ANSIThemeString("paramiko\n", "command")], stderr = True)
 			warning += 1
 			break
 
@@ -210,7 +222,9 @@ def check_insecure_kube_config_options(cluster_name: str, kubeconfig: Dict, iktc
 				note (int): The new count of note severity security issues
 	"""
 
-	iktprint([("[Checking for insecure ", "phase"), (f"{KUBE_CONFIG_FILE}", "path"), (" options]", "phase")])
+	iktprint([ANSIThemeString("[Checking for insecure ", "phase"),
+		  ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
+		  ANSIThemeString(" options]", "phase")])
 
 	insecureskiptlsverify = False
 
@@ -220,15 +234,20 @@ def check_insecure_kube_config_options(cluster_name: str, kubeconfig: Dict, iktc
 			break
 
 	if insecureskiptlsverify == False:
-		iktprint([("  OK\n", "emphasis")])
+		iktprint([ANSIThemeString("  OK\n", "emphasis")])
 	else:
-		iktprint([("  Warning", "critical"), (": TLS verification has been disabled in ", "emphasis"), (f"{KUBE_CONFIG_FILE}", "path"),
-			  ("; this is a potential security threat.", "emphasis")], stderr = True)
-		iktprint([("    If TLS verification is disabled other systems can impersonate the control plane", "default")], stderr = True)
-		iktprint([("    and thus perform Man in the Middle (MITM) attacks.", "default")], stderr = True)
-		iktprint([("    It is adviced that you remove the ", "default"), ("insecure-skip-tls-verify", "argument"), (" option from ", "default"),
-			  (f"{KUBE_CONFIG_FILE}", "path"), (",", "default")], stderr = True)
-		iktprint([("    unless you're absolutely certain that your network environment is safe.\n", "default")], stderr = True)
+		iktprint([ANSIThemeString("  Warning", "critical"),
+			  ANSIThemeString(": TLS verification has been disabled in ", "emphasis"),
+			  ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
+			  ANSIThemeString("; this is a potential security threat.", "emphasis")], stderr = True)
+		iktprint([ANSIThemeString("    If TLS verification is disabled other systems can impersonate the control plane", "default")], stderr = True)
+		iktprint([ANSIThemeString("    and thus perform Man in the Middle (MITM) attacks.", "default")], stderr = True)
+		iktprint([ANSIThemeString("    It is adviced that you remove the ", "default"),
+			  ANSIThemeString("insecure-skip-tls-verify", "argument"),
+			  ANSIThemeString(" option from ", "default"),
+			  ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
+			  ANSIThemeString(",", "default")], stderr = True)
+		iktprint([ANSIThemeString("    unless you're absolutely certain that your network environment is safe.\n", "default")], stderr = True)
 		critical += 1
 
 	return critical, error, warning, note
@@ -259,55 +278,76 @@ def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, iktco
 	mismatch = False
 
 	# Is the version of kubectl within one version of the cluster version?
-	iktprint([("[Checking client/server version match]", "phase")])
+	iktprint([ANSIThemeString("[Checking client/server version match]", "phase")])
 
 	_kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version = kubectl_get_version()
 
-	iktprint([("         kubectl ", "programname"), ("version: ", "default"), (f"{kubectl_git_version}", "version")])
-	iktprint([("  kube-apiserver ", "programname"), ("version: ", "default"), (f"{server_git_version}", "version")])
+	iktprint([ANSIThemeString("         kubectl ", "programname"),
+		  ANSIThemeString("version: ", "default"),
+		  ANSIThemeString(f"{kubectl_git_version}", "version")])
+	iktprint([ANSIThemeString("  kube-apiserver ", "programname"),
+		  ANSIThemeString("version: ", "default"),
+		  ANSIThemeString(f"{server_git_version}", "version")])
 
 	print()
 
 	if server_major_version != 1:
-		iktprint([("  ", "default"), ("Critical", "critical"), (": ", "default"),
-			  (f"{about.PROGRAM_SUITE_NAME}", "programname"),
-			  (" has not been tested for any other major version of Kubernetes than ", "default"), ("v1", "version"), ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("  ", "default"),
+			  ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": ", "default"),
+			  ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
+			  ANSIThemeString(" has not been tested for any other major version of Kubernetes than ", "default"),
+			  ANSIThemeString("v1", "version"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOTSUP)
 
 	if kubectl_minor_version > server_minor_version and kubectl_minor_version == server_minor_version + 1:
-		iktprint([("  ", "default"), ("Note", "note"),
-			  (": The ", "default"),
-			  ("kubectl", "programname"), (" version is one minor version newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
-		iktprint([("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
+		iktprint([ANSIThemeString("  ", "default"),
+			  ANSIThemeString("Note", "note"),
+			  ANSIThemeString(": The ", "default"),
+			  ANSIThemeString("kubectl", "programname"),
+			  ANSIThemeString(" version is one minor version newer than that of ", "default"),
+			  ANSIThemeString("kube-apiserver", "programname"),
+			  ANSIThemeString(";", "default")])
+		iktprint([ANSIThemeString("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
 		note += 1
 		mismatch = True
 	elif kubectl_minor_version > server_minor_version:
-		iktprint([("  ", "default"), ("Warning", "note"),
-			  (": The ", "default"),
-			  ("kubectl", "programname"),
-			  (" version is more than one minor version newer than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
-		iktprint([("         this might work, but it's generally recommended to keep the versions in sync.", "default")], stderr = True)
+		iktprint([ANSIThemeString("  ", "default"),
+			  ANSIThemeString("Warning", "note"),
+			  ANSIThemeString(": The ", "default"),
+			  ANSIThemeString("kubectl", "programname"),
+			  ANSIThemeString(" version is more than one minor version newer than that of ", "default"),
+			  ANSIThemeString("kube-apiserver", "programname"),
+			  ANSIThemeString(";", "default")], stderr = True)
+		iktprint([ANSIThemeString("         this might work, but it's generally recommended to keep the versions in sync.", "default")], stderr = True)
 		warning += 1
 		mismatch = True
 	elif kubectl_minor_version < server_minor_version and kubectl_minor_version + 1 == server_minor_version:
-		iktprint([("  ", "default"), ("Warning", "note"),
-			  (": The ", "default"),
-			  ("kubectl", "programname"),
-			  (" version is one minor version older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")])
-		iktprint([("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
+		iktprint([ANSIThemeString("  ", "default"),
+			  ANSIThemeString("Warning", "note"),
+			  ANSIThemeString(": The ", "default"),
+			  ANSIThemeString("kubectl", "programname"),
+			  ANSIThemeString(" version is one minor version older than that of ", "default"),
+			  ANSIThemeString("kube-apiserver", "programname"),
+			  ANSIThemeString(";", "default")])
+		iktprint([ANSIThemeString("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
 		warning += 1
 		mismatch = True
 	elif kubectl_minor_version < server_minor_version:
-		iktprint([("  ", "default"), ("Error", "note"),
-			  (": The ", "default"),
-			  ("kubectl", "programname"),
-			  (" version is much older than that of ", "default"), ("kube-apiserver", "programname"), (";", "default")], stderr = True)
-		iktprint([("       this is NOT supported and is likely to cause issues.", "default")], stderr = True)
+		iktprint([ANSIThemeString("  ", "default"),
+			  ANSIThemeString("Error", "note"),
+			  ANSIThemeString(": The ", "default"),
+			  ANSIThemeString("kubectl", "programname"),
+			  ANSIThemeString(" version is much older than that of ", "default"),
+			  ANSIThemeString("kube-apiserver", "programname"),
+			  ANSIThemeString(";", "default")], stderr = True)
+		iktprint([ANSIThemeString("       this is NOT supported and is likely to cause issues.", "default")], stderr = True)
 		error += 1
 		mismatch = True
 
 	if mismatch == False:
-		iktprint([("OK", "ok")])
+		iktprint([ANSIThemeString("OK", "ok")])
 
 	return critical, error, warning, note
 
@@ -334,26 +374,34 @@ def check_containerd_and_docker(cluster_name: str, kubeconfig: Dict, iktconfig_d
 				note (int): The new count of note severity security issues
 	"""
 
-	iktprint([("[Checking whether ", "phase"),
-		  ("docker-ce / containerd.io", "path"),
-		  (" is installed instead of ", "phase"), ("docker.io / containerd", "path"), ("]", "phase")])
-	iktprint([("  Note", "emphasis"), (": this is only an issue if you intend to use this host as a control plane or node\n", "default")])
+	iktprint([ANSIThemeString("[Checking whether ", "phase"),
+		  ANSIThemeString("docker-ce / containerd.io", "path"),
+		  ANSIThemeString(" is installed instead of ", "phase"),
+		  ANSIThemeString("docker.io / containerd", "path"),
+		  ANSIThemeString("]", "phase")])
+	iktprint([ANSIThemeString("  Note", "emphasis"),
+		  ANSIThemeString(": this is only an issue if you intend to use this host as a control plane or node\n", "default")])
 	deb_versions = check_deb_versions(["docker.io", "containerd", "docker-ce", "containerd.io"])
 	conflict = False
 	for package, _installed_version, _candidate_version, _all_versions in deb_versions:
 		if package in ("docker-ce", "containerd.io"):
-			iktprint([("  Error", "error"),
-				  (": ", "default"),
-				  ("docker-ce / containerd.io", "path"),
-				  (" is installed; use ", "default"), ("docker.io / containerd", "path"), (" instead\n", "default")], stderr = True)
-			iktprint([("  ", "default"), ("Suggested fix:", "header")])
-			iktprint([("    sudo apt ", "programname"), ("install ", "command"), ("docker.io containerd docker-ce- containerd.io-\n", "argument")])
+			iktprint([ANSIThemeString("  Error", "error"),
+				  ANSIThemeString(": ", "default"),
+				  ANSIThemeString("docker-ce / containerd.io", "path"),
+				  ANSIThemeString(" is installed; use ", "default"),
+				  ANSIThemeString("docker.io / containerd", "path"),
+				  ANSIThemeString(" instead\n", "default")], stderr = True)
+			iktprint([ANSIThemeString("  ", "default"),
+				  ANSIThemeString("Suggested fix:", "header")])
+			iktprint([ANSIThemeString("    sudo apt ", "programname"),
+				  ANSIThemeString("install ", "command"),
+				  ANSIThemeString("docker.io containerd docker-ce- containerd.io-\n", "argument")])
 			error += 1
 			conflict = True
 			break
 
 	if conflict == False:
-		iktprint([("  OK\n", "emphasis")])
+		iktprint([ANSIThemeString("  OK\n", "emphasis")])
 
 	return critical, error, warning, note
 
@@ -387,7 +435,7 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, i
 	mismatch = False
 
 	# Kubernetes API based checks
-	iktprint([("\n[Checking kubelet & kube-proxy versions]", "phase")])
+	iktprint([ANSIThemeString("\n[Checking kubelet & kube-proxy versions]", "phase")])
 
 	_kubectl_major_version, _kubectl_minor_version, _kubectl_git_version, server_major_version, server_minor_version, _server_git_version = kubectl_get_version()
 
@@ -413,10 +461,11 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, i
 			kubelet_major_version = int(tmp[1])
 			kubelet_minor_version = int(tmp[2])
 		else:
-			iktprint([("Error", "error"),
-				  (": Failed to extract ", "default"),
-				  ("kubelet", "programname"),
-				  (" version on node ", "default"), (f"{node_name}", "hostname")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": Failed to extract ", "default"),
+				  ANSIThemeString("kubelet", "programname"),
+				  ANSIThemeString(" version on node ", "default"),
+				  ANSIThemeString(f"{node_name}", "hostname")], stderr = True)
 			critical += 1
 			mismatch = True
 
@@ -425,65 +474,108 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, i
 			kubeproxy_major_version = int(tmp[1])
 			kubeproxy_minor_version = int(tmp[2])
 		else:
-			iktprint([("Error", "error"),
-				  (": Failed to extract ", "default"), ("kube-proxy", "programname"), (" version on node ", "default"), (f"{node_name}", "hostname")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": Failed to extract ", "default"),
+				  ANSIThemeString("kube-proxy", "programname"),
+				  ANSIThemeString(" version on node ", "default"),
+				  ANSIThemeString(f"{node_name}", "hostname")], stderr = True)
 			critical += 1
 			mismatch = True
 
 		if kubelet_major_version is not None and kubelet_major_version != 1:
-			iktprint([("Critical", "critical"), (": ", "default"), (about.PROGRAM_SUITE_NAME, "programname"),
-				  (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"),
-				  (" runs ", "default"), ("kubelet ", "programname"), ("version ", "default"), (f"{kubelet_version}", "version")], stderr = True)
+			iktprint([ANSIThemeString("Critical", "critical"),
+				  ANSIThemeString(": ", "default"),
+				  ANSIThemeString(about.PROGRAM_SUITE_NAME, "programname"),
+				  ANSIThemeString(" has not been tested for any other major version of Kubernetes than v1; node ", "default"),
+				  ANSIThemeString(f"{node_name}", "hostname"),
+				  ANSIThemeString(" runs ", "default"),
+				  ANSIThemeString("kubelet ", "programname"),
+				  ANSIThemeString("version ", "default"),
+				  ANSIThemeString(f"{kubelet_version}", "version")], stderr = True)
 			critical += 1
 			mismatch = True
 
 		if kubeproxy_major_version is not None and kubeproxy_major_version != 1:
-			iktprint([("Critical", "critical"), (": ", "default"), (about.PROGRAM_SUITE_NAME, "programname"),
-				  (" has not been tested for any other major version of Kubernetes than v1; node ", "default"), (f"{node_name}", "hostname"),
-				  (" runs ", "default"), ("kube-proxy ", "programname"), ("version ", "default"), (f"{kubeproxy_version}", "version")], stderr = True)
+			iktprint([ANSIThemeString("Critical", "critical"),
+				  ANSIThemeString(": ", "default"),
+				  ANSIThemeString(about.PROGRAM_SUITE_NAME, "programname"),
+				  ANSIThemeString(" has not been tested for any other major version of Kubernetes than v1; node ", "default"),
+				  ANSIThemeString(f"{node_name}", "hostname"),
+				  ANSIThemeString(" runs ", "default"),
+				  ANSIThemeString("kube-proxy ", "programname"),
+				  ANSIThemeString("version ", "default"),
+				  ANSIThemeString(f"{kubeproxy_version}", "version")], stderr = True)
 			critical += 1
 			mismatch = True
 
 		if kubelet_minor_version is not None and kubelet_minor_version > server_minor_version:
-			iktprint([("Error", "error"), (": The version of ", "default"),
-				  ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
-				  (") on node ", "default"), (f"{node_name}", "hostname"),
-				  (" is newer than that of ", "default"),
-				  ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([("       this is not supported.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": The version of ", "default"),
+				  ANSIThemeString("kubelet", "programname"),
+				  ANSIThemeString(" (", "default"),
+				  ANSIThemeString(f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
+				  ANSIThemeString(") on node ", "default"),
+				  ANSIThemeString(f"{node_name}", "hostname"),
+				  ANSIThemeString(" is newer than that of ", "default"),
+				  ANSIThemeString("kube-apiserver", "programname"),
+				  ANSIThemeString(" (", "default"),
+				  ANSIThemeString(f"{server_major_version}.{server_minor_version}", "version"),
+				  ANSIThemeString(");", "default")], stderr = True)
+			iktprint([ANSIThemeString("       this is not supported.", "default")], stderr = True)
 			error += 1
 			mismatch = True
 		elif kubelet_minor_version is not None and server_minor_version - 2 <= kubelet_minor_version < server_minor_version:
-			iktprint([("Warning", "warning"), (": The version of ", "default"),
-				  ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
-				  (") on node ", "default"), (f"{node_name}", "hostname"),
-				  (" is a bit older than that of ", "default"), ("kube-apiserver", "programname"), (" (", "default"),
-				  (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([("         this is supported, but not recommended.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Warning", "warning"),
+				  ANSIThemeString(": The version of ", "default"),
+				  ANSIThemeString("kubelet", "programname"),
+				  ANSIThemeString(" (", "default"),
+				  ANSIThemeString(f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
+				  ANSIThemeString(") on node ", "default"),
+				  ANSIThemeString(f"{node_name}", "hostname"),
+				  ANSIThemeString(" is a bit older than that of ", "default"),
+				  ANSIThemeString("kube-apiserver", "programname"),
+				  ANSIThemeString(" (", "default"),
+				  ANSIThemeString(f"{server_major_version}.{server_minor_version}", "version"),
+				  ANSIThemeString(");", "default")], stderr = True)
+			iktprint([ANSIThemeString("         this is supported, but not recommended.", "default")], stderr = True)
 			warning += 1
 			mismatch = True
 		elif kubelet_minor_version is not None and kubelet_minor_version < server_minor_version:
-			iktprint([("Error", "error"), (": The version of ", "default"),
-				  ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
-				  (") on node ", "default"), (f"{node_name}", "hostname"),
-				  (" is much older than that of ", "default"),
-				  ("kube-apiserver", "programname"), (" (", "default"), (f"{server_major_version}.{server_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([("       this is not supported.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": The version of ", "default"),
+				  ANSIThemeString("kubelet", "programname"),
+				  ANSIThemeString(" (", "default"),
+				  ANSIThemeString(f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
+				  ANSIThemeString(") on node ", "default"),
+				  ANSIThemeString(f"{node_name}", "hostname"),
+				  ANSIThemeString(" is much older than that of ", "default"),
+				  ANSIThemeString("kube-apiserver", "programname"),
+				  ANSIThemeString(" (", "default"),
+				  ANSIThemeString(f"{server_major_version}.{server_minor_version}", "version"),
+				  ANSIThemeString(");", "default")], stderr = True)
+			iktprint([ANSIThemeString("       this is not supported.", "default")], stderr = True)
 			error += 1
 			mismatch = True
 
 		if kubelet_minor_version is not None and kubeproxy_minor_version is not None and kubelet_minor_version != kubeproxy_minor_version:
-			iktprint([("Error", "error"), (": The version of ", "default"),
-				  ("kubelet", "programname"), (" (", "default"), (f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
-				  (") on node ", "default"), (f"{node_name}", "hostname"),
-				  (" is not the same as that of ", "default"),
-				  ("kube-proxy", "programname"), (" (", "default"), (f"{kubeproxy_major_version}.{kubeproxy_minor_version}", "version"), (");", "default")], stderr = True)
-			iktprint([("       this is not supported.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": The version of ", "default"),
+				  ANSIThemeString("kubelet", "programname"),
+				  ANSIThemeString(" (", "default"),
+				  ANSIThemeString(f"{kubelet_major_version}.{kubelet_minor_version}", "version"),
+				  ANSIThemeString(") on node ", "default"),
+				  ANSIThemeString(f"{node_name}", "hostname"),
+				  ANSIThemeString(" is not the same as that of ", "default"),
+				  ANSIThemeString("kube-proxy", "programname"),
+				  ANSIThemeString(" (", "default"),
+				  ANSIThemeString(f"{kubeproxy_major_version}.{kubeproxy_minor_version}", "version"),
+				  ANSIThemeString(");", "default")], stderr = True)
+			iktprint([ANSIThemeString("       this is not supported.", "default")], stderr = True)
 			error += 1
 			mismatch = True
 
 	if mismatch == False:
-		iktprint([("  OK\n", "emphasis")])
+		iktprint([ANSIThemeString("  OK\n", "emphasis")])
 
 	return critical, error, warning, note
 
@@ -493,117 +585,117 @@ recommended_directory_permissions = [
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "critical",
-		"justification": [("If other users can create or overwrite files in ", "default"),
-				  (f"{BINDIR}", "path"),
-				  (" they can obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If other users can create or overwrite files in ", "default"),
+				  ANSIThemeString(f"{BINDIR}", "path"),
+				  ANSIThemeString(" they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": IKTDIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "critical",
-		"justification": [("If other users can create or replace files in ", "default"),
-				  (f"{IKTDIR}", "path"),
-				  (" they may be able to obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
+				  ANSIThemeString(f"{IKTDIR}", "path"),
+				  ANSIThemeString(" they may be able to obtain elevated privileges", "default")]
 	},
 	{
 		"path": IKT_CONFIG_FILE_DIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "critical",
-		"justification": [("If other users can create or replace files in ", "default"),
-				  (f"{IKT_CONFIG_FILE_DIR}", "path"),
-				  (" they may be able to obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
+				  ANSIThemeString(f"{IKT_CONFIG_FILE_DIR}", "path"),
+				  ANSIThemeString(" they may be able to obtain elevated privileges", "default")]
 	},
 	{
 		"path": ANSIBLE_DIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "critical",
-		"justification": [("If other users can create or replace files in ", "default"),
-				  (f"{ANSIBLE_DIR}", "path"),
-				  (" they can obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
+				  ANSIThemeString(f"{ANSIBLE_DIR}", "path"),
+				  ANSIThemeString(" they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": IKT_HOOKS_DIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "critical",
-		"justification": [("If other users can create or replace files in ", "default"),
-				  (f"{IKT_HOOKS_DIR}", "path"),
-				  (" they can obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
+				  ANSIThemeString(f"{IKT_HOOKS_DIR}", "path"),
+				  ANSIThemeString(" they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": FilePath(os.path.join(IKT_HOOKS_DIR, "pre-upgrade.d")),
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "critical",
-		"justification": [("If other users can create or replace files in ", "default"),
-				  (f"{os.path.join(IKT_HOOKS_DIR, 'pre-upgrade.d')}", "path"),
-				  (" they can obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
+				  ANSIThemeString(f"{os.path.join(IKT_HOOKS_DIR, 'pre-upgrade.d')}", "path"),
+				  ANSIThemeString(" they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": FilePath(os.path.join(IKT_HOOKS_DIR, "post-upgrade.d")),
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "critical",
-		"justification": [("If other users can create or replace files in ", "default"),
-				  (f"{os.path.join(IKT_HOOKS_DIR, 'post-upgrade.d')}", "path"),
-				  (" they can obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
+				  ANSIThemeString(f"{os.path.join(IKT_HOOKS_DIR, 'post-upgrade.d')}", "path"),
+				  ANSIThemeString(" they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": DEPLOYMENT_DIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "critical",
-		"justification": [("If other users can create or replace files in ", "default"),
-				  (f"{DEPLOYMENT_DIR}", "path"),
-				  (" they can obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
+				  ANSIThemeString(f"{DEPLOYMENT_DIR}", "path"),
+				  ANSIThemeString(" they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": ANSIBLE_LOG_DIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "warning",
-		"justification": [("If others users can create or replace files in ", "default"),
-				  (f"{ANSIBLE_LOG_DIR}", "path"),
-				  (" they can spoof results from playbook runs", "default")]
+		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
+				  ANSIThemeString(f"{ANSIBLE_LOG_DIR}", "path"),
+				  ANSIThemeString(" they can spoof results from playbook runs", "default")]
 	},
 	{
 		"path": KUBE_CONFIG_DIR,
 		"alertmask": 0o027,
 		"usergroup_alertmask": 0o077,
 		"severity": "critical",
-		"justification": [("If others users can read, create or replace files in ", "default"),
-				  (f"{KUBE_CONFIG_DIR}", "path"),
-				  (" they can obtain cluster access", "default")]
+		"justification": [ANSIThemeString("If others users can read, create or replace files in ", "default"),
+				  ANSIThemeString(f"{KUBE_CONFIG_DIR}", "path"),
+				  ANSIThemeString(" they can obtain cluster access", "default")]
 	},
 	{
 		"path": THEME_DIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "error",
-		"justification": [("If others users can create or replace files in ", "default"),
-				  (f"{THEME_DIR}", "path"),
-				  (" they can cause ", "default"), ("iku", "command"), (" to malfunction", "default")]
+		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
+				  ANSIThemeString(f"{THEME_DIR}", "path"),
+				  ANSIThemeString(" they can cause ", "default"), ("iku", "command"), (" to malfunction", "default")]
 	},
 	{
 		"path": PARSER_DIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "error",
-		"justification": [("If others users can create or replace files in ", "default"),
-				  (f"{PARSER_DIR}", "path"),
-				  (" they can cause ", "default"), ("iku", "command"), (" to malfunction and possibly hide signs of a compromised cluster", "default")]
+		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
+				  ANSIThemeString(f"{PARSER_DIR}", "path"),
+				  ANSIThemeString(" they can cause ", "default"), ("iku", "command"), (" to malfunction and possibly hide signs of a compromised cluster", "default")]
 	},
 	{
 		"path": VIEW_DIR,
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o022,
 		"severity": "error",
-		"justification": [("If others users can create or replace files in ", "default"),
-				  (f"{VIEW_DIR}", "path"),
-				  (" they can cause ", "default"), ("iku", "command"), (" to malfunction and possibly hide signs of a compromised cluster", "default")]
+		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
+				  ANSIThemeString(f"{VIEW_DIR}", "path"),
+				  ANSIThemeString(" they can cause ", "default"), ("iku", "command"), (" to malfunction and possibly hide signs of a compromised cluster", "default")]
 	},
 ]
 
@@ -614,7 +706,7 @@ recommended_file_permissions = [
 		"usergroup_alertmask": 0o022,
 		"executable": True,
 		"severity": "critical",
-		"justification": [("If others users can modify executables they can obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If others users can modify executables they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": FilePath(os.path.join(BINDIR, "iktinv")),
@@ -622,7 +714,7 @@ recommended_file_permissions = [
 		"usergroup_alertmask": 0o022,
 		"executable": True,
 		"severity": "critical",
-		"justification": [("If others users can modify executables they can obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If others users can modify executables they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": FilePath(os.path.join(BINDIR, "ikt")),
@@ -630,7 +722,7 @@ recommended_file_permissions = [
 		"usergroup_alertmask": 0o022,
 		"executable": True,
 		"severity": "critical",
-		"justification": [("If others users can modify executables they can obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If others users can modify executables they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": FilePath(os.path.join(BINDIR, "iku")),
@@ -638,7 +730,7 @@ recommended_file_permissions = [
 		"usergroup_alertmask": 0o022,
 		"executable": True,
 		"severity": "critical",
-		"justification": [("If others users can modify configlets they may be able to obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If others users can modify configlets they may be able to obtain elevated privileges", "default")]
 	},
 	{
 		"path": IKT_CONFIG_FILE_DIR,
@@ -647,7 +739,7 @@ recommended_file_permissions = [
 		"usergroup_alertmask": 0o022,
 		"executable": False,
 		"severity": "critical",
-		"justification": [("If others users can modify configlets they may be able to obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If others users can modify configlets they may be able to obtain elevated privileges", "default")]
 	},
 	{
 		"path": ANSIBLE_PLAYBOOK_DIR,
@@ -656,14 +748,14 @@ recommended_file_permissions = [
 		"usergroup_alertmask": 0o022,
 		"executable": False,
 		"severity": "critical",
-		"justification": [("If other users can modify playbooks they can obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If other users can modify playbooks they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": ANSIBLE_INVENTORY,
 		"alertmask": 0o027,
 		"usergroup_alertmask": 0o077,
 		"severity": "critical",
-		"justification": [("If other users can read or modify the Ansible inventory they can obtain elevated privileges", "default")]
+		"justification": [ANSIThemeString("If other users can read or modify the Ansible inventory they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": KUBE_CONFIG_DIR,
@@ -671,7 +763,7 @@ recommended_file_permissions = [
 		"usergroup_alertmask": 0o077,
 		"executable": False,
 		"severity": "critical",
-		"justification": [("If others users can read or modify cluster configuration files they can obtain cluster access", "default")]
+		"justification": [ANSIThemeString("If others users can read or modify cluster configuration files they can obtain cluster access", "default")]
 	},
 ]
 
@@ -737,47 +829,62 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 				try:
 					path_owner = entry.owner()
 				except KeyError:
-					iktprint([("Critical", "critical"), (f": The owner of the {pathtype} ", "default"),
-						  (f"{entry}", "path"),
-						  (" does not exist in the system database; aborting.", "default")], stderr = True)
+					iktprint([ANSIThemeString("Critical", "critical"),
+						  ANSIThemeString(f": The owner of the {pathtype} ", "default"),
+						  ANSIThemeString(f"{entry}", "path"),
+						  ANSIThemeString(" does not exist in the system database; aborting.", "default")], stderr = True)
 					sys.exit(errno.ENOENT)
 				try:
 					path_group = entry.group()
 				except KeyError:
-					iktprint([("Critical", "critical"), (f": The group of the {pathtype} ", "default"),
-						  (f"{entry}", "path"),
-						  (" does not exist in the system database; aborting.", "default")], stderr = True)
+					iktprint([ANSIThemeString("Critical", "critical"),
+						  ANSIThemeString(f": The group of the {pathtype} ", "default"),
+						  ANSIThemeString(f"{entry}", "path"),
+						  ANSIThemeString(" does not exist in the system database; aborting.", "default")], stderr = True)
 					sys.exit(errno.ENOENT)
 				path_stat = entry.stat()
 				path_permissions = path_stat.st_mode & 0o777
 				recommended_permissions = 0o777 & ~(alertmask | notemask)
 
 				if path_owner not in (user, "root"):
-					iktprint([("  ", "default"), ("Critical", severity), (f": The {pathtype} ", "default"), (f"{entry}", "path"), (" is not owned by ", "default"),
-						  (user, "emphasis")], stderr = True)
-					iktprint([("  ", "default"), ("Justification: ", "emphasis"),
-						  ("if other users can overwrite files they may be able to achieve elevated privileges", "default")], stderr = True)
+					iktprint([ANSIThemeString("  ", "default"),
+						  ANSIThemeString("Critical", severity),
+						  ANSIThemeString(f": The {pathtype} ", "default"),
+						  ANSIThemeString(f"{entry}", "path"),
+						  ANSIThemeString(" is not owned by ", "default"),
+						  ANSIThemeString(user, "emphasis")], stderr = True)
+					iktprint([ANSIThemeString("  ", "default"),
+						  ANSIThemeString("Justification: ", "emphasis"),
+						  ANSIThemeString("if other users can overwrite files they may be able to achieve elevated privileges", "default")], stderr = True)
 					critical += 1
 					issue = True
 
 				if len(usergroup) > 0 and path_group != usergroup:
-					iktprint([("  ", "default"), ("Critical", severity), (f": The {pathtype} ", "default"),
-						  (f"{entry}", "path"),
-						  (" does not belong to the user group for ", "default"),
-						  (user, "emphasis")], stderr = True)
-					iktprint([("  ", "default"), ("Justification: ", "emphasis")] + justification, stderr = True)
+					iktprint([ANSIThemeString("  ", "default"),
+						  ANSIThemeString("Critical", severity),
+						  ANSIThemeString(f": The {pathtype} ", "default"),
+						  ANSIThemeString(f"{entry}", "path"),
+						  ANSIThemeString(" does not belong to the user group for ", "default"),
+						  ANSIThemeString(user, "emphasis")], stderr = True)
+					iktprint([ANSIThemeString("  ", "default"),
+						  ANSIThemeString("Justification: ", "emphasis")] + justification, stderr = True)
 					print()
 					critical += 1
 					issue = True
 
 				if path_permissions & alertmask != 0:
-					iktprint([("  ", "default"), (f"{severity.capitalize()}:", severity),
-						  (f" The permissions for the {pathtype} ", "default"),
-						  (f"{entry}", "path"),
-						  (" are ", "default"), (f"{path_permissions:03o}", "emphasis"), ("; the recommended permissions are ", "default"),
-						  (f"{recommended_permissions:03o}", "emphasis"), (" (or stricter)", "default")],
+					iktprint([ANSIThemeString("  ", "default"),
+						  ANSIThemeString(f"{severity.capitalize()}:", severity),
+						  ANSIThemeString(f" The permissions for the {pathtype} ", "default"),
+						  ANSIThemeString(f"{entry}", "path"),
+						  ANSIThemeString(" are ", "default"),
+						  ANSIThemeString(f"{path_permissions:03o}", "emphasis"),
+						  ANSIThemeString("; the recommended permissions are ", "default"),
+						  ANSIThemeString(f"{recommended_permissions:03o}", "emphasis"),
+						  ANSIThemeString(" (or stricter)", "default")],
 						  stderr = True)
-					iktprint([("  ", "default"), ("Justification: ", "emphasis")] + justification, stderr = True)
+					iktprint([ANSIThemeString("  ", "default"),
+						  ANSIThemeString("Justification: ", "emphasis")] + justification, stderr = True)
 					print()
 
 					if severity == "critical":
@@ -794,12 +901,18 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 						issue = True
 
 				if path_permissions & notemask != 0:
-					iktprint([("  ", "default"), ("Note", "note"),
-						  (f": The permissions for the {pathtype} ", "default"),
-						  (f"{entry}", "path"), (" are ", "default"), (f"{path_permissions:03o}", "emphasis"),
-						  ("; this file isn't an executable and shouldn't have the executable bit set", "default")])
+					iktprint([ANSIThemeString("  ", "default"),
+						  ANSIThemeString("Note", "note"),
+						  ANSIThemeString(f": The permissions for the {pathtype} ", "default"),
+						  ANSIThemeString(f"{entry}", "path"),
+						  ANSIThemeString(" are ", "default"),
+						  ANSIThemeString(f"{path_permissions:03o}", "emphasis"),
+						  ANSIThemeString("; this file isn't an executable and shouldn't have the executable bit set", "default")])
 		else:
-			iktprint([("  Warning", "warning"), (f": the {pathtype} ", "default"), (f"{path}", "path"), (" does not exist; skipping.\n", "default")], stderr = True)
+			iktprint([ANSIThemeString("  Warning", "warning"),
+				  ANSIThemeString(f": the {pathtype} ", "default"),
+				  ANSIThemeString(f"{path}", "path"),
+				  ANSIThemeString(" does not exist; skipping.\n", "default")], stderr = True)
 			warning += 1
 			issue = True
 			continue
@@ -829,7 +942,7 @@ def check_file_permissions(cluster_name: str, kubeconfig: Dict, iktconfig_dict: 
 				note: The new count of note severity security issues
 	"""
 
-	iktprint([("[Checking directory and file permissions]", "phase")])
+	iktprint([ANSIThemeString("[Checking directory and file permissions]", "phase")])
 
 	usergroup = deep_get(kwargs, DictPath("usergroup"), "")
 
@@ -838,6 +951,6 @@ def check_file_permissions(cluster_name: str, kubeconfig: Dict, iktconfig_dict: 
 	issue, critical, error, warning, note = __check_permissions(recommended_file_permissions, "file", user, usergroup, critical, error, warning, note)
 
 	if issue == False:
-		iktprint([("  OK\n", "emphasis")])
+		iktprint([ANSIThemeString("  OK\n", "emphasis")])
 
 	return critical, error, warning, note

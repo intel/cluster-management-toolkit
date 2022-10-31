@@ -7,29 +7,36 @@ This generates elements for various more complex types
 # pylint: disable=too-many-arguments
 
 from datetime import datetime
+from typing import List, Union
 
 from curses_helper import color_status_group, themearray_len, themearray_to_string
 import iktlib
 from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, timestamp_to_datetime
-from ikttypes import DictPath, StatusGroup
+from ikttypes import DictPath, StatusGroup, ThemeRef, ThemeString
 
 def format_list(items, fieldlen, pad, ralign, selected,
-		item_separator = ("separators", "list"),
+		item_separator = None,
 		field_separators = None,
 		field_colors = None,
-		ellipsise = -1,
-		ellipsis = ("separators", "ellipsis"),
+		ellipsise: int = -1,
+		ellipsis = None,
 		field_prefixes = None,
 		field_suffixes = None,
 		mapping = None):
-	array = [] # type: ignore
+	array: List[Union[ThemeRef, ThemeString]] = []
 	totallen = 0
 
+	if item_separator == None:
+		item_separator = ThemeRef("separators", "list")
+
+	if ellipsis is None:
+		ellipsis = ThemeRef("separators", "ellipsis")
+
 	if field_separators is None:
-		field_separators = [("separators", "field")]
+		field_separators = [ThemeRef("separators", "field")]
 
 	if field_colors is None:
-		field_colors = [("types", "generic")]
+		field_colors = [ThemeRef("types", "generic")]
 
 	if not isinstance(field_separators, list):
 		raise Exception(f"field_separators should be a list of (context, style) tuple, not a single tuple; {field_separators}")
@@ -75,11 +82,11 @@ def format_list(items, fieldlen, pad, ralign, selected,
 				array.append((field_separator, selected))
 
 			if string == "<none>":
-				fmt = ("types", "none")
-				formatted_string = (string, fmt, selected)
+				fmt = ThemeRef("types", "none")
+				formatted_string = ThemeString(string, fmt, selected)
 			elif string == "<not ready>":
 				fmt = color_status_group(StatusGroup.NOT_OK)
-				formatted_string = (string, fmt, selected)
+				formatted_string = ThemeString(string, fmt, selected)
 			else:
 				context, attr_ref = field_colors[min(i, len(field_colors) - 1)]
 				formatted_string, __string = map_value(string, selected = selected, default_field_color = (context, attr_ref), mapping = mapping)
@@ -208,7 +215,7 @@ def align_and_pad(array, pad: int, fieldlen: int, stringlen: int, ralign: bool, 
 			array.append((("separators", "pad"), selected))
 	return array
 
-def format_numerical_with_units(string: str, ftype, selected: bool, non_units = None, separator_lookup = None):
+def format_numerical_with_units(string: str, ftype: str, selected: bool, non_units = None, separator_lookup = None):
 	substring = ""
 	array = []
 	numeric = None
@@ -219,7 +226,7 @@ def format_numerical_with_units(string: str, ftype, selected: bool, non_units = 
 		separator_lookup = {}
 
 	if "default" not in separator_lookup:
-		separator_lookup["default"] = ("types", "unit")
+		separator_lookup["default"] = ThemeRef("types", "unit")
 
 	if non_units is None:
 		non_units = set("0123456789")
@@ -235,9 +242,9 @@ def format_numerical_with_units(string: str, ftype, selected: bool, non_units = 
 			# Do we need to flush?
 			if not char in non_units:
 				if selected is None:
-					array.append((substring, ("types", ftype)))
+					array.append(ThemeString(substring, ThemeRef("types", ftype)))
 				else:
-					array.append((substring, ("types", ftype), selected))
+					array.append(ThemeString(substring, ThemeRef("types", ftype), selected))
 				substring = ""
 				numeric = False
 
@@ -257,9 +264,9 @@ def format_numerical_with_units(string: str, ftype, selected: bool, non_units = 
 		if len(liststring) == 0:
 			if numeric == True:
 				if selected is None:
-					array.append((substring, ("types", ftype)))
+					array.append(ThemeString(substring, ThemeRef("types", ftype)))
 				else:
-					array.append((substring, ("types", ftype), selected))
+					array.append((substring, ThemeRef("types", ftype), selected))
 			else:
 				fmt = deep_get_with_fallback(separator_lookup, [DictPath(substring), DictPath("default")])
 				if selected is None:
@@ -268,11 +275,11 @@ def format_numerical_with_units(string: str, ftype, selected: bool, non_units = 
 					array.append((substring, fmt, selected))
 
 	if len(array) == 0:
-		array = [("", ("types", "generic"), selected)]
+		array = [ThemeString("", ThemeRef("types", "generic"), selected)]
 
 	return array
 
-def generator_age_raw(value, selected: bool):
+def generator_age_raw(value, selected: bool) -> List[ThemeString]:
 	if value == -1:
 		string = ""
 	elif isinstance(value, str):
@@ -281,11 +288,11 @@ def generator_age_raw(value, selected: bool):
 		string = iktlib.seconds_to_age(value, negative_is_skew = True)
 
 	if string in ("<none>", "<unset>", "<unknown>"):
-		fmt = ("types", "none")
-		array = [(string, fmt, selected)]
+		fmt = ThemeRef("types", "none")
+		array = [ThemeString(string, fmt, selected)]
 	elif string == "<clock skew detected>":
-		fmt = ("main", "status_not_ok")
-		array = [(string, fmt, selected)]
+		fmt = ThemeRef("main", "status_not_ok")
+		array = [ThemeString(string, fmt, selected)]
 	else:
 		array = format_numerical_with_units(string, "age", selected)
 

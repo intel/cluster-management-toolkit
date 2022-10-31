@@ -107,14 +107,15 @@ def iktinput_password(themearray: List[ANSIThemeString]) -> str:
 		tmp = tmp.replace("\x00", "<NUL>")
 	return tmp
 
-def iktprint(themearray, stderr: bool = False) -> None:
+def iktprint(themearray: List[ANSIThemeString], stderr: bool = False) -> None:
+#def iktprint(themearray, stderr: bool = False) -> None:
 	"""
 	Print a themearray;
 	a themearray is a list of format strings of the format:
 	(string, theme_attr_ref); context is implicitly understood to be term
 
 		Parameters:
-			themearray (list[(str, str)]): The themearray to print
+			themearray (list[ANSIThemeString]): The themearray to print
 			stderr (bool): True to print to stderr, False to print to stdout
 	"""
 

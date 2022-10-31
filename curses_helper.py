@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 """
-curses-based UI for iKT
+Curses-based UI for iKT
 """
 
 # Before calling into this helper you need to call init_colors()
@@ -15,7 +15,7 @@ import errno
 from operator import attrgetter
 from pathlib import Path, PurePath
 import sys
-from typing import Dict, List, Optional, NoReturn, Tuple, Union
+from typing import Dict, List, Optional, NoReturn, Sequence, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -23,7 +23,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 from iktio import check_path, secure_read_yaml
-from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping
+from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping, ThemeRef, ThemeString
 
 import iktlib
 from iktlib import deep_get
@@ -38,10 +38,10 @@ class curses_configuration:
 	Configuration options for the curses UI
 	"""
 
-	abouttext = None
-	mousescroll_enable = False
-	mousescroll_up = 0b10000000000000000
-	mousescroll_down = 0b1000000000000000000000000000
+	abouttext: Optional[List[Tuple[int, List[ThemeString]]]] = None
+	mousescroll_enable: bool = False
+	mousescroll_up: int = 0b10000000000000000
+	mousescroll_down: int = 0b1000000000000000000000000000
 
 def set_mousemask(mask: int) -> None:
 	"""
@@ -871,7 +871,13 @@ def _attr_to_curses_merged(context: str, attr: str, selected: bool = False) -> i
 
 # XXX: If we ever turn themearray to a proper object reuse this
 # This extracts the string without formatting
-def themearray_to_string(themearray: List[Union[Tuple[str, Tuple[str, str]], Tuple[str, Tuple[str, str], bool], Tuple[str, Tuple[str, int]], Tuple[str, str], Tuple[str, str, bool]]]) -> str:
+def themearray_to_string(themearray: Sequence[Union[ThemeRef,
+						    ThemeString,
+						    Tuple[str, Tuple[str, str]],
+						    Tuple[str, Tuple[str, str], bool],
+						    Tuple[str, Tuple[str, int]],
+						    Tuple[str, str],
+						    Tuple[str, str, bool]]]) -> str:
 	string = ""
 
 	for fragment in themearray:
@@ -880,7 +886,8 @@ def themearray_to_string(themearray: List[Union[Tuple[str, Tuple[str, str]], Tup
 			raise ValueError(f"themearray_to_string() called with an invalid themearray: “{themearray}“; element: “{fragment}“ has invalid type {type(fragment)}; expected tuple")
 		# (string, curses_attr)
 		# (string, (context, theme_attr))
-		if isinstance(fragment[0], str) and type(fragment[1]) in (int, tuple):
+		# (string, (context, theme_attr), selected)
+		if isinstance(fragment[0], str) and type(fragment[1]) in (int, tuple, ThemeRef):
 			string += fragment[0]
 		# (context, theme_attr)
 		elif len(fragment) == 2 and isinstance(fragment[0], str) and isinstance(fragment[1], str):

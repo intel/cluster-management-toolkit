@@ -194,15 +194,15 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 
 	controlplanes = __selection_control_planes()
 	if controlplanes is None or len(controlplanes) == 0:
-		iktprint([("", "default")])
-		iktprint([("Critical", "critical"), (": No control plane defined in inventory; cannot rebuild installation info. Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("", "default")])
+		iktprint([ANSIThemeString("Critical", "critical"), ANSIThemeString(": No control plane defined in inventory; cannot rebuild installation info. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	deb_versions = check_deb_versions(["kubeadm"])
 	if len(deb_versions) == 0 or deb_versions[0][1] == "<none>":
-		iktprint([("", "default")])
-		iktprint([("Critical", "critical"),
-			  (": Failed to get kubeadm version; are you sure there's a kubeadm-based cluster installed? Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("", "default")])
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Failed to get kubeadm version; are you sure there's a kubeadm-based cluster installed? Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 	else:
 		version = deb_versions[0][1]
@@ -318,9 +318,9 @@ def check_and_print_status(retval):
 	"""
 
 	if retval == True:
-		iktprint([("OK", "ok")])
+		iktprint([ANSIThemeString("OK", "ok")])
 	else:
-		iktprint([("NOT OK", "notok"), ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("NOT OK", "notok"), ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 def patch_cni_flannel(cni_path, pod_network_cidr):
@@ -537,16 +537,16 @@ def __upgrade_cni(cni, upgradetype, context):
 
 	version = None
 	if version_command is not None:
-		iktprint([("\n• ", "separator"), (f"Checking {upgradetype} version", "action")])
+		iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString(f"Checking {upgradetype} version", "action")])
 		version = check_version_from_executable(version_command[0],
 							substitute_list(version_command[1:], version_substitutions), version_command_regex)
 
 	candidate_version = ""
 	if candidate_version_url is not None:
-		iktprint([("\n• ", "separator"), (f"Checking {upgradetype} candidate version", "action")])
+		iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString(f"Checking {upgradetype} candidate version", "action")])
 		candidate_version = check_version_from_url(substitute_string(candidate_version_url, version_substitutions), candidate_version_regex)
 	elif candidate_version_command is not None:
-		iktprint([("\n• ", "separator"), (f"Checking {upgradetype} candidate version", "action")])
+		iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString(f"Checking {upgradetype} candidate version", "action")])
 		candidate_version = check_version_from_executable(candidate_version_command[0],
 								  substitute_list(candidate_version_command[1:], version_substitutions),
 								  candidate_version_regex)
@@ -555,7 +555,7 @@ def __upgrade_cni(cni, upgradetype, context):
 		if version is None or version < candidate_version:
 			version = "".join(candidate_version)
 
-			iktprint([("\n• ", "separator"), (f"Downloading {upgradetype} ", "action"), (f"{version}", "version")])
+			iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString(f"Downloading {upgradetype} ", "action"), ANSIThemeString(f"{version}", "version")])
 
 			substitutions = {
 				"<<<version>>>": version,
@@ -576,11 +576,11 @@ def __upgrade_cni(cni, upgradetype, context):
 			mkdir_if_not_exists(directory)
 			check_and_print_status(download_files(directory, [(download_url, command_filename, download_checksum_url, download_checksum_type)], permissions = permissions))
 		else:
-			iktprint([("No newer version available.", "default")])
+			iktprint([ANSIThemeString("No newer version available.", "default")])
 	elif install_command is not None and version is None:
 		version = "".join(candidate_version)
 
-		iktprint([("\n• ", "separator"), (f"Installing {upgradetype} ", "action"), (f"{version}", "version")])
+		iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString(f"Installing {upgradetype} ", "action"), ANSIThemeString(f"{version}", "version")])
 
 		substitutions = {
 			"<<<version>>>": version,
@@ -592,7 +592,7 @@ def __upgrade_cni(cni, upgradetype, context):
 		if version is None or version < candidate_version:
 			version = "".join(candidate_version)
 
-			iktprint([("\n• ", "separator"), (f"Upgrading {upgradetype} to ", "action"), (f"{version}", "version")])
+			iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString(f"Upgrading {upgradetype} to ", "action"), ANSIThemeString(f"{version}", "version")])
 
 			substitutions = {
 				"<<<version>>>": version,
@@ -847,8 +847,8 @@ def __task_add_ssh_keys_to_inventory(installation_info) -> None:
 			pubkey = tmplines[0]
 
 		if tmp is None or len(pubkey) == 0:
-			iktprint([("Warning", "warning"), (": Failed to read a key from ", "default"),
-				  (str(path), "path"), ("; skipping.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Warning", "warning"), ANSIThemeString(": Failed to read a key from ", "default"),
+				  ANSIThemeString(str(path), "path"), ANSIThemeString("; skipping.", "default")], stderr = True)
 			continue
 
 		if pubkey not in __authorized_keys:
@@ -857,9 +857,9 @@ def __task_add_ssh_keys_to_inventory(installation_info) -> None:
 		found_key = True
 
 	if found_key == False:
-		iktprint([("Error", "error"), (": Could not find a valid public key in ", "default"),
-			  (SSH_DIR, "path"),
-			  ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"), ANSIThemeString(": Could not find a valid public key in ", "default"),
+			  ANSIThemeString(SSH_DIR, "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	__vars["authorized_keys"] = __authorized_keys
@@ -1340,17 +1340,32 @@ def __task_import_kube_config(installation_info) -> None:
 
 	for cluster in d1["clusters"]:
 		if cluster_name == cluster["name"]:
-			iktprint([("Error", "error"), (": A cluster named ", "default"), (cluster_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": A cluster named ", "default"),
+				  ANSIThemeString(cluster_name, "hostname"),
+				  ANSIThemeString(" already exists in ", "default"),
+				  ANSIThemeString(f"{HOMEDIR}/.kube/config", "path"),
+				  ANSIThemeString("; manual merge is necessary.", "default")], stderr = True)
 			return
 
 	for user in d1["users"]:
 		if admin_name == user["name"]:
-			iktprint([("Error", "error"), (": A user named ", "default"), (admin_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": A user named ", "default"),
+				  ANSIThemeString(admin_name, "hostname"),
+				  ANSIThemeString(" already exists in ", "default"),
+				  ANSIThemeString(f"{HOMEDIR}/.kube/config", "path"),
+				  ANSIThemeString("; manual merge is necessary.", "default")], stderr = True)
 			return
 
 	for context in d1["contexts"]:
 		if context_name == context["name"]:
-			iktprint([("Error", "error"), (": A context named ", "default"), (context_name, "hostname"), (" already exists in ", "default"), (f"{HOMEDIR}/.kube/config", "path"), ("; manual merge is necessary.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": A context named ", "default"),
+				  ANSIThemeString(context_name, "hostname"),
+				  ANSIThemeString(" already exists in ", "default"),
+				  ANSIThemeString(f"{HOMEDIR}/.kube/config", "path"),
+				  ANSIThemeString("; manual merge is necessary.", "default")], stderr = True)
 			return
 
 	cad = d2["clusters"][0]["cluster"].get("certificate-authority-data")
@@ -1471,17 +1486,17 @@ def __task_uncordon_control_planes(installation_info) -> None:
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for controlplane in controlplanes:
-		iktprint([(f"  {controlplane}:", "hostname")])
+		iktprint([ANSIThemeString(f"  {controlplane}:", "hostname")])
 		message, status = kh.uncordon_node(controlplane)
 		if status in (200, 204):
-			iktprint([("    Uncordoned", "success")])
+			iktprint([ANSIThemeString("    Uncordoned", "success")])
 			print(message)
 		elif status == 42503:
-			iktprint([("\n  ", "default"), ("Critical", "critical"), (": Cluster not available; aborting", "default")], stderr = True)
+			iktprint([ANSIThemeString("\n  ", "default"), ANSIThemeString("Critical", "critical"), ANSIThemeString(": Cluster not available; aborting", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
-			iktprint([("\n  API call returned error:", "error")], stderr = True)
-			iktprint([(f"    {message}", "error")], stderr = True)
+			iktprint([ANSIThemeString("\n  API call returned error:", "error")], stderr = True)
+			iktprint([ANSIThemeString(f"    {message}", "error")], stderr = True)
 			sys.exit(errno.EINVAL)
 
 # pylint: disable-next=unused-argument
@@ -1564,10 +1579,12 @@ def __task_verify_that_cluster_has_no_nodes(installation_info) -> None:
 	if node_statuses is not None:
 		for node in node_statuses:
 			if "control-plane" not in node["roles"]:
-				iktprint([("\nPlease delete all nodes (except the ", "warning"), ("control plane", "emphasis"), (") from the cluster before attempting a teardown.", "warning")])
+				iktprint([ANSIThemeString("\nPlease delete all nodes (except the ", "warning"),
+					  ANSIThemeString("control plane", "emphasis"),
+					  ANSIThemeString(") from the cluster before attempting a teardown.", "warning")])
 				sys.exit(errno.EAGAIN)
 
-	iktprint([("OK", "ok")])
+	iktprint([ANSIThemeString("OK", "ok")])
 
 # Run teardown playbooks on control planes
 def __task_run_teardown_playbooks_on_control_planes(installation_info) -> None:
@@ -1681,13 +1698,13 @@ def __validate_task_index(tasks, task):
 	try:
 		task = int(task)
 	except ValueError as e:
-		iktprint([("Error", "error"), (": ", "default"), ("TASK", "argument"),
-			  (f" needs to be an integer index in the range [0, {len(tasks) - 1}]. Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"), ANSIThemeString(": ", "default"), ANSIThemeString("TASK", "argument"),
+			  ANSIThemeString(f" needs to be an integer index in the range [0, {len(tasks) - 1}]. Aborting.", "default")], stderr = True)
 		sys.exit(f"Exception: {e}")
 
 	if task < 0 or task >= len(tasks):
-		iktprint([("Error", "error"), (": ", "default"), ("TASK", "argument"),
-			  (f" needs to be in the range [0, {len(tasks) - 1}]. Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"), ANSIThemeString(": ", "default"), ANSIThemeString("TASK", "argument"),
+			  ANSIThemeString(f" needs to be in the range [0, {len(tasks) - 1}]. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ERANGE)
 	return task
 
@@ -1728,44 +1745,44 @@ def __format_none(string, fmt):
 	return __string
 
 prepare_tasks = [
-	([("Check for ssh host key and create if needed", "action")], __task_check_and_create_ssh_key),
-	([("Add ssh keys for localhost and the control plane(s) to ", "action"), (f"{HOMEDIR}/.ssh/known_hosts", "path")], __task_scan_and_add_ssh_keys),
-	([("Add public ssh keys to ", "action"), (f"{HOMEDIR}/.ssh/authorized_keys", "path")], __task_check_and_add_ssh_keys_to_authorized_keys),
-	([("Add public ssh keys to inventory", "action")], __task_add_ssh_keys_to_inventory),
-	([("Request the ansible password if necessary", "action")], __task_request_ansible_password),
-	([("Install ", "action"), ("ansible.posix", "programname"), (" if necessary", "action")], __task_check_and_install_ansible_posix),
-	([("Run playbooks on ", "action"), ("localhost", "hostname")], __task_run_preparation_playbooks_on_localhost),
-	([("Run playbooks on ", "action"), ("control planes", "hostname")], __task_run_preparation_playbooks_on_control_planes),
+	([ANSIThemeString("Check for ssh host key and create if needed", "action")], __task_check_and_create_ssh_key),
+	([ANSIThemeString("Add ssh keys for localhost and the control plane(s) to ", "action"), ANSIThemeString(f"{HOMEDIR}/.ssh/known_hosts", "path")], __task_scan_and_add_ssh_keys),
+	([ANSIThemeString("Add public ssh keys to ", "action"), ANSIThemeString(f"{HOMEDIR}/.ssh/authorized_keys", "path")], __task_check_and_add_ssh_keys_to_authorized_keys),
+	([ANSIThemeString("Add public ssh keys to inventory", "action")], __task_add_ssh_keys_to_inventory),
+	([ANSIThemeString("Request the ansible password if necessary", "action")], __task_request_ansible_password),
+	([ANSIThemeString("Install ", "action"), ANSIThemeString("ansible.posix", "programname"), ANSIThemeString(" if necessary", "action")], __task_check_and_install_ansible_posix),
+	([ANSIThemeString("Run playbooks on ", "action"), ANSIThemeString("localhost", "hostname")], __task_run_preparation_playbooks_on_localhost),
+	([ANSIThemeString("Run playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_preparation_playbooks_on_control_planes),
 ]
 
 __setup_kubeadm_control_plane_tasks = [
-	([("Run playbooks on ", "action"), ("localhost", "hostname")], __task_run_setup_playbooks_on_localhost),
-	([("Setup ", "action"), ("bash completion", "emphasis"), (" for ", "action"), ("kubectl", "programname")], __task_setup_bash_completion),
-	([("Run playbooks on ", "action"), ("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
-	([("Import kube config", "action")], __task_import_kube_config),
-	([("Setup ", "action"), ("kubeadm", "programname"), (" Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
+	([ANSIThemeString("Run playbooks on ", "action"), ANSIThemeString("localhost", "hostname")], __task_run_setup_playbooks_on_localhost),
+	([ANSIThemeString("Setup ", "action"), ANSIThemeString("bash completion", "emphasis"), ANSIThemeString(" for ", "action"), ("kubectl", "programname")], __task_setup_bash_completion),
+	([ANSIThemeString("Run playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
+	([ANSIThemeString("Import kube config", "action")], __task_import_kube_config),
+	([ANSIThemeString("Setup ", "action"), ANSIThemeString("kubeadm", "programname"), ANSIThemeString(" Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
 ]
 
 setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
 
 upgrade_control_plane_tasks = [
-	([("Drain the ", "action"), ("control planes", "hostname")], __task_drain_control_planes),
-	([("Run pre-upgrade playbooks on ", "action"), ("localhost", "hostname")], __task_run_preupgrade_playbooks_on_localhost),
-	([("Run pre-upgrade playbooks on ", "action"), ("control planes", "hostname")], __task_run_preupgrade_playbooks_on_control_planes),
-	([("Run upgrade playbooks on ", "action"), ("control planes", "hostname")], __task_run_upgrade_playbooks_on_control_planes),
-	([("Run post-upgrade playbooks on ", "action"), ("control planes", "hostname")], __task_run_postupgrade_playbooks_on_control_planes),
-	([("Uncordon the ", "action"), ("control planes", "hostname")], __task_uncordon_control_planes),
+	([ANSIThemeString("Drain the ", "action"), ANSIThemeString("control planes", "hostname")], __task_drain_control_planes),
+	([ANSIThemeString("Run pre-upgrade playbooks on ", "action"), ANSIThemeString("localhost", "hostname")], __task_run_preupgrade_playbooks_on_localhost),
+	([ANSIThemeString("Run pre-upgrade playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_preupgrade_playbooks_on_control_planes),
+	([ANSIThemeString("Run upgrade playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_upgrade_playbooks_on_control_planes),
+	([ANSIThemeString("Run post-upgrade playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_postupgrade_playbooks_on_control_planes),
+	([ANSIThemeString("Uncordon the ", "action"), ANSIThemeString("control planes", "hostname")], __task_uncordon_control_planes),
 ]
 
 teardown_control_plane_tasks = [
-	([("Verify that only ", "action"), ("control planes", "hostname"), (" remain in the cluster", "action")], __task_verify_that_cluster_has_no_nodes),
-	([("Drain the ", "action"), ("control planes", "hostname")], __task_drain_control_planes),
-	([("Run teardown playbooks on ", "action"), ("control planes", "hostname")], __task_run_teardown_playbooks_on_control_planes),
-	([("Remove kube config", "action")], __task_remove_kube_config),
+	([ANSIThemeString("Verify that only ", "action"), ANSIThemeString("control planes", "hostname"), (" remain in the cluster", "action")], __task_verify_that_cluster_has_no_nodes),
+	([ANSIThemeString("Drain the ", "action"), ANSIThemeString("control planes", "hostname")], __task_drain_control_planes),
+	([ANSIThemeString("Run teardown playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_teardown_playbooks_on_control_planes),
+	([ANSIThemeString("Remove kube config", "action")], __task_remove_kube_config),
 ]
 
 purge_control_plane_tasks = [
-	([("Run purge playbooks on ", "action"), ("control planes", "hostname")], __task_run_purge_playbooks_on_control_planes),
+	([ANSIThemeString("Run purge playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_purge_playbooks_on_control_planes),
 ]
 
 def run_tasks(tasks, phase, phase_skiplist, final_state):
@@ -2885,11 +2902,11 @@ def run_checks(checks, **kwargs) -> None:
 		if call is not None:
 			critical, error, warning, note = call(cluster_name, kubeconfig, iktlib.iktconfig, user, critical, error, warning, note, **kwargs)
 
-	iktprint([("Summary:", "header")])
-	iktprint([ ("Critical:", "critical"), (f" {critical}", "error")])
-	iktprint([(f"  Errors: {error}", "error")])
-	iktprint([(f"Warnings: {warning}", "warning")])
-	iktprint([(f"   Notes: {note}", "note")])
+	iktprint([ANSIThemeString("Summary:", "header")])
+	iktprint([ANSIThemeString("Critical:", "critical"), ANSIThemeString(f" {critical}", "error")])
+	iktprint([ANSIThemeString(f"  Errors: {error}", "error")])
+	iktprint([ANSIThemeString(f"Warnings: {warning}", "warning")])
+	iktprint([ANSIThemeString(f"   Notes: {note}", "note")])
 
 security_audit_checks = [
 	{

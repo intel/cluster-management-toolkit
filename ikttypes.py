@@ -6,7 +6,7 @@ This file contains custom types used to define types used by iKT
 """
 
 from enum import auto, Enum, IntEnum
-from typing import NamedTuple, NewType
+from typing import NamedTuple, NewType, Optional
 
 class ThemeRef(NamedTuple):
 	context: str
@@ -15,6 +15,7 @@ class ThemeRef(NamedTuple):
 class ThemeString(NamedTuple):
 	string: str
 	themeref: ThemeRef
+	selected: bool = False
 
 class ANSIThemeString(NamedTuple):
 	string: str
