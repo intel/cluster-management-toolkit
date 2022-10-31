@@ -3355,7 +3355,7 @@ class KubernetesHelper:
 		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_post(kind, body = body)
 
-	def taint_node(self, node: str, taints: List[Dict], new_taint: Tuple[str, str, str, str], overwrite: bool = False) -> Tuple[str, int]:
+	def taint_node(self, node: str, taints: List[Dict], new_taint: Tuple[str, Optional[str], Optional[str], Optional[str]], overwrite: bool = False) -> Tuple[str, int]:
 		"""
 		Apply a new taint, replace an existing taint, or remove a taint for a node
 

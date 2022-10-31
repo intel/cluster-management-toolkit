@@ -23,7 +23,7 @@ from ikttypes import ANSIThemeString, DictPath, FilePath, FilePathAuditError, Se
 
 ansible_results: Dict = {}
 
-ansible_configuration = {
+ansible_configuration: Dict = {
 	"ansible_forks": 5,
 	"ansible_password": None,
 	"ansible_user": None,
@@ -79,7 +79,7 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 	return FilePath(path)
 
 # Add all playbooks in the array
-def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[Tuple[str, str]], FilePath]]:
+def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSIThemeString], FilePath]]:
 	"""
 	Populate a playbook list
 
@@ -95,7 +95,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[Tupl
 	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	for playbookpath in paths:
-		playbookpath = FilePath(playbookpath)
+		playbookpath = playbookpath
 		pathname = PurePath(playbookpath).name
 		playbook_dir = FilePath(str(PurePath(playbookpath).parent))
 
@@ -109,7 +109,6 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[Tupl
 			raise Exception(f"The playbook filename “{pathname}“ does not end with .yaml or .yml; this is most likely a programming error.")
 
 		playbookname = tmp[1]
-		description = None
 
 		# The playbook directory itself may be a symlink. This is expected behaviour when installing from a git repo,
 		# but we only allow it if the rest of the path components are secure
@@ -145,13 +144,15 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[Tupl
 		]
 
 		d = secure_read_yaml(playbookpath, checks = checks)
-		description = [(deep_get(d[0], DictPath("vars#metadata#description")), "play")]
+		description = [ANSIThemeString(deep_get(d[0], DictPath("vars#metadata#description")), "play")]
 
 		if description is None or len(description) == 0:
-			description = [("Running “", "play"), (playbookname, "programname"), ("“", "play")]
+			description = [ANSIThemeString("Running “", "play"),
+				       ANSIThemeString(playbookname, "programname"),
+				       ANSIThemeString("“", "play")]
 
 		# If there's no description we fallback to just using the filename
-		playbooks.append(([("  • ", "separator")] + description, playbookpath))
+		playbooks.append(([ANSIThemeString("  • ", "separator")] + description, playbookpath))
 
 	return playbooks
 

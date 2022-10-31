@@ -25,7 +25,7 @@ import socket
 import subprocess
 import sys
 import tempfile
-from typing import cast, Dict, List, Optional, Tuple
+from typing import Callable, cast, Dict, List, Optional, Set, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -51,7 +51,7 @@ from networkio import download_files, scan_and_add_ssh_keys
 import iktlib
 from iktlib import check_deb_versions, deep_get, execute_command, execute_command_with_response, read_iktconfig
 
-from kubernetes_helper import kubectl_get_version
+import kubernetes_helper
 
 from iktprint import iktinput, iktinput_password, iktprint
 
@@ -66,7 +66,7 @@ DEFAULT_POD_NETWORK_CIDR = "10.244.0.0/16"
 
 no_password = False
 
-prepare_targets = {
+prepare_targets: Dict = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
 		"playbooks": [
@@ -94,7 +94,7 @@ prepare_targets = {
 	},
 }
 
-setup_control_plane_targets = {
+setup_control_plane_targets: Dict = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
 		"playbooks": [
@@ -128,7 +128,7 @@ setup_control_plane_targets = {
 	},
 }
 
-upgrade_control_plane_targets = {
+upgrade_control_plane_targets: Dict = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
 		"playbooks": [
@@ -149,7 +149,7 @@ upgrade_control_plane_targets = {
         },
 }
 
-teardown_control_plane_targets = {
+teardown_control_plane_targets: Dict = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
 		"playbooks": [
@@ -159,7 +159,7 @@ teardown_control_plane_targets = {
 	},
 }
 
-purge_control_plane_targets = {
+purge_control_plane_targets: Dict = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
 		"playbooks": [
@@ -260,7 +260,7 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
 
 # pylint: disable-next=too-many-arguments
 def update_installation_info(cluster_name: Optional[str] = None, distro: Optional[str] = None, version: Optional[str] = None, requested_version: Optional[str] = None,
-			     state: Optional[str] = None, phase: Optional[str] = None, phase_skiplist: Optional[List[str]] = None,
+			     state: Optional[str] = None, phase: Union[int, str] = None, phase_skiplist: Optional[List[str]] = None,
 			     cni: Optional[str] = None, pod_network_cidr: Optional[str] = None, cri: Optional[str] = None) -> Dict:
 	"""
 	Update installation info for a cluster
@@ -445,7 +445,7 @@ def substitute_list(strlist: List[str], substitutions: Dict) -> List[str]:
 		strlist = [s.replace(key, value) for s in strlist]
 	return strlist
 
-def check_version_from_url(url: str, version_regex: str):
+def check_version_from_url(url: str, version_regex: str) -> List[str]:
 	"""
 	Given a URL download a text file and treat the first line that matches version_regex as a version number
 
@@ -456,7 +456,8 @@ def check_version_from_url(url: str, version_regex: str):
 			version (str): The version number, or None in case of failure
 	"""
 
-	version = None
+	version: List[str] = []
+
 	if url is not None:
 		with tempfile.TemporaryDirectory() as td:
 			check_and_print_status(download_files(td, [(url, "version.txt", None, None)], permissions = 0o600))
@@ -466,11 +467,11 @@ def check_version_from_url(url: str, version_regex: str):
 			for line in versionoutput:
 				tmp_match = _version_regex.match(line)
 				if tmp_match is not None:
-					version = tmp_match.groups()
+					version = list(tmp_match.groups())
 					break
 	return version
 
-def check_version_from_executable(command: FilePath, args: List[str], version_regex: str):
+def check_version_from_executable(command: FilePath, args: List[str], version_regex: str) -> List[str]:
 	"""
 	Given a path to an executable, the arguments needed to show version information,
 	and a version_regex, return the executable version
@@ -483,7 +484,7 @@ def check_version_from_executable(command: FilePath, args: List[str], version_re
 			version (str): The version number, or None in case of failure
 	"""
 
-	version = None
+	version: List[str] = []
 
 	security_policy = SecurityPolicy.ALLOWLIST_RELAXED
 	fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
@@ -502,7 +503,7 @@ def check_version_from_executable(command: FilePath, args: List[str], version_re
 			for line in versionoutput:
 				tmp = _version_regex.match(line)
 				if tmp is not None:
-					version = tmp.groups()
+					version = list(tmp.groups())
 					break
 	return version
 
@@ -538,14 +539,14 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str) -> None:
 		"<<<context>>>": context,
 	}
 
-	version = None
+	version = []
 	if version_command is not None:
 		iktprint([ANSIThemeString("\n• ", "separator"),
 			  ANSIThemeString(f"Checking {upgradetype} version", "action")])
 		version = check_version_from_executable(version_command[0],
 							substitute_list(version_command[1:], version_substitutions), version_command_regex)
 
-	candidate_version = ""
+	candidate_version = []
 	if candidate_version_url is not None:
 		iktprint([ANSIThemeString("\n• ", "separator"),
 			  ANSIThemeString(f"Checking {upgradetype} candidate version", "action")])
@@ -559,14 +560,14 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str) -> None:
 
 	if download_url is not None and command_filename is not None:
 		if version is None or version < candidate_version:
-			version = "".join(candidate_version)
+			new_version = "".join(candidate_version)
 
 			iktprint([ANSIThemeString("\n• ", "separator"),
 				  ANSIThemeString(f"Downloading {upgradetype} ", "action"),
-				  ANSIThemeString(f"{version}", "version")])
+				  ANSIThemeString(f"{new_version}", "version")])
 
 			substitutions = {
-				"<<<version>>>": version,
+				"<<<version>>>": new_version,
 				"<<<arch>>>": arch,
 				"<<<context>>>": context,
 			}
@@ -586,28 +587,28 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str) -> None:
 		else:
 			iktprint([ANSIThemeString("No newer version available.", "default")])
 	elif install_command is not None and version is None:
-		version = "".join(candidate_version)
+		new_version = "".join(candidate_version)
 
 		iktprint([ANSIThemeString("\n• ", "separator"),
 			  ANSIThemeString(f"Installing {upgradetype} ", "action"),
-			  ANSIThemeString(f"{version}", "version")])
+			  ANSIThemeString(f"{new_version}", "version")])
 
 		substitutions = {
-			"<<<version>>>": version,
+			"<<<version>>>": new_version,
 			"<<<arch>>>": arch,
 			"<<<context>>>": context,
 		}
 		check_and_print_status(execute_command(substitute_list(install_command, substitutions)))
 	elif upgrade_command is not None:
 		if version is None or version < candidate_version:
-			version = "".join(candidate_version)
+			new_version = "".join(candidate_version)
 
 			iktprint([ANSIThemeString("\n• ", "separator"),
 				  ANSIThemeString(f"Upgrading {upgradetype} to ", "action"),
-				  ANSIThemeString(f"{version}", "version")])
+				  ANSIThemeString(f"{new_version}", "version")])
 
 			substitutions = {
-				"<<<version>>>": version,
+				"<<<version>>>": new_version,
 				"<<<arch>>>": arch,
 				"<<<context>>>": context,
 			}
@@ -631,6 +632,18 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 		installation_info = get_installation_info()
 		cluster_name = installation_info["installation_target"]
 		cni = installation_info[cluster_name]["cni"]
+
+		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+		tmp_cni = kh.identify_cni()
+		if len(tmp_cni) == 0:
+			cni = "<unknown>"
+		elif len(tmp_cni) > 1:
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(f": Could not uniquely identify the CNI; multiple potential candidates identified; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+		else:
+			cni = tmp_cni[0][0]
 	if cni not in cni_upgrade_data:
 		iktprint([ANSIThemeString("Upgrading ", "default"),
 			  ANSIThemeString(f"{cni}", "command"),
@@ -979,7 +992,7 @@ def __get_theme(string: str, default: str) -> str:
 	}
 	return translation.get(string, default)
 
-def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List[str], str]]) -> Tuple[List[Tuple[str, str, str, List[str]]], List[Tuple[str, str, str]]]:
+def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List[str], str]]) -> Tuple[List[Tuple[str, str, str, List[str]]], List[Tuple[str, str, str, List[str]]]]:
 	"""
 	Check versions for all relevant software
 
@@ -990,7 +1003,7 @@ def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List
 			(deb_versions, other_versions): A tuple of utput from check_deb_versions(), (software, installed_version, "")
 	"""
 
-	other_versions = []
+	other_versions: List[Tuple[str, str, str, List[str]]] = []
 
 	# First check all Debian versions
 	deb_versions = check_deb_versions(deb_packages)
@@ -1004,10 +1017,10 @@ def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List
 		try:
 			response = execute_command_with_response(args)
 		except FileNotFoundError:
-			other_versions.append((tmp_software, "<none>", ""))
+			other_versions.append((tmp_software, "<none>", "", []))
 			continue
 		except subprocess.CalledProcessError:
-			other_versions.append((tmp_software, "<unknown>", ""))
+			other_versions.append((tmp_software, "<unknown>", "", []))
 			continue
 
 		if regex is None:
@@ -1018,7 +1031,7 @@ def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List
 				tmp_installed_version = tmp_match[1]
 			else:
 				tmp_installed_version = "<none>"
-		other_versions.append((tmp_software, tmp_installed_version, ""))
+		other_versions.append((tmp_software, tmp_installed_version, "", []))
 
 	# Finally, display the gathered version information; find the longest string of each type
 	# Create lists of header + all values belonging to that header, and get the length of the longest element
@@ -1038,7 +1051,7 @@ def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List
 			  ANSIThemeString(f"{installed_version.ljust(ilen + 2)}", iformat),
 			  ANSIThemeString(f"{candidate_version}", cformat)])
 	print()
-	for software, installed_version, candidate_version in cast(Tuple[str, str, str], natsorted(other_versions)):
+	for software, installed_version, candidate_version, _ in cast(Tuple[str, str, str, List[str]], natsorted(other_versions)):
 		iformat = __get_theme(installed_version, "version")
 		cformat = __get_theme(candidate_version, "version")
 		iktprint([ANSIThemeString(f"{software.ljust(slen + 2)}", "default"),
@@ -1048,12 +1061,12 @@ def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List
 	return deb_versions, other_versions
 
 # pylint: disable-next=unused-argument
-def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False):
+def run_playbook(playbookpath: FilePath, hosts = None, extra_values = None, quiet = False) -> Tuple[int, Dict]:
 	"""
 	Run a playbook
 
 		Parameters:
-			playbookpath (str): A path to the playbook to run
+			playbookpath (FilePath): A path to the playbook to run
 			hosts (list[str]): A list of hosts to run the playbook on
 			extra_values (dict): A dict of values to set before running the playbook
 			quiet (bool): Unused
@@ -1099,13 +1112,13 @@ def run_playbook(playbookpath, hosts = None, extra_values = None, quiet = False)
 
 	return retval, ansible_results
 
-def run_playbooks(playbooks, hosts = None, extra_values = None):
+def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts: List[str] = None, extra_values: Dict = None) -> bool:
 	"""
 	Run a set of playbooks
 
 		Parameters:
-			playbooks (list[(description, playbookpath)]): A list of playbooks
-			hosts (str): The hosts to run the playbooks on
+			playbooks (list[(description (list[ANSIThemeString]), playbookpath (FilePath))]): A list of playbooks
+			hosts (list[str]): The hosts to run the playbooks on
 			extra_values (dict): Variables to set before running the playbooks
 		Returns:
 			True on success, False on failure
@@ -1124,14 +1137,14 @@ def run_playbooks(playbooks, hosts = None, extra_values = None):
 
 	return retval == 0
 
-def __playbook_paths_from_path(playbook_path: FilePath):
+def __playbook_paths_from_path(playbook_path: FilePath) -> List[FilePath]:
 	"""
 	Scan a directory and return a list of playbook paths
 
 		Parameters:
 			playbook_path (str): A path to a directory
 		Returns:
-			list[str]: A list of paths
+			list[FilePath]: A list of paths
 	"""
 
 	if playbook_path is None:
@@ -1146,12 +1159,12 @@ def __playbook_paths_from_path(playbook_path: FilePath):
 			continue
 		if not path.name.endswith((".yml", ".yaml")):
 			continue
-		playbook_paths.append(path)
+		playbook_paths.append(FilePath(str(path)))
 
 	return playbook_paths
 
 # Add all playbooks in the directory
-def populate_playbooks_from_dir(path: FilePath):
+def populate_playbooks_from_dir(path: FilePath) -> List[Tuple[List[ANSIThemeString], FilePath]]:
 	"""
 	Populate a playbook list from path
 
@@ -1166,7 +1179,7 @@ def populate_playbooks_from_dir(path: FilePath):
 	return populate_playbooks_from_paths(playbook_paths)
 
 # pylint: disable-next=unused-argument
-def __task_request_ansible_password(installation_info):
+def __task_request_ansible_password(installation_info: Optional[Dict]) -> None:
 	"""
 	An installer task that requests the ansible password
 
@@ -1176,9 +1189,9 @@ def __task_request_ansible_password(installation_info):
 
 	# Check whether ansible_password is defined or not
 	if deep_get(ansible_configuration, DictPath("ansible_password")) is None and no_password == False:
-		iktprint([("Attention", "warning"),
-			  (": To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
-		iktprint([("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
+		iktprint([ANSIThemeString("Attention", "warning"),
+			  ANSIThemeString(": To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
+		iktprint([ANSIThemeString("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
 		ansible_password = iktinput_password([ANSIThemeString("\nPassword: ", "default")])
 		if len(ansible_password) == 0:
 			iktprint([ANSIThemeString("\nError", "Error"),
@@ -1187,7 +1200,7 @@ def __task_request_ansible_password(installation_info):
 		else:
 			ansible_configuration["ansible_password"] = ansible_password
 
-def __run_playbooks_on_selection(playbooks, selection, extra_values = None) -> None:
+def __run_playbooks_on_selection(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], selection: List[str], extra_values: Dict = None) -> None:
 	"""
 	A helper that runs a playbook list on a selection
 
@@ -1199,7 +1212,7 @@ def __run_playbooks_on_selection(playbooks, selection, extra_values = None) -> N
 
 	check_and_print_status(run_playbooks(playbooks, hosts = selection, extra_values = extra_values))
 
-def __selection_control_planes():
+def __selection_control_planes() -> List[str]:
 	"""
 	Return a selection with all control planes
 
@@ -1210,7 +1223,7 @@ def __selection_control_planes():
 	__controlplanes = get_control_planes(fail_on_empty = False)
 	return [controlplane[0] for controlplane in __controlplanes]
 
-def __selection_localhost():
+def __selection_localhost() -> List[str]:
 	"""
 	Returns a list with the hostname of localhost
 
@@ -1221,7 +1234,7 @@ def __selection_localhost():
 	return [socket.gethostname()]
 
 # pylint: disable-next=unused-argument
-def __task_run_preparation_playbooks_on_localhost(installation_info) -> None:
+def __task_run_preparation_playbooks_on_localhost(installation_info: Dict) -> None:
 	"""
 	An installer task that runs preparation playbooks on localhost
 
@@ -1239,7 +1252,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info) -> None:
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
-def __task_run_preparation_playbooks_on_control_planes(installation_info) -> None:
+def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict) -> None:
 	"""
 	An installer task that runs preparation playbooks on control planes
 
@@ -1262,7 +1275,7 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info) -> Non
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
 # pylint: disable-next=unused-argument
-def __task_setup_bash_completion(installation_info) -> None:
+def __task_setup_bash_completion(installation_info: Dict) -> None:
 	"""
 	An installer task that sets up bash completion
 
@@ -1279,7 +1292,7 @@ def __task_setup_bash_completion(installation_info) -> None:
 	result = execute_command_with_response(args)
 	secure_write_string(FilePath(str(PurePath(BASH_COMPLETION_DIR).joinpath("kubectl"))), result)
 
-def get_cluster_name():
+def get_cluster_name() -> Optional[str]:
 	"""
 	Return the name of the cluster
 
@@ -1304,7 +1317,7 @@ def get_cluster_name():
 
 	return cluster_name
 
-def __task_run_setup_playbooks_on_localhost(installation_info) -> None:
+def __task_run_setup_playbooks_on_localhost(installation_info: Dict) -> None:
 	"""
 	An installer task that runs playbooks on localhost
 
@@ -1324,7 +1337,7 @@ def __task_run_setup_playbooks_on_localhost(installation_info) -> None:
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
-def __task_run_setup_playbooks_on_control_planes(installation_info) -> None:
+def __task_run_setup_playbooks_on_control_planes(installation_info: Dict) -> None:
 	"""
 	An installer task that runs playbooks on control planes
 
@@ -1345,7 +1358,7 @@ def __task_run_setup_playbooks_on_control_planes(installation_info) -> None:
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
-def __task_import_kube_config(installation_info) -> None:
+def __task_import_kube_config(installation_info: Dict) -> None:
 	"""
 	An installer task that merges a Kube config into ~/.kube/config
 
@@ -1447,7 +1460,7 @@ def __task_import_kube_config(installation_info) -> None:
 
 	check_and_print_status(True)
 
-def __task_setup_kubeadm_cni(installation_info) -> None:
+def __task_setup_kubeadm_cni(installation_info: Dict) -> None:
 	"""
 	An installer task that sets up a CNI
 
@@ -1465,7 +1478,7 @@ def __task_setup_kubeadm_cni(installation_info) -> None:
 	__setup_cni(cni, pod_network_cidr, context_name, cluster_name)
 
 # pylint: disable-next=unused-argument
-def __task_drain_control_planes(installation_info) -> None:
+def __task_drain_control_planes(installation_info: Dict) -> None:
 	"""
 	An installer task that drains control plains
 
@@ -1490,7 +1503,7 @@ def __task_drain_control_planes(installation_info) -> None:
 		check_and_print_status(True)
 		return
 
-	kubectl_major_version, kubectl_minor_version, _kubectl_git_version, _server_major_version, _server_minor_version, _server_git_version = kubectl_get_version()
+	kubectl_major_version, kubectl_minor_version, _kubectl_git_version, _server_major_version, _server_minor_version, _server_git_version = kubernetes_helper.kubectl_get_version()
 
 	# Build the drain command line based on what version of kubectl is installed
 	args = ["/usr/bin/kubectl", "drain", "--ignore-daemonsets"]
@@ -1505,7 +1518,7 @@ def __task_drain_control_planes(installation_info) -> None:
 		check_and_print_status(execute_command(args + [controlplane]))
 
 # pylint: disable-next=unused-argument
-def __task_uncordon_control_planes(installation_info) -> None:
+def __task_uncordon_control_planes(installation_info: Dict) -> None:
 	"""
 	An installer task that uncordons control planes
 
@@ -1535,7 +1548,7 @@ def __task_uncordon_control_planes(installation_info) -> None:
 			sys.exit(errno.EINVAL)
 
 # pylint: disable-next=unused-argument
-def __task_run_preupgrade_playbooks_on_localhost(installation_info) -> None:
+def __task_run_preupgrade_playbooks_on_localhost(installation_info: Dict) -> None:
 	"""
 	An installer task that runs pre-upgrade playbooks on localhost
 
@@ -1552,7 +1565,7 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info) -> None:
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
 # pylint: disable-next=unused-argument
-def __task_run_preupgrade_playbooks_on_control_planes(installation_info) -> None:
+def __task_run_preupgrade_playbooks_on_control_planes(installation_info: Dict) -> None:
 	"""
 	An installer task that runs pre-upgrade playbooks on control planes
 
@@ -1566,7 +1579,7 @@ def __task_run_preupgrade_playbooks_on_control_planes(installation_info) -> None
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
 # Run upgrade playbooks on control planes
-def __task_run_upgrade_playbooks_on_control_planes(installation_info) -> None:
+def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict) -> None:
 	"""
 	An installer task that runs upgrade playbooks on control planes
 
@@ -1587,7 +1600,7 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info) -> None:
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
 # pylint: disable-next=unused-argument
-def __task_run_postupgrade_playbooks_on_control_planes(installation_info) -> None:
+def __task_run_postupgrade_playbooks_on_control_planes(installation_info: Dict) -> None:
 	"""
 	An installer task that runs post-upgrade playbooks on control planes
 
@@ -1601,7 +1614,7 @@ def __task_run_postupgrade_playbooks_on_control_planes(installation_info) -> Non
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
 # pylint: disable-next=unused-argument
-def __task_verify_that_cluster_has_no_nodes(installation_info) -> None:
+def __task_verify_that_cluster_has_no_nodes(installation_info: Dict) -> None:
 	"""
 	An installer task that verifies that no non-control plane nodes remain in the cluster
 
@@ -1622,7 +1635,7 @@ def __task_verify_that_cluster_has_no_nodes(installation_info) -> None:
 	iktprint([ANSIThemeString("OK", "ok")])
 
 # Run teardown playbooks on control planes
-def __task_run_teardown_playbooks_on_control_planes(installation_info) -> None:
+def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict) -> None:
 	"""
 	An installer task that runs teardown playbooks on control planes
 
@@ -1636,7 +1649,7 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info) -> None:
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], teardown_control_plane_targets[distro]["playbooks"]))
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
-def __task_remove_kube_config(installation_info) -> None:
+def __task_remove_kube_config(installation_info: Dict) -> None:
 	"""
 	An installer task that removes a cluster configuration from ~/.kube/config
 
@@ -1702,7 +1715,7 @@ def __task_remove_kube_config(installation_info) -> None:
 	check_and_print_status(True)
 
 # Run purge playbooks on control planes
-def __task_run_purge_playbooks_on_control_planes(installation_info) -> None:
+def __task_run_purge_playbooks_on_control_planes(installation_info: Dict) -> None:
 	"""
 	An installer task that runs purge playbooks on control planes
 
@@ -1720,18 +1733,18 @@ def __task_run_purge_playbooks_on_control_planes(installation_info) -> None:
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
-def __validate_task_index(tasks, task):
+def __validate_task_index(tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]], phase: Union[str, int]) -> int:
 	"""
 	Helper that validates the installer task index
 		Parameters:
-			tasks (list[str]): A list of tasks
-			task (int): An integer index
+			tasks (list[tasks]): A list of tasks
+			phase (int): An integer index
 		Returns:
-			task (int): The integer index on success; exits if the task is out of range
+			phase (int): The integer index on success; exits if the task is out of range
 	"""
 
 	try:
-		task = int(task)
+		phase = int(phase)
 	except ValueError as e:
 		iktprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": ", "default"),
@@ -1739,41 +1752,41 @@ def __validate_task_index(tasks, task):
 			  ANSIThemeString(f" needs to be an integer index in the range [0, {len(tasks) - 1}]. Aborting.", "default")], stderr = True)
 		sys.exit(f"Exception: {e}")
 
-	if task < 0 or task >= len(tasks):
+	if phase < 0 or phase >= len(tasks):
 		iktprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": ", "default"),
 			  ANSIThemeString("TASK", "argument"),
 			  ANSIThemeString(f" needs to be in the range [0, {len(tasks) - 1}]. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ERANGE)
-	return task
+	return phase
 
-def __list_phases(phases):
+def __list_phases(phases: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]]) -> None:
 	"""
 	Helper that lists installation phases
 	"""
 
 	for i, phase in enumerate(phases):
-		tmp = [(f"{str(i).rjust(2)}: ", "emphasis")]
+		tmp = [ANSIThemeString(f"{str(i).rjust(2)}: ", "emphasis")]
 		tmp += phase[0]
 		iktprint(tmp)
 
-def __expand_index_list(index_list):
+def __expand_index_list(index_list: str) -> Set[int]:
 	indexes = set()
 
 	for index in index_list.split(","):
 		try:
 			if "-" in index:
-				first, last = index.split("-")
-				first = int(first)
-				last = int(last)
+				tmp_first, tmp_last = index.split("-")
+				first = int(tmp_first)
+				last = int(tmp_last)
 			else:
 				first = int(index)
 				last = first
 		except ValueError as e:
-			iktprint([("Error", "error"),
-				  (": ", "default"),
-				  (f"{index}", "argument"),
-				  (" is not an integer or range of integers. Aborting.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": ", "default"),
+				  ANSIThemeString(f"{index}", "argument"),
+				  ANSIThemeString(" is not an integer or range of integers. Aborting.", "default")], stderr = True)
 			sys.exit(f"Exception: {e}")
 		for i in range(first, last + 1):
 			indexes.add(i)
@@ -1786,48 +1799,72 @@ def __format_none(string: Optional[str], fmt: str) -> ANSIThemeString:
 		__string = ANSIThemeString(string, fmt)
 	return __string
 
-prepare_tasks = [
+prepare_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]] = [
 	([ANSIThemeString("Check for ssh host key and create if needed", "action")], __task_check_and_create_ssh_key),
-	([ANSIThemeString("Add ssh keys for localhost and the control plane(s) to ", "action"), ANSIThemeString(f"{HOMEDIR}/.ssh/known_hosts", "path")], __task_scan_and_add_ssh_keys),
-	([ANSIThemeString("Add public ssh keys to ", "action"), ANSIThemeString(f"{HOMEDIR}/.ssh/authorized_keys", "path")], __task_check_and_add_ssh_keys_to_authorized_keys),
+	([ANSIThemeString("Add ssh keys for localhost and the control plane(s) to ", "action"),
+	  ANSIThemeString(f"{HOMEDIR}/.ssh/known_hosts", "path")], __task_scan_and_add_ssh_keys),
+	([ANSIThemeString("Add public ssh keys to ", "action"),
+	  ANSIThemeString(f"{HOMEDIR}/.ssh/authorized_keys", "path")], __task_check_and_add_ssh_keys_to_authorized_keys),
 	([ANSIThemeString("Add public ssh keys to inventory", "action")], __task_add_ssh_keys_to_inventory),
 	([ANSIThemeString("Request the ansible password if necessary", "action")], __task_request_ansible_password),
-	([ANSIThemeString("Install ", "action"), ANSIThemeString("ansible.posix", "programname"), ANSIThemeString(" if necessary", "action")], __task_check_and_install_ansible_posix),
-	([ANSIThemeString("Run playbooks on ", "action"), ANSIThemeString("localhost", "hostname")], __task_run_preparation_playbooks_on_localhost),
-	([ANSIThemeString("Run playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_preparation_playbooks_on_control_planes),
+	([ANSIThemeString("Install ", "action"),
+	  ANSIThemeString("ansible.posix", "programname"),
+	  ANSIThemeString(" if necessary", "action")], __task_check_and_install_ansible_posix),
+	([ANSIThemeString("Run playbooks on ", "action"),
+	  ANSIThemeString("localhost", "hostname")], __task_run_preparation_playbooks_on_localhost),
+	([ANSIThemeString("Run playbooks on ", "action"),
+	  ANSIThemeString("control planes", "hostname")], __task_run_preparation_playbooks_on_control_planes),
 ]
 
-__setup_kubeadm_control_plane_tasks = [
-	([ANSIThemeString("Run playbooks on ", "action"), ANSIThemeString("localhost", "hostname")], __task_run_setup_playbooks_on_localhost),
-	([ANSIThemeString("Setup ", "action"), ANSIThemeString("bash completion", "emphasis"), ANSIThemeString(" for ", "action"), ("kubectl", "programname")], __task_setup_bash_completion),
-	([ANSIThemeString("Run playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
+__setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]] = [
+	([ANSIThemeString("Run playbooks on ", "action"),
+	  ANSIThemeString("localhost", "hostname")], __task_run_setup_playbooks_on_localhost),
+	([ANSIThemeString("Setup ", "action"),
+	  ANSIThemeString("bash completion", "emphasis"),
+	  ANSIThemeString(" for ", "action"),
+	  ANSIThemeString("kubectl", "programname")], __task_setup_bash_completion),
+	([ANSIThemeString("Run playbooks on ", "action"),
+	  ANSIThemeString("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
 	([ANSIThemeString("Import kube config", "action")], __task_import_kube_config),
-	([ANSIThemeString("Setup ", "action"), ANSIThemeString("kubeadm", "programname"), ANSIThemeString(" Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
+	([ANSIThemeString("Setup ", "action"),
+	  ANSIThemeString("kubeadm", "programname"),
+	  ANSIThemeString(" Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
 ]
 
 setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
 
-upgrade_control_plane_tasks = [
-	([ANSIThemeString("Drain the ", "action"), ANSIThemeString("control planes", "hostname")], __task_drain_control_planes),
-	([ANSIThemeString("Run pre-upgrade playbooks on ", "action"), ANSIThemeString("localhost", "hostname")], __task_run_preupgrade_playbooks_on_localhost),
-	([ANSIThemeString("Run pre-upgrade playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_preupgrade_playbooks_on_control_planes),
-	([ANSIThemeString("Run upgrade playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_upgrade_playbooks_on_control_planes),
-	([ANSIThemeString("Run post-upgrade playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_postupgrade_playbooks_on_control_planes),
-	([ANSIThemeString("Uncordon the ", "action"), ANSIThemeString("control planes", "hostname")], __task_uncordon_control_planes),
+upgrade_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]] = [
+	([ANSIThemeString("Drain the ", "action"),
+	  ANSIThemeString("control planes", "hostname")], __task_drain_control_planes),
+	([ANSIThemeString("Run pre-upgrade playbooks on ", "action"),
+	  ANSIThemeString("localhost", "hostname")], __task_run_preupgrade_playbooks_on_localhost),
+	([ANSIThemeString("Run pre-upgrade playbooks on ", "action"),
+	  ANSIThemeString("control planes", "hostname")], __task_run_preupgrade_playbooks_on_control_planes),
+	([ANSIThemeString("Run upgrade playbooks on ", "action"),
+	  ANSIThemeString("control planes", "hostname")], __task_run_upgrade_playbooks_on_control_planes),
+	([ANSIThemeString("Run post-upgrade playbooks on ", "action"),
+	  ANSIThemeString("control planes", "hostname")], __task_run_postupgrade_playbooks_on_control_planes),
+	([ANSIThemeString("Uncordon the ", "action"),
+	  ANSIThemeString("control planes", "hostname")], __task_uncordon_control_planes),
 ]
 
-teardown_control_plane_tasks = [
-	([ANSIThemeString("Verify that only ", "action"), ANSIThemeString("control planes", "hostname"), (" remain in the cluster", "action")], __task_verify_that_cluster_has_no_nodes),
-	([ANSIThemeString("Drain the ", "action"), ANSIThemeString("control planes", "hostname")], __task_drain_control_planes),
-	([ANSIThemeString("Run teardown playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_teardown_playbooks_on_control_planes),
+teardown_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]] = [
+	([ANSIThemeString("Verify that only ", "action"),
+	  ANSIThemeString("control planes", "hostname"),
+	  ANSIThemeString(" remain in the cluster", "action")], __task_verify_that_cluster_has_no_nodes),
+	([ANSIThemeString("Drain the ", "action"),
+	  ANSIThemeString("control planes", "hostname")], __task_drain_control_planes),
+	([ANSIThemeString("Run teardown playbooks on ", "action"),
+	  ANSIThemeString("control planes", "hostname")], __task_run_teardown_playbooks_on_control_planes),
 	([ANSIThemeString("Remove kube config", "action")], __task_remove_kube_config),
 ]
 
-purge_control_plane_tasks = [
-	([ANSIThemeString("Run purge playbooks on ", "action"), ANSIThemeString("control planes", "hostname")], __task_run_purge_playbooks_on_control_planes),
+purge_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]] = [
+	([ANSIThemeString("Run purge playbooks on ", "action"),
+	  ANSIThemeString("control planes", "hostname")], __task_run_purge_playbooks_on_control_planes),
 ]
 
-def run_tasks(tasks, phase, phase_skiplist, final_state):
+def run_tasks(tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]], phase: int, phase_skiplist: Set[int], final_state: str) -> None:
 	"""
 	Run tasks
 
@@ -1840,11 +1877,11 @@ def run_tasks(tasks, phase, phase_skiplist, final_state):
 
 	installation_info = get_installation_info()
 
-	if isinstance(phase, int):
+	if not isinstance(phase, int):
 		phase = 0
 
 	for i in range(phase, len(tasks)):
-		iktprint([("\n• ", "separator")] + tasks[i][0])
+		iktprint([ANSIThemeString("\n• ", "separator")] + tasks[i][0])
 		if i not in set(phase_skiplist):
 			tasks[i][1](installation_info)
 		if i < len(tasks) - 1:
@@ -1852,7 +1889,7 @@ def run_tasks(tasks, phase, phase_skiplist, final_state):
 		else:
 			update_installation_info(state = final_state, phase = "<done>")
 
-def __find_requested_version(distro, version = None):
+def __find_requested_version(distro: str, version: str = None) -> str:
 	"""
 	Based on a provided version, try to find a matching package;
 	Passing None will give the latest version, passing major, minor will give the latest patch revision of that version.
@@ -1874,10 +1911,10 @@ def __find_requested_version(distro, version = None):
 		versions = check_deb_versions(["kubeadm"])
 
 		if len(versions) == 0:
-			iktprint([("Critical", "critical"),
-				  (": No candidate version for ", "default"),
-				  ("kubeadm", "programname"),
-				  (" available; aborting.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Critical", "critical"),
+				  ANSIThemeString(": No candidate version for ", "default"),
+				  ANSIThemeString("kubeadm", "programname"),
+				  ANSIThemeString(" available; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		elif version is not None:
 			# The list is sorted in falling order, so the first match is the one we want, since that's the newest package revision.
@@ -1897,34 +1934,34 @@ def __find_requested_version(distro, version = None):
 				requested_version = versions[0][1]
 
 		if requested_version is None:
-			iktprint([("Error", "error"),
-				  (": Could not find a matching kubeadm package for version ", "default"),
-				  (version, "version"),
-				  ("; aborting.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": Could not find a matching kubeadm package for version ", "default"),
+				  ANSIThemeString(f"{version}", "version"),
+				  ANSIThemeString("; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 	else:
 		raise Exception("No support for other distros implemented")
 
 	_major, minor, _patchrev = requested_version.split(".")
 	if int(minor) < 11:
-		iktprint([("Error", "error"),
-			  (": Kubernetes versions older than ", "default"),
-			  ("1.11", "version"),
-			  (" are not supported by ", "default"),
-			  (f"{about.PROGRAM_SUITE_NAME}", "programname"),
-			  ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Kubernetes versions older than ", "default"),
+			  ANSIThemeString("1.11", "version"),
+			  ANSIThemeString(" are not supported by ", "default"),
+			  ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif int(minor) < 18:
-		iktprint([("Warning", "warning"),
-			  (": Kubernetes versions older than ", "default"),
-			  ("1.18", "version"),
-			  (" are not fully supported by ", "default"),
-			  (f"{about.PROGRAM_SUITE_NAME}", "programname"),
-			  (". Some features may be missing or completely broken.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Warning", "warning"),
+			  ANSIThemeString(": Kubernetes versions older than ", "default"),
+			  ANSIThemeString("1.18", "version"),
+			  ANSIThemeString(" are not fully supported by ", "default"),
+			  ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
+			  ANSIThemeString(". Some features may be missing or completely broken.", "default")], stderr = True)
 
 	return requested_version
 
-def prepare_installation(options, args):
+def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Install and configure pre-requisites for a control plane
 
@@ -1941,14 +1978,14 @@ def prepare_installation(options, args):
 		__list_phases(prepare_tasks)
 		sys.exit(0)
 	elif len(args) == 0:
-		iktprint([(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
-			  (": “", "default"),
-			  ("prepare", "command"),
-			  ("“ requires at least 1 arguments.", "default")], stderr = True)
-		iktprint([("Try “", "default"),
-			  (f"{about.ADMIN_PROGRAM_NAME} ", "programname"),
-			  ("help", "command"),
-			  ("“ for more information.", "default")], stderr = True)
+		iktprint([ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
+			  ANSIThemeString(": “", "default"),
+			  ANSIThemeString("prepare", "command"),
+			  ANSIThemeString("“ requires at least 1 arguments.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Try “", "default"),
+			  ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME} ", "programname"),
+			  ANSIThemeString("help", "command"),
+			  ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	# Always require the user to specify the name of the cluster to operate against, even when resuming prepare;
@@ -1959,12 +1996,12 @@ def prepare_installation(options, args):
 	distro = "kubeadm"
 	requested_version = installation_info[cluster_name]["requested_version"]
 	state = installation_info[cluster_name]["state"]
-	phase = installation_info[cluster_name]["phase"]
+	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
 	if state is not None and state not in ("<none>", "preparing", "prepared"):
-		iktprint([("Error", "error"),
-			  (": Invalid installation state; the system cannot be in a configured or semi-configured state when running prepare; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Invalid installation state; the system cannot be in a configured or semi-configured state when running prepare; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if phase == "<none>":
@@ -1978,8 +2015,10 @@ def prepare_installation(options, args):
 	__controlplanes = get_control_planes(fail_on_empty = False)
 	controlplanes = [controlplane[0] for controlplane in __controlplanes]
 	if len(controlplanes) == 0 and "--control-plane" not in (tmp[0] for tmp in options):
-		retval = iktinput([ANSIThemeString("\nWarning", "warning"), ANSIThemeString(": No control plane defined in the inventory; do you want to add ", "default"),
-				   ANSIThemeString(f"{hostname}", "hostname"), ANSIThemeString(" as control plane? (No will abort the installation) [y/", "default"),
+		retval = iktinput([ANSIThemeString("\nWarning", "warning"),
+				   ANSIThemeString(": No control plane defined in the inventory; do you want to add ", "default"),
+				   ANSIThemeString(f"{hostname}", "hostname"),
+				   ANSIThemeString(" as control plane? (No will abort the installation) [y/", "default"),
 				   ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([ANSIThemeString("\nAborting:", "error"),
@@ -2008,8 +2047,8 @@ def prepare_installation(options, args):
 			if phase is None or phase == "<none>":
 				phase = 0
 			elif phase == "<done>":
-				iktprint([("Warning", "warning"),
-					  (": Ignoring request to resume a completed preparation. Exiting.")], stderr = True)
+				iktprint([ANSIThemeString("Warning", "warning"),
+					  ANSIThemeString(": Ignoring request to resume a completed preparation. Exiting.", "default")], stderr = True)
 				sys.exit(0)
 
 			else:
@@ -2020,10 +2059,10 @@ def prepare_installation(options, args):
 			if optarg in ("dockershim", "containerd", "manual"):
 				cri = optarg
 			else:
-				iktprint([("Error", "error"),
-					  (": Unknown CRI “", "default"),
-					  (optarg, "argument"),
-					  ("“ specified; aborting.", "default")], stderr = True)
+				iktprint([ANSIThemeString("Error", "error"),
+					  ANSIThemeString(": Unknown CRI “", "default"),
+					  ANSIThemeString(optarg, "argument"),
+					  ANSIThemeString("“ specified; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 		elif opt == "-Y":
 			confirm = False
@@ -2034,14 +2073,14 @@ def prepare_installation(options, args):
 		_version = args[1].split(".")
 		if len(_version) == 1 or len(_version) >= 2 and int(_version[1]) >= 24:
 			if cri == "dockershim":
-				iktprint([("Error", "error"),
-					  (": CRI cannot be “", "default"),
-					  ("dockershim", "argument"),
-					  ("“ for ", "default"),
-					  ("Kubernetes ", "programname"),
-					  (">= ", "default"),
-					  ("1.24", "version"),
-					  ("; aborting.", "default")], stderr = True)
+				iktprint([ANSIThemeString("Error", "error"),
+					  ANSIThemeString(": CRI cannot be “", "default"),
+					  ANSIThemeString("dockershim", "argument"),
+					  ANSIThemeString("“ for ", "default"),
+					  ANSIThemeString("Kubernetes ", "programname"),
+					  ANSIThemeString(">= ", "default"),
+					  ANSIThemeString("1.24", "version"),
+					  ANSIThemeString("; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 			elif cri is None:
 				cri = "containerd"
@@ -2052,21 +2091,23 @@ def prepare_installation(options, args):
 		if cri is None:
 			cri = "containerd"
 		elif cri == "dockershim":
-			iktprint([("Error", "error"),
-				  (": CRI cannot be “", "default"),
-				  ("dockershim", "argument"),
-				  ("“ for ", "default"),
-				  ("Kubernetes ", "programname"),
-				  (">= ", "default"),
-				  ("1.24", "version"),
-				  ("; aborting.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": CRI cannot be “", "default"),
+				  ANSIThemeString("dockershim", "argument"),
+				  ANSIThemeString("“ for ", "default"),
+				  ANSIThemeString("Kubernetes ", "programname"),
+				  ANSIThemeString(">= ", "default"),
+				  ANSIThemeString("1.24", "version"),
+				  ANSIThemeString("; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
 	installation_info = update_installation_info(cri = cri)
 	show_configuration()
 
 	if confirm == True:
-		retval = iktinput([ANSIThemeString("\nStart control plane preparation? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nStart control plane preparation? [y/", "default"),
+				   ANSIThemeString("N", "emphasis"),
+				   ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
 			iktprint([ANSIThemeString("\nAborting:", "error"),
 				  ANSIThemeString(" User stopped control plane preparation.", "default")], stderr = True)
@@ -2075,10 +2116,10 @@ def prepare_installation(options, args):
 
 	iktprint([ANSIThemeString("\n[Preparing localhost and control plane(s)]", "phase")])
 
-	run_tasks(tasks = prepare_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "prepared")
+	run_tasks(tasks = prepare_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "prepared")
 
-	iktprint([("\n• ", "separator"),
-		  ("Updating installation information", "action")])
+	iktprint([ANSIThemeString("\n• ", "separator"),
+		  ANSIThemeString("Updating installation information", "action")])
 
 	# Adjust the kube* packages for the control plane(s) and localhost to match the requested cluster version if necessary;
 	# we couldn't do this before since the apt repository wasn't available then
@@ -2087,29 +2128,29 @@ def prepare_installation(options, args):
 	else:
 		requested_version = __find_requested_version(distro)
 
-	iktprint([("   Requested version: ", "action"),
-		  (requested_version, "version")])
+	iktprint([ANSIThemeString("   Requested version: ", "action"),
+		  ANSIThemeString(requested_version, "version")])
 	update_installation_info(requested_version = requested_version)
 
-	iktprint([("\nControl plane preparation successful", "success")])
+	iktprint([ANSIThemeString("\nControl plane preparation successful", "success")])
 	print("\nNext step:")
-	iktprint([("• ", "separator"),
-		  (f"{about.ADMIN_PROGRAM_NAME}", "programname"),
-		  (" setup-control-plane ", "command"),
-		  ("[", "separator"),
-		  ("CNI", "argument"),
-		  ("]", "separator"),
-		  (" [", "separator"),
-		  ("POD_NETWORK_CIDR", "argument"),
-		  ("]", "separator")])
-	iktprint([("\nSee “", "separator"),
-		  (f"{about.ADMIN_PROGRAM_NAME}", "programname"),
-		  (" help", "command"),
-		  ("“ for more information about valid ", "default"),
-		  ("CNI", "argument"),
-		  (" options.\n", "default")])
+	iktprint([ANSIThemeString("• ", "separator"),
+		  ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
+		  ANSIThemeString(" setup-control-plane ", "command"),
+		  ANSIThemeString("[", "separator"),
+		  ANSIThemeString("CNI", "argument"),
+		  ANSIThemeString("]", "separator"),
+		  ANSIThemeString(" [", "separator"),
+		  ANSIThemeString("POD_NETWORK_CIDR", "argument"),
+		  ANSIThemeString("]", "separator")])
+	iktprint([ANSIThemeString("\nSee “", "separator"),
+		  ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
+		  ANSIThemeString(" help", "command"),
+		  ANSIThemeString("“ for more information about valid ", "default"),
+		  ANSIThemeString("CNI", "argument"),
+		  ANSIThemeString(" options.\n", "default")])
 
-def import_cluster(options, args):
+def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Import an existing cluster to iKT
 
@@ -2145,54 +2186,54 @@ def import_cluster(options, args):
 	if len(args) > 0:
 		for cluster in args[0].split(","):
 			if cluster not in available_clusters and match == True:
-				iktprint([("Warning", "warning"),
-					  (": Ignoring non-existing cluster ", "default"),
-					  (cluster, "hostname"),
-					  ("\n", "default")], stderr = True)
+				iktprint([ANSIThemeString("Warning", "warning"),
+					  ANSIThemeString(": Ignoring non-existing cluster ", "default"),
+					  ANSIThemeString(cluster, "hostname"),
+					  ANSIThemeString("\n", "default")], stderr = True)
 
 	if match == False:
-		iktprint([("Error", "error"),
-			  (": No matching clusters found; available clusters are:", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": No matching clusters found; available clusters are:", "default")], stderr = True)
 		for cluster in available_clusters:
-			iktprint([("• ", "separator"),
-				  (cluster, "hostname")])
-		iktprint([("\nAborting.", "default")], stderr = True)
+			iktprint([ANSIThemeString("• ", "separator"),
+				  ANSIThemeString(cluster, "hostname")])
+		iktprint([ANSIThemeString("\nAborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	iktprint([("Cluster:", "header"),
-		  ("".ljust(pad + 2 - len("Cluster:")), "default"),
-		  ("Context:", "header")])
+	iktprint([ANSIThemeString("Cluster:", "header"),
+		  ANSIThemeString("".ljust(pad + 2 - len("Cluster:")), "default"),
+		  ANSIThemeString("Context:", "header")])
 	for cluster_name, context in clusters:
 		if len(args) > 0 and cluster_name not in args[0]:
 			continue
-		iktprint([(cluster_name, "hostname"),
-			  ("".ljust(pad + 2 - len(cluster_name)), "default"),
-			  (context, "default")])
+		iktprint([ANSIThemeString(cluster_name, "hostname"),
+			  ANSIThemeString("".ljust(pad + 2 - len(cluster_name)), "default"),
+			  ANSIThemeString(context, "default")])
 
 	if confirm == True:
-		retval = iktinput([ANSIThemeString("\nImport the following clusters? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
+		input_retval = iktinput([ANSIThemeString("\nImport the following clusters? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 
-		if retval.lower() not in ("y", "yes"):
+		if input_retval.lower() not in ("y", "yes"):
 			iktprint([ANSIThemeString("\nAborting:", "error"),
 				  ANSIThemeString(" User stopped cluster import.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
-	iktprint([("\n[Importing cluster(s)]", "phase")])
+	iktprint([ANSIThemeString("\n[Importing cluster(s)]", "phase")])
 
 	# Since the clusters might use different versions of Kubernetes
 	# we always install the latest kubectl on localhost, so no need to adjust version
 
 	contexts = kh.list_contexts()
 	current_context = None
-	for context in contexts:
-		if context[0] == True:
-			current_context = context[1]
+	for ctx in contexts:
+		if ctx[0] == True:
+			current_context = ctx[1]
 
 	for cluster_name, context in clusters:
 		if len(args) > 0 and cluster_name not in args[0]:
 			continue
 
-		kh.set_context(context)
+		kh.set_context(name = context)
 
 		vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
 
@@ -2206,12 +2247,12 @@ def import_cluster(options, args):
 				break
 
 		if controlplane is None:
-			iktprint([("Error", "error"),
-				  (": Could not find a control plane for the cluster ", "default"),
-				  (cluster_name, "hostname"),
-				  ("; aborting.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": Could not find a control plane for the cluster ", "default"),
+				  ANSIThemeString(cluster_name, "hostname"),
+				  ANSIThemeString("; aborting.", "default")], stderr = True)
 			# Remember to restore current-context
-			kh.set_context(current_context)
+			kh.set_context(name = current_context)
 			sys.exit(errno.ENOENT)
 
 		__task_request_ansible_password(None)
@@ -2223,17 +2264,17 @@ def import_cluster(options, args):
 
 		install_ansible_posix()
 
-		retval, ansible_results = run_playbook(f"{ANSIBLE_PLAYBOOK_DIR}/prepare_passwordless_ansible.yaml", hosts = [controlplane], extra_values = extra_values, quiet = True)
+		retval, ansible_results = run_playbook(FilePath(f"{ANSIBLE_PLAYBOOK_DIR}/prepare_passwordless_ansible.yaml"), hosts = [controlplane], extra_values = extra_values, quiet = True)
 		if retval != 0:
 			break
 
-		cni = kh.identify_cni()
-		if len(cni) != 1:
+		tmp_cni = kh.identify_cni()
+		if len(tmp_cni) != 1:
 			cni = "<unknown>"
 		else:
-			cni = cni[0][0]
+			cni = tmp_cni[0][0]
 
-		retval, ansible_results = run_playbook(f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml", hosts = [controlplane], extra_values = extra_values, quiet = True)
+		retval, ansible_results = run_playbook(FilePath(f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml"), hosts = [controlplane], extra_values = extra_values, quiet = True)
 		distro = "<unknown>"
 		version = "<unknown>"
 		if retval == 0:
@@ -2251,12 +2292,12 @@ def import_cluster(options, args):
 
 		update_installation_info(cluster_name = cluster_name, distro = distro, version = version, requested_version = "<none>", cni = cni, state = "installed", phase = "<none>", pod_network_cidr = "<FIXME>")
 
-	kh.set_context(current_context)
+	kh.set_context(name = current_context)
 
-	iktprint([("\nCluster import successful", "success")])
+	iktprint([ANSIThemeString("\nCluster import successful", "success")])
 
 # pylint: disable-next=unused-argument
-def check_for_updates(options, args):
+def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Check whether there are newer versions of packages that are related to the cluster
 
@@ -2274,11 +2315,11 @@ def check_for_updates(options, args):
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
-	iktprint([("\n[Checking for software updates]", "phase")])
+	iktprint([ANSIThemeString("\n[Checking for software updates]", "phase")])
 
 	if update_cache == True:
-		iktprint([("\n• ", "separator"),
-			  ("Updating APT cache", "action")])
+		iktprint([ANSIThemeString("\n• ", "separator"),
+			  ANSIThemeString("Updating APT cache", "action")])
 		check_and_print_status(update_apt_cache())
 
 	deb_packages = [
@@ -2306,7 +2347,7 @@ def check_for_updates(options, args):
 		"runc",
 	]
 
-	version_checks = []
+	version_checks: List = []
 
 	print()
 	check_versions(deb_packages, version_checks)
@@ -2402,7 +2443,7 @@ def show_configuration() -> None:
 				  ANSIThemeString(f"{controlplane[1]}", "emphasis"),
 				  ANSIThemeString(")", "default")])
 
-def setup_control_plane(options, args):
+def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Setup a control plane
 
@@ -2423,15 +2464,20 @@ def setup_control_plane(options, args):
 	distro = installation_info[cluster_name]["distro"]
 	requested_version = installation_info[cluster_name]["requested_version"]
 	state = installation_info[cluster_name]["state"]
-	phase = installation_info[cluster_name]["phase"]
+	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 	cni = installation_info[cluster_name]["cni"]
 
 	if state is not None and state in ("installed", "upgrading", "tearing_down", "torn_down", "purging"):
-		iktprint([("Error", "error"), (": Invalid installation state; there is a partial or full installation already; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Invalid installation state; there is a partial or full installation already; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif state is None or state == "preparing":
-		iktprint([("Error", "error"), (": The system is not prepared for installation yet; run ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" prepare", "command"), (" before continuing. Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": The system is not prepared for installation yet; run ", "default"),
+			  ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
+			  ANSIThemeString(" prepare", "command"),
+			  ANSIThemeString(" before continuing. Aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if state == "prepared":
@@ -2449,7 +2495,8 @@ def setup_control_plane(options, args):
 			if phase is None or phase == "<none>":
 				phase = 0
 			elif phase == "<done>":
-				iktprint([("Warning", "warning"), (": Ignoring request to resume a completed installation. Exiting.")], stderr = True)
+				iktprint([ANSIThemeString("Warning", "warning"),
+					  ANSIThemeString(": Ignoring request to resume a completed installation. Exiting.", "default")], stderr = True)
 				sys.exit(0)
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
@@ -2462,7 +2509,10 @@ def setup_control_plane(options, args):
 
 	if cni is None or cni == "<none>":
 		if len(args) == 0:
-			iktprint([("Warning", "warning"), (": No CNI specified; defaulting to ", "default"), (f"{DEFAULT_CNI}", "programname"), (".", "default")], stderr = True)
+			iktprint([ANSIThemeString("Warning", "warning"),
+				  ANSIThemeString(": No CNI specified; defaulting to ", "default"),
+				  ANSIThemeString(f"{DEFAULT_CNI}", "programname"),
+				  ANSIThemeString(".", "default")], stderr = True)
 			cni = DEFAULT_CNI
 		elif cni != args[0]:
 			cni = args[0]
@@ -2477,12 +2527,15 @@ def setup_control_plane(options, args):
 	show_configuration()
 
 	if confirm == True:
-		retval = iktinput([ANSIThemeString("\nStart installation? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nStart installation? [y/", "default"),
+				   ANSIThemeString("N", "emphasis"),
+				   ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
-			iktprint([("\nAborting:", "error"), (" User stopped installation.", "default")], stderr = True)
+			iktprint([ANSIThemeString("\nAborting:", "error"),
+				  ANSIThemeString(" User stopped installation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
-	iktprint([("\n[Setting up control plane]", "phase")])
+	iktprint([ANSIThemeString("\n[Setting up control plane]", "phase")])
 
 	if distro == "kubeadm":
 		setup_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
@@ -2494,14 +2547,18 @@ def setup_control_plane(options, args):
 		setup_control_plane_targets["kubeadm"]["deb_packages"].remove("kubelet")
 		setup_control_plane_targets["kubeadm"]["deb_packages"].append(f"kubelet={requested_version}")
 
-	run_tasks(tasks = setup_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "installed")
+	run_tasks(tasks = setup_control_plane_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "installed")
 	update_installation_info(version = requested_version)
 
-	iktprint([("\nControl plane setup successful", "success")])
+	iktprint([ANSIThemeString("\nControl plane setup successful", "success")])
 
-def __get_node_info(kh = None):
+def __get_node_info(kh: kubernetes_helper.KubernetesHelper = None) -> Tuple[List[Dict], kubernetes_helper.KubernetesHelper]:
 	if not Path(KUBE_CONFIG_FILE).is_file():
-		return None, None
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
 	# The reason for importing inside the function is to avoid slow startup
 	# when we don't use the Kubernetes helper
@@ -2509,14 +2566,20 @@ def __get_node_info(kh = None):
 		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
+	# If kh is *still* None here something has gone wrong. It's time to exit.
+	if kh is None:
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Failed to initialise connection to API-server; do you have a running cluster? Aborting.", "default")], stderr = True)
+		sys.exit(errno.ENXIO)
+
 	node_statuses = []
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
-	if status == 504:
-		return None, None
-
 	if status != 200:
-		iktprint([("Error", "error"), (": API-server returned ", "default"), (status, "errorvalue"), ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": API-server returned ", "default"),
+			  ANSIThemeString(status, "errorvalue"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	for node in vlist:
@@ -2533,14 +2596,16 @@ def __get_node_info(kh = None):
 
 	return node_statuses, kh
 
-def get_control_planes(fail_on_empty = True):
+def get_control_planes(fail_on_empty = True) -> List[Tuple[str, str]]:
 	"""
 	Get a list of control planes defined in the inventory
 
 		Parameters:
 			fail_on_empty (bool): If True the action will fail if no control planes are defined in the inventory
 		Returns:
-			control_planes (list[str]): A list of control planes
+			control_planes (list[hostname, ip]): A list of control planes
+				hostname (str): The hostname
+				ip (str): The IP-address
 	"""
 
 	installation_info = get_installation_info()
@@ -2550,10 +2615,20 @@ def get_control_planes(fail_on_empty = True):
 	__clusterhosts = deep_get(inventory, DictPath(f"{cluster_name}#hosts"), {})
 	controlplanes = []
 	if len(__controlplanes) == 0 and fail_on_empty == True:
-		iktprint([("Error", "error"), (": No control plane(s) defined in the inventory; rebuilding the inventory using “", "default"), (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": No control plane(s) defined in the inventory; rebuilding the inventory using “", "default"),
+			  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
+			  ANSIThemeString("rebuild-inventory", "command"),
+			  ANSIThemeString("“ might help. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 	if len(__clusterhosts) == 0 and fail_on_empty == True:
-		iktprint([("Error", "error"), (": The cluster ", "default"), (f"{cluster_name}", "hostname"), (" has no hosts in the inventory; rebuilding the inventory using “", "default"), (f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ("rebuild-inventory", "command"), ("“ might help. Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": The cluster ", "default"),
+			  ANSIThemeString(f"{cluster_name}", "hostname"),
+			  ANSIThemeString(" has no hosts in the inventory; rebuilding the inventory using “", "default"),
+			  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
+			  ANSIThemeString("rebuild-inventory", "command"),
+			  ANSIThemeString("“ might help. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	for controlplane in __controlplanes:
@@ -2565,7 +2640,7 @@ def get_control_planes(fail_on_empty = True):
 	return controlplanes
 
 # pylint: disable-next=unused-argument
-def teardown_control_plane(options, args):
+def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Teardown an existing control plane
 
@@ -2582,25 +2657,32 @@ def teardown_control_plane(options, args):
 		sys.exit(0)
 
 	if not Path(IKT_INSTALLATION_INFO_FILE).is_file():
-		iktprint([("Error", "error"), (": Could not find reliable installation information. Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Could not find reliable installation information. Aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
 	state = installation_info[cluster_name]["state"]
-	phase = installation_info[cluster_name]["phase"]
+	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
 	if distro is None or distro == "<none>":
-		iktprint([("Error", "error"), (": Could not find reliable installation information. Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Could not find reliable installation information. Aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if state is None:
-		iktprint([("Error", "error"), (": Cannot determine installation state; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Cannot determine installation state; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif state in ("preparing", "prepared", "torn_down"):
-		iktprint([("Error", "error"), (": The system has no installed cluster; try ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" purge-control-plane", "command"), ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": The system has no installed cluster; try ", "default"),
+			  ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
+			  ANSIThemeString(" purge-control-plane", "command"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	for opt, optarg in options:
@@ -2615,7 +2697,8 @@ def teardown_control_plane(options, args):
 			if phase is None or phase == "<none>":
 				phase = 0
 			elif phase == "<done>":
-				iktprint([("Warning", "warning"), (": Ignoring request to resume a completed teardown. Exiting.")], stderr = True)
+				iktprint([ANSIThemeString("Warning", "warning"),
+					  ANSIThemeString(": Ignoring request to resume a completed teardown. Exiting.", "default")], stderr = True)
 				sys.exit(0)
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
@@ -2629,19 +2712,22 @@ def teardown_control_plane(options, args):
 	show_configuration()
 
 	if confirm == True:
-		retval = iktinput([ANSIThemeString("\nStart teardown? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nStart teardown? [y/", "default"),
+				   ANSIThemeString("N", "emphasis"),
+				   ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
-			iktprint([("\nAborting:", "error"), (" User stopped teardown.", "default")], stderr = True)
+			iktprint([ANSIThemeString("\nAborting:", "error"),
+				  ANSIThemeString(" User stopped teardown.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
-	iktprint([("\n[Tearing down cluster]", "phase")])
+	iktprint([ANSIThemeString("\n[Tearing down cluster]", "phase")])
 
 	installation_info = update_installation_info(state = "tearing_down", phase = 0)
 
-	run_tasks(tasks = teardown_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "torn_down")
-	iktprint([("\nCluster teardown successful", "success")])
+	run_tasks(tasks = teardown_control_plane_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "torn_down")
+	iktprint([ANSIThemeString("\nCluster teardown successful", "success")])
 
-def purge_control_plane(options, args):
+def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Purge an existing control plane
 
@@ -2658,17 +2744,19 @@ def purge_control_plane(options, args):
 		sys.exit(0)
 
 	if not Path(IKT_INSTALLATION_INFO_FILE).is_file():
-		iktprint([("Error", "error"), (": Could not find reliable installation information. Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Could not find reliable installation information. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
 	state = installation_info[cluster_name]["state"]
-	phase = installation_info[cluster_name]["phase"]
+	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
 	if state is None or state in ("preparing", "installing", "upgrading"):
-		iktprint([("Error", "error"), (": Invalid installation state; there's no fully installed cluster; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Invalid installation state; there's no fully installed cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if len(options) == 0:
@@ -2686,7 +2774,8 @@ def purge_control_plane(options, args):
 			if phase is None or phase == "<none>":
 				phase = 0
 			elif phase == "<done>":
-				iktprint([("Warning", "warning"), (": Ignoring request to resume a completed teardown. Exiting.")], stderr = True)
+				iktprint([ANSIThemeString("Warning", "warning"),
+					  ANSIThemeString(": Ignoring request to resume a completed teardown. Exiting.", "default")], stderr = True)
 				sys.exit(0)
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
@@ -2705,12 +2794,15 @@ def purge_control_plane(options, args):
 		show_configuration()
 
 		if confirm == True:
-			retval = iktinput([ANSIThemeString("\nStart purge? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
+			retval = iktinput([ANSIThemeString("\nStart purge? [y/", "default"),
+					   ANSIThemeString("N", "emphasis"),
+					   ANSIThemeString("]: ", "default")])
 			if retval.lower() not in ("y", "yes"):
-				iktprint([("\nAborting:", "error"), (" User stopped purge.", "default")], stderr = True)
+				iktprint([ANSIThemeString("\nAborting:", "error"),
+					  ANSIThemeString(" User stopped purge.", "default")], stderr = True)
 				sys.exit(errno.EINTR)
 
-	iktprint([("\n\n[Purging cluster configuration and software]", "phase")])
+	iktprint([ANSIThemeString("\n\n[Purging cluster configuration and software]", "phase")])
 
 	# If we're purging the control plane we want to leave kubectl behind; if we have a setup with multiple
 	# control planes and we run this from one of them, then kubectl will remain on the other two. Just don't do it.
@@ -2720,14 +2812,15 @@ def purge_control_plane(options, args):
 
 	installation_info = update_installation_info(state = "purging", phase = 0)
 
-	run_tasks(tasks = purge_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "purged")
+	run_tasks(tasks = purge_control_plane_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "purged")
 	secure_rm(IKT_INSTALLATION_INFO_FILE, ignore_non_existing = True)
 
-	iktprint([("\nCluster purge successful", "success")])
+	iktprint([ANSIThemeString("\nCluster purge successful", "success")])
 
-	iktprint([("\nNote", "note"), (": It's recommended to reboot the control plane(s) after purging the cluster\n", "default")])
+	iktprint([ANSIThemeString("\nNote", "note"),
+		  ANSIThemeString(": It's recommended to reboot the control plane(s) after purging the cluster\n", "default")])
 
-def upgrade_control_plane(options, args):
+def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Upgrade a control plane
 
@@ -2749,11 +2842,15 @@ def upgrade_control_plane(options, args):
 		sys.exit(0)
 	elif "--override" in (tmp[0] for tmp in options):
 		if Path(IKT_INSTALLATION_INFO_FILE).is_file():
-			iktprint([("Warning", "warning"), (": Overriding ", "default"), (f"{IKT_INSTALLATION_INFO_FILE}", "path"), ("; this may cause issues.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Warning", "warning"),
+				  ANSIThemeString(": Overriding ", "default"),
+				  ANSIThemeString(f"{IKT_INSTALLATION_INFO_FILE}", "path"),
+				  ANSIThemeString("; this may cause issues.", "default")], stderr = True)
 		else:
-			iktprint([("Note", "note"), (": ", "default"),
-				  (f"{IKT_INSTALLATION_INFO_FILE}", "path"),
-				  (" does not exist; rebuilding.", "default")])
+			iktprint([ANSIThemeString("Note", "note"),
+				  ANSIThemeString(": ", "default"),
+				  ANSIThemeString(f"{IKT_INSTALLATION_INFO_FILE}", "path"),
+				  ANSIThemeString(" does not exist; rebuilding.", "default")])
 		rebuild_installation_info(state = "upgrading")
 
 	installation_info = get_installation_info()
@@ -2762,15 +2859,21 @@ def upgrade_control_plane(options, args):
 	version = installation_info[cluster_name]["version"]
 	requested_version = installation_info[cluster_name]["requested_version"]
 	state = installation_info[cluster_name]["state"]
-	phase = installation_info[cluster_name]["phase"]
+	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
 	if state is None or state == "<none>":
-		iktprint([("Error", "error"), (": Unknown installation state; if you believe this is OK (such as when upgrading a cluster not installed using ", "default"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" you can try using the “", "default"), ("--override", "option"), ("“ option; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Unknown installation state; if you believe this is OK (such as when upgrading a cluster not installed using ", "default"),
+			  ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
+			  ANSIThemeString(" you can try using the “", "default"),
+			  ANSIThemeString("--override", "option"),
+			  ANSIThemeString("“ option; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if state is None or state in ("<none>", "preparing", "prepared", "installing", "tearing_down", "torn_down", "purging"):
-		iktprint([("Error", "error"), (": Invalid installation state; Kubernetes does not seems to be fully installed; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Invalid installation state; Kubernetes does not seems to be fully installed; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if state in ("installed", "upgraded"):
@@ -2793,7 +2896,8 @@ def upgrade_control_plane(options, args):
 			if phase is None or phase == "<none>":
 				phase = 0
 			elif phase == "<done>":
-				iktprint([("Warning", "warning"), (": Ignoring request to resume a completed upgrade. Exiting.")], stderr = True)
+				iktprint([ANSIThemeString("Warning", "warning"),
+					  ANSIThemeString(": Ignoring request to resume a completed upgrade. Exiting.", "default")], stderr = True)
 				sys.exit(0)
 
 			phase = __validate_task_index(upgrade_control_plane_tasks, phase)
@@ -2814,36 +2918,60 @@ def upgrade_control_plane(options, args):
 	node_status, _kh = __get_node_info()
 
 	if node_status is None:
-		iktprint([("Error", "error"), (": No ", "default"), (f"{HOMEDIR}/.kube/config", "path"), (" available; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": No ", "default"),
+			  ANSIThemeString(f"{HOMEDIR}/.kube/config", "path"), 
+			  ANSIThemeString(" available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	if update_cache == True:
-		iktprint([("\n• ", "separator"), ("Updating APT cache", "action")])
+		iktprint([ANSIThemeString("\n• ", "separator"),
+			  ANSIThemeString("Updating APT cache", "action")])
 		check_and_print_status(update_apt_cache())
 
-	iktprint([("\n• ", "separator"), ("Running sanity checks", "action")])
+	iktprint([ANSIThemeString("\n• ", "separator"),
+		  ANSIThemeString("Running sanity checks", "action")])
 
 	deb_versions = check_deb_versions(["kubeadm"])
 
 	if len(deb_versions) == 0:
-		iktprint([("Critical", "critical"), (": No candidate version for ", "default"), ("kubeadm", "programname"), (" available; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": No candidate version for ", "default"),
+			  ANSIThemeString("kubeadm", "programname"),
+			  ANSIThemeString(" available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	if requested_version is not None:
 		if requested_version not in deb_versions[0][3]:
-			iktprint([("Error", "error"), (": The requested version ", "default"), (f"{requested_version}", "version"), (" is not available; aborting.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": The requested version ", "default"),
+				  ANSIThemeString(f"{requested_version}", "version"),
+				  ANSIThemeString(" is not available; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		elif requested_version == version:
 			if allow_reinstall == False:
-				iktprint([("Warning", "warning"), (": The requested version ", "default"), (f"{requested_version}", "version"), (" is already installed; to reinstall use the option “", "default"), ("--reinstall", "option"), ("“.", "default")], stderr = True)
+				iktprint([ANSIThemeString("Warning", "warning"),
+					  ANSIThemeString(": The requested version ", "default"),
+					  ANSIThemeString(f"{requested_version}", "version"),
+					  ANSIThemeString(" is already installed; to reinstall use the option “", "default"),
+					  ANSIThemeString("--reinstall", "option"),
+					  ANSIThemeString("“.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 		elif deb_compare_versions(version, requested_version) == True:
-			iktprint([("Error", "error"), (": The requested version ", "default"), (f"{requested_version}", "version"), (" is older than than the installed version ", "default"), (f"{deb_versions[0][1]}", "version"), (". Downgrades are not supported; aborting.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": The requested version ", "default"),
+				  ANSIThemeString(f"{requested_version}", "version"),
+				  ANSIThemeString(" is older than than the installed version ", "default"),
+				  ANSIThemeString(f"{deb_versions[0][1]}", "version"),
+				  ANSIThemeString(". Downgrades are not supported; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 	else:
 		requested_version = deb_versions[0][2]
 		if len(requested_version) == 0 or requested_version == "<none>":
-			iktprint([("Note", "note"), (": The latest version ", "default"), (f"{deb_versions[0][1]}", "version"), (" is already installed.", "default")])
+			iktprint([ANSIThemeString("Note", "note"),
+				  ANSIThemeString(": The latest version ", "default"),
+				  ANSIThemeString(f"{deb_versions[0][1]}", "version"),
+				  ANSIThemeString(" is already installed.", "default")])
 			sys.exit(0)
 
 	# Is this an major, minor, or patchrev upgrade?
@@ -2853,19 +2981,32 @@ def upgrade_control_plane(options, args):
 	upgrade_type = None
 
 	if installed_version_tuple[0] != requested_version_tuple[0]:
-		iktprint([("Error", "error"), (": Upgrades between ", "default"), ("MAJOR", "emphasis"), (" versions is currently not supported (installed version: ", "default"), (f"{deb_versions[0][1]}", "version"), (", requested version: ", "default"), (f"{requested_version}", "version"), ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Upgrades between ", "default"),
+			  ANSIThemeString("MAJOR", "emphasis"),
+			  ANSIThemeString(" versions is currently not supported (installed version: ", "default"),
+			  ANSIThemeString(f"{deb_versions[0][1]}", "version"),
+			  ANSIThemeString(", requested version: ", "default"),
+			  ANSIThemeString(f"{requested_version}", "version"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOTSUP)
 	elif installed_version_tuple[1] != requested_version_tuple[1]:
 		if int(requested_version_tuple[1]) - int(installed_version_tuple[1]) > 1:
-			iktprint([("Error", "error"), (": Skipping ", "default"), ("MINOR", "emphasis"), (" versions is not supported, please perform the following upgrades sequentially:", "default")], stderr = True)
-			minor_versions = {}
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": Skipping ", "default"),
+				  ANSIThemeString("MINOR", "emphasis"),
+				  ANSIThemeString(" versions is not supported, please perform the following upgrades sequentially:", "default")], stderr = True)
+			minor_versions: Dict = {}
 			for version in reversed(deb_versions[0][3]):
 				version_tuple = version.split(".")
 				major_minor = f"{version_tuple[0]}.{version_tuple[1]}"
 				if int(version_tuple[1]) > int(installed_version_tuple[1]) and int(version_tuple[1]) <= int(requested_version_tuple[1]) and (major_minor not in minor_versions or minor_versions[major_minor] < version_tuple[2]):
 					minor_versions[major_minor] = version_tuple[2]
 			for version, minor_version in minor_versions.items():
-				iktprint([("• ", "separator"), (f"{about.ADMIN_PROGRAM_NAME}", "programname"), (" upgrade-control-plane", "command"), (f" {version}.{minor_version}", "version")])
+				iktprint([ANSIThemeString("• ", "separator"),
+					  ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
+					  ANSIThemeString(" upgrade-control-plane", "command"),
+					  ANSIThemeString(f" {version}.{minor_version}", "version")])
 			sys.exit(errno.EINVAL)
 		else:
 			upgrade_type = "minor"
@@ -2884,19 +3025,26 @@ def upgrade_control_plane(options, args):
 				continue
 
 			if schedulable_count == 0:
-				iktprint([("\nError", "error"), (": The following nodes need to be drained; aborting.", "default")])
+				iktprint([ANSIThemeString("\nError", "error"),
+					  ANSIThemeString(": The following nodes need to be drained; aborting.", "default")])
 			schedulable_count += 1
-			iktprint([("• ", "separator"), (f"{node['name']}", "emphasis")])
+			iktprint([ANSIThemeString("• ", "separator"),
+				  ANSIThemeString(f"{node['name']}", "emphasis")])
 			nodes_to_drain += node['name']
 
 		if schedulable_count > 0:
-			iktprint([("\nThis can be achieved with: “", "default"), ("kubectl ", "programname"), ("drain ", "command"), ("--ignore-daemonsets --delete-emptydir-data ", "option"), (f"{nodes_to_drain}", "url"), ("“", "default")])
+			iktprint([ANSIThemeString("\nThis can be achieved with: “", "default"),
+				  ANSIThemeString("kubectl ", "programname"),
+				  ANSIThemeString("drain ", "command"),
+				  ANSIThemeString("--ignore-daemonsets --delete-emptydir-data ", "option"),
+				  ANSIThemeString(f"{nodes_to_drain}", "url"),
+				  ANSIThemeString("“", "default")])
 			sys.exit(errno.EBUSY)
 
 	installation_info = update_installation_info(state = "upgrading", requested_version = requested_version, phase = 0)
 
 	# If we got here all the sanity checks were successful
-	iktprint([("OK", "ok")])
+	iktprint([ANSIThemeString("OK", "ok")])
 
 	# Adjust package version for localhost
 	upgrade_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
@@ -2905,24 +3053,27 @@ def upgrade_control_plane(options, args):
 	show_configuration()
 
 	if confirm == True:
-		retval = iktinput([ANSIThemeString("\nStart upgrade? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
+		retval = iktinput([ANSIThemeString("\nStart upgrade? [y/", "default"),
+				   ANSIThemeString("N", "emphasis"),
+				   ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
-			iktprint([ANSIThemeString("\nAborting:", "error"), ANSIThemeString(" User stopped upgrade.", "default")], stderr = True)
+			iktprint([ANSIThemeString("\nAborting:", "error"),
+				  ANSIThemeString(" User stopped upgrade.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
 	iktprint([ANSIThemeString("\n[Upgrading control plane]", "phase")])
 
-	run_tasks(tasks = upgrade_control_plane_tasks, phase = phase, phase_skiplist = phase_skiplist, final_state = "upgraded")
+	run_tasks(tasks = upgrade_control_plane_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "upgraded")
 	values = {
 		"control_plane_k8s_version": requested_version,
 	}
 	ansible_set_vars(ANSIBLE_INVENTORY, "all", values)
 	update_installation_info(version = requested_version)
 
-	iktprint([("\nControl plane upgrade successful", "success")])
+	iktprint([ANSIThemeString("\nControl plane upgrade successful", "success")])
 
 # pylint: disable-next=unused-argument
-def taint_control_plane(options, args):
+def taint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Taint a control plane
 
@@ -2934,7 +3085,8 @@ def taint_control_plane(options, args):
 	node_statuses, kh = __get_node_info()
 
 	if node_statuses is None:
-		iktprint([("Critical", "critical"), (": Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENXIO)
 
 	first = True
@@ -2942,38 +3094,41 @@ def taint_control_plane(options, args):
 	for node in node_statuses:
 		if "control-plane" in node["roles"] and (len(args) == 0 or node["name"] in args):
 			if first == True:
-				iktprint([("Tainting control plane(s):", "header")])
+				iktprint([ANSIThemeString("Tainting control plane(s):", "header")])
 				first = False
-			iktprint([(node["name"], "hostname")])
+			iktprint([ANSIThemeString(node["name"], "hostname")])
 			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/control-plane", None, None, "NoSchedule"))
 			if status == 304:
-				iktprint([("  Not modified", "none")])
+				iktprint([ANSIThemeString("  Not modified", "none")])
 			elif status == 200:
-				iktprint([("  Tainted", "success")])
+				iktprint([ANSIThemeString("  Tainted", "success")])
 			else:
-				iktprint([("  Failed to modify taint", "error"), (f"; HTTP error {status}; aborting.", "default")], stderr = True)
+				iktprint([ANSIThemeString("  Failed to modify taint", "error"),
+					  ANSIThemeString(f"; HTTP error {status}; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
 		if "master" in node["roles"] and (len(args) == 0 or node["name"] in args):
 			if first == True:
-				iktprint([("Tainting control plane(s):", "header")])
+				iktprint([ANSIThemeString("Tainting control plane(s):", "header")])
 				first = False
-			iktprint([(node["name"], "hostname")])
+			iktprint([ANSIThemeString(node["name"], "hostname")])
 			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/master", None,  None, "NoSchedule"))
 			if status == 304:
-				iktprint([("  Not modified", "none")])
+				iktprint([ANSIThemeString("  Not modified", "none")])
 			elif status == 200:
-				iktprint([("  Tainted", "success")])
+				iktprint([ANSIThemeString("  Tainted", "success")])
 			else:
-				iktprint([("  Failed to modify taint", "error"), (f"; HTTP error {status}; aborting.", "default")], stderr = True)
+				iktprint([ANSIThemeString("  Failed to modify taint", "error"),
+					  ANSIThemeString(f"; HTTP error {status}; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
 	if first == True:
-		iktprint([("Warning", "warning"), (": No matching control planes found. Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Warning", "warning"),
+			  ANSIThemeString(": No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 # pylint: disable-next=unused-argument
-def untaint_control_plane(options, args):
+def untaint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Untaint a control plane
 
@@ -2985,7 +3140,8 @@ def untaint_control_plane(options, args):
 	node_statuses, kh = __get_node_info()
 
 	if node_statuses is None:
-		iktprint([("Critical", "critical"), (": Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENXIO)
 
 	first = True
@@ -2993,38 +3149,41 @@ def untaint_control_plane(options, args):
 	for node in node_statuses:
 		if "control-plane" in node["roles"] and (len(args) == 0 or node["name"] in args):
 			if first == True:
-				iktprint([("Untainting control plane(s):", "header")])
+				iktprint([ANSIThemeString("Untainting control plane(s):", "header")])
 				first = False
-			iktprint([(node["name"], "hostname")])
+			iktprint([ANSIThemeString(node["name"], "hostname")])
 			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/control-plane", None,  None, None))
 			if status == 304:
-				iktprint([("  Not modified", "none")])
+				iktprint([ANSIThemeString("  Not modified", "none")])
 			elif status == 200:
-				iktprint([("  Untainted", "success")])
+				iktprint([ANSIThemeString("  Untainted", "success")])
 			else:
-				iktprint([("  Failed to modify taint", "error"), (f"; HTTP error {status}; aborting.", "default")], stderr = True)
+				iktprint([ANSIThemeString("  Failed to modify taint", "error"),
+					  ANSIThemeString(f"; HTTP error {status}; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
 		if "master" in node["roles"] and (len(args) == 0 or node["name"] in args):
 			if first == True:
-				iktprint([("Untainting control plane(s):", "header")])
+				iktprint([ANSIThemeString("Untainting control plane(s):", "header")])
 				first = False
-			iktprint([(node["name"], "hostname")])
+			iktprint([ANSIThemeString(node["name"], "hostname")])
 			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/master", None, None, None))
 			if status == 304:
-				iktprint([("  Not modified", "none")])
+				iktprint([ANSIThemeString("  Not modified", "none")])
 			elif status == 200:
-				iktprint([("  Untainted", "success")])
+				iktprint([ANSIThemeString("  Untainted", "success")])
 			else:
-				iktprint([("  Failed to modify taint", "error"), (f"; HTTP error {status}; aborting.", "default")], stderr = True)
+				iktprint([ANSIThemeString("  Failed to modify taint", "error"),
+					  ANSIThemeString(f"; HTTP error {status}; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
 	if first == True:
-		iktprint([("Warning", "warning"), (": No matching control planes found. Aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Warning", "warning"),
+			  ANSIThemeString(": No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 # pylint: disable=unused-argument,redefined-outer-name
-def run_checks(checks, **kwargs) -> None:
+def run_checks(checks: List[Dict], **kwargs) -> None:
 	"""
 	Run a batch of checks, and output the result.
 	The checks can return 4 different severities; critical, error, warning, and note.
@@ -3063,7 +3222,7 @@ def run_checks(checks, **kwargs) -> None:
 				skip += 1
 				continue
 			kubeconfig = secure_read_yaml(KUBE_CONFIG_FILE)
-			cluster_name = get_cluster_name()
+			cluster_name = cast(str, get_cluster_name())
 
 		call = deep_get(check, DictPath("call"))
 		if call is not None:
@@ -3097,7 +3256,7 @@ security_audit_checks = [
 ]
 
 # pylint: disable-next=unused-argument
-def audit(options, args):
+def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Run security audit checks
 
@@ -3120,10 +3279,11 @@ def audit(options, args):
 
 	run_checks(security_audit_checks, **kwargs)
 
-	iktprint([("\nImportant:", "emphasis"),
-		  (" iktadm", "programname"), (" audit", "command"),
-		  (" currently only checks for a very limited set of issues;", "default")])
-	iktprint([("a perfect score is not a guarantee that your installation is secure.", "default")])
+	iktprint([ANSIThemeString("\nImportant:", "emphasis"),
+		  ANSIThemeString(" iktadm", "programname"),
+		  ANSIThemeString(" audit", "command"),
+		  ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
+	iktprint([ANSIThemeString("a perfect score is not a guarantee that your installation is secure.", "default")])
 
 preflight_checks = [
 	{
@@ -3142,7 +3302,7 @@ preflight_checks = [
 ]
 
 # pylint: disable-next=unused-argument
-def preflight_check(options, args):
+def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Run preflight checks before creating a new cluster
 
@@ -3153,10 +3313,11 @@ def preflight_check(options, args):
 
 	run_checks(preflight_checks)
 
-	iktprint([("\nImportant:", "emphasis"),
-		  (" iktadm", "programname"), (" preflight-check", "command"),
-		  (" currently only checks for a very limited set of issues;", "default")])
-	iktprint([("a perfect score is not a guarantee that installation will succeed.", "default")])
+	iktprint([ANSIThemeString("\nImportant:", "emphasis"),
+		  ANSIThemeString(" iktadm", "programname"),
+		  ANSIThemeString(" preflight-check", "command"),
+		  ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
+	iktprint([ANSIThemeString("a perfect score is not a guarantee that installation will succeed.", "default")])
 
 troubleshoot_checks = [
 	# First start with the really basic: does the cluster respond?
@@ -3182,7 +3343,7 @@ troubleshoot_checks = [
 ]
 
 # pylint: disable-next=unused-argument
-def troubleshoot(options, args):
+def troubleshoot(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Troubleshoot issues in the cluster
 
@@ -3193,22 +3354,24 @@ def troubleshoot(options, args):
 
 	run_checks(troubleshoot_checks)
 
-	iktprint([("\nImportant:", "emphasis"),
-		  (" iktadm", "programname"), (" troubleshoot", "command"),
-		  (" currently only checks for a very limited set of issues;", "default")])
-	iktprint([("a perfect score is not a guarantee that your cluster is problem free.", "default")])
+	iktprint([ANSIThemeString("\nImportant:", "emphasis"),
+		  ANSIThemeString(" iktadm", "programname"),
+		  ANSIThemeString(" troubleshoot", "command"),
+		  ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
+	iktprint([ANSIThemeString("a perfect score is not a guarantee that your cluster is problem free.", "default")])
 
 COMMANDLINE = {
 	"Check Versions": {
 		"command": ["check-versions", "cv"],
-		"description": [("Update the package cache and show software versions", "description")],
+		"description": [ANSIThemeString("Update the package cache and show software versions", "description")],
 		"extended_description": [
-			[("Note", "note"), (": some of the listed software might not be relevant", "description")],
-			[("to the configuration in use", "description")],
+			[ANSIThemeString("Note", "note"),
+			 ANSIThemeString(": some of the listed software might not be relevant", "description")],
+			[ANSIThemeString("to the configuration in use", "description")],
 		],
 		"options": {
 			"--no-cache-update": {
-				"description": [("Do not update the APT cache", "description")],
+				"description": [ANSIThemeString("Do not update the APT cache", "description")],
 			},
 		},
 		"min_args": 0,
@@ -3217,11 +3380,19 @@ COMMANDLINE = {
 	},
 	"Import Cluster": {
 		"command": ["import-cluster"],
-		"values": [("[", "separator"), ("CLUSTER_NAME", "argument"), (",", "separator"), ("...", "argument"), ("]", "separator")],
-		"description": [(f"Import existing cluster(s) and prepare them for use with {about.PROGRAM_SUITE_NAME}", "description")],
+		"values": [ANSIThemeString("[", "separator"),
+			   ANSIThemeString("CLUSTER_NAME", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument"),
+			   ANSIThemeString("]", "separator")],
+		"description": [ANSIThemeString(f"Import existing cluster(s) and prepare them for use with {about.PROGRAM_SUITE_NAME}", "description")],
 		"extended_description": [
-			[("If ", "description"), ("CLUSTER_NAME", "argument"), (",", "separator"), ("...", "argument"), (" is not specified all clusters in ", "description"), (f"{HOMEDIR}/.kube/config", "path")],
-			[(" will be imported", "description")],
+			[ANSIThemeString("If ", "description"),
+			 ANSIThemeString("CLUSTER_NAME", "argument"),
+			 ANSIThemeString(",", "separator"), ("...", "argument"),
+			 ANSIThemeString(" is not specified all clusters in ", "description"),
+			 ANSIThemeString(f"{HOMEDIR}/.kube/config", "path")],
+			[ANSIThemeString(" will be imported", "description")],
 		],
 		"options": {
 			"-Y": {
