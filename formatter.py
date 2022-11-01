@@ -186,6 +186,8 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[Sequence[Un
 
 	generic_format = ThemeRef("types", "generic")
 
+	override_formatting: Union[ThemeRef, Dict] = {}
+
 	if deep_get(kwargs, DictPath("raw"), False) == True:
 		override_formatting = generic_format
 
