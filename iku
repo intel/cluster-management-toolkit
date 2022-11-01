@@ -181,7 +181,7 @@ def format_timestamp(timestamp: datetime, localtimezone: bool = False) -> List[T
 	array = []
 
 	if timestamp is None:
-		array = [("strings", "none")]
+		array = [ThemeRef("strings", "none")]
 	else:
 		if localtimezone == True:
 			ftimestamp = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
@@ -7053,14 +7053,14 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					timestamp = deep_get(obj, DictPath(creation_timestamp_path))
 
 					if timestamp is None:
-						field = [("strings", "unset")]
+						field = [ThemeRef("strings", "unset")]
 					elif type(timestamp) == datetime:
 						field = format_timestamp(timestamp)
 					else:
 						timestamp = timestamp_to_datetime(timestamp)
 						field = format_timestamp(timestamp, localtimezone = True)
 					fieldarray = [
-						("Created: ", ("main", "infoheader")),
+						ThemeString("Created: ", ThemeRef("main", "infoheader")),
 					]
 					fieldarray += field
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)

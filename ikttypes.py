@@ -17,11 +17,11 @@ class ThemeString(NamedTuple):
 	themeref: ThemeRef
 	selected: bool = False
 
+# Note: A ThemeArray is Sequence[Union[ThemeRef, ThemeString]]
+
 class ANSIThemeString(NamedTuple):
 	string: str
 	themeref: str
-
-# Note: A ThemeArray is Sequence[Union[ThemeRef, ThemeString]]
 
 FilePath = NewType("FilePath", str)
 DictPath = NewType("DictPath", str)

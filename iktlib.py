@@ -120,7 +120,7 @@ a		Parameters:
 			else:
 				ref[pathsplit[i]] = {}
 
-def deep_get(dictionary: Dict, path: DictPath, default: Any = None) -> Any:
+def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) -> Any:
 	"""
 	Given a dictionary and a path into that dictionary, get the value
 
