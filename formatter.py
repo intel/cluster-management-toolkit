@@ -66,7 +66,7 @@ def format_none(lines: Union[str, list[str]], **kwargs: Dict) -> List[Sequence[U
 		dumps.append([ThemeString(line, ThemeRef("types", "generic"))])
 	return dumps
 
-def format_yaml_line(line: str, override_formatting: Dict = None) -> List[Union[ThemeRef, ThemeString]]:
+def format_yaml_line(line: str, override_formatting: Union[ThemeRef, Dict] = None) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Formats a single line of Yaml
 
@@ -89,11 +89,10 @@ def format_yaml_line(line: str, override_formatting: Dict = None) -> List[Union[
 		comment_format = ThemeRef("types", "yaml_comment")
 		key_format = ThemeRef("types", "yaml_key")
 		value_format = ThemeRef("types", "yaml_value")
-		list_format = ThemeRef("separators", "yaml_list")
+		list_format: Union[ThemeRef, ThemeString] = ThemeRef("separators", "yaml_list")
 		separator_format = ThemeRef("types", "generic")
 		reference_format = ThemeRef("types", "yaml_reference")
-	elif isinstance(override_formatting, tuple):
-		override_formatting = cast(ThemeRef, override_formatting)
+	elif isinstance(override_formatting, ThemeRef):
 		generic_format = override_formatting
 		comment_format = override_formatting
 		key_format = override_formatting
@@ -101,6 +100,7 @@ def format_yaml_line(line: str, override_formatting: Dict = None) -> List[Union[
 		list_format = ThemeString("- ", override_formatting)
 		separator_format = override_formatting
 		reference_format = override_formatting
+		override_formatting = {}
 
 	tmpline: List[Union[ThemeRef, ThemeString]] = []
 
@@ -165,20 +165,18 @@ def format_yaml_line(line: str, override_formatting: Dict = None) -> List[Union[
 
 	return tmpline
 
-def format_yaml(lines: Union[str, list[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
+def format_yaml(lines: Union[str, list[str]], **kwargs: Any) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	YAML formatter; returns the text with syntax highlighting for YAML
 
 		Parameters:
 			lines (list[str]): A list of strings
 			*or*
-			lines (str): a string with newlines that should be split
-			kwargs (dict): unused
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Additional parameters
 		Returns:
 			list[themearray]: A list of themearrays
 	"""
-
-	override_formatting = deep_get(kwargs, DictPath("override_formatting"), {})
 
 	dumps: List[Sequence[Union[ThemeRef, ThemeString]]] = []
 	indent = deep_get(iktlib.iktconfig, DictPath("Global#indent"), 2)
