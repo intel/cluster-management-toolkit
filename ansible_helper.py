@@ -1392,7 +1392,7 @@ def ansible_ping_async(selection: List[str]) -> ansible_runner.runner.Runner:
 
 	return ansible_run_playbook_on_selection_async(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection)
 
-def __ansible_run_async_finished_cb(runner_obj: ansible_runner.runner.Runner, **kwargs: Dict):
+def __ansible_run_async_finished_cb(runner_obj: ansible_runner.runner.Runner, **kwargs: Dict) -> None:
 	# pylint: disable-next=global-variable-not-assigned
 	global finished_runs
 	finished_runs.add(runner_obj)

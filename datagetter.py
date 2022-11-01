@@ -6,7 +6,7 @@ datagetters are used for data extraction that's too complext to be expressed by 
 """
 
 import re
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
 
 from iktlib import deep_get, deep_get_with_fallback, get_since, timestamp_to_datetime
 from ikttypes import DictPath, StatusGroup
@@ -148,7 +148,7 @@ def datagetter_eps_endpoints(kh: kubernetes_helper.KubernetesHelper, obj: Dict, 
 	return get_endpointslices_endpoints(obj), {}
 
 # pylint: disable-next=unused-argument
-def datagetter_metrics(kh: kubernetes_helper.KubernetesHelper, obj: Dict, path: DictPath, default: Any) -> Tuple[Tuple[str, ...], Dict]:
+def datagetter_metrics(kh: kubernetes_helper.KubernetesHelper, obj: Dict, path: DictPath, default: Any) -> Tuple[List[str], Dict]:
 	"""
 	A datagetter that returns metrics for the specified path
 
@@ -158,7 +158,7 @@ def datagetter_metrics(kh: kubernetes_helper.KubernetesHelper, obj: Dict, path: 
 			path (DictPath): The path to the metrics to get
 			default (Any): Unused?
 		Returns:
-			result (tuple), {} (dict): A tuple with metrics and an empty dict
+			result (list[str]), {} (dict): A list with metrics and an empty dict
 	"""
 
 	if obj is None or path is None:
@@ -171,9 +171,9 @@ def datagetter_metrics(kh: kubernetes_helper.KubernetesHelper, obj: Dict, path: 
 	for field in path:
 		result.append(deep_get(obj, DictPath(f"fields#{field}"), ""))
 
-	return tuple(result), {}
+	return result, {}
 
-def datagetter_deprecated_api(kh: kubernetes_helper.KubernetesHelper, obj, path: DictPath, default):
+def datagetter_deprecated_api(kh: kubernetes_helper.KubernetesHelper, obj: Dict, path: DictPath, default: Any) -> Tuple[Tuple[str, str, str], Dict]:
 	"""
 	A datagetter that returns deprecated API information for the specified path
 
@@ -181,14 +181,18 @@ def datagetter_deprecated_api(kh: kubernetes_helper.KubernetesHelper, obj, path:
 			kh (KubernetesHelper): A reference to a KubernetesHelper object
 			obj (dict): The object with metrics
 			path (str): The path to the metrics to get
-			default (opaque): Unused?
+			default (Any): Unused?
 		Returns:
-			kind (str), api_family (str), metrics (tuple), extra_vars (dict): kind, API family, and metrics for the deprecated API
+			kind, api_family, metrics, extra_vars:
+				kind (str): Kind for the deprecated API
+				api_family (str): API-family for the deprecated API
+				metrics (list[str]): Metrics for the deprecated API
+				extra_vars (dict): Additional vars
 	"""
 
 	result, extra_vars = datagetter_metrics(kh, obj, path, default)
-	kind = kh.guess_kind((result[0], result[1]))
-	return (kind[0], kind[1], result[2]), extra_vars
+	kind, api_family = kh.guess_kind((result[0], result[1]))
+	return (kind, api_family, result[2]), extra_vars
 
 def datagetter_latest_version(kh: kubernetes_helper.KubernetesHelper, obj: Dict, path: DictPath, default: Any) -> Tuple[Tuple[str, str, str], Dict]:
 	"""

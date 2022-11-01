@@ -6,7 +6,7 @@ Format text as themearrays
 
 import re
 import sys
-from typing import Callable, cast, Dict, List, Sequence, Union
+from typing import Any, Callable, cast, Dict, List, Sequence, Union
 import yaml
 
 from ikttypes import DictPath, ThemeRef, ThemeString
@@ -14,7 +14,7 @@ from ikttypes import DictPath, ThemeRef, ThemeString
 import iktlib
 from iktlib import deep_get, split_msg
 
-def __str_representer(dumper, data):
+def __str_representer(dumper: yaml.Dumper, data: Any) -> yaml.Node:
 	"""
 	Reformat yaml with |-style str
 
@@ -36,7 +36,7 @@ def format_binary(lines: bytes, **kwargs: Dict) -> List[Sequence[Union[ThemeRef,
 
 		Parameters:
 			lines (opaque): Unused
-			kwargs (dict): Unused
+			kwargs (dict): unused
 		Returns:
 			list[themearray]: A list of themearrays
 	"""
@@ -44,15 +44,15 @@ def format_binary(lines: bytes, **kwargs: Dict) -> List[Sequence[Union[ThemeRef,
 	return [[ThemeString("Binary file; cannot view", ThemeRef("types", "generic"))]]
 
 # pylint: disable=unused-argument
-def format_none(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
+def format_none(lines: Union[str, list[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	Noop formatter; returns the text without syntax highlighting
 
 		Parameters:
 			lines (list[str]): A list of strings
 			*or*
-			lines (str): A string with newlines that should be split
-			kwargs (dict): Unused
+			lines (str): a string with newlines that should be split
+			kwargs (dict): unused
 		Returns:
 			list[themearray]: A list of themearrays
 	"""
@@ -68,13 +68,13 @@ def format_none(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[U
 
 def format_yaml_line(line: str, override_formatting: Dict = None) -> List[Union[ThemeRef, ThemeString]]:
 	"""
-	Formats a single line of YAML
+	Formats a single line of Yaml
 
 		Parameters:
-			line (str): A string
+			line (str): a string
 			override_formatting (dict): Overrides instead of default YAML-formatting
 		Returns:
-			themearray: A themearray
+			themearray: a themearray
 	"""
 
 	if override_formatting is None:
@@ -165,15 +165,15 @@ def format_yaml_line(line: str, override_formatting: Dict = None) -> List[Union[
 
 	return tmpline
 
-def format_yaml(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
+def format_yaml(lines: Union[str, list[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	YAML formatter; returns the text with syntax highlighting for YAML
 
 		Parameters:
 			lines (list[str]): A list of strings
 			*or*
-			lines (str): A string with newlines that should be split
-			kwargs (dict): Unused
+			lines (str): a string with newlines that should be split
+			kwargs (dict): unused
 		Returns:
 			list[themearray]: A list of themearrays
 	"""
