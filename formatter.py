@@ -44,7 +44,7 @@ def format_binary(lines: bytes, **kwargs: Dict) -> List[Sequence[Union[ThemeRef,
 	return [[ThemeString("Binary file; cannot view", ThemeRef("types", "generic"))]]
 
 # pylint: disable=unused-argument
-def format_none(lines: Union[str, list[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
+def format_none(lines: Union[str, List[str]], **kwargs: Dict) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	Noop formatter; returns the text without syntax highlighting
 
@@ -165,7 +165,7 @@ def format_yaml_line(line: str, override_formatting: Union[ThemeRef, Dict] = Non
 
 	return tmpline
 
-def format_yaml(lines: Union[str, list[str]], **kwargs: Any) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
+def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[Sequence[Union[ThemeRef, ThemeString]]]:
 	"""
 	YAML formatter; returns the text with syntax highlighting for YAML
 
