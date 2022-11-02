@@ -30,6 +30,8 @@
       message:
         field: 3
   - name: "http"
+    options:
+      reformat_timestamps: true
 - name: "kubeapps"
   show_in_selector: false
   matchkeys:
@@ -54,6 +56,8 @@
         field: 2
   - name: "ts_8601"
   - name: "http"
+    options:
+      reformat_timestamps: true
 - name: "kubeapps"
   show_in_selector: false
   matchkeys:
@@ -63,12 +67,7 @@
   - name: "strip_ansicodes"
   - name: "custom_splitter"
     options:
-      regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d.\d\d\d [A-Z]{3} (.*)'
-      message:
-        field: 1
-  - name: "custom_splitter"
-    options:
-      regex: '^\[\d+\]\s*(.*)'
+      regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d\d\d [A-Z]{3} \[\d+\] (.*)'
       message:
         field: 1
   - name: "custom_splitter"
