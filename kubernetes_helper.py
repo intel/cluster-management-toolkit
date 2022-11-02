@@ -1800,6 +1800,22 @@ kubernetes_resources: Dict[Any, Any] = {
 		"namespaced": False,
 	},
 	# policy.linkerd.io
+	("AuthorizationPolicy", "policy.linkerd.io"): {
+		"api_family": ["apis/policy.linkerd.io/v1alpha1/"],
+		"api": "authorizationpolicies",
+	},
+	("HTTPRoute", "policy.linkerd.io"): {
+		"api_family": ["apis/policy.linkerd.io/v1alpha1/"],
+		"api": "httproutes",
+	},
+	("MeshTLSAuthentication", "policy.linkerd.io"): {
+		"api_family": ["apis/policy.linkerd.io/v1alpha1/"],
+		"api": "meshtlsauthentications",
+	},
+	("NetworkAuthentication", "policy.linkerd.io"): {
+		"api_family": ["apis/policy.linkerd.io/v1alpha1/"],
+		"api": "networkauthentications",
+	},
 	("ServerAuthorization", "policy.linkerd.io"): {
 		"api_family": ["apis/policy.linkerd.io/v1beta1/"],
 		"api": "serverauthorizations",
