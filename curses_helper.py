@@ -894,7 +894,7 @@ def themearray_to_string(themearray: Sequence[Union[ThemeRef,
 		# (string, curses_attr)
 		# (string, (context, theme_attr))
 		# (string, (context, theme_attr), selected)
-		elif isinstance(fragment[0], str) and type(fragment[1]) in (int, tuple, ThemeRef):
+		elif isinstance(fragment[0], str) and type(fragment[1]) in (int, tuple, ThemeAttr):
 			string += fragment[0]
 		# (context, theme_attr)
 		elif len(fragment) == 2 and isinstance(fragment[0], str) and isinstance(fragment[1], str):

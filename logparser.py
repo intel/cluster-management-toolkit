@@ -52,7 +52,7 @@ except ModuleNotFoundError:
 
 from iktpaths import HOMEDIR, PARSER_DIR
 
-from ikttypes import DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name, ThemeRef, ThemeString
+from ikttypes import DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name, ThemeAttr, ThemeRef, ThemeString
 
 from iktio import secure_read_yaml
 
@@ -555,16 +555,16 @@ def http(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", f
 				severity = LogLevel.ERR
 			separator6 = tmp[14]
 			new_message: Sequence[Union[ThemeRef, ThemeString]] = [
-				ThemeString(address1, ThemeRef("logview", "hostname")),
-				ThemeString(separator1, ThemeRef("logview", "severity_info")),
-				ThemeString(f"{separator2}{ts}{separator3}", ThemeRef("logview", "timestamp")),
-				ThemeString(separator4, ThemeRef("logview", "severity_info")),
-				ThemeString(verb, ThemeRef("logview", "protocol")),
-				ThemeString(address3, ThemeRef("logview", "url")),
-				ThemeString(protocol, ThemeRef("logview", "protocol")),
-				ThemeString(separator5, ThemeRef("logview", "severity_info")),
-				ThemeString(statuscode, ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-				ThemeString(separator6, ThemeRef("logview", "severity_info")),
+				ThemeString(address1, ThemeAttr("logview", "hostname")),
+				ThemeString(separator1, ThemeAttr("logview", "severity_info")),
+				ThemeString(f"{separator2}{ts}{separator3}", ThemeAttr("logview", "timestamp")),
+				ThemeString(separator4, ThemeAttr("logview", "severity_info")),
+				ThemeString(verb, ThemeAttr("logview", "protocol")),
+				ThemeString(address3, ThemeAttr("logview", "url")),
+				ThemeString(protocol, ThemeAttr("logview", "protocol")),
+				ThemeString(separator5, ThemeAttr("logview", "severity_info")),
+				ThemeString(statuscode, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+				ThemeString(separator6, ThemeAttr("logview", "severity_info")),
 			]
 
 			return new_message, severity, facility
@@ -632,24 +632,24 @@ def http(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", f
 			address6 = tmp[20]
 			separator9 = tmp[21]
 			new_message = [
-				ThemeString(address1, ThemeRef("logview", "hostname")),
-				ThemeString(separator1, ThemeRef("logview", "severity_info")),
-				ThemeString(f"{separator2}{ts}{separator3}", ThemeRef("logview", "timestamp")),
-				ThemeString(separator4, ThemeRef("logview", "severity_info")),
-				ThemeString(verb, ThemeRef("logview", "protocol")),
-				ThemeString(address3, ThemeRef("logview", "url")),
-				ThemeString(protocol, ThemeRef("logview", "protocol")),
-				ThemeString(separator5, ThemeRef("logview", "severity_info")),
-				ThemeString(statuscode, ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-				ThemeString(separator6, ThemeRef("logview", "severity_info")),
-				ThemeString(address4, ThemeRef("logview", "url")),
-				ThemeString(separator7, ThemeRef("logview", "severity_info")),
-				ThemeString(address5, ThemeRef("logview", "url")),
-				ThemeString(separator8, ThemeRef("logview", "severity_info")),
+				ThemeString(address1, ThemeAttr("logview", "hostname")),
+				ThemeString(separator1, ThemeAttr("logview", "severity_info")),
+				ThemeString(f"{separator2}{ts}{separator3}", ThemeAttr("logview", "timestamp")),
+				ThemeString(separator4, ThemeAttr("logview", "severity_info")),
+				ThemeString(verb, ThemeAttr("logview", "protocol")),
+				ThemeString(address3, ThemeAttr("logview", "url")),
+				ThemeString(protocol, ThemeAttr("logview", "protocol")),
+				ThemeString(separator5, ThemeAttr("logview", "severity_info")),
+				ThemeString(statuscode, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+				ThemeString(separator6, ThemeAttr("logview", "severity_info")),
+				ThemeString(address4, ThemeAttr("logview", "url")),
+				ThemeString(separator7, ThemeAttr("logview", "severity_info")),
+				ThemeString(address5, ThemeAttr("logview", "url")),
+				ThemeString(separator8, ThemeAttr("logview", "severity_info")),
 			]
 			if address6 is not None:
-				new_message.append(ThemeString(address6, ThemeRef("logview", "url")))
-				new_message.append(ThemeString(separator9, ThemeRef("logview", "severity_info")))
+				new_message.append(ThemeString(address6, ThemeAttr("logview", "url")))
+				new_message.append(ThemeString(separator9, ThemeAttr("logview", "severity_info")))
 
 			return new_message, severity, facility
 
@@ -673,23 +673,23 @@ def http(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", f
 		verb = tmp[6]
 		url = tmp[7]
 		new_message = [
-			ThemeString("| ", ThemeRef("logview", "severity_info")),
-			ThemeString(statuscode, ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-			ThemeString(" | ", ThemeRef("logview", "severity_info")),
-			ThemeString(duration, ThemeRef("logview", "severity_info")),
-			ThemeString(unit, ThemeRef("types", "unit")),
-			ThemeString(" | ", ThemeRef("logview", "severity_info")),
-			ThemeString(hostname, ThemeRef("logview", "hostname")),
+			ThemeString("| ", ThemeAttr("logview", "severity_info")),
+			ThemeString(statuscode, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+			ThemeString(" | ", ThemeAttr("logview", "severity_info")),
+			ThemeString(duration, ThemeAttr("logview", "severity_info")),
+			ThemeString(unit, ThemeAttr("types", "unit")),
+			ThemeString(" | ", ThemeAttr("logview", "severity_info")),
+			ThemeString(hostname, ThemeAttr("logview", "hostname")),
 			ThemeRef("separators", "port"),
-			ThemeString(port, ThemeRef("types", "port")),
-			ThemeString(" | ", ThemeRef("logview", "severity_info")),
-			ThemeString(verb, ThemeRef("logview", "protocol")),
-			ThemeString(" ", ThemeRef("logview", "severity_info")),
-			ThemeString(url, ThemeRef("logview", "url")),
+			ThemeString(port, ThemeAttr("types", "port")),
+			ThemeString(" | ", ThemeAttr("logview", "severity_info")),
+			ThemeString(verb, ThemeAttr("logview", "protocol")),
+			ThemeString(" ", ThemeAttr("logview", "severity_info")),
+			ThemeString(url, ThemeAttr("logview", "url")),
 		]
 		return new_message, severity, facility
 
-	return [ThemeString(f"{ipaddress}", ThemeRef("logview", "hostname")), ThemeString(f"{message}", ThemeRef("logview", "severity_info"))], severity, facility
+	return [ThemeString(f"{ipaddress}", ThemeAttr("logview", "hostname")), ThemeString(f"{message}", ThemeAttr("logview", "severity_info"))], severity, facility
 
 # log messages of the format:
 # E0514 09:01:55.108028382       1 server_chttp2.cc:40]
@@ -736,7 +736,7 @@ def split_glog(message: str, severity: LogLevel = None, facility: str = "") ->\
 	# If we have a logging error we return that as message and the rest as remnants
 	if loggingerror is not None:
 		severity = LogLevel.ERR
-		remnants.insert(0, ([ThemeString(message, ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+		remnants.insert(0, ([ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 		message = loggingerror
 
 	return message, severity, facility, remnants, matched
@@ -893,29 +893,29 @@ def split_json_style(message: str, severity: LogLevel = LogLevel.INFO, facility:
 			else:
 				message = ""
 
-			override_formatting: Union[ThemeRef, Dict] = {}
+			override_formatting: Union[ThemeAttr, Dict] = {}
 			formatted_message = None
 			remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
 			if len(logentry) > 0:
 				if structseverity == LogLevel.DEBUG:
-					override_formatting = ThemeRef("logview", "severity_debug")
+					override_formatting = ThemeAttr("logview", "severity_debug")
 				else:
 					override_formatting = {}
 					for _msg in versions:
 						override_formatting[f"\"{_msg}\""] = {
-							"key": ThemeRef("types", "yaml_key"),
-							"value": ThemeRef("logview", "severity_notice")
+							"key": ThemeAttr("types", "yaml_key"),
+							"value": ThemeAttr("logview", "severity_notice")
 						}
 					for _msg in messages:
 						override_formatting[f"\"{_msg}\""] = {
-							"key": ThemeRef("types", "yaml_key"),
-							"value": ThemeRef("logview", f"severity_{loglevel_to_name(msgseverity).lower()}")
+							"key": ThemeAttr("types", "yaml_key"),
+							"value": ThemeAttr("logview", f"severity_{loglevel_to_name(msgseverity).lower()}")
 						}
 					for _err in errors:
 						override_formatting[f"\"{_err}\""] = {
-							"key": ThemeRef("types", "yaml_key_error"),
-							"value": ThemeRef("logview", f"severity_{loglevel_to_name(errorseverity).lower()}"),
+							"key": ThemeAttr("types", "yaml_key_error"),
+							"value": ThemeAttr("logview", f"severity_{loglevel_to_name(errorseverity).lower()}"),
 						}
 				dump = json_dumps(logentry)
 				tmp = formatters.format_yaml([dump], override_formatting = override_formatting)
@@ -949,9 +949,9 @@ def merge_message(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeS
 	"""
 
 	if remnants is not None:
-		remnants.insert(0, ([ThemeString(message, ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+		remnants.insert(0, ([ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 	else:
-		remnants = [([ThemeString(message, ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
+		remnants = [([ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 	message = ""
 
 	return message, remnants
@@ -1008,10 +1008,10 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 	if event in ("AddPod", "DeletePod", "AddNamespace", "DeleteNamespace") or (event in ("UpdatePod", "UpdateNamespace") and not "} {" in tmp[2]):
 		msg = tmp[2]
 		_message, _severity, _facility, remnants = split_json_style_raw(message = msg, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_msg = True)
-		new_message = [ThemeString(f"{tmp[0]} {event}", ThemeRef("listview", "severity_info"))]
+		new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("listview", "severity_info"))]
 		if event in ("UpdatePod", "UpdateNamespace"):
-			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-				       ThemeString(" [No changes]", ThemeRef("logview", "unchanged"))]
+			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+				       ThemeString(" [No changes]", ThemeAttr("logview", "unchanged"))]
 	elif event in ("UpdatePod", "UpdateNamespace"):
 		# Safe
 		tmp2 = re.match(r"^({.*})\s*({.*})", tmp[2])
@@ -1019,18 +1019,18 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 			try:
 				old = json.loads(tmp2[1])
 			except DecodeException:
-				new_message = [ThemeString(f"{tmp[1]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-					       ThemeString(" [error: could not parse json]", ThemeRef("logview", "severity_error"))]
-				remnants = [([ThemeString(tmp[2], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
+				new_message = [ThemeString(f"{tmp[1]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+					       ThemeString(" [error: could not parse json]", ThemeAttr("logview", "severity_error"))]
+				remnants = [([ThemeString(tmp[2], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 				return new_message, severity, facility, remnants
 
 			old_str = json_dumps(old)
 			try:
 				new = json.loads(tmp2[2])
 			except DecodeException:
-				new_message = [ThemeString(f"{tmp[0]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-					       ThemeString(" [error: could not parse json]", ThemeRef("logview", "severity_error"))]
-				remnants = [([ThemeString(tmp[2], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
+				new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+					       ThemeString(" [error: could not parse json]", ThemeAttr("logview", "severity_error"))]
+				remnants = [([ThemeString(tmp[2], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 				return new_message, severity, facility, remnants
 			new_str = json_dumps(new)
 
@@ -1040,13 +1040,13 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 				if y < 4:
 					continue
 				if el.startswith("+"):
-					remnants.append(((el, ThemeRef("logview", "severity_diffplus")), LogLevel.DIFFPLUS))
+					remnants.append(((el, ThemeAttr("logview", "severity_diffplus")), LogLevel.DIFFPLUS))
 				elif el.startswith("-"):
-					remnants.append(((el, ThemeRef("logview", "severity_diffminus")), LogLevel.DIFFMINUS))
+					remnants.append(((el, ThemeAttr("logview", "severity_diffminus")), LogLevel.DIFFMINUS))
 				else:
-					remnants.append(((el, ThemeRef("logview", "severity_diffsame")), LogLevel.DIFFSAME))
-			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-				       ThemeString(" [State modified]", ThemeRef("logview", "modified"))]
+					remnants.append(((el, ThemeAttr("logview", "severity_diffsame")), LogLevel.DIFFSAME))
+			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+				       ThemeString(" [State modified]", ThemeAttr("logview", "modified"))]
 	else:
 		sys.exit(f"json_event: Unknown EVENT type:\n{message}")
 
@@ -1128,7 +1128,7 @@ def custom_override_severity(message: Union[str, List], severity: Optional[LogLe
 		if isinstance(message, list):
 			override_message = []
 			for substring in message:
-				override_message.append(ThemeString(substring.string, ThemeRef("logview", f"severity_{loglevel_to_name(override_loglevel).lower()}")))
+				override_message.append(ThemeString(substring.string, ThemeAttr("logview", f"severity_{loglevel_to_name(override_loglevel).lower()}")))
 		break
 
 	return override_message, severity
@@ -1178,19 +1178,19 @@ def expand_event_objectmeta(message: str, severity: LogLevel, remnants: List[Tup
 			if message is None:
 				if ":" in tmp:
 					key, value = tmp.split(":", 1)
-					message = [ThemeString("".ljust(indent * depth) + key, ThemeRef("types", "yaml_key")),
+					message = [ThemeString("".ljust(indent * depth) + key, ThemeAttr("types", "yaml_key")),
 						   ThemeRef("separators", "yaml_key_separator"),
-						   ThemeString(f"{value}", ThemeRef("types", "yaml_value"))]
+						   ThemeString(f"{value}", ThemeAttr("types", "yaml_value"))]
 				else:
-					message = [ThemeString("".ljust(indent * depth) + tmp, ThemeRef("types", "yaml_value"))]
+					message = [ThemeString("".ljust(indent * depth) + tmp, ThemeAttr("types", "yaml_value"))]
 			else:
 				if ":" in tmp:
 					key, value = tmp.split(":", 1)
-					remnants.append(([ThemeString("".ljust(indent * depth) + key, ThemeRef("types", "yaml_key")),
+					remnants.append(([ThemeString("".ljust(indent * depth) + key, ThemeAttr("types", "yaml_key")),
 							  ThemeRef("separators", "yaml_key_separator"),
-							  ThemeString(f"{value}", ThemeRef("types", "yaml_value"))], severity))
+							  ThemeString(f"{value}", ThemeAttr("types", "yaml_value"))], severity))
 				else:
-					remnants.append(([ThemeString("".ljust(indent * depth) + tmp, ThemeRef("types", "yaml_value"))], severity))
+					remnants.append(([ThemeString("".ljust(indent * depth) + tmp, ThemeAttr("types", "yaml_value"))], severity))
 			tmp = ""
 			if raw_msg == "{":
 				depth += 1
@@ -1254,15 +1254,15 @@ def expand_event(message: str, severity: LogLevel, remnants: List[Tuple[List[Uni
 			_severity = LogLevel.WARNING
 		if _severity < severity:
 			severity = _severity
-	remnants.append(([ThemeString(" ".ljust(indent) + raw_message[eventstart:refstart], ThemeRef("types", "yaml_reference"))], severity))
+	remnants.append(([ThemeString(" ".ljust(indent) + raw_message[eventstart:refstart], ThemeAttr("types", "yaml_reference"))], severity))
 	for _key_value in raw_message[refstart:refend].split(", "):
 		key, value = _key_value.split(":", 1)
-		remnants.append(([ThemeString(" ".ljust(indent * 2) + key, ThemeRef("types", "yaml_key")),
+		remnants.append(([ThemeString(" ".ljust(indent * 2) + key, ThemeAttr("types", "yaml_key")),
 				  ThemeRef("separators", "yaml_key_separator"),
-				  ThemeString(f" {value}", ThemeRef("types", "yaml_value"))], severity))
-	remnants.append(([ThemeString(" ".ljust(indent * 1) + raw_message[refend:eventend], ThemeRef("types", "yaml_reference"))], severity))
-	remnants.append(([ThemeString(raw_message[eventend:eventend + 3], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-			  ThemeString(raw_message[eventend + 3:len(raw_message)], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+				  ThemeString(f" {value}", ThemeAttr("types", "yaml_value"))], severity))
+	remnants.append(([ThemeString(" ".ljust(indent * 1) + raw_message[refend:eventend], ThemeAttr("types", "yaml_reference"))], severity))
+	remnants.append(([ThemeString(raw_message[eventend:eventend + 3], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+			  ThemeString(raw_message[eventend + 3:len(raw_message)], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 
 	return severity, message, remnants
 
@@ -1334,14 +1334,14 @@ def expand_header_key_value(message: str, severity: LogLevel, remnants = None, f
 					# DoS
 					tmp = re.match(r"(\d+ errors occurred:)(.*)", value)
 					if tmp is not None:
-						remnants.append(([ThemeString(f"{entry}: {tmp[1]}\n", ThemeRef("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
+						remnants.append(([ThemeString(f"{entry}: {tmp[1]}\n", ThemeAttr("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
 						s = tmp[2].replace("\\t", "").split("\\n")
 						for line in s:
 							if len(line) > 0:
 								if line.startswith("* "):
-									remnants.append(([ThemeString("   {line}\n", ThemeRef("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
+									remnants.append(([ThemeString("   {line}\n", ThemeAttr("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
 								else:
-									remnants.append(([ThemeString("   * {line}\n", ThemeRef("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
+									remnants.append(([ThemeString("   * {line}\n", ThemeAttr("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
 						continue
 				elif entry == "error":
 					tmpseverity = severity
@@ -1357,9 +1357,9 @@ def expand_header_key_value(message: str, severity: LogLevel, remnants = None, f
 					# this should have LogLevel.INFO or lower severity
 					tmpseverity = max(LogLevel.INFO, severity, tmpseverity)
 
-				remnants.append(([ThemeString(entry, ThemeRef("types", "key")),
+				remnants.append(([ThemeString(entry, ThemeAttr("types", "key")),
 						  ThemeRef("separators", "keyvalue_log"),
-						  ThemeString(value, ThemeRef("types", "value"))], tmpseverity))
+						  ThemeString(value, ThemeAttr("types", "value"))], tmpseverity))
 			if len(message) == 0:
 				message = remnants[0]
 				remnants.pop(0)
@@ -1368,17 +1368,17 @@ def expand_header_key_value(message: str, severity: LogLevel, remnants = None, f
 
 def format_key_value(key: str, value: str, severity: LogLevel, force_severity: bool = False) -> List[Union[ThemeRef, ThemeString]]:
 	if key in ("error", "err"):
-		tmp = [ThemeString(f"{key}", ThemeRef("types", "key_error")),
+		tmp = [ThemeString(f"{key}", ThemeAttr("types", "key_error")),
 		       ThemeRef("separators", "keyvalue_log"),
-		       ThemeString(f"{value}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+		       ThemeString(f"{value}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 	elif force_severity == True:
-		tmp = [ThemeString(f"{key}", ThemeRef("types", "key")),
+		tmp = [ThemeString(f"{key}", ThemeAttr("types", "key")),
 		       ThemeRef("separators", "keyvalue_log"),
-		       ThemeString(f"{value}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+		       ThemeString(f"{value}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 	else:
-		tmp = [ThemeString(f"{key}", ThemeRef("types", "key")),
+		tmp = [ThemeString(f"{key}", ThemeAttr("types", "key")),
 		       ThemeRef("separators", "keyvalue_log"),
-		       ThemeString(f"{value}", ThemeRef("types", "value"))]
+		       ThemeString(f"{value}", ThemeAttr("types", "value"))]
 	return tmp
 
 # Severity: lvl=|level=
@@ -1482,16 +1482,16 @@ def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = 
 			# DoS
 			tmp = re.match(r"(\d+ errors? occurred:)(.*)", err)
 			if tmp is not None:
-				remnants.append(([ThemeString(tmp[1], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+				remnants.append(([ThemeString(tmp[1], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 				s = tmp[2].replace("\\t", "").split("\\n")
 				for line in s:
 					if len(line) > 0:
 						# Real bullets look so much nicer
 						if line.startswith("* ") and logparser_configuration.msg_realbullets == True:
 							remnants.append(([ThemeRef("separators", "logbullet"),
-									  ThemeString(f"{line[2:]}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+									  ThemeString(f"{line[2:]}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 						else:
-							remnants.append(([ThemeString(f"{line}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+							remnants.append(([ThemeString(f"{line}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 		else:
 			tmp = []
 			# If we're extracting msg we always want msg first
@@ -1562,10 +1562,10 @@ def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = 
 		_remnants = []
 		if len(lines) > 1:
 			for line in lines[1:]:
-				_remnants.append(([ThemeString(f"{line}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+				_remnants.append(([ThemeString(f"{line}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 			if type(remnants) == tuple:
 				for remnant in remnants[0]:
-					_remnants.append(([ThemeString(remnant, ThemeRef("logview", f"severity_{loglevel_to_name(remnants[1]).lower()}"))], remnants[1]))
+					_remnants.append(([ThemeString(remnant, ThemeAttr("logview", f"severity_{loglevel_to_name(remnants[1]).lower()}"))], remnants[1]))
 				remnants = _remnants
 			elif type(remnants) == list:
 				remnants = _remnants + remnants
@@ -1629,10 +1629,10 @@ def modinfo(message: str, fold_msg: bool = True) ->\
 		whitespace = tmp[2]
 		value = tmp[3]
 		new_message: List[Union[ThemeRef, ThemeString]] = [
-			ThemeString(key, ThemeRef("types", "key")),
+			ThemeString(key, ThemeAttr("types", "key")),
 			ThemeRef("separators", "keyvalue"),
-			ThemeString(whitespace, ThemeRef("types", "generic")),
-			ThemeString(value, ThemeRef("types", "value")),
+			ThemeString(whitespace, ThemeAttr("types", "generic")),
+			ThemeString(value, ThemeAttr("types", "value")),
 		]
 		return facility, severity, new_message, remnants
 	return facility, severity, message, remnants
@@ -1692,60 +1692,60 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 	suffix = tmp[20]
 
 	_message: List[Union[ThemeRef, ThemeString]] = [
-		ThemeString(f"{etype}", ThemeRef("types", "dir_type")),
-		ThemeString(f"{permissions}", ThemeRef("types", "dir_permissions")),
-		ThemeString(f"{space1}", ThemeRef("types", "generic")),
-		ThemeString(f"{linkcount}", ThemeRef("types", "dir_linkcount")),
-		ThemeString(f"{space2}", ThemeRef("types", "generic")),
-		ThemeString(f"{owner}", ThemeRef("types", "dir_owner")),
-		ThemeString(f"{space3}", ThemeRef("types", "generic")),
-		ThemeString(f"{group}", ThemeRef("types", "dir_group")),
-		ThemeString(f"{space4}", ThemeRef("types", "generic")),
-		ThemeString(f"{size}", ThemeRef("types", "dir_size")),
-		ThemeString(f"{space5}", ThemeRef("types", "generic")),
-		ThemeString(f"{month}", ThemeRef("types", "dir_date")),
-		ThemeString(f"{space6}", ThemeRef("types", "generic")),
-		ThemeString(f"{day}", ThemeRef("types", "dir_date")),
-		ThemeString(f"{space7}", ThemeRef("types", "generic")),
-		ThemeString(f"{yearortime}", ThemeRef("types", "dir_date")),
-		ThemeString(f"{space8}", ThemeRef("types", "generic")),
+		ThemeString(f"{etype}", ThemeAttr("types", "dir_type")),
+		ThemeString(f"{permissions}", ThemeAttr("types", "dir_permissions")),
+		ThemeString(f"{space1}", ThemeAttr("types", "generic")),
+		ThemeString(f"{linkcount}", ThemeAttr("types", "dir_linkcount")),
+		ThemeString(f"{space2}", ThemeAttr("types", "generic")),
+		ThemeString(f"{owner}", ThemeAttr("types", "dir_owner")),
+		ThemeString(f"{space3}", ThemeAttr("types", "generic")),
+		ThemeString(f"{group}", ThemeAttr("types", "dir_group")),
+		ThemeString(f"{space4}", ThemeAttr("types", "generic")),
+		ThemeString(f"{size}", ThemeAttr("types", "dir_size")),
+		ThemeString(f"{space5}", ThemeAttr("types", "generic")),
+		ThemeString(f"{month}", ThemeAttr("types", "dir_date")),
+		ThemeString(f"{space6}", ThemeAttr("types", "generic")),
+		ThemeString(f"{day}", ThemeAttr("types", "dir_date")),
+		ThemeString(f"{space7}", ThemeAttr("types", "generic")),
+		ThemeString(f"{yearortime}", ThemeAttr("types", "dir_date")),
+		ThemeString(f"{space8}", ThemeAttr("types", "generic")),
 	]
 	# regular file
 	if etype == "-":
 		_message += [
-			ThemeString(f"{name}", ThemeRef("types", "dir_file"))
+			ThemeString(f"{name}", ThemeAttr("types", "dir_file"))
 		]
 	# block device
 	elif etype == "b":
 		_message += [
-			ThemeString(f"{name}", ThemeRef("types", "dir_dev"))
+			ThemeString(f"{name}", ThemeAttr("types", "dir_dev"))
 		]
 	# character device
 	elif etype == "c":
 		_message += [
-			ThemeString(f"{name}", ThemeRef("types", "dir_dev"))
+			ThemeString(f"{name}", ThemeAttr("types", "dir_dev"))
 		]
 	# sticky bit has precedence over the regular directory type
 	elif permissions.endswith("t"):
 		_message += [
-			ThemeString(f"{name}", ThemeRef("types", "dir_socket"))
+			ThemeString(f"{name}", ThemeAttr("types", "dir_socket"))
 		]
 	# directory
 	elif etype == "d":
 		_message += [
-			ThemeString(f"{name}", ThemeRef("types", "dir_dir"))
+			ThemeString(f"{name}", ThemeAttr("types", "dir_dir"))
 		]
 	# symbolic link
 	elif etype == "l":
 		tmp2 = re.match(r"(.+?)( -> )(.+)", name)
 		if tmp2 is None:
 			_message += [
-				ThemeString(f"{name}", ThemeRef("types", "dir_symlink_name"))
+				ThemeString(f"{name}", ThemeAttr("types", "dir_symlink_name"))
 			]
 		else:
 			_message += [
-				ThemeString(f"{tmp2[1]}", ThemeRef("types", "dir_symlink_name")),
-				ThemeString(f"{tmp2[2]}", ThemeRef("types", "dir_symlink_link"))
+				ThemeString(f"{tmp2[1]}", ThemeAttr("types", "dir_symlink_name")),
+				ThemeString(f"{tmp2[2]}", ThemeAttr("types", "dir_symlink_link"))
 			]
 			# There's no suffix for devices or regular files,
 			# but we can distinguish the two based on the file size;
@@ -1754,40 +1754,40 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 			if len(suffix) == 0:
 				if "," in size:
 					_message += [
-						ThemeString(f"{tmp2[3]}", ThemeRef("types", "dir_dev")),
+						ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_dev")),
 					]
 				else:
 					_message += [
-						ThemeString(f"{tmp2[3]}", ThemeRef("types", "dir_file")),
+						ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_file")),
 					]
 			elif suffix == "|":
 				_message += [
-					ThemeString(f"{tmp2[3]}", ThemeRef("types", "dir_pipe")),
+					ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_pipe")),
 				]
 			elif suffix == "=":
 				_message += [
-					ThemeString(f"{tmp2[3]}", ThemeRef("types", "dir_socket")),
+					ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_socket")),
 				]
 			elif suffix == "/":
 				_message += [
-					ThemeString(f"{tmp2[3]}", ThemeRef("types", "dir_dir")),
+					ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_dir")),
 				]
 			else:
 				raise Exception("Unhandled suffix {suffix} in line {message}")
 	# pipe
 	elif etype == "p":
 		_message += [
-			ThemeString(f"{name}", ThemeRef("types", "dir_pipe"))
+			ThemeString(f"{name}", ThemeAttr("types", "dir_pipe"))
 		]
 	# socket
 	elif etype == "s":
 		_message += [
-			ThemeString(f"{name}", ThemeRef("types", "dir_socket"))
+			ThemeString(f"{name}", ThemeAttr("types", "dir_socket"))
 		]
 
 	if len(suffix) > 0:
 		_message += [
-			ThemeString(f"{suffix}", ThemeRef("types", "dir_suffix"))
+			ThemeString(f"{suffix}", ThemeAttr("types", "dir_suffix"))
 		]
 
 	return facility, severity, _message, remnants
@@ -1809,8 +1809,8 @@ def seconds_severity_facility(message: str, fold_msg: bool = True) ->\
 	if tmp is not None:
 		severity = cast(LogLevel, str_to_severity(tmp[2], default = severity))
 		facility = cast(str, tmp[3])
-		new_message: List[Union[ThemeRef, ThemeString]] = [ThemeString(f"{tmp[1]} ", ThemeRef("logview", "timestamp")),
-								   ThemeString(f"{tmp[4]}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+		new_message: List[Union[ThemeRef, ThemeString]] = [ThemeString(f"{tmp[1]} ", ThemeAttr("logview", "timestamp")),
+								   ThemeString(f"{tmp[4]}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 		return facility, severity, new_message, remnants
 
 	return facility, severity, message, remnants
@@ -1841,26 +1841,26 @@ def python_traceback_scanner(message: str, fold_msg: bool = True, options: Dict 
 
 	# Default case
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = [
-		([ThemeString(message, ThemeRef("logview", "severity_info"))], severity)
+		([ThemeString(message, ThemeAttr("logview", "severity_info"))], severity)
 	]
 
 	tmp = re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", message)
 	if tmp is not None:
 		remnants = [
-			([ThemeString(tmp[1], ThemeRef("logview", "severity_info")),
-			  ThemeString(tmp[2], ThemeRef("types", "path")),
-			  ThemeString(tmp[3], ThemeRef("logview", "severity_info")),
-			  ThemeString(tmp[4], ThemeRef("types", "lineno")),
-			  ThemeString(tmp[5], ThemeRef("logview", "severity_info")),
-			  ThemeString(tmp[6], ThemeRef("types", "path"))],
+			([ThemeString(tmp[1], ThemeAttr("logview", "severity_info")),
+			  ThemeString(tmp[2], ThemeAttr("types", "path")),
+			  ThemeString(tmp[3], ThemeAttr("logview", "severity_info")),
+			  ThemeString(tmp[4], ThemeAttr("types", "lineno")),
+			  ThemeString(tmp[5], ThemeAttr("logview", "severity_info")),
+			  ThemeString(tmp[6], ThemeAttr("types", "path"))],
 			 severity),
 		]
 	else:
 		tmp = re.match(r"(^\S+?Error:|Exception:|GeneratorExit:|KeyboardInterrupt:|StopIteration:|StopAsyncIteration:|SystemExit:)( .*)", message)
 		if tmp is not None:
 			remnants = [
-				([ThemeString(tmp[1], ThemeRef("logview", "severity_error")),
-				  ThemeString(tmp[2], ThemeRef("logview", "severity_info"))],
+				([ThemeString(tmp[1], ThemeAttr("logview", "severity_error")),
+				  ThemeString(tmp[2], ThemeAttr("logview", "severity_info"))],
 				 severity),
 			]
 			processor = ["end_block", None]
@@ -1874,7 +1874,7 @@ def python_traceback(message: str, fold_msg: bool = True) ->\
 				Tuple[Union[str, List], List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 	if message == "Traceback (most recent call last):":
-		remnants = [([ThemeString(message, ThemeRef("logview", "severity_error"))], LogLevel.ERR)]
+		remnants = [([ThemeString(message, ThemeAttr("logview", "severity_error"))], LogLevel.ERR)]
 		return ["start_block", python_traceback_scanner], remnants
 	else:
 		return message, remnants
@@ -1985,7 +1985,7 @@ def yaml_line_scanner(message: str, fold_msg: bool = True, options: Dict = None)
 			if format_block_end == True:
 				remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
 			else:
-				remnants = [([ThemeString(message, ThemeRef("logview", "severity_info"))], severity)]
+				remnants = [([ThemeString(message, ThemeAttr("logview", "severity_info"))], severity)]
 			processor = ["end_block", None]
 		else:
 			processor = ["end_block_not_processed", None]
@@ -2063,6 +2063,7 @@ def custom_splitter(message: str, severity: LogLevel = None, facility: str = "",
 		raise Exception("parser rule is missing regex or message field")
 
 	tmp = compiled_regex.match(message)
+
 	if tmp is not None:
 		group_count = len(tmp.groups())
 		if message_field > group_count:
@@ -2083,6 +2084,8 @@ def custom_splitter(message: str, severity: LogLevel = None, facility: str = "",
 			else:
 				sys.exit(f"Unknown severity transform rule {severity_transform}; aborting.")
 			message, severity = custom_override_severity(tmp[message_field], severity, overrides = severity_overrides)
+		else:
+			message = tmp[message_field]
 		if facility_fields is not None and len(facility) == 0:
 			if type(facility_fields) == str:
 				facility_fields = [facility_fields]
@@ -2177,7 +2180,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 						if _severity is None:
 							_severity = LogLevel.INFO
 						_message, remnants = merge_message(_message, remnants, severity = severity)
-						message = [ThemeString(parts[0], ThemeRef("logview", f"severity_{loglevel_to_name(_severity).lower()}"))]
+						message = [ThemeString(parts[0], ThemeAttr("logview", f"severity_{loglevel_to_name(_severity).lower()}"))]
 			elif _filter[0] == "json_event":
 				_parser_options = _filter[1]
 				# We don't extract the facility/severity from folded messages, so just skip if fold_msg == True
@@ -2404,7 +2407,7 @@ def logparser_initialised(parser: Parser = None, message: str = "", fold_msg: bo
 	facility, severity, message, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
 
 	if len(message) > 16383:
-		remnants = [([ThemeString(message[0:16383], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
+		remnants = [([ThemeString(message[0:16383], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 		severity = LogLevel.ERR
 		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)"
 
@@ -2504,7 +2507,7 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 		facility, severity, message, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = {})
 
 	if len(message) > 16383:
-		remnants = [([ThemeString(message[0:16383], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
+		remnants = [([ThemeString(message[0:16383], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 		severity = LogLevel.ERR
 		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)"
 

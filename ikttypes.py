@@ -13,15 +13,15 @@ class ThemeAttr(NamedTuple):
 	context: str
 	attr_ref: str
 
-# A reference to preformatted string;
+# A reference to preformatted string; while the type definition is the same as ThemeAttr,
+# its use is different
 class ThemeRef(NamedTuple):
 	context: str
 	attr_ref: str
 
 class ThemeString(NamedTuple):
 	string: str
-	# Once all callsites have been modified this should be ThemeAttr, not ThemeRef
-	themeref: ThemeRef
+	themeref: ThemeAttr
 	selected: bool = False
 
 # Note: A ThemeArray is Sequence[Union[ThemeRef, ThemeString]]

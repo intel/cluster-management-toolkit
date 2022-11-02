@@ -12,7 +12,7 @@ from typing import List, Union
 from curses_helper import color_status_group, themearray_len, themearray_to_string
 import iktlib
 from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, timestamp_to_datetime
-from ikttypes import DictPath, StatusGroup, ThemeRef, ThemeString
+from ikttypes import DictPath, StatusGroup, ThemeAttr, ThemeRef, ThemeString
 
 def format_list(items, fieldlen, pad, ralign, selected,
 		item_separator = None,
@@ -36,7 +36,7 @@ def format_list(items, fieldlen, pad, ralign, selected,
 		field_separators = [ThemeRef("separators", "field")]
 
 	if field_colors is None:
-		field_colors = [ThemeRef("types", "generic")]
+		field_colors = [ThemeAttr("types", "generic")]
 
 	if not isinstance(field_separators, list):
 		raise Exception(f"field_separators should be a list of (context, style) tuple, not a single tuple; {field_separators}")
@@ -82,7 +82,7 @@ def format_list(items, fieldlen, pad, ralign, selected,
 				array.append((field_separator, selected))
 
 			if string == "<none>":
-				fmt = ThemeRef("types", "none")
+				fmt = ThemeAttr("types", "none")
 				formatted_string = ThemeString(string, fmt, selected)
 			elif string == "<not ready>":
 				fmt = color_status_group(StatusGroup.NOT_OK)
@@ -226,7 +226,7 @@ def format_numerical_with_units(string: str, ftype: str, selected: bool, non_uni
 		separator_lookup = {}
 
 	if "default" not in separator_lookup:
-		separator_lookup["default"] = ThemeRef("types", "unit")
+		separator_lookup["default"] = ThemeAttr("types", "unit")
 
 	if non_units is None:
 		non_units = set("0123456789")
@@ -242,9 +242,9 @@ def format_numerical_with_units(string: str, ftype: str, selected: bool, non_uni
 			# Do we need to flush?
 			if not char in non_units:
 				if selected is None:
-					array.append(ThemeString(substring, ThemeRef("types", ftype)))
+					array.append(ThemeString(substring, ThemeAttr("types", ftype)))
 				else:
-					array.append(ThemeString(substring, ThemeRef("types", ftype), selected))
+					array.append(ThemeString(substring, ThemeAttr("types", ftype), selected))
 				substring = ""
 				numeric = False
 
@@ -264,9 +264,9 @@ def format_numerical_with_units(string: str, ftype: str, selected: bool, non_uni
 		if len(liststring) == 0:
 			if numeric == True:
 				if selected is None:
-					array.append(ThemeString(substring, ThemeRef("types", ftype)))
+					array.append(ThemeString(substring, ThemeAttr("types", ftype)))
 				else:
-					array.append((substring, ThemeRef("types", ftype), selected))
+					array.append((substring, ThemeAttr("types", ftype), selected))
 			else:
 				fmt = deep_get_with_fallback(separator_lookup, [DictPath(substring), DictPath("default")])
 				if selected is None:
@@ -275,7 +275,7 @@ def format_numerical_with_units(string: str, ftype: str, selected: bool, non_uni
 					array.append((substring, fmt, selected))
 
 	if len(array) == 0:
-		array = [ThemeString("", ThemeRef("types", "generic"), selected)]
+		array = [ThemeString("", ThemeAttr("types", "generic"), selected)]
 
 	return array
 
@@ -288,10 +288,10 @@ def generator_age_raw(value, selected: bool) -> List[ThemeString]:
 		string = iktlib.seconds_to_age(value, negative_is_skew = True)
 
 	if string in ("<none>", "<unset>", "<unknown>"):
-		fmt = ThemeRef("types", "none")
+		fmt = ThemeAttr("types", "none")
 		array = [ThemeString(string, fmt, selected)]
 	elif string == "<clock skew detected>":
-		fmt = ThemeRef("main", "status_not_ok")
+		fmt = ThemeAttr("main", "status_not_ok")
 		array = [ThemeString(string, fmt, selected)]
 	else:
 		array = format_numerical_with_units(string, "age", selected)

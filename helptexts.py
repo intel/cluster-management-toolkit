@@ -6,38 +6,38 @@ This module contains helptexts for iku
 
 from about import PROGRAM_SUITE_FULL_NAME, PROGRAM_SUITE_VERSION, UI_PROGRAM_NAME, UI_PROGRAM_VERSION
 
-from ikttypes import ANSIThemeString, ThemeRef, ThemeString
+from ikttypes import ANSIThemeString, ThemeAttr, ThemeString
 
 # Improve to handle embedded color codes; probably through storing the log messages
 # as a list of lines
 
 about = [
-	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
-	(0, [ThemeString("   ████   ", ThemeRef("main", "logo_bullet")), ThemeString("████    ◢███◤  ████████████████   ", ThemeRef("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ", ThemeRef("main", "logo_bullet")), ThemeString("████   ◢███◤         ████         ", ThemeRef("main", "logo_letter"))]),
-	(0, [ThemeString("          ████  ◢███◤          ████         ", ThemeRef("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████ ◢███◤           ████         ", ThemeRef("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████◢███◤            ████         ", ThemeRef("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████◥███◣            ████         ", ThemeRef("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████ ◥███◣           ████         ", ThemeRef("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████  ◥███◣          ████         ", ThemeRef("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████   ◥███◣         ████         ", ThemeRef("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████    ◥███◣        ████         ", ThemeRef("main", "logo_letter"))]),
-	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
-	(0, [ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeRef("main", "about_text_highlight")), ThemeString("v", ThemeRef("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION}", ThemeRef("main", "about_version"))]), # pylint: disable=line-too-long
-	(0, [ThemeString(f" {UI_PROGRAM_NAME} ", ThemeRef("main", "about_text_highlight")), ThemeString("v", ThemeRef("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeRef("main", "about_version"))]),
-	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
-	(0, [ThemeString(" Copyright © 2019-2022 Intel Corporation", ThemeRef("main", "about_text_highlight"))]),
-	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
-	(0, [ThemeString(" Author(s):", ThemeRef("main", "about_text_highlight"))]),
-	(0, [ThemeString(" David Weinehall", ThemeRef("main", "about_text"))]),
-	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
-	(0, [ThemeString(" Testing:", ThemeRef("main", "about_text_highlight"))]),
-	(0, [ThemeString(" Valtteri Rantala", ThemeRef("main", "about_text"))]),
-	(0, [ThemeString(" Ukri Niemimuukko", ThemeRef("main", "about_text"))]),
-	(0, [ThemeString(" Eero Tamminen", ThemeRef("main", "about_text"))]),
-	(0, [ThemeString(" Alexey Fomenko", ThemeRef("main", "about_text"))]),
-	(0, [ThemeString("", ThemeRef("main", "about_text"))]),
+	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
+	(0, [ThemeString("   ████   ", ThemeAttr("main", "logo_bullet")), ThemeString("████    ◢███◤  ████████████████   ", ThemeAttr("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ", ThemeAttr("main", "logo_bullet")), ThemeString("████   ◢███◤         ████         ", ThemeAttr("main", "logo_letter"))]),
+	(0, [ThemeString("          ████  ◢███◤          ████         ", ThemeAttr("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████ ◢███◤           ████         ", ThemeAttr("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████◢███◤            ████         ", ThemeAttr("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████◥███◣            ████         ", ThemeAttr("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████ ◥███◣           ████         ", ThemeAttr("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████  ◥███◣          ████         ", ThemeAttr("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████   ◥███◣         ████         ", ThemeAttr("main", "logo_letter"))]),
+	(0, [ThemeString("   ████   ████    ◥███◣        ████         ", ThemeAttr("main", "logo_letter"))]),
+	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
+	(0, [ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION}", ThemeAttr("main", "about_version"))]), # pylint: disable=line-too-long
+	(0, [ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))]),
+	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
+	(0, [ThemeString(" Copyright © 2019-2022 Intel Corporation", ThemeAttr("main", "about_text_highlight"))]),
+	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
+	(0, [ThemeString(" Author(s):", ThemeAttr("main", "about_text_highlight"))]),
+	(0, [ThemeString(" David Weinehall", ThemeAttr("main", "about_text"))]),
+	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
+	(0, [ThemeString(" Testing:", ThemeAttr("main", "about_text_highlight"))]),
+	(0, [ThemeString(" Valtteri Rantala", ThemeAttr("main", "about_text"))]),
+	(0, [ThemeString(" Ukri Niemimuukko", ThemeAttr("main", "about_text"))]),
+	(0, [ThemeString(" Eero Tamminen", ThemeAttr("main", "about_text"))]),
+	(0, [ThemeString(" Alexey Fomenko", ThemeAttr("main", "about_text"))]),
+	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
 ]
 
 toggleborders = [

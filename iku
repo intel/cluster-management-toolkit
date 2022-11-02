@@ -209,17 +209,17 @@ def processor_timestamp_with_age(obj, field: str, formatting) -> str:
 	if len(values) == 2:
 		if values[0] is None:
 			array = [
-				ThemeString("<none>", ThemeRef("types", "none"))
+				ThemeString("<none>", ThemeAttr("types", "none"))
 			]
 		else:
 			timestamp_string = datetime_to_timestamp(values[0])
 			array = generators.format_numerical_with_units(timestamp_string, "timestamp", False)
 			array += [
-				ThemeString(" (", ThemeRef("types", "generic"))
+				ThemeString(" (", ThemeAttr("types", "generic"))
 			]
 			array += generators.generator_age_raw(values[1], False)
 			array += [
-				ThemeString(")", ThemeRef("types", "generic"))
+				ThemeString(")", ThemeAttr("types", "generic"))
 			]
 	else:
 		array = []
@@ -228,17 +228,17 @@ def processor_timestamp_with_age(obj, field: str, formatting) -> str:
 			# If there's no formatting for this field we assume that
 			# it's a generic string
 			if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
-				formatting = ThemeRef("types", "generic")
+				formatting = ThemeAttr("types", "generic")
 				array += [values[i], formatting]
-			elif formatting["field_colors"][i] == ThemeRef("types", "timestamp"):
+			elif formatting["field_colors"][i] == ThemeAttr("types", "timestamp"):
 				if values[i] is None:
 					array += [
-						ThemeString("<none>", ThemeRef("types", "none"))
+						ThemeString("<none>", ThemeAttr("types", "none"))
 					]
 				else:
 					# timestamp_string = datetime_to_timestamp(values[0])
 					array += generators.format_numerical_with_units(values[i], "timestamp", False)
-			elif formatting["field_colors"][i] == ThemeRef("types", "age"):
+			elif formatting["field_colors"][i] == ThemeAttr("types", "age"):
 				array += generators.generator_age_raw(values[i], False)
 			else:
 				array += [
@@ -7043,7 +7043,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 						timestamp = timestamp_to_datetime(timestamp)
 						field = format_timestamp(timestamp, localtimezone = True)
 					fieldarray = [
-						ThemeString("Created: ", ThemeRef("main", "infoheader")),
+						ThemeString("Created: ", ThemeAttr("main", "infoheader")),
 					]
 					fieldarray += field
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
