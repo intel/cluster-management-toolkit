@@ -39,7 +39,7 @@ import socket
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
-from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 import yaml
 
 try:
@@ -47,7 +47,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import ANSIThemeString, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup, ThemeRef, ThemeString
+from ikttypes import ANSIThemeString, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup, ThemeAttr, ThemeRef, ThemeString
 from iktpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
@@ -548,20 +548,6 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 
 	return vlist, status
 
-class ContainerInfo:
-	# pylint: disable-next=too-many-arguments
-	def __init__(self, name, ref, container_type, image_version, instances, image_id, pods, pod_references):
-		self.name = name
-		self.ref = ref
-		self.container_type = container_type
-		self.image_version = image_version
-		self.instances = instances
-		self.image_id = image_id
-		self.pods = pods
-		self.pod_references = pod_references
-	def __repr__(self):
-		return repr((self.name, self.ref, self.container_type, self.image_version, self.instances, self.image_id, self.pods, self.pod_references))
-
 def get_image_tuple(image: str) -> Tuple[str, str]:
 	"""
 	Given the name of a container, return the name and the version field
@@ -618,8 +604,8 @@ def __get_container_info(obj, container_type: str, spec_path: DictPath, status_p
 	return containers
 
 # pylint: disable-next=unused-argument
-def get_container_info(**kwargs: Dict) -> List[ContainerInfo]:
-	info: List[ContainerInfo] = []
+def get_container_info(**kwargs: Dict) -> List[Type]:
+	info: List[Type] = []
 	containers: Dict = {}
 
 	# There's no direct way to get a list of unique containers
@@ -660,15 +646,23 @@ def get_container_info(**kwargs: Dict) -> List[ContainerInfo]:
 		for pod in pod_references:
 			pods.append((deep_get(pod, DictPath("metadata#namespace")), deep_get(pod, DictPath("metadata#name"))))
 		instances = containers[(name, container_type, image_version, image_id)]["instances"]
-		# This replaces ref
-		obj = {
+		info.append(type("InfoClass", (), {
 			"name": name,
+			# This replaces ref
+			"ref": {
+				"name": name,
+				"container_type": container_type,
+				"image_version": image_version,
+				"image_id": image_id,
+				"pod_references": pod_references,
+			},
 			"container_type": container_type,
 			"image_version": image_version,
+			"instances": instances,
 			"image_id": image_id,
+			"pods": pods,
 			"pod_references": pod_references,
-		}
-		info.append(ContainerInfo(name, obj, container_type, image_version, instances, image_id, pods, pod_references))
+		}))
 	return info
 
 class LogInfo:
@@ -3754,27 +3748,6 @@ def get_inventory_list_async_cb(vlist, async_cookie, **kwargs):
 
 	return vlist, async_cookie
 
-class NodeInfo:
-	# pylint: disable-next=too-many-arguments
-	def __init__(self, name, ref, status, status_group, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel, container_runtime, cpu, mem, taints):
-		self.name = name
-		# The reference to the "true" resource object
-		self.ref = ref
-		self.status = status
-		self.status_group = status_group
-		self.kubernetes_roles = kubernetes_roles
-		self.age = age
-		self.kubelet_version = kubelet_version
-		self.internal_ips = internal_ips
-		self.os = os
-		self.kernel = kernel
-		self.container_runtime = container_runtime
-		self.cpu = cpu
-		self.mem = mem
-		self.taints = taints
-	def __repr__(self):
-		return repr((self.name, self.ref, self.status, self.status_group, self.age, self.kubernetes_roles, self.kubelet_version, self.internal_ips, self.os, self.kernel, self.container_runtime, self.cpu, self.mem, self.taints))
-
 def get_node_addresses(name, addresses):
 	iips = []
 	eips = []
@@ -3806,8 +3779,8 @@ def get_node_addresses(name, addresses):
 	return name, iips, eips
 
 # pylint: disable-next=unused-argument
-def get_node_info(vlist, extra_vars):
-	info = []
+def get_node_info(vlist, extra_vars) -> List[Type]:
+	info: List[Type] = []
 
 	if vlist == []:
 		return []
@@ -3828,7 +3801,22 @@ def get_node_info(vlist, extra_vars):
 		os = deep_get(obj, DictPath("status#nodeInfo#osImage"))
 		kernel = deep_get(obj, DictPath("status#nodeInfo#kernelVersion"))
 
-		info.append(NodeInfo(name, ref, status, status_group, kubernetes_roles, age, kubelet_version, internal_ips, os, kernel, container_runtime, cpu, mem, taints))
+		info.append(type("InfoClass", (), {
+			"name": name,
+			"ref": ref,
+			"status": status,
+			"status_group": status_group,
+			"kubernetes_roles": kubernetes_roles,
+			"age": age,
+			"kubelet_version": kubelet_version,
+			"internal_ips": internal_ips,
+			"os": os,
+			"kernel": kernel,
+			"container_runtime": container_runtime,
+			"cpu": cpu,
+			"mem": mem,
+			"taints": taints,
+		}))
 
 	return info
 
@@ -3856,26 +3844,6 @@ def get_control_plane():
 			print(f"  {control_plane[1]}")
 
 	return control_planes[0][0], control_planes[0][1]
-
-class PodInfo:
-	# pylint: disable-next=too-many-arguments
-	def __init__(self, namespace, name, ref, status, status_group, node, pod_ip, age, restarts, last_restart, controller, tolerations, containers):
-		self.namespace = namespace
-		self.name = name
-		# The reference to the "true" resource object
-		self.ref = ref
-		self.status = status
-		self.status_group = status_group
-		self.node = node
-		self.pod_ip = pod_ip
-		self.age = age
-		self.restarts = restarts
-		self.last_restart = last_restart
-		self.controller = controller
-		self.tolerations = tolerations
-		self.containers = containers
-	def __repr__(self):
-		return repr((self.namespace, self.name, self.ref, self.status, self.status_group, self.node, self.pod_ip, self.age, self.restarts, self.last_restart, self.controller, self.tolerations, self.containers))
 
 def get_pod_restarts_total(pod):
 	restarts = 0
@@ -4126,11 +4094,11 @@ def listgetter_join_dicts_to_list(obj, **kwargs):
 
 	return vlist, 200
 
-def get_pod_info(**kwargs):
+def get_pod_info(**kwargs) -> List[Type]:
 	vlist = deep_get(kwargs, DictPath("_vlist"))
 	extra_vars = deep_get(kwargs, DictPath("extra_vars"), {"show_kind": "", "show_evicted": True})
 	filters = deep_get(kwargs, DictPath("filters"), [])
-	info = []
+	info: List[Type] = []
 
 	if vlist == []:
 		return []
@@ -4180,7 +4148,22 @@ def get_pod_info(**kwargs):
 		containers = get_containers(containers = deep_get(obj, DictPath("spec#initContainers"), []), container_statuses = deep_get(obj, DictPath("status#initContainerStatuses"), []))
 		containers += get_containers(containers = deep_get(obj, DictPath("spec#containers"), []), container_statuses = deep_get(obj, DictPath("status#containerStatuses"), []))
 
-		info.append(PodInfo(namespace, name, ref, status, status_group, nodename, pod_ip, age, pod_restarts, last_restart, controller, tolerations, containers))
+		info.append(type("InfoClass", (), {
+			"namespace": namespace,
+			"name": name,
+			# The reference to the "true" resource object
+			"ref": ref,
+			"status": status,
+			"status_group": status_group,
+			"node": nodename,
+			"pod_ip": pod_ip,
+			"age": age,
+			"restarts": pod_restarts,
+			"last_restart": last_restart,
+			"controller": controller,
+			"tolerations": tolerations,
+			"containers": containers,
+		}))
 
 	return info
 
@@ -7090,7 +7073,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					line_match = uip.yoffset + y in uip.search_matches
 					match_prefix = [("separators", "matchbullet")]
 					if line_match == False:
-						match_prefix = [("".ljust(len(curses_helper.themearray_get_string(match_prefix))), ("types", "generic"))]
+						match_prefix = [ThemeString("".ljust(len(themearray_to_string(match_prefix))), ThemeAttr("types", "generic"))]
 					if uip.match_index is not None and uip.yoffset + y == uip.match_index:
 						current_match = True
 					message = match_prefix + message
