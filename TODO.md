@@ -54,6 +54,8 @@ iktadm:
   * Add a security warning ansible_pass being used in iktconfig.
 
 logparser:
+* All handling of message needs to be rewritten; as soon as a message gets formatted as a themearray
+  it can no longer be processed further.
 * Rewrite key_value; the parser is overly complex at the moment; it needs to be simplified
   and have fewer special cases.
 * Line too long shouldn't override severity.

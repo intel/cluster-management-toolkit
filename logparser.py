@@ -42,7 +42,7 @@ except ModuleNotFoundError:
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import cast, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Callable, cast, Dict, List, Optional, Sequence, Set, Tuple, Union
 import yaml
 
 try:
@@ -59,6 +59,8 @@ from iktio import secure_read_yaml
 import iktlib
 from iktlib import deep_get, deep_get_with_fallback, none_timestamp
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
+
+from curses_helper import themearray_to_string
 
 class logparser_configuration:
 	"""
@@ -278,6 +280,7 @@ def split_4letter_spaced_severity(message: str, severity: LogLevel = LogLevel.IN
 		"DEBU": LogLevel.DEBUG,
 	}
 
+	# DoS
 	tmp = re.match(r"\s*([a-zA-Z]{4})\s+(.*)", message)
 	if tmp is not None:
 		severity = severities.get(tmp[1], severity)
@@ -299,6 +302,7 @@ def split_bracketed_severity(message: str, default: LogLevel = LogLevel.INFO) ->
 		"[debug]": LogLevel.DEBUG,
 	}
 
+	# Safe
 	tmp = re.match(r"^(\[[A-Za-z]+?\]) ?(.*)", message)
 	if tmp is not None:
 		severity = severities.get(tmp[1].lower())
@@ -322,6 +326,7 @@ def split_colon_severity(message: str, severity: LogLevel = LogLevel.INFO) -> Tu
 		"DEBUG:": LogLevel.DEBUG,
 	}
 
+	# Safe
 	tmp = re.match(r"^([A-Za-z]+?:) ?(.*)", message)
 	if tmp is not None:
 		_severity = severities.get(tmp[1].upper())
@@ -348,16 +353,18 @@ def split_colon_severity(message: str, severity: LogLevel = LogLevel.INFO) -> Tu
 # XXX: According to ISO-8601 timestamps that lack timezone should be assumed to be local timezone,
 #      NOT UTC. Does this make a difference though? Are these timestamps actually used anywhere?
 def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetime]:
-	tmp_timestamp = timestamp
+	old_timestamp = timestamp
+	tmp_timestamp = ""
 
 	while True:
 		# 2020-02-07 13:12:24.224
 		# 2020-02-07 13:12:24,224
 		# [2020-02-07 13:12:24.224]
 		# [2020-02-07 13:12:24,224]
+		# Safe
 		tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)(,|\.)(\d+)\]? ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == none_timestamp():
+			if tmp_timestamp == "":
 				ymd = tmp[1]
 				hms = tmp[2]
 				_sep = tmp[3]
@@ -367,9 +374,10 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 			break
 
 		# 2020-02-07T13:12:24.224Z (Z = UTC)
+		# Safe
 		tmp = re.match(r"^(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d\.\d+)Z ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == none_timestamp():
+			if tmp_timestamp == "":
 				ymd = tmp[1]
 				hmsms = tmp[2][0:len("HH:MM:SS.sss")]
 				tmp_timestamp = f"{ymd} {hmsms}+0000"
@@ -378,9 +386,10 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 
 		# 2020-02-13T12:06:18.011345 [+-]00:00 (+timezone)
 		# 2020-09-23T17:12:32.183967091[+-]03:00
+		# Safe
 		tmp = re.match(r"^(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d\.\d+) ?([\+-])(\d\d):(\d\d) ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == none_timestamp():
+			if tmp_timestamp == "":
 				ymd = tmp[1]
 				hmsms = tmp[2][0:len("HH:MM:SS.sss")]
 				tzsign = tmp[3]
@@ -393,9 +402,10 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 		# 2020-02-13 12:06:18[+-]00:00 (+timezone)
 		# [2020-02-13 12:06:18 [+-]00:00] (+timezone)
 		# 2020-02-13T12:06:18[+-]0000 (+timezone)
+		# Safe
 		tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d)[ T](\d\d:\d\d:\d\d) ?([\+-])(\d\d):?(\d\d)\]? ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == none_timestamp():
+			if tmp_timestamp == "":
 				ymd = tmp[1]
 				hms = tmp[2]
 				tzsign = tmp[3]
@@ -409,9 +419,10 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 		# 2020-02-20 13:47:41.008416: (assume UTC)
 		# 2020/02/20 13:47:41.008416 (assume UTC)
 		# 2020-02-20 13:47:41.008416Z (Z = UTC)
+		# Safe
 		tmp = re.match(r"^(\d{4})[-/](\d\d)[-/](\d\d) (\d\d:\d\d:\d\d\.\d+)[Z:]? ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == none_timestamp():
+			if tmp_timestamp == "":
 				year = tmp[1]
 				month = tmp[2]
 				day = tmp[3]
@@ -422,9 +433,10 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 
 		# [2021-12-18T20:15:36Z]
 		# 2021-12-18T20:15:36Z
+		# Safe
 		tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d)Z\]? ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == none_timestamp():
+			if tmp_timestamp == "":
 				ymd = tmp[1]
 				hms = tmp[2]
 				tmp_timestamp = f"{ymd} {hms}.000+0000"
@@ -434,9 +446,10 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 
 		# 2020-02-20 13:47:41 (assume UTC)
 		# 2020/02/20 13:47:41 (assume UTC)
+		# Safe
 		tmp = re.match(r"^(\d{4})[-/](\d\d)[-/](\d\d) (\d\d:\d\d:\d\d) ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == none_timestamp():
+			if tmp_timestamp == "":
 				year = tmp[1]
 				month = tmp[2]
 				day = tmp[3]
@@ -447,10 +460,10 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 
 		break
 
-	if timestamp == none_timestamp() and tmp_timestamp != none_timestamp():
+	if old_timestamp == none_timestamp() and len(tmp_timestamp) > 0:
 		timestamp = datetime.strptime(tmp_timestamp, "%Y-%m-%d %H:%M:%S.%f%z")
 
-	# message + either a timestamp or None is passed in, so it's safe just to return it too
+	# message + either a timestamp or none_timestamp() is passed in, so it's safe just to return it too
 	return message, timestamp
 
 def strip_iso_timestamp(message: str) -> str:
@@ -477,6 +490,7 @@ def strip_iso_timestamp_with_tz(message: str) -> str:
 			stripped_message (str): The stripped message
 	"""
 
+	# Safe
 	tmp = re.match(r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d\d\d [A-Z]{3}(\s+?|$)(.*)", message)
 	if tmp is not None:
 		message = tmp[2]
@@ -487,24 +501,32 @@ def strip_iso_timestamp_with_tz(message: str) -> str:
 # 10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"
 # 10.244.0.1 - - [29/Jan/2022:10:33:50 +0000] "GET /v0/healthz/ HTTP/1.1" 200 3 "http://10.244.0.123:8000/v0/healthz" "kube-probe/1.23"
 # pylint: disable-next=unused-argument
-def http(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) -> Tuple[Sequence[Union[ThemeRef, ThemeString]], LogLevel, str]:
+def http(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+			Tuple[Sequence[Union[ThemeRef, ThemeString]], LogLevel, str]:
 	reformat_timestamps = deep_get(options, DictPath("reformat_timestamps"), False)
 
 	ipaddress = ""
 
 	# First match the IP-address; it's either IPv4 or IPv6
+	# DoS (And probably not entirely correct)
 	tmp = re.match(r"^(([a-f0-9:]+:+)+[a-f0-9.]+?[a-f0-9])( - - .*)", message)
 	if tmp is not None:
 		ipaddress = tmp[1]
 		message = message[len(ipaddress):]
 	else:
-		tmp = re.match(r"^(\d+\.\d+\.\d+\.\d+)( - - .*)", message)
+		# This actually makes sure that the IPv4 address is valid
+		# Safe
+		tmp = re.match(r"^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
+			         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
+			         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
+			         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d))( - - .*)", message)
 		if tmp is not None:
 			ipaddress = tmp[1]
-			message = tmp[2]
+			message = tmp[6]
 
 	# Short format
 	if len(ipaddress) > 0:
+		# Safe
 		tmp = re.match(r"( - - )"
 			       r"(\[)"
 			       r"(\d\d)"
@@ -567,6 +589,7 @@ def http(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", f
 			return new_message, severity, facility
 
 	if len(ipaddress) > 0:
+		# Safe
 		tmp = re.match(r"( - - )"
 			       r"(\[)"
 			       r"(\d\d)"
@@ -650,6 +673,7 @@ def http(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", f
 			return new_message, severity, facility
 
 	# Alternate format
+	# DoS
 	tmp = re.match(r"^\|\s+(\d{3})\s+\|\s+([0-9.]+)([^ ]*)\s+\|\s+([^:]*):(\d+?)\s+\|\s+([A-Z]+)\s+(.*)", message)
 
 	if tmp is not None:
@@ -692,10 +716,11 @@ def http(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", f
 # XXX: Messages like these have been observed;
 # I0417 09:32:43.32022-04-17T09:32:43.343052189Z 41605       1 tlsconfig.go:178]
 # they indicate a race condition; hack around them to make the log pretty
-def split_glog(message: str, severity: LogLevel = None, facility: str = None) -> Tuple[str, LogLevel, Optional[str], List[Tuple[str, LogLevel]], bool]:
+def split_glog(message: str, severity: LogLevel = None, facility: str = "") ->\
+			Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]], bool]:
 	matched = False
 	loggingerror = None
-	remnants: List[Tuple[str, LogLevel]] = []
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
 	# Workaround a bug in use of glog; to make the logged message useful
 	# we separate it from the warning about glog use; this way we can get the proper severity
@@ -703,10 +728,12 @@ def split_glog(message: str, severity: LogLevel = None, facility: str = None) ->
 		loggingerror = message[0:len("ERROR: logging before flag.Parse")]
 		message = message[len("ERROR: logging before flag.Parse: "):]
 
+	# Safe
 	tmp = re.match(r"^([A-Z]\d{4} \d\d:\d\d:\d\d\.\d)\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{9}Z (.*)", message)
 	if tmp is not None:
 		message = f"{tmp[1]}{tmp[2]}"
 
+	# Safe
 	tmp = re.match(r"^([A-Z])\d\d\d\d \d\d:\d\d:\d\d\.\d+\s+(\d+)\s(.+?:\d+)\](.*)", message)
 	if tmp is not None:
 		severity = letter_to_severity(tmp[1])
@@ -727,14 +754,15 @@ def split_glog(message: str, severity: LogLevel = None, facility: str = None) ->
 
 	# If we have a logging error we return that as message and the rest as remnants
 	if loggingerror is not None:
-		remnants.insert(0, (message, severity))
-		message = loggingerror
 		severity = LogLevel.ERR
+		remnants.insert(0, ([ThemeString(message, ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+		message = loggingerror
 
 	return message, severity, facility, remnants, matched
 
 # \tINFO\tcontrollers.Reaper\tstarting reconciliation\t{"reaper": "default/k8ssandra-cluster-a-reaper-k8ssandra"}
-def __split_severity_facility_style(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "") -> Tuple[str, LogLevel, str]:
+def __split_severity_facility_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "") -> Tuple[str, LogLevel, str]:
+	# Safe
 	tmp = re.match(r"^\s*([A-Z]+)\s+([a-zA-Z-\.]+)\s+(.*)", message)
 	if tmp is not None:
 		severity = cast(LogLevel, str_to_severity(tmp[1], default = severity))
@@ -743,9 +771,8 @@ def __split_severity_facility_style(message: str, severity: LogLevel = LogLevel.
 
 	return message, severity, facility
 
-def split_json_style(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "",
-		     fold_msg: bool = True, options: Dict = None) -> Tuple[Union[str, Sequence[Union[ThemeRef, ThemeString]]], LogLevel, str,
-									   Optional[Sequence[Tuple[Union[str, Sequence[Union[ThemeRef, ThemeString]]], LogLevel]]]]:
+def split_json_style(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+				Tuple[Union[str, Sequence[Union[ThemeRef, ThemeString]]], LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	logentry = None
 
 	messages = deep_get(options, DictPath("messages"), ["msg", "message"])
@@ -873,7 +900,7 @@ def split_json_style(message: str, severity: LogLevel = LogLevel.INFO, facility:
 			if severity is not None:
 				errorseverity = severity
 			else:
-				errorseverity = LogLevel.Err
+				errorseverity = LogLevel.ERR
 
 			if logparser_configuration.msg_extract is True:
 				message = msg
@@ -886,6 +913,9 @@ def split_json_style(message: str, severity: LogLevel = LogLevel.INFO, facility:
 				message = ""
 
 			override_formatting: Union[ThemeRef, Dict] = {}
+			formatted_message = None
+			remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+
 			if len(logentry) > 0:
 				if structseverity == LogLevel.DEBUG:
 					override_formatting = ThemeRef("logview", "severity_debug")
@@ -908,28 +938,46 @@ def split_json_style(message: str, severity: LogLevel = LogLevel.INFO, facility:
 						}
 				dump = json_dumps(logentry)
 				tmp = formatters.format_yaml([dump], override_formatting = override_formatting)
-				remnants = []
 				if len(message) == 0:
 					formatted_message = tmp[0]
 					tmp.pop(0)
 					msgseverity = structseverity
 				for line in tmp:
 					remnants.append((line, severity))
-			return formatted_message, severity, facility, remnants
 
-	return message, severity, facility, None
+			if formatted_message is not None:
+				return formatted_message, severity, facility, remnants
 
-def merge_message(message: str, remnants = None, severity: LogLevel = LogLevel.INFO):
+			return message, severity, facility, remnants
+
+	return message, severity, facility, []
+
+def merge_message(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = None, severity: LogLevel = LogLevel.INFO) ->\
+			Tuple[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+	"""
+	Given message + remnants, merge the message into the remnants and return an empty message
+
+		Parameters:
+			message (str): The string to merge into remnants
+			remnants (list[(themearray, LogLevel)]): The list of remnants
+			severity (LogLevel): The severity for message
+		Returns:
+			(message, remnants):
+				message (str): The newly emptied message
+				remnants (list[(themearray, LogLevel)]): Remnants with message preprended
+	"""
+
 	if remnants is not None:
-		remnants = [(message, severity)] + remnants
+		remnants.insert(0, ([ThemeString(message, ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 	else:
-		remnants = [(message, severity)]
+		remnants = [([ThemeString(message, ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 	message = ""
 
 	return message, remnants
 
 # pylint: disable-next=too-many-arguments
-def split_json_style_raw(message, severity = LogLevel.INFO, facility = "", fold_msg: bool = True, options = None, merge_msg = False):
+def split_json_style_raw(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None, merge_msg: bool = False) ->\
+				Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	# This warning seems incorrect
 	# pylint: disable-next=global-variable-not-assigned
 	global logparser_configuration
@@ -966,8 +1014,9 @@ def split_json_style_raw(message, severity = LogLevel.INFO, facility = "", fold_
 
 	return message, severity, facility, remnants
 
-def json_event(message, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options = None):
-	remnants = []
+def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+			Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 	tmp = message.split(" ", 2)
 
 	if not message.startswith("EVENT ") or len(tmp) < 3:
@@ -978,84 +1027,69 @@ def json_event(message, severity: LogLevel = LogLevel.INFO, facility: str = "", 
 	if event in ("AddPod", "DeletePod", "AddNamespace", "DeleteNamespace") or (event in ("UpdatePod", "UpdateNamespace") and not "} {" in tmp[2]):
 		msg = tmp[2]
 		_message, _severity, _facility, remnants = split_json_style_raw(message = msg, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_msg = True)
-		message = f"{tmp[0]} {event}"
+		new_message = [ThemeString(f"{tmp[0]} {event}", ThemeRef("listview", "severity_info"))]
 		if event in ("UpdatePod", "UpdateNamespace"):
-			message = [ThemeString(f"{tmp[0]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")), ThemeString(" [No changes]", ThemeRef("logview", "unchanged"))]
+			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+				       ThemeString(" [No changes]", ThemeRef("logview", "unchanged"))]
 	elif event in ("UpdatePod", "UpdateNamespace"):
+		# Safe
 		tmp2 = re.match(r"^({.*})\s*({.*})", tmp[2])
 		if tmp2 is not None:
 			try:
 				old = json.loads(tmp2[1])
 			except DecodeException:
-				message = [ThemeString(f"{tmp[1]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-					   ThemeString(" [error: could not parse json]", ThemeRef("logview", "severity_error"))]
-				remnants = [(tmp[2], severity)]
-				return message, severity, facility, remnants
+				new_message = [ThemeString(f"{tmp[1]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+					       ThemeString(" [error: could not parse json]", ThemeRef("logview", "severity_error"))]
+				remnants = [([ThemeString(tmp[2], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
+				return new_message, severity, facility, remnants
 
 			old_str = json_dumps(old)
 			try:
 				new = json.loads(tmp2[2])
 			except DecodeException:
-				message = [ThemeString(f"{tmp[0]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-					   ThemeString(" [error: could not parse json]", ThemeRef("logview", "severity_error"))]
-				remnants = [(tmp[2], severity)]
-				return message, severity, facility, remnants
+				new_message = [ThemeString(f"{tmp[0]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+					       ThemeString(" [error: could not parse json]", ThemeRef("logview", "severity_error"))]
+				remnants = [([ThemeString(tmp[2], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
+				return new_message, severity, facility, remnants
 			new_str = json_dumps(new)
 
-			remnants = []
 			y = 0
 			for el in difflib.unified_diff(old_str.split("\n"), new_str.split("\n"), n = sys.maxsize, lineterm = ""):
 				y += 1
 				if y < 4:
 					continue
 				if el.startswith("+"):
-					remnants.append((el, LogLevel.DIFFPLUS))
+					remnants.append(((el, ThemeRef("logview", "severity_diffplus")), LogLevel.DIFFPLUS))
 				elif el.startswith("-"):
-					remnants.append((el, LogLevel.DIFFMINUS))
+					remnants.append(((el, ThemeRef("logview", "severity_diffminus")), LogLevel.DIFFMINUS))
 				else:
-					remnants.append((formatters.format_yaml_line(el), LogLevel.DIFFSAME))
-			message = [ThemeString(f"{tmp[0]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-				   ThemeString(" [State modified]", ThemeRef("logview", "modified"))]
+					remnants.append(((el, ThemeRef("logview", "severity_diffsame")), LogLevel.DIFFSAME))
+			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+				       ThemeString(" [State modified]", ThemeRef("logview", "modified"))]
 	else:
 		sys.exit(f"json_event: Unknown EVENT type:\n{message}")
 
-	return message, severity, facility, remnants
+	return new_message, severity, facility, remnants
 
-def split_angle_bracketed_facility(message, facility: str = "") -> Tuple[str, str]:
+def split_angle_bracketed_facility(message: str, facility: str = "") -> Tuple[str, str]:
+	# Safe
 	tmp = re.match(r"^<(.+?)>\s?(.*)", message)
 	if tmp is not None:
 		facility = tmp[1]
 		message = tmp[2]
 	return message, facility
 
-def split_colon_facility(message, facility = ""):
+def split_colon_facility(message: str, facility: str = "") -> Tuple[str, str]:
+	# Safe
 	tmp = re.match(r"^(\S+?):\s?(.*)", message)
 	if tmp is not None:
 		facility = tmp[1]
 		message = tmp[2]
 	return message, facility
 
-# XXX: This function is broken; this needs to be done in curses_helper
-def replace_tabs(message):
-	if type(message) is str:
-		message = message.replace("\t", " ")
-	elif type(message) is tuple:
-		if type(message[1]) is tuple:
-			message = (message[0].replace("\t", " "), message[1])
-	elif type(message) is list:
-		for i, _msg in enumerate(message):
-			message[i] = replace_tabs(message[i])
-
-	return message
-
-def strip_bracketed_pid(message):
-	tmp = re.match(r"^\[\d+\]\s*(.*)", message)
-	if tmp is not None:
-		message = tmp[1]
-	return message
-
-def strip_ansicodes(message):
+def strip_ansicodes(message: str) -> str:
 	message = message.replace("\\x1b", "\x1b")
+	# Safe
 	tmp = re.findall(r"("
 	                 r"\x1b\[\d+m|"
 	                 r"\x1b\[\d+;\d+m|"
@@ -1070,6 +1104,7 @@ def split_bracketed_timestamp_severity_facility(message: str, default: LogLevel 
 	severity = default
 	facility = ""
 
+	# DoS
 	tmp = re.match(r"\[(.*?) (.*?) (.*?)\]: (.*)", message)
 
 	if tmp is not None:
@@ -1079,66 +1114,12 @@ def split_bracketed_timestamp_severity_facility(message: str, default: LogLevel 
 
 	return message, severity, facility
 
-def override_severity(message, severity, facility = None):
-	if type(message) != str:
-		return message, severity
-
-	# Exceptions
-	override_notice = (
-		"version ",
-		"Version: ",
-		"\"Version info\"",
-
-		"Kiali: Version: ",
-		"Kiali: Console version: ",
-		"Kubernetes host: ",
-		"NodeName: ",
-		"OpenShift Web Console Version",
-		"  Release:    ",
-		"running version",
-		"\"Starting Kubernetes Scheduler\"",
-		"\"Starting Prometheus\"",
-		"Starting Prometheus Operator version ",
-		"Starting Tiller",
-		"Starting Weaveworks NPC ",
-		"TensorBoard ",
-		"Workflow Controller (version: ",
-	)
-	override_warning = (
-		"Aborted connection",
-		"failed to ",
-		"Flag --insecure-port has been deprecated",
-		"Flag --port has been deprecated",
-	)
-	override_err = (
-		"Error checking version: ",
-		"http: proxy error",
-		"http: TLS handshake error",
-	)
-	override_alert = (
-		"panic: ",
-	)
-
-	if message.startswith(override_notice):
-		severity = min(severity, LogLevel.NOTICE)
-	elif message.startswith(override_warning):
-		severity = min(severity, LogLevel.WARNING)
-	elif message.startswith(override_err):
-		severity = min(severity, LogLevel.ERR)
-	elif message.startswith(override_alert):
-		severity = min(severity, LogLevel.ALERT)
-	# Trace messages are annoying, set them to debug severity
-	elif message.startswith("Trace["):
-		severity = LogLevel.DEBUG
-	elif facility is not None and facility.startswith("trace.go"):
-		severity = LogLevel.DEBUG
-
-	return message, severity
-
-def custom_override_severity(message, severity, overrides):
-	# FIXME: override_severity isn't implemented for strarrays yet
-	if type(message) == list:
-		return severity
+def custom_override_severity(message: Union[str, List], severity: Optional[LogLevel], overrides: Dict) -> LogLevel:
+	if isinstance(message, list):
+		tmp_message = themearray_to_string(message)
+	else:
+		tmp_message = message
+	override_message = message
 
 	for override in overrides:
 		override_type = deep_get(override, DictPath("matchtype"), "")
@@ -1146,24 +1127,33 @@ def custom_override_severity(message, severity, overrides):
 		override_loglevel = name_to_loglevel(deep_get(override, DictPath("loglevel"), ""))
 
 		if override_type == "startswith":
-			if not message.startswith(override_pattern):
+			if not tmp_message.startswith(override_pattern):
 				continue
 		elif override_type == "endswith":
-			if not message.endswith(override_pattern):
+			if not tmp_message.endswith(override_pattern):
+				continue
+		elif override_type == "contains":
+			if override_pattern not in tmp_message:
 				continue
 		elif override_type == "regex":
-			tmp = override_pattern.match(message)
+			tmp = override_pattern.match(tmp_message)
 			if tmp is None:
 				continue
 		else:
 			raise Exception(f"Unknown override_type '{override_type}'; this is a programming error.")
 
 		severity = override_loglevel
+
+		if isinstance(message, list):
+			override_message = []
+			for substring in message:
+				override_message.append(ThemeString(substring.string, ThemeRef("logview", f"severity_{loglevel_to_name(override_loglevel).lower()}")))
 		break
 
-	return severity
+	return override_message, severity
 
-def expand_event_objectmeta(message, severity: LogLevel, remnants = None, fold_msg: bool = True):
+def expand_event_objectmeta(message: str, severity: LogLevel, remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = None, fold_msg: bool = True) ->\
+					Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	# pylint: disable=unused-argument
 	raw_message = message
 	curlydepth = 0
@@ -1230,7 +1220,8 @@ def expand_event_objectmeta(message, severity: LogLevel, remnants = None, fold_m
 		tmp += raw_msg
 	return severity, message, remnants
 
-def expand_event(message: str, severity: LogLevel, remnants = None, fold_msg: bool = True):
+def expand_event(message: str, severity: LogLevel, remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = None, fold_msg: bool = True) ->\
+			Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	if fold_msg == True or (remnants is not None and len(remnants) > 0):
 		return severity, message, remnants
 
@@ -1273,6 +1264,7 @@ def expand_event(message: str, severity: LogLevel, remnants = None, fold_msg: bo
 	message = raw_message[0:eventstart]
 	indent = 2
 	# Try to extract an embedded severity; use it if higher than severity
+	# DoS
 	tmp = re.match(r".*type: '([A-Z][a-z]+)' reason:.*", raw_message)
 	if tmp is not None:
 		if tmp[1] == "Normal":
@@ -1281,17 +1273,20 @@ def expand_event(message: str, severity: LogLevel, remnants = None, fold_msg: bo
 			_severity = LogLevel.WARNING
 		if _severity < severity:
 			severity = _severity
-	remnants.append(([(" ".ljust(indent) + raw_message[eventstart:refstart], ("types", "yaml_reference"))], severity))
+	remnants.append(([ThemeString(" ".ljust(indent) + raw_message[eventstart:refstart], ThemeRef("types", "yaml_reference"))], severity))
 	for _key_value in raw_message[refstart:refend].split(", "):
 		key, value = _key_value.split(":", 1)
-		remnants.append(([(" ".ljust(indent * 2) + key, ("types", "yaml_key")), ("separators", "yaml_key_separator"), (f" {value}", ("types", "yaml_value"))], severity))
-	remnants.append(([(" ".ljust(indent * 1) + raw_message[refend:eventend], ("types", "yaml_reference"))], severity))
-	remnants.append(([(raw_message[eventend:eventend + 3], ("logview", f"severity_{loglevel_to_name(severity).lower()}")), (raw_message[eventend + 3:len(raw_message)], ("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+		remnants.append(([ThemeString(" ".ljust(indent * 2) + key, ThemeRef("types", "yaml_key")),
+				  ThemeRef("separators", "yaml_key_separator"),
+				  ThemeString(f" {value}", ThemeRef("types", "yaml_value"))], severity))
+	remnants.append(([ThemeString(" ".ljust(indent * 1) + raw_message[refend:eventend], ThemeRef("types", "yaml_reference"))], severity))
+	remnants.append(([ThemeString(raw_message[eventend:eventend + 3], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+			  ThemeString(raw_message[eventend + 3:len(raw_message)], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 
 	return severity, message, remnants
 
 # pylint: disable-next=too-many-nested-blocks
-def expand_header_key_value(message, severity, remnants = None, fold_msg = True):
+def expand_header_key_value(message: str, severity: LogLevel, remnants = None, fold_msg: bool = True) -> Tuple[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	if fold_msg == True or (remnants is not None and len(remnants) > 0):
 		return message, remnants
 
@@ -1355,16 +1350,17 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 					# alertmanager sometimes folds up multiple errors on one line;
 					# try to unfold them
 					tmpseverity = severity
+					# DoS
 					tmp = re.match(r"(\d+ errors occurred:)(.*)", value)
 					if tmp is not None:
-						remnants.append((f"{entry}: {tmp[1]}\n", tmpseverity))
+						remnants.append(([ThemeString(f"{entry}: {tmp[1]}\n", ThemeRef("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
 						s = tmp[2].replace("\\t", "").split("\\n")
 						for line in s:
 							if len(line) > 0:
 								if line.startswith("* "):
-									remnants.append(("   {line}\n", tmpseverity))
+									remnants.append(([ThemeString("   {line}\n", ThemeRef("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
 								else:
-									remnants.append(("   * {line}\n", tmpseverity))
+									remnants.append(([ThemeString("   * {line}\n", ThemeRef("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
 						continue
 				elif entry == "error":
 					tmpseverity = severity
@@ -1380,41 +1376,52 @@ def expand_header_key_value(message, severity, remnants = None, fold_msg = True)
 					# this should have LogLevel.INFO or lower severity
 					tmpseverity = max(LogLevel.INFO, severity, tmpseverity)
 
-				remnants.append(([(entry, ("types", "key")), ("separators", "keyvalue_log"), (value, ("types", "value"))], tmpseverity))
+				remnants.append(([ThemeString(entry, ThemeRef("types", "key")),
+						  ThemeRef("separators", "keyvalue_log"),
+						  ThemeString(value, ThemeRef("types", "value"))], tmpseverity))
 			if len(message) == 0:
 				message = remnants[0]
 				remnants.pop(0)
 
 	return message, remnants
 
-def format_key_value(key, value, severity, force_severity = False):
+def format_key_value(key: str, value: str, severity: LogLevel, force_severity: bool = False) -> List[Union[ThemeRef, ThemeString]]:
 	if key in ("error", "err"):
-		tmp = [(f"{key}", ("types", "key_error")), ("separators", "keyvalue_log"), (f"{value}", ("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+		tmp = [ThemeString(f"{key}", ThemeRef("types", "key_error")),
+		       ThemeRef("separators", "keyvalue_log"),
+		       ThemeString(f"{value}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 	elif force_severity == True:
-		tmp = [(f"{key}", ("types", "key")), ("separators", "keyvalue_log"), (f"{value}", ("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+		tmp = [ThemeString(f"{key}", ThemeRef("types", "key")),
+		       ThemeRef("separators", "keyvalue_log"),
+		       ThemeString(f"{value}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 	else:
-		tmp = [(f"{key}", ("types", "key")), ("separators", "keyvalue_log"), (f"{value}", ("types", "value"))]
+		tmp = [ThemeString(f"{key}", ThemeRef("types", "key")),
+		       ThemeRef("separators", "keyvalue_log"),
+		       ThemeString(f"{value}", ThemeRef("types", "value"))]
 	return tmp
 
 # Severity: lvl=|level=
 # Timestamps: t=|ts=|time= (all of these are ignored)
 # Facility: subsys|caller|logger|source
-def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options = None):
-	remnants = []
+def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+			Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
-	messages = options.get("messages", ["msg"])
-	errors = options.get("errors", ["err", "error"])
-	timestamps = options.get("timestamps", ["t", "ts", "time"])
-	severities = options.get("severities", ["level", "lvl"])
+	messages = deep_get(options, DictPath("messages"), ["msg"])
+	errors = deep_get(options, DictPath("errors"), ["err", "error"])
+	timestamps = deep_get(options, DictPath("timestamps"), ["t", "ts", "time"])
+	severities = deep_get(options, DictPath("severities"), ["level", "lvl"])
 	severity_overrides = deep_get(options, DictPath("severity#overrides"), [])
-	facilities = options.get("facilities", ["source", "subsys", "caller", "logger", "Topic"])
-	versions = options.get("versions", [])
+	facilities = deep_get(options, DictPath("facilities"), ["source", "subsys", "caller", "logger", "Topic"])
+	versions = deep_get(options, DictPath("versions"), [])
 
 	# Replace embedded quotes with fancy quotes
 	message = message.replace("\\\"", "”")
 
 	# split all key=value pairs
+	# Safe
 	key_value_regex = re.compile(r"^(.*?)=(.*)")
+	# Safe
 	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
 	# pylint: disable-next=too-many-nested-blocks
 	if tmp is not None:
@@ -1484,24 +1491,26 @@ def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = 
 
 		# pylint: disable-next=too-many-boolean-expressions
 		if fold_msg == False and len(d) == 2 and logparser_configuration.merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
-			severity = custom_override_severity(msg, severity, overrides = severity_overrides)
+			message, severity = custom_override_severity(msg, severity, overrides = severity_overrides)
 			message = f"{msg} {version}"
 		elif "err" in d and ("errors occurred:" in d["err"] or "error occurred:" in d["err"]) and fold_msg == False:
 			err = d["err"]
 			if err.startswith("\"") and err.endswith("\""):
 				err = err[1:-1]
 			message = f"{msg}"
+			# DoS
 			tmp = re.match(r"(\d+ errors? occurred:)(.*)", err)
 			if tmp is not None:
-				remnants.append((tmp[1], severity))
+				remnants.append(([ThemeString(tmp[1], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 				s = tmp[2].replace("\\t", "").split("\\n")
 				for line in s:
 					if len(line) > 0:
 						# Real bullets look so much nicer
 						if line.startswith("* ") and logparser_configuration.msg_realbullets == True:
-							remnants.append(([("separators", "logbullet"), (f"{line[2:]}", ("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+							remnants.append(([ThemeRef("separators", "logbullet"),
+									  ThemeString(f"{line[2:]}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 						else:
-							remnants.append((f"{line}", severity))
+							remnants.append(([ThemeString(f"{line}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 		else:
 			tmp = []
 			# If we're extracting msg we always want msg first
@@ -1551,7 +1560,7 @@ def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = 
 					elif d_key in versions:
 						tmp.append(format_key_value(d_key, d_value, LogLevel.NOTICE, force_severity = True))
 					else:
-						__severity = custom_override_severity(d_value, severity, overrides = severity_overrides)
+						d_value, __severity = custom_override_severity(d_value, severity, overrides = severity_overrides)
 						tmp.append(format_key_value(d_key, d_value, __severity, force_severity = (__severity != severity)))
 				else:
 					tmp.append(f"{d_key}={d_value}")
@@ -1572,10 +1581,10 @@ def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = 
 		_remnants = []
 		if len(lines) > 1:
 			for line in lines[1:]:
-				_remnants.append((line, severity))
+				_remnants.append(([ThemeString(f"{line}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 			if type(remnants) == tuple:
 				for remnant in remnants[0]:
-					_remnants.append((remnant, remnants[1]))
+					_remnants.append(([ThemeString(remnant, ThemeRef("logview", f"severity_{loglevel_to_name(remnants[1]).lower()}"))], remnants[1]))
 				remnants = _remnants
 			elif type(remnants) == list:
 				remnants = _remnants + remnants
@@ -1587,11 +1596,12 @@ def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = 
 # For messages along the lines of:
 # "Foo" "key"="value" "key"="value"
 # Foo key=value key=value
-def key_value_with_leading_message(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options = None):
+def key_value_with_leading_message(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options = None) ->\
+						Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	# This warning seems incorrect
 	# pylint: disable-next=global-variable-not-assigned
 	global logparser_configuration
-	remnants = []
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
 	if fold_msg == True:
 		return facility, severity, message, remnants
@@ -1601,39 +1611,43 @@ def key_value_with_leading_message(message: str, severity: LogLevel = LogLevel.I
 	if tmp is not None and len(tmp) > 0:
 		if "=" in tmp[0]:
 			# Try parsing this as regular key_value
-			facility, severity, message, remnants = key_value(message, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
+			facility, severity, new_message, remnants = key_value(message, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
+			return facility, severity, themearray_to_string(new_message), remnants
+
+		for item in tmp[1:]:
+			# we couldn't parse this as "msg key=value"; give up
+			if "=" not in item:
+				return facility, severity, message, remnants
+		rest = message[len(tmp[0]):].lstrip()
+		new_message = tmp[0]
+		tmp_msg_extract = logparser_configuration.msg_extract
+		logparser_configuration.msg_extract = False
+		facility, severity, first_message, tmp_new_remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
+		logparser_configuration.msg_extract = tmp_msg_extract
+		if tmp_new_remnants is not None and len(tmp_new_remnants) > 0:
+			new_remnants_strs, new_remnants_severity = tmp_new_remnants
+			new_remnants = ([first_message] + new_remnants_strs, new_remnants_severity)
 		else:
-			for item in tmp[1:]:
-				# we couldn't parse this as "msg key=value"; give up
-				if "=" not in item:
-					return facility, severity, message, remnants
-			rest = message[len(tmp[0]):].lstrip()
-			message = tmp[0]
-			tmp_msg_extract = logparser_configuration.msg_extract
-			logparser_configuration.msg_extract = False
-			facility, severity, _message, _remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
-			logparser_configuration.msg_extract = tmp_msg_extract
-			if _remnants is not None and len(_remnants) > 0:
-				_remnant_strs, _remnants_severity = _remnants
-				remnants = ([_message] + _remnant_strs, severity)
-			else:
-				remnants = ([_message], severity)
+			new_remnants = ([first_message], severity)
+		return facility, severity, new_message, new_remnants
 	return facility, severity, message, remnants
 
 # Messages on the format:
 # <key>:<whitespace>...<value>
 # pylint: disable-next=unused-argument
-def modinfo(message: str, fold_msg: bool = True) -> Tuple[str, LogLevel, Union[str, Sequence[Union[ThemeRef, ThemeString]]], List[str]]:
+def modinfo(message: str, fold_msg: bool = True) ->\
+			Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	facility = ""
 	severity = LogLevel.INFO
-	remnants: List[str] = []
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
+	# Safe
 	tmp = re.match(r"^([a-z][\S]*?):(\s+)(.+)", message)
 	if tmp is not None:
 		key = tmp[1]
 		whitespace = tmp[2]
 		value = tmp[3]
-		new_message = [
+		new_message: List[Union[ThemeRef, ThemeString]] = [
 			ThemeString(key, ThemeRef("types", "key")),
 			ThemeRef("separators", "keyvalue"),
 			ThemeString(whitespace, ThemeRef("types", "generic")),
@@ -1645,10 +1659,11 @@ def modinfo(message: str, fold_msg: bool = True) -> Tuple[str, LogLevel, Union[s
 # Messages on the format:
 # [timestamp] [severity] message
 # pylint: disable-next=unused-argument
-def bracketed_timestamp_severity(message: str, fold_msg: bool = True) -> Tuple[str, LogLevel, str, List[str]]:
+def bracketed_timestamp_severity(message: str, fold_msg: bool = True) ->\
+					Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	facility = ""
 	severity = LogLevel.INFO
-	remnants: List[str] = []
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
 	# Some messages have double timestamps...
 	message, _timestamp = split_iso_timestamp(message, none_timestamp())
@@ -1660,13 +1675,16 @@ def bracketed_timestamp_severity(message: str, fold_msg: bool = True) -> Tuple[s
 	return facility, severity, message, remnants
 
 # pylint: disable-next=unused-argument
-def directory(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel.INFO, facility: str = ""):
-	remnants: List[str] = []
+def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "") ->\
+					Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], LogLevel, Union[str, List[Union[ThemeRef, ThemeString]]], List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
+	# Safe
 	tmp = re.match(r"^(total)\s+(\d+)$", message)
 	if tmp is not None:
 		return facility, severity, message, remnants
 
+	# DoS
 	tmp = re.match(r"^(.)(.........)(\s+)(\d+)(\s+)(.*?)(\s+)(\*?)(\s+)(\d+)(,\s+\d+|)(\s+)(.+?)(\s+)(\d+)(\s+)(.*?)(\s+)(.+?)(=|\||/|)$", message)
 	if tmp is None:
 		# This is unlikely to be a directory match
@@ -1692,7 +1710,7 @@ def directory(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 	name = tmp[19]
 	suffix = tmp[20]
 
-	_message = [
+	_message: List[Union[ThemeRef, ThemeString]] = [
 		ThemeString(f"{etype}", ThemeRef("types", "dir_type")),
 		ThemeString(f"{permissions}", ThemeRef("types", "dir_permissions")),
 		ThemeString(f"{space1}", ThemeRef("types", "generic")),
@@ -1793,23 +1811,6 @@ def directory(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	return facility, severity, _message, remnants
 
-# input: nginx 08:44:38.88 INFO  ==> ** Starting NGINX setup **
-# output:
-#   severity: LogLevel.INFO
-#   facility: nginx
-#   msg: ==> ** Starting NGINX setup **
-#   remnants: []
-# pylint: disable-next=unused-argument
-def facility_hh_mm_ss_ms_severity(message: str, severity: LogLevel = LogLevel.INFO, fold_msg: bool = True) -> Tuple[str, LogLevel, str, List[str]]:
-	facility = ""
-	remnants: List[str] = []
-
-	tmp = re.match(r"^(.+?)\s+?(\d\d:\d\d:\d\d\.\d\d)(\s+?|$)(.*)", message)
-	if tmp is not None:
-		facility = tmp[1]
-		message, severity = split_4letter_spaced_severity(tmp[4])
-	return facility, severity, message, remnants
-
 # input: [     0.000384s]  INFO ThreadId(01) linkerd2_proxy::rt: Using single-threaded proxy runtime
 # output:
 #   severity: LogLevel.INFO
@@ -1817,28 +1818,39 @@ def facility_hh_mm_ss_ms_severity(message: str, severity: LogLevel = LogLevel.IN
 #   msg: [     0.000384s] linkerd2_proxy::rt: Using single-threaded proxy runtime
 #   remnants: []
 # pylint: disable-next=unused-argument
-def seconds_severity_facility(message: str, fold_msg: bool = True) -> Tuple[str, LogLevel, Union[str, Sequence[Union[ThemeRef, ThemeString]]], List[str]]:
+def seconds_severity_facility(message: str, fold_msg: bool = True) ->\
+					Tuple[str, LogLevel, Union[str, List[Union[ThemeRef, ThemeString]]], List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	facility = ""
 	severity = LogLevel.INFO
-	remnants: List[str] = []
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
 	tmp = re.match(r"(\[\s*?\d+?\.\d+?s\])\s+([A-Z]+?)\s+(\S+?)\s(.*)", message)
 	if tmp is not None:
 		severity = cast(LogLevel, str_to_severity(tmp[2], default = severity))
-		facility = tmp[3]
-		new_message = [ThemeString(f"{tmp[1]} ", ThemeRef("logview", "timestamp")),
-			       ThemeString(f"{tmp[4]}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+		facility = cast(str, tmp[3])
+		new_message: List[Union[ThemeRef, ThemeString]] = [ThemeString(f"{tmp[1]} ", ThemeRef("logview", "timestamp")),
+								   ThemeString(f"{tmp[4]}", ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 		return facility, severity, new_message, remnants
 
 	return facility, severity, message, remnants
 
 def substitute_bullets(message: str, prefix: str) -> str:
+	"""
+	Replace '*' with actual bullet characters
+
+		Parameters:
+			message (str): The message to process
+			prefix (str): The prefix to use to detect whether or not the bullets should be substituted
+		Returns:
+			message (str): The message with bullets substituted
+	"""
 	if message.startswith(prefix):
 		# We don't want to replace all "*" in the message with bullet, just prefixes
-		message = message[0:len(prefix)].replace("*", "•") + message[len(prefix):]
+		message = message[0:len(prefix)].replace("*", "•", 1) + message[len(prefix):]
 	return message
 
-def python_traceback_scanner(message: str, fold_msg: bool = True, options = None):
+def python_traceback_scanner(message: str, fold_msg: bool = True, options: Dict = None) ->\
+					Tuple[List, Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
 	# pylint: disable=unused-argument
 	timestamp = none_timestamp()
 	facility = ""
@@ -1847,26 +1859,28 @@ def python_traceback_scanner(message: str, fold_msg: bool = True, options = None
 	processor = ["block", python_traceback_scanner]
 
 	# Default case
-	remnants = [
-		ThemeString(message, ThemeRef("logview", "severity_info")),
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = [
+		([ThemeString(message, ThemeRef("logview", "severity_info"))], severity)
 	]
 
 	tmp = re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", message)
 	if tmp is not None:
 		remnants = [
-			ThemeString(tmp[1], ThemeRef("logview", "severity_info")),
-			ThemeString(tmp[2], ThemeRef("types", "path")),
-			ThemeString(tmp[3], ThemeRef("logview", "severity_info")),
-			ThemeString(tmp[4], ThemeRef("types", "lineno")),
-			ThemeString(tmp[5], ThemeRef("logview", "severity_info")),
-			ThemeString(tmp[6], ThemeRef("types", "path"))
+			([ThemeString(tmp[1], ThemeRef("logview", "severity_info")),
+			  ThemeString(tmp[2], ThemeRef("types", "path")),
+			  ThemeString(tmp[3], ThemeRef("logview", "severity_info")),
+			  ThemeString(tmp[4], ThemeRef("types", "lineno")),
+			  ThemeString(tmp[5], ThemeRef("logview", "severity_info")),
+			  ThemeString(tmp[6], ThemeRef("types", "path"))],
+			 severity),
 		]
 	else:
 		tmp = re.match(r"(^\S+?Error:|Exception:|GeneratorExit:|KeyboardInterrupt:|StopIteration:|StopAsyncIteration:|SystemExit:)( .*)", message)
 		if tmp is not None:
 			remnants = [
-				ThemeString(tmp[1], ThemeRef("logview", "severity_error")),
-				ThemeString(tmp[2], ThemeRef("logview", "severity_info"))
+				([ThemeString(tmp[1], ThemeRef("logview", "severity_error")),
+				  ThemeString(tmp[2], ThemeRef("logview", "severity_info"))],
+				 severity),
 			]
 			processor = ["end_block", None]
 		elif message.lstrip() == message:
@@ -1875,14 +1889,17 @@ def python_traceback_scanner(message: str, fold_msg: bool = True, options = None
 	return processor, (timestamp, facility, severity, remnants)
 
 # pylint: disable-next=unused-argument
-def python_traceback(message, fold_msg = True):
-	remnants = []
+def python_traceback(message: str, fold_msg: bool = True) ->\
+				Tuple[Union[str, List], List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 	if message == "Traceback (most recent call last):":
-		remnants = [(message, ThemeRef("logview", "severity_error"))]
-		message = ["start_block", python_traceback_scanner]
-	return message, remnants
+		remnants = [([ThemeString(message, ThemeRef("logview", "severity_error"))], LogLevel.ERR)]
+		return ["start_block", python_traceback_scanner], remnants
+	else:
+		return message, remnants
 
-def json_line_scanner(message, fold_msg = True, options = None):
+def json_line_scanner(message: str, fold_msg: bool = True, options: Dict = None) ->\
+				Tuple[List, Tuple[datetime, str, LogLevel, Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]]:
 	# pylint: disable=unused-argument
 	allow_empty_lines = deep_get(options, DictPath("allow_empty_lines"), True)
 	timestamp = none_timestamp()
@@ -1891,13 +1908,13 @@ def json_line_scanner(message, fold_msg = True, options = None):
 	message, _timestamp = split_iso_timestamp(message, none_timestamp())
 
 	if message == "}".rstrip():
-		remnants = formatters.format_yaml_line(message, override_formatting = {})
-		processor = ["end_block", None]
+		remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
+		processor: List = ["end_block", None]
 	elif message.lstrip() != message:
-		remnants = formatters.format_yaml_line(message, override_formatting = {})
+		remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
 		processor = ["block", json_line_scanner]
 	elif len(message.strip()) == 0 and allow_empty_lines == True:
-		remnants = formatters.format_yaml_line(message, override_formatting = {})
+		remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
 		processor = ["block", json_line_scanner]
 	else:
 		remnants = None
@@ -1906,8 +1923,9 @@ def json_line_scanner(message, fold_msg = True, options = None):
 	return processor, (timestamp, facility, severity, remnants)
 
 # pylint: disable-next=unused-argument
-def json_line(message, fold_msg = True, options = None):
-	remnants = []
+def json_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel.INFO, options: Dict = None) ->\
+			Tuple[List, Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+	remnants: Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = []
 	matched = False
 
 	block_start = deep_get(options, DictPath("block_start"), [{
@@ -1937,19 +1955,20 @@ def json_line(message, fold_msg = True, options = None):
 
 	if matched == True:
 		if format_block_start == True:
-			remnants = formatters.format_yaml_line(message, override_formatting = {})
+			remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
 		else:
 			remnants = message
-		message = ["start_block", json_line_scanner, options]
-	return message, remnants
+		processor = ["start_block", json_line_scanner, options]
+	return processor, remnants
 
 # pylint: disable-next=unused-argument
-def yaml_line_scanner(message, fold_msg = True, options = None):
+def yaml_line_scanner(message: str, fold_msg: bool = True, options: Dict = None) ->\
+				Tuple[List, Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
 	timestamp = none_timestamp()
-	facility = None
+	facility = ""
 	severity = LogLevel.INFO
 	message, _timestamp = split_iso_timestamp(message, none_timestamp())
-	remnants = None
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 	matched = True
 
 	# If no block end is defined we continue until EOF
@@ -1978,14 +1997,14 @@ def yaml_line_scanner(message, fold_msg = True, options = None):
 				matched = False
 
 	if matched == True:
-		remnants = formatters.format_yaml_line(message, override_formatting = {})
+		remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
 		processor = ["block", yaml_line_scanner, options]
 	else:
 		if process_block_end == True:
 			if format_block_end == True:
-				remnants = formatters.format_yaml_line(message, override_formatting = {})
+				remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
 			else:
-				remnants = [ThemeString(message, ThemeRef("logview", "severity_info"))]
+				remnants = [([ThemeString(message, ThemeRef("logview", "severity_info"))], severity)]
 			processor = ["end_block", None]
 		else:
 			processor = ["end_block_not_processed", None]
@@ -1993,8 +2012,13 @@ def yaml_line_scanner(message, fold_msg = True, options = None):
 	return processor, (timestamp, facility, severity, remnants)
 
 # pylint: disable-next=unused-argument
-def yaml_line(message, fold_msg = True, options = None):
-	remnants = []
+def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel.INFO, options: Dict = None) ->\
+			Tuple[Union[str, List], Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+	if options is None:
+		options = {}
+
+	remnants: Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = []
+	response: Union[str, List] = []
 	matched = False
 
 	block_start = deep_get(options, DictPath("block_start"), [{
@@ -2026,14 +2050,21 @@ def yaml_line(message, fold_msg = True, options = None):
 
 	if matched == True:
 		if format_block_start == True:
-			remnants = formatters.format_yaml_line(message, override_formatting = {})
+			remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
 		else:
 			remnants = message
-		message = ["start_block", yaml_line_scanner, options]
+		response = ["start_block", yaml_line_scanner, options]
+
+	if response == []:
+		response = message
+
 	return message, remnants
 
 # pylint: disable-next=unused-argument
-def custom_splitter(message, severity = None, facility = "", fold_msg = True, options = None):
+def custom_splitter(message: str, severity: LogLevel = None, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+			Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], Optional[LogLevel], str]:
+	assert options is not None
+
 	compiled_regex = deep_get(options, DictPath("regex"), None)
 	severity_field = deep_get(options, DictPath("severity#field"), None)
 	severity_transform = deep_get(options, DictPath("severity#transform"), None)
@@ -2055,7 +2086,6 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 		group_count = len(tmp.groups())
 		if message_field > group_count:
 			sys.exit(f"The parser rule references a non-existing capture group {message_field} for message; the valid range is [1-{group_count}]")
-		message = tmp[message_field]
 		if severity_field is not None and severity_transform is not None:
 			if severity_field > group_count:
 				sys.exit(f"The parser rule references a non-existing capture group {severity_field} for severity; the valid range is [1-{group_count}]")
@@ -2068,10 +2098,10 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 			elif severity_transform == "str":
 				severity = str_to_severity(tmp[severity_field], severity)
 			elif severity_transform == "int":
-				severity = int(tmp[severity_field])
+				severity = cast(LogLevel, int(tmp[severity_field]))
 			else:
 				sys.exit(f"Unknown severity transform rule {severity_transform}; aborting.")
-			severity = custom_override_severity(message, severity, overrides = severity_overrides)
+			message, severity = custom_override_severity(tmp[message_field], severity, overrides = severity_overrides)
 		if facility_fields is not None and len(facility) == 0:
 			if type(facility_fields) == str:
 				facility_fields = [facility_fields]
@@ -2090,10 +2120,14 @@ def custom_splitter(message, severity = None, facility = "", fold_msg = True, op
 
 	return message, severity, facility
 
-def custom_parser(message, fold_msg = True, filters = None, options = None):
+def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool = True, options: Dict = None) ->\
+				Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	facility = ""
 	severity = None
-	remnants = []
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+
+	if options is None:
+		options = {}
 
 	for _filter in filters:
 		if type(_filter) == str:
@@ -2102,14 +2136,10 @@ def custom_parser(message, fold_msg = True, filters = None, options = None):
 				message, severity, facility, remnants, _match = split_glog(message, severity = severity, facility = facility)
 			elif _filter == "spaced_severity_facility":
 				message, severity, facility = __split_severity_facility_style(message, severity = severity, facility = facility)
-			elif _filter == "letter_severity_colon_facility":
-				message, severity, facility = __split_severity_facility_style(message, severity = severity, facility = facility)
 			elif _filter == "directory":
 				facility, severity, message, remnants = directory(message, fold_msg = fold_msg, severity = severity, facility = facility)
 			elif _filter == "seconds_severity_facility":
 				facility, severity, message, remnants = seconds_severity_facility(message, fold_msg = fold_msg)
-			elif _filter == "facility_hh_mm_ss_ms_severity":
-				facility, severity, message, remnants = facility_hh_mm_ss_ms_severity(message, severity = severity, fold_msg = fold_msg)
 			elif _filter == "expand_event":
 				if message.startswith(("Event(v1.ObjectReference{")):
 					severity, message, remnants = expand_event(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
@@ -2120,8 +2150,6 @@ def custom_parser(message, fold_msg = True, filters = None, options = None):
 			# Timestamp formats
 			elif _filter == "ts_8601": # Anything that resembles ISO-8601 / RFC 3339
 				message = strip_iso_timestamp(message)
-			elif _filter == "ts_8601_tz": # ISO-8601 / RFC 3339 with 3-letter timezone; since the offset is dependent on date we don't even try to parse
-				message = strip_iso_timestamp_with_tz(message)
 			# Facility formats
 			elif _filter == "colon_facility":
 				message, facility = split_colon_facility(message, facility)
@@ -2137,8 +2165,6 @@ def custom_parser(message, fold_msg = True, filters = None, options = None):
 			# Filters
 			elif _filter == "strip_ansicodes":
 				message = strip_ansicodes(message)
-			elif _filter == "strip_bracketed_pid":
-				message = strip_bracketed_pid(message)
 			# Block starters
 			elif _filter == "python_traceback":
 				message, remnants = python_traceback(message, fold_msg = fold_msg)
@@ -2190,17 +2216,17 @@ def custom_parser(message, fold_msg = True, filters = None, options = None):
 			elif _filter[0] == "bracketed_severity":
 				message, severity = split_bracketed_severity(message, default = _filter[1])
 			elif _filter[0] == "override_severity":
-				severity = custom_override_severity(message, severity, _filter[1])
+				message, severity = custom_override_severity(message, severity, _filter[1])
 			# Filters
 			elif _filter[0] == "substitute_bullets":
 				message = substitute_bullets(message, _filter[1])
 			# Block starters; these are treated as parser loop terminators if a match is found
 			elif _filter[0] == "json_line":
 				_parser_options = {**_filter[1], **options}
-				message, remnants = json_line(message, fold_msg = fold_msg, options = _parser_options)
+				message, remnants = json_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
 			elif _filter[0] == "yaml_line":
 				_parser_options = {**_filter[1], **options}
-				message, remnants = yaml_line(message, fold_msg = fold_msg, options = _parser_options)
+				message, remnants = yaml_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 
@@ -2215,7 +2241,7 @@ def custom_parser(message, fold_msg = True, filters = None, options = None):
 Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser_rules")
 parsers = []
 
-def init_parser_list():
+def init_parser_list() -> None:
 	# This pylint warning seems incorrect--does it not handle namedtuple.append()?
 	# pylint: disable-next=global-variable-not-assigned
 	global parsers
@@ -2287,9 +2313,30 @@ def init_parser_list():
 			for rule in parser_rules:
 				if type(rule) == dict:
 					rule_name = rule.get("name")
-					if rule_name in ("colon_severity", "directory", "4letter_colon_severity", "angle_bracketed_facility", "colon_facility", "glog", "strip_ansicodes", "ts_8601", "ts_8601_tz", "strip_bracketed_pid", "postgresql_severity", "facility_hh_mm_ss_ms_severity", "seconds_severity_facility", "4letter_spaced_severity", "expand_event", "spaced_severity_facility", "modinfo", "python_traceback"):
+					if rule_name in ("4letter_colon_severity",
+							 "4letter_spaced_severity",
+							 "angle_bracketed_facility",
+							 "colon_facility",
+							 "colon_severity",
+							 "directory",
+							 "expand_event",
+							 "glog",
+							 "modinfo",
+							 "python_traceback",
+							 "seconds_severity_facility",
+							 "spaced_severity_facility",
+							 "strip_ansicodes",
+							 "ts_8601"):
 						rules.append(rule_name)
-					elif rule_name in ("http", "json", "json_with_leading_message", "json_event", "json_line", "yaml_line", "key_value", "key_value_with_leading_message", "custom_splitter"):
+					elif rule_name in ("custom_splitter",
+							   "http",
+							   "json",
+							   "json_event",
+							   "json_line",
+							   "json_with_leading_message",
+							   "key_value",
+							   "key_value_with_leading_message",
+							   "yaml_line"):
 						options = {}
 						for key, value in deep_get(rule, DictPath("options"), {}).items():
 							if key == "regex":
@@ -2338,7 +2385,7 @@ def init_parser_list():
 	# This should always be last
 	parsers.append(Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("raw", "", "", "container", None)], parser_rules = ["ts_8601"]))
 
-def get_parser_list():
+def get_parser_list() -> Set[Parser]:
 	_parsers = set()
 	for parser in parsers:
 		if parser.show_in_selector == False:
@@ -2348,7 +2395,25 @@ def get_parser_list():
 	return _parsers
 
 # We've already defined the parser, so no need to do it again
-def logparser_initialised(parser = None, message = "", fold_msg = True, line = 0):
+def logparser_initialised(parser: Parser = None, message: str = "", fold_msg: bool = True, line: int = 0) ->\
+				Tuple[datetime, str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+	"""
+	This is used when the parser is already initialised.
+
+		Parameters:
+			parser (Parser): The parser to use
+			message (str): A line to parse
+			fold_msg (bool): Should the message be folded (unmodified) or unfolded (expanded to multiple lines where possible)
+			line (int): The line number
+		Returns:
+			(timestamp, facility, severity, message, remnants):
+				timestamp (datetime): A timestamp
+				facility (str): The log facility
+				severity (int): Loglevel
+				message (str): An unformatted string
+				remnants (list[(ThemeArray, LogLevel)]): Formatted remainders with severity
+	"""
+
 	# First extract the Kubernetes timestamp
 	message, timestamp = split_iso_timestamp(message, none_timestamp())
 
@@ -2358,23 +2423,19 @@ def logparser_initialised(parser = None, message = "", fold_msg = True, line = 0
 	options = {
 		"__line": line,
 	}
-	pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser_rules, options = options)
+	facility, severity, message, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
 
 	if len(message) > 16383:
-		remnants = (message[0:16383], severity)
+		remnants = [([ThemeString(message[0:16383], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 		severity = LogLevel.ERR
 		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)"
 
-	# The UI gets mightily confused by tabs, so replace them with spaces
-	# XXX: Doing this here doesn't make sense; at this point we don't know how long the line is.
-	#      The only place where we can do this sensibly is in the curses helper.
-	message = replace_tabs(message)
-	remnants = replace_tabs(remnants)
-
-	return timestamp, pod_name, severity, message, remnants
+	return timestamp, facility, severity, message, remnants
 
 # pylint: disable-next=too-many-arguments
-def logparser(pod_name, container_name, image_name, message, fold_msg = True, override_parser = None, container_type = "container", line = 0):
+def logparser(pod_name: str, container_name: str, image_name: str, message: str, fold_msg: bool = True,
+	      override_parser: Optional[Parser] = None, container_type: str = "container", line: int = 0) ->\
+			Tuple[datetime, str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]], Tuple[Optional[str], str], Parser]:
 	"""
 	This (re-)initialises the parser; it will identify what parser rules to use
 	helped by pod_name, container_name, and image_name;
@@ -2391,12 +2452,12 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 			container_type (str): container or init_container
 			line (int): The line number
 		Returns:
-			(timestamp, pod_name, severity, message, remnants, (lparser, uparser), parser):
+			(timestamp, facility, severity, message, remnants, (lparser, uparser), parser):
 				timestamp (datetime): A timestamp
-				pod_name: The name of the pod
+				facility: The log facility
 				severity (int): Loglevel
 				message (str): An unformatted string
-				remnants ((themarray, severity): Formatted remainders with severity
+				remnants (list[(ThemeArray, LogLevel)]): Formatted remainders with severity
 				lparser (str): Subidentifiers to help explain what rules in the parser file are used
 				uparser (str): Name of the parser file used
 				parser (opaque): A reference to the parser rules that are used
@@ -2416,8 +2477,8 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 				options = {
 					"__line": line,
 				}
-				pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser_rules, options = options)
-		return timestamp, pod_name, severity, message, remnants, ("<override>", str(override_parser)), parser
+				facility, severity, message, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
+		return timestamp, facility, severity, message, remnants, ("<override>", str(override_parser)), parser
 
 	if image_name.startswith("docker-pullable://"):
 		image_name = image_name[len("docker-pullable://"):]
@@ -2444,7 +2505,7 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 				options = {
 					"__line": line,
 				}
-				pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser_rules, options = options)
+				facility, severity, message, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
 
 				_lparser = []
 				if len(pod_prefix) > 0:
@@ -2458,21 +2519,15 @@ def logparser(pod_name, container_name, image_name, message, fold_msg = True, ov
 
 		if lparser is not None:
 			break
-	if uparser is None and lparser is None or len(lparser) == 0:
+	if uparser is None and (lparser is None or len(lparser) == 0):
 		lparser = "<unknown format>"
 		uparser = "basic_8601"
 		parser = Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("raw", "", "", "container", None)], parser_rules = ["ts_8601"])
-		pod_name, severity, message, remnants = custom_parser(message, fold_msg = fold_msg, filters = parser.parser_rules, options = {})
+		facility, severity, message, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = {})
 
 	if len(message) > 16383:
-		remnants = (message[0:16383], severity)
+		remnants = [([ThemeString(message[0:16383], ThemeRef("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 		severity = LogLevel.ERR
 		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)"
 
-	# The UI gets mightily confused by tabs, so replace them with spaces
-	# XXX: Doing this here doesn't make sense; at this point we don't know how long the line is.
-	#      The only place where we can do this sensibly is in the curses helper.
-	message = replace_tabs(message)
-	remnants = replace_tabs(remnants)
-
-	return timestamp, pod_name, severity, message, remnants, (lparser, str(uparser)), parser
+	return timestamp, facility, severity, message, remnants, (lparser, str(uparser)), parser

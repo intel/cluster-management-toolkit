@@ -20,6 +20,15 @@
   - pod_name: "kubeapps"
     container_name: "nginx"
   parser_rules:
+  - name: "strip_ansicodes"
+  - name: "custom_splitter"
+    options:
+      regex: '^(nginx) (\d\d:\d\d:\d\d.\d\d)\s(.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 3
   - name: "http"
 - name: "kubeapps"
   show_in_selector: false
@@ -52,10 +61,24 @@
     image_name: "/bitnami/postgresql"
   parser_rules:
   - name: "strip_ansicodes"
-  # FIXME: "This" should be modified to use custom_splitter instead
-  - name: "ts_8601_tz"
-  - name: "facility_hh_mm_ss_ms_severity"
-  - name: "strip_bracketed_pid"
+  - name: "custom_splitter"
+    options:
+      regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d.\d\d\d [A-Z]{3} (.*)'
+      message:
+        field: 1
+  - name: "custom_splitter"
+    options:
+      regex: '^\[\d+\]\s*(.*)'
+      message:
+        field: 1
+  - name: "custom_splitter"
+    options:
+      regex: '^(postgresql) (\d\d:\d\d:\d\d.\d\d)\s(.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 3
 - name: "kubeapps"
   show_in_selector: false
   matchkeys:
