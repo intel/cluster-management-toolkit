@@ -19,8 +19,14 @@
     container_type: "init_container"
   parser_rules:
   - name: "strip_ansicodes"
-  - name: "ts_8601"
-  - name: "4letter_spaced_severity"
+  - name: "custom_splitter"
+    options:
+      regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d.\d{6}Z\s\s([A-Z]{4})\s(.*)$'
+      severity:
+        field: 1
+        transform: "4letter"
+      message:
+        field: 2
 - name: "starboard"
   show_in_selector: false
   matchkeys:

@@ -9,8 +9,14 @@
   - pod_name: "linkerd-destination"
     container_name: "policy"
   parser_rules:
-  - name: "ts_8601"
-  - name: "4letter_spaced_severity"
+  - name: "custom_splitter"
+    options:
+      regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d.\d{6}Z\s\s([A-Z]{4})\s(.*)$'
+      severity:
+        field: 1
+        transform: "4letter"
+      message:
+        field: 2
 - name: "linkerd"
   matchkeys:
   - pod_name: "linkerd-destination"
@@ -31,8 +37,8 @@
   - name: "key_value"
   - name: "override_severity"
     overrides:
-    - matchtype: "startswith"
-      matchkey: "http: \"TLS\" handshake error"
+    - matchtype: "regex"
+      matchkey: "^https?: \"?TLS\"? handshake error"
       loglevel: "warning"
     - matchtype: "startswith"
       matchkey: "running version "
@@ -43,3 +49,4 @@
     container_type: "init_container"
   parser_rules:
   - name: "ts_8601"
+  - name: "key_value"
