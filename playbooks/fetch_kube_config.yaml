@@ -7,8 +7,6 @@
       - "internal"
       category: "Setup"
   gather_facts: false
-  become: true
-  become_user: "root"
   tasks:
   - name: "Creating .kube if it doesn't exist"
     ansible.builtin.file:
@@ -18,6 +16,8 @@
     delegate_to: "localhost"
   - name: "Copying /etc/kubernetes/admin.conf from control plane to localhost"
     ansible.builtin.fetch:
+      become: true
+      become_user: "root"
       src: "/etc/kubernetes/admin.conf"
       dest: "~/.kube/config.{{ cluster_name }}"
       flat: true

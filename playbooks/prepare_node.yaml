@@ -16,10 +16,10 @@
   - "!min"
   - "!all"
   - "distribution"
-  become: true
-  become_user: "root"
   tasks:
   - name: "Adding {{ ansible_user }} to sudoers"
+    become: true
+    become_user: "root"
     ansible.builtin.lineinfile:
       path: "/etc/sudoers.d/{{ ansible_user }}"
       regex: "^{{ ansible_user }}"
@@ -35,25 +35,35 @@
       key: "{{ item }}"
     loop: "{{ authorized_keys }}"
   - name: "Updating package cache"
+    become: true
+    become_user: "root"
     ansible.builtin.apt: "update_cache=yes force_apt_get=yes"
     when: "ansible_os_family == 'Debian'"
   - name: "Gathering package facts"
+    become: true
+    become_user: "root"
     ansible.builtin.package_facts:
       manager: "apt"
     when: "ansible_os_family == 'Debian'"
   - name: "Installing Docker"
+    become: true
+    become_user: "root"
     ansible.builtin.apt:
       name: "docker.io"
       state: "present"
       force_apt_get: true
     when: "('docker-ce' not in ansible_facts.packages) and (ansible_os_family == 'Debian')"
   - name: "Adding Docker repo"
+    become: true
+    become_user: "root"
     ansible.builtin.template:
       dest: "/etc/yum.repos.d/docker.repo"
       src: "templates/etc/yum.repos.d/docker.repo.j2"
       mode: "0644"
     when: "ansible_os_family == 'RedHat'"
   - name: "Updating package cache"
+    become: true
+    become_user: "root"
     ansible.builtin.dnf: "update_cache=yes"
     when: "ansible_os_family == 'RedHat'"
   - name: "Gathering package facts"
@@ -61,6 +71,8 @@
       manager: "rpm"
     when: "ansible_os_family == 'RedHat'"
   - name: "Removing runc and containers-common (Due to Docker conflict)"
+    become: true
+    become_user: "root"
     ansible.builtin.dnf:
       pkg:
       - "runc"
@@ -68,39 +80,53 @@
       state: "absent"
     when: "ansible_os_family == 'RedHat'"
   - name: "Installing Docker"
+    become: true
+    become_user: "root"
     ansible.builtin.dnf:
       name: "docker-ce"
       state: "present"
     when: "ansible_os_family == 'RedHat'"
   - name: "Creating /etc/docker"
+    become: true
+    become_user: "root"
     ansible.builtin.file:
       path: "/etc/docker"
       state: "directory"
       mode: "0755"
   - name: "Configuring Docker daemon"
+    become: true
+    become_user: "root"
     ansible.builtin.template:
       dest: "/etc/docker/daemon.json"
       src: "templates/etc/docker/daemon.json.j2"
       mode: "0644"
       force: true
   - name: "Creating /etc/systemd/system/docker.service.d"
+    become: true
+    become_user: "root"
     ansible.builtin.file:
       path: "/etc/systemd/system/docker.service.d"
       state: "directory"
       mode: "0755"
   - name: "Configuring docker/http-proxy.conf"
+    become: true
+    become_user: "root"
     ansible.builtin.template:
       dest: "/etc/systemd/system/docker.service.d/http-proxy.conf"
       src: "templates/etc/systemd/system/docker.service.d/http-proxy.conf.j2"
       mode: "0644"
       force: true
   - name: "Restarting Docker"
+    become: true
+    become_user: "root"
     ansible.builtin.systemd:
       name: "docker"
       enabled: true
       daemon_reload: true
       state: "restarted"
   - name: "Disabling swap"  # noqa fqcn-builtins risky-shell-pipe
+    become: true
+    become_user: "root"
     shell: |
       # Disable swap during this boot
       swapoff -a
@@ -115,6 +141,8 @@
       fi
     changed_when: false
   - name: "Setting SELinux to permissive mode"  # noqa fqcn-builtins
+    become: true
+    become_user: "root"
     shell: |
       setenforce 0
       sed -i -e 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
