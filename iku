@@ -6189,7 +6189,7 @@ def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
 
 		# We're in luck; there's an interpreter signature
 		# or other type of signature to help
-		if splitmsg[0].startswith(("#!", "-----")):
+		if len(splitmsg) > 0 and splitmsg[0].startswith(("#!", "-----")):
 			for match_infix, dataformat in cmdata_header:
 				if match_infix in data:
 					break
