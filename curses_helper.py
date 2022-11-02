@@ -15,7 +15,7 @@ import errno
 from operator import attrgetter
 from pathlib import Path, PurePath
 import sys
-from typing import Dict, List, Optional, NoReturn, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, NoReturn, Sequence, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -23,7 +23,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 from iktio import check_path, secure_read_yaml
-from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping, ThemeRef, ThemeString
+from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping, ThemeAttr, ThemeRef, ThemeString
 
 import iktlib
 from iktlib import deep_get
@@ -884,10 +884,17 @@ def themearray_to_string(themearray: Sequence[Union[ThemeRef,
 		if not isinstance(fragment, tuple):
 			# pylint: disable-next=line-too-long
 			raise ValueError(f"themearray_to_string() called with an invalid themearray: “{themearray}“; element: “{fragment}“ has invalid type {type(fragment)}; expected tuple")
+		if isinstance(fragment, ThemeString):
+			string += fragment.string
+		elif isinstance(fragment, ThemeRef):
+			themed_tuple = deep_get(theme, DictPath(f"{fragment[0]}#{fragment[1]}"))
+			if themed_tuple is None:
+				raise KeyError(f"The theme key-pair context: “{fragment[0]}“, key: “{fragment[1]}“ in the themearray “{themearray}“ does not exist")
+			string += themed_tuple[0][0]
 		# (string, curses_attr)
 		# (string, (context, theme_attr))
 		# (string, (context, theme_attr), selected)
-		if isinstance(fragment[0], str) and type(fragment[1]) in (int, tuple, ThemeRef):
+		elif isinstance(fragment[0], str) and type(fragment[1]) in (int, tuple, ThemeRef):
 			string += fragment[0]
 		# (context, theme_attr)
 		elif len(fragment) == 2 and isinstance(fragment[0], str) and isinstance(fragment[1], str):
@@ -983,35 +990,6 @@ def themearray_wrap_line(strarray, maxwidth: int = -1, wrap_marker: bool = True)
 def themearray_extract_string(key: str, context: str = "main", selected: bool = False) -> str:
 	strarray = themearray_to_strarray(key, context, selected)
 	return strarray_extract_string(strarray)
-
-def themearray_get_string(themearray) -> str:
-	string = ""
-
-	if isinstance(themearray, tuple):
-		themearray = [themearray]
-
-	# If this is just a string, return it
-	if isinstance(themearray, str):
-		string = themearray
-	else:
-		for item in themearray:
-			# If item is a tuple of length 2, with both items being strings,
-			# it's a theme string lookup; if it's length 2 with the second
-			# item being a tuple, it's a themed string
-			_p1, _p2 = item
-			if len(item) == 2:
-				if isinstance(_p1, str):
-					if isinstance(_p2, str):
-						string += themearray_extract_string(_p2, context = _p1)
-					elif isinstance(_p2, tuple):
-						string += _p1
-				else:
-					raise Exception(f"type(item)={type(item)}\nlen(item)={len(item)}\nitem={item}")
-
-	return string
-
-def themearray_get_length(themearray) -> int:
-	return len(themearray_get_string(themearray))
 
 ignoreinput = False
 
@@ -1557,7 +1535,7 @@ class UIProps:
 		self.statusbarypos = None
 		self.continuous_log = False
 		self.match_index = None
-		self.search_matches = None
+		self.search_matches = set()
 		self.timestamps = None
 		self.facilities = None
 		self.severities = None
@@ -1802,7 +1780,7 @@ class UIProps:
 		mousearray = [
 			("Mouse: ", ("statusbar", "infoheader")), (f"{mousestatus}", ("statusbar", "highlight"))
 		]
-		xpos = self.maxx - themearray_get_length(mousearray) + 1
+		xpos = self.maxx - themearray_len(mousearray) + 1
 		if self.statusbar is not None:
 			self.addthemearray(self.statusbar, mousearray, y = 0, x = xpos)
 		ycurpos = self.curypos + self.yoffset
@@ -1812,7 +1790,7 @@ class UIProps:
 				# pylint: disable-next=line-too-long
 				("Line: ", ("statusbar", "infoheader")), (f"{ycurpos + 1}".rjust(len(str(maxypos + 1))), ("statusbar", "highlight")), ("separators", "statusbar_fraction"), (f"{maxypos + 1}", ("statusbar", "highlight"))
 			]
-			xpos = self.maxx - themearray_get_length(curposarray) + 1
+			xpos = self.maxx - themearray_len(curposarray) + 1
 			if self.statusbar is not None:
 				self.addthemearray(self.statusbar, curposarray, y = 1, x = xpos)
 		self.stdscr.noutrefresh()
@@ -2259,7 +2237,7 @@ class UIProps:
 		for y, msg in enumerate(messages):
 			# The messages can either be raw strings,
 			# or themearrays, so we need to flatten them to just text first
-			message = themearray_get_string(msg)
+			message = themearray_to_string(msg)
 			if searchkey in message:
 				self.search_matches.add(y)
 
@@ -2474,10 +2452,19 @@ class UIProps:
 		# If we don't match we'll just end up with the old pos
 		self.move_cur_with_offset(offset)
 
-	# This function is used to find the first match based on command line input
-	# The sort order used will still be the default, to ensure that the partial
-	# match ends up being the first.
-	def goto_first_match_by_name_namespace(self, name: str, namespace: str):
+	def goto_first_match_by_name_namespace(self, name: str, namespace: str) -> Optional[Any]:
+		"""
+		This function is used to find the first match based on command line input
+		The sort order used will still be the default, to ensure that the partial
+		match ends up being the first.
+
+			Parameters:
+				name (str): The name to search for
+				namespace (str): The namespace to search for
+			Returns:
+				match (Any): The unique match, the first partial match if no unique match is found, or None if no match is found
+		"""
+
 		if self.info is None or len(self.info) == 0 or name is None or len(name) == 0 or hasattr(self.info[0], "name") == False:
 			return None
 
@@ -2542,9 +2529,11 @@ class UIProps:
 	def get_sortcolumn(self) -> str:
 		return self.sortcolumn
 
-	def get_sortkeys(self):
+	def get_sortkeys(self) -> Tuple[str, str]:
 		if self.field_list is None:
-			return None, None
+			# We don't really care about what the sortkeys are; we don't have a list to sort
+			# but if we return valid strings we can at least pacify the type checker
+			return "", ""
 
 		field = self.field_list.get(self.sortcolumn)
 
@@ -2564,11 +2553,11 @@ class UIProps:
 			_eventid, x, y, _z, bstate = curses.getmouse()
 		except curses.error:
 			# Most likely mouse isn't supported
-			return False
+			return Retval.NOMATCH
 
 		if win == self.listpad:
 			if self.listpad is None:
-				return False
+				return Retval.NOMATCH
 			cypos = self.listpadypos
 			cxpos = self.listpadxpos
 			cheight = self.listpadheight
@@ -2582,7 +2571,7 @@ class UIProps:
 			# We don't care about selection
 			selections = False
 		else:
-			return False
+			return Retval.NOMATCH
 
 		cmaxy = self.maxy
 		cmaxx = self.maxx
@@ -2698,17 +2687,17 @@ class UIProps:
 				self.move_cur_with_offset(-5)
 			elif self.logpad is not None and self.continuous_log == False:
 				self.move_yoffset_rel(-5)
-			return True
+			return Retval.MATCH
 		elif curses_configuration.mousescroll_enable and bstate == curses_configuration.mousescroll_down:
 			if self.listpad is not None:
 				self.move_cur_with_offset(5)
 			elif self.logpad is not None and self.continuous_log == False:
 				self.move_yoffset_rel(5)
-			return True
+			return Retval.MATCH
 
-		return False
+		return Retval.NOMATCH
 
-	def enter_handler(self, activatedfun, extraref, data):
+	def enter_handler(self, activatedfun, extraref, data) -> Retval:
 		selected = self.get_selected()
 
 		if activatedfun is not None and selected is not None and selected.ref is not None:
@@ -2731,7 +2720,7 @@ class UIProps:
 				self.force_update()
 			return _retval
 
-		return False
+		return Retval.NOMATCH
 
 	# pylint: disable-next=too-many-return-statements
 	def generic_keycheck(self, c: int) -> Retval:
@@ -2996,19 +2985,19 @@ class UIProps:
 		return Retval.NOMATCH
 
 	# Shortcuts used in most view
-	def __exit_program(self, **kwargs) -> NoReturn:
+	def __exit_program(self, **kwargs: Dict) -> NoReturn:
 		retval = deep_get(kwargs, DictPath("retval"))
 
 		curses.endwin()
 		sys.exit(retval)
 
 	# pylint: disable-next=unused-argument
-	def __refresh_information(self, **kwargs):
+	def __refresh_information(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
 		# XXX: We need to rate limit this somehow
 		self.force_update()
 		return Retval.MATCH, {}
 
-	def __select_menu(self, **kwargs):
+	def __select_menu(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
 		refresh_apis = deep_get(kwargs, DictPath("refresh_apis"), False)
 		selectwindow = deep_get(kwargs, DictPath("selectwindow"))
 
@@ -3019,13 +3008,13 @@ class UIProps:
 		return retval, {}
 
 	# pylint: disable-next=unused-argument
-	def __show_about(self, **kwargs):
+	def __show_about(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
 		if curses_configuration.abouttext is not None:
 			windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, curses_configuration.abouttext, title = "About", cursor = False)
 		self.refresh_all()
 		return Retval.MATCH, {}
 
-	def __show_help(self, **kwargs):
+	def __show_help(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
 		helptext = deep_get(kwargs, DictPath("helptext"))
 
 		windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, helptext, title = "Help", cursor = False)
@@ -3033,7 +3022,7 @@ class UIProps:
 		return Retval.MATCH, {}
 
 	# pylint: disable-next=unused-argument
-	def __toggle_mouse(self, **kwargs):
+	def __toggle_mouse(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
 		# Toggle mouse support on/off to allow for copy'n'paste
 		if get_mousemask() == 0:
 			set_mousemask(-1)
@@ -3044,13 +3033,13 @@ class UIProps:
 		return Retval.MATCH, {}
 
 	# pylint: disable-next=unused-argument
-	def __toggle_borders(self, **kwargs):
+	def __toggle_borders(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
 		self.toggle_borders()
 		self.refresh_all()
 		self.force_update()
 		return Retval.MATCH, {}
 
-	def generate_helptext(self, shortcuts, **kwargs):
+	def generate_helptext(self, shortcuts: Dict, **kwargs: Dict) -> List[Tuple[str, str]]:
 		"""
 		Generate helptexts to use with generic_inputhandler()
 
@@ -3069,7 +3058,7 @@ class UIProps:
 		# Global F-keys
 		# Command
 		# Navigation keys
-		helptext_groups = [[], [], [], []]
+		helptext_groups: List[List] = [[], [], [], []]
 
 		for shortcut_name, shortcut_data in shortcuts.items():
 			read_only = deep_get(shortcut_data, DictPath("read_only"), False)

@@ -8,12 +8,19 @@ This file contains custom types used to define types used by iKT
 from enum import auto, Enum, IntEnum
 from typing import NamedTuple, NewType, Optional
 
+# A reference to text formatting
+class ThemeAttr(NamedTuple):
+	context: str
+	attr_ref: str
+
+# A reference to preformatted string;
 class ThemeRef(NamedTuple):
 	context: str
 	attr_ref: str
 
 class ThemeString(NamedTuple):
 	string: str
+	# Once all callsites have been modified this should be ThemeAttr, not ThemeRef
 	themeref: ThemeRef
 	selected: bool = False
 
