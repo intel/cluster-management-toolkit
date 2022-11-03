@@ -840,6 +840,9 @@ def ansible_extract_failure(retval: int, error_msg_lines: List[str], skipped: bo
 			if "No route to host" in line:
 				status = "NO ROUTE TO HOST"
 				break
+			if "Connection timed out" in line:
+				status = "CONNECTION TIMED OUT"
+				break
 		if len(status) == 0:
 			status = "UNREACHABLE (unknown reason)"
 	elif skipped == True:
