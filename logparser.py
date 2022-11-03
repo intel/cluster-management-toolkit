@@ -724,11 +724,11 @@ def split_glog(message: str, severity: LogLevel = None, facility: str = "") ->\
 	return message, severity, facility, remnants, matched
 
 # \tINFO\tcontrollers.Reaper\tstarting reconciliation\t{"reaper": "default/k8ssandra-cluster-a-reaper-k8ssandra"}
-def __split_severity_facility_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "") -> Tuple[str, LogLevel, str]:
+def __split_severity_facility_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "") -> Tuple[str, Optional[LogLevel], str]:
 	# Safe
 	tmp = re.match(r"^\s*([A-Z]+)\s+([a-zA-Z-\.]+)\s+(.*)", message)
 	if tmp is not None:
-		severity = cast(LogLevel, str_to_severity(tmp[1], default = severity))
+		severity = str_to_severity(tmp[1], default = severity)
 		facility = tmp[2]
 		message = tmp[3]
 
@@ -1022,11 +1022,11 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 				if y < 4:
 					continue
 				if el.startswith("+"):
-					remnants.append(((el, ThemeAttr("logview", "severity_diffplus")), LogLevel.DIFFPLUS))
+					remnants.append((ThemeString(el, ThemeAttr("logview", "severity_diffplus")), LogLevel.DIFFPLUS))
 				elif el.startswith("-"):
-					remnants.append(((el, ThemeAttr("logview", "severity_diffminus")), LogLevel.DIFFMINUS))
+					remnants.append((ThemeString(el, ThemeAttr("logview", "severity_diffminus")), LogLevel.DIFFMINUS))
 				else:
-					remnants.append(((el, ThemeAttr("logview", "severity_diffsame")), LogLevel.DIFFSAME))
+					remnants.append((ThemeString(el, ThemeAttr("logview", "severity_diffsame")), LogLevel.DIFFSAME))
 			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
 				       ThemeString(" [State modified]", ThemeAttr("logview", "modified"))]
 	else:
