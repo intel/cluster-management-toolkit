@@ -251,24 +251,6 @@ def lvl_to_word_severity(lvl: LogLevel) -> str:
 
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
-def split_4letter_colon_severity(message: str, severity: LogLevel = LogLevel.INFO) -> Tuple[str, LogLevel]:
-	severities = {
-		"CRIT: ": LogLevel.CRIT,
-		"FATA: ": LogLevel.CRIT,
-		"ERRO: ": LogLevel.ERR,
-		"WARN: ": LogLevel.WARNING,
-		"NOTI: ": LogLevel.NOTICE,
-		"INFO: ": LogLevel.INFO,
-		"DEBU: ": LogLevel.DEBUG,
-	}
-
-	_severity = severities.get(message[0:len("ERRO: ")], -1)
-	if _severity != -1:
-		severity = cast(LogLevel, _severity)
-		message = message[len("ERRO: "):]
-
-	return message, severity
-
 def split_bracketed_severity(message: str, default: LogLevel = LogLevel.INFO) -> Tuple[str, LogLevel]:
 	severities = {
 		"[fatal]": LogLevel.CRIT,
@@ -2142,8 +2124,6 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 			# Severity formats
 			elif _filter == "colon_severity":
 				message, severity = split_colon_severity(message, severity)
-			elif _filter == "4letter_colon_severity":
-				message, severity = split_4letter_colon_severity(message, severity)
 			# Filters
 			elif _filter == "strip_ansicodes":
 				message = strip_ansicodes(message)
@@ -2295,8 +2275,7 @@ def init_parser_list() -> None:
 			for rule in parser_rules:
 				if type(rule) == dict:
 					rule_name = rule.get("name")
-					if rule_name in ("4letter_colon_severity",
-							 "angle_bracketed_facility",
+					if rule_name in ("angle_bracketed_facility",
 							 "colon_facility",
 							 "colon_severity",
 							 "directory",
