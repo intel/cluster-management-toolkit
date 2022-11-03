@@ -127,7 +127,7 @@ def format_yaml_line(line: str, override_formatting: Union[ThemeAttr, Dict] = No
 		else:
 			_key_format = key_format
 		tmpline += [
-			ThemeRef(f"{line[:-1]}", _key_format),
+			ThemeString(f"{line[:-1]}", _key_format),
 			ThemeString(":", separator_format),
 		]
 	else:
