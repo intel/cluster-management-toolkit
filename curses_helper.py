@@ -15,7 +15,7 @@ import errno
 from operator import attrgetter
 from pathlib import Path, PurePath
 import sys
-from typing import Any, Dict, List, Optional, NoReturn, Sequence, Tuple, Union
+from typing import Any, cast, Dict, List, Optional, NoReturn, Sequence, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -62,7 +62,7 @@ def get_mousemask() -> int:
 __color = {
 }
 
-__pairs = {
+__pairs: Dict = {
 }
 
 color_map = {
@@ -229,8 +229,8 @@ def init_curses() -> None:
 def color_log_severity(severity: LogLevel, selected: bool) -> Tuple[str, str, bool]:
 	return ("logview", f"severity_{loglevel_to_name(severity).lower()}", selected)
 
-def color_status_group(status_group: StatusGroup) -> Tuple[str, str]:
-	return ("main", stgroup_mapping[status_group])
+def color_status_group(status_group: StatusGroup) -> ThemeAttr:
+	return ThemeAttr("main", stgroup_mapping[status_group])
 
 def window_tee_hline(win: curses.window, y: int, start: int, end: int, attribute: int = None) -> None:
 	_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
@@ -389,7 +389,7 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width
 	return leftarrow, rightarrow, hdragger
 
 # This does not draw a heatmap; it only generates an array of string arrays
-def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) -> List[List[Tuple[str, Tuple[str, str], bool]]]:
+def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) -> List[List[ThemeString]]:
 	array = []
 	row = []
 	block = theme["boxdrawing"].get("smallblock", "■")
@@ -409,7 +409,7 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 			sblock = block
 
 		if x > maxwidth:
-			row.append((tmp, color, False))
+			row.append(ThemeString(tmp, color, False))
 			x = 0
 			array.append(row)
 			row = []
@@ -422,13 +422,13 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 		elif nextcolor == color:
 			tmp += f"{sblock}"
 		elif nextcolor != color:
-			row.append((tmp, color, False))
+			row.append(ThemeString(tmp, color, False))
 			tmp = f"{sblock}"
 			color = nextcolor
 
 		x += 1
 		if i == len(stgroups) - 1:
-			row.append((tmp, color, False))
+			row.append(ThemeString(tmp, color, False))
 			array.append(row)
 			break
 
@@ -849,7 +849,8 @@ def attr_to_curses(context: str, attr: str, selected: bool = False):
 			attr = attr["unselected"]
 	return __attr_to_curses(attr, selected)
 
-def __attr_to_curses_merged(attr: str, selected: bool = False) -> int:
+# This should be Union[str, Tuple]
+def __attr_to_curses_merged(attr: Union[str, List], selected: bool = False) -> int:
 	curses_col, curses_attr = __attr_to_curses(attr, selected)
 	return curses_col | curses_attr
 
@@ -871,7 +872,8 @@ def _attr_to_curses_merged(context: str, attr: str, selected: bool = False) -> i
 
 # XXX: If we ever turn themearray to a proper object reuse this
 # This extracts the string without formatting
-def themearray_to_string(themearray: Sequence[Union[ThemeRef,
+def themearray_to_string(themearray: Sequence[Union[str,
+						    ThemeRef,
 						    ThemeString,
 						    Tuple[str, Tuple[str, str]],
 						    Tuple[str, Tuple[str, str], bool],
@@ -879,6 +881,9 @@ def themearray_to_string(themearray: Sequence[Union[ThemeRef,
 						    Tuple[str, str],
 						    Tuple[str, str, bool]]]) -> str:
 	string = ""
+
+	if isinstance(themearray, str):
+		return themearray
 
 	for fragment in themearray:
 		if not isinstance(fragment, tuple):
@@ -926,6 +931,81 @@ def themearray_to_strarray(key: str, context: str = "main", selected: bool = Fal
 		strarray.append((string, attr))
 
 	return strarray
+
+def themeref_to_cursesarray(themeref: ThemeRef, selected: bool = False) -> List[Tuple[str, int]]:
+	"""
+	Given a themeref returns a cursesarray
+
+		Parameters:
+			themeref (ThemeRef): The ThemeRef to convert
+			selected (bool): [optional] True is selected, False otherwise
+		Returns:
+			cursesarray (list[(str, int)]): A curses array for use with addformattedarray()
+	"""
+
+	# Does it include selected or not?
+	if len(themeref) == 2:
+		context, key = themeref
+	else:
+		context, key, selected = cast(Tuple[str, str, bool], themeref)
+
+	array = theme[context][key]
+
+	cursesarray = []
+	for item in array:
+		string = item[0]
+		curses_attr = __attr_to_curses_merged(item[1], selected)
+		cursesarray.append((string, curses_attr))
+
+	return cursesarray
+
+def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False):
+	"""
+	Given a themeattr returns a tuple with curses color + curses attributes
+
+		Parameters:
+			themeattr (ThemeAttr): The ThemeAttr to convert
+			selected (bool): [optional] True is selected, False otherwise
+		Returns:
+			curses_attrs (int, int): A curses color + attrs tuple
+	"""
+
+	context, key = themeattr
+	return attr_to_curses(context, key, selected)
+
+def themeattr_to_curses_merged(themeattr: ThemeAttr, selected: bool = False):
+	"""
+	Given a themeattr returns merged curses color + curses attributes
+
+		Parameters:
+			themeattr (ThemeAttr): The ThemeAttr to convert
+			selected (bool): [optional] True is selected, False otherwise
+		Returns:
+			curses_attrs (int): Curses color | attrs
+	"""
+
+	context, key = themeattr
+	color, attrs = attr_to_curses(context, key, selected)
+	return color | attrs
+
+def themestring_to_cursestuple(themestring: ThemeString, selected: bool = False) -> Tuple[str, int]:
+	"""
+	Given a themestring returns a cursestuple
+
+		Parameters:
+			themestring (ThemeString): The ThemeString to convert
+			selected (bool): [optional] True is selected, False otherwise
+		Returns:
+			cursestuple (str, int): A curses tuple for use with addformattedarray()
+	"""
+
+	# Does it include selected or not?
+	if len(themestring) == 2:
+		string, themeattr = cast(Tuple[str, ThemeAttr], themestring)
+	else:
+		string, themeattr, selected = themestring
+
+	return (string, themeattr_to_curses_merged(themeattr, selected))
 
 def strarray_extract_string(strarray) -> str:
 	string = ""
@@ -2113,6 +2193,8 @@ class UIProps:
 
 	# addthemearray() takes an array as input.
 	# The elements in the array can be:
+	# ThemeString,
+	# ThemeRef,
 	# (string, (context, theme_attr_ref)),
 	# (string, (context, theme_attr_ref), selected),
 	# (string, (context, curses_attr)),
@@ -2124,6 +2206,17 @@ class UIProps:
 			if not isinstance(item, tuple):
 				raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
 
+			if isinstance(item, ThemeString):
+				cursestuple = themestring_to_cursestuple(item, selected)
+				y, x = self.__addformattedarray(win, cursestuple, y = y, x = x)
+				continue
+
+			if isinstance(item, ThemeRef):
+				cursesarray = themeref_to_cursesarray(item, selected)
+				y, x = self.__addformattedarray(win, cursesarray, y = y, x = x)
+				continue
+
+			# These are fallbacks until all ThemeArrays have been converted to ThemeString / ThemeRef
 			if len(item) == 3:
 				_p1, _p2, _selected = item
 			else:

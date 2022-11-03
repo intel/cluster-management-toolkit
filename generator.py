@@ -7,7 +7,7 @@ This generates elements for various more complex types
 # pylint: disable=too-many-arguments
 
 from datetime import datetime
-from typing import List, Union
+from typing import cast, List, Tuple, Union
 
 from curses_helper import color_status_group, themearray_len, themearray_to_string
 import iktlib
@@ -23,7 +23,7 @@ def format_list(items, fieldlen, pad, ralign, selected,
 		field_prefixes = None,
 		field_suffixes = None,
 		mapping = None):
-	array: List[Union[ThemeRef, ThemeString]] = []
+	array: List[Tuple[Union[ThemeRef, ThemeString], bool]] = []
 	totallen = 0
 
 	if item_separator == None:
@@ -88,8 +88,8 @@ def format_list(items, fieldlen, pad, ralign, selected,
 				fmt = color_status_group(StatusGroup.NOT_OK)
 				formatted_string = ThemeString(string, fmt, selected)
 			else:
-				context, attr_ref = field_colors[min(i, len(field_colors) - 1)]
-				formatted_string, __string = map_value(string, selected = selected, default_field_color = (context, attr_ref), mapping = mapping)
+				default_field_color = cast(ThemeAttr, field_colors[min(i, len(field_colors) - 1)])
+				formatted_string, __string = map_value(string, selected = selected, default_field_color = default_field_color, mapping = mapping)
 
 			# OK, we know now that we'll be appending the field, so do the prefix
 			if field_prefixes is not None and i < len(field_prefixes):
@@ -120,7 +120,7 @@ def format_list(items, fieldlen, pad, ralign, selected,
 # reference values (such as using other paths to get the range, instead of getting
 # it static from formatting#mapping)
 # pylint: disable=unused-argument
-def map_value(value, references = None, selected: bool = False, default_field_color = ("types", "generic"), mapping = None):
+def map_value(value, references = None, selected: bool = False, default_field_color: ThemeAttr = ThemeAttr("types", "generic"), mapping = None):
 	# If we lack a mapping, use the default color for this field
 	if mapping is None or len(mapping) == 0:
 		context, attr_ref = default_field_color
@@ -656,7 +656,7 @@ def generator_timestamp_with_age(obj, field, fieldlen: int, pad: int, ralign: bo
 def generator_value_mapper(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	value = getattr(obj, field)
 
-	default_field_color = deep_get(formatting, DictPath("field_colors"), [("types", "generic")])[0]
+	default_field_color = cast(ThemeAttr, deep_get(formatting, DictPath("field_colors"), [("types", "generic")])[0])
 
 	formatted_string, string = map_value(value, selected = selected,default_field_color = default_field_color,
 					     mapping = deep_get(formatting, DictPath("mapping"), {}))
