@@ -100,7 +100,7 @@ def format_list(items, fieldlen, pad, ralign, selected,
 					for prefix in field_prefixes[i]:
 						totallen += themearray_len([prefix])
 						array.append((prefix, selected))
-			array.append(formatted_string)
+			array.append((formatted_string))
 			totallen += len(string)
 			# And now the suffix
 			if field_suffixes is not None and i < len(field_suffixes):
@@ -142,7 +142,7 @@ def map_value(value, references = None, selected: bool = False, default_field_co
 			value = substitutions[value]
 
 		# If the substitution is a dict it's a themearray; typically either a separator or a string
-		if isinstance(value, dict):
+		if isinstance(value, (ThemeRef, dict)):
 			context = deep_get(value, DictPath("context"), "main")
 			attr_ref = deep_get(value, DictPath("type"))
 			return ((context, attr_ref), selected), themearray_to_string([(context, attr_ref)])
@@ -215,7 +215,7 @@ def align_and_pad(array, pad: int, fieldlen: int, stringlen: int, ralign: bool, 
 			array.append((("separators", "pad"), selected))
 	return array
 
-def format_numerical_with_units(string: str, ftype: str, selected: bool, non_units = None, separator_lookup = None):
+def format_numerical_with_units(string: str, ftype: str, selected: bool, non_units = None, separator_lookup = None) -> List[Union[ThemeRef, ThemeString]]:
 	substring = ""
 	array = []
 	numeric = None
@@ -252,11 +252,11 @@ def format_numerical_with_units(string: str, ftype: str, selected: bool, non_uni
 		else:
 			# Do we need to flush?
 			if char in non_units:
-				fmt = deep_get_with_fallback(separator_lookup, [DictPath(substring), DictPath("default")])
+				fmt = cast(ThemeAttr, deep_get_with_fallback(separator_lookup, [DictPath(substring), DictPath("default")]))
 				if selected is None:
-					array.append((substring, fmt))
+					array.append(ThemeString(substring, fmt))
 				else:
-					array.append((substring, fmt, selected))
+					array.append(ThemeString(substring, fmt, selected))
 				substring = ""
 				numeric = True
 			substring += char
@@ -266,13 +266,13 @@ def format_numerical_with_units(string: str, ftype: str, selected: bool, non_uni
 				if selected is None:
 					array.append(ThemeString(substring, ThemeAttr("types", ftype)))
 				else:
-					array.append((substring, ThemeAttr("types", ftype), selected))
+					array.append(ThemeString(substring, ThemeAttr("types", ftype), selected))
 			else:
-				fmt = deep_get_with_fallback(separator_lookup, [DictPath(substring), DictPath("default")])
+				fmt = cast(ThemeAttr, deep_get_with_fallback(separator_lookup, [DictPath(substring), DictPath("default")]))
 				if selected is None:
-					array.append((substring, fmt))
+					array.append(ThemeString(substring, fmt))
 				else:
-					array.append((substring, fmt, selected))
+					array.append(ThemeString(substring, fmt, selected))
 
 	if len(array) == 0:
 		array = [ThemeString("", ThemeAttr("types", "generic"), selected)]

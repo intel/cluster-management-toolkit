@@ -6,27 +6,115 @@ This file contains custom types used to define types used by iKT
 """
 
 from enum import auto, Enum, IntEnum
-from typing import NamedTuple, NewType, Optional
+from typing import NamedTuple, List, NewType, Optional, Union
 
 # A reference to text formatting
 class ThemeAttr(NamedTuple):
-	context: str
-	attr_ref: str
+	"""
+	A reference to formatting for a themed string
 
-# A reference to preformatted string; while the type definition is the same as ThemeAttr,
-# its use is different
+		Parameters:
+			context: The context to use when doing a looking in themes
+			key: The key to use when doing a looking in themes
+	"""
+
+	context: str
+	key: str
+
 class ThemeRef(NamedTuple):
-	context: str
-	attr_ref: str
+	"""
+	A reference to a themed string; while the type definition is the same as ThemeAttr its use is different
 
-class ThemeString(NamedTuple):
-	string: str
-	themeref: ThemeAttr
+		Parameters:
+			context: The context to use when doing a looking in themes
+			key: The key to use when doing a looking in themes
+			selected (Optional[bool]): Should the selected or unselected formatting be used
+	"""
+
+	context: str
+	key: str
 	selected: bool = False
 
-# Note: A ThemeArray is Sequence[Union[ThemeRef, ThemeString]]
+class ThemeString:
+	"""
+	A themed string
+
+		Parameters:
+			string: A string
+			themeattr: The themeattr used to format the string
+			selected (Optional[bool]): Should the selected or unselected formatting be used
+	"""
+
+	def __init__(self, string: str, themeattr: ThemeAttr, selected: bool = False) -> None:
+		if not isinstance(string, str):
+			raise TypeError("ThemeString only accepts (str, ThemeAttr[, bool])")
+		self.string = string
+		self.themeattr = themeattr
+		self.selected = selected
+
+	def __str__(self):
+		return self.string
+
+	def __len__(self):
+		return len(self.string)
+
+	def __repr__(self):
+		return f"({self.string}, {self.themeattr}, {self.selected})"
+
+class ThemeArray:
+	"""
+	An array of themed strings and references to themed strings
+
+		Parameters:
+			list[Union[ThemeString, ThemeRef]]: The themearray
+			selected (Optional[bool]): Should the selected or unselected formatting be used; passing selected overrides the individual components
+	"""
+
+	def __init__(self, array: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> None:
+		if array is None:
+			raise ValueError("A ThemeArray cannot be None")
+
+		newarray = []
+		for item in array:
+			if not isinstance(item, (ThemeRef, ThemeString)):
+				raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
+			if selected is None:
+				newarray += array
+			elif isinstance(item, ThemeString):
+				newarray.append(ThemeString(item.string, item.themeattr, selected = selected))
+			elif isinstance(item, ThemeRef):
+				newarray.append(ThemeRef(item.context, item.key, selected = selected))
+
+		self.array = array
+
+	def __add__(self, array):
+		self.array += array
+		return self.array
+
+	def __str__(self):
+		string = 0
+		for item in self.array:
+			string += str(item)
+		return string
+
+	def __len__(self):
+		arraylen = 0
+		for item in self.array:
+			arraylen += len(item)
+		return arraylen
+
+	def __repr__(self):
+		return vars(self)
 
 class ANSIThemeString(NamedTuple):
+	"""
+	A themed string for printing with ANSI control codes
+
+		Parameters:
+			string: A string
+			themeref: The reference to use when doing a looking in themes
+	"""
+
 	string: str
 	themeref: str
 

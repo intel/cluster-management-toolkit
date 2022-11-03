@@ -42,7 +42,7 @@ except ModuleNotFoundError:
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Callable, cast, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import cast, Dict, List, Optional, Sequence, Set, Tuple, Union
 import yaml
 
 try:
@@ -1424,11 +1424,11 @@ def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = 
 
 		if facility == "":
 			for _fac in facilities:
-				if type(_fac) == str:
+				if isinstance(_fac, str):
 					facility = deep_get(d, DictPath(_fac), "")
 					break
 
-				if type(_fac) == dict:
+				if isinstance(_fac, dict):
 					_facilities = deep_get(_fac, DictPath("keys"), [])
 					_separators = deep_get(_fac, DictPath("separators"), [])
 					for i, _fac in enumerate(_facilities):
@@ -1441,9 +1441,9 @@ def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = 
 							facility += _separators[i]
 		if logparser_configuration.pop_facility == True:
 			for _fac in facilities:
-				if type(_fac) == str:
+				if isinstance(_fac, str):
 					d.pop(_fac, None)
-				elif type(_fac) == dict:
+				elif isinstance(_fac, dict):
 					# This is a list, since the order of the facilities matter when outputting
 					# it doesn't matter when popping though
 					for __fac in deep_get(_fac, DictPath("keys"), []):
@@ -1538,18 +1538,18 @@ def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = 
 				if len(tmp) > 0:
 					remnants = (tmp, severity)
 
-	if logparser_configuration.msg_linebreaks == True and "\\n" in message and type(message) == str and fold_msg == False:
+	if logparser_configuration.msg_linebreaks == True and "\\n" in message and isinstance(message, str) and fold_msg == False:
 		lines = message.split("\\n")
 		message = lines[0]
 		_remnants = []
 		if len(lines) > 1:
 			for line in lines[1:]:
 				_remnants.append(([ThemeString(f"{line}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
-			if type(remnants) == tuple:
+			if isinstance(remnants, tuple):
 				for remnant in remnants[0]:
 					_remnants.append(([ThemeString(remnant, ThemeAttr("logview", f"severity_{loglevel_to_name(remnants[1]).lower()}"))], remnants[1]))
 				remnants = _remnants
-			elif type(remnants) == list:
+			elif isinstance(remnants, list):
 				remnants = _remnants + remnants
 
 	if facility.startswith("\"") and facility.endswith("\""):
@@ -1855,11 +1855,12 @@ def python_traceback_scanner(message: str, fold_msg: bool = True, options: Dict 
 def python_traceback(message: str, fold_msg: bool = True) ->\
 				Tuple[Union[str, List], List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+
 	if message == "Traceback (most recent call last):":
 		remnants = [([ThemeString(message, ThemeAttr("logview", "severity_error"))], LogLevel.ERR)]
 		return ["start_block", python_traceback_scanner], remnants
-	else:
-		return message, remnants
+
+	return message, remnants
 
 def json_line_scanner(message: str, fold_msg: bool = True, options: Dict = None) ->\
 				Tuple[List, Tuple[datetime, str, LogLevel, Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]]:
@@ -2018,7 +2019,7 @@ def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 			remnants = message
 		response = ["start_block", yaml_line_scanner, options]
 
-	if response == []:
+	if len(response) == 0:
 		response = message
 
 	return message, remnants
@@ -2037,7 +2038,7 @@ def custom_splitter(message: str, severity: LogLevel = None, facility: str = "",
 	message_field = deep_get(options, DictPath("message#field"), None)
 
 	# This message is already formatted
-	if type(message) == list:
+	if isinstance(message, list):
 		return message, severity, facility
 
 	# The bare minimum for these rules is
@@ -2069,9 +2070,9 @@ def custom_splitter(message: str, severity: LogLevel = None, facility: str = "",
 		else:
 			message = tmp[message_field]
 		if facility_fields is not None and len(facility) == 0:
-			if type(facility_fields) == str:
+			if isinstance(facility_fields, str):
 				facility_fields = [facility_fields]
-			if type(facility_separators) == str:
+			if isinstance(facility_separators, str):
 				facility_separators = [facility_separators]
 			i = 0
 			facility = ""
@@ -2096,7 +2097,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 		options = {}
 
 	for _filter in filters:
-		if type(_filter) == str:
+		if isinstance(_filter, str):
 			# Multiparsers
 			if _filter == "glog":
 				message, severity, facility, remnants, _match = split_glog(message, severity = severity, facility = facility)
@@ -2132,7 +2133,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 				message, remnants = python_traceback(message, fold_msg = fold_msg)
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
-		elif type(_filter) == tuple:
+		elif isinstance(_filter, tuple):
 			# Multiparsers
 			if _filter[0] == "bracketed_timestamp_severity_facility":
 				message, severity, facility = split_bracketed_timestamp_severity_facility(message, default = _filter[1])
@@ -2192,7 +2193,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 
-		if type(message) == list and message[0] == "start_block":
+		if isinstance(message, list) and message[0] == "start_block":
 			break
 
 	if severity is None:
@@ -2273,7 +2274,7 @@ def init_parser_list() -> None:
 
 			rules = []
 			for rule in parser_rules:
-				if type(rule) == dict:
+				if isinstance(rule, dict):
 					rule_name = rule.get("name")
 					if rule_name in ("angle_bracketed_facility",
 							 "colon_facility",

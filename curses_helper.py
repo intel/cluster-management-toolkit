@@ -23,7 +23,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 from iktio import check_path, secure_read_yaml
-from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping, ThemeAttr, ThemeRef, ThemeString
+from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping, ThemeArray, ThemeAttr, ThemeRef, ThemeString
 
 import iktlib
 from iktlib import deep_get
@@ -226,8 +226,30 @@ def init_curses() -> None:
 		selected_index = __pairs[selected]
 		__color[pair] = (unselected_index, selected_index)
 
-def color_log_severity(severity: LogLevel, selected: bool) -> Tuple[str, str, bool]:
-	return ("logview", f"severity_{loglevel_to_name(severity).lower()}", selected)
+def dump_themearray(themearray: List[Any]) -> NoReturn:
+	tmp = ""
+	for substr in themearray:
+		if isinstance(substr, ThemeString):
+			tmp +=  "ThemeString:\n"
+			tmp += f"          str: “{substr}“\n"
+			tmp += f"       strlen: “{len(substr)}“\n"
+			tmp += f"         attr: {substr.themeattr}\n"
+			tmp += f"     selected: {substr.selected}\n"
+		elif isinstance(substr, ThemeRef):
+			tmp += f"   ThemeRef: {substr}\n"
+			tmp += f"          ctx: {substr.context}\n"
+			tmp += f"          key: {substr.key}\n"
+			tmp += f"     selected: {substr.selected}\n"
+		elif isinstance(substr, tuple):
+			tmp += f"      tuple: {substr}\n"
+		elif isinstance(substr, list):
+			tmp += f"       list: {substr}\n"
+		else:
+			tmp += f"TYPE {type(substr)}: {substr}\n"
+	sys.exit(tmp)
+
+def color_log_severity(severity: LogLevel) -> ThemeAttr:
+	return ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")
 
 def color_status_group(status_group: StatusGroup) -> ThemeAttr:
 	return ThemeAttr("main", stgroup_mapping[status_group])
@@ -435,7 +457,7 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 	return array
 
 # pylint: disable-next=too-many-arguments
-def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, Tuple[str, str]]]) -> curses.window:
+def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeAttr]]) -> curses.window:
 	block = theme["boxdrawing"].get("smallblock", "■")
 	barwidth = maxx - minx - 3
 	barpos = minx + 1
@@ -445,7 +467,7 @@ def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, 
 	for subset in subsets:
 		rx = 0
 		pct, themeattr = subset
-		col = _attr_to_curses_merged(themeattr[0], themeattr[1])
+		col = themeattr_to_curses_merged(themeattr)
 		subsetwidth = int((pct / total) * barwidth)
 
 		while rx < subsetwidth and ax < barwidth:
@@ -481,10 +503,10 @@ def __notification(stdscr: Optional[curses.window], y: int, x: int, message: str
 	return win
 
 def notice(stdscr: Optional[curses.window], y: int, x: int, message: str) -> curses.window:
-	return __notification(stdscr, y, x, message, ("windowwidget", "notice"))
+	return __notification(stdscr, y, x, message, ThemeAttr("windowwidget", "notice"))
 
 def alert(stdscr: Optional[curses.window], y: int, x: int, message: str) -> curses.window:
-	return __notification(stdscr, y, x, message, ("windowwidget", "alert"))
+	return __notification(stdscr, y, x, message, ThemeAttr("windowwidget", "alert"))
 
 
 # pylint: disable-next=too-many-arguments
@@ -711,7 +733,7 @@ def __addstr(win: curses.window, string: str, y: int = -1, x: int = -1, attribut
 	cury, curx = win.getyx()
 	return cury, curx
 
-def __addformattedarray(win: curses.window, array: List[Tuple[str, int]], y: int = -1, x: int = -1) -> Tuple[int, int]:
+def __addformattedarray(win: curses.window, array: Union[List[Tuple[str, int]], Tuple[str, int]], y: int = -1, x: int = -1) -> Tuple[int, int]:
 	# This way we can print a single (string, attr) too
 	if isinstance(array, tuple):
 		array = [array]
@@ -754,42 +776,55 @@ def addthemearray(win: curses.window,
 				x (int): The new x-coordinate
 	"""
 
-	for item in array:
-		if not isinstance(item, tuple):
-			raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
+	try:
+		for item in array:
+			if isinstance(item, ThemeString):
+				cursestuple = themestring_to_cursestuple(item, selected)
+				y, x = __addformattedarray(win, cursestuple, y = y, x = x)
+				continue
 
-		if len(item) == 3:
-			_p1, _p2, _selected = item
-		elif len(item) == 2:
-			_p1, _p2 = item
-			_selected = selected
+			if isinstance(item, ThemeRef):
+				cursesarray = themeref_to_cursesarray(item, selected)
+				y, x = __addformattedarray(win, cursesarray, y = y, x = x)
+				continue
 
-		if isinstance(_p2, tuple):
-			string = _p1
-			if len(_p2) == 3:
-				context, _p3, _selected = _p2
-			else:
-				context, _p3 = _p2
-			if type(_p3) == int: # pylint: disable=unidiomatic-typecheck
-				attr = _p3
-			else:
-				attr = _attr_to_curses_merged(context, _p3, selected = _selected)
-			y, x = __addstr(win, string, y, x, attr)
-		elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
-			string = _p1
-			attr = _p2
-			y, x = __addstr(win, string, y, x, attr)
-		else:
-			if isinstance(_p1, tuple):
-				context, attr_ref = _p1
-				_selected = _p2
-			else:
-				attr_ref = _p2
-				context = _p1
+			if not isinstance(item, tuple):
+				raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
+
+			if len(item) == 3:
+				_p1, _p2, _selected = item
+			elif len(item) == 2:
+				_p1, _p2 = item
 				_selected = selected
 
-			strarray = themearray_to_strarray(attr_ref, context = context, selected = _selected)
-			y, x = __addformattedarray(win, strarray, y = y, x = x)
+			if isinstance(_p2, tuple):
+				string = _p1
+				if len(_p2) == 3:
+					context, _p3, _selected = _p2
+				else:
+					context, _p3 = _p2
+				if type(_p3) == int: # pylint: disable=unidiomatic-typecheck
+					attr = _p3
+				else:
+					attr = _attr_to_curses_merged(context, _p3, selected = _selected)
+				y, x = __addstr(win, string, y, x, attr)
+			elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
+				string = _p1
+				attr = _p2
+				y, x = __addstr(win, string, y, x, attr)
+			else:
+				if isinstance(_p1, tuple):
+					context, attr_ref = _p1
+					_selected = _p2
+				else:
+					attr_ref = _p2
+					context = _p1
+					_selected = selected
+
+				strarray = themearray_to_strarray(attr_ref, context = context, selected = _selected)
+				y, x = __addformattedarray(win, strarray, y = y, x = x)
+	except (TypeError, ValueError):
+		dump_themearray(array)
 	return y, x
 
 class WidgetLineAttrs(IntFlag):
@@ -873,6 +908,7 @@ def _attr_to_curses_merged(context: str, attr: str, selected: bool = False) -> i
 # XXX: If we ever turn themearray to a proper object reuse this
 # This extracts the string without formatting
 def themearray_to_string(themearray: Sequence[Union[str,
+						    ThemeArray,
 						    ThemeRef,
 						    ThemeString,
 						    Tuple[str, Tuple[str, str]],
@@ -885,21 +921,29 @@ def themearray_to_string(themearray: Sequence[Union[str,
 	if isinstance(themearray, str):
 		return themearray
 
+	if isinstance(themearray, ThemeArray):
+		return str(themearray)
+
 	for fragment in themearray:
-		if not isinstance(fragment, tuple):
-			# pylint: disable-next=line-too-long
-			raise ValueError(f"themearray_to_string() called with an invalid themearray: “{themearray}“; element: “{fragment}“ has invalid type {type(fragment)}; expected tuple")
 		if isinstance(fragment, ThemeString):
-			string += fragment.string
-		elif isinstance(fragment, ThemeRef):
+			string += str(fragment)
+			continue
+
+		if isinstance(fragment, ThemeRef):
 			themed_tuple = deep_get(theme, DictPath(f"{fragment[0]}#{fragment[1]}"))
 			if themed_tuple is None:
 				raise KeyError(f"The theme key-pair context: “{fragment[0]}“, key: “{fragment[1]}“ in the themearray “{themearray}“ does not exist")
 			string += themed_tuple[0][0]
+			continue
+
+		if not isinstance(fragment, tuple):
+			# pylint: disable-next=line-too-long
+			raise ValueError(f"themearray_to_string() called with an invalid themearray: “{themearray}“; element: “{fragment}“ has invalid type {type(fragment)}; expected tuple")
+
 		# (string, curses_attr)
 		# (string, (context, theme_attr))
 		# (string, (context, theme_attr), selected)
-		elif isinstance(fragment[0], str) and type(fragment[1]) in (int, tuple, ThemeAttr):
+		if isinstance(fragment[0], str) and type(fragment[1]) in (int, tuple, ThemeAttr):
 			string += fragment[0]
 		# (context, theme_attr)
 		elif len(fragment) == 2 and isinstance(fragment[0], str) and isinstance(fragment[1], str):
@@ -932,7 +976,7 @@ def themearray_to_strarray(key: str, context: str = "main", selected: bool = Fal
 
 	return strarray
 
-def themeref_to_cursesarray(themeref: ThemeRef, selected: bool = False) -> List[Tuple[str, int]]:
+def themeref_to_cursesarray(themeref: ThemeRef, selected: Optional[bool] = None) -> List[Tuple[str, int]]:
 	"""
 	Given a themeref returns a cursesarray
 
@@ -944,10 +988,12 @@ def themeref_to_cursesarray(themeref: ThemeRef, selected: bool = False) -> List[
 	"""
 
 	# Does it include selected or not?
-	if len(themeref) == 2:
-		context, key = themeref
-	else:
-		context, key, selected = cast(Tuple[str, str, bool], themeref)
+	context = themeref.context
+	key = themeref.key
+	if selected is None:
+		selected = themeref.selected
+	if selected is None:
+		selected = False
 
 	array = theme[context][key]
 
@@ -988,7 +1034,7 @@ def themeattr_to_curses_merged(themeattr: ThemeAttr, selected: bool = False):
 	color, attrs = attr_to_curses(context, key, selected)
 	return color | attrs
 
-def themestring_to_cursestuple(themestring: ThemeString, selected: bool = False) -> Tuple[str, int]:
+def themestring_to_cursestuple(themestring: ThemeString, selected: bool = None) -> Tuple[str, int]:
 	"""
 	Given a themestring returns a cursestuple
 
@@ -999,13 +1045,36 @@ def themestring_to_cursestuple(themestring: ThemeString, selected: bool = False)
 			cursestuple (str, int): A curses tuple for use with addformattedarray()
 	"""
 
-	# Does it include selected or not?
-	if len(themestring) == 2:
-		string, themeattr = cast(Tuple[str, ThemeAttr], themestring)
-	else:
-		string, themeattr, selected = themestring
+	string = themestring.string
+	themeattr = themestring.themeattr
+	if selected is None:
+		selected = themestring.selected
+		if selected is None:
+			selected = False
 
 	return (string, themeattr_to_curses_merged(themeattr, selected))
+
+def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> List[tuple[str, int]]:
+	strarray = []
+
+	for substring in themearray:
+		if isinstance(substring, ThemeString):
+			strarray.append(themestring_to_cursestuple(substring, selected = selected))
+		elif isinstance(substring, ThemeRef):
+			strarray += themeref_to_cursesarray(substring, selected = selected)
+		elif isinstance(substring, tuple):
+			if len(substring) == 3:
+				_selected = substring[2]
+			else:
+				_selected = selected
+			if isinstance(substring[1], str):
+				# This is a lookup
+				strarray += themeref_to_cursesarray(ThemeRef(substring[0], substring[1]), selected = _selected)
+			else:
+				strarray.append(themestring_to_cursestuple(ThemeString(substring[0], substring[1]), selected = _selected))
+		else:
+			raise TypeError(f"themearray_flatten called with invalid type {type(substring)}")
+	return strarray
 
 def strarray_extract_string(strarray) -> str:
 	string = ""
@@ -1019,29 +1088,32 @@ def strarray_extract_string(strarray) -> str:
 			string += _string
 	return string
 
-def themearray_wrap_line(strarray, maxwidth: int = -1, wrap_marker: bool = True):
-	if maxwidth == -1 or len(strarray_extract_string(strarray)) < maxwidth:
-		return [strarray]
+# This can actually deal with more than just ThemeString and ThemeRef
+# XXX: Fix the return type once all callsites are clean
+def themearray_wrap_line(themearray, maxwidth: int = -1, wrap_marker: bool = True, selected: Optional[bool] = None) -> Any:
+	if maxwidth == -1:
+		return [themearray]
 
-	# We don't want to modify the original array
-	_strarray = copy.deepcopy(strarray)
+	strarray = themearray_flatten(themearray, selected = selected)
+
 	strarrays = []
 	i = 0
-	tmpstrarray = []
-	tmplen = 0
-	linebreak = themearray_to_strarray("line_break", context = "separators")
+
+	linebreak = themeref_to_cursesarray(ThemeRef("separators", "line_break"))
+
 	if wrap_marker == True:
 		linebreaklen = len(strarray_extract_string(linebreak))
 	else:
 		linebreaklen = 0
 
+	tmpstrarray = []
+	tmplen = 0
+
 	while True:
-		if isinstance(_strarray[i], tuple) and len(_strarray[i]) == 2 and isinstance(_strarray[i][1], str):
-			_strarray[i] = themearray_to_strarray(_strarray[i][1], _strarray[i][0])[0]
-		_string, _attr = _strarray[i]
+		_string, _attr = strarray[i]
 
 		# If this is the last fragment and it fits, don't add a linebreak marker
-		if tmplen + len(_string) <= maxwidth and i == len(_strarray) - 1:
+		if tmplen + len(_string) <= maxwidth and i == len(strarray) - 1:
 			tmpstrarray.append((_string, _attr))
 			strarrays.append(tmpstrarray)
 			tmpstrarray = []
@@ -1061,7 +1133,7 @@ def themearray_wrap_line(strarray, maxwidth: int = -1, wrap_marker: bool = True)
 			if wrap_marker == True:
 				tmpstrarray += linebreak
 			strarrays.append(tmpstrarray)
-			_strarray[i] = (_string[maxwidth - linebreaklen - tmplen:], _attr)
+			strarray[i] = (_string[maxwidth - linebreaklen - tmplen:], _attr)
 			tmpstrarray = []
 			tmplen = 0
 
@@ -1103,7 +1175,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			for item in items:
 				tmpitems.append({
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[(item[0], ("windowwidget", "highlight"))], [(item[1], ("windowwidget", "default"))]],
+					"columns": [[ThemeString(item[0], ThemeAttr("windowwidget", "highlight"))], [ThemeString(item[1], ThemeAttr("windowwidget", "default"))]],
 					"retval": None,
 				})
 		else:
@@ -1227,18 +1299,23 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 	# Generate headers
 	if headers is not None:
 		if taggable == True:
-			headerarray.append((f"{tagprefix}", ("windowwidget", "highlight")))
+			headerarray.append(ThemeString(f"{tagprefix}", ThemeAttr("windowwidget", "highlight")))
 		for i in range(0, columns):
 			extrapad = padwidth
 			if i == columns - 1:
 				extrapad = 0
-			headerarray.append(((headers[i].ljust(lengths[i] + extrapad)), _attr_to_curses_merged("windowwidget", "header")))
+			headerarray.append(ThemeString((headers[i].ljust(lengths[i] + extrapad)), _attr_to_curses_merged("windowwidget", "header")))
 
 	# Move to preselection
 	if isinstance(preselection, str):
 		if preselection != "":
 			for _y, item in enumerate(items):
-				if item["columns"][0][0][0] == preselection:
+				if isinstance(item["columns"][0][0], ThemeString):
+					tmp_selection = item["columns"][0][0]
+				else:
+					tmp_selection = item["columns"][0][0][0]
+
+				if tmp_selection == preselection:
 					curypos, yoffset = move_cur_with_offset(0, height, yoffset, maxcurypos, maxyoffset, _y)
 					break
 		tagged_items = set()
@@ -1257,43 +1334,52 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 
 			if taggable == True:
 				if _y in tagged_items:
-					linearray.append((f"{tagprefix}", ("windowwidget", "tag")))
+					linearray.append(ThemeString(f"{tagprefix}", ThemeAttr("windowwidget", "tag")))
 				else:
-					linearray.append(("".ljust(tagprefixlen), ("windowwidget", "tag")))
+					linearray.append(ThemeString("".ljust(tagprefixlen), ThemeAttr("windowwidget", "tag")))
 
 			for _x in range(0, columns):
 				strarray = []
 				length = 0
 				tmpstring = ""
 
-				for string, attribute in item["columns"][_x]:
-					tmpstring += string
-					length += len(string)
+				for string in item["columns"][_x]:
+					if isinstance(string, ThemeString):
+						tmpstring += str(string)
+						attribute = string.themeattr
+						strlen = len(string)
+						length += strlen
+					else:
+						tmpstring += string[0]
+						attribute = string[1]
+						strlen = len(tmpstring)
+						length += strlen
+
 					if lineattributes & (WidgetLineAttrs.INVALID) != 0:
-						attribute = ("windowwidget", "alert")
-						strarray.append((string, attribute, _selected))
+						attribute = ThemeAttr("windowwidget", "alert")
+						strarray.append((tmpstring, attribute, _selected))
 					elif lineattributes & (WidgetLineAttrs.DISABLED | WidgetLineAttrs.UNSELECTABLE) != 0:
-						attribute = ("windowwidget", "dim")
-						strarray.append((string, attribute, _selected))
+						attribute = ThemeAttr("windowwidget", "dim")
+						strarray.append((tmpstring, attribute, _selected))
 					elif lineattributes & WidgetLineAttrs.SEPARATOR != 0:
-						if attribute == ("windowwidget", "default"):
-							attribute = ("windowwidget", "highlight")
-						tpad = listpadwidth - len(string)
+						if attribute == ThemeAttr("windowwidget", "default"):
+							attribute = ThemeAttr("windowwidget", "highlight")
+						tpad = listpadwidth - strlen
 						lpad = int(tpad / 2)
 						rpad = tpad - lpad
 						lpadstr = "".ljust(lpad, "─")
 						rpadstr = "".rjust(rpad, "─")
 
-						strarray.append((lpadstr, ("windowwidget", "highlight"), _selected))
-						strarray.append((string, attribute, _selected))
-						strarray.append((rpadstr, ("windowwidget", "highlight"), _selected))
+						strarray.append(ThemeString(lpadstr, ThemeAttr("windowwidget", "highlight"), _selected))
+						strarray.append(ThemeString(tmpstring, attribute, _selected))
+						strarray.append(ThemeString(rpadstr, ThemeAttr("windowwidget", "highlight"), _selected))
 					else:
-						strarray.append((string, attribute, _selected))
+						strarray.append(ThemeString(tmpstring, attribute, _selected))
 
 
 				if lineattributes & WidgetLineAttrs.SEPARATOR == 0:
 					padstring = "".ljust(lengths[_x] - length + padwidth)
-					strarray.append((padstring, attribute, _selected))
+					strarray.append(ThemeString(padstring, attribute, _selected))
 
 				linearray += strarray
 
@@ -2180,7 +2266,7 @@ class UIProps:
 		cury, curx = win.getyx()
 		return cury, curx
 
-	def __addformattedarray(self, win, array, y: int = -1, x: int = -1):
+	def __addformattedarray(self, win: curses.window, array: Union[List[Tuple[str, int]], Tuple[str, int]], y: int = -1, x: int = -1) -> Tuple[int, int]:
 		# This way we can print a single (string, attr) too
 		if isinstance(array, tuple):
 			array = [array]
@@ -2201,54 +2287,57 @@ class UIProps:
 	# (context, theme_ref),
 	# (context, theme_ref, selected),
 	# pylint: disable-next=too-many-arguments
-	def addthemearray(self, win, array, y: int = -1, x: int = -1, selected: bool = False):
-		for item in array:
-			if not isinstance(item, tuple):
-				raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
+	def addthemearray(self, win: curses.window, array, y: int = -1, x: int = -1, selected: bool = False) -> Tuple[int, int]:
+		try:
+			for item in array:
+				if isinstance(item, ThemeString):
+					cursestuple = themestring_to_cursestuple(item, selected)
+					y, x = self.__addformattedarray(win, cursestuple, y = y, x = x)
+					continue
 
-			if isinstance(item, ThemeString):
-				cursestuple = themestring_to_cursestuple(item, selected)
-				y, x = self.__addformattedarray(win, cursestuple, y = y, x = x)
-				continue
+				if isinstance(item, ThemeRef):
+					cursesarray = themeref_to_cursesarray(item, selected)
+					y, x = self.__addformattedarray(win, cursesarray, y = y, x = x)
+					continue
 
-			if isinstance(item, ThemeRef):
-				cursesarray = themeref_to_cursesarray(item, selected)
-				y, x = self.__addformattedarray(win, cursesarray, y = y, x = x)
-				continue
+				if not isinstance(item, tuple):
+					raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
 
-			# These are fallbacks until all ThemeArrays have been converted to ThemeString / ThemeRef
-			if len(item) == 3:
-				_p1, _p2, _selected = item
-			else:
-				_p1, _p2 = item
-				_selected = selected
-
-			if isinstance(_p2, tuple):
-				string = _p1
-				if len(_p2) == 3:
-					context, _p3, _selected = _p2
+				# These are fallbacks until all ThemeArrays have been converted to ThemeString / ThemeRef
+				if len(item) == 3:
+					_p1, _p2, _selected = item
 				else:
-					context, _p3 = _p2
-				if type(_p3) == int: # pylint: disable=unidiomatic-typecheck
-					attr = _p3
-				else:
-					attr = _attr_to_curses_merged(context, _p3, selected = _selected)
-				y, x = self.__addstr(win, string, y, x, attr)
-			elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
-				string = _p1
-				attr = _p2
-				y, x = self.__addstr(win, string, y, x, attr)
-			else:
-				if isinstance(_p1, tuple):
-					context, attr_ref = _p1
-					_selected = _p2
-				else:
-					attr_ref = _p2
-					context = _p1
+					_p1, _p2 = item
 					_selected = selected
 
-				strarray = themearray_to_strarray(attr_ref, context = context, selected = _selected)
-				y, x = self.__addformattedarray(win, strarray, y = y, x = x)
+				if isinstance(_p2, tuple):
+					string = _p1
+					if len(_p2) == 3:
+						context, _p3, _selected = _p2
+					else:
+						context, _p3 = _p2
+					if type(_p3) == int: # pylint: disable=unidiomatic-typecheck
+						attr = _p3
+					else:
+						attr = _attr_to_curses_merged(context, _p3, selected = _selected)
+					y, x = self.__addstr(win, string, y, x, attr)
+				elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
+					string = _p1
+					attr = _p2
+					y, x = self.__addstr(win, string, y, x, attr)
+				else:
+					if isinstance(_p1, tuple):
+						context, attr_ref = _p1
+						_selected = _p2
+					else:
+						attr_ref = _p2
+						context = _p1
+						_selected = selected
+
+					strarray = themearray_to_strarray(attr_ref, context = context, selected = _selected)
+					y, x = self.__addformattedarray(win, strarray, y = y, x = x)
+		except (TypeError, ValueError):
+			dump_themearray(array)
 		return y, x
 
 	def move_xoffset_abs(self, position: int) -> None:

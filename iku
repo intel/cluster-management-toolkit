@@ -47,7 +47,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import ANSIThemeString, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup, ThemeAttr, ThemeRef, ThemeString
+from ikttypes import ANSIThemeString, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup, ThemeArray, ThemeAttr, ThemeRef, ThemeString
 from iktpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
@@ -167,7 +167,7 @@ def gather_cluster_info() -> None:
 
 	print("\n\n")
 
-def format_timestamp(timestamp: datetime, localtimezone: bool = False) -> List[ThemeString]:
+def format_timestamp(timestamp: datetime, localtimezone: bool = False) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Takes datetime and formats it as a YYYY-MM-DD HH:MM:SS themearray
 
@@ -175,7 +175,7 @@ def format_timestamp(timestamp: datetime, localtimezone: bool = False) -> List[T
 			timestamp (datetime): The timestamp
 			localtimezone (bool): IS the timestamp in local time
 		Returns:
-			(list[ThemeString]): A formatted timestamp
+			array (list[Union[ThemeRef, ThemeArray]]): A formatted timestamp
 	"""
 
 	array = []
@@ -249,16 +249,18 @@ def processor_timestamp_with_age(obj, field: str, formatting) -> str:
 
 # For the list processor to work we need to know the length of all the separators
 # pylint: disable-next=too-many-arguments
-def processor_list(obj, field: str, item_separator: ThemeRef, field_separators: List[ThemeRef],
-		   ellipsise: bool, ellipsis: ThemeRef, field_prefixes: List[ThemeString], field_suffixes: List[ThemeString]) -> str:
+def processor_list(obj, field: str, item_separator: ThemeRef, field_separators: List[Union[ThemeRef, ThemeString]],
+		   ellipsise: bool, ellipsis: ThemeRef,
+		   field_prefixes: List[Union[Tuple[str, str], ThemeString, List[Union[Tuple[str, str], ThemeString]]]],
+		   field_suffixes: List[Union[Tuple[str, str], ThemeString, List[Union[Tuple[str, str], ThemeString]]]]) -> str:
 	items = getattr(obj, field)
 
-	strings = []
+	strings: List[str] = []
 
 	elcount = 0
 	skip_separator = True
 
-	if type(items) is tuple:
+	if isinstance(items, tuple):
 		items = [items]
 
 	for item in items:
@@ -266,7 +268,7 @@ def processor_list(obj, field: str, item_separator: ThemeRef, field_separators: 
 			strings.append(themearray_to_string([ellipsis]))
 			break
 
-		if type(item) is not tuple:
+		if not isinstance(item, tuple):
 			item = (item, None)
 
 		# Join all elements of the field into one string
@@ -309,7 +311,7 @@ def processor_list(obj, field: str, item_separator: ThemeRef, field_separators: 
 # For the list processor to work we need to know the length of all the separators
 # pylint: disable-next=too-many-arguments
 
-def processor_list_with_status(obj, field: str, item_separator: ThemeRef, field_separators: List[ThemeRef],
+def processor_list_with_status(obj, field: str, item_separator: ThemeRef, field_separators: List[Union[ThemeRef, ThemeString]],
 			       ellipsise: bool, ellipsis: ThemeRef, field_prefixes: List[ThemeString], field_suffixes: List[ThemeString]) -> str:
 	items = getattr(obj, field)
 
@@ -367,9 +369,9 @@ def processor_mem(obj, field: str) -> str:
 	free, total = getattr(obj, field)
 
 	string = f"{100 - (100 * int(free)) / int(total):0.1f}"
-	string += themearray_to_string([("separators", "percentage")])
+	string += themearray_to_string([ThemeRef("separators", "percentage")])
 	string += " "
-	string += themearray_to_string([("separators", "fraction")])
+	string += themearray_to_string([ThemeRef("separators", "fraction")])
 	string += " "
 	string += f"{int(total) / (1024 * 1024):0.1f}"
 	string += "GiB"
@@ -531,7 +533,7 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 
 	_vlist = kh.list_contexts()
 
-	tag_prefix = themearray_to_string([("separators", "tag")])
+	tag_prefix = themearray_to_string([ThemeRef("separators", "tag")])
 
 	for _current, name, cluster, authinfo, namespace in _vlist:
 		if _current == True:
@@ -605,6 +607,15 @@ def __get_container_info(obj, container_type: str, spec_path: DictPath, status_p
 
 # pylint: disable-next=unused-argument
 def get_container_info(**kwargs: Dict) -> List[Type]:
+	"""
+	Infogetter for Containers
+
+		Parameters:
+			kwargs (dict): Additional parameters
+		Returns:
+			info (list[InfoClass]): A list with info
+	"""
+
 	info: List[Type] = []
 	containers: Dict = {}
 
@@ -665,20 +676,18 @@ def get_container_info(**kwargs: Dict) -> List[Type]:
 		}))
 	return info
 
-class LogInfo:
-	# pylint: disable-next=too-many-arguments
-	def __init__(self, name, action, log_path, created_at, log_type):
-		self.name = name
-		self.action = action
-		self.ref = log_path
-		self.created_at = created_at
-		self.log_type = log_type
-	def __repr__(self):
-		return repr((self.name, self.ref, self.created_at, self.log_type))
-
 # pylint: disable-next=unused-argument
-def get_log_info(**kwargs: Dict) -> List[LogInfo]:
-	info: List[LogInfo] = []
+def get_log_info(**kwargs: Dict) -> List[Type]:
+	"""
+	Infogetter for Ansible logs
+
+		Parameters:
+			kwargs (dict): Additional parameters
+		Returns:
+			info (list[InfoClass]): A list with info
+	"""
+
+	info: List[Type] = []
 
 	# Get the list of available Ansible logs
 	ansible_logs = ansible_get_logs()
@@ -687,8 +696,13 @@ def get_log_info(**kwargs: Dict) -> List[LogInfo]:
 
 	for name, action, ref, created_at in ansible_logs:
 		log_type = "Ansible Play"
-		info.append(LogInfo(name, action, ref, created_at, log_type))
-
+		info.append(type("InfoClass", (), {
+			"name": name,
+			"ref": ref,
+			"action": action,
+			"created_at": created_at,
+			"log_type": log_type,
+		}))
 	return info
 
 # pylint: disable-next=unused-argument
@@ -886,8 +900,8 @@ def __process_sum_mem_usage(values: List[str]) -> str:
 		mem_usage_sum += normalise_mem_to_bytes(value)
 	return normalise_mem_bytes_to_str(mem_usage_sum)
 
-def __process_regex_to_sequence(values: Union[str, List[str]], match_regex, target_type: str) -> Union[Sequence[str], str]:
-	new_values: List[str] = []
+def __process_regex_to_sequence(values: Union[str, List[str]], match_regex, target_type: str) -> Union[Sequence[Union[str, Tuple]], str]:
+	new_values: List[Union[str, Tuple]] = []
 
 	compiled_regex = re.compile(match_regex)
 
@@ -2044,14 +2058,14 @@ def get_task_log(obj):
 def get_themearrays(obj):
 	return obj
 
-def logpad_msg_getter(obj, **kwargs):
-	messages = []
+def logpad_msg_getter(obj: Dict, **kwargs: Dict) -> List[List[ThemeString]]:
+	messages: List[List[ThemeString]] = []
 
 	path = deep_get(kwargs, DictPath("path"))
 	tmp = deep_get(obj, DictPath(path), "")
 
 	for line in split_msg(tmp):
-		messages.append([(f"{line}", curses.A_NORMAL)])
+		messages.append([ThemeString(f"{line}", ThemeAttr("main", "default"))])
 
 	return messages
 
@@ -2148,21 +2162,18 @@ def get_virtsvc_rule_list(obj, **kwargs):
 
 	return vlist, 200
 
-class PromRulesInfo:
-	# pylint: disable-next=too-many-arguments
-	def __init__(self, group, ref, rtype, alertrecord, duration):
-		self.group = group
-		# The reference to the "true" resource object
-		self.ref = ref
-		self.rtype = rtype
-		self.alertrecord = alertrecord
-		self.duration = duration
-	def __repr__(self):
-		return repr((self.group, self.ref, self.rtype, self.alertrecord, self.duration))
+def get_promrules_info(**kwargs: Dict) -> List[Type]:
+	"""
+	Infogetter for Prometheus Rules
 
-def get_promrules_info(**kwargs):
+		Parameters:
+			kwargs (dict): Additional parameters
+		Returns:
+			info (list[InfoClass]): A list with info
+	"""
+
 	obj = deep_get(kwargs, DictPath("_obj"))
-	info = []
+	info: List[Type] = []
 
 	if obj is None:
 		return []
@@ -2192,29 +2203,27 @@ def get_promrules_info(**kwargs):
 			ref = rule
 			age = deep_get(rule, DictPath("for"), "")
 			duration = iktlib.age_to_seconds(age)
-			info.append(PromRulesInfo(name, ref, rtype, alertrecord, duration))
-
+			info.append(type("InfoClass", (), {
+				"name": name,
+				"ref": ref,
+				"rtype": rtype,
+				"alertrecord": alertrecord,
+				"duration": duration,
+			}))
 	return info
 
-class SVCMonEndpointsInfo:
-	# pylint: disable-next=too-many-arguments
-	def __init__(self, bearer_token_file, ref, port, target_port, interval, scheme, path, honor_labels, proxy_url):
-		self.bearer_token_file = bearer_token_file
-		# The reference to the "true" resource object
-		self.ref = ref
-		self.port = port
-		self.target_port = target_port
-		self.interval = interval
-		self.scheme = scheme
-		self.path = path
-		self.honor_labels = honor_labels
-		self.proxy_url = proxy_url
-	def __repr__(self):
-		return repr((self.bearer_token_file, self.ref, self.port, self.target_port, self.interval, self.scheme, self.path, self.honor_labels, self.proxy_url))
+def get_svcmon_endpoints_info(**kwargs: Dict) -> List[Type]:
+	"""
+	Infogetter for Service Monitor Endpoints
 
-def get_svcmon_endpoints_info(**kwargs):
+		Parameters:
+			kwargs (dict): Additional parameters
+		Returns:
+			info (list[InfoClass]): A list with info
+	"""
+
 	obj = deep_get(kwargs, DictPath("_obj"))
-	info = []
+	info: List[Type] = []
 
 	if obj is None:
 		return []
@@ -2229,27 +2238,32 @@ def get_svcmon_endpoints_info(**kwargs):
 		path = deep_get(item, DictPath("path"), "")
 		honor_labels = deep_get(item, DictPath("honorLabels"), "")
 		proxy_url = deep_get(item, DictPath("proxyUrl"), "")
-		info.append(SVCMonEndpointsInfo(bearer_token_file, ref, port, target_port, interval, scheme, path, honor_labels, proxy_url))
+		info.append(type("InfoClass", (), {
+			"bearer_token_file": bearer_token_file,
+			"ref": ref,
+			"port": port,
+			"target_port": target_port,
+			"interval": interval,
+			"scheme": scheme,
+			"path": path,
+			"honor_labels": honor_labels,
+			"proxy_url": proxy_url
+		}))
 
 	return info
 
-class LimitInfo:
-	# pylint: disable-next=too-many-arguments
-	def __init__(self, ltype, name, ref, lmin, lmax, default_request, default_limit, max_lr_ratio):
-		self.ltype = ltype
-		self.name = name
-		self.ref = ref
-		self.lmin = lmin
-		self.lmax = lmax
-		self.default_request = default_request
-		self.default_limit = default_limit
-		self.max_lr_ratio = max_lr_ratio
-	def __repr__(self):
-		return repr((self.ltype, self.name, self.ref, self.lmin, self.lmax, self.default_request, self.default_limit, self.max_lr_ratio))
+def get_limit_info(**kwargs: Dict) -> List[Type]:
+	"""
+	Infogetter for Limits
 
-def get_limit_info(**kwargs):
+		Parameters:
+			kwargs (dict): Additional parameters
+		Returns:
+			info (list[InfoClass]): A list with info
+	"""
+
 	obj = deep_get(kwargs, DictPath("_obj"))
-	info = []
+	info: List[Type] = []
 
 	if obj is None:
 		return []
@@ -2270,30 +2284,37 @@ def get_limit_info(**kwargs):
 		for item in deep_get(limit, DictPath("maxLimitRequestRatio"), []):
 			resources.add(item)
 		ltype = deep_get(limit, DictPath("type"))
-		ref = limit
 
 		for item in resources:
-			name = item
 			lmin = deep_get(limit, DictPath(f"min#{item}"), "-")
 			lmax = deep_get(limit, DictPath(f"max#{item}"), "-")
 			default_request = deep_get(limit, DictPath(f"defaultRequest#{item}"), "-")
 			default_limit = deep_get(limit, DictPath(f"default#{item}"), "-")
 			max_lr_ratio = deep_get(limit, DictPath(f"maxLimitRequestRatio#{item}"), "-")
-			info.append(LimitInfo(ltype, name, ref, lmin, lmax, default_request, default_limit, max_lr_ratio))
-
+			info.append(type("InfoClass", (), {
+				"name": item,
+				"ref": limit,
+				"ltype": ltype,
+				"lmin": lmin,
+				"lmax": lmax,
+				"default_request": default_request,
+				"default_limit": default_limit,
+				"max_lr_ratio": max_lr_ratio,
+			}))
 	return info
 
-class AuthRuleInfo:
-	def __init__(self, source, operation, condition):
-		self.source = source
-		self.operation = operation
-		self.condition = condition
-	def __repr__(self):
-		return repr((self.source, self.operation, self.condition))
+def get_auth_rule_info(**kwargs: Dict) -> List[Type]:
+	"""
+	Infogetter for Istio Authorization Policy Rules
 
-def get_auth_rule_info(**kwargs):
+		Parameters:
+			kwargs (dict): Additional parameters
+		Returns:
+			info (list[InfoClass]): A list with info
+	"""
+
 	obj = deep_get(kwargs, DictPath("_obj"))
-	info = []
+	info: List[Type] = []
 
 	if obj is None:
 		return []
@@ -2332,21 +2353,48 @@ def get_auth_rule_info(**kwargs):
 			conditions.append((key, values, key, not_values))
 
 		if len(sources) > 0 or len(operations) > 0 or len(conditions) > 0:
-			info.append(AuthRuleInfo(sources, operations, conditions))
-
+			info.append(type("InfoClass", (), {
+				"sources": sources,
+				"operations": operations,
+				"conditions": conditions,
+			}))
 	return info
 
-def listgetter_path(obj, **kwargs):
+def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]], int]:
+	"""
+	Listgetter for paths
+
+		Parameters:
+			obj (Dict): The object to extract a list of data from
+			kwargs (Dict): Additional parameters
+		Returns:
+			((vlist, retval)):
+				vlist (list[dict]): The list of data
+				retval (int): The return value
+	"""
+
 	path = deep_get(kwargs, DictPath("path"))
 
-	# As a special case passing the empty string as path will return the object as a list
+	# As a special case passing the empty string as path will return the object instead of a list
 	if path == "":
 		return obj, 200
 	return deep_get(obj, DictPath(path)), 200
 
 # pylint: disable-next=unused-argument
-def listgetter_policy_rules(obj, **kwargs):
-	vlist = []
+def listgetter_policy_rules(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
+	"""
+	Listgetter for Role & ClusterRole policy rules
+
+		Parameters:
+			obj (Dict): The object to extract ingress policy rule information from
+			kwargs (Dict): Additional parameters
+		Returns:
+			((vlist, retval)):
+				vlist (list[dict]): The ingress rules
+				retval (int): The return value
+	"""
+
+	vlist: List[Dict] = []
 
 	if obj is None:
 		return [], 200
@@ -2359,7 +2407,7 @@ def listgetter_policy_rules(obj, **kwargs):
 	#	"resource_names": [],
 	#	"verbs": [],
 	# }
-	resources = {}
+	resources: Dict = {}
 
 	for rule in deep_get(obj, DictPath("rules"), []):
 		non_resource_urls = deep_get(rule, DictPath("nonResourceURLs"), [])
@@ -2434,7 +2482,19 @@ def listgetter_policy_rules(obj, **kwargs):
 	return vlist, 200
 
 # pylint: disable-next=unused-argument
-def get_ingress_rule_list(obj, **kwargs):
+def get_ingress_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
+	"""
+	Listgetter for Ingress rules
+
+		Parameters:
+			obj (Dict): The object to extract ingress rule information from
+			kwargs (Dict): Additional parameters
+		Returns:
+			((vlist, retval)):
+				vlist (list[dict]): The ingress rules
+				retval (int): The return value
+	"""
+
 	vlist = []
 
 	for item in deep_get(obj, DictPath("spec#rules"), []):
@@ -2469,22 +2529,18 @@ def get_ingress_rule_list(obj, **kwargs):
 
 	return vlist, 200
 
-class ServiceAccountSecretInfo:
-	# pylint: disable-next=too-many-arguments
-	def __init__(self, kind, stype, namespace, name, ref):
-		self.kind = kind
-		self.type = stype
-		self.namespace = namespace
-		self.name = name
-		# The reference to the "true" resource object
-		self.ref = ref
-	def __repr__(self):
-		return repr((self.kind, self.type, self.namespace, self.name, self.ref))
+def get_sas_info(**kwargs: Dict) -> List[Type]:
+	"""
+	Infogetter for Service Account secrets
 
-def get_sas_info(**kwargs):
+		Parameters:
+			kwargs (dict): Additional parameters
+		Returns:
+			info (list[InfoClass]): A list with info
+	"""
+
 	obj = deep_get(kwargs, DictPath("_obj"))
-
-	info = []
+	info: List[Type] = []
 
 	if obj is None:
 		return []
@@ -2499,7 +2555,13 @@ def get_sas_info(**kwargs):
 		# Get a reference to the secret
 		ref = kh.get_ref_by_kind_name_namespace(("Secret", ""), secret_name, snamespace)
 
-		info.append(ServiceAccountSecretInfo(("Secret", ""), "Mountable", snamespace, secret_name, ref))
+		info.append(type("InfoClass", (), {
+			"name": secret_name,
+			"ref": ref,
+			"namespace": snamespace,
+			"kind": ("Secret", ""),
+			"type": "Mountable",
+		}))
 
 	for secret in deep_get(obj, DictPath("imagePullSecrets"), []):
 		deep_set(ref, DictPath("kind"), "Secret", create_path = True)
@@ -2510,7 +2572,13 @@ def get_sas_info(**kwargs):
 		# Get a reference to the secret
 		ref = kh.get_ref_by_kind_name_namespace(("Secret", ""), secret_name, snamespace)
 
-		info.append(ServiceAccountSecretInfo(("Secret", ""), "Image Pull", snamespace, secret_name, ref))
+		info.append(type("InfoClass", (), {
+			"name": secret_name,
+			"ref": ref,
+			"namespace": snamespace,
+			"kind": ("Secret", ""),
+			"type": "Image Pull",
+		}))
 
 	vlist, status = kh.get_list_by_kind_namespace(("RoleBinding", "rbac.authorization.k8s.io"), "")
 
@@ -2523,7 +2591,13 @@ def get_sas_info(**kwargs):
 			subjectname = deep_get(subject, DictPath("name"), "")
 			subjectnamespace = deep_get(subject, DictPath("namespace"), "")
 			if subjectkind == "ServiceAccount" and subjectname == saname and subjectnamespace == sanamespace:
-				info.append(ServiceAccountSecretInfo(("RoleBinding", "rbac.authorization.k8s.io"), "", deep_get(ref, DictPath("metadata#namespace")), deep_get(ref, DictPath("metadata#name")), ref))
+				info.append(type("InfoClass", (), {
+					"name": deep_get(ref, DictPath("metadata#name")),
+					"ref": ref,
+					"namespace": deep_get(ref, DictPath("metadata#namespace")),
+					"kind": ("RoleBinding", "rbac.authorization.k8s.io"),
+					"type": "",
+				}))
 
 				# Excellent, we have a Role Binding, now add the role it binds to
 				rolerefkind = (deep_get(ref, DictPath("roleRef#kind"), ""), deep_get(ref, DictPath("roleRef#apiGroup")))
@@ -2533,7 +2607,13 @@ def get_sas_info(**kwargs):
 				if roleref is not None:
 					deep_set(roleref, DictPath("kind"), rolerefkind[0], create_path = True)
 					deep_set(roleref, DictPath("apiVersion"), f"{rolerefkind[1]}/", create_path = True)
-				info.append(ServiceAccountSecretInfo(rolerefkind, "", rolerefnamespace, rolerefname, roleref))
+				info.append(type("InfoClass", (), {
+					"name": rolerefname,
+					"ref": roleref,
+					"namespace": subjectnamespace,
+					"kind": rolerefkind,
+					"type": "",
+				}))
 				break
 
 	vlist, status = kh.get_list_by_kind_namespace(("ClusterRoleBinding", "rbac.authorization.k8s.io"), "")
@@ -2547,7 +2627,13 @@ def get_sas_info(**kwargs):
 			subjectname = deep_get(subject, DictPath("name"), "")
 			subjectnamespace = deep_get(subject, DictPath("namespace"), "")
 			if subjectkind == "ServiceAccount" and subjectname == saname and subjectnamespace == sanamespace:
-				info.append(ServiceAccountSecretInfo(("ClusterRoleBinding", "rbac.authorization.k8s.io"), "", "", deep_get(ref, DictPath("metadata#name")), ref))
+				info.append(type("InfoClass", (), {
+					"name": deep_get(ref, DictPath("metadata#name")),
+					"ref": ref,
+					"namespace": deep_get(ref, DictPath("metadata#namespace")),
+					"kind": ("ClusterRoleBinding", "rbac.authorization.k8s.io"),
+					"type": "",
+				}))
 
 				# Excellent, we have a Cluster Role Binding, now add the role it binds to
 				rolerefkind = (deep_get(ref, DictPath("roleRef#kind"), ""), deep_get(ref, DictPath("roleRef#apiGroup")))
@@ -2556,7 +2642,13 @@ def get_sas_info(**kwargs):
 				if roleref is not None:
 					deep_set(roleref, DictPath("kind"), rolerefkind[0], create_path = True)
 					deep_set(roleref, DictPath("apiVersion"), f"{rolerefkind[1]}/", create_path = True)
-				info.append(ServiceAccountSecretInfo(rolerefkind, "", subjectnamespace, rolerefname, roleref))
+				info.append(type("InfoClass", (), {
+					"name": rolerefname,
+					"ref": roleref,
+					"namespace": subjectnamespace,
+					"kind": rolerefkind,
+					"type": "",
+				}))
 				break
 
 	return info
@@ -3780,6 +3872,14 @@ def get_node_addresses(name, addresses):
 
 # pylint: disable-next=unused-argument
 def get_node_info(vlist, extra_vars) -> List[Type]:
+	"""
+	Infogetter for Nodes
+
+		Parameters:
+			kwargs (dict): Additional parameters
+		Returns:
+			info (list[InfoClass]): A list with info
+	"""
 	info: List[Type] = []
 
 	if vlist == []:
@@ -4095,6 +4195,14 @@ def listgetter_join_dicts_to_list(obj, **kwargs):
 	return vlist, 200
 
 def get_pod_info(**kwargs) -> List[Type]:
+	"""
+	Infogetter for Pods
+
+		Parameters:
+			kwargs (dict): Additional parameters
+		Returns:
+			info (list[InfoClass]): A list with info
+	"""
 	vlist = deep_get(kwargs, DictPath("_vlist"))
 	extra_vars = deep_get(kwargs, DictPath("extra_vars"), {"show_kind": "", "show_evicted": True})
 	filters = deep_get(kwargs, DictPath("filters"), [])
@@ -4178,7 +4286,7 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 	# Is the list taggable?
 	if is_taggable:
 		tabstops.append(tabstop)
-		headerarray.append(("separators", "tag"))
+		headerarray.append(ThemeRef("separators", "tag"))
 		tabstop = themearray_len(headerarray)
 
 	for field in field_list:
@@ -4205,7 +4313,7 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 		# Note that we need to subtract the width of sort direction char
 		# from the width of pad; this only works if len(pad) > 0
 		if first == False:
-			headerarray.append(("".ljust(themearray_len([("separators", "pad")]) - len(sort_direction_char)), ("types", "generic")))
+			headerarray.append(ThemeString("".ljust(themearray_len([ThemeRef("separators", "pad")]) - len(sort_direction_char)), ThemeAttr("types", "generic")))
 
 		tabstop = themearray_len(headerarray)
 
@@ -4218,11 +4326,11 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 		# because we want the string and arrow in different colours,
 		# so just prepend/append whitespace instead
 		if ralign == True:
-			headerarray.append(("".ljust(fieldlen - len(header)), ("types", "generic")))
-		headerarray.append((header, ("main", "listheader", uip.get_sortcolumn() == field)))
-		headerarray.append((sort_direction_char, ("main", "listheader_arrows")))
+			headerarray.append(ThemeString("".ljust(fieldlen - len(header)), ThemeAttr("types", "generic")))
+		headerarray.append(ThemeString(header, ThemeAttr("main", "listheader"), selected = (uip.get_sortcolumn() == field)))
+		headerarray.append(ThemeString(sort_direction_char, ThemeAttr("main", "listheader_arrows")))
 		if ralign == False:
-			headerarray.append(("".ljust(fieldlen - len(header)), ("types", "generic")))
+			headerarray.append(ThemeString("".ljust(fieldlen - len(header)), ThemeAttr("types", "generic")))
 		first = False
 
 	# We've got to account for the last entry
@@ -4245,12 +4353,12 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 		attribute = curses.A_NORMAL
 
 		if is_taggable:
-			tagprefixlen = themearray_len([("separators", "tag")])
+			tagprefixlen = themearray_len([ThemeRef("separators", "tag")])
 
 			if is_tagged:
-				tagprefix = [("separators", "tag")]
+				tagprefix = [ThemeRef("separators", "tag")]
 			else:
-				tagprefix = [("".ljust(tagprefixlen), ("types", "generic"))]
+				tagprefix = [ThemeString("".ljust(tagprefixlen), ThemeAttr("types", "generic"))]
 		else:
 			tagprefix = ""
 			tagprefixlen = 0
@@ -4263,7 +4371,7 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 
 		fieldlen = field_list[field]["fieldlen"]
 		if i < len(field_list):
-			fpad = themearray_len([("separators", "pad")])
+			fpad = themearray_len([ThemeRef("separators", "pad")])
 		else:
 			fpad = 0
 
@@ -4288,7 +4396,7 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 			uip.addthemearray(listpad, tagprefix, y = ypos, x = pos)
 			first = False
 
-		uip.addthemearray(listpad, tmp, y = ypos, x = pos + tagprefixlen)
+		uip.addthemearray(listpad, tmp, y = ypos, x = pos + tagprefixlen, selected = is_selected)
 
 builtin_fields = {
 	"age": {
@@ -4716,39 +4824,42 @@ def genericlistloop(stdscr, view):
 				interval = "Manual"
 
 			statusarray1 = [
-				("Fields: ", ("statusbar", "infoheader")), (field_index, ("statusbar", "highlight"))
+				ThemeString("Fields: ", ThemeAttr("statusbar", "infoheader")),
+				ThemeString(field_index, ThemeAttr("statusbar", "highlight"))
 			]
 			if len(label_selector) > 0:
 				if len(statusarray1) > 0:
-					statusarray1 += [("separators", "statusbar")]
+					statusarray1 += [ThemeRef("separators", "statusbar")]
 				statusarray1 += [
-					("Label selector: ", ("statusbar", "infoheader")), (f"{label_selector}", ("statusbar", "highlight"))
+					ThemeString("Label selector: ", ThemeAttr("statusbar", "infoheader")),
+					ThemeString(f"{label_selector}", ThemeAttr("statusbar", "highlight"))
 				]
 			statusarray2 = [
 			]
 			if read_only_mode == True:
-				statusarray2 += [("Read Only Mode", ("statusbar", "highlight"))]
+				statusarray2 += [ThemeString("Read Only Mode", ThemeAttr("statusbar", "highlight"))]
 
 			if view != "Contexts" and ("namespace" in denylist or "namespace" in field_names):
 				if len(statusarray2) > 0:
-					statusarray2 += [("separators", "statusbar")]
-				statusarray2 += [("Namespace: ", ("statusbar", "infoheader")), (f"{selected_namespace if len(selected_namespace) > 0 else '<All>'}", ("statusbar", "highlight"))]
+					statusarray2 += [ThemeRef("separators", "statusbar")]
+				statusarray2 += [ThemeString("Namespace: ", ThemeAttr("statusbar", "infoheader")),
+						 ThemeString(f"{selected_namespace if len(selected_namespace) > 0 else '<All>'}", ThemeAttr("statusbar", "highlight"))]
 
 			if len(statusarray2) > 0:
-				statusarray2 += [("separators", "statusbar")]
+				statusarray2 += [ThemeRef("separators", "statusbar")]
 			statusarray2 += [
-				("API Status: ", ("statusbar", "infoheader")),
+				ThemeString("API Status: ", ThemeAttr("statusbar", "infoheader")),
 				# Here we should probably highlight when something is bad
-				(f"{serverstatus}", ("statusbar", "default")),
+				ThemeString(f"{serverstatus}", ThemeAttr("statusbar", "default")),
 			]
 
 			for key, path in deep_get(viewref, DictPath("statusmsg"), []):
 				value = str(deep_get(listview_args, DictPath(path), "<unset>"))
 				if len(statusarray2) > 0:
-					statusarray2 += [("separators", "statusbar")]
+					statusarray2 += [ThemeRef("separators", "statusbar")]
 				statusarray2 += [
-					(key, ("statusbar", "infoheader")),
-					(value, ("statusbar", "default")),
+					ThemeString(key, ThemeAttr("statusbar", "infoheader")),
+					ThemeString(value, ThemeAttr("statusbar", "default")),
 				]
 
 			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
@@ -5792,11 +5903,11 @@ def clusteroverviewloop(stdscr, view):
 			uip.update_window()
 
 			if islocal == True:
-				tmp = secure_read_string("/proc/loadavg")
+				tmp = secure_read_string(FilePath("/proc/loadavg"))
 				loadavg_raw = tmp.splitlines()
-				tmp = secure_read_string("/proc/meminfo")
+				tmp = secure_read_string(FilePath("/proc/meminfo"))
 				meminfo_raw = tmp.splitlines()
-				tmp = secure_read_string("/proc/stat")
+				tmp = secure_read_string(FilePath("/proc/stat"))
 				stat_raw = tmp.splitlines()
 
 			if len(loadavg_raw) > 0:
@@ -5882,19 +5993,19 @@ def clusteroverviewloop(stdscr, view):
 			uip.resize_listpad(max(len(node_heatmap), len(pod_heatmap)), -1)
 
 		namearray = [
-			("Control Plane: ", ("main", "infoheader")),
-			(f"{name}", ("types", "generic"))
+			ThemeString("Control Plane: ", ThemeAttr("main", "infoheader")),
+			ThemeString(f"{name}", ThemeAttr("types", "generic"))
 		]
 		contextarray = [
-			("Cluster Context: ", ("main", "infoheader")),
-			(f"{kh.context_name}", ("types", "generic"))
+			ThemeString("Cluster Context: ", ThemeAttr("main", "infoheader")),
+			ThemeString(f"{kh.context_name}", ThemeAttr("types", "generic"))
 		]
 		internaliparray = [
-			("Internal IP-address(es): ", ("main", "infoheader")),
+			ThemeString("Internal IP-address(es): ", ThemeAttr("main", "infoheader")),
 		]
 		internaliparray += generators.format_list(iips, 0, 0, False, False)
 		externaliparray = [
-			("External IP-address(es): ", ("main", "infoheader")),
+			ThemeString("External IP-address(es): ", ThemeAttr("main", "infoheader")),
 		]
 		externaliparray += generators.format_list(eips, 0, 0, False, False)
 		# Kubernetes port
@@ -5908,32 +6019,32 @@ def clusteroverviewloop(stdscr, view):
 
 		if len(loadavg_raw) > 0 and len(meminfo_raw) > 0 and len(stat_raw) > 0:
 			tasksarray = [
-				("Tasks: ", ("main", "infoheader")),
-				(f"{running}", ("types", "numerical")),
-				("separators", "fraction"),
-				(f"{tasks} ", ("types", "numerical")),
-				("running", ("types", "generic")),
+				ThemeString("Tasks: ", ThemeAttr("main", "infoheader")),
+				ThemeString(f"{running}", ThemeAttr("types", "numerical")),
+				ThemeRef("separators", "fraction"),
+				ThemeString(f"{tasks} ", ThemeAttr("types", "numerical")),
+				ThemeString("running", ThemeAttr("types", "generic")),
 			]
 
 			cpuarray = [
-				(" CPU: ", ("main", "infoheader")),
+				ThemeString(" CPU: ", ThemeAttr("main", "infoheader")),
 			]
 			cpuusagearray = [
-				(f"{str(100 * cputimetotalused // cputimetotal).rjust(3)}", ("types", "numerical")),
-				("separators", "percentage"),
+				ThemeString(f"{str(100 * cputimetotalused // cputimetotal).rjust(3)}", ThemeAttr("types", "numerical")),
+				ThemeRef("separators", "percentage"),
 			]
 			memarray = [
-				(" Mem: ", ("main", "infoheader")),
+				ThemeString(" Mem: ", ThemeAttr("main", "infoheader")),
 			]
 			memusagearray = [
-				(str(100 * memused // memtotal).rjust(3), ("types", "numerical")),
-				("separators", "percentage"),
+				ThemeString(str(100 * memused // memtotal).rjust(3), ThemeAttr("types", "numerical")),
+				ThemeRef("separators", "percentage"),
 			]
 			swaparray = [
-				("Swap: ", ("main", "infoheader")),
+				ThemeString("Swap: ", ThemeAttr("main", "infoheader")),
 			]
 			disabledarray = [
-				("Disabled", ("main", "highlight")),
+				ThemeString("Disabled", ThemeAttr("main", "highlight")),
 			]
 
 			uip.addthemearray(infopad, tasksarray, y = 5, x = 0)
@@ -5947,18 +6058,20 @@ def clusteroverviewloop(stdscr, view):
 			# low-priority (bold blue) / normal (green) / kernel (red) / virtualized (cyan)
 			# This is aggregate over all CPUs
 			curses_helper.percentagebar(infopad, 6, 6, uip.infopadwidth - 10, cputimetotal, [
-				(cputimeusernice, ("types", "cputime_user_nice")),
-				(cputimeuser, ("types", "cputime_user")),
-				(cputimetotalsystem, ("types", "cputime_total_system")),
-				(cputimetotalguest, ("types", "cputime_total_guest"))
+				# Note: These are NOT themestrings!
+				(cputimeusernice, ThemeAttr("types", "cputime_user_nice")),
+				(cputimeuser, ThemeAttr("types", "cputime_user")),
+				(cputimetotalsystem, ThemeAttr("types", "cputime_total_system")),
+				(cputimetotalguest, ThemeAttr("types", "cputime_total_guest"))
 			])
 
 			# memory usage:
 			# used (green) / buffers (bold blue) / cache (yellow)
 			curses_helper.percentagebar(infopad, 7, 6, uip.infopadwidth - 10, memtotal, [
-				(memused - memcached - buffers, ("types", "mem")),
-				(buffers, ("types", "buffers")),
-				(memcached, ("types", "cached"))
+				# Note: These are NOT themestrings!
+				(memused - memcached - buffers, ThemeAttr("types", "mem")),
+				(buffers, ThemeAttr("types", "buffers")),
+				(memcached, ThemeAttr("types", "cached"))
 			])
 
 			# swap usage:
@@ -5967,11 +6080,12 @@ def clusteroverviewloop(stdscr, view):
 				uip.addthemearray(infopad, disabledarray, y = 8, x = 6)
 			else:
 				curses_helper.percentagebar(infopad, 8, 6, uip.infopadwidth - 10, swaptotal, [
-					(swapused, ("types", "swap_used"))
+					# Note: These are NOT themestrings!
+					(swapused, ThemeAttr("types", "swap_used"))
 				])
 				swapusagearray = [
-					(f"{100 * swapused // swaptotal}", ("main", "dim")),
-					("separators", "percentage"),
+					ThemeString(f"{100 * swapused // swaptotal}", ThemeAttr("main", "dim")),
+					ThemeRef("separators", "percentage"),
 				]
 				uip.addthemearray(infopad, swapusagearray, y = 8, x = (uip.infopadwidth - 8))
 
@@ -5980,21 +6094,21 @@ def clusteroverviewloop(stdscr, view):
 			heatmap_width = ((uip.maxx - uip.minx - 1) // 2) - 1
 			node_heatmap_xpos = 0
 			pod_heatmap_xpos = heatmap_width - 1
-			uip.addthemearray(listpad, [("Node heatmap:", ("main", "listheader", selected_heatmap == "Node"))], y = 0, x = node_heatmap_xpos)
+			uip.addthemearray(listpad, [ThemeString("Node heatmap:", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node"))], y = 0, x = node_heatmap_xpos)
 			selectednodearray = [
-				("N", ("main", "listheader")),
-				("o", ("main", "listheader", selected_heatmap == "Node")),
-				("de: ", ("main", "listheader")),
-				(f"{nodeinfo[selected_node].name}".ljust(heatmap_width), ("main", "highlight")),
+				ThemeString("N", ThemeAttr("main", "listheader")),
+				ThemeString("o", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node")),
+				ThemeString("de: ", ThemeAttr("main", "listheader")),
+				ThemeString(f"{nodeinfo[selected_node].name}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
 			]
 			selectednodestatusarray = [
-				("Status: ", ("main", "infoheader")),
-				(f"{nodeinfo[selected_node].status}".ljust(heatmap_width), color_status_group(nodeinfo[selected_node].status_group)),
+				ThemeString("Status: ", ThemeAttr("main", "infoheader")),
+				ThemeString(f"{nodeinfo[selected_node].status}".ljust(heatmap_width), color_status_group(nodeinfo[selected_node].status_group)),
 			]
 			selectednodetaintsarray = [
-				("Taints: ", ("main", "infoheader")),
+				ThemeString("Taints: ", ThemeAttr("main", "infoheader")),
 			]
-			selectednodetaintsarray += generators.format_list(nodeinfo[selected_node].taints, 0, 0, False, False, field_colors = [("types", "key"), ("types", "value")], field_separators = [("separators", "keyvalue_taint")])
+			selectednodetaintsarray += generators.format_list(nodeinfo[selected_node].taints, 0, 0, False, False, field_colors = [ThemeAttr("types", "key"), ThemeAttr("types", "value")], field_separators = [ThemeRef("separators", "keyvalue_taint")])
 
 			uip.addthemearray(listpad, selectednodearray, y = 1, x = node_heatmap_xpos + 1)
 			uip.addthemearray(listpad, selectednodestatusarray, y = 2, x = node_heatmap_xpos + 1)
@@ -6008,26 +6122,26 @@ def clusteroverviewloop(stdscr, view):
 				uip.addthemearray(listpad, row, y = y, x = node_heatmap_xpos)
 				y += 1
 
-			uip.addthemearray(listpad, [("Pod heatmap:", ("main", "listheader", selected_heatmap == "Pod"))], y = 0, x = pod_heatmap_xpos)
+			uip.addthemearray(listpad, [ThemeString("Pod heatmap:", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod"))], y = 0, x = pod_heatmap_xpos)
 			selectedpodarray = [
-				("P", ("main", "listheader", selected_heatmap == "Pod")),
-				("od: ", ("main", "listheader")),
-				(f"{podinfo[selected_pod].name}".ljust(heatmap_width), ("main", "highlight")),
+				ThemeString("P", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+				ThemeString("od: ", ThemeAttr("main", "listheader")),
+				ThemeString(f"{podinfo[selected_pod].name}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
 			]
 			selectedpodnamespacearray = [
-				("N", ("main", "listheader", selected_heatmap == "Pod")),
-				("amespace: ", ("main", "listheader")),
-				(f"{podinfo[selected_pod].namespace}".ljust(heatmap_width), ("main", "highlight")),
+				ThemeString("N", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+				ThemeString("amespace: ", ThemeAttr("main", "listheader")),
+				ThemeString(f"{podinfo[selected_pod].namespace}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
 			]
 			selectedpodnodearray = [
-				("N", ("main", "infoheader")),
-				("o", ("main", "listheader", selected_heatmap == "Pod")),
-				("de: ", ("main", "infoheader")),
-				(f"{podinfo[selected_pod].node}".ljust(heatmap_width), ("main", "highlight")),
+				ThemeString("N", ThemeAttr("main", "infoheader")),
+				ThemeString("o", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+				ThemeString("de: ", ThemeAttr("main", "infoheader")),
+				ThemeString(f"{podinfo[selected_pod].node}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
 			]
 			selectedpodstatusarray = [
-				("Status: ", ("main", "infoheader")),
-				(f"{podinfo[selected_pod].status}".ljust(heatmap_width), color_status_group(podinfo[selected_pod].status_group)),
+				ThemeString("Status: ", ThemeAttr("main", "infoheader")),
+				ThemeString(f"{podinfo[selected_pod].status}".ljust(heatmap_width), color_status_group(podinfo[selected_pod].status_group)),
 			]
 			uip.addthemearray(listpad, selectedpodarray, y = 1, x = pod_heatmap_xpos + 1)
 			uip.addthemearray(listpad, selectedpodnamespacearray, y = 2, x = pod_heatmap_xpos + 1)
@@ -6867,7 +6981,8 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 			uip.statusbar.erase()
 
 			statusarray1 = [
-				("Fields: ", ("statusbar", "infoheader")), (field_index, ("statusbar", "highlight"))
+				ThemeString("Fields: ", ThemeAttr("statusbar", "infoheader")),
+				ThemeString(field_index, ThemeAttr("statusbar", "highlight"))
 			]
 			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
 
@@ -7605,27 +7720,27 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						facility_extended = None
 					elif multilog_prefix == ["container"]:
 						facility_extended = [
-							("separators", "facility_extended_prefix"),
-							(f"{containername}", ("types", "facility_extended")),
-							("separators", "facility_extended_suffix"),
+							ThemeRef("separators", "facility_extended_prefix"),
+							ThemeString(f"{containername}", ThemeAttr("types", "facility_extended")),
+							ThemeRef("separators", "facility_extended_suffix"),
 						]
 					elif multilog_prefix == ["podname", "container"] or multilog_prefix == ["namespace", "podname", "container"] and all_same_namespace == True:
 						facility_extended = [
-							("separators", "facility_extended_prefix"),
-							(f"{podname}", ("types", "facility_extended")),
-							("separators", "container"),
-							(f"{containername}", ("types", "facility_extended")),
-							("separators", "facility_extended_suffix"),
+							ThemeRef("separators", "facility_extended_prefix"),
+							ThemeString(f"{podname}", ThemeAttr("types", "facility_extended")),
+							ThemeRef("separators", "container"),
+							ThemeString(f"{containername}", ThemeAttr("types", "facility_extended")),
+							ThemeRef("separators", "facility_extended_suffix"),
 						]
 					elif multilog_prefix == ["namespace", "podname", "container"]:
 						facility_extended = [
-							("separators", "facility_extended_prefix"),
-							(f"{namespace}", ("types", "facility_extended")),
-							("separators", "namespace"),
-							(f"{podname}", ("types", "facility_extended")),
-							("separators", "container"),
-							(f"{containername}", ("types", "facility_extended")),
-							("separators", "facility_extended_suffix"),
+							ThemeRef("separators", "facility_extended_prefix"),
+							ThemeString(f"{namespace}", ThemeAttr("types", "facility_extended")),
+							ThemeRef("separators", "namespace"),
+							ThemeString(f"{podname}", ThemeAttr("types", "facility_extended")),
+							ThemeRef("separators", "container"),
+							ThemeString(f"{containername}", ThemeAttr("types", "facility_extended")),
+							ThemeRef("separators", "facility_extended_suffix"),
 						]
 					rawmsg, internal_error = get_pod_log_by_name_namespace_container(podname, namespace, containername, tail_lines = tail_lines)
 					if internal_error == True:
@@ -7768,7 +7883,12 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						continue
 				else:
 					if repeat_count > 0 and merge_repeats:
-						timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity, [("[previous message repeated ", color_log_severity(prev_severity, False)), (f"{repeat_count}", ("logview", "repeat_count")), (" times]", color_log_severity(prev_severity, False))], facility_extended)
+						timestamps, facilities, severities, messages =\
+							log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity,
+								     [ThemeString("[previous message repeated ", color_log_severity(prev_severity)),
+								      ThemeString(f"{repeat_count}", ThemeAttr("logview", "repeat_count")),
+								      ThemeString(" times]", color_log_severity(prev_severity))],
+								     facility_extended)
 					repeat_count = 0
 					prev_timestamp = timestamp
 					prev_facility = facility
@@ -7810,7 +7930,12 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 			# If the last message in the log is a repeat we need to add the repeat signature
 			if repeat_count > 0 and merge_repeats:
-				timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity, [("[previous message repeated ", color_log_severity(prev_severity, False)), (f"{repeat_count}", ("logview", "repeat_count")), (" times]", color_log_severity(prev_severity, False))], facility_extended)
+				timestamps, facilities, severities, messages =\
+					log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity,
+						     [ThemeString("[previous message repeated ", color_log_severity(prev_severity)),
+						      ThemeString(f"{repeat_count}", ThemeAttr("logview", "repeat_count")),
+						      ThemeString(" times]", color_log_severity(prev_severity))],
+						     facility_extended)
 
 			uip.update_log_info(timestamps, facilities, severities, messages)
 			uip.loglen = len(messages)
@@ -7832,39 +7957,39 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 				status, status_group, restarts, message, _age = datagetter.get_container_status(src_statuses, containername)
 				containerarray = [
-					("Container: ", ("main", "infoheader")),
-					(f"{containername}{containertypearray}", ("types", "generic"))
+					ThemeString("Container: ", ThemeAttr("main", "infoheader")),
+					ThemeString(f"{containername}{containertypearray}", ThemeAttr("types", "generic"))
 				]
 				statusarray = [
-					("Status: ", ("main", "infoheader")),
-					(f"{status}", color_status_group(status_group))
+					ThemeString("Status: ", ThemeAttr("main", "infoheader")),
+					ThemeString(f"{status}", color_status_group(status_group))
 				]
 				if message != "":
-					statusarray.append((f" ({message})", ("types", "generic")))
+					statusarray.append(ThemeString(f" ({message})", ThemeAttr("types", "generic")))
 				restartsarray = [
-					("Restarts: ", ("main", "infoheader")),
-					(f"{restarts}", ("types", "numerical"))
+					ThemeString("Restarts: ", ThemeAttr("main", "infoheader")),
+					ThemeString(f"{restarts}", ThemeAttr("types", "numerical"))
 				]
 				podarray = [
-					("Pod: ", ("main", "infoheader")),
-					(f"{pod_info.name}", ("types", "generic")),
+					ThemeString("Pod: ", ThemeAttr("main", "infoheader")),
+					ThemeString(f"{pod_info.name}", ThemeAttr("types", "generic")),
 				]
 				containeridarray = [
-					("Container ID: ", ("main", "infoheader")),
-					(f"{deep_get(container_status, DictPath('containerID'))}", ("types", "generic")),
+					ThemeString("Container ID: ", ThemeAttr("main", "infoheader")),
+					ThemeString(f"{deep_get(container_status, DictPath('containerID'))}", ThemeAttr("types", "generic")),
 				]
 				image_name, image_version = get_image_tuple(deep_get(container_status, DictPath("image")))
 				imagearray = [
-					("Image: ", ("main", "infoheader")),
-					(f"{image_name}", ("types", "generic")),
-					("separators", "version"),
-					(f"{image_version}", ("types", "version")),
+					ThemeString("Image: ", ThemeAttr("main", "infoheader")),
+					ThemeString(f"{image_name}", ThemeAttr("types", "generic")),
+					ThemeRef("separators", "version"),
+					ThemeString(f"{image_version}", ThemeAttr("types", "version")),
 				]
 				image_id = deep_get(container_status, DictPath("imageID"))
 				imageidarray = [
-					("I", ("main", "infoheader_shortcut")),
-					("mage ID: ", ("main", "infoheader")),
-					(f"{image_id}", ("types", "generic")),
+					ThemeString("I", ThemeAttr("main", "infoheader_shortcut")),
+					ThemeString("mage ID: ", ThemeAttr("main", "infoheader")),
+					ThemeString(f"{image_id}", ThemeAttr("types", "generic")),
 				]
 				uip.addthemearray(infopad, containerarray, y = 0, x = 0)
 				uip.addthemearray(infopad, statusarray, y = 1, x = 0)
@@ -7876,34 +8001,40 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			else:
 				if len(multilog_containers) == 1:
 					containerarray = [
-						("Container: ", ("main", "infoheader")),
-						(f"{containername}", ("types", "generic")),
+						ThemeString("Container: ", ThemeAttr("main", "infoheader")),
+						ThemeString(f"{containername}", ThemeAttr("types", "generic")),
 					]
 					podarray = [
-						("Pod: ", ("main", "infoheader")),
-						(f"{podname}", ("types", "generic")),
+						ThemeString("Pod: ", ThemeAttr("main", "infoheader")),
+						ThemeString(f"{podname}", ThemeAttr("types", "generic")),
 					]
 					namespacearray = [
-						("Namespace: ", ("main", "infoheader")),
-						(f"{namespace}", ("types", "namespace")),
+						ThemeString("Namespace: ", ThemeAttr("main", "infoheader")),
+						ThemeString(f"{namespace}", ThemeAttr("types", "namespace")),
 					]
 					containeridarray = [
-						("I", ("main", "infoheader_shortcut")),
-						("mage ID: ", ("main", "infoheader")),
-						(f"{image_id}", ("types", "generic")),
+						ThemeString("I", ThemeAttr("main", "infoheader_shortcut")),
+						ThemeString("mage ID: ", ThemeAttr("main", "infoheader")),
+						ThemeString(f"{image_id}", ThemeAttr("types", "generic")),
 					]
 					uip.addthemearray(infopad, podarray, y = 1, x = 0)
 					uip.addthemearray(infopad, namespacearray, y = 2, x = 0)
 					uip.addthemearray(infopad, containeridarray, y = 3, x = 0)
 				else:
 					containerarray = [
-						("Containers: ", ("main", "infoheader")),
+						ThemeString("Containers: ", ThemeAttr("main", "infoheader")),
 					]
-					containerarray += generators.format_list(multilog_containers, 0, 0, False, False, field_colors = [("types", "namespace"), ("types", "generic"), ("types", "generic")], field_separators = [("separators", "namespace"), ("separators", "container")], ellipsise = 3)
+					containerarray += generators.format_list(multilog_containers, 0, 0, False, False,
+										 field_colors = [ThemeAttr("types", "namespace"),
+												 ThemeAttr("types", "generic"),
+												 ThemeAttr("types", "generic")],
+										 field_separators = [ThemeRef("separators", "namespace"),
+												     ThemeRef("separators", "container")],
+										 ellipsise = 3)
 					if all_same_namespace == True:
 						namespacearray = [
-							("Namespace: ", ("main", "infoheader")),
-							(f"{namespace}", ("types", "namespace")),
+							ThemeString("Namespace: ", ThemeAttr("main", "infoheader")),
+							ThemeString(f"{namespace}", ThemeAttr("types", "namespace")),
 						]
 						uip.addthemearray(infopad, namespacearray, y = 1, x = 0)
 				uip.addthemearray(infopad, containerarray, y = 0, x = 0)
@@ -7935,94 +8066,109 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			if uip.maxx - uip.minx > 108:
 				# Wide version
 				statusarray1 = [
-					("Updates: ", ("statusbar", "infoheader")), (f"{interval}", ("statusbar", "highlight")),
-					("separators", "statusbar"),
-					("Loglvl: ", ("statusbar", "infoheader")), (f"{loglevel_str}", ("statusbar", "highlight")),
-					("separators", "statusbar"),
-					("Log length: ", ("statusbar", "infoheader")), (f"{uip.loglen} ", ("statusbar", "highlight")), ("lines (", ("statusbar", "default")),
+					ThemeString("Updates: ", ThemeAttr("statusbar", "infoheader")),
+					ThemeString(f"{interval}", ThemeAttr("statusbar", "highlight")),
+					ThemeRef("separators", "statusbar"),
+					ThemeString("Loglvl: ", ThemeAttr("statusbar", "infoheader")),
+					ThemeString(f"{loglevel_str}", ThemeAttr("statusbar", "highlight")),
+					ThemeRef("separators", "statusbar"),
+					ThemeString("Log length: ", ThemeAttr("statusbar", "infoheader")),
+					ThemeString(f"{uip.loglen} ", ThemeAttr("statusbar", "highlight")),
+					ThemeString("lines (", ThemeAttr("statusbar", "default")),
 				]
 				if hidden_msgs > 0:
 					statusarray1 += [
-						(f"{hidden_msgs}", ("statusbar", "highlight")), (" messages hidden)", ("statusbar", "dim")), ("; ", ("statusbar", "default")),
+						ThemeString(f"{hidden_msgs}", ThemeAttr("statusbar", "highlight")),
+						ThemeString(" messages hidden)", ThemeAttr("statusbar", "dim")),
+						ThemeString("; ", ThemeAttr("statusbar", "default")),
 					]
 				statusarray1 += [
-					("limit: ", ("statusbar", "default")), (f"{loglimit}", ("statusbar", "highlight")), (")", ("statusbar", "default")),
+					ThemeString("limit: ", ThemeAttr("statusbar", "default")),
+					ThemeString(f"{loglimit}", ThemeAttr("statusbar", "highlight")),
+					ThemeString(")", ThemeAttr("statusbar", "default")),
 				]
 				statusarray2 = [
 				]
 				if fold_msg == False:
 					statusarray2 += [
-						("Unfolding messages", ("statusbar", "highlight")),
-						("separators", "statusbar"),
+						ThemeString("Unfolding messages", ThemeAttr("statusbar", "highlight")),
+						ThemeRef("separators", "statusbar"),
 					]
 				if merge_repeats == True:
 					statusarray2 += [
-						("Repeats merged", ("statusbar", "highlight")),
-						("separators", "statusbar"),
+						ThemeString("Repeats merged", ThemeAttr("statusbar", "highlight")),
+						ThemeRef("separators", "statusbar"),
 					]
 
 				statusarray2 += [
-					("Facility: ", ("statusbar", "infoheader")),
-					(f"{show_facility}", ("statusbar", "highlight")),
-					("separators", "statusbar"),
-					("Format: ", ("statusbar", "infoheader")),
+					ThemeString("Facility: ", ThemeAttr("statusbar", "infoheader")),
+					ThemeString(f"{show_facility}", ThemeAttr("statusbar", "highlight")),
+					ThemeRef("separators", "statusbar"),
+					ThemeString("Format: ", ThemeAttr("statusbar", "infoheader")),
 				]
 			else:
 				# Compact version
 				statusarray1 = [
-					("Updates: ", ("statusbar", "infoheader")), (f"{interval}", ("statusbar", "highlight")),
-					("separators", "statusbar_compact"),
-					("Loglvl: ", ("statusbar", "infoheader")), (f"{loglevel_str}", ("statusbar", "highlight")),
-					("separators", "statusbar_compact"),
-					(f"{uip.loglen} ", ("statusbar", "highlight")), ("lines (", ("statusbar", "default")),
+					ThemeString("Updates: ", ThemeAttr("statusbar", "infoheader")),
+					ThemeString(f"{interval}", ThemeAttr("statusbar", "highlight")),
+					ThemeRef("separators", "statusbar_compact"),
+					ThemeString("Loglvl: ", ThemeAttr("statusbar", "infoheader")),
+					ThemeString(f"{loglevel_str}", ThemeAttr("statusbar", "highlight")),
+					ThemeRef("separators", "statusbar_compact"),
+					ThemeString(f"{uip.loglen} ", ThemeAttr("statusbar", "highlight")),
+					ThemeString("lines (", ThemeAttr("statusbar", "default")),
 				]
 				if hidden_msgs > 0:
 					statusarray1 += [
-						(f"{hidden_msgs}", ("statusbar", "highlight")), (" hidden", ("statusbar", "dim")), ("; ", ("statusbar", "default")),
+						ThemeString(f"{hidden_msgs}", ThemeAttr("statusbar", "highlight")),
+						ThemeString(" hidden", ThemeAttr("statusbar", "dim")),
+						ThemeString("; ", ThemeAttr("statusbar", "default")),
 					]
 				statusarray1 += [
-					("max: ", ("statusbar", "default")), (f"{loglimit}", ("statusbar", "highlight")), (")", ("statusbar", "default")),
+					ThemeString("max: ", ThemeAttr("statusbar", "default")),
+					ThemeString(f"{loglimit}", ThemeAttr("statusbar", "highlight")),
+					ThemeString(")", ThemeAttr("statusbar", "default")),
 				]
 				statusarray2 = [
 				]
 				if fold_msg == False:
 					statusarray2 += [
-						("Unfolding", ("statusbar", "highlight")),
-						("separators", "statusbar_compact"),
+						ThemeString("Unfolding", ThemeAttr("statusbar", "highlight")),
+						ThemeRef("separators", "statusbar_compact"),
 					]
 				if merge_repeats == True:
 					statusarray2 += [
-						("Repeats merged", ("statusbar", "highlight")),
-						("separators", "statusbar_compact"),
+						ThemeString("Repeats merged", ThemeAttr("statusbar", "highlight")),
+						ThemeRef("separators", "statusbar_compact"),
 					]
 
 				statusarray2 += [
-					("Facility: ", ("statusbar", "infoheader")),
-					(f"{show_facility}", ("statusbar", "highlight")),
-					("separators", "statusbar_compact"),
-					("Format: ", ("statusbar", "infoheader")),
+					ThemeString("Facility: ", ThemeAttr("statusbar", "infoheader")),
+					ThemeString(f"{show_facility}", ThemeAttr("statusbar", "highlight")),
+					ThemeRef("separators", "statusbar_compact"),
+					ThemeString("Format: ", ThemeAttr("statusbar", "infoheader")),
 				]
 
 			if len(rawmsg) == 0 or parser[0] == "":
 				statusarray2 += [
-					("Empty", ("main", "format_empty")),
+					ThemeString("Empty", ThemeAttr("main", "format_empty")),
 				]
 			elif parser[0] == "unknown":
 				statusarray2 += [
-					("Unknown", ("main", "format_unknown")),
+					ThemeString("Unknown", ThemeAttr("main", "format_unknown")),
 				]
 			elif raw_logs:
 				statusarray2 += [
-					("Raw", ("main", "format_raw")),
+					ThemeString("Raw", ThemeAttr("main", "format_raw")),
 				]
 			else:
 				if uip.maxx - uip.minx > 118:
 					statusarray2 += [
-						(f"{parser[0]}:{parser[1]}", ("statusbar", "highlight")),
+						ThemeString(f"{parser[0]}:{parser[1]}", ThemeAttr("statusbar", "highlight")),
 					]
 				else:
 					statusarray2 += [
-						(f"{parser[0]}", ("statusbar", "highlight")),
+						ThemeString(f"{parser[0]}", ThemeAttr("statusbar", "highlight")),
 					]
 
 			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
@@ -8068,15 +8214,15 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				# FIXME
 				if only_new_dates == True:
 					if new_date == True:
-						tsthemearray = [(datestamp, ("logview", datetype))]
+						tsthemearray = [ThemeString(datestamp, ThemeAttr("logview", datetype))]
 						new_date = False
 						# If we do empty lines for new dates we need something like this
 						# uip.addstr(logpad, "", y = y + yadd, x = 0)
 						# yadd += 1
 				else:
-					tsthemearray = [(datestamp, ("logview", datetype))]
+					tsthemearray = [ThemeString(datestamp, ThemeAttr("logview", datetype))]
 
-				tsthemearray += [(hourstamp, ("logview", "timestamp"))]
+				tsthemearray += [ThemeString(hourstamp, ThemeAttr("logview", "timestamp"))]
 
 				new_date = False
 
@@ -8131,28 +8277,28 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						_severity = f"{_prefix}{_severity.lower()}{_suffix}"
 
 					if len(timestamp.strip()) != 0 or y >= len(timestamps):
-						msgstrarray.append((f"{_severity}", color_log_severity(severity, False)))
+						msgstrarray.append((f"{_severity}", color_log_severity(severity)))
 					else:
-						msgstrarray.append(("".ljust(len(f"{_severity}")), color_log_severity(severity, False)))
+						msgstrarray.append(("".ljust(len(f"{_severity}")), color_log_severity(severity)))
 
 				if facility_extended is not None and len(facility_extended) > 0:
 					msgstrarray += facility_extended
 
 				if facility != "":
 					facilitystr = [
-						("separators", "facility_prefix"),
-						(facility, ("logview", "facility")),
-						("separators", "facility_suffix"),
-						("separators", "facility_padding"),
+						ThemeRef("separators", "facility_prefix"),
+						ThemeString(facility, ThemeAttr("logview", "facility")),
+						ThemeRef("separators", "facility_suffix"),
+						ThemeRef("separators", "facility_padding"),
 					]
 					# We don't actually want any prefix, but we want empty padding of the same length
 					if facility.rstrip() == "":
-						facilitystr = [("".ljust(themearray_len(facilitystr)), ("logview", "severity_debug"))]
+						facilitystr = [ThemeString("".ljust(themearray_len(facilitystr)), ThemeAttr("logview", "severity_debug"))]
 					msgstrarray += facilitystr
 
 				msg = messages[uip.yoffset + y]
 				if type(msg) != list:
-					msgstrarray.append((msg, color_log_severity(severity, False)))
+					msgstrarray.append((msg, color_log_severity(severity)))
 				else:
 					msgstrarray += msg
 				if wrap_lines == True:
@@ -8269,13 +8415,13 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 		elif c == ord("P"):
 			parserlist = [{
 				"lineattrs": WidgetLineAttrs.NORMAL,
-				"columns": [[("<autodetect>", ("windowwidget", "default"))]],
+				"columns": [[ThemeString("<autodetect>", ThemeAttr("windowwidget", "default"))]],
 				"retval": "<autodetect>",
 			}]
 			for parser in natsorted(get_parser_list()):
 				parserlist.append({
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[(f"{parser}", ("windowwidget", "default"))]],
+					"columns": [[ThemeString(f"{parser}", ThemeAttr("windowwidget", "default"))]],
 					"retval": parser,
 				})
 
@@ -8304,7 +8450,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					continue
 				loglevellist.append({
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[(f"{lvl}", ("windowwidget", "default"))]],
+					"columns": [[ThemeString(f"{lvl}", ThemeAttr("windowwidget", "default"))]],
 					"retval": lvl,
 				})
 
@@ -8347,15 +8493,15 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			facilitylist = [
 				{
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[("Full", ("windowwidget", "default"))]],
+					"columns": [[ThemeString("Full", ThemeAttr("windowwidget", "default"))]],
 					"retval": "Full",
 				}, {
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[("Short", ("windowwidget", "default"))]],
+					"columns": [[ThemeString("Short", ThemeAttr("windowwidget", "default"))]],
 					"retval": "Short",
 				}, {
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[("None", ("windowwidget", "default"))]],
+					"columns": [[ThemeString("None", ThemeAttr("windowwidget", "default"))]],
 					"retval": "None",
 				}
 			]
