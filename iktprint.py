@@ -38,16 +38,25 @@ def __themearray_to_string(themearray) -> str:
 		sys.exit("__themearray_to_string() used without calling init_iktprint() first; this is a programming error.")
 
 	string: str = ""
-	for _string, theme_attr_ref in themearray:
+	for themestring in themearray:
+		#if not isinstance(themestring, ANSIThemeString):
+		#	raise TypeError(f"__themarray_to_string() only accepts themestrings; this themearray consists of:\n{themearray}")
+
+		if isinstance(themestring, ANSIThemeString):
+			theme_attr_ref = themestring.themeref
+			theme_string = str(themestring)
+		elif isinstance(themestring, tuple):
+			theme_string, theme_attr_ref = themestring.themeref
+
 		if theme is not None:
 			if theme_attr_ref in theme["term"]:
 				attr = theme["term"][theme_attr_ref]
 				reset = theme["term"]["reset"]
-				string += f"{attr}{_string}{reset}"
+				string += f"{attr}{themestring}{reset}"
 			else:
 				raise Exception(f"attribute (“term“, “{theme_attr_ref}“) does not exist in {themepath}")
 		else:
-			string += _string
+			string += themestring
 
 	if len(string) > 0:
 		string = string.replace("\x0033", "\033")
@@ -64,7 +73,7 @@ def themearray_len(themearray) -> int:
 			The length of the themearray
 	"""
 
-	return len("".join([_str for _str, _format in themearray]))
+	return sum(map(len, themearray))
 
 def iktinput(themearray: List[ANSIThemeString]) -> str:
 	"""

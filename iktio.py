@@ -12,6 +12,7 @@ import os
 from pathlib import Path, PurePath
 import re
 import sys
+from typing import Dict, Iterator, List
 import yaml
 
 from ikttypes import ANSIThemeString, FilePath, HostNameStatus, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
@@ -138,7 +139,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 	return HostNameStatus.OK
 
 # pylint: disable=too-many-arguments,line-too-long
-def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = None, checks = None, exit_on_critical: bool = False, message_on_error: bool = False):
+def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = None, checks = None, exit_on_critical: bool = False, message_on_error: bool = False) -> List[SecurityStatus]:
 	"""
 	Verifies that a path meets certain security criteria;
 	if the path fails to meet the criteria the function returns False and optionally
@@ -216,10 +217,12 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 
 	if SecurityChecks.PARENT_OWNER_IN_ALLOWLIST in checks and parent_entry.owner() not in parent_owner_allowlist:
 		if message_on_error == True:
-			msg = [ANSIThemeString("Critical", "critical"), ANSIThemeString(": The parent of the target path ", "default"),
+			msg = [ANSIThemeString("Critical", "critical"),
+			       ANSIThemeString(": The parent of the target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" is not owned by one of (", "default")] +\
-			       iktlib.join_tuple_list(parent_owner_allowlist, _tuple = "emphasis", separator = (", ", "separator")) + [(")", "default")]
+			      iktlib.ansithemestring_join_tuple_list(parent_owner_allowlist, formatting = "emphasis", separator = ANSIThemeString(", ", "separator")) +\
+			      [ANSIThemeString(")", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
 				iktprint.iktprint(msg, stderr = True)
@@ -231,7 +234,8 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 	parent_path_permissions = parent_path_stat.st_mode & 0o002
 	if SecurityChecks.PARENT_WORLD_WRITABLE in checks and parent_path_permissions != 0:
 		if message_on_error == True:
-			msg = [ANSIThemeString("Critical", "critical"), ANSIThemeString(": The parent of the target path ", "default"),
+			msg = [ANSIThemeString("Critical", "critical"),
+			       ANSIThemeString(": The parent of the target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" is world writable", "default")]
 			if exit_on_critical == True:
@@ -288,7 +292,8 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			msg = [ANSIThemeString("Critical", "critical"), ANSIThemeString(": The target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" is not owned by one of (", "default")] +\
-			       iktlib.join_tuple_list(owner_allowlist, _tuple = "emphasis", separator = (", ", "separator")) + [(")", "default")]
+			      iktlib.ansithemestring_join_tuple_list(owner_allowlist, formatting = "emphasis", separator = ANSIThemeString(", ", "separator")) +\
+			      [ANSIThemeString(")", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
 				iktprint.iktprint(msg, stderr = True)
@@ -575,7 +580,7 @@ def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool
 
 	return string
 
-def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool = False):
+def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool = False) -> Dict:
 	"""
 	Read data in YAML-format from a file in a safe manner
 
@@ -592,7 +597,7 @@ def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool =
 	string = secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
 	return yaml.safe_load(string)
 
-def secure_read_yaml_all(path: FilePath, checks = None, directory_is_symlink: bool = False):
+def secure_read_yaml_all(path: FilePath, checks = None, directory_is_symlink: bool = False) -> Iterator[Dict]:
 	"""
 	Read all dicts in YAML-format from a file in a safe manner
 

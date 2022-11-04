@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from typing import List, Tuple
 
 from ikttypes import ANSIThemeString, FilePath
 from iktpaths import BINDIR, HOMEDIR, IKTDIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR
@@ -129,7 +130,7 @@ def install_software(packages, verbose: bool = False) -> None:
 	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + packages
 	_retval = subprocess.run(args, check = False).returncode
 
-def install_software_with_pip_fallback(packages, verbose: bool = False, dryrun: bool = False):
+def install_software_with_pip_fallback(packages, verbose: bool = False, dryrun: bool = False) -> Tuple[List[str], List[str]]:
 	"""
 	Batch install Debian packages with pip fallback
 	This function tries to install a Python module from a Debian package;
@@ -138,6 +139,10 @@ def install_software_with_pip_fallback(packages, verbose: bool = False, dryrun: 
 		Parameters:
 			packages (list[(str, str)]): A list of packages to install (pkg, fallback)
 			verbose (bool): Unused
+		Returns:
+			(pkgs, fallbacks):
+				pkgs (list[str]): Packages that were, or would be, installed as Debian packages
+				fallbacks (list[str]): Packages that were, or would be, installed using pip
 	"""
 
 	del verbose
@@ -195,8 +200,8 @@ def install(options, args) -> None:
 
 	if confirm == True:
 		iktprint([ANSIThemeString("Important:", "warning"), ANSIThemeString(" The following actions will be taken that will modify the system:", "default")])
-		pkgs = []
-		pkgs_fallback = []
+		pkgs: List[str] = []
+		pkgs_fallback: List[str] = []
 
 		if install_dependencies == True:
 			pkgs, pkgs_fallback = install_software_with_pip_fallback(PACKAGES_WITH_PIP_FALLBACK, dryrun = True)

@@ -11,9 +11,9 @@ import re
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from ikttypes import DictPath, FilePath, SecurityPolicy
+from ikttypes import ANSIThemeString, DictPath, FilePath, SecurityPolicy
 from iktpaths import IKT_CONFIG_FILE, IKT_CONFIG_FILE_DIR
 import iktio
 
@@ -260,38 +260,35 @@ def versiontuple(ver: str) -> Tuple[str, ...]:
 		filled.append(point.zfill(8))
 	return tuple(filled)
 
-def join_tuple_list(items: List[Union[str, Tuple[str, str]]], _tuple: Union[str, Tuple[str, str]] = "",
-		    item_prefix: Optional[Tuple[str, str]] = None, item_suffix: Optional[Tuple[str, str]] = None, separator: Optional[Tuple[str, str]] = None):
+def ansithemestring_join_tuple_list(items: Sequence[Union[str, ANSIThemeString]], formatting: str = "default", separator: ANSIThemeString = ANSIThemeString(", ", "separator")) -> List[ANSIThemeString]:
 	"""
-	Given a list of strings or tuples, returns a list of tuples suitable to be used a themearray;
-	tuples will be added as is, strings will be paired up with _tuple.
+	Given a list of ANSIThemeStrings or strings + formatting, join them separated by a separator
 
 		Parameters:
-			items (list[str]): The list of strings to format
-			_tuple (str|(str, str)): Either a string or a tuple
-			item_prefix (tuple(str, str)|tuple(str, tuple(str, str))): A prefix to apply before each item
-			item_suffix (tuple(str, str)|tuple(str, tuple(str, str))): A suffix to apply after each item
-			separator (tuple(str, str)|tuple(str, tuple(str, str))): A separator to apply between each item
-		Returns:
-			(themearray): A list of themearray fragments with all items joined together
+			items (list[Union(str, ANSIThemeString)]): The items to join into an ANSIThemeString list
+			formatting (str): The formatting to use if the list is a string-list
+			separator (ANSIThemeString): The list separator to use
+		Return:
+			themearray (list[ANSIThemeString]): The resulting ANSIThemeString list
 	"""
 
-	_list: List[Tuple[str, Union[str, Tuple[str, str]]]] = []
+	themearray = []
 	first = True
 
 	for item in items:
-		if first == False and separator is not None:
-			_list.append(separator)
-		if item_prefix is not None:
-			_list.append(item_prefix)
-		if isinstance(item, tuple):
-			_list.append(item)
+		if isinstance(item, str):
+			tmpitem = ANSIThemeString(item, formatting)
 		else:
-			_list.append((item, _tuple))
-		if item_suffix is not None:
-			_list.append(item_suffix)
-		first = False
-	return _list
+			tmpitem = item
+
+		if first == False:
+			if separator is not None:
+				themearray.append(separator)
+		else:
+			first = False
+		themearray.append(tmpitem)
+
+	return themearray
 
 def age_to_seconds(age: str) -> int:
 	"""

@@ -59,7 +59,7 @@ class ThemeString:
 		return len(self.string)
 
 	def __repr__(self):
-		return f"({self.string}, {self.themeattr}, {self.selected})"
+		return f"ThemeString(\"{self.string}\", {self.themeattr}, \"{self.selected}\")"
 
 class ThemeArray:
 	"""
@@ -106,7 +106,7 @@ class ThemeArray:
 	def __repr__(self):
 		return vars(self)
 
-class ANSIThemeString(NamedTuple):
+class ANSIThemeString:
 	"""
 	A themed string for printing with ANSI control codes
 
@@ -115,8 +115,20 @@ class ANSIThemeString(NamedTuple):
 			themeref: The reference to use when doing a looking in themes
 	"""
 
-	string: str
-	themeref: str
+	def __init__(self, string: str, themeref: str) -> None:
+		if not isinstance(string, str) or not isinstance(themeref, str):
+			raise TypeError("ANSIThemeString only accepts (str, str)")
+		self.string = string
+		self.themeref = themeref
+
+	def __str__(self):
+		return self.string
+
+	def __len__(self):
+		return len(self.string)
+
+	def __repr__(self):
+		return f"ANSIThemeString(string=\"{self.string}\", themeref=\"{self.themeref}\")"
 
 FilePath = NewType("FilePath", str)
 DictPath = NewType("DictPath", str)
@@ -165,7 +177,7 @@ class HostNameStatus(Enum):
 	DNS_LABEL_PUNYCODE_TOO_LONG = auto()
 	DNS_LABEL_INVALID_CHARACTERS = auto()
 
-class SecurityStatus(Enum):
+class SecurityStatus(IntEnum):
 	"""
 	Return values from check_path()
 	"""

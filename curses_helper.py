@@ -1157,7 +1157,8 @@ ignoreinput = False
 #	"retval": the value to return if this items is selected (any type is allowed)
 # }
 # pylint: disable-next=too-many-arguments,line-too-long
-def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", preselection = "", cursor = True, taggable = False, confirm = False, confirm_buttons = None, **kwargs):
+def windowwidget(stdscr: curses.window, maxy, maxx, y, x, items, headers = None, title = "", preselection = "",
+		 cursor: bool = True, taggable: bool = False, confirm: bool = False, confirm_buttons = None, **kwargs):
 	stdscr.refresh()
 	global ignoreinput # pylint: disable=global-statement
 	ignoreinput = False
@@ -1291,7 +1292,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 		col, __discard = attr_to_curses("windowwidget", "header")
 		headerpad.bkgd(" ", col)
 
-	selection = None
+	selection: Union[int, str, None] = None
 	curypos = 0
 
 	headerarray = []
@@ -1304,7 +1305,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 			extrapad = padwidth
 			if i == columns - 1:
 				extrapad = 0
-			headerarray.append(ThemeString((headers[i].ljust(lengths[i] + extrapad)), _attr_to_curses_merged("windowwidget", "header")))
+			headerarray.append(ThemeString((headers[i].ljust(lengths[i] + extrapad)), ThemeAttr("windowwidget", "header")))
 
 	# Move to preselection
 	if isinstance(preselection, str):
@@ -1330,7 +1331,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 				_selected = False
 
 			lineattributes = item["lineattrs"]
-			linearray = []
+			linearray: List[Union[ThemeRef, ThemeString]] = []
 
 			if taggable == True:
 				if _y in tagged_items:
@@ -1339,7 +1340,7 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 					linearray.append(ThemeString("".ljust(tagprefixlen), ThemeAttr("windowwidget", "tag")))
 
 			for _x in range(0, columns):
-				strarray = []
+				strarray: List[Union[ThemeRef, ThemeString]] = []
 				length = 0
 				tmpstring = ""
 
@@ -1357,10 +1358,10 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 
 					if lineattributes & (WidgetLineAttrs.INVALID) != 0:
 						attribute = ThemeAttr("windowwidget", "alert")
-						strarray.append((tmpstring, attribute, _selected))
+						strarray.append(ThemeString(tmpstring, attribute, _selected))
 					elif lineattributes & (WidgetLineAttrs.DISABLED | WidgetLineAttrs.UNSELECTABLE) != 0:
 						attribute = ThemeAttr("windowwidget", "dim")
-						strarray.append((tmpstring, attribute, _selected))
+						strarray.append(ThemeString(tmpstring, attribute, _selected))
 					elif lineattributes & WidgetLineAttrs.SEPARATOR != 0:
 						if attribute == ThemeAttr("windowwidget", "default"):
 							attribute = ThemeAttr("windowwidget", "highlight")
@@ -1564,12 +1565,12 @@ def windowwidget(stdscr, maxy, maxx, y, x, items, headers = None, title = "", pr
 
 label_headers = ["Label:", "Value:"]
 
-def get_labels(labels):
+def get_labels(labels: Dict):
 	"""
 	Get labels
 
 		Parameters:
-			labels (str): A dict path
+			labels (dict): A dict
 		Returns:
 			None if no labels are found, list[(WidgetLineAttrs, themestr, themestr)] if labels are found
 	"""
@@ -1591,7 +1592,7 @@ def get_annotations(annotations):
 	Get annotations
 
 		Parameters:
-			annotations (str): A dict path
+			annotations (dict: A dict
 		Returns:
 			The return value from get_labels()
 	"""
@@ -2241,7 +2242,7 @@ class UIProps:
 			self.statusbar = curses.newpad(2, self.maxx + 1)
 
 	# pylint: disable-next=too-many-arguments
-	def __addstr(self, win, string: str, y: int = -1, x: int = -1, attribute: int = curses.A_NORMAL):
+	def __addstr(self, win: curses.window, string: str, y: int = -1, x: int = -1, attribute: int = curses.A_NORMAL):
 		cury, curx = win.getyx()
 		winmaxy, winmaxx = win.getmaxyx()
 		newmaxy = max(y, winmaxy)
@@ -2730,7 +2731,7 @@ class UIProps:
 		return sortkey1, sortkey2
 
 	# pylint: disable-next=too-many-arguments,too-many-return-statements
-	def handle_mouse_events(self, win, sorted_list, activatedfun, extraref, data):
+	def handle_mouse_events(self, win: curses.window, sorted_list, activatedfun, extraref, data):
 		try:
 			_eventid, x, y, _z, bstate = curses.getmouse()
 		except curses.error:
@@ -3398,7 +3399,7 @@ class UIProps:
 				action = deep_get(shortcut_data, DictPath("action"))
 				action_call = deep_get(shortcut_data, DictPath("action_call"))
 				_action_args = deep_get(shortcut_data, DictPath("action_args"), {})
-				action_args = {**kwargs, **_action_args}
+				action_args: Dict = {**kwargs, **_action_args}
 				action_args["__keypress"] = c
 				action_args["helptext"] = helptext
 				if action == "key_callback":

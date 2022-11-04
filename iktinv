@@ -13,7 +13,7 @@ import errno
 import os
 from pathlib import Path, PurePath
 import sys
-from typing import cast, List, Tuple
+from typing import cast, List, Optional, Tuple
 
 try:
 	from natsort import natsorted
@@ -70,11 +70,16 @@ def set_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 		try:
 			key, value = keyval.split(":")
 		except ValueError:
-			iktprint([ANSIThemeString("Error", "error"), ANSIThemeString(": Setting a variable requires a ", "default"),
-				  ANSIThemeString("KEY", "argument"), ANSIThemeString(":", "separator"), ANSIThemeString("VALUE ", "argument"), ANSIThemeString("pair.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": Setting a variable requires a ", "default"),
+				  ANSIThemeString("KEY", "argument"),
+				  ANSIThemeString(":", "separator"),
+				  ANSIThemeString("VALUE ", "argument"),
+				  ANSIThemeString("pair.", "default")], stderr = True)
 			print()
 			iktprint([ANSIThemeString("Try “", "default"),
-				  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
+				  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
+				  ANSIThemeString("help", "command"),
 				  ANSIThemeString("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		hostvars.append((key, value))
@@ -113,11 +118,16 @@ def set_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 		try:
 			key, value = keyval.split(":")
 		except ValueError:
-			iktprint([ANSIThemeString("Error", "error"), ANSIThemeString(": Setting a variable requires a ", "default"),
-				  ANSIThemeString("KEY", "argument"), ANSIThemeString(":", "separator"), ANSIThemeString("VALUE ", "argument"), ANSIThemeString("pair.", "default")], stderr = True)
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": Setting a variable requires a ", "default"),
+				  ANSIThemeString("KEY", "argument"),
+				  ANSIThemeString(":", "separator"),
+				  ANSIThemeString("VALUE ", "argument"),
+				  ANSIThemeString("pair.", "default")], stderr = True)
 			print()
 			iktprint([ANSIThemeString("Try “", "default"),
-				  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
+				  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
+				  ANSIThemeString("help", "command"),
 				  ANSIThemeString("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		groupvars.append((key, value))
@@ -420,7 +430,7 @@ def remove_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	return 0
 
-def get_cluster_name():
+def get_cluster_name() -> Optional[str]:
 	"""
 	Return the name of the cluster
 		Returns:
@@ -480,6 +490,10 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# We ideally want to iterate over all clusters here, but for now we only import the current-context
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 	cluster_name = get_cluster_name()
+	if cluster_name is None:
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Could not obtain cluster name; do you have a cluster available? Aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -510,7 +524,9 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	if pubkey is None or len(pubkey) == 0:
 		iktprint([ANSIThemeString("Error", "error"),
-			  ANSIThemeString(": Failed to read ", "default"), ANSIThemeString(f"{HOMEDIR}/.ssh/id_ecdsa.pub", "path"), ANSIThemeString("; aborting.", "default")], stderr = True)
+			  ANSIThemeString(": Failed to read ", "default"),
+			  ANSIThemeString(f"{HOMEDIR}/.ssh/id_ecdsa.pub", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	values = {
@@ -845,7 +861,7 @@ COMMANDLINE = {
 				ANSIThemeString(" to ", "description"),
 				ANSIThemeString("GROUP", "argument"),
 				ANSIThemeString(",", "separator"),
-				ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
+				ANSIThemeString("...", "argument")],
 	},
 	"Inventory": {
 		"command": ["inventory", "inv"],
@@ -908,7 +924,7 @@ COMMANDLINE = {
 				ANSIThemeString("...", "argument"),
 				ANSIThemeString(" (Default: “", "description"),
 				ANSIThemeString("all", "argument"),
-				ANSIThemeString("“)", "description")], # pylint: disable=line-too-long
+				ANSIThemeString("“)", "description")],
 		"min_args": 0,
 		"max_args": 1,
 		"callback": ping,
@@ -918,9 +934,10 @@ COMMANDLINE = {
 		"description": [ANSIThemeString("Create inventory for an existing Kubernetes cluster", "description")],
 		"extended_description": [
 			[ANSIThemeString("In cases where the cluster has not been setup using ", "description"),
-			 ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME}", "programname")],
+			 ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname")],
 			[ANSIThemeString("this can be used to build a barebones inventory", "description")],
-			[ANSIThemeString("Note", "note"), (": This requires a running cluster", "description")],
+			[ANSIThemeString("Note", "note"),
+			 ANSIThemeString(": This requires a running cluster", "description")],
 		],
 		"options": {
 			"--force": {
@@ -998,7 +1015,7 @@ COMMANDLINE = {
 				ANSIThemeString(" from ", "description"),
 				ANSIThemeString("GROUP", "argument"),
 				ANSIThemeString(",", "separator"),
-				ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
+				ANSIThemeString("...", "argument")],
 	},
 	"Set Global Variables": {
 		"command": ["set-var", "set-vars"],
@@ -1032,7 +1049,7 @@ COMMANDLINE = {
 			   ANSIThemeString("... ", "argument"),
 			   ANSIThemeString("GROUP", "argument"),
 			   ANSIThemeString(",", "separator"),
-			   ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
+			   ANSIThemeString("...", "argument")],
 		"description": [ANSIThemeString("Set ", "description"),
 				ANSIThemeString("KEY", "argument"),
 				ANSIThemeString(":", "separator"),
@@ -1042,7 +1059,7 @@ COMMANDLINE = {
 				ANSIThemeString(" for ", "description"),
 				ANSIThemeString("GROUP", "argument"),
 				ANSIThemeString(",", "separator"),
-				ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
+				ANSIThemeString("...", "argument")],
 		"min_args": 2,
 		"max_args": 2,
 		"callback": set_group_vars,
@@ -1056,7 +1073,7 @@ COMMANDLINE = {
 			   ANSIThemeString("... ", "argument"),
 			   ANSIThemeString("HOST", "argument"),
 			   ANSIThemeString(",", "separator"),
-			   ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
+			   ANSIThemeString("...", "argument")],
 		"description": [ANSIThemeString("Set ", "description"),
 				ANSIThemeString("KEY", "argument"),
 				ANSIThemeString(":", "separator"),
@@ -1066,7 +1083,7 @@ COMMANDLINE = {
 				ANSIThemeString(" for ", "description"),
 				ANSIThemeString("HOST", "argument"),
 				ANSIThemeString(",", "separator"),
-				ANSIThemeString("...", "argument")], # pylint: disable=line-too-long
+				ANSIThemeString("...", "argument")],
 		"min_args": 2,
 		"max_args": 2,
 		"callback": set_host_vars,

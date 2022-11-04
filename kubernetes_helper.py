@@ -2195,7 +2195,7 @@ def kubectl_get_version() -> Tuple[int, int, str, int, int, str]:
 
 	return kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version
 
-def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]], List[Tuple[str, str]]]:
+def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]], List[Dict]]:
 	status = "Unknown"
 	status_group = StatusGroup.UNKNOWN
 	taints = []
@@ -3377,7 +3377,7 @@ class KubernetesHelper:
 
 			Parameters:
 				node (str): The node to taint
-				taints (str): The current taints
+				taints (list[dict]): The current taints
 				new_taint ((key, value, old_effect, new_effect): The modified or new taint
 				overwrite (bool): If overwrite is set, modify the taint, otherwise return
 			Returns:
