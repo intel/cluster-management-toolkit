@@ -1054,7 +1054,7 @@ def themestring_to_cursestuple(themestring: ThemeString, selected: bool = None) 
 
 	return (string, themeattr_to_curses_merged(themeattr, selected))
 
-def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> List[tuple[str, int]]:
+def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> List[Tuple[str, int]]:
 	strarray = []
 
 	for substring in themearray:
