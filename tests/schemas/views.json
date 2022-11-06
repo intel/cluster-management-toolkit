@@ -846,7 +846,9 @@
 								"type": "string"
 							}
 						],
-						"items": false
+						"items": false,
+						"minItems": 2,
+						"maxItems": 2
 					}
 				],
 				"items": false
@@ -1057,7 +1059,6 @@
 														"minItems": 2,
 														"maxItems": 2
 													}
-
 												],
 												"items": false
 											},
@@ -1282,7 +1283,7 @@
 				"shortcuts": {
 					"type": "object",
 					"patternProperties": {
-						"^[A-Z][A-Za-z0-9 -]*[A-Za-z0-9]$": {
+						"^[A-Za-z0-9 -]*[A-Za-z0-9]$": {
 							"oneOf": [
 								{
 									"type": "object",
@@ -1688,7 +1689,7 @@
 				"shortcuts": {
 					"type": "object",
 					"patternProperties": {
-						"^[A-Z][A-Za-z0-9 -]*[A-Za-z0-9]$": {
+						"^[A-Za-z0-9 -]*[A-Za-z0-9]$": {
 							"oneOf": [
 								{
 									"type": "object",
@@ -1711,7 +1712,15 @@
 												},
 												"api_group_path": {
 													"description": "Path to get the API group of the object from",
-													"$ref": "#/definitions/simple_path"
+													"anyof": [
+														{
+															"$ref": "#/definitions/simple_path"
+														}, {
+															"description": "a field index to the field in the data returned by the itemgetter to get the data from",
+															"type": "integer",
+															"minimum": 0
+														}
+													]
 												},
 												"api_version_path": {
 													"description": "Path to get the API version of the object from, optionally with fallback(s)",
@@ -1764,7 +1773,15 @@
 												},
 												"kind_path": {
 													"description": "Path to get the kind of the object from, optionally with fallback(s)",
-													"$ref": "#/definitions/path"
+													"anyof": [
+														{
+															"$ref": "#/definitions/simple_path"
+														}, {
+															"description": "a field index to the field in the data returned by the itemgetter to get the data from",
+															"type": "integer",
+															"minimum": 0
+														}
+													]
 												},
 												"name_path": {
 													"description": "Path to get the name of the object from, optionally with fallback(s)",
@@ -1811,6 +1828,10 @@
 												},
 												"_named_title": {
 													"type": "boolean"
+												},
+												"_parent_namespace_path": {
+													"description": "Path to get the namespace of the parent obj",
+													"$ref": "#/definitions/simple_path"
 												},
 												"_pass_obj": {
 													"type": "boolean"
