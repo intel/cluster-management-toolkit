@@ -15,9 +15,14 @@ yamllint:
 	done; \
 	yamllint ikt.yaml || /bin/true
 
+mypy-strict:
+	@for file in $(python_executables) *.py; do \
+		mypy --ignore-missing-imports --check-untyped-defs $$file || true; \
+	done
+
 mypy:
 	@for file in $(python_executables) *.py; do \
-		mypy --ignore-missing-imports  $$file || true; \
+		mypy --ignore-missing-imports $$file || true; \
 	done
 
 export_src:
