@@ -681,7 +681,9 @@ recommended_directory_permissions = [
 		"severity": "error",
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{THEME_DIR}", "path"),
-				  ANSIThemeString(" they can cause ", "default"), ("iku", "command"), (" to malfunction", "default")]
+				  ANSIThemeString(" they can cause ", "default"),
+				  ANSIThemeString("iku", "command"),
+				  ANSIThemeString(" to malfunction", "default")]
 	},
 	{
 		"path": PARSER_DIR,
@@ -690,7 +692,9 @@ recommended_directory_permissions = [
 		"severity": "error",
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{PARSER_DIR}", "path"),
-				  ANSIThemeString(" they can cause ", "default"), ("iku", "command"), (" to malfunction and possibly hide signs of a compromised cluster", "default")]
+				  ANSIThemeString(" they can cause ", "default"),
+				  ANSIThemeString("iku", "command"),
+				  ANSIThemeString(" to malfunction and possibly hide signs of a compromised cluster", "default")]
 	},
 	{
 		"path": VIEW_DIR,
@@ -699,7 +703,9 @@ recommended_directory_permissions = [
 		"severity": "error",
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{VIEW_DIR}", "path"),
-				  ANSIThemeString(" they can cause ", "default"), ("iku", "command"), (" to malfunction and possibly hide signs of a compromised cluster", "default")]
+				  ANSIThemeString(" they can cause ", "default"),
+				  ANSIThemeString("iku", "command"),
+				  ANSIThemeString(" to malfunction and possibly hide signs of a compromised cluster", "default")]
 	},
 ]
 
