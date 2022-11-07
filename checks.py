@@ -587,7 +587,7 @@ recommended_directory_permissions = [
 	{
 		"path": BINDIR,
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If other users can create or overwrite files in ", "default"),
 				  ANSIThemeString(f"{BINDIR}", "path"),
@@ -596,7 +596,7 @@ recommended_directory_permissions = [
 	{
 		"path": IKTDIR,
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{IKTDIR}", "path"),
@@ -605,7 +605,7 @@ recommended_directory_permissions = [
 	{
 		"path": IKT_CONFIG_FILE_DIR,
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{IKT_CONFIG_FILE_DIR}", "path"),
@@ -614,7 +614,7 @@ recommended_directory_permissions = [
 	{
 		"path": ANSIBLE_DIR,
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{ANSIBLE_DIR}", "path"),
@@ -623,7 +623,7 @@ recommended_directory_permissions = [
 	{
 		"path": IKT_HOOKS_DIR,
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{IKT_HOOKS_DIR}", "path"),
@@ -632,7 +632,7 @@ recommended_directory_permissions = [
 	{
 		"path": FilePath(os.path.join(IKT_HOOKS_DIR, "pre-upgrade.d")),
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{os.path.join(IKT_HOOKS_DIR, 'pre-upgrade.d')}", "path"),
@@ -641,7 +641,7 @@ recommended_directory_permissions = [
 	{
 		"path": FilePath(os.path.join(IKT_HOOKS_DIR, "post-upgrade.d")),
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{os.path.join(IKT_HOOKS_DIR, 'post-upgrade.d')}", "path"),
@@ -650,7 +650,7 @@ recommended_directory_permissions = [
 	{
 		"path": DEPLOYMENT_DIR,
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{DEPLOYMENT_DIR}", "path"),
@@ -659,7 +659,7 @@ recommended_directory_permissions = [
 	{
 		"path": ANSIBLE_LOG_DIR,
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "warning",
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{ANSIBLE_LOG_DIR}", "path"),
