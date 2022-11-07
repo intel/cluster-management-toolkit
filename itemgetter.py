@@ -13,7 +13,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from curses_helper import WidgetLineAttrs
+from curses_helper import ThemeAttr, ThemeString, WidgetLineAttrs
 
 from ikttypes import DictPath
 
@@ -205,7 +205,7 @@ KNOWN_PV_TYPES = {
 #				"processor": field_processor_str_to_list,
 #				"formatting": {
 #					"iskeyvalue": True,
-#					"field_separators": [("separators", "host")]
+#					"field_separators": [ThemeRef("separators", "host")]
 #				}
 #			}, # str(host:port, host:port, ...)
 			"Read Only:": { "path": "readOnly", "default": "False" },
@@ -295,12 +295,14 @@ def get_allowed_ips(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs:
 			mask = tmp[2]
 			allowed_ips.append({
 				"lineattrs": WidgetLineAttrs.NORMAL,
-				"columns": [[(f"{ip}", ("windowwidget", "default")), ("/", ("windowwidget", "dim")), (f"{mask}", ("windowwidget", "default"))]],
+				"columns": [[ThemeString(f"{ip}", ThemeAttr("windowwidget", "default")),
+					     ThemeString("/", ThemeAttr("windowwidget", "dim")),
+					     ThemeString(f"{mask}", ThemeAttr("windowwidget", "default"))]],
 			})
 		else:
 			allowed_ips.append({
 				"lineattrs": WidgetLineAttrs.NORMAL,
-				"columns": [[(f"{addr}", ("windowwidget", "default"))]],
+				"columns": [[ThemeString(f"{addr}", ThemeAttr("windowwidget", "default"))]],
 			})
 
 	return allowed_ips

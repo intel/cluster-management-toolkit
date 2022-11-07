@@ -52,7 +52,7 @@ except ModuleNotFoundError:
 
 from iktpaths import HOMEDIR, PARSER_DIR
 
-from ikttypes import DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name, ThemeAttr, ThemeRef, ThemeString
+from ikttypes import DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name
 
 from iktio import secure_read_yaml
 
@@ -60,7 +60,7 @@ import iktlib
 from iktlib import deep_get, deep_get_with_fallback, none_timestamp
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
 
-from curses_helper import themearray_to_string
+from curses_helper import themearray_to_string, ThemeAttr, ThemeRef, ThemeString
 
 class logparser_configuration:
 	"""
@@ -1022,11 +1022,11 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 				if y < 4:
 					continue
 				if el.startswith("+"):
-					remnants.append((ThemeString(el, ThemeAttr("logview", "severity_diffplus")), LogLevel.DIFFPLUS))
+					remnants.append(([ThemeString(el, ThemeAttr("logview", "severity_diffplus"))], LogLevel.DIFFPLUS))
 				elif el.startswith("-"):
-					remnants.append((ThemeString(el, ThemeAttr("logview", "severity_diffminus")), LogLevel.DIFFMINUS))
+					remnants.append(([ThemeString(el, ThemeAttr("logview", "severity_diffminus"))], LogLevel.DIFFMINUS))
 				else:
-					remnants.append((ThemeString(el, ThemeAttr("logview", "severity_diffsame")), LogLevel.DIFFSAME))
+					remnants.append(([ThemeString(el, ThemeAttr("logview", "severity_diffsame"))], LogLevel.DIFFSAME))
 			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
 				       ThemeString(" [State modified]", ThemeAttr("logview", "modified"))]
 	else:
@@ -1366,7 +1366,7 @@ def format_key_value(key: str, value: str, severity: LogLevel, force_severity: b
 # Severity: lvl=|level=
 # Timestamps: t=|ts=|time= (all of these are ignored)
 # Facility: subsys|caller|logger|source
-def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
 			Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
@@ -1413,9 +1413,8 @@ def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = 
 				d.pop(_sev, None)
 		if level is not None:
 			severity = str_to_severity(level)
-		else:
-			if severity is None:
-				severity = LogLevel.INFO
+		if severity is None:
+			severity = LogLevel.INFO
 
 		msg = deep_get_with_fallback(d, messages, "")
 		if msg.startswith("\"") and msg.endswith("\""):
@@ -1559,7 +1558,7 @@ def key_value(message: str, severity: LogLevel = LogLevel.INFO, facility: str = 
 # For messages along the lines of:
 # "Foo" "key"="value" "key"="value"
 # Foo key=value key=value
-def key_value_with_leading_message(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options = None) ->\
+def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options = None) ->\
 						Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	# This warning seems incorrect
 	# pylint: disable-next=global-variable-not-assigned

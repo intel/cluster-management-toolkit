@@ -54,7 +54,7 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 		Parameters:
 			playbook (str): The name of the playbook to get the path to
 		Returns:
-			path (str): The playbook path with the highest priority
+			path (FilePath): The playbook path with the highest priority
 	"""
 
 	path = ""

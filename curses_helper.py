@@ -15,7 +15,7 @@ import errno
 from operator import attrgetter
 from pathlib import Path, PurePath
 import sys
-from typing import Any, cast, Dict, List, Optional, NoReturn, Sequence, Tuple, Union
+from typing import Any, cast, Dict, List, Optional, NamedTuple, NoReturn, Sequence, Set, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -23,7 +23,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 from iktio import check_path, secure_read_yaml
-from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping, ThemeArray, ThemeAttr, ThemeRef, ThemeString
+from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping
 
 import iktlib
 from iktlib import deep_get
@@ -31,6 +31,156 @@ from iktlib import deep_get
 theme: Dict = {}
 
 mousemask = 0
+
+# A reference to text formatting
+class ThemeAttr(NamedTuple):
+	"""
+	A reference to formatting for a themed string
+
+		Parameters:
+			context: The context to use when doing a looking in themes
+			key: The key to use when doing a looking in themes
+	"""
+
+	context: str
+	key: str
+
+class ThemeRef:
+	"""
+	A reference to a themed string; while the type definition is the same as ThemeAttr its use is different
+
+		Parameters:
+			context: The context to use when doing a looking in themes
+			key: The key to use when doing a looking in themes
+			selected (Optional[bool]): Should the selected or unselected formatting be used
+	"""
+
+	def __init__(self, context: str, key: str, selected: bool = False) -> None:
+		if not isinstance(context, str) or not isinstance(key, str) or (selected is not None and not isinstance(selected, bool)):
+			raise TypeError("ThemeRef only accepts (str, str[, bool])")
+		self.context = context
+		self.key = key
+		self.selected = selected
+
+	def __str__(self):
+		string = ""
+		array = theme[self.context][self.key]
+		for string_fragment, _attr in array:
+			string += string_fragment
+		return string
+
+	def __len__(self):
+		return len(str(self))
+
+	def __repr__(self):
+		return f"ThemeRef(\"{self.context}\", \"{self.key}\", \"{self.selected}\")"
+
+class ThemeString:
+	"""
+	A themed string
+
+		Parameters:
+			string: A string
+			themeattr: The themeattr used to format the string
+			selected (Optional[bool]): Should the selected or unselected formatting be used
+	"""
+
+	def __init__(self, string: str, themeattr: ThemeAttr, selected: bool = False) -> None:
+		if not isinstance(string, str):
+			raise TypeError(f"ThemeString only accepts (str, ThemeAttr[, bool]); received ThemeString({string}, {themeattr}, selected)")
+		self.string = string
+		self.themeattr = themeattr
+		self.selected = selected
+
+	def __str__(self):
+		return self.string
+
+	def __len__(self):
+		return len(self.string)
+
+	def __repr__(self):
+		return f"ThemeString(\"{self.string}\", {repr(self.themeattr)}, \"{self.selected}\")"
+
+class ThemeArray:
+	"""
+	An array of themed strings and references to themed strings
+
+		Parameters:
+			list[Union[ThemeString, ThemeRef]]: The themearray
+			selected (Optional[bool]): Should the selected or unselected formatting be used; passing selected overrides the individual components
+	"""
+
+	def __init__(self, array: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> None:
+		if array is None:
+			raise ValueError("A ThemeArray cannot be None")
+
+		newarray: List[Union[ThemeRef, ThemeString]] = []
+		for item in array:
+			if not isinstance(item, (ThemeRef, ThemeString)):
+				raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
+			if selected is None:
+				newarray.append(item)
+			elif isinstance(item, ThemeString):
+				newarray.append(ThemeString(item.string, item.themeattr, selected = selected))
+			elif isinstance(item, ThemeRef):
+				newarray.append(ThemeRef(item.context, item.key, selected = selected))
+
+		self.array = newarray
+
+	def append(self, item: Union[ThemeRef, ThemeString]):
+		if not isinstance(item, (ThemeRef, ThemeString)):
+			raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
+		self.array.append(item)
+
+	def __add__(self, array):
+		tmparray: List[Union[ThemeRef, ThemeString]] = []
+		for item in self.array, array:
+			tmparray.append(item)
+		return ThemeArray(tmparray)
+
+	def __str__(self):
+		string = ""
+		for item in self.array:
+			string += str(item)
+		return string
+
+	def __len__(self):
+		arraylen = 0
+		for item in self.array:
+			arraylen += len(item)
+		return arraylen
+
+	def __repr__(self):
+		references = ""
+		first = True
+		for item in self.array:
+			if first == True:
+				references += f"{repr(item)}"
+			else:
+				references += f", {repr(item)}"
+			first = False
+		return f"ThemeArray({references})"
+
+def format_helptext(helptext: List[Tuple[str, str]]) -> List[Dict]:
+	"""
+	Given a helptext in the format [(key, description)], format it in a way suitable for windowwidget
+
+		Parameters:
+			helptext: list[(key, description)]: A list of rows with keypress + effect
+		Returns:
+			formatted_helptext (Dict): The formatted helptext
+	"""
+
+	formatted_helptext: List[Dict] = []
+
+	for key, description in helptext:
+		formatted_helptext.append({
+			"lineattrs": WidgetLineAttrs.NORMAL,
+			"columns": [[ThemeString(key, ThemeAttr("windowwidget", "highlight"))], [ThemeString(description, ThemeAttr("windowwidget", "default"))]],
+			"retval": None,
+		})
+
+	return formatted_helptext
 
 # pylint: disable-next=too-few-public-methods
 class curses_configuration:
@@ -237,6 +387,7 @@ def dump_themearray(themearray: List[Any]) -> NoReturn:
 			tmp += f"     selected: {substr.selected}\n"
 		elif isinstance(substr, ThemeRef):
 			tmp += f"   ThemeRef: {substr}\n"
+			tmp += f"          str: “{str(substr)}“\n"
 			tmp += f"          ctx: {substr.context}\n"
 			tmp += f"          key: {substr.key}\n"
 			tmp += f"     selected: {substr.selected}\n"
@@ -246,7 +397,7 @@ def dump_themearray(themearray: List[Any]) -> NoReturn:
 			tmp += f"       list: {substr}\n"
 		else:
 			tmp += f"TYPE {type(substr)}: {substr}\n"
-	sys.exit(tmp)
+	raise TypeError(f"themearray contains invalid substring(s):\n{tmp}\n{themearray}")
 
 def color_log_severity(severity: LogLevel) -> ThemeAttr:
 	return ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")
@@ -299,7 +450,8 @@ def window_tee_vline(win: curses.window, x: int, start: int, end: int, attribute
 		win.addch(end, x, _btee)
 
 # pylint: disable-next=too-many-arguments
-def scrollbar_vertical(win: curses.window, x: int, miny: int, maxy: int, height: int, yoffset: int, clear_color: int) -> Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int, int]]:
+def scrollbar_vertical(win: curses.window, x: int, miny: int, maxy: int, height: int, yoffset: int, clear_color: int) ->\
+				Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int, int]]:
 	"""
 	Draw a vertical scroll bar
 
@@ -353,7 +505,8 @@ def scrollbar_vertical(win: curses.window, x: int, miny: int, maxy: int, height:
 	return upperarrow, lowerarrow, vdragger
 
 # pylint: disable-next=too-many-arguments
-def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width: int, xoffset: int, clear_color: int) -> Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int, int]]:
+def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width: int, xoffset: int, clear_color: int) ->\
+				Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int, int]]:
 	"""
 	Draw a horizontal scroll bar
 
@@ -497,7 +650,7 @@ def __notification(stdscr: Optional[curses.window], y: int, x: int, message: str
 	_bl = theme["boxdrawing"].get("llcorner", curses.ACS_LLCORNER)
 	_br = theme["boxdrawing"].get("lrcorner", curses.ACS_LRCORNER)
 	win.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
-	win.addstr(1, 1, message, _attr_to_curses_merged(formatting[0], formatting[1]))
+	win.addstr(1, 1, message, _attr_to_curses_merged(formatting.context, formatting.key))
 	win.noutrefresh()
 	curses.doupdate()
 	return win
@@ -744,23 +897,7 @@ def __addformattedarray(win: curses.window, array: Union[List[Tuple[str, int]], 
 		y, x = __addstr(win, string, y, x, attr)
 	return y, x
 
-# addthemearray() takes an array as input.
-# The elements in the array can be:
-# (string, (context, theme_attr_ref)),
-# (string, (context, theme_attr_ref), selected),
-# (string, (context, curses_attr)),
-# (context, theme_ref),
-# (context, theme_ref, selected),
-def addthemearray(win: curses.window,
-		  array,
-#		  array: List[Union[
-#				Tuple[str, Tuple[str, str]],
-#				Tuple[str, Tuple[str, str], bool],
-#				Tuple[str, Tuple[str, int]],
-#				Tuple[str, str],
-#				Tuple[str, str, bool]]
-#			 ],
-		  y: int = -1, x: int = -1, selected: bool = False) -> Tuple[int, int]:
+def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
 	"""
 	Given a themed string in themearray format, output it to the screen
 
@@ -838,7 +975,7 @@ class WidgetLineAttrs(IntFlag):
 	UNSELECTABLE = 4	# Unselectable items are not selectable, but aren't skipped when navigating
 	INVALID = 8		# Invalid items are not selectable; to be used for parse error etc.
 
-def __attr_to_curses(attr, selected: bool = False):
+def __attr_to_curses(attr, selected: bool = False) -> Tuple[int, int]:
 	if isinstance(attr, list):
 		col, attr = attr
 		if isinstance(attr, str):
@@ -930,10 +1067,7 @@ def themearray_to_string(themearray: Sequence[Union[str,
 			continue
 
 		if isinstance(fragment, ThemeRef):
-			themed_tuple = deep_get(theme, DictPath(f"{fragment[0]}#{fragment[1]}"))
-			if themed_tuple is None:
-				raise KeyError(f"The theme key-pair context: “{fragment[0]}“, key: “{fragment[1]}“ in the themearray “{themearray}“ does not exist")
-			string += themed_tuple[0][0]
+			string += str(fragment)
 			continue
 
 		if not isinstance(fragment, tuple):
@@ -1157,7 +1291,7 @@ ignoreinput = False
 #	"retval": the value to return if this items is selected (any type is allowed)
 # }
 # pylint: disable-next=too-many-arguments,line-too-long
-def windowwidget(stdscr: curses.window, maxy, maxx, y, x, items, headers = None, title = "", preselection = "",
+def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, items, headers = None, title: str = "", preselection: Union[str, Set[int]] = "",
 		 cursor: bool = True, taggable: bool = False, confirm: bool = False, confirm_buttons = None, **kwargs):
 	stdscr.refresh()
 	global ignoreinput # pylint: disable=global-statement
@@ -1169,24 +1303,15 @@ def windowwidget(stdscr: curses.window, maxy, maxx, y, x, items, headers = None,
 	if confirm_buttons is None:
 		confirm_buttons = []
 
-	# This is only used by helptexts
+	# This is hopefully only used by the About text
 	if not isinstance(items[0], dict):
-		if not type(items[0][0]) == int: # pylint: disable=unidiomatic-typecheck
-			tmpitems = []
-			for item in items:
-				tmpitems.append({
-					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[ThemeString(item[0], ThemeAttr("windowwidget", "highlight"))], [ThemeString(item[1], ThemeAttr("windowwidget", "default"))]],
-					"retval": None,
-				})
-		else:
-			tmpitems = []
-			for item in items:
-				tmpitems.append({
-					"lineattrs": item[0],
-					"columns": list(item[1:]),
-					"retval": None,
-				})
+		tmpitems = []
+		for item in items:
+			tmpitems.append({
+				"lineattrs": item[0],
+				"columns": list(item[1:]),
+				"retval": None,
+			})
 		items = tmpitems
 
 	columns = len(items[0]["columns"])
@@ -1199,7 +1324,7 @@ def windowwidget(stdscr: curses.window, maxy, maxx, y, x, items, headers = None,
 		for i in range(0, columns):
 			lengths[i] = len(headers[i])
 
-	tagprefix = themearray_extract_string("tag", context = "separators")
+	tagprefix = str(ThemeRef("separators", "tag"))
 
 	# Leave room for a tag prefix column if needed
 	if taggable == True:
@@ -1295,7 +1420,7 @@ def windowwidget(stdscr: curses.window, maxy, maxx, y, x, items, headers = None,
 	selection: Union[int, str, None] = None
 	curypos = 0
 
-	headerarray = []
+	headerarray: List[Union[ThemeRef, ThemeString]] = []
 
 	# Generate headers
 	if headers is not None:
@@ -1312,7 +1437,7 @@ def windowwidget(stdscr: curses.window, maxy, maxx, y, x, items, headers = None,
 		if preselection != "":
 			for _y, item in enumerate(items):
 				if isinstance(item["columns"][0][0], ThemeString):
-					tmp_selection = item["columns"][0][0]
+					tmp_selection = str(item["columns"][0][0])
 				else:
 					tmp_selection = item["columns"][0][0][0]
 
@@ -1322,6 +1447,8 @@ def windowwidget(stdscr: curses.window, maxy, maxx, y, x, items, headers = None,
 		tagged_items = set()
 	elif isinstance(preselection, set):
 		tagged_items = preselection
+	else:
+		raise ValueError(f"is_taggable() == True, but type(preselection) == {type(preselection)} (must be str or set())")
 
 	while selection is None:
 		for _y, item in enumerate(items):
@@ -1339,29 +1466,27 @@ def windowwidget(stdscr: curses.window, maxy, maxx, y, x, items, headers = None,
 				else:
 					linearray.append(ThemeString("".ljust(tagprefixlen), ThemeAttr("windowwidget", "tag")))
 
-			for _x in range(0, columns):
-				strarray: List[Union[ThemeRef, ThemeString]] = []
+			for _x, column in enumerate(item["columns"]):
+				themearray: List[Union[ThemeRef, ThemeString]] = []
 				length = 0
-				tmpstring = ""
 
-				for string in item["columns"][_x]:
+				for string in column:
 					if isinstance(string, ThemeString):
-						tmpstring += str(string)
+						tmpstring = str(string)
 						attribute = string.themeattr
-						strlen = len(string)
-						length += strlen
 					else:
-						tmpstring += string[0]
+						sys.exit(f"In windowwidget(); we want to get rid of this: items={items}")
+						tmpstring = string[0]
 						attribute = string[1]
-						strlen = len(tmpstring)
-						length += strlen
+					strlen = len(tmpstring)
+					length += strlen
 
 					if lineattributes & (WidgetLineAttrs.INVALID) != 0:
 						attribute = ThemeAttr("windowwidget", "alert")
-						strarray.append(ThemeString(tmpstring, attribute, _selected))
+						themearray.append(ThemeString(tmpstring, attribute, _selected))
 					elif lineattributes & (WidgetLineAttrs.DISABLED | WidgetLineAttrs.UNSELECTABLE) != 0:
 						attribute = ThemeAttr("windowwidget", "dim")
-						strarray.append(ThemeString(tmpstring, attribute, _selected))
+						themearray.append(ThemeString(tmpstring, attribute, _selected))
 					elif lineattributes & WidgetLineAttrs.SEPARATOR != 0:
 						if attribute == ThemeAttr("windowwidget", "default"):
 							attribute = ThemeAttr("windowwidget", "highlight")
@@ -1371,18 +1496,19 @@ def windowwidget(stdscr: curses.window, maxy, maxx, y, x, items, headers = None,
 						lpadstr = "".ljust(lpad, "─")
 						rpadstr = "".rjust(rpad, "─")
 
-						strarray.append(ThemeString(lpadstr, ThemeAttr("windowwidget", "highlight"), _selected))
-						strarray.append(ThemeString(tmpstring, attribute, _selected))
-						strarray.append(ThemeString(rpadstr, ThemeAttr("windowwidget", "highlight"), _selected))
+						themearray.append(ThemeString(lpadstr, ThemeAttr("windowwidget", "highlight"), _selected))
+						themearray.append(ThemeString(tmpstring, attribute, _selected))
+						themearray.append(ThemeString(rpadstr, ThemeAttr("windowwidget", "highlight"), _selected))
 					else:
-						strarray.append(ThemeString(tmpstring, attribute, _selected))
+						themearray.append(ThemeString(tmpstring, attribute, _selected))
+
 
 
 				if lineattributes & WidgetLineAttrs.SEPARATOR == 0:
 					padstring = "".ljust(lengths[_x] - length + padwidth)
-					strarray.append(ThemeString(padstring, attribute, _selected))
+					themearray.append(ThemeString(padstring, attribute, _selected))
 
-				linearray += strarray
+				linearray += themearray
 
 			addthemearray(listpad, linearray, y = _y, x = 0)
 
@@ -1441,7 +1567,7 @@ def windowwidget(stdscr: curses.window, maxy, maxx, y, x, items, headers = None,
 			while True:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1, wraparound = True)
 				lineattributes = items[yoffset + curypos]["lineattrs"]
-				tmp_char = items[yoffset + curypos]["columns"][0][0][0].lstrip("*•◉")[0]
+				tmp_char = str(items[yoffset + curypos]["columns"][0][0])[0]
 				if tmp_char.lower() == chr(c).lower() and lineattributes & WidgetLineAttrs.DISABLED == 0:
 					break
 				if (curypos + yoffset) == (oldcurypos + oldyoffset):
@@ -1455,7 +1581,7 @@ def windowwidget(stdscr: curses.window, maxy, maxx, y, x, items, headers = None,
 			while True:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1, wraparound = True)
 				lineattributes = items[yoffset + curypos]["lineattrs"]
-				tmp_char = items[yoffset + curypos]["columns"][0][0][0].lstrip("*•◉")[0]
+				tmp_char = str(items[yoffset + curypos]["columns"][0][0])[0]
 				if tmp_char.lower() == chr(c).lower() and lineattributes & WidgetLineAttrs.DISABLED == 0:
 					break
 				if (curypos + yoffset) == (oldcurypos + oldyoffset):
@@ -1579,10 +1705,12 @@ def get_labels(labels: Dict):
 		return None
 
 	rlabels = []
-	for label in labels:
-		rlabels.append((WidgetLineAttrs.NORMAL,
-				[(label, attr_to_curses("windowwidget", "default"))],
-				[(labels[label].replace("\n", "\\n"), attr_to_curses("windowwidget", "default"))]))
+	for key, value in labels.items():
+		rlabels.append({
+			"lineattrs": WidgetLineAttrs.NORMAL,
+			"columns": [[ThemeString(key, ThemeAttr("windowwidget", "highlight"))], [ThemeString(value.replace("\n", "\\n"), ThemeAttr("windowwidget", "default"))]],
+			"retval": None,
+		})
 	return rlabels
 
 annotation_headers = ["Annotation:", "Value:"]
@@ -1914,9 +2042,9 @@ class UIProps:
 		_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
 		_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
 		if self.windowheader != "":
-			winheaderarray = [("separators", "mainheader_prefix")]
-			winheaderarray.append((f"{self.windowheader}", ("main", "header")))
-			winheaderarray.append(("separators", "mainheader_suffix"))
+			winheaderarray: List[Union[ThemeRef, ThemeString]] = [ThemeRef("separators", "mainheader_prefix")]
+			winheaderarray.append(ThemeString(f"{self.windowheader}", ThemeAttr("main", "header")))
+			winheaderarray.append(ThemeRef("separators", "mainheader_suffix"))
 			if self.borders == True:
 				self.stdscr.addch(0, 1, _rtee)
 				self.addthemearray(self.stdscr, winheaderarray, y = 0, x = 2)
@@ -1944,8 +2072,9 @@ class UIProps:
 		self.draw_winheader()
 
 		mousestatus = "On" if get_mousemask() == -1 else "Off"
-		mousearray = [
-			("Mouse: ", ("statusbar", "infoheader")), (f"{mousestatus}", ("statusbar", "highlight"))
+		mousearray: List[Union[ThemeRef, ThemeString]] = [
+			ThemeString("Mouse: ", ThemeAttr("statusbar", "infoheader")),
+			ThemeString(f"{mousestatus}", ThemeAttr("statusbar", "highlight"))
 		]
 		xpos = self.maxx - themearray_len(mousearray) + 1
 		if self.statusbar is not None:
@@ -1953,9 +2082,12 @@ class UIProps:
 		ycurpos = self.curypos + self.yoffset
 		maxypos = self.maxcurypos + self.maxyoffset
 		if ycurpos != 0 or maxypos != 0:
-			curposarray = [
+			curposarray: List[Union[ThemeRef, ThemeString]] = [
 				# pylint: disable-next=line-too-long
-				("Line: ", ("statusbar", "infoheader")), (f"{ycurpos + 1}".rjust(len(str(maxypos + 1))), ("statusbar", "highlight")), ("separators", "statusbar_fraction"), (f"{maxypos + 1}", ("statusbar", "highlight"))
+				ThemeString("Line: ", ThemeAttr("statusbar", "infoheader")),
+				ThemeString(f"{ycurpos + 1}".rjust(len(str(maxypos + 1))), ThemeAttr("statusbar", "highlight")),
+				ThemeRef("separators", "statusbar_fraction"),
+				ThemeString(f"{maxypos + 1}", ThemeAttr("statusbar", "highlight"))
 			]
 			xpos = self.maxx - themearray_len(curposarray) + 1
 			if self.statusbar is not None:
@@ -2278,17 +2410,7 @@ class UIProps:
 			y, x = self.__addstr(win, string, y, x, attr)
 		return y, x
 
-	# addthemearray() takes an array as input.
-	# The elements in the array can be:
-	# ThemeString,
-	# ThemeRef,
-	# (string, (context, theme_attr_ref)),
-	# (string, (context, theme_attr_ref), selected),
-	# (string, (context, curses_attr)),
-	# (context, theme_ref),
-	# (context, theme_ref, selected),
-	# pylint: disable-next=too-many-arguments
-	def addthemearray(self, win: curses.window, array, y: int = -1, x: int = -1, selected: bool = False) -> Tuple[int, int]:
+	def addthemearray(self, win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
 		try:
 			for item in array:
 				if isinstance(item, ThemeString):
@@ -2914,7 +3036,7 @@ class UIProps:
 			del self
 			return Retval.RETURNONE
 		elif c == curses.KEY_MOUSE:
-			return self.handle_mouse_events(self.listpad, self.sorted_list, self.activatedfun, self.extraref, self.data)
+			return self.handle_mouse_events(cast(curses.window, self.listpad), self.sorted_list, self.activatedfun, self.extraref, self.data)
 		elif c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
 			return self.enter_handler(self.activatedfun, self.extraref, self.data)
 		elif c == ord("M"):
@@ -3259,7 +3381,7 @@ class UIProps:
 
 		helptext = []
 		if subview == True:
-			helptext.append(("[ESC]", "Return to previous screen"))
+			helptext.append(("", ""))
 
 		first = True
 		for helptexts in helptext_groups:
@@ -3267,10 +3389,11 @@ class UIProps:
 				continue
 			if first == False:
 				helptext.append(("", ""))
-			helptext += helptexts
+			for key, description in helptexts:
+				helptext.append((key, description))
 			first = False
 
-		return helptext
+		return format_helptext(helptext)
 
 	def generic_inputhandler(self, shortcuts: Dict, **kwargs: Dict) -> Tuple[Retval, Dict]:
 		"""
@@ -3363,7 +3486,7 @@ class UIProps:
 			return Retval.RETURNONE, {}
 
 		if c == curses.KEY_MOUSE:
-			return self.handle_mouse_events(self.listpad, self.sorted_list, self.activatedfun, self.extraref, self.data), {}
+			return self.handle_mouse_events(cast(curses.window, self.listpad), self.sorted_list, self.activatedfun, self.extraref, self.data), {}
 
 		if c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
 			return self.enter_handler(self.activatedfun, self.extraref, self.data), {}

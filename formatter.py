@@ -9,10 +9,12 @@ import sys
 from typing import Any, Callable, cast, Dict, List, Sequence, Union
 import yaml
 
-from ikttypes import DictPath, ThemeAttr, ThemeRef, ThemeString
+from ikttypes import DictPath
 
 import iktlib
 from iktlib import deep_get, split_msg
+
+from curses_helper import ThemeAttr, ThemeRef, ThemeString
 
 def __str_representer(dumper: yaml.Dumper, data: Any) -> yaml.Node:
 	"""

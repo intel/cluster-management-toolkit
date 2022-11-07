@@ -34,6 +34,7 @@ except ModuleNotFoundError:
 	DecodeException = json.decoder.JSONDecodeError # type: ignore
 from operator import itemgetter
 import os
+from pathlib import Path, PurePath
 import re
 import socket
 import subprocess
@@ -47,7 +48,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import ANSIThemeString, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup, ThemeAttr, ThemeRef, ThemeString
+from ikttypes import ANSIThemeString, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
 from iktpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
@@ -57,7 +58,7 @@ from logparser import logparser, logparser_initialised, LogLevel, lvl_to_letter_
 import curses_helper
 import iktlib
 from iktlib import clamp, deep_get, deep_get_with_fallback, deep_set, disksize_to_human, execute_command, get_package_versions, make_set_expression_list, none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple, read_iktconfig
-from curses_helper import curses_configuration, color_log_severity, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, themearray_wrap_line, themearray_to_string, themearray_len
+from curses_helper import curses_configuration, color_log_severity, format_helptext, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, themearray_wrap_line, themearray_to_string, themearray_len, ThemeAttr, ThemeRef, ThemeString
 
 import datagetter
 from datagetter import datagetter_allowlist
@@ -369,9 +370,9 @@ def processor_mem(obj, field: str) -> str:
 	free, total = getattr(obj, field)
 
 	string = f"{100 - (100 * int(free)) / int(total):0.1f}"
-	string += themearray_to_string([ThemeRef("separators", "percentage")])
+	string += str(ThemeRef("separators", "percentage"))
 	string += " "
-	string += themearray_to_string([ThemeRef("separators", "fraction")])
+	string += str(ThemeRef("separators", "fraction"))
 	string += " "
 	string += f"{int(total) / (1024 * 1024):0.1f}"
 	string += "GiB"
@@ -429,12 +430,12 @@ def update_field_widths(field_dict: Dict, field_names: List[str], objects) -> in
 
 		field_dict[field_name]["fieldlen"] = max(tmplen, len(field_dict[field_name]["header"]))
 
-		linelen += field_dict[field_name].get("fieldlen") + themearray_len([ThemeRef("separators", "pad")])
+		linelen += field_dict[field_name].get("fieldlen") + len(ThemeRef("separators", "pad"))
 		pos = linelen
 
 	# The last element shouldn't be padded
 	if linelen > 0:
-		linelen -= themearray_len([ThemeRef("separators", "pad")])
+		linelen -= len(ThemeRef("separators", "pad"))
 
 	return linelen
 
@@ -533,7 +534,7 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 
 	_vlist = kh.list_contexts()
 
-	tag_prefix = themearray_to_string([ThemeRef("separators", "tag")])
+	tag_prefix = str(ThemeRef("separators", "tag"))
 
 	for _current, name, cluster, authinfo, namespace in _vlist:
 		if _current == True:
@@ -1046,6 +1047,7 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 		# Is a custom type used for theming?
 		if vtype not in theme["types"]:
 			raise Exception(f"Unknown value type {vtype}; the view file is probably invalid")
+		new_value = value
 	return new_value
 
 def transform_filter(transformations, value: DictPath):
@@ -1541,7 +1543,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 				elif ptype == "substitution":
 					value = []
 					substitute = deep_get(_path, DictPath("substitute"), "")
-					tmp = deep_get_with_fallback(obj, DictPath(path))
+					tmp = deep_get_with_fallback(obj, path)
 					if tmp is None:
 						tmp = []
 					if type(tmp) == dict:
@@ -1765,7 +1767,10 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
 
 						if vtype == "api_group":
-							override_kind = deep_get_with_fallback(iktlib.iktconfig, [f"{view}#kind_format_{field_index}", f"{view}#kind_format", f"Global#kind_format_{field_index}", "Global#kind_format"], "mixed")
+							override_kind = deep_get_with_fallback(iktlib.iktconfig, [DictPath(f"{view}#kind_format_{field_index}"),
+														  DictPath(f"{view}#kind_format"),
+														  DictPath(f"Global#kind_format_{field_index}"),
+														  DictPath("Global#kind_format")], "mixed")
 							if override_kind == "skip" or override_kind == "mixed" and "." not in tmp:
 								tmp = ""
 							vtype = "kind"
@@ -1797,7 +1802,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							value = (deep_get(_path, DictPath("lookup#messages#ok")), StatusGroup.NEUTRAL)
 					_values.append((value, "raw"))
 				elif ptype == "dictfields":
-					subpaths = deep_get_with_fallback(_path, ["subpaths", "subpath"], [])
+					subpaths = deep_get_with_fallback(_path, [DictPath("subpaths"), DictPath("subpath")], [])
 					if type(subpaths) == str:
 						subpaths = [[subpaths]]
 					for mpath in mpaths:
@@ -1843,6 +1848,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 				d[name] = values[0]
 			else:
 				d[name] = values
+
 
 	# We've got all the information we can get now; time to apply filters
 	skip = False
@@ -2030,28 +2036,28 @@ def get_task_log(obj):
 	msg_lines = deep_get(obj, DictPath("log#msg_lines"), [])
 
 	if skipped == True:
-		field.append([("[skipped]", ("types", "unset"))])
+		field.append([ThemeString("[skipped]", ThemeAttr("types", "unset"))])
 		return field
 
 	if len(stderr_lines) > 0:
-		field.append([("stderr:", ("main", "paragraphheader"))])
+		field.append([ThemeString("stderr:", ThemeAttr("main", "paragraphheader"))])
 		for line in stderr_lines:
-			field.append([(f"{line}", color_status_group(StatusGroup.NOT_OK))])
+			field.append([ThemeString(f"{line}", color_status_group(StatusGroup.NOT_OK))])
 
 	if len(stdout_lines) > 0:
 		if len(field) > 0:
-			field.append([("", ("main", "default"))])
-		field.append([("stdout:", ("main", "paragraphheader"))])
+			field.append([ThemeString("", ThemeAttr("main", "default"))])
+		field.append([ThemeString("stdout:", ThemeAttr("main", "paragraphheader"))])
 		for line in stdout_lines:
-			field.append([(f"{line}", ("main", "default"))])
+			field.append([ThemeString(f"{line}", ThemeAttr("main", "default"))])
 
 	if len(msg_lines) > 0:
 		if len(field) > 0:
-			field.append([("", ("main", "default"))])
-			field.append([("", ("main", "default"))])
-		field.append([("msg:", ("main", "paragraphheader"))])
+			field.append([ThemeString("", ThemeAttr("main", "default"))])
+			field.append([ThemeString("", ThemeAttr("main", "default"))])
+		field.append([ThemeString("msg:", ThemeAttr("main", "paragraphheader"))])
 		for line in msg_lines:
-			field.append([(f"{line}", color_status_group(StatusGroup.OK))])
+			field.append([ThemeString(f"{line}", color_status_group(StatusGroup.OK))])
 
 	return field
 
@@ -3487,7 +3493,12 @@ def get_pod_resource_list(obj, **kwargs):
 				event_name = deep_get(event, DictPath("metadata#name"))
 				resource_tuple = (kind[0], "", event_name)
 				status = deep_get(event, DictPath("type"))
-				tmp = __get_timestamp_with_fallback(event, ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"])
+				tmp = __get_timestamp_with_fallback(event, [DictPath("series#lastObservedTime"),
+									    DictPath("deprecatedLastTimestamp"),
+									    DictPath("lastTimestamp"),
+									    DictPath("eventTime"),
+									    DictPath("deprecatedFirstTimestamp"),
+									    DictPath("firstTimestamp")])
 				seen = get_since(tmp)
 				message = deep_get(event, DictPath("message"), "")
 				message = message.replace("\n", "\\n").rstrip()
@@ -4314,7 +4325,7 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 		# Note that we need to subtract the width of sort direction char
 		# from the width of pad; this only works if len(pad) > 0
 		if first == False:
-			headerarray.append(ThemeString("".ljust(themearray_len([ThemeRef("separators", "pad")]) - len(sort_direction_char)), ThemeAttr("types", "generic")))
+			headerarray.append(ThemeString("".ljust(len(ThemeRef("separators", "pad")) - len(sort_direction_char)), ThemeAttr("types", "generic")))
 
 		tabstop = themearray_len(headerarray)
 
@@ -4354,7 +4365,7 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 		attribute = curses.A_NORMAL
 
 		if is_taggable:
-			tagprefixlen = themearray_len([ThemeRef("separators", "tag")])
+			tagprefixlen = len(ThemeRef("separators", "tag"))
 
 			if is_tagged:
 				tagprefix = [ThemeRef("separators", "tag")]
@@ -4372,18 +4383,18 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 
 		fieldlen = field_list[field]["fieldlen"]
 		if i < len(field_list):
-			fpad = themearray_len([ThemeRef("separators", "pad")])
+			fpad = len(ThemeRef("separators", "pad"))
 		else:
 			fpad = 0
 
 		ralign = field_list[field].get("ralign", False)
 
 		formatting = {
-			"item_separator": field_list[field].get("item_separator", ("separators", "list")),
-			"field_separators": field_list[field].get("field_separators", [("separators", "field")]),
-			"field_colors": field_list[field].get("field_colors", [("types", "field")]),
+			"item_separator": field_list[field].get("item_separator", ThemeRef("separators", "list")),
+			"field_separators": field_list[field].get("field_separators", [ThemeRef("separators", "field")]),
+			"field_colors": field_list[field].get("field_colors", [ThemeAttr("types", "field")]),
 			"ellipsise": field_list[field].get("ellipsise", -1),
-			"ellipsis": field_list[field].get("ellipsis", ("separators", "ellipsis")),
+			"ellipsis": field_list[field].get("ellipsis", ThemeRef("separators", "ellipsis")),
 			"field_prefixes": field_list[field].get("field_prefixes", None),
 			"field_suffixes": field_list[field].get("field_suffixes", None),
 			"mapping": field_list[field].get("mapping", {}),
@@ -4449,48 +4460,47 @@ builtin_fields = {
 
 # The return type of the formatting will be the same
 # as the type of the default, so default == None is a programming error
-def get_formatting(field, formatting, default):
+def get_formatting(field: str, formatting: str, default: Union[Union[dict, ThemeAttr, ThemeRef, ThemeString], List[dict]]):
 	result = []
-	items = deep_get(field, DictPath(f"formatting#{formatting}"))
+	items: Union[Dict, List[Dict]] = deep_get(field, DictPath(f"formatting#{formatting}"))
+
 	if items is None:
 		return default
+
+	if not isinstance(items, (dict, list)):
+		raise TypeError(f"Formatting must be either list[union[dict, ThemeAttr, ThemeRef, ThemeString]] or list[list[dict]]; is type: {type(items)}")
 
 	if default is None:
 		raise Exception(f"default cannot be None for field {field}, formatting {formatting}; this is a programming error")
 
-	if type(default) == tuple:
-		items = [items]
-
 	if len(items) < 1:
 		raise Exception(f"field {field}, formatting {formatting}: format list item is empty; this is likely an error in the view file")
 
-	for item in items:
-		context = None
-		if formatting in ("item_separator", "field_separators", "ellipsis", "field_prefixes", "field_suffixes"):
-			context = "separators"
-		elif formatting == "field_colors":
-			context = "types"
-		# field_prefixes/suffixes can be either a list of a list of lists
-		if type(item) == tuple or formatting not in ("field_prefixes", "field_suffixes"):
-			context = deep_get(item, DictPath("context"), context)
-			ftype = deep_get(item, DictPath("type"))
-			if ftype is None or context is None:
-				raise Exception(f"field {field}, formatting {formatting}: context={context} type={ftype}; list type or context missing/formatting has no implicit context; this is likely an error in the view file")
-			result.append((context, ftype))
-		else:
-			_result = []
-			for _item in item:
-				_context = deep_get(_item, DictPath("context"), context)
-				ftype = deep_get(_item, DictPath("type"))
-				if ftype is None or context is None:
-					raise Exception(f"field {field}, formatting {formatting}: context={context} type={ftype}; list type or context missing/formatting has no implicit context; this is likely an error in the view file")
-				_result.append((_context, ftype))
-			result.append(_result)
+	if formatting in ("item_separator", "field_separators", "ellipsis", "field_prefixes", "field_suffixes"):
+		default_context = "separators"
+	elif formatting == "field_colors":
+		default_context = "types"
 
-	if type(default) == tuple:
-		if len(result) > 1:
-			raise Exception(f"field {field}, formatting {formatting}: default is of type {type(default)}, but formatting is a list with length {len(result)} that cannot be represented as a tuple; this is likely an error in the view file")
-		result = result[0]
+	if isinstance(items, dict):
+		context = deep_get(items, DictPath("context"), default_context)
+		key = deep_get(items, DictPath("type"))
+		return ThemeRef(context, key)
+
+	for item in items:
+		# field_prefixes/suffixes can be either list[Union[ThemeRef, ThemeString]] or Union[ThemeRef, ThemeString]; in the latter case turn it into a list
+		if isinstance(item, (ThemeAttr, ThemeRef, ThemeString)):
+			result.append(item)
+		elif isinstance(item, dict):
+			context = deep_get(item, DictPath("context"), default_context)
+			key = deep_get(item, DictPath("type"))
+			if formatting in ("field_separators", "field_prefixes", "field_suffixes"):
+				result.append(ThemeRef(context, key))
+			elif formatting == "field_colors":
+				result.append(ThemeAttr(context, key))
+			else:
+				raise TypeError(f"Unknown formatting type {formatting}")
+		else:
+			raise TypeError(f"Formatting is of invalid type {type(item)}")
 
 	return result
 
@@ -4504,7 +4514,7 @@ def get_formatter(field):
 		generator = deep_get(generator_allowlist, DictPath(generator), generators.generator_basic)
 	processor = deep_get(field, DictPath("processor"))
 
-	field_separators_default = [("separators", "field")]
+	field_separators_default = [ThemeRef("separators", "field")]
 
 	if formatter is None:
 		pass
@@ -4552,18 +4562,18 @@ def get_formatter(field):
 	theme = get_theme_ref()
 	if deep_get(field, DictPath("formatting#field_colors")) is None:
 		if "type" in field and field["type"] in theme["types"]:
-			field_colors = [("types", deep_get(field, DictPath("type")))]
+			field_colors = [ThemeAttr("types", deep_get(field, DictPath("type")))]
 		else:
-			field_colors = get_formatting(field, "field_colors", [("types", "field")])
+			field_colors = get_formatting(field, "field_colors", [ThemeAttr("types", "field")])
 	else:
-		field_colors = get_formatting(field, "field_colors", [("types", "field")])
+		field_colors = get_formatting(field, "field_colors", [ThemeAttr("types", "field")])
 
 	field_prefixes = get_formatting(field, "field_prefixes", [])
 	field_suffixes = get_formatting(field, "field_suffixes", [])
 	field_separators = get_formatting(field, "field_separators", field_separators_default)
 	ellipsise = deep_get(field, DictPath("formatting#ellipsise"), -1)
-	ellipsis = get_formatting(field, "ellipsis", ("separators", "ellipsis"))
-	item_separator = get_formatting(field, "item_separator", ("separators", "list"))
+	ellipsis = get_formatting(field, "ellipsis", ThemeRef("separators", "ellipsis"))
+	item_separator = get_formatting(field, "item_separator", ThemeRef("separators", "list"))
 	mapping = deep_get(field, DictPath("formatting#mapping"), {})
 
 	tmp_field["generator"] = generator
@@ -4933,7 +4943,8 @@ def genericlistloop(stdscr, view):
 			field_index = _list[(_index + 1) % len(field_indexes)]
 
 			# Toggle field width
-			field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, DictPath(f"{view}#fields")), denylist = denylist)
+			field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes,
+												fields = deep_get(views, DictPath(f"{view}#fields")), denylist = denylist)
 			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
 			uip.resize_listpad(height = -1, width = -1)
 			uip.refresh_all()
@@ -5021,14 +5032,14 @@ def genericlistloop(stdscr, view):
 							for item in tmp_file_list:
 								realpath, filename, ptype = item
 								if ptype in ("File", "Configuration File", "Kustomization"):
-									formatting = ("windowwidget", "default")
+									fmt = ThemeAttr("windowwidget", "default")
 								elif ptype == "<dir>":
-									formatting = ("windowwidget", "highlight")
+									fmt = ThemeAttr("windowwidget", "highlight")
 								else:
 									raise Exception(f"Unknown ptype {ptype}")
 								file_list.append({
 									"lineattrs": WidgetLineAttrs.NORMAL,
-									"columns": [[(f"{filename}", formatting)], [(f"{ptype}", ("windowwidget", "description"))]],
+									"columns": [[ThemeString(f"{filename}", fmt)], [ThemeString(f"{ptype}", ThemeAttr("windowwidget", "description"))]],
 									"retval": filename,
 								})
 							tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, file_list, title = query, cursor = True)
@@ -5080,7 +5091,7 @@ def genericlistloop(stdscr, view):
 				preselection = selected_namespace
 			namespace_list = [{
 				"lineattrs": WidgetLineAttrs.NORMAL,
-				"columns": [[(f"{all_ns}", ("windowwidget", "default"))]],
+				"columns": [[ThemeString(f"{all_ns}", ThemeAttr("windowwidget", "default"))]],
 				"retval": all_ns,
 			}]
 
@@ -5089,7 +5100,7 @@ def genericlistloop(stdscr, view):
 				for ns in (deep_get(item, DictPath("metadata#name")) for item in tmp):
 					namespace_list.append({
 						"lineattrs": WidgetLineAttrs.NORMAL,
-						"columns": [[(f"{ns}", ("windowwidget", "default"))]],
+						"columns": [[ThemeString(f"{ns}", ThemeAttr("windowwidget", "default"))]],
 						"retval": ns,
 					})
 
@@ -5190,7 +5201,7 @@ def genericlistloop(stdscr, view):
 			for key, value in natsorted(labels):
 				labellist.append({
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[(f"{key}", ("windowwidget", "default"))], [(f"{value}", ("windowwidget", "default"))]],
+					"columns": [[ThemeString(f"{key}", ThemeAttr("windowwidget", "default"))], [ThemeString(f"{value}", ThemeAttr("windowwidget", "default"))]],
 				})
 			label_headers = ["Label:", "Value:"]
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, labellist, headers = label_headers, title = "Labels", cursor = False)
@@ -5231,7 +5242,7 @@ def genericlistloop(stdscr, view):
 			for key, value in labels:
 				labellist.append({
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[(f"{key}", ("windowwidget", "default"))], [(f"{value}", ("windowwidget", "default"))]],
+					"columns": [[ThemeString(f"{key}", ThemeAttr("windowwidget", "default"))], [ThemeString(f"{value}", ThemeAttr("windowwidget", "default"))]],
 				})
 			label_headers = ["Label:", "Value:"]
 			tagged_labels = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, labellist, headers = label_headers, title = "Labels", cursor = True, taggable = True)
@@ -5248,24 +5259,27 @@ def genericlistloop(stdscr, view):
 		elif c == ord("A") and view == "Inventory" and len(tagged_items) == 0:
 			selected = uip.get_selected()
 			groups = ansible_get_groups(ANSIBLE_INVENTORY)
+			inventory = ansible_get_inventory_dict()
+
 			# These Ansible groups shouldn't be possible to toggle on/off
 			for skip in ["all", "controlplane", "controlplanes", "master", "node", "nodes"]:
 				try:
 					groups.remove(skip)
-				except KeyError:
+				except (KeyError, ValueError):
 					pass
-			host_groups = ansible_get_groups_by_host(ANSIBLE_INVENTORY, selected.name)
+			host_groups = ansible_get_groups_by_host(inventory, selected.name)
 			grouplist = []
 			preselection = set()
 			for i in range(0, len(groups)):
 				grouplist.append({
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[(f"{groups[i]}", ("windowwidget", "default"))]],
+					"columns": [[ThemeString(f"{groups[i]}", ThemeAttr("windowwidget", "default"))]],
 				})
 				if groups[i] in host_groups:
 					preselection.add(i)
 			group_headers = ["Ansible Groups:"]
-			selection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, grouplist, headers = group_headers, title = "Ansible Groups", cursor = True, taggable = True, preselection = preselection)
+			selection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, grouplist, headers = group_headers,
+							       title = f"Toggle Ansible groups for {selected.name}:", cursor = True, taggable = True, preselection = preselection)
 			new_groups = []
 			for keep in ["all", "controlplane", "controlplanes", "master", "node", "nodes"]:
 				if keep in host_groups:
@@ -5300,7 +5314,7 @@ def genericlistloop(stdscr, view):
 			for item in tagged_items:
 				taggeditemlist.append({
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[("separators", "widgetbullet"), (f"{item.name}", ("windowwidget", "default"))]],
+					"columns": [[ThemeRef("separators", "widgetbullet"), ThemeString(f"{item.name}", ThemeAttr("windowwidget", "default"))]],
 				})
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, taggeditemlist, title = "Tagged items", cursor = False)
 			uip.refresh_all()
@@ -5368,7 +5382,7 @@ def genericlistloop(stdscr, view):
 				selection = ""
 				for i in range(0, len(tmpselection)):
 					if len(tmpselection[i]) > 0:
-						selection += tmpselection[i][0][0]
+						selection += str(tmpselection[i][0])
 			uip.refresh_all()
 			curses.doupdate()
 
@@ -5441,14 +5455,14 @@ def genericlistloop(stdscr, view):
 							for item in tmp_file_list:
 								realpath, filename, ptype = item
 								if ptype in ("File", "Configuration File", "Kustomization"):
-									formatting = ("windowwidget", "default")
+									fmt = ThemeAttr("windowwidget", "default")
 								elif ptype == "<dir>":
-									formatting = ("windowwidget", "highlight")
+									fmt = ThemeAttr("windowwidget", "highlight")
 								else:
 									raise Exception(f"Unknown ptype {ptype}")
 								file_list.append({
 									"lineattrs": WidgetLineAttrs.NORMAL,
-									"columns": [[(f"{filename}", formatting)], [(f"{ptype}", ("windowwidget", "description"))]],
+									"columns": [[ThemeString(f"{filename}", fmt)], [ThemeString(f"{ptype}", ThemeAttr("windowwidget", "description"))]],
 									"retval": filename,
 								})
 							tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, file_list, title = query, cursor = True)
@@ -5497,6 +5511,7 @@ def genericlistloop(stdscr, view):
 		if deep_get(viewref, DictPath("shortcuts#View YAML dump")) is None:
 			shortcuts["View YAML dump of resource"] = {
 				"shortcut": ord("y"),
+				"read_only": True,
 				"helptext": ("Y", "View YAML dump of resource"),
 				"action": "call",
 				"action_call": view_yaml,
@@ -5505,12 +5520,12 @@ def genericlistloop(stdscr, view):
 					"_named_title": True,
 					"_pass_obj": True,
 				},
-				"read_only": True,
 			}
 		# Always include the shortcut for edit resource, unless overridden
 		if deep_get(viewref, DictPath("shortcuts#Edit resource")) is None:
 			shortcuts["Edit resource"] = {
 				"shortcut": ord("e"),
+				"read_only": False,
 				"helptext": ("E", "Edit resource"),
 				"action": "call",
 				"action_call": edit_resource,
@@ -5577,6 +5592,9 @@ def genericlistloop(stdscr, view):
 					action_args["selected"] = selected
 				if "_pass_selection_vars" in action_args:
 					action_args["selection_vars"] = selection_vars
+				if "_parent_namespace_path" in action_args and selected is not None:
+					parent_namespace_path = deep_get(action_args, DictPath("_parent_namespace_path"))
+					action_args["_parent_namespace"] = deep_get(obj, parent_namespace_path, "")
 				if "_named_title" in action_args and selected is not None and getattr(selected, "name", None):
 					action_args["named_title"] = deep_get(action_args, DictPath("title"), "") + " (" + getattr(selected, "name") + ")"
 				action_call = deep_get(value, DictPath("action_call"))
@@ -5695,12 +5713,12 @@ def __fetch_package_versions(**kwargs):
 	package_versions = []
 	for package, version in _package_versions:
 		if version == "N/A":
-			versionattr = ("windowwidget", "dim")
+			fmt = ThemeAttr("windowwidget", "dim")
 		else:
-			versionattr = ("windowwidget", "default")
+			fmt = ThemeAttr("windowwidget", "default")
 		package_versions.append({
 			"lineattrs": WidgetLineAttrs.NORMAL,
-			"columns": [[(f"{package}", ("windowwidget", "default"))], [(f"{version}", versionattr)]],
+			"columns": [[ThemeString(f"{package}", ThemeAttr("windowwidget", "default"))], [ThemeString(f"{version}", fmt)]],
 		})
 	uip.refresh_window()
 	uip.refresh_infopad()
@@ -5877,7 +5895,6 @@ def clusteroverviewloop(stdscr, view):
 			# We're waiting for results
 			__ansible_results = ansible_async_get_data(async_cookie)
 			if __ansible_results is not None:
-				#sys.exit(json.dumps(__ansible_results, indent = 2))
 				for __result in deep_get(__ansible_results, DictPath(control_plane_name), []):
 					if __result["task"] == "Fetching /proc/loadavg":
 						loadavg_raw = deep_get(__result, DictPath("stdout_lines"), [])
@@ -5892,7 +5909,8 @@ def clusteroverviewloop(stdscr, view):
 		else:
 			if islocal == False:
 				if async_retrigger_timeout == 0:
-					async_cookie = ansible_run_playbook_on_selection_async(f"{ANSIBLE_PLAYBOOK_DIR}/load_ping.yaml", selection = [control_plane_name])
+					ping_path = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("load_ping.yaml")))
+					async_cookie = ansible_run_playbook_on_selection_async(ping_path, selection = [control_plane_name])
 				else:
 					async_retrigger_timeout -= 1
 
@@ -6506,48 +6524,66 @@ def cniloop(stdscr, view):
 
 			if len(_cnis) == 0:
 				cni = "<unknown>"
-				cnistr = [(f"{cni}", color_status_group(StatusGroup.UNKNOWN))]
+				cnistr = [
+					ThemeString(f"{cni}", color_status_group(StatusGroup.UNKNOWN))
+				]
 				cni_version = "N/A"
-				cni_version_str = [(f"{cni_version}", color_status_group(StatusGroup.UNKNOWN))]
+				cni_version_str = [
+					ThemeString(f"{cni_version}", color_status_group(StatusGroup.UNKNOWN))
+				]
 				cni_status = ("N/A", StatusGroup.UNKNOWN)
 			elif len(_cnis) == 1:
 				cni = _cnis[0][0]
-				cnistr = [(f"{cni}", ("types", "generic"))]
+				cnistr = [
+					ThemeString(f"{cni}", ThemeAttr("types", "generic"))
+				]
 				cni_version = _cnis[0][1]
-				cni_version_str = [(f"{cni_version}", ("types", "version"))]
+				cni_version_str = [
+					ThemeString(f"{cni_version}", ThemeAttr("types", "version"))
+				]
 				cni_status = _cnis[0][2]
 			else:
 				cni = "<unknown>"
-				cnistr = [("Could not uniquely identify CNI ", ("main", "status_not_ok")), ("(", ("types", "generic")), ("Candidates: ", ("main", "infoheader"))]
+				cnistr = [
+					ThemeString("Could not uniquely identify CNI ", ThemeAttr("main", "status_not_ok")),
+					ThemeString("(", ThemeAttr("types", "generic")),
+					ThemeString("Candidates: ", ThemeAttr("main", "infoheader"))]
 				for i, _cni in enumerate(_cnis):
-					cnistr += [(f"{_cni[0]}", ("types", "generic")), ("separators", "version"), (f"{_cni[1]}", ("types", "version"))]
+					cnistr += [
+						ThemeString(f"{_cni[0]}", ThemeAttr("types", "generic")),
+						ThemeRef("separators", "version"),
+						ThemeString(f"{_cni[1]}", ThemeAttr("types", "version"))]
 					if i < len(_cnis) - 1:
-						cnistr.append(("separators", "list"))
-				cnistr.append((")", ("types", "generic")))
+						cnistr.append(ThemeRef("separators", "list"))
+				cnistr.append(ThemeString(")", ThemeAttr("types", "generic")))
 				cni_version = "N/A"
-				cni_version_str = [(f"{cni_version[0]}", color_status_group(StatusGroup.UNKNOWN))]
+				cni_version_str = [
+					ThemeString(f"{cni_version[0]}", color_status_group(StatusGroup.UNKNOWN))
+				]
 				cni_status = ("N/A", StatusGroup.UNKNOWN)
 
-			cni_status_str = [(f"{cni_status[0]}", color_status_group(cni_status[1]))]
+			cni_status_str = [
+				ThemeString(f"{cni_status[0]}", color_status_group(cni_status[1]))
+			]
 
 			versionarray = [
-				("Version: ", ("main", "infoheader")),
+				ThemeString("Version: ", ThemeAttr("main", "infoheader")),
 			]
 			versionarray += cni_version_str
 			candidateversionarray = [
-				("Candidate version: ", ("main", "infoheader")),
+				ThemeString("Candidate version: ", ThemeAttr("main", "infoheader")),
 			]
 
 			candidate_version = check_cni_updates(cni, cni_version)
-			candidateversionarray.append((f"{candidate_version}", ("types", "version")))
+			candidateversionarray.append(ThemeString(f"{candidate_version}", ThemeAttr("types", "version")))
 
 
 			namearray = [
-				("Container Network Interface: ", ("main", "infoheader")),
+				ThemeString("Container Network Interface: ", ThemeAttr("main", "infoheader")),
 			]
 			namearray += cnistr
 			statusarray = [
-				("Status: ", ("main", "infoheader")),
+				ThemeString("Status: ", ThemeAttr("main", "infoheader")),
 			]
 			statusarray += cni_status_str
 
@@ -6669,7 +6705,7 @@ def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
 			helptext += helptexts.infoviewheader_part2
 			helptext += helptexts.spacer
 			helptext += additional_helptexts
-			return helptext
+			return format_helptext(helptext)
 
 		viewref = infoviews[view]
 
@@ -6728,9 +6764,9 @@ def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
 
 		helptext += helptexts.listmovement
 
-	return helptext
+	return format_helptext(helptext)
 
-def genericinfoloop(stdscr, obj, view, **kwargs):
+def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	global initial_container # pylint: disable=global-statement
 
 	# If obj is a tuple we got the object as obj[0]
@@ -6797,7 +6833,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	reversible = deep_get(viewref, DictPath("reversible"), True)
 	activatedfun = deep_get(viewref, DictPath("activatedfun"))
 	on_activation = deep_get(viewref, DictPath("listpad#on_activation"), {})
-	labels = deep_get(viewref, "labels", DictPath("metadata#labels"))
+	labels = deep_get(viewref, DictPath("labels"), "metadata#labels")
 	annotations = deep_get(viewref, DictPath("annotations"), "metadata#annotations")
 	extraref = deep_get(viewref, DictPath("extraref"))
 	data = deep_get(viewref, DictPath("data"), None)
@@ -6835,6 +6871,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	if deep_get(shortcuts, DictPath("Namespace")) is None and deep_get(obj, DictPath(namespace_path)) is not None:
 		shortcuts["Namespace"] = {
 			"shortcut": ord("N"),
+			"read_only": True,
 			"helptext": ("[Shift] + N", "Open info page for Namespace"),
 			"call": resourceinfodispatch,
 			"kind": ("Namespace", ""),
@@ -6846,12 +6883,13 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	if "securityContext" in deep_get(obj, DictPath("spec"), {}) or "securityContext" in deep_get(obj, DictPath("spec#template#spec"), {}):
 		shortcuts["Show Security Context"] = {
 			"shortcut": ord("x"),
+			"read_only": True,
 			"helptext": ("X", "Show security context information"),
 			"widget": "windowwidget",
 			"title": "Security Context Policies:",
 			"headers": ["Policy:", "Value:"],
 			"itemgetter": itemgetters.get_security_context,
-			"formatting": [("windowwidget", "default"), ("windowwidget", "highlight")],
+			"formatting": [ThemeAttr("windowwidget", "default"), ThemeAttr("windowwidget", "highlight")],
 		}
 
 	# Always include the shortcut for conditions,
@@ -6859,6 +6897,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	if "conditions" in deep_get(obj, DictPath("status"), {}):
 		shortcuts["Show Resource Conditions"] = {
 			"shortcut": ord("c"),
+			"read_only": True,
 			"helptext": ("C", "Show resource conditions"),
 			"widget": "windowwidget",
 			"title": "Conditions:",
@@ -6870,6 +6909,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	if deep_get(viewref, DictPath("shortcuts#Show Events")) is None:
 		shortcuts["Show Events"] = {
 			"shortcut": ord("e"),
+			"read_only": True,
 			"helptext": ("E", "Show events"),
 			"widget": "windowwidget",
 			"selectable": True,
@@ -6889,6 +6929,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	if deep_get(viewref, DictPath("shortcuts#YAML")) is None:
 		shortcuts["View YAML dump of resource"] = {
 			"shortcut": ord("y"),
+			"read_only": True,
 			"helptext": ("Y", "View YAML dump of resource"),
 			"action": "call",
 			"action_call": view_yaml,
@@ -6902,6 +6943,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 	if deep_get(viewref, DictPath("shortcuts#Last Applied Configuration")) is None:
 		shortcuts["Last Applied Configuration"] = {
 			"shortcut": ord("L"),
+			"read_only": True,
 			"helptext": ("[Shift] + L", "Show last applied configuration"),
 			"action": "call",
 			"action_call": view_last_applied_configuration,
@@ -6962,7 +7004,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 		if listpad is not None:
 			raise Exception("We cannot have listpad and logpad simultaneously")
 
-		timestamps = deep_get_with_fallback(viewref, ["logpad#timestamps", "timestamps"], True)
+		timestamps = deep_get_with_fallback(viewref, [DictPath("logpad#timestamps"), DictPath("timestamps")], True)
 		if infopadheight == 0:
 			tspad, logpad = uip.init_logpad(width = -1, ypos = 1, xpos = 1, timestamps = timestamps)
 		else:
@@ -6995,7 +7037,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					title = "Error!"
 					errormsg = [{
 						"lineattrs": 0,
-						"columns": [[("Resource not available; it may have been deleted", ("types", "generic"))]],
+						"columns": [[ThemeString("Resource not available; it may have been deleted", ThemeAttr("types", "generic"))]],
 					}]
 					curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, errormsg, title = title, cursor = False)
 					return Retval.RETURNDONE
@@ -7111,16 +7153,17 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				y = 0
 				if name_path is not None and len(name_path) > 0:
 					fieldarray = [
-						("Name:", ("main", "infoheader")),
-						(f" {deep_get(obj, DictPath(name_path))}", ("types", "generic"))
+						ThemeString("Name:", ThemeAttr("main", "infoheader")),
+						ThemeString(f" {deep_get(obj, DictPath(name_path))}", ThemeAttr("types", "generic"))
 					]
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 					y += 1
 
 				if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, DictPath(namespace_path)) is not None:
 					fieldarray = [
-						("N", ("main", "infoheader_shortcut")), ("amespace:", ("main", "infoheader")),
-						(f" {deep_get(obj, DictPath(namespace_path))}", ("types", "namespace"))
+						ThemeString("N", ThemeAttr("main", "infoheader_shortcut")),
+						ThemeString("amespace:", ThemeAttr("main", "infoheader")),
+						ThemeString(f" {deep_get(obj, DictPath(namespace_path))}", ThemeAttr("types", "namespace"))
 					]
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 					y += 1
@@ -7141,7 +7184,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							if _generator is not None:
 								ralign = deep_get(_formatter, DictPath(f"{key}#ralign"))
 								formatting = deep_get(_formatter, DictPath(f"{key}#formatting"))
-								fieldarray += [(" ", ("types", "generic"))]
+								fieldarray += [ThemeString(" ", ThemeAttr("types", "generic"))]
 								fieldarray += _generator(data, key, fieldlen = 0, pad = 0, ralign = ralign, selected = False, **formatting)
 						uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 
@@ -7187,7 +7230,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 				current_match = False
 				if len(uip.search_matches) > 0:
 					line_match = uip.yoffset + y in uip.search_matches
-					match_prefix = [("separators", "matchbullet")]
+					match_prefix = [ThemeRef("separators", "matchbullet")]
 					if line_match == False:
 						match_prefix = [ThemeString("".ljust(len(themearray_to_string(match_prefix))), ThemeAttr("types", "generic"))]
 					if uip.match_index is not None and uip.yoffset + y == uip.match_index:
@@ -7372,7 +7415,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					# If not available we try to provide some sensible defaults.
 					if w_items is not None and len(w_items) > 0 and (type(w_items[0]) == dict or type(w_items[0]) in (list, tuple) and type(w_items[0][0]) != int):
 						tmp_items = []
-						w_formatting = deep_get(value, DictPath("formatting"), [("windowwidget", "default")])
+						w_formatting = deep_get(value, DictPath("formatting"), [ThemeAttr("windowwidget", "default")])
 						lineattrs = WidgetLineAttrs.NORMAL
 						# w_item is a line
 						for w_item in w_items:
@@ -7383,7 +7426,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 							# w_item[i] is a column
 							tmp = []
 							for i in range(0, len(w_item)):
-								tmp.append([(w_item[i], w_formatting[min(i, len(w_formatting) - 1)])])
+								tmp.append([ThemeString(w_item[i], w_formatting[min(i, len(w_formatting) - 1)])])
 
 							tmp_items.append({
 								"lineattrs": lineattrs,
@@ -7428,7 +7471,7 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					changed = True
 				elif widget == "executecommand":
 					selected = uip.get_selected()
-					w_kinds = deep_get_with_fallback(value, ["widget_args#kinds", "kinds"])
+					w_kinds = deep_get_with_fallback(value, [DictPath("widget_args#kinds"), DictPath("kinds")])
 					if w_kinds is None:
 						continue
 					w_ref = None
@@ -7437,27 +7480,34 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					if w_kinds != ["<native>"] and [deep_get(w_ref, DictPath("kind"), ""), deep_get(w_ref, DictPath("api_group"), "")] not in w_kinds and w_kinds != [("", "")]:
 						continue
 
-					w_inputtitle = deep_get_with_fallback(value, ["widget_args#inputtitle", "inputtitle"])
+					w_inputtitle = deep_get_with_fallback(value, [DictPath("widget_args#inputtitle"), DictPath("inputtitle")])
 					if w_inputtitle is not None:
 						w_input = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, title = w_inputtitle)
 						w_command = w_input.split()
 					else:
-						w_command = deep_get_with_fallback(value, ["widget_args#command", "command"], [])
+						w_command = deep_get_with_fallback(value, [DictPath("widget_args#command"), DictPath("command")], [])
 					if len(w_command) == 0:
 						continue
 
-					w_waitforkeypress = deep_get_with_fallback(value, ["widget_args#waitforkeypress", "waitforkeypress"], False)
+					w_waitforkeypress = deep_get_with_fallback(value, [DictPath("widget_args#waitforkeypress"), DictPath("waitforkeypress")], False)
 					if not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
 						containername = deep_get(w_ref, DictPath("name"), "")
 					if w_command == [ "<ephemeral>" ]:
 						ephemeral_image = deep_get(iktlib.iktconfig, DictPath("Debug#ephemeral_image"), "busybox")
-						msg = [("Creating ephemeral ", "action"), (ephemeral_image, "programname"), (" container sharing process namespace with ", "action"), (f"{containername}", "path")]
+						msg = [ANSIThemeString("Creating ephemeral ", "action"),
+						       ANSIThemeString(ephemeral_image, "programname"),
+						       ANSIThemeString(" container sharing process namespace with ", "action"),
+						       ANSIThemeString(f"{containername}", "path")]
 					elif w_command == [ "<dnsutils>" ]:
 						node_name = deep_get(obj, DictPath("metadata#name"))
 						containername = None
-						msg = [("Opening dnsutils container on ", "action"), (node_name, "hostname")]
+						msg = [ANSIThemeString("Opening dnsutils container on ", "action"),
+						       ANSIThemeString(node_name, "hostname")]
 					else:
-						msg = [("Executing ", "action"), (w_command[0], "programname"), (" inside ", "action"), (containername, "path")]
+						msg = [ANSIThemeString("Executing ", "action"),
+						       ANSIThemeString(w_command[0], "programname"),
+						       ANSIThemeString(" inside ", "action"),
+						       ANSIThemeString(containername, "path")]
 					executecommand(uip.stdscr, obj, containername, msg, command = w_command, waitforkeypress = w_waitforkeypress)
 					changed = True
 			if "action" in value:
@@ -7472,6 +7522,10 @@ def genericinfoloop(stdscr, obj, view, **kwargs):
 					action_args["selected"] = selected
 				if "_pass_selected_obj" in action_args and selected is not None:
 					action_args["selected_obj"] = getattr(selected, "ref", None)
+				if "_parent_namespace_path" in action_args:
+					parent_namespace_path = deep_get(action_args, DictPath("_parent_namespace_path"))
+					action_args["_parent_namespace"] = deep_get(obj, DictPath(parent_namespace_path), "")
+
 				if tmpselection is not None:
 					action_args["selection"] = tmpselection
 				action_call = deep_get(value, DictPath("action_call"))
@@ -8026,11 +8080,15 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						ThemeString("Containers: ", ThemeAttr("main", "infoheader")),
 					]
 					containerarray += generators.format_list(multilog_containers, 0, 0, False, False,
-										 field_colors = [ThemeAttr("types", "namespace"),
-												 ThemeAttr("types", "generic"),
-												 ThemeAttr("types", "generic")],
-										 field_separators = [ThemeRef("separators", "namespace"),
-												     ThemeRef("separators", "container")],
+										 field_colors = [
+											ThemeAttr("types", "namespace"),
+											ThemeAttr("types", "generic"),
+											ThemeAttr("types", "generic")
+										 ],
+										 field_separators = [
+											ThemeRef("separators", "namespace"),
+											ThemeRef("separators", "container")
+										 ],
 										 ellipsise = 3)
 					if all_same_namespace == True:
 						namespacearray = [
@@ -8299,7 +8357,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 				msg = messages[uip.yoffset + y]
 				if type(msg) != list:
-					msgstrarray.append((msg, color_log_severity(severity)))
+					msgstrarray.append(ThemeString(msg, color_log_severity(severity)))
 				else:
 					msgstrarray += msg
 				if wrap_lines == True:
@@ -8691,7 +8749,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 			args = [kubectl_path, "exec", obj_name, "-n", obj_namespace, "-i", "-t", "--container", container, "--"] + command
 			_result = subprocess.run(args, check = False).returncode
 	else:
-		sys.exit("Called execute command with obj=None")
+		sys.exit("Called executecommand() with obj == None")
 
 	if waitforkeypress:
 		input("\nPress Enter to continue...") # nosec
@@ -8729,7 +8787,7 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 
 	if kind == ("", ""):
 		kind = deep_get(obj, DictPath("kind"), "")
-		if type(kind) == str:
+		if isinstance(kind, str):
 			api_version = deep_get(obj, DictPath("apiVersion"), "")
 			# Is this a core API?
 			if "/" not in api_version:
@@ -8767,7 +8825,7 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 			if "_selected_objs" in kwargs:
 				obj = {}
 				for key, attribute in deep_get(kwargs, DictPath("_selected_objs"), []).items():
-					if type(attribute) == list:
+					if isinstance(attribute, list):
 						tmp = getattr(selected, attribute[0])
 						if tmp is not None:
 							obj[key] = tmp[attribute[1]]
@@ -8784,35 +8842,54 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	namespace = deep_get(kwargs, DictPath("namespace"))
 
 	name_path = deep_get(kwargs, DictPath("name_path"))
-	if name_path is not None and type(name_path) == str:
+	if name_path is not None and isinstance(name_path, str):
 		name_path = [name_path]
 	namespace_path = deep_get(kwargs, DictPath("namespace_path"), "")
-	if namespace_path is not None and type(namespace_path) == str:
+	if namespace_path is not None and isinstance(namespace_path, str):
 		namespace_path = [namespace_path]
 
 	kind = deep_get(kwargs, DictPath("kind"))
 	kind_path = deep_get(kwargs, DictPath("kind_path"))
-	if kind_path is not None and type(kind_path) == str:
-		kind_path = [kind_path]
+	if kind_path is not None:
+		if isinstance(kind_path, str):
+			kind_path = [kind_path]
+		elif isinstance(kind_path, int) and selection is not None and len(selection) > 0:
+			tmp = selection[kind_path]
+			if tmp is not None:
+				kind = themearray_to_string(tmp)
 
-	api_group = deep_get_with_fallback(kwargs, ["api_family", "api_group"])
-	api_group_path = deep_get_with_fallback(kwargs, ["api_family_path", "api_group_path"])
-	if api_group_path is not None and type(api_group_path) == str:
-		api_group_path = [api_group_path]
+	api_group = deep_get_with_fallback(kwargs, [DictPath("api_family"), DictPath("api_group")])
+	api_group_path = deep_get_with_fallback(kwargs, [DictPath("api_family_path"), DictPath("api_group_path")])
+	if api_group_path is not None:
+		if isinstance(api_group_path, str):
+			api_group_path = [api_group_path]
+		elif isinstance(api_group_path, int) and selection is not None and len(selection) > 0:
+			tmp = selection[api_group_path]
+			if tmp is not None:
+				api_group = themearray_to_string(tmp)
 
 	api_version_path = deep_get(kwargs, DictPath("api_version_path"))
-	if api_version_path is not None and type(api_version_path) == str:
+	if api_version_path is not None and isinstance(api_version_path, str):
 		api_version_path = [api_version_path]
 
 	owner_reference_path = deep_get(kwargs, DictPath("owner_reference_path"))
 	holder_identity_path = deep_get(kwargs, DictPath("holder_identity_path"))
 
-	# When name_path or namespace_path are integers they reference
-	# fields in selected
-	if type(name_path) == int and selection is not None and selection != "":
-		name = selection[name_path][0][0]
-	if type(namespace_path) == int and selection is not None and selection != "":
-		namespace = selection[namespace_path][0][0]
+	# When a path is an integer it references a field in selected
+	if isinstance(name_path, int) and selection is not None and len(selection) > 0:
+		tmp = selection[name_path]
+		if tmp is not None:
+			name = themearray_to_string(tmp)
+	if isinstance(namespace_path, int) and selection is not None and len(selection) > 0:
+		tmp = selection[namespace_path]
+		if tmp is not None:
+			namespace = themearray_to_string(tmp)
+
+		# If an integer namespace is empty, the namespace is (most likely)
+		# the same namespace as the parent. This shouldn't interfere with non-namespaced
+		# APIs, since they ignore the namespace
+		if namespace is None or len(namespace) == 0:
+			namespace = deep_get(kwargs, DictPath("_parent_namespace"), "")
 
 	if obj is not None:
 		kind = deep_get_with_fallback(obj, kind_path, kind)
@@ -8825,7 +8902,7 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 					api_group = ""
 			api_group = deep_get_with_fallback(obj, api_group_path, api_group)
 
-	if type(kind) != tuple:
+	if not isinstance(kind, tuple):
 		if api_group is None:
 			api_group = ""
 		kind = (kind, api_group)
@@ -8879,7 +8956,12 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 	if namespace is None and obj is not None:
 		namespace = deep_get_with_fallback(obj, namespace_path)
 
-	kind = kh.guess_kind(kind)
+        # If the kind is unknown we'll get NameError;
+	# in this case we probably don't want to crash
+	try:
+		kind = kh.guess_kind(kind)
+	except NameError:
+		obj = None
 
         # If the kind is unknown we'll get NameError;
 	# in this case we probably don't want to crash
@@ -8944,7 +9026,7 @@ def executecommand_multiple(stdscr, msg, command, items, waitforkeypress) -> Non
 		input("\nPress Enter to continue...") # nosec
 	stdscr.refresh()
 
-def __run_playbook(playbookpath, nodes, values = None):
+def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Dict] = None) -> Tuple[int, Dict]:
 	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
 	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
 	use_proxy = "no"
@@ -8968,7 +9050,7 @@ def view_obj(stdscr, **kwargs):
 		obj = deep_get(kwargs, DictPath("obj"))
 	if obj is None:
 		return None
-	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
+	title = deep_get_with_fallback(kwargs, [DictPath("named_title"), DictPath("title")])
 	title_path = deep_get(kwargs, DictPath("title_path"))
 	if title_path is not None:
 		title = deep_get(obj, DictPath(title_path))
@@ -9011,7 +9093,7 @@ def view_yaml(stdscr, **kwargs):
 		obj = [_obj]
 	else:
 		obj = [obj]
-	title = deep_get_with_fallback(kwargs, ["named_title", "title"])
+	title = deep_get_with_fallback(kwargs, [DictPath("named_title"), DictPath("title")])
 	formatter = formatters.format_yaml
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
@@ -9124,9 +9206,10 @@ def __pause_resource(kind, namespace, name):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([("Critical", "critical"), (": Could not find ", "default"),
-			  ("kubectl", "path"),
-			  ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("kubectl", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	args = [kubectl_path, "rollout", "pause", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
@@ -9140,9 +9223,10 @@ def __resume_resource(kind, namespace, name):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([("Critical", "critical"), (": Could not find ", "default"),
-			  ("kubectl", "path"),
-			  ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("kubectl", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	args = [kubectl_path, "rollout", "resume", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
@@ -9158,9 +9242,10 @@ def __restart_resource(kind, namespace, name):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([("Critical", "critical"), (": Could not find ", "default"),
-			  ("kubectl", "path"),
-			  ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("kubectl", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	args = [kubectl_path, "rollout", "restart", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
@@ -9181,9 +9266,10 @@ def __scale_replicas(kind, namespace, name, scale):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([("Critical", "critical"), (": Could not find ", "default"),
-			  ("kubectl", "path"),
-			  ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("kubectl", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	args = [kubectl_path, "scale", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}", f"--replicas={scale}"]
@@ -9195,9 +9281,10 @@ def __edit_resource(kind, namespace, name):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([("Critical", "critical"), (": Could not find ", "default"),
-			  ("kubectl", "path"),
-			  ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("kubectl", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	if namespace is None:
@@ -9213,9 +9300,10 @@ def apply_configuration_from_file(uip, items, action, values, kind, **kwargs):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([("Critical", "critical"), (": Could not find ", "default"),
-			  ("kubectl", "path"),
-			  ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("kubectl", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	curses.endwin()
@@ -9255,9 +9343,10 @@ def __apply_or_create_configuration_from_url(resource_url, create = False):
 		result = subprocess.run(args, universal_newlines = True, check = False)
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([("Critical", "critical"), (": Could not find ", "default"),
-			  ("kubectl", "path"),
-			  ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("kubectl", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 	return Retval.MATCH
 
@@ -9337,9 +9426,10 @@ def create_resource_from_file(uip, items, action, values, kind, **kwargs):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([("Critical", "critical"), (": Could not find ", "default"),
-			  ("kubectl", "path"),
-			  ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("kubectl", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	if rtype == "Configuration File":
@@ -9348,22 +9438,33 @@ def create_resource_from_file(uip, items, action, values, kind, **kwargs):
 		for kind, namespace, name in resources:
 			resource_list.append({
 				"lineattrs": WidgetLineAttrs.NORMAL,
-				"columns": [[(namespace, ("windowwidget", "default"))], [(name, ("windowwidget", "default"))], [(kind, ("windowwidget", "default"))]],
+				"columns": [[ThemeString(namespace, ThemeAttr("windowwidget", "default"))],
+					    [ThemeString(name, ThemeAttr("windowwidget", "default"))],
+					    [ThemeString(kind, ThemeAttr("windowwidget", "default"))]],
 			})
 
 		headers = ["Namespace:", "Name:", "Kind:"]
 		title = "The following resources will be created; accept?"
 
 		uip.refresh_all()
-		confirm_buttons = [[ord("y"), ord("Y"), ord("n"), ord("N")], [("[", ("windowwidget", "default")), ("Y", ("windowwidget", "highlight")), ("es", ("windowwidget", "default")), ("]", ("windowwidget", "default"))], [("[", ("windowwidget", "default")), ("N", ("windowwidget", "highlight")), ("o", ("windowwidget", "default")), ("]", ("windowwidget", "default"))]]
-		confirm_press, _tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, resource_list, headers = headers, title = title, confirm = True, confirm_buttons = confirm_buttons, cursor = False)
+		confirm_buttons = [[ord("y"), ord("Y"), ord("n"), ord("N")],
+				   [ThemeString("[", ThemeAttr("windowwidget", "default")),
+				    ThemeString("Y", ThemeAttr("windowwidget", "highlight")),
+				    ThemeString("es", ThemeAttr("windowwidget", "default")),
+				    ThemeString("]", ThemeAttr("windowwidget", "default"))],
+				   [ThemeString("[", ThemeAttr("windowwidget", "default")),
+				    ThemeString("N", ThemeAttr("windowwidget", "highlight")),
+				    ThemeString("o", ThemeAttr("windowwidget", "default")),
+				    ThemeString("]", ThemeAttr("windowwidget", "default"))]]
+		confirm_press, _tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, resource_list, headers = headers,
+									  title = title, confirm = True, confirm_buttons = confirm_buttons, cursor = False)
 
 		if confirm_press in (ord("y"), ord("Y")):
 			args = [kubectl_path, "create", "-f", resource_path]
 	elif rtype == "Kustomization":
 		args = [kubectl_path, "create", "-k", resource_path]
 	else:
-		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
+		raise TypeError(f"Unknown resource type {rtype}; this is a programming error.")
 
 	if len(args) > 0:
 		result = subprocess.run(args, universal_newlines = True, check = False).returncode
@@ -9378,9 +9479,10 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([("Critical", "critical"), (": Could not find ", "default"),
-			  ("kubectl", "path"),
-			  ("; aborting.", "default")], stderr = True)
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("kubectl", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	if rtype == "Configuration File":
@@ -9388,7 +9490,7 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 	elif rtype == "Kustomization":
 		args = [kubectl_path, "diff", "-k", resource_path]
 	else:
-		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
+		raise TypeError(f"Unknown resource type {rtype}; this is a programming error.")
 
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 
@@ -9404,15 +9506,15 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 
 	for line in result.stdout.splitlines():
 		if line.startswith("+"):
-			formatting = ("windowwidget", "diffplus")
+			fmt = ThemeAttr("windowwidget", "diffplus")
 		elif line.startswith("-"):
-			formatting = ("windowwidget", "diffminus")
+			fmt = ThemeAttr("windowwidget", "diffminus")
 		elif line.startswith("@@"):
-			formatting = ("windowwidget", "diffatat")
+			fmt = ThemeAttr("windowwidget", "diffatat")
 		elif line.startswith("diff "):
-			formatting = ("windowwidget", "diffheader")
+			fmt = ThemeAttr("windowwidget", "diffheader")
 		else:
-			formatting = ("windowwidget", "diffsame")
+			fmt = ThemeAttr("windowwidget", "diffsame")
 
 		# kubectl shows the diff with a 2-space indent;
 		# if a different indent is configured we have to modify this
@@ -9424,7 +9526,7 @@ def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
 
 		diff.append({
 			"lineattrs": WidgetLineAttrs.NORMAL,
-			"columns": [[(line, formatting)]],
+			"columns": [[ThemeString(line, fmt)]],
 		})
 
 	_tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, diff, title = "Diff between current and would be configuration:", cursor = False)
@@ -9567,8 +9669,11 @@ def pause_resource_rollout(uip, items, action, values, kind, **kwargs):
 	for item in items:
 		namespace, name = item
 		__pause_resource(kind, namespace, name)
-		msg = [(f"Pausing {kind[0]}.{kind[1]} “", "default"), (namespace, "argument"), ("::", "separator"), (name, "argument")]
-		print(msg)
+		msg = [ANSIThemeString(f"Pausing {kind[0]}.{kind[1]} “", "default"),
+		       ANSIThemeString(namespace, "argument"),
+		       ANSIThemeString("::", "separator"),
+		       ANSIThemeString(name, "argument")]
+		iktprint(msg)
 
 	print("\n")
 
@@ -9587,8 +9692,11 @@ def resume_resource_rollout(uip, items, action, values, kind, **kwargs):
 	for item in items:
 		namespace, name = item
 		__resume_resource(kind, namespace, name)
-		msg = [(f"Resuming {kind[0]}.{kind[1]} “", "default"), (namespace, "argument"), ("::", "separator"), (name, "argument")]
-		print(msg)
+		msg = [ANSIThemeString(f"Resuming {kind[0]}.{kind[1]} “", "default"),
+		       ANSIThemeString(namespace, "argument"),
+		       ANSIThemeString("::", "separator"),
+		       ANSIThemeString(name, "argument")]
+		iktprint(msg)
 
 	print("\n")
 
@@ -9608,8 +9716,15 @@ def stop_resource_rescale(uip, items, action, values, kind, **kwargs):
 		namespace, name = item
 		old_scale = __get_resource_scale(kind, namespace, name)
 		__scale_replicas(kind, namespace, name, 0)
-		msg = [(f"Stopping {kind[0]}.{kind[1]} “", "default"), (namespace, "argument"), ("::", "separator"), (name, "argument"), ("“ scale: ", "default"), (old_scale, "emphasis"), (" => ", "default"), ("0", "emphasis")]
-		print(msg)
+		msg = [ANSIThemeString(f"Stopping {kind[0]}.{kind[1]} “", "default"),
+		       ANSIThemeString(namespace, "argument"),
+		       ANSIThemeString("::", "separator"),
+		       ANSIThemeString(name, "argument"),
+		       ANSIThemeString("“ scale: ", "default"),
+		       ANSIThemeString(old_scale, "emphasis"),
+		       ANSIThemeString(" => ", "default"),
+		       ANSIThemeString("0", "emphasis")]
+		iktprint(msg)
 
 	print("\n")
 
@@ -9690,7 +9805,7 @@ def command_hosts(uip, items, action, values, kind, **kwargs) -> None:
 	retval = 0
 
 	for preplaybook in runbefore:
-		preplaybookpath = get_playbook_path(f"{preplaybook}.yaml")
+		preplaybookpath = get_playbook_path(FilePath(f"{preplaybook}.yaml"))
 		tmpretval = __run_playbook(preplaybookpath, items, values = values)
 		if retval == 0:
 			retval = tmpretval
@@ -9706,7 +9821,7 @@ def command_hosts(uip, items, action, values, kind, **kwargs) -> None:
 		runafter = action.get("run_after", [])
 
 		for postplaybook in runafter:
-			postplaybookpath = get_playbook_path(f"{postplaybook}.yaml")
+			postplaybookpath = get_playbook_path(FilePath(f"{postplaybook}.yaml"))
 			tmpretval = __run_playbook(postplaybookpath, items, values = values)
 			if retval == 0:
 				retval = tmpretval
@@ -9876,17 +9991,18 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 		if currentcategory != category:
 			actions.append({
 				"lineattrs": WidgetLineAttrs.SEPARATOR,
-				"columns": [[(f" {category} ", ("windowwidget", "default"))], [("", ("windowwidget", "default"))]],
+				"columns": [[ThemeString(f" {category} ", ThemeAttr("windowwidget", "default"))],
+					    [ThemeString("", ThemeAttr("windowwidget", "default"))]],
 			})
 			currentcategory = category
 		actions.append({
 			"lineattrs": WidgetLineAttrs.NORMAL,
-			"columns": [[(f"{action}", ("windowwidget", "default"))], metadata],
+			"columns": [[ThemeString(f"{action}", ThemeAttr("windowwidget", "default"))], metadata],
 		})
 
 	return actions, action_list
 
-def __populate_playbooklist(path, action_list):
+def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Optional[Dict]:
 	if not os.path.isdir(path):
 		return None
 
@@ -9896,30 +10012,29 @@ def __populate_playbooklist(path, action_list):
 	# Safe
 	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
-	for filename in os.listdir(path):
-		if filename.startswith(("~", ".")):
+	for playbookpath in Path(path).iterdir():
+		if playbookpath.name.startswith(("~", ".")):
 			continue
 
-		tmp = yaml_regex.match(filename)
+		tmp = yaml_regex.match(playbookpath.name)
 		if tmp is None:
 			continue
 
-		playbookname = tmp[1]
+		playbookname = str(tmp[1])
 
 		# Check if the playbook already exists in the action list,
 		if playbookname in action_list:
 			continue
 
-		playbookpath = f"{path}/{filename}"
 		description = None
 
 		try:
-			d = secure_read_yaml(playbookpath, directory_is_symlink = True)
+			d = secure_read_yaml(FilePath(str(playbookpath)), directory_is_symlink = True)
 		except yaml.YAMLError:
 			# This entry could not be parsed; add a dummy entry
 			action_list[playbookname] = {
 				"description": playbookpath,
-				"playbook": playbookpath,
+				"playbook": FilePath(str(playbookpath)),
 				"category": "__INVALID__",
 				"comments": "Failed to parse (Not valid YAML)",
 			}
@@ -9929,7 +10044,7 @@ def __populate_playbooklist(path, action_list):
 		if d is None or len(d) == 0:
 			action_list[playbookname] = {
 				"description": playbookpath,
-				"playbook": playbookpath,
+				"playbook": FilePath(str(playbookpath)),
 				"category": "__DISABLED__",
 			}
 			continue
@@ -9938,7 +10053,7 @@ def __populate_playbooklist(path, action_list):
 			# This entry could not be parsed; add a dummy entry
 			action_list[playbookname] = {
 				"description": playbookpath,
-				"playbook": playbookpath,
+				"playbook": FilePath(str(playbookpath)),
 				"category": "__INVALID__",
 				"comments": "Failed to parse (Not a list of plays)",
 			}
@@ -9974,22 +10089,22 @@ def __populate_playbooklist(path, action_list):
 		else:
 			raise Exception(f"{playbookpath}: Invalid values for allow-on-control-plane")
 
-		requiresclusterinfo = deep_get_with_fallback(d[0], ["vars#metadata#requires_cluster_info", "vars#metadata#requires-cluster-info"], False)
-		runbefore = deep_get_with_fallback(d[0], ["vars#metadata#run_before", "vars#metadata#run-before"], [])
-		runafter = deep_get_with_fallback(d[0], ["vars#metadata#run_after", "vars#metadata#run-after"], [])
-		addtogroups = deep_get_with_fallback(d[0], ["vars#metadata#add_to_groups", "vars#metadata#add-to-groups"], [])
-		removefromgroups = deep_get_with_fallback(d[0], ["vars#metadata#remove_from_groups", "vars#metadata#remove-from-groups"], [])
+		requiresclusterinfo = deep_get_with_fallback(d[0], [DictPath("vars#metadata#requires_cluster_info"), DictPath("vars#metadata#requires-cluster-info")], False)
+		runbefore = deep_get_with_fallback(d[0], [DictPath("vars#metadata#run_before"), DictPath("vars#metadata#run-before")], [])
+		runafter = deep_get_with_fallback(d[0], [DictPath("vars#metadata#run_after"), DictPath("vars#metadata#run-after")], [])
+		addtogroups = deep_get_with_fallback(d[0], [DictPath("vars#metadata#add_to_groups"), DictPath("vars#metadata#add-to-groups")], [])
+		removefromgroups = deep_get_with_fallback(d[0], [DictPath("vars#metadata#remove_from_groups"), DictPath("vars#metadata#remove-from-groups")], [])
 		category = deep_get(d[0], DictPath("vars#metadata#category"), "Uncategorized")
-		playbooktypes = deep_get_with_fallback(d[0], ["vars#metadata#playbook_types", "vars#metadata#playbook-types"], [])
+		playbooktypes = deep_get_with_fallback(d[0], [DictPath("vars#metadata#playbook_types"), DictPath("vars#metadata#playbook-types")], [])
 		comments = deep_get(d[0], DictPath("vars#metadata#comments"), "")
-		readonly = deep_get_with_fallback(d[0], ["vars#metadata#read_only", "vars#metadata#read-only"], False)
+		readonly = deep_get_with_fallback(d[0], [DictPath("vars#metadata#read_only"), DictPath("vars#metadata#read-only")], False)
 		extravars = {
 			"quiet": deep_get(d[0], DictPath("vars#metadata#quiet"), False),
 		}
 
 		action_list[playbookname] = {
 			"description": description,
-			"playbook": playbookpath,
+			"playbook": FilePath(str(playbookpath)),
 			"query": query,
 			"queryval": queryval,
 			"queryfunc": queryfunc,
@@ -10015,8 +10130,8 @@ def populate_playbooklist(context, actions, action_list, control_plane_selected,
 	local_playbooks = deep_get(iktlib.iktconfig, DictPath("Ansible#local_playbooks"), [])
 	for playbook_path in local_playbooks:
 		# Substitute {HOME}/ for {HOMEDIR}
-		if playbook_path.startswith("{HOME}/"):
-			playbook_path = f"{HOMEDIR}/{playbook_path[len('{HOME}/'):]}"
+		if playbook_path.startswith(("{HOME}/", "{HOME}\\")):
+			playbook_path = FilePath(str(PurePath(HOMEDIR).joinpath(playbook_path[len('{HOME}/'):])))
 		# Skip non-existing playbook paths
 		if not os.path.isdir(playbook_path):
 			continue
@@ -10053,39 +10168,39 @@ def populate_playbooklist(context, actions, action_list, control_plane_selected,
 		if action_list[item[2]].get("requires_cluster_info", False) == True and cluster_available == False:
 			metadata = []
 			if len(comments) > 0:
-				metadata.append((f"{comments},", ("windowwidget", "highlight")))
-			metadata.append(("<cluster not available>", ("windowwidget", "alert")))
+				metadata.append(ThemeString(f"{comments},", ThemeAttr("windowwidget", "highlight")))
+			metadata.append(ThemeString("<cluster not available>", ThemeAttr("windowwidget", "alert")))
 			lineattrs = WidgetLineAttrs.UNSELECTABLE
 		elif category == "__INVALID__":
 			lineattrs = WidgetLineAttrs.UNSELECTABLE & WidgetLineAttrs.INVALID
-			metadata = [(comments, ("windowwidget", "alert"))]
+			metadata = [ThemeString(comments, ThemeAttr("windowwidget", "alert"))]
 		elif category == "__DISABLED__":
 			continue
 		else:
-			metadata = [(comments, ("windowwidget", "highlight"))]
+			metadata = [ThemeString(comments, ThemeAttr("windowwidget", "highlight"))]
 
 		if currentcategory != category:
 			if category == "__INVALID__":
 				actions.append({
 					"lineattrs": WidgetLineAttrs.SEPARATOR,
-					"columns": [[(" INVALID ", ("windowwidget", "bright"))], [("", ("windowwidget", "default"))]],
+					"columns": [[ThemeString(" INVALID ", ThemeAttr("windowwidget", "bright"))], [ThemeString("", ThemeAttr("windowwidget", "default"))]],
 				})
 				currentcategory = category
 			else:
 				actions.append({
 					"lineattrs": WidgetLineAttrs.SEPARATOR,
-					"columns": [[(f" {category} ", ("windowwidget", "default"))], [("", ("windowwidget", "default"))]],
+					"columns": [[ThemeString(f" {category} ", ThemeAttr("windowwidget", "default"))], [ThemeString("", ThemeAttr("windowwidget", "default"))]],
 				})
 				currentcategory = category
 		if currentcategory == "__INVALID__":
 			actions.append({
 				"lineattrs": lineattrs,
-				"columns": [[(f"{action}", ("windowwidget", "alert"))], metadata],
+				"columns": [[ThemeString(f"{action}", ThemeAttr("windowwidget", "alert"))], metadata],
 			})
 		else:
 			actions.append({
 				"lineattrs": lineattrs,
-				"columns": [[(f"{action}", ("windowwidget", "default"))], metadata],
+				"columns": [[ThemeString(f"{action}", ThemeAttr("windowwidget", "default"))], metadata],
 			})
 
 	return actions, action_list
@@ -10179,7 +10294,8 @@ def format_selection_list(uip, refresh_apis = False):
 		if currentgroup != group and categorise == True:
 			items.append({
 				"lineattrs": WidgetLineAttrs.SEPARATOR,
-				"columns": [[(f" {group} ", ("windowwidget", "highlight"))], [("", ("windowwidget", "default"))]],
+				"columns": [[ThemeString(f" {group} ", ThemeAttr("windowwidget", "highlight"))],
+					    [ThemeString("", ThemeAttr("windowwidget", "default"))]],
 			})
 			currentgroup = group
 		lineattrs = WidgetLineAttrs.NORMAL
@@ -10188,13 +10304,15 @@ def format_selection_list(uip, refresh_apis = False):
 		if api_group == "":
 			items.append({
 				"lineattrs": lineattrs,
-				"columns": [[(f"{view}", ("windowwidget", "default"))], [("", ("windowwidget", "dim"))]],
+				"columns": [[ThemeString(f"{view}", ThemeAttr("windowwidget", "default"))],
+					    [ThemeString("", ThemeAttr("windowwidget", "dim"))]],
 				"retval": view,
 			})
 		else:
 			items.append({
 				"lineattrs": lineattrs,
-				"columns": [[(f"{view}", ("windowwidget", "default"))], [(f"<{api_group}>", ("windowwidget", "dim"))]],
+				"columns": [[ThemeString(f"{view}", ThemeAttr("windowwidget", "default"))],
+					    [ThemeString(f"<{api_group}>", ThemeAttr("windowwidget", "dim"))]],
 				"retval": view,
 			})
 
@@ -10557,8 +10675,8 @@ def populate_views(force_refresh: bool = False) -> None:
 				continue
 
 			if len(available_api_families) > 0:
-				tmp = yaml_regex.match(filename)
-				tmp = tmp[1]
+				match_tmp = yaml_regex.match(filename)
+				tmp = match_tmp[1]
 				if "." in tmp:
 					kind, api_family = tmp.split(".", 1)
 				else:
@@ -10574,7 +10692,7 @@ def populate_views(force_refresh: bool = False) -> None:
 		has_infoview = False
 
 		try:
-			d = secure_read_yaml(view_file, directory_is_symlink = True)
+			d = secure_read_yaml(FilePath(view_file), directory_is_symlink = True)
 		except yaml.parser.ParserError:
 			sys.exit(f"View-file {view_file} is invalid; aborting.")
 
@@ -10654,23 +10772,28 @@ def populate_views(force_refresh: bool = False) -> None:
 				conflicting_kind = deep_get(views, DictPath(f"{name}#kind"))
 				sys.exit(f"Error when processing view-vile {view_file} for kind: {(kind, api_family)}; a view named {name} already exists (for the kind: {conflicting_kind})")
 
-			infogetter = generic_infogetter
+			# This complexity is required because if the key is missing we want to use the default,
+			# but if the key is explicitly None we don't want any fallback
 			if "infogetter" in deep_get(d, DictPath("listview")):
 				infogetter = deep_get(d, DictPath("listview#infogetter"))
 				if infogetter is not None:
-					infogetter = deep_get(infogetter_allowlist, DictPath(infogetter))
+					infogetter = deep_get(infogetter_allowlist, DictPath(infogetter), generic_infogetter)
+			else:
+				infogetter = generic_infogetter
 
-			listgetter = generic_listgetter
+			# This complexity is required because if the key is missing we want to use the default,
+			# but if the key is explicitly None we don't want any fallback
 			if "listgetter" in deep_get(d, DictPath("listview")):
 				listgetter = deep_get(d, DictPath("listview#listgetter"))
 				if listgetter is not None:
 					listgetter = deep_get(listgetter_allowlist, DictPath(listgetter))
+			else:
+				listgetter = generic_listgetter
 
-			listgetter_async = None
-			if "listgetter_async" in deep_get(d, DictPath("listview")):
-				listgetter_async = deep_get(d, DictPath("listview#listgetter_async"))
-				if listgetter_async is not None:
-					listgetter_async = deep_get(listgetter_async_allowlist, DictPath(listgetter_async))
+			# No fallback here, so no complexities needed
+			listgetter_async = deep_get(d, DictPath("listview#listgetter_async"))
+			if listgetter_async is not None:
+				listgetter_async = deep_get(listgetter_async_allowlist, DictPath(listgetter_async))
 
 			listgetter_args = deep_get(d, DictPath("listview#listgetter_args"), {})
 
@@ -10680,7 +10803,7 @@ def populate_views(force_refresh: bool = False) -> None:
 			else:
 				activatedfun = deep_get(on_activation, DictPath("call"))
 				if type(activatedfun) == str:
-					_activatedfun = deep_get(activatedfun_allowlist, DictPath(activatedfun))
+					_activatedfun = deep_get(activatedfun_allowlist, DictPath(cast(str, activatedfun)))
 					if _activatedfun is None:
 						sys.exit(f"{activatedfun} is not in the activatedfun allow list")
 					activatedfun = _activatedfun
@@ -10801,9 +10924,9 @@ def populate_views(force_refresh: bool = False) -> None:
 					row_fields[row] = copy.deepcopy(deep_get(infopad_rows, DictPath(row), {}))
 					# We need to reformat the header
 					_header = deep_get(infopad_rows, DictPath(f"{row}#header"), [["<unset>", ["types", "unset"]]])
-					header = []
+					header: List[Union[ThemeRef, ThemeString]] = []
 					for string, formatting in _header:
-						header.append((string, tuple(formatting)))
+						header.append(ThemeString(string, ThemeAttr(formatting[0], formatting[1])))
 					row_fields[row]["header"] = header
 
 			name_path = deep_get(d, DictPath("infoview#infopad#name_path"))
@@ -10934,8 +11057,8 @@ def populate_views(force_refresh: bool = False) -> None:
 				w_formatting = None
 				if _w_formatting is not None:
 					w_formatting = []
-					for context, attr in _w_formatting:
-						w_formatting.append((context, attr))
+					for fmt in _w_formatting:
+						w_formatting.append(fmt)
 				w_sortcolumn = deep_get(_shortcuts[shortcut], DictPath("sortcolumn"), {})
 
 				if key is None or helptext is None or action is None or "<missing>" in (key, helptext):

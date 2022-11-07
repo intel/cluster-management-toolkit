@@ -6,7 +6,8 @@ This module contains helptexts for iku
 
 from about import PROGRAM_SUITE_FULL_NAME, PROGRAM_SUITE_VERSION, UI_PROGRAM_NAME, UI_PROGRAM_VERSION
 
-from ikttypes import ANSIThemeString, ThemeAttr, ThemeString
+from ikttypes import ANSIThemeString
+from curses_helper import ThemeAttr, ThemeString
 
 # Improve to handle embedded color codes; probably through storing the log messages
 # as a list of lines

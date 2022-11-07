@@ -3117,7 +3117,6 @@ class KubernetesHelper:
 		else:
 			raise Exception(f"Unhandled error: {result.status}; method: {method}, URL: {url}; header_params: {header_params}")
 
-		#sys.exit(f"{data=}\n{message=}\n{status=}")
 		return data, message, status
 
 	def __rest_helper_post(self, kind: Tuple[str, str], name: str = "", namespace: str = "", body = None) -> Tuple[str, int]:
