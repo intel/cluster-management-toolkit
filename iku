@@ -975,9 +975,12 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 			new_value = __process_stringify_list(value)
 		else:
 			new_value = str(value)
-	elif vtype == "cpu_usage":
+	elif vtype in ("cpu_usage", "cpu_usage_round"):
 		if action == "sum" and type(value) == list:
 			new_value = __process_sum_cpu_usage(value)
+		elif vtype == "cpu_usage_round":
+			tmp_float = normalise_cpu_usage_to_millicores(value)
+			new_value = f"{int(tmp_float / 1000)}"
 		else:
 			tmp_float = normalise_cpu_usage_to_millicores(value)
 			new_value = f"{tmp_float:0.1f}"

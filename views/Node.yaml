@@ -18,16 +18,16 @@ listview:
     cpu:
       header: "CPUs:"
       paths:
-      - path: [["status#allocatable#cpu"], ["status#capacity#cpu"]]
-        pathtype: "tuple"
-        type: ["raw", "raw"]
+      - path: "status#allocatable#cpu"
+        type: "cpu_usage_round"
+      - path: "status#capacity#cpu"
+        type: "cpu_usage_round"
       formatter: "list"
       formatting:
         field_colors:
         - type: "numerical"
-        - type: "numerical"
-        field_separator:
-        - type: "fraction"
+        item_separator:
+          type: "fraction"
       align: "right"
     internal_ips:
       header: "Internal-IPs:"
