@@ -20,3 +20,67 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Authorization Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["target_ref"]
+    rows:
+      target_ref:
+        header: [["T", ["main", "infoheader_shortcut"]], ["arget Reference:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#targetRef#kind"], ["spec#targetRef#group"], ["spec#targetRef#namespace", "metadata#namespace"], ["spec#targetRef#name"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+          - type: "namespace"
+  shortcuts:
+    "List Required Authentication References":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "List required authentication references"
+      widget: "windowwidget"
+      title: "Required Authentication References:"
+      headers: ["Kind:", "API-Family:", "Namespace:", "Name:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#requiredAuthenticationRefs"
+        fields:
+        - "kind"
+        - "group"
+        - "namespace"
+        - "name"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind_path: 0
+        api_group_path: 1
+        namespace_path: 2
+        _parent_namespace_path: "metadata#namespace"
+        name_path: 3
+      # This isn't supported for now
+      sortcolumn: "kind"
+    "Open Target Reference":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for target reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#targetRef#kind"
+        api_family_path: "spec#targetRef#group"
+        namespace_path: ["spec#targetRef#namespace", "metadata#namespace"]
+        name_path: "spec#targetRef#name"

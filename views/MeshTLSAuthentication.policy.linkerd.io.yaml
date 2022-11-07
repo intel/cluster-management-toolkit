@@ -11,3 +11,43 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Mesh TLS Authentication Info"
+  infopad:
+  shortcuts:
+    "mTLS Identities":
+      key: "i"
+      modifier: "shift"
+      helptext: "List mTLS Identities"
+      widget: "windowwidget"
+      title: "mTLS Identities:"
+      headers: ["Identity:"]
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#identities"
+    "Identity References":
+      key: "r"
+      modifier: "shift"
+      helptext: "List Identity References"
+      widget: "windowwidget"
+      title: "Identity References:"
+      headers: ["Kind:", "API-Family:", "Namespace:", "Name:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#identityRefs"
+        fields:
+        - "kind"
+        - "group"
+        - "namespace"
+        - "name"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind_path: 0
+        api_group_path: 1
+        namespace_path: 2
+        _parent_namespace_path: "metadata#namespace"
+        name_path: 3
+      # This isn't supported for now
+      sortcolumn: "kind"

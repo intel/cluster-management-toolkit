@@ -13,3 +13,22 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Network Authentication Info"
+  infopad:
+  shortcuts:
+    "Networks":
+      key: "e"
+      modifier: "shift"
+      helptext: "List Networks"
+      widget: "windowwidget"
+      title: "Networks:"
+      headers: ["CIDR:", "Except:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#networks"
+        fields:
+        - "cidr"
+        - "except"
+      # This isn't supported for now
+      sortcolumn: "cidr"

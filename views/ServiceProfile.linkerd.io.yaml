@@ -11,3 +11,23 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Service Profile Info"
+  infopad:
+  shortcuts:
+    "Routes":
+      key: "r"
+      modifier: "shift"
+      helptext: "List Routes"
+      widget: "windowwidget"
+      title: "Routes:"
+      headers: ["Name:", "Path Regex:", "Method:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#routes"
+        fields:
+        - "name"
+        - "condition#pathRegex"
+        - "condition#method"
+      # This isn't supported for now
+      sortcolumn: "name"

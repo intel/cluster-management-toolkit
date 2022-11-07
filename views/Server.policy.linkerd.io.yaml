@@ -19,3 +19,46 @@ listview:
       header: "Protocol:"
       path: "spec#proxyProtocol"
       type: "str"
+infoview:
+  name: "Server Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["pod_selector", "set_based_pod_selector", "port", "proxy_protocol"]
+    rows:
+      pod_selector:
+        header: [["Pod Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#podSelector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      port:
+        header: [["Port:", ["main", "infoheader"]]]
+        path: "spec#port"
+        type: str
+      proxy_protocol:
+        header: [["Proxy Protocol:", ["main", "infoheader"]]]
+        path: "spec#proxyProtocol"
+        type: str
+      set_based_pod_selector:
+        header: [["Set-based Pod Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#podSelector#matchExpressions"
+          pathtype: "match_expression"
+          default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"
