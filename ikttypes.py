@@ -6,7 +6,8 @@ This file contains custom types used to define types used by iKT
 """
 
 from enum import auto, Enum, IntEnum
-from typing import List, NewType, Optional, Union
+from functools import reduce
+from typing import Any, Dict, List, NewType, Optional, Union
 
 class ANSIThemeString:
 	"""
@@ -210,3 +211,120 @@ stgroup_mapping = {
 	StatusGroup.PENDING: "status_pending",
 	StatusGroup.DONE: "status_done",
 }
+
+def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = False) -> None:
+	"""
+	Given a dictionary, a path into that dictionary, and a value, set the path to that value
+
+		Parameters:
+			dictionary (dict): The dict to set the value in
+			path (DictPath): A dict path
+			value (any): The value to set
+			create_path (bool): If True the path will be created if it doesn't exist
+	"""
+
+	if dictionary is None or path is None or len(path) == 0:
+		raise Exception(f"deep_set: dictionary {dictionary} or path {path} invalid/unset")
+
+	ref = dictionary
+	pathsplit = path.split("#")
+	for i in range(0, len(pathsplit)):
+		if pathsplit[i] in ref:
+			if i == len(pathsplit) - 1:
+				ref[pathsplit[i]] = value
+				break
+
+			ref = deep_get(ref, DictPath(pathsplit[i]))
+			if ref is None or not isinstance(ref, dict):
+				raise Exception(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
+		elif create_path == True:
+			if i == len(pathsplit) - 1:
+				ref[pathsplit[i]] = value
+			else:
+				ref[pathsplit[i]] = {}
+
+def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) -> Any:
+	"""
+	Given a dictionary and a path into that dictionary, get the value
+
+		Parameters:
+			dictionary (dict): The dict to get the value from
+			path (DictPath): A dict path
+			default (Any): The default value to return if the dictionary, path is None, or result is None
+		Returns:
+			result (Any): The value from the path
+	"""
+
+	if dictionary is None:
+		return default
+	if path is None or len(path) == 0:
+		return default
+	result = reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
+	if result is None:
+		result = default
+	return result
+
+def __deep_get_recursive(dictionary: Dict, path_fragments: List[str], result: Union[List, None] = None) -> Optional[List[Any]]:
+	if result is None:
+		result = []
+
+	for i in range(0, len(path_fragments)):
+		path_fragment = DictPath(path_fragments[i])
+		tmp = deep_get(dictionary, path_fragment)
+		if i + 1 == len(path_fragments):
+			if tmp is None:
+				return result
+			return tmp
+
+		if isinstance(tmp, dict):
+			result = __deep_get_recursive(tmp, path_fragments[i + 1:len(path_fragments)], result)
+		elif isinstance(tmp, list):
+			for tmp2 in tmp:
+				result = __deep_get_recursive(tmp2, path_fragments[i + 1:len(path_fragments)], result)
+
+	return result
+
+def deep_get_list(dictionary: Dict, paths: List[DictPath], default: Optional[List[Any]] = None, fallback_on_empty: bool = False) -> Optional[List[Any]]:
+	"""
+	Given a dictionary and a list of paths into that dictionary, get all values
+
+		Parameters:
+			dictionary (dict): The dict to get the values from
+			path (List[DictPath]): A list of dict paths
+			default (List[Any]): The default value to return if the dictionary, paths, or results are None
+			fallback_on_empty (bool): Should "" be treated as None?
+		Returns:
+			result (List[Any]): The values from the paths
+	"""
+
+	for path in paths:
+		result = __deep_get_recursive(dictionary, path.split("#"))
+
+		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True):
+			break
+	if result is None or type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True:
+		result = default
+	return result
+
+def deep_get_with_fallback(obj: Dict, paths: List[DictPath], default: Optional[Any] = None, fallback_on_empty: bool = False) -> Any:
+	"""
+	Given a dictionary and a list of paths into that dictionary, get the value from the first path that has a value
+
+		Parameters:
+			dictionary (dict): The dict to get the value from
+			paths (list[DictPath]): A list of dict paths
+			default (any): The default value to return if the dictionary, path is None, or result is None
+			fallback_on_empty (bool): Should "" be treated as None?
+	"""
+
+	if paths is None:
+		return default
+
+	result = None
+	for path in paths:
+		result = deep_get(obj, path)
+		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True):
+			break
+	if result is None or type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True:
+		result = default
+	return result

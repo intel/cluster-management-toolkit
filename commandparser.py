@@ -10,9 +10,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import about
 
-from ikttypes import ANSIThemeString, DictPath, FilePath
-
-from iktlib import deep_get
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath
 from iktprint import themearray_len, iktprint, init_iktprint
 
 programname = None
@@ -266,7 +264,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 	commandname = None
 	command = None
 	key = None
-	options = []
+	options: List[Tuple[str, str]] = []
 	args: List[str] = []
 	min_args = 0
 	max_args = 0

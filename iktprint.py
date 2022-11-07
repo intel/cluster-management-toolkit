@@ -10,7 +10,7 @@ from getpass import getpass
 from pathlib import PurePath
 import subprocess
 import sys
-from typing import List
+from typing import List, Sequence, Union
 
 from ikttypes import ANSIThemeString, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy
 import iktio
@@ -74,6 +74,36 @@ def themearray_len(themearray) -> int:
 	"""
 
 	return sum(map(len, themearray))
+
+def ansithemestring_join_tuple_list(items: Sequence[Union[str, ANSIThemeString]], formatting: str = "default", separator: ANSIThemeString = ANSIThemeString(", ", "separator")) -> List[ANSIThemeString]:
+	"""
+	Given a list of ANSIThemeStrings or strings + formatting, join them separated by a separator
+
+		Parameters:
+			items (list[Union(str, ANSIThemeString)]): The items to join into an ANSIThemeString list
+			formatting (str): The formatting to use if the list is a string-list
+			separator (ANSIThemeString): The list separator to use
+		Return:
+			themearray (list[ANSIThemeString]): The resulting ANSIThemeString list
+	"""
+
+	themearray = []
+	first = True
+
+	for item in items:
+		if isinstance(item, str):
+			tmpitem = ANSIThemeString(item, formatting)
+		else:
+			tmpitem = item
+
+		if first == False:
+			if separator is not None:
+				themearray.append(separator)
+		else:
+			first = False
+		themearray.append(tmpitem)
+
+	return themearray
 
 def iktinput(themearray: List[ANSIThemeString]) -> str:
 	"""

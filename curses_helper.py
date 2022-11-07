@@ -23,10 +23,9 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 from iktio import check_path, secure_read_yaml
-from ikttypes import DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping
+from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping
 
 import iktlib
-from iktlib import deep_get
 
 theme: Dict = {}
 
@@ -3344,7 +3343,7 @@ class UIProps:
 		self.force_update()
 		return Retval.MATCH, {}
 
-	def generate_helptext(self, shortcuts: Dict, **kwargs: Dict) -> List[Tuple[str, str]]:
+	def generate_helptext(self, shortcuts: Dict, **kwargs: Dict) -> List[Dict]:
 		"""
 		Generate helptexts to use with generic_inputhandler()
 
@@ -3352,7 +3351,7 @@ class UIProps:
 				shortcuts (dict): A dict of shortcuts
 				kwargs (dict): Additional parameters
 			Returns:
-				list[(str, str)]: A list of tuples of shortcut, description
+				list[Dict]: A list of dicts formatted for passing to windowwidget()
 		"""
 
 		read_only_mode = deep_get(kwargs, DictPath("read_only"), False)

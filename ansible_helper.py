@@ -13,13 +13,12 @@ from typing import cast, Dict, List, Optional, Set, Tuple, Union
 import yaml
 
 import iktlib
-from iktlib import deep_get
 from iktio import check_path, mkdir_if_not_exists, secure_read_yaml, secure_rm, secure_rmdir, secure_write_yaml
 from iktpaths import HOMEDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from iktpaths import ANSIBLE_INVENTORY
 from iktprint import iktprint
-from ikttypes import ANSIThemeString, DictPath, FilePath, FilePathAuditError, SecurityChecks
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks
 
 ansible_results: Dict = {}
 

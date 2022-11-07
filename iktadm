@@ -32,7 +32,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run ikt-install?")
 
-from ikttypes import ANSIThemeString, DictPath, FilePath, SecurityPolicy
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, SecurityPolicy
 from iktpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR
 from iktpaths import DEPLOYMENT_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -44,12 +44,12 @@ from ansible_helper import ansible_configuration, ansible_get_inventory_dict, an
 from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results, populate_playbooks_from_paths
 
 import iktio
-from iktio import mkdir_if_not_exists
+from iktio import execute_command, execute_command_with_response, mkdir_if_not_exists
 from iktio import secure_read_string, secure_read_yaml, secure_rm, secure_which, secure_write_string, secure_write_yaml
 from networkio import download_files, scan_and_add_ssh_keys
 
 import iktlib
-from iktlib import check_deb_versions, deep_get, execute_command, execute_command_with_response, read_iktconfig
+from iktlib import check_deb_versions, read_iktconfig
 
 import kubernetes_helper
 
@@ -2925,7 +2925,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	if node_status is None:
 		iktprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": No ", "default"),
-			  ANSIThemeString(f"{HOMEDIR}/.kube/config", "path"), 
+			  ANSIThemeString(f"{HOMEDIR}/.kube/config", "path"),
 			  ANSIThemeString(" available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 

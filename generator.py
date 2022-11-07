@@ -12,8 +12,8 @@ from typing import cast, List, Tuple, Union
 
 from curses_helper import color_status_group, themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString
 import iktlib
-from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, timestamp_to_datetime
-from ikttypes import DictPath, StatusGroup
+from iktlib import datetime_to_timestamp, timestamp_to_datetime
+from ikttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
 
 def format_list(items, fieldlen: int, pad, ralign: bool, selected: bool,
 		item_separator = None,

@@ -11,14 +11,15 @@ from getpass import getuser
 import os
 from pathlib import Path, PurePath
 import re
+import subprocess
+from subprocess import PIPE, STDOUT
 import sys
-from typing import Dict, Iterator, List
+from typing import Dict, Iterator, List, Union
 import yaml
 
 from ikttypes import ANSIThemeString, FilePath, HostNameStatus, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from iktpaths import HOMEDIR
 
-import iktlib # pylint: disable=unused-import
 import iktprint
 
 # pylint: disable-next=too-many-return-statements
@@ -221,7 +222,7 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			       ANSIThemeString(": The parent of the target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" is not owned by one of (", "default")] +\
-			      iktlib.ansithemestring_join_tuple_list(parent_owner_allowlist, formatting = "emphasis", separator = ANSIThemeString(", ", "separator")) +\
+			      iktprint.ansithemestring_join_tuple_list(parent_owner_allowlist, formatting = "emphasis", separator = ANSIThemeString(", ", "separator")) +\
 			      [ANSIThemeString(")", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
@@ -292,7 +293,7 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			msg = [ANSIThemeString("Critical", "critical"), ANSIThemeString(": The target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" is not owned by one of (", "default")] +\
-			      iktlib.ansithemestring_join_tuple_list(owner_allowlist, formatting = "emphasis", separator = ANSIThemeString(", ", "separator")) +\
+			      iktprint.ansithemestring_join_tuple_list(owner_allowlist, formatting = "emphasis", separator = ANSIThemeString(", ", "separator")) +\
 			      [ANSIThemeString(")", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
@@ -381,7 +382,7 @@ def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
 		try:
 			violations.pop(SecurityStatus.DOES_NOT_EXIST)
 			ignoring_non_existing = True
-		except ValueError:
+		except IndexError:
 			pass
 
 	if len(violations) > 0:
@@ -425,7 +426,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 		try:
 			violations.pop(SecurityStatus.DOES_NOT_EXIST)
 			ignoring_non_existing = True
-		except ValueError:
+		except IndexError:
 			pass
 
 	if len(violations) > 0:
@@ -913,3 +914,35 @@ def replace_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on
 		dst_path.unlink()
 
 	dst_path.symlink_to(src_path)
+
+# This executes a command without capturing the output
+def execute_command(args: List[Union[FilePath, str]], env: Dict = None, comparison: int = 0) -> bool:
+	"""
+	Executes a command
+
+		Parameters:
+			args (list[str]): The commandline
+			env (dict): Environment variables to set
+			comparison (int): The value to compare retval to
+		Returns:
+			retval.returncode == comparison (bool): True if retval.returncode == comparison, False otherwise
+	"""
+
+	if env is None:
+		retval = subprocess.run(args, check = False)
+	else:
+		retval = subprocess.run(args, env = env, check = False)
+	return retval.returncode == comparison
+
+# This executes a command with the output captured
+def execute_command_with_response(args: List[str]) -> str:
+	"""
+	Executes a command and returns stdout
+
+		Parameters:
+			args (list[str]): The commandline
+		Returns:
+			stdout (str): The stdout from the execution
+	"""
+	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+	return result.stdout.decode("utf-8")

@@ -8,8 +8,8 @@ datagetters are used for data extraction that's too complext to be expressed by 
 import re
 from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
 
-from iktlib import deep_get, deep_get_with_fallback, get_since, timestamp_to_datetime
-from ikttypes import DictPath, StatusGroup
+from iktlib import get_since, timestamp_to_datetime
+from ikttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
 import kubernetes_helper
 from kubernetes_helper import get_node_status, kind_tuple_to_name
 

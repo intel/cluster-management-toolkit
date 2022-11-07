@@ -23,7 +23,7 @@ import iktlib
 
 from iktpaths import SSH_DIR
 import iktprint
-from ikttypes import ANSIThemeString, DictPath, FilePath
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath
 
 try:
 	import urllib3
@@ -227,8 +227,8 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 	# OK, the destination isn't a symlink and doesn't contain ".." or similar,
 	# it's owned by the user, and is an existing directory; we can safely continue
 
-	http_proxy = iktlib.deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
-	https_proxy = iktlib.deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
+	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
+	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
 	retval = True
 
 	if http_proxy is not None and http_proxy != "":

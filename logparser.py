@@ -52,12 +52,12 @@ except ModuleNotFoundError:
 
 from iktpaths import HOMEDIR, PARSER_DIR
 
-from ikttypes import DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name
+from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name
 
 from iktio import secure_read_yaml
 
 import iktlib
-from iktlib import deep_get, deep_get_with_fallback, none_timestamp
+from iktlib import none_timestamp
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
 
 from curses_helper import themearray_to_string, ThemeAttr, ThemeRef, ThemeString

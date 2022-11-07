@@ -20,7 +20,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import ANSIThemeString, DictPath, FilePath
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath
 from iktpaths import HOMEDIR, SSH_DIR
 from iktpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
 
@@ -36,7 +36,7 @@ from ansible_helper import ansible_unset_groupvars, ansible_create_groups, ansib
 from ansible_helper import ANSIBLE_INVENTORY
 
 import iktlib
-from iktlib import deep_get, read_iktconfig
+from iktlib import read_iktconfig
 
 from iktprint import iktprint
 

@@ -15,10 +15,10 @@ except ModuleNotFoundError:
 
 from curses_helper import ThemeAttr, ThemeString, WidgetLineAttrs
 
-from ikttypes import DictPath
+from ikttypes import deep_get, deep_get_with_fallback, DictPath
 
 import iktlib
-from iktlib import deep_get, deep_get_with_fallback, disksize_to_human, get_package_versions, get_since, make_set_expression, split_msg, timestamp_to_datetime
+from iktlib import disksize_to_human, get_package_versions, get_since, make_set_expression, split_msg, timestamp_to_datetime
 
 import kubernetes_helper
 

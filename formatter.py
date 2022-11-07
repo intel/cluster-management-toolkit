@@ -9,10 +9,10 @@ import sys
 from typing import Any, Callable, cast, Dict, List, Sequence, Union
 import yaml
 
-from ikttypes import DictPath
+from ikttypes import deep_get, DictPath
 
 import iktlib
-from iktlib import deep_get, split_msg
+from iktlib import split_msg
 
 from curses_helper import ThemeAttr, ThemeRef, ThemeString
 

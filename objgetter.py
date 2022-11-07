@@ -15,9 +15,8 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import DictPath, FilePath, FilePathAuditError, SecurityChecks
+from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks
 from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path
-from iktlib import deep_get
 from iktio import check_path, secure_read_yaml
 
 def objgetter_ansible_facts(obj: Dict) -> Dict:

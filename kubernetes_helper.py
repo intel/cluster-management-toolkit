@@ -37,9 +37,9 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
 from iktpaths import KUBE_CONFIG_FILE
-from iktlib import datetime_to_timestamp, deep_get, deep_get_with_fallback, execute_command_with_response, get_since, timestamp_to_datetime, versiontuple
-from ikttypes import DictPath, FilePath, StatusGroup
-from iktio import secure_read_yaml, secure_which, secure_write_yaml
+from iktlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
+from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, StatusGroup
+from iktio import execute_command_with_response, secure_read_yaml, secure_which, secure_write_yaml
 
 # A list of all K8s resources we have some knowledge about
 kubernetes_resources: Dict[Any, Any] = {
@@ -2407,7 +2407,7 @@ class KubernetesHelper:
 		"""
 
 		contexts = self.list_contexts(config_path = config_path)
-		__clusters = {}
+		__clusters: Dict = {}
 		clusters = []
 
 		for context in contexts:
@@ -2677,7 +2677,7 @@ class KubernetesHelper:
 		return cni
 
 	def identify_cni(self) -> List[Tuple[str, str, Tuple[str, StatusGroup, str]]]:
-		cni = []
+		cni: List[Tuple[str, str, Tuple[str, StatusGroup, str]]] = []
 
 		# We're gonna have to do some sleuthing here
 		# Antrea:
@@ -2704,7 +2704,16 @@ class KubernetesHelper:
 		return cni
 
 	def get_node_roles(self, node: Dict) -> List[str]:
-		roles = []
+		"""
+		Get a list of the roles that the node belongs to
+
+			Parameters:
+				node (dict): The node object
+			Returns:
+				roles (list[str]): THe roles that the node belongs to
+		"""
+
+		roles: List[str] = []
 
 		# Safe
 		node_role_regex = re.compile(r"^node-role\.kubernetes\.io/(.*)")

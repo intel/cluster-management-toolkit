@@ -14,15 +14,14 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-from typing import List, Tuple
+from typing import List, Set, Tuple
 
 from ikttypes import ANSIThemeString, FilePath, SecurityPolicy
 from iktpaths import BINDIR, HOMEDIR, IKTDIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIRNAME, IKT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
 
-from iktio import copy_if_not_exists, mkdir_if_not_exists, replace_symlink, secure_which
-from iktlib import execute_command_with_response
+from iktio import copy_if_not_exists, execute_command_with_response, mkdir_if_not_exists, replace_symlink, secure_which
 
 from commandparser import parse_commandline
 from iktprint import iktprint, iktinput
@@ -166,8 +165,8 @@ def install_software_with_pip_fallback(packages, pip_proxy: str = "", verbose: b
 				fallbacks (list[str]): Packages that were, or would be, installed using pip
 	"""
 
-	pkgs = set()
-	fallbacks = set()
+	pkgs: Set[str] = set()
+	fallbacks: Set[str] = set()
 
 	try:
 		apt_cache_path = secure_which(FilePath("/usr/bin/apt-cache"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)

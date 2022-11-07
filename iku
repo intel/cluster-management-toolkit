@@ -48,16 +48,16 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import ANSIThemeString, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
+from ikttypes import ANSIThemeString, deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
 from iktpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
-from iktio import secure_read_string, secure_read_yaml, secure_read_yaml_all, secure_which
+from iktio import execute_command, secure_read_string, secure_read_yaml, secure_read_yaml_all, secure_which
 
 from logparser import logparser, logparser_initialised, LogLevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
-from iktlib import clamp, deep_get, deep_get_with_fallback, deep_set, disksize_to_human, execute_command, get_package_versions, make_set_expression_list, none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple, read_iktconfig
+from iktlib import clamp, disksize_to_human, get_package_versions, make_set_expression_list, none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple, read_iktconfig
 from curses_helper import curses_configuration, color_log_severity, format_helptext, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, themearray_wrap_line, themearray_to_string, themearray_len, ThemeAttr, ThemeRef, ThemeString
 
 import datagetter
@@ -82,7 +82,7 @@ import helptexts
 
 from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, make_selector, update_api_status as kh_update_api_status
 
-from iktprint import clear_screen, iktprint, init_iktprint
+from iktprint import ansithemestring_join_tuple_list, clear_screen, iktprint, init_iktprint
 
 import about
 
@@ -1572,8 +1572,8 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 				elif ptype == "timediff":
 					if len(mpaths) != 2:
 						raise ValueError(f"Field {name}: when using pathtype: 'timediff' path must be [start_time_path(s), end_time_path(s)]")
-					start_time = iktlib.deep_get_with_fallback(obj, mpaths[0], default = None)
-					end_time = iktlib.deep_get_with_fallback(obj, mpaths[1], default = None)
+					start_time = deep_get_with_fallback(obj, mpaths[0], default = None)
+					end_time = deep_get_with_fallback(obj, mpaths[1], default = None)
 					if end_time is None or start_time is None:
 						duration = -1
 					else:
@@ -1609,10 +1609,10 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						if type(mpaths[i]) == list:
 							if start_time_index == -1:
 								start_time_index = i
-								start_time = iktlib.deep_get_with_fallback(obj, mpaths[i], default = None)
+								start_time = deep_get_with_fallback(obj, mpaths[i], default = None)
 							elif end_time_index == -1:
 								end_time_index = i
-								end_time = iktlib.deep_get_with_fallback(obj, mpaths[i], default = None)
+								end_time = deep_get_with_fallback(obj, mpaths[i], default = None)
 							else:
 								raise ValueError(f"{field_name} received too many timestamp paths; the view file is most likely malformed")
 					if end_time is None or start_time is None:
@@ -1640,7 +1640,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					for mpath in mpaths:
 						if type(mpath) == str:
 							mpath = [mpath]
-						tmp = iktlib.deep_get_list(obj, mpath, default = [], fallback_on_empty = fallback_on_empty)
+						tmp = deep_get_list(obj, mpath, default = [], fallback_on_empty = fallback_on_empty)
 						# XXX: This is to avoid breaking anything
 						# Ideally the "appenditems" behaviour should be the only one,
 						# but requires rewriting a lot of files
@@ -9791,7 +9791,7 @@ def command_hosts(uip, items, action, values, kind, **kwargs) -> None:
 	msg = [ANSIThemeString("Executing playbook “", "action"),
 	       ANSIThemeString(action.get("description"), "argument"),
 	       ANSIThemeString("“ on the following hosts: ", "action")] +\
-	       iktlib.ansithemestring_join_tuple_list(items, formatting = "hostname", separator = ANSIThemeString(", ", "separator")) +\
+	       ansithemestring_join_tuple_list(items, formatting = "hostname", separator = ANSIThemeString(", ", "separator")) +\
 	       [ANSIThemeString("\n", "action")]
 
 	curses.endwin()
@@ -11169,7 +11169,7 @@ def list_namespaces() -> None:
 	tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
 	if status == 200:
 		iktprint([ANSIThemeString("Valid namespaces: ", "default")] +\
-			  iktlib.ansithemestring_join_tuple_list([deep_get(item, DictPath("metadata#name")) for item in tmp], formatting = "argument", separator = ANSIThemeString(", ", "separator")) +\
+			  ansithemestring_join_tuple_list([deep_get(item, DictPath("metadata#name")) for item in tmp], formatting = "argument", separator = ANSIThemeString(", ", "separator")) +\
 			 [ANSIThemeString(".", "separator")])
 	elif status in (42503, 42504):
 		iktprint([ANSIThemeString("Error", "error"),
@@ -11226,7 +11226,7 @@ def list_views() -> None:
 		  ANSIThemeString(f"{''.ljust(maxkindlen + 2 - len('Kind:'))}", "default"),
 		  ANSIThemeString("Supported fields:", "header")])
 	for view, kind, fields in viewfields:
-		joined_fields = iktlib.ansithemestring_join_tuple_list(fields, separator = ANSIThemeString(", ", "separator"))
+		joined_fields = ansithemestring_join_tuple_list(fields, separator = ANSIThemeString(", ", "separator"))
 		iktprint([ANSIThemeString(f"{view.ljust(maxviewlen + 2)}{kind.ljust(maxkindlen + 2)}", "default")] + joined_fields)
 
 	iktprint([ANSIThemeString("\nList views can be customised to only show select fields by editing “", "default"),

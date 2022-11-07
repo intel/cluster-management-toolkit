@@ -5,15 +5,12 @@ Helpers used by various components of iKT
 """
 
 from datetime import datetime, timezone, timedelta, date
-from functools import reduce
 from pathlib import Path, PurePath
 import re
-import subprocess
-from subprocess import PIPE, STDOUT
 import sys
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
-from ikttypes import ANSIThemeString, DictPath, FilePath, SecurityPolicy
+from ikttypes import ANSIThemeString, deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy
 from iktpaths import IKT_CONFIG_FILE, IKT_CONFIG_FILE_DIR
 import iktio
 
@@ -89,123 +86,6 @@ def split_msg(rawmsg: str) -> List[str]:
 	tmp = rawmsg.replace("\x00", "<NUL>")
 	return list(map(str.rstrip, tmp.splitlines()))
 
-def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = False) -> None:
-	"""
-	Given a dictionary, a path into that dictionary, and a value, set the path to that value
-
-a		Parameters:
-			dictionary (dict): The dict to set the value in
-			path (DictPath): A dict path
-			value (any): The value to set
-			create_path (bool): If True the path will be created if it doesn't exist
-	"""
-
-	if dictionary is None or path is None or len(path) == 0:
-		raise Exception(f"deep_set: dictionary {dictionary} or path {path} invalid/unset")
-
-	ref = dictionary
-	pathsplit = path.split("#")
-	for i in range(0, len(pathsplit)):
-		if pathsplit[i] in ref:
-			if i == len(pathsplit) - 1:
-				ref[pathsplit[i]] = value
-				break
-
-			ref = deep_get(ref, DictPath(pathsplit[i]))
-			if ref is None or not isinstance(ref, dict):
-				raise Exception(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
-		elif create_path == True:
-			if i == len(pathsplit) - 1:
-				ref[pathsplit[i]] = value
-			else:
-				ref[pathsplit[i]] = {}
-
-def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) -> Any:
-	"""
-	Given a dictionary and a path into that dictionary, get the value
-
-		Parameters:
-			dictionary (dict): The dict to get the value from
-			path (DictPath): A dict path
-			default (Any): The default value to return if the dictionary, path is None, or result is None
-		Returns:
-			result (Any): The value from the path
-	"""
-
-	if dictionary is None:
-		return default
-	if path is None or len(path) == 0:
-		return default
-	result = reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
-	if result is None:
-		result = default
-	return result
-
-def __deep_get_recursive(dictionary: Dict, path_fragments: List[str], result: Union[List, None] = None) -> Optional[List[Any]]:
-	if result is None:
-		result = []
-
-	for i in range(0, len(path_fragments)):
-		path_fragment = DictPath(path_fragments[i])
-		tmp = deep_get(dictionary, path_fragment)
-		if i + 1 == len(path_fragments):
-			if tmp is None:
-				return result
-			return tmp
-
-		if isinstance(tmp, dict):
-			result = __deep_get_recursive(tmp, path_fragments[i + 1:len(path_fragments)], result)
-		elif isinstance(tmp, list):
-			for tmp2 in tmp:
-				result = __deep_get_recursive(tmp2, path_fragments[i + 1:len(path_fragments)], result)
-
-	return result
-
-def deep_get_list(dictionary: Dict, paths: List[DictPath], default: Optional[List[Any]] = None, fallback_on_empty: bool = False) -> Optional[List[Any]]:
-	"""
-	Given a dictionary and a list of paths into that dictionary, get all values
-
-		Parameters:
-			dictionary (dict): The dict to get the values from
-			path (List[DictPath]): A list of dict paths
-			default (List[Any]): The default value to return if the dictionary, paths, or results are None
-			fallback_on_empty (bool): Should "" be treated as None?
-		Returns:
-			result (List[Any]): The values from the paths
-	"""
-
-	for path in paths:
-		result = __deep_get_recursive(dictionary, path.split("#"))
-
-		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True):
-			break
-	if result is None or type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True:
-		result = default
-	return result
-
-def deep_get_with_fallback(obj: Dict, paths: List[DictPath], default: Optional[Any] = None, fallback_on_empty: bool = False) -> Any:
-	"""
-	Given a dictionary and a list of paths into that dictionary, get the value from the first path that has a value
-
-		Parameters:
-			dictionary (dict): The dict to get the value from
-			paths (list[DictPath]): A list of dict paths
-			default (any): The default value to return if the dictionary, path is None, or result is None
-			fallback_on_empty (bool): Should "" be treated as None?
-	"""
-
-	if paths is None:
-		return default
-
-	result = None
-	for path in paths:
-		result = deep_get(obj, path)
-		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True):
-			break
-	if result is None or type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True:
-		result = default
-	return result
-
 def read_iktconfig() -> Dict:
 	"""
 	Read ikt.yaml and ikt.yaml.d/*.yaml and update the global iktconfig dict
@@ -259,36 +139,6 @@ def versiontuple(ver: str) -> Tuple[str, ...]:
 	for point in ver.split("."):
 		filled.append(point.zfill(8))
 	return tuple(filled)
-
-def ansithemestring_join_tuple_list(items: Sequence[Union[str, ANSIThemeString]], formatting: str = "default", separator: ANSIThemeString = ANSIThemeString(", ", "separator")) -> List[ANSIThemeString]:
-	"""
-	Given a list of ANSIThemeStrings or strings + formatting, join them separated by a separator
-
-		Parameters:
-			items (list[Union(str, ANSIThemeString)]): The items to join into an ANSIThemeString list
-			formatting (str): The formatting to use if the list is a string-list
-			separator (ANSIThemeString): The list separator to use
-		Return:
-			themearray (list[ANSIThemeString]): The resulting ANSIThemeString list
-	"""
-
-	themearray = []
-	first = True
-
-	for item in items:
-		if isinstance(item, str):
-			tmpitem = ANSIThemeString(item, formatting)
-		else:
-			tmpitem = item
-
-		if first == False:
-			if separator is not None:
-				themearray.append(separator)
-		else:
-			first = False
-		themearray.append(tmpitem)
-
-	return themearray
 
 def age_to_seconds(age: str) -> int:
 	"""
@@ -486,38 +336,6 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
 			pass
 	raise ValueError(f"Could not parse timestamp: {rtimestamp}")
 
-# This executes a command without capturing the output
-def execute_command(args: List[Union[FilePath, str]], env: Dict = None, comparison: int = 0) -> bool:
-	"""
-	Executes a command
-
-		Parameters:
-			args (list[str]): The commandline
-			env (dict): Environment variables to set
-			comparison (int): The value to compare retval to
-		Returns:
-			retval.returncode == comparison (bool): True if retval.returncode == comparison, False otherwise
-	"""
-
-	if env is None:
-		retval = subprocess.run(args, check = False)
-	else:
-		retval = subprocess.run(args, env = env, check = False)
-	return retval.returncode == comparison
-
-# This executes a command with the output captured
-def execute_command_with_response(args: List[str]) -> str:
-	"""
-	Executes a command and returns stdout
-
-		Parameters:
-			args (list[str]): The commandline
-		Returns:
-			stdout (str): The stdout from the execution
-	"""
-	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
-	return result.stdout.decode("utf-8")
-
 def make_set_expression_list(expression_list: Dict) -> List[Tuple[str, str, str]]:
 	"""
 	Create a list of set expressions (key, operator, values)
@@ -644,7 +462,7 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 
 	apt_cache_path = iktio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	args = [apt_cache_path, "policy"] + deb_packages
-	response = execute_command_with_response(args)
+	response = iktio.execute_command_with_response(args)
 	split_response = response.splitlines()
 	# Safe
 	installed_regex = re.compile(r"^\s*Installed: (.*)")
@@ -676,7 +494,7 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 			# We have the current and candidate version now; get all the other versions of the same package
 			apt_cache_path = iktio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 			_args = [apt_cache_path, "madison", package]
-			_response = execute_command_with_response(_args)
+			_response = iktio.execute_command_with_response(_args)
 			_split_response = _response.splitlines()
 			all_versions = []
 			for version in _split_response:
