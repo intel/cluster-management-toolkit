@@ -16,12 +16,12 @@ import subprocess
 import sys
 from typing import List, Tuple
 
-from ikttypes import ANSIThemeString, FilePath
+from ikttypes import ANSIThemeString, FilePath, SecurityPolicy
 from iktpaths import BINDIR, HOMEDIR, IKTDIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIRNAME, IKT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
 
-from iktio import copy_if_not_exists, mkdir_if_not_exists, replace_symlink
+from iktio import copy_if_not_exists, mkdir_if_not_exists, replace_symlink, secure_which
 from iktlib import execute_command_with_response
 
 from commandparser import parse_commandline
@@ -117,6 +117,7 @@ def copy_files(files, verbose: bool = False) -> None:
 	for src, dst, permissions in files:
 		copy_if_not_exists(src, dst, verbose = verbose, permissions = permissions)
 
+# pylint: disable-next=unused-argument
 def install_software(packages, verbose: bool = False) -> None:
 	"""
 	Batch install Debian packages
@@ -126,11 +127,29 @@ def install_software(packages, verbose: bool = False) -> None:
 			verbose (bool): Unused
 	"""
 
-	del verbose
-	args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + packages
+	try:
+		sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+	except FileNotFoundError:
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("sudo", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	try:
+		apt_get_path = secure_which(FilePath("/usr/bin/apt-get"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+	except FileNotFoundError:
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("apt-get", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	args = [sudo_path, apt_get_path, "install"] + packages
 	_retval = subprocess.run(args, check = False).returncode
 
-def install_software_with_pip_fallback(packages, verbose: bool = False, dryrun: bool = False) -> Tuple[List[str], List[str]]:
+# pylint: disable-next=unused-argument
+def install_software_with_pip_fallback(packages, pip_proxy: str = "", verbose: bool = False, dryrun: bool = False) -> Tuple[List[str], List[str]]:
 	"""
 	Batch install Debian packages with pip fallback
 	This function tries to install a Python module from a Debian package;
@@ -138,19 +157,28 @@ def install_software_with_pip_fallback(packages, verbose: bool = False, dryrun: 
 
 		Parameters:
 			packages (list[(str, str)]): A list of packages to install (pkg, fallback)
+			pip_proxy (str): A proxy to use when installing packages
 			verbose (bool): Unused
+			dryrun (bool): Simulate a run without installing packages
 		Returns:
 			(pkgs, fallbacks):
 				pkgs (list[str]): Packages that were, or would be, installed as Debian packages
 				fallbacks (list[str]): Packages that were, or would be, installed using pip
 	"""
 
-	del verbose
-
 	pkgs = set()
 	fallbacks = set()
 
-	args = ["/usr/bin/apt-cache", "madison"] + list(packages.keys())
+	try:
+		apt_cache_path = secure_which(FilePath("/usr/bin/apt-cache"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+	except FileNotFoundError:
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("sudo", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	args = [apt_cache_path, "madison"] + list(packages.keys())
 	response = execute_command_with_response(args)
 	split_response = response.splitlines()
 
@@ -164,11 +192,40 @@ def install_software_with_pip_fallback(packages, verbose: bool = False, dryrun: 
 			fallbacks.add(fallback)
 
 	if len(pkgs) > 0 and dryrun == False:
-		args = ["/usr/bin/sudo", "/usr/bin/apt-get", "install"] + list(pkgs)
+		try:
+			sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+		except FileNotFoundError:
+			iktprint([ANSIThemeString("Critical", "critical"),
+				  ANSIThemeString(": Could not find ", "default"),
+				  ANSIThemeString("sudo", "path"),
+				  ANSIThemeString("; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+
+		try:
+			apt_get_path = secure_which(FilePath("/usr/bin/apt-get"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+		except FileNotFoundError:
+			iktprint([ANSIThemeString("Critical", "critical"),
+				  ANSIThemeString(": Could not find ", "default"),
+				  ANSIThemeString("apt-get", "path"),
+				  ANSIThemeString("; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+
+		args = [sudo_path, apt_get_path, "install"] + list(pkgs)
 		_retval = subprocess.run(args, check = False).returncode
 
 	if len(fallbacks) > 0 and dryrun == False:
-		args = ["/usr/bin/pip3", "install"] + list(fallbacks)
+		try:
+			pip3_path = secure_which(FilePath("pip3"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+		except FileNotFoundError:
+			iktprint([ANSIThemeString("Critical", "critical"),
+				  ANSIThemeString(": Could not find ", "default"),
+				  ANSIThemeString("pip3", "path"),
+				  ANSIThemeString("; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+		args = [pip3_path, "install"]
+		if len(pip_proxy) > 0:
+			args += ["--proxy", pip_proxy]
+		args += list(fallbacks)
 		_retval = subprocess.run(args, check = False).returncode
 
 	return list(pkgs), list(fallbacks)
@@ -179,20 +236,21 @@ def install(options, args) -> None:
 	and optionally install packages necessary to run iKT
 	"""
 
-	del args
-
 	verbose: bool = False
 	install_dependencies: bool = True
 	confirm: bool = True
 	allow_fallback: bool = True
+	pip_proxy = ""
 
-	for opt, _optarg in options:
+	for opt, optarg in options:
 		if opt == "--verbose":
 			verbose = True
 		elif opt == "--no-dependencies":
 			install_dependencies = False
 		elif opt == "--no-fallback":
 			allow_fallback = False
+		elif opt == "--pip-proxy":
+			pip_proxy = optarg
 		elif opt == "-Y":
 			confirm = False
 		else:
@@ -238,8 +296,8 @@ def install(options, args) -> None:
 			sys.exit(errno.EINTR)
 
 	if install_dependencies == True:
-		install_software_with_pip_fallback(PACKAGES_WITH_PIP_FALLBACK, verbose = verbose)
 		install_software(PACKAGES_WITHOUT_FALLBACK, verbose = verbose)
+		install_software_with_pip_fallback(PACKAGES_WITH_PIP_FALLBACK, verbose = verbose, pip_proxy = pip_proxy)
 
 	create_directories(directories = DIRECTORIES, verbose = verbose)
 	copy_files(files = CONFIGURATION_FILES, verbose = verbose)
@@ -256,6 +314,12 @@ COMMANDLINE = {
 			},
 			"--no-fallback": {
 				"description": [ANSIThemeString("Do not use Python packages from PIP if no system package exist", "description")],
+			},
+			"--pip-proxy": {
+				"values": [ANSIThemeString("PROXY", "argument")],
+				"description": [ANSIThemeString("HTTPS proxy to use if installing fallback packages from PIP on the format ", "description"),
+						ANSIThemeString("[user:passwd@]proxy:port", "argument")],
+				"requires_arg": True,
 			},
 			"--verbose": {
 				"description": [ANSIThemeString("Be more verbose", "description")],

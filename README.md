@@ -30,6 +30,8 @@ to ssh to itself when running playbooks.
 Check out this repository and, while in the repository directory, type:
 
 `./ikt-install`
+_or_
+`./ikt-install --pip-proxy PROXY` (if you need to use a proxy to install from PIP)
 
 This will create symlinks, directories, etc. and install a few packages
 necessary to run iKT; it will not install any components of the cluster.
