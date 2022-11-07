@@ -57,12 +57,15 @@ def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfi
 				note (int): The new count of note severity security issues
 	"""
 
-	iktprint([ANSIThemeString("[Checking for insecure configuration options in ", "phase"), ANSIThemeString(f"{IKT_CONFIG_FILE}", "path"), ANSIThemeString("]", "phase")])
+	iktprint([ANSIThemeString("[Checking for insecure configuration options in ", "phase"),
+		  ANSIThemeString(f"{IKT_CONFIG_FILE}", "path"),
+		  ANSIThemeString("]", "phase")])
 	disablestricthostkeychecking = deep_get(iktconfig_dict, DictPath("Nodes#disablestricthostkeychecking"), False)
 	if disablestricthostkeychecking == False:
 		iktprint([ANSIThemeString("  OK\n", "emphasis")])
 	else:
-		iktprint([ANSIThemeString("  Warning", "warning"), ANSIThemeString(": strict SSH host key checking is disabled; this is a potential security threat.", "emphasis")], stderr = True)
+		iktprint([ANSIThemeString("  Warning", "warning"),
+			  ANSIThemeString(": strict SSH host key checking is disabled; this is a potential security threat.", "emphasis")], stderr = True)
 		iktprint([ANSIThemeString("    If strict SSH host key checking is disabled other systems can impersonate the remote host", "default")], stderr = True)
 		iktprint([ANSIThemeString("    and thus perform Man in the Middle (MITM) attacks.", "default")], stderr = True)
 		iktprint([ANSIThemeString("    It is strongly adviced that you enable strict SSH host key checking unless you're absolutely certain", "default")], stderr = True)
@@ -100,7 +103,8 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, iktconfig_dict
 		  ANSIThemeString(" is in ", "phase"),
 		  ANSIThemeString("/etc/sudoers", "path"),
 		  ANSIThemeString(" or ", "default"),
-		  ANSIThemeString("/etc/sudoers.d", "path"), ANSIThemeString("]", "phase")])
+		  ANSIThemeString("/etc/sudoers.d", "path"),
+		  ANSIThemeString("]", "phase")])
 	args = ["/usr/bin/sudo", "-l"]
 	result = execute_command_with_response(args)
 
@@ -797,7 +801,7 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 		alertmask = deep_get(permissions, DictPath("alertmask"), 0o000)
 		usergroup_alertmask = deep_get(permissions, DictPath("usergroup_alertmask"), 0o000)
 		severity = deep_get(permissions, DictPath("severity"), "critical")
-		justification = deep_get(permissions, DictPath("justification"), [("<no justification provided>", "emphasis")])
+		justification = deep_get(permissions, DictPath("justification"), [ANSIThemeString("<no justification provided>", "emphasis")])
 		executable = deep_get(permissions, DictPath("executable"), False)
 		suffixes = deep_get(permissions, DictPath("suffixes"))
 
@@ -867,7 +871,8 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 						  ANSIThemeString(" does not belong to the user group for ", "default"),
 						  ANSIThemeString(user, "emphasis")], stderr = True)
 					iktprint([ANSIThemeString("  ", "default"),
-						  ANSIThemeString("Justification", "emphasis"), ANSIThemeString(": ", "default")] + justification, stderr = True)
+						  ANSIThemeString("Justification", "emphasis"),
+						  ANSIThemeString(": ", "default")] + justification, stderr = True)
 					print()
 					critical += 1
 					issue = True
@@ -884,7 +889,8 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 						  ANSIThemeString(" (or stricter)", "default")],
 						  stderr = True)
 					iktprint([ANSIThemeString("  ", "default"),
-						  ANSIThemeString("Justification", "emphasis"), ANSIThemeString(": ", "default")] + justification, stderr = True)
+						  ANSIThemeString("Justification", "emphasis"),
+						  ANSIThemeString(": ", "default")] + justification, stderr = True)
 					print()
 
 					if severity == "critical":
