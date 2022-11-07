@@ -9039,7 +9039,7 @@ def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Di
 
 	return retval
 
-def run_playbook(playbook, nodes, values = None):
+def run_playbook(playbook: Dict, nodes: List[str], values: Optional[Dict] = None) -> Tuple[int, Dict]:
 	return __run_playbook(playbook.get("playbook"), nodes, values = values)
 
 def view_obj(stdscr, **kwargs):

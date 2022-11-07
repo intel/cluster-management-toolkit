@@ -900,8 +900,8 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 
 	stdout = deep_get(event, DictPath("event_data#res#stdout"), "")
 	stderr = deep_get(event, DictPath("event_data#res#stderr"), "")
-	stdout_lines = deep_get(event, DictPath("event_data#res#stdout_lines"), "")
-	stderr_lines = deep_get(event, DictPath("event_data#res#stderr_lines"), "")
+	stdout_lines = deep_get(event, DictPath("event_data#res#stdout_lines"), [])
+	stderr_lines = deep_get(event, DictPath("event_data#res#stderr_lines"), [])
 
 	if len(stdout_lines) == 0 and len(stdout) > 0:
 		stdout_lines = stdout.split("\n")
@@ -957,6 +957,7 @@ def ansible_results_add(event: Dict) -> int:
 		Returns:
 			(int): 0 on success, -1 if host is unreachable, retval on other failure
 	"""
+	global ansible_results
 
 	host = deep_get(event, DictPath("event_data#host"), "")
 	__retval, d = ansible_results_extract(event)
@@ -1289,7 +1290,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 		values["ansible_user"] = deep_get(ansible_configuration, DictPath("ansible_user"))
 
 	for key, value in values.items():
-		d["all"][key] = value
+		d["all"]["vars"][key] = value
 
 	d["selection"] = {
 		"hosts": {}
@@ -1337,7 +1338,7 @@ def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[
 		values["ansible_user"] = deep_get(ansible_configuration, DictPath("ansible_user"))
 
 	for key, value in values.items():
-		d["all"][key] = value
+		d["all"]["vars"][key] = value
 
 	d["selection"] = {
 		"hosts": {}
@@ -1380,7 +1381,7 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 
 	return host_status
 
-def ansible_ping_async(selection: List[str]) -> ansible_runner.runner.Runner:
+def ansible_ping_async(selection: Optional[List[str]]) -> ansible_runner.runner.Runner:
 	"""
 	Ping all selected hosts asynchronously
 
