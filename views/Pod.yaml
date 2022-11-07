@@ -161,6 +161,7 @@ listview:
       key: "e"
       modifier: "shift"
       read_only: true
+      read_only: true
       helptext: "Show / Hide evicted pods"
       action: "toggle_var"
       action_args:
@@ -528,6 +529,7 @@ infoview:
     "Show affinities":
       key: "a"
       modifier: "shift"
+      read_only: true
       helptext: "Show affinities"
       widget: "windowwidget"
       headers: ["Type:", "Scheduling:", "Execution:", "Selector:", "Topology:"]
@@ -537,6 +539,7 @@ infoview:
     "Execute command in container":
       key: "e"
       modifier: "ctrl"
+      read_only: false
       helptext: "Execute command inside container"
       widget: "executecommand"
       inputtitle: "Command to execute:"
@@ -548,6 +551,7 @@ infoview:
     "Open ephemeral shell in container":
       key: "d"
       modifier: "ctrl"
+      read_only: false
       helptext: "Open a debug (ephemeral) shell inside container"
       widget: "executecommand"
       widget_args:
@@ -556,6 +560,7 @@ infoview:
     "Open shell in container":
       key: "o"
       modifier: "ctrl"
+      read_only: false
       helptext: "Open a shell inside container"
       widget: "executecommand"
       widget_args:
@@ -563,6 +568,7 @@ infoview:
         command: ["/bin/sh"]
     "Show tolerations":
       key: "t"
+      read_only: true
       helptext: "Show tolerations"
       widget: "windowwidget"
       headers: ["Key:", "Operator:", "Value:", "Effect:", "Timeout:"]
@@ -572,6 +578,7 @@ infoview:
     "Priority Class":
       key: "p"
       modifier: "shift"
+      read_only: true
       helptext: "Open info page for Priority Class"
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"
@@ -583,6 +590,7 @@ infoview:
     "SSH to Node":
       key: "s"
       modifier: "shift"
+      read_only: false
       helptext: "SSH to selected Node"
       action: "call"
       action_call: "ssh_to_host"

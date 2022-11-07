@@ -147,6 +147,7 @@ listview:
     "SSH to host":
       key: "s"
       modifier: "shift"
+      read_only: false
       helptext: "SSH to host"
       action: "call"
       action_call: "ssh_to_host"
@@ -384,6 +385,7 @@ infoview:
     "CSI Node":
       key: "c"
       modifier: "shift"
+      read_only: true
       helptext: "Open info page for CSI Node"
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"
@@ -394,6 +396,7 @@ infoview:
         name_path: "metadata#name"
     "Node Metrics":
       key: "m"
+      read_only: true
       helptext: "Open info page for Node Metrics"
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"
@@ -405,6 +408,7 @@ infoview:
     "SSH to Node":
       key: "s"
       modifier: "shift"
+      read_only: false
       helptext: "SSH to node"
       action: "call"
       action_call: "ssh_to_host"
@@ -414,6 +418,7 @@ infoview:
     "Container Images":
       key: "i"
       modifier: "shift"
+      read_only: true
       helptext: "List container images on Node"
       widget: "windowwidget"
       title: "Container images:"
@@ -427,6 +432,7 @@ infoview:
     "Open dnsutils Pod on Node":
       key: "n"
       modifier: "ctrl"
+      read_only: false
       helptext: "Open a dnsutils Pod on Node"
       widget: "executecommand"
       widget_args:
@@ -435,6 +441,7 @@ infoview:
     "Show package versions":
       key: "v"
       modifier: "shift"
+      read_only: true
       helptext: "Show package versions"
       widget: "windowwidget"
       title: "Package versions:"
@@ -449,6 +456,7 @@ infoview:
     "Show resources":
       key: "r"
       modifier: "shift"
+      read_only: true
       helptext: "Show resources"
       widget: "windowwidget"
       title: "Resources:"
