@@ -667,8 +667,8 @@ recommended_directory_permissions = [
 	},
 	{
 		"path": KUBE_CONFIG_DIR,
-		"alertmask": 0o027,
-		"usergroup_alertmask": 0o077,
+		"alertmask": 0o077,
+		"usergroup_alertmask": 0o027,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If others users can read, create or replace files in ", "default"),
 				  ANSIThemeString(f"{KUBE_CONFIG_DIR}", "path"),
@@ -677,7 +677,7 @@ recommended_directory_permissions = [
 	{
 		"path": THEME_DIR,
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "error",
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{THEME_DIR}", "path"),
@@ -688,7 +688,7 @@ recommended_directory_permissions = [
 	{
 		"path": PARSER_DIR,
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "error",
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{PARSER_DIR}", "path"),
@@ -699,7 +699,7 @@ recommended_directory_permissions = [
 	{
 		"path": VIEW_DIR,
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"severity": "error",
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{VIEW_DIR}", "path"),
@@ -713,7 +713,7 @@ recommended_file_permissions = [
 	{
 		"path": FilePath(os.path.join(BINDIR, "iktadm")),
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"executable": True,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If others users can modify executables they can obtain elevated privileges", "default")]
@@ -721,7 +721,7 @@ recommended_file_permissions = [
 	{
 		"path": FilePath(os.path.join(BINDIR, "iktinv")),
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"executable": True,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If others users can modify executables they can obtain elevated privileges", "default")]
@@ -729,7 +729,7 @@ recommended_file_permissions = [
 	{
 		"path": FilePath(os.path.join(BINDIR, "ikt")),
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"executable": True,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If others users can modify executables they can obtain elevated privileges", "default")]
@@ -737,7 +737,7 @@ recommended_file_permissions = [
 	{
 		"path": FilePath(os.path.join(BINDIR, "iku")),
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"executable": True,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If others users can modify configlets they may be able to obtain elevated privileges", "default")]
@@ -746,7 +746,7 @@ recommended_file_permissions = [
 		"path": IKT_CONFIG_FILE_DIR,
 		"suffixes": (".yml", ".yaml"),
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"executable": False,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If others users can modify configlets they may be able to obtain elevated privileges", "default")]
@@ -755,22 +755,22 @@ recommended_file_permissions = [
 		"path": ANSIBLE_PLAYBOOK_DIR,
 		"suffixes": (".yml", ".yaml"),
 		"alertmask": 0o022,
-		"usergroup_alertmask": 0o022,
+		"usergroup_alertmask": 0o002,
 		"executable": False,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If other users can modify playbooks they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": ANSIBLE_INVENTORY,
-		"alertmask": 0o027,
-		"usergroup_alertmask": 0o077,
+		"alertmask": 0o077,
+		"usergroup_alertmask": 0o007,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If other users can read or modify the Ansible inventory they can obtain elevated privileges", "default")]
 	},
 	{
 		"path": KUBE_CONFIG_FILE,
-		"alertmask": 0o027,
-		"usergroup_alertmask": 0o077,
+		"alertmask": 0o077,
+		"usergroup_alertmask": 0o007,
 		"executable": False,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If others users can read or modify cluster configuration files they can obtain cluster access", "default")]
@@ -804,8 +804,8 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 
 	for permissions in recommended_permissions:
 		path = deep_get(permissions, DictPath("path"))
-		alertmask = deep_get(permissions, DictPath("alertmask"), 0o000)
-		usergroup_alertmask = deep_get(permissions, DictPath("usergroup_alertmask"), 0o000)
+		alertmask = deep_get(permissions, DictPath("alertmask"), 0o077)
+		usergroup_alertmask = deep_get(permissions, DictPath("usergroup_alertmask"), alertmask)
 		severity = deep_get(permissions, DictPath("severity"), "critical")
 		justification = deep_get(permissions, DictPath("justification"), [ANSIThemeString("<no justification provided>", "emphasis")])
 		executable = deep_get(permissions, DictPath("executable"), False)
