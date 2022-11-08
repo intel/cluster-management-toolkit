@@ -15,7 +15,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["bpf_log_level", "log_severity_screen", "reporting_interval", "ipip_enabled", "vxlan_enabled"]
+        fields: ["bpf_log_level", "log_severity_screen", "floating_ips", "reporting_interval", "ipip_enabled", "vxlan_enabled"]
     rows:
       bpf_log_level:
         header: [["BPF Log Level:", ["main", "infoheader"]]]
@@ -26,6 +26,10 @@ infoview:
           mapping:
             substitutions:
               "": "Off"
+      floating_ips:
+        header: [["Floating IPs:", ["main", "infoheader"]]]
+        path: "spec#floatingIPs"
+        type: "bool"
       log_severity_screen:
         header: [["Log Severity Screen:", ["main", "infoheader"]]]
         path: "spec#logSeverityScreen"

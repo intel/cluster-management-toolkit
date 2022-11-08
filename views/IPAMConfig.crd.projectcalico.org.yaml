@@ -7,3 +7,23 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "IPAM Config Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["auto_allocate_blocks", "max_blocks_per_host", "strict_affinity"]
+    rows:
+      auto_allocate_blocks:
+        header: [["Auto Allocate Blocks:", ["main", "infoheader"]]]
+        path: "spec#autoAllocateBlocks"
+        type: "bool"
+      max_blocks_per_host:
+        header: [["Max Blocks per Host:", ["main", "infoheader"]]]
+        path: "spec#maxBlocksPerHost"
+        type: "int"
+        default: "Unlimited"
+      strict_affinity:
+        header: [["Strict Affinity:", ["main", "infoheader"]]]
+        path: "spec#strictAffinity"
+        type: "bool"
