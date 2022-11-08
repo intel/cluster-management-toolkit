@@ -38,7 +38,7 @@ except ModuleNotFoundError:
 
 from iktpaths import KUBE_CONFIG_FILE
 from iktlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
-from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityChecks, StatusGroup
+from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, FilePathAuditError, SecurityChecks, StatusGroup
 from iktio import execute_command_with_response, secure_which
 from iktio_yaml import secure_read_yaml, secure_write_yaml
 
@@ -2376,9 +2376,12 @@ class KubernetesHelper:
 
 		try:
 			kubeconfig = secure_read_yaml(FilePath(str(config_path)))
+		except FilePathAuditError as e:
+			if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
+				return []
 		except FileNotFoundError:
-			# We can handle FileNotFoundError; other exceptions
-			# are security related, so we let them raise
+			# We can handle FileNotFoundError and PARENT_DOES_NOT_EXIST;
+			# other exceptions might be security related, so we let them raise
 			return []
 		except yaml.parser.ParserError as e:
 			raise yaml.parser.ParserError(f"{config_path} is not valid YAML; aborting.") from e
@@ -2472,6 +2475,10 @@ class KubernetesHelper:
 			kubeconfig = secure_read_yaml(config_path, checks = checks)
 		except FileNotFoundError:
 			return False
+		except FilePathAuditError as e:
+			if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
+				return False
+			raise
 
 		current_context = deep_get(kubeconfig, DictPath("current-context"), "")
 
