@@ -176,7 +176,11 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 
 		Parameters:
 			directory (str): The path to extract the file to
-			fetch_urls (list[(url, filename, checksum_url, checksum_type)]): url, filename, checksum_url, and checksum_type
+			fetch_urls (list[(url, filename, checksum_url, checksum_type)]):
+				url (str): The URL to download
+				filename (str): The name of the downloaded file
+				checksum_url (str): The URL to the checksum
+				checksum_type (str): The type of checksum
 			permissions (int): File permissions (*PLEASE* use octal!)
 		Returns:
 			True on success, False on failure
