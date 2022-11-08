@@ -12,7 +12,7 @@
     shell: |
       lsof -i -P -n | grep 6443.*LISTEN > /dev/null
     register: "port_check"
-    ignore_errors: true
+    failed_when: false
     changed_when: false
   - name: "Creating permanent join token"  # noqa fqcn-builtins
     command: "kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command"
