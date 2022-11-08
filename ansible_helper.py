@@ -13,7 +13,8 @@ from typing import cast, Dict, List, Optional, Set, Tuple, Union
 import yaml
 
 import iktlib
-from iktio import check_path, mkdir_if_not_exists, secure_read_yaml, secure_rm, secure_rmdir, secure_write_yaml
+from iktio import check_path, mkdir_if_not_exists, secure_rm, secure_rmdir
+from iktio_yaml import secure_read_yaml, secure_write_yaml
 from iktpaths import HOMEDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from iktpaths import ANSIBLE_INVENTORY

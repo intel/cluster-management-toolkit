@@ -38,8 +38,9 @@ except ModuleNotFoundError:
 
 from iktpaths import KUBE_CONFIG_FILE
 from iktlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
-from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, StatusGroup
-from iktio import execute_command_with_response, secure_read_yaml, secure_which, secure_write_yaml
+from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityChecks, StatusGroup
+from iktio import execute_command_with_response, secure_which
+from iktio_yaml import secure_read_yaml, secure_write_yaml
 
 # A list of all K8s resources we have some knowledge about
 kubernetes_resources: Dict[Any, Any] = {
@@ -2457,8 +2458,18 @@ class KubernetesHelper:
 
 		config_path = FilePath(str(config_path))
 
+		# We are semi-OK with the file not existing
+		checks = [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.IS_FILE,
+		]
+
 		try:
-			kubeconfig = secure_read_yaml(config_path)
+			kubeconfig = secure_read_yaml(config_path, checks = checks)
 		except FileNotFoundError:
 			return False
 
@@ -2611,7 +2622,7 @@ class KubernetesHelper:
 		if context_name != current_context:
 			kubeconfig["current-context"] = context_name
 
-		secure_write_yaml(config_path, kubeconfig)
+		secure_write_yaml(config_path, kubeconfig, permissions = 0o600, sort_keys = False)
 
 		return True
 

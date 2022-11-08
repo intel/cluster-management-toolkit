@@ -14,9 +14,55 @@ from typing import List, Sequence, Union
 
 from ikttypes import ANSIThemeString, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy
 import iktio
+try:
+	import yaml # pylint: disable=unused-import
+	from iktio_yaml import secure_read_yaml
+	use_fallback_theme = False
+except ModuleNotFoundError:
+	use_fallback_theme = True
 
 theme = None
 themepath = None
+
+fallback_theme = {
+	"term": {
+		"default": "\033[0m",                           # reset
+		"programname": "\033[1;37m",                    # white + bright
+		"version": "\033[0;32m",                        # green
+		"candidateversion": "\033[1;36m",               # cyan + bright
+		# FIXME: having command the same colour as action is probably not a good choice
+		"command": "\033[1;36m",                        # cyan + bright
+		"option": "\033[0;36m",                         # cyan
+		"argument": "\033[0;32m",                       # green
+		"separator": "\033[38;5;240m",                  # grey + dim
+		"description": "\033[0m",                       # reset
+		"hostname": "\033[1;37m",                       # white + bright
+		"path": "\033[0;36m",                           # cyan
+		"url": "\033[1;4;37m",                          # white + bright + underline
+		"header": "\033[0;4;37m",                       # white + underline
+		"underline": "\033[0;4;37m",                    # white + underline
+		"emphasis": "\033[1;37m",                       # white + bright
+		"skip": "\033[38;5;240m\033[1m",                # grey + dim + bold
+		"ok": "\033[1;37m",                             # white + bright
+		"notok": "\033[1;31m",                          # red + bright
+		"success": "\033[1;32m",                        # green + bright
+		"note": "\033[0;32m",                           # green
+		"error": "\033[1;31m",                          # red + bright
+		"warning": "\033[1;33m",                        # yellow + bright
+		"critical": "\033[1;41;93m",                    # red + bright + inverted
+		"errorvalue": "\033[0;31m",                     # red
+		"phase": "\033[1;33m",                          # yellow + bright
+		"action": "\033[1;36m",                         # cyan + bright
+		"play": "\033[0;36m",                           # cyan
+		"none": "\033[38;5;240m\033[1m",                # grey + dim + bold
+		"unknown": "\033[0;31m",                        # red
+		"reset": "\033[0m",                             # reset all attributes
+		"yaml_list": "\033[1;33m",                      # yellow + bright
+		"yaml_key": "\033[1;36m",                       # cyan + bright
+		"yaml_key_separator": "\033[0;37m",             # white
+		"yaml_value": "\033[0m",                        # reset
+	}
+}
 
 def clear_screen() -> int:
 	"""
@@ -39,24 +85,21 @@ def __themearray_to_string(themearray) -> str:
 
 	string: str = ""
 	for themestring in themearray:
-		#if not isinstance(themestring, ANSIThemeString):
-		#	raise TypeError(f"__themarray_to_string() only accepts themestrings; this themearray consists of:\n{themearray}")
+		if not isinstance(themestring, ANSIThemeString):
+			raise TypeError(f"__themarray_to_string() only accepts themestrings; this themearray consists of:\n{themearray}")
 
-		if isinstance(themestring, ANSIThemeString):
-			theme_attr_ref = themestring.themeref
-			theme_string = str(themestring)
-		elif isinstance(themestring, tuple):
-			theme_string, theme_attr_ref = themestring.themeref
+		theme_attr_ref = themestring.themeref
+		theme_string = str(themestring)
 
 		if theme is not None:
 			if theme_attr_ref in theme["term"]:
 				attr = theme["term"][theme_attr_ref]
 				reset = theme["term"]["reset"]
-				string += f"{attr}{themestring}{reset}"
+				string += f"{attr}{theme_string}{reset}"
 			else:
 				raise Exception(f"attribute (“term“, “{theme_attr_ref}“) does not exist in {themepath}")
 		else:
-			string += themestring
+			string += theme_string
 
 	if len(string) > 0:
 		string = string.replace("\x0033", "\033")
@@ -75,7 +118,8 @@ def themearray_len(themearray) -> int:
 
 	return sum(map(len, themearray))
 
-def ansithemestring_join_tuple_list(items: Sequence[Union[str, ANSIThemeString]], formatting: str = "default", separator: ANSIThemeString = ANSIThemeString(", ", "separator")) -> List[ANSIThemeString]:
+def ansithemestring_join_tuple_list(items: Sequence[Union[str, ANSIThemeString]],
+				    formatting: str = "default", separator: ANSIThemeString = ANSIThemeString(", ", "separator")) -> List[ANSIThemeString]:
 	"""
 	Given a list of ANSIThemeStrings or strings + formatting, join them separated by a separator
 
@@ -121,7 +165,11 @@ def iktinput(themearray: List[ANSIThemeString]) -> str:
 		sys.exit("iktinput() used without calling init_iktprint() first; this is a programming error.")
 
 	string = __themearray_to_string(themearray)
-	tmp = input(string) # nosec
+	try:
+		tmp = input(string) # nosec
+	except KeyboardInterrupt:
+		print()
+		sys.exit(errno.ECANCELED)
 	tmp = tmp.replace("\x00", "<NUL>")
 	return tmp
 
@@ -141,13 +189,16 @@ def iktinput_password(themearray: List[ANSIThemeString]) -> str:
 		sys.exit("iktinput_password() used without calling init_iktprint() first; this is a programming error.")
 
 	string = __themearray_to_string(themearray)
-	tmp = getpass(string)
+	try:
+		tmp = getpass(string)
+	except KeyboardInterrupt:
+		print()
+		sys.exit(errno.ECANCELED)
 	if tmp is not None:
 		tmp = tmp.replace("\x00", "<NUL>")
 	return tmp
 
 def iktprint(themearray: List[ANSIThemeString], stderr: bool = False) -> None:
-#def iktprint(themearray, stderr: bool = False) -> None:
 	"""
 	Print a themearray;
 	a themearray is a list of format strings of the format:
@@ -216,8 +267,15 @@ def init_iktprint(themefile: FilePath) -> None:
 		SecurityChecks.IS_FILE,
 	]
 
-	try:
-		theme = iktio.secure_read_yaml(themefile, checks = checks)
-	except FileNotFoundError:
-		print(f"Warning: themefile ”{themefile}” does not exist", file = sys.stderr)
-		return
+	if use_fallback_theme == True:
+		theme = fallback_theme
+	else:
+		try:
+			theme = secure_read_yaml(themefile, checks = checks)
+		except FileNotFoundError:
+			theme = fallback_theme
+			iktprint([ANSIThemeString("Warning", "warning"),
+				  ANSIThemeString(": themefile ”", "default"),
+				  ANSIThemeString(f"{themefile}", "path"),
+				  ANSIThemeString("” does not exist; using built-in fallback theme.", "default")], stderr = True)
+			return

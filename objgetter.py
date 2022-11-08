@@ -17,7 +17,8 @@ except ModuleNotFoundError:
 
 from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks
 from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path
-from iktio import check_path, secure_read_yaml
+from iktio import check_path
+from iktio_yaml import secure_read_yaml
 
 def objgetter_ansible_facts(obj: Dict) -> Dict:
 	"""

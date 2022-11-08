@@ -10,9 +10,10 @@ import re
 import sys
 from typing import Dict, List, Optional, Tuple, Union
 
-from ikttypes import ANSIThemeString, deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy
+from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy
 from iktpaths import IKT_CONFIG_FILE, IKT_CONFIG_FILE_DIR
 import iktio
+import iktio_yaml
 
 try:
 	from natsort import natsorted
@@ -100,7 +101,7 @@ def read_iktconfig() -> Dict:
 		return {}
 
 	# Read the base configuration file
-	iktconfig = iktio.secure_read_yaml(IKT_CONFIG_FILE)
+	iktconfig = iktio_yaml.secure_read_yaml(IKT_CONFIG_FILE)
 
 	# Now read ikt.yaml.d/* if available
 	if not Path(IKT_CONFIG_FILE_DIR).is_dir():
@@ -116,7 +117,7 @@ def read_iktconfig() -> Dict:
 			continue
 
 		# Read the conflet files
-		moreiktconfig = iktio.secure_read_yaml(FilePath(str(path)))
+		moreiktconfig = iktio_yaml.secure_read_yaml(FilePath(str(path)))
 
 		# Handle config files without any values defined
 		if moreiktconfig is not None:

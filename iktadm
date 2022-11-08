@@ -32,7 +32,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run ikt-install?")
 
-from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, SecurityPolicy
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, SecurityChecks, SecurityPolicy
 from iktpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR
 from iktpaths import DEPLOYMENT_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -45,7 +45,8 @@ from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts,
 
 import iktio
 from iktio import execute_command, execute_command_with_response, mkdir_if_not_exists
-from iktio import secure_read_string, secure_read_yaml, secure_rm, secure_which, secure_write_string, secure_write_yaml
+from iktio import secure_read_string, secure_rm, secure_which, secure_write_string
+from iktio_yaml import secure_read_yaml, secure_write_yaml
 from networkio import download_files, scan_and_add_ssh_keys
 
 import iktlib
@@ -225,8 +226,18 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
 
 	info = None
 
+	# We're OK with the file not existing
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.IS_FILE,
+	]
+
 	try:
-		info = secure_read_yaml(IKT_INSTALLATION_INFO_FILE)
+		info = secure_read_yaml(IKT_INSTALLATION_INFO_FILE, checks = checks)
 	except FileNotFoundError:
 		pass
 
@@ -640,7 +651,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 			cni = "<unknown>"
 		elif len(tmp_cni) > 1:
 			iktprint([ANSIThemeString("Error", "error"),
-				  ANSIThemeString(f": Could not uniquely identify the CNI; multiple potential candidates identified; aborting.", "default")], stderr = True)
+				  ANSIThemeString(": Could not uniquely identify the CNI; multiple potential candidates identified; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		else:
 			cni = tmp_cni[0][0]
@@ -693,7 +704,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 	# FIXME: for now we hardcode this
 	arch = "amd64"
 	substitutions = {
-		"<<<version>>>": version,
+		"<<<version>>>": "".join(version),
 		"<<<arch>>>": arch,
 	}
 
@@ -1373,10 +1384,21 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
+	# This read mustn't fail, so no exceptions
 	d2 = secure_read_yaml(config_file_name)
 
+	# This file won't exist if this is the first cluster
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.IS_FILE,
+	]
+
 	try:
-		d1 = secure_read_yaml(KUBE_CONFIG_FILE)
+		d1 = secure_read_yaml(KUBE_CONFIG_FILE, checks = checks)
 	except FileNotFoundError:
 		d1 = dict(d2)
 		# We'll be renaming things anyway, so instead of using a lot of special casing below we just empty
@@ -1458,7 +1480,7 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 
 	d1["users"].append(user)
 
-	secure_write_yaml(KUBE_CONFIG_FILE, d1, sort_keys = False)
+	secure_write_yaml(KUBE_CONFIG_FILE, d1, permissions = 0o600, sort_keys = False)
 
 	check_and_print_status(True)
 
@@ -1712,7 +1734,7 @@ def __task_remove_kube_config(installation_info: Dict) -> None:
 		if len(d1["contexts"]) > 0:
 			d1["current-context"] = d1["contexts"][0]["name"]
 
-		secure_write_yaml(KUBE_CONFIG_FILE, d1, sort_keys = False)
+		secure_write_yaml(KUBE_CONFIG_FILE, d1, permissions = 0o600, sort_keys = False)
 
 	check_and_print_status(True)
 

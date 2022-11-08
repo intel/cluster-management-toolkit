@@ -14,8 +14,7 @@ import re
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
-from typing import Dict, Iterator, List, Union
-import yaml
+from typing import Dict, List, Union
 
 from ikttypes import ANSIThemeString, FilePath, HostNameStatus, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from iktpaths import HOMEDIR
@@ -483,27 +482,6 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 		with open(path, write_mode, opener = partial(os.open, mode = permissions), encoding = "utf-8") as f:
 			f.write(string)
 
-def secure_write_yaml(path: FilePath, data, permissions: int = None, replace_empty = False, replace_null = False, sort_keys = True) -> None:
-	"""
-	Dump a dict to a file in YAML-format in a safe manner
-
-		Parameters:
-			path (FilePath): The path to write to
-			data (dict): The dict to dump
-			permissions (int): File permissions (None uses system defaults)
-			replace_empty (bool): True strips empty strings
-			replace_null (bool): True strips null
-		Raises:
-			ikttypes.FilePathAuditError
-	"""
-
-	yaml_str = yaml.safe_dump(data, default_flow_style = False, sort_keys = sort_keys)
-	if replace_empty == True:
-		yaml_str = yaml_str.replace(r"''", "")
-	if replace_null == True:
-		yaml_str = yaml_str.replace(r"null", "")
-	secure_write_string(path, yaml_str, permissions = permissions)
-
 def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool = False) -> str:
 	"""
 	Read a string from a file in a safe manner
@@ -580,40 +558,6 @@ def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool
 		string = f.read()
 
 	return string
-
-def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool = False) -> Dict:
-	"""
-	Read data in YAML-format from a file in a safe manner
-
-		Parameters:
-			path (FilePath): The path to read from
-			directory_is_symlink (bool): The directory that the path points to is a symlink
-		Returns:
-			yaml_data (yaml): The read YAML-data
-		Raises:
-			FileNotFoundError
-			ikttypes.FilePathAuditError
-	"""
-
-	string = secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
-	return yaml.safe_load(string)
-
-def secure_read_yaml_all(path: FilePath, checks = None, directory_is_symlink: bool = False) -> Iterator[Dict]:
-	"""
-	Read all dicts in YAML-format from a file in a safe manner
-
-		Parameters:
-			path (FilePath): The path to read from
-			directory_is_symlink (bool): The directory that the path points to is a symlink
-		Returns:
-			dicts (list[dict]): A list of dicts
-		Raises:
-			FileNotFoundError
-			ikttypes.FilePathAuditError
-	"""
-
-	string = secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
-	return yaml.safe_load_all(string)
 
 def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
 	"""

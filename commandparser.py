@@ -6,7 +6,7 @@ This module parses command line options and generate helptexts
 
 import errno
 import sys
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import about
 
@@ -20,7 +20,7 @@ programauthors = None
 
 commandline = None
 
-# pylint: disable-next=unused-arguments
+# pylint: disable-next=unused-argument
 def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Display version information
@@ -34,7 +34,8 @@ def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 
 	iktprint([ANSIThemeString(f"{programname} ", "programname"), ANSIThemeString(f"{programversion}", "version")])
-	iktprint([ANSIThemeString(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"), ANSIThemeString(f"{about.PROGRAM_SUITE_VERSION}", "version")])
+	iktprint([ANSIThemeString(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"),
+		  ANSIThemeString(f"{about.PROGRAM_SUITE_VERSION}", "version")])
 	print()
 	print(about.COPYRIGHT)
 	print(about.LICENSE)
@@ -42,7 +43,7 @@ def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
 	print(programauthors)
 	return 0
 
-# pylint: disable-next=unused-arguments
+# pylint: disable-next=unused-argument
 def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Display usage information

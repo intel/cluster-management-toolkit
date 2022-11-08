@@ -25,6 +25,7 @@ from iktpaths import HOMEDIR, SSH_DIR
 from iktpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
 
 import iktio
+import iktio_yaml
 
 from commandparser import parse_commandline
 
@@ -439,7 +440,7 @@ def get_cluster_name() -> Optional[str]:
 	"""
 
 	try:
-		d1 = iktio.secure_read_yaml(KUBE_CONFIG_FILE)
+		d1 = iktio_yaml.secure_read_yaml(KUBE_CONFIG_FILE)
 	except FileNotFoundError:
 		return None
 

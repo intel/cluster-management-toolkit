@@ -54,7 +54,7 @@ from iktpaths import HOMEDIR, PARSER_DIR
 
 from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name
 
-from iktio import secure_read_yaml
+from iktio_yaml import secure_read_yaml
 
 import iktlib
 from iktlib import none_timestamp
@@ -1871,13 +1871,13 @@ def json_line_scanner(message: str, fold_msg: bool = True, options: Dict = None)
 	message, _timestamp = split_iso_timestamp(message, none_timestamp())
 
 	if message == "}".rstrip():
-		remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
+		remnants = formatters.format_yaml_line(message, override_formatting = {})
 		processor: List = ["end_block", None]
 	elif message.lstrip() != message:
-		remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
+		remnants = formatters.format_yaml_line(message, override_formatting = {})
 		processor = ["block", json_line_scanner]
 	elif len(message.strip()) == 0 and allow_empty_lines == True:
-		remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
+		remnants = formatters.format_yaml_line(message, override_formatting = {})
 		processor = ["block", json_line_scanner]
 	else:
 		remnants = None
@@ -1918,11 +1918,13 @@ def json_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	if matched == True:
 		if format_block_start == True:
-			remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
+			remnants = formatters.format_yaml_line(message, override_formatting = {})
 		else:
 			remnants = message
 		processor = ["start_block", json_line_scanner, options]
-	return processor, remnants
+		return processor, remnants
+	else:
+		return message, []
 
 # pylint: disable-next=unused-argument
 def yaml_line_scanner(message: str, fold_msg: bool = True, options: Dict = None) ->\
@@ -1965,9 +1967,9 @@ def yaml_line_scanner(message: str, fold_msg: bool = True, options: Dict = None)
 	else:
 		if process_block_end == True:
 			if format_block_end == True:
-				remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
+				remnants = formatters.format_yaml_line(message, override_formatting = {})
 			else:
-				remnants = [([ThemeString(message, ThemeAttr("logview", "severity_info"))], severity)]
+				remnants = [ThemeString(message, ThemeAttr("logview", "severity_info"))]
 			processor = ["end_block", None]
 		else:
 			processor = ["end_block_not_processed", None]
@@ -2013,15 +2015,13 @@ def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	if matched == True:
 		if format_block_start == True:
-			remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
+			remnants = formatters.format_yaml_line(message, override_formatting = {})
 		else:
 			remnants = message
 		response = ["start_block", yaml_line_scanner, options]
-
-	if len(response) == 0:
-		response = message
-
-	return message, remnants
+		return response, remnants
+	else:
+		return message, remnants
 
 # pylint: disable-next=unused-argument
 def custom_splitter(message: str, severity: LogLevel = None, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\

@@ -15,10 +15,14 @@
       mode: "0700"
     delegate_to: "localhost"
   - name: "Copying /etc/kubernetes/admin.conf from control plane to localhost"
+    become: true
+    become_user: "root"
     ansible.builtin.fetch:
-      become: true
-      become_user: "root"
       src: "/etc/kubernetes/admin.conf"
       dest: "~/.kube/config.{{ cluster_name }}"
       flat: true
+  - name: "Fix file permissions for config file"
+    ansible.builtin.file:
+      path: "~/.kube/config.{{ cluster_name }}"
       mode: "0600"
+    delegate_to: "localhost"

@@ -22,7 +22,8 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from iktio import check_path, secure_read_yaml
+from iktio import check_path
+from iktio_yaml import secure_read_yaml
 from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping
 
 import iktlib
