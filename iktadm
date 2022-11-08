@@ -32,7 +32,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run ikt-install?")
 
-from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, SecurityChecks, SecurityPolicy
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy
 from iktpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR
 from iktpaths import DEPLOYMENT_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -44,7 +44,7 @@ from ansible_helper import ansible_configuration, ansible_get_inventory_dict, an
 from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results, populate_playbooks_from_paths
 
 import iktio
-from iktio import execute_command, execute_command_with_response, mkdir_if_not_exists
+from iktio import check_path, execute_command, execute_command_with_response, mkdir_if_not_exists
 from iktio import secure_read_string, secure_rm, secure_which, secure_write_string
 from iktio_yaml import secure_read_yaml, secure_write_yaml
 from networkio import download_files, scan_and_add_ssh_keys
@@ -346,15 +346,79 @@ def patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> None:
 			pod_network_cidr (str): The CIDR for the pod network
 	"""
 
+	violations = check_path(cni_path)
+	if len(violations) > 0:
+		if len(violations) > 0:
+			violation_strings = []
+			for violation in violations:
+				violation_strings.append(str(violation))
+			violations_joined = ",".join(violation_strings)
+			raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
+
 	# Ideally we should patch this using a round-trip capable YAML parser,
 	# such as ruamel
 	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$#\\1Network:": "{pod_network_cidr}",#'
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	check_and_print_status(execute_command(args))
 
+def patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> None:
+	"""
+	Patch the configuration for Calico
+
+		Parameters:
+			cni_path (FilePath): The path to the CNI configuration to patch
+			pod_network_cidr (str): The CIDR for the pod network
+	"""
+
+	violations = check_path(cni_path)
+	if len(violations) > 0:
+		if len(violations) > 0:
+			violation_strings = []
+			for violation in violations:
+				violation_strings.append(str(violation))
+			violations_joined = ",".join(violation_strings)
+			raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
+
+	# Ideally we should patch this using a round-trip capable YAML parser,
+	# such as ruamel
+	sedstr = fr's#cidr: 192.168.0.0/16$#cidr: {pod_network_cidr}#'
+	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
+	check_and_print_status(execute_command(args))
+
 # XXX: We should convert all of cni_data to use this format instead,
 #      and move all of this code to a separate file to allow it to be used both from iku and iktadm
 cni_upgrade_data = {
+	"calico": {
+		"executable": {
+			"version_command": ["kubectl", "calico", "version"],
+			# Safe
+			"version_regex": r"^Client Version:\s+(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+			"urls": [
+				{
+					"url": "https://github.com/projectcalico/calico/releases/download/v3.24.4/calicoctl-linux-<<<arch>>>",
+					"checksum_url": "https://github.com/projectcalico/calico/releases/download/v3.24.4/SHA256SUMS",
+					"checksum_type": "sha256",
+					"filename": "kubectl-calico",
+				}
+			]
+		},
+		"CNI": {
+			"urls": [
+				{
+					# "url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/tigera-operator.yaml",
+					"url": "https://raw.githubusercontent.com/projectcalico/calico/v3.24.4/manifests/tigera-operator.yaml",
+					# "filename": "tigera-operator-<<<version>>>.yaml",
+					"filename": "tigera-operator-v3.24.4.yaml",
+				}, {
+					# "url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/custom-resources.yaml",
+					"url": "https://raw.githubusercontent.com/projectcalico/calico/v3.24.4/manifests/custom-resources.yaml",
+					# "filename": "calico-custom-resources-<<<version>>>.yaml",
+					"filename": "calico-custom-resources-v3.24.4.yaml",
+					"patch": patch_cni_calico,
+				}
+			]
+		}
+	},
 	"cilium": {
 		"executable": {
 			"version_command": ["cilium", "--context", "<<<context>>>", "version"],
@@ -363,10 +427,14 @@ cni_upgrade_data = {
 			"candidate_version_url": "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
 			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz",
-			"checksum_url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz.sha256sum",
-			"checksum_type": "sha256",
-			"filename": "cilium",
+			"urls": [
+				{
+					"url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz",
+					"checksum_url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz.sha256sum",
+					"checksum_type": "sha256",
+					"filename": "cilium",
+				}
+			],
 		},
 		"CNI": {
 			"version_command": ["cilium", "--context", "<<<context>>>", "version"],
@@ -518,7 +586,7 @@ def check_version_from_executable(command: FilePath, args: List[str], version_re
 					break
 	return version
 
-def __upgrade_cni(cni: str, upgradetype: str, context: str) -> None:
+def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: str) -> None:
 	"""
 	A helper that is used when upgrading a CNI; it can either upgrade the CNI itself or a helper executable
 
@@ -526,6 +594,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str) -> None:
 			cni (str): The CNI to upgrade
 			upgradetype (str): Valid options CNI, executable
 			context (str): The cluster context
+			pod_network_cidr (str): The CIDR of the pod network
 	"""
 
 	if upgradetype not in ("CNI", "executable"):
@@ -538,10 +607,6 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str) -> None:
 	candidate_version_url = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_url"))
 	candidate_version_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_command"))
 	candidate_version_regex = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_regex"))
-	download_url = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#url"))
-	download_checksum_url = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#checksum_url"))
-	download_checksum_type = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#checksum_type"))
-	command_filename = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#filename"))
 	install_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#install"))
 	upgrade_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#upgrade"))
 
@@ -556,7 +621,6 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str) -> None:
 			  ANSIThemeString(f"Checking {upgradetype} version", "action")])
 		version = check_version_from_executable(version_command[0],
 							substitute_list(version_command[1:], version_substitutions), version_command_regex)
-
 	candidate_version = []
 	if candidate_version_url is not None:
 		iktprint([ANSIThemeString("\n• ", "separator"),
@@ -569,8 +633,8 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str) -> None:
 								  substitute_list(candidate_version_command[1:], version_substitutions),
 								  candidate_version_regex)
 
-	if download_url is not None and command_filename is not None:
-		if version is None or version < candidate_version:
+	if "urls" in deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}")):
+		if (version is None or len(version) == 0) or version is not None and (candidate_version is None or len(candidate_version) == 0) or version < candidate_version:
 			new_version = "".join(candidate_version)
 
 			iktprint([ANSIThemeString("\n• ", "separator"),
@@ -583,9 +647,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str) -> None:
 				"<<<context>>>": context,
 			}
 
-			download_url = substitute_string(download_url, substitutions)
-			download_checksum_url = substitute_string(download_checksum_url, substitutions)
-
+			kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 			if upgradetype == "CNI":
 				mkdir_if_not_exists(DEPLOYMENT_DIR)
 				directory = FilePath(str(PurePath(DEPLOYMENT_DIR).joinpath("cni")))
@@ -594,7 +656,24 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str) -> None:
 				directory = BINDIR
 				permissions = 0o755
 			mkdir_if_not_exists(directory)
-			check_and_print_status(download_files(directory, [(download_url, command_filename, download_checksum_url, download_checksum_type)], permissions = permissions))
+
+			for url in deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#urls"), []):
+				download_url = deep_get(url, DictPath("url"), "")
+				checksum_url = deep_get(url, DictPath("checksum_url"), None)
+				checksum_type = deep_get(url, DictPath("checksum_type"), None)
+				filename = deep_get(url, DictPath("filename"), "")
+
+				download_url = substitute_string(download_url, substitutions)
+				checksum_url = substitute_string(checksum_url, substitutions)
+
+				check_and_print_status(download_files(directory, [(download_url, filename, checksum_url, checksum_type)], permissions = permissions))
+
+				if upgradetype == "CNI":
+					new_path = FilePath(str(PurePath(directory).joinpath(filename)))
+					patch_cni_call = deep_get(url, DictPath("patch"))
+					if patch_cni_call is not None:
+						patch_cni_call(new_path, pod_network_cidr)
+					execute_command_with_response([kubectl_path, "apply", "-f", new_path])
 		else:
 			iktprint([ANSIThemeString("No newer version available.", "default")])
 	elif install_command is not None and version is None:
@@ -639,10 +718,27 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	if len(args) > 0:
 		cni = args[0]
+
+		# If we have a running cluster and we're upgrading by CNI rather than through installation info we need to get the Pod CIDR
+		# by some other means; try this. If fail we give up.
+		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+		pod_network_cidr = kh.get_pod_network_cidr()
+		if pod_network_cidr is None:
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": Could not identify Pod network CIDR; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOTSUP)
 	else:
 		installation_info = get_installation_info()
 		cluster_name = installation_info["installation_target"]
 		cni = installation_info[cluster_name]["cni"]
+		pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
+		if pod_network_cidr is None:
+			pod_network_cidr = kh.get_pod_network_cidr()
+			if pod_network_cidr is None:
+				iktprint([ANSIThemeString("Error", "error"),
+					  ANSIThemeString(": Could not identify Pod network CIDR; aborting.", "default")], stderr = True)
+				sys.exit(errno.ENOTSUP)
 
 		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
@@ -666,8 +762,8 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	iktprint([ANSIThemeString("\n[Upgrading CNI]", "phase")])
 
-	__upgrade_cni(cni, "executable", context_name)
-	__upgrade_cni(cni, "CNI", context_name)
+	__upgrade_cni(cni, "executable", context_name, pod_network_cidr)
+	__upgrade_cni(cni, "CNI", context_name, pod_network_cidr)
 
 	iktprint([ANSIThemeString("\nCNI upgrade successful", "success")])
 
@@ -3627,7 +3723,11 @@ COMMANDLINE = {
 			   ANSIThemeString("]", "separator")],
 		"description": [ANSIThemeString("Upgrade the CNI", "description")],
 		"extended_description": [
-			[ANSIThemeString("Upgrades the CNI (currently only Cilium is supported)", "description")],
+			[ANSIThemeString("Upgrades the CNI (currently only ", "description"),
+			 ANSIThemeString("calico", "argument"),
+			 ANSIThemeString(" and ", "description"),
+			 ANSIThemeString("cilium", "argument"),
+			 ANSIThemeString(" are supported)", "description")],
 		],
 		"min_args": 0,
 		"max_args": 1,

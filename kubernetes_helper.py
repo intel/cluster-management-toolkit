@@ -2145,6 +2145,17 @@ kubernetes_resources: Dict[Any, Any] = {
 }
 
 def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
+	"""
+	Given a kind tuple, return a string representation
+
+		Parameters:
+			kind ((kind, api_family)): The kind tuple
+				kind (str): The kind
+				api_family (str): The API family
+		Returns:
+			name (str): The string representation of kind + API family
+	"""
+
 	name = ""
 
 	if kind in kubernetes_resources:
@@ -2154,6 +2165,15 @@ def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
 	return name
 
 def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: bool = False) -> None:
+	"""
+	Update kubernetes_resources for a kind to indicate whether or not there are list and infoviews for them
+
+		Parameters:
+			kind ((kind, api_family)): The kind tuple
+			listview (bool): Does this kind have a list view
+			infoview (bool): Does this kind have an info view
+	"""
+
 	# There are other kind of views than just Kubernetes APIs; just ignore them
 	if kind not in kubernetes_resources:
 		return
@@ -2197,6 +2217,19 @@ def kubectl_get_version() -> Tuple[int, int, str, int, int, str]:
 	return kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version
 
 def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]], List[Dict]]:
+	"""
+	Given a node dict, extract the node status
+
+		Parameters:
+			node (dict): A dict with node information
+		Returns:
+			(status, status_group, taints, full_taints):
+				status (str): A string representation of the node status
+				status_group (StatusGroup): An enum representation of the node status
+				taints (list[(str, str)]): A list of curated taints in tuple format
+				full_taints (list[dict]): The full list of taints in dict format
+	"""
+
 	status = "Unknown"
 	status_group = StatusGroup.UNKNOWN
 	taints = []
@@ -2299,6 +2332,20 @@ class KubernetesHelper:
 	programversion = ""
 
 	def validate_name(self, rtype: str, name: str) -> bool:
+		"""
+		Given a name validate whether it's valid for the given type
+
+			Parameters:
+				rtype (str): The resource type; valid types are:
+					dns-label
+					dns-subdomain
+					path-segment
+					port-name
+				name (str): The name to check for validity
+			Returns:
+				valid (bool): True if valid, False if invalid
+		"""
+
 		invalid = False
 		tmp = None
 
@@ -2633,6 +2680,21 @@ class KubernetesHelper:
 
 		return True
 
+	def get_pod_network_cidr(self) -> Optional[str]:
+		"""
+		Returns the Pod network CIDR for the cluster
+
+			Returns:
+				pod_network_cidr (str): The Pod network CIDR
+		"""
+
+		nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = make_selector({"node-role.kubernetes.io/control-plane": ""}))
+		if len(nodes) == 0 or status != 200:
+			nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = make_selector({"node-role.kubernetes.io/master": ""}))
+		if len(nodes) == 0:
+			return None
+		return deep_get(nodes[0], DictPath("spec#podCIDR"))
+
 	# CNI detection helpers
 	def __identify_cni(self, cni_name: str, controller_kind: Tuple[str, str], controller_selector: str, container_name: str) -> List[Tuple[str, str, Tuple[str, StatusGroup, str]]]:
 		cni: List[Tuple[str, str, Tuple[str, StatusGroup, str]]] = []
@@ -2695,6 +2757,18 @@ class KubernetesHelper:
 		return cni
 
 	def identify_cni(self) -> List[Tuple[str, str, Tuple[str, StatusGroup, str]]]:
+		"""
+		Attempt to identify what CNI the cluster is using; if there are multiple possible matches all are returned
+
+			Returns:
+				cni (list[(name, version, (status, status_group, reason)])): A list of possible CNI candidates
+					name (str): The CNI name
+					version (str): The version of the CNI
+					status: A string representation of the CNI status
+					status_group (StatusGroup): An enum representation of the CNI status
+					reason (str): The reason for the status, if known
+		"""
+
 		cni: List[Tuple[str, str, Tuple[str, StatusGroup, str]]] = []
 
 		# We're gonna have to do some sleuthing here
@@ -2770,12 +2844,35 @@ class KubernetesHelper:
 		self.context_name = ""
 
 	def is_cluster_reachable(self) -> bool:
+		"""
+		Checks if the cluster is reachable
+
+			Returns:
+				is_reachable (bool): True if cluster is reachable, False if the cluster is unreachable
+		"""
+
 		return self.cluster_unreachable == False
 
 	def get_control_plane_address(self) -> Tuple[str, str]:
+		"""
+		Returns the IP-address and port of the control plane
+
+			Returns:
+				(control_plane_ip, control_plane_port): The IP-address and port of the control plane
+					control_plane_ip (str): An IP-address
+					control_plane_port (str): A port
+		"""
+
 		return self.control_plane_ip, self.control_plane_port
 
 	def get_join_token(self) -> str:
+		"""
+		Returns the cluster join token
+
+			Returns:
+				join_token (str): The cluster join token
+		"""
+
 		join_token = ""
 
 		vlist, _status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
@@ -2809,6 +2906,13 @@ class KubernetesHelper:
 		return join_token
 
 	def get_ca_cert_hash(self) -> str:
+		"""
+		Returns the CA certificate hash
+
+			Returns:
+				ca_cert_hash (str): The CA certificate hash
+		"""
+
 		ca_cert_hash = ""
 
 		vlist, _status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")

@@ -102,10 +102,16 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 
 	if checksum_type == "md5":
 		m = hashlib.md5() # nosec
-		iktprint.iktprint([ANSIThemeString("Warning", "warning"), ANSIThemeString(": Use of MD5 checksums is ", "default"), ANSIThemeString("strongly", "emphasis"), ANSIThemeString(" discouraged", "default")], stderr = True)
+		iktprint.iktprint([ANSIThemeString("Warning", "warning"),
+				   ANSIThemeString(": Use of MD5 checksums is ", "default"),
+				   ANSIThemeString("strongly", "emphasis"),
+				   ANSIThemeString(" discouraged", "default")], stderr = True)
 	elif checksum_type in ("sha", "sha1"):
 		m = hashlib.sha1() # nosec
-		iktprint.iktprint([ANSIThemeString("Warning", "warning"), ANSIThemeString(": Use of SHA1 checksums is ", "default"), ANSIThemeString("strongly", "emphasis"), ANSIThemeString(" discouraged", "default")], stderr = True)
+		iktprint.iktprint([ANSIThemeString("Warning", "warning"),
+				   ANSIThemeString(": Use of SHA1 checksums is ", "default"),
+				   ANSIThemeString("strongly", "emphasis"),
+				   ANSIThemeString(" discouraged", "default")], stderr = True)
 	elif checksum_type == "sha224":
 		m = hashlib.sha224()
 	elif checksum_type == "sha256":
