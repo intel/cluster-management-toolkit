@@ -875,6 +875,14 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api": "externalippools",
 		"namespaced": False,
 	},
+	("ExternalNode", "crd.antrea.io"): {
+		"api_family": ["apis/crd.antrea.io/v1alpha1/"],
+		"api": "externalnodes",
+	},
+	("Group", "crd.antrea.io"): {
+		"api_family": ["apis/crd.antrea.io/v1alpha3/"],
+		"api": "groups",
+	},
 	("IPPool", "crd.antrea.io"): {
 		"api_family": ["apis/crd.antrea.io/v1alpha2/"],
 		"api": "ippools",
@@ -884,6 +892,11 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api_family": ["apis/crd.antrea.io/v1alpha1/"],
 		"api": "networkpolicies",
 	},
+	("SupportBundleCollection", "crd.antrea.io"): {
+		"api_family": ["apis/crd.antrea.io/v1alpha1/"],
+		"api": "supportbundlecollections",
+		"namespaced": False,
+	},
 	("Tier", "crd.antrea.io"): {
 		"api_family": ["apis/crd.antrea.io/v1alpha1/"],
 		"api": "tiers",
@@ -892,6 +905,11 @@ kubernetes_resources: Dict[Any, Any] = {
 	("Traceflow", "crd.antrea.io"): {
 		"api_family": ["apis/crd.antrea.io/v1alpha1/"],
 		"api": "traceflows",
+		"namespaced": False,
+	},
+	("TrafficControl", "crd.antrea.io"): {
+		"api_family": ["apis/crd.antrea.io/v1alpha2/"],
+		"api": "trafficcontrols",
 		"namespaced": False,
 	},
 	# crd.projectcalico.org
