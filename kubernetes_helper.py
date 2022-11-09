@@ -2952,7 +2952,7 @@ class KubernetesHelper:
 		Is this kind namespaced?
 
 			Parameters:
-				kind ((str, str)): The kind
+				kind ((str, str)): A (kind, api_family) tuple
 			Returns:
 				is_namespaced (bool): True if namespaced, False if not
 		"""
@@ -2974,6 +2974,15 @@ class KubernetesHelper:
 		return kind, api_group
 
 	def get_latest_api(self, kind: Tuple[str, str]) -> str:
+		"""
+		Given a Kubernetes API as (kind, api_family), returns the latest API-version
+
+			Parameters:
+				kind ((str, str)): A (kind, api_family) tuple
+			Returns:
+				latest_api (str): The latest API-version
+		"""
+
 		if kind not in kubernetes_resources:
 			raise Exception(f"Could not determine latest API; kind {kind} not found in kubernetes_resources")
 
@@ -2986,9 +2995,23 @@ class KubernetesHelper:
 			latest_api = latest_api[:-len("/")]
 		return latest_api
 
-	# In cases where we get a kind that doesn't include the API group
-	# (such as from owner references), we have to guess
 	def guess_kind(self, kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
+		"""
+		Given a Kind without API-family, or (API-name, API-family)
+		return the (Kind, API-family) tuple
+
+			Parameters:
+				kind (str):
+					kind (str): The Kubernetes kind
+				kind ((str, str)):
+					kind (str): The API-name
+					api_family (str): The API-family
+			Returns:
+				kind (kind, api_family):
+					kind (str): The Kubernetes kind
+					api_family (str): The API-family
+		"""
+
 		# If we already have a tuple, don't guess
 		if isinstance(kind, tuple):
 			if kind in kubernetes_resources:
@@ -3482,6 +3505,17 @@ class KubernetesHelper:
 		return None, status
 
 	def create_namespace(self, name: str) -> Tuple[str, int]:
+		"""
+		Create a new namespace
+
+			Parameters:
+				name (str): The name of the new namespace
+			Returns:
+				(message, status):
+					message (str): The status message, if any
+					status (int): The HTTP response
+		"""
+
 		kind = ("Namespace", "")
 
 		if name is None or len(name) == 0:
@@ -3640,7 +3674,16 @@ a				the return value from __rest_helper_patch
 
 		return self.__rest_helper_delete(kind, name, namespace, query_params = query_params)
 
-	def get_metrics(self) -> Tuple[List, int]:
+	def get_metrics(self) -> Tuple[List[str], int]:
+		"""
+		Get cluster metrics
+
+			Returns:
+				(metrics, status):
+					metrics (list[str]): The metrics
+					status (int): The HTTP response
+		"""
+
 		if self.cluster_unreachable == True:
 			return [], 42503
 
@@ -3661,14 +3704,54 @@ a				the return value from __rest_helper_patch
 		return msg, status
 
 	def get_list_by_kind_namespace(self, kind, namespace: str, label_selector: str = "", field_selector: str = ""):
-		return self.__rest_helper_get(kind, "", namespace, label_selector, field_selector)
+		"""
+		Given kind, namespace and optionally label and/or field selectors, return all matching resources
+
+			Parameters:
+				kind (str, str): A kind, API-family tuple
+				namespace (str): The namespace of the resource (empty if the resource isn't namespaced)
+				label_selector (str): A label selector
+				label_selector (str): A field selector
+			Returns:
+				(objects, status):
+					objects (list[dict]): A list of object dicts
+					status (int): The HTTP response
+		"""
+
+		d, status = self.__rest_helper_get(kind, "", namespace, label_selector, field_selector)
+		d = cast(List[Optional[Dict]], d)
+		return d, status
 
 	def get_ref_by_kind_name_namespace(self, kind, name: str, namespace: str) -> Dict:
+		"""
+		Given kind, name, namespace return a resource
+
+			Parameters:
+				kind (str, str): A kind, API-family tuple
+				name (str): The name of the resource
+				namespace (str): The namespace of the resource (empty if the resource isn't namespaced)
+			Returns:
+				object (dict): An object dict
+		"""
 		ref, _status = self.__rest_helper_get(kind, name, namespace, "", "")
-		ref = cast(dict, ref)
+		ref = cast(Dict, ref)
 		return ref
 
 	def read_namespaced_pod_log(self, name: str, namespace: str, container: Optional[str] = None, tail_lines: int = 0) -> Tuple[str, int]:
+		"""
+		Read a pod log
+
+			Parameters:
+				name (str): The name of the pod
+				namespace (str): The namespace of the pod
+				container (str): The name of the container
+				tail_lines (int): The amount of lines to return (0 returns all)
+			Returns:
+				(msg, status):
+					msg (str): A string with all log messages
+					status (int): The HTTP response
+		"""
+
 		query_params: List[Optional[Tuple[str, Any]]] = []
 		if container is not None:
 			query_params.append(("container", container))
@@ -3696,11 +3779,41 @@ a				the return value from __rest_helper_patch
 	# Namespace must be the namespace of the resource; the owner reference itself lacks namespace
 	# since owners have to reside in the same namespace as their owned resources
 	def get_ref_from_owr(self, owr: Dict, namespace: str) -> Dict:
+		"""
+		Given an Owner Reference (OWR), returns resource of the owner
+
+			Parameters:
+				owr (dict): A reference to the owner of the resource
+				namespace (str): The namespace of the resource
+			Returns:
+				object (dict): An object dict
+		"""
+
 		ref, _status = self.__rest_helper_get(deep_get(owr, DictPath("kind")), deep_get(owr, DictPath("name")), namespace)
 		ref = cast(dict, ref)
 		return ref
 
 	def get_events_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str) -> List[Tuple[str, str, str, str, str, str, str, int, str]]:
+		"""
+		Given kind, name, and namespace, returns all matching events
+
+			Parameters:
+				kind ((str, str)): A (kind, api_family) tuple
+				name (str): The name of the resource
+				namespace (str): The namespace of the resource
+			Returns:
+				events (list[(ev_namespace, ev_name, last_seen, status, reason, source, first_seen, count, message)]):
+					ev_namespace (str): The namespace of the event
+					ev_name (str): The name of the event
+					last_seen (str): A string representation of the last seen datetime
+					status (str): The event status
+					reason (str): The reason for the event
+					source (str): The source of the event
+					first_seen (str): A string representation of the first seen datetime
+					count (int): The number of times this event has been emitted
+					str (message): A free-form explanation of the event
+		"""
+
 		events = []
 		vlist, status = self.get_list_by_kind_namespace(("Event", "events.k8s.io"), "")
 		for obj in vlist:
