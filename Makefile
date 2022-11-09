@@ -33,3 +33,10 @@ validate_yaml:
 
 validate_playbooks:
 	ansible-lint playbooks/*.yaml || /bin/true
+
+parser_bundle:
+	rm -f parsers/BUNDLE.yaml; \
+	for file in parsers/*.yaml; do \
+		printf -- "---\n" >> parsers/BUNDLE.yaml; \
+		cat $$file >> parsers/BUNDLE.yaml; \
+	done

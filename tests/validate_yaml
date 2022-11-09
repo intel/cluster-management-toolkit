@@ -83,6 +83,11 @@ def validate_file(yaml_path, schema_path, verbose = 0, abort_on_fail = False):
 			print(f"\n{yaml_path} does not end in .yaml or .yml; skipping.\n")
 		return -1
 
+	if yaml_path.endswith("BUNDLE.yaml"):
+		if verbose > 1:
+			print(f"\n{yaml_path} is a bundle; skipping.\n")
+		return -1
+
 	if not os.path.isfile(yaml_path):
 		if verbose > 1:
 			print(f"\n{yaml_path} is not a file; skipping.\n")
