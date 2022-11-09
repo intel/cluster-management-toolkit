@@ -45,7 +45,7 @@ class FilePathAuditError(Exception):
 			message: Additional information about the error
 	"""
 
-	def __init__(self, message: str, path: FilePath = None) -> None:
+	def __init__(self, message: str, path: Optional[FilePath] = None) -> None:
 		self.path = path
 		self.message = message
 		super().__init__(message)

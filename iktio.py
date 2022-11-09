@@ -14,7 +14,7 @@ import re
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from ikttypes import ANSIThemeString, FilePath, HostNameStatus, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from iktpaths import HOMEDIR
@@ -860,7 +860,7 @@ def replace_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on
 	dst_path.symlink_to(src_path)
 
 # This executes a command without capturing the output
-def execute_command(args: List[Union[FilePath, str]], env: Dict = None, comparison: int = 0) -> bool:
+def execute_command(args: List[Union[FilePath, str]], env: Optional[Dict] = None, comparison: int = 0) -> bool:
 	"""
 	Executes a command
 

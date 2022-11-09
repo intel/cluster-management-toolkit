@@ -172,7 +172,7 @@ def ansible_get_inventory_dict() -> Dict:
 	return d
 
 # pylint: disable-next=line-too-long
-def ansible_get_inventory_pretty(groups: List[str] = None, highlight: bool = False, include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True) -> List[List[ANSIThemeString]]:
+def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: bool = False, include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True) -> List[List[ANSIThemeString]]:
 	"""
         Get the iKT inventory and return it neatly formatted
 
@@ -1195,7 +1195,7 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 				if unreachable == True:
 					break
 
-def ansible_run_playbook(playbook: FilePath, inventory: Dict = None) -> Tuple[int, Dict]:
+def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None) -> Tuple[int, Dict]:
 	"""
 	Run a playbook
 
@@ -1253,7 +1253,7 @@ def ansible_run_playbook_async(playbook: FilePath, inventory: Dict) -> ansible_r
 
 	return runner
 
-def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], values: Dict = None) -> Tuple[int, Dict]:
+def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], values: Optional[Dict] = None) -> Tuple[int, Dict]:
 	"""
 	Run a playbook on selected nodes
 
@@ -1301,7 +1301,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 
 	return ansible_run_playbook(playbook, d)
 
-def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[str], values: Dict = None) -> ansible_runner.runner.Runner:
+def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[str], values: Optional[Dict] = None) -> ansible_runner.runner.Runner:
 	"""
 	Run a playbook on selected nodes
 

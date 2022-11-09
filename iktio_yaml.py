@@ -5,14 +5,14 @@
 YAML I/O helpers for Intel Kubernetes Toolkit
 """
 
-from typing import  Dict, Iterator
+from typing import Dict, Iterator, Optional
 import yaml
 
 import iktio
 from ikttypes import FilePath
 
 # pylint: disable-next=too-many-arguments
-def secure_write_yaml(path: FilePath, data, permissions: int = None, replace_empty = False, replace_null = False, sort_keys = True) -> None:
+def secure_write_yaml(path: FilePath, data, permissions: Optional[int] = None, replace_empty = False, replace_null = False, sort_keys = True) -> None:
 	"""
 	Dump a dict to a file in YAML-format in a safe manner
 
