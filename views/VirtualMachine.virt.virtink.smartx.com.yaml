@@ -1,0 +1,22 @@
+kind: "VirtualMachine"
+api_family: "virt.virtink.smartx.com"
+default_command: "virtualmachines"
+command:
+- "vivms"
+- "vivm"
+listview:
+  name: "Virtual Machines (Virtink)"
+  group: "Virtualization"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "phase", "node_name", "age"]
+      sortcolumn: "phase"
+  fields:
+    node_name:
+      header: "Node:"
+      path: "status#nodeName"
+      type: "str"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"

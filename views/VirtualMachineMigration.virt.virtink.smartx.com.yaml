@@ -1,0 +1,30 @@
+kind: "VirtualMachineMigration"
+api_family: "virt.virtink.smartx.com"
+default_command: "virtualmachinemigrations"
+command:
+- "vivmms"
+- "vivmm"
+listview:
+  name: "Virtual Machine Migrations (Virtink)"
+  group: "Virtualization"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "phase", "vmname", "source_node_name", "target_node_name", "age"]
+      sortcolumn: "phase"
+  fields:
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+    source_node_name:
+      header: "Source:"
+      path: "status#sourceNodeName"
+      type: "str"
+    target_node_name:
+      header: "Source:"
+      path: "status#targetNodeName"
+      type: "str"
+    vmname:
+      header: "VM:"
+      path: "status#vmName"
+      type: "str"

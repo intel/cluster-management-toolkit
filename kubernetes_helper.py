@@ -2140,6 +2140,15 @@ kubernetes_resources: Dict[Any, Any] = {
 	#	"api": "useridentitymappings",
 	#	"namespaced": False,
 	#},
+	# virt.virtink.smartx.com
+	("VirtualMachine", "virt.virtink.smartx.com"): {
+		"api_family": ["apis/virt.virtink.smartx.com/v1alpha1/"],
+		"api": "virtualmachines",
+	},
+	("VirtualMachineMigration", "virt.virtink.smartx.com"): {
+		"api_family": ["apis/virt.virtink.smartx.com/v1alpha1/"],
+		"api": "virtualmachinemigrations",
+	},
 	# webconsole.openshift.io
 	("OpenShiftWebConsoleConfig", "webconsole.openshift.io"): {
 		"api_family": ["apis/webconsole.openshift.io/v1/"],
