@@ -302,6 +302,13 @@ def install(options, args) -> None:
 	copy_files(files = CONFIGURATION_FILES, verbose = verbose)
 	create_symlinks(symlinks = MISC_SYMLINKS + EXECUTABLE_SYMLINKS, verbose = verbose)
 
+	iktprint([ANSIThemeString("\nNote", "note"),
+		  ANSIThemeString(": if ", "default"),
+		  ANSIThemeString(f"{BINDIR}", "path"),
+		  ANSIThemeString(" did not exist before installation it it most likely not in ", "default"),
+		  ANSIThemeString("$PATH", "argument"),
+		  ANSIThemeString("; if so you need to logout and login again or spawn a new shell/terminal.", "default")])
+
 COMMANDLINE = {
 	# Default command
 	"__global_options": {
