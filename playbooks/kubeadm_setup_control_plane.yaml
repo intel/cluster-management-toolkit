@@ -15,7 +15,7 @@
   tasks:
   - name: "Checking if cluster is already running"  # noqa fqcn-builtins
     shell: |
-      lsof -i -P -n | grep 6443.*LISTEN > /dev/null || /bin/true
+      lsof -i -P -n | grep 6443.*LISTEN > /dev/null
     register: "port_check"
     failed_when: false
     changed_when: false
