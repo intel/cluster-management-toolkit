@@ -43,6 +43,8 @@ def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool =
 		Returns:
 			yaml_data (yaml): The read YAML-data
 		Raises:
+			yaml.composer.ComposerError
+			yaml.parser.ParserError
 			FileNotFoundError
 			ikttypes.FilePathAuditError
 	"""
@@ -53,12 +55,15 @@ def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool =
 def secure_read_yaml_all(path: FilePath, checks = None, directory_is_symlink: bool = False) -> Iterator[Dict]:
 	"""
 	Read all dicts in YAML-format from a file in a safe manner
+	Note: since the return type from safe_load_all() is an iterator evaluation doesn't happen until
+	      iterating; this means that exceptions must be handled when iterating rather than when getting
+	      the return value
 
 		Parameters:
 			path (FilePath): The path to read from
 			directory_is_symlink (bool): The directory that the path points to is a symlink
 		Returns:
-			dicts (list[dict]): A list of dicts
+			iterator[dict]: An iterator of dicts
 		Raises:
 			FileNotFoundError
 			ikttypes.FilePathAuditError

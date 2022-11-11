@@ -87,8 +87,8 @@ class SecurityStatus(IntEnum):
 
 	OK = auto()
 	# Critical
-	WORLD_WRITABLE = auto()
-	PARENT_WORLD_WRITABLE = auto()
+	PERMISSIONS = auto()
+	PARENT_PERMISSIONS = auto()
 	OWNER_NOT_IN_ALLOWLIST = auto()
 	PARENT_OWNER_NOT_IN_ALLOWLIST = auto()
 	PATH_NOT_RESOLVING_TO_SELF = auto()
@@ -99,6 +99,7 @@ class SecurityStatus(IntEnum):
 	IS_NOT_FILE = auto()
 	IS_NOT_DIR = auto()
 	IS_NOT_SYMLINK = auto()
+	IS_EXECUTABLE = auto()
 	IS_NOT_EXECUTABLE = auto()
 	PARENT_IS_NOT_DIR = auto()
 
@@ -109,8 +110,6 @@ class SecurityChecks(Enum):
 
 	PARENT_RESOLVES_TO_SELF = auto()
 	RESOLVES_TO_SELF = auto()
-	WORLD_WRITABLE = auto()
-	PARENT_WORLD_WRITABLE = auto()
 	OWNER_IN_ALLOWLIST = auto()
 	PARENT_OWNER_IN_ALLOWLIST = auto()
 	PERMISSIONS = auto()

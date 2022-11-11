@@ -232,7 +232,7 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 
 	parent_path_stat = parent_entry.stat()
 	parent_path_permissions = parent_path_stat.st_mode & 0o002
-	if SecurityChecks.PARENT_WORLD_WRITABLE in checks and parent_path_permissions != 0:
+	if SecurityChecks.PARENT_PERMISSIONS in checks and parent_path_permissions != 0:
 		if message_on_error == True:
 			msg = [ANSIThemeString("Critical", "critical"),
 			       ANSIThemeString(": The parent of the target path ", "default"),
@@ -243,7 +243,7 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 				iktprint.iktprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
 			iktprint.iktprint(msg, stderr = True)
-		violations.append(SecurityStatus.PARENT_WORLD_WRITABLE)
+		violations.append(SecurityStatus.PARENT_PERMISSIONS)
 
 	parent_entry_resolved = parent_entry.resolve()
 	parent_entry_systemdir = False
@@ -313,7 +313,7 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 				iktprint.iktprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
 			iktprint.iktprint(msg, stderr = True)
-		violations.append(SecurityStatus.WORLD_WRITABLE)
+		violations.append(SecurityStatus.PERMISSIONS)
 
 	if SecurityChecks.IS_SYMLINK in checks and not path_entry.is_symlink():
 		if message_on_error == True:
@@ -340,6 +340,14 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			       ANSIThemeString(" exists but is not a directory; this is either a configuration error or a security issue", "default")]
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_NOT_DIR)
+
+	if SecurityChecks.IS_EXECUTABLE not in checks and os.access(path, os.X_OK) and not path_entry.is_dir():
+		if message_on_error == True:
+			msg = [ANSIThemeString("Warning", "warning"), ANSIThemeString(": The target path ", "default"),
+			       ANSIThemeString(f"{path}", "path"),
+			       ANSIThemeString(" is executable but shouldn't be; skipping", "default")]
+			iktprint.iktprint(msg, stderr = True)
+		violations.append(SecurityStatus.IS_EXECUTABLE)
 
 	if SecurityChecks.IS_EXECUTABLE in checks and not os.access(path, os.X_OK):
 		if message_on_error == True:

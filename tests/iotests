@@ -1,0 +1,530 @@
+#! /usr/bin/env python3
+"""
+A checker that validates iktio, iktio_yaml, and networkio
+
+Usage: ./tests/iotests
+"""
+
+from types import GeneratorType
+from typing import Dict
+import yaml
+
+from iktio import check_path, secure_read_string, secure_which
+from iktio_yaml import secure_read_yaml, secure_read_yaml_all
+from iktpaths import HOMEDIR
+from ikttypes import deep_get, DictPath, FilePath, SecurityChecks, SecurityPolicy, SecurityStatus
+
+def test_check_path(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio.check_path() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	checks = deep_get(checkdata, DictPath("checks"), None)
+	expect = deep_get(checkdata, DictPath("expect"))
+	result = check_path(path, checks = checks, exit_on_critical = False, message_on_error = False)
+	if result != expect:
+		print(f"FAIL: Testcase: {testcase} (path: {path}); expected {expect}, got {result}")
+		return 1
+	print(f"PASS: Testcase: {testcase}")
+	return 0
+
+def test_secure_read_string(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio.secure_read_string() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	result = False
+
+	try:
+		string = secure_read_string(path)
+		if expect == "string":
+			if isinstance(string, str):
+				result = True
+	except Exception as e: # pylint: disable=broad-except
+		if type(e) == expect: # pylint: disable=unidiomatic-typecheck
+			result = True
+		else:
+			string = f"{type(e)}"
+
+	if result == False:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {string}")
+		return 1
+	print(f"PASS: Testcase: {testcase}")
+	return 0
+
+def test_secure_read_yaml(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio.secure_read_yaml() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	result = False
+	string = ""
+
+	try:
+		d = secure_read_yaml(path)
+
+		if expect == "dict" and isinstance(d, dict):
+			result = True
+	except Exception as e: # pylint: disable=broad-except
+		if type(e) == expect: # pylint: disable=unidiomatic-typecheck
+			result = True
+		else:
+			string = f"{type(e)}"
+
+	if result == False:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {string}")
+		return 1
+	print(f"PASS: Testcase: {testcase}")
+	return 0
+
+def test_secure_read_yaml_all(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio.secure_read_yaml_all() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	result = False
+	string = ""
+
+	try:
+		ld = secure_read_yaml_all(path)
+		if expect == "generator" and isinstance(ld, GeneratorType):
+			result = True
+	except Exception as e: # pylint: disable=broad-except
+		if type(e) == expect: # pylint: disable=unidiomatic-typecheck
+			result = True
+		else:
+			string = f"{type(e)}"
+
+	if result == False:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {string}")
+		return 1
+	print(f"PASS: Testcase: {testcase}")
+	return 0
+
+def test_secure_which(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio.secure_which() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	expect = deep_get(checkdata, DictPath("expect"))
+	fallback_allowlist = deep_get(checkdata, DictPath("fallback_allowlist"))
+	security_policy = deep_get(checkdata, DictPath("security_policy"))
+
+	result = False
+
+	try:
+		string = str(secure_which(path, fallback_allowlist = fallback_allowlist, security_policy = security_policy))
+		if expect == "string" and isinstance(string, str):
+			result = True
+	except Exception as e: # pylint: disable=broad-except
+		if type(e) == expect: # pylint: disable=unidiomatic-typecheck
+			result = True
+		else:
+			string = f"{type(e)}"
+
+	if result == False:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {string}")
+		return 1
+	print(f"PASS: Testcase: {testcase}")
+	return 0
+
+testcases = {
+	"01: File permissions": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/01-wrong_permissions"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"expect": [SecurityStatus.PERMISSIONS],
+	},
+	"02: File path resolution": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/02-symlink"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"expect": [SecurityStatus.PATH_NOT_RESOLVING_TO_SELF],
+	},
+	"03: Directory permissions": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/03-wrong_dir_permissions"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_DIR,
+		],
+		"expect": [SecurityStatus.PERMISSIONS],
+	},
+	"04: Directory path resolution and destination permissions": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/04-dir_symlink"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_DIR,
+		],
+		"expect": [SecurityStatus.PATH_NOT_RESOLVING_TO_SELF, SecurityStatus.PERMISSIONS],
+	},
+	"05: Wrong type (Expected file)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/13-correct_directory"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"expect": [SecurityStatus.IS_NOT_FILE],
+	},
+	"06: Correct type (Expected file)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/05-not_executable.sh"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"expect": [],
+	},
+	"07: Wrong type (Expected directory)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/05-not_executable.sh"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_DIR,
+		],
+		"expect": [SecurityStatus.IS_NOT_DIR],
+	},
+	"08: Correct type (Expected directory)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/13-correct_directory"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_DIR,
+		],
+		"expect": [],
+	},
+	"09: Wrong type (Expected symlink)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/08-not_utf8.txt"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_SYMLINK,
+		],
+		"expect": [SecurityStatus.IS_NOT_SYMLINK],
+	},
+	"10: Correct type (Expected symlink)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/02-symlink"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_SYMLINK,
+		],
+		"expect": [],
+	},
+	"11: Not executable (should be)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/05-not_executable.sh"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+			SecurityChecks.IS_EXECUTABLE,
+		],
+		"expect": [SecurityStatus.IS_NOT_EXECUTABLE],
+	},
+	"12: Executable (shouldn't be)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/06-executable.sh"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"expect": [SecurityStatus.IS_EXECUTABLE],
+	},
+	"13: Dangling symlink": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/07-dangling_symlink"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+		],
+		"expect": [SecurityStatus.DOES_NOT_EXIST],
+	},
+	"14: Non-existing path": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/this path does not exist/not this either"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"expect": [SecurityStatus.PARENT_DOES_NOT_EXIST],
+	},
+	"15: Parent has incorrect permissions": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/03-wrong_dir_permissions/14-correct_file_in_wrong_permission_directory"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"expect": [SecurityStatus.PARENT_PERMISSIONS],
+	},
+	"16: Parent directory is symlink": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"expect": [SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF],
+	},
+	"17: Valid path": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/13-correct_directory/16-correct_file_in_correct_permission_directory"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"expect": [],
+	},
+	"18: Valid UTF-8": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/11-valid_yaml_but_single.yaml"),
+		"test": test_secure_read_string,
+		"expect": "string"
+	},
+	"19: Invalid UTF-8": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/08-not_utf8.txt"),
+		"test": test_secure_read_string,
+		"expect": UnicodeDecodeError,
+	},
+	"20: Invalid single YAML (secure_read_yaml)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/09-this_is_not_valid.yaml"),
+		"test": test_secure_read_yaml,
+		"expect": yaml.parser.ParserError,
+	},
+	"21: Valid single YAML (secure_read_yaml)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/11-valid_yaml_but_single.yaml"),
+		"test": test_secure_read_yaml,
+		"expect": "dict",
+	},
+	"22: Valid multi YAML (secure_read_yaml)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/10-valid_yaml_for_load_all.yaml"),
+		"test": test_secure_read_yaml,
+		"expect": yaml.composer.ComposerError,
+	},
+	"23: Valid multi YAML (secure_read_yaml_all)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/10-valid_yaml_for_load_all.yaml"),
+		"test": test_secure_read_yaml_all,
+		"expect": "generator",
+	},
+	# Note: yaml.safe_load_all() yields a generator; this means that the data is validated when iterated over,
+	#       NOT when loaded
+	"24: Invalid YAML (secure_read_yaml_all)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/12-valid_yaml_followed_by_invalid_yaml.yaml"),
+		"test": test_secure_read_yaml_all,
+		"expect": "generator",
+	},
+	"25: Valid single YAML (secure_read_yaml_all)": {
+		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/11-valid_yaml_but_single.yaml"),
+		"test": test_secure_read_yaml_all,
+		"expect": "generator",
+	},
+	"26: /bin/ssh [fallback=[], STRICT] (secure_which)": {
+		"path": FilePath("/bin/ssh"),
+		"test": test_secure_which,
+		"fallback_allowlist": [],
+		"security_policy": SecurityPolicy.STRICT,
+		"expect": "string",
+	},
+	"27: /usr/local/bin/ssh [fallback=[], STRICT] (secure_which)": {
+		"path": FilePath("/usr/local/bin/ssh"),
+		"test": test_secure_which,
+		"fallback_allowlist": [],
+		"security_policy": SecurityPolicy.STRICT,
+		"expect": FileNotFoundError,
+	},
+	"28: /usr/local/bin/ssh [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\"], ALLOWLIST_STRICT] (secure_which)": {
+		"path": FilePath("/usr/local/bin/ssh"),
+		"test": test_secure_which,
+		"fallback_allowlist": ["/bin", "/sbin", "/usr/bin", "/usr/sbin"],
+		"security_policy": SecurityPolicy.ALLOWLIST_STRICT,
+		"expect": "string",
+	},
+	"29: /usr/local/bin/ssh [fallback=[\"testpaths/ssh\"], ALLOWLIST_RELAXED] (secure_which)": {
+		"path": FilePath("/usr/local/bin/ssh"),
+		"test": test_secure_which,
+		"fallback_allowlist": [f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/ssh"],
+		"security_policy": SecurityPolicy.ALLOWLIST_RELAXED,
+		"expect": FileNotFoundError,
+	},
+	"30: /usr/local/bin/ssh [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\", \"testpaths/ssh\"], ALLOWLIST_RELAXED] (secure_which)": {
+		"path": FilePath("/usr/local/bin/ssh"),
+		"test": test_secure_which,
+		"fallback_allowlist": ["/bin", "/sbin", "/usr/bin", "/usr/sbin", f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/ssh"],
+		"security_policy": SecurityPolicy.ALLOWLIST_RELAXED,
+		"expect": "string",
+	},
+	# TODO:
+	# * iktio.secure_rm
+	# * iktio.secure_rmdir
+	# * iktio.secure_write_string
+	# * iktio.mkdir_if_not_exists
+	# * iktio.copy_if_not_exists
+	# * iktio.replace_symlink
+	# * iktio_yaml.secure_write_yaml
+	# * networkio.verify_checksum
+}
+
+def main() -> int:
+	"""
+	Main function for the program
+
+		Returns:
+			retval (int): number of failed tests
+	"""
+
+	fail = 0
+
+	for testcase, testcase_data in testcases.items():
+		test = deep_get(testcase_data, DictPath("test"))
+		fail += test(testcase, testcase_data)
+
+	return fail
+
+if __name__ == "__main__":
+	main()
