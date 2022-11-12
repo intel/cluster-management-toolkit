@@ -19,7 +19,7 @@ from iktpaths import HOMEDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from iktpaths import ANSIBLE_INVENTORY
 from iktprint import iktprint
-from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus
 
 ansible_results: Dict = {}
 
@@ -123,7 +123,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 		]
 
 		violations = check_path(playbook_dir, checks = checks)
-		if len(violations) > 0:
+		if violations != [SecurityStatus.OK]:
 			violation_strings = []
 			for violation in violations:
 				violation_strings.append(str(violation))

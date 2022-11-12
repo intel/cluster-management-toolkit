@@ -285,6 +285,8 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 	if not path_entry.exists():
 		if SecurityChecks.EXISTS in checks:
 			violations.append(SecurityStatus.DOES_NOT_EXIST)
+		if len(violations) == 0:
+			violations = [SecurityStatus.OK]
 		return violations
 
 	if SecurityChecks.OWNER_IN_ALLOWLIST in checks and path_entry.owner() not in owner_allowlist:
@@ -357,6 +359,9 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_NOT_EXECUTABLE)
 
+	if len(violations) == 0:
+		violations = [SecurityStatus.OK]
+
 	return violations
 
 def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
@@ -385,14 +390,14 @@ def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
 
 	ignoring_non_existing = False
 
-	if ignore_non_existing:
+	if ignore_non_existing == True:
 		try:
-			violations.pop(SecurityStatus.DOES_NOT_EXIST)
+			violations.remove(SecurityStatus.DOES_NOT_EXIST)
 			ignoring_non_existing = True
-		except IndexError:
+		except ValueError:
 			pass
 
-	if len(violations) > 0:
+	if violations != [SecurityStatus.OK]:
 		violation_strings = []
 		for violation in violations:
 			violation_strings.append(str(violation))
@@ -429,14 +434,14 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 
 	ignoring_non_existing = False
 
-	if ignore_non_existing:
+	if ignore_non_existing == True:
 		try:
-			violations.pop(SecurityStatus.DOES_NOT_EXIST)
+			violations.remove(SecurityStatus.DOES_NOT_EXIST)
 			ignoring_non_existing = True
-		except IndexError:
+		except ValueError:
 			pass
 
-	if len(violations) > 0:
+	if violations != [SecurityStatus.OK]:
 		violation_strings = []
 		for violation in violations:
 			violation_strings.append(str(violation))
@@ -444,7 +449,19 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
 
 	if ignoring_non_existing == False:
-		Path(path).rmdir()
+		violations = []
+		try:
+			Path(path).rmdir()
+		except OSError as e:
+			if "[Errno 39] Directory not empty" in str(e):
+				violations.append(SecurityStatus.DIR_NOT_EMPTY)
+				violation_strings = []
+				for violation in violations:
+					violation_strings.append(str(violation))
+				violations_joined = ",".join(violation_strings)
+				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
+			else:
+				raise OSError from e
 
 def secure_write_string(path: FilePath, string: str, permissions = None, write_mode = "w") -> None:
 	"""
@@ -474,7 +491,7 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 
 	violations = check_path(path, checks = checks)
 
-	if len(violations) > 0:
+	if violations != [SecurityStatus.OK]:
 		violation_strings = []
 		for violation in violations:
 			violation_strings.append(str(violation))
@@ -483,12 +500,16 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 
 	# We have no default recourse if this write fails, so if the caller can handle the failure
 	# they have to capture the exception
-	if permissions is None:
-		with open(path, write_mode, encoding = "utf-8") as f:
-			f.write(string)
-	else:
-		with open(path, write_mode, opener = partial(os.open, mode = permissions), encoding = "utf-8") as f:
-			f.write(string)
+	try:
+		if permissions is None:
+			with open(path, write_mode, encoding = "utf-8") as f:
+				f.write(string)
+		else:
+			with open(path, write_mode, opener = partial(os.open, mode = permissions), encoding = "utf-8") as f:
+				f.write(string)
+	except FileExistsError:
+		if write_mode in ("x", "xb"):
+			raise FilePathAuditError("Violated rules: SecurityStatus.EXISTS", path = path)
 
 def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool = False) -> str:
 	"""
@@ -520,7 +541,7 @@ def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool
 			]
 
 			violations = check_path(parent_dir, checks = checks)
-			if len(violations) > 0:
+			if violations != [SecurityStatus.OK]:
 				violation_strings = []
 				for violation in violations:
 					violation_strings.append(str(violation))
@@ -553,7 +574,7 @@ def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool
 
 	violations = check_path(path, checks = checks)
 
-	if len(violations) > 0:
+	if violations != [SecurityStatus.OK]:
 		violation_strings = []
 		for violation in violations:
 			violation_strings.append(str(violation))
@@ -617,7 +638,7 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 
 	# If we're using SecurityPolicy.STRICT we fail if we don't find a match here
 	if security_policy == SecurityPolicy.STRICT:
-		if len(violations) == 0:
+		if violations == [SecurityStatus.OK]:
 			return path
 
 		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}")
@@ -658,7 +679,7 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 						SecurityChecks.IS_EXECUTABLE,
 					])
 
-		if len(violations) > 0:
+		if violations != [SecurityStatus.OK]:
 			if security_policy == SecurityPolicy.ALLOWLIST_STRICT:
 				continue
 
@@ -681,7 +702,7 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 
 	raise FileNotFoundError(f"secure_which() could not find an acceptable match for {name}")
 
-def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: bool = False, exit_on_failure: bool = False) -> None:
+def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: bool = False, exit_on_failure: bool = False) -> List[SecurityStatus]:
 	"""
 	Create a directory if it doesn't already exist
 		Parameters:
@@ -713,17 +734,26 @@ def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: 
 				exit_on_critical = exit_on_failure)
 
 	if SecurityStatus.PARENT_DOES_NOT_EXIST in violations:
+		if exit_on_failure == False:
+			return violations
 		sys.exit(errno.ENOENT)
 
 	if SecurityStatus.PARENT_IS_NOT_DIR in violations:
+		if exit_on_failure == False:
+			return violations
 		sys.exit(errno.EINVAL)
 
 	if SecurityStatus.DOES_NOT_EXIST not in violations and SecurityStatus.IS_NOT_DIR in violations:
+		if exit_on_failure == False:
+			return violations
 		sys.exit(errno.EEXIST)
 
 	# These are the only acceptable conditions where we'd try to create the directory
-	if len(violations) == 0 or violations == [SecurityStatus.DOES_NOT_EXIST]:
+	if violations == [SecurityStatus.OK] or violations == [SecurityStatus.DOES_NOT_EXIST]:
+		violations = []
 		Path(directory).mkdir(mode = permissions, exist_ok = True)
+	
+	return violations
 
 def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False, permissions = None) -> None:
 	"""

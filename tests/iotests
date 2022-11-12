@@ -5,14 +5,18 @@ A checker that validates iktio, iktio_yaml, and networkio
 Usage: ./tests/iotests
 """
 
+from pathlib import Path
+import re
 from types import GeneratorType
 from typing import Dict
 import yaml
 
-from iktio import check_path, secure_read_string, secure_which
-from iktio_yaml import secure_read_yaml, secure_read_yaml_all
+from iktio import check_path, copy_if_not_exists, mkdir_if_not_exists, secure_read_string, secure_rm, secure_rmdir, secure_which, secure_write_string
+from iktio_yaml import secure_read_yaml, secure_read_yaml_all, secure_write_yaml
 from iktpaths import HOMEDIR
-from ikttypes import deep_get, DictPath, FilePath, SecurityChecks, SecurityPolicy, SecurityStatus
+from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
+
+TEST_DIR = FilePath(str(Path.cwd().joinpath("testpaths")))
 
 def test_check_path(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -169,9 +173,245 @@ def test_secure_which(testcase: str, checkdata: Dict) -> int:
 	print(f"PASS: Testcase: {testcase}")
 	return 0
 
+def test_secure_rm(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio.secure_rm() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	ignore_non_existing = expect is None
+
+	try:
+		secure_rm(path, ignore_non_existing = ignore_non_existing)
+		fail = expect
+	except FileNotFoundError:
+		fail = True
+	except FilePathAuditError as e:
+		tmp = re.match(r".*Violated rules: (.*)", str(e))
+		if tmp is None:
+			raise FilePathAuditError("Failed to extract FilePathAuditError violations; this is a programming error.") from e
+		violations_string = tmp[1]
+		fail = set(violations_string.split(","))
+
+	if fail != expect and expect is not None:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {fail}")
+		return 1
+
+	# Even when expect is None it's still a FAIL if the directory stays behind
+	if (expect is None or fail != expect) and Path(path).is_file():
+		print(f"FAIL: Testcase: {testcase}; failed to delete file {path}; following testcases are likely to fail.")
+		return 1
+
+	print(f"PASS: Testcase: {testcase}")
+	return 0
+
+def test_secure_rmdir(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio.secure_rmdir() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	ignore_non_existing = expect is None
+
+	try:
+		secure_rmdir(path, ignore_non_existing = ignore_non_existing)
+		fail = expect
+	except FileNotFoundError:
+		fail = True
+	except FilePathAuditError as e:
+		tmp = re.match(r".*Violated rules: (.*)", str(e))
+		if tmp is None:
+			raise FilePathAuditError("Failed to extract FilePathAuditError violations; this is a programming error.") from e
+		violations_string = tmp[1]
+		fail = set(violations_string.split(","))
+
+	if fail != expect and expect is not None:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {fail}")
+		return 1
+
+	# Even when expect is None it's still a FAIL if the directory stays behind
+	if (expect is None or fail != expect) and Path(path).is_dir():
+		print(f"FAIL: Testcase: {testcase}; failed to delete directory {path}; following testcases are likely to fail.")
+		return 1
+
+	print(f"PASS: Testcase: {testcase}")
+	return 0
+
+def test_mkdir_if_not_exists(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio.mkdir_if_not_exists() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	permissions = deep_get(checkdata, DictPath("permissions"))
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	violations = mkdir_if_not_exists(path, permissions = permissions)
+	violations_set = set(violations)
+
+	if not Path(path).is_dir():
+		violations_set.add(SecurityStatus.DOES_NOT_EXIST)
+	else:
+		path_stat = Path(path).stat()
+		if path_stat.st_mode & 0o777 != permissions:
+			violations_set.add(SecurityStatus.PERMISSIONS)
+
+	if violations_set != expect:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
+		return 1
+	print(f"PASS: Testcase: {testcase}")
+	return 0
+
+def test_copy_if_not_exists(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio.copy_if_not_exists() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	src = deep_get(checkdata, DictPath("src"), "")
+	path = deep_get(checkdata, DictPath("path"), "")
+	permissions = deep_get(checkdata, DictPath("permissions"))
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	try:
+		copy_if_not_exists(src, path, permissions = permissions)
+		violations_set = {"SecurityStatus.OK"}
+	except FilePathAuditError as e:
+		tmp = re.match(r".*Violated rules: (.*)", str(e))
+		if tmp is None:
+			raise FilePathAuditError("Failed to extract FilePathAuditError violations; this is a programming error.") from e
+		violations_string = tmp[1]
+		violations_set = set(violations_string.split(","))
+
+	if not Path(path).is_file():
+		violations_set.add(SecurityStatus.DOES_NOT_EXIST)
+	else:
+		path_stat = Path(path).stat()
+		if path_stat.st_mode & 0o777 != permissions:
+			violations_set.add(SecurityStatus.PERMISSIONS)
+
+	if violations_set != expect:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
+		return 1
+	print(f"PASS: Testcase: {testcase}")
+	return 0
+
+def test_secure_write_string(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio.secure_write_string() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	permissions = deep_get(checkdata, DictPath("permissions"))
+	expect = deep_get(checkdata, DictPath("expect"))
+	write_mode = deep_get(checkdata, DictPath("write_mode"), "w")
+
+	try:
+		secure_write_string(path, string = "Random text", permissions = permissions, write_mode = write_mode)
+		violations_set = {"SecurityStatus.OK"}
+	except FilePathAuditError as e:
+		tmp = re.match(r".*Violated rules: (.*)", str(e))
+		if tmp is None:
+			raise FilePathAuditError("Failed to extract FilePathAuditError violations; this is a programming error.") from e
+		violations_string = tmp[1]
+		violations_set = set(violations_string.split(","))
+
+	if violations_set == {"SecurityStatus.OK"}:
+		if not Path(path).is_file():
+			violations_set.add(SecurityStatus.DOES_NOT_EXIST)
+		else:
+			path_stat = Path(path).stat()
+			if path_stat.st_mode & 0o777 != permissions:
+				violations_set.add(SecurityStatus.PERMISSIONS)
+
+	if violations_set != expect:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
+		return 1
+
+	print(f"PASS: Testcase: {testcase}")
+
+	return 0
+
+def test_secure_write_yaml(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio_yaml.secure_write_yaml() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	permissions = deep_get(checkdata, DictPath("permissions"))
+	expect = deep_get(checkdata, DictPath("expect"))
+	
+
+	try:
+		data = {
+			"valid_yaml": True,
+		}
+		secure_write_yaml(path, data = data, permissions = permissions)
+		violations_set = {"SecurityStatus.OK"}
+	except FilePathAuditError as e:
+		tmp = re.match(r".*Violated rules: (.*)", str(e))
+		if tmp is None:
+			raise FilePathAuditError("Failed to extract FilePathAuditError violations; this is a programming error.") from e
+		violations_string = tmp[1]
+		violations_set = set(violations_string.split(","))
+
+	if violations_set == {"SecurityStatus.OK"}:
+		if not Path(path).is_file():
+			violations_set.add(SecurityStatus.DOES_NOT_EXIST)
+		else:
+			path_stat = Path(path).stat()
+			if path_stat.st_mode & 0o777 != permissions:
+				violations_set.add(SecurityStatus.PERMISSIONS)
+
+	if violations_set != expect:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
+		return 1
+	print(f"PASS: Testcase: {testcase}")
+
+	return 0
+
 testcases = {
 	"01: File permissions": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/01-wrong_permissions"),
+		"path": FilePath(f"{TEST_DIR}/01-wrong_permissions"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -186,7 +426,7 @@ testcases = {
 		"expect": [SecurityStatus.PERMISSIONS],
 	},
 	"02: File path resolution": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/02-symlink"),
+		"path": FilePath(f"{TEST_DIR}/02-symlink"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -201,7 +441,7 @@ testcases = {
 		"expect": [SecurityStatus.PATH_NOT_RESOLVING_TO_SELF],
 	},
 	"03: Directory permissions": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/03-wrong_dir_permissions"),
+		"path": FilePath(f"{TEST_DIR}/03-wrong_dir_permissions"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -216,7 +456,7 @@ testcases = {
 		"expect": [SecurityStatus.PERMISSIONS],
 	},
 	"04: Directory path resolution and destination permissions": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/04-dir_symlink"),
+		"path": FilePath(f"{TEST_DIR}/04-dir_symlink"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -231,7 +471,7 @@ testcases = {
 		"expect": [SecurityStatus.PATH_NOT_RESOLVING_TO_SELF, SecurityStatus.PERMISSIONS],
 	},
 	"05: Wrong type (Expected file)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/13-correct_directory"),
+		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -246,7 +486,7 @@ testcases = {
 		"expect": [SecurityStatus.IS_NOT_FILE],
 	},
 	"06: Correct type (Expected file)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/05-not_executable.sh"),
+		"path": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -258,10 +498,10 @@ testcases = {
 			SecurityChecks.EXISTS,
 			SecurityChecks.IS_FILE,
 		],
-		"expect": [],
+		"expect": [SecurityStatus.OK],
 	},
 	"07: Wrong type (Expected directory)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/05-not_executable.sh"),
+		"path": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -276,7 +516,7 @@ testcases = {
 		"expect": [SecurityStatus.IS_NOT_DIR],
 	},
 	"08: Correct type (Expected directory)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/13-correct_directory"),
+		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -288,10 +528,10 @@ testcases = {
 			SecurityChecks.EXISTS,
 			SecurityChecks.IS_DIR,
 		],
-		"expect": [],
+		"expect": [SecurityStatus.OK],
 	},
 	"09: Wrong type (Expected symlink)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/08-not_utf8.txt"),
+		"path": FilePath(f"{TEST_DIR}/08-not_utf8.txt"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -305,7 +545,7 @@ testcases = {
 		"expect": [SecurityStatus.IS_NOT_SYMLINK],
 	},
 	"10: Correct type (Expected symlink)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/02-symlink"),
+		"path": FilePath(f"{TEST_DIR}/02-symlink"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -316,10 +556,10 @@ testcases = {
 			SecurityChecks.EXISTS,
 			SecurityChecks.IS_SYMLINK,
 		],
-		"expect": [],
+		"expect": [SecurityStatus.OK],
 	},
 	"11: Not executable (should be)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/05-not_executable.sh"),
+		"path": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -335,7 +575,7 @@ testcases = {
 		"expect": [SecurityStatus.IS_NOT_EXECUTABLE],
 	},
 	"12: Executable (shouldn't be)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/06-executable.sh"),
+		"path": FilePath(f"{TEST_DIR}/06-executable.sh"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -350,7 +590,7 @@ testcases = {
 		"expect": [SecurityStatus.IS_EXECUTABLE],
 	},
 	"13: Dangling symlink": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/07-dangling_symlink"),
+		"path": FilePath(f"{TEST_DIR}/07-dangling_symlink"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -363,7 +603,7 @@ testcases = {
 		"expect": [SecurityStatus.DOES_NOT_EXIST],
 	},
 	"14: Non-existing path": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/this path does not exist/not this either"),
+		"path": FilePath(f"{TEST_DIR}/this path does not exist/not this either"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -378,7 +618,7 @@ testcases = {
 		"expect": [SecurityStatus.PARENT_DOES_NOT_EXIST],
 	},
 	"15: Parent has incorrect permissions": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/03-wrong_dir_permissions/14-correct_file_in_wrong_permission_directory"),
+		"path": FilePath(f"{TEST_DIR}/03-wrong_dir_permissions/14-correct_file_in_wrong_permission_directory"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -393,7 +633,7 @@ testcases = {
 		"expect": [SecurityStatus.PARENT_PERMISSIONS],
 	},
 	"16: Parent directory is symlink": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
+		"path": FilePath(f"{TEST_DIR}/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -408,7 +648,7 @@ testcases = {
 		"expect": [SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF],
 	},
 	"17: Valid path": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/13-correct_directory/16-correct_file_in_correct_permission_directory"),
+		"path": FilePath(f"{TEST_DIR}/13-correct_directory/16-correct_file_in_correct_permission_directory"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -420,47 +660,47 @@ testcases = {
 			SecurityChecks.EXISTS,
 			SecurityChecks.IS_FILE,
 		],
-		"expect": [],
+		"expect": [SecurityStatus.OK],
 	},
 	"18: Valid UTF-8": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/11-valid_yaml_but_single.yaml"),
+		"path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
 		"test": test_secure_read_string,
 		"expect": "string"
 	},
 	"19: Invalid UTF-8": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/08-not_utf8.txt"),
+		"path": FilePath(f"{TEST_DIR}/08-not_utf8.txt"),
 		"test": test_secure_read_string,
 		"expect": UnicodeDecodeError,
 	},
 	"20: Invalid single YAML (secure_read_yaml)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/09-this_is_not_valid.yaml"),
+		"path": FilePath(f"{TEST_DIR}/09-this_is_not_valid.yaml"),
 		"test": test_secure_read_yaml,
 		"expect": yaml.parser.ParserError,
 	},
 	"21: Valid single YAML (secure_read_yaml)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/11-valid_yaml_but_single.yaml"),
+		"path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
 		"test": test_secure_read_yaml,
 		"expect": "dict",
 	},
 	"22: Valid multi YAML (secure_read_yaml)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/10-valid_yaml_for_load_all.yaml"),
+		"path": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
 		"test": test_secure_read_yaml,
 		"expect": yaml.composer.ComposerError,
 	},
 	"23: Valid multi YAML (secure_read_yaml_all)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/10-valid_yaml_for_load_all.yaml"),
+		"path": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
 		"test": test_secure_read_yaml_all,
 		"expect": "generator",
 	},
 	# Note: yaml.safe_load_all() yields a generator; this means that the data is validated when iterated over,
 	#       NOT when loaded
 	"24: Invalid YAML (secure_read_yaml_all)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/12-valid_yaml_followed_by_invalid_yaml.yaml"),
+		"path": FilePath(f"{TEST_DIR}/12-valid_yaml_followed_by_invalid_yaml.yaml"),
 		"test": test_secure_read_yaml_all,
 		"expect": "generator",
 	},
 	"25: Valid single YAML (secure_read_yaml_all)": {
-		"path": FilePath(f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/11-valid_yaml_but_single.yaml"),
+		"path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
 		"test": test_secure_read_yaml_all,
 		"expect": "generator",
 	},
@@ -488,25 +728,99 @@ testcases = {
 	"29: /usr/local/bin/ssh [fallback=[\"testpaths/ssh\"], ALLOWLIST_RELAXED] (secure_which)": {
 		"path": FilePath("/usr/local/bin/ssh"),
 		"test": test_secure_which,
-		"fallback_allowlist": [f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/ssh"],
+		"fallback_allowlist": [f"{TEST_DIR}/ssh"],
 		"security_policy": SecurityPolicy.ALLOWLIST_RELAXED,
 		"expect": FileNotFoundError,
 	},
 	"30: /usr/local/bin/ssh [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\", \"testpaths/ssh\"], ALLOWLIST_RELAXED] (secure_which)": {
 		"path": FilePath("/usr/local/bin/ssh"),
 		"test": test_secure_which,
-		"fallback_allowlist": ["/bin", "/sbin", "/usr/bin", "/usr/sbin", f"{HOMEDIR}/intel-kubernetes-toolkit/tests/testpaths/ssh"],
+		"fallback_allowlist": ["/bin", "/sbin", "/usr/bin", "/usr/sbin", f"{TEST_DIR}/ssh"],
 		"security_policy": SecurityPolicy.ALLOWLIST_RELAXED,
 		"expect": "string",
 	},
+	# This is not meant as a test; it prepares for the next test
+	"--: Deleting testdir as preparation (secure_rmdir)": {
+		"path": FilePath(f"{TEST_DIR}/testdir"),
+		"test": test_secure_rmdir,
+		"expect": None,
+	},
+	"31: Deleting non-empty directory (secure_rmdir)": {
+		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
+		"test": test_secure_rmdir,
+		"expect": {"SecurityStatus.DIR_NOT_EMPTY"},
+	},
+	"32: Deleting non-directory (secure_rmdir)": {
+		"path": FilePath(f"{TEST_DIR}/08-not_utf8.txt"),
+		"test": test_secure_rmdir,
+		"expect": {"SecurityStatus.IS_NOT_DIR"},
+	},
+	"33: testdir (mkdir_if_not_exists)": {
+		"path": FilePath(f"{TEST_DIR}/testdir"),
+		"test": test_mkdir_if_not_exists,
+		"permissions": 0o700,
+		"expect": set(),
+	},
+	"34: Deleting testdir (secure_rmdir)": {
+		"path": FilePath(f"{TEST_DIR}/testdir"),
+		"test": test_secure_rmdir,
+		"expect": None,
+	},
+	# This is not meant as a test; it prepares for the next test
+	"--: Deleting testfile as preparation (secure_rm)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"test": test_secure_rm,
+		"expect": None,
+	},
+	# This is not meant as a test; it prepares for the next test
+	"--: Deleting testfile.yaml as preparation (secure_rm)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_rm,
+		"expect": None,
+	},
+	"35: Deleting directory (secure_rm)": {
+		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
+		"test": test_secure_rm,
+		"expect": {"SecurityStatus.IS_NOT_FILE"},
+	},
+	"36: Writing text to a file (secure_write_string)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"test": test_secure_write_string,
+		"permissions": 0o600,
+		"expect": {"SecurityStatus.OK"},
+	},
+	"37: Appending text to a file (secure_write_string)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"test": test_secure_write_string,
+		"write_mode": "a",
+		"permissions": 0o600,
+		"expect": {"SecurityStatus.OK"},
+	},
+	"38: Writing string to existing file (secure_write_string)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"test": test_secure_write_string,
+		"write_mode": "x",
+		"permissions": 0o600,
+		"expect": {"SecurityStatus.EXISTS"},
+	},
+	"39: Writing YAML to a file (secure_write_yaml)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_write_yaml,
+		"permissions": 0o600,
+		"expect": {"SecurityStatus.OK"},
+	},
+	"40: Deleting testfile (secure_rm)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"test": test_secure_rm,
+		"expect": {SecurityStatus.OK},
+	},
+	"41: Deleting testfile.yaml (secure_rm)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_rm,
+		"expect": {SecurityStatus.OK},
+	},
 	# TODO:
-	# * iktio.secure_rm
-	# * iktio.secure_rmdir
-	# * iktio.secure_write_string
-	# * iktio.mkdir_if_not_exists
-	# * iktio.copy_if_not_exists
 	# * iktio.replace_symlink
-	# * iktio_yaml.secure_write_yaml
 	# * networkio.verify_checksum
 }
 

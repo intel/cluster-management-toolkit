@@ -24,7 +24,7 @@ except ModuleNotFoundError:
 
 from iktio import check_path
 from iktio_yaml import secure_read_yaml
-from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, StatusGroup, loglevel_to_name, stgroup_mapping
+from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
 
 import iktlib
 
@@ -313,7 +313,7 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 	theme_dir = FilePath(str(PurePath(themefile).parent))
 
 	violations = check_path(theme_dir, checks = checks)
-	if len(violations) > 0:
+	if violations != [SecurityStatus.OK]:
 		violation_strings = []
 		for violation in violations:
 			violation_strings.append(str(violation))

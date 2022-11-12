@@ -35,8 +35,28 @@ validate_playbooks:
 	ansible-lint playbooks/*.yaml || /bin/true
 
 parser_bundle:
+	@printf -- "Building parser bundle\n" ;\
 	rm -f parsers/BUNDLE.yaml; \
 	for file in parsers/*.yaml; do \
 		printf -- "---\n" >> parsers/BUNDLE.yaml; \
 		cat $$file >> parsers/BUNDLE.yaml; \
 	done
+
+setup_tests:
+	@(cd tests ;\
+	 test -e iktio.py || ln -s ../iktio.py . ;\
+	 test -e iktio_yaml.py || ln -s ../iktio_yaml.py . ;\
+	 test -e iktpaths.py || ln -s ../iktpaths.py . ;\
+	 test -e iktprint.py || ln -s ../iktprint.py . ;\
+	 test -e ikttypes.py || ln -s ../ikttypes.py .);\
+	(cd tests/testpaths ;\
+	 test -e 02-symlink || ln -s 05-not_executable.sh 02-symlink ;\
+	 test -e 04-dir_symlink || ln -s 03-wrong_dir_permissions 04-dir_symlink ;\
+	 test -e 07-dangling_symlink || ln -s this_destination_does_not_exist 07-dangling_symlink ;\
+	 test -e 15-symlink_directory || ln -s 13-correct_directory 15-symlink_directory ;\
+	 test -e ssh || ln -s /usr/bin/ssh ssh ;\
+	 chmod o+w 03-wrong_dir_permissions ;\
+	 chmod o+w 01-wrong_permissions )
+
+make iotests: setup_tests
+	@(cd tests &&  ./iotests)

@@ -15,7 +15,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks
+from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus
 from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path
 from iktio import check_path
 from iktio_yaml import secure_read_yaml
@@ -75,7 +75,7 @@ def objgetter_ansible_log(obj: Dict) -> Dict:
 	playbook_dir = FilePath(str(PurePath(playbook_path).parent))
 
 	violations = check_path(playbook_dir, checks = checks)
-	if len(violations) > 0:
+	if violations != [SecurityStatus.OK]:
 		violation_strings = []
 		for violation in violations:
 			violation_strings.append(str(violation))

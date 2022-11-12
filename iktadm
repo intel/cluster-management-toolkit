@@ -32,7 +32,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run ikt-install?")
 
-from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from iktpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR
 from iktpaths import DEPLOYMENT_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -347,13 +347,12 @@ def patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> None:
 	"""
 
 	violations = check_path(cni_path)
-	if len(violations) > 0:
-		if len(violations) > 0:
-			violation_strings = []
-			for violation in violations:
-				violation_strings.append(str(violation))
-			violations_joined = ",".join(violation_strings)
-			raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
+	if violations != [SecurityStatus.OK]:
+		violation_strings = []
+		for violation in violations:
+			violation_strings.append(str(violation))
+		violations_joined = ",".join(violation_strings)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
 
 	# Ideally we should patch this using a round-trip capable YAML parser,
 	# such as ruamel
@@ -371,13 +370,12 @@ def patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> None:
 	"""
 
 	violations = check_path(cni_path)
-	if len(violations) > 0:
-		if len(violations) > 0:
-			violation_strings = []
-			for violation in violations:
-				violation_strings.append(str(violation))
-			violations_joined = ",".join(violation_strings)
-			raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
+	if violations != [SecurityStatus.OK]:
+		violation_strings = []
+		for violation in violations:
+			violation_strings.append(str(violation))
+		violations_joined = ",".join(violation_strings)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
 
 	# Ideally we should patch this using a round-trip capable YAML parser,
 	# such as ruamel

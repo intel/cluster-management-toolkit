@@ -12,7 +12,7 @@ import subprocess
 import sys
 from typing import List, Sequence, Union
 
-from ikttypes import ANSIThemeString, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy
+from ikttypes import ANSIThemeString, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 import iktio
 try:
 	import yaml # pylint: disable=unused-import
@@ -247,7 +247,7 @@ def init_iktprint(themefile: FilePath) -> None:
 	theme_dir = FilePath(str(PurePath(themefile).parent))
 
 	violations = iktio.check_path(theme_dir, checks = checks)
-	if len(violations) > 0:
+	if violations != [SecurityStatus.OK]:
 		violation_strings = []
 		for violation in violations:
 			violation_strings.append(str(violation))

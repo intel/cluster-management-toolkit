@@ -102,6 +102,7 @@ class SecurityStatus(IntEnum):
 	IS_EXECUTABLE = auto()
 	IS_NOT_EXECUTABLE = auto()
 	PARENT_IS_NOT_DIR = auto()
+	DIR_NOT_EMPTY = auto()
 
 class SecurityChecks(Enum):
 	"""

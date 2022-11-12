@@ -2243,10 +2243,10 @@ def init_parser_list() -> None:
 
 	for parser_file in parser_files:
 		if parser_file.endswith("BUNDLE.yaml"):
-			dl = secure_read_yaml_all(parser_file, directory_is_symlink = True)
+			temp_dl = secure_read_yaml_all(parser_file, directory_is_symlink = True)
 			try:
 				# This validates everything in one go
-				temp_dl = list(dl)
+				dl = list(temp_dl)
 			except yaml.composer.ComposerError as e:
 				raise yaml.composer.ComposerError(f"{parser_file} is not valid YAML; aborting.") from e
 			except yaml.parser.ParserError as e:
