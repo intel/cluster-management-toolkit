@@ -5130,7 +5130,7 @@ def genericlistloop(stdscr, view):
 
 			if selected is not None:
 				if selected in tagged_items:
-					tagged_items.remove(selected)
+					tagged_items.discard(selected)
 				else:
 					tagged_items.add(selected)
 				# After we tag an item we advance the cursor (when possible);
@@ -5169,8 +5169,7 @@ def genericlistloop(stdscr, view):
 					tmp = compiled_pattern.match(item.name)
 
 					if tmp is not None and len(tmp[0]) > 0:
-						if item in tagged_items:
-							tagged_items.remove(item)
+						tagged_items.discard(item)
 				except re.error:
 					continue
 		elif c == ord("l") and is_taggable == True and vlist is not None and listlen > 0:

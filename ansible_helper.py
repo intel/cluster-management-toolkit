@@ -13,7 +13,7 @@ from typing import cast, Dict, List, Optional, Set, Tuple, Union
 import yaml
 
 import iktlib
-from iktio import check_path, mkdir_if_not_exists, secure_rm, secure_rmdir
+from iktio import check_path, secure_mkdir, secure_rm, secure_rmdir
 from iktio_yaml import secure_read_yaml, secure_write_yaml
 from iktpaths import HOMEDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
@@ -342,7 +342,7 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False) -> 
 		return
 
 	# If the ansible directory doesn't exist, create it
-	mkdir_if_not_exists(ANSIBLE_DIR, permissions = 0o755, exit_on_failure = True)
+	secure_mkdir(ANSIBLE_DIR, permissions = 0o755, exit_on_failure = True)
 
 	# Create the basic yaml structure that we'll write later on
 	d: Dict = {
@@ -1007,7 +1007,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 			playbook_name = tmp[1]
 
 	directory_name = f"{start_date}_{playbook_name}".replace(" ", "_")
-	mkdir_if_not_exists(FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}"), exit_on_failure = True)
+	secure_mkdir(FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}"), exit_on_failure = True)
 
 	# Start by creating a file with metadata about the whole run
 	d = {
@@ -1416,7 +1416,7 @@ def ansible_async_get_data(async_cookie: ansible_runner.runner.Runner) -> Option
 	if async_cookie is None or async_cookie not in finished_runs:
 		return None
 
-	finished_runs.remove(async_cookie)
+	finished_runs.discard(async_cookie)
 
 	async_results: Dict = {}
 	data = None

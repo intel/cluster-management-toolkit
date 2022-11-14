@@ -84,7 +84,7 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
 				   ANSIThemeString("“; aborting.", "default")], stderr = True)
 		sys.exit(errno.EIO)
 
-def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filename: str = None) -> bool:
+def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filename: Optional[str] = None) -> bool:
 	"""
 	Checksum data against a checksum file
 
@@ -163,8 +163,13 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 	if match_checksum is None:
 		return False
 
-	if m.hexdigest() != match_checksum:
-		return False
+	if checksum_type in ("shake_128", "shake_256"):
+		shake_length = len(match_checksum) // 2
+		if m.hexdigest(shake_length) != match_checksum:
+			return False
+	else:
+		if m.hexdigest() != match_checksum:
+			return False
 
 	return True
 

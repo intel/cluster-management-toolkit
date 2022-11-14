@@ -44,7 +44,7 @@ from ansible_helper import ansible_configuration, ansible_get_inventory_dict, an
 from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results, populate_playbooks_from_paths
 
 import iktio
-from iktio import check_path, execute_command, execute_command_with_response, mkdir_if_not_exists
+from iktio import check_path, execute_command, execute_command_with_response, secure_mkdir
 from iktio import secure_read_string, secure_rm, secure_which, secure_write_string
 from iktio_yaml import secure_read_yaml, secure_write_yaml
 from networkio import download_files, scan_and_add_ssh_keys
@@ -647,13 +647,13 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 
 			kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 			if upgradetype == "CNI":
-				mkdir_if_not_exists(DEPLOYMENT_DIR)
+				secure_mkdir(DEPLOYMENT_DIR)
 				directory = FilePath(str(PurePath(DEPLOYMENT_DIR).joinpath("cni")))
 				permissions = 0o644
 			elif upgradetype == "executable":
 				directory = BINDIR
 				permissions = 0o755
-			mkdir_if_not_exists(directory)
+			secure_mkdir(directory)
 
 			for url in deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#urls"), []):
 				download_url = deep_get(url, DictPath("url"), "")
@@ -811,13 +811,13 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 	if filetype is None:
 		raise Exception(f"type for {cni} is missing; this is a programming error.")
 	if filetype == "yaml":
-		mkdir_if_not_exists(DEPLOYMENT_DIR)
+		secure_mkdir(DEPLOYMENT_DIR)
 		directory = FilePath(os.path.join(DEPLOYMENT_DIR, "cni"))
 		permissions = 0o644
 	elif filetype == "installer":
 		directory = BINDIR
 		permissions = 0o755
-	mkdir_if_not_exists(directory)
+	secure_mkdir(directory)
 
 	check_and_print_status(download_files(directory, [(url, filename, checksum_url, checksum_type)], permissions = permissions))
 
@@ -1390,10 +1390,10 @@ def __task_setup_bash_completion(installation_info: Dict) -> None:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
 
-	mkdir_if_not_exists(FilePath(str(PurePath(HOMEDIR).joinpath(".local"))), verbose = True)
-	mkdir_if_not_exists(FilePath(str(PurePath(HOMEDIR).joinpath(".local", "share"))), verbose = True)
-	mkdir_if_not_exists(BASH_COMPLETION_BASE_DIR, verbose = True)
-	mkdir_if_not_exists(BASH_COMPLETION_DIR, verbose = True)
+	secure_mkdir(FilePath(str(PurePath(HOMEDIR).joinpath(".local"))), verbose = True)
+	secure_mkdir(FilePath(str(PurePath(HOMEDIR).joinpath(".local", "share"))), verbose = True)
+	secure_mkdir(BASH_COMPLETION_BASE_DIR, verbose = True)
+	secure_mkdir(BASH_COMPLETION_DIR, verbose = True)
 
 	args = ["/usr/bin/kubectl", "completion", "bash"]
 	result = execute_command_with_response(args)

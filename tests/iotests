@@ -11,11 +11,14 @@ from types import GeneratorType
 from typing import Dict
 import yaml
 
-from iktio import check_path, copy_if_not_exists, mkdir_if_not_exists, secure_read_string, secure_rm, secure_rmdir, secure_which, secure_write_string
+from iktio import check_path, secure_copy, secure_mkdir, secure_read, secure_read_string, secure_rm, secure_rmdir, secure_which, secure_write_string
 from iktio_yaml import secure_read_yaml, secure_read_yaml_all, secure_write_yaml
+from networkio import verify_checksum
 from iktpaths import HOMEDIR
+from iktprint import init_iktprint
 from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 
+CHECKSUMS_DIR = FilePath(str(Path.cwd().joinpath("checksums")))
 TEST_DIR = FilePath(str(Path.cwd().joinpath("testpaths")))
 
 def test_check_path(testcase: str, checkdata: Dict) -> int:
@@ -253,9 +256,9 @@ def test_secure_rmdir(testcase: str, checkdata: Dict) -> int:
 	print(f"PASS: Testcase: {testcase}")
 	return 0
 
-def test_mkdir_if_not_exists(testcase: str, checkdata: Dict) -> int:
+def test_secure_mkdir(testcase: str, checkdata: Dict) -> int:
 	"""
-	Test whether iktio.mkdir_if_not_exists() works correctly
+	Test whether iktio.secure_mkdir() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -266,9 +269,10 @@ def test_mkdir_if_not_exists(testcase: str, checkdata: Dict) -> int:
 
 	path = deep_get(checkdata, DictPath("path"), "")
 	permissions = deep_get(checkdata, DictPath("permissions"))
+	exist_ok = deep_get(checkdata, DictPath("exist_ok"))
 	expect = deep_get(checkdata, DictPath("expect"))
 
-	violations = mkdir_if_not_exists(path, permissions = permissions)
+	violations = secure_mkdir(path, permissions = permissions, exist_ok = exist_ok)
 	violations_set = set(violations)
 
 	if not Path(path).is_dir():
@@ -284,9 +288,9 @@ def test_mkdir_if_not_exists(testcase: str, checkdata: Dict) -> int:
 	print(f"PASS: Testcase: {testcase}")
 	return 0
 
-def test_copy_if_not_exists(testcase: str, checkdata: Dict) -> int:
+def test_secure_copy(testcase: str, checkdata: Dict) -> int:
 	"""
-	Test whether iktio.copy_if_not_exists() works correctly
+	Test whether iktio.secure_copy() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -300,22 +304,17 @@ def test_copy_if_not_exists(testcase: str, checkdata: Dict) -> int:
 	permissions = deep_get(checkdata, DictPath("permissions"))
 	expect = deep_get(checkdata, DictPath("expect"))
 
-	try:
-		copy_if_not_exists(src, path, permissions = permissions)
-		violations_set = {"SecurityStatus.OK"}
-	except FilePathAuditError as e:
-		tmp = re.match(r".*Violated rules: (.*)", str(e))
-		if tmp is None:
-			raise FilePathAuditError("Failed to extract FilePathAuditError violations; this is a programming error.") from e
-		violations_string = tmp[1]
-		violations_set = set(violations_string.split(","))
+	violations = secure_copy(src, path, permissions = permissions)
+	violations_set = set(violations)
 
 	if not Path(path).is_file():
 		violations_set.add(SecurityStatus.DOES_NOT_EXIST)
+		violations_set.discard(SecurityStatus.OK)
 	else:
 		path_stat = Path(path).stat()
 		if path_stat.st_mode & 0o777 != permissions:
 			violations_set.add(SecurityStatus.PERMISSIONS)
+			violations_set.discard(SecurityStatus.OK)
 
 	if violations_set != expect:
 		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
@@ -351,11 +350,11 @@ def test_secure_write_string(testcase: str, checkdata: Dict) -> int:
 
 	if violations_set == {"SecurityStatus.OK"}:
 		if not Path(path).is_file():
-			violations_set.add(SecurityStatus.DOES_NOT_EXIST)
+			violations_set.add("SecurityStatus.DOES_NOT_EXIST")
 		else:
 			path_stat = Path(path).stat()
 			if path_stat.st_mode & 0o777 != permissions:
-				violations_set.add(SecurityStatus.PERMISSIONS)
+				violations_set.add("SecurityStatus.PERMISSIONS")
 
 	if violations_set != expect:
 		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
@@ -379,7 +378,6 @@ def test_secure_write_yaml(testcase: str, checkdata: Dict) -> int:
 	path = deep_get(checkdata, DictPath("path"), "")
 	permissions = deep_get(checkdata, DictPath("permissions"))
 	expect = deep_get(checkdata, DictPath("expect"))
-	
 
 	try:
 		data = {
@@ -396,14 +394,40 @@ def test_secure_write_yaml(testcase: str, checkdata: Dict) -> int:
 
 	if violations_set == {"SecurityStatus.OK"}:
 		if not Path(path).is_file():
-			violations_set.add(SecurityStatus.DOES_NOT_EXIST)
+			violations_set.add("SecurityStatus.DOES_NOT_EXIST")
 		else:
 			path_stat = Path(path).stat()
 			if path_stat.st_mode & 0o777 != permissions:
-				violations_set.add(SecurityStatus.PERMISSIONS)
+				violations_set.add("SecurityStatus.PERMISSIONS")
 
 	if violations_set != expect:
 		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
+		return 1
+	print(f"PASS: Testcase: {testcase}")
+
+	return 0
+
+def test_verify_checksum(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether networkio.verify_checksum() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	checksum_type = deep_get(checkdata, DictPath("hash"))
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	data = secure_read(path, read_mode = "rb")
+	csum = secure_read(FilePath(f"{path}.{checksum_type}"), read_mode = "rb")
+	result = verify_checksum(csum, checksum_type, data, "testcase.txt")
+
+	if result != expect:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {result}")
 		return 1
 	print(f"PASS: Testcase: {testcase}")
 
@@ -755,13 +779,21 @@ testcases = {
 		"test": test_secure_rmdir,
 		"expect": {"SecurityStatus.IS_NOT_DIR"},
 	},
-	"33: testdir (mkdir_if_not_exists)": {
+	"33: Creating testdir; exist_ok = True (secure_mkdir)": {
 		"path": FilePath(f"{TEST_DIR}/testdir"),
-		"test": test_mkdir_if_not_exists,
+		"test": test_secure_mkdir,
+		"exist_ok": True,
 		"permissions": 0o700,
 		"expect": set(),
 	},
-	"34: Deleting testdir (secure_rmdir)": {
+	"34: Creating testdir; exist_ok = False (secure_mkdir)": {
+		"path": FilePath(f"{TEST_DIR}/testdir"),
+		"test": test_secure_mkdir,
+		"exist_ok": False,
+		"permissions": 0o700,
+		"expect": {SecurityStatus.EXISTS},
+	},
+	"35: Deleting testdir (secure_rmdir)": {
 		"path": FilePath(f"{TEST_DIR}/testdir"),
 		"test": test_secure_rmdir,
 		"expect": None,
@@ -778,50 +810,268 @@ testcases = {
 		"test": test_secure_rm,
 		"expect": None,
 	},
-	"35: Deleting directory (secure_rm)": {
+	"36: Deleting directory (secure_rm)": {
 		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
 		"test": test_secure_rm,
 		"expect": {"SecurityStatus.IS_NOT_FILE"},
 	},
-	"36: Writing text to a file (secure_write_string)": {
+	"37: Writing text to a file (secure_write_string)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_write_string,
 		"permissions": 0o600,
 		"expect": {"SecurityStatus.OK"},
 	},
-	"37: Appending text to a file (secure_write_string)": {
+	"38: Appending text to a file (secure_write_string)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_write_string,
 		"write_mode": "a",
 		"permissions": 0o600,
 		"expect": {"SecurityStatus.OK"},
 	},
-	"38: Writing string to existing file (secure_write_string)": {
+	"39: Writing string to existing file (secure_write_string)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_write_string,
 		"write_mode": "x",
 		"permissions": 0o600,
 		"expect": {"SecurityStatus.EXISTS"},
 	},
-	"39: Writing YAML to a file (secure_write_yaml)": {
+	"40: Writing YAML to a file (secure_write_yaml)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_write_yaml,
 		"permissions": 0o600,
 		"expect": {"SecurityStatus.OK"},
 	},
-	"40: Deleting testfile (secure_rm)": {
+	"41: Deleting testfile (secure_rm)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_rm,
 		"expect": {SecurityStatus.OK},
 	},
-	"41: Deleting testfile.yaml (secure_rm)": {
+	"42: Deleting testfile.yaml (secure_rm)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_rm,
 		"expect": {SecurityStatus.OK},
 	},
+	"43: Copying valid file to valid destination (secure_copy)": {
+		"src": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_copy,
+		"permissions": 0o600,
+		"expect": {SecurityStatus.OK},
+	},
+	"44: Copying valid file to non-valid destination (secure_copy)": {
+		"src": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_copy,
+		"permissions": 0o600,
+		"expect": {SecurityStatus.EXISTS},
+	},
+	"--: Deleting testfile.yaml (secure_rm)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_rm,
+		"expect": None,
+	},
+	"45: Copying symlinked file (secure_copy)": {
+		"src": FilePath(f"{TEST_DIR}/02-symlink"),
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_copy,
+		"permissions": 0o600,
+		"expect": {SecurityStatus.DOES_NOT_EXIST, SecurityStatus.PATH_NOT_RESOLVING_TO_SELF},
+	},
+	"46: Copying file to symlinked directory (secure_copy)": {
+		"path": FilePath(f"{TEST_DIR}/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_copy,
+		"permissions": 0o600,
+		"expect": {SecurityStatus.DOES_NOT_EXIST, SecurityStatus.IS_NOT_FILE, SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF},
+	},
+	"47: verify_checksum() (MD5)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "md5",
+		"test": test_verify_checksum,
+		# A warning about weak checksum is also expected
+		"expect": True,
+	},
+	"48: verify_checksum() (SHA)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "sha",
+		"test": test_verify_checksum,
+		# A warning about weak checksum is also expected
+		"expect": True,
+	},
+	"49: verify_checksum() (SHA1)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "sha1",
+		"test": test_verify_checksum,
+		# A warning about weak checksum is also expected
+		"expect": True,
+	},
+	"50: verify_checksum() (SHA224)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "sha224",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"51: verify_checksum() (SHA256)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "sha256",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"52: verify_checksum() (SHA384)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "sha384",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"53: verify_checksum() (SHA512)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "sha512",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"54: verify_checksum() (Blake 2B)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "blake2b",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"55: verify_checksum() (Blake 2S)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "blake2s",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"56: verify_checksum() (SHA3-224)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "sha3_224",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"57: verify_checksum() (SHA3-256)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "sha3_256",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"58: verify_checksum() (SHA3-384)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "sha3_384",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"59: verify_checksum() (SHA3-512)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "sha3_512",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"60: verify_checksum() (Shake-128)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "shake_128",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"61: verify_checksum() (Shake-256)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "shake_256",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"62: verify_checksum()--invalid (MD5)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "md5",
+		"test": test_verify_checksum,
+		# A warning about weak checksum is also expected
+		"expect": False,
+	},
+	"63: verify_checksum()--invalid (SHA)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "sha",
+		"test": test_verify_checksum,
+		# A warning about weak checksum is also expected
+		"expect": False,
+	},
+	"64: verify_checksum()--invalid (SHA1)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "sha1",
+		"test": test_verify_checksum,
+		# A warning about weak checksum is also expected
+		"expect": False,
+	},
+	"65: verify_checksum()--invalid (SHA224)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "sha224",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"66: verify_checksum()--invalid (SHA256)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "sha256",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"67: verify_checksum()--invalid (SHA384)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "sha384",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"68: verify_checksum()--invalid (SHA512)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "sha512",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"69: verify_checksum()--invalid (Blake 2B)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "blake2b",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"70: verify_checksum()--invalid (Blake 2S)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "blake2s",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"71: verify_checksum()--invalid (SHA3-224)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "sha3_224",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"72: verify_checksum()--invalid (SHA3-256)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "sha3_256",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"73: verify_checksum()--invalid (SHA3-384)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "sha3_384",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"74: verify_checksum()--invalid (SHA3-512)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "sha3_512",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"75: verify_checksum()--invalid (Shake-128)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "shake_128",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"76: verify_checksum()--invalid (Shake-256)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"hash": "shake_256",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
 	# TODO:
 	# * iktio.replace_symlink
-	# * networkio.verify_checksum
 }
 
 def main() -> int:
@@ -841,4 +1091,5 @@ def main() -> int:
 	return fail
 
 if __name__ == "__main__":
+	init_iktprint(themefile = None)
 	main()

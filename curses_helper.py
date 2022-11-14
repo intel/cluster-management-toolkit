@@ -1558,7 +1558,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 			break
 		elif taggable == True and c == ord(" "):
 			if curypos + yoffset in tagged_items:
-				tagged_items.remove(curypos + yoffset)
+				tagged_items.discard(curypos + yoffset)
 			else:
 				tagged_items.add(curypos + yoffset)
 		elif ord("a") <= c <= ord("z") and cursor == True and confirm == False:

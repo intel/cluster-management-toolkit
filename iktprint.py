@@ -10,7 +10,7 @@ from getpass import getpass
 from pathlib import PurePath
 import subprocess
 import sys
-from typing import List, Sequence, Union
+from typing import cast, List, Optional, Sequence, Union
 
 from ikttypes import ANSIThemeString, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 import iktio
@@ -219,7 +219,7 @@ def iktprint(themearray: List[ANSIThemeString], stderr: bool = False) -> None:
 	else:
 		print(string)
 
-def init_iktprint(themefile: FilePath) -> None:
+def init_iktprint(themefile: Optional[FilePath]) -> None:
 	"""
 	Initialise iktprint
 
@@ -230,9 +230,15 @@ def init_iktprint(themefile: FilePath) -> None:
 	global theme # pylint: disable=global-statement
 	global themepath # pylint: disable=global-statement
 
-	themepath = themefile
+	# If we get None as theme we use the builtin fallback theme
+	if themepath is None:
+		theme = fallback_theme
+		themepath = FilePath("<built-in default>")
+		return
 
-	# The parsers directory itself may be a symlink. This is expected behaviour when installing from a git repo,
+	themepath = cast(FilePath, themefile)
+
+	# The themes directory itself may be a symlink. This is expected behaviour when installing from a git repo,
 	# but we only allow it if the rest of the path components are secure
 	checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -269,6 +275,7 @@ def init_iktprint(themefile: FilePath) -> None:
 
 	if use_fallback_theme == True:
 		theme = fallback_theme
+		themepath = FilePath("<built-in default>")
 	else:
 		try:
 			theme = secure_read_yaml(themefile, checks = checks)

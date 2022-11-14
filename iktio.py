@@ -471,7 +471,7 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 			path (FilePath): The path to write to
 			string (str): The string to write
 			permissions (int): File permissions (None uses system defaults)
-			write_type (str): [w, a, x, wb, ab, xb] Write, Append, Exclusive Write, text or binary
+			write_mode (str): [w, a, x, wb, ab, xb] Write, Append, Exclusive Write, text or binary
 		Raises:
 			ikttypes.FilePathAuditError
 	"""
@@ -511,18 +511,22 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 		if write_mode in ("x", "xb"):
 			raise FilePathAuditError("Violated rules: SecurityStatus.EXISTS", path = path)
 
-def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool = False) -> str:
+def secure_read(path: FilePath, checks = None, directory_is_symlink: bool = False, read_mode = "r") -> str:
 	"""
 	Read a string from a file in a safe manner
 
 		Parameters:
 			path (FilePath): The path to read from
 			directory_is_symlink (bool): The directory that the path points to is a symlink
+			read_mode (str): [r, rb] Read text or binary
 		Returns:
 			string (str): The read string
 		Raises:
 			ikttypes.FilePathAuditError
 	"""
+
+	if read_mode not in ("r", "rb"):
+		raise ValueError(f"Invalid read mode “{read_mode}“; permitted modes are “r(b)“ (read (binary))")
 
 	if checks is None:
 		if directory_is_symlink == True:
@@ -583,10 +587,29 @@ def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool
 
 	# We have no default recourse if this write fails, so if the caller can handle the failure
 	# they have to capture the exception
-	with open(path, "r", encoding = "utf-8") as f:
-		string = f.read()
+	if read_mode == "r":
+		with open(path, encoding = "utf-8") as f:
+			string = f.read()
+	else:
+		with open(path, "rb") as f:
+			string = f.read()
 
 	return string
+
+def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool = False) -> str:
+	"""
+	Read a string from a file in a safe manner
+
+		Parameters:
+			path (FilePath): The path to read from
+			directory_is_symlink (bool): The directory that the path points to is a symlink
+		Returns:
+			string (str): The read string
+		Raises:
+			ikttypes.FilePathAuditError
+	"""
+
+	return secure_read(path, checks = checks, directory_is_symlink = directory_is_symlink, read_mode = "r")
 
 def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
 	"""
@@ -702,7 +725,7 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 
 	raise FileNotFoundError(f"secure_which() could not find an acceptable match for {name}")
 
-def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: bool = False, exit_on_failure: bool = False) -> List[SecurityStatus]:
+def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = False, exist_ok: bool = True, exit_on_failure: bool = False) -> List[SecurityStatus]:
 	"""
 	Create a directory if it doesn't already exist
 		Parameters:
@@ -710,6 +733,8 @@ def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: 
 			permissions (int): File permissions (None uses system defaults)
 			verbose (bool): Should extra debug messages be printed?
 			exit_on_failure (bool): True to exit on failure, False to return (when possible)
+		Returns:
+			list[SecurityStatus]: [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
 	"""
 
 	if verbose == True:
@@ -751,19 +776,24 @@ def mkdir_if_not_exists(directory: FilePath, permissions: int = 0o750, verbose: 
 	# These are the only acceptable conditions where we'd try to create the directory
 	if violations == [SecurityStatus.OK] or violations == [SecurityStatus.DOES_NOT_EXIST]:
 		violations = []
-		Path(directory).mkdir(mode = permissions, exist_ok = True)
-	
+		try:
+			Path(directory).mkdir(mode = permissions, exist_ok = exist_ok)
+		except FileExistsError:
+			violations.append(SecurityStatus.EXISTS)
+
 	return violations
 
-def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False, permissions = None) -> None:
+def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False, permissions = None) -> List[SecurityStatus]:
 	"""
-	Copy a file if it doesn't already exist
+	Copy a file
 		Parameters:
 			src (str): The path to copy from
 			dst (str): The path to copy to
 			verbose (bool): Should extra debug messages be printed?
 			exit_on_failure (bool): True to exit on failure, False to return (when possible)
 			permissions (int): The file permissions to use (None to use system defaults)
+		Returns:
+			list[SecurityStatus]: [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
 	"""
 
 	user = getuser()
@@ -771,8 +801,58 @@ def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit
 	if verbose == True:
 		iktprint.iktprint([ANSIThemeString("Copying file ", "default"), ANSIThemeString(f"{src}", "path"), ANSIThemeString(" to ", "default"), ANSIThemeString(f"{dst}", "path")])
 
+	# Are there any path shenanigans going on?
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.RESOLVES_TO_SELF,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_FILE,
+	]
+
+	violations = check_path(src, checks = checks)
+	if violations != [SecurityStatus.OK]:
+		if verbose == True:
+			violation_strings = []
+			for violation in violations:
+				violation_strings.append(str(violation))
+			violations_joined = ",".join(violation_strings)
+			iktprint.iktprint([ANSIThemeString("Critical", "critical"), ANSIThemeString(": The source path ", "default"),
+					   ANSIThemeString(f"{src}", "path"),
+					   ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr = True)
+		if exit_on_failure == True:
+			sys.exit(errno.EINVAL)
+		return violations
+
+	# Are there any path shenanigans going on?
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.RESOLVES_TO_SELF,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.IS_DIR,
+	]
+
 	dst_path_parent = PurePath(dst).parent
-	dst_path_parent_resolved = Path(dst_path_parent).resolve()
+	violations = check_path(FilePath(str(PurePath(dst).parent)), checks = checks)
+
+	if violations != [SecurityStatus.OK]:
+		if verbose == True:
+			violation_strings = []
+			for violation in violations:
+				violation_strings.append(str(violation))
+			violations_joined = ",".join(violation_strings)
+			iktprint.iktprint([ANSIThemeString("Critical", "critical"), ANSIThemeString(": The target path ", "default"),
+					   ANSIThemeString(f"{dst_path_parent}", "path"),
+					   ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr = True)
+		if exit_on_failure == True:
+			sys.exit(errno.EINVAL)
+		return violations
 
 	dst_path = Path(dst)
 
@@ -781,43 +861,11 @@ def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit
 			iktprint.iktprint([ANSIThemeString("Error", "error"), ANSIThemeString(": The target path ", "default"),
 					   ANSIThemeString(f"{dst}", "path"),
 					   ANSIThemeString(" already exists; refusing to overwrite.", "default")], stderr = True)
-		return
-
-	# Are there any path shenanigans going on?
-	if dst_path_parent != dst_path_parent_resolved:
-		iktprint.iktprint([ANSIThemeString("Critical", "critical"), ANSIThemeString(": The target path ", "default"),
-				   ANSIThemeString(f"{dst}", "path"),
-				   ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue.", "default")], stderr = True)
 		if exit_on_failure == True:
-			iktprint.iktprint([ANSIThemeString("Aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
-
-		iktprint.iktprint([ANSIThemeString("Refusing to copy file.", "default")], stderr = True)
-		return
+		return [SecurityStatus.EXISTS]
 
 	dst_path_parent_path = Path(dst_path_parent)
-
-	if not dst_path_parent_path.is_dir():
-		iktprint.iktprint([ANSIThemeString("Error", "error"), ANSIThemeString(": The parent of the target path ", "default"),
-				   ANSIThemeString(f"{dst}", "path"),
-				   ANSIThemeString(" is not a directory; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
-
-	if dst_path_parent_path.owner() not in ("root", user):
-		iktprint.iktprint([ANSIThemeString("Error", "error"), ANSIThemeString(": The parent of the target path ", "default"),
-				   ANSIThemeString(f"{dst}", "path"),
-				   ANSIThemeString(" is not owned by ", "default"), ANSIThemeString("root", "emphasis"),
-				   ANSIThemeString(" or ", "default"), ANSIThemeString(user, "emphasis"), ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
-
-	parent_path_stat = dst_path_parent_path.stat()
-	parent_path_permissions = parent_path_stat.st_mode & 0o002
-
-	if parent_path_permissions != 0:
-		iktprint.iktprint([ANSIThemeString("Critical", "critical"), ANSIThemeString(": The parent of the target path ", "default"),
-				   ANSIThemeString(f"{dst}", "path"),
-				   ANSIThemeString(" is world writable", "default"), ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
 
 	# We don't need to inspect the content, so open it in binary mode
 	with open(src, "rb") as fr:
@@ -830,6 +878,7 @@ def copy_if_not_exists(src: FilePath, dst: FilePath, verbose: bool = False, exit
 		else:
 			with open(dst, "xb", opener = partial(os.open, mode = permissions)) as fw:
 				fw.write(content)
+	return [SecurityStatus.OK]
 
 def replace_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False) -> None:
 	"""

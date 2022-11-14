@@ -21,7 +21,7 @@ from iktpaths import BINDIR, HOMEDIR, IKTDIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIB
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIRNAME, IKT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
 
-from iktio import copy_if_not_exists, execute_command_with_response, mkdir_if_not_exists, replace_symlink, secure_which
+from iktio import execute_command_with_response, replace_symlink, secure_copy, secure_mkdir, secure_which
 
 from commandparser import parse_commandline
 from iktprint import iktprint, iktinput
@@ -88,7 +88,7 @@ def create_directories(directories, verbose: bool = False) -> None:
 	"""
 
 	for directory, permissions in directories:
-		mkdir_if_not_exists(directory, permissions = permissions, verbose = verbose)
+		secure_mkdir(directory, permissions = permissions, verbose = verbose)
 
 def create_symlinks(symlinks, verbose: bool = False) -> None:
 	"""
@@ -114,7 +114,7 @@ def copy_files(files, verbose: bool = False) -> None:
 	"""
 
 	for src, dst, permissions in files:
-		copy_if_not_exists(src, dst, verbose = verbose, permissions = permissions)
+		_violations = secure_copy(src, dst, verbose = verbose, permissions = permissions)
 
 # pylint: disable-next=unused-argument
 def install_software(packages, verbose: bool = False) -> None:
@@ -299,7 +299,7 @@ def install(options, args) -> None:
 		install_software_with_pip_fallback(PACKAGES_WITH_PIP_FALLBACK, verbose = verbose, pip_proxy = pip_proxy)
 
 	create_directories(directories = DIRECTORIES, verbose = verbose)
-	copy_files(files = CONFIGURATION_FILES, verbose = verbose)
+	_violations = copy_files(files = CONFIGURATION_FILES, verbose = verbose)
 	create_symlinks(symlinks = MISC_SYMLINKS + EXECUTABLE_SYMLINKS, verbose = verbose)
 
 	iktprint([ANSIThemeString("\nNote", "note"),
