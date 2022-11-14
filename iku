@@ -83,7 +83,7 @@ import helptexts
 
 from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, make_selector, update_api_status as kh_update_api_status
 
-from iktprint import ansithemestring_join_tuple_list, clear_screen, iktprint, init_iktprint
+from iktprint import ansithemestring_join_tuple_list, clear_screen, iktpinput, iktprint, init_iktprint
 
 import about
 
@@ -9185,13 +9185,21 @@ def create_namespace(stdscr, **kwargs):
 
 	# Verify that the name of the new namespace is valid
 	if kh.validate_name("dns-label", name) == False:
-		msg = [ANSIThemeString("Error: ", "error"), ANSIThemeString("“", "default"), ANSIThemeString(name, "argument"), ANSIThemeString("“ is not a valid name", "default")]
+		msg = [ANSIThemeString("Error: ", "error"),
+		       ANSIThemeString("“", "default"),
+		       ANSIThemeString(name, "argument"),
+		       ANSIThemeString("“ is not a valid name", "default")]
 		iktprint(msg, stderr = True)
 	elif kh.get_ref_by_kind_name_namespace(("Namespace", ""), name, "") is not None:
-		msg = [ANSIThemeString("Error: ", "error"), ANSIThemeString("namespace “", "default"), ANSIThemeString(name, "argument"), ANSIThemeString("“ already exists", "default")]
+		msg = [ANSIThemeString("Error: ", "error"),
+		       ANSIThemeString("namespace “", "default"),
+		       ANSIThemeString(name, "argument"),
+		       ANSIThemeString("“ already exists", "default")]
 		iktprint(msg, stderr = True)
 	else:
-		msg = [ANSIThemeString("Creating namespace “", "default"), ANSIThemeString(name, "argument"), ANSIThemeString("“", "default")]
+		msg = [ANSIThemeString("Creating namespace “", "default"),
+		       ANSIThemeString(name, "argument"),
+		       ANSIThemeString("“", "default")]
 		iktprint(msg)
 		msg, _status = kh.create_namespace(name)
 
@@ -9886,7 +9894,9 @@ def ssh_to_host(stdscr, **kwargs):
 	if host is None or len(host) == 0:
 		return
 
-	msg = [ANSIThemeString("SSH:ing to ", "action"), ANSIThemeString(host, "hostname"), ANSIThemeString(":\n", "action")]
+	msg = [ANSIThemeString("SSH:ing to ", "action"),
+	       ANSIThemeString(host, "hostname"),
+	       ANSIThemeString(":\n", "action")]
 
 	inventory = ansible_get_inventory_dict()
 
