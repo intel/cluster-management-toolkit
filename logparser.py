@@ -2433,7 +2433,7 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 		Returns:
 			(timestamp, facility, severity, message, remnants, (lparser, uparser), parser):
 				timestamp (datetime): A timestamp
-				facility: The log facility
+				facility (str): The log facility
 				severity (int): Loglevel
 				message (str): An unformatted string
 				remnants (list[(ThemeArray, LogLevel)]): Formatted remainders with severity

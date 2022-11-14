@@ -7,10 +7,9 @@ This generates elements for various more complex types
 # pylint: disable=too-many-arguments
 
 from datetime import datetime
-import sys
-from typing import cast, List, Tuple, Union
+from typing import cast, List, Union
 
-from curses_helper import color_status_group, themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString
+from curses_helper import color_status_group, themearray_len, ThemeAttr, ThemeRef, ThemeString
 import iktlib
 from iktlib import datetime_to_timestamp, timestamp_to_datetime
 from ikttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
@@ -64,7 +63,7 @@ def format_list(items, fieldlen: int, pad, ralign: bool, selected: bool,
 
 		if elcount == ellipsise:
 			ell = ellipsis
-			ell.selected
+			ell.selected = selected
 			totallen += len(ell)
 			array.append(ellipsis)
 			break
@@ -156,7 +155,7 @@ def map_value(value, references = None, selected: bool = False, default_field_co
 			attr_ref: str = deep_get(value, DictPath("type"))
 			themeref = ThemeRef(context, attr_ref, selected)
 			return themeref, str(themeref)
-		elif isinstance(value, ThemeRef):
+		if isinstance(value, ThemeRef):
 			return value, str(value)
 
 	# OK, so we want to output output_value, but compare using reference_value
@@ -209,7 +208,8 @@ def map_value(value, references = None, selected: bool = False, default_field_co
 		fmt = ThemeAttr("types", "generic")
 	return ThemeString(string, fmt, selected), string
 
-def align_and_pad(array: List[Union[ThemeRef, ThemeString]], pad: int, fieldlen: int, stringlen: int, ralign: bool, selected: bool) -> List[Union[ThemeRef, ThemeString]]:
+def align_and_pad(array: List[Union[ThemeRef, ThemeString]], pad: int, fieldlen: int, stringlen: int, ralign: bool, selected: bool) ->\
+			List[Union[ThemeRef, ThemeString]]:
 	tmp_array: List[Union[ThemeRef, ThemeString]] = []
 	if ralign:
 		tmp_array.append(ThemeString("".ljust(fieldlen - stringlen), ThemeAttr("types", "generic"), selected))

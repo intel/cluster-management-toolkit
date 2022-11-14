@@ -165,7 +165,8 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 
 	if checksum_type in ("shake_128", "shake_256"):
 		shake_length = len(match_checksum) // 2
-		if m.hexdigest(shake_length) != match_checksum:
+		# pylint: disable-next=too-many-function-args
+		if m.hexdigest(shake_length) != match_checksum: # type: ignore
 			return False
 	else:
 		if m.hexdigest() != match_checksum:

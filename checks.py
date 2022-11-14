@@ -69,8 +69,8 @@ def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfi
 			  ANSIThemeString(": strict SSH host key checking is disabled; this is a potential security threat.", "emphasis")], stderr = True)
 		iktprint([ANSIThemeString("    If strict SSH host key checking is disabled other systems can impersonate the remote host", "default")], stderr = True)
 		iktprint([ANSIThemeString("    and thus perform Man in the Middle (MITM) attacks.", "default")], stderr = True)
-		iktprint([ANSIThemeString("    It is strongly adviced that you enable strict SSH host key checking unless you're absolutely certain", "default")], stderr = True)
-		iktprint([ANSIThemeString("    that your network environment is safe.\n", "default")], stderr = True)
+		iktprint([ANSIThemeString("    It is strongly adviced that you enable strict SSH host key checking", "default")], stderr = True)
+		iktprint([ANSIThemeString("    unless you're absolutely certain that your network environment is safe.\n", "default")], stderr = True)
 		error += 1
 
 	return critical, error, warning, note

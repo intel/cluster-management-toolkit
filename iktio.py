@@ -480,9 +480,8 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 				for violation in violations:
 					violation_strings.append(str(violation))
 				violations_joined = ",".join(violation_strings)
-				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
-			else:
-				raise OSError from e
+				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path) from e
+			raise OSError from e
 
 def secure_write_string(path: FilePath, string: str, permissions = None, write_mode = "w") -> None:
 	"""
@@ -528,11 +527,11 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 		else:
 			with open(path, write_mode, opener = partial(os.open, mode = permissions), encoding = "utf-8") as f:
 				f.write(string)
-	except FileExistsError:
+	except FileExistsError as e:
 		if write_mode in ("x", "xb"):
-			raise FilePathAuditError("Violated rules: SecurityStatus.EXISTS", path = path)
+			raise FilePathAuditError("Violated rules: SecurityStatus.EXISTS", path = path) from e
 
-def secure_read(path: FilePath, checks = None, directory_is_symlink: bool = False, read_mode = "r") -> str:
+def secure_read(path: FilePath, checks = None, directory_is_symlink: bool = False, read_mode = "r") -> Union[str, bytes]:
 	"""
 	Read a string from a file in a safe manner
 
@@ -541,7 +540,7 @@ def secure_read(path: FilePath, checks = None, directory_is_symlink: bool = Fals
 			directory_is_symlink (bool): The directory that the path points to is a symlink
 			read_mode (str): [r, rb] Read text or binary
 		Returns:
-			string (str): The read string
+			string (union[str, bytes]): The read string
 		Raises:
 			ikttypes.FilePathAuditError
 	"""
@@ -610,14 +609,14 @@ def secure_read(path: FilePath, checks = None, directory_is_symlink: bool = Fals
 	# they have to capture the exception
 	if read_mode == "r":
 		with open(path, encoding = "utf-8") as f:
-			string = f.read()
+			string: Union[str, bytes] = f.read()
 	else:
 		with open(path, "rb") as f:
 			string = f.read()
 
 	return string
 
-def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool = False) -> str:
+def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool = False) -> Union[str, bytes]:
 	"""
 	Read a string from a file in a safe manner
 
@@ -797,7 +796,7 @@ def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = 
 		sys.exit(errno.EEXIST)
 
 	# These are the only acceptable conditions where we'd try to create the directory
-	if violations == [SecurityStatus.OK] or violations == [SecurityStatus.DOES_NOT_EXIST]:
+	if violations in ([SecurityStatus.OK], [SecurityStatus.DOES_NOT_EXIST]):
 		violations = []
 		try:
 			Path(directory).mkdir(mode = permissions, exist_ok = exist_ok)
@@ -818,8 +817,6 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 		Returns:
 			list[SecurityStatus]: [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
 	"""
-
-	user = getuser()
 
 	if verbose == True:
 		iktprint.iktprint([ANSIThemeString("Copying file ", "default"),
@@ -894,8 +891,6 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 			sys.exit(errno.EINVAL)
 		return [SecurityStatus.EXISTS]
 
-	dst_path_parent_path = Path(dst_path_parent)
-
 	# We don't need to inspect the content, so open it in binary mode
 	with open(src, "rb") as fr:
 		content = fr.read()
@@ -909,6 +904,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 				fw.write(content)
 	return [SecurityStatus.OK]
 
+# pylint: disable-next=too-many-return-statements
 def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False, replace_existing: bool = False) -> List[SecurityStatus]:
 	"""
 	Create or replace a symlink
@@ -982,7 +978,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 			sys.exit(errno.EINVAL)
 		elif verbose == True:
 			iktprint.iktprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
-		return [SecurityStatus.PARENT_OWNER]
+		return [SecurityStatus.PARENT_OWNER_NOT_IN_ALLOWLIST]
 
 	parent_path_stat = dst_path_parent_path.stat()
 	parent_path_permissions = parent_path_stat.st_mode & 0o002
@@ -1045,7 +1041,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 			elif verbose == True:
 				iktprint.iktprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
 			return [SecurityStatus.EXISTS]
-			
+
 		dst_path.unlink()
 
 	try:

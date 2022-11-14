@@ -26,7 +26,7 @@ about = [
 	(0, [ThemeString("   ████   ████    ◥███◣        ████         ", ThemeAttr("main", "logo_letter"))]),
 	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
 	(0, [ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION}", ThemeAttr("main", "about_version"))]), # pylint: disable=line-too-long
-	(0, [ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))]),
+	(0, [ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))]), # pylint: disable=line-too-long
 	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
 	(0, [ThemeString(" Copyright © 2019-2022 Intel Corporation", ThemeAttr("main", "about_text_highlight"))]),
 	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
@@ -224,7 +224,7 @@ usage += [ANSIThemeString("                         if ", "description"),
 	  ANSIThemeString(" has exactly one container, then ", "description"),
 	  ANSIThemeString("NAME:", "argument"), ANSIThemeString(" opens that container\n", "description")]
 usage += [ANSIThemeString("configmap ", "command"), ANSIThemeString("NAME NAMESPACE CONFIGMAP\n", "argument")]
-usage += [ANSIThemeString("configmap ", "command"), ANSIThemeString("[", "separator"), ANSIThemeString("NAMESPACE/", "argument"), ANSIThemeString("]", "separator"),
+usage += [ANSIThemeString("configmap ", "command"), ANSIThemeString("[", "separator"), ANSIThemeString("NAMESPACE/", "argument"), ANSIThemeString("]", "separator"), # pylint: disable=line-too-long
 	  ANSIThemeString("NAME:", "argument"), ANSIThemeString("[", "separator"), ANSIThemeString("CONFIGMAP", "argument"), ANSIThemeString("]\n", "separator")]
 usage += [ANSIThemeString("                         start in the configmap info view matching ", "description"),
 	  ANSIThemeString("NAME", "argument"), ANSIThemeString(", ", "description"),
@@ -239,7 +239,7 @@ usage += [ANSIThemeString("  --read-only ", "option"),
           ANSIThemeString("           disable all commands that modify state", "description")]
 usage += [ANSIThemeString("\n", "description")]
 usage += [ANSIThemeString("  --namespace ", "option"), ANSIThemeString("NAMESPACE", "argument"),
-          ANSIThemeString("  only show namespace ", "description"), ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString(" (valid for all namespaced views)\n", "description")]
+          ANSIThemeString("  only show namespace ", "description"), ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString(" (valid for all namespaced views)\n", "description")] # pylint: disable=line-too-long
 usage += [ANSIThemeString("\n", "description")]
 usage += [ANSIThemeString("list-views     ", "command"),
           ANSIThemeString("          list view information and exit\n", "description")]

@@ -95,7 +95,6 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	for playbookpath in paths:
-		playbookpath = playbookpath
 		pathname = PurePath(playbookpath).name
 		playbook_dir = FilePath(str(PurePath(playbookpath).parent))
 
@@ -957,7 +956,7 @@ def ansible_results_add(event: Dict) -> int:
 		Returns:
 			(int): 0 on success, -1 if host is unreachable, retval on other failure
 	"""
-	global ansible_results
+	global ansible_results # pylint: disable=global-variable-not-assigned
 
 	host = deep_get(event, DictPath("event_data#host"), "")
 	__retval, d = ansible_results_extract(event)

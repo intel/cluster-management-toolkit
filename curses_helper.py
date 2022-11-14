@@ -15,7 +15,7 @@ import errno
 from operator import attrgetter
 from pathlib import Path, PurePath
 import sys
-from typing import Any, cast, Dict, List, Optional, NamedTuple, NoReturn, Sequence, Set, Tuple, Union
+from typing import Any, cast, Dict, List, Optional, NamedTuple, NoReturn, Sequence, Set, Tuple, Type, Union
 
 try:
 	from natsort import natsorted
@@ -62,17 +62,17 @@ class ThemeRef:
 		self.key = key
 		self.selected = selected
 
-	def __str__(self):
+	def __str__(self) -> str:
 		string = ""
 		array = theme[self.context][self.key]
 		for string_fragment, _attr in array:
 			string += string_fragment
 		return string
 
-	def __len__(self):
+	def __len__(self) -> int:
 		return len(str(self))
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return f"ThemeRef(\"{self.context}\", \"{self.key}\", \"{self.selected}\")"
 
 class ThemeString:
@@ -92,13 +92,13 @@ class ThemeString:
 		self.themeattr = themeattr
 		self.selected = selected
 
-	def __str__(self):
+	def __str__(self) -> str:
 		return self.string
 
-	def __len__(self):
+	def __len__(self) -> int:
 		return len(self.string)
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return f"ThemeString(\"{self.string}\", {repr(self.themeattr)}, \"{self.selected}\")"
 
 class ThemeArray:
@@ -127,30 +127,32 @@ class ThemeArray:
 
 		self.array = newarray
 
-	def append(self, item: Union[ThemeRef, ThemeString]):
+	def append(self, item: Union[ThemeRef, ThemeString]) -> None:
 		if not isinstance(item, (ThemeRef, ThemeString)):
 			raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
 		self.array.append(item)
 
-	def __add__(self, array):
+	def __add__(self, array: List[Union[ThemeRef, ThemeString]]) -> ThemeArray:
 		tmparray: List[Union[ThemeRef, ThemeString]] = []
-		for item in self.array, array:
+		for item in self.array:
+			tmparray.append(item)
+		for item in array:
 			tmparray.append(item)
 		return ThemeArray(tmparray)
 
-	def __str__(self):
+	def __str__(self) -> str:
 		string = ""
 		for item in self.array:
 			string += str(item)
 		return string
 
-	def __len__(self):
+	def __len__(self) -> int:
 		arraylen = 0
 		for item in self.array:
 			arraylen += len(item)
 		return arraylen
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		references = ""
 		first = True
 		for item in self.array:
@@ -405,7 +407,7 @@ def color_log_severity(severity: LogLevel) -> ThemeAttr:
 def color_status_group(status_group: StatusGroup) -> ThemeAttr:
 	return ThemeAttr("main", stgroup_mapping[status_group])
 
-def window_tee_hline(win: curses.window, y: int, start: int, end: int, attribute: int = None) -> None:
+def window_tee_hline(win: curses.window, y: int, start: int, end: int, attribute: Optional[int] = None) -> None:
 	_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
 	_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
 	_hline = theme["boxdrawing"].get("hline", curses.ACS_HLINE)
@@ -427,7 +429,7 @@ def window_tee_hline(win: curses.window, y: int, start: int, end: int, attribute
 	else:
 		win.addch(y, end, _rtee)
 
-def window_tee_vline(win: curses.window, x: int, start: int, end: int, attribute: int = None) -> None:
+def window_tee_vline(win: curses.window, x: int, start: int, end: int, attribute: Optional[int] = None) -> None:
 	_ttee = theme["boxdrawing"].get("ttee", curses.ACS_TTEE)
 	_btee = theme["boxdrawing"].get("btee", curses.ACS_BTEE)
 	_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
@@ -631,7 +633,7 @@ def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, 
 	return win
 
 # pylint: disable=unused-argument
-def __notification(stdscr: Optional[curses.window], y: int, x: int, message: str, formatting) -> curses.window:
+def __notification(stdscr: Optional[curses.window], y: int, x: int, message: str, formatting: ThemeAttr) -> curses.window:
 	height = 3
 	width = 2 + len(message)
 	ypos = y - height // 2
@@ -663,7 +665,7 @@ def alert(stdscr: Optional[curses.window], y: int, x: int, message: str) -> curs
 
 
 # pylint: disable-next=too-many-arguments
-def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int, title: str = None) -> curses.window:
+def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int, title: Optional[str] = None) -> curses.window:
 	"""
 	A progress bar;
 	Usage: Initialise by calling with a reference to a variable set to None
@@ -1005,7 +1007,7 @@ def __attr_to_curses(attr, selected: bool = False) -> Tuple[int, int]:
 		raise KeyError(f"__attr_to_curses: (color: {col}, selected: {selected}) not found") from e
 	return key, attr
 
-def attr_to_curses(context: str, attr: str, selected: bool = False):
+def attr_to_curses(context: str, attr: str, selected: bool = False) -> Tuple[int, int]:
 	# <attr> is a string that references a field in the section <context> of the themes-file;
 	# that field can either be either a string, which in that case will be used directly against
 	# the colour lookup table, or a list, in which case the first entry is the colour,
@@ -1062,11 +1064,7 @@ def themearray_to_string(themearray: Sequence[Union[str,
 		return str(themearray)
 
 	for fragment in themearray:
-		if isinstance(fragment, ThemeString):
-			string += str(fragment)
-			continue
-
-		if isinstance(fragment, ThemeRef):
+		if isinstance(fragment, (ThemeRef, ThemeString)):
 			string += str(fragment)
 			continue
 
@@ -1139,7 +1137,7 @@ def themeref_to_cursesarray(themeref: ThemeRef, selected: Optional[bool] = None)
 
 	return cursesarray
 
-def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False):
+def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[int, int]:
 	"""
 	Given a themeattr returns a tuple with curses color + curses attributes
 
@@ -1153,7 +1151,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False):
 	context, key = themeattr
 	return attr_to_curses(context, key, selected)
 
-def themeattr_to_curses_merged(themeattr: ThemeAttr, selected: bool = False):
+def themeattr_to_curses_merged(themeattr: ThemeAttr, selected: bool = False) -> int:
 	"""
 	Given a themeattr returns merged curses color + curses attributes
 
@@ -1168,7 +1166,7 @@ def themeattr_to_curses_merged(themeattr: ThemeAttr, selected: bool = False):
 	color, attrs = attr_to_curses(context, key, selected)
 	return color | attrs
 
-def themestring_to_cursestuple(themestring: ThemeString, selected: bool = None) -> Tuple[str, int]:
+def themestring_to_cursestuple(themestring: ThemeString, selected: Optional[bool] = None) -> Tuple[str, int]:
 	"""
 	Given a themestring returns a cursestuple
 
@@ -1691,7 +1689,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 
 label_headers = ["Label:", "Value:"]
 
-def get_labels(labels: Dict):
+def get_labels(labels: Optional[Dict]) -> Optional[List[Dict]]:
 	"""
 	Get labels
 
@@ -1715,14 +1713,14 @@ def get_labels(labels: Dict):
 
 annotation_headers = ["Annotation:", "Value:"]
 
-def get_annotations(annotations):
+def get_annotations(annotations: Optional[Dict]) -> Optional[List[Dict]]:
 	"""
 	Get annotations
 
 		Parameters:
-			annotations (dict: A dict
+			annotations (dict): A dict
 		Returns:
-			The return value from get_labels()
+			None if no labels are found, list[(WidgetLineAttrs, themestr, themestr)] if annotations are found
 	"""
 
 	return get_labels(annotations)
@@ -1733,25 +1731,24 @@ class UIProps:
 	The class used for the iKT UI
 	"""
 
-	def __init__(self, stdscr):
-		self.stdscr = stdscr
+	def __init__(self, stdscr: curses.window) -> None:
+		self.stdscr: curses.window = stdscr
 
 		# Helptext
 		self.helptext = None
 
 		# Info to use for populating lists, etc.
-		self.info = None
-		self.sorted_list = None
+		self.sorted_list: List[Type] = []
 		self.sortorder_reverse = False
 
 		# Used for searching
 		self.searchkey = ""
 
 		# Used for label list
-		self.labels = None
+		self.labels: Optional[List[Dict]] = None
 
 		# Used for annotation list
-		self.annotations = None
+		self.annotations: Optional[List[Dict]] = None
 
 		# Reference to the external color class
 		self.miny = 0
@@ -1777,15 +1774,11 @@ class UIProps:
 		self.sortcolumn = ""
 		self.sortkey1 = ""
 		self.sortkey2 = ""
-		self.field_list = None
+		self.field_list: Dict = {}
 		# Should there be a timestamp in the upper right corner?
 		self.timestamp = True
 
 		self.selected = None
-
-		# For important status;
-		# shown next to the window title
-		self.extra_status = None
 
 		# For generic information
 		self.infopadminwidth = 0
@@ -1793,23 +1786,23 @@ class UIProps:
 		self.infopadxpos = 0
 		self.infopadheight = 0
 		self.infopadwidth = 0
-		self.infopad = None
+		self.infopad: Optional[curses.window] = None
 		# For lists
 		self.headerpadminwidth = 0
 		self.headerpadypos = 0
 		self.headerpadxpos = 0
 		self.headerpadheight = 0
 		self.headerpadwidth = 0
-		self.headerpad = None
-		self.listlen = None
-		self.info = None
+		self.headerpad: Optional[curses.window] = None
+		self.listlen: int = 0
+		self.info: List[Type] = []
 		# This is a list of the xoffset for all headers in listviews
-		self.tabstops = []
+		self.tabstops: List[int] = []
 		self.listpadypos = 0
 		self.listpadxpos = 0
 		self.listpadheight = 0
 		self.listpadwidth = 0
-		self.listpad = None
+		self.listpad: Optional[curses.window] = None
 		self.listpadminwidth = 0
 		self.reversible = True
 		# For logs with a timestamp column
@@ -1817,24 +1810,24 @@ class UIProps:
 		self.tspadxpos = 0
 		self.tspadheight = 0
 		self.tspadwidth = len("YYYY-MM-DD HH:MM:SS")
-		self.tspad = None
-		self.borders = None
+		self.tspad: Optional[curses.window] = None
+		self.borders = True
 		self.logpadypos = 0
 		self.logpadxpos = 0
 		self.logpadheight = 0
 		self.logpadwidth = 0
-		self.logpad = None
+		self.logpad: Optional[curses.window] = None
 		self.loglen = 0
 		self.logpadminwidth = 0
-		self.statusbar = None
-		self.statusbarypos = None
+		self.statusbar: Optional[curses.window] = None
+		self.statusbarypos: int = 0
 		self.continuous_log = False
-		self.match_index = None
-		self.search_matches = set()
-		self.timestamps = None
-		self.facilities = None
-		self.severities = None
-		self.messages = None
+		self.match_index: Optional[int] = None
+		self.search_matches: Set[int] = set()
+		self.timestamps: Optional[List[datetime]] = None
+		self.facilities: Optional[List[str]] = None
+		self.severities: Optional[List[LogLevel]] = None
+		self.messages: Optional[List[str]] = None
 		# For checking clicks/drags of the scrollbars
 		self.leftarrow = -1, -1
 		self.rightarrow = -1, -1
@@ -1845,12 +1838,12 @@ class UIProps:
 
 		# Function handler for <enter> / <double-click>
 		self.activatedfun = None
-		self.on_activation = {}
+		self.on_activation: Dict = {}
 		self.extraref = None
 		self.data = None
 
-		self.windowheader = None
-		self.view = None
+		self.windowheader: str = ""
+		self.view = ""
 
 	def __del__(self) -> None:
 		if self.infopad is not None:
@@ -1862,9 +1855,6 @@ class UIProps:
 		if self.logpad is not None:
 			del self.logpad
 
-	def set_extra_status(self, extra_status = None) -> None:
-		self.extra_status = extra_status
-
 	def update_sorted_list(self) -> None:
 		sortkey1, sortkey2 = self.get_sortkeys()
 		try:
@@ -1873,13 +1863,13 @@ class UIProps:
 			# We couldn't sort the list; we should log and just keep the current sort order
 			pass
 
-	def update_info(self, info) -> int:
+	def update_info(self, info: List[Type]) -> int:
 		self.info = info
 		self.listlen = len(self.info)
 
 		return self.listlen
 
-	def update_log_info(self, timestamps, facilities, severities, messages) -> None:
+	def update_log_info(self, timestamps: Optional[List[datetime]], facilities: Optional[List[str]], severities: Optional[List[LogLevel]], messages: Optional[List[str]]) -> None:
 		self.timestamps = timestamps
 		self.facilities = facilities
 		self.severities = severities
@@ -1908,7 +1898,7 @@ class UIProps:
 	def select(self, selection) -> None:
 		self.selected = selection
 
-	def select_if_y(self, y, selection) -> None:
+	def select_if_y(self, y: int, selection: int) -> None:
 		if self.yoffset + self.curypos == y:
 			self.select(selection)
 
@@ -1924,7 +1914,7 @@ class UIProps:
 	# Default behaviour:
 	# timestamps enabled, no automatic updates, default sortcolumn = "status"
 	# pylint: disable-next=too-many-arguments
-	def init_window(self, field_list, view = None, windowheader: str = "",
+	def init_window(self, field_list: Dict, view = None, windowheader: str = "",
 			timestamp = True, update_delay: int = -1, sortcolumn: str = "status", sortorder_reverse: bool = False, reversible: bool = True,
 			helptext = None, activatedfun = None, on_activation = None, extraref = None, data = None) -> None:
 		self.field_list = field_list
@@ -1956,7 +1946,7 @@ class UIProps:
 		self.extraref = extraref
 		self.data = data
 
-	def reinit_window(self, field_list, sortcolumn: str) -> None:
+	def reinit_window(self, field_list: Dict, sortcolumn: str) -> None:
 		self.field_list = field_list
 		self.searchkey = ""
 		self.sortcolumn = sortcolumn
@@ -2021,7 +2011,7 @@ class UIProps:
 
 		self.reset_update_delay()
 
-	def update_timestamp(self, ypos: int, xpos: int, ralign: bool = False):
+	def update_timestamp(self, ypos: int, xpos: int, ralign: bool = False) -> None:
 		del ypos
 
 		_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
@@ -2037,7 +2027,7 @@ class UIProps:
 		if self.borders == True:
 			self.stdscr.addch(_ltee)
 
-	def draw_winheader(self):
+	def draw_winheader(self) -> None:
 		_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
 		_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
 		_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
@@ -2050,10 +2040,6 @@ class UIProps:
 				self.addthemearray(self.stdscr, winheaderarray, y = 0, x = 2)
 			else:
 				self.addthemearray(self.stdscr, winheaderarray, y = 0, x = 0)
-			if self.extra_status is not None:
-				self.stdscr.addch(_vline)
-				extra_msg, extra_status = self.extra_status
-				self.stdscr.addstr(extra_msg, color_status_group(extra_status))
 			self.stdscr.addch(_ltee)
 
 	def refresh_window(self) -> None:
@@ -2129,7 +2115,7 @@ class UIProps:
 	# For generic information
 	# Pass -1 as width to the infopadminwidth
 	# pylint: disable-next=too-many-arguments
-	def init_infopad(self, height: int, width: int, ypos: int, xpos: int, labels = None, annotations = None):
+	def init_infopad(self, height: int, width: int, ypos: int, xpos: int, labels: Optional[Dict] = None, annotations: Optional[Dict] = None):
 		self.infopadminwidth = self.maxx + 1
 		self.infopadypos = ypos
 		self.infopadxpos = xpos
@@ -2142,6 +2128,8 @@ class UIProps:
 
 	# Pass -1 to keep the current height/width
 	def resize_infopad(self, height: int, width: int) -> None:
+		if self.infopad is None:
+			return
 		self.infopadminwidth = self.maxx - self.infopadxpos
 		if height != -1:
 			self.infopadheight = height
@@ -2173,7 +2161,7 @@ class UIProps:
 	# optionally with a header
 	# Pass -1 as width to use listpadminwidth
 	# pylint: disable-next=too-many-arguments
-	def init_listpad(self, listheight: int, width: int, ypos: int, xpos: int, header: bool = True):
+	def init_listpad(self, listheight: int, width: int, ypos: int, xpos: int, header: bool = True) -> Tuple[Optional[curses.window], curses.window]:
 		self.listpadminwidth = self.maxx
 		if header == True:
 			self.headerpadypos = ypos
@@ -2194,6 +2182,8 @@ class UIProps:
 
 	# Pass -1 to keep the current height/width
 	def resize_listpad(self, height: int, width: int) -> None:
+		if self.listpad is None:
+			return
 		self.listpadminwidth = self.maxx
 		if height != -1:
 			self.listpadheight = height
@@ -2213,7 +2203,7 @@ class UIProps:
 		self.headerpadwidth = self.listpadwidth
 		self.maxxoffset = max(0, self.listpadwidth - self.listpadminwidth)
 
-		if self.headerpadheight > 0:
+		if self.headerpad is not None and self.headerpadheight > 0:
 			self.headerpad.resize(self.headerpadheight, self.headerpadwidth)
 		if self.listpadheight > 0:
 			self.listpad.resize(max(self.listpadheight, self.maxy), self.listpadwidth)
@@ -2239,7 +2229,7 @@ class UIProps:
 				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
 
 	# Recalculate the xpos of the log; this is needed when timestamps are toggled
-	def recalculate_logpad_xpos(self, tspadxpos: int = -1, timestamps = None) -> None:
+	def recalculate_logpad_xpos(self, tspadxpos: int = -1, timestamps: Optional[bool] = None) -> None:
 		if tspadxpos == -1:
 			if self.tspadxpos is None:
 				raise Exception("logpad is not initialised and no tspad xpos provided")
@@ -2265,7 +2255,7 @@ class UIProps:
 	# as the yoffset changes.  The pad is still variable width though.
 	#
 	# Pass -1 as width to use logpadminwidth
-	def init_logpad(self, width: int, ypos: int, xpos: int, timestamps: bool = True):
+	def init_logpad(self, width: int, ypos: int, xpos: int, timestamps: bool = True) -> Tuple[Optional[curses.window], curses.window]:
 		self.match_index = None
 		self.search_matches = set()
 
@@ -2306,7 +2296,8 @@ class UIProps:
 		if self.logpadheight > 0:
 			if self.tspad is not None and self.tspadxpos != self.logpadxpos:
 				self.tspad.resize(self.tspadheight + 1, self.tspadwidth + 1)
-			self.logpad.resize(self.logpadheight + 1, self.logpadwidth + 1)
+			if self.logpad is not None:
+				self.logpad.resize(self.logpadheight + 1, self.logpadwidth + 1)
 		self.maxyoffset = max(0, self.loglen - self.logpadheight)
 		self.maxxoffset = max(0, self.logpadwidth - self.logpadminwidth)
 		self.yoffset = min(self.yoffset, self.maxyoffset)
@@ -2340,13 +2331,13 @@ class UIProps:
 		else:
 			self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 2, self.maxx)
 
-	def toggle_timestamps(self, timestamps = None) -> None:
+	def toggle_timestamps(self, timestamps: Optional[bool] = None) -> None:
 		if timestamps is None:
 			timestamps = self.tspadxpos == self.logpadxpos
 
 		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos, timestamps = timestamps)
 
-	def toggle_borders(self, borders = None) -> None:
+	def toggle_borders(self, borders: Optional[bool] = None) -> None:
 		if borders is None:
 			self.borders = not self.borders
 		else:
@@ -2374,7 +2365,7 @@ class UIProps:
 			self.statusbar = curses.newpad(2, self.maxx + 1)
 
 	# pylint: disable-next=too-many-arguments
-	def __addstr(self, win: curses.window, string: str, y: int = -1, x: int = -1, attribute: int = curses.A_NORMAL):
+	def __addstr(self, win: curses.window, string: str, y: int = -1, x: int = -1, attribute: int = curses.A_NORMAL) -> Tuple[int, int]:
 		cury, curx = win.getyx()
 		winmaxy, winmaxx = win.getmaxyx()
 		newmaxy = max(y, winmaxy)
@@ -2570,7 +2561,7 @@ class UIProps:
 					break
 
 	# Find the next line that has severity > NOTICE
-	def next_line_by_severity(self, severities) -> None:
+	def next_line_by_severity(self, severities: Optional[List[LogLevel]]) -> None:
 		y = 0
 		newoffset = self.yoffset
 
@@ -2588,7 +2579,7 @@ class UIProps:
 		self.refresh = True
 
 	# Find the prev line that has severity > NOTICE
-	def prev_line_by_severity(self, severities) -> None:
+	def prev_line_by_severity(self, severities: Optional[List[LogLevel]]) -> None:
 		y = 0
 		newoffset = self.yoffset
 
@@ -2606,7 +2597,7 @@ class UIProps:
 		self.yoffset = newoffset
 		self.refresh = True
 
-	def next_by_sortkey(self, info) -> None:
+	def next_by_sortkey(self, info: List[Type]) -> None:
 		if self.sortkey1 is None:
 			return
 
@@ -2647,7 +2638,7 @@ class UIProps:
 		# If we don't match we'll just end up with the old pos
 		self.move_cur_with_offset(newpos)
 
-	def prev_by_sortkey(self, info) -> None:
+	def prev_by_sortkey(self, info: List[Type]) -> None:
 		if self.sortkey1 is None:
 			return
 
@@ -2693,7 +2684,7 @@ class UIProps:
 		else:
 			self.move_cur_with_offset(newpos)
 
-	def find_next_by_sortkey(self, info, searchkey: str) -> None:
+	def find_next_by_sortkey(self, info: List[Type], searchkey: str) -> None:
 		pos = self.curypos + self.yoffset
 		offset = 0
 
@@ -2728,7 +2719,7 @@ class UIProps:
 		# If we don't match we'll just end up with the old pos
 		self.move_cur_with_offset(offset)
 
-	def find_prev_by_sortkey(self, info, searchkey: str) -> None:
+	def find_prev_by_sortkey(self, info: List[Type], searchkey: str) -> None:
 		pos = self.curypos + self.yoffset
 		offset = 0
 
@@ -2757,7 +2748,7 @@ class UIProps:
 		# If we don't match we'll just end up with the old pos
 		self.move_cur_with_offset(offset)
 
-	def goto_first_match_by_name_namespace(self, name: str, namespace: str) -> Optional[Any]:
+	def goto_first_match_by_name_namespace(self, name: str, namespace: str) -> Optional[Type]:
 		"""
 		This function is used to find the first match based on command line input
 		The sort order used will still be the default, to ensure that the partial
@@ -2767,7 +2758,7 @@ class UIProps:
 				name (str): The name to search for
 				namespace (str): The namespace to search for
 			Returns:
-				match (Any): The unique match, the first partial match if no unique match is found, or None if no match is found
+				match (InfoType): The unique match, the first partial match if no unique match is found, or None if no match is found
 		"""
 
 		if self.info is None or len(self.info) == 0 or name is None or len(name) == 0 or hasattr(self.info[0], "name") == False:
@@ -2853,7 +2844,7 @@ class UIProps:
 		return sortkey1, sortkey2
 
 	# pylint: disable-next=too-many-arguments,too-many-return-statements
-	def handle_mouse_events(self, win: curses.window, sorted_list, activatedfun, extraref, data):
+	def handle_mouse_events(self, win: curses.window, sorted_list, activatedfun, extraref, data) -> Retval:
 		try:
 			_eventid, x, y, _z, bstate = curses.getmouse()
 		except curses.error:
@@ -3045,7 +3036,8 @@ class UIProps:
 				set_mousemask(-1)
 			else:
 				set_mousemask(0)
-			self.statusbar.erase()
+			if self.statusbar is not None:
+				self.statusbar.erase()
 			self.refresh_all()
 			return Retval.MATCH
 		elif c == ord("") or c == ord(""):
@@ -3333,7 +3325,8 @@ class UIProps:
 			set_mousemask(-1)
 		else:
 			set_mousemask(0)
-		self.statusbar.erase()
+		if self.statusbar is not None:
+			self.statusbar.erase()
 		self.refresh_all()
 		return Retval.MATCH, {}
 

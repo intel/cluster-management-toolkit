@@ -233,7 +233,7 @@ COMMANDLINEDEFAULTS = {
 
 # pylint: disable-next=line-too-long
 def parse_commandline(__programname: str, __programversion: str, __programdescription: str, __programauthors: str, argv: List[str],
-		      __commandline: Dict, default_command: str = None, theme: FilePath = None):
+		      __commandline: Dict, default_command: Optional[str] = None, theme: Optional[FilePath] = None):
 	"""
 	Parse the command line
 

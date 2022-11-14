@@ -30,7 +30,6 @@ import about
 PROGRAMDESCRIPTION = "Setup Intel Kubernetes Toolkit"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
-
 DIRECTORIES = [
 	(BINDIR, 0o755),
 	(IKTDIR, 0o755),
@@ -229,6 +228,7 @@ def install_software_with_pip_fallback(packages, pip_proxy: str = "", verbose: b
 
 	return list(pkgs), list(fallbacks)
 
+# pylint: disable-next=unused-argument
 def install(options, args) -> None:
 	"""
 	Create directories, install configuration files, create symlinks,

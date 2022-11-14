@@ -6,7 +6,7 @@ Format text as themearrays
 
 import re
 import sys
-from typing import Any, Callable, cast, Dict, List, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 import yaml
 
 from ikttypes import deep_get, DictPath
@@ -68,7 +68,7 @@ def format_none(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union
 		dumps.append([ThemeString(line, ThemeAttr("types", "generic"))])
 	return dumps
 
-def format_yaml_line(line: str, override_formatting: Union[ThemeAttr, Dict] = None) -> List[Union[ThemeRef, ThemeString]]:
+def format_yaml_line(line: str, override_formatting: Optional[Union[ThemeAttr, Dict]] = None) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Formats a single line of Yaml
 

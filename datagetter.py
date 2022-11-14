@@ -6,7 +6,7 @@ datagetters are used for data extraction that's too complext to be expressed by 
 """
 
 import re
-from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 from iktlib import get_since, timestamp_to_datetime
 from ikttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
