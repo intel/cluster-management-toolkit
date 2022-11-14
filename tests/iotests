@@ -11,7 +11,7 @@ from types import GeneratorType
 from typing import Dict
 import yaml
 
-from iktio import check_path, secure_copy, secure_mkdir, secure_read, secure_read_string, secure_rm, secure_rmdir, secure_which, secure_write_string
+from iktio import check_path, secure_copy, secure_mkdir, secure_read, secure_read_string, secure_rm, secure_rmdir, secure_symlink, secure_which, secure_write_string
 from iktio_yaml import secure_read_yaml, secure_read_yaml_all, secure_write_yaml
 from networkio import verify_checksum
 from iktpaths import HOMEDIR
@@ -322,6 +322,35 @@ def test_secure_copy(testcase: str, checkdata: Dict) -> int:
 	print(f"PASS: Testcase: {testcase}")
 	return 0
 
+def test_secure_symlink(testcase: str, checkdata: Dict) -> int:
+	"""
+	Test whether iktio.secure_symlink() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	src = deep_get(checkdata, DictPath("src"), "")
+	path = deep_get(checkdata, DictPath("path"), "")
+	replace = deep_get(checkdata, DictPath("replace"))
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	violations = secure_symlink(src, path, replace_existing = replace)
+	violations_set = set(violations)
+
+	if violations == [SecurityStatus.OK] and not Path(path).is_symlink():
+		violations_set.add(SecurityStatus.DOES_NOT_EXIST)
+		violations_set.discard(SecurityStatus.OK)
+
+	if violations_set != expect:
+		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
+		return 1
+	print(f"PASS: Testcase: {testcase}")
+	return 0
+
 def test_secure_write_string(testcase: str, checkdata: Dict) -> int:
 	"""
 	Test whether iktio.secure_write_string() works correctly
@@ -356,7 +385,7 @@ def test_secure_write_string(testcase: str, checkdata: Dict) -> int:
 			if path_stat.st_mode & 0o777 != permissions:
 				violations_set.add("SecurityStatus.PERMISSIONS")
 
-	if violations_set != expect:
+	if expect is not None and violations_set != expect:
 		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
 		return 1
 
@@ -400,7 +429,7 @@ def test_secure_write_yaml(testcase: str, checkdata: Dict) -> int:
 			if path_stat.st_mode & 0o777 != permissions:
 				violations_set.add("SecurityStatus.PERMISSIONS")
 
-	if violations_set != expect:
+	if expect is not None and violations_set != expect:
 		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
 		return 1
 	print(f"PASS: Testcase: {testcase}")
@@ -878,11 +907,11 @@ testcases = {
 		"expect": {SecurityStatus.DOES_NOT_EXIST, SecurityStatus.PATH_NOT_RESOLVING_TO_SELF},
 	},
 	"46: Copying file to symlinked directory (secure_copy)": {
-		"path": FilePath(f"{TEST_DIR}/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
+		"src": FilePath(f"{TEST_DIR}/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_copy,
 		"permissions": 0o600,
-		"expect": {SecurityStatus.DOES_NOT_EXIST, SecurityStatus.IS_NOT_FILE, SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF},
+		"expect": {SecurityStatus.DOES_NOT_EXIST, SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF},
 	},
 	"47: verify_checksum() (MD5)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
@@ -1070,8 +1099,54 @@ testcases = {
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	# TODO:
-	# * iktio.replace_symlink
+	"77: Symlink valid source, valid destination, replace = True (secure_symlink)": {
+		"src": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
+		"path": FilePath(f"{TEST_DIR}/test_symlink"),
+		"replace": True,
+		"test": test_secure_symlink,
+		"expect": {SecurityStatus.OK},
+	},
+	"78: Symlink valid source, valid destination, replace = False (secure_symlink)": {
+		"src": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
+		"path": FilePath(f"{TEST_DIR}/test_symlink"),
+		"replace": False,
+		"test": test_secure_symlink,
+		"expect": {SecurityStatus.EXISTS},
+	},
+	"79: Symlink non-existing source parent, valid destination (secure_symlink)": {
+		"src": FilePath(f"{TEST_DIR}/this path does not exist/not this either"),
+		"path": FilePath(f"{TEST_DIR}/test_symlink"),
+		"replace": True,
+		"test": test_secure_symlink,
+		"expect": {SecurityStatus.PARENT_DOES_NOT_EXIST},
+	},
+	"80: Symlink source with parent path resolution issues, valid destination (secure_symlink)": {
+		"src": FilePath(f"{TEST_DIR}/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
+		"path": FilePath(f"{TEST_DIR}/test_symlink"),
+		"replace": True,
+		"test": test_secure_symlink,
+		"expect": {SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF},
+	},
+	"--: Writing text to a file as preparation (secure_write_string)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"test": test_secure_write_string,
+		"permissions": 0o600,
+		"expect": None,
+	},
+	"81: Symlink valid source, non-symlink destination, replace = True (secure_symlink)": {
+		"src": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"replace": True,
+		"test": test_secure_symlink,
+		"expect": {SecurityStatus.EXISTS},
+	},
+	"82: Symlink valid source, non-symlink destination, replace = False (secure_symlink)": {
+		"src": FilePath(f"{TEST_DIR}/13-correct_directory/16-correct_file_in_correct_permission_directory"),
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"replace": False,
+		"test": test_secure_symlink,
+		"expect": {SecurityStatus.EXISTS},
+	},
 }
 
 def main() -> int:

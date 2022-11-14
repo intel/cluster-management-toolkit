@@ -21,7 +21,7 @@ from iktpaths import BINDIR, HOMEDIR, IKTDIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIB
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIRNAME, IKT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
 
-from iktio import execute_command_with_response, replace_symlink, secure_copy, secure_mkdir, secure_which
+from iktio import execute_command_with_response, secure_copy, secure_mkdir, secure_symlink, secure_which
 
 from commandparser import parse_commandline
 from iktprint import iktprint, iktinput
@@ -101,7 +101,7 @@ def create_symlinks(symlinks, verbose: bool = False) -> None:
 	"""
 
 	for src, dst in symlinks:
-		replace_symlink(src, dst, verbose = verbose)
+		_violations = secure_symlink(src, dst, verbose = verbose, replace_existing = True)
 
 def copy_files(files, verbose: bool = False) -> None:
 	"""
