@@ -132,7 +132,7 @@ class ThemeArray:
 			raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
 		self.array.append(item)
 
-	def __add__(self, array: List[Union[ThemeRef, ThemeString]]) -> ThemeArray:
+	def __add__(self, array: List[Union[ThemeRef, ThemeString]]) -> "ThemeArray":
 		tmparray: List[Union[ThemeRef, ThemeString]] = []
 		for item in self.array:
 			tmparray.append(item)
