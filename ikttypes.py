@@ -121,6 +121,7 @@ class SecurityChecks(Enum):
 	IS_DIR = auto()
 	IS_SYMLINK = auto()
 	IS_EXECUTABLE = auto()
+	IS_NOT_EXECUTABLE = auto()
 
 class SecurityPolicy(Enum):
 	"""

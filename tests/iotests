@@ -15,8 +15,8 @@ from iktio import check_path
 from iktio import secure_copy, secure_mkdir, secure_read, secure_read_string, secure_rm, secure_rmdir, secure_symlink, secure_which, secure_write_string
 from iktio_yaml import secure_read_yaml, secure_read_yaml_all, secure_write_yaml
 from networkio import verify_checksum
-from iktprint import init_iktprint
-from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
+from iktprint import iktprint, init_iktprint
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 
 CHECKSUMS_DIR = FilePath(str(Path.cwd().joinpath("checksums")))
 TEST_DIR = FilePath(str(Path.cwd().joinpath("testpaths")))
@@ -37,10 +37,8 @@ def test_check_path(testcase: str, checkdata: Dict) -> int:
 	expect = deep_get(checkdata, DictPath("expect"))
 	result = check_path(path, checks = checks, exit_on_critical = False, message_on_error = False)
 	if result != expect:
-		print(f"FAIL: Testcase: {testcase} (path: {path}); expected {expect}, got {result}")
-		return 1
-	print(f"PASS: Testcase: {testcase}")
-	return 0
+		return 1, f"expected {expect}, got {result}"
+	return 0, ""
 
 def test_secure_read_string(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -70,10 +68,8 @@ def test_secure_read_string(testcase: str, checkdata: Dict) -> int:
 			string = f"{type(e)}"
 
 	if result == False:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {string}")
-		return 1
-	print(f"PASS: Testcase: {testcase}")
-	return 0
+		return 1, f"expected {expect}, got {string}"
+	return 0, ""
 
 def test_secure_read_yaml(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -104,10 +100,8 @@ def test_secure_read_yaml(testcase: str, checkdata: Dict) -> int:
 			string = f"{type(e)}"
 
 	if result == False:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {string}")
-		return 1
-	print(f"PASS: Testcase: {testcase}")
-	return 0
+		return 1, f"expected {expect}, got {string}"
+	return 0, ""
 
 def test_secure_read_yaml_all(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -137,10 +131,8 @@ def test_secure_read_yaml_all(testcase: str, checkdata: Dict) -> int:
 			string = f"{type(e)}"
 
 	if result == False:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {string}")
-		return 1
-	print(f"PASS: Testcase: {testcase}")
-	return 0
+		return 1, f"expected {expect}, got {string}"
+	return 0, ""
 
 def test_secure_which(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -171,10 +163,8 @@ def test_secure_which(testcase: str, checkdata: Dict) -> int:
 			string = f"{type(e)}"
 
 	if result == False:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {string}")
-		return 1
-	print(f"PASS: Testcase: {testcase}")
-	return 0
+		return 1, f"expected {expect}, got {string}"
+	return 0, ""
 
 def test_secure_rm(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -205,16 +195,12 @@ def test_secure_rm(testcase: str, checkdata: Dict) -> int:
 		fail = set(violations_string.split(","))
 
 	if fail != expect and expect is not None:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {fail}")
-		return 1
+		return 1, f"expected {expect}, got {violations_string}"
 
 	# Even when expect is None it's still a FAIL if the directory stays behind
 	if (expect is None or fail != expect) and Path(path).is_file():
-		print(f"FAIL: Testcase: {testcase}; failed to delete file {path}; following testcases are likely to fail.")
-		return 1
-
-	print(f"PASS: Testcase: {testcase}")
-	return 0
+		return 1, f"failed to delete file {path}; following testcases are likely to fail."
+	return 0, ""
 
 def test_secure_rmdir(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -245,16 +231,12 @@ def test_secure_rmdir(testcase: str, checkdata: Dict) -> int:
 		fail = set(violations_string.split(","))
 
 	if fail != expect and expect is not None:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {fail}")
-		return 1
+		return 1, f"expected {expect}, got {violations_string}"
 
 	# Even when expect is None it's still a FAIL if the directory stays behind
 	if (expect is None or fail != expect) and Path(path).is_dir():
-		print(f"FAIL: Testcase: {testcase}; failed to delete directory {path}; following testcases are likely to fail.")
-		return 1
-
-	print(f"PASS: Testcase: {testcase}")
-	return 0
+		return 1, f"failed to delete directory {path}; following testcases are likely to fail."
+	return 0, ""
 
 def test_secure_mkdir(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -283,10 +265,8 @@ def test_secure_mkdir(testcase: str, checkdata: Dict) -> int:
 			violations_set.add(SecurityStatus.PERMISSIONS)
 
 	if violations_set != expect:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
-		return 1
-	print(f"PASS: Testcase: {testcase}")
-	return 0
+		return 1, f"expected {', '.join(expect)}, got {', '.join(violations_set)}"
+	return 0, ""
 
 def test_secure_copy(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -317,10 +297,8 @@ def test_secure_copy(testcase: str, checkdata: Dict) -> int:
 			violations_set.discard(SecurityStatus.OK)
 
 	if violations_set != expect:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
-		return 1
-	print(f"PASS: Testcase: {testcase}")
-	return 0
+		return 1, f"expected {', '.join(expect)}, got {', '.join(violations_set)}"
+	return 0, ""
 
 def test_secure_symlink(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -346,10 +324,8 @@ def test_secure_symlink(testcase: str, checkdata: Dict) -> int:
 		violations_set.discard(SecurityStatus.OK)
 
 	if violations_set != expect:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
-		return 1
-	print(f"PASS: Testcase: {testcase}")
-	return 0
+		return 1, f"expected {', '.join(expect)}, got {', '.join(violations_set)}"
+	return 0, ""
 
 def test_secure_write_string(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -386,12 +362,8 @@ def test_secure_write_string(testcase: str, checkdata: Dict) -> int:
 				violations_set.add("SecurityStatus.PERMISSIONS")
 
 	if expect is not None and violations_set != expect:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
-		return 1
-
-	print(f"PASS: Testcase: {testcase}")
-
-	return 0
+		return 1, f"expected {', '.join(expect)}, got {', '.join(violations_set)}"
+	return 0, ""
 
 def test_secure_write_yaml(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -430,11 +402,8 @@ def test_secure_write_yaml(testcase: str, checkdata: Dict) -> int:
 				violations_set.add("SecurityStatus.PERMISSIONS")
 
 	if expect is not None and violations_set != expect:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {violations_set}")
-		return 1
-	print(f"PASS: Testcase: {testcase}")
-
-	return 0
+		return 1, f"expected {', '.join(expect)}, got {', '.join(violations_set)}"
+	return 0, ""
 
 def test_verify_checksum(testcase: str, checkdata: Dict) -> int:
 	"""
@@ -456,11 +425,8 @@ def test_verify_checksum(testcase: str, checkdata: Dict) -> int:
 	result = verify_checksum(csum, checksum_type, data, "testcase.txt")
 
 	if result != expect:
-		print(f"FAIL: Testcase: {testcase}; expected {expect}, got {result}")
-		return 1
-	print(f"PASS: Testcase: {testcase}")
-
-	return 0
+		return 1, f"expected {expect}, got {result}"
+	return 0, ""
 
 testcases = {
 	"01: File permissions": {
@@ -474,6 +440,7 @@ testcases = {
 			SecurityChecks.PERMISSIONS,
 			SecurityChecks.PARENT_PERMISSIONS,
 			SecurityChecks.EXISTS,
+			SecurityChecks.IS_NOT_EXECUTABLE,
 			SecurityChecks.IS_FILE,
 		],
 		"expect": [SecurityStatus.PERMISSIONS],
@@ -489,6 +456,7 @@ testcases = {
 			SecurityChecks.PERMISSIONS,
 			SecurityChecks.PARENT_PERMISSIONS,
 			SecurityChecks.EXISTS,
+			SecurityChecks.IS_NOT_EXECUTABLE,
 			SecurityChecks.IS_FILE,
 		],
 		"expect": [SecurityStatus.PATH_NOT_RESOLVING_TO_SELF],
@@ -534,6 +502,7 @@ testcases = {
 			SecurityChecks.PERMISSIONS,
 			SecurityChecks.PARENT_PERMISSIONS,
 			SecurityChecks.EXISTS,
+			SecurityChecks.IS_NOT_EXECUTABLE,
 			SecurityChecks.IS_FILE,
 		],
 		"expect": [SecurityStatus.IS_NOT_FILE],
@@ -549,6 +518,7 @@ testcases = {
 			SecurityChecks.PERMISSIONS,
 			SecurityChecks.PARENT_PERMISSIONS,
 			SecurityChecks.EXISTS,
+			SecurityChecks.IS_NOT_EXECUTABLE,
 			SecurityChecks.IS_FILE,
 		],
 		"expect": [SecurityStatus.OK],
@@ -622,8 +592,8 @@ testcases = {
 			SecurityChecks.PERMISSIONS,
 			SecurityChecks.PARENT_PERMISSIONS,
 			SecurityChecks.EXISTS,
-			SecurityChecks.IS_FILE,
 			SecurityChecks.IS_EXECUTABLE,
+			SecurityChecks.IS_FILE,
 		],
 		"expect": [SecurityStatus.IS_NOT_EXECUTABLE],
 	},
@@ -638,6 +608,7 @@ testcases = {
 			SecurityChecks.PERMISSIONS,
 			SecurityChecks.PARENT_PERMISSIONS,
 			SecurityChecks.EXISTS,
+			SecurityChecks.IS_NOT_EXECUTABLE,
 			SecurityChecks.IS_FILE,
 		],
 		"expect": [SecurityStatus.IS_EXECUTABLE],
@@ -666,6 +637,7 @@ testcases = {
 			SecurityChecks.PERMISSIONS,
 			SecurityChecks.PARENT_PERMISSIONS,
 			SecurityChecks.EXISTS,
+			SecurityChecks.IS_NOT_EXECUTABLE,
 			SecurityChecks.IS_FILE,
 		],
 		"expect": [SecurityStatus.PARENT_DOES_NOT_EXIST],
@@ -696,6 +668,7 @@ testcases = {
 			SecurityChecks.PERMISSIONS,
 			SecurityChecks.PARENT_PERMISSIONS,
 			SecurityChecks.EXISTS,
+			SecurityChecks.IS_NOT_EXECUTABLE,
 			SecurityChecks.IS_FILE,
 		],
 		"expect": [SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF],
@@ -711,6 +684,7 @@ testcases = {
 			SecurityChecks.PERMISSIONS,
 			SecurityChecks.PARENT_PERMISSIONS,
 			SecurityChecks.EXISTS,
+			SecurityChecks.IS_NOT_EXECUTABLE,
 			SecurityChecks.IS_FILE,
 		],
 		"expect": [SecurityStatus.OK],
@@ -1158,10 +1132,32 @@ def main() -> int:
 	"""
 
 	fail = 0
+	success = 0
+	failed_testcases = []
 
 	for testcase, testcase_data in testcases.items():
 		test = deep_get(testcase_data, DictPath("test"))
-		fail += test(testcase, testcase_data)
+		failed, msg = test(testcase, testcase_data)
+		if failed == 1:
+			fail += 1
+			failed_testcases.append(testcase)
+			iktprint([ANSIThemeString(f"FAIL", "error"),
+				  ANSIThemeString(f": Testcase: {testcase}; {msg}", "default")])
+		else:
+			iktprint([ANSIThemeString(f"PASS", "success"),
+				  ANSIThemeString(f": Testcase: {testcase}", "default")])
+			if not testcase.startswith("--"):
+				success += 1
+
+	iktprint([ANSIThemeString("\nSummary:", "header")])
+	iktprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+	iktprint([ANSIThemeString(f"  PASS: {success}", "success")])
+
+	if fail > 0:
+		iktprint([ANSIThemeString("\nFailed testcases:", "header")])
+		for testcase in failed_testcases:
+			iktprint([ANSIThemeString("  • ", "separator"),
+				  ANSIThemeString(testcase, "default")], stderr = True)
 
 	return fail
 

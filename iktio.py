@@ -362,7 +362,7 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_NOT_DIR)
 
-	if SecurityChecks.IS_EXECUTABLE not in checks and os.access(path, os.X_OK) and not path_entry.is_dir():
+	if SecurityChecks.IS_NOT_EXECUTABLE in checks and os.access(path, os.X_OK) and not path_entry.is_dir():
 		if message_on_error == True:
 			msg = [ANSIThemeString("Warning", "warning"),
 			       ANSIThemeString(": The target path ", "default"),

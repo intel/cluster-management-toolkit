@@ -73,7 +73,7 @@ PACKAGES_WITHOUT_FALLBACK = [
 ]
 
 CONFIGURATION_FILES = [
-	(IKT_CONFIG_FILENAME, IKT_CONFIG_FILE, 0o644)
+	(FilePath(os.path.join(os.getcwd(), IKT_CONFIG_FILENAME)), IKT_CONFIG_FILE, 0o644)
 ]
 
 def create_directories(directories, verbose: bool = False) -> None:
@@ -241,6 +241,8 @@ def install(options, args) -> None:
 	allow_fallback: bool = True
 	pip_proxy = ""
 
+	bindir_exists = Path(BINDIR).is_dir()
+
 	for opt, optarg in options:
 		if opt == "--verbose":
 			verbose = True
@@ -302,12 +304,14 @@ def install(options, args) -> None:
 	_violations = copy_files(files = CONFIGURATION_FILES, verbose = verbose)
 	create_symlinks(symlinks = MISC_SYMLINKS + EXECUTABLE_SYMLINKS, verbose = verbose)
 
-	iktprint([ANSIThemeString("\nNote", "note"),
-		  ANSIThemeString(": if ", "default"),
-		  ANSIThemeString(f"{BINDIR}", "path"),
-		  ANSIThemeString(" did not exist before installation it it most likely not in ", "default"),
-		  ANSIThemeString("$PATH", "argument"),
-		  ANSIThemeString("; if so you need to logout and login again or spawn a new shell/terminal.", "default")])
+	if bindir_exists == False:
+		iktprint([ANSIThemeString("\nWarning", "warning"),
+			  ANSIThemeString(": ", "default"),
+			  ANSIThemeString(f"{BINDIR}", "path"),
+			  ANSIThemeString(" did not exist before installation; you will most likely need to ", "default"),
+			  ANSIThemeString("logout and login again (or spawn a new shell/terminal) to have it added to ", "default"),
+			  ANSIThemeString("$PATH", "argument"),
+			  ANSIThemeString(".", "default")])
 
 COMMANDLINE = {
 	# Default command
