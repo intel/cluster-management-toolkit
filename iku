@@ -2214,7 +2214,7 @@ def get_promrules_info(**kwargs: Dict) -> List[Type]:
 			age = deep_get(rule, DictPath("for"), "")
 			duration = iktlib.age_to_seconds(age)
 			info.append(type("InfoClass", (), {
-				"name": name,
+				"group": name,
 				"ref": ref,
 				"rtype": rtype,
 				"alertrecord": alertrecord,
