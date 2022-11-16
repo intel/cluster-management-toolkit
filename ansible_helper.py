@@ -736,7 +736,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[
 	d = secure_read_yaml(inventory)
 
 	for host in hosts:
-		if d[group].get("hosts") is not None:
+		if group in d and d[group].get("hosts") is not None:
 			if host in d[group]["hosts"]:
 				d[group]["hosts"].pop(host, None)
 				changed = True
