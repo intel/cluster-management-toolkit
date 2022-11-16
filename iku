@@ -947,7 +947,7 @@ def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: st
 		new_value = tmp_timestamp
 	else:
 		if value == -1:
-			new_value == none_timestamp()
+			new_value = none_timestamp()
 		else:
 			new_value = timestamp_to_datetime(cast(str, value))
 
@@ -8106,10 +8106,6 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 		if uip.refresh == True:
 			# FIXME: the status stuff should be done by curses_helper
 			theme = get_theme_ref()
-			_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
-			_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
-			_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
-
 			uip.statusbar.erase()
 
 			if uip.continuous_log == True:

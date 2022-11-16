@@ -64,7 +64,9 @@ class ThemeRef:
 
 	def __str__(self) -> str:
 		string = ""
-		array = theme[self.context][self.key]
+		array = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
+		if array is None:
+			raise ValueError(f"The ThemeRef(\"{self.context}\", \"{self.key}\") does not exist")
 		for string_fragment, _attr in array:
 			string += string_fragment
 		return string
@@ -407,52 +409,42 @@ def color_log_severity(severity: LogLevel) -> ThemeAttr:
 def color_status_group(status_group: StatusGroup) -> ThemeAttr:
 	return ThemeAttr("main", stgroup_mapping[status_group])
 
-def window_tee_hline(win: curses.window, y: int, start: int, end: int, attribute: Optional[int] = None) -> None:
-	_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
-	_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
-	_hline = theme["boxdrawing"].get("hline", curses.ACS_HLINE)
-	if attribute is not None:
-		win.addch(y, start, _ltee, attribute)
-	else:
-		win.addch(y, start, _ltee)
+def window_tee_hline(win: curses.window, y: int, start: int, end: int, formatting: Optional[ThemeAttr] = None) -> None:
+	ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
+	rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
+	hline = deep_get(theme, DictPath("boxdrawing#hline"))
 
-	x = start + 1
-	while x < end:
-		if attribute is not None:
-			win.addch(y, x, _hline, attribute)
-		else:
-			win.addch(y, x, _hline)
-		x += 1
+	if formatting is None:
+		formatting = ThemeAttr("main", "default")
 
-	if attribute is not None:
-		win.addch(y, end, _rtee, attribute)
-	else:
-		win.addch(y, end, _rtee)
+	hlinearray = [
+		ThemeString(ltee, formatting),
+		ThemeString("".rjust(end - start - 1, hline), formatting),
+		ThemeString(rtee, formatting),
+	]
 
-def window_tee_vline(win: curses.window, x: int, start: int, end: int, attribute: Optional[int] = None) -> None:
-	_ttee = theme["boxdrawing"].get("ttee", curses.ACS_TTEE)
-	_btee = theme["boxdrawing"].get("btee", curses.ACS_BTEE)
-	_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
-	if attribute is not None:
-		win.addch(start, x, _ttee, attribute)
-	else:
-		win.addch(start, x, _ttee)
+	addthemearray(win, hlinearray, y = y, x = start)
 
-	y = start + 1
+def window_tee_vline(win: curses.window, x: int, start: int, end: int, formatting: Optional[ThemeAttr] = None) -> None:
+	ttee = deep_get(theme, DictPath("boxdrawing#ttee"))
+	btee = deep_get(theme, DictPath("boxdrawing#btee"))
+	vline = deep_get(theme, DictPath("boxdrawing#vline"))
+
+	if formatting is None:
+		formatting = ThemeAttr("main", "default")
+
+	y = start
+
+	addthemearray(win, [ThemeString(ttee, formatting)], y = y, x = x)
+
 	while y < end:
-		if attribute is not None:
-			win.addch(y, x, _vline, attribute)
-		else:
-			win.addch(y, x, _vline)
 		y += 1
+		addthemearray(win, [ThemeString(vline, formatting)], y = y, x = x)
 
-	if attribute is not None:
-		win.addch(end, x, _btee, attribute)
-	else:
-		win.addch(end, x, _btee)
+	addthemearray(win, [ThemeString(btee, formatting)], y = end, x = x)
 
 # pylint: disable-next=too-many-arguments
-def scrollbar_vertical(win: curses.window, x: int, miny: int, maxy: int, height: int, yoffset: int, clear_color: int) ->\
+def scrollbar_vertical(win: curses.window, x: int, miny: int, maxy: int, height: int, yoffset: int, clear_color: ThemeAttr) ->\
 				Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int, int]]:
 	"""
 	Draw a vertical scroll bar
@@ -464,50 +456,51 @@ def scrollbar_vertical(win: curses.window, x: int, miny: int, maxy: int, height:
 			maxy (int): the ending point of the scroll bar
 			height (int): the height of the scrollable area
 			yoffset (int): the offset into the scrollable area
+			clear_color (ThemeAttr): The theme attr to use if the scrollbar is disabled
 		Returns:
 			((int, int), (int, int), (int, int)): A tuple with (y, x) for the upper and lower arrow,
 			as well as the midpoint of the dragger
 	"""
 
-	_arrowup = theme["boxdrawing"].get("arrowup", "▲")
-	_arrowdown = theme["boxdrawing"].get("arrowdown", "▼")
-	_scrollbar = theme["boxdrawing"].get("scrollbar", "▒")
-	_verticaldragger_upper = theme["boxdrawing"].get("verticaldragger_upper", "█")
-	_verticaldragger_midpoint = theme["boxdrawing"].get("verticaldragger_midpoint", "◉")
-	_verticaldragger_lower = theme["boxdrawing"].get("verticaldragger_lower", "█")
-	_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
-	upperarrow = -1, -1
-	lowerarrow = -1, -1
-	vdragger = -1, -1, -1
+	arrowup = deep_get(theme, DictPath("boxdrawing#arrowup"), "▲")
+	arrowdown = deep_get(theme, DictPath("boxdrawing#arrowdown"), "▼")
+	scrollbar = deep_get(theme, DictPath("boxdrawing#scrollbar"), "▒")
+	verticaldragger_upper = deep_get(theme, DictPath("boxdrawing#verticaldragger_upper"), "█")
+	verticaldragger_midpoint = deep_get(theme, DictPath("boxdrawing#verticaldragger_midpoint"), "◉")
+	verticaldragger_lower = deep_get(theme, DictPath("boxdrawing#verticaldragger_lower"), "█")
+	vline = deep_get(theme, DictPath("boxdrawing#vline"))
+	upperarrow = (-1, -1)
+	lowerarrow = (-1, -1)
+	vdragger = (-1, -1, -1)
 
 	maxoffset = height - (maxy - miny) - 1
 
 	# We only need a scrollbar if we can actually scroll
 	if maxoffset > 0:
-		win.addch(miny, x, _arrowup, _attr_to_curses_merged("main", "scrollbar_arrows"))
-		upperarrow = miny, x
+		addthemearray(win, [ThemeString(arrowup, ThemeAttr("main", "scrollbar_arrows"))], y = miny, x = x)
+		upperarrow = (miny, x)
 		y = miny + 1
 		while y < maxy:
-			win.addch(y, x, _scrollbar, _attr_to_curses_merged("main", "scrollbar"))
+			addthemearray(win, [ThemeString(scrollbar, ThemeAttr("main", "scrollbar"))], y = y, x = x)
 			y += 1
-		win.addch(maxy, x, _arrowdown, _attr_to_curses_merged("main", "scrollbar_arrows"))
-		lowerarrow = maxy, x
+		addthemearray(win, [ThemeString(arrowdown, ThemeAttr("main", "scrollbar_arrows"))], y = maxy, x = x)
+		lowerarrow = (maxy, x)
 		curpos = miny + 1 + int((maxy - miny) * (yoffset / (maxoffset)))
 		curpos = min(curpos, maxy - 3)
-		vdragger = curpos, x, 3
-		win.addch(curpos, x, _verticaldragger_upper, _attr_to_curses_merged("main", "dragger"))
-		win.addch(curpos + 1, x, _verticaldragger_midpoint, _attr_to_curses_merged("main", "dragger_midpoint"))
-		win.addch(curpos + 2, x, _verticaldragger_lower, _attr_to_curses_merged("main", "dragger"))
+		vdragger = (curpos, x, 3)
+		addthemearray(win, [ThemeString(verticaldragger_upper, ThemeAttr("main", "dragger"))], y = curpos + 0, x = x)
+		addthemearray(win, [ThemeString(verticaldragger_midpoint, ThemeAttr("main", "dragger_midpoint"))], y = curpos + 1, x = x)
+		addthemearray(win, [ThemeString(verticaldragger_lower, ThemeAttr("main", "dragger"))], y = curpos + 2, x = x)
 	# But we might need to cover up the lack of one if the window has been resized
 	else:
 		for y in range(miny, maxy + 1):
-			win.addch(y, x, _vline, clear_color)
+			addthemearray(win, [ThemeString(vline, clear_color)], y = y, x = x)
 
 	# (y, x Upper arrow), (y, x Lower arrow), (y, x, len vertical dragger)
 	return upperarrow, lowerarrow, vdragger
 
 # pylint: disable-next=too-many-arguments
-def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width: int, xoffset: int, clear_color: int) ->\
+def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width: int, xoffset: int, clear_color: ThemeAttr) ->\
 				Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int, int]]:
 	"""
 	Draw a horizontal scroll bar
@@ -519,48 +512,62 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width
 			maxx (int): the ending point of the scroll bar
 			width (int): the width of the scrollable area
 			xoffset (int): the offset into the scrollable area
+			clear_color (ThemeAttr): The theme attr to use if the scrollbar is disabled
 		Returns:
 			((int, int), (int, int), (int, int)): A tuple with (y, x) for the upper and lower arrow,
 			as well as the midpoint of the dragger
 	"""
 
-	_arrowleft = theme["boxdrawing"].get("arrowleft", "◀")
-	_arrowright = theme["boxdrawing"].get("arrowright", "▶")
-	_scrollbar = theme["boxdrawing"].get("scrollbar", "▒")
-	_horizontaldragger_left = theme["boxdrawing"].get("horizontaldragger_left", "█")
-	_horizontaldragger_midpoint = theme["boxdrawing"].get("horizontaldragger_midpoint", "◉")
-	_horizontaldragger_right = theme["boxdrawing"].get("horizontaldragger_right", "█")
-	_hline = theme["boxdrawing"].get("hline", curses.ACS_HLINE)
-	leftarrow = -1, -1
-	rightarrow = -1, -1
-	hdragger = -1, -1, -1
+	arrowleft = deep_get(theme, DictPath("boxdrawing#arrowleft"), "▲")
+	arrowright = deep_get(theme, DictPath("boxdrawing#arrowright"), "▼")
+	scrollbar = deep_get(theme, DictPath("boxdrawing#scrollbar"), "▒")
+	horizontaldragger_left = deep_get(theme, DictPath("boxdrawing#horizontaldragger_left"), "█")
+	horizontaldragger_midpoint = deep_get(theme, DictPath("boxdrawing#horizontaldragger_midpoint"), "◉")
+	horizontaldragger_right = deep_get(theme, DictPath("boxdrawing#horizontaldragger_right"), "█")
+	hline = deep_get(theme, DictPath("boxdrawing#hline"))
+
+	leftarrow = (-1, -1)
+	rightarrow = (-1, -1)
+	hdragger = (-1, -1, -1)
 
 	maxoffset = width - (maxx - minx) - 1
 
+	scrollbararray = []
+
 	# We only need a scrollbar if we can actually scroll
 	if maxoffset > 0:
-		win.addch(y, minx, _arrowleft, _attr_to_curses_merged("main", "scrollbar_arrows"))
-		leftarrow = y, minx
+		scrollbararray += [
+			ThemeString(arrowleft, ThemeAttr("main", "scrollbar_arrows")),
+		]
+		leftarrow = (y, minx)
 
-		x = minx + 1
-		while x < maxx:
-			win.addch(y, x, _scrollbar, _attr_to_curses_merged("main", "scrollbar"))
-			x += 1
-		win.addch(y, maxx, _arrowright, _attr_to_curses_merged("main", "scrollbar_arrows"))
-		rightarrow = y, maxx
+		scrollbararray += [
+			ThemeString("".rjust(maxx - minx - 1, scrollbar), ThemeAttr("main", "scrollbar")),
+		]
+		scrollbararray += [
+			ThemeString(arrowright, ThemeAttr("main", "scrollbar_arrows")),
+		]
+		rightarrow = (y, maxx)
 
 		curpos = minx + 1 + int((maxx - minx) * (xoffset / (maxoffset)))
 		curpos = min(curpos, maxx - 5)
-		win.addch(y, curpos, _horizontaldragger_left, _attr_to_curses_merged("main", "dragger"))
-		win.addch(_horizontaldragger_left, _attr_to_curses_merged("main", "dragger"))
-		win.addch(_horizontaldragger_midpoint, _attr_to_curses_merged("main", "dragger_midpoint"))
-		win.addch(_horizontaldragger_right, _attr_to_curses_merged("main", "dragger"))
-		win.addch(_horizontaldragger_right, _attr_to_curses_merged("main", "dragger"))
-		hdragger = y, curpos, 5
+
+		addthemearray(win, scrollbararray, y = y, x = minx)
+
+		draggerarray = [
+			ThemeString(f"{horizontaldragger_left}{horizontaldragger_left}", ThemeAttr("main", "dragger")),
+			ThemeString(f"{horizontaldragger_midpoint}", ThemeAttr("main", "dragger_midpoint")),
+			ThemeString(f"{horizontaldragger_right}{horizontaldragger_right}", ThemeAttr("main", "dragger")),
+		]
+
+		addthemearray(win, draggerarray, y = y, x = curpos)
+		hdragger = (y, curpos, 5)
 	# But we might need to cover up the lack of one if the window has been resized
 	else:
-		for x in range(minx, maxx + 1):
-			win.addch(y, x, _hline, clear_color)
+		scrollbararray += [
+			ThemeString("".rjust(maxx - minx + 1, hline), clear_color),
+		]
+		addthemearray(win, scrollbararray, y = y, x = minx)
 
 	# (y, x Upper arrow), (y, x Lower arrow), (y, x, len horizontal dragger)
 	return leftarrow, rightarrow, hdragger
@@ -569,8 +576,8 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width
 def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) -> List[List[ThemeString]]:
 	array = []
 	row = []
-	block = theme["boxdrawing"].get("smallblock", "■")
-	selectedblock = theme["boxdrawing"].get("block", "█")
+	block = deep_get(theme, DictPath("boxdrawing#smallblock"), "■")
+	selectedblock = deep_get(theme, DictPath("boxdrawing#block"), "█")
 	x = 0
 
 	color = color_status_group(stgroups[0])
@@ -613,7 +620,7 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 
 # pylint: disable-next=too-many-arguments
 def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeAttr]]) -> curses.window:
-	block = theme["boxdrawing"].get("smallblock", "■")
+	block = deep_get(theme, DictPath("boxdrawing#smallblock"), "■")
 	barwidth = maxx - minx - 3
 	barpos = minx + 1
 
@@ -643,15 +650,7 @@ def __notification(stdscr: Optional[curses.window], y: int, x: int, message: str
 	col, __discard = attr_to_curses("windowwidget", "boxdrawing")
 	win.attrset(col)
 	win.clear()
-	_ls = theme["boxdrawing"].get("vline_left", curses.ACS_VLINE)
-	_rs = theme["boxdrawing"].get("vline_right", curses.ACS_VLINE)
-	_ts = theme["boxdrawing"].get("hline_top", curses.ACS_HLINE)
-	_bs = theme["boxdrawing"].get("hline_bottom", curses.ACS_HLINE)
-	_tl = theme["boxdrawing"].get("ulcorner", curses.ACS_ULCORNER)
-	_tr = theme["boxdrawing"].get("urcorner", curses.ACS_URCORNER)
-	_bl = theme["boxdrawing"].get("llcorner", curses.ACS_LLCORNER)
-	_br = theme["boxdrawing"].get("lrcorner", curses.ACS_LRCORNER)
-	win.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
+	win.border()
 	win.addstr(1, 1, message, _attr_to_curses_merged(formatting.context, formatting.key))
 	win.noutrefresh()
 	curses.doupdate()
@@ -696,26 +695,20 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int,
 		col, __discard = attr_to_curses("windowwidget", "boxdrawing")
 		win.attrset(col)
 		win.clear()
-		_ls = theme["boxdrawing"].get("vline_left", curses.ACS_VLINE)
-		_rs = theme["boxdrawing"].get("vline_right", curses.ACS_VLINE)
-		_ts = theme["boxdrawing"].get("hline_top", curses.ACS_HLINE)
-		_bs = theme["boxdrawing"].get("hline_bottom", curses.ACS_HLINE)
-		_tl = theme["boxdrawing"].get("ulcorner", curses.ACS_ULCORNER)
-		_tr = theme["boxdrawing"].get("urcorner", curses.ACS_URCORNER)
-		_bl = theme["boxdrawing"].get("llcorner", curses.ACS_LLCORNER)
-		_br = theme["boxdrawing"].get("lrcorner", curses.ACS_LRCORNER)
-		win.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
+		win.border()
 		col, __discard = attr_to_curses("windowwidget", "default")
 		win.bkgd(" ", col)
 		if title is not None:
 			win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
 
 	# progress is in % of the total length
+	solidblock = deep_get(theme, DictPath("boxdrawing#solidblock"))
+	dimmedblock = deep_get(theme, DictPath("boxdrawing#dimmedblock"))
 	for x in range(0, width - 2):
 		if x < (width * progress) // 100:
-			win.addch(1, x + 1, theme["boxdrawing"]["solidblock"], _attr_to_curses_merged("main", "progressbar"))
+			addthemearray(win, [ThemeString(solidblock, ThemeAttr("main", "progressbar"))], y = 1, x = x + 1)
 		else:
-			win.addch(1, x + 1, theme["boxdrawing"]["dimmedblock"], _attr_to_curses_merged("main", "progressbar"))
+			addthemearray(win, [ThemeString(dimmedblock, ThemeAttr("main", "progressbar"))], y = 1, x = x + 1)
 
 	win.noutrefresh()
 	curses.doupdate()
@@ -745,15 +738,7 @@ def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, tit
 	col, _discard = attr_to_curses("windowwidget", "boxdrawing")
 	win.attrset(col)
 	win.clear()
-	_ls = theme["boxdrawing"].get("vline_left", curses.ACS_VLINE)
-	_rs = theme["boxdrawing"].get("vline_right", curses.ACS_VLINE)
-	_ts = theme["boxdrawing"].get("hline_top", curses.ACS_HLINE)
-	_bs = theme["boxdrawing"].get("hline_bottom", curses.ACS_HLINE)
-	_tl = theme["boxdrawing"].get("ulcorner", curses.ACS_ULCORNER)
-	_tr = theme["boxdrawing"].get("urcorner", curses.ACS_URCORNER)
-	_bl = theme["boxdrawing"].get("llcorner", curses.ACS_LLCORNER)
-	_br = theme["boxdrawing"].get("lrcorner", curses.ACS_LRCORNER)
-	win.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
+	win.border()
 	win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
 	win.noutrefresh()
 
@@ -802,15 +787,7 @@ def confirmationbox(stdscr: curses.window, y: int, x: int, title: str = "", defa
 	col, __discard = attr_to_curses("windowwidget", "boxdrawing")
 	win.attrset(col)
 	win.clear()
-	_ls = theme["boxdrawing"].get("vline_left", curses.ACS_VLINE)
-	_rs = theme["boxdrawing"].get("vline_right", curses.ACS_VLINE)
-	_ts = theme["boxdrawing"].get("hline_top", curses.ACS_HLINE)
-	_bs = theme["boxdrawing"].get("hline_bottom", curses.ACS_HLINE)
-	_tl = theme["boxdrawing"].get("ulcorner", curses.ACS_ULCORNER)
-	_tr = theme["boxdrawing"].get("urcorner", curses.ACS_URCORNER)
-	_bl = theme["boxdrawing"].get("llcorner", curses.ACS_LLCORNER)
-	_br = theme["boxdrawing"].get("lrcorner", curses.ACS_LRCORNER)
-	win.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
+	win.border()
 	win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
 	win.addstr(1, 1, question.ljust(width - 2), _attr_to_curses_merged("windowwidget", "default"))
 	win.noutrefresh()
@@ -874,96 +851,18 @@ def move_cur_with_offset(curypos: int, listlen: int, yoffset: int, maxcurypos: i
 				newyoffset = max(yoffset + movement + curypos, 0)
 	return newcurypos, newyoffset
 
-def __addstr(win: curses.window, string: str, y: int = -1, x: int = -1, attribute: int = curses.A_NORMAL) -> Tuple[int, int]:
-	cury, curx = win.getyx()
-	winmaxy, winmaxx = win.getmaxyx()
-	newmaxy = max(y, winmaxy)
-	newmaxx = max(winmaxx, len(string) + curx + 1)
-	win.resize(newmaxy, newmaxx)
-	if y == -1:
-		y = cury
-	if x == -1:
-		x = curx
-	win.addstr(y, x, string, attribute)
-	cury, curx = win.getyx()
-	return cury, curx
-
-def __addformattedarray(win: curses.window, array: Union[List[Tuple[str, int]], Tuple[str, int]], y: int = -1, x: int = -1) -> Tuple[int, int]:
-	# This way we can print a single (string, attr) too
-	if isinstance(array, tuple):
-		array = [array]
-
-	for string, attr in array:
-		if isinstance(attr, tuple):
-			raise TypeError(f"__addformattedarray() called with attr: {attr} (type: tuple); must be integer")
-		y, x = __addstr(win, string, y, x, attr)
-	return y, x
-
 def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
-	"""
-	Given a themed string in themearray format, output it to the screen
+	for item in array:
+		if isinstance(item, ThemeRef):
+			cursesarray = themeref_to_cursesarray(item, selected)
+		elif isinstance(item, ThemeString):
+			cursesarray = [themestring_to_cursestuple(item)]
+		else:
+			dump_themearray(array)
 
-		Parameters:
-			win (curses.window): The Curses window
-			array (themearray): The themearray to out
-			y (int): The y-coordinate to add the string at
-			x (int): The x-coordinate to add the string at
-			selected (bool): Should the selected version of the theming be used?
-		Returns:
-			(y, x):
-				y (int): The new y-coordinate
-				x (int): The new x-coordinate
-	"""
-
-	try:
-		for item in array:
-			if isinstance(item, ThemeString):
-				cursestuple = themestring_to_cursestuple(item, selected)
-				y, x = __addformattedarray(win, cursestuple, y = y, x = x)
-				continue
-
-			if isinstance(item, ThemeRef):
-				cursesarray = themeref_to_cursesarray(item, selected)
-				y, x = __addformattedarray(win, cursesarray, y = y, x = x)
-				continue
-
-			if not isinstance(item, tuple):
-				raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
-
-			if len(item) == 3:
-				_p1, _p2, _selected = item
-			elif len(item) == 2:
-				_p1, _p2 = item
-				_selected = selected
-
-			if isinstance(_p2, tuple):
-				string = _p1
-				if len(_p2) == 3:
-					context, _p3, _selected = _p2
-				else:
-					context, _p3 = _p2
-				if type(_p3) == int: # pylint: disable=unidiomatic-typecheck
-					attr = _p3
-				else:
-					attr = _attr_to_curses_merged(context, _p3, selected = _selected)
-				y, x = __addstr(win, string, y, x, attr)
-			elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
-				string = _p1
-				attr = _p2
-				y, x = __addstr(win, string, y, x, attr)
-			else:
-				if isinstance(_p1, tuple):
-					context, attr_ref = _p1
-					_selected = _p2
-				else:
-					attr_ref = _p2
-					context = _p1
-					_selected = selected
-
-				strarray = themearray_to_strarray(attr_ref, context = context, selected = _selected)
-				y, x = __addformattedarray(win, strarray, y = y, x = x)
-	except (TypeError, ValueError):
-		dump_themearray(array)
+		for string, attr in cursesarray:
+			win.addstr(y, x, string, attr)
+			y, x = win.getyx()
 	return y, x
 
 class WidgetLineAttrs(IntFlag):
@@ -1389,15 +1288,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 	col, __discard = attr_to_curses("windowwidget", "boxdrawing")
 	win.attrset(col)
 	win.clear()
-	_ls = theme["boxdrawing"].get("vline_left", curses.ACS_VLINE)
-	_rs = theme["boxdrawing"].get("vline_right", curses.ACS_VLINE)
-	_ts = theme["boxdrawing"].get("hline_top", curses.ACS_HLINE)
-	_bs = theme["boxdrawing"].get("hline_bottom", curses.ACS_HLINE)
-	_tl = theme["boxdrawing"].get("ulcorner", curses.ACS_ULCORNER)
-	_tr = theme["boxdrawing"].get("urcorner", curses.ACS_URCORNER)
-	_bl = theme["boxdrawing"].get("llcorner", curses.ACS_LLCORNER)
-	_br = theme["boxdrawing"].get("lrcorner", curses.ACS_LRCORNER)
-	win.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
+	win.border()
 	col, __discard = attr_to_curses("windowwidget", "default")
 	win.bkgd(" ", col)
 	win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
@@ -1511,9 +1402,9 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 			addthemearray(listpad, linearray, y = _y, x = 0)
 
 		# pylint: disable-next=line-too-long
-		_upperarrow, _lowerarrow, _vdragger = scrollbar_vertical(win, width - 1, scrollbarypos, height - 2, listpadheight, yoffset, _attr_to_curses_merged("windowwidget", "boxdrawing"))
+		_upperarrow, _lowerarrow, _vdragger = scrollbar_vertical(win, width - 1, scrollbarypos, height - 2, listpadheight, yoffset, ThemeAttr("windowwidget", "boxdrawing"))
 		# pylint: disable-next=line-too-long
-		_leftarrow, _rightarrow, _hdragger = scrollbar_horizontal(win, height - 1, 1, width - 2, listpadwidth, xoffset, _attr_to_curses_merged("windowwidget", "boxdrawing"))
+		_leftarrow, _rightarrow, _hdragger = scrollbar_horizontal(win, height - 1, 1, width - 2, listpadwidth, xoffset, ThemeAttr("windowwidget", "boxdrawing"))
 
 		if headers is not None:
 			addthemearray(headerpad, headerarray, y = 0, x = 0)
@@ -1521,7 +1412,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 			if len(headers) > 0:
 				headerxoffset = xoffset
 			headerpad.noutrefresh(0, headerxoffset, headerpadypos, xpos + 1, headerpadypos, xpos + width - 2)
-			window_tee_hline(win, 2, 0, width - 1, _attr_to_curses_merged("windowwidget", "boxdrawing"))
+			window_tee_hline(win, 2, 0, width - 1, ThemeAttr("windowwidget", "boxdrawing"))
 
 		listpad.noutrefresh(yoffset, xoffset, listpadypos, xpos + 1, ypos + height - 2, xpos + width - 2)
 
@@ -1533,7 +1424,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 				_, x = addthemearray(buttonpad, button, y = 0, x = x)
 				x += 1
 			buttonpad.noutrefresh(0, 0, buttonpadypos, xpos + 1, buttonpadypos, xpos + width - 2)
-			window_tee_hline(win, height - 3, 0, width - 1, _attr_to_curses_merged("windowwidget", "boxdrawing"))
+			window_tee_hline(win, height - 3, 0, width - 1, ThemeAttr("windowwidget", "boxdrawing"))
 
 		win.noutrefresh()
 		curses.doupdate()
@@ -1775,6 +1666,8 @@ class UIProps:
 		self.sortkey1 = ""
 		self.sortkey2 = ""
 		self.field_list: Dict = {}
+
+		self.helpstring = "[F1] / [Shift] + H: Help"
 		# Should there be a timestamp in the upper right corner?
 		self.timestamp = True
 
@@ -1915,7 +1808,7 @@ class UIProps:
 	# timestamps enabled, no automatic updates, default sortcolumn = "status"
 	# pylint: disable-next=too-many-arguments
 	def init_window(self, field_list: Dict, view = None, windowheader: str = "",
-			timestamp = True, update_delay: int = -1, sortcolumn: str = "status", sortorder_reverse: bool = False, reversible: bool = True,
+			update_delay: int = -1, sortcolumn: str = "status", sortorder_reverse: bool = False, reversible: bool = True,
 			helptext = None, activatedfun = None, on_activation = None, extraref = None, data = None) -> None:
 		self.field_list = field_list
 		self.searchkey = ""
@@ -1924,7 +1817,6 @@ class UIProps:
 		self.reversible = reversible
 		self.sortkey1, self.sortkey2 = self.get_sortkeys()
 		self.set_update_delay(update_delay)
-		self.timestamp = timestamp
 		self.view = view
 
 		self.resize_window()
@@ -1954,31 +1846,21 @@ class UIProps:
 		self.resize_window()
 
 	def update_window(self) -> None:
+		hline = deep_get(theme, DictPath("boxdrawing#hline"))
+
 		maxyx = self.stdscr.getmaxyx()
 		if self.maxy != (maxyx[0] - 1) or self.maxx != (maxyx[1] - 1):
 			self.resize_window()
 		self.stdscr.erase()
-		_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
-		_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
-		_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
-		_hline = theme["boxdrawing"].get("hline", curses.ACS_HLINE)
-		_ls = theme["boxdrawing"].get("vline_left", curses.ACS_VLINE)
-		_rs = theme["boxdrawing"].get("vline_right", curses.ACS_VLINE)
-		_ts = theme["boxdrawing"].get("hline_top", curses.ACS_HLINE)
-		_bs = theme["boxdrawing"].get("hline_bottom", curses.ACS_HLINE)
-		_tl = theme["boxdrawing"].get("ulcorner", curses.ACS_ULCORNER)
-		_tr = theme["boxdrawing"].get("urcorner", curses.ACS_URCORNER)
-		_bl = theme["boxdrawing"].get("llcorner", curses.ACS_LLCORNER)
-		_br = theme["boxdrawing"].get("lrcorner", curses.ACS_LRCORNER)
-		self.stdscr.border(_ls, _rs, _ts, _bs, _tl, _tr, _bl, _br)
+		self.stdscr.border()
 		# If we don't have sideborders we need to clear the right border we just painted,
 		# just in case the content of the logpad isn't wide enough to cover it
 		if self.borders == False:
 			for y in range(self.logpadypos, self.maxy - 1):
-				self.stdscr.addch(y, self.maxx, " ")
+				self.addthemearray(self.stdscr, [ThemeString(" ", ThemeAttr("main", "default"))], y = y, x = self.maxx)
 
 		self.draw_winheader()
-		self.update_timestamp(0, self.maxx, ralign = True)
+		self.update_timestamp(0, self.maxx)
 
 		if self.headerpad is not None:
 			self.headerpad.clear()
@@ -1989,13 +1871,13 @@ class UIProps:
 			window_tee_hline(self.stdscr, self.headerpadypos + 1, 0, self.maxx)
 			if self.borders == False:
 				if self.headerpadypos > 1:
-					self.stdscr.addch(self.headerpadypos - 1, 0, _hline)
-					self.stdscr.addch(self.headerpadypos - 1, self.maxx, _hline)
-				self.stdscr.addch(self.headerpadypos + 1, 0, _hline)
-				self.stdscr.addch(self.headerpadypos + 1, self.maxx, _hline)
+					self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.headerpadypos - 1, x = 0)
+					self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.headerpadypos - 1, x = self.maxx)
+				self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.headerpadypos + 1, x = 0)
+				self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.headerpadypos + 1, x = self.maxx)
 		elif self.listpad is not None and self.borders == False:
-			self.stdscr.addch(self.listpadypos - 1, 0, " ")
-			self.stdscr.addch(self.listpadypos - 1, self.maxx, " ")
+			self.addthemearray(self.stdscr, [ThemeString(" ", ThemeAttr("main", "default"))], y = self.listpadypos - 1, x = 0)
+			self.addthemearray(self.stdscr, [ThemeString(" ", ThemeAttr("main", "default"))], y = self.listpadypos - 1, x = self.maxx)
 
 		if self.logpad is not None:
 			if self.logpadypos > 2:
@@ -2006,53 +1888,72 @@ class UIProps:
 					window_tee_vline(self.stdscr, self.logpadxpos - 1, self.logpadypos - 1, self.maxy - 2)
 			else:
 				# If the window lacks sideborders we want lines
-				self.stdscr.addch(self.logpadypos - 1, 0, _hline)
-				self.stdscr.addch(self.logpadypos - 1, self.maxx, _hline)
+				self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.logpadypos - 1, x = 0)
+				self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.logpadypos - 1, x = self.maxx)
 
 		self.reset_update_delay()
 
-	def update_timestamp(self, ypos: int, xpos: int, ralign: bool = False) -> None:
-		del ypos
+	# pylint: disable-next=unused-argument
+	def update_timestamp(self, ypos: int, xpos: int) -> None:
+		lastupdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+		rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
+		ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
 
-		_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
-		_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
-		_lastupdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-		lastupdatestr = f"{_lastupdate}"
-		if ralign:
-			xpos -= len(lastupdatestr)
-			if self.borders == True:
-				xpos -= 2
-		self.stdscr.addch(0, xpos, _rtee)
-		self.stdscr.addstr(lastupdatestr, _attr_to_curses_merged("main", "last_update"))
+		timestamparray: List[Union[ThemeRef, ThemeString]] = [
+			ThemeString(rtee, ThemeAttr("main", "statusbar")),
+		]
+
+		if len(self.helpstring) > 0:
+			timestamparray += [
+				ThemeString(self.helpstring, ThemeAttr("main", "statusbar")),
+				ThemeRef("separators", "statusbar"),
+			]
+		timestamparray += [
+			ThemeString(lastupdate, ThemeAttr("main", "last_update")),
+		]
+
 		if self.borders == True:
-			self.stdscr.addch(_ltee)
+			timestamparray += [
+				ThemeString(ltee, ThemeAttr("main", "statusbar")),
+			]
+
+		xpos -= themearray_len(timestamparray)
+		if self.borders == False:
+			xpos += 1
+		self.addthemearray(self.stdscr, timestamparray, y = 0, x = xpos)
 
 	def draw_winheader(self) -> None:
-		_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
-		_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
-		_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
+		ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
+		rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
+		vline = deep_get(theme, DictPath("boxdrawing#vline"))
 		if self.windowheader != "":
-			winheaderarray: List[Union[ThemeRef, ThemeString]] = [ThemeRef("separators", "mainheader_prefix")]
-			winheaderarray.append(ThemeString(f"{self.windowheader}", ThemeAttr("main", "header")))
-			winheaderarray.append(ThemeRef("separators", "mainheader_suffix"))
+			winheaderarray: List[Union[ThemeRef, ThemeString]] = []
+
 			if self.borders == True:
-				self.stdscr.addch(0, 1, _rtee)
-				self.addthemearray(self.stdscr, winheaderarray, y = 0, x = 2)
+				winheaderarray += [
+					ThemeString(rtee, ThemeAttr("main", "default")),
+				]
+			
+			winheaderarray += [
+				ThemeRef("separators", "mainheader_prefix"),
+				ThemeString(f"{self.windowheader}", ThemeAttr("main", "header")),
+				ThemeRef("separators", "mainheader_suffix"),
+			]
+			if self.borders == True:
+				winheaderarray += [
+					ThemeString(ltee, ThemeAttr("main", "default")),
+				]
+				self.addthemearray(self.stdscr, winheaderarray, y = 0, x = 1)
 			else:
 				self.addthemearray(self.stdscr, winheaderarray, y = 0, x = 0)
-			self.stdscr.addch(_ltee)
 
 	def refresh_window(self) -> None:
-		_ltee = theme["boxdrawing"].get("ltee", curses.ACS_LTEE)
-		_rtee = theme["boxdrawing"].get("rtee", curses.ACS_RTEE)
-		_vline = theme["boxdrawing"].get("vline", curses.ACS_VLINE)
-		_hline = theme["boxdrawing"].get("hline", curses.ACS_HLINE)
-		_bl = theme["boxdrawing"].get("llcorner", curses.ACS_LLCORNER)
-		_br = theme["boxdrawing"].get("lrcorner", curses.ACS_LRCORNER)
+		bl = deep_get(theme, DictPath("boxdrawing#llcorner"))
+		br = deep_get(theme, DictPath("boxdrawing#lrcorner"))
 
 		if self.borders == True:
-			self.stdscr.addch(self.maxy - 2, 0, _bl)
-			self.stdscr.addch(self.maxy - 2, self.maxx, _br)
+			self.addthemearray(self.stdscr, [ThemeString(bl, ThemeAttr("main", "default"))], y = self.maxy - 2, x = 0)
+			self.addthemearray(self.stdscr, [ThemeString(br, ThemeAttr("main", "default"))], y = self.maxy - 2, x = self.maxx)
 
 		# The extra status can change, so we need to update the windowheader (which shouldn't change)
 		self.draw_winheader()
@@ -2153,9 +2054,9 @@ class UIProps:
 			# If there's no logpad and no listpad, then the infopad is responsible for scrollbars
 			if self.listpad is None and self.logpad is None and self.borders == True:
 				# pylint: disable-next=line-too-long
-				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.infopadypos, self.maxy - 3, self.infopadheight, self.yoffset, _attr_to_curses_merged("main", "boxdrawing"))
+				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.infopadypos, self.maxy - 3, self.infopadheight, self.yoffset, ThemeAttr("main", "boxdrawing"))
 				# pylint: disable-next=line-too-long
-				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, self.infopadxpos, self.maxx - 1, self.infopadwidth - 1, self.xoffset, _attr_to_curses_merged("main", "boxdrawing"))
+				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, self.infopadxpos, self.maxx - 1, self.infopadwidth - 1, self.xoffset, ThemeAttr("main", "boxdrawing"))
 
 	# For (optionally) scrollable lists of information,
 	# optionally with a header
@@ -2222,9 +2123,9 @@ class UIProps:
 			if self.borders == True:
 				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 3, maxx)
 				# pylint: disable-next=line-too-long
-				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, x = maxx + 1, miny = self.listpadypos, maxy = self.maxy - 3, height = self.listpadheight, yoffset = self.yoffset, clear_color = _attr_to_curses_merged("main", "boxdrawing"))
+				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, x = maxx + 1, miny = self.listpadypos, maxy = self.maxy - 3, height = self.listpadheight, yoffset = self.yoffset, clear_color = ThemeAttr("main", "boxdrawing"))
 				# pylint: disable-next=line-too-long
-				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, y = self.maxy - 2, minx = self.listpadxpos, maxx = maxx, width = self.listpadwidth - 1, xoffset = self.xoffset, clear_color = _attr_to_curses_merged("main", "boxdrawing"))
+				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, y = self.maxy - 2, minx = self.listpadxpos, maxx = maxx, width = self.listpadwidth - 1, xoffset = self.xoffset, clear_color = ThemeAttr("main", "boxdrawing"))
 			else:
 				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
 
@@ -2315,19 +2216,19 @@ class UIProps:
 			tspadxpos -= 1
 			logpadxpos -= 1
 		if self.tspad is not None and self.tspadxpos != self.logpadxpos:
-			_hline = theme["boxdrawing"].get("hline", curses.ACS_HLINE)
+			hline = deep_get(theme, DictPath("boxdrawing#hline"))
 			if self.borders == True:
 				for i in range(0, self.tspadwidth):
-					self.stdscr.addch(self.maxy - 2, 1 + i, _hline)
+					self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.maxy - 2, x = 1 + i)
 				self.tspad.noutrefresh(0, 0, self.tspadypos, tspadxpos, self.maxy - 3, self.tspadwidth)
 			else:
 				self.tspad.noutrefresh(0, 0, self.tspadypos, tspadxpos, self.maxy - 2, self.tspadwidth - 1)
 		if self.borders == True:
 			self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 3, self.maxx - 1)
 			# pylint: disable-next=line-too-long
-			self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.logpadypos, self.maxy - 3, self.loglen, self.yoffset, _attr_to_curses_merged("main", "boxdrawing"))
+			self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.logpadypos, self.maxy - 3, self.loglen, self.yoffset, ThemeAttr("main", "boxdrawing"))
 			# pylint: disable-next=line-too-long
-			self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, logpadxpos, self.maxx - 1, self.logpadwidth, self.xoffset, _attr_to_curses_merged("main", "boxdrawing"))
+			self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, logpadxpos, self.maxx - 1, self.logpadwidth, self.xoffset, ThemeAttr("main", "boxdrawing"))
 		else:
 			self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 2, self.maxx)
 
@@ -2364,94 +2265,43 @@ class UIProps:
 		else:
 			self.statusbar = curses.newpad(2, self.maxx + 1)
 
-	# pylint: disable-next=too-many-arguments
-	def __addstr(self, win: curses.window, string: str, y: int = -1, x: int = -1, attribute: int = curses.A_NORMAL) -> Tuple[int, int]:
-		cury, curx = win.getyx()
-		winmaxy, winmaxx = win.getmaxyx()
-		newmaxy = max(y, winmaxy)
-		newmaxx = max(winmaxx, len(string) + curx + 1)
-
-		if win != self.stdscr:
-			win.resize(newmaxy, newmaxx)
-		elif win == self.stdscr and (winmaxy, winmaxx) != (newmaxy, newmaxx):
-			# If there's an attempt to print a message that would resize the window,
-			# just pretend success instead of raising an exception
-			cury, curx = win.getyx()
-			return cury, curx
-		if y == -1:
-			y = cury
-		if x == -1:
-			x = curx
-		try:
-			win.addstr(y, x, string, attribute)
-		except TypeError as e:
-			raise TypeError(f"{e}\n  y: {y}\n  x: {x}\n  string: |{string}|\n  length: {len(string)}\n  attribute: {attribute}") from e
-
-		cury, curx = win.getyx()
-		return cury, curx
-
-	def __addformattedarray(self, win: curses.window, array: Union[List[Tuple[str, int]], Tuple[str, int]], y: int = -1, x: int = -1) -> Tuple[int, int]:
-		# This way we can print a single (string, attr) too
-		if isinstance(array, tuple):
-			array = [array]
-
-		for string, attr in array:
-			if isinstance(attr, tuple):
-				raise TypeError(f"__addformattedarray() called with attr: {attr} (type: tuple); must be integer")
-			y, x = self.__addstr(win, string, y, x, attr)
-		return y, x
-
 	def addthemearray(self, win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
-		try:
-			for item in array:
-				if isinstance(item, ThemeString):
-					cursestuple = themestring_to_cursestuple(item, selected)
-					y, x = self.__addformattedarray(win, cursestuple, y = y, x = x)
-					continue
+		for item in array:
+			if isinstance(item, ThemeRef):
+				cursesarray = themeref_to_cursesarray(item, selected)
+			elif isinstance(item, ThemeString):
+				cursesarray = [themestring_to_cursestuple(item)]
+			else:
+				dump_themearray(array)
 
-				if isinstance(item, ThemeRef):
-					cursesarray = themeref_to_cursesarray(item, selected)
-					y, x = self.__addformattedarray(win, cursesarray, y = y, x = x)
-					continue
+			for string, attr in cursesarray:
+				maxy, maxx = win.getmaxyx()
+				cury, curx = win.getyx()
 
-				if not isinstance(item, tuple):
-					raise TypeError(f"unexpected item-type passed to addthemearray):\ntype(item): {type(item)}\nitem: {item}\narray: {array}")
+				newmaxy = max(y, maxy)
+				newmaxx = max(maxx, len(string) + curx + 1)
 
-				# These are fallbacks until all ThemeArrays have been converted to ThemeString / ThemeRef
-				if len(item) == 3:
-					_p1, _p2, _selected = item
-				else:
-					_p1, _p2 = item
-					_selected = selected
-
-				if isinstance(_p2, tuple):
-					string = _p1
-					if len(_p2) == 3:
-						context, _p3, _selected = _p2
+				if win != self.stdscr:
+					win.resize(newmaxy, newmaxx)
+				elif win == self.stdscr and (maxy, maxx) != (newmaxy, newmaxx):
+					# If the string to print is *exactly* maxx == len(string) + curx,
+					# then we check if we can print the last character using addch(),
+					# otherwise we give up.
+					if (maxy, maxx) == (newmaxy, len(string) + curx):
+						try:
+							win.addch(y, maxx - 1, string[-1:], attr)
+							win.addstr(string[0:-1], attr)
+						except curses.error:
+							cury, curx = win.getyx()
+							return cury, curx
 					else:
-						context, _p3 = _p2
-					if type(_p3) == int: # pylint: disable=unidiomatic-typecheck
-						attr = _p3
-					else:
-						attr = _attr_to_curses_merged(context, _p3, selected = _selected)
-					y, x = self.__addstr(win, string, y, x, attr)
-				elif type(_p2) == int: # pylint: disable=unidiomatic-typecheck
-					string = _p1
-					attr = _p2
-					y, x = self.__addstr(win, string, y, x, attr)
-				else:
-					if isinstance(_p1, tuple):
-						context, attr_ref = _p1
-						_selected = _p2
-					else:
-						attr_ref = _p2
-						context = _p1
-						_selected = selected
+						# If the message would resize the window,
+						# just pretend success instead of raising an exception
+						cury, curx = win.getyx()
+						return cury, curx
 
-					strarray = themearray_to_strarray(attr_ref, context = context, selected = _selected)
-					y, x = self.__addformattedarray(win, strarray, y = y, x = x)
-		except (TypeError, ValueError):
-			dump_themearray(array)
+				win.addstr(y, x, string, attr)
+				y, x = win.getyx()
 		return y, x
 
 	def move_xoffset_abs(self, position: int) -> None:

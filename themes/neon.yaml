@@ -82,6 +82,7 @@ color_pairs_curses:
   listheader: [["white", "bright"], ["black", "normal"]]
   listheader_arrows: [["cyan", "normal"], ["black", "normal"]]
   infoheader: [["white", "bright"], ["black", "normal"]]
+  paragraphheader: [["white", "bright"], ["black", "normal"]]
   boxdrawing: [["white", "normal"], ["black", "normal"]]
   mainheader: [["yellow", "normal"], ["blue", "normal"]]
   last_update: [["yellow", "normal"], ["blue", "normal"]]
@@ -543,48 +544,30 @@ color_pairs_curses:
   about_version: [["white", "bright"], ["blue", "bright"]]
 
 boxdrawing:
-  # By default curses.ACS_HLINE is used
-  # vline:
-  # vline_left:
-  # vline_right:
-  # By default curses.ACS_VLINE is used
-  # hline:
-  # hline_top:
-  # hline_bottom:
-  # By default curses.ACS_LTEE is used
-  # ltee:
-  # By default curses.ACS_RTEE is used
-  # rtee:
-  # By default curses.ACS_TTEE is used
-  # ttee:
-  # By default curses.ACS_BTEE is used
-  # btee:
-  # By default curses.ACS_ULCORNER is used
-  # ulcorner:
-  # By default curses.ACS_URCORNER is used
-  # urcorner:
-  # By default curses.ACS_LLCORNER is used
-  # llcorner:
-  # By default curses.ACS_LRCORNER is used
-  # lrcorner:
+  # Warning: curses has a really ugly corner case in addstr; it cannot
+  # add lines that are exactly the width of the screen. For windows this
+  # isn't a problem since they can be allocated wider than the visible
+  # area, but for stdscr this is an issue.
   #
-  # By default curses.ACS_PLUS is used
-  # plus:
+  # The workaround is to use addch for such characters (iku implements this),
+  # but not all characters are supported by addch(); it's accepting unicode.
   #
-  # "Checker board (stipple)   " ACS_CKBOARD
-  # "Degree Symbol             " ACS_DEGREE
-  # "Plus/Minus Symbol         " ACS_PLMINUS
-  # "Bullet                    " ACS_BULLET
-  # "Arrow Pointing Left       " ACS_LARROW
-  # "Arrow Pointing Right      " ACS_RARROW
-  # "Arrow Pointing Down       " ACS_DARROW
-  # "Arrow Pointing Up         " ACS_UARROW
-  # "Board of squares          " ACS_BOARD
-  # "Lantern Symbol            " ACS_LANTERN
-  # "Solid Square Block        " ACS_BLOCK
-  # "Less/Equal sign           " ACS_LEQUAL
-  # "Greater/Equal sign        " ACS_GEQUAL
-  # "Not equal                 " ACS_NEQUAL
+  # If you change this and the program crashes, this is most likely the reason.
+  # You have been warned.
+  vline: "│"
+  vline_left: "│"
+  vline_right: "│"
+  hline: "─"
+  hline_top: "─"
+  hline_bottom: "─"
+  ltee: "├"
+  rtee: "┤"
+  ttee: "┬"
+  btee: "┴"
+  ulcorner: "┌"
+  urcorner: "┐"
+  llcorner: "└"
+  lrcorner: "┘"
   arrowup: "▲"
   arrowdown: "▼"
   arrowleft: "◀"
@@ -618,6 +601,7 @@ main:
     selected: "dim"
   timestamp: "timestamp"
   # list header
+  paragraphheader: ["paragraphheader", ["underline", "bold"]]
   listheader:
     selected: ["listheader", ["underline", "bold"]]
     unselected: ["listheader", "bold"]
