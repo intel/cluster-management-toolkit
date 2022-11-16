@@ -6292,7 +6292,8 @@ def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
 		if "\n" not in data:
 			try:
 				decoded = base64.b64decode(data)
-				uudata = True
+				if base64.b64encode(decoded) == data:
+					uudata = True
 			except binascii.Error:
 				pass
 
