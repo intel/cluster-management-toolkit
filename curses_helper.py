@@ -995,7 +995,12 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 	else:
 		attr = tmp_attr
 
-	col, attr = attr
+	if isinstance(attr, list):
+		col, attr = attr
+	else:
+		col = attr
+		attr = "normal"
+
 	if isinstance(attr, str):
 		attr = [attr]
 	else:
@@ -1016,7 +1021,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 			raise ValueError(f"Invalid text attribute {attr} used in theme; valid attributes are: dim, normal, bold, underline")
 	curses_attrs = tmp
 
-	curses_col = deep_get(__color, DictPath(f"{col}#{selected}"))
+	curses_col = __color[col][selected]
 	if curses_col is None:
 		raise KeyError(f"themeattr_to_curses: (color: {col}, selected: {selected}) not found")
 	return curses_col, curses_attrs
