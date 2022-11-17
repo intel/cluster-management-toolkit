@@ -62,7 +62,25 @@
 					"description": "A string fragment",
 					"type": "string"
 				}, {
-					"$ref": "#/definitions/color_pair_name"
+					"$ref": "#/definitions/format_reference"
+				}
+			],
+			"items": false
+		},
+		"format_reference": {
+			"description": "A reference to formatting",
+			"type": "array",
+			"prefixItems": [
+				{
+					"enum": [
+						"main",
+						"statusbar",
+						"windowwidget",
+						"logview",
+						"types"
+					]
+				}, {
+					"type": "string"
 				}
 			],
 			"items": false

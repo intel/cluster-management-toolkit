@@ -15,7 +15,7 @@ import errno
 from operator import attrgetter
 from pathlib import Path, PurePath
 import sys
-from typing import Any, cast, Dict, List, Optional, NamedTuple, NoReturn, Sequence, Set, Tuple, Type, Union
+from typing import Any, cast, Dict, List, Optional, NamedTuple, NoReturn, Set, Tuple, Type, Union
 
 try:
 	from natsort import natsorted
@@ -24,7 +24,8 @@ except ModuleNotFoundError:
 
 from iktio import check_path
 from iktio_yaml import secure_read_yaml
-from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval, SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
+from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval
+from ikttypes import SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
 
 import iktlib
 
@@ -45,9 +46,55 @@ class ThemeAttr(NamedTuple):
 	context: str
 	key: str
 
+class ThemeString:
+	"""
+	A themed string
+
+		Parameters:
+			string: A string
+			themeattr: The themeattr used to format the string
+			selected (Optional[bool]): Should the selected or unselected formatting be used
+	"""
+
+	def __init__(self, string: str, themeattr: ThemeAttr, selected: bool = False) -> None:
+		if not isinstance(string, str):
+			raise TypeError(f"ThemeString only accepts (str, ThemeAttr[, bool]); received ThemeString({string}, {themeattr}, selected)")
+		self.string = string
+		self.themeattr = themeattr
+		self.selected = selected
+
+	def __str__(self) -> str:
+		return self.string
+
+	def __len__(self) -> int:
+		return len(self.string)
+
+	def __repr__(self) -> str:
+		return f"ThemeString(\"{self.string}\", {repr(self.themeattr)}, \"{self.selected}\")"
+
+	def get_themeattr(self) -> ThemeAttr:
+		"""
+		Return the ThemeAttr attribute of the ThemeString
+
+			Returns:
+				themeattr (ThemeAttr): The ThemeAttr attribute of the ThemeString
+		"""
+
+		return self.themeattr
+
+	def get_selected(self) -> bool:
+		"""
+		Return the selected attribute of the ThemeString
+
+			Returns:
+				selected  (bool): The selected attribute of the ThemeString
+		"""
+
+		return self.selected
+
 class ThemeRef:
 	"""
-	A reference to a themed string; while the type definition is the same as ThemeAttr its use is different
+	A reference to a themed string; while the type definition is the same as ThemeAttr its use is different.
 
 		Parameters:
 			context: The context to use when doing a looking in themes
@@ -77,31 +124,31 @@ class ThemeRef:
 	def __repr__(self) -> str:
 		return f"ThemeRef(\"{self.context}\", \"{self.key}\", \"{self.selected}\")"
 
-class ThemeString:
-	"""
-	A themed string
+	def to_themearray(self) -> List[ThemeString]:
+		"""
+		Return the themearray representation of the ThemeRef
 
-		Parameters:
-			string: A string
-			themeattr: The themeattr used to format the string
-			selected (Optional[bool]): Should the selected or unselected formatting be used
-	"""
+			Returns:
+				themearray (ThemeArray): The themearray representation
+		"""
 
-	def __init__(self, string: str, themeattr: ThemeAttr, selected: bool = False) -> None:
-		if not isinstance(string, str):
-			raise TypeError(f"ThemeString only accepts (str, ThemeAttr[, bool]); received ThemeString({string}, {themeattr}, selected)")
-		self.string = string
-		self.themeattr = themeattr
-		self.selected = selected
+		themearray = []
+		array = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
+		if array is None:
+			raise ValueError(f"The ThemeRef(\"{self.context}\", \"{self.key}\") does not exist")
+		for string, themeattr in array:
+			themearray.append(ThemeString(string, ThemeAttr(themeattr[0], themeattr[1]), self.selected))
+		return themearray
 
-	def __str__(self) -> str:
-		return self.string
+	def get_selected(self) -> bool:
+		"""
+		Return the selected attribute of the ThemeRef
 
-	def __len__(self) -> int:
-		return len(self.string)
+			Returns:
+				selected (bool): The selected attribute of the ThemeRef
+		"""
 
-	def __repr__(self) -> str:
-		return f"ThemeString(\"{self.string}\", {repr(self.themeattr)}, \"{self.selected}\")"
+		return self.selected
 
 class ThemeArray:
 	"""
@@ -417,7 +464,7 @@ def window_tee_hline(win: curses.window, y: int, start: int, end: int, formattin
 	if formatting is None:
 		formatting = ThemeAttr("main", "default")
 
-	hlinearray = [
+	hlinearray: List[Union[ThemeRef, ThemeString]] = [
 		ThemeString(ltee, formatting),
 		ThemeString("".rjust(end - start - 1, hline), formatting),
 		ThemeString(rtee, formatting),
@@ -450,7 +497,7 @@ def scrollbar_vertical(win: curses.window, x: int, miny: int, maxy: int, height:
 	Draw a vertical scroll bar
 
 		Parameters:
-			win (opaque): The curses window to operate on
+			win (curses.window): The curses window to operate on
 			x (int): The x-coordinate
 			miny (int): the starting point of the scroll bar
 			maxy (int): the ending point of the scroll bar
@@ -506,7 +553,7 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width
 	Draw a horizontal scroll bar
 
 		Parameters:
-			win (opaque): The curses window to operate on
+			win (curses.window): The curses window to operate on
 			y (int): The y-coordinate
 			minx (int): the starting point of the scroll bar
 			maxx (int): the ending point of the scroll bar
@@ -532,7 +579,7 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width
 
 	maxoffset = width - (maxx - minx) - 1
 
-	scrollbararray = []
+	scrollbararray: List[Union[ThemeRef, ThemeString]] = []
 
 	# We only need a scrollbar if we can actually scroll
 	if maxoffset > 0:
@@ -554,7 +601,7 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width
 
 		addthemearray(win, scrollbararray, y = y, x = minx)
 
-		draggerarray = [
+		draggerarray: List[Union[ThemeRef, ThemeString]] = [
 			ThemeString(f"{horizontaldragger_left}{horizontaldragger_left}", ThemeAttr("main", "dragger")),
 			ThemeString(f"{horizontaldragger_midpoint}", ThemeAttr("main", "dragger_midpoint")),
 			ThemeString(f"{horizontaldragger_right}{horizontaldragger_right}", ThemeAttr("main", "dragger")),
@@ -620,6 +667,22 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 
 # pylint: disable-next=too-many-arguments
 def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeAttr]]) -> curses.window:
+	"""
+	Draw a bar of multiple subsets that sum up to a total
+
+		Parameters:
+			win (curses.window): The curses window to operate on
+			y (int):  The y-position of the percentage bar
+			minx (int): The starting position of the percentage bar
+			maxx (int): The ending position of the percentage bar
+			total (int): The total sum
+			subsets (list(subset, themeattr)):
+				subset (int): The fraction of the total that this subset represents
+				themeattr (ThemeAttr): The colour to use for this subset
+		Returns:
+			win (curses.window): The curses window to operate on
+	"""
+
 	block = deep_get(theme, DictPath("boxdrawing#smallblock"), "■")
 	barwidth = maxx - minx - 3
 	barpos = minx + 1
@@ -647,11 +710,11 @@ def __notification(stdscr: Optional[curses.window], y: int, x: int, message: str
 	xpos = x - width // 2
 
 	win = curses.newwin(height, width, ypos, xpos)
-	col, __discard = attr_to_curses("windowwidget", "boxdrawing")
+	col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "boxdrawing"))
 	win.attrset(col)
 	win.clear()
 	win.border()
-	win.addstr(1, 1, message, _attr_to_curses_merged(formatting.context, formatting.key))
+	win.addstr(1, 1, message, themeattr_to_curses_merged(formatting))
 	win.noutrefresh()
 	curses.doupdate()
 	return win
@@ -673,14 +736,14 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int,
 	stdscr.refresh()
 
 		Parameters:
-			win (opaque): The curses window to operate on
+			win (curses.window): The curses window to operate on
 			y (int): the y-coordinate
 			miny (int): the starting point of the progress bar
 			maxy (int): the ending point of the progress bar
 			progress (int): 0-100%
 			title (str): The title for the progress bar (None for an anonymous window)
 		Returns:
-			win (opaque): A reference to the progress bar window
+			win (curses.window): A reference to the progress bar window
 	"""
 
 	width = maxx - minx + 1
@@ -692,14 +755,14 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int,
 
 	if win is None:
 		win = curses.newwin(3, width, y, minx)
-		col, __discard = attr_to_curses("windowwidget", "boxdrawing")
+		col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "boxdrawing"))
 		win.attrset(col)
 		win.clear()
 		win.border()
-		col, __discard = attr_to_curses("windowwidget", "default")
+		col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "default"))
 		win.bkgd(" ", col)
 		if title is not None:
-			win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
+			win.addstr(0, 1, title, themeattr_to_curses_merged(ThemeAttr("windowwidget", "title")))
 
 	# progress is in % of the total length
 	solidblock = deep_get(theme, DictPath("boxdrawing#solidblock"))
@@ -735,16 +798,16 @@ def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, tit
 	ignoreinput = False
 
 	win = curses.newwin(3, width, y, x)
-	col, _discard = attr_to_curses("windowwidget", "boxdrawing")
+	col, _discard = themeattr_to_curses(ThemeAttr("windowwidget", "boxdrawing"))
 	win.attrset(col)
 	win.clear()
 	win.border()
-	win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
+	win.addstr(0, 1, title, themeattr_to_curses_merged(ThemeAttr("windowwidget", "title")))
 	win.noutrefresh()
 
 	inputarea = win.subwin(1, width - 2, y + 1, x + 1)
-	inputarea.bkgd(" ", _attr_to_curses_merged("windowwidget", "title"))
-	inputarea.attrset(_attr_to_curses_merged("windowwidget", "title"))
+	inputarea.bkgd(" ", themeattr_to_curses_merged(ThemeAttr("windowwidget", "title")))
+	inputarea.attrset(themeattr_to_curses_merged(ThemeAttr("windowwidget", "title")))
 	inputarea.noutrefresh()
 
 	tpad = curses.textpad.Textbox(inputarea)
@@ -784,12 +847,12 @@ def confirmationbox(stdscr: curses.window, y: int, x: int, title: str = "", defa
 	xpos = x - width // 2
 
 	win = curses.newwin(height, width, ypos, xpos)
-	col, __discard = attr_to_curses("windowwidget", "boxdrawing")
+	col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "boxdrawing"))
 	win.attrset(col)
 	win.clear()
 	win.border()
-	win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
-	win.addstr(1, 1, question.ljust(width - 2), _attr_to_curses_merged("windowwidget", "default"))
+	win.addstr(0, 1, title, themeattr_to_curses_merged(ThemeAttr("windowwidget", "title")))
+	win.addstr(1, 1, question.ljust(width - 2), themeattr_to_curses_merged(ThemeAttr("windowwidget", "default")))
 	win.noutrefresh()
 	curses.doupdate()
 
@@ -822,7 +885,8 @@ def confirmationbox(stdscr: curses.window, y: int, x: int, title: str = "", defa
 	return retval
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def move_cur_with_offset(curypos: int, listlen: int, yoffset: int, maxcurypos: int, maxyoffset: int, movement: int, wraparound: bool = False) -> Tuple[int, int]:
+def move_cur_with_offset(curypos: int, listlen: int, yoffset: int,
+			 maxcurypos: int, maxyoffset: int, movement: int, wraparound: bool = False) -> Tuple[int, int]:
 	newcurypos = curypos + movement
 	newyoffset = yoffset
 
@@ -852,17 +916,10 @@ def move_cur_with_offset(curypos: int, listlen: int, yoffset: int, maxcurypos: i
 	return newcurypos, newyoffset
 
 def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
-	for item in array:
-		if isinstance(item, ThemeRef):
-			cursesarray = themeref_to_cursesarray(item, selected)
-		elif isinstance(item, ThemeString):
-			cursesarray = [themestring_to_cursestuple(item)]
-		else:
-			dump_themearray(array)
-
-		for string, attr in cursesarray:
-			win.addstr(y, x, string, attr)
-			y, x = win.getyx()
+	for item in themearray_flatten(array):
+		string, attr = themestring_to_cursestuple(item)
+		win.addstr(y, x, string, attr)
+		y, x = win.getyx()
 	return y, x
 
 class WidgetLineAttrs(IntFlag):
@@ -876,165 +933,40 @@ class WidgetLineAttrs(IntFlag):
 	UNSELECTABLE = 4	# Unselectable items are not selectable, but aren't skipped when navigating
 	INVALID = 8		# Invalid items are not selectable; to be used for parse error etc.
 
-def __attr_to_curses(attr, selected: bool = False) -> Tuple[int, int]:
-	if isinstance(attr, list):
-		col, attr = attr
-		if isinstance(attr, str):
-			attr = [attr]
-		else:
-			attr = list(attr)
-		tmp = 0
-		for item in attr:
-			if item == "dim":
-				tmp |= curses.A_DIM
-			elif item == "normal":
-				tmp |= curses.A_NORMAL
-			elif item == "bold":
-				tmp |= curses.A_BOLD
-			elif item == "underline":
-				tmp |= curses.A_UNDERLINE
-			else:
-				raise ValueError(f"Invalid text attribute {attr} used in theme; valid attributes are: dim, normal, bold, underline")
-		attr = tmp
-	else:
-		col = attr
-		attr = curses.A_NORMAL
+# This extracts the string without formatting;
+# once everything uses proper ThemeArray this won't be necessary anymore
+def themearray_to_string(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]]) -> str:
+	"""
+	Given a themearray (either a true ThemeArray or List[Union[ThemeRef, ThemeString]],
+	return an unformatted string
 
-	try:
-		key = __color[col][selected]
-	except KeyError as e:
-		raise KeyError(f"__attr_to_curses: (color: {col}, selected: {selected}) not found") from e
-	return key, attr
+		Parameters:
+			themearray (ThemeArray): A themearray
+		Returns:
+			string (str): The unformatted string
+	"""
 
-def attr_to_curses(context: str, attr: str, selected: bool = False) -> Tuple[int, int]:
-	# <attr> is a string that references a field in the section <context> of the themes-file;
-	# that field can either be either a string, which in that case will be used directly against
-	# the colour lookup table, or a list, in which case the first entry is the colour,
-	# and the second entry is a curses attribute (in str format); recognised attributes (dim, normal, bold, underline)
-	try:
-		attr = theme[context][attr]
-	except KeyError as e:
-		raise KeyError(f"couldn't find the tuple ({context}, {attr}) in theme") from e
-	if isinstance(attr, dict):
-		if selected == True:
-			attr = attr["selected"]
-		else:
-			attr = attr["unselected"]
-	return __attr_to_curses(attr, selected)
-
-# This should be Union[str, Tuple]
-def __attr_to_curses_merged(attr: Union[str, List], selected: bool = False) -> int:
-	curses_col, curses_attr = __attr_to_curses(attr, selected)
-	return curses_col | curses_attr
-
-def _attr_to_curses_merged(context: str, attr: str, selected: bool = False) -> int:
-	# <attr> is a string that references a field in the section <context> of the themes-file;
-	# that field can either be either a string, which in that case will be used directly against
-	# the colour lookup table, or a list, in which case the first entry is the colour,
-	# and the second entry is a curses attribute; recognised attributes (dim, normal, bold, underline)
-	try:
-		attr = theme[context][attr]
-	except KeyError as e:
-		raise KeyError(f"Couldn't find the tuple ({context}, {attr}) in theme") from e
-	if isinstance(attr, dict):
-		if selected == True:
-			attr = attr["selected"]
-		else:
-			attr = attr["unselected"]
-	return __attr_to_curses_merged(attr, selected)
-
-# XXX: If we ever turn themearray to a proper object reuse this
-# This extracts the string without formatting
-def themearray_to_string(themearray: Sequence[Union[str,
-						    ThemeArray,
-						    ThemeRef,
-						    ThemeString,
-						    Tuple[str, Tuple[str, str]],
-						    Tuple[str, Tuple[str, str], bool],
-						    Tuple[str, Tuple[str, int]],
-						    Tuple[str, str],
-						    Tuple[str, str, bool]]]) -> str:
 	string = ""
-
-	if isinstance(themearray, str):
-		return themearray
 
 	if isinstance(themearray, ThemeArray):
 		return str(themearray)
 
 	for fragment in themearray:
-		if isinstance(fragment, (ThemeRef, ThemeString)):
-			string += str(fragment)
-			continue
+		string += str(fragment)
 
-		if not isinstance(fragment, tuple):
-			# pylint: disable-next=line-too-long
-			raise ValueError(f"themearray_to_string() called with an invalid themearray: “{themearray}“; element: “{fragment}“ has invalid type {type(fragment)}; expected tuple")
-
-		# (string, curses_attr)
-		# (string, (context, theme_attr))
-		# (string, (context, theme_attr), selected)
-		if isinstance(fragment[0], str) and type(fragment[1]) in (int, tuple, ThemeAttr):
-			string += fragment[0]
-		# (context, theme_attr)
-		elif len(fragment) == 2 and isinstance(fragment[0], str) and isinstance(fragment[1], str):
-			themed_tuple = deep_get(theme, DictPath(f"{fragment[0]}#{fragment[1]}"))
-			if themed_tuple is None:
-				raise KeyError(f"The theme key-pair context: “{fragment[0]}“, key: “{fragment[1]}“ in the themearray “{themearray}“ does not exist")
-			string += themed_tuple[0][0]
-		# ((context, theme_attr), selected)
-		elif len(fragment) == 2 and isinstance(fragment[0], tuple) and isinstance(fragment[1], bool):
-			themed_tuple = deep_get(theme, DictPath(f"{fragment[0][0]}#{fragment[0][1]}"))
-			if themed_tuple is None:
-				raise KeyError(f"The theme key-pair context: “{fragment[0][0]}“, key: “{fragment[0][1]}“ in the themearray “{themearray}“ does not exist")
-			string += themed_tuple[0][0]
-		else:
-			raise ValueError(f"themearray_to_string() called with invalid themearray: “{themearray}“; cannot parse element: “{fragment}“")
 	return string
 
-# XXX: If we ever turn themearray to a proper object reuse this
-def themearray_len(themearray) -> int:
-	return len(themearray_to_string(themearray))
-
-def themearray_to_strarray(key: str, context: str = "main", selected: bool = False):
-	array = theme[context][key]
-
-	strarray = []
-	for item in array:
-		string = item[0]
-		attr = __attr_to_curses_merged(item[1], selected)
-		strarray.append((string, attr))
-
-	return strarray
-
-def themeref_to_cursesarray(themeref: ThemeRef, selected: Optional[bool] = None) -> List[Tuple[str, int]]:
+def themearray_len(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]]) -> int:
 	"""
-	Given a themeref returns a cursesarray
+	Given a themearray (either a true ThemeArray or List[Union[ThemeRef, ThemeString]],
+	return its length
 
 		Parameters:
-			themeref (ThemeRef): The ThemeRef to convert
-			selected (bool): [optional] True is selected, False otherwise
+			themearray (ThemeArray): A themearray
 		Returns:
-			cursesarray (list[(str, int)]): A curses array for use with addformattedarray()
+			len (int): The length of the unformatted string
 	"""
-
-	# Does it include selected or not?
-	context = themeref.context
-	key = themeref.key
-	if selected is None:
-		selected = themeref.selected
-	if selected is None:
-		selected = False
-
-	array = theme[context][key]
-
-	cursesarray = []
-	for item in array:
-		string = item[0]
-		curses_attr = __attr_to_curses_merged(item[1], selected)
-		cursesarray.append((string, curses_attr))
-
-	return cursesarray
+	return len(themearray_to_string(themearray))
 
 def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[int, int]:
 	"""
@@ -1044,11 +976,50 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 			themeattr (ThemeAttr): The ThemeAttr to convert
 			selected (bool): [optional] True is selected, False otherwise
 		Returns:
-			curses_attrs (int, int): A curses color + attrs tuple
+			(curses_col, curses_attrs):
+				curses_col (int): A curses color
+				curses_attrs (int): Curses attributes
 	"""
 
 	context, key = themeattr
-	return attr_to_curses(context, key, selected)
+	tmp_attr = deep_get(theme, DictPath(f"{context}#{key}"))
+
+	if tmp_attr is None:
+		raise KeyError(f"couldn't find the tuple ({context}, {key}) in theme")
+
+	if isinstance(tmp_attr, dict):
+		if selected == True:
+			attr = tmp_attr["selected"]
+		else:
+			attr = tmp_attr["unselected"]
+	else:
+		attr = tmp_attr
+
+	col, attr = attr
+	if isinstance(attr, str):
+		attr = [attr]
+	else:
+		attr = list(attr)
+
+	tmp = 0
+
+	for item in attr:
+		if item == "dim":
+			tmp |= curses.A_DIM
+		elif item == "normal":
+			tmp |= curses.A_NORMAL
+		elif item == "bold":
+			tmp |= curses.A_BOLD
+		elif item == "underline":
+			tmp |= curses.A_UNDERLINE
+		else:
+			raise ValueError(f"Invalid text attribute {attr} used in theme; valid attributes are: dim, normal, bold, underline")
+	curses_attrs = tmp
+
+	curses_col = deep_get(__color, DictPath(f"{col}#{selected}"))
+	if curses_col is None:
+		raise KeyError(f"themeattr_to_curses: (color: {col}, selected: {selected}) not found")
+	return curses_col, curses_attrs
 
 def themeattr_to_curses_merged(themeattr: ThemeAttr, selected: bool = False) -> int:
 	"""
@@ -1061,9 +1032,8 @@ def themeattr_to_curses_merged(themeattr: ThemeAttr, selected: bool = False) -> 
 			curses_attrs (int): Curses color | attrs
 	"""
 
-	context, key = themeattr
-	color, attrs = attr_to_curses(context, key, selected)
-	return color | attrs
+	curses_col, curses_attrs = themeattr_to_curses(themeattr, selected)
+	return curses_col | curses_attrs
 
 def themestring_to_cursestuple(themestring: ThemeString, selected: Optional[bool] = None) -> Tuple[str, int]:
 	"""
@@ -1076,103 +1046,94 @@ def themestring_to_cursestuple(themestring: ThemeString, selected: Optional[bool
 			cursestuple (str, int): A curses tuple for use with addformattedarray()
 	"""
 
-	string = themestring.string
-	themeattr = themestring.themeattr
+	string = str(themestring)
+	themeattr = themestring.get_themeattr()
+
 	if selected is None:
-		selected = themestring.selected
+		selected = themestring.get_selected()
 		if selected is None:
 			selected = False
 
 	return (string, themeattr_to_curses_merged(themeattr, selected))
 
-def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> List[Tuple[str, int]]:
-	strarray = []
+def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> List[ThemeString]:
+	"""
+	Replace all ThemeRefs in a ThemeArray with ThemeString
+
+		Parameters:
+			themearray (ThemeArray): The themearray to flatten
+			selected (bool): [optional] True is selected, False otherwise
+		Returns:
+			themearray_flattened (ThemeArray): The flattened themearray
+	"""
+
+	themearray_flattened = []
 
 	for substring in themearray:
 		if isinstance(substring, ThemeString):
-			strarray.append(themestring_to_cursestuple(substring, selected = selected))
+			themearray_flattened.append(substring)
 		elif isinstance(substring, ThemeRef):
-			strarray += themeref_to_cursesarray(substring, selected = selected)
-		elif isinstance(substring, tuple):
-			if len(substring) == 3:
-				_selected = substring[2]
-			else:
-				_selected = selected
-			if isinstance(substring[1], str):
-				# This is a lookup
-				strarray += themeref_to_cursesarray(ThemeRef(substring[0], substring[1]), selected = _selected)
-			else:
-				strarray.append(themestring_to_cursestuple(ThemeString(substring[0], substring[1]), selected = _selected))
+			themearray_flattened += substring.to_themearray()
 		else:
 			raise TypeError(f"themearray_flatten called with invalid type {type(substring)}")
-	return strarray
+	return themearray_flattened
 
-def strarray_extract_string(strarray) -> str:
-	string = ""
-	for _string, _attr in strarray:
-		if isinstance(_string, str) and isinstance(_attr, str):
-			tmp = theme[_string][_attr][0]
-			if isinstance(tmp, list):
-				tmp = tmp[0]
-			string += tmp
-		else:
-			string += _string
-	return string
+def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeString]], maxwidth: int = -1, wrap_marker: bool = True, selected: Optional[bool] = None) ->\
+				List[List[Union[ThemeRef, ThemeString]]]:
+	"""
+	Given a themearray, split it into multiple lines, each maxwidth long
 
-# This can actually deal with more than just ThemeString and ThemeRef
-# XXX: Fix the return type once all callsites are clean
-def themearray_wrap_line(themearray, maxwidth: int = -1, wrap_marker: bool = True, selected: Optional[bool] = None) -> Any:
+		Parameters:
+			themearray (ThemeArray): The themearray to wrap
+			maxwidth (int): The maximum number of characters before wrapping
+			wrap_marker (bool): Should the line end in a wrap marker?
+			selected (bool): Should the line(s) be selected?
+		Returns:
+			themearrays (list[ThemeArray]): A list of themearrays
+	"""
+
 	if maxwidth == -1:
 		return [themearray]
 
-	strarray = themearray_flatten(themearray, selected = selected)
+	themearray_flattened = themearray_flatten(themearray, selected = selected)
 
-	strarrays = []
-	i = 0
-
-	linebreak = themeref_to_cursesarray(ThemeRef("separators", "line_break"))
+	linebreak = ThemeRef("separators", "line_break").to_themearray()
 
 	if wrap_marker == True:
-		linebreaklen = len(strarray_extract_string(linebreak))
+		linebreaklen = len(linebreak)
 	else:
 		linebreaklen = 0
 
-	tmpstrarray = []
+	themearrays: List[List[Union[ThemeRef, ThemeString]]] = []
+	tmp_themearray: List[Union[ThemeRef, ThemeString]] = []
 	tmplen = 0
+	i = 0
 
 	while True:
-		_string, _attr = strarray[i]
+		# Does the fragment fit?
+		tfilen = len(themearray_flattened[i])
+		if tmplen + tfilen < maxwidth:
+			tmp_themearray.append(themearray_flattened[i])
+			tmplen += tfilen
+			i += 1
+		# Nope
+		else:
+			string = str(themearray_flattened[i])
+			themeattr = themearray_flattened[i].get_themeattr()
 
-		# If this is the last fragment and it fits, don't add a linebreak marker
-		if tmplen + len(_string) <= maxwidth and i == len(strarray) - 1:
-			tmpstrarray.append((_string, _attr))
-			strarrays.append(tmpstrarray)
-			tmpstrarray = []
+			tmp_themearray.append(ThemeString(string[:maxwidth - linebreaklen - tmplen], themeattr))
+			if wrap_marker == True:
+				tmp_themearray += linebreak
+			themearray_flattened[i] = ThemeString(string[maxwidth - linebreaklen - tmplen:], themeattr)
+			themearrays.append(tmp_themearray)
+			tmp_themearray = []
 			tmplen = 0
+			continue
+		if i == len(themearray_flattened):
+			themearrays.append(tmp_themearray)
 			break
 
-		# If this fragment fits (and we need room for a linebreak character),
-		# add it and continue
-		if len(_string) + tmplen < (maxwidth - linebreaklen):
-			tmpstrarray.append((_string, _attr))
-			tmplen += len(_string)
-			i += 1
-		# If the fragment doesn't fit, slice it up and replace the element
-		# with the remainder
-		else:
-			tmpstrarray.append((_string[0:maxwidth - linebreaklen - tmplen], _attr))
-			if wrap_marker == True:
-				tmpstrarray += linebreak
-			strarrays.append(tmpstrarray)
-			strarray[i] = (_string[maxwidth - linebreaklen - tmplen:], _attr)
-			tmpstrarray = []
-			tmplen = 0
-
-	return strarrays
-
-def themearray_extract_string(key: str, context: str = "main", selected: bool = False) -> str:
-	strarray = themearray_to_strarray(key, context, selected)
-	return strarray_extract_string(strarray)
+	return themearrays
 
 ignoreinput = False
 
@@ -1200,8 +1161,8 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 	if confirm_buttons is None:
 		confirm_buttons = []
 
-	# This is hopefully only used by the About text
-	if not isinstance(items[0], dict):
+	# This is used by the About text and old-style helptexts
+	if isinstance(items[0], tuple) and isinstance(items[0][0], int):
 		tmpitems = []
 		for item in items:
 			tmpitems.append({
@@ -1210,6 +1171,9 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 				"retval": None,
 			})
 		items = tmpitems
+	# This is used by old-style helptexts
+	elif isinstance(items[0], tuple) and isinstance(items[0][0], str):
+		items = format_helptext(items)
 
 	columns = len(items[0]["columns"])
 	lengths = [0] * columns
@@ -1285,25 +1249,25 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 		buttonpadypos = ypos + height - 2
 
 	win = curses.newwin(height, width, ypos, xpos)
-	col, __discard = attr_to_curses("windowwidget", "boxdrawing")
+	col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "boxdrawing"))
 	win.attrset(col)
 	win.clear()
 	win.border()
-	col, __discard = attr_to_curses("windowwidget", "default")
+	col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "default"))
 	win.bkgd(" ", col)
-	win.addstr(0, 1, title, _attr_to_curses_merged("windowwidget", "title"))
+	win.addstr(0, 1, title, themeattr_to_curses_merged(ThemeAttr("windowwidget", "title")))
 	listpad = curses.newpad(listpadheight + 1, listpadwidth + 1)
-	col, __discard = attr_to_curses("windowwidget", "default")
+	col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "default"))
 	listpad.bkgd(" ", col)
 
 	if headers is not None:
 		headerpad = curses.newpad(1, listpadwidth + 1)
-		col, __discard = attr_to_curses("windowwidget", "header")
+		col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "header"))
 		headerpad.bkgd(" ", col)
 
 	if confirm == True:
 		buttonpad = curses.newpad(1, listpadwidth + 1)
-		col, __discard = attr_to_curses("windowwidget", "header")
+		col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "header"))
 		headerpad.bkgd(" ", col)
 
 	selection: Union[int, str, None] = None
@@ -1418,7 +1382,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 
 		if confirm == True:
 			x = width - button_lengths - 2
-			col, __discard = attr_to_curses("windowwidget", "header")
+			col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "header"))
 			buttonpad.bkgd(" ", col)
 			for button in confirm_buttons[1:]:
 				_, x = addthemearray(buttonpad, button, y = 0, x = x)
@@ -1762,7 +1726,8 @@ class UIProps:
 
 		return self.listlen
 
-	def update_log_info(self, timestamps: Optional[List[datetime]], facilities: Optional[List[str]], severities: Optional[List[LogLevel]], messages: Optional[List[str]]) -> None:
+	def update_log_info(self, timestamps: Optional[List[datetime]],
+			    facilities: Optional[List[str]], severities: Optional[List[LogLevel]], messages: Optional[List[str]]) -> None:
 		self.timestamps = timestamps
 		self.facilities = facilities
 		self.severities = severities
@@ -1923,17 +1888,17 @@ class UIProps:
 		self.addthemearray(self.stdscr, timestamparray, y = 0, x = xpos)
 
 	def draw_winheader(self) -> None:
-		ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
-		rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
-		vline = deep_get(theme, DictPath("boxdrawing#vline"))
 		if self.windowheader != "":
+			ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
+			rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
+
 			winheaderarray: List[Union[ThemeRef, ThemeString]] = []
 
 			if self.borders == True:
 				winheaderarray += [
 					ThemeString(rtee, ThemeAttr("main", "default")),
 				]
-			
+
 			winheaderarray += [
 				ThemeRef("separators", "mainheader_prefix"),
 				ThemeString(f"{self.windowheader}", ThemeAttr("main", "header")),
@@ -1948,10 +1913,9 @@ class UIProps:
 				self.addthemearray(self.stdscr, winheaderarray, y = 0, x = 0)
 
 	def refresh_window(self) -> None:
-		bl = deep_get(theme, DictPath("boxdrawing#llcorner"))
-		br = deep_get(theme, DictPath("boxdrawing#lrcorner"))
-
 		if self.borders == True:
+			bl = deep_get(theme, DictPath("boxdrawing#llcorner"))
+			br = deep_get(theme, DictPath("boxdrawing#lrcorner"))
 			self.addthemearray(self.stdscr, [ThemeString(bl, ThemeAttr("main", "default"))], y = self.maxy - 2, x = 0)
 			self.addthemearray(self.stdscr, [ThemeString(br, ThemeAttr("main", "default"))], y = self.maxy - 2, x = self.maxx)
 
@@ -2016,7 +1980,7 @@ class UIProps:
 	# For generic information
 	# Pass -1 as width to the infopadminwidth
 	# pylint: disable-next=too-many-arguments
-	def init_infopad(self, height: int, width: int, ypos: int, xpos: int, labels: Optional[Dict] = None, annotations: Optional[Dict] = None):
+	def init_infopad(self, height: int, width: int, ypos: int, xpos: int, labels: Optional[Dict] = None, annotations: Optional[Dict] = None) -> curses.window:
 		self.infopadminwidth = self.maxx + 1
 		self.infopadypos = ypos
 		self.infopadxpos = xpos
@@ -2246,18 +2210,33 @@ class UIProps:
 
 		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos)
 
-	def init_statusbar(self):
+	def init_statusbar(self) -> Optional[curses.window]:
+		"""
+		Initialise the statusbar
+
+			Returns:
+				statusbar (curses.window): A reference to the statusbar object
+		"""
+
 		self.resize_statusbar()
 
 		return self.statusbar
 
 	def refresh_statusbar(self) -> None:
+		"""
+		Refresh the statusbar
+		"""
+
 		if self.statusbar is not None:
-			col, __discard = attr_to_curses("statusbar", "default")
+			col, __discard = themeattr_to_curses(ThemeAttr("statusbar", "default"))
 			self.statusbar.bkgd(" ", col)
 			self.statusbar.noutrefresh(0, 0, self.statusbarypos, 0, self.maxy, self.maxx)
 
 	def resize_statusbar(self) -> None:
+		"""
+		Trigger the statusbar to be resized
+		"""
+
 		self.statusbarypos = self.maxy - 1
 		if self.statusbar is not None:
 			self.statusbar.erase()
@@ -2265,43 +2244,38 @@ class UIProps:
 		else:
 			self.statusbar = curses.newpad(2, self.maxx + 1)
 
-	def addthemearray(self, win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
-		for item in array:
-			if isinstance(item, ThemeRef):
-				cursesarray = themeref_to_cursesarray(item, selected)
-			elif isinstance(item, ThemeString):
-				cursesarray = [themestring_to_cursestuple(item)]
-			else:
-				dump_themearray(array)
+	def addthemearray(self, win: curses.window,
+			  array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
+		for item in themearray_flatten(array):
+			string, attr = themestring_to_cursestuple(item)
 
-			for string, attr in cursesarray:
-				maxy, maxx = win.getmaxyx()
-				cury, curx = win.getyx()
+			maxy, maxx = win.getmaxyx()
+			cury, curx = win.getyx()
 
-				newmaxy = max(y, maxy)
-				newmaxx = max(maxx, len(string) + curx + 1)
+			newmaxy = max(y, maxy)
+			newmaxx = max(maxx, len(string) + curx + 1)
 
-				if win != self.stdscr:
-					win.resize(newmaxy, newmaxx)
-				elif win == self.stdscr and (maxy, maxx) != (newmaxy, newmaxx):
-					# If the string to print is *exactly* maxx == len(string) + curx,
-					# then we check if we can print the last character using addch(),
-					# otherwise we give up.
-					if (maxy, maxx) == (newmaxy, len(string) + curx):
-						try:
-							win.addch(y, maxx - 1, string[-1:], attr)
-							win.addstr(string[0:-1], attr)
-						except curses.error:
-							cury, curx = win.getyx()
-							return cury, curx
-					else:
-						# If the message would resize the window,
-						# just pretend success instead of raising an exception
+			if win != self.stdscr:
+				win.resize(newmaxy, newmaxx)
+			elif win == self.stdscr and (maxy, maxx) != (newmaxy, newmaxx):
+				# If the string to print is *exactly* maxx == len(string) + curx,
+				# then we check if we can print the last character using addch(),
+				# otherwise we give up.
+				if (maxy, maxx) == (newmaxy, len(string) + curx):
+					try:
+						win.addch(y, maxx - 1, string[-1:], attr)
+						win.addstr(string[0:-1], attr)
+					except curses.error:
 						cury, curx = win.getyx()
 						return cury, curx
+				else:
+					# If the message would resize the window,
+					# just pretend success instead of raising an exception
+					cury, curx = win.getyx()
+					return cury, curx
 
-				win.addstr(y, x, string, attr)
-				y, x = win.getyx()
+			win.addstr(y, x, string, attr)
+			y, x = win.getyx()
 		return y, x
 
 	def move_xoffset_abs(self, position: int) -> None:

@@ -210,7 +210,7 @@ def processor_timestamp_with_age(obj, field: str, formatting) -> str:
 
 	if len(values) == 2:
 		if values[0] is None:
-			array = [
+			array: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("<none>", ThemeAttr("types", "none"))
 			]
 		else:

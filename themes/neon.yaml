@@ -650,6 +650,8 @@ statusbar:
   infoheader: ["statusbar_infoheader", "bold"]
   # Used for normal text
   default: "statusbar_default"
+  # Used for dimmed normal text
+  default_dim: ["statusbar_default", "dim"]
   # Used for highlighted text
   highlight: ["statusbar_highlight", "bold"]
   # Used for dimmed text
@@ -708,194 +710,258 @@ logview:
   severity_diffheader: ["severity_diffheader", "bold"]
 
 types:
-  key: "type_key"
-  key_error: "type_key_error"
-  value:
-    unselected: "type_value"
-    selected: ["type_value", "bold"]
-  operator: "type_operator"
-  generic:
-    unselected: "type_generic"
-    selected: ["type_generic", "bold"]
-  resource: "type_resource"
-  namespace: "type_namespace"
-  field:
-    unselected: "type_field"
-    selected: ["type_field", "bold"]
-  kind: "type_kind"
-  api_group: "type_api_group"
-  unit: "type_unit"
-  user: "type_user"
-  uid: "type_uid"
-  group: "type_group"
-  hostname: "hostname"
-  watermark_high: "type_watermark_high"
-  watermark_medium: ["type_watermark_medium", "dim"]
-  watermark_low: ["type_watermark_low", "bold"]
-  numerical: "type_numerical"
-  address: "type_address"
-  address_separator: "separator_address"
-  ipmask: "type_ipmask"
-  ipmask_separator: "separator_ipmask"
-  age: "type_age"
-  timestamp: "type_timestamp"
-  version: "type_version"
-  none: ["type_none", "bold"]
-  undefined: ["type_undefined", "bold"]
-  default: ["type_default", "bold"]
-  unset: ["type_unset", "bold"]
-  host: "type_host"
-  subset: "type_subset"
-  service: "type_service"
-  port: "type_port"
-  protocol: ["type_protocol", "bold"]
-  secret_type: "type_secret_type"
-  cputime_user_nice:
-    unselected: ["type_cputime_user_nice", "bold"]
-    selected: "type_cputime_user_nice"
-  cputime_user: "type_cputime_user"
-  cputime_total_system: "type_cputime_total_system"
-  cputime_total_guest: "type_cputime_total_guest"
-  mem: "type_mem"
   buffers:
     unselected: ["type_buffers", "bold"]
     selected: "type_buffers"
-  cached: "type_cached"
-  swap_used: "type_swap_used"
+  cputime_user_nice:
+    unselected: ["type_cputime_user_nice", "bold"]
+    selected: "type_cputime_user_nice"
+  field:
+    unselected: "type_field"
+    selected: ["type_field", "bold"]
+  generic:
+    unselected: "type_generic"
+    selected: ["type_generic", "bold"]
   separator:
     unselected: ["type_separator", "bold"]
     selected: "type_separator"
-  dir_type: "type_generic"
-  dir_permissions: "type_generic"
-  dir_linkcount: "type_generic"
-  dir_owner: "type_generic"
-  dir_group: "type_generic"
-  dir_size: "type_generic"
+  value:
+    unselected: "type_value"
+    selected: ["type_value", "bold"]
+  address: "type_address"
+  age: "type_age"
+  api_group: "type_api_group"
+  cached: "type_cached"
+  caddyfile_argument: "type_caddyfile_argument"
+  caddyfile_block: "type_generic"
+  caddyfile_comment: "type_caddyfile_comment"
+  caddyfile_directive: "type_caddyfile_directive"
+  caddyfile_matcher: "type_caddyfile_matcher"
+  caddyfile_site: "type_caddyfile_site"
+  caddyfile_snippet: "type_generic"
+  cputime_total_guest: "type_cputime_total_guest"
+  cputime_total_system: "type_cputime_total_system"
+  cputime_user: "type_cputime_user"
+  default: ["type_default", "bold"]
   dir_date: "type_generic"
   dir_dev: ["type_dir_dev", "bold"]
-  dir_sticky: ["type_dir_sticky", "bold"]
   dir_dir: ["type_dir_dir", "bold"]
   dir_file: "type_generic"
-  dir_symlink_name: ["type_dir_symlink_name", "bold"]
-  dir_symlink_link: "type_generic"
+  dir_group: "type_generic"
+  dir_linkcount: "type_generic"
+  dir_owner: "type_generic"
+  dir_permissions: "type_generic"
   dir_pipe: "type_dir_pipe"
+  dir_size: "type_generic"
   dir_socket: ["type_dir_socket", "bold"]
+  dir_sticky: ["type_dir_sticky", "bold"]
   dir_suffix: "type_generic"
+  dir_symlink_link: "type_generic"
+  dir_symlink_name: ["type_dir_symlink_name", "bold"]
+  dir_type: "type_generic"
   dir_unknown: "type_generic"
-  ini_section: ["type_ini_section", "bold"]
+  facility_extended: "type_facility_extended"
+  fixme: ["type_fixme", "bold"]
+  group: "type_group"
+  haproxy_label: "type_haproxy_label"
+  haproxy_section: "type_generic"
+  haproxy_setting: "type_haproxy_setting"
+  hostname: "hostname"
+  host: "type_host"
   ini_comment: "type_ini_comment"
   ini_key: "type_ini_key"
   ini_key_separator: "separator_ini_key_separator"
+  ini_section: ["type_ini_section", "bold"]
   ini_value: "type_ini_value"
-  toml_comment: "type_toml_comment"
-  toml_table: "type_toml_table"
-  toml_key: "type_toml_key"
-  toml_key_separator: "separator_toml_key_separator"
-  toml_value: "type_toml_value"
-  yaml_comment: "type_yaml_comment"
-  yaml_key: "type_yaml_key"
-  yaml_key_error: "type_yaml_key_error"
-  yaml_value: "type_yaml_value"
-  yaml_reference: "type_yaml_reference"
-  xml_comment: "type_xml_comment"
-  xml_content: "type_generic"
-  xml_tag: ["type_xml_tag", "bold"]
-  xml_declaration: "type_xml_declaration"
-  xml_attribute_key: "type_xml_attribute_key"
-  xml_attribute_value: "type_xml_attribute_value"
-  xml_escape: "type_xml_escape"
-  xml_escape_data: "type_xml_escape_data"
-  mosquitto_variable: "type_mosquitto_variable"
+  ipmask: "type_ipmask"
+  key_error: "type_key_error"
+  key: "type_key"
+  kind: "type_kind"
+  lineno: "type_lineno"
+  logbullet: ["severity_debug", "bold"]
+  mainheader_prefix: ["mainheader", "bold"]
+  mainheader_suffix: ["mainheader", "bold"]
+  matchbullet: "matchbullet"
+  mem: "type_mem"
   mosquitto_comment: "type_mosquitto_comment"
+  mosquitto_variable: "type_mosquitto_variable"
+  namespace: "type_namespace"
+  negative_check: ["type_negative_check", "bold"]
+  nginx_comment: "type_nginx_comment"
   nginx_key: "type_nginx_key"
   nginx_value: "type_nginx_value"
   nginx_variable: "type_nginx_variable"
-  nginx_comment: "type_nginx_comment"
-  caddyfile_site: "type_caddyfile_site"
-  caddyfile_block: "type_generic"
-  caddyfile_snippet: "type_generic"
-  caddyfile_matcher: "type_caddyfile_matcher"
-  caddyfile_argument: "type_caddyfile_argument"
-  caddyfile_comment: "type_caddyfile_comment"
-  caddyfile_directive: "type_caddyfile_directive"
-  haproxy_section: "type_generic"
-  haproxy_label: "type_haproxy_label"
-  haproxy_setting: "type_haproxy_setting"
+  none: ["type_none", "bold"]
+  no_pad: "type_generic"
+  numerical: "type_numerical"
+  operator: "type_operator"
   path: "type_path"
-  lineno: "type_lineno"
-  facility_extended: "type_facility_extended"
+  port: "type_port"
+  positive_check: ["type_positive_check", "bold"]
+  protocol: ["type_protocol", "bold"]
+  range: "type_range"
+  resource: "type_resource"
+  secret_type: "type_secret_type"
+  separator_address: "separator_address"
+  separator_container: "separator_container"
+  separator_ellipsis: "separator_ellipsis"
+  separator_equals: "separator_equals"
+  separator_facility_extended_prefix: "separator_facility_extended_prefix"
+  separator_facility_extended_suffix: "separator_facility_extended_suffix"
+  separator_facility_padding: "separator_facility_suffix"
+  separator_facility_prefix: "separator_facility_prefix"
+  separator_facility_suffix: "separator_facility_suffix"
+  separator_field: "separator_field"
+  separator_fraction: "separator_fraction"
+  separator_fraction_spaced: "separator_fraction"
+  separator_host: "separator_host"
+  separator_hosts: "separator_hosts"
+  separator_ipblocks: "separator_ipblocks"
+  separator_ipmask: "separator_ipmask"
+  separator_ipv4address: "separator_address"
+  separator_ipv6address: "separator_address"
+  separator_keyvalue_log: "separator_keyvalue"
+  separator_keyvalue: "separator_keyvalue"
+  separator_keyvalue_taint: "separator_keyvalue"
+  separator_kind_api_group: "separator_kind_api_group"
+  separator_kind: "separator_kind"
+  separator_line_break: "separator_line_break"
+  separator_list_end_colon: ["separator_list_end", "bold"]
+  separator_list_end: ["separator_list_end", "bold"]
+  separator_list: "separator_list"
+  separator_list_start: ["separator_list_start", "bold"]
+  separator_logical_and: "separator_logical_and"
+  separator_logical_or: "separator_logical_or"
+  separator_macaddress: "separator_address"
+  separator_methods: "separator_methods"
+  separator_namespace: "separator_namespace"
+  separator_namespaces: "separator_namespaces"
+  separator_not_equals: "separator_not_equals"
+  separator_not: "separator_not"
+  separator_pad: "separator_pad"
+  separator_paths: "separator_paths"
+  separator_percentage: ["separator_percentage", "bold"]
+  separator_port: "separator_port"
+  separator_ports: "separator_ports"
+  separator_principals: "separator_principals"
+  separator_request_principals: "separator_request_principals"
+  separator_resource: "separator_resource"
+  separator_secret_type: "separator_secret_type"
+  separator_selector_list: "separator_list"
+  separator_selector: "separator_selector"
+  separator_service: "separator_service"
+  separator_set_end: ["separator_set_end", "bold"]
+  separator_set_start: ["separator_set_start", "bold"]
+  separator_space: "separator_pad"
+  separator_user_uid: "separator_user_uid"
+  separator_version: "separator_version"
+  service: "type_service"
+  subset: "type_subset"
+  swap_used: "type_swap_used"
+  tag: ["tag", "bold"]
+  timestamp: "type_timestamp"
+  toml_comment: "type_toml_comment"
+  toml_key_separator: "separator_toml_key_separator"
+  toml_key: "type_toml_key"
+  toml_table: "type_toml_table"
+  toml_value: "type_toml_value"
+  uid: "type_uid"
+  undefined: ["type_undefined", "bold"]
+  unit: "type_unit"
+  unset: ["type_unset", "bold"]
+  user: "type_user"
+  version: "type_version"
+  watermark_high: "type_watermark_high"
+  watermark_low: ["type_watermark_low", "bold"]
+  watermark_medium: ["type_watermark_medium", "dim"]
+  widgetbullet: ["widgetbullet", "bold"]
+  xml_attribute_key: "type_xml_attribute_key"
+  xml_attribute_value: "type_xml_attribute_value"
+  xml_comment: "type_xml_comment"
+  xml_content: "type_generic"
+  xml_declaration: "type_xml_declaration"
+  xml_escape_data: "type_xml_escape_data"
+  xml_escape: "type_xml_escape"
+  xml_tag: ["type_xml_tag", "bold"]
+  yaml_comment: "type_yaml_comment"
+  yaml_key_error: "type_yaml_key_error"
+  yaml_key_separator: "separator_yaml_key_separator"
+  yaml_key: "type_yaml_key"
+  yaml_list: "separator_yaml_list"
+  yaml_reference: "type_yaml_reference"
+  yaml_value: "type_yaml_value"
 
 strings:
-  none: [["<none>", ["type_none", "bold"]]]
-  undefined: [["<undefined>", ["type_undefined", "bold"]]]
-  unset: [["<unset>", ["type_unset", "bold"]]]
-  fixme: [["<FIXME>", ["type_fixme", "bold"]]]
-  positive_check: [["✓", ["type_positive_check", "bold"]]]
-  negative_ballot: [["✗", ["type_negative_check", "bold"]]]
+  none: [["<none>", ["types", "none"]]]
+  undefined: [["<undefined>", ["types", "undefined"]]]
+  unset: [["<unset>", ["types", "unset"]]]
+  fixme: [["<FIXME>", ["types", "fixme"]]]
+  positive_check: [["✓", ["types", "positive_check"]]]
+  negative_ballot: [["✗", ["types", "negative_check"]]]
 
 separators:
-  no_pad: [["", "type_generic"]]
-  range: [["–", "type_range"]]
-  tag: [["✓ ", ["tag", "bold"]]]
-  mainheader_prefix: [[":: ", ["mainheader", "bold"]]]
-  mainheader_suffix: [[" ::", ["mainheader", "bold"]]]
-  percentage: [["%", ["separator_percentage", "bold"]]]
-  keyvalue: [[":", "separator_keyvalue"]]
-  keyvalue_taint: [["=", "separator_keyvalue"]]
-  keyvalue_log: [["=", "separator_keyvalue"]]
-  selector: [["=", "separator_selector"]]
-  version: [[":", "separator_version"]]
-  user_uid: [[":", "separator_user_uid"]]
-  kind: [["/", "separator_kind"]]
-  kind_api_group: [[".", "separator_kind_api_group"]]
-  port: [[":", "separator_port"]]
-  host: [[":", "separator_host"]]
-  resource: [[":", "separator_resource"]]
-  service: [["/", "separator_service"]]
-  namespace: [["::", "separator_namespace"]]
-  container: [[":", "separator_container"]]
-  list: [[", ", "separator_list"]]
-  selector_list: [[",", "separator_list"]]
-  field: [["/", "separator_field"]]
-  ellipsis: [["...", "separator_ellipsis"]]
-  ipv4address: [[".", "separator_address"]]
-  ipv6address: [[":", "separator_address"]]
-  macaddress: [[":", "separator_address"]]
-  ipmask: [["/", "separator_ipmask"]]
-  fraction: [["/", "separator_fraction"]]
-  fraction_spaced: [[" / ", "separator_fraction"]]
-  statusbar_fraction: [["/", "statusbar_default"]]
-  equals: [["=", "separator_equals"]]
-  not_equals: [["≠", "separator_not_equals"]]
-  logical_and: [[" ∧ ", "separator_logical_and"]]
-  logical_or: [[" ∨ ", "separator_logical_or"]]
-  set_start: [["{", ["separator_set_start", "bold"]]]
-  set_end: [["}", ["separator_set_end", "bold"]]]
-  list_start: [["[", ["separator_list_start", "bold"]]]
-  list_end: [["]", ["separator_list_end", "bold"]]]
-  list_end_colon: [["]:", ["separator_list_end", "bold"]]]
-  not: [["!", "separator_not"]]
-  hosts: [["Hosts", "separator_hosts"]]
-  ports: [["Ports", "separator_ports"]]
-  methods: [["Methods", "separator_methods"]]
-  paths: [["Paths", "separator_paths"]]
-  principals: [["Principals", "separator_principals"]]
-  request_principals: [["RequestPrincipals", "separator_request_principals"]]
-  namespaces: [["Namespaces", "separator_namespaces"]]
-  ipblocks: [["IPBlocks", "separator_ipblocks"]]
-  secret_type: [["/", "separator_secret_type"]]
-  widgetbullet: [["• ", ["widgetbullet", "bold"]]]
-  matchbullet: [["◉ ", "matchbullet"]]
-  logbullet: [["• ", ["severity_debug", "bold"]]]
-  statusbar: [[" ┃ ", ["statusbar_default", "dim"]]]
-  statusbar_compact: [["┃", ["statusbar_default", "dim"]]]
-  yaml_list: [["- ", "separator_yaml_list"]]
-  yaml_key_separator: [[":", "separator_yaml_key_separator"]]
-  space: [[" ", "separator_pad"]]
-  pad: [["  ", "separator_pad"]]
-  line_break: [["⏎", "separator_line_break"]]
-  facility_extended_prefix: [["[", "separator_facility_extended_prefix"]]
-  facility_extended_suffix: [["]", "separator_facility_extended_suffix"]]
-  facility_prefix: [["<", "separator_facility_prefix"]]
-  facility_suffix: [[">", "separator_facility_suffix"]]
-  facility_padding: [[" ", "separator_facility_suffix"]]
+  no_pad: [["", ["types", "generic"]]]
+  range: [["–", ["types", "range"]]]
+  tag: [["✓ ", ["types", "tag"]]]
+  mainheader_prefix: [[":: ", ["types", "mainheader_prefix"]]]
+  mainheader_suffix: [[" ::", ["types", "mainheader_suffix"]]]
+  percentage: [["%", ["types", "percentage"]]]
+  keyvalue: [[":", ["types", "separator_keyvalue"]]]
+  keyvalue_taint: [["=", ["types", "separator_keyvalue"]]]
+  keyvalue_log: [["=", ["types", "separator_keyvalue"]]]
+  selector: [["=", ["types", "separator_selector"]]]
+  version: [[":", ["types", "separator_version"]]]
+  user_uid: [[":", ["types", "separator_user_uid"]]]
+  kind: [["/", ["types", "separator_kind"]]]
+  kind_api_group: [[".", ["types", "separator_kind_api_group"]]]
+  port: [[":", ["types", "separator_port"]]]
+  host: [[":", ["types", "separator_host"]]]
+  resource: [[":", ["types", "separator_resource"]]]
+  service: [["/", ["types", "separator_service"]]]
+  namespace: [["::", ["types", "separator_namespace"]]]
+  container: [[":", ["types", "separator_container"]]]
+  list: [[", ", ["types", "separator_list"]]]
+  selector_list: [[",", ["types", "separator_list"]]]
+  field: [["/", ["types", "separator_field"]]]
+  ellipsis: [["...", ["types", "separator_ellipsis"]]]
+  ipv4address: [[".", ["types", "separator_address"]]]
+  ipv6address: [[":", ["types", "separator_address"]]]
+  macaddress: [[":", ["types", "separator_address"]]]
+  ipmask: [["/", ["types", "separator_ipmask"]]]
+  fraction: [["/", ["types", "separator_fraction"]]]
+  fraction_spaced: [[" / ", ["types", "separator_fraction"]]]
+  statusbar_fraction: [["/", ["types", "default"]]]
+  equals: [["=", ["types", "separator_equals"]]]
+  not_equals: [["≠", ["types", "separator_not_equals"]]]
+  logical_and: [[" ∧ ", ["types", "separator_logical_and"]]]
+  logical_or: [[" ∨ ", ["types", "separator_logical_or"]]]
+  set_start: [["{", ["types", "separator_set_start"]]]
+  set_end: [["}", ["types", "separator_set_end"]]]
+  list_start: [["[", ["types", "separator_list_start"]]]
+  list_end: [["]", ["types", "separator_list_end"]]]
+  list_end_colon: [["]:", ["types", "separator_list_end"]]]
+  not: [["!", ["types", "separator_not"]]]
+  hosts: [["Hosts", ["types", "separator_hosts"]]]
+  ports: [["Ports", ["types", "separator_ports"]]]
+  methods: [["Methods", ["types", "separator_methods"]]]
+  paths: [["Paths", ["types", "separator_paths"]]]
+  principals: [["Principals", ["types", "separator_principals"]]]
+  request_principals: [["RequestPrincipals", ["types", "separator_request_principals"]]]
+  namespaces: [["Namespaces", ["types", "separator_namespaces"]]]
+  ipblocks: [["IPBlocks", ["types", "separator_ipblocks"]]]
+  secret_type: [["/", ["types", "separator_secret_type"]]]
+  widgetbullet: [["• ", ["types", "widgetbullet"]]]
+  matchbullet: [["◉ ", ["types", "matchbullet"]]]
+  logbullet: [["• ", ["types", "logbullet"]]]
+  statusbar: [[" ┃ ", ["statusbar", "default"]]]
+  statusbar_compact: [["┃", ["statusbar", "default_dim"]]]
+  yaml_list: [["- ", ["types", "separator_yaml_list"]]]
+  yaml_key_separator: [[":", ["types", "separator_yaml_key_separator"]]]
+  space: [[" ", ["types", "separator_pad"]]]
+  pad: [["  ", ["types", "separator_pad"]]]
+  line_break: [["⏎", ["types", "separator_line_break"]]]
+  facility_extended_prefix: [["[", ["types", "separator_facility_extended_prefix"]]]
+  facility_extended_suffix: [["]", ["types", "separator_facility_extended_suffix"]]]
+  facility_prefix: [["<", ["types", "separator_facility_prefix"]]]
+  facility_suffix: [[">", ["types", "separator_facility_suffix"]]]
+  facility_padding: [[" ", ["types", "separator_facility_suffix"]]]
