@@ -149,12 +149,17 @@ def map_value(value, references = None, selected: bool = False, default_field_co
 		else:
 			value = substitutions[value]
 
-		# If the substitution is a dict it's a themearray; typically either a separator or a string
+		# If the substitution is a dict it's either a ThemeRef to a separator or a string,
+		# or a ThemeString
 		if isinstance(value, dict):
 			context: str = deep_get(value, DictPath("context"), "main")
 			attr_ref: str = deep_get(value, DictPath("type"))
-			themeref = ThemeRef(context, attr_ref, selected)
-			return themeref, str(themeref)
+			string: str = deep_get(value, DictPath("string"))
+			if string is None:
+				themeref = ThemeRef(context, attr_ref, selected)
+				return themeref, str(themeref)
+			themestring = ThemeString(string, ThemeAttr(context, attr_ref))
+			return themestring, str(themestring)
 		if isinstance(value, ThemeRef):
 			return value, str(value)
 
