@@ -997,6 +997,11 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api": "networksets",
 	},
 	# deviceplugin.intel.com
+	("DlbDevicePlugin", "deviceplugin.intel.com"): {
+		"api_family": ["apis/deviceplugin.intel.com/v1/"],
+		"api": "dlbdeviceplugins",
+		"namespaced": False,
+	},
 	("DsaDevicePlugin", "deviceplugin.intel.com"): {
 		"api_family": ["apis/deviceplugin.intel.com/v1/"],
 		"api": "dsadeviceplugins",
@@ -1010,6 +1015,11 @@ kubernetes_resources: Dict[Any, Any] = {
 	("GpuDevicePlugin", "deviceplugin.intel.com"): {
 		"api_family": ["apis/deviceplugin.intel.com/v1/"],
 		"api": "gpudeviceplugins",
+		"namespaced": False,
+	},
+	("IaaDevicePlugin", "deviceplugin.intel.com"): {
+		"api_family": ["apis/deviceplugin.intel.com/v1/"],
+		"api": "iaadeviceplugins",
 		"namespaced": False,
 	},
 	("QatDevicePlugin", "deviceplugin.intel.com"): {
