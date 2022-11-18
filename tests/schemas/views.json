@@ -281,10 +281,13 @@
 											"description": "Substitute the value with a literal string",
 											"type": "string"
 										}, {
-											"description": "A theme-file (context, type) lookup",
+											"description": "A ThemeRef(context, type) or ThemeString(string, ThemeAttr(context, type))",
 											"type": "object",
 											"properties": {
 												"context": {
+													"type": "string"
+												},
+												"string": {
 													"type": "string"
 												},
 												"type": {
@@ -1336,6 +1339,10 @@
 													"description": "Should the name of the selected object be appended to the title",
 													"type": "boolean"
 												},
+												"_name_path": {
+													"description": "Alternate path to use when getting the name for _named_title",
+													"$ref": "#/definitions/simple_path"
+												},
 												"_pass_obj": {
 													"description": "Pass obj to callback",
 													"type": "boolean"
@@ -1829,7 +1836,12 @@
 													"$ref": "#/definitions/simple_path"
 												},
 												"_named_title": {
+													"description": "Should the name of the selected object be appended to the title",
 													"type": "boolean"
+												},
+												"_name_path": {
+													"description": "Alternate path to use when getting the name for _named_title",
+													"$ref": "#/definitions/simple_path"
 												},
 												"_parent_namespace_path": {
 													"description": "Path to get the namespace of the parent obj",

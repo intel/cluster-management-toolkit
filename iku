@@ -5598,8 +5598,17 @@ def genericlistloop(stdscr, view):
 				if "_parent_namespace_path" in action_args and selected is not None:
 					parent_namespace_path = deep_get(action_args, DictPath("_parent_namespace_path"))
 					action_args["_parent_namespace"] = deep_get(obj, parent_namespace_path, "")
-				if "_named_title" in action_args and selected is not None and getattr(selected, "name", None):
-					action_args["named_title"] = deep_get(action_args, DictPath("title"), "") + " (" + getattr(selected, "name") + ")"
+				if "_named_title" in action_args:
+					title = deep_get(action_args, DictPath("title"), "")
+					title_name = ""
+					if "_name_path" in action_args:
+						title_name_path = deep_get(action_args, DictPath("_name_path"), "")
+						title_name = deep_get(selected.ref, DictPath(title_name_path), "")
+					elif selected is not None:
+						title_name = getattr(selected, "name", "")
+					if title_name != "":
+						title_name = f" ({title_name})"
+					action_args["named_title"] = f"{title}{title_name}"
 				action_call = deep_get(value, DictPath("action_call"))
 				if action == "toggle_var":
 					var = deep_get(action_args, DictPath("var"))
@@ -7442,6 +7451,8 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					if w_items is not None and len(w_items) > 0:
 						w_sortcolumn = deep_get(value, DictPath("sortcolumn"))
 						tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items = w_items, headers = w_headers, title = w_title, cursor = w_selectable)
+						if len(tmpselection) == 0:
+							continue
 						changed = True
 				elif widget == "inputbox":
 					selected = uip.get_selected()
@@ -7529,6 +7540,21 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				if "_parent_namespace_path" in action_args:
 					parent_namespace_path = deep_get(action_args, DictPath("_parent_namespace_path"))
 					action_args["_parent_namespace"] = deep_get(obj, DictPath(parent_namespace_path), "")
+				if "_named_title" in action_args:
+					title = deep_get(action_args, DictPath("title"), "")
+					title_name = ""
+					if selected is not None:
+						ref = getattr(selected, "ref", None)
+					elif tmpselection is not None:
+						ref = tmpselection
+					if "_name_path" in action_args and ref is not None:
+						title_name_path = deep_get(action_args, DictPath("_name_path"), "")
+						title_name = deep_get(ref, DictPath(title_name_path), "")
+					elif selected is not None:
+						title_name = getattr(selected, "name", "")
+					if title_name != "":
+						title_name = f" ({title_name})"
+					action_args["named_title"] = f"{title}{title_name}"
 
 				if tmpselection is not None:
 					action_args["selection"] = tmpselection
@@ -9079,6 +9105,7 @@ def view_yaml(stdscr, **kwargs):
 		obj = selection
 	else:
 		obj = deep_get(kwargs, DictPath("obj"))
+
 	if obj is None:
 		return None
 	path = deep_get(kwargs, DictPath("path"))
