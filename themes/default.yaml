@@ -366,6 +366,9 @@ color_pairs_curses:
   separator_keyvalue:
     unselected: [["black", "bright"], ["black", "normal"]]
     selected: [["black", "bright"], ["white", "normal"]]
+  separator_sysctl_key_components:
+    unselected: [["black", "bright"], ["black", "normal"]]
+    selected: [["black", "bright"], ["white", "normal"]]
   separator_user_uid:
     unselected: [["black", "bright"], ["black", "normal"]]
     selected: [["black", "bright"], ["white", "normal"]]
@@ -853,6 +856,7 @@ types:
   separator_set_end: ["separator_set_end", "bold"]
   separator_set_start: ["separator_set_start", "bold"]
   separator_space: "separator_pad"
+  separator_sysctl_key_components: ["separator_sysctl_key_components", "bold"]
   separator_user_uid: "separator_user_uid"
   separator_version: "separator_version"
   service: "type_service"
@@ -957,6 +961,8 @@ separators:
   statusbar_compact: [["┃", ["statusbar", "default_dim"]]]
   yaml_list: [["- ", ["types", "yaml_list"]]]
   yaml_key_separator: [[":", ["types", "yaml_key_separator"]]]
+  sysctl_key_components: [[".", ["types", "separator_sysctl_key_components"]]]
+  sysctl_keyvalue: [[" = ", ["types", "separator_keyvalue"]]]
   space: [[" ", ["types", "separator_pad"]]]
   pad: [["  ", ["types", "separator_pad"]]]
   line_break: [["⏎", ["types", "separator_line_break"]]]

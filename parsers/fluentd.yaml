@@ -38,6 +38,9 @@
     - matchtype: "regex"
       matchkey: '^gem.*?version '
       loglevel: "notice"
+    - matchtype: "startswith"
+      matchkey: "starting fluentd-1.14.4"
+      loglevel: "notice"
   - name: "custom_splitter"
     options:
       regex: '^(gem)\s+(.*)'

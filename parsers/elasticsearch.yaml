@@ -1,0 +1,67 @@
+- name: "elasticsearch"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "elasticsearch"
+    container_name: "elasticsearch"
+  parser_rules:
+  - name: "strip_ansicodes"
+  - name: "custom_splitter"
+    options:
+      regex: '^(elasticsearch) \d\d:\d\d:\d\d\.\d\d ([A-Z]{4})  ==> (.*)'
+      severity:
+        field: 2
+        transform: "4letter"
+      facility:
+        fields:
+        - 1
+      message:
+        field: 3
+  - name: "custom_splitter"
+    options:
+      regex: '^(elasticsearch) \d\d:\d\d:\d\d\.\d\d (.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2
+  - name: "json"
+    options:
+      facilities:
+      - "component"
+      overrides:
+      - matchtype: "contains"
+        matchkey: " was deprecated "
+        loglevel: "warning"
+      - matchtype: "contains"
+        matchkey: " are deprecated"
+        loglevel: "warning"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "warning:"
+      loglevel: "warning"
+    - matchtype: "startswith"
+      matchkey: "OpenJDK 64-Bit Server VM warning:"
+      loglevel: "warning"
+  - name: "custom_splitter"
+    options:
+      regex: '^\[\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\d\]\[([A-Z]{4}) \]\[([^]^\s]+)\s*\] \[([^]]+)\] (.*)'
+      severity:
+        field: 1
+        transform: "4letter"
+      facility:
+        fields:
+        - 2
+        - 3
+        separators:
+        - ":"
+      message:
+        field: 4
+- name: "elasticsearch"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "elasticsearch"
+    container_name: "sysctl"
+    container_type: "init_container"
+  parser_rules:
+  - name: "sysctl"

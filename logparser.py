@@ -742,6 +742,7 @@ def split_json_style(message: str, severity: LogLevel = LogLevel.INFO, facility:
 	errors = deep_get(options, DictPath("errors"), ["err", "error"])
 	timestamps = deep_get(options, DictPath("timestamps"), ["ts", "time", "timestamp"])
 	severities = deep_get(options, DictPath("severities"), ["level"])
+	msg_severity_overrides = deep_get(options, DictPath("msg#severity#overrides"), [])
 	facilities = deep_get(options, DictPath("facilities"), ["logger", "caller", "filename"])
 	versions = deep_get(options, DictPath("versions"), [])
 
@@ -911,6 +912,8 @@ def split_json_style(message: str, severity: LogLevel = LogLevel.INFO, facility:
 			if formatted_message is not None:
 				return formatted_message, severity, facility, remnants
 
+			if isinstance(message, str):
+				_message, severity = custom_override_severity(message, severity, msg_severity_overrides)
 			return message, severity, facility, remnants
 
 	return message, severity, facility, []
@@ -1077,7 +1080,7 @@ def split_bracketed_timestamp_severity_facility(message: str, default: LogLevel 
 
 	return message, severity, facility
 
-def custom_override_severity(message: Union[str, List], severity: Optional[LogLevel], overrides: Dict) -> LogLevel:
+def custom_override_severity(message: Union[str, List], severity: Optional[LogLevel], overrides: Dict) -> Tuple[Union[str, List], LogLevel]:
 	if isinstance(message, list):
 		tmp_message = themearray_to_string(message)
 	else:
@@ -1363,6 +1366,35 @@ def format_key_value(key: str, value: str, severity: LogLevel, force_severity: b
 		       ThemeString(f"{value}", ThemeAttr("types", "value"))]
 	return tmp
 
+def sysctl(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+			Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+	"""
+	Format output from sysctl
+
+		Parameters:
+			message (str): The string to format
+			severity (LogLevel): The log severity
+			facility (str): The log facility
+			fold_msg (bool): Should the message be expanded or folded?
+			options (dict): Additional, rule specific, options
+		Returns:
+	"""
+
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+	new_message: List[Union[ThemeRef, ThemeString]] = []
+
+	kv = message.split(" = ")
+	if len(kv) == 2:
+		key, value = kv
+		keyparts = key.split(".")
+		for i, part in enumerate(keyparts):
+			new_message.append(ThemeString(part, ThemeAttr("types", "key")))
+			if i < len(keyparts) - 1:
+				new_message.append(ThemeRef("separators", "sysctl_key_components"))
+		new_message.append(ThemeRef("separators", "sysctl_keyvalue"))
+		new_message.append(ThemeString(value, ThemeAttr("types", "value")))
+	return facility, severity, new_message, remnants
+
 # Severity: lvl=|level=
 # Timestamps: t=|ts=|time= (all of these are ignored)
 # Facility: subsys|caller|logger|source
@@ -1377,6 +1409,8 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 	severity_overrides = deep_get(options, DictPath("severity#overrides"), [])
 	facilities = deep_get(options, DictPath("facilities"), ["source", "subsys", "caller", "logger", "Topic"])
 	versions = deep_get(options, DictPath("versions"), [])
+	substitute_bullets = deep_get(options, DictPath("substitute_bullets"), True)
+	collector_bullets = deep_get(options, DictPath("collector_bullets"), False)
 
 	# Replace embedded quotes with fancy quotes
 	message = message.replace("\\\"", "”")
@@ -1468,7 +1502,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 				for line in s:
 					if len(line) > 0:
 						# Real bullets look so much nicer
-						if line.startswith("* ") and logparser_configuration.msg_realbullets == True:
+						if line.startswith("* ") and substitute_bullets == True and logparser_configuration.msg_realbullets == True:
 							remnants.append(([ThemeRef("separators", "logbullet"),
 									  ThemeString(f"{line[2:]}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 						else:
@@ -1517,7 +1551,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 
 			for d_key, d_value in d.items():
 				if fold_msg == False:
-					if d_key == "collector" and logparser_configuration.bullet_collectors == True:
+					if d_key == "collector" and collector_bullets == True and logparser_configuration.bullet_collectors == True:
 						tmp.append(f"• {d_value}")
 					elif d_key in versions:
 						tmp.append(format_key_value(d_key, d_value, LogLevel.NOTICE, force_severity = True))
@@ -2113,6 +2147,8 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 					severity, message, remnants = expand_event_objectmeta(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
 			elif _filter == "modinfo":
 				facility, severity, message, remnants = modinfo(message, fold_msg = fold_msg)
+			elif _filter == "sysctl":
+				facility, severity, message, remnants = sysctl(message, severity = severity, fold_msg = fold_msg)
 			# Timestamp formats
 			elif _filter == "ts_8601": # Anything that resembles ISO-8601 / RFC 3339
 				message = strip_iso_timestamp(message)
@@ -2305,6 +2341,7 @@ def init_parser_list() -> None:
 								 "seconds_severity_facility",
 								 "spaced_severity_facility",
 								 "strip_ansicodes",
+								 "sysctl",
 								 "ts_8601"):
 							rules.append(rule_name)
 						elif rule_name in ("custom_splitter",

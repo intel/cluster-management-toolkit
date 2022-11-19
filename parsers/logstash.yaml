@@ -1,0 +1,70 @@
+- name: "logstash"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "logstash"
+    container_name: "logstash"
+  parser_rules:
+  - name: "strip_ansicodes"
+  - name: "custom_splitter"
+    options:
+      regex: '^(logstash) \d\d:\d\d:\d\d\.\d\d ([A-Z]{4})  ==> (.*)'
+      severity:
+        field: 2
+        transform: "4letter"
+      facility:
+        fields:
+        - 1
+      message:
+        field: 3
+  - name: "custom_splitter"
+    options:
+      regex: '^(logstash) \d\d:\d\d:\d\d\.\d\d (.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "OpenJDK 64-Bit Server VM warning:"
+      loglevel: "warning"
+  - name: "custom_splitter"
+    options:
+      regex: '^\[\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\d\]\[([A-Z]{4}) \]\[([^]^\s]+)\s*\]\[([^]]+)\](\[[^]]+\] .*)'
+      severity:
+        field: 1
+        transform: "4letter"
+      facility:
+        fields:
+        - 2
+        - 3
+        separators:
+        - ":"
+      message:
+        field: 4
+  - name: "custom_splitter"
+    options:
+      regex: '^\[\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\d\]\[([A-Z]{4}) \]\[([^]^\s]+)\s*\]\[([^]]+)\] (.*)'
+      severity:
+        field: 1
+        transform: "4letter"
+      facility:
+        fields:
+        - 2
+        - 3
+        separators:
+        - ":"
+      message:
+        field: 4
+  - name: "custom_splitter"
+    options:
+      regex: '^\[\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\d\]\[([A-Z]{4}) \]\[([^]^\s]+)\s*\] (.*)'
+      severity:
+        field: 1
+        transform: "4letter"
+      facility:
+        fields:
+        - 2
+      message:
+        field: 3

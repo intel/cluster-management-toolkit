@@ -17,6 +17,7 @@
 			"properties": {
 				"matchtype": {
 					"enum": [
+						"contains",
 						"endswith",
 						"regex",
 						"startswith"
@@ -139,6 +140,7 @@
 										"seconds_severity_facility",
 										"spaced_severity_facility",
 										"strip_ansicodes",
+										"sysctl",
 										"ts_8601"
 									]
 								}
@@ -292,6 +294,9 @@
 												"type": "string"
 											},
 											"minItems": 1
+										},
+										"overrides": {
+											"$ref": "#/definitions/severity_overrides"
 										},
 										"timestamps": {
 											"description": "A list of fields that should be treated as timestamps",
