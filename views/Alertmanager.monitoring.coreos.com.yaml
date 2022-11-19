@@ -31,8 +31,24 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["image", "node_selector", "replicas", "service_account"]
+        fields:
+        - "image"
+        - "external_url"
+        - "listen_local"
+        - "log_format"
+        - "loglevel"
+        - "retention"
+        - "port_name"
+        - "route_prefix"
+        - "node_selector"
+        - "paused"
+        - "replicas"
+        - "service_account"
     rows:
+      external_url:
+        header: [["External URL:", ["main", "infoheader"]]]
+        path: "spec#externalUrl"
+        type: "str"
       image:
         header: [["Image:", ["main", "infoheader"]]]
         paths:
@@ -46,6 +62,18 @@ infoview:
           - type: "version"
           field_separators:
           - type: "version"
+      listen_local:
+        header: [["Listen Local:", ["main", "infoheader"]]]
+        path: "spec#listenLocal"
+        type: "bool"
+      log_format:
+        header: [["Log Format:", ["main", "infoheader"]]]
+        path: "spec#logFormat"
+        type: "str"
+      loglevel:
+        header: [["Loglevel:", ["main", "infoheader"]]]
+        path: "spec#logLevel"
+        type: "str"
       node_selector:
         header: [["Node Selector:", ["main", "infoheader"]]]
         paths:
@@ -58,6 +86,14 @@ infoview:
           - type: "value"
           field_separators:
           - type: "selector"
+      paused:
+        header: [["Paused:", ["main", "infoheader"]]]
+        path: "spec#paused"
+        type: "bool"
+      port_name:
+        header: [["Port Name:", ["main", "infoheader"]]]
+        path: "spec#portName"
+        type: "str"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         path: "spec#replicas"
@@ -65,6 +101,15 @@ infoview:
         formatting:
           field_colors:
           - type: "numerical"
+      retention:
+        header: [["Retention:", ["main", "infoheader"]]]
+        path: "spec#retention"
+        type: "str"
+        formatter: "age"
+      route_prefix:
+        header: [["Route Prefix:", ["main", "infoheader"]]]
+        path: "spec#routePrefix"
+        type: "str"
       service_account:
         header: [["S", ["main", "infoheader_shortcut"]], ["ervice Account:", ["main", "infoheader"]]]
         path: "spec#serviceAccountName"
@@ -112,3 +157,33 @@ infoview:
         kind: "ServiceAccount"
         namespace_path: "metadata#namespace"
         name_path: "spec#serviceAccountName"
+    "Containers":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List containers"
+      widget: "windowwidget"
+      title: "Containers:"
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#containers"
+        fields:
+        - "name"
+        pass_ref: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Container Information"
+        _named_title: true
+        _name_path: "name"
+    "Show affinities":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show affinities"
+      widget: "windowwidget"
+      headers: ["Type:", "Scheduling:", "Execution:", "Selector:", "Topology:"]
+      itemgetter: "get_pod_affinity"
+      # This isn't supported for now
+      sortcolumn: "type"
