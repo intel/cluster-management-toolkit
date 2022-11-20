@@ -177,6 +177,13 @@ class ThemeArray:
 		self.array = newarray
 
 	def append(self, item: Union[ThemeRef, ThemeString]) -> None:
+		"""
+		Append a ThemeRef or ThemeString to the ThemeArray
+
+			Parameters:
+				item (union(ThemeRef, ThemeString)): The item to append
+		"""
+
 		if not isinstance(item, (ThemeRef, ThemeString)):
 			raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
 		self.array.append(item)
@@ -337,6 +344,14 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 			raise
 
 def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
+	"""
+	Read the theme file and initialise the theme dict
+
+		Parameters:
+			configthemefile (FilePath): The theme to read
+			defaultthemefile (FilePath): The fallback if the other theme isn't available
+	"""
+
 	global theme # pylint: disable=global-statement
 	themefile = None
 
@@ -387,6 +402,11 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 	theme = secure_read_yaml(FilePath(themefile), checks = checks)
 
 def init_curses() -> None:
+	"""
+	Initialise the curses helper; this configures all curses color pairs needed
+	for the various ThemeAttrs
+	"""
+
 	color_last = 1
 
 	# First we set the colour palette
@@ -428,6 +448,14 @@ def init_curses() -> None:
 		__color[pair] = (unselected_index, selected_index)
 
 def dump_themearray(themearray: List[Any]) -> NoReturn:
+	"""
+	Dump all individual parts of a ThemeArray;
+	used for debug purposes
+
+		Parameters:
+			themearray (list): A themearray
+	"""
+
 	tmp = ""
 	for substr in themearray:
 		if isinstance(substr, ThemeString):
@@ -451,12 +479,41 @@ def dump_themearray(themearray: List[Any]) -> NoReturn:
 	raise TypeError(f"themearray contains invalid substring(s):\n{tmp}\n{themearray}")
 
 def color_log_severity(severity: LogLevel) -> ThemeAttr:
+	"""
+	Given severity, returns the corresponding ThemeAttr
+
+		Parameters:
+			severity (LogLevel): The severity
+		Returns:
+			themeattr (ThemeAttr): The corresponding ThemeAttr
+	"""
+
 	return ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")
 
 def color_status_group(status_group: StatusGroup) -> ThemeAttr:
+	"""
+	Given status group, returns the corresponding ThemeAttr
+
+		Parameters:
+			severity (LogLevel): The status group
+		Returns:
+			themeattr (ThemeAttr): The corresponding ThemeAttr
+	"""
+
 	return ThemeAttr("main", stgroup_mapping[status_group])
 
 def window_tee_hline(win: curses.window, y: int, start: int, end: int, formatting: Optional[ThemeAttr] = None) -> None:
+	"""
+	Draw a horizontal line with "tees" ("├", "┤") at the ends
+
+		Parameters:
+			win (curses.window): The curses window to operate on
+			y (int): The y-coordinate
+			start (int): the starting point of the hline
+			end (int): the ending point of the hline
+			formatting (ThemeAttr): Optional ThemeAttr to apply to the line
+	"""
+
 	ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
 	rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
 	hline = deep_get(theme, DictPath("boxdrawing#hline"))
@@ -473,6 +530,17 @@ def window_tee_hline(win: curses.window, y: int, start: int, end: int, formattin
 	addthemearray(win, hlinearray, y = y, x = start)
 
 def window_tee_vline(win: curses.window, x: int, start: int, end: int, formatting: Optional[ThemeAttr] = None) -> None:
+	"""
+	Draw a vertical line with "tees" ("┬", "┴") at the ends
+
+		Parameters:
+			win (curses.window): The curses window to operate on
+			x (int): The y-coordinate
+			start (int): the starting point of the vline
+			end (int): the ending point of the vline
+			formatting (ThemeAttr): Optional ThemeAttr to apply to the line
+	"""
+
 	ttee = deep_get(theme, DictPath("boxdrawing#ttee"))
 	btee = deep_get(theme, DictPath("boxdrawing#btee"))
 	vline = deep_get(theme, DictPath("boxdrawing#vline"))
@@ -619,8 +687,19 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width
 	# (y, x Upper arrow), (y, x Lower arrow), (y, x, len horizontal dragger)
 	return leftarrow, rightarrow, hdragger
 
-# This does not draw a heatmap; it only generates an array of string arrays
 def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) -> List[List[ThemeString]]:
+	"""
+	Given list[StatusGroup] and an index to the selected item and the max width,
+	generate an array of themearrays
+
+		Parameters:
+			maxwidth (int): The maximum width of a line
+			stgroups (list[StatusGroup]): The status group for each item
+			selected (int): The selected item (used to draw the cursor); use -1 to disable cursor
+		Returns:
+			array (list[ThemeArray]): A list of themearrays
+	"""
+
 	array = []
 	row = []
 	block = deep_get(theme, DictPath("boxdrawing#smallblock"), "■")
@@ -720,9 +799,33 @@ def __notification(stdscr: Optional[curses.window], y: int, x: int, message: str
 	return win
 
 def notice(stdscr: Optional[curses.window], y: int, x: int, message: str) -> curses.window:
+	"""
+	Show a notification
+
+		Parameters:
+			win (curses.window): The curses window to operate on
+			y (int): the y-coordinate of the window centre point
+			x (int): the x-coordinate of the window centre point
+			message (str): The message to show
+		Returns:
+			win (curses.window): A reference to the notification window
+	"""
+
 	return __notification(stdscr, y, x, message, ThemeAttr("windowwidget", "notice"))
 
 def alert(stdscr: Optional[curses.window], y: int, x: int, message: str) -> curses.window:
+	"""
+	Show an alert
+
+		Parameters:
+			win (curses.window): The curses window to operate on
+			y (int): the y-coordinate of the window centre point
+			x (int): the x-coordinate of the window centre point
+			message (str): The message to show
+		Returns:
+			win (curses.window): A reference to the notification window
+	"""
+
 	return __notification(stdscr, y, x, message, ThemeAttr("windowwidget", "alert"))
 
 
@@ -779,6 +882,15 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int,
 	return win
 
 def inputwrapper(keypress: int) -> int:
+	"""
+	A wrapper used by textpads to change the input behaviour of the Escape key
+
+		Parameters:
+			keypress (int): The keypress
+		Returns:
+			keypress (int): The filtered keypress
+	"""
+
 	global ignoreinput # pylint: disable=global-statement
 
 	if keypress == 27:	# ESCAPE
@@ -916,6 +1028,21 @@ def move_cur_with_offset(curypos: int, listlen: int, yoffset: int,
 	return newcurypos, newyoffset
 
 def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
+	"""
+	Add a ThemeArray to a curses window
+
+		Parameters:
+			win (curses.window): The curses window to operate on
+			array (list[union[ThemeRef, ThemeString]]): The themearray to add to the curses window
+			y (int): The y-coordinate (-1 to start from current cursor position)
+			x (int): The x-coordinate (-1 to start from current cursor position)
+			selected (bool): Should the selected version of the ThemeArray be used
+		Returns:
+			(y, x):
+				y (int): The new y-coordinate
+				x (int): The new x-coordinate
+	"""
+
 	for item in themearray_flatten(array):
 		string, attr = themestring_to_cursestuple(item)
 		win.addstr(y, x, string, attr)
@@ -2251,6 +2378,21 @@ class UIProps:
 
 	def addthemearray(self, win: curses.window,
 			  array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
+		"""
+		Add a ThemeArray to a curses window
+
+			Parameters:
+				win (curses.window): The curses window to operate on
+				array (list[union[ThemeRef, ThemeString]]): The themearray to add to the curses window
+				y (int): The y-coordinate (-1 to start from current cursor position)
+				x (int): The x-coordinate (-1 to start from current cursor position)
+				selected (bool): Should the selected version of the ThemeArray be used
+			Returns:
+				(y, x):
+					y (int): The new y-coordinate
+					x (int): The new x-coordinate
+		"""
+
 		for item in themearray_flatten(array):
 			string, attr = themestring_to_cursestuple(item)
 
