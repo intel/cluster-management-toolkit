@@ -1,5 +1,8 @@
 # TODO
 
+## Testing / Validation
+* Check that all ThemeAttrs, ThemeRefs, and ANSIThemeString attrs exist
+
 ## All
 * When running either ikt or iku, check whether .ssh/id_ecdsa.pub is in authorized_keys
   in .ikt/ansible/inventory.yaml; if not, add it.
