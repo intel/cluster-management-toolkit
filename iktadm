@@ -241,9 +241,6 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
 	except FileNotFoundError:
 		pass
 
-	if info is None and cluster_name is None:
-		raise Exception("cluster_name cannot be None when the installation_info file is empty")
-
 	if info is None or info.get("installation_target") is None or (info.get("installation_target") is not None and cluster_name is not None and cluster_name not in info):
 		if info is None:
 			info = {}
@@ -271,7 +268,7 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
 
 # pylint: disable-next=too-many-arguments
 def update_installation_info(cluster_name: Optional[str] = None, distro: Optional[str] = None, version: Optional[str] = None, requested_version: Optional[str] = None,
-			     state: Optional[str] = None, phase: Union[int, str] = None, phase_skiplist: Optional[List[str]] = None,
+			     state: Optional[str] = None, phase: Optional[Union[int, str]] = None, phase_skiplist: Optional[List[str]] = None,
 			     cni: Optional[str] = None, pod_network_cidr: Optional[str] = None, cri: Optional[str] = None) -> Dict:
 	"""
 	Update installation info for a cluster
@@ -542,7 +539,7 @@ def check_version_from_url(url: str, version_regex: str) -> List[str]:
 			versionoutput = tmp.splitlines()
 			_version_regex = re.compile(version_regex)
 			for line in versionoutput:
-				tmp_match = _version_regex.match(line)
+				tmp_match = _version_regex.match(cast(str, line))
 				if tmp_match is not None:
 					version = list(tmp_match.groups())
 					break
@@ -674,7 +671,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 					execute_command_with_response([kubectl_path, "apply", "-f", new_path])
 		else:
 			iktprint([ANSIThemeString("No newer version available.", "default")])
-	elif install_command is not None and version is None or version == []:
+	elif install_command is not None and version is None or len(version) == 0:
 		new_version = "".join(candidate_version)
 
 		iktprint([ANSIThemeString("\n• ", "separator"),
@@ -718,7 +715,13 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	if len(args) > 0:
 		cni = args[0]
+	else:
+		installation_info = get_installation_info()
+		cluster_name = installation_info["installation_target"]
+		cni = installation_info[cluster_name]["cni"]
+		pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 
+	if pod_network_cidr is None:
 		# If we have a running cluster and we're upgrading by CNI rather than through installation info we need to get the Pod CIDR
 		# by some other means; try this. If fail we give up.
 		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
@@ -728,17 +731,6 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 			iktprint([ANSIThemeString("Error", "error"),
 				  ANSIThemeString(": Could not identify Pod network CIDR; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOTSUP)
-	else:
-		installation_info = get_installation_info()
-		cluster_name = installation_info["installation_target"]
-		cni = installation_info[cluster_name]["cni"]
-		pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
-		if pod_network_cidr is None:
-			pod_network_cidr = kh.get_pod_network_cidr()
-			if pod_network_cidr is None:
-				iktprint([ANSIThemeString("Error", "error"),
-					  ANSIThemeString(": Could not identify Pod network CIDR; aborting.", "default")], stderr = True)
-				sys.exit(errno.ENOTSUP)
 
 	if cni in ("", "<none>", "<unknown>"):
 		if kh is None:
@@ -756,7 +748,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	install_cni = False
 	action_str = "Upgrading"
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt == "install":
 			install_cni = True
 			action_str = "Installing"
@@ -804,7 +796,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		sys.exit(errno.EINVAL)
 
 	if cni in cni_upgrade_data:
-		upgrade_cni(options = [("install", None)], args = [])
+		upgrade_cni(options = [("install", "")], args = [])
 		return
 
 	version_url = deep_get(cni_data, DictPath(f"{cni}#version_url"))
@@ -906,7 +898,6 @@ def add_ssh_keys_to_authorized_keys() -> bool:
 			retval (bool): True on success, False on failure
 	"""
 
-	pubkey = None
 	retval = False
 
 	# Since we run create_ssh_key() before this task we can safely assume that .ssh/ exists
@@ -917,7 +908,7 @@ def add_ssh_keys_to_authorized_keys() -> bool:
 		tmp = secure_read_string(FilePath(str(path)))
 		if tmp is not None:
 			tmplines = tmp.splitlines()
-			pubkey = tmplines[0]
+			pubkey = cast(str, tmplines[0])
 			if len(pubkey) == 0:
 				continue
 
@@ -1243,7 +1234,7 @@ def run_playbook(playbookpath: FilePath, hosts = None, extra_values = None, quie
 
 	return retval, ansible_results
 
-def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts: List[str] = None, extra_values: Dict = None) -> bool:
+def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts: Optional[List[str]] = None, extra_values: Optional[Dict] = None) -> bool:
 	"""
 	Run a set of playbooks
 
@@ -1331,7 +1322,7 @@ def __task_request_ansible_password(installation_info: Optional[Dict]) -> None:
 		else:
 			ansible_configuration["ansible_password"] = ansible_password
 
-def __run_playbooks_on_selection(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], selection: List[str], extra_values: Dict = None) -> None:
+def __run_playbooks_on_selection(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], selection: List[str], extra_values: Optional[Dict] = None) -> None:
 	"""
 	A helper that runs a playbook list on a selection
 
@@ -2031,7 +2022,7 @@ def run_tasks(tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]],
 		else:
 			update_installation_info(state = final_state, phase = "<done>")
 
-def __find_requested_version(distro: str, version: str = None) -> str:
+def __find_requested_version(distro: str, version: Optional[str] = None) -> str:
 	"""
 	Based on a provided version, try to find a matching package;
 	Passing None will give the latest version, passing major, minor will give the latest patch revision of that version.
@@ -2598,6 +2589,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	"""
 
 	confirm = True
+	override_cni = False
 
 	# We don't need a cluster name for --list-tasks, so check this first of all
 	if "--list-tasks" in (tmp[0] for tmp in options):
@@ -2612,12 +2604,13 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 	cni = installation_info[cluster_name]["cni"]
+	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 
 	if state is not None and state in ("installed", "upgrading", "tearing_down", "torn_down", "purging"):
 		iktprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": Invalid installation state; there is a partial or full installation already; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
-	elif state is None or state == "preparing":
+	elif state is None or state in ("<none>", "preparing"):
 		iktprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": The system is not prepared for installation yet; run ", "default"),
 			  ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
@@ -2645,6 +2638,8 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 				sys.exit(0)
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
+		elif opt == "--override-cni":
+			override_cni = True
 		elif opt == "--save-ansible-logs":
 			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
@@ -2661,11 +2656,43 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			cni = DEFAULT_CNI
 		elif cni != args[0]:
 			cni = args[0]
+	else:
+		if len(args) > 0:
+			new_cni = args[0]
+
+		if new_cni != cni:
+			if override_cni == False:
+				iktprint([ANSIThemeString("Error", "error"),
+					  ANSIThemeString(": Installation was previous initiated with ", "default"),
+					  ANSIThemeString(f"{cni}", "programname"),
+					  ANSIThemeString(" as CNI; ", "default"),
+					  ANSIThemeString("you can attempt to override this by using ", "default"),
+					  ANSIThemeString("--override-cni", "option"),
+					  ANSIThemeString(", but success is not guaranteed. Aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
+			else:
+				iktprint([ANSIThemeString("Warning", "warning"),
+					  ANSIThemeString(": Installation was previous initiated with ", "default"),
+					  ANSIThemeString(f"{cni}", "programname"),
+					  ANSIThemeString(" as CNI, ", "default"),
+					  ANSIThemeString("but ", "default"),
+					  ANSIThemeString("--override-cni", "option"),
+					  ANSIThemeString(" was specified; continuing installation.", "default")], stderr = True)
+		cni = new_cni
 
 	if len(args) > 1:
-		pod_network_cidr = args[1]
+		new_pod_network_cidr = args[1]
 	else:
-		pod_network_cidr = DEFAULT_POD_NETWORK_CIDR
+		new_pod_network_cidr = DEFAULT_POD_NETWORK_CIDR
+	if pod_network_cidr == "<none>" or pod_network_cidr == new_pod_network_cidr or phase == 0:
+		pod_network_cidr = new_pod_network_cidr
+	else:
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": Installation was previously initiated with ", "default"),
+			  ANSIThemeString(f"{pod_network_cidr}", "emphasis"),
+			  ANSIThemeString(" as Pod Network CIDR;\n", "default"),
+			  ANSIThemeString("changing this value in the middle of installation is not supported. Aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
 
 	update_installation_info(cni = cni, pod_network_cidr = pod_network_cidr, state = "installing", phase = phase, phase_skiplist = list(phase_skiplist))
 
@@ -2697,7 +2724,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	iktprint([ANSIThemeString("\nControl plane setup successful", "success")])
 
-def __get_node_info(kh: kubernetes_helper.KubernetesHelper = None) -> Tuple[List[Dict], kubernetes_helper.KubernetesHelper]:
+def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> Tuple[List[Dict], kubernetes_helper.KubernetesHelper]:
 	if not Path(KUBE_CONFIG_FILE).is_file():
 		iktprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
@@ -3729,6 +3756,9 @@ COMMANDLINE = {
 						ANSIThemeString("iku", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
+			},
+			"--override-cni": {
+				"description": [ANSIThemeString("Allow a change of CNI even if installation started with a different CNI", "description")],
 			},
 			"-Y": {
 				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
