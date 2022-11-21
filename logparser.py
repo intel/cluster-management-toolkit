@@ -993,7 +993,7 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 	if event in ("AddPod", "DeletePod", "AddNamespace", "DeleteNamespace") or (event in ("UpdatePod", "UpdateNamespace") and not "} {" in tmp[2]):
 		msg = tmp[2]
 		_message, _severity, _facility, remnants = split_json_style_raw(message = msg, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_msg = True)
-		new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("listview", "severity_info"))]
+		new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", "severity_info"))]
 		if event in ("UpdatePod", "UpdateNamespace"):
 			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
 				       ThemeString(" [No changes]", ThemeAttr("logview", "unchanged"))]
