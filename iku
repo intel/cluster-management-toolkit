@@ -5222,7 +5222,7 @@ def genericlistloop(stdscr, view):
 				tagged_items.add(selected)
 			labellist = []
 			labels = []
-			if "namespace" in deep_get(vlist[0], DictPath("metadata"), ""):
+			if "namespace" in deep_get(vlist[0], DictPath("metadata"), "") and hasattr(item, "namespace"):
 				itemlist = [ (item.namespace, item.name) for item in tagged_items ]
 			else:
 				itemlist = [ item.name for item in tagged_items ]
@@ -5243,6 +5243,7 @@ def genericlistloop(stdscr, view):
 					if (key, labelref[key]) not in labels:
 						labels.append((key, labelref[key]))
 			if len(labels) == 0:
+				tagged_items.clear()
 				continue
 			for key, value in natsorted(labels):
 				labellist.append({
