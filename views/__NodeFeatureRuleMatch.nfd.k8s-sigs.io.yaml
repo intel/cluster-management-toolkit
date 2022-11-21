@@ -1,0 +1,49 @@
+kind: "__NodeFeatureRuleMatch"
+api_family: "nfd.k8s-sigs.io"
+default_command: "__"
+infoview:
+  name: "Node Feature Rule Match"
+  infopad:
+    name_path: "name"
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["labels"]
+    rows:
+      labels:
+        header: [["Labels:", ["main", "infoheader"]]]
+        paths:
+        - path: "labels"
+          pathtype: "key_value"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+  listpad:
+    listgetter: "listgetter_matchrules"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["feature", "match_expressions"]
+        sortcolumn: "feature"
+    fields:
+      feature:
+        header: "Match:"
+        path: "feature" 
+        type: "str"
+      match_expressions:
+        header: "Match Expressions:"
+        path: "match_expressions" 
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"

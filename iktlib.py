@@ -337,7 +337,7 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
 			pass
 	raise ValueError(f"Could not parse timestamp: {rtimestamp}")
 
-def make_set_expression_list(expression_list: Dict) -> List[Tuple[str, str, str]]:
+def make_set_expression_list(expression_list: Dict, key: str = "") -> List[Tuple[str, str, str]]:
 	"""
 	Create a list of set expressions (key, operator, values)
 
@@ -351,7 +351,7 @@ def make_set_expression_list(expression_list: Dict) -> List[Tuple[str, str, str]
 
 	if expression_list is not None:
 		for expression in expression_list:
-			operator = deep_get(expression, DictPath("operator"), "")
+			operator = deep_get_with_fallback(expression, [DictPath("operator"), DictPath("op")], "")
 			if operator == "In":
 				operator = "In "
 			elif operator == "NotIn":
@@ -364,9 +364,9 @@ def make_set_expression_list(expression_list: Dict) -> List[Tuple[str, str, str]
 				operator = "> "
 			elif operator == "Lt":
 				operator = "< "
-			key = deep_get_with_fallback(expression, [DictPath("key"), DictPath("scopeName")], "")
+			key = deep_get_with_fallback(expression, [DictPath("key"), DictPath("scopeName")], key)
 
-			tmp = deep_get(expression, DictPath("values"), [])
+			tmp = deep_get_with_fallback(expression, [DictPath("values"), DictPath("value")], [])
 			values = ",".join(tmp)
 			if len(values) > 0 and operator not in ("Gt", "Lt"):
 				values = f"[{values}]"

@@ -10,3 +10,35 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "Node Feature Rule Info"
+  listpad:
+    listgetter: "listgetter_field"
+    listgetter_args:
+      path: "spec#rules"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__NodeFeatureRuleMatch"
+      api_family: "nfd.k8s-sigs.io"
+    field_indexes:
+      Normal:
+        fields: ["name", "labels"]
+        sortcolumn: "name"
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      labels:
+        header: "Labels:"
+        paths:
+        - path: "labels"
+          pathtype: "key_value"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"

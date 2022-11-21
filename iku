@@ -874,11 +874,12 @@ def __process_string(value: str, replace_quotes: str) -> str:
 	# We don't want any newlines, and extra trailing whitespace
 	if value is None:
 		value = ""
-	value = value.replace("\n", "\\n").rstrip()
-	if replace_quotes == "pretty":
-		value = value.replace("\\\"", "“")
-	elif replace_quotes == "same":
-		value = value.replace("\\\"", "\"")
+	if type(value) == str:
+		value = value.replace("\n", "\\n").rstrip()
+		if replace_quotes == "pretty":
+			value = value.replace("\\\"", "“")
+		elif replace_quotes == "same":
+			value = value.replace("\\\"", "\"")
 	return value
 
 def __process_sum_numerical(value: Sequence[Union[int, float]]) -> Union[float, int]:
@@ -1978,6 +1979,48 @@ def check_matchlist(item, matchlist):
 	exacts, prefixes, suffixes, ins = split_matchlist(matchlist, exacts = [], prefixes = [], suffixes = [], ins = [])
 	return check_matchlists(item, exacts = exacts, prefixes = prefixes, suffixes = suffixes, ins = ins)
 
+def listgetter_matchrules(obj: Dict, **kwargs: Dict) -> Tuple[Dict, str]:
+	"""
+	Extract match rules from an object
+
+		Parameters:
+			obj (Dict): The object to extract a list of matchrules from
+			kwargs (Dict): Additional parameters
+		Returns:
+			(match_list, retval):
+				match_list (list[dict]): The list of data
+				retval (str): Always "OK"
+	"""
+
+	match_list = []
+
+	for match_any in deep_get(obj, DictPath("matchAny"), []):
+		for match_feature in deep_get(match_any, DictPath("matchFeatures"), []):
+			feature = deep_get(match_feature, DictPath("feature"), "")
+			match_expressions_dict = deep_get(match_feature, DictPath("matchExpressions"), {})
+			match_expressions = []
+			for match_expression_name, match_expression in match_expressions_dict.items():
+				tmp = make_set_expression_list([match_expression], match_expression_name)[0]
+				match_expressions.append(tmp)
+			match_list.append({
+				"feature": f"Any:{feature}",
+				"match_expressions": match_expressions,
+			})
+
+	for match_feature in deep_get(obj, DictPath("matchFeatures"), []):
+		feature = deep_get(match_feature, DictPath("feature"), "")
+		match_expressions_dict = deep_get(match_feature, DictPath("matchExpressions"), {})
+		match_expressions = []
+		for match_expression_name, match_expression in match_expressions_dict.items():
+			tmp = make_set_expression_list([match_expression], match_expression_name)[0]
+			match_expressions.append(tmp)
+		match_list.append({
+			"feature": f"{feature}",
+			"match_expressions": match_expressions,
+		})
+
+	return match_list, "OK"
+
 # pylint: disable-next=unused-argument
 def listgetter_ansible_volumes(obj, **kwargs):
 	info = []
@@ -2378,7 +2421,7 @@ def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]],
 			obj (Dict): The object to extract a list of data from
 			kwargs (Dict): Additional parameters
 		Returns:
-			((vlist, retval)):
+			(vlist, retval):
 				vlist (list[dict]): The list of data
 				retval (int): The return value
 	"""
@@ -10556,6 +10599,7 @@ listgetter_allowlist = {
 	"listgetter_field": listgetter_field,
 	"listgetter_join_dicts_to_list": listgetter_join_dicts_to_list,
 	"listgetter_join_lists": listgetter_join_lists,
+	"listgetter_matchrules": listgetter_matchrules,
 	"listgetter_namespaced_resources": listgetter_namespaced_resources,
 	"listgetter_path": listgetter_path,
 	"listgetter_policy_rules": listgetter_policy_rules,
