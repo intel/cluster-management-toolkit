@@ -674,7 +674,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 					execute_command_with_response([kubectl_path, "apply", "-f", new_path])
 		else:
 			iktprint([ANSIThemeString("No newer version available.", "default")])
-	elif install_command is not None and version is None:
+	elif install_command is not None and version is None or version == []:
 		new_version = "".join(candidate_version)
 
 		iktprint([ANSIThemeString("\n• ", "separator"),
@@ -710,9 +710,11 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	Upgrade the specified CNI to the latest version
 
 		Parameters:
-			options (list[(str, str)]): Unused
+			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): The CNI to upgrade (optional; if not specified the CNI will be taken from installation_info.yaml)
 	"""
+
+	kh = None
 
 	if len(args) > 0:
 		cni = args[0]
@@ -738,8 +740,10 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 					  ANSIThemeString(": Could not identify Pod network CIDR; aborting.", "default")], stderr = True)
 				sys.exit(errno.ENOTSUP)
 
-		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
-		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if cni in ("", "<none>", "<unknown>"):
+		if kh is None:
+			from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+			kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 		tmp_cni = kh.identify_cni()
 		if len(tmp_cni) == 0:
 			cni = "<unknown>"
@@ -749,8 +753,18 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 			sys.exit(errno.EINVAL)
 		else:
 			cni = tmp_cni[0][0]
+
+	install_cni = False
+	action_str = "Upgrading"
+	for opt, optarg in options:
+		if opt == "install":
+			install_cni = True
+			action_str = "Installing"
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
+
 	if cni not in cni_upgrade_data:
-		iktprint([ANSIThemeString("Upgrading ", "default"),
+		iktprint([ANSIThemeString(f"{action_str} ", "default"),
 			  ANSIThemeString(f"{cni}", "command"),
 			  ANSIThemeString(" is currently not supported; exiting.", "default")])
 		sys.exit(errno.ENOTSUP)
@@ -758,12 +772,18 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	context_name = execute_command_with_response([kubectl_path, "config", "current-context"]).splitlines()[0]
 
-	iktprint([ANSIThemeString("\n[Upgrading CNI]", "phase")])
+	if install_cni == True:
+		iktprint([ANSIThemeString("\n[Installing CNI]", "phase")])
+	else:
+		iktprint([ANSIThemeString("\n[Upgrading CNI]", "phase")])
 
 	__upgrade_cni(cni, "executable", context_name, pod_network_cidr)
 	__upgrade_cni(cni, "CNI", context_name, pod_network_cidr)
 
-	iktprint([ANSIThemeString("\nCNI upgrade successful", "success")])
+	if install_cni == True:
+		iktprint([ANSIThemeString("\nCNI installation successful", "success")])
+	else:
+		iktprint([ANSIThemeString("\nCNI upgrade successful", "success")])
 
 def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name: str) -> None:
 	"""
@@ -776,12 +796,16 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 			cluster_name (str): The name of the cluster
 	"""
 
-	if cni not in cni_data:
+	if cni not in cni_data and cni not in cni_upgrade_data:
 		iktprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": ", "default"),
 			  ANSIThemeString(f"{cni}", "argument"),
 			  ANSIThemeString(" is not a valid/supported CNI; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
+
+	if cni in cni_upgrade_data:
+		upgrade_cni(options = [("install", None)], args = [])
+		return
 
 	version_url = deep_get(cni_data, DictPath(f"{cni}#version_url"))
 	version_regex = deep_get(cni_data, DictPath(f"{cni}#version_regex"))
