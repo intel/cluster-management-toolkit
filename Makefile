@@ -1,5 +1,5 @@
 yaml_dirs = parsers themes views playbooks
-python_executables = ikt iktadm ikt-install iktinv iku tests/validate_yaml
+python_executables = ikt iktadm ikt-install iktinv iku tests/validate_yaml tests/check_theme_use tests/iotests
 
 checks: bandit yamllint validate_yaml validate_playbooks
 
@@ -61,5 +61,12 @@ setup_tests:
 	 chmod o+w 03-wrong_dir_permissions ;\
 	 chmod o+w 01-wrong_permissions )
 
-make iotests: setup_tests
-	@(cd tests &&  ./iotests)
+iotests: setup_tests
+	@(cd tests && ./iotests)
+
+check_theme_use: setup_tests
+	@for theme in themes/*.yaml; do \
+		printf -- "\nChecking against theme file $$theme:\n" ;\
+		printf -- "---\n" ;\
+		./tests/check_theme_use $$theme $(python_executables) *.py ;\
+	done

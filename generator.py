@@ -492,7 +492,7 @@ def generator_list_with_status(obj, field, fieldlen: int, pad: int, ralign: bool
 		ThemeAttr("main", "status_admin"),
 		ThemeAttr("main", "status_not_ok"),
 		ThemeAttr("main", "status_unknown"),
-		ThemeAttr("main", "status_crit"),
+		ThemeAttr("main", "status_critical"),
 		ThemeAttr("types", "generic")]
 	field_separators = [ThemeRef("separators", "no_pad", selected)]
 

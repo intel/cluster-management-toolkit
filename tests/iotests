@@ -1135,6 +1135,8 @@ def main() -> int:
 	success = 0
 	failed_testcases = []
 
+	init_iktprint(themefile = None)
+
 	for testcase, testcase_data in testcases.items():
 		test = deep_get(testcase_data, DictPath("test"))
 		failed, msg = test(testcase, testcase_data)
@@ -1162,5 +1164,4 @@ def main() -> int:
 	return fail
 
 if __name__ == "__main__":
-	init_iktprint(themefile = None)
 	main()

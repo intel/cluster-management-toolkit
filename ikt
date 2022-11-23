@@ -66,7 +66,7 @@ def request_ansible_password() -> None:
 		ansible_password = iktinput_password([ANSIThemeString("\nPassword: ", "default")])
 
 		if ansible_password is None or len(ansible_password) == 0:
-			iktprint([ANSIThemeString("\nError", "Error"),
+			iktprint([ANSIThemeString("\nError", "error"),
 				  ANSIThemeString(": Empty password; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
