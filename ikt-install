@@ -301,7 +301,7 @@ def install(options, args) -> None:
 		install_software_with_pip_fallback(PACKAGES_WITH_PIP_FALLBACK, verbose = verbose, pip_proxy = pip_proxy)
 
 	create_directories(directories = DIRECTORIES, verbose = verbose)
-	_violations = copy_files(files = CONFIGURATION_FILES, verbose = verbose)
+	copy_files(files = CONFIGURATION_FILES, verbose = verbose)
 	create_symlinks(symlinks = MISC_SYMLINKS + EXECUTABLE_SYMLINKS, verbose = verbose)
 
 	if bindir_exists == False:

@@ -170,8 +170,8 @@ def ansible_get_inventory_dict() -> Dict:
 
 	return d
 
-# pylint: disable-next=line-too-long
-def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: bool = False, include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True) -> List[List[ANSIThemeString]]:
+def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: bool = False,
+				 include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True) -> List[List[ANSIThemeString]]:
 	"""
         Get the iKT inventory and return it neatly formatted
 

@@ -14,12 +14,37 @@ import re
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
-from typing import Dict, List, Optional, Union
+from typing import cast, Dict, List, Optional, Set, Union
+
+try:
+	from natsort import natsorted
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 from ikttypes import ANSIThemeString, FilePath, HostNameStatus, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from iktpaths import HOMEDIR
 
 import iktprint
+
+def join_securitystatus_set(separator: str, securitystatuses: Set[SecurityStatus]) -> str:
+	"""
+	Given a set of violations, join it to a sorted string
+
+		Parameters:
+			separator (str): The separator to use between items
+			securitystatuses (set(SecurityStatus)): The set of security statuses
+		Returns:
+			securitystatus_str (str): The string of joined securitystatuses
+	"""
+
+	securitystatus_str = ""
+
+	for securitystatus in natsorted(securitystatuses):
+		if len(securitystatus_str) > 0:
+			securitystatus_str += separator
+		securitystatus_str += str(securitystatus)
+
+	return securitystatus_str
 
 # pylint: disable-next=too-many-return-statements
 def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
@@ -419,10 +444,7 @@ def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
 			pass
 
 	if violations != [SecurityStatus.OK]:
-		violation_strings = []
-		for violation in violations:
-			violation_strings.append(str(violation))
-		violations_joined = ",".join(violation_strings)
+		violations_joined = join_securitystatus_set(",", set(violations))
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
 
 	if ignoring_non_existing == False:
@@ -463,10 +485,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 			pass
 
 	if violations != [SecurityStatus.OK]:
-		violation_strings = []
-		for violation in violations:
-			violation_strings.append(str(violation))
-		violations_joined = ",".join(violation_strings)
+		violations_joined = join_securitystatus_set(",", set(violations))
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
 
 	if ignoring_non_existing == False:
@@ -566,10 +585,7 @@ def secure_read(path: FilePath, checks = None, directory_is_symlink: bool = Fals
 
 			violations = check_path(parent_dir, checks = checks)
 			if violations != [SecurityStatus.OK]:
-				violation_strings = []
-				for violation in violations:
-					violation_strings.append(str(violation))
-				violations_joined = ",".join(violation_strings)
+				violations_joined = join_securitystatus_set(",", set(violations))
 				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = parent_dir)
 
 			# We don't want to check that parent resolves to itself,
@@ -616,7 +632,7 @@ def secure_read(path: FilePath, checks = None, directory_is_symlink: bool = Fals
 
 	return string
 
-def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool = False) -> Union[str, bytes]:
+def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool = False) -> str:
 	"""
 	Read a string from a file in a safe manner
 
@@ -629,7 +645,7 @@ def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool
 			ikttypes.FilePathAuditError
 	"""
 
-	return secure_read(path, checks = checks, directory_is_symlink = directory_is_symlink, read_mode = "r")
+	return cast(str, secure_read(path, checks = checks, directory_is_symlink = directory_is_symlink, read_mode = "r"))
 
 def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
 	"""
@@ -839,10 +855,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 	violations = check_path(src, checks = checks)
 	if violations != [SecurityStatus.OK]:
 		if verbose == True:
-			violation_strings = []
-			for violation in violations:
-				violation_strings.append(str(violation))
-			violations_joined = ",".join(violation_strings)
+			violations_joined = join_securitystatus_set(",", set(violations))
 			iktprint.iktprint([ANSIThemeString("Critical", "critical"),
 					   ANSIThemeString(": The source path ", "default"),
 					   ANSIThemeString(f"{src}", "path"),
@@ -867,10 +880,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 
 	if violations != [SecurityStatus.OK]:
 		if verbose == True:
-			violation_strings = []
-			for violation in violations:
-				violation_strings.append(str(violation))
-			violations_joined = ",".join(violation_strings)
+			violations_joined = join_securitystatus_set(",", set(violations))
 			iktprint.iktprint([ANSIThemeString("Critical", "critical"),
 					   ANSIThemeString(": The target path ", "default"),
 					   ANSIThemeString(f"{dst_path_parent}", "path"),
@@ -1010,10 +1020,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 	violations = check_path(FilePath(str(src_path)), checks = checks)
 
 	if violations != [SecurityStatus.OK]:
-		violation_strings = []
-		for violation in violations:
-			violation_strings.append(str(violation))
-		violations_joined = ",".join(violation_strings)
+		violations_joined = join_securitystatus_set(",", set(violations))
 		if verbose == True:
 			iktprint.iktprint([ANSIThemeString("Critical", "critical"),
 					   ANSIThemeString(": The source path ", "default"),

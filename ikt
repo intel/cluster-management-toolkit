@@ -194,7 +194,7 @@ def show_configuration(hosts: List[str]) -> None:
 		iktprint([ANSIThemeString("  • ", "separator"),
 			  ANSIThemeString(host, "hostname")])
 
-def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts: List[str] = None, extra_values: Optional[Dict] = None) -> bool:
+def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts: Optional[List[str]] = None, extra_values: Optional[Dict] = None) -> bool:
 	"""
 	Run a set of playbooks
 
@@ -219,7 +219,7 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts
 
 	return retval == 0
 
-def get_selection(selection: List[str], kind: Tuple[str, str] = None) -> Tuple[List[str], List[str], List[str]]:
+def get_selection(selection: List[str], kind: Optional[Tuple[str, str]] = None) -> Tuple[List[str], List[str], List[str]]:
 	"""
 	Based on input parameters, split the node list into nodes, non-existing nodes, and control planes
 
@@ -760,7 +760,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 			sys.exit(errno.ENOENT)
 
 		hosts_raw = secure_read_string(FilePath(hostfile))
-		hosts_raw_split = hosts_raw.splitlines()
+		hosts_raw_split = cast(List[str], hosts_raw.splitlines())
 
 		if len(hosts_raw_split) == 1 and "," in hosts_raw_split[0]:
 			selection = hosts_raw_split[0].split(",")

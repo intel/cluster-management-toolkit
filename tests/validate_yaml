@@ -10,6 +10,7 @@ For usage, see:
 import json
 import os
 import sys
+from typing import cast, List, Tuple
 import yaml
 
 try:
@@ -26,7 +27,7 @@ validate_yaml_version = "0.3"
 
 failed_files = []
 
-def usage():
+def usage() -> None:
 	"""
 	Display usage information for the program.
 	"""
@@ -59,14 +60,14 @@ def usage():
 	print("help|--help            Display this help and exit")
 	print("version|--version      Output version information and exit")
 
-def version():
+def version() -> None:
 	"""
 	Display version information for the program.
 	"""
 
 	print(f"validate_yaml {validate_yaml_version}")
 
-def validate_file(yaml_path, schema_path, verbose = 0, abort_on_fail = False):
+def validate_file(yaml_path: str, schema_path: str, verbose: int = 0, abort_on_fail: bool = False) -> int:
 	"""
 	Validate a YAML file against a JSON schema
 
@@ -134,7 +135,7 @@ def validate_file(yaml_path, schema_path, verbose = 0, abort_on_fail = False):
 
 	return fail
 
-def main():
+def main() -> None:
 	"""
 	Main function for the program
 	"""
@@ -144,9 +145,9 @@ def main():
 	no_summary = None
 
 	i = 1
-	schema = None
-	schema_path = None
-	yaml_paths = []
+	schema = ""
+	schema_path = ""
+	yaml_paths: List[Tuple[str, str]] = []
 	resume_from = None
 
 	while i < len(sys.argv):
@@ -179,7 +180,7 @@ def main():
 		else:
 			# If schema hasn't been set this is the schema to use;
 			# either an alias {views,themes,parsers} or a full path
-			if schema is None:
+			if len(schema) == 0:
 				schema = sys.argv[i]
 				if schema in ["themes", "views", "parsers"]:
 					schema_path = f"tests/schemas/{schema}.json"
@@ -213,7 +214,7 @@ def main():
 	fail = 0
 	skip = 0
 
-	_yaml_paths = []
+	_yaml_paths: List[Tuple[str, str]] = []
 	for yaml_path, schema in yaml_paths:
 		if os.path.isfile(yaml_path):
 			if resume_from is not None:
@@ -231,7 +232,7 @@ def main():
 				else:
 					_yaml_paths.append((f"{yaml_path}/{path}", schema))
 
-	for yaml_path, schema in natsorted(_yaml_paths):
+	for yaml_path, schema in cast(List[Tuple[str, str]], natsorted(_yaml_paths)):
 		try:
 			retval = validate_file(yaml_path, schema, verbose = verbose, abort_on_fail = abort_on_fail)
 		except KeyboardInterrupt:
