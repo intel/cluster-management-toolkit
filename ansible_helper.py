@@ -877,14 +877,25 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 	ansible_facts = deep_get(event, DictPath("event_data#res#ansible_facts"), {})
 
 	skipped = deep_get(event, DictPath("event"), "") == "runner_on_skipped"
+	failed = deep_get(event, DictPath("event"), "") == "runner_on_failed"
 	unreachable = deep_get(event, DictPath("event_data#res#unreachable"), False)
 
 	if unreachable == True:
 		__retval = -1
 	elif skipped == True or deep_get(event, DictPath("event"), "") == "runner_on_ok":
 		__retval = 0
+	elif failed == True:
+		__retval = -1
 	else:
 		__retval = deep_get(event, DictPath("event_data#res#rc"))
+
+	if task.startswith("hide_on_ok: "):
+		if __retval == 0:
+			__retval = None
+		else:
+			task = task[len("hide_on_ok: "):]
+	elif task == "Gathering Facts" and __retval == 0:
+		__retval = None
 
 	if __retval is None:
 		return 0, {}

@@ -12,10 +12,14 @@ This module requires init_iktprint() to have been executed first
 
 import errno
 import os
-from pathlib import Path
+from pathlib import Path, PurePath
 import re
 import sys
 from typing import Dict, Generator, List, Tuple, Union
+import yaml
+
+from ansible_helper import ansible_configuration, ansible_set_vars
+from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results, populate_playbooks_from_paths
 
 from iktio import execute_command_with_response
 from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath
@@ -23,8 +27,9 @@ from iktpaths import BINDIR, IKTDIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
 from iktpaths import DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import IKT_CONFIG_FILE, KUBE_CONFIG_FILE
+import iktlib
 from iktlib import check_deb_versions
-from iktprint import iktprint
+from iktprint import ansithemestring_join_tuple_list, iktprint
 
 from kubernetes_helper import kubectl_get_version
 
@@ -965,5 +970,136 @@ def check_file_permissions(cluster_name: str, kubeconfig: Dict, iktconfig_dict: 
 
 	if issue == False:
 		iktprint([ANSIThemeString("  OK\n", "emphasis")])
+
+	return critical, error, warning, note
+
+# pylint: disable-next=unused-argument
+def run_playbook(playbookpath: FilePath, hosts = None, extra_values = None, quiet = False) -> Tuple[int, Dict]:
+	"""
+	Run a playbook
+
+		Parameters:
+			playbookpath (FilePath): A path to the playbook to run
+			hosts (list[str]): A list of hosts to run the playbook on
+			extra_values (dict): A dict of values to set before running the playbook
+			quiet (bool): Unused
+		Returns:
+			retval (int): The return value from ansible_run_playbook_on_selection()
+			ansible_results (dict): A dict with the results from the run
+	"""
+
+	# Set necessary Ansible keys before running playbooks
+	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
+	if http_proxy is None:
+		http_proxy = ""
+	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
+	if https_proxy is None:
+		https_proxy = ""
+	no_proxy = deep_get(iktlib.iktconfig, DictPath("Network#no_proxy"), "")
+	if no_proxy is None:
+		no_proxy = ""
+	insecure_registries = deep_get(iktlib.iktconfig, DictPath("Docker#insecure_registries"), [])
+	registry_mirrors = deep_get(iktlib.iktconfig, DictPath("Containerd#registry_mirrors"), [])
+	retval = 0
+
+	use_proxy = "no"
+	if len(http_proxy) > 0 or len(https_proxy) > 0:
+		use_proxy = "yes"
+
+	if extra_values is None:
+		extra_values = {}
+
+	values = {
+		"http_proxy": http_proxy,
+		"https_proxy": https_proxy,
+		"no_proxy": no_proxy,
+		"insecure_registries": insecure_registries,
+		"registry_mirrors": registry_mirrors,
+		"use_proxy": use_proxy,
+	}
+	merged_values = { **values, **extra_values }
+
+	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
+
+	ansible_print_play_results(retval, ansible_results)
+
+	return retval, ansible_results
+
+# pylint: disable-next=too-many-arguments,unused-argument
+def check_control_plane(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict, user: str,
+			critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[int, int, int, int]:
+	"""
+	This checks whether a host is suitable to be used as a control plane
+
+		Parameters:
+			cluster_name (str): The name of the cluster
+			kubeconfig (dict)): The kubeconfig file
+			iktconfig_dict (dict): The iktconfig file
+			critical (int): The current count of critical severity security issues
+			error (int): The current count of error severity security issues
+			warning (int): The current count of warning severity security issues
+			note (int): The current count of note severity security issues
+			kwargs (dict): Additional parameters
+		Returns:
+			(critical, error, warning, note):
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
+	"""
+
+	# The host(s) to check
+	hosts = deep_get(kwargs, "hosts", [])
+	playbookpath = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("preflight_check.yaml")))
+
+	iktprint([ANSIThemeString("[Checking whether ", "phase")] +
+		 ansithemestring_join_tuple_list(hosts, formatting = "hostname") +
+		 [ANSIThemeString(" are suitable as control plane(s)]", "phase")])
+
+	extra_values = {
+		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
+		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
+		"role": "control-plane",
+	}
+
+	retval, ansible_results = run_playbook(playbookpath, hosts = hosts, extra_values = extra_values)
+
+	for host in ansible_results:
+		ansible_os_family = ""
+		for taskdata in ansible_results[host]:
+			taskname = str(deep_get(taskdata, "task", ""))
+
+			if taskname == "Gathering Facts":
+				ansible_os_family = deep_get(taskdata, "ansible_facts#ansible_os_family", "")
+				continue
+
+			if taskname == "Checking whether the host runs an Operating System supported for control planes":
+				if deep_get(taskdata, "retval") != 0:
+					critical += 1
+					iktprint([ANSIThemeString("Critical", "critical"),
+						  ANSIThemeString(": Unsupported Operating System ", "default"),
+						  ANSIThemeString(f"{ansible_os_family}", "programname"),
+						  ANSIThemeString(" currently the only supported OS family for control planes is ", "default"),
+						  ANSIThemeString("Debian", "programname"),
+						  ANSIThemeString("; aborting.", "default\n")], stderr = True)
+					break
+
+			if taskname == "Check whether the host is a Kubernetes control plane":
+				if deep_get(taskdata, "retval") != 0:
+					critical += 1
+					iktprint([ANSIThemeString("Critical", "critical"),
+						  ANSIThemeString(": Host ", "default"),
+						  ANSIThemeString(f"{host}", "hostname"),
+						  ANSIThemeString(" seems to already be running a Kubernetes api-server; aborting.\n", "default")], stderr = True)
+					break
+
+			if taskname == "Check whether the host is a Kubernetes node":
+				if deep_get(taskdata, "retval") != 0:
+					critical += 1
+					iktprint([ANSIThemeString("Critical", "critical"),
+						  ANSIThemeString(": Host ", "default"),
+						  ANSIThemeString(f"{host}", "hostname"),
+						  ANSIThemeString(" seems to already have a running kubelet; aborting.\n", "default")], stderr = True)
+					break
 
 	return critical, error, warning, note

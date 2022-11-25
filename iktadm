@@ -1960,8 +1960,7 @@ __setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[
 	  ANSIThemeString("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
 	([ANSIThemeString("Import kube config", "action")], __task_import_kube_config),
 	([ANSIThemeString("Setup ", "action"),
-	  ANSIThemeString("kubeadm", "programname"),
-	  ANSIThemeString(" Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
+	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
 ]
 
 setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
@@ -2657,6 +2656,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 		elif cni != args[0]:
 			cni = args[0]
 	else:
+		new_cni = cni
 		if len(args) > 0:
 			new_cni = args[0]
 
@@ -3355,13 +3355,15 @@ def untaint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 		sys.exit(errno.ENOENT)
 
 # pylint: disable=unused-argument,redefined-outer-name
-def run_checks(checks: List[Dict], **kwargs) -> None:
+def run_checks(checks: List[Dict], **kwargs) -> bool:
 	"""
 	Run a batch of checks, and output the result.
 	The checks can return 4 different severities; critical, error, warning, and note.
 
 		Parameters:
 			checks (list[dict]): A list with all checks to run
+		Return:
+			clean_run (bool): True if nothing higher than "note" was returned, False otherwise
 	"""
 
 	critical: int = 0
@@ -3407,6 +3409,8 @@ def run_checks(checks: List[Dict], **kwargs) -> None:
 	iktprint([ANSIThemeString(f" Skipped: {skip}", "emphasis")])
 	iktprint([ANSIThemeString(f"   Notes: {note}", "note")])
 
+	return critical + error + warning == 0
+
 security_audit_checks = [
 	{
 		"description": "Check whether strict host key checking has been disabled",
@@ -3449,28 +3453,29 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 		"usergroup": usergroup
 	}
 
-	run_checks(security_audit_checks, **kwargs)
+	clean_run = run_checks(security_audit_checks, **kwargs)
 
-	iktprint([ANSIThemeString("\nImportant:", "emphasis"),
-		  ANSIThemeString(" iktadm", "programname"),
-		  ANSIThemeString(" audit", "command"),
-		  ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
-	iktprint([ANSIThemeString("a perfect score is not a guarantee that your installation is secure.", "default")])
+	if clean_run == True:
+		iktprint([ANSIThemeString("\nImportant:", "emphasis"),
+			  ANSIThemeString(" iktadm", "programname"),
+			  ANSIThemeString(" audit", "command"),
+			  ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
+		iktprint([ANSIThemeString("a perfect score is not a guarantee that your installation is secure.", "default")])
 
 preflight_checks = [
 	{
-		"description": "Check whether the user can sudo without a password",
+		"description": "Check whether the user can sudo without a password on localhost",
 		"call": checks.check_sudo_configuration,
 		"preconditions": [
 			"user",
 		],
 	}, {
-		"description": "Check whether SSH known_hosts hashing is enabled",
+		"description": "Check whether SSH known_hosts hashing is enabled on localhost",
 		"call": checks.check_known_hosts_hashing,
 	}, {
-		"description": "Check whether docker-ce / containerd.io is installed instead of docker.io / containerd",
-		"call": checks.check_containerd_and_docker,
-	},
+		"description": "Check control plane for suitability",
+		"call": checks.check_control_plane,
+	}
 ]
 
 # pylint: disable-next=unused-argument
@@ -3483,13 +3488,18 @@ def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 			args (list[str]): Options to use when executing this action
 	"""
 
-	run_checks(preflight_checks)
+	control_planes = [args[0]]
 
-	iktprint([ANSIThemeString("\nImportant:", "emphasis"),
-		  ANSIThemeString(" iktadm", "programname"),
-		  ANSIThemeString(" preflight-check", "command"),
-		  ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
-	iktprint([ANSIThemeString("a perfect score is not a guarantee that installation will succeed.", "default")])
+	__task_request_ansible_password(None)
+
+	clean_run = run_checks(preflight_checks, hosts = control_planes)
+
+	if clean_run == True:
+		iktprint([ANSIThemeString("\nImportant:", "emphasis"),
+			  ANSIThemeString(" iktadm", "programname"),
+			  ANSIThemeString(" preflight-check", "command"),
+			  ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
+		iktprint([ANSIThemeString("a perfect score is not a guarantee that installation will succeed.", "default")])
 
 troubleshoot_checks = [
 	# First start with the really basic: does the cluster respond?
@@ -3524,13 +3534,14 @@ def troubleshoot(options: List[Tuple[str, str]], args: List[str]) -> None:
 			args (list[str]): Options to use when executing this action
 	"""
 
-	run_checks(troubleshoot_checks)
+	clean_run = run_checks(troubleshoot_checks)
 
-	iktprint([ANSIThemeString("\nImportant:", "emphasis"),
-		  ANSIThemeString(" iktadm", "programname"),
-		  ANSIThemeString(" troubleshoot", "command"),
-		  ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
-	iktprint([ANSIThemeString("a perfect score is not a guarantee that your cluster is problem free.", "default")])
+	if clean_run == True:
+		iktprint([ANSIThemeString("\nImportant:", "emphasis"),
+			  ANSIThemeString(" iktadm", "programname"),
+			  ANSIThemeString(" troubleshoot", "command"),
+			  ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
+		iktprint([ANSIThemeString("a perfect score is not a guarantee that your cluster is problem free.", "default")])
 
 COMMANDLINE = {
 	"Check Versions": {
@@ -4035,9 +4046,10 @@ COMMANDLINE = {
 	},
 	"Preflight Check": {
 		"command": ["preflight-check"],
+		"values": [ANSIThemeString("CONTROLPLANE", "argument")],
 		"description": [ANSIThemeString("Check for potential pitfalls that may prevent installation from succeeding", "description")],
-		"min_args": 0,
-		"max_args": 0,
+		"min_args": 1,
+		"max_args": 1,
 		"callback": preflight_check,
 	},
 	"Troubleshoot": {
