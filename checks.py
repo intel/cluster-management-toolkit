@@ -23,7 +23,7 @@ from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts,
 
 from iktio import execute_command_with_response
 from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath
-from iktpaths import BINDIR, IKTDIR
+from iktpaths import BINDIR, IKTDIR, IKT_LOGS_DIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
 from iktpaths import DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import IKT_CONFIG_FILE, KUBE_CONFIG_FILE
@@ -607,6 +607,17 @@ recommended_directory_permissions = [
 		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{IKTDIR}", "path"),
 				  ANSIThemeString(" they may be able to obtain elevated privileges", "default")]
+	},
+	{
+		"path": IKT_LOGS_DIR,
+		"alertmask": 0o077,
+		"usergroup_alertmask": 0o027,
+		"severity": "error",
+		"justification": [ANSIThemeString("If other users can read, create or replace files in ", "default"),
+				  ANSIThemeString(f"{IKT_LOGS_DIR}", "path"),
+				  ANSIThemeString(" they can cause ", "default"),
+				  ANSIThemeString("iku", "command"),
+				  ANSIThemeString(" to malfunction and possibly hide signs of a compromised cluster and may be able to obtain sensitive information from audit messages", "default")]
 	},
 	{
 		"path": IKT_CONFIG_FILE_DIR,

@@ -12,7 +12,7 @@ import iktio
 from ikttypes import FilePath
 
 # pylint: disable-next=too-many-arguments
-def secure_write_yaml(path: FilePath, data, permissions: Optional[int] = None, replace_empty = False, replace_null = False, sort_keys = True) -> None:
+def secure_write_yaml(path: FilePath, data, permissions: Optional[int] = None, replace_empty = False, replace_null = False, sort_keys = True, write_mode = "w") -> None:
 	"""
 	Dump a dict to a file in YAML-format in a safe manner
 
@@ -22,16 +22,20 @@ def secure_write_yaml(path: FilePath, data, permissions: Optional[int] = None, r
 			permissions (int): File permissions (None uses system defaults)
 			replace_empty (bool): True strips empty strings
 			replace_null (bool): True strips null
+			write_mode (str): [w, a, x] Write, Append, Exclusive Write
 		Raises:
 			ikttypes.FilePathAuditError
 	"""
+
+	if write_mode not in ("a", "w", "x"):
+		raise ValueError(f"Invalid write mode “{write_mode}“; permitted modes are “a“ (append), “w“ (write) and “x“ (exclusive write)")
 
 	yaml_str = yaml.safe_dump(data, default_flow_style = False, sort_keys = sort_keys)
 	if replace_empty == True:
 		yaml_str = yaml_str.replace(r"''", "")
 	if replace_null == True:
 		yaml_str = yaml_str.replace(r"null", "")
-	iktio.secure_write_string(path, yaml_str, permissions = permissions)
+	iktio.secure_write_string(path, yaml_str, permissions = permissions, write_mode = write_mode)
 
 def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool = False) -> Dict:
 	"""

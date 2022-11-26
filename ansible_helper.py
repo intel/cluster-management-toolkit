@@ -881,7 +881,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 	unreachable = deep_get(event, DictPath("event_data#res#unreachable"), False)
 
 	if unreachable == True:
-		__retval = -1
+		__retval: Optional[int] = -1
 	elif skipped == True or deep_get(event, DictPath("event"), "") == "runner_on_ok":
 		__retval = 0
 	elif failed == True:

@@ -516,7 +516,7 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 	"""
 
 	if write_mode not in ("a", "ab", "w", "wb", "x", "xb"):
-		raise ValueError(f"Invalid write mode “{write_mode}“; permitted modes are “a(b)“ (append (binary)), “w(b)“ (write (binary)) and “x“ (exclusive write (binary))")
+		raise ValueError(f"Invalid write mode “{write_mode}“; permitted modes are “a(b)“ (append (binary)), “w(b)“ (write (binary)) and “x(b)“ (exclusive write (binary))")
 
 	checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,

@@ -24,12 +24,14 @@ except ModuleNotFoundError:
 
 from iktio import check_path
 from iktio_yaml import secure_read_yaml
-from ikttypes import deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval
+from iktlog import IKTLogType, IKTLog
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval
 from ikttypes import SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
 
 import iktlib
 
 theme: Dict = {}
+themefile: Optional[FilePath] = None
 
 mousemask = 0
 
@@ -294,8 +296,33 @@ def get_theme_ref() -> Dict:
 def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int:
 	col, attr = color
 
-	if not isinstance(attr, str) or attr not in ["normal", "bright"]:
-		raise ValueError("Invalid color attribute used in theme; attribute has to be a string and one of: normal, bright")
+	if not isinstance(attr, str):
+		IKTLog(IKTLogType.DEBUG, [
+				[ANSIThemeString(f"Invalid color attribute used in theme; attribute has to be a string and one of:", "default")],
+				[ANSIThemeString("“", "default"),
+				 ANSIThemeString("normal", "emphasis"),
+				 ANSIThemeString("“, “", "default"),
+				 ANSIThemeString("bright", "emphasis"),
+				 ANSIThemeString("“.", "default")],
+				[ANSIThemeString(f"Using “", "default"),
+				 ANSIThemeString("normal", "emphasis"),
+				 ANSIThemeString("“ as fallback.", "default")],
+		       ], severity = LogLevel.ERR, facility = str(themefile))
+	elif attr not in ["normal", "bright"]:
+		IKTLog(IKTLogType.DEBUG, [
+				[ANSIThemeString(f"Invalid color attribute “", "default"),
+				 ANSIThemeString(f"{attr}", "emphasis"),
+				 ANSIThemeString("“ used in theme; attribute has to be a string and one of:", "default")],
+				[ANSIThemeString("“", "default"),
+				 ANSIThemeString("normal", "emphasis"),
+				 ANSIThemeString("“, “", "default"),
+				 ANSIThemeString("bright", "emphasis"),
+				 ANSIThemeString("“.", "default")],
+				[ANSIThemeString(f"Using “", "default"),
+				 ANSIThemeString("normal", "emphasis"),
+				 ANSIThemeString("“ as fallback.", "default")],
+		       ], severity = LogLevel.ERR, facility = str(themefile))
+		attr = "normal"
 	if isinstance(col, str):
 		col = col.lower()
 
@@ -353,11 +380,11 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 	"""
 
 	global theme # pylint: disable=global-statement
-	themefile = None
+	global themefile # pylint: disable=global-statement
 
 	for item in [configthemefile, f"{configthemefile}.yaml", defaultthemefile]:
 		if Path(item).is_file():
-			themefile = item
+			themefile = cast(FilePath, item)
 			break
 
 	if themefile is None:
@@ -1112,7 +1139,19 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 	tmp_attr = deep_get(theme, DictPath(f"{context}#{key}"))
 
 	if tmp_attr is None:
-		raise KeyError(f"couldn't find the tuple ({context}, {key}) in theme")
+		IKTLog(IKTLogType.DEBUG, [
+				[ANSIThemeString("Could not find the tuple (", "default"),
+				 ANSIThemeString(f"{context}", "emphasis"),
+				 ANSIThemeString(", ", "default"),
+				 ANSIThemeString(f"{key}", "emphasis"),
+				 ANSIThemeString(") in theme.", "default")],
+				[ANSIThemeString(f"Using (", "default"),
+				 ANSIThemeString("main", "emphasis"),
+				 ANSIThemeString(", ", "default"),
+				 ANSIThemeString("default", "emphasis"),
+				 ANSIThemeString(") as fallback.", "default")],
+		       ], severity = LogLevel.ERR, facility = str(themefile))
+		tmp_attr = deep_get(theme, DictPath(f"main#default"))
 
 	if isinstance(tmp_attr, dict):
 		if selected == True:
@@ -1136,6 +1175,22 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 	tmp = 0
 
 	for item in attr:
+		if not isinstance(item, str):
+			IKTLog(IKTLogType.DEBUG, [
+					[ANSIThemeString(f"Invalid text attribute used in theme; attribute has to be a string and one of:", "default")],
+					[ANSIThemeString("“", "default"),
+					 ANSIThemeString("dim", "emphasis"),
+					 ANSIThemeString("“, “", "default"),
+					 ANSIThemeString("normal", "emphasis"),
+					 ANSIThemeString("“, “", "default"),
+					 ANSIThemeString("bold", "emphasis"),
+					 ANSIThemeString("“, “", "default"),
+					 ANSIThemeString("underline", "emphasis"),
+					 ANSIThemeString("“.", "default")],
+					[ANSIThemeString(f"Using “", "default"),
+					 ANSIThemeString("normal", "emphasis"),
+					 ANSIThemeString("“ as fallback.", "default")],
+			       ], severity = LogLevel.ERR, facility = str(themefile))
 		if item == "dim":
 			tmp |= curses.A_DIM
 		elif item == "normal":
@@ -1145,7 +1200,24 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 		elif item == "underline":
 			tmp |= curses.A_UNDERLINE
 		else:
-			raise ValueError(f"Invalid text attribute {attr} used in theme; valid attributes are: dim, normal, bold, underline")
+			IKTLog(IKTLogType.DEBUG, [
+					[ANSIThemeString(f"Invalid text attribute “", "default"),
+					 ANSIThemeString(f"{item}", "emphasis"),
+					 ANSIThemeString("“ used in theme; attribute has to be one of:", "default")],
+					[ANSIThemeString("“", "default"),
+					 ANSIThemeString("dim", "emphasis"),
+					 ANSIThemeString("“, “", "default"),
+					 ANSIThemeString("normal", "emphasis"),
+					 ANSIThemeString("“, “", "default"),
+					 ANSIThemeString("bold", "emphasis"),
+					 ANSIThemeString("“, “", "default"),
+					 ANSIThemeString("underline", "emphasis"),
+					 ANSIThemeString("“.", "default")],
+					[ANSIThemeString(f"Using “", "default"),
+					 ANSIThemeString("normal", "emphasis"),
+					 ANSIThemeString("“ as fallback.", "default")],
+			       ], severity = LogLevel.ERR, facility = str(themefile))
+			tmp |= curses.A_NORMAL
 	curses_attrs = tmp
 
 	curses_col = __color[col][selected]

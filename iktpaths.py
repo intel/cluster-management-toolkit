@@ -18,6 +18,13 @@ BINDIR = FilePath(str(PurePath(HOMEDIR).joinpath(BIN_DIRNAME)))
 IKT_DIRNAME = ".ikt"
 IKTDIR = FilePath(str(PurePath(HOMEDIR).joinpath(IKT_DIRNAME)))
 
+LOGS_DIRNAME = "logs"
+IKT_LOGS_DIR = FilePath(str(PurePath(IKTDIR).joinpath(LOGS_DIRNAME)))
+AUDIT_LOG_FILENAME = "audit_log.yaml"
+AUDIT_LOG_FILE = FilePath(str(PurePath(IKT_LOGS_DIR).joinpath(AUDIT_LOG_FILENAME)))
+DEBUG_LOG_FILENAME = "debug_log.yaml"
+DEBUG_LOG_FILE = FilePath(str(PurePath(IKT_LOGS_DIR).joinpath(DEBUG_LOG_FILENAME)))
+
 IKT_CONFIG_FILENAME = "ikt.yaml"
 IKT_CONFIG_FILE = FilePath(str(PurePath(IKTDIR).joinpath(IKT_CONFIG_FILENAME)))
 
