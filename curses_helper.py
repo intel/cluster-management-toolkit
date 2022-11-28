@@ -28,6 +28,8 @@ from iktlog import IKTLogType, IKTLog
 from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval
 from ikttypes import SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
 
+from iktprint import iktprint
+
 import iktlib
 
 theme: Dict = {}
@@ -898,10 +900,16 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int,
 	solidblock = deep_get(theme, DictPath("boxdrawing#solidblock"))
 	dimmedblock = deep_get(theme, DictPath("boxdrawing#dimmedblock"))
 	for x in range(0, width - 2):
-		if x < (width * progress) // 100:
-			addthemearray(win, [ThemeString(solidblock, ThemeAttr("main", "progressbar"))], y = 1, x = x + 1)
-		else:
-			addthemearray(win, [ThemeString(dimmedblock, ThemeAttr("main", "progressbar"))], y = 1, x = x + 1)
+		try:
+			if x < (width * progress) // 100:
+				addthemearray(win, [ThemeString(solidblock, ThemeAttr("main", "progressbar"))], y = 1, x = x + 1)
+			else:
+				addthemearray(win, [ThemeString(dimmedblock, ThemeAttr("main", "progressbar"))], y = 1, x = x + 1)
+		except curses.error:
+			curses.endwin()
+			iktprint([ANSIThemeString("Critical", "critical"),
+				  ANSIThemeString(": Live resizing progressbar() is currently broken; this is a known issue.", "default")], stderr = True)
+			sys.exit(errno.ENOTSUP)
 
 	win.noutrefresh()
 	curses.doupdate()
@@ -1072,7 +1080,10 @@ def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]],
 
 	for item in themearray_flatten(array):
 		string, attr = themestring_to_cursestuple(item)
-		win.addstr(y, x, string, attr)
+		try:
+			win.addstr(y, x, string, attr)
+		except curses.error:
+			pass
 		y, x = win.getyx()
 	return y, x
 
@@ -1602,6 +1613,11 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 		oldyoffset = yoffset
 
 		c = stdscr.getch()
+		if c == curses.KEY_RESIZE:
+			curses.endwin()
+			iktprint([ANSIThemeString("Critical", "critical"),
+				  ANSIThemeString(": Live resizing windowwidget() is currently broken; this is a known issue.", "default")], stderr = True)
+			sys.exit(errno.ENOTSUP)
 		if c == 27:	# ESCAPE
 			selection = ""
 			confirm_press = c
@@ -2213,11 +2229,17 @@ class UIProps:
 			if self.borders == True:
 				if self.logpad is None and self.listpad is None:
 					height = self.maxy - 3
-				self.infopad.noutrefresh(0, 0, self.infopadypos, self.infopadxpos, height, self.maxx - 1)
+				try:
+					self.infopad.noutrefresh(0, 0, self.infopadypos, self.infopadxpos, height, self.maxx - 1)
+				except curses.error:
+					pass
 			else:
 				if self.logpad is None and self.listpad is None:
 					height = self.maxy - 2
-				self.infopad.noutrefresh(0, 0, self.infopadypos, self.infopadxpos - 1, height, self.maxx)
+				try:
+					self.infopad.noutrefresh(0, 0, self.infopadypos, self.infopadxpos - 1, height, self.maxx)
+				except curses.error:
+					pass
 
 			# If there's no logpad and no listpad, then the infopad is responsible for scrollbars
 			if self.listpad is None and self.logpad is None and self.borders == True:
@@ -2286,16 +2308,25 @@ class UIProps:
 			xpos -= 1
 			maxx = self.maxx
 		if self.headerpad is not None:
-			self.headerpad.noutrefresh(0, self.xoffset, self.headerpadypos, xpos, self.headerpadypos, maxx)
+			try:
+				self.headerpad.noutrefresh(0, self.xoffset, self.headerpadypos, xpos, self.headerpadypos, maxx)
+			except curses.error:
+				pass
 		if self.listpad is not None:
 			if self.borders == True:
-				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 3, maxx)
+				try:
+					self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 3, maxx)
+				except curses.error:
+					pass
 				# pylint: disable-next=line-too-long
 				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, x = maxx + 1, miny = self.listpadypos, maxy = self.maxy - 3, height = self.listpadheight, yoffset = self.yoffset, clear_color = ThemeAttr("main", "boxdrawing"))
 				# pylint: disable-next=line-too-long
 				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, y = self.maxy - 2, minx = self.listpadxpos, maxx = maxx, width = self.listpadwidth - 1, xoffset = self.xoffset, clear_color = ThemeAttr("main", "boxdrawing"))
 			else:
-				self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
+				try:
+					self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
+				except curses.error:
+					pass
 
 	# Recalculate the xpos of the log; this is needed when timestamps are toggled
 	def recalculate_logpad_xpos(self, tspadxpos: int = -1, timestamps: Optional[bool] = None) -> None:
@@ -2388,17 +2419,29 @@ class UIProps:
 			if self.borders == True:
 				for i in range(0, self.tspadwidth):
 					self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.maxy - 2, x = 1 + i)
-				self.tspad.noutrefresh(0, 0, self.tspadypos, tspadxpos, self.maxy - 3, self.tspadwidth)
+				try:
+					self.tspad.noutrefresh(0, 0, self.tspadypos, tspadxpos, self.maxy - 3, self.tspadwidth)
+				except curses.error:
+					pass
 			else:
-				self.tspad.noutrefresh(0, 0, self.tspadypos, tspadxpos, self.maxy - 2, self.tspadwidth - 1)
+				try:
+					self.tspad.noutrefresh(0, 0, self.tspadypos, tspadxpos, self.maxy - 2, self.tspadwidth - 1)
+				except curses.error:
+					pass
 		if self.borders == True:
-			self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 3, self.maxx - 1)
+			try:
+				self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 3, self.maxx - 1)
+			except curses.error:
+				pass
 			# pylint: disable-next=line-too-long
 			self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.logpadypos, self.maxy - 3, self.loglen, self.yoffset, ThemeAttr("main", "boxdrawing"))
 			# pylint: disable-next=line-too-long
 			self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, self.maxy - 2, logpadxpos, self.maxx - 1, self.logpadwidth, self.xoffset, ThemeAttr("main", "boxdrawing"))
 		else:
-			self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 2, self.maxx)
+			try:
+				self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 2, self.maxx)
+			except curses.error:
+				pass
 
 	def toggle_timestamps(self, timestamps: Optional[bool] = None) -> None:
 		if timestamps is None:
@@ -2434,7 +2477,10 @@ class UIProps:
 		if self.statusbar is not None:
 			col, __discard = themeattr_to_curses(ThemeAttr("statusbar", "default"))
 			self.statusbar.bkgd(" ", col)
-			self.statusbar.noutrefresh(0, 0, self.statusbarypos, 0, self.maxy, self.maxx)
+			try:
+				self.statusbar.noutrefresh(0, 0, self.statusbarypos, 0, self.maxy, self.maxx)
+			except curses.error:
+				pass
 
 	def resize_statusbar(self) -> None:
 		"""
@@ -2493,7 +2539,10 @@ class UIProps:
 					cury, curx = win.getyx()
 					return cury, curx
 
-			win.addstr(y, x, string, attr)
+			try:
+				win.addstr(y, x, string, attr)
+			except curses.error:
+				pass
 			y, x = win.getyx()
 		return y, x
 
