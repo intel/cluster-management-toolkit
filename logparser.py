@@ -92,6 +92,7 @@ class logparser_configuration:
 	# this decides whether should be converted to:
 	# msg="Starting foo" version="(version=.*)" => Starting foo (version=.*)
 	merge_starting_version: bool = True
+	using_bundles: bool = False
 
 if json_is_ujson:
 	def json_dumps(obj) -> str:
@@ -165,7 +166,7 @@ def month_to_numerical(month: str) -> str:
 	raise TypeError("No matching month")
 
 # Mainly used by glog
-def letter_to_severity(letter: str, default = None) -> LogLevel:
+def letter_to_severity(letter: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
 	severities = {
 		"F": LogLevel.EMERG,
 		"E": LogLevel.ERR,
@@ -179,7 +180,7 @@ def letter_to_severity(letter: str, default = None) -> LogLevel:
 	return severities.get(letter, default)
 
 # Used by Kiali; anything else?
-def str_3letter_to_severity(string: str, default = None) -> LogLevel:
+def str_3letter_to_severity(string: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
 	severities = {
 		"ERR": LogLevel.ERR,
 		"WRN": LogLevel.WARNING,
@@ -187,7 +188,7 @@ def str_3letter_to_severity(string: str, default = None) -> LogLevel:
 	}
 	return severities.get(string.upper(), default)
 
-def str_4letter_to_severity(string: str, default = None) -> LogLevel:
+def str_4letter_to_severity(string: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
 	severities = {
 		"CRIT": LogLevel.CRIT,
 		"FATA": LogLevel.CRIT,
@@ -459,13 +460,91 @@ def strip_iso_timestamp_with_tz(message: str) -> str:
 		message = tmp[2]
 	return message
 
+# pylint: disable-next=too-many-arguments,unused-argument
+def iptables(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]],
+	     severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True) ->\
+			Tuple[Sequence[Union[ThemeRef, ThemeString]], LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+	"""
+	Format output from iptables-save
+
+		Parameters:
+			message (str): The message part of the msg to format
+			remnants (list[(themearray, severity)]): The remnants part of the msg to format
+			severity (LogLevel): The log severity
+			facility (str): The log facility
+			fold_msg (bool): Should the message be expanded or folded?
+			options (dict): Additional, rule specific, options
+		Returns:
+	"""
+
+	new_message: List[Union[ThemeRef, ThemeString]] = []
+	new_remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+
+	old_messages: List[str] = []
+	if fold_msg == True and "\\n" in message:
+		old_messages = message.split("\\n")
+	else:
+		old_messages.append(message)
+
+		for themearray, _loglevel in remnants:
+			old_messages.append(themearray_to_string(themearray))
+
+	for i, items in enumerate(old_messages):
+		tmp_message = []
+		for j, item in enumerate(items.split(" ")):
+			if j == 0:
+				if item.startswith("/sbin/iptables"):
+					tmp_message.append(ThemeString(item, ThemeAttr("types", "iptables_programname")))
+				elif item.startswith("*"):
+					tmp_message.append(ThemeString(item, ThemeAttr("types", "iptables_table")))
+				elif item.startswith(":"):
+					tmp_message.append(ThemeString(item, ThemeAttr("types", "iptables_chain")))
+				elif item.startswith("COMMIT"):
+					tmp_message.append(ThemeString(item, ThemeAttr("types", "iptables_command")))
+				elif item.startswith("#"):
+					tmp_message.append(ThemeString(items[j:], ThemeAttr("types", "iptables_comment")))
+					break
+			elif item.startswith("-"):
+				tmp_message.append(ThemeString(f" {item}", ThemeAttr("types", "iptables_option")))
+			elif item.startswith("#"):
+				tmp_message.append(ThemeString(" ", ThemeAttr("types", "iptables_comment")))
+				tmp_message.append(ThemeString(" ".join(item[j:]), ThemeAttr("types", "iptables_comment")))
+				break
+			else:
+				tmp_message.append(ThemeString(f" {item}", ThemeAttr("types", "iptables_argument")))
+
+		if i == 0:
+			new_message = tmp_message
+		else:
+			new_remnants.append((tmp_message, severity))
+
+	if fold_msg == True and "\\n" in message:
+		for remnant, _severity in new_remnants:
+			new_message.append(ThemeRef("separators", "newline"))
+			new_message += remnant
+
+		new_remnants = []
+	return new_message, severity, facility, new_remnants
+
 # http:
 # ::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -
 # 10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"
 # 10.244.0.1 - - [29/Jan/2022:10:33:50 +0000] "GET /v0/healthz/ HTTP/1.1" 200 3 "http://10.244.0.123:8000/v0/healthz" "kube-probe/1.23"
 # pylint: disable-next=unused-argument
-def http(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 			Tuple[Sequence[Union[ThemeRef, ThemeString]], LogLevel, str]:
+	"""
+	Format http log style messages
+
+		Parameters:
+			message (str): The message to format
+			severity (LogLevel): The log severity
+			facility (str): The log facility
+			fold_msg (bool): Unused
+			options (dict): Additional, rule specific, options
+		Returns:
+	"""
+
 	reformat_timestamps = deep_get(options, DictPath("reformat_timestamps"), False)
 
 	ipaddress = ""
@@ -679,7 +758,7 @@ def http(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", f
 # XXX: Messages like these have been observed;
 # I0417 09:32:43.32022-04-17T09:32:43.343052189Z 41605       1 tlsconfig.go:178]
 # they indicate a race condition; hack around them to make the log pretty
-def split_glog(message: str, severity: LogLevel = None, facility: str = "") ->\
+def split_glog(message: str, severity: Optional[LogLevel] = None, facility: str = "") ->\
 			Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]], bool]:
 	matched = False
 	loggingerror = None
@@ -734,7 +813,7 @@ def __split_severity_facility_style(message: str, severity: Optional[LogLevel] =
 
 	return message, severity, facility
 
-def split_json_style(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 				Tuple[Union[str, Sequence[Union[ThemeRef, ThemeString]]], LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	logentry = None
 
@@ -918,7 +997,7 @@ def split_json_style(message: str, severity: LogLevel = LogLevel.INFO, facility:
 
 	return message, severity, facility, []
 
-def merge_message(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = None, severity: LogLevel = LogLevel.INFO) ->\
+def merge_message(message: str, remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = None, severity: LogLevel = LogLevel.INFO) ->\
 			Tuple[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	"""
 	Given message + remnants, merge the message into the remnants and return an empty message
@@ -942,7 +1021,7 @@ def merge_message(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeS
 	return message, remnants
 
 # pylint: disable-next=too-many-arguments
-def split_json_style_raw(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None, merge_msg: bool = False) ->\
+def split_json_style_raw(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None, merge_msg: bool = False) ->\
 				Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	# This warning seems incorrect
 	# pylint: disable-next=global-variable-not-assigned
@@ -980,7 +1059,7 @@ def split_json_style_raw(message: str, severity: LogLevel = LogLevel.INFO, facil
 
 	return message, severity, facility, remnants
 
-def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 			Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 	tmp = message.split(" ", 2)
@@ -1118,7 +1197,7 @@ def custom_override_severity(message: Union[str, List], severity: Optional[LogLe
 
 	return override_message, severity
 
-def expand_event_objectmeta(message: str, severity: LogLevel, remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = None, fold_msg: bool = True) ->\
+def expand_event_objectmeta(message: str, severity: LogLevel, remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = None, fold_msg: bool = True) ->\
 					Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	# pylint: disable=unused-argument
 	raw_message = message
@@ -1186,7 +1265,7 @@ def expand_event_objectmeta(message: str, severity: LogLevel, remnants: List[Tup
 		tmp += raw_msg
 	return severity, message, remnants
 
-def expand_event(message: str, severity: LogLevel, remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = None, fold_msg: bool = True) ->\
+def expand_event(message: str, severity: LogLevel, remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = None, fold_msg: bool = True) ->\
 			Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	if fold_msg == True or (remnants is not None and len(remnants) > 0):
 		return severity, message, remnants
@@ -1366,7 +1445,8 @@ def format_key_value(key: str, value: str, severity: LogLevel, force_severity: b
 		       ThemeString(f"{value}", ThemeAttr("types", "value"))]
 	return tmp
 
-def sysctl(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+# pylint: disable-next=unused-argument
+def sysctl(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 			Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	"""
 	Format output from sysctl
@@ -1398,7 +1478,7 @@ def sysctl(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility:
 # Severity: lvl=|level=
 # Timestamps: t=|ts=|time= (all of these are ignored)
 # Facility: subsys|caller|logger|source
-def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 			Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
@@ -1592,7 +1672,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 # For messages along the lines of:
 # "Foo" "key"="value" "key"="value"
 # Foo key=value key=value
-def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options = None) ->\
+def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 						Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	# This warning seems incorrect
 	# pylint: disable-next=global-variable-not-assigned
@@ -1608,7 +1688,9 @@ def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = 
 		if "=" in tmp[0]:
 			# Try parsing this as regular key_value
 			facility, severity, new_message, remnants = key_value(message, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
-			return facility, severity, themearray_to_string(new_message), remnants
+			if not isinstance(new_message, str):
+				new_message = themearray_to_string(new_message)
+			return facility, severity, new_message, remnants
 
 		for item in tmp[1:]:
 			# we couldn't parse this as "msg key=value"; give up
@@ -1840,12 +1922,13 @@ def substitute_bullets(message: str, prefix: str) -> str:
 		Returns:
 			message (str): The message with bullets substituted
 	"""
+
 	if message.startswith(prefix):
 		# We don't want to replace all "*" in the message with bullet, just prefixes
 		message = message[0:len(prefix)].replace("*", "•", 1) + message[len(prefix):]
 	return message
 
-def python_traceback_scanner(message: str, fold_msg: bool = True, options: Dict = None) ->\
+def python_traceback_scanner(message: str, fold_msg: bool = True, options: Optional[Dict] = None) ->\
 					Tuple[List, Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
 	# pylint: disable=unused-argument
 	timestamp = none_timestamp()
@@ -1895,7 +1978,7 @@ def python_traceback(message: str, fold_msg: bool = True) ->\
 
 	return message, remnants
 
-def json_line_scanner(message: str, fold_msg: bool = True, options: Dict = None) ->\
+def json_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dict] = None) ->\
 				Tuple[List, Tuple[datetime, str, LogLevel, Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]]:
 	# pylint: disable=unused-argument
 	allow_empty_lines = deep_get(options, DictPath("allow_empty_lines"), True)
@@ -1920,7 +2003,7 @@ def json_line_scanner(message: str, fold_msg: bool = True, options: Dict = None)
 	return processor, (timestamp, facility, severity, remnants)
 
 # pylint: disable-next=unused-argument
-def json_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel.INFO, options: Dict = None) ->\
+def json_line(message: str, fold_msg: bool = True, severity: Optional[LogLevel] = LogLevel.INFO, options: Optional[Dict] = None) ->\
 			Tuple[List, Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
 	remnants: Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = []
 	matched = False
@@ -1957,11 +2040,11 @@ def json_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 			remnants = message
 		processor = ["start_block", json_line_scanner, options]
 		return processor, remnants
-	else:
-		return message, []
+
+	return message, []
 
 # pylint: disable-next=unused-argument
-def yaml_line_scanner(message: str, fold_msg: bool = True, options: Dict = None) ->\
+def yaml_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dict] = None) ->\
 				Tuple[List, Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
 	timestamp = none_timestamp()
 	facility = ""
@@ -2011,7 +2094,7 @@ def yaml_line_scanner(message: str, fold_msg: bool = True, options: Dict = None)
 	return processor, (timestamp, facility, severity, remnants)
 
 # pylint: disable-next=unused-argument
-def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel.INFO, options: Dict = None) ->\
+def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel.INFO, options: Optional[Dict] = None) ->\
 			Tuple[Union[str, List], Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
 	if options is None:
 		options = {}
@@ -2054,11 +2137,11 @@ def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 			remnants = message
 		response = ["start_block", yaml_line_scanner, options]
 		return response, remnants
-	else:
-		return message, remnants
+
+	return message, remnants
 
 # pylint: disable-next=unused-argument
-def custom_splitter(message: str, severity: LogLevel = None, facility: str = "", fold_msg: bool = True, options: Dict = None) ->\
+def custom_splitter(message: str, severity: Optional[LogLevel] = None, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 			Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], Optional[LogLevel], str]:
 	assert options is not None
 
@@ -2120,7 +2203,7 @@ def custom_splitter(message: str, severity: LogLevel = None, facility: str = "",
 
 	return message, severity, facility
 
-def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool = True, options: Dict = None) ->\
+def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool = True, options: Optional[Dict] = None) ->\
 				Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	facility = ""
 	severity = None
@@ -2148,7 +2231,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 			elif _filter == "modinfo":
 				facility, severity, message, remnants = modinfo(message, fold_msg = fold_msg)
 			elif _filter == "sysctl":
-				facility, severity, message, remnants = sysctl(message, severity = severity, fold_msg = fold_msg)
+				facility, severity, message, remnants = sysctl(message, severity = severity, facility = facility, fold_msg = fold_msg)
 			# Timestamp formats
 			elif _filter == "ts_8601": # Anything that resembles ISO-8601 / RFC 3339
 				message = strip_iso_timestamp(message)
@@ -2178,6 +2261,9 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 			elif _filter[0] == "http":
 				_parser_options = _filter[1]
 				message, severity, facility = http(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
+			elif _filter[0] == "iptables":
+				_parser_options = _filter[1]
+				message, severity, facility, remnants = iptables(message, remnants, severity = severity, facility = facility, fold_msg = fold_msg)
 			elif _filter[0] == "json":
 				_parser_options = _filter[1]
 				_message = message
@@ -2239,7 +2325,11 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser_rules")
 parsers = []
 
-def init_parser_list() -> None:
+def init_parser_list() -> bool:
+	"""
+	Initialise the list of parsers
+	"""
+
 	# This pylint warning seems incorrect--does it not handle namedtuple.append()?
 	# pylint: disable-next=global-variable-not-assigned
 	global parsers
@@ -2287,6 +2377,7 @@ def init_parser_list() -> None:
 				raise yaml.composer.ComposerError(f"{parser_file} is not valid YAML; aborting.") from e
 			except yaml.parser.ParserError as e:
 				raise yaml.parser.ParserError(f"{parser_file} is not valid YAML; aborting.") from e
+			logparser_configuration.using_bundles = True
 		else:
 			try:
 				d = secure_read_yaml(parser_file, directory_is_symlink = True)
@@ -2346,6 +2437,7 @@ def init_parser_list() -> None:
 							rules.append(rule_name)
 						elif rule_name in ("custom_splitter",
 								   "http",
+								   "iptables",
 								   "json",
 								   "json_event",
 								   "json_line",
@@ -2411,7 +2503,7 @@ def get_parser_list() -> Set[Parser]:
 	return _parsers
 
 # We've already defined the parser, so no need to do it again
-def logparser_initialised(parser: Parser = None, message: str = "", fold_msg: bool = True, line: int = 0) ->\
+def logparser_initialised(parser: Optional[Parser] = None, message: str = "", fold_msg: bool = True, line: int = 0) ->\
 				Tuple[datetime, str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	"""
 	This is used when the parser is already initialised.

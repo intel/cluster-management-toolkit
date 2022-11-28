@@ -1060,7 +1060,7 @@ def check_control_plane(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dic
 	"""
 
 	# The host(s) to check
-	hosts = deep_get(kwargs, "hosts", [])
+	hosts = deep_get(kwargs, DictPath("hosts"), [])
 	playbookpath = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("preflight_check.yaml")))
 
 	iktprint([ANSIThemeString("[Checking whether ", "phase")] +
@@ -1078,14 +1078,14 @@ def check_control_plane(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dic
 	for host in ansible_results:
 		ansible_os_family = ""
 		for taskdata in ansible_results[host]:
-			taskname = str(deep_get(taskdata, "task", ""))
+			taskname = str(deep_get(taskdata, DictPath("task"), ""))
 
 			if taskname == "Gathering Facts":
-				ansible_os_family = deep_get(taskdata, "ansible_facts#ansible_os_family", "")
+				ansible_os_family = deep_get(taskdata, DictPath("ansible_facts#ansible_os_family"), "")
 				continue
 
 			if taskname == "Checking whether the host runs an Operating System supported for control planes":
-				if deep_get(taskdata, "retval") != 0:
+				if deep_get(taskdata, DictPath("retval")) != 0:
 					critical += 1
 					iktprint([ANSIThemeString("Critical", "critical"),
 						  ANSIThemeString(": Unsupported Operating System ", "default"),
@@ -1096,7 +1096,7 @@ def check_control_plane(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dic
 					break
 
 			if taskname == "Check whether the host is a Kubernetes control plane":
-				if deep_get(taskdata, "retval") != 0:
+				if deep_get(taskdata, DictPath("retval")) != 0:
 					critical += 1
 					iktprint([ANSIThemeString("Critical", "critical"),
 						  ANSIThemeString(": Host ", "default"),
@@ -1105,7 +1105,7 @@ def check_control_plane(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dic
 					break
 
 			if taskname == "Check whether the host is a Kubernetes node":
-				if deep_get(taskdata, "retval") != 0:
+				if deep_get(taskdata, DictPath("retval")) != 0:
 					critical += 1
 					iktprint([ANSIThemeString("Critical", "critical"),
 						  ANSIThemeString(": Host ", "default"),

@@ -444,6 +444,9 @@ color_pairs_curses:
   separator_list_end:
     unselected: [["black", "bright"], ["black", "normal"]]
     selected: [["black", "bright"], ["white", "normal"]]
+  separator_newline:
+    unselected: [["blue", "normal"], ["black", "normal"]]
+    selected: [["blue", "normal"], ["white", "normal"]]
   separator_not:
     unselected: [["red", "normal"], ["black", "normal"]]
     selected: [["red", "bright"], ["white", "normal"]]
@@ -500,6 +503,27 @@ color_pairs_curses:
   type_ini_section: [["white", "bright"], ["black", "normal"]]
   type_ini_key: [["blue", "bright"], ["black", "normal"]]
   type_ini_value: [["white", "normal"], ["black", "normal"]]
+  type_iptables_argument:
+    unselected: [["green", "normal"], ["black", "normal"]]
+    selected: [["green", "normal"], ["white", "normal"]]
+  type_iptables_chain:
+    unselected: [["magenta", "normal"], ["black", "normal"]]
+    selected: [["magenta", "normal"], ["white", "normal"]]
+  type_iptables_command:
+    unselected: [["cyan", "bright"], ["black", "normal"]]
+    selected: [["cyan", "bright"], ["white", "normal"]]
+  type_iptables_comment:
+    unselected: [["black", "bright"], ["black", "normal"]]
+    selected: [["black", "normal"], ["white", "normal"]]
+  type_iptables_option:
+    unselected: [["cyan", "normal"], ["black", "normal"]]
+    selected: [["cyan", "normal"], ["white", "normal"]]
+  type_iptables_programname:
+    unselected: [["white", "bright"], ["black", "normal"]]
+    selected: [["black", "normal"], ["white", "normal"]]
+  type_iptables_table:
+    unselected: [["blue", "bright"], ["black", "normal"]]
+    selected: [["blue", "bright"], ["white", "normal"]]
   type_toml_comment: [["green", "normal"], ["black", "normal"]]
   type_toml_table: [["cyan", "bright"], ["black", "normal"]]
   type_toml_key: [["blue", "bright"], ["black", "normal"]]
@@ -777,6 +801,13 @@ types:
   ini_section: ["type_ini_section", "bold"]
   ini_value: "type_ini_value"
   ipmask: "type_ipmask"
+  iptables_argument: "type_iptables_argument"
+  iptables_chain: "type_iptables_chain"
+  iptables_command: "type_iptables_command"
+  iptables_comment: "type_iptables_comment"
+  iptables_option: "type_iptables_option"
+  iptables_programname: "type_iptables_programname"
+  iptables_table: "type_iptables_table"
   key_error: "type_key_error"
   key: "type_key"
   kind: "type_kind"
@@ -839,6 +870,7 @@ types:
   separator_methods: "separator_methods"
   separator_namespace: "separator_namespace"
   separator_namespaces: "separator_namespaces"
+  separator_newline: "separator_newline"
   separator_not_equals: "separator_not_equals"
   separator_not: "separator_not"
   separator_pad: "separator_pad"
@@ -956,6 +988,7 @@ separators:
   secret_type: [["/", ["types", "separator_secret_type"]]]
   widgetbullet: [["• ", ["types", "widgetbullet"]]]
   matchbullet: [["◉ ", ["types", "matchbullet"]]]
+  newline: [["\\n", ["types", "separator_newline"]]]
   logbullet: [["• ", ["types", "logbullet"]]]
   statusbar: [[" ┃ ", ["statusbar", "default"]]]
   statusbar_compact: [["┃", ["statusbar", "default_dim"]]]

@@ -55,7 +55,8 @@ from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 from iktio import execute_command, secure_read_string, secure_which
 from iktio_yaml import secure_read_yaml, secure_read_yaml_all
 
-from logparser import logparser, logparser_initialised, LogLevel, lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
+from logparser import logparser, logparser_initialised, LogLevel, logparser_configuration
+from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import iktlib
 from iktlib import clamp, disksize_to_human, get_package_versions, make_set_expression_list, none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple, read_iktconfig
@@ -8298,6 +8299,10 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				else:
 					statusarray2 += [
 						ThemeString(f"{parser[0]}", ThemeAttr("statusbar", "highlight")),
+					]
+				if uip.maxx - uip.minx > 128 and logparser_configuration.using_bundles == True:
+					statusarray2 += [
+						ThemeString(f" (Bundle)", ThemeAttr("statusbar", "dim")),
 					]
 
 			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)

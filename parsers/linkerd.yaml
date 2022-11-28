@@ -11,10 +11,21 @@
   parser_rules:
   - name: "custom_splitter"
     options:
-      regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d.\d{6}Z\s\s([A-Z]{4})\s(.*)$'
+      regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z\s+([A-Z]+)\s([^:]+):\s(.*)$'
       severity:
         field: 1
-        transform: "4letter"
+        transform: "str"
+      facility:
+        fields:
+        - 2
+      message:
+        field: 3
+  - name: "custom_splitter"
+    options:
+      regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z\s+([A-Z]+)\s(.*)$'
+      severity:
+        field: 1
+        transform: "str"
       message:
         field: 2
 - name: "linkerd"
@@ -48,5 +59,5 @@
   - container_name: "linkerd-init"
     container_type: "init_container"
   parser_rules:
-  - name: "ts_8601"
   - name: "key_value"
+  - name: "iptables"
