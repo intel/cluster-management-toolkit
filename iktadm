@@ -353,7 +353,7 @@ def patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> None:
 
 	# Ideally we should patch this using a round-trip capable YAML parser,
 	# such as ruamel
-	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$#\\1Network:": "{pod_network_cidr}",#'
+	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$#\1Network:": "{pod_network_cidr}",#'
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	check_and_print_status(execute_command(args))
 
@@ -470,7 +470,7 @@ cni_data = {
 		"command": ["cilium", "--context", "<<<context>>>", "install"]
 	},
 	"flannel": {
-		"url": "https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml",
+		"url": "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml",
 		"type": "yaml",
 		"filename": "flannel.yaml",
 		"patch_cni": patch_cni_flannel,
