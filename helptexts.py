@@ -126,7 +126,7 @@ linewrap = [
 ]
 
 toggleformatter = [
-	("[Shift] + R", "Toggle syntax highlighting"),
+	("[Shift] + R", "Toggle highlighting / formatting (default: On)"),
 ]
 
 logmovement = [
@@ -158,7 +158,7 @@ spacer = [
 ]
 
 configmapdata = infoviewheader_part1 + infoviewheader_part2 + spacer + [
-	("[Shift] + R", "Toggle syntax highlighting (default: On)"),
+	("[Shift] + R", "Toggle highlighting / formatting (default: On)"),
 ] + spacer + logmovement
 
 containerinfo = [
@@ -174,7 +174,7 @@ containerinfo = [
 	("[F12]", "Show information about the program"),
 	("", ""),
 	("[Shift] + I", "Open info page for container image"),
-	("[Shift] + R", "Toggle log parsing (default: On)"),
+	("[Shift] + R", "Toggle highlighting / formatting (default: On)"),
 	("[Shift] + T", "Toggle timestamps (default: On)"),
 	("[Shift] + D", "Toggle merging of duplicate messages"),
 ] + linewrap + toggleborders + [

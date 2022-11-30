@@ -6,9 +6,20 @@ This file contains helpers that provide an obj for use in info views,
 for cases where the obj provided from the list view isn't sufficient
 """
 
+from datetime import datetime
 from pathlib import Path, PurePath
 import sys
-from typing import Dict
+from typing import Dict, List, Union
+# ujson is much faster than json,
+# but it might not be available
+try:
+	import ujson as json
+	# The exception raised by ujson when parsing fails is different
+	# from what json raises
+	DecodeException = ValueError
+except ModuleNotFoundError:
+	import json # type: ignore
+	DecodeException = json.decoder.JSONDecodeError # type: ignore
 
 try:
 	from natsort import natsorted
@@ -44,7 +55,18 @@ def objgetter_ansible_facts(obj: Dict) -> Dict:
 
 	return ar
 
-def objgetter_ansible_log(obj: Dict) -> Dict:
+def objgetter_journalctl_log(obj: List[Dict]) -> Dict:
+	data = {
+		# This should only be logs from one host, so we can get the hostname
+		"name": deep_get(obj[0], DictPath("name")),
+		"host": deep_get(obj[0], DictPath("host")),
+		"created_at": deep_get(obj[0], DictPath("created_at")),
+		"obj": obj,
+	}
+
+	return data
+
+def objgetter_ansible_log(obj: str) -> Dict:
 	"""
 	Get an obj from an ansible log entry
 
@@ -121,4 +143,5 @@ def objgetter_ansible_log(obj: Dict) -> Dict:
 objgetter_allowlist = {
 	"objgetter_ansible_facts": objgetter_ansible_facts,
 	"objgetter_ansible_log": objgetter_ansible_log,
+	"objgetter_journalctl_log": objgetter_journalctl_log,
 }

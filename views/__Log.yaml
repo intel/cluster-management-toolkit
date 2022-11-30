@@ -7,6 +7,8 @@ listview:
   group: "Administration"
   listgetter: null
   infogetter: "get_log_info"
+  on_activation:
+    call: null
   field_indexes:
     Normal:
       fields: ["name", "action", "created_at", "log_type"]
@@ -37,114 +39,12 @@ listview:
   shortcuts:
     "Edit resource": null
     "View YAML dump": null
-infoview:
-  name: "Playbook Log Info"
-  infopad:
-    name_path: "name"
-    creation_timestamp_path: "created_at"
-    objgetter: "objgetter_ansible_log"
-    infogetter: "generic_infogetter"
-    row_indexes:
-      Normal:
-        fields: ["path", "category", "playbook_types"]
-    rows:
-      category:
-        header: [["Category:", ["main", "infoheader"]]]
-        path: "category"
-        type: "str"
-      path:
-        header: [["Path:", ["main", "infoheader"]]]
-        path: "playbook_path"
-        type: "str"
-      playbook_types:
-        header: [["Playbook Types:", ["main", "infoheader"]]]
-        path: "playbook_types"
-        type: "raw"
-        formatter: "list"
-  listpad:
-    listgetter: "listgetter_field"
-    listgetter_args:
-      path: "logs"
-    infogetter: "generic_infogetter"
-    on_activation:
-      call: "resourceinfodispatch"
-      kind: "__LogView"
-    field_indexes:
-      Normal:
-        fields: ["index", "name", "host", "start_time", "completion_time", "retval", "status"]
-        sortcolumn: "index"
-    fields:
-      completion_time:
-        header: "Finished At:"
-        path: "log#end_date"
-        type: "age"
-      host:
-        header: "Host:"
-        path: "log#host"
-        type: "str"
-      index:
-        header: "Index:"
-        path: "index"
-        type: "int"
-        formatting:
-          field_colors:
-          - type: "numerical"
-        align: "right"
-      name:
-        header: "Name:"
-        path: "log#task"
-        type: "str"
-      retval:
-        header: "Return Value:"
-        path: "log#retval"
-        type: "int"
-        formatting:
-          field_colors:
-          - type: "numerical"
-        align: "right"
-      start_time:
-        header: "Started At:"
-        path: "log#start_date"
-        type: "age"
-      status:
-        header: "Status:"
-        path: "log#status"
-        type: "str"
-        formatter: "value_mapper"
-        formatting:
-          mapping:
-            mappings:
-              "COULD NOT RESOLVE":
-                field_colors:
-                - context: "main"
-                  type: "status_critical"
-              "MISSING INTERPRETER?":
-                field_colors:
-                - context: "main"
-                  type: "status_not_ok"
-              "NO ROUTE TO HOST":
-                field_colors:
-                - context: "main"
-                  type: "status_not_ok"
-              "PERMISSION DENIED":
-                field_colors:
-                - context: "main"
-                  type: "status_not_ok"
-              "SKIPPED":
-                field_colors:
-                - context: "types"
-                  type: "none"
-              "SUCCESS":
-                field_colors:
-                - context: "main"
-                  type: "status_ok"
-              "UNKNOWN ERROR":
-                field_colors:
-                - context: "main"
-                  type: "status_not_ok"
-              "UNKNOWN":
-                field_colors:
-                - context: "main"
-                  type: "status_unknown"
-  shortcuts:
-    "Last Applied Configuration": null
+    "View Log":
+      key: "enter"
+      read_only: true
+      helptext: "View selected log"
+      action: "call"
+      action_call: "resourceinfodispatch_from_pod_resource_list"
+      action_args:
+        _pass_obj: true
+        kind_path: "kind"

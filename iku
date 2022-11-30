@@ -52,9 +52,10 @@ from ikttypes import ANSIThemeString, deep_get, deep_get_list, deep_get_with_fal
 from iktpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
-from iktio import execute_command, secure_read_string, secure_which
+from iktio import execute_command, execute_command_with_response, secure_read_string, secure_which
 from iktio_yaml import secure_read_yaml, secure_read_yaml_all
 
+import logparser as logparsers
 from logparser import logparser, logparser_initialised, LogLevel, logparser_configuration
 from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
@@ -682,7 +683,7 @@ def get_container_info(**kwargs: Dict) -> List[Type]:
 # pylint: disable-next=unused-argument
 def get_log_info(**kwargs: Dict) -> List[Type]:
 	"""
-	Infogetter for Ansible logs
+	Infogetter for logs
 
 		Parameters:
 			kwargs (dict): Additional parameters
@@ -691,6 +692,53 @@ def get_log_info(**kwargs: Dict) -> List[Type]:
 	"""
 
 	info: List[Type] = []
+
+	# Fetch kubelet log, if available (for now only useful if run on the control-plane)
+	sudo_path = secure_which(FilePath("sudo"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	journalctl_path = secure_which(FilePath(os.path.join(BINDIR, "journalctl")), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	args = [sudo_path, journalctl_path, "--no-pager", "-o", "json"]
+
+	kubelet_logs = []
+
+	logs = [
+		("Latest boot", "[dmesg]", ["-k", "-b"], "glog"),
+		("Latest 500 lines", "[kubelet]", ["--lines", "500", "-u", "kubelet"], "glog"),
+		("Latest 500 lines", "[containerd]", ["--lines", "500", "-u", "containerd"], "key_value"),
+	]
+
+	try:
+		for name, action, log, parser in logs:
+			response = execute_command_with_response(args + log)
+			# The first entry in the obj list holds metadata
+			split_response = [{
+				"parser": parser,
+			}]
+			split_response += response.splitlines()
+			latestentry = split_response[1]
+
+			d = json.loads(latestentry)
+
+			split_response[0]["name"] = deep_get(d, DictPath("SYSLOG_IDENTIFIER"), "<unknown>")
+			hostname = deep_get(d, DictPath("_HOSTNAME"), "<unknown>")
+			split_response[0]["host"] = hostname
+			created_at = datetime.fromtimestamp(int(deep_get(d, DictPath("__REALTIME_TIMESTAMP"))) / 1000000)
+			split_response[0]["created_at"] = created_at
+
+			info.append(type("InfoClass", (), {
+				"name": f"<dynamic> {hostname}: {name}",
+				"ref": {
+					"ref": split_response,
+					"kind": "__JournalctlLogView",
+				},
+				"action": action,
+				"message": deep_get(d, DictPath("MESSAGE"), ""),
+				"created_at": created_at,
+				"log_type": "journalctl",
+			}))
+	except FileNotFoundError:
+		pass
+	except IndexError:
+		pass
 
 	# Get the list of available Ansible logs
 	ansible_logs = ansible_get_logs()
@@ -701,7 +749,10 @@ def get_log_info(**kwargs: Dict) -> List[Type]:
 		log_type = "Ansible Play"
 		info.append(type("InfoClass", (), {
 			"name": name,
-			"ref": ref,
+			"ref": {
+				"ref": ref,
+				"kind": "__AnsibleLog",
+			},
 			"action": action,
 			"created_at": created_at,
 			"log_type": log_type,
@@ -2075,7 +2126,72 @@ def listgetter_ansible_volumes(obj, **kwargs):
 
 	return info, "OK"
 
-def get_task_log(obj):
+def get_journalctl_log(obj, **kwargs: Dict):
+	timestamps = []
+	facilities = []
+	severities = []
+	messages = []
+
+	show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
+	objlist = deep_get(obj, "obj")
+	parser = deep_get(objlist[0], "parser")
+
+	for line in objlist[1:]:
+		try:
+			d = json.loads(line)
+		except DecodeException:
+			d = {}
+
+		timestamp = datetime.fromtimestamp(int(deep_get(d, DictPath("__REALTIME_TIMESTAMP")), 0) / 1000000)
+		severity = None
+		facility = ""
+		remnants = None
+		msg = ""
+
+		raw_severity = int(deep_get(d, "PRIORITY", "6"))
+		raw_msg = deep_get(d, "MESSAGE", "")
+
+		if show_raw == True:
+			msg = raw_msg
+		elif parser == "glog":
+			msg, severity, facility, remnants, matched = logparsers.split_glog(raw_msg, raw_severity)
+
+			if matched == False:
+				severity = raw_severity
+				remnants = None
+				msg = raw_msg
+		elif "=" in raw_msg and parser == "key_value":
+			facility, severity, msg, remnants = logparsers.key_value(raw_msg, raw_severity, fold_msg = False)
+		else:
+			severity = raw_severity
+			msg = raw_msg
+
+		timestamps.append(timestamp)
+		facilities.append(facility)
+		if severity is None:
+			severity = raw_severity
+		severities.append(severity)
+		messages.append(msg)
+
+		if remnants is not None:
+			if isinstance(remnants, tuple):
+				fmt_remnants, remnant_severity = remnants
+
+				for remnant in fmt_remnants:
+					timestamps.append("")
+					facilities.append("")
+					severities.append(remnant_severity)
+					messages.append(remnant)
+			else:
+				for remnant, remnant_severity in remnants:
+					timestamps.append("")
+					facilities.append("")
+					severities.append(remnant_severity)
+					messages.append(remnant)
+
+	return (timestamps, facilities, severities, messages)
+
+def get_task_log(obj, **kwargs: Dict):
 	field = []
 
 	skipped = deep_get(obj, DictPath("log#skipped"), False)
@@ -2109,7 +2225,7 @@ def get_task_log(obj):
 
 	return field
 
-def get_themearrays(obj):
+def get_themearrays(obj, **kwargs: Dict):
 	return obj
 
 def logpad_msg_getter(obj: Dict, **kwargs: Dict) -> List[List[ThemeString]]:
@@ -4945,9 +5061,10 @@ def genericlistloop(stdscr, view):
 		initial_namespace = None
 		if unique_match is not None:
 			selected = uip.get_selected()
-			retval = uip.activatedfun(uip.stdscr, unique_match, kind)
-			if retval == Retval.RETURNFULL:
-				return retval
+			if uip.activatedfun is not None:
+				retval = uip.activatedfun(uip.stdscr, unique_match, kind)
+				if retval == Retval.RETURNFULL:
+					return retval
 			uip.force_update()
 			uip.refresh_all()
 			continue
@@ -7062,11 +7179,12 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 		if listpad is not None:
 			raise Exception("We cannot have listpad and logpad simultaneously")
 
-		timestamps = deep_get_with_fallback(viewref, [DictPath("logpad#timestamps"), DictPath("timestamps")], True)
+		show_timestamps = deep_get_with_fallback(viewref, [DictPath("logpad#timestamps"), DictPath("timestamps")], True)
+		uip.toggle_timestamps(show_timestamps)
 		if infopadheight == 0:
-			tspad, logpad = uip.init_logpad(width = -1, ypos = 1, xpos = 1, timestamps = timestamps)
+			tspad, logpad = uip.init_logpad(width = -1, ypos = 1, xpos = 1, timestamps = show_timestamps)
 		else:
-			tspad, logpad = uip.init_logpad(width = -1, ypos = infopadheight + 2, xpos = 1, timestamps = timestamps)
+			tspad, logpad = uip.init_logpad(width = -1, ypos = infopadheight + 2, xpos = 1, timestamps = show_timestamps)
 
 	wrap_lines = False
 	raw_output = False
@@ -7202,9 +7320,17 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 				infogetter = deep_get(viewref, DictPath("logpad#infogetter"))
 				infogetter_args = deep_get(viewref, DictPath("logpad#infogetter_args"), {})
+				infogetter_args["_show_raw"] = raw_output
 				if infogetter is not None:
-					messages = infogetter(formatted_obj, **infogetter_args)
-					uip.update_log_info(None, None, None, messages)
+					tmp = infogetter(formatted_obj, **infogetter_args)
+					if isinstance(tmp, tuple):
+						timestamps, facilities, severities, messages = tmp
+					else:
+						timestamps = None
+						facilities = None
+						severities = None
+						messages = tmp
+					uip.update_log_info(timestamps, facilities, severities, messages)
 					uip.loglen = len(messages)
 
 			if infopad is not None:
@@ -7283,7 +7409,29 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			uip.resize_logpad(uip.maxy - uip.logpadypos - 2, 0)
 			maxx = 0
 			yadd = 0
+
 			for y in range(0, min(uip.logpadheight, len(messages))):
+				facility = None
+				if facilities is not None and uip.yoffset + y < len(facilities):
+					fac = facilities[uip.yoffset + y]
+
+					if len(fac) > 0:
+						facility = [ThemeRef("separators", "facility_prefix"),
+							    ThemeString(facilities[uip.yoffset + y], ThemeAttr("logview", "facility")),
+							    ThemeRef("separators", "facility_suffix"),
+							    ThemeRef("separators", "facility_padding")]
+
+				if timestamps is None or uip.yoffset + y >= len(timestamps):
+					timestamp = "".ljust(uip.tspadwidth)
+				else:
+					timestamp = str(timestamps[uip.yoffset + y]).ljust(uip.tspadwidth)
+					tsthemearray = [ThemeString(timestamp, ThemeAttr("logview", "timestamp"))]
+
+				if severities is None or uip.yoffset + y >= len(severities):
+					severity = LogLevel.INFO
+				else:
+					severity = severities[uip.yoffset + y]
+
 				message = messages[uip.yoffset + y]
 				current_match = False
 				if len(uip.search_matches) > 0:
@@ -7301,14 +7449,22 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					maxwidth = uip.logpadminwidth + sideadjust
 				else:
 					maxwidth = -1
+				if isinstance(message, str):
+					message = [ThemeString(message, color_log_severity(severity))]
+				if facility is not None:
+					message = facility + message
 				_lines = themearray_wrap_line(message, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
 				for i, _line in enumerate(_lines):
 					if y + yadd + i >= uip.logpadheight:
 						break
+					if i == 0 and timestamps is not None:
+						uip.addthemearray(tspad, tsthemearray, y = y + yadd, x = 0)
 					ypos, xpos = uip.addthemearray(logpad, _line, y = y + yadd + i, x = 0, selected = current_match)
 					maxx = max(maxx, xpos)
 				yadd += i
 			uip.resize_logpad(-1, maxx)
+
+		uip.update_window()
 
 		uip.refresh_window()
 		uip.refresh_infopad()
@@ -7414,7 +7570,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			uip.toggle_borders()
 			uip.refresh_all()
 			uip.force_update()
-		elif c == ord("W"):
+		elif c == ord("W") and listpad is not None:
 			if len(field_indexes) == 0:
 				continue
 
@@ -7424,7 +7580,8 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 			# Toggle field width
 			denylist = []
-			field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, DictPath("fields")), denylist = denylist)
+			field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes,
+											        fields = deep_get(viewref, DictPath("fields")), denylist = denylist)
 			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
 			uip.resize_listpad(height = -1, width = -1)
 			uip.refresh_all()
@@ -7433,8 +7590,12 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			raw_output = not raw_output
 			uip.refresh_all()
 			uip.force_update()
-		elif c == ord("W"):
+		elif c == ord("W") and logpad is not None:
 			wrap_lines = not wrap_lines
+			uip.refresh_all()
+			uip.force_update()
+		elif c == ord("T"):
+			uip.toggle_timestamps()
 			uip.refresh_all()
 			uip.force_update()
 
@@ -8883,7 +9044,7 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 
 	return None
 
-def resourceinfodispatch_from_pod_resource_list(stdscr, obj, kind, info = None, **kwargs):
+def resourceinfodispatch_from_pod_resource_list(stdscr, obj = None, kind = None, info = None, **kwargs):
 	kind = deep_get(obj, DictPath("kind"))
 	api_family = deep_get(obj, DictPath("api_group"), "")
 	obj = deep_get(obj, DictPath("ref"))
@@ -10529,6 +10690,7 @@ action_call_allowlist = {
 	"eventdispatch": eventdispatch,
 	"export_data": export_data,
 	"listviewdispatch": listviewdispatch,
+	"resourceinfodispatch_from_pod_resource_list": resourceinfodispatch_from_pod_resource_list,
 	"resourceinfodispatch_with_lookup": resourceinfodispatch_with_lookup,
 	"set_cluster_context": set_cluster_context,
 	"ssh_to_host": ssh_to_host,
@@ -10580,6 +10742,7 @@ infogetter_allowlist = {
 	"get_svcmon_endpoints_info": get_svcmon_endpoints_info,
 	# Used by logpad
 	"logpad_msg_getter": logpad_msg_getter,
+	"get_journalctl_log": get_journalctl_log,
 	"get_task_log": get_task_log,
 	"get_themearrays": get_themearrays,
 }

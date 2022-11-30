@@ -760,6 +760,17 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 # they indicate a race condition; hack around them to make the log pretty
 def split_glog(message: str, severity: Optional[LogLevel] = None, facility: str = "") ->\
 			Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]], bool]:
+	"""
+	Extract messages in glog format
+
+		Parameters:
+			message (str): The message to reformat
+			severity (LogLevel): The current loglevel
+			facility (str): The current facility
+		Returns:
+			(message, severity, facility, remnants, matched)
+	"""
+
 	matched = False
 	loggingerror = None
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []

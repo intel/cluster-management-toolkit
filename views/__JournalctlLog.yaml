@@ -1,0 +1,22 @@
+kind: "__JournalctlLogView"
+default_command: "__"
+infoview:
+  name: "Journalctl Log View"
+  infopad:
+    name_path: "name"
+    creation_timestamp_path: "created_at"
+    objgetter: "objgetter_journalctl_log"
+    infogetter: "generic_infogetter"
+    row_indexes:
+      Normal:
+        fields: ["host"]
+    rows:
+      host:
+        header: [["Host:", ["main", "infoheader"]]]
+        path: "host"
+        type: "str"
+  logpad:
+    infogetter: "get_journalctl_log"
+  shortcuts:
+    "Show Events": null
+    "Last Applied Configuration": null
