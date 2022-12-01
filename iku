@@ -195,7 +195,7 @@ def format_timestamp(timestamp: datetime, localtimezone: bool = False) -> List[U
 
 	return array
 
-def processor_timestamp(obj, field: str) -> str:
+def processor_timestamp(obj: Dict, field: str) -> str:
 	value = getattr(obj, field)
 
 	if value is None:
@@ -204,7 +204,7 @@ def processor_timestamp(obj, field: str) -> str:
 	string = value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 	return string
 
-def processor_timestamp_with_age(obj, field: str, formatting) -> str:
+def processor_timestamp_with_age(obj: Dict, field: str, formatting) -> str:
 	values = getattr(obj, field)
 
 	if len(values) > 2 and len(deep_get(formatting, DictPath("field_colors"), [])) < 2:
@@ -253,7 +253,7 @@ def processor_timestamp_with_age(obj, field: str, formatting) -> str:
 
 # For the list processor to work we need to know the length of all the separators
 # pylint: disable-next=too-many-arguments
-def processor_list(obj, field: str, item_separator: ThemeRef, field_separators: List[Union[ThemeRef, ThemeString]],
+def processor_list(obj: Dict, field: str, item_separator: ThemeRef, field_separators: List[Union[ThemeRef, ThemeString]],
 		   ellipsise: bool, ellipsis: ThemeRef,
 		   field_prefixes: List[Union[Tuple[str, str], ThemeString, List[Union[Tuple[str, str], ThemeString]]]],
 		   field_suffixes: List[Union[Tuple[str, str], ThemeString, List[Union[Tuple[str, str], ThemeString]]]]) -> str:
@@ -315,7 +315,7 @@ def processor_list(obj, field: str, item_separator: ThemeRef, field_separators: 
 # For the list processor to work we need to know the length of all the separators
 # pylint: disable-next=too-many-arguments
 
-def processor_list_with_status(obj, field: str, item_separator: ThemeRef, field_separators: List[Union[ThemeRef, ThemeString]],
+def processor_list_with_status(obj: Dict, field: str, item_separator: ThemeRef, field_separators: List[Union[ThemeRef, ThemeString]],
 			       ellipsise: bool, ellipsis: ThemeRef, field_prefixes: List[ThemeString], field_suffixes: List[ThemeString]) -> str:
 	items = getattr(obj, field)
 
@@ -365,11 +365,11 @@ def processor_list_with_status(obj, field: str, item_separator: ThemeRef, field_
 
 	return vstring
 
-def processor_age(obj, field: str) -> str:
+def processor_age(obj: Dict, field: str) -> str:
 	seconds = getattr(obj, field)
 	return iktlib.seconds_to_age(seconds, negative_is_skew = True)
 
-def processor_mem(obj, field: str) -> str:
+def processor_mem(obj: Dict, field: str) -> str:
 	free, total = getattr(obj, field)
 
 	string = f"{100 - (100 * int(free)) / int(total):0.1f}"
@@ -443,7 +443,7 @@ def update_field_widths(field_dict: Dict, field_names: List[str], objects) -> in
 	return linelen
 
 # pylint: disable-next=unused-argument
-def get_hpa_metrics(obj, **kwargs: Dict) -> Tuple[List[Dict], int]:
+def get_hpa_metrics(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
 	vlist = []
 	status = 200
 
@@ -577,7 +577,7 @@ def get_image_tuple(image: str) -> Tuple[str, str]:
 	return image_name, image_version
 
 # We should probably have a real type for container_type here
-def __get_container_info(obj, container_type: str, spec_path: DictPath, status_path: DictPath) -> Dict:
+def __get_container_info(obj: Dict, container_type: str, spec_path: DictPath, status_path: DictPath) -> Dict:
 
 	containers: Dict = {}
 
@@ -917,7 +917,7 @@ def normalise_mem_bytes_to_str(mem_usage_bytes: int) -> str:
 
 	return f"{mem_usage:0.1f}{suffix}B"
 
-def __get_timestamp_with_fallback(obj, paths: List[DictPath]) -> datetime:
+def __get_timestamp_with_fallback(obj: Dict, paths: List[DictPath]) -> datetime:
 	return timestamp_to_datetime(deep_get_with_fallback(obj, paths))
 
 latest_info = None
@@ -955,7 +955,7 @@ def __process_sum_mem_usage(values: List[str]) -> str:
 		mem_usage_sum += normalise_mem_to_bytes(value)
 	return normalise_mem_bytes_to_str(mem_usage_sum)
 
-def __process_regex_to_sequence(values: Union[str, List[str]], match_regex, target_type: str) -> Union[Sequence[Union[str, Tuple]], str]:
+def __process_regex_to_sequence(values: Union[str, List[str]], match_regex: str, target_type: str) -> Union[Sequence[Union[str, Tuple]], str]:
 	new_values: List[Union[str, Tuple]] = []
 
 	compiled_regex = re.compile(match_regex)
@@ -1011,7 +1011,8 @@ def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: st
 	return new_value
 
 # pylint: disable-next=too-many-arguments
-def process_value(field_name: str, value: Any, vtype: str, view: str, field_index: str, action: str, formatter, replace_quotes: str, _regex: str) -> Union[int, float, str, List[str], datetime, None]:
+def process_value(field_name: str, value: Any, vtype: str, view: str, field_index: str, action: str,
+		  formatter, replace_quotes: str, _regex: str) -> Union[int, float, str, List[str], datetime, None]:
 	override_kind = deep_get_with_fallback(iktlib.iktconfig, [
 				DictPath(f"{view}#kind_format_{field_index}"),
 				DictPath(f"{view}#kind_format"),
@@ -1107,12 +1108,12 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 		new_value = value
 	return new_value
 
-def transform_filter(transformations, value: DictPath):
+def transform_filter(transformations: Dict, value: DictPath):
 	if value in transformations:
 		value = deep_get(transformations, value)
 	return value
 
-def when_filter(when_path, item, key = None, value = None):
+def when_filter(when_path: Dict, item: Dict, key = None, value = None):
 	# When is a list of when-conditions,
 	# all of which have to evaluate to true
 	when_conditions = deep_get(when_path, DictPath("when"), [])
@@ -1949,7 +1950,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 
 	return entry
 
-def generic_infogetter(**kwargs):
+def generic_infogetter(**kwargs: Dict) -> List[Dict]:
 	info = []
 
 	vlist = deep_get(kwargs, DictPath("_vlist"), [])
@@ -1980,7 +1981,7 @@ def generic_infogetter(**kwargs):
 
 	return info
 
-def get_device_model(obj, device):
+def get_device_model(obj: Dict, device: DictPath) -> str:
 	for dev in deep_get(obj, DictPath("ansible_devices"), {}):
 		partitions = deep_get(obj, DictPath(f"ansible_devices#{dev}#partitions"), {})
 		model = deep_get(obj, DictPath(f"ansible_devices#{dev}#model"), "")
@@ -2074,7 +2075,7 @@ def listgetter_matchrules(obj: Dict, **kwargs: Dict) -> Tuple[Dict, str]:
 	return match_list, "OK"
 
 # pylint: disable-next=unused-argument
-def listgetter_ansible_volumes(obj, **kwargs):
+def listgetter_ansible_volumes(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], str]:
 	info = []
 
 	# Find all mounts
@@ -2126,7 +2127,7 @@ def listgetter_ansible_volumes(obj, **kwargs):
 
 	return info, "OK"
 
-def get_journalctl_log(obj, **kwargs: Dict):
+def get_journalctl_log(obj: Dict, **kwargs: Dict):
 	timestamps = []
 	facilities = []
 	severities = []
@@ -2191,7 +2192,7 @@ def get_journalctl_log(obj, **kwargs: Dict):
 
 	return (timestamps, facilities, severities, messages)
 
-def get_task_log(obj, **kwargs: Dict):
+def get_task_log(obj: Dict, **kwargs: Dict):
 	field = []
 
 	skipped = deep_get(obj, DictPath("log#skipped"), False)
@@ -2225,11 +2226,11 @@ def get_task_log(obj, **kwargs: Dict):
 
 	return field
 
-def get_themearrays(obj, **kwargs: Dict):
+def get_themearrays(obj: Dict, **kwargs: Dict) -> Dict:
 	return obj
 
-def logpad_msg_getter(obj: Dict, **kwargs: Dict) -> List[List[ThemeString]]:
-	messages: List[List[ThemeString]] = []
+def logpad_msg_getter(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+	messages: List[List[Union[ThemeRef, ThemeString]]] = []
 
 	path = deep_get(kwargs, DictPath("path"))
 	tmp = deep_get(obj, DictPath(path), "")
@@ -2240,7 +2241,7 @@ def logpad_msg_getter(obj: Dict, **kwargs: Dict) -> List[List[ThemeString]]:
 	return messages
 
 # pylint: disable-next=unused-argument
-def get_netpol_rule_list(obj, **kwargs):
+def get_netpol_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
 	vlist = []
 	for item in deep_get(obj, DictPath("spec#ingress"), []):
 		policy_type = "ingress"
@@ -2309,7 +2310,7 @@ def get_netpol_rule_list(obj, **kwargs):
 	return vlist, 200
 
 # pylint: disable-next=unused-argument
-def get_virtsvc_rule_list(obj, **kwargs):
+def get_virtsvc_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
 	vlist = []
 
 	for rule_path, rule_type in [("spec#http", "HTTP"), ("spec#tls", "TLS"), ("spec#tcp", "TCP")]:
@@ -2823,7 +2824,7 @@ def get_sas_info(**kwargs: Dict) -> List[Type]:
 
 	return info
 
-def get_name_by_kind_from_owner_references(owner_references, kind):
+def get_name_by_kind_from_owner_references(owner_references: List[Dict], kind: str) -> str:
 	for owr in owner_references:
 		if deep_get(owr, DictPath("kind"), "") == kind:
 			name = deep_get(owr, DictPath("name"))
@@ -2831,17 +2832,17 @@ def get_name_by_kind_from_owner_references(owner_references, kind):
 
 	return name
 
-def get_holder_kind_from_owner_references(owner_references, holder_name):
+def get_holder_kind_from_owner_references(owner_references: List[Dict], holder_name: str):
 	holder_kind = ""
 
 	for owr in owner_references:
 		if deep_get(owr, DictPath("name")) == holder_name:
-			holder_kind = deep_get(owr, DictPath("kind"))
+			holder_kind = deep_get(owr, DictPath("kind"), "")
 			break
 
 	return holder_kind
 
-def format_controller(controller, show_kind):
+def format_controller(controller, show_kind: str):
 	if len(show_kind) > 0:
 		if show_kind == "short" or len(controller[0][1]) == 0:
 			controller = (f"{controller[0][0]}", f"{controller[1]}")
@@ -2860,7 +2861,7 @@ def format_controller(controller, show_kind):
 
 	return controller
 
-def get_controller_from_owner_references(owner_references):
+def get_controller_from_owner_references(owner_references: List[Dict]) -> Tuple[Tuple[str, str], str]:
 	controller = (("", ""), "")
 	if owner_references is not None:
 		# Safe
@@ -2875,7 +2876,7 @@ def get_controller_from_owner_references(owner_references):
 				else:
 					api_group = ""
 				kind = (deep_get(owr, DictPath("kind")), api_group)
-				controller = (kind, deep_get(owr, DictPath("name")))
+				controller = (kind, deep_get(owr, DictPath("name"), ""))
 
 	return controller
 
@@ -4451,8 +4452,8 @@ def get_pod_info(**kwargs) -> List[Type]:
 
 	return info
 
-def generate_listheader(uip, headerpad, field_list, is_taggable = False):
-	headerarray = []
+def generate_listheader(uip: UIProps, headerpad, field_list, is_taggable = False):
+	headerarray: List[Union[ThemeRef, ThemeString]] = []
 	first = True
 
 	tabstops = []
@@ -4518,7 +4519,7 @@ def generate_listheader(uip, headerpad, field_list, is_taggable = False):
 	uip.tabstops = tabstops
 
 # pylint: disable-next=too-many-arguments
-def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable = False, is_tagged = False):
+def generate_list(uip: UIProps, listpad, data, field_list, ypos, is_selected, is_taggable = False, is_tagged = False):
 	first = True
 
 	i = 0
@@ -4532,7 +4533,7 @@ def generate_list(uip, listpad, data, field_list, ypos, is_selected, is_taggable
 			tagprefixlen = len(ThemeRef("separators", "tag"))
 
 			if is_tagged:
-				tagprefix = [ThemeRef("separators", "tag")]
+				tagprefix: List[Union[ThemeRef, ThemeString]] = [ThemeRef("separators", "tag")]
 			else:
 				tagprefix = [ThemeString("".ljust(tagprefixlen), ThemeAttr("types", "generic"))]
 		else:
@@ -4770,7 +4771,7 @@ def get_formatter(field):
 
 	return tmp_field
 
-def fieldgenerator(view, field_index: str, field_indexes, fields, denylist):
+def fieldgenerator(view, field_index: str, field_indexes, fields, denylist: List[str]):
 	"""
 	Generate a dict with the fields necessary for a view
 
@@ -6629,7 +6630,7 @@ def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False)
 
 	return retval
 
-def __update_cni(uip, **kwargs):
+def __update_cni(uip: UIProps, **kwargs):
 	cni = deep_get(kwargs, DictPath("cni"))
 	cni_version = deep_get(kwargs, DictPath("cni_version"))
 	candidate_version = deep_get(kwargs, DictPath("candidate_version"))
@@ -7199,7 +7200,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				uip.infopad.erase()
 			uip.statusbar.erase()
 
-			statusarray1 = [
+			statusarray1: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Fields: ", ThemeAttr("statusbar", "infoheader")),
 				ThemeString(field_index, ThemeAttr("statusbar", "highlight"))
 			]
@@ -7336,7 +7337,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			if infopad is not None:
 				y = 0
 				if name_path is not None and len(name_path) > 0:
-					fieldarray = [
+					fieldarray: List[Union[ThemeRef, ThemeString]] = [
 						ThemeString("Name:", ThemeAttr("main", "infoheader")),
 						ThemeString(f" {deep_get(obj, DictPath(name_path))}", ThemeAttr("types", "generic"))
 					]
@@ -7425,7 +7426,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					timestamp = "".ljust(uip.tspadwidth)
 				else:
 					timestamp = str(timestamps[uip.yoffset + y]).ljust(uip.tspadwidth)
-					tsthemearray = [ThemeString(timestamp, ThemeAttr("logview", "timestamp"))]
+					tsthemearray: List[Union[ThemeRef, ThemeString]] = [ThemeString(timestamp, ThemeAttr("logview", "timestamp"))]
 
 				if severities is None or uip.yoffset + y >= len(severities):
 					severity = LogLevel.INFO
@@ -7579,7 +7580,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			field_index = _list[(_index + 1) % len(field_indexes)]
 
 			# Toggle field width
-			denylist = []
+			denylist: List[str] = []
 			field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes,
 											        fields = deep_get(viewref, DictPath("fields")), denylist = denylist)
 			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
@@ -9360,7 +9361,7 @@ def view_pod_logs(stdscr, **kwargs):
 	return containerinfoloop(stdscr, container = None, kind = None, obj = None, **multilog_args)
 
 # pylint: disable=unused-argument
-def action_view_pod_logs(uip, items, action, values, kind, **kwargs):
+def action_view_pod_logs(uip: UIProps, items, action, values, kind, **kwargs):
 	return view_pod_logs(uip.stdscr, **values)
 
 def view_last_applied_configuration(stdscr, **kwargs):
@@ -9381,7 +9382,7 @@ def view_last_applied_configuration(stdscr, **kwargs):
 	return resourceinfodispatch(stdscr, [data], ("__ResourceView", ""), title = title, formatter = formatter)
 
 # pylint: disable=unused-argument
-def delete_resource(uip, items, action, values, kind, **kwargs):
+def delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
 	success = True
 	force = deep_get(values, DictPath("__force"), False)
 
@@ -9406,7 +9407,7 @@ def delete_resource(uip, items, action, values, kind, **kwargs):
 			break
 
 # pylint: disable=unused-argument
-def force_delete_resource(uip, items, action, values, kind, **kwargs):
+def force_delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
 	values["__force"] = True
 	return delete_resource(uip, items = items, action = action, values = values, kind = kind)
 
@@ -9540,7 +9541,7 @@ def __edit_resource(kind, namespace, name):
 	return result.returncode, args
 
 # pylint: disable=unused-argument
-def apply_configuration_from_file(uip, items, action, values, kind, **kwargs):
+def apply_configuration_from_file(uip: UIProps, items, action, values, kind, **kwargs):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
@@ -9596,7 +9597,7 @@ def __apply_or_create_configuration_from_url(resource_url, create = False):
 	return Retval.MATCH
 
 # pylint: disable=unused-argument
-def apply_configuration_from_url(uip, items, action, values, kind, **kwargs):
+def apply_configuration_from_url(uip: UIProps, items, action, values, kind, **kwargs):
 	"""
 	Given a URL, apply it using kubectl apply
 
@@ -9621,7 +9622,7 @@ def apply_configuration_from_url(uip, items, action, values, kind, **kwargs):
 
 # We should probably download and apply locally instead
 # pylint: disable=unused-argument
-def create_resource_from_url(uip, items, action, values, kind, **kwargs):
+def create_resource_from_url(uip: UIProps, items, action, values, kind, **kwargs):
 	"""
 	Given a URL, create it using kubectl create
 
@@ -9660,7 +9661,7 @@ def __summarise_resources(path):
 	return resources
 
 # pylint: disable=unused-argument
-def create_resource_from_file(uip, items, action, values, kind, **kwargs):
+def create_resource_from_file(uip: UIProps, items, action, values, kind, **kwargs):
 	resource_path, rtype = values["resource_path"]
 	resource_list = []
 
@@ -9717,7 +9718,7 @@ def create_resource_from_file(uip, items, action, values, kind, **kwargs):
 	return Retval.MATCH
 
 # pylint: disable=unused-argument
-def diff_resource_configuration(uip, items, action, values, kind, **kwargs):
+def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwargs):
 	resource_path, rtype = values["resource_path"]
 
 	try:
@@ -9832,7 +9833,7 @@ def edit_resource(stdscr, **kwargs) -> None:
 	stdscr.refresh()
 
 # pylint: disable=unused-argument
-def restart_resource_rescale(uip, items, action, values, kind, **kwargs):
+def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
 	curses.endwin()
 	_retval = clear_screen()
 
@@ -9857,7 +9858,7 @@ def restart_resource_rescale(uip, items, action, values, kind, **kwargs):
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
-def restart_resource_rollout(uip, items, action, values, kind, **kwargs):
+def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs):
 	curses.endwin()
 	_retval = clear_screen()
 
@@ -9878,7 +9879,7 @@ def restart_resource_rollout(uip, items, action, values, kind, **kwargs):
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
-def rescale_resource(uip, items, action, values, kind, **kwargs):
+def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs):
 	curses.endwin()
 	_retval = clear_screen()
 
@@ -9907,7 +9908,7 @@ def rescale_resource(uip, items, action, values, kind, **kwargs):
 # Valid kinds:
 # ("Deployment", "apps")
 # pylint: disable=unused-argument
-def pause_resource_rollout(uip, items, action, values, kind, **kwargs):
+def pause_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs):
 	curses.endwin()
 	_retval = clear_screen()
 
@@ -9930,7 +9931,7 @@ def pause_resource_rollout(uip, items, action, values, kind, **kwargs):
 # Valid kinds:
 # ("Deployment", "apps")
 # pylint: disable=unused-argument
-def resume_resource_rollout(uip, items, action, values, kind, **kwargs):
+def resume_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs):
 	curses.endwin()
 	_retval = clear_screen()
 
@@ -9953,7 +9954,7 @@ def resume_resource_rollout(uip, items, action, values, kind, **kwargs):
 # Valid kinds:
 # ("Deployment", "apps")
 # pylint: disable=unused-argument
-def stop_resource_rescale(uip, items, action, values, kind, **kwargs):
+def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
 	curses.endwin()
 	_retval = clear_screen()
 
@@ -9979,12 +9980,12 @@ def stop_resource_rescale(uip, items, action, values, kind, **kwargs):
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
-def delete_logs(uip, items, action, values, kind, **kwargs):
+def delete_logs(uip: UIProps, items, action, values, kind, **kwargs):
 	for item in items:
 		ansible_delete_log(item)
 
 # pylint: disable=unused-argument
-def action_execute_command(uip, items, action, values, kind, **kwargs) -> None:
+def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs) -> None:
 	tmpargs = deep_get(values, DictPath("action_args#command"), [])
 	if len(tmpargs) == 0:
 		return
@@ -10028,7 +10029,7 @@ def action_execute_command(uip, items, action, values, kind, **kwargs) -> None:
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
-def command_hosts(uip, items, action, values, kind, **kwargs) -> None:
+def command_hosts(uip: UIProps, items, action, values, kind, **kwargs) -> None:
 	values.pop("_tagged_items", None)
 	msg = [ANSIThemeString("Executing playbook “", "action"),
 	       ANSIThemeString(action.get("description"), "argument"),
@@ -10087,12 +10088,12 @@ def command_hosts(uip, items, action, values, kind, **kwargs) -> None:
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
-def cordon_node(uip, items, action, values, kind, **kwargs):
+def cordon_node(uip: UIProps, items, action, values, kind, **kwargs):
 	for node in items:
 		kh.cordon_node(node)
 
 # pylint: disable=unused-argument
-def uncordon_node(uip, items, action, values, kind, **kwargs):
+def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs):
 	for node in items:
 		kh.uncordon_node(node)
 
@@ -10454,7 +10455,7 @@ def populate_playbooklist(context, actions, action_list, control_plane_selected,
 
 force_refresh_apis = False
 
-def format_selection_list(uip, refresh_apis = False):
+def format_selection_list(uip: UIProps, refresh_apis = False):
 	if force_refresh_apis == True:
 		refresh_apis = True
 
@@ -10565,7 +10566,7 @@ def format_selection_list(uip, refresh_apis = False):
 
 	return items
 
-def selectwindow(uip, refresh_apis = False):
+def selectwindow(uip: UIProps, refresh_apis = False) -> Retval:
 	# Ideally we want to return to the same selection
 	global defaultview # pylint: disable=global-statement
 
@@ -10596,11 +10597,11 @@ def selectwindow(uip, refresh_apis = False):
 
 	return Retval.NOMATCH
 
-def selectorloop(stdscr, view):
+def selectorloop(stdscr: curses.window, view: str) -> Retval:
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
-	windowheader = views[view].get("windowheader", view)
+	windowheader = deep_get(views, DictPath(f"{view}#windowheader"), view)
 
 	uip.init_window(field_list = field_list, windowheader = windowheader, sortcolumn = sortcolumn)
 
@@ -10671,7 +10672,7 @@ listviewactions = {
 infoviews = {} # type: ignore
 
 # These functions are used to check whether an API is available
-def is_cluster_reachable():
+def is_cluster_reachable() -> bool:
 	reachable = False
 
 	if kh is not None:
@@ -10845,7 +10846,7 @@ key_mappings = {
 	"f24": curses.KEY_F24,
 }
 
-def map_key(view_file, shortcut, activatedfun, key, modifier):
+def map_key(view_file: str, shortcut: str, activatedfun, key: str, modifier: str) -> Tuple[Union[int, List[int]], str]:
 	if len(modifier) > 0 and modifier not in ("ctrl", "shift"):
 		sys.exit(f"View-file {view_file} is invalid: unknown modifier {modifier}; valid modifiers are shift, ctrl; aborting")
 
@@ -11381,7 +11382,7 @@ def populate_views(force_refresh: bool = False) -> None:
 			has_infoview = True
 		kh_update_api_status((kind, api_family), listview = has_listview, infoview = has_infoview)
 
-def setupui(stdscr) -> None:
+def setupui(stdscr: curses.window) -> None:
 	# Hide the cursor
 	curses.curs_set(False)
 	# Disable CTRL+C, CTRL+Z, etc.
@@ -11413,6 +11414,10 @@ def setupui(stdscr) -> None:
 			sys.exit(errno.ENOENT)
 
 def list_namespaces() -> None:
+	"""
+	List all available namespaces
+	"""
+
 	tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
 	if status == 200:
 		iktprint([ANSIThemeString("Valid namespaces: ", "default")] +\
@@ -11427,6 +11432,10 @@ def list_namespaces() -> None:
 			  ANSIThemeString(status, "errorvalue")], stderr = True)
 
 def list_views() -> None:
+	"""
+	List available views and their supported fields and default sort column
+	"""
+
 	viewfields = []
 	maxviewlen = 0
 	maxkindlen = 0
@@ -11442,19 +11451,19 @@ def list_views() -> None:
 
 		fields = []
 		fieldset = set()
-		field_indexes_fields = []
-		for field_index in viewref["field_indexes"]:
-			field_indexes_fields += viewref["field_indexes"][field_index]
+		sortcolumn = ""
+		# This is necessary because of built-in fields
+		for values in deep_get(viewref, DictPath("field_indexes"), []).values():
+			fieldset.update(deep_get(values, DictPath("fields"), []))
+			if len(sortcolumn) == 0:
+				sortcolumn = deep_get(values, DictPath("sortcolumn"), "")
+		fieldset.union(set(deep_get(viewref, DictPath("fields"), {}).keys()))
 
-		for field in field_indexes_fields + list(viewref["fields"].keys()):
-			fieldname = field
-			if fieldname in fieldset:
-				continue
-			fieldset.add(fieldname)
-			if "sortcolumn" in viewref and viewref["sortcolumn"] == fieldname:
-				fields.append(ANSIThemeString(fieldname, "emphasis"))
-			elif "sortcolumn" not in viewref and fieldname == "name":
-				fields.append(ANSIThemeString(fieldname, "emphasis"))
+		for fieldname in fieldset:
+			if sortcolumn == "" and fieldname == "name":
+				fields.append(ANSIThemeString(f"[{fieldname}]", "note"))
+			elif fieldname == sortcolumn:
+				fields.append(ANSIThemeString(f"<{fieldname}>", "emphasis"))
 			else:
 				fields.append(ANSIThemeString(fieldname, "default"))
 		kind = viewref["kind"][0]
@@ -11497,15 +11506,35 @@ def list_views() -> None:
 		  ANSIThemeString("; it is NOT an exhaustive list", "default")])
 	iktprint([ANSIThemeString("of fields available in the resource.\n", "default")])
 
-	iktprint([ANSIThemeString("The highlighted field for each View is the default sortcolumn.", "default")])
+	iktprint([ANSIThemeString("If a field is marked ", "default"),
+		  ANSIThemeString("<field>", "emphasis"),
+		  ANSIThemeString(" it is the explicit sortcolumn.", "default")])
+	iktprint([ANSIThemeString("If the field is marked ", "default"),
+		  ANSIThemeString("[field]", "note"),
+		  ANSIThemeString(" it is the implicit sortcolumn.", "default")])
+	iktprint([ANSIThemeString("Note: the brackets (“<“, “>“, “[“, and “]“) are not part of the field names.", "default")])
 
-def usage() -> None:
+def usage() -> int:
+	"""
+	Display usage information
+		Returns:
+			0
+	"""
+
 	helptext = [ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname")]
 	helptext += helptexts.usage
 
 	iktprint(helptext)
 
+	return 0
+
 def version() -> int:
+	"""
+	Display version information
+		Returns:
+			0
+	"""
+
 	iktprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
 		  ANSIThemeString(f"{about.UI_PROGRAM_VERSION}", "version")])
 	iktprint([ANSIThemeString(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"),
@@ -11518,6 +11547,13 @@ def version() -> int:
 	return 0
 
 def set_default_view(view: str) -> None:
+	"""
+	Set the view to open when the program starts
+
+		Parameters:
+			view (str): The view to open
+	"""
+
 	global defaultview # pylint: disable=global-statement
 
 	if defaultview == "":
@@ -11533,7 +11569,16 @@ def set_default_view(view: str) -> None:
 			  ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-def checkforview(arg: str) -> Optional[str]:
+def checkforview(arg: Union[str, Tuple[str, str]]) -> Optional[str]:
+	"""
+	Check whether a view exists
+
+		Parameters:
+			arg (union(str, (str, str))): Either the name of a view or a (kind, api_family) tuple
+		Returns:
+			view (str): The key for the matching view, or None if no such view was found
+	"""
+
 	for view, viewref in views.items():
 		if isinstance(arg, str):
 			if arg in deep_get(viewref, DictPath("commandline"), []):
@@ -11545,6 +11590,10 @@ def checkforview(arg: str) -> Optional[str]:
 	return None
 
 def customise_listviews() -> None:
+	"""
+	Apply user-provided customisation to the list views
+	"""
+
 	for view in views:
 		viewref = views[view]
 		if "skip" in viewref:
