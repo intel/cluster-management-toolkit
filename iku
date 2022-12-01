@@ -701,9 +701,9 @@ def get_log_info(**kwargs: Dict) -> List[Type]:
 	kubelet_logs = []
 
 	logs = [
-		("Latest boot", "[dmesg]", ["-k", "-b"], "glog"),
-		("Latest 500 lines", "[kubelet]", ["--lines", "500", "-u", "kubelet"], "glog"),
-		("Latest 500 lines", "[containerd]", ["--lines", "500", "-u", "containerd"], "key_value"),
+		("Latest boot, last 1h", "[dmesg]", ["-k", "-b", "--since", "1 hour ago", "--lines", "10000"], "glog"),
+		("Latest 1000 lines", "[kubelet]", ["--lines", "1000", "-u", "kubelet"], "glog"),
+		("Latest 1000 lines", "[containerd]", ["--lines", "1000", "-u", "containerd"], "key_value"),
 	]
 
 	try:
