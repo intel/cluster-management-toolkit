@@ -537,18 +537,32 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 		violations_joined = ",".join(violation_strings)
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
 
-	# We have no default recourse if this write fails, so if the caller can handle the failure
-	# they have to capture the exception
-	try:
-		if permissions is None:
-			with open(path, write_mode, encoding = "utf-8") as f:
-				f.write(string)
-		else:
-			with open(path, write_mode, opener = partial(os.open, mode = permissions), encoding = "utf-8") as f:
-				f.write(string)
-	except FileExistsError as e:
-		if write_mode in ("x", "xb"):
-			raise FilePathAuditError("Violated rules: SecurityStatus.EXISTS", path = path) from e
+	if "b" in write_mode:
+		# We have no default recourse if this write fails, so if the caller can handle the failure
+		# they have to capture the exception
+		try:
+			if permissions is None:
+				with open(path, write_mode) as f:
+					f.write(string)
+			else:
+				with open(path, write_mode, opener = partial(os.open, mode = permissions)) as f:
+					f.write(string)
+		except FileExistsError as e:
+			if write_mode == "xb":
+				raise FilePathAuditError("Violated rules: SecurityStatus.EXISTS", path = path) from e
+	else:
+		# We have no default recourse if this write fails, so if the caller can handle the failure
+		# they have to capture the exception
+		try:
+			if permissions is None:
+				with open(path, write_mode, encoding = "utf-8") as f:
+					f.write(string)
+			else:
+				with open(path, write_mode, opener = partial(os.open, mode = permissions), encoding = "utf-8") as f:
+					f.write(string)
+		except FileExistsError as e:
+			if write_mode == "x":
+				raise FilePathAuditError("Violated rules: SecurityStatus.EXISTS", path = path) from e
 
 def secure_read(path: FilePath, checks = None, directory_is_symlink: bool = False, read_mode = "r") -> Union[str, bytes]:
 	"""
