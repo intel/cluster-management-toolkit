@@ -1,0 +1,11 @@
+- name: "cloud-controller-manager"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "cloud-controller-manager"
+  parser_rules:
+  - name: "glog"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Version: v"
+      loglevel: "notice"

@@ -4,6 +4,9 @@
   - container_name: "install-cni"
     container_type: "init_container"
     image_name: "/calico/cni"
+  - container_name: "install-cni"
+    container_type: "init_container"
+    image_name: "/rancher/hardened-calico"
   parser_rules:
   - name: "ts_8601"
   - name: "glog"
@@ -27,6 +30,9 @@
     overrides:
     - matchtype: "startswith"
       matchkey: "CNI plugin version:"
+      loglevel: "notice"
+    - matchtype: "contains"
+      matchkey: "cniVersion"
       loglevel: "notice"
 - name: "calico"
   matchkeys:
@@ -68,4 +74,10 @@
       loglevel: "notice"
     - matchtype: "regex"
       matchkey: 'Starting node .* with version'
+      loglevel: "notice"
+    - matchtype: "startswith"
+      matchkey: "Felix starting up"
+      loglevel: "notice"
+    - matchtype: "contains"
+      matchkey: "CalicoVersion"
       loglevel: "notice"
