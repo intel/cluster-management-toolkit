@@ -52,7 +52,7 @@ from ikttypes import ANSIThemeString, deep_get, deep_get_list, deep_get_with_fal
 from iktpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
 
-from iktio import execute_command, execute_command_with_response, secure_read_string, secure_which
+from iktio import execute_command, execute_command_with_response, secure_read_string, secure_which, secure_write_string
 from iktio_yaml import secure_read_yaml, secure_read_yaml_all
 
 import logparser as logparsers
@@ -6427,7 +6427,9 @@ cmdata_format = [
 	("kube-system", "antrea", "antrea-agent", "", "YAML"),
 	("kube-system", "antrea", "antrea-controller", "", "YAML"),
 	("kube-system", "antrea", "antrea-cni", "", "JSON"),
+	("kube-system", "", "cni_network_config", "", "JSON"),
 	("kube-system", "coredns", "Corefile", "", "CaddyFile"),
+	("kube-system", "rke2-coredns", "Corefile", "", "CaddyFile"),
 	("kube-system", "kubeadm-config", "", "", "YAML"),
 	("kube-system", "kubelet-config", "", "", "YAML"),
 	("kube-system", "kube-proxy", "", "config.conf", "YAML"),
@@ -6464,7 +6466,7 @@ def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
 		if "\n" not in data:
 			try:
 				decoded = base64.b64decode(data)
-				if base64.b64encode(decoded) == data:
+				if base64.b64encode(decoded) == bytes(data, encoding = "utf-8"):
 					uudata = True
 			except binascii.Error:
 				pass
@@ -6853,11 +6855,31 @@ def decode_and_view_file_templates(stdscr, **kwargs):
 
 # pylint: disable-next=unused-argument
 def export_data(stdscr, **kwargs):
-	if "selected" not in kwargs:
+	selected = deep_get(kwargs, "selected")
+	obj = deep_get(kwargs, "obj")
+
+	if selected is None and obj is None:
 		return
 
-	value = kwargs["selected"].value
-	filename = deep_get(kwargs, DictPath("result"))
+	extra_args = deep_get(kwargs, DictPath("_extra_args"), {})
+	base_path = deep_get(extra_args, DictPath("base_path"))
+	name_attr = deep_get(extra_args, DictPath("name_attr"), "value")
+
+	value = None
+	if selected is not None:
+		value = getattr(selected, name_attr)
+	if obj is not None:
+		if value is not None:
+			value = deep_get(obj, DictPath(f"{base_path}#{value}"))
+		else:
+			value = deep_get(obj, DictPath(f"{base_path}"))
+
+	raw_filename = deep_get(kwargs, DictPath("result"))
+	if "/" not in raw_filename:
+		filename = FilePath(str(Path.cwd().joinpath(raw_filename)))
+	else:
+		filename = FilePath(raw_filename)
+
 	vtype, value = decode_value(value)
 
 	if vtype.startswith("string"):
@@ -7392,6 +7414,8 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					fieldarray += field
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 
+		uip.update_window()
+
 		# Output listpad if we have one
 		if listpad is not None:
 			y = 0
@@ -7464,8 +7488,6 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					maxx = max(maxx, xpos)
 				yadd += i
 			uip.resize_logpad(-1, maxx)
-
-		uip.update_window()
 
 		uip.refresh_window()
 		uip.refresh_infopad()
@@ -7665,7 +7687,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					selected = uip.get_selected()
 					w_title = deep_get(value, DictPath("inputtitle"), "")
 					w_result = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, w_title)
-					if w_result is None or len(w_result) == 0 or w_title == "" or len(selected.value) == 0:
+					if w_result is None or len(w_result) == 0 or w_title == "":
 						continue
 					# This is necessary because we never go through the normal update cycle for the listpad and infopad
 					uip.refresh_infopad()
@@ -7738,7 +7760,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				action_args = deep_get(value, DictPath("action_args"), {})
 				if "_pass_obj" in action_args:
 					action_args["obj"] = obj
-				if "_pass_result" in action_args and selected is not None:
+				if "_pass_result" in action_args:
 					action_args["result"] = w_result
 				if "_pass_selected" in action_args and selected is not None:
 					action_args["selected"] = selected
@@ -8994,16 +9016,35 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 
 def listviewdispatch(stdscr, **kwargs):
 	obj = deep_get(kwargs, DictPath("obj"))
-	if obj is None:
+	selection = deep_get(kwargs, DictPath("selection"))
+	if obj is None and selection is None:
 		return Retval.RETURNDONE
 
+	kind = deep_get(kwargs, DictPath("kind"))
 	kind_path = deep_get(kwargs, DictPath("kind_path"))
-	kind = deep_get(obj, DictPath(kind_path))
-	api_family_path = deep_get(kwargs, DictPath("api_family_path"))
-	api_family = deep_get(obj, DictPath(api_family_path), "")
+	if kind_path is not None:
+		if isinstance(kind_path, str):
+			kind_path = [kind_path]
+			kind = deep_get_with_fallback(obj, kind_path)
+		elif isinstance(kind_path, int) and selection is not None and len(selection) > 0:
+			tmp = selection[kind_path]
+			if tmp is not None:
+				kind = themearray_to_string(tmp)
+	api_family = deep_get_with_fallback(kwargs, [DictPath("api_family"), DictPath("api_group")])
+	api_group_path = deep_get_with_fallback(kwargs, [DictPath("api_family_path"), DictPath("api_group_path")])
+	if api_group_path is not None:
+		if isinstance(api_group_path, str):
+			api_group_path = [api_group_path]
+			api_family = deep_get_with_fallback(obj, api_group_path)
+		else:
+			tmp = selection[api_group_path]
+			if tmp is not None:
+				api_family = themearray_to_string(tmp)
 
 	if kind is None:
 		return Retval.RETURNDONE
+	if api_family is None:
+		api_family = ""
 
 	view = checkforview((kind, api_family))
 

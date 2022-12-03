@@ -23,3 +23,26 @@ infoview:
         header: [["Checksum:", ["main", "infoheader"]]]
         path: "spec#checksum"
         type: "str"
+  shortcuts:
+    "List GVKs":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "List GVKs"
+      widget: "windowwidget"
+      title: "GVKs:"
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#gvks"
+        fields:
+        - "Kind"
+        - "Group"
+        - "Version"
+      # Not supported for now
+      sortcolumn: "kind"
+      action: "call"
+      action_call: "listviewdispatch"
+      action_args:
+        kind_path: 0
+        api_group_path: 1

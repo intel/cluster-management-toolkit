@@ -50,3 +50,22 @@ infoview:
         header: "Type:"
         path: "type"
         type: "str"
+  shortcuts:
+    "Export":
+      key: "e"
+      modifier: "shift"
+      read_only: false
+      helptext: "Decode and export selected configmap to a file"
+      widget: "inputbox"
+      inputtitle: "Export to file:"
+      confirm: "path_exists"
+      confirmtitle: "File already exists; overwrite?:"
+      action: "call"
+      action_call: "export_data"
+      action_args:
+        _pass_result: true
+        _pass_selected: true
+        _pass_obj: true
+        _extra_args:
+          base_path: "data"
+          name_attr: "data"

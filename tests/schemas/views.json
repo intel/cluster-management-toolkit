@@ -1505,7 +1505,8 @@
 									"description": "The function to use to get an object to pass to the infogetter",
 									"enum": [
 										"objgetter_ansible_facts",
-										"objgetter_ansible_log"
+										"objgetter_ansible_log",
+										"objgetter_journalctl_log"
 									]
 								},
 								"name_path": {
@@ -1682,6 +1683,7 @@
 							"description": "The function to use to get the content for the logpad",
 							"enum": [
 								"logpad_msg_getter",
+								"get_journalctl_log",
 								"get_task_log",
 								"get_themearrays"
 							]
@@ -1762,6 +1764,10 @@
 														]
 													},
 													"minItems": 1
+												},
+												"_extra_args": {
+													"description": "Extra arguments to pass to calls",
+													"type": "object"
 												},
 												"file_path": {
 													"description": "Path to a file template",

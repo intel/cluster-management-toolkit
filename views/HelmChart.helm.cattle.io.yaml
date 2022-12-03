@@ -2,9 +2,109 @@ kind: "HelmChart"
 api_family: "helm.cattle.io"
 default_command: "helmcharts"
 listview:
-  name: "Helmcharts"
+  name: "Helm Charts"
   group: "API & Extendability"
   field_indexes:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Helm Chart Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields:
+        - "bootstrap"
+        - "job_name"
+        - "global_header"
+        - "system_default_registry"
+        - "cattle_system_default_registry"
+        - "cluster_cidr"
+        - "cluster_cidr_v4"
+        - "cluster_cidr_v6"
+        - "cluster_dns"
+        - "cluster_domain"
+        - "rke2_data_dir"
+        - "service_cidr"
+    rows:
+      bootstrap:
+        header: [["Bootstrap:", ["main", "infoheader"]]]
+        path: "spec#bootstrap"
+        type: "bool"
+      cattle_system_default_registry:
+        header: [["  Cattle System Default Registry:", ["main", "infoheader"]]]
+        path: "spec#set#global.cattle.systemDefaultRegistry"
+        type: "str"
+      cluster_cidr:
+        header: [["  Cluster CIDR:", ["main", "infoheader"]]]
+        path: "spec#set#global.clusterCIDR"
+        type: "str"
+        formatter: "address"
+      cluster_cidr_v4:
+        header: [["  Cluster CIDR IPv4:", ["main", "infoheader"]]]
+        path: "spec#set#global.clusterCIDRv4"
+        type: "str"
+        formatter: "address"
+      cluster_cidr_v6:
+        header: [["  Cluster CIDR IPv6:", ["main", "infoheader"]]]
+        path: "spec#set#global.clusterCIDRv6"
+        type: "str"
+        formatter: "address"
+      cluster_dns:
+        header: [["  Cluster DNS:", ["main", "infoheader"]]]
+        path: "spec#set#global.clusterDNS"
+        type: "str"
+        formatter: "address"
+      cluster_domain:
+        header: [["  Cluster Domain:", ["main", "infoheader"]]]
+        path: "spec#set#global.clusterDomain"
+        type: "str"
+      global_header:
+        header: [["Global:", ["main", "infoheader"]]]
+      job_name:
+        header: [["J", ["main", "infoheader_shortcut"]], ["ob Name:", ["main", "infoheader"]]]
+        path: "status#jobName"
+        type: "str"
+      rke2_data_dir:
+        header: [["  RKE2 Data Dir:", ["main", "infoheader"]]]
+        path: "spec#set#global.rke2DataDir"
+        type: "str"
+      service_cidr:
+        header: [["  Service CIDR:", ["main", "infoheader"]]]
+        path: "spec#set#global.serviceCIDR"
+        type: "str"
+        formatter: "address"
+      system_default_registry:
+        header: [["  System Default Registry:", ["main", "infoheader"]]]
+        path: "spec#set#global.systemDefaultRegistry"
+        type: "str"
+  shortcuts:
+    "Open Job":
+      key: "j"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Job"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "status#jobName"
+        namespace_path: "metadata#namespace"
+        kind: "Job"
+        api_family: "batch"
+    "Export":
+      key: "e"
+      modifier: "shift"
+      read_only: false
+      helptext: "Decode and export HelmChart content"
+      widget: "inputbox"
+      inputtitle: "Export to file:"
+      confirm: "path_exists"
+      confirmtitle: "File already exists; overwrite?:"
+      action: "call"
+      action_call: "export_data"
+      action_args:
+        _pass_result: true
+        _pass_obj: true
+        _extra_args:
+          base_path: "spec#chartContent"
