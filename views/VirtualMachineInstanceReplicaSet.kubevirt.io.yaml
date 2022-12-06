@@ -1,0 +1,68 @@
+kind: "VirtualMachineInstanceReplicaSet"
+api_family: "kubevirt.io"
+default_command: "virtualmachineinstancereplicasets"
+command:
+- "kvvmirss"
+- "kvvmirs"
+listview:
+  name: "Virtual Machine Instance Replica Sets"
+  group: "Virtualization"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "desired_replicas", "ready_replicas", "current_replicas", "age"]
+      sortcolumn: "namespace"
+  fields:
+    current_replicas:
+      header: "Current:"
+      paths:
+      - path: ["status#replicas", "spec#replicas"]
+        pathtype: "comparison"
+        default: [0, 0]
+      align: "right"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_not_ok"
+    desired_replicas:
+      header: "Desired:"
+      path: "spec#replicas"
+      default: 0
+      type: "int"
+      align: "right"
+      formatting:
+        field_colors:
+        - type: "numerical"
+    ready_replicas:
+      header: "Ready:"
+      paths:
+      - path: ["status#readyReplicas", "status#replicas"]
+        pathtype: "comparison"
+        default: [0, 0]
+      align: "right"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - min: -1
+            max: 0
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_not_ok"
