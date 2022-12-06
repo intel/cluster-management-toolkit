@@ -2975,6 +2975,10 @@ class KubernetesHelper:
 						ca_cert = tmp1
 						age = newage
 
+		if ca_cert == "":
+			ref = self.get_ref_by_kind_name_namespace(("ConfigMap", ""), "kube-root-ca.crt", "kube-public")
+			ca_cert = deep_get(ref, DictPath("data#ca.crt"), "")
+
 		# we have the CA cert; now to extract the public key and hash it
 		if ca_cert != "":
 			x509obj = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, ca_cert) # type: ignore
