@@ -2526,14 +2526,14 @@ def show_configuration() -> None:
 	iktprint([ANSIThemeString("\n[Summary]", "phase")])
 	iktprint([ANSIThemeString("\n• ", "separator"),
 		  ANSIThemeString("Configuration:", "action")])
-	iktprint([ANSIThemeString("        cluster name: ", "action"),
+	iktprint([ANSIThemeString("        Cluster Name: ", "action"),
 		  ANSIThemeString(f"{cluster_name}", "hostname")])
-	iktprint([ANSIThemeString("        distribution: ", "action"),
+	iktprint([ANSIThemeString("        Distribution: ", "action"),
 		  ANSIThemeString(f"{distro}", "programname")])
-	iktprint([ANSIThemeString("   installed version: ", "action"),
+	iktprint([ANSIThemeString("   Installed Version: ", "action"),
 		  __format_none(version, "version")])
 	if requested_version is not None and requested_version != "<none>":
-		iktprint([ANSIThemeString("   requested version: ", "action"),
+		iktprint([ANSIThemeString("   Requested Version: ", "action"),
 			  __format_none(requested_version, "version")])
 	if cni is not None and cni != "<none>":
 		iktprint([ANSIThemeString("                 CNI: ", "action"),
@@ -2570,9 +2570,9 @@ def show_configuration() -> None:
 		  ANSIThemeString(" (Environment)", "default")])
 	if len(controlplanes) > 0:
 		iktprint([ANSIThemeString("\n• ", "separator"),
-			  ANSIThemeString("Control plane(s):", "action")])
+			  ANSIThemeString("Control Plane(s):", "action")])
 		for controlplane in controlplanes:
-			iktprint([ANSIThemeString("            hostname: ", "action"),
+			iktprint([ANSIThemeString("            Hostname: ", "action"),
 				  ANSIThemeString(f"{controlplane[0]} ", "emphasis"),
 				  ANSIThemeString("(", "default"),
 				  ANSIThemeString(f"{controlplane[1]}", "emphasis"),
