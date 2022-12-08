@@ -329,7 +329,16 @@ infoview:
       helptext: "Open a shell inside virtual machine"
       widget: "command"
       widget_args:
-        command: ["virtctl", "console", ["metadata#name"]]
+        command: ["virtctl", "console", "-n", ["metadata#namespace"], ["metadata#name"]]
+        _pass_obj: true
+    "SSH to VM":
+      key: "s"
+      modifier: "shift"
+      read_only: false
+      helptext: "SSH to VM"
+      widget: "command"
+      widget_args:
+        command: ["virtctl", "ssh", "--local-ssh", "--local-ssh-opts", "-o StrictHostKeyChecking=no", "-n", ["metadata#namespace"], ["metadata#name"]]
         _pass_obj: true
     "Show interfaces":
       key: "i"
