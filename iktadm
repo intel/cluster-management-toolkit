@@ -147,7 +147,7 @@ upgrade_control_plane_targets: Dict = {
 		"deb_packages_held": [
 			"kubectl",
 		],
-        },
+	},
 }
 
 teardown_control_plane_targets: Dict = {
@@ -3324,7 +3324,7 @@ def untaint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 				iktprint([ANSIThemeString("Untainting control plane(s):", "header")])
 				first = False
 			iktprint([ANSIThemeString(node["name"], "hostname")])
-			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/control-plane", None,  None, None))
+			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/control-plane", None, None, None))
 			if status == 304:
 				iktprint([ANSIThemeString("  Not modified", "none")])
 			elif status == 200:
