@@ -1080,6 +1080,8 @@ def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]],
 
 	for item in themearray_flatten(array):
 		string, attr = themestring_to_cursestuple(item)
+		# If there still are remaining <NUL> occurences, replace them
+		string = string.replace("\x00", "<NUL>")
 		try:
 			win.addstr(y, x, string, attr)
 		except curses.error:
@@ -2513,6 +2515,8 @@ class UIProps:
 
 		for item in themearray_flatten(array):
 			string, attr = themestring_to_cursestuple(item)
+			# If there still are remaining <NUL> occurences, replace them
+			string = string.replace("\x00", "<NUL>")
 
 			maxy, maxx = win.getmaxyx()
 			cury, curx = win.getyx()
