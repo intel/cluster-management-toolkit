@@ -2152,6 +2152,103 @@ def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 	return message, remnants
 
 # pylint: disable-next=unused-argument
+def diff_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dict] = None) ->\
+				Tuple[List, Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+	timestamp = none_timestamp()
+	facility = ""
+	severity = LogLevel.INFO
+	message, _timestamp = split_iso_timestamp(message, none_timestamp())
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+	matched = True
+
+	# If no block end is defined we continue until EOF
+	block_end = deep_get(options, DictPath("block_end"))
+
+	format_block_end = False
+	process_block_end = True
+
+	for _be in block_end:
+		matchtype = deep_get(_be, DictPath("matchtype"))
+		matchkey = deep_get(_be, DictPath("matchkey"))
+		format_block_end = deep_get(_be, DictPath("format_block_end"), False)
+		process_block_end = deep_get(_be, DictPath("process_block_end"), True)
+		if matchtype == "empty":
+			if len(message.strip()) == 0:
+				matched = False
+		elif matchtype == "exact":
+			if message == matchkey:
+				matched = False
+		elif matchtype == "startswith":
+			if message.startswith(matchkey):
+				matched = False
+		elif matchtype == "regex":
+			tmp = matchkey.match(message)
+			if tmp is not None:
+				matched = False
+
+	if matched == True:
+		remnants = formatters.format_diff_line(message, override_formatting = {})
+		processor = ["block", diff_line_scanner, options]
+	else:
+		if process_block_end == True:
+			if format_block_end == True:
+				remnants = formatters.format_diff_line(message, override_formatting = {})
+			else:
+				remnants = [ThemeString(message, ThemeAttr("logview", "severity_info"))]
+			processor = ["end_block", None]
+		else:
+			processor = ["end_block_not_processed", None]
+
+	return processor, (timestamp, facility, severity, remnants)
+
+# pylint: disable-next=unused-argument
+def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel.INFO, options: Optional[Dict] = None) ->\
+			Tuple[Union[str, List], Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+	if options is None:
+		options = {}
+
+	remnants: Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = []
+	response: Union[str, List] = []
+	matched = False
+
+	block_start = deep_get(options, DictPath("block_start"), [{
+		"matchtype": "regex",
+		"matchkey": re.compile(r"\S+?: \S.*|\S+?:$"),
+		"matchline": "any",
+		"format_block_start": False,
+	}])
+	line = deep_get(options, DictPath("__line"), 0)
+	if deep_get(options, DictPath("eof")) is None:
+		options["eof"] = "end_block"
+
+	for _bs in block_start:
+		matchtype = _bs["matchtype"]
+		matchkey = _bs["matchkey"]
+		matchline = _bs["matchline"]
+		format_block_start = deep_get(_bs, DictPath("format_block_start"), False)
+		if matchline == "any" or matchline == "first" and line == 0:
+			if matchtype == "exact":
+				if message == matchkey:
+					matched = True
+			elif matchtype == "startswith":
+				if message.startswith(matchkey):
+					matched = True
+			elif matchtype == "regex":
+				tmp = matchkey.match(message)
+				if tmp is not None:
+					matched = True
+
+	if matched == True:
+		if format_block_start == True:
+			remnants = formatters.format_diff_line(message, override_formatting = {})
+		else:
+			remnants = message
+		response = ["start_block", diff_line_scanner, options]
+		return response, remnants
+
+	return message, remnants
+
+# pylint: disable-next=unused-argument
 def custom_splitter(message: str, severity: Optional[LogLevel] = None, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 			Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], Optional[LogLevel], str]:
 	assert options is not None
@@ -2322,6 +2419,9 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 			elif _filter[0] == "yaml_line":
 				_parser_options = {**_filter[1], **options}
 				message, remnants = yaml_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
+			elif _filter[0] == "diff_line":
+				_parser_options = {**_filter[1], **options}
+				message, remnants = diff_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 
@@ -2447,6 +2547,7 @@ def init_parser_list() -> bool:
 								 "ts_8601"):
 							rules.append(rule_name)
 						elif rule_name in ("custom_splitter",
+								   "diff_line",
 								   "http",
 								   "iptables",
 								   "json",

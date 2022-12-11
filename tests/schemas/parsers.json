@@ -251,6 +251,79 @@
 							"properties": {
 								"name": {
 									"enum": [
+										"diff_line"
+									]
+								},
+								"options": {
+									"type": "object",
+									"properties": {
+										"block_start": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"matchtype": {
+														"enum": [
+															"exact",
+															"regex",
+															"startswith"
+														]
+													},
+													"matchkey": {
+														"type": "string"
+													},
+													"matchline": {
+														"enum": [
+															"any",
+															"first"
+														]
+													},
+													"format_block_start": {
+														"type": "boolean"
+													}
+												},
+												"additionalProperties": false
+											},
+											"minItems": 1
+										},
+										"block_end": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"matchtype": {
+														"enum": [
+															"empty",
+															"exact",
+															"regex",
+															"startswith"
+														]
+													},
+													"matchkey": {
+														"type": "string"
+													},
+													"format_block_end": {
+														"type": "boolean"
+													},
+													"process_block_end": {
+														"type": "boolean"
+													}
+												},
+												"additionalProperties": false
+											},
+											"minItems": 1
+										}
+									},
+									"additionalProperties": false
+								}
+							},
+							"requiredProperties": [ "name" ],
+							"additionalProperties": false
+						}, {
+							"type": "object",
+							"properties": {
+								"name": {
+									"enum": [
 										"http"
 									]
 								},
