@@ -5,6 +5,15 @@
     container_name: "cluster-version-operator"
   parser_rules:
   - name: "glog"
+  - name: "diff_line"
+    options:
+      block_start:
+      - matchtype: "startswith"
+        matchkey: "Updating "
+        matchline: "any"
+      block_end:
+      - matchtype: "startswith"
+        matchkey: "  }"
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"

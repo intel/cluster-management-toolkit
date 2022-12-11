@@ -39,6 +39,7 @@
       message:
         field: 3
   - name: "glog"
+  - name: "expand_event"
   - name: "json"
     options:
       versions:
@@ -62,6 +63,9 @@
     - matchtype: "startswith"
       matchkey: "trace["
       loglevel: "debug"
+    - matchtype: "startswith"
+      matchkey: "http: TLS handshake error"
+      loglevel: "error"
   - name: "custom_splitter"
     options:
       regex: '^([A-Z]+): \d{4}/\d\d/\d\d \d\d:\d\d:\d\d \[([^]]+)] (.*)'
