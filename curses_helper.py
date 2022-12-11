@@ -300,19 +300,19 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 
 	if not isinstance(attr, str):
 		IKTLog(IKTLogType.DEBUG, [
-				[ANSIThemeString(f"Invalid color attribute used in theme; attribute has to be a string and one of:", "default")],
+				[ANSIThemeString("Invalid color attribute used in theme; attribute has to be a string and one of:", "default")],
 				[ANSIThemeString("“", "default"),
 				 ANSIThemeString("normal", "emphasis"),
 				 ANSIThemeString("“, “", "default"),
 				 ANSIThemeString("bright", "emphasis"),
 				 ANSIThemeString("“.", "default")],
-				[ANSIThemeString(f"Using “", "default"),
+				[ANSIThemeString("Using “", "default"),
 				 ANSIThemeString("normal", "emphasis"),
 				 ANSIThemeString("“ as fallback.", "default")],
 		       ], severity = LogLevel.ERR, facility = str(themefile))
 	elif attr not in ["normal", "bright"]:
 		IKTLog(IKTLogType.DEBUG, [
-				[ANSIThemeString(f"Invalid color attribute “", "default"),
+				[ANSIThemeString("Invalid color attribute “", "default"),
 				 ANSIThemeString(f"{attr}", "emphasis"),
 				 ANSIThemeString("“ used in theme; attribute has to be a string and one of:", "default")],
 				[ANSIThemeString("“", "default"),
@@ -320,7 +320,7 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 				 ANSIThemeString("“, “", "default"),
 				 ANSIThemeString("bright", "emphasis"),
 				 ANSIThemeString("“.", "default")],
-				[ANSIThemeString(f"Using “", "default"),
+				[ANSIThemeString("Using “", "default"),
 				 ANSIThemeString("normal", "emphasis"),
 				 ANSIThemeString("“ as fallback.", "default")],
 		       ], severity = LogLevel.ERR, facility = str(themefile))
@@ -1158,13 +1158,13 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 				 ANSIThemeString(", ", "default"),
 				 ANSIThemeString(f"{key}", "emphasis"),
 				 ANSIThemeString(") in theme.", "default")],
-				[ANSIThemeString(f"Using (", "default"),
+				[ANSIThemeString("Using (", "default"),
 				 ANSIThemeString("main", "emphasis"),
 				 ANSIThemeString(", ", "default"),
 				 ANSIThemeString("default", "emphasis"),
 				 ANSIThemeString(") as fallback.", "default")],
 		       ], severity = LogLevel.ERR, facility = str(themefile))
-		tmp_attr = deep_get(theme, DictPath(f"main#default"))
+		tmp_attr = deep_get(theme, DictPath("main#default"))
 
 	if isinstance(tmp_attr, dict):
 		if selected == True:
@@ -1190,7 +1190,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 	for item in attr:
 		if not isinstance(item, str):
 			IKTLog(IKTLogType.DEBUG, [
-					[ANSIThemeString(f"Invalid text attribute used in theme; attribute has to be a string and one of:", "default")],
+					[ANSIThemeString("Invalid text attribute used in theme; attribute has to be a string and one of:", "default")],
 					[ANSIThemeString("“", "default"),
 					 ANSIThemeString("dim", "emphasis"),
 					 ANSIThemeString("“, “", "default"),
@@ -1200,7 +1200,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 					 ANSIThemeString("“, “", "default"),
 					 ANSIThemeString("underline", "emphasis"),
 					 ANSIThemeString("“.", "default")],
-					[ANSIThemeString(f"Using “", "default"),
+					[ANSIThemeString("Using “", "default"),
 					 ANSIThemeString("normal", "emphasis"),
 					 ANSIThemeString("“ as fallback.", "default")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
@@ -1214,7 +1214,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 			tmp |= curses.A_UNDERLINE
 		else:
 			IKTLog(IKTLogType.DEBUG, [
-					[ANSIThemeString(f"Invalid text attribute “", "default"),
+					[ANSIThemeString("Invalid text attribute “", "default"),
 					 ANSIThemeString(f"{item}", "emphasis"),
 					 ANSIThemeString("“ used in theme; attribute has to be one of:", "default")],
 					[ANSIThemeString("“", "default"),
@@ -1226,7 +1226,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 					 ANSIThemeString("“, “", "default"),
 					 ANSIThemeString("underline", "emphasis"),
 					 ANSIThemeString("“.", "default")],
-					[ANSIThemeString(f"Using “", "default"),
+					[ANSIThemeString("Using “", "default"),
 					 ANSIThemeString("normal", "emphasis"),
 					 ANSIThemeString("“ as fallback.", "default")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
