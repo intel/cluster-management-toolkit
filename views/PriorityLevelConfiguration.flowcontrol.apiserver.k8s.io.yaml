@@ -9,20 +9,21 @@ listview:
   group: "Scheduling & Scaling"
   field_indexes:
     Normal:
-      fields: ["name", "priority_type", "assured_concurrency_shares", "queues", "hand_size", "queue_length_limit", "age"]
+      fields: ["name", "priority_type", "nominal_concurrency_shares", "queues", "hand_size", "queue_length_limit", "age"]
   fields:
-    assured_concurrency_shares:
-      header: "Assured Concurrency Shares:"
-      path: "spec#limited#assuredConcurrencyShares"
+    hand_size:
+      header: "Hand Size:"
+      path: "spec#limited#limitResponse#queuing#handSize"
       type: "raw"
       align: "right"
       formatting:
         field_colors:
         - type: "numerical"
-    hand_size:
-      header: "Hand Size:"
-      path: "spec#limited#limitResponse#queuing#handSize"
-      type: "raw"
+    nominal_concurrency_shares:
+      header: "Nominal Concurrency Shares:"
+      paths:
+      - path: ["spec#limited#nominalConcurrencyShares", "spec#limited#assuredConcurrencyShares"]
+        pathtype: "int"
       align: "right"
       formatting:
         field_colors:
@@ -52,19 +53,20 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["priority_type", "assured_concurrency_shares", "queues", "hand_size", "queue_length_limit", "queues"]
+        fields: ["priority_type", "nominal_concurrency_shares", "queues", "hand_size", "queue_length_limit", "queues"]
     rows:
-      assured_concurrency_shares:
-        header: [["Assured Concurrency Shares:", ["main", "infoheader"]]]
-        path: "spec#limited#assuredConcurrencyShares"
-        type: "raw"
-        formatting:
-          field_colors:
-          - type: "numerical"
       hand_size:
         header: [["Hand Size:", ["main", "infoheader"]]]
         path: "spec#limited#limitResponse#queuing#handSize"
         type: "raw"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      nominal_concurrency_shares:
+        header: [["Nominal Concurrency Shares:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#limited#assuredConcurrencyShares"
+          pathtype: "int"
         formatting:
           field_colors:
           - type: "numerical"

@@ -207,12 +207,12 @@ kubernetes_resources: Dict[Any, Any] = {
 	},
 	# flowcontrol.apiserver.k8s.io
 	("FlowSchema", "flowcontrol.apiserver.k8s.io"): {
-		"api_family": ["apis/flowcontrol.apiserver.k8s.io/v1beta2/", "apis/flowcontrol.apiserver.k8s.io/v1beta1/"],
+		"api_family": ["apis/flowcontrol.apiserver.k8s.io/v1beta3/", "apis/flowcontrol.apiserver.k8s.io/v1beta2/", "apis/flowcontrol.apiserver.k8s.io/v1beta1/"],
 		"api": "flowschemas",
 		"namespaced": False,
 	},
 	("PriorityLevelConfiguration", "flowcontrol.apiserver.k8s.io"): {
-		"api_family": ["apis/flowcontrol.apiserver.k8s.io/v1beta2/", "apis/flowcontrol.apiserver.k8s.io/v1beta1/"],
+		"api_family": ["apis/flowcontrol.apiserver.k8s.io/v1beta3/", "apis/flowcontrol.apiserver.k8s.io/v1beta2/", "apis/flowcontrol.apiserver.k8s.io/v1beta1/"],
 		"api": "prioritylevelconfigurations",
 		"namespaced": False,
 	},
@@ -335,7 +335,7 @@ kubernetes_resources: Dict[Any, Any] = {
 		"namespaced": False,
 	},
 	("CSIStorageCapacity", "storage.k8s.io"): {
-		"api_family": ["apis/storage.k8s.io/v1beta1/"],
+		"api_family": ["apis/storage.k8s.io/v1/", "apis/storage.k8s.io/v1beta1/"],
 		"api": "csistoragecapacities",
 	},
 	("StorageClass", "storage.k8s.io"): {
