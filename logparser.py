@@ -813,6 +813,51 @@ def split_glog(message: str, severity: Optional[LogLevel] = None, facility: str 
 
 	return message, severity, facility, remnants, matched
 
+# 2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}
+# 2022-12-13T22:23:45.808Z\tINFO\tsetup\tstarting manager
+# Assumption: datetime\tSEVERITY\t{facility if lowercase, else message}[\tjson]
+def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True) -> Tuple[str, Optional[LogLevel], str]:
+	"""
+	Extract messages of the format datetime\tSEVERITY\t[facility\t]message[\tjson]
+
+		Parameters:
+			message (str): The message to reformat
+			severity (LogLevel): The current loglevel
+			facility (str): The current facility
+			fold_msg (bool): Should the message be expanded or folded?
+		Returns:
+			(message, severity, facility, remnants)
+	"""
+
+	remnants = []
+
+	fields = message.split("\t")
+	# If the first field isn't a timestamp we cannot trust the rest of the message to be what we hope for
+	if len(fields) < 4 or len(fields[0]) != 24:
+		return message, severity, facility, remnants
+
+	severity = str_to_severity(fields[1], severity)
+	message_index = 2
+	if fields[2][0].islower():
+		facility = fields[2]
+		message_index += 1
+
+	message = fields[message_index]
+	remnants_index = message_index + 1
+
+	if fold_msg == False and remnants_index < len(fields) and fields[remnants_index].startswith("{") and fields[remnants_index].endswith("}"):
+		try:
+			d = json.loads(fields[remnants_index])
+			json_strs = json_dumps(d)
+			for remnant in formatters.format_yaml(json_strs):
+				remnants.append((remnant, severity))
+		except DecodeException:
+			message = " ".join(fields[message_index:])
+	else:
+		message = " ".join(fields[message_index:])
+
+	return message, severity, facility, remnants
+
 # \tINFO\tcontrollers.Reaper\tstarting reconciliation\t{"reaper": "default/k8ssandra-cluster-a-reaper-k8ssandra"}
 def __split_severity_facility_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "") -> Tuple[str, Optional[LogLevel], str]:
 	# Safe
@@ -2325,6 +2370,8 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 			# Multiparsers
 			if _filter == "glog":
 				message, severity, facility, remnants, _match = split_glog(message, severity = severity, facility = facility)
+			elif _filter == "tab_separated":
+				message, severity, facility, remnants = tab_separated(message, severity = severity, facility = facility, fold_msg = fold_msg)
 			elif _filter == "spaced_severity_facility":
 				message, severity, facility = __split_severity_facility_style(message, severity = severity, facility = facility)
 			elif _filter == "directory":
@@ -2544,6 +2591,7 @@ def init_parser_list() -> bool:
 								 "spaced_severity_facility",
 								 "strip_ansicodes",
 								 "sysctl",
+								 "tab_separated",
 								 "ts_8601"):
 							rules.append(rule_name)
 						elif rule_name in ("custom_splitter",
