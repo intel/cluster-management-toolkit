@@ -3290,6 +3290,10 @@ class KubernetesHelper:
 			# Most likely a update events were requested (using resourceVersion), but it's been too long since the previous request;
 			# caller should retry without &resourceVersion=xxxxx
 			pass
+		elif status == 415:
+			# Unsupported Media Type
+			# The server refused to accept the request because the payload was in an unsupported format; check Content-Type, Content-Encoding, and the data itself.
+			raise Exception(f"415: Unsupported Media Type; this is probably a programming error; method: {method}, URL: {url}; header_params: {header_params}")
 		elif status == 422:
 			# Unprocessable entity
 			# The content and syntax is correct, but the request cannot be processed
@@ -3361,13 +3365,17 @@ class KubernetesHelper:
 
 		return message, status
 
-	def __rest_helper_patch(self, kind: Tuple[str, str], name: str, namespace: str = "", body = None) -> Tuple[str, int]:
+	def __rest_helper_patch(self, kind: Tuple[str, str], name: str, namespace: str = "", strategic_merge = True, subresource = "", body = None) -> Tuple[str, int]:
 		method = "PATCH"
 
 		header_params = {
-			"Content-Type": "application/strategic-merge-patch+json",
 			"User-Agent": f"{self.programname} v{self.programversion}",
 		}
+
+		if strategic_merge == True:
+			header_params["Content-Type"] = "application/strategic-merge-patch+json"
+		else:
+			header_params["Content-Type"] = "application/merge-patch+json"
 
 		if body is None or len(body) == 0:
 			raise Exception("__rest_helper_patch called with empty body; this is most likely a programming error")
@@ -3375,6 +3383,10 @@ class KubernetesHelper:
 		namespace_part = ""
 		if namespace is not None and namespace != "":
 			namespace_part = f"namespaces/{namespace}/"
+
+		subresource_part = ""
+		if subresource is not None and subresource != "":
+			subresource_part = f"/{subresource}"
 
 		if kind is None:
 			raise Exception("__rest_helper_patch called with kind None")
@@ -3402,7 +3414,7 @@ class KubernetesHelper:
 
 		# Try the newest API first and iterate backwards
 		for i in range(0, len(api_family)):
-			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}"
+			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_family[i]}{namespace_part}{api}{name}{subresource_part}"
 			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
 			if status in (200, 204, 42503):
 				break
@@ -3694,6 +3706,10 @@ a				the return value from __rest_helper_patch
 		}
 		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_patch(kind, node, body = body)
+
+	def patch_obj_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, patch: Dict, subresource: str = "", strategic_merge = True) -> Tuple[str, int]:
+		body = json.dumps(patch).encode("utf-8")
+		return self.__rest_helper_patch(kind, name, namespace, body = body, subresource = subresource, strategic_merge = strategic_merge)
 
 	def delete_obj_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, force: bool = False) -> Tuple[str, int]:
 		"""
