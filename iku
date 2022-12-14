@@ -7640,9 +7640,10 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					w_title = deep_get(value, DictPath("title"), "")
 					w_headers = deep_get(value, DictPath("headers"))
 					w_itemgetter = deep_get(value, DictPath("itemgetter"))
-					if w_itemgetter is not None:
-						if type(w_itemgetter) == str:
-							w_itemgetter = deep_get(itemgetter_allowlist, DictPath(w_itemgetter))
+					if w_itemgetter is None:
+						continue
+					if type(w_itemgetter) == str:
+						w_itemgetter = deep_get(itemgetter_allowlist, DictPath(w_itemgetter))
 					w_itemgetter_args = deep_get(value, DictPath("itemgetter_args"), {})
 					w_selectable = deep_get(value, DictPath("selectable"), False)
 					w_kind = deep_get(value, DictPath("kind"), view)
@@ -7755,7 +7756,18 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			if "action" in value:
 				selected = uip.get_selected()
 				action = deep_get(value, DictPath("action"), "")
-				action_args = deep_get(value, DictPath("action_args"), {})
+				if action == "from_ref":
+					ref = tmpselection
+					action = deep_get(ref, DictPath("action"))
+					action_call = deep_get(ref, DictPath("action_call"))
+					_action_call = deep_get(action_call_allowlist, DictPath(action_call))
+					if _action_call is None:
+						sys.exit(f"{action_call} is not in the action_call allow list")
+					action_call = _action_call
+					action_args = deep_get(ref, DictPath("action_args"), {})
+				else:
+					action_call = deep_get(value, DictPath("action_call"))
+					action_args = deep_get(value, DictPath("action_args"), {})
 				if "_pass_obj" in action_args:
 					action_args["obj"] = obj
 				if "_pass_result" in action_args:
@@ -7785,7 +7797,6 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 				if tmpselection is not None:
 					action_args["selection"] = tmpselection
-				action_call = deep_get(value, DictPath("action_call"))
 				if action == "call" and action_call is not None:
 					retval = action_call(uip.stdscr, **action_args)
 					if retval is not None and retval == Retval.RETURNFULL:
@@ -9055,6 +9066,16 @@ def listviewdispatch(stdscr, **kwargs):
 
 	return Retval.RETURNDONE
 
+def patch_object(stdscr, **kwargs):
+	kind = deep_get(kwargs, DictPath("kind"))
+	name = deep_get(kwargs, DictPath("name"))
+	namespace = deep_get(kwargs, DictPath("namespace"))
+	patch = deep_get(kwargs, DictPath("args#patch"))
+	subresource = deep_get(kwargs, DictPath("args#subresource"), "")
+	_message, _status = kh.patch_obj_by_kind_name_namespace(kind, name, namespace, patch, subresource = subresource, strategic_merge = False)
+
+	return Retval.RETURNDONE
+
 # This dispatches to info views; as soon as one is added this function will
 # dispatch to that view.
 def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
@@ -9223,7 +9244,7 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 			# This is needed since CiliumID, for instance, is an integer
 			name = str(name)
 
-	if kind is None:
+	if kind is None or isinstance(kind, tuple) and kind[0] is None:
 		return None
 
 	if name is None or len(name) == 0:
@@ -9867,7 +9888,7 @@ def edit_resource(stdscr, **kwargs) -> None:
 				  ANSIThemeString(": ", "default")] +\
 				 format_commandline(args, implicit_command = False) +\
 				 [ANSIThemeString(" returned ", "default"),
-				  ANSIThemeString(retval, "errorvalue")], stderr = True)
+				  ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
 		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
@@ -10730,6 +10751,7 @@ action_call_allowlist = {
 	"eventdispatch": eventdispatch,
 	"export_data": export_data,
 	"listviewdispatch": listviewdispatch,
+	"patch_object": patch_object,
 	"resourceinfodispatch_from_pod_resource_list": resourceinfodispatch_from_pod_resource_list,
 	"resourceinfodispatch_with_lookup": resourceinfodispatch_with_lookup,
 	"set_cluster_context": set_cluster_context,
