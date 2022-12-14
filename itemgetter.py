@@ -513,6 +513,17 @@ def get_list_as_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 
 # pylint: disable-next=unused-argument
 def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Any]:
+	"""
+	Get the specified fields from a dict list in list format
+
+		Parameters:
+			kh (KubernetesHelper): Unused
+			obj (dict): The object to get data from
+			kwargs (dict): Additional parameters
+		Returns:
+			list[dict]: A list of data
+	"""
+
 	vlist: List[Any] = []
 
 	if "path" in kwargs and "fields" in kwargs:
@@ -611,6 +622,47 @@ def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 					affinities.append((atype, f"{scheduling}{weight}", execution, selectors, topology))
 
 	return affinities
+
+# pylint: disable-next=unused-argument
+def get_prepopulated_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple]:
+	items = deep_get(kwargs, "items", [])
+
+	vlist = []
+
+	for item in items:
+		action = deep_get(item, "action")
+		action_call = deep_get(item, "action_call")
+		action_args = deep_get(item, "action_args", {})
+		kind = deep_get(action_args, "kind")
+		kind_path = deep_get(action_args, "kind_path")
+		kind = deep_get(obj, kind_path, kind)
+		api_family = deep_get(action_args, "api_family", "")
+		api_family_path = deep_get(action_args, "api_family_path")
+		api_family = deep_get(obj, DictPath(api_family_path), api_family)
+		kind = deep_get(obj, kind_path, kind)
+		name_path = deep_get(action_args, "name_path")
+		name = deep_get(obj, DictPath(name_path))
+		namespace_path = deep_get(action_args, "namespace_path")
+		namespace = deep_get(obj, DictPath(namespace_path), "")
+		kind = kh.guess_kind((kind, api_family))
+		columns = deep_get(item, DictPath("columns"), [])
+		args = deep_get(action_args, DictPath("args"), {})
+
+		vlist.append({
+			"fields": columns,
+			"ref": {
+				"action": action,
+				"action_call": action_call,
+				"action_args": {
+					"kind": kind,
+					"name": name,
+					"namespace": namespace,
+					"args": args,
+				},
+			},
+		})
+
+	return vlist
 
 # pylint: disable-next=unused-argument
 def get_pod_tolerations(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str, str, str, str]]:
@@ -846,6 +898,7 @@ itemgetter_allowlist = {
 	"get_package_version_list": get_package_version_list,
 	"get_pod_affinity": get_pod_affinity,
 	"get_pod_tolerations": get_pod_tolerations,
+	"get_prepopulated_list": get_prepopulated_list,
 	"get_resource_list": get_resource_list,
 	"get_resources": get_resources,
 	"get_strings_from_string": get_strings_from_string,
