@@ -136,9 +136,12 @@ infoview:
         type: "str"
         formatter: "address"
       gateway_node:
-        header: [["Gateway Node:", ["main", "infoheader"]]]
+        header: [["Gateway No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e:", ["main", "infoheader"]]]
         path: "spec#gatewayNode"
         type: "str"
+        formatting:
+          field_colors:
+          - type: "host"
       gateway_type:
         header: [["Gateway Type:", ["main", "infoheader"]]]
         path: "spec#gatewayType"
@@ -196,6 +199,16 @@ infoview:
           field_separators:
           - type: "fraction"
   shortcuts:
+    "Open gateway Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for gateway Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        name_path: "spec#gatewayNode"
     "Open VPC Info":
       key: "v"
       modifier: "shift"

@@ -33,6 +33,9 @@ listview:
       header: "Node Name:"
       path: "status#nodeName"
       type: "str"
+      formatting:
+        field_colors:
+        - type: "host"
     phase:
       header: "Phase:"
       path: "status#phase"
@@ -149,9 +152,12 @@ infoview:
             eq: "LiveMigratable"
         type: "str"
       node_name:
-        header: [["Node Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
         path: "status#nodeName"
         type: "str"
+        formatting:
+          field_colors:
+          - type: "host"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -322,6 +328,16 @@ infoview:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        name_path: "status#nodeName"
     "Open shell in VM":
       key: "o"
       modifier: "ctrl"

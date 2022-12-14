@@ -8,7 +8,7 @@ listview:
   group: "Antrea"
   field_indexes:
     Normal:
-      fields: ["name", "healthy", "last_heartbeat", "version", "node", "subnets", "age"]
+      fields: ["name", "healthy", "last_heartbeat", "version", "node_name", "subnets", "age"]
   fields:
     healthy:
       header: "Healthy:"
@@ -46,10 +46,13 @@ listview:
           eq: "AgentHealthy"
         type: "timestamp"
       formatter: "timestamp"
-    node:
+    node_name:
       header: "Node:"
       path: "nodeRef#name"
       type: "str"
+      formatting:
+        field_colors:
+        - type: "host"
     subnets:
       header: "Subnets:"
       path: "nodeSubnets"
@@ -67,12 +70,15 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["node", "pod", "node_subnets", "version"]
+        fields: ["node_name", "pod", "node_subnets", "version"]
     rows:
-      node:
-        header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]
+      node_name:
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
         path: "nodeRef#name"
         type: "str"
+        formatting:
+          field_colors:
+          - type: "host"
       node_subnets:
         header: [["Node Subnets:", ["main", "infoheader"]]]
         path: "nodeSubnets"
@@ -110,8 +116,7 @@ infoview:
         title: "Network Policy Controller Info"
         path: "networkPolicyControllerInfo"
     "Node":
-      key: "n"
-      modifier: "shift"
+      key: "d"
       read_only: true
       helptext: "Open info page for Node"
       action: "call"

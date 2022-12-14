@@ -12,7 +12,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cidr", "deleted", "node", "state"]
+        fields: ["cidr", "deleted", "node_name", "state"]
     rows:
       cidr:
         header: [["CIDR:", ["main", "infoheader"]]]
@@ -24,8 +24,8 @@ infoview:
         path: "spec#deleted"
         default: "False"
         type: "str"
-      node:
-        header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]
+      node_name:
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
         path: "spec#node"
         type: "str"
         formatting:
@@ -37,8 +37,7 @@ infoview:
         type: "str"
   shortcuts:
     "Open node":
-      key: "n"
-      modifier: "shift"
+      key: "d"
       read_only: true
       helptext: "Open info page for Node"
       action: "call"

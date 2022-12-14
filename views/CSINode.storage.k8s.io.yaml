@@ -21,10 +21,10 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["node"]
+        fields: ["node_name"]
     rows:
-      node:
-        header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]
+      node_name:
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
           pathtype: "items"
@@ -73,8 +73,7 @@ infoview:
         formatter: "list"
   shortcuts:
     "Open Node":
-      key: "n"
-      modifier: "shift"
+      key: "d"
       read_only: true
       helptext: "Open info page for Node"
       action: "call"
