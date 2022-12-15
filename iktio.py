@@ -16,11 +16,6 @@ from subprocess import PIPE, STDOUT
 import sys
 from typing import cast, Dict, List, Optional, Set, Union
 
-try:
-	from natsort import natsorted
-except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
-
 from ikttypes import ANSIThemeString, FilePath, HostNameStatus, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from iktpaths import HOMEDIR
 
@@ -39,7 +34,7 @@ def join_securitystatus_set(separator: str, securitystatuses: Set[SecurityStatus
 
 	securitystatus_str = ""
 
-	for securitystatus in natsorted(securitystatuses):
+	for securitystatus in sorted(securitystatuses):
 		if len(securitystatus_str) > 0:
 			securitystatus_str += separator
 		securitystatus_str += str(securitystatus)
