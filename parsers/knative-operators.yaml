@@ -1,0 +1,14 @@
+- name: "knative-operators"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "knative-operator"
+    container_name: "knative-operator"
+  - pod_name: "storage-version-migration-serving-serving"
+    container_name: "migrate"
+  parser_rules:
+  - name: "glog"
+  - name: "ts_8601"
+  - name: "json"
+    options:
+      severities:
+      - "severity"
