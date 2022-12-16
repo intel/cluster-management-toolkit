@@ -167,6 +167,16 @@ def ansible_get_inventory_dict() -> Dict:
 		return {}
 
 	d = secure_read_yaml(ANSIBLE_INVENTORY)
+	if d.get("all") is None:
+		d["all"] = {
+			"hosts": {},
+			"vars": {}
+		}
+	else:
+		if d["all"].get("hosts") is None:
+			d["all"]["hosts"] = {}
+		if d["all"].get("vars") is None:
+			d["all"]["vars"] = {}
 
 	return d
 
