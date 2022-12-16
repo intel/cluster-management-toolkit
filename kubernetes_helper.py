@@ -1577,6 +1577,7 @@ kubernetes_resources: Dict[Any, Any] = {
 	("ClusterDomainClaim", "networking.internal.knative.dev"): {
 		"api_family": ["apis/networking.internal.knative.dev/v1alpha1/"],
 		"api": "clusterdomainclaims",
+		"namespaced": False,
 	},
 	("Ingress", "networking.internal.knative.dev"): {
 		"api_family": ["apis/networking.internal.knative.dev/v1alpha1/"],
@@ -1796,6 +1797,15 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api_family": ["apis/operators.coreos.com/v1alpha1/"],
 		"api": "subscriptions",
 	},
+	# operator.knative.dev
+	("KnativeEventing", "operator.knative.dev"): {
+		"api_family": ["apis/operator.knative.dev/v1beta1/"],
+		"api": "knativeeventings",
+	},
+	("KnativeServing", "operator.knative.dev"): {
+		"api_family": ["apis/operator.knative.dev/v1beta1/"],
+		"api": "knativeservings",
+	},
 	# operator.tigera.io
 	("APIServer", "operator.tigera.io"): {
 		"api_family": ["apis/operator.tigera.io/v1/"],
@@ -1996,19 +2006,19 @@ kubernetes_resources: Dict[Any, Any] = {
 	},
 	# sources.knative.dev
 	("ApiServerSource", "sources.knative.dev"): {
-		"api_family": ["apis/sources.knative.dev/v1beta1/"],
+		"api_family": ["apis/sources.knative.dev/v1/", "apis/sources.knative.dev/v1beta1/"],
 		"api": "apiserversources",
 	},
 	("ContainerSource", "sources.knative.dev"): {
-		"api_family": ["apis/sources.knative.dev/v1beta1/"],
+		"api_family": ["apis/sources.knative.dev/v1/", "apis/sources.knative.dev/v1beta1/"],
 		"api": "containersources",
 	},
 	("PingSource", "sources.knative.dev"): {
-		"api_family": ["apis/sources.knative.dev/v1beta1/"],
+		"api_family": ["apis/sources.knative.dev/v1/", "apis/sources.knative.dev/v1beta1/"],
 		"api": "pingsources",
 	},
 	("SinkBinding", "sources.knative.dev"): {
-		"api_family": ["apis/sources.knative.dev/v1beta1/"],
+		"api_family": ["apis/sources.knative.dev/v1/", "apis/sources.knative.dev/v1beta1/"],
 		"api": "sinkbindings",
 	},
 	# specs.smi-spec.io
