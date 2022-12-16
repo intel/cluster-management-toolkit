@@ -11082,7 +11082,7 @@ def populate_views(force_refresh: bool = False) -> None:
 
 			if name in views:
 				conflicting_kind = deep_get(views, DictPath(f"{name}#kind"))
-				sys.exit(f"Error when processing view-vile {view_file} for kind: {(kind, api_family)}; a view named {name} already exists (for the kind: {conflicting_kind})")
+				sys.exit(f"Error when processing view-file {view_file} for kind: {(kind, api_family)}; a view named {name} already exists (for the kind: {conflicting_kind})")
 
 			# This complexity is required because if the key is missing we want to use the default,
 			# but if the key is explicitly None we don't want any fallback
