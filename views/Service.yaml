@@ -75,7 +75,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["selector", "endpoints", "endpoint_slices", "type", "cluster_ips", "internal_traffic_policy", "ip_families", "ip_family_policy", "external_ips", "ports", "topology_keys", "session_affinity"]
+        fields: ["external_name", "selector", "endpoints", "endpoint_slices", "type", "cluster_ips", "internal_traffic_policy", "ip_families", "ip_family_policy", "external_ips", "ports", "topology_keys", "session_affinity"]
     rows:
       cluster_ips:
         header: [["Cluster IPs:", ["main", "infoheader"]]]
@@ -118,6 +118,11 @@ infoview:
         type: "raw"
         default: "<none>"
         formatter: "address"
+      external_name:
+        header: [["External Name:", ["main", "infoheader"]]]
+        path: "spec#externalName"
+        type: "str"
+        default: "<unset>"
       internal_traffic_policy:
         header: [["Internal Traffic Policy:", ["main", "infoheader"]]]
         path: "spec#internalTrafficPolicy"
@@ -193,6 +198,7 @@ infoview:
     listgetter_args:
       _kind: "Pod"
       _label_selector_path: "spec#selector"
+      _none_on_empty_selector: true
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch"

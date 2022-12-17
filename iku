@@ -2032,6 +2032,21 @@ def check_matchlist(item, matchlist):
 	exacts, prefixes, suffixes, ins = split_matchlist(matchlist, exacts = [], prefixes = [], suffixes = [], ins = [])
 	return check_matchlists(item, exacts = exacts, prefixes = prefixes, suffixes = suffixes, ins = ins)
 
+# pylint disable-next=unused-argument
+def listgetter_noop(obj: Dict, **kwargs: Dict) -> Tuple[Dict, str]:
+	"""
+	A noop listgetter that returns an empty list
+		Parameters:
+			obj (Dict): Unused
+			kwargs (Dict): Unused
+		Returns:
+			(match_list, retval):
+				match_list (list[dict]): An empty list
+				retval (str): Always "OK"
+	"""
+
+	return [], "OK"
+
 def listgetter_matchrules(obj: Dict, **kwargs: Dict) -> Tuple[Dict, str]:
 	"""
 	Extract match rules from an object
@@ -7262,6 +7277,8 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 						elif type(label_value) == list:
 							label_selectors[label_key] = deep_get_with_fallback(obj, label_value)
 					listgetter_args["label_selector"] = make_selector(label_selectors)
+				if len(deep_get(listgetter_args, DictPath("label_selector"), "")) == 0 and deep_get(listgetter_args, DictPath("_none_on_empty_selector"), False):
+					listgetter = listgetter_noop
 				_field_selector = deep_get(listgetter_args, DictPath("_field_selector"), {})
 				if len(_field_selector) > 0:
 					field_selectors = {}
@@ -10832,6 +10849,7 @@ listgetter_allowlist = {
 	"listgetter_join_lists": listgetter_join_lists,
 	"listgetter_matchrules": listgetter_matchrules,
 	"listgetter_namespaced_resources": listgetter_namespaced_resources,
+	"listgetter_noop": listgetter_noop,
 	"listgetter_path": listgetter_path,
 	"listgetter_policy_rules": listgetter_policy_rules,
 }
