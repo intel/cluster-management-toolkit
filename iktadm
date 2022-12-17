@@ -1313,7 +1313,11 @@ def __task_request_ansible_password(installation_info: Optional[Dict]) -> None:
 	if deep_get(ansible_configuration, DictPath("ansible_password")) is None and no_password == False:
 		iktprint([ANSIThemeString("Attention", "warning"),
 			  ANSIThemeString(": To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
-		iktprint([ANSIThemeString("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
+		iktprint([ANSIThemeString("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.\n", "default")])
+		iktprint([ANSIThemeString("Note", "note"),
+			  ANSIThemeString(": If the remote host is already configured for passwordless sudo and allows for login using a pre-generated SSH-key you can use “", "default"),
+			  ANSIThemeString("--no-password", "option"),
+			  ANSIThemeString("“ to bypass this check.", "default")])
 		ansible_password = iktinput_password([ANSIThemeString("\nPassword: ", "default")])
 		if len(ansible_password) == 0:
 			iktprint([ANSIThemeString("\nError", "error"),
@@ -3478,7 +3482,6 @@ preflight_checks = [
 	}
 ]
 
-# pylint: disable-next=unused-argument
 def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Run preflight checks before creating a new cluster
@@ -3487,6 +3490,14 @@ def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): Options to use when executing this action
 	"""
+
+	global no_password # pylint: disable=global-statement
+
+	for opt, _optarg in options:
+		if opt == "-Y":
+			confirm = False
+		elif opt == "--no-password":
+			no_password = True
 
 	control_planes = [args[0]]
 
@@ -4048,6 +4059,11 @@ COMMANDLINE = {
 		"command": ["preflight-check"],
 		"values": [ANSIThemeString("CONTROLPLANE", "argument")],
 		"description": [ANSIThemeString("Check for potential pitfalls that may prevent installation from succeeding", "description")],
+		"options": {
+			"--no-password": {
+				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you're checking are already configured for login using an SSH key", "description")],
+			},
+		},
 		"min_args": 1,
 		"max_args": 1,
 		"callback": preflight_check,
