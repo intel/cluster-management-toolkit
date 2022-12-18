@@ -530,11 +530,12 @@ def iptables(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString
 # ::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -
 # 10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"
 # 10.244.0.1 - - [29/Jan/2022:10:33:50 +0000] "GET /v0/healthz/ HTTP/1.1" 200 3 "http://10.244.0.123:8000/v0/healthz" "kube-probe/1.23"
+# [2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 200 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""
 # pylint: disable-next=unused-argument
 def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 			Tuple[Sequence[Union[ThemeRef, ThemeString]], LogLevel, str]:
 	"""
-	Format http log style messages
+	Format various http log style messages
 
 		Parameters:
 			message (str): The message to format
@@ -549,22 +550,24 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 
 	ipaddress = ""
 
-	# First match the IP-address; it's either IPv4 or IPv6
-	# DoS (And probably not entirely correct)
-	tmp = re.match(r"^(([a-f0-9:]+:+)+[a-f0-9.]+?[a-f0-9])( - - .*)", message)
-	if tmp is not None:
-		ipaddress = tmp[1]
-		message = message[len(ipaddress):]
-	else:
-		# This actually makes sure that the IPv4 address is valid
-		# Safe
-		tmp = re.match(r"^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
-			         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
-			         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
-			         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d))( - - .*)", message)
+	# If the message starts with a timestamp without a leading IP-address, skip this
+	if not message.startswith("["):
+		# First match the IP-address; it's either IPv4 or IPv6
+		# DoS (And probably not entirely correct)
+		tmp = re.match(r"^(([a-f0-9:]+:+)+[a-f0-9.]+?[a-f0-9])( - - .*)", message)
 		if tmp is not None:
 			ipaddress = tmp[1]
-			message = tmp[6]
+			message = message[len(ipaddress):]
+		else:
+			# This actually makes sure that the IPv4 address is valid
+			# Safe
+			tmp = re.match(r"^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
+				         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
+				         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
+				         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d))( - - .*)", message)
+			if tmp is not None:
+				ipaddress = tmp[1]
+				message = tmp[6]
 
 	# Short format
 	if len(ipaddress) > 0:
@@ -714,7 +717,7 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 
 			return new_message, severity, facility
 
-	# Alternate format
+	# Alternate formats
 	# DoS
 	tmp = re.match(r"^\|\s+(\d{3})\s+\|\s+([0-9.]+)([^ ]*)\s+\|\s+([^:]*):(\d+?)\s+\|\s+([A-Z]+)\s+(.*)", message)
 
@@ -750,7 +753,89 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 		]
 		return new_message, severity, facility
 
-	return [ThemeString(f"{ipaddress}", ThemeAttr("logview", "hostname")), ThemeString(f"{message}", ThemeAttr("logview", "severity_info"))], severity, facility
+	tmp = re.match(r"^\["
+		       r"(\d{4}-\d\d-\d\d)"
+		       r"T"
+		       r"(\d\d:\d\d:\d\d\.\d\d\d)Z"
+		       r"\] \""
+		       r"([A-Z]+)"
+		       r"\s"
+		       r"([^\s]+)"
+		       r"\s"
+		       r"([^\"]+)"
+		       r"\" "
+		       r"([\d]+)"
+		       r" ([^\s]+)"
+		       r" ([^\s]+)"
+		       r" ([^\s]+)"
+		       r" ([^\s]+)"
+		       r" ([^\s]+) "
+		       r"\"([^\"]+)\" "
+		       r"\"([^\"]+)\" "
+		       r"\"([^\"]+)\" "
+		       r"\"([^\"]+)\" "
+		       r"\"([^\"]+)\"", message)
+
+	if tmp is not None:
+		date = tmp[1]
+		hmsms = tmp[2]
+		
+		if reformat_timestamps is True:
+			ts = f"{date} {hmsms} +0000"
+		else:
+			ts = f"{date}T{hmsms}Z"
+
+		verb = tmp[3]
+		address1 = tmp[4]
+		protocol = tmp[5]
+		statuscode = tmp[6]
+		_statuscode = int(statuscode)
+		if 100 <= _statuscode < 300:
+			severity = LogLevel.NOTICE
+		elif 300 <= _statuscode < 400:
+			severity = LogLevel.WARNING
+		else:
+			severity = LogLevel.ERR
+		number0 = tmp[7]
+		number1 = tmp[8]
+		number2 = tmp[9]
+		number3 = tmp[10]
+		number4 = tmp[11]
+		client = tmp[12]
+		str0 = tmp[13]
+		str1 = tmp[14]
+		str2 = tmp[15]
+		str3 = tmp[16]
+
+		new_message = [
+			ThemeString(f"[{ts}] ", ThemeAttr("logview", "timestamp")),
+			ThemeString("\"", ThemeAttr("logview", "severity_info")),
+			ThemeString(f"{verb} ", ThemeAttr("logview", "protocol")),
+			ThemeString(address1, ThemeAttr("logview", "url")),
+			ThemeString(f" {protocol}", ThemeAttr("logview", "protocol")),
+			ThemeString("\" ", ThemeAttr("logview", "severity_info")),
+			ThemeString(statuscode, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+			ThemeString(f" {number0}", ThemeAttr("logview", "severity_info")),
+			ThemeString(f" {number1}", ThemeAttr("logview", "severity_info")),
+			ThemeString(f" {number2}", ThemeAttr("logview", "severity_info")),
+			ThemeString(f" {number3}", ThemeAttr("logview", "severity_info")),
+			ThemeString(f" {number4} \"", ThemeAttr("logview", "severity_info")),
+			ThemeString(f"{client}", ThemeAttr("logview", "url")),
+			ThemeString(f"\" \"", ThemeAttr("logview", "severity_info")),
+			ThemeString(str0, ThemeAttr("logview", "url")),
+			ThemeString(f"\" \"", ThemeAttr("logview", "severity_info")),
+			ThemeString(str1, ThemeAttr("logview", "url")),
+			ThemeString(f"\" \"", ThemeAttr("logview", "severity_info")),
+			ThemeString(str2, ThemeAttr("logview", "url")),
+			ThemeString(f"\" \"", ThemeAttr("logview", "severity_info")),
+			ThemeString(str3, ThemeAttr("logview", "url")),
+			ThemeString(f"\"", ThemeAttr("logview", "severity_info")),
+		]
+		return new_message, severity, facility
+
+	if severity is None:
+		severity = LogLevel.INFO
+	return [ThemeString(f"{ipaddress}", ThemeAttr("logview", "hostname")), ThemeString(f"{message}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity, facility
 
 # log messages of the format:
 # E0514 09:01:55.108028382       1 server_chttp2.cc:40]
