@@ -7,6 +7,7 @@ This file contains paths used by iKT
 
 import os
 from pathlib import Path, PurePath
+from typing import List
 
 from ikttypes import FilePath
 
@@ -63,6 +64,10 @@ KUBE_CONFIG_DIR = FilePath(os.path.join(HOMEDIR, ".kube"))
 KUBE_CONFIG_FILE = FilePath(os.path.join(KUBE_CONFIG_DIR, "config"))
 
 SSH_DIR = FilePath(os.path.join(HOMEDIR, ".ssh"))
+SSH_BIN_PATH = FilePath("/usr/bin/ssh")
+SSH_ARGS: List[str] = []
+SSH_KEYGEN_BIN_PATH = FilePath("/usr/bin/ssh-keygen")
+SSH_KEYGEN_ARGS = ["-t", "ecdsa", "-b", "521"]
 
 BASH_COMPLETION_BASE_DIR = FilePath(os.path.join(HOMEDIR, ".local/share/bash-completion"))
 BASH_COMPLETION_DIR = FilePath(os.path.join(HOMEDIR, ".local/share/bash-completion/completions"))

@@ -624,25 +624,25 @@ def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 	return affinities
 
 # pylint: disable-next=unused-argument
-def get_prepopulated_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple]:
-	items = deep_get(kwargs, "items", [])
+def get_prepopulated_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Dict]:
+	items = deep_get(kwargs, DictPath("items"), [])
 
-	vlist = []
+	vlist: List[Dict] = []
 
 	for item in items:
-		action = deep_get(item, "action")
-		action_call = deep_get(item, "action_call")
-		action_args = deep_get(item, "action_args", {})
-		kind = deep_get(action_args, "kind")
-		kind_path = deep_get(action_args, "kind_path")
-		kind = deep_get(obj, kind_path, kind)
-		api_family = deep_get(action_args, "api_family", "")
-		api_family_path = deep_get(action_args, "api_family_path")
+		action = deep_get(item, DictPath("action"))
+		action_call = deep_get(item, DictPath("action_call"))
+		action_args = deep_get(item, DictPath("action_args"), {})
+		kind = deep_get(action_args, DictPath("kind"))
+		kind_path = deep_get(action_args, DictPath("kind_path"))
+		kind = deep_get(obj, DictPath(kind_path), kind)
+		api_family = deep_get(action_args, DictPath("api_family"), "")
+		api_family_path = deep_get(action_args, DictPath("api_family_path"))
 		api_family = deep_get(obj, DictPath(api_family_path), api_family)
-		kind = deep_get(obj, kind_path, kind)
-		name_path = deep_get(action_args, "name_path")
+		kind = deep_get(obj, DictPath(kind_path), kind)
+		name_path = deep_get(action_args, DictPath("name_path"))
 		name = deep_get(obj, DictPath(name_path))
-		namespace_path = deep_get(action_args, "namespace_path")
+		namespace_path = deep_get(action_args, DictPath("namespace_path"))
 		namespace = deep_get(obj, DictPath(namespace_path), "")
 		kind = kh.guess_kind((kind, api_family))
 		columns = deep_get(item, DictPath("columns"), [])

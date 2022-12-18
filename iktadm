@@ -33,7 +33,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run ikt-install?")
 
 from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
-from iktpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR
+from iktpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR, SSH_KEYGEN_BIN_PATH, SSH_KEYGEN_ARGS
 from iktpaths import DEPLOYMENT_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE, IKT_INSTALLATION_INFO_FILE, KUBE_CONFIG_DIR, KUBE_CONFIG_FILE
@@ -883,7 +883,7 @@ def create_ssh_key() -> bool:
 	"""
 
 	if not os.path.exists(f"{HOMEDIR}/.ssh/id_ecdsa"):
-		args = ["/usr/bin/ssh-keygen", "-t", "ecdsa", "-b", "521", "-f", f"{HOMEDIR}/.ssh/id_ecdsa"]
+		args = [SSH_KEYGEN_BIN_PATH] + SSH_KEYGEN_ARGS + ["-f", f"{SSH_DIR}/id_ecdsa"]
 		retval = execute_command(args)
 	else:
 		retval = True

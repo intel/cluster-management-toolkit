@@ -159,7 +159,7 @@ def get_cluster_name() -> Optional[str]:
 
 	return cluster_name
 
-def get_control_planes() -> List[str]:
+def get_control_planes() -> List[Tuple[str, List[str]]]:
 	controlplanes = []
 
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel

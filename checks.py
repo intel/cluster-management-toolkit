@@ -16,17 +16,16 @@ from pathlib import Path, PurePath
 import re
 import sys
 from typing import Dict, Generator, List, Tuple, Union
-import yaml
 
-from ansible_helper import ansible_configuration, ansible_set_vars
-from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results, populate_playbooks_from_paths
+from ansible_helper import ansible_configuration
+from ansible_helper import ansible_run_playbook_on_selection, ansible_print_play_results
 
 from iktio import execute_command_with_response
 from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath
 from iktpaths import BINDIR, IKTDIR, IKT_LOGS_DIR
 from iktpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
 from iktpaths import DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
-from iktpaths import IKT_CONFIG_FILE, KUBE_CONFIG_FILE
+from iktpaths import IKT_CONFIG_FILE, KUBE_CONFIG_FILE, SSH_BIN_PATH
 import iktlib
 from iktlib import check_deb_versions
 from iktprint import ansithemestring_join_tuple_list, iktprint
@@ -190,7 +189,7 @@ def check_known_hosts_hashing(cluster_name: str, kubeconfig: Dict, iktconfig_dic
 		  ANSIThemeString(" known_hosts hashing is enabled]", "phase")])
 	iktprint([ANSIThemeString("  Note", "note"),
 		  ANSIThemeString(": this test is not 100% reliable since ssh settings can vary based on target host\n", "default")])
-	args = ["/usr/bin/ssh", "-G", "localhost"]
+	args = [SSH_BIN_PATH, "-G", "localhost"]
 	result = execute_command_with_response(args)
 
 	# Safe
@@ -617,7 +616,8 @@ recommended_directory_permissions = [
 				  ANSIThemeString(f"{IKT_LOGS_DIR}", "path"),
 				  ANSIThemeString(" they can cause ", "default"),
 				  ANSIThemeString("iku", "command"),
-				  ANSIThemeString(" to malfunction and possibly hide signs of a compromised cluster and may be able to obtain sensitive information from audit messages", "default")]
+				  ANSIThemeString(" to malfunction and possibly hide signs of a compromised cluster ", "default"),
+				  ANSIThemeString("and may be able to obtain sensitive information from audit messages", "default")]
 	},
 	{
 		"path": IKT_CONFIG_FILE_DIR,
@@ -1073,11 +1073,11 @@ def check_control_plane(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dic
 		"role": "control-plane",
 	}
 
-	retval, ansible_results = run_playbook(playbookpath, hosts = hosts, extra_values = extra_values)
+	_retval, ansible_results = run_playbook(playbookpath, hosts = hosts, extra_values = extra_values)
 
-	for host in ansible_results:
+	for host, host_results in ansible_results.items():
 		ansible_os_family = ""
-		for taskdata in ansible_results[host]:
+		for taskdata in host_results:
 			taskname = str(deep_get(taskdata, DictPath("task"), ""))
 
 			if taskname == "Gathering Facts":

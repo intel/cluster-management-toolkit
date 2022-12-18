@@ -50,7 +50,7 @@ except ModuleNotFoundError:
 
 from ikttypes import ANSIThemeString, deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
 from iktpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
-from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE
+from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE, SSH_BIN_PATH
 
 from iktio import execute_command, execute_command_with_response, secure_read_string, secure_which, secure_write_string
 from iktio_yaml import secure_read_yaml, secure_read_yaml_all
@@ -2149,8 +2149,8 @@ def get_journalctl_log(obj: Dict, **kwargs: Dict):
 	messages = []
 
 	show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
-	objlist = deep_get(obj, "obj")
-	parser = deep_get(objlist[0], "parser")
+	objlist = deep_get(obj, DictPath("obj"))
+	parser = deep_get(objlist[0], DictPath("parser"))
 
 	for line in objlist[1:]:
 		try:
@@ -2164,8 +2164,8 @@ def get_journalctl_log(obj: Dict, **kwargs: Dict):
 		remnants = None
 		msg = ""
 
-		raw_severity = int(deep_get(d, "PRIORITY", "6"))
-		raw_msg = deep_get(d, "MESSAGE", "")
+		raw_severity = int(deep_get(d, DictPath("PRIORITY"), "6"))
+		raw_msg = deep_get(d, DictPath("MESSAGE"), "")
 
 		if show_raw == True:
 			msg = raw_msg
@@ -9354,7 +9354,7 @@ def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Di
 	return retval
 
 def run_playbook(playbook: Dict, nodes: List[str], values: Optional[Dict] = None) -> Tuple[int, Dict]:
-	return __run_playbook(playbook.get("playbook"), nodes, values = values)
+	return __run_playbook(FilePath(cast(str, playbook.get("playbook"))), nodes, values = values)
 
 def view_obj(stdscr, **kwargs):
 	selection = deep_get(kwargs, DictPath("selection"))
@@ -10225,7 +10225,7 @@ def ssh_to_host(stdscr, **kwargs):
 	iktprint(msg)
 
 	try:
-		ssh_path = secure_which(FilePath("/usr/bin/ssh"), fallback_allowlist = [])
+		ssh_path = secure_which(SSH_BIN_PATH, fallback_allowlist = [])
 	except FileNotFoundError:
 		# Once we have support for logging we should probably just log an error
 		# and return here instead
@@ -10238,7 +10238,7 @@ def ssh_to_host(stdscr, **kwargs):
 
 	if sshuser is not None:
 		host = f"{sshuser}@{host}"
-	args = [ssh_path, host]
+	args = [ssh_path] + [SSH_ARGS] + [host]
 
 	subprocess.run(args, check = False)
 
