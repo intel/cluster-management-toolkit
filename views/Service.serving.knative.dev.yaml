@@ -1,0 +1,107 @@
+kind: "Service"
+api_family: "serving.knative.dev"
+default_command: "knservices"
+command:
+- "knservice"
+- "knsvcs"
+- "knsvc"
+listview:
+  name: "Services (KNative)"
+  group: "KNative"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "url", "latest_created", "latest_ready", "ready", "age"]
+      sortcolumn: "namespace"
+  fields:
+    latest_created:
+      header: "Latest Created:"
+      path: "status#latestCreatedRevisionName"
+      type: "str"
+    latest_ready:
+      header: "Latest Ready:"
+      path: "status#latestReadyRevisionName"
+      type: "str"
+    ready:
+      header: "Ready:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "status"
+        when:
+        - key: "type"
+          eq: "Ready"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+    url:
+      header: "URL:"
+      path: "status#address#url"
+      type: str
+infoview:
+  name: "Service Info (KNative)"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["url", "latest_created", "latest_ready", "ready"]
+    rows:
+      latest_created:
+        header: [["Latest Created:", ["main", "infoheader"]]]
+        path: "status#latestCreatedRevisionName"
+        type: "str"
+      latest_ready:
+        header: [["Latest Ready:", ["main", "infoheader"]]]
+        path: "status#latestReadyRevisionName"
+        type: "str"
+      ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+          - key: "type"
+            eq: "Ready"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      url:
+        header: [["URL:", ["main", "infoheader"]]]
+        path: "status#address#url"
+        type: str
+  shortcuts:
+    "Show traffic info":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show traffic info"
+      widget: "windowwidget"
+      headers: ["Revision Name:", "Percent:", "Latest:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#traffic"
+        fields:
+        - "revisionName"
+        - "percent"
+        - "latestRevision"
+      # This isn't supported for now
+      sortcolumn: "revision_name"
