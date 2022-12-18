@@ -43,6 +43,70 @@ def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
 	print(programauthors)
 	return 0
 
+def __sub_usage(command: str) -> int:
+	"""
+	Display usage information for a single command
+
+		Parameters:
+			command (str): The command to show help for
+		Returns:
+			0
+	"""
+
+	assert commandline is not None
+
+	headerstring = [ANSIThemeString(f"{programname}", "programname"),
+			ANSIThemeString(f" {command}", "command")]
+
+	commandinfo = {}
+
+	for key, value in commandline.items():
+		if command in deep_get(value, "command"):
+			commandinfo = value
+			break
+		
+	values = deep_get(commandinfo, DictPath("values"), [])
+	options = deep_get(commandinfo, DictPath("options"), [])
+	description = deep_get(commandinfo, DictPath("description"), [])
+	extended_description = deep_get(commandinfo, DictPath("extended_description"), [])
+
+	if len(options) > 0:
+		headerstring += [ANSIThemeString(" [", "separator"),
+				 ANSIThemeString("OPTION", "option"),
+				 ANSIThemeString("]", "separator"),
+				 ANSIThemeString("...", "option")]
+	if len(values) > 0:
+		headerstring += [ANSIThemeString(" ", "separator")] + values
+
+	iktprint(headerstring)
+	print()
+	iktprint(description)
+	print()
+	if len(extended_description) > 0:
+		for line in extended_description:
+			iktprint([ANSIThemeString("  ", "description")] + line)
+		print()
+
+	if len(options) > 0:
+		max_optionlen = 0
+		for option, optiondata in options.items():
+			optionlen = len(option) + 4 + themearray_len(deep_get(optiondata, DictPath("values"), ""))
+			max_optionlen = max(max_optionlen, optionlen)
+
+		iktprint([ANSIThemeString("Options:", "description")])
+		for option, optiondata in options.items():
+			optionline = [ANSIThemeString(f"  {option}", "option")]
+			values = deep_get(optiondata, DictPath("values"), [])
+			description = deep_get(optiondata, DictPath("description"), [])
+
+			if len(values) > 0:
+				optionline += [ANSIThemeString(f" ", "option")] + values
+			pad = " ".rjust(max_optionlen - themearray_len(optionline))
+			optionline += [ANSIThemeString(pad, "description")] + description
+			iktprint(optionline)
+
+	return 0
+
 # pylint: disable-next=unused-argument
 def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
@@ -303,6 +367,11 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 				continue
 		# OK, we have a command, time to check for options
 		elif argv[i].startswith("-"):
+			# All commands except [--]help and [--]version have their own help pages
+			if argv[i] == "--help" and commandname not in ("--help", "help", "--version", "version") and not commandname.startswith("__"):
+				__sub_usage(commandname)
+				sys.exit()
+
 			if len(args) > 0:
 				# I came here to have an argument, but this is an option!
 				iktprint([ANSIThemeString(f"{programname}", "programname"),

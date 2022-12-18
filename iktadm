@@ -3560,8 +3560,8 @@ COMMANDLINE = {
 		"description": [ANSIThemeString("Update the package cache and show software versions", "description")],
 		"extended_description": [
 			[ANSIThemeString("Note", "note"),
-			 ANSIThemeString(": some of the listed software might not be relevant", "description")],
-			[ANSIThemeString("to the configuration in use", "description")],
+			 ANSIThemeString(": some of the listed software may not be relevant", "description")],
+			[ANSIThemeString("to the configuration in use.", "description")],
 		],
 		"options": {
 			"--no-cache-update": {
@@ -3587,7 +3587,7 @@ COMMANDLINE = {
 			 ANSIThemeString("...", "argument"),
 			 ANSIThemeString(" is not specified all clusters in ", "description"),
 			 ANSIThemeString(f"{HOMEDIR}/.kube/config", "path")],
-			[ANSIThemeString(" will be imported", "description")],
+			[ANSIThemeString("will be imported.", "description")],
 		],
 		"options": {
 			"-Y": {
@@ -3610,7 +3610,7 @@ COMMANDLINE = {
 		"description": [ANSIThemeString("Install and configure pre-requisites; run this before ", "description"),
 				ANSIThemeString("setup-control-plane", "command")],
 		"extended_description": [
-			[ANSIThemeString("If no version is specified the newest available version will be used", "description")],
+			[ANSIThemeString("If no version is specified the newest available version will be used.", "description")],
 		],
 		"options": {
 			"--control-plane": {
@@ -3685,7 +3685,7 @@ COMMANDLINE = {
 					 ANSIThemeString(", ", "separator"),
 					],
 					[ANSIThemeString("manual", "argument"),
-					 ANSIThemeString(" (do not install a CRI; this requires you to manually install and configure the CRI)", "description"),
+					 ANSIThemeString(" (do not install a CRI; this requires you to manually install and configure the CRI).", "description"),
 					],
 					[ANSIThemeString("The default CRI is ", "description"),
 					 ANSIThemeString("dockershim", "argument"),
@@ -3698,7 +3698,8 @@ COMMANDLINE = {
 					 ANSIThemeString(" for ", "description"),
 					 ANSIThemeString("Kubernetes", "programname"),
 					 ANSIThemeString(" >= ", "description"),
-					 ANSIThemeString("1.24", "version")],
+					 ANSIThemeString("1.24", "version"),
+					 ANSIThemeString(".", "description")],
 				],
 				"requires_arg": True,
 			},
@@ -3742,7 +3743,7 @@ COMMANDLINE = {
 			 ANSIThemeString(" will be used as CNI", "description")],
 			[ANSIThemeString("and ", "description"),
 			 ANSIThemeString("10.244.0.0/16", "argument"),
-			 ANSIThemeString(" will be used as pod network CIDR", "description")],
+			 ANSIThemeString(" will be used as pod network CIDR.", "description")],
 		],
 		"options": {
 			"--resume": {
@@ -3801,7 +3802,7 @@ COMMANDLINE = {
 			 ANSIThemeString("calico", "argument"),
 			 ANSIThemeString(" and ", "description"),
 			 ANSIThemeString("cilium", "argument"),
-			 ANSIThemeString(" are supported)", "description")],
+			 ANSIThemeString(" are supported).", "description")],
 		],
 		"min_args": 0,
 		"max_args": 1,
@@ -3817,13 +3818,15 @@ COMMANDLINE = {
 			[ANSIThemeString("Upgrades the control plane to ", "description"),
 			 ANSIThemeString("KUBERNETES_VERSION", "argument"),
 			 ANSIThemeString(" if specified;", "description")],
-			[ANSIThemeString("if no version is specified the newest available version will be used", "description")],
-			[ANSIThemeString("Upgrading requires all nodes to be drained first. Once the control plane", "description")],
-			[ANSIThemeString("has been upgraded you must upgrade all nodes to the same version.", "description")],
+			[ANSIThemeString("if no version is specified the newest available version will be used.", "description")],
+			[ANSIThemeString("Upgrading requires all nodes to be drained first.  Once the control plane", "description")],
+			[ANSIThemeString("has been upgraded you ", "description"),
+			 ANSIThemeString("must", "emphasis"),
+			 ANSIThemeString(" upgrade all nodes to the same version.", "description")],
 			[ANSIThemeString("Important", "emphasis"),
 			 ANSIThemeString(": skipping PATCH REVISIONS is acceptable,", "description")],
 			[ANSIThemeString("but when upgrading to a newer MINOR version all intermediate MINOR versions", "description")],
-			[ANSIThemeString("must be installed first; this applies to nodes too", "description")],
+			[ANSIThemeString("must be installed first; this applies to nodes too.", "description")],
 		],
 		"options": {
 			"--no-cache-update": {
@@ -3884,7 +3887,7 @@ COMMANDLINE = {
 			[ANSIThemeString("Note", "emphasis"),
 			 ANSIThemeString(": Before running this command all nodes must have been removed first", "description")],
 			[ANSIThemeString("The configuration for the control plane and any software installed", "description")],
-			[ANSIThemeString("during installation will NOT be removed", "description")],
+			[ANSIThemeString("during installation will NOT be removed.", "description")],
 
 		],
 		"options": {
@@ -3937,10 +3940,10 @@ COMMANDLINE = {
 			[ANSIThemeString("purge-control-plane", "command"),
 			 ANSIThemeString(" will run ", "description"),
 			 ANSIThemeString("teardown-control-plane", "command"),
-			 ANSIThemeString(" first if necessary", "description")],
+			 ANSIThemeString(" first if necessary.", "description")],
 			[ANSIThemeString("Software and configuration needed for ", "description"),
 			 ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
-			 ANSIThemeString(" will not be purged", "description")],
+			 ANSIThemeString(" will not be purged.", "description")],
 		],
 		"options": {
 			"--resume": {
@@ -3995,12 +3998,12 @@ COMMANDLINE = {
 		"description": [ANSIThemeString("Mark control plane(s) as tainted", "description")],
 		"extended_description": [
 			[ANSIThemeString("If you have previously marked your control plane(s) as untainted", "description")],
-			[ANSIThemeString("you can mark them as tainted again using this command", "description")],
+			[ANSIThemeString("you can mark them as tainted again using this command.", "description")],
 			[ANSIThemeString("If ", "description"),
 			 ANSIThemeString("CONTROLPLANE", "argument"),
 			 ANSIThemeString(",", "separator"),
 			 ANSIThemeString("...", "argument"),
-			 ANSIThemeString(" is not specified all control planes will be tainted", "description")],
+			 ANSIThemeString(" is not specified all control planes will be tainted.", "description")],
 		],
 		"min_args": 0,
 		"max_args": 1,
