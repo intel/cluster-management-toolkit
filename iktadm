@@ -1191,7 +1191,7 @@ def run_playbook(playbookpath: FilePath, hosts = None, extra_values = None, quie
 			playbookpath (FilePath): A path to the playbook to run
 			hosts (list[str]): A list of hosts to run the playbook on
 			extra_values (dict): A dict of values to set before running the playbook
-			quiet (bool): Unused
+			quiet (bool): Should the results of the run be printed?
 		Returns:
 			retval (int): The return value from ansible_run_playbook_on_selection()
 			ansible_results (dict): A dict with the results from the run
@@ -1230,7 +1230,8 @@ def run_playbook(playbookpath: FilePath, hosts = None, extra_values = None, quie
 
 	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
 
-	ansible_print_play_results(retval, ansible_results)
+	if quiet == False:
+		ansible_print_play_results(retval, ansible_results)
 
 	return retval, ansible_results
 
@@ -2256,15 +2257,56 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 
 	run_tasks(tasks = prepare_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "prepared")
 
-	iktprint([ANSIThemeString("\n• ", "separator"),
-		  ANSIThemeString("Updating installation information", "action")])
-
 	# Adjust the kube* packages for the control plane(s) and localhost to match the requested cluster version if necessary;
 	# we couldn't do this before since the apt repository wasn't available then
 	if len(args) > 1:
 		requested_version = __find_requested_version(distro, args[1])
 	else:
 		requested_version = __find_requested_version(distro)
+
+	# We need one final sanity check; we cannot install Kubernetes >= 1.26 if containerd < 1.6
+	if cri == "containerd":
+		ansible_retval, ansible_results = run_playbook(FilePath(f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml"), hosts = controlplanes, quiet = True)
+		if ansible_retval != 0:
+			print()
+			iktprint([ANSIThemeString("Critical", "critical"),
+                                  ANSIThemeString(": failed to get package versions; aborting.", "default")], stderr = True)
+			update_installation_info(phase = "preparing")
+			sys.exit(errno.ENOENT)
+
+		for host, results in ansible_results.items():
+			for result in results:
+				if deep_get(result, DictPath("task"), "") != "package versions":
+					continue
+				data = deep_get(result, DictPath("msg_lines"), [])
+				containerd_version = ""
+				for package in data:
+					if package.startswith(("containerd:", "containerd.io:")):
+						containerd_version = package.split(" ")[1]
+						break
+				containerd_version_split = containerd_version.split(".")
+				requested_version_split = requested_version.split(".")
+
+				if int(containerd_version_split[0]) < 2 and int(containerd_version_split[1]) < 6 and int(requested_version_split[0]) >= 1 and int(requested_version_split[1]) >= 26:
+					print()
+					iktprint([ANSIThemeString("Critical", "critical"),
+						  ANSIThemeString(": containerd ", "programname"),
+						  ANSIThemeString("versions < ", "default"),
+						  ANSIThemeString("1.6", "version"),
+						  ANSIThemeString(" do not work with ", "default"),
+						  ANSIThemeString("Kubernetes", "programname"),
+						  ANSIThemeString(" >= ", "default"),
+						  ANSIThemeString("1.26", "version"),
+						  ANSIThemeString("; either use an older version of ", "default"),
+						  ANSIThemeString("Kubernetes", "programname"),
+						  ANSIThemeString(" or a newer version of ", "default"),
+						  ANSIThemeString("containerd", "programname"),
+						  ANSIThemeString("; aborting.", "default")], stderr = True)
+					update_installation_info(phase = "preparing")
+					sys.exit(errno.ENOTSUP)
+
+	iktprint([ANSIThemeString("\n• ", "separator"),
+		  ANSIThemeString("Updating installation information", "action")])
 
 	iktprint([ANSIThemeString("   Requested version: ", "action"),
 		  ANSIThemeString(requested_version, "version")])
