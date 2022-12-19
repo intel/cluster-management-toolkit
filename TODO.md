@@ -39,6 +39,8 @@ iktinv:
 * Optionally limit rebuild-inventory to a subset of clusters.
 
 iktadm:
+* Stop installation if containerd < 1.6 and kubernetes >= 1.26.
+* We might have to wait before running the install CNI step to ensure that the  cluster can accept requests.
 * Add command to import kube-config (requires cluster-name--unless unique) and a path.
 * Pass cluster_name to `kubeadm init` using ClusterConfiguration + clusterName.
 * prepare_passwordless_ansible won't work on localhost; we're not passing the password,
