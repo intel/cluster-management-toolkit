@@ -1794,13 +1794,14 @@ def __task_remove_kube_config(installation_info: Dict) -> None:
 			installation_info (dict): A dict with installation information
 	"""
 
+	if not Path(KUBE_CONFIG_DIR).is_dir():
+		check_and_print_status(True)
+		return
+
 	cluster_name = installation_info["installation_target"]
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 	d1 = None
-
-	if not Path(KUBE_CONFIG_DIR).is_dir():
-		check_and_print_status(True)
 
 	if os.path.exists(f"{HOMEDIR}/.kube/config.{cluster_name}"):
 		os.remove(f"{HOMEDIR}/.kube/config.{cluster_name}")
