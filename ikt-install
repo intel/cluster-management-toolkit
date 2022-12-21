@@ -152,7 +152,7 @@ def install_software_with_pip_fallback(packages, pip_proxy: str = "", verbose: b
 	"""
 	Batch install Debian packages with pip fallback
 	This function tries to install a Python module from a Debian package;
-	if that package doesn't exist it installs the pip version of the module instead
+	if that package does not exist it installs the pip version of the module instead
 
 		Parameters:
 			packages (list[(str, str)]): A list of packages to install (pkg, fallback)
@@ -358,7 +358,7 @@ def main() -> None:
 	Main function for the program
 	"""
 
-	# Before doing anything else, make sure that the user isn't running as root
+	# Before doing anything else, make sure that the user is not running as root
 	if os.geteuid() == 0:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 

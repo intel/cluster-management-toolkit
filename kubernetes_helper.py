@@ -2315,9 +2315,9 @@ def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]]
 			taints.append((key, effect))
 
 			# If status is already "worse" than OK,
-			# we don't override it.
+			# we do not override it.
 			# Scheduling being disabled is not an error,
-			# but it's worth highlighting
+			# but it is worth highlighting
 			if status_group == StatusGroup.OK:
 				status_group = StatusGroup.ADMIN
 		else:
@@ -2361,7 +2361,7 @@ def get_image_version(image: str, default: str = "<undefined>") -> str:
 	image_version = image_version.split("/")[-1]
 	image_version = image_version.split(":")[-1]
 
-	# If we didn't manage to do any splitting it means there wasn't a version; return default instead
+	# If we did not manage to do any splitting it means there was not a version; return default instead
 	if image_version == image:
 		image_version = default
 	return image_version
@@ -2380,7 +2380,7 @@ class KubernetesHelper:
 
 	def validate_name(self, rtype: str, name: str) -> bool:
 		"""
-		Given a name validate whether it's valid for the given type
+		Given a name validate whether it is valid for the given type
 
 			Parameters:
 				rtype (str): The resource type; valid types are:
@@ -2435,7 +2435,7 @@ class KubernetesHelper:
 			# Any name containing adjacent "-" is invalid
 			if "--" in name:
 				invalid = True
-			# As is any port-name that doesn't contain any character in [a-z]
+			# As is any port-name that does not contain any character in [a-z]
 			if portname_regex.match(name.lower()) is None:
 				invalid = True
 			# A portname can be at most 15 characters long
@@ -2577,14 +2577,14 @@ class KubernetesHelper:
 		current_context = deep_get(kubeconfig, DictPath("current-context"), "")
 
 		unchanged = True
-		# If we didn't get a context name we try current-context
+		# If we did not get a context name we try current-context
 		if name is None or len(name) == 0:
 			unchanged = False
 			name = current_context
 		name = str(name)
 
 		for context in deep_get(kubeconfig, DictPath("contexts"), []):
-			# If we still don't have a context name,
+			# If we still do not have a context name,
 			# pick the first match
 			if len(name) == 0 or deep_get(context, DictPath("name")) == name:
 				context_name = deep_get(context, DictPath("name"))
@@ -2656,7 +2656,7 @@ class KubernetesHelper:
 				self.token = deep_get(user, DictPath("user#token"))
 				break
 
-		# We don't have the cert or token needed to access the server
+		# We do not have the cert or token needed to access the server
 		if self.token is None and (cert is None or key is None):
 			return False
 
@@ -2667,7 +2667,7 @@ class KubernetesHelper:
 		# OK, we've got the cluster IP and port,
 		# as well as the certs we need; time to switch context
 
-		# If we're switching contexts we might have open files
+		# If we are switching contexts we might have open files
 		self.__close_certs()
 
 		self.control_plane_ip = control_plane_ip
@@ -2719,7 +2719,7 @@ class KubernetesHelper:
 		self.cluster_unreachable = False
 		self.context_name = context_name
 
-		# If we're switching contexts, update the config file
+		# If we are switching contexts, update the config file
 		if context_name != current_context:
 			kubeconfig["current-context"] = context_name
 
@@ -2746,7 +2746,7 @@ class KubernetesHelper:
 	def __identify_cni(self, cni_name: str, controller_kind: Tuple[str, str], controller_selector: str, container_name: str) -> List[Tuple[str, str, Tuple[str, StatusGroup, str]]]:
 		cni: List[Tuple[str, str, Tuple[str, StatusGroup, str]]] = []
 
-		# Is there a controller matching the kind we're looking for?
+		# Is there a controller matching the kind we are looking for?
 		vlist, _status = self.get_list_by_kind_namespace(controller_kind, "", field_selector = controller_selector)
 
 		if len(vlist) == 0:
@@ -2818,7 +2818,7 @@ class KubernetesHelper:
 
 		cni: List[Tuple[str, str, Tuple[str, StatusGroup, str]]] = []
 
-		# We're gonna have to do some sleuthing here
+		# We have to do some sleuthing here
 		# Antrea:
 		cni += self.__identify_cni("antrea", ("DaemonSet", "apps"), "metadata.name=antrea-agent", "antrea-agent")
 		# Canal:
@@ -3063,7 +3063,7 @@ class KubernetesHelper:
 					api_family (str): The API-family
 		"""
 
-		# If we already have a tuple, don't guess
+		# If we already have a tuple, do not guess
 		if isinstance(kind, tuple):
 			if kind in kubernetes_resources:
 				return kind
@@ -3071,7 +3071,7 @@ class KubernetesHelper:
 			if kind[0].startswith("__"):
 				return kind
 
-			# We have a tuple, but it didn't have an entry in kubernetes_resources;
+			# We have a tuple, but it did not have an entry in kubernetes_resources;
 			# it might be api + api_family instead though, but for that we need to scan
 			for resource_kind, resource_data in kubernetes_resources.items():
 				if deep_get(resource_data, DictPath("api")) == kind[0] and resource_kind[1] == kind[1]:
@@ -3085,17 +3085,17 @@ class KubernetesHelper:
 			if kind == _kind:
 				return str(_kind), str(_api_group)
 
-		raise NameError(f"Couldn't guess kubernetes resource for kind: {kind}")
+		raise NameError(f"Could not guess kubernetes resource for kind: {kind}")
 
 	# This returns a list of API families known by both kubernetes_helper and the API server
 	def get_available_api_families(self, force_refresh: bool = False) -> Tuple[Dict, int, bool]:
 		modified = False
 
-		# If the list isn't empty, but the cluster is unreachable, return it unchanged
+		# If the list is not empty, but the cluster is unreachable, return it unchanged
 		if self.cluster_unreachable == True:
 			return kubernetes_resources, 42503, modified
 
-		# It's fairly easy to check if the API-list is "fresh"; just check whether Pod is available
+		# It is fairly easy to check if the API-list is "fresh"; just check whether Pod is available
 		if force_refresh == False and deep_get(kubernetes_resources[("Pod", "")], DictPath("available"), False) == True:
 			return kubernetes_resources, 200, modified
 
@@ -3115,7 +3115,7 @@ class KubernetesHelper:
 				return kubernetes_resources, 42422, False
 		else:
 			self.cluster_unreachable = True
-			# We couldn't get the core APIs; there's no use continuing
+			# We could not get the core APIs; there is no use continuing
 			modified = True
 			return kubernetes_resources, status, modified
 
@@ -3165,7 +3165,7 @@ class KubernetesHelper:
 			for version in versions:
 				_version = deep_get(version, DictPath("groupVersion"))
 				if _version is None:
-					# This shouldn't happen, but ignore it
+					# This should not happen, but ignore it
 					continue
 				url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis/{_version}"
 				raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
@@ -3186,7 +3186,7 @@ class KubernetesHelper:
 					if len(kind) == 0:
 						continue
 					if (kind, name) in kubernetes_resources and f"apis/{_version}/" in kubernetes_resources[(kind, name)].get("api_family", ""):
-						# We're special casing this since the core API is deprecated and handled transparently
+						# We are special casing this since the core API is deprecated and handled transparently
 						if (kind, name) == ("Event", "events.k8s.io"):
 							continue
 						if (kind, name) in kubernetes_resources:
@@ -3253,7 +3253,7 @@ class KubernetesHelper:
 				result = self.pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
 			status = result.status
 		except urllib3.exceptions.MaxRetryError:
-			# No route to host doesn't have a HTTP response; make one up...
+			# No route to host does not have a HTTP response; make one up...
 			# 503 is Service Unavailable; this is generally temporary, but to distinguish it from a real 503
 			# we prefix it...
 			status = 42503
@@ -3297,7 +3297,7 @@ class KubernetesHelper:
 			raise Exception(f"406: Not Acceptable; this is probably a programming error; method: {method}, URL: {url}; header_params: {header_params}")
 		elif status == 410:
 			# Gone
-			# Most likely a update events were requested (using resourceVersion), but it's been too long since the previous request;
+			# Most likely a update events were requested (using resourceVersion), but it has been too long since the previous request;
 			# caller should retry without &resourceVersion=xxxxx
 			pass
 		elif status == 415:
@@ -3540,11 +3540,11 @@ class KubernetesHelper:
 				return d["items"], status
 
 			if status in (204, 400, 403, 503):
-				# We didn't get any data, but we might not want to fail
+				# We did not get any data, but we might not want to fail
 				continue
 
 			if status == 404:
-				# We didn't get any data, but we might not want to fail
+				# We did not get any data, but we might not want to fail
 
 				# page not found (API not available or possibly programming error)
 				# raise Exception(f"API not available; this is probably a programming error; URL {url}")
@@ -3558,7 +3558,7 @@ class KubernetesHelper:
 				# XXX: Should be handled when we implement support for update events
 
 				# Gone
-				# We requested update events (using resourceVersion), but it's been too long since the previous request;
+				# We requested update events (using resourceVersion), but it has been too long since the previous request;
 				# retry without &resourceVersion=xxxxx
 
 		# If name is not set this is a list request, so return an empty list instead of None
@@ -3620,7 +3620,7 @@ class KubernetesHelper:
 		modified = False
 
 		for taint in taints:
-			# If the taint isn't the one to modify we keep it
+			# If the taint is not the one to modify we keep it
 			if deep_get(taint, DictPath("key")) != key:
 				modified_taints.append(taint)
 				continue
@@ -3641,7 +3641,7 @@ class KubernetesHelper:
 			if _old_effect == new_effect:
 				if overwrite == False:
 					# We already have the right taint,
-					# and we don't want to overwrite it
+					# and we do not want to overwrite it
 					return "", 42304
 
 				tmp = {
@@ -3776,7 +3776,7 @@ a				the return value from __rest_helper_patch
 
 			Parameters:
 				kind (str, str): A kind, API-family tuple
-				namespace (str): The namespace of the resource (empty if the resource isn't namespaced)
+				namespace (str): The namespace of the resource (empty if the resource is not namespaced)
 				label_selector (str): A label selector
 				label_selector (str): A field selector
 			Returns:
@@ -3796,7 +3796,7 @@ a				the return value from __rest_helper_patch
 			Parameters:
 				kind (str, str): A kind, API-family tuple
 				name (str): The name of the resource
-				namespace (str): The namespace of the resource (empty if the resource isn't namespaced)
+				namespace (str): The namespace of the resource (empty if the resource is not namespaced)
 			Returns:
 				object (dict): An object dict
 		"""

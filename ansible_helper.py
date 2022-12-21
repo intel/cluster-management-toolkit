@@ -37,11 +37,11 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ansible_runner not available; try (re-)running ikt-install")
 
-# Exit if the ansible directory doesn't exist
+# Exit if the ansible directory does not exist
 if not Path(ANSIBLE_DIR).exists():
 	sys.exit(f"{ANSIBLE_DIR} not found; try (re-)running ikt-install")
 
-# Exit if the ansible log directory doesn't exist
+# Exit if the ansible log directory does not exist
 if not Path(ANSIBLE_LOG_DIR).exists():
 	sys.exit(f"{ANSIBLE_LOG_DIR} not found; try (re-)running ikt-install")
 
@@ -98,7 +98,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 		pathname = PurePath(playbookpath).name
 		playbook_dir = FilePath(str(PurePath(playbookpath).parent))
 
-		# Don't process backups, etc.
+		# Do not process backups, etc.
 		if pathname.startswith(("~", ".")):
 			continue
 
@@ -129,7 +129,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 			violations_joined = ",".join(violation_strings)
 			raise FilePathAuditError(f"Violated rules: {violations_joined}", path = playbook_dir)
 
-		# We don't want to check that parent resolves to itself,
+		# We do not want to check that parent resolves to itself,
 		# because when we have an installation with links directly to the git repo
 		# the playbooks directory will be a symlink
 		checks = [
@@ -211,7 +211,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 			if item is not None:
 				tmp[group] = item
 
-	# OK, now we have a dict with only the groups we're interested in;
+	# OK, now we have a dict with only the groups we are interested in;
 	# time for further post-processing
 
 	# do we want groupvars?
@@ -266,7 +266,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 				dump[i] = [ANSIThemeString(key, "yaml_key"), ANSIThemeString(separator, "yaml_key_separator"), ANSIThemeString(value, "yaml_value")]
 				continue
 
-			# Nope, then we'll use default format
+			# Nope, then we will use default format
 			dump[i] = [ANSIThemeString(dump[i], "default")]
 
 	return dump
@@ -345,15 +345,15 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False) -> 
 			overwrite (bool): True: Overwrite the existing inventory
 	"""
 
-	# Don't create anything if the inventory exists;
+	# Do not create anything if the inventory exists;
 	# unless overwrite is set
 	if Path(inventory).exists() and overwrite == False:
 		return
 
-	# If the ansible directory doesn't exist, create it
+	# If the ansible directory does not exist, create it
 	secure_mkdir(ANSIBLE_DIR, permissions = 0o755, exit_on_failure = True)
 
-	# Create the basic yaml structure that we'll write later on
+	# Create the basic yaml structure that we will write later on
 	d: Dict = {
 		"all": {
 			"hosts": {},
@@ -438,7 +438,7 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict) -> bool:
 
 	d = secure_read_yaml(inventory)
 
-	# If the group doesn't exist we create it
+	# If the group does not exist we create it
 	if d.get(group) is None:
 		d[group] = {}
 
@@ -479,7 +479,7 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 		raise Exception("ansible_set_vars: groupvars is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
-		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
+		raise Exception("ansible_set_vars: the inventory does not exist; this is a programming error")
 
 	d = secure_read_yaml(inventory)
 
@@ -526,7 +526,7 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 		raise Exception("ansible_set_vars: hostvars is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
-		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
+		raise Exception("ansible_set_vars: the inventory does not exist; this is a programming error")
 
 	d = secure_read_yaml(inventory)
 
@@ -570,7 +570,7 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 		raise Exception("ansible_set_vars: groupvars is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
-		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
+		raise Exception("ansible_set_vars: the inventory does not exist; this is a programming error")
 
 	d = secure_read_yaml(inventory)
 
@@ -622,7 +622,7 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 		raise Exception("ansible_set_vars: hostvars is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
-		raise Exception("ansible_set_vars: the inventory doesn't exist; this is a programming error")
+		raise Exception("ansible_set_vars: the inventory does not exist; this is a programming error")
 
 	d = secure_read_yaml(inventory)
 
@@ -649,13 +649,13 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 
 def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", skip_all: bool = False) -> bool:
 	"""
-	Add hosts to the ansible inventory; if the inventory doesn't exist, create it
+	Add hosts to the ansible inventory; if the inventory does not exist, create it
 
 		Parameters:
 			inventory (FilePath): The path to the inventory
 			hosts (list[str]): The hosts to add to the inventory
 			group (str): The group to add the hosts to
-			skip_all (bool): If True we don't create a new inventory if it doesn't exist
+			skip_all (bool): If True we do not create a new inventory if it does not exist
 		Returns:
 			(bool): True on success, False on failure
 	"""
@@ -667,8 +667,8 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 
 	d: Dict = {}
 
-	# The inventory doesn't exist; if the user specified skip_all
-	# we don't mind, otherwise we need to create it
+	# The inventory does not exist; if the user specified skip_all
+	# we do not mind, otherwise we need to create it
 	if not Path(inventory).is_file():
 		if skip_all == True and group != "all":
 			changed = True
@@ -684,7 +684,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 		# skip_all has been specified; the exception being
 		# if the group is all
 		#
-		# Don't add a host that already exists in all;
+		# Do not add a host that already exists in all;
 		# that will wipe its vars
 		if skip_all == False and group != "all":
 			if d["all"]["hosts"] is None:
@@ -694,11 +694,11 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 				d["all"]["hosts"][host] = ""
 				changed = True
 
-		# If the group doesn't exist,
-		# create it--we currently don't support
+		# If the group does not exist,
+		# create it--we currently do not support
 		# nested groups, node vars or anything like that
 		#
-		# We don't want to overwrite groups
+		# We do not want to overwrite groups
 		if group not in ("", "all"):
 			if d.get(group) is None:
 				d[group] = {}
@@ -950,7 +950,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 			d["stdout_lines"] = stdout_lines
 		if len(stderr_lines) > 0:
 			d["stderr_lines"] = stderr_lines
-		# We don't want msg unless stdout_lines and stderr_lines are empty
+		# We do not want msg unless stdout_lines and stderr_lines are empty
 		# XXX: Or can it be used to get a sequential log when there's both
 		# stdout and stderr?
 		if len(stdout_lines) == 0 and len(stderr_lines) == 0 and len(msg_lines) > 0:
@@ -1107,7 +1107,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 				d["stdout_lines"] = stdout_lines
 			if len(stderr_lines) > 0:
 				d["stderr_lines"] = stderr_lines
-			# We don't want msg unless stdout_lines and stderr_lines are empty
+			# We do not want msg unless stdout_lines and stderr_lines are empty
 			# XXX: Or can it be used to get a sequential log when there's both
 			# stdout and stderr?
 			if len(stdout_lines) == 0 and len(stderr_lines) == 0 and len(msg_lines) > 0:
@@ -1163,7 +1163,7 @@ def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: Li
 			iktprint([ANSIThemeString("<no output>", "none")])
 		iktprint([ANSIThemeString("", "default")])
 
-	# If retval isn't 0 we don't really care if stderr is empty
+	# If retval is not 0 we do not really care if stderr is empty
 	if len(stderr_lines) > 0 or retval != 0:
 		iktprint([ANSIThemeString("stderr:", "header")])
 		for line in stderr_lines:
@@ -1293,7 +1293,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 	# This is mainly for the benefit of making the prepare_host task possible to run without
 	# encouraging permanent use of ansible_{ssh,sudo,become}_pass.
 	# Ideally these variables should only be needed once; when preparing the host; after that
-	# we'll use passwordless sudo and ssh hostkeys.
+	# we will use passwordless sudo and ssh hostkeys.
 	#
 	# Also, if ansible_user is not set ansible will implicitly use the local user. Pass this
 	# as ansible user to make scripts that tries to access ansible_user function properly.
@@ -1341,7 +1341,7 @@ def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[
 	# This is mainly for the benefit of making the prepare_host task possible to run without
 	# encouraging permanent use of ansible_{ssh,sudo,become}_pass.
 	# Ideally these variables should only be needed once; when preparing the host; after that
-	# we'll use passwordless sudo and ssh hostkeys.
+	# we will use passwordless sudo and ssh hostkeys.
 	#
 	# Also, if ansible_user is not set ansible will implicitly use the local user. Pass this
 	# as ansible user to make scripts that tries to access ansible_user function properly.

@@ -218,7 +218,7 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 	path_entry = Path(path)
 	parent_entry = Path(PurePath(path).parent)
 
-	# This test isn't optional; if the parent directory doesn't exist it's always a failure
+	# This test is not optional; if the parent directory does not exist it is always a failure
 	if not parent_entry.exists():
 		if message_on_error == True:
 			msg = [ANSIThemeString("Critical", "critical"),
@@ -283,7 +283,7 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 		parent_entry_systemdir = True
 
 	# Are there any path shenanigans going on?
-	# If we're dealing with {/bin,/sbin,/usr/bin,/usr/sbin}/path => {/bin,/sbin,/usr/bin,/usr/sbin}/path the symlink is acceptable
+	# If we are dealing with {/bin,/sbin,/usr/bin,/usr/sbin}/path => {/bin,/sbin,/usr/bin,/usr/sbin}/path the symlink is acceptable
 	if SecurityChecks.PARENT_RESOLVES_TO_SELF in checks and parent_entry != parent_entry_resolved and parent_entry_systemdir == False:
 		if message_on_error == True:
 			msg = [ANSIThemeString("Critical", "critical"),
@@ -387,7 +387,7 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 			msg = [ANSIThemeString("Warning", "warning"),
 			       ANSIThemeString(": The target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
-			       ANSIThemeString(" is executable but shouldn't be; skipping", "default")]
+			       ANSIThemeString(" is executable but should not be; skipping", "default")]
 			iktprint.iktprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_EXECUTABLE)
 
@@ -597,7 +597,7 @@ def secure_read(path: FilePath, checks = None, directory_is_symlink: bool = Fals
 				violations_joined = join_securitystatus_set(",", set(violations))
 				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = parent_dir)
 
-			# We don't want to check that parent resolves to itself,
+			# We do not want to check that parent resolves to itself,
 			# because when we have an installation with links directly to the git repo
 			# the parsers directory will be a symlink
 			checks = [
@@ -676,7 +676,7 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 			paths (list[FilePath]): A list of paths to the executable
 			security_policy (SecurityPolicy):
 				The policy to use when deciding whether or not
-				it's OK to use the file at the path.
+				it is OK to use the file at the path.
 		Returns:
 			path (FilePath): A path to the executable
 		Exceptions:
@@ -704,14 +704,14 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 					SecurityChecks.IS_EXECUTABLE,
 				])
 
-	# If we're using SecurityPolicy.STRICT we fail if we don't find a match here
+	# If we are using SecurityPolicy.STRICT we fail if we cannot find a match here
 	if security_policy == SecurityPolicy.STRICT:
 		if violations == [SecurityStatus.OK]:
 			return path
 
 		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}")
 
-	# If the security policy is ALLOWLIST* and fallback_allowlist isn't empty,
+	# If the security policy is ALLOWLIST* and fallback_allowlist is not empty,
 	# all paths in the fallback list will be tested one at a time with the basename from path,
 	# until a match is found (or the list reaches the end).
 	#
@@ -754,7 +754,7 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 			if SecurityStatus.DOES_NOT_EXIST in violations:
 				continue
 
-			# IF the only violation is that the path doesn't resolve to
+			# If the only violation is that the path does not resolve to
 			# itself, but it resolves to a path that otherwise has no violations
 			# and that is within the fallback_allowlist (and that entry in turn
 			# resolves to itself) we return the path if policy is relaxed.
@@ -772,7 +772,7 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 
 def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = False, exist_ok: bool = True, exit_on_failure: bool = False) -> List[SecurityStatus]:
 	"""
-	Create a directory if it doesn't already exist
+	Create a directory if it does not already exist
 		Parameters:
 			directory (str): The path to the directory to create
 			permissions (int): File permissions (None uses system defaults)
@@ -910,10 +910,10 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 			sys.exit(errno.EINVAL)
 		return [SecurityStatus.EXISTS]
 
-	# We don't need to inspect the content, so open it in binary mode
+	# We do not need to inspect the content, so open it in binary mode
 	with open(src, "rb") as fr:
 		content = fr.read()
-		# We shouldn't need "xb", since we've already checked that dst doesn't exist,
+		# We should not need "xb", since we have already checked that dst does not exist,
 		# but better be safe than sorry
 		if permissions is None:
 			with open(dst, "xb") as fw:
@@ -1015,7 +1015,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 			iktprint.iktprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
 		return [SecurityStatus.PARENT_PERMISSIONS]
 
-	# Verify that the source path exists and that the owner and permissions are reliable; we don't make further assumptions
+	# Verify that the source path exists and that the owner and permissions are reliable; we do not make further assumptions
 	checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
 		SecurityChecks.RESOLVES_TO_SELF,
@@ -1043,7 +1043,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 			iktprint.iktprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
 		return violations
 
-	# Since the parent path resolves safely, we can unlink dst_path if it's a symlink
+	# Since the parent path resolves safely, we can unlink dst_path if it is a symlink
 	if dst_path.is_symlink():
 		if replace_existing == False:
 			if verbose == True:

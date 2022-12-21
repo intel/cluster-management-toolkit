@@ -25,7 +25,7 @@ class IKTLog:
 	"""
 	A structured log format used by iKT that serialises to YAML on disk. To ensure that we can use
 	append we use a list; this means that the performance is worse when reading the log,
-	but we won't need to read the file to do an append.
+	but we do not need to read the file to do an append.
 
 	The AUDIT log is always synchronous (flushed immediately).
 	All other logs require flush() to be called.
@@ -181,7 +181,7 @@ class IKTLog:
 
 	def close(self) -> None:
 		"""
-		Close the log; this isn't necessary from an I/O-perspective; it's intended to be used to detect logical errors in the code
+		Close the log; this is not necessary from an I/O-perspective; it is intended to be used to detect logical errors in the code
 		"""
 
 		self.path = None

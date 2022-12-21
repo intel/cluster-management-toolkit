@@ -190,7 +190,7 @@ containerinfo = [
 	("[Shift] + V", "Change facility level"),
 	("", ""),
 	("[Shift] + E", "Export log to a file"),
-	("", "  The log format is decided by current mode; if you're viewing the raw"),
+	("", "  The log format is decided by current mode; if you are viewing the raw"),
 	("", "  log it will be exported as such; otherwise the parsed log will be exported."),
 	("", ""),
 	("[Tab]", "Jump to next elevated severity"),

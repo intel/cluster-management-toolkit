@@ -222,7 +222,7 @@ def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = F
 			dictionary (dict): The dict to set the value in
 			path (DictPath): A dict path
 			value (any): The value to set
-			create_path (bool): If True the path will be created if it doesn't exist
+			create_path (bool): If True the path will be created if it does not exist
 	"""
 
 	if dictionary is None or path is None or len(path) == 0:

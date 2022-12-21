@@ -59,7 +59,7 @@ def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool =
 def secure_read_yaml_all(path: FilePath, checks = None, directory_is_symlink: bool = False) -> Iterator[Dict]:
 	"""
 	Read all dicts in YAML-format from a file in a safe manner
-	Note: since the return type from safe_load_all() is an iterator evaluation doesn't happen until
+	Note: since the return type from safe_load_all() is an iterator evaluation does not happen until
 	      iterating; this means that exceptions must be handled when iterating rather than when getting
 	      the return value
 

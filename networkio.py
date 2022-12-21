@@ -40,7 +40,7 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
 
 	known_hosts = FilePath(os.path.join(SSH_DIR, "known_hosts"))
 
-	# Note: Paramiko seems to have issues if .ssh/known_hosts doesn't exist,
+	# Note: Paramiko seems to have issues if .ssh/known_hosts does not exist,
 	# so "touch" the file just in case.
 	old_umask = os.umask(0o077)
 	Path(known_hosts, mode = 0o600, exist_ok = True).touch()
@@ -141,7 +141,7 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 
 	m.update(data)
 
-	# If filename is supplied it's expected that the checksum file can contain
+	# If filename is supplied it is expected that the checksum file can contain
 	# more than one checksum, or at least that it contains a filename;
 	# if so we find the matching entry
 	# Safe
@@ -240,8 +240,8 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 				   ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	# OK, the destination isn't a symlink and doesn't contain ".." or similar,
-	# it's owned by the user, and is an existing directory; we can safely continue
+	# OK, the destination is not a symlink and does not contain ".." or similar,
+	# it is owned by the user, and is an existing directory; we can safely continue
 
 	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
 	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
@@ -318,13 +318,13 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 							with tf.extractfile(filename) as tff: # type: ignore
 								f2.write(tff.read())
 
-							# Here we change to the permissions we're supposed to use
+							# Here we change to the permissions we are supposed to use
 							os.chmod(f2.name, permissions)
 							# Here we atomically move it in place
 							os.rename(f2.name, f"{directory}/{filename}")
 							os.remove(f.name)
 				else:
-					# Here we change to the permissions we're supposed to use
+					# Here we change to the permissions we are supposed to use
 					os.chmod(f.name, permissions)
 					# Here we atomically move it in place
 					os.rename(f.name, f"{directory}/{filename}")

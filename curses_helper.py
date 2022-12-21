@@ -378,7 +378,7 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 
 		Parameters:
 			configthemefile (FilePath): The theme to read
-			defaultthemefile (FilePath): The fallback if the other theme isn't available
+			defaultthemefile (FilePath): The fallback if the other theme is not available
 	"""
 
 	global theme # pylint: disable=global-statement
@@ -415,7 +415,7 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 		violations_joined = ",".join(violation_strings)
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = theme_dir)
 
-	# We don't want to check that parent resolves to itself,
+	# We do not want to check that parent resolves to itself,
 	# because when we have an installation with links directly to the git repo
 	# the themes directory will be a symlink
 	checks = [
@@ -448,7 +448,7 @@ def init_curses() -> None:
 			curses.init_color(curses_col, r, g, b)
 		except curses.error as e:
 			if str(e) == "init_extended_color() returned ERR":
-			# Most likely remapping the palette isn't supported (16-color xterm?);
+			# Most likely remapping the palette is not supported (16-color xterm?);
 			# just ignore the remap attempt
 				pass
 			else:
@@ -881,7 +881,7 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int,
 	width = maxx - minx + 1
 
 	if progress < 0:
-		sys.exit("You cannot use a progress bar with negative progress; this isn't a regression bar.")
+		sys.exit("You cannot use a progress bar with negative progress; this is not a regression bar.")
 	elif progress > 100:
 		sys.exit("That's impossible. No one can give more than 100%. By definition, that is the most anyone can give.")
 
@@ -1037,10 +1037,10 @@ def move_cur_with_offset(curypos: int, listlen: int, yoffset: int,
 	newcurypos = curypos + movement
 	newyoffset = yoffset
 
-	# If we are being asked to move forward but we're already
-	# at the end of the list, it's prudent not to move,
+	# If we are being asked to move forward but we are already
+	# at the end of the list, it is prudent not to move,
 	# even if the caller so requests.
-	# It's just good manners, really; likewise if we're being asked to move
+	# It is just good manners, really; likewise if we are being asked to move
 	# backward past the start of the list.
 	#
 	# One may gracefully accept the request if so instructed using the wraparound flag, though.
@@ -1096,12 +1096,12 @@ class WidgetLineAttrs(IntFlag):
 
 	NORMAL = 0		# No specific attributes
 	SEPARATOR = 1		# Separators start a new category; they are not selectable
-	DISABLED = 2		# Disabled items are not selectable, but aren't treated as a new category
-	UNSELECTABLE = 4	# Unselectable items are not selectable, but aren't skipped when navigating
+	DISABLED = 2		# Disabled items are not selectable, but are not treated as a new category
+	UNSELECTABLE = 4	# Unselectable items are not selectable, but are not skipped when navigating
 	INVALID = 8		# Invalid items are not selectable; to be used for parse error etc.
 
 # This extracts the string without formatting;
-# once everything uses proper ThemeArray this won't be necessary anymore
+# once everything uses proper ThemeArray this wo not be necessary anymore
 def themearray_to_string(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]]) -> str:
 	"""
 	Given a themearray (either a true ThemeArray or List[Union[ThemeRef, ThemeString]],
@@ -1646,7 +1646,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 				if tmp_char.lower() == chr(c).lower() and lineattributes & WidgetLineAttrs.DISABLED == 0:
 					break
 				if (curypos + yoffset) == (oldcurypos + oldyoffset):
-					# While we're at the same position in the list we might not be at the same offsets
+					# While we are at the same position in the list we might not be at the same offsets
 					curypos = oldcurypos
 					yoffset = oldyoffset
 					break
@@ -1660,7 +1660,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 				if tmp_char.lower() == chr(c).lower() and lineattributes & WidgetLineAttrs.DISABLED == 0:
 					break
 				if (curypos + yoffset) == (oldcurypos + oldyoffset):
-					# While we're at the same position in the list we might not be at the same offsets
+					# While we are at the same position in the list we might not be at the same offsets
 					curypos = oldcurypos
 					yoffset = oldyoffset
 					break
@@ -1839,7 +1839,7 @@ class UIProps:
 		self.xoffset = 0
 		self.maxyoffset = 0
 		self.maxxoffset = 0
-		# -1 -- Don't update
+		# -1 -- Do not update
 		# 0 -- Update
 		# > 0 -- Count this down to 0 before updating
 		self.update_count = 0
@@ -1939,7 +1939,7 @@ class UIProps:
 		try:
 			self.sorted_list = natsorted(self.info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse)
 		except TypeError:
-			# We couldn't sort the list; we should log and just keep the current sort order
+			# We could not sort the list; we should log and just keep the current sort order
 			pass
 
 	def update_info(self, info: List[Type]) -> int:
@@ -2040,8 +2040,8 @@ class UIProps:
 			self.resize_window()
 		self.stdscr.erase()
 		self.stdscr.border()
-		# If we don't have sideborders we need to clear the right border we just painted,
-		# just in case the content of the logpad isn't wide enough to cover it
+		# If we do not have sideborders we need to clear the right border we just painted,
+		# just in case the content of the logpad is not wide enough to cover it
 		if self.borders == False:
 			for y in range(self.logpadypos, self.maxy - 1):
 				self.addthemearray(self.stdscr, [ThemeString(" ", ThemeAttr("main", "default"))], y = y, x = self.maxx)
@@ -2141,7 +2141,7 @@ class UIProps:
 			self.addthemearray(self.stdscr, [ThemeString(bl, ThemeAttr("main", "default"))], y = self.maxy - 2, x = 0)
 			self.addthemearray(self.stdscr, [ThemeString(br, ThemeAttr("main", "default"))], y = self.maxy - 2, x = self.maxx)
 
-		# The extra status can change, so we need to update the windowheader (which shouldn't change)
+		# The extra status can change, so we need to update the windowheader (which should not change)
 		self.draw_winheader()
 
 		mousestatus = "On" if get_mousemask() == -1 else "Off"
@@ -2381,7 +2381,7 @@ class UIProps:
 		return self.tspad, self.logpad
 
 	# Pass -1 to keep the current height/width
-	# Calling this function directly isn't necessary; the pad never grows down, and self.__addstr() calls this when x grows
+	# Calling this function directly is not necessary; the pad never grows down, and self.__addstr() calls this when x grows
 	def resize_logpad(self, height: int, width: int) -> None:
 		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos)
 		if height != -1:
@@ -2602,10 +2602,10 @@ class UIProps:
 		newcurypos = self.curypos + movement
 		newyoffset = self.yoffset
 
-		# If we are being asked to move forward but we're already
-		# at the end of the list, it's prudent not to move,
+		# If we are being asked to move forward but we are already
+		# at the end of the list, it is prudent not to move,
 		# even if the caller so requests.
-		# It's just good manners, really.
+		# It is just good manners, really.
 		if self.yoffset + newcurypos > self.listpadheight:
 			newcurypos = min(newcurypos, self.maxcurypos)
 			newyoffset = self.maxyoffset
@@ -2650,7 +2650,7 @@ class UIProps:
 			end = self.yoffset
 		for y in reversed(range(0, end)):
 			if y in self.search_matches:
-				# We don't want to return the same match over and over...
+				# We do not want to return the same match over and over...
 				if self.match_index is None or self.match_index != y:
 					self.match_index = y
 					self.yoffset = min(y, self.maxyoffset)
@@ -2665,7 +2665,7 @@ class UIProps:
 			return
 
 		for severity in severities:
-			# We're only searching forward
+			# We are only searching forward
 			if y > self.yoffset and severity < LogLevel.NOTICE:
 				newoffset = y
 				break
@@ -2683,7 +2683,7 @@ class UIProps:
 			return
 
 		for severity in severities:
-			# We're only searching backward
+			# We are only searching backward
 			if y == self.yoffset:
 				break
 			if severity < LogLevel.NOTICE:
@@ -2731,7 +2731,7 @@ class UIProps:
 						break
 			y += 1
 
-		# If we don't match we'll just end up with the old pos
+		# If we do not match we will just end up with the old pos
 		self.move_cur_with_offset(newpos)
 
 	def prev_by_sortkey(self, info: List[Type]) -> None:
@@ -2774,7 +2774,7 @@ class UIProps:
 					newpos = y - pos
 			y += 1
 
-		# If we don't match we'll just end up with the old pos
+		# If we do not match we will just end up with the old pos
 		if newpos == 0:
 			self.move_cur_abs(0)
 		else:
@@ -2812,7 +2812,7 @@ class UIProps:
 			if match == True:
 				break
 
-		# If we don't match we'll just end up with the old pos
+		# If we do not match we will just end up with the old pos
 		self.move_cur_with_offset(offset)
 
 	def find_prev_by_sortkey(self, info: List[Type], searchkey: str) -> None:
@@ -2841,7 +2841,7 @@ class UIProps:
 			if match == True:
 				break
 
-		# If we don't match we'll just end up with the old pos
+		# If we do not match we will just end up with the old pos
 		self.move_cur_with_offset(offset)
 
 	def goto_first_match_by_name_namespace(self, name: str, namespace: str) -> Optional[Type]:
@@ -2923,7 +2923,7 @@ class UIProps:
 
 	def get_sortkeys(self) -> Tuple[str, str]:
 		if self.field_list is None:
-			# We don't really care about what the sortkeys are; we don't have a list to sort
+			# We do not really care about what the sortkeys are; we do not have a list to sort
 			# but if we return valid strings we can at least pacify the type checker
 			return "", ""
 
@@ -2944,7 +2944,7 @@ class UIProps:
 		try:
 			_eventid, x, y, _z, bstate = curses.getmouse()
 		except curses.error:
-			# Most likely mouse isn't supported
+			# Most likely mouse is not supported
 			return Retval.NOMATCH
 
 		if win == self.listpad:
@@ -2960,7 +2960,7 @@ class UIProps:
 			cypos = self.logpadypos
 			cxpos = self.logpadxpos
 			cheight = self.logpadheight
-			# We don't care about selection
+			# We do not care about selection
 			selections = False
 		else:
 			return Retval.NOMATCH
@@ -3004,7 +3004,7 @@ class UIProps:
 			if cypos <= y < min(cheight + cypos, cmaxy) and cxpos <= x < cmaxx and selections == True:
 				selected = self.get_selected()
 
-				# If we're clicking on something that isn't selected (or if nothing is selected), move here
+				# If we are clicking on something that is not selected (or if nothing is selected), move here
 				if selected is None or selected != sorted_list[ypos + cyoffset]:
 					# We want to move the cursor here
 					self.selected = sorted_list[ypos + self.yoffset]
@@ -3044,7 +3044,7 @@ class UIProps:
 					self.move_yoffset_rel(1)
 			elif x == self.upperarrow[1]:
 				if self.upperarrow[0] < y < self.lowerarrow[0]:
-					# Don't count the arrows
+					# Do not count the arrows
 					total = self.lowerarrow[0] - self.upperarrow[0] - 2
 					# Y-position on the bar
 					ypos = y - self.upperarrow[0] - 1
@@ -3061,7 +3061,7 @@ class UIProps:
 				self.move_xoffset_rel(1)
 			elif y == self.leftarrow[0]:
 				if self.leftarrow[1] < x < self.rightarrow[1]:
-					# Don't count the arrows
+					# Do not count the arrows
 					total = self.rightarrow[1] - self.leftarrow[1] - 2
 					# X-position on the bar
 					xpos = x - self.leftarrow[1] - 1
@@ -3563,7 +3563,7 @@ class UIProps:
 		self.stdscr.timeout(100)
 		c = self.stdscr.getch()
 
-		# Default return value if we don't manage to match anything
+		# Default return value if we do not manage to match anything
 		retval = Retval.NOMATCH
 
 		if c == curses.KEY_RESIZE:

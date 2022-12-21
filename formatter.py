@@ -83,7 +83,7 @@ def format_diff_line(line: str, override_formatting: Optional[Union[ThemeAttr, D
 		override_formatting = {}
 
 	if isinstance(override_formatting, dict):
-		# Since we don't necessarily override all
+		# Since we do not necessarily override all
 		# formatting we need to set defaults;
 		# doing it here instead of in the code makes
 		# it easier to change the defaults of necessary
@@ -136,7 +136,7 @@ def format_yaml_line(line: str, override_formatting: Optional[Union[ThemeAttr, D
 		override_formatting = {}
 
 	if isinstance(override_formatting, dict):
-		# Since we don't necessarily override all
+		# Since we do not necessarily override all
 		# formatting we need to set defaults;
 		# doing it here instead of in the code makes
 		# it easier to change the defaults of necessary
@@ -542,8 +542,8 @@ def format_caddyfile(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[
 					directive = True
 					continue
 			else:
-				# OK, we have a directive already, and this isn't a matcher or a block,
-				# which means that it's an argument
+				# OK, we have a directive already, and this is not a matcher or a block,
+				# which means that it is an argument
 				tmp = argument_regex.match(line)
 				if tmp is not None:
 					tmpline += [
@@ -677,7 +677,7 @@ def format_nginx(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Unio
 				]
 			dumps.append(dump)
 		else:
-			sys.exit(f"__format_nginx(): Couldn't match line={line}")
+			sys.exit(f"__format_nginx(): Could not match line={line}")
 	return dumps
 
 def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
@@ -737,7 +737,7 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 					tag_open = True
 					tag_named = False
 
-					# Don't add 0-length "indentation"
+					# Do not add 0-length "indentation"
 					if len(tmp[1]) > 0:
 						tmpline += [
 							ThemeString(tmp[1], ThemeAttr("types", "xml_declaration")),
@@ -778,7 +778,7 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 					line = tmp[5]
 					continue
 
-				# Nope, it's content; split to first & or <
+				# Nope, it is content; split to first & or <
 				tmp = content_regex.match(line)
 				if tmp is not None:
 					tmpline += [
@@ -794,7 +794,7 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 				# Are we closing a tag?
 				tmp = tag_close_regex.match(line)
 				if tmp is not None:
-					# Don't add 0-length "indentation"
+					# Do not add 0-length "indentation"
 					if len(tmp[1]) > 0:
 						tmpline += [
 							ThemeString(tmp[1], ThemeAttr("types", "xml_comment")),
@@ -890,7 +890,7 @@ def format_toml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union
 	# * Instead of only checking for lines that end with a comment for key = value,
 	#   and for full comment lines, check for lines that end with a comment
 	#   in any situation (except multiline). Split out the comment and add it last.
-	# * Handle quoting and escaping of quotes; \''' shouldn't end a multiline, for instance.
+	# * Handle quoting and escaping of quotes; \''' should not end a multiline, for instance.
 	# * XXX: should we highlight key=value for inline tables? Probably not
 	# * XXX: should we highlight different types (integer, string, etc.)? Almost certainly not.
 	dumps: List[List[Union[ThemeRef, ThemeString]]] = []

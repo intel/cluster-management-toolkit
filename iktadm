@@ -182,7 +182,7 @@ purge_control_plane_targets: Dict = {
 
 def rebuild_installation_info(state: Optional[str] = None) -> None:
 	"""
-	If the installation info file doesn't exist, but a cluster already exists and it's part of the inventory,
+	If the installation info file does not exist, but a cluster already exists and is part of the inventory,
 	this function will try to rebuild the installation info file
 
 		Parameters:
@@ -226,7 +226,7 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
 
 	info = None
 
-	# We're OK with the file not existing
+	# We are OK with the file not existing
 	checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
 		SecurityChecks.OWNER_IN_ALLOWLIST,
@@ -722,8 +722,8 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 		pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 
 	if pod_network_cidr is None:
-		# If we have a running cluster and we're upgrading by CNI rather than through installation info we need to get the Pod CIDR
-		# by some other means; try this. If fail we give up.
+		# If we have a running cluster and we are upgrading by CNI rather than through installation info we need to get the Pod CIDR
+		# by some other means; try this. If this fails we give up.
 		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 		pod_network_cidr = kh.get_pod_network_cidr()
@@ -1043,8 +1043,8 @@ def install_ansible_posix() -> bool:
 			(bool): True on success, False on failure
 	"""
 
-	# Old versions of ansible-galaxy doesn't have the list command;
-	# if it doesn't work we just assume that ansible.posix is missing
+	# Old versions of ansible-galaxy does not have the list command;
+	# if it does not work we just assume that ansible.posix is missing
 	args = ["/usr/bin/ansible-galaxy", "collection", "list"]
 	result = execute_command_with_response(args)
 
@@ -1254,7 +1254,7 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts
 		iktprint(string)
 		retval, _ansible_results = run_playbook(playbookpath, hosts = hosts, extra_values = extra_values)
 
-		# We don't want to continue executing playbooks if the first one failed
+		# We do not want to continue executing playbooks if the first one failed
 		if retval != 0:
 			break
 
@@ -1277,7 +1277,7 @@ def __playbook_paths_from_path(playbook_path: FilePath) -> List[FilePath]:
 
 	# Populate list of playbooks
 	for path in Path(playbook_path).iterdir():
-		# Don't process backups, etc.
+		# Do not process backups, etc.
 		if path.name.startswith(("~", ".")):
 			continue
 		if not path.name.endswith((".yml", ".yaml")):
@@ -1498,10 +1498,10 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
-	# This read mustn't fail, so no exceptions
+	# This read must not fail, so no exceptions
 	d2 = secure_read_yaml(config_file_name)
 
-	# This file won't exist if this is the first cluster
+	# This file will not exist if this is the first cluster
 	checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
 		SecurityChecks.OWNER_IN_ALLOWLIST,
@@ -1515,7 +1515,7 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 		d1 = secure_read_yaml(KUBE_CONFIG_FILE, checks = checks)
 	except FileNotFoundError:
 		d1 = dict(d2)
-		# We'll be renaming things anyway, so instead of using a lot of special casing below we just empty
+		# We will be renaming things anyway, so instead of using a lot of special casing below we just empty
 		# these fields
 		d1["clusters"] = []
 		d1["contexts"] = []
@@ -1626,8 +1626,8 @@ def __task_drain_control_planes(installation_info: Dict) -> None:
 
 	controlplanes = __selection_control_planes()
 
-	# Check if there's an API-server running that will listen to our request;
-	# drain is issued during teardown--so if we're resuming a teardown the cluster
+	# Check if there is an API-server running that will listen to our request;
+	# drain is issued during teardown--so if we are resuming a teardown the cluster
 	# might already be partially deconfigured
 	# XXX: This should be done on the control plane(s), not on localhost
 	args = ["/usr/bin/sudo", "/usr/bin/lsof", "-i", "-P", "-n"]
@@ -1810,7 +1810,7 @@ def __task_remove_kube_config(installation_info: Dict) -> None:
 	try:
 		d1 = secure_read_yaml(KUBE_CONFIG_FILE)
 
-		# This isn't perfect--there might be leftover users and contexts belonging to this cluster;
+		# This is not perfect--there might be leftover users and contexts belonging to this cluster;
 		# but we better not go on a killing spree--better leave cruft behind than remove everything.
 		for i in range(0, len(d1["clusters"])):
 			if d1["clusters"][i].get("name") == cluster_name:
@@ -2111,7 +2111,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 	global no_password # pylint: disable=global-statement
 	confirm = True
 
-	# We don't need a cluster name for --list-tasks, so check this first of all
+	# We do not need a cluster name for --list-tasks, so check this first of all
 	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(prepare_tasks)
 		sys.exit(0)
@@ -2258,7 +2258,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 	run_tasks(tasks = prepare_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "prepared")
 
 	# Adjust the kube* packages for the control plane(s) and localhost to match the requested cluster version if necessary;
-	# we couldn't do this before since the apt repository wasn't available then
+	# we could not do this before since the apt repository was not available then
 	if len(args) > 1:
 		requested_version = __find_requested_version(distro, args[1])
 	else:
@@ -2637,7 +2637,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	confirm = True
 	override_cni = False
 
-	# We don't need a cluster name for --list-tasks, so check this first of all
+	# We do not need a cluster name for --list-tasks, so check this first of all
 	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(setup_control_plane_tasks)
 		sys.exit(0)
@@ -2780,12 +2780,12 @@ def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> 
 		sys.exit(errno.ENOENT)
 
 	# The reason for importing inside the function is to avoid slow startup
-	# when we don't use the Kubernetes helper
+	# when we do not use the Kubernetes helper
 	if kh is None:
 		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-	# If kh is *still* None here something has gone wrong. It's time to exit.
+	# If kh is *still* None here something has gone wrong. It is time to exit.
 	if kh is None:
 		iktprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Failed to initialise connection to API-server; do you have a running cluster? Aborting.", "default")], stderr = True)
@@ -2870,7 +2870,7 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
 
 	confirm = True
 
-	# We don't need a cluster name for --list-tasks, so check this first of all
+	# We do not need a cluster name for --list-tasks, so check this first of all
 	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(teardown_control_plane_tasks)
 		sys.exit(0)
@@ -2957,7 +2957,7 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	confirm = True
 
-	# We don't need a cluster name for --list-tasks, so check this first of all
+	# We do not need a cluster name for --list-tasks, so check this first of all
 	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(purge_control_plane_tasks)
 		sys.exit(0)
@@ -3005,7 +3005,7 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
-	# If there's still an installed cluster or if the teardown hasn't finished, teardown the cluster before purging
+	# If there is still an installed cluster or if the teardown has not finished, teardown the cluster before purging
 	if state in ("installed", "upgraded", "tearing_down"):
 		teardown_control_plane(options, args)
 		state = "torn_down"
@@ -3023,8 +3023,8 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	iktprint([ANSIThemeString("\n\n[Purging cluster configuration and software]", "phase")])
 
-	# If we're purging the control plane we want to leave kubectl behind; if we have a setup with multiple
-	# control planes and we run this from one of them, then kubectl will remain on the other two. Just don't do it.
+	# If we are purging the control plane we want to leave kubectl behind; if we have a setup with multiple
+	# control planes and we run this from one of them, then kubectl will remain on the other two.
 	if __selection_localhost() == __selection_control_planes():
 		purge_control_plane_targets["kubeadm"]["deb_packages"].remove("kubectl")
 		purge_control_plane_targets["kubeadm"]["deb_packages_held"].remove("kubectl")
@@ -3037,7 +3037,7 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	iktprint([ANSIThemeString("\nCluster purge successful", "success")])
 
 	iktprint([ANSIThemeString("\nNote", "note"),
-		  ANSIThemeString(": It's recommended to reboot the control plane(s) after purging the cluster\n", "default")])
+		  ANSIThemeString(": It is recommended to reboot the control plane(s) after purging the cluster\n", "default")])
 
 def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
@@ -3055,7 +3055,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	allow_reinstall = False
 	requested_version = None
 
-	# We don't need a cluster name for --list-tasks or --override, so check this first of all
+	# We do not need a cluster name for --list-tasks or --override, so check this first of all
 	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(upgrade_control_plane_tasks)
 		sys.exit(0)
@@ -3232,7 +3232,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	else:
 		upgrade_type = "patchrev"
 
-	# If this is an upgrade to a new patchrev the cluster doesn't have to be drained
+	# If this is an upgrade to a new patchrev the cluster does not have to be drained
 	if upgrade_type == "minor":
 		schedulable_count = 0
 		nodes_to_drain = ""
@@ -3637,7 +3637,7 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
 			},
 			"--no-password": {
-				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you're preparing are already configured for login using an SSH key", "description")],
+				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you are preparing are already configured for login using an SSH key", "description")],
 			},
 		},
 		"min_args": 0,
@@ -3663,8 +3663,8 @@ COMMANDLINE = {
 					 ANSIThemeString(": ", "description"),
 					 ANSIThemeString("HOST", "argument"),
 					 ANSIThemeString(" should be a resolvable hostname; using IP-addresses may cause issues.", "description")],
-					[ANSIThemeString("If the host intend for use as control plane in the cluster does not have a resolvable", "description")],
-					[ANSIThemeString("hostname it's recommended to use ", "description"),
+					[ANSIThemeString("If the host intended for use as control plane in the cluster does not have a resolvable", "description")],
+					[ANSIThemeString("hostname it is recommended to use ", "description"),
 					 ANSIThemeString("/etc/hosts", "path"),
 					 ANSIThemeString(" for this purpose.", "description")],
 				],
@@ -3702,7 +3702,7 @@ COMMANDLINE = {
 						ANSIThemeString("--skip-tasks", "option")],
 			},
 			"--no-password": {
-				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you're preparing are already configured for login using an SSH key", "description")],
+				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you are preparing are already configured for login using an SSH key", "description")],
 			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
@@ -3742,6 +3742,16 @@ COMMANDLINE = {
 					 ANSIThemeString("Kubernetes", "programname"),
 					 ANSIThemeString(" >= ", "description"),
 					 ANSIThemeString("1.24", "version"),
+					 ANSIThemeString(".", "description")],
+					[ANSIThemeString("Note", "note"),
+					 ANSIThemeString(": ", "description"),
+					 ANSIThemeString("Kubernetes", "programname"),
+					 ANSIThemeString(" >= ", "description"),
+					 ANSIThemeString("1.26", "version"),
+					 ANSIThemeString(" requires ", "description"),
+					 ANSIThemeString("containerd", "programname"),
+					 ANSIThemeString(" >= ", "description"),
+					 ANSIThemeString("1.6", "version"),
 					 ANSIThemeString(".", "description")],
 				],
 				"requires_arg": True,
@@ -4063,7 +4073,7 @@ COMMANDLINE = {
 		"extended_description": [
 			[ANSIThemeString("Per default control planes are marked as tainted; workloads that lack ", "description")],
 			[ANSIThemeString("tolerations will not be scheduled to them", "description")],
-			[ANSIThemeString("If you're running a single-node cluster, or if the control plane is very", "description")],
+			[ANSIThemeString("If you are running a single-node cluster, or if the control plane is very", "description")],
 			[ANSIThemeString("powerful it might be useful to permit workloads on control plane(s) too", "description")],
 			[ANSIThemeString("If ", "description"),
 			 ANSIThemeString("CONTROLPLANE", "argument"),
@@ -4107,7 +4117,7 @@ COMMANDLINE = {
 		"description": [ANSIThemeString("Check for potential pitfalls that may prevent installation from succeeding", "description")],
 		"options": {
 			"--no-password": {
-				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you're checking are already configured for login using an SSH key", "description")],
+				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you are checking are already configured for login using an SSH key", "description")],
 			},
 		},
 		"min_args": 1,
@@ -4132,7 +4142,7 @@ def main() -> None:
 	Main function for the program
 	"""
 
-	# Before doing anything else, make sure that the user isn't running as root
+	# Before doing anything else, make sure that the user is not running as root
 	if os.geteuid() == 0:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 

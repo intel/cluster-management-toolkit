@@ -14,12 +14,12 @@ provided by __kubectl__, but again hopefully in a more userfriendly manner.
 
 Since installation and maintenance tasks are performed using _Ansible_ all hosts
 need to be added to the _iKT_ inventory before adding them as nodes;
-the inventory view in `iku` allows for running playbooks even on hosts that aren't
+the inventory view in `iku` allows for running playbooks even on hosts that are not
 nodes in the cluster, so adding other infrastructure can also be useful.
 
 _Note_: __iktadm__ runs some minor sanity checks during the prepare step.
 It will check whether a control plane has been defined in the inventory;
-if not it'll ask if the system that `iktadm prepare` is executed on should be added
+if not it will ask if the system that `iktadm prepare` is executed on should be added
 as a control plane. It will also check whether passwordless sudo is enabled
 (this is necessary for most functionality) and, if necessary, create an _ssh_
 hostkey and install that in `.ssh/authorized_keys` to allow the control plane
@@ -72,13 +72,13 @@ _Docker_, and _Containerd_; notably _http_proxy_, _https_proxy_, _no_proxy_.
 3. Wait a short while...
 4. `iktadm setup-control-plane [CNI] [POD_NETWORK_CIDR]`
 5. Wait quite a while...
-6. _OPTIONAL_: If you're planning to use the control plane as a worker node: `iktadm untaint-control-plane`
+6. _OPTIONAL_: If you are planning to use the control plane as a worker node: `iktadm untaint-control-plane`
 
 Step 1 will check for known potential issues that can cause setup to fail.
 
 When specifying `--control-plane HOSTNAME` the specified host will be used as control plane.
-If no control plane is specified _iktadm_ will check whether there's a controlplane defined
-in `~/.ikt/ansible/inventory.yaml`; if not it'll ask whether localhost should be used as control plane.
+If no control plane is specified _iktadm_ will check whether there is a controlplane defined
+in `~/.ikt/ansible/inventory.yaml`; if not it will ask whether localhost should be used as control plane.
 
 ## Add nodes
 
@@ -95,6 +95,6 @@ in `~/.ikt/ansible/inventory.yaml`; if not it'll ask whether localhost should be
 ## CAVEATS
 
 * The _HashKnownHosts_ setting in `/etc/ssh/ssh_config` seems to cause issues with paramiko
-  and/or Ansible; until this has been debugged further it's recommended to disable this feature.
+  and/or Ansible; until this has been debugged further it is recommended to disable this feature.
   While it can be a semi-useful security-by-obscurity feature on multiuser systems, you generally
   have bigger issues if someone else can access the system you use to set up your Kubernetes cluster.

@@ -427,7 +427,7 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 	if old_timestamp == none_timestamp() and len(tmp_timestamp) > 0:
 		timestamp = datetime.strptime(tmp_timestamp, "%Y-%m-%d %H:%M:%S.%f%z")
 
-	# message + either a timestamp or none_timestamp() is passed in, so it's safe just to return it too
+	# message + either a timestamp or none_timestamp() is passed in, so it is safe just to return it too
 	return message, timestamp
 
 def strip_iso_timestamp(message: str) -> str:
@@ -552,7 +552,7 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 
 	# If the message starts with a timestamp without a leading IP-address, skip this
 	if not message.startswith("["):
-		# First match the IP-address; it's either IPv4 or IPv6
+		# First match the IP-address; it is either IPv4 or IPv6
 		# DoS (And probably not entirely correct)
 		tmp = re.match(r"^(([a-f0-9:]+:+)+[a-f0-9.]+?[a-f0-9])( - - .*)", message)
 		if tmp is not None:
@@ -876,8 +876,7 @@ def split_glog(message: str, severity: Optional[LogLevel] = None, facility: str 
 	if tmp is not None:
 		severity = letter_to_severity(tmp[1])
 
-		# We don't really care about the pid,
-		# but let's assign it just to document what it is
+		# We do not use PID, but it is assigned here just to document the meaning of the field
 		_pid = tmp[2]
 
 		facility = f"{(tmp[3])}"
@@ -917,7 +916,7 @@ def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, fa
 	remnants = []
 
 	fields = message.split("\t")
-	# If the first field isn't a timestamp we cannot trust the rest of the message to be what we hope for
+	# If the first field is not a timestamp we cannot trust the rest of the message to be what we hope for
 	if len(fields) < 4 or len(fields[0]) != 24:
 		return message, severity, facility, remnants
 
@@ -1034,8 +1033,8 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 				if isinstance(_fac, str):
 					logentry.pop(_fac, None)
 				elif isinstance(_fac, dict):
-					# this is a list, since the order of the facilities matter when outputting
-					# it doesn't matter when popping though
+					# This is a list, since the order of the facilities matter when outputting
+					# it does not matter when popping though
 					for __fac in deep_get(_fac, DictPath("keys"), []):
 						if __fac == "":
 							continue
@@ -1378,8 +1377,8 @@ def expand_event_objectmeta(message: str, severity: LogLevel, remnants: Optional
 					if i < len(raw_msg) - 1:
 						continue
 
-			# OK, this isn't an escaped curly brace or comma,
-			# so it's time to flush the buffer
+			# OK, this is not an escaped curly brace or comma,
+			# so it is time to flush the buffer
 			if message is None:
 				if ":" in tmp:
 					key, value = tmp.split(":", 1)
@@ -1504,7 +1503,7 @@ def expand_header_key_value(message: str, severity: LogLevel, remnants = None, f
 				res[tmp2[0]] = tmp2[1][1:-1]
 			else:
 				# Now we restore the quotation marks; fancy quotes should be paired,
-				# and since we cannot do that we shouldn't pretend that we did
+				# and since we cannot do that we should not pretend that we did
 				res[tmp2[0]] = tmp2[1].replace("”", "\"")
 
 		if len(res) > 0:
@@ -1699,7 +1698,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 					d.pop(_fac, None)
 				elif isinstance(_fac, dict):
 					# This is a list, since the order of the facilities matter when outputting
-					# it doesn't matter when popping though
+					# it does not matter when popping though
 					for __fac in deep_get(_fac, DictPath("keys"), []):
 						if __fac == "":
 							continue
@@ -1730,7 +1729,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 							remnants.append(([ThemeString(f"{line}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 		else:
 			tmp = []
-			# If we're extracting msg we always want msg first
+			# If we are extracting msg we always want msg first
 			if logparser_configuration.msg_extract == True and fold_msg == False and len(msg) > 0:
 				tmp.append(msg)
 				# Pop the first matching _msg
@@ -1834,7 +1833,7 @@ def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = 
 			return facility, severity, new_message, remnants
 
 		for item in tmp[1:]:
-			# we couldn't parse this as "msg key=value"; give up
+			# we could not parse this as "msg key=value"; give up
 			if "=" not in item:
 				return facility, severity, message, remnants
 		rest = message[len(tmp[0]):].lstrip()
@@ -1985,9 +1984,9 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 				ThemeString(f"{tmp2[1]}", ThemeAttr("types", "dir_symlink_name")),
 				ThemeString(f"{tmp2[2]}", ThemeAttr("types", "dir_symlink_link"))
 			]
-			# There's no suffix for devices or regular files,
+			# There is no suffix for devices or regular files,
 			# but we can distinguish the two based on the file size;
-			# the size for devices isn't really a size per se,
+			# the size for devices is not really a size per se,
 			# but rather major, minor (a normal size never has a comma)
 			if len(suffix) == 0:
 				if "," in size:
@@ -2065,7 +2064,7 @@ def substitute_bullets(message: str, prefix: str) -> str:
 	"""
 
 	if message.startswith(prefix):
-		# We don't want to replace all "*" in the message with bullet, just prefixes
+		# We do not want to replace all "*" in the message with bullet, just prefixes
 		message = message[0:len(prefix)].replace("*", "•", 1) + message[len(prefix):]
 	return message
 
@@ -2525,7 +2524,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 						message = [ThemeString(parts[0], ThemeAttr("logview", f"severity_{loglevel_to_name(_severity).lower()}"))]
 			elif _filter[0] == "json_event":
 				_parser_options = _filter[1]
-				# We don't extract the facility/severity from folded messages, so just skip if fold_msg == True
+				# We do not extract the facility/severity from folded messages, so just skip if fold_msg == True
 				if message.startswith("EVENT ") and fold_msg == False:
 					message, severity, facility, remnants = json_event(message, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "key_value":

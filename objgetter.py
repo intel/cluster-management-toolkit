@@ -3,7 +3,7 @@
 
 """
 This file contains helpers that provide an obj for use in info views,
-for cases where the obj provided from the list view isn't sufficient
+for cases where the obj provided from the list view is not sufficient
 """
 
 from datetime import datetime
@@ -104,7 +104,7 @@ def objgetter_ansible_log(obj: str) -> Dict:
 		violations_joined = ",".join(violation_strings)
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = playbook_dir)
 
-	# We don't want to check that parent resolves to itself,
+	# We do not want to check that parent resolves to itself,
 	# because when we have an installation with links directly to the git repo
 	# the playbooks directory will be a symlink
 	checks = [

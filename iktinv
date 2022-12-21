@@ -245,7 +245,7 @@ def add_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	groups = args[0].split(",")
 
-	# We shouldn't try to add "all" (it may cause unexpected issues with variables)
+	# We should not try to add "all" (it may cause unexpected issues with variables)
 	if "all" in groups:
 		iktprint([ANSIThemeString("Warning", "warning"),
 			  ANSIThemeString(": Ignoring attempt to add group “", "default"), ANSIThemeString("all", "argument"), ANSIThemeString("“.", "default")], stderr = True)
@@ -566,8 +566,8 @@ def remove_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		inventory_dict = ansible_get_inventory_dict()
 
 		# If the hosts are only members of "all"
-		# (or aren't in the inventory at all),
-		# it's OK to remove them without --force.
+		# (or are not in the inventory at all),
+		# it is OK to remove them without --force.
 		#
 		# All hosts are members of the groups "all";
 		# this means that if len(hostgroups) > 1
@@ -730,7 +730,7 @@ def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 		for group_or_host in groups_or_hosts:
 			# First check if there's a group by this name
 			hosts = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, group_or_host)
-			# If the group is empty let's try to see if it's a host
+			# If the group is empty let's try to see if it is a host
 			if len(hosts) == 0:
 				if group_or_host in _all:
 					selection.append(group_or_host)
@@ -1147,7 +1147,7 @@ def main() -> int:
 	Main function for the program
 	"""
 
-	# Before doing anything else, make sure that the user isn't running as root
+	# Before doing anything else, make sure that the user is not running as root
 	if os.geteuid() == 0:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 

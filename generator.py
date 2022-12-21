@@ -97,7 +97,7 @@ def format_list(items, fieldlen: int, pad, ralign: bool, selected: bool,
 				default_field_color = cast(ThemeAttr, field_colors[min(i, len(field_colors) - 1)])
 				formatted_string, __string = map_value(string, selected = selected, default_field_color = default_field_color, mapping = mapping)
 
-			# OK, we know now that we'll be appending the field, so do the prefix
+			# OK, we know now that we will be appending the field, so do the prefix
 			if field_prefixes is not None and i < len(field_prefixes):
 				if isinstance(field_prefixes[i], tuple):
 					totallen += len(field_prefixes[i])
@@ -143,13 +143,13 @@ def map_value(value, references = None, selected: bool = False, default_field_co
 	field_colors = None
 
 	if value in substitutions:
-		# We don't need to check for bool, since it's a subclass of int
+		# We do not need to check for bool, since it is a subclass of int
 		if isinstance(value, int):
 			value = substitutions[f"__{str(value)}"]
 		else:
 			value = substitutions[value]
 
-		# If the substitution is a dict it's either a ThemeRef to a separator or a string,
+		# If the substitution is a dict it is either a ThemeRef to a separator or a string,
 		# or a ThemeString
 		if isinstance(value, dict):
 			context: str = deep_get(value, DictPath("context"), "main")
@@ -481,7 +481,7 @@ def generator_list_with_status(obj, field, fieldlen: int, pad: int, ralign: bool
 	field_prefixes = deep_get(formatting, DictPath("field_prefixes"))
 	field_suffixes = deep_get(formatting, DictPath("field_prefixes"))
 
-	# XXX: Well, this works:ish, but it's ugly beyond belief
+	# XXX: Well, this works:ish, but it is ugly beyond belief
 	#      it would be solved so much better with a mapping that uses a secondary value
 	newitems = []
 	field_colors = [
@@ -668,7 +668,7 @@ def generator_timestamp_with_age(obj, field, fieldlen: int, pad: int, ralign: bo
 
 		for i in range(0, len(values)):
 			# If there's no formatting for this field we assume that
-			# it's a generic string
+			# it is a generic string
 			if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
 				fmt = ThemeAttr("types", "generic")
 				array += [ThemeString(values[i], fmt, selected)]

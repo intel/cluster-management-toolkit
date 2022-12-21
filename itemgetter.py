@@ -450,7 +450,7 @@ def get_key_value(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: D
 				value = ",".join(_value)
 			elif isinstance(_value, dict):
 				value = ",".join(f"{key}:{val}" for (key, val) in _value.items())
-			# We don't need to check for bool, since it's a subclass of int
+			# We do not need to check for bool, since it is a subclass of int
 			elif isinstance(_value, (int, float)):
 				value = str(_value)
 			elif isinstance(_value, str):
@@ -543,7 +543,7 @@ def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs:
 					value = ", ".join(_value)
 				elif isinstance(_value, dict) or (i < len(fields) and i < len(override_types) and override_types[i] == "dict"):
 					value = ", ".join(f"{key}:{val}" for (key, val) in _value.items())
-				# We don't need to check for bool, since it's a subclass of int
+				# We do not need to check for bool, since it is a subclass of int
 				elif isinstance(_value, (int, float)) or (i < len(fields) and i < len(override_types) and override_types[i] == "str"):
 					value = str(_value)
 				elif isinstance(_value, str):
@@ -612,7 +612,7 @@ def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 					if isinstance(weight, int):
 						weight = f"/{weight}"
 					topology = deep_get(selector, DictPath("topologyKey"), "")
-					# We're combining a few different policies, so the expressions can be in various places; not simultaneously though
+					# We are combining a few different policies, so the expressions can be in various places; not simultaneously though
 					selectors += make_set_expression(deep_get(selector, DictPath("labelSelector#matchExpressions"), {}))
 					selectors += make_set_expression(deep_get(selector, DictPath("labelSelector#matchFields"), {}))
 					selectors += make_set_expression(deep_get(selector, DictPath("preference#matchExpressions"), {}))
@@ -864,7 +864,7 @@ def get_pv_type(obj: Dict) -> Optional[str]:
 def get_volume_properties(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str]]:
 	volume_properties: List[Tuple[str, str]] = []
 
-	# First find out what kind of volume we're dealing with
+	# First find out what kind of volume we are dealing with
 	pv_type = get_pv_type(obj)
 	if pv_type is None:
 		return volume_properties
@@ -878,7 +878,7 @@ def get_volume_properties(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **k
 			value = ",".join(value)
 		elif isinstance(value, dict):
 			value = ",".join(f"{key}:{val}" for (key, val) in value.items())
-		# We don't need to check for bool, since it's a subclass of int
+		# We do not need to check for bool, since it is a subclass of int
 		elif isinstance(value, (int, float, str)):
 			value = str(value)
 		else:

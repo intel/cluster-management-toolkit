@@ -260,7 +260,7 @@ def init_iktprint(themefile: Optional[FilePath]) -> None:
 		violations_joined = ",".join(violation_strings)
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = theme_dir)
 
-	# We don't want to check that parent resolves to itself,
+	# We do not want to check that parent resolves to itself,
 	# because when we have an installation with links directly to the git repo
 	# the themes directory will be a symlink
 	checks = [

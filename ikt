@@ -273,7 +273,7 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts
 		iktprint(string)
 		retval, _ansible_results = run_playbook(playbookpath, hosts = cast(List[str], hosts), extra_values = extra_values)
 
-		# We don't want to continue executing playbooks if the first one failed
+		# We do not want to continue executing playbooks if the first one failed
 		if retval != 0:
 			break
 
@@ -334,7 +334,7 @@ def get_selection(selection: List[str], kind: Optional[Tuple[str, str]] = None) 
 				continue
 
 			items1.append(name)
-	# str kinds are things such as playbooks; for now ikt doesn't use them
+	# str kinds are things such as playbooks; for now ikt does not use them
 
 	# Finally, generate a list of non-existing items
 	if all_items == False:
@@ -368,7 +368,7 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	selection = args[0].split(",")
 
-	# It's OK to specify control planes individually
+	# It is OK to specify control planes individually
 	if "ALL" not in selection:
 		include_control_planes = True
 
@@ -452,7 +452,7 @@ def drain_nodes(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 
 	selection = args[0].split(",")
 
-	# It's OK to specify control planes individually
+	# It is OK to specify control planes individually
 	if "ALL" not in selection:
 		include_control_planes = True
 
@@ -505,7 +505,7 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	selection = args[0].split(",")
 
-	# It's OK to specify control planes individually
+	# It is OK to specify control planes individually
 	if "ALL" not in selection:
 		include_control_planes = True
 
@@ -625,7 +625,7 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	# It's OK to specify control planes individually
+	# It is OK to specify control planes individually
 	if "ALL" not in selection:
 		include_control_planes = True
 
@@ -725,7 +725,7 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	# It's OK to specify control planes individually
+	# It is OK to specify control planes individually
 	if "ALL" not in selection:
 		include_control_planes = True
 
@@ -900,7 +900,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	scan_and_add_ssh_keys(non_existing)
 
-	# We most likely won't be able to connect to the remote host without a password
+	# We most likely will not be able to connect to the remote host without a password
 	if no_password == False:
 		request_ansible_password()
 
@@ -1190,7 +1190,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			cri = "dockershim"
 
 	add_playbooks = [
-		# ikt doesn't use run_before/run_after/add_to_groups/remove_from_groups,
+		# ikt does not use run_before/run_after/add_to_groups/remove_from_groups,
 		# so we have to do all of that explicitly
 		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
 		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_setup_node.yaml")))
@@ -1781,7 +1781,7 @@ IKT_COMMANDLINE = {
 						ANSIThemeString(" as the path to a file with hostnames instead of a list of hostnames.", "description")],
 			},
 			"--no-password": {
-				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you're preparing are already configured for login using an SSH key", "description")],
+				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you are preparing are already configured for login using an SSH key", "description")],
 			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
@@ -1810,7 +1810,7 @@ IKT_COMMANDLINE = {
 			 ANSIThemeString("HOST", "argument"),
 			 ANSIThemeString(" should be a resolvable hostname; using IP-addresses may cause issues.", "description")],
 			[ANSIThemeString("If the hosts intended for use as nodes in the cluster do not have a resolvable", "description")],
-			[ANSIThemeString("hostnames it's recommended to use ", "description"),
+			[ANSIThemeString("hostnames it is recommended to use ", "description"),
 			 ANSIThemeString("/etc/hosts", "path"),
 			 ANSIThemeString(" for this purpose.", "description")],
 		],
@@ -2085,7 +2085,7 @@ def main() -> int:
 	Main function for the program
 	"""
 
-	# Before doing anything else, make sure that the user isn't running as root
+	# Before doing anything else, make sure that the user is not running as root
 	if os.geteuid() == 0:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 

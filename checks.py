@@ -74,7 +74,7 @@ def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfi
 		iktprint([ANSIThemeString("    If strict SSH host key checking is disabled other systems can impersonate the remote host", "default")], stderr = True)
 		iktprint([ANSIThemeString("    and thus perform Man in the Middle (MITM) attacks.", "default")], stderr = True)
 		iktprint([ANSIThemeString("    It is strongly adviced that you enable strict SSH host key checking", "default")], stderr = True)
-		iktprint([ANSIThemeString("    unless you're absolutely certain that your network environment is safe.\n", "default")], stderr = True)
+		iktprint([ANSIThemeString("    unless you are absolutely certain that your network environment is safe.\n", "default")], stderr = True)
 		error += 1
 
 	return critical, error, warning, note
@@ -256,7 +256,7 @@ def check_insecure_kube_config_options(cluster_name: str, kubeconfig: Dict, iktc
 			  ANSIThemeString(" option from ", "default"),
 			  ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
 			  ANSIThemeString(",", "default")], stderr = True)
-		iktprint([ANSIThemeString("    unless you're absolutely certain that your network environment is safe.\n", "default")], stderr = True)
+		iktprint([ANSIThemeString("    unless you are absolutely certain that your network environment is safe.\n", "default")], stderr = True)
 		critical += 1
 
 	return critical, error, warning, note
@@ -318,7 +318,7 @@ def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, iktco
 			  ANSIThemeString(" version is one minor version newer than that of ", "default"),
 			  ANSIThemeString("kube-apiserver", "programname"),
 			  ANSIThemeString(";", "default")])
-		iktprint([ANSIThemeString("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
+		iktprint([ANSIThemeString("      this is a supported configuration, but it is generally recommended to keep the versions in sync.", "default")])
 		note += 1
 		mismatch = True
 	elif kubectl_minor_version > server_minor_version:
@@ -329,7 +329,7 @@ def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, iktco
 			  ANSIThemeString(" version is more than one minor version newer than that of ", "default"),
 			  ANSIThemeString("kube-apiserver", "programname"),
 			  ANSIThemeString(";", "default")], stderr = True)
-		iktprint([ANSIThemeString("         this might work, but it's generally recommended to keep the versions in sync.", "default")], stderr = True)
+		iktprint([ANSIThemeString("         this might work, but it is generally recommended to keep the versions in sync.", "default")], stderr = True)
 		warning += 1
 		mismatch = True
 	elif kubectl_minor_version < server_minor_version and kubectl_minor_version + 1 == server_minor_version:
@@ -340,7 +340,7 @@ def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, iktco
 			  ANSIThemeString(" version is one minor version older than that of ", "default"),
 			  ANSIThemeString("kube-apiserver", "programname"),
 			  ANSIThemeString(";", "default")])
-		iktprint([ANSIThemeString("      this is a supported configuration, but it's generally recommended to keep the versions in sync.", "default")])
+		iktprint([ANSIThemeString("      this is a supported configuration, but it is generally recommended to keep the versions in sync.", "default")])
 		warning += 1
 		mismatch = True
 	elif kubectl_minor_version < server_minor_version:
@@ -936,7 +936,7 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 						  ANSIThemeString(f"{entry}", "path"),
 						  ANSIThemeString(" are ", "default"),
 						  ANSIThemeString(f"{path_permissions:03o}", "emphasis"),
-						  ANSIThemeString("; this file isn't an executable and shouldn't have the executable bit set", "default")])
+						  ANSIThemeString("; this file is not an executable and should not have the executable bit set", "default")])
 		else:
 			iktprint([ANSIThemeString("  Warning", "warning"),
 				  ANSIThemeString(f": the {pathtype} ", "default"),
