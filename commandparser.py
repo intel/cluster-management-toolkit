@@ -64,7 +64,7 @@ def __sub_usage(command: str) -> int:
 		if command in deep_get(value, "command"):
 			commandinfo = value
 			break
-		
+
 	values = deep_get(commandinfo, DictPath("values"), [])
 	options = deep_get(commandinfo, DictPath("options"), [])
 	description = deep_get(commandinfo, DictPath("description"), [])
@@ -98,12 +98,17 @@ def __sub_usage(command: str) -> int:
 			optionline = [ANSIThemeString(f"  {option}", "option")]
 			values = deep_get(optiondata, DictPath("values"), [])
 			description = deep_get(optiondata, DictPath("description"), [])
+			extended_description = deep_get(optiondata, DictPath("extended_description"), [])
 
 			if len(values) > 0:
 				optionline += [ANSIThemeString(f" ", "option")] + values
 			pad = " ".rjust(max_optionlen - themearray_len(optionline))
 			optionline += [ANSIThemeString(pad, "description")] + description
 			iktprint(optionline)
+
+			pad = " ".rjust(max_optionlen)
+			for extended_line in extended_description:
+				iktprint([ANSIThemeString(pad, "description")] + extended_line)
 
 	return 0
 
@@ -363,7 +368,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 						  ANSIThemeString("“ for more information.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 
-				# If we defaulted we don't want to consume any options
+				# If we defaulted we do not want to consume any options
 				continue
 		# OK, we have a command, time to check for options
 		elif argv[i].startswith("-"):
