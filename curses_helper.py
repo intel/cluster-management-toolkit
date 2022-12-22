@@ -358,7 +358,7 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 		if fg == bg:
 			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 	except (curses.error, ValueError) as e:
-		if str(e) in ("curses.init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
+		if str(e) in ("init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
 			# Most likely we failed due to the terminal only
 			# supporting colours 0-7. If "bright black" was
 			# requested, we need to remap it. Fallback to blue;
