@@ -3090,7 +3090,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 			  ANSIThemeString("“ option; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	if state is None or state in ("<none>", "preparing", "prepared", "installing", "tearing_down", "torn_down", "purging"):
+	if state in ("preparing", "prepared", "installing", "tearing_down", "torn_down", "purging"):
 		iktprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": Invalid installation state; Kubernetes does not seems to be fully installed; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
