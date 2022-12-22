@@ -8907,7 +8907,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				else:
 					data += f"{timestamp}  {severity}{facility}{messages[y]}\n"
 
-			secure_write_string(filename, data)
+			secure_write_string(filename, data, allow_relative_path = True)
 
 def do_command(stdscr, **kwargs) -> None:
 	"""

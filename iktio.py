@@ -169,7 +169,8 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 	return HostNameStatus.OK
 
 # pylint: disable=too-many-arguments,line-too-long
-def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = None, checks = None, exit_on_critical: bool = False, message_on_error: bool = False) -> List[SecurityStatus]:
+def check_path(path: FilePath, parent_owner_allowlist: List[str] = None, owner_allowlist: List[str] = None,
+	       checks: List[SecurityChecks] = None, exit_on_critical: bool = False, message_on_error: bool = False) -> List[SecurityStatus]:
 	"""
 	Verifies that a path meets certain security criteria;
 	if the path fails to meet the criteria the function returns False and optionally
@@ -177,6 +178,8 @@ def check_path(path: FilePath, parent_owner_allowlist = None, owner_allowlist = 
 
 		Parameters:
 			path (FilePath): The path to the file to verify
+			parent_allowlist (list[str]): A list of acceptable file owners;
+				 by default [user, "root"]
 			owner_allowlist (list[str]): A list of acceptable file owners;
 				 by default [user, "root"]
 			checks (list[SecurityChecks]): A list of checks that should be performed
@@ -497,7 +500,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path) from e
 			raise OSError from e
 
-def secure_write_string(path: FilePath, string: str, permissions = None, write_mode = "w") -> None:
+def secure_write_string(path: FilePath, string: str, permissions: int = None, write_mode: str = "w", allow_relative_path: bool = False) -> None:
 	"""
 	Write a string to a file in a safe manner
 
@@ -506,6 +509,7 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 			string (str): The string to write
 			permissions (int): File permissions (None uses system defaults)
 			write_mode (str): [w, a, x, wb, ab, xb] Write, Append, Exclusive Write, text or binary
+			allow_relative_path (bool): Is it acceptable to have the path not resolve to self?
 		Raises:
 			ikttypes.FilePathAuditError
 	"""
@@ -514,14 +518,18 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 		raise ValueError(f"Invalid write mode “{write_mode}“; permitted modes are “a(b)“ (append (binary)), “w(b)“ (write (binary)) and “x(b)“ (exclusive write (binary))")
 
 	checks = [
-		SecurityChecks.PARENT_RESOLVES_TO_SELF,
-		SecurityChecks.RESOLVES_TO_SELF,
 		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
 		SecurityChecks.OWNER_IN_ALLOWLIST,
 		SecurityChecks.PARENT_PERMISSIONS,
 		SecurityChecks.PERMISSIONS,
 		SecurityChecks.IS_FILE,
 	]
+
+	if allow_relative_path is False:
+		checks += [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+		]
 
 	violations = check_path(path, checks = checks)
 
@@ -559,12 +567,13 @@ def secure_write_string(path: FilePath, string: str, permissions = None, write_m
 			if write_mode == "x":
 				raise FilePathAuditError("Violated rules: SecurityStatus.EXISTS", path = path) from e
 
-def secure_read(path: FilePath, checks = None, directory_is_symlink: bool = False, read_mode = "r") -> Union[str, bytes]:
+def secure_read(path: FilePath, checks: List[SecurityChecks] = None, directory_is_symlink: bool = False, read_mode: str = "r") -> Union[str, bytes]:
 	"""
 	Read a string from a file in a safe manner
 
 		Parameters:
 			path (FilePath): The path to read from
+			checks (list[SecurityChecks]): A list of checks that should be performed
 			directory_is_symlink (bool): The directory that the path points to is a symlink
 			read_mode (str): [r, rb] Read text or binary
 		Returns:
@@ -633,20 +642,21 @@ def secure_read(path: FilePath, checks = None, directory_is_symlink: bool = Fals
 	# We have no default recourse if this write fails, so if the caller can handle the failure
 	# they have to capture the exception
 	if read_mode == "r":
-		with open(path, encoding = "utf-8") as f:
+		with open(path, "r", encoding = "utf-8") as f:
 			string: Union[str, bytes] = f.read()
 	else:
-		with open(path, "rb") as f:
-			string = f.read()
+		with open(path, "rb") as bf:
+			string = bf.read()
 
 	return string
 
-def secure_read_string(path: FilePath, checks = None, directory_is_symlink: bool = False) -> str:
+def secure_read_string(path: FilePath, checks: List[SecurityChecks] = None, directory_is_symlink: bool = False) -> str:
 	"""
 	Read a string from a file in a safe manner
 
 		Parameters:
 			path (FilePath): The path to read from
+			checks (list[SecurityChecks]): A list of checks that should be performed
 			directory_is_symlink (bool): The directory that the path points to is a symlink
 		Returns:
 			string (str): The read string
