@@ -401,7 +401,7 @@ def generator_basic(obj, field, fieldlen: int, pad: int, ralign: bool, selected:
 		fmt = ThemeAttr("types", "default")
 	elif string == "<undefined>":
 		fmt = ThemeAttr("types", "undefined")
-	elif string == "<unset>":
+	elif string in ("<empty>", "<unset>"):
 		fmt = ThemeAttr("types", "unset")
 	else:
 		context, attr_ref = field_colors[0]
