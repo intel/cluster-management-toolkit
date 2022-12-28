@@ -2736,9 +2736,9 @@ class KubernetesHelper:
 		"""
 
 		nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = make_selector({"node-role.kubernetes.io/control-plane": ""}))
-		if len(nodes) == 0 or status != 200:
+		if nodes is None or len(nodes) == 0 or status != 200:
 			nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = make_selector({"node-role.kubernetes.io/master": ""}))
-		if len(nodes) == 0:
+		if nodes is None or len(nodes) == 0 or status != 200:
 			return None
 		return deep_get(nodes[0], DictPath("spec#podCIDR"))
 
@@ -2749,7 +2749,7 @@ class KubernetesHelper:
 		# Is there a controller matching the kind we are looking for?
 		vlist, _status = self.get_list_by_kind_namespace(controller_kind, "", field_selector = controller_selector)
 
-		if len(vlist) == 0:
+		if vlist is None or len(vlist) == 0 or _status != 200:
 			return cni
 
 		pod_matches = 0
@@ -2924,7 +2924,7 @@ class KubernetesHelper:
 
 		vlist, _status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
 
-		if len(vlist) == 0:
+		if vlist is None or len(vlist) == 0 or _status != 200:
 			return join_token
 
 		age = -1
@@ -2939,7 +2939,7 @@ class KubernetesHelper:
 					try:
 						tmp1 = base64.b64decode(deep_get(secret, DictPath("data#token-id"), "")).decode("utf-8")
 					except UnicodeDecodeError:
-						tmp1 = secret.data.get("data#token-id", "")
+						tmp2 = deep_get(secret, DictPath("data#token-id"), "")
 
 					try:
 						tmp2 = base64.b64decode(deep_get(secret, DictPath("data#token-secret"), "")).decode("utf-8")
@@ -2964,7 +2964,7 @@ class KubernetesHelper:
 
 		vlist, _status = self.get_list_by_kind_namespace(("Secret", ""), "kube-system")
 
-		if len(vlist) == 0:
+		if vlist is None or len(vlist) == 0 or _status != 200:
 			return ca_cert_hash
 
 		age = -1
@@ -3213,7 +3213,7 @@ class KubernetesHelper:
 
 	# pylint: disable-next=too-many-arguments
 	def __rest_helper_generic_json(self, method: Optional[str] = None, url: Optional[str] = None, header_params: Optional[Dict] = None,
-				       query_params: Optional[Sequence[Optional[Tuple[str, Any]]]] = None, body: Optional[Dict] = None,
+				       query_params: Optional[Sequence[Optional[Tuple[str, Any]]]] = None, body: Optional[bytes] = None,
 				       retries: int = 3, connect_timeout: float = 3.0) -> Tuple[Union[AnyStr, None], str, int]:
 		if query_params is None:
 			query_params = []
@@ -3328,7 +3328,7 @@ class KubernetesHelper:
 
 		return data, message, status
 
-	def __rest_helper_post(self, kind: Tuple[str, str], name: str = "", namespace: str = "", body = None) -> Tuple[str, int]:
+	def __rest_helper_post(self, kind: Tuple[str, str], name: str = "", namespace: str = "", body: Optional[bytes] = None) -> Tuple[str, int]:
 		method = "POST"
 
 		if body is None or len(body) == 0:
@@ -3375,7 +3375,7 @@ class KubernetesHelper:
 
 		return message, status
 
-	def __rest_helper_patch(self, kind: Tuple[str, str], name: str, namespace: str = "", strategic_merge = True, subresource = "", body = None) -> Tuple[str, int]:
+	def __rest_helper_patch(self, kind: Tuple[str, str], name: str, namespace: str = "", strategic_merge: bool = True, subresource: str = "", body: Optional[bytes] = None) -> Tuple[str, int]:
 		method = "PATCH"
 
 		header_params = {
@@ -3717,7 +3717,7 @@ a				the return value from __rest_helper_patch
 		body = json.dumps(data).encode("utf-8")
 		return self.__rest_helper_patch(kind, node, body = body)
 
-	def patch_obj_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, patch: Dict, subresource: str = "", strategic_merge = True) -> Tuple[str, int]:
+	def patch_obj_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, patch: Dict, subresource: str = "", strategic_merge: bool = True) -> Tuple[str, int]:
 		body = json.dumps(patch).encode("utf-8")
 		return self.__rest_helper_patch(kind, name, namespace, body = body, subresource = subresource, strategic_merge = strategic_merge)
 
@@ -3770,7 +3770,7 @@ a				the return value from __rest_helper_patch
 			msg = []
 		return msg, status
 
-	def get_list_by_kind_namespace(self, kind, namespace: str, label_selector: str = "", field_selector: str = ""):
+	def get_list_by_kind_namespace(self, kind: Tuple[str, str], namespace: str, label_selector: str = "", field_selector: str = "") -> Tuple[Union[Optional[Dict], List[Optional[Dict]]], int]:
 		"""
 		Given kind, namespace and optionally label and/or field selectors, return all matching resources
 
@@ -3789,7 +3789,7 @@ a				the return value from __rest_helper_patch
 		d = cast(List[Optional[Dict]], d)
 		return d, status
 
-	def get_ref_by_kind_name_namespace(self, kind, name: str, namespace: str) -> Dict:
+	def get_ref_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str) -> Dict:
 		"""
 		Given kind, name, namespace return a resource
 
@@ -3860,7 +3860,7 @@ a				the return value from __rest_helper_patch
 		ref = cast(dict, ref)
 		return ref
 
-	def get_events_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str) -> List[Tuple[str, str, str, str, str, str, str, int, str]]:
+	def get_events_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str) -> List[Tuple[str, str, str, str, str, str, str, str, str]]:
 		"""
 		Given kind, name, and namespace, returns all matching events
 
@@ -3877,13 +3877,18 @@ a				the return value from __rest_helper_patch
 					reason (str): The reason for the event
 					source (str): The source of the event
 					first_seen (str): A string representation of the first seen datetime
-					count (int): The number of times this event has been emitted
-					str (message): A free-form explanation of the event
+					count (str): The number of times this event has been emitted
+					message (str): A free-form explanation of the event
 		"""
 
-		events = []
-		vlist, status = self.get_list_by_kind_namespace(("Event", "events.k8s.io"), "")
+		events: List[Tuple[str, str, str, str, str, str, str, str, str]] = []
+		vlist, _status = self.get_list_by_kind_namespace(("Event", "events.k8s.io"), "")
+		if vlist is None or len(vlist) == 0 or _status != 200:
+			return events
+
 		for obj in vlist:
+			obj = cast(Dict, obj)
+
 			__involved_kind = deep_get_with_fallback(obj, [DictPath("regarding#kind"), DictPath("involvedObject#kind")])
 			__involved_api_version = deep_get_with_fallback(obj, [DictPath("regarding#apiVersion"), DictPath("involvedObject#apiVersion")])
 			involved_kind = self.kind_api_version_to_kind(__involved_kind, __involved_api_version)
@@ -3915,12 +3920,12 @@ a				the return value from __rest_helper_patch
 			_first_seen = timestamp_to_datetime(deep_get_with_fallback(obj, [DictPath("eventTime"), DictPath("deprecatedFirstTimestamp"), DictPath("firstTimestamp")]))
 			first_seen = datetime_to_timestamp(_first_seen)
 
-			count = deep_get_with_fallback(obj, [DictPath("series#count"), DictPath("deprecatedCount"), DictPath("count")], "")
+			count: str = deep_get_with_fallback(obj, [DictPath("series#count"), DictPath("deprecatedCount"), DictPath("count")], "")
 			if count is None:
 				count = ""
 			else:
 				count = str(count)
-			message = deep_get(obj, DictPath("message"), "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
+			message: str = deep_get(obj, DictPath("message"), "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
 			if kind == involved_kind and name == involved_name and ev_namespace == namespace:
 				event = (str(ev_namespace), str(ev_name), last_seen, status, str(reason), str(source), first_seen, count, message)
 				events.append(event)

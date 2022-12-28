@@ -302,7 +302,7 @@ COMMANDLINEDEFAULTS = {
 
 # pylint: disable-next=line-too-long
 def parse_commandline(__programname: str, __programversion: str, __programdescription: str, __programauthors: str, argv: List[str],
-		      __commandline: Dict, default_command: Optional[str] = None, theme: Optional[FilePath] = None):
+		      __commandline: Dict, default_command: Optional[str] = None, theme: Optional[FilePath] = None) -> Tuple[Callable, List[Tuple[str, str]], List[str]]:
 	"""
 	Parse the command line
 
@@ -311,6 +311,11 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 			__programversion (str): The version of the program (used in version information)
 			__programdescription (str): The description of the program (used in usage information)
 			__programauthors (str): The authors of the program (used in version information)
+		Returns:
+			(command, options, args):
+				command (str): The command to call
+				options (list[(str, str)]): The options to pass to the command
+				args (list[str]): The arguments to pass to the command
 	"""
 
 	global commandline  # pylint: disable=global-statement

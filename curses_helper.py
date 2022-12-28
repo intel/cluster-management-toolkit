@@ -1975,20 +1975,20 @@ class UIProps:
 	def is_update_triggered(self) -> bool:
 		return self.update_count == 0
 
-	def select(self, selection) -> None:
+	def select(self, selection: Union[None, int]) -> None:
 		self.selected = selection
 
 	def select_if_y(self, y: int, selection: int) -> None:
 		if self.yoffset + self.curypos == y:
 			self.select(selection)
 
-	def is_selected(self, selected) -> bool:
+	def is_selected(self, selected: Union[None, int]) -> bool:
 		if selected is None:
 			return False
 
 		return self.selected == selected
 
-	def get_selected(self):
+	def get_selected(self) -> Union[None, int]:
 		return self.selected
 
 	# Default behaviour:

@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-from typing import List, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 from ikttypes import ANSIThemeString, FilePath, SecurityPolicy
 from iktpaths import BINDIR, HOMEDIR, IKTDIR, IKT_LOGS_DIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR
@@ -77,39 +77,39 @@ CONFIGURATION_FILES = [
 	(FilePath(os.path.join(os.getcwd(), IKT_CONFIG_FILENAME)), IKT_CONFIG_FILE, 0o644)
 ]
 
-def create_directories(directories, verbose: bool = False) -> None:
+def create_directories(directories: List[Tuple[FilePath, int]], verbose: bool = False) -> None:
 	"""
 	Batch create directories
 	If a directory already exists it is silently ignored
 
 		Parameters:
-			directories (list[str]): A list of directories (full path) to create
+			directories (list[(FilePath, int)]): A list of directories (path, permissions) to create
 			verbose (bool): Be more verbose
 	"""
 
 	for directory, permissions in directories:
 		secure_mkdir(directory, permissions = permissions, verbose = verbose)
 
-def create_symlinks(symlinks, verbose: bool = False) -> None:
+def create_symlinks(symlinks: List[Tuple[FilePath, FilePath]], verbose: bool = False) -> None:
 	"""
 	Batch create symlinks
 	If a symlink already exists it is *replaced*
 
 		Parameters:
-			symlinks (list[(str, str)]): A list of symlinks (full path) to create; (src, dst)
+			symlinks (list[(FilePath, FilePath)]): A list of symlinks (full path) to create; (src, dst)
 			verbose (bool): Be more verbose
 	"""
 
 	for src, dst in symlinks:
 		_violations = secure_symlink(src, dst, verbose = verbose, replace_existing = True)
 
-def copy_files(files, verbose: bool = False) -> None:
+def copy_files(files: List[Tuple[FilePath, FilePath, int]], verbose: bool = False) -> None:
 	"""
 	Batch copy files
 	If a file already exists it is silently ignored
 
 		Parameters:
-			files (list[(str, str)]): A list of files (full path) to copy; (src, dst)
+			files (list[(FilePath, FilePath, int)]): A list of files (full path) to copy; (src, dst, permissions)
 			verbose (bool): Be more verbose
 	"""
 
@@ -117,7 +117,7 @@ def copy_files(files, verbose: bool = False) -> None:
 		_violations = secure_copy(src, dst, verbose = verbose, permissions = permissions)
 
 # pylint: disable-next=unused-argument
-def install_software(packages, verbose: bool = False) -> None:
+def install_software(packages: List[str], verbose: bool = False) -> None:
 	"""
 	Batch install Debian packages
 
@@ -148,14 +148,14 @@ def install_software(packages, verbose: bool = False) -> None:
 	_retval = subprocess.run(args, check = False).returncode
 
 # pylint: disable-next=unused-argument
-def install_software_with_pip_fallback(packages, pip_proxy: str = "", verbose: bool = False, dryrun: bool = False) -> Tuple[List[str], List[str]]:
+def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verbose: bool = False, dryrun: bool = False) -> Tuple[List[str], List[str]]:
 	"""
 	Batch install Debian packages with pip fallback
 	This function tries to install a Python module from a Debian package;
 	if that package does not exist it installs the pip version of the module instead
 
 		Parameters:
-			packages (list[(str, str)]): A list of packages to install (pkg, fallback)
+			packages (dict): A dict of packages to install (pkg, fallback)
 			pip_proxy (str): A proxy to use when installing packages
 			verbose (bool): Unused
 			dryrun (bool): Simulate a run without installing packages
@@ -230,7 +230,7 @@ def install_software_with_pip_fallback(packages, pip_proxy: str = "", verbose: b
 	return list(pkgs), list(fallbacks)
 
 # pylint: disable-next=unused-argument
-def install(options, args) -> None:
+def install(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Create directories, install configuration files, create symlinks,
 	and optionally install packages necessary to run iKT

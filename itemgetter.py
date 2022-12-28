@@ -363,7 +363,10 @@ def get_endpoint_slices(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwa
 	# We need to find all Endpoint Slices in the same namespace as the service that have this service
 	# as its controller
 	vlist, _status = kh.get_list_by_kind_namespace(("EndpointSlice", "discovery.k8s.io"), svcnamespace, label_selector = f"kubernetes.io/service-name={svcname}")
-	tmp = []
+	tmp: List[Tuple[str, str]] = []
+	if vlist is None or _status != 200:
+		return tmp
+
 	for item in vlist:
 		epsnamespace = deep_get(item, DictPath("metadata#namespace"))
 		epsname = deep_get(item, DictPath("metadata#name"))

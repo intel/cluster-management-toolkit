@@ -1183,7 +1183,7 @@ def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List
 	return deb_versions, other_versions
 
 # pylint: disable-next=unused-argument
-def run_playbook(playbookpath: FilePath, hosts = None, extra_values = None, quiet = False) -> Tuple[int, Dict]:
+def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optional[Dict] = None, quiet: bool = False) -> Tuple[int, Dict]:
 	"""
 	Run a playbook
 
@@ -2417,13 +2417,23 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 		kh.set_context(name = context)
 
-		vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
+		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+		if status != 200:
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": API-server returned ", "default"),
+				  ANSIThemeString(f"{status}", "errorvalue"),
+				  ANSIThemeString("; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+		if vlist is None:
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
 
 		controlplane = None
 
 		for node in vlist:
 			node_name = deep_get(node, DictPath("metadata#name"))
-			node_roles = kh.get_node_roles(node)
+			node_roles = kh.get_node_roles(cast(Dict, node))
 			if "control-plane" in node_roles:
 				controlplane = node_name
 				break
@@ -2797,14 +2807,18 @@ def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> 
 	if status != 200:
 		iktprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": API-server returned ", "default"),
-			  ANSIThemeString(status, "errorvalue"),
+			  ANSIThemeString(f"{status}", "errorvalue"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+	if vlist is None:
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	for node in vlist:
 		node_name = deep_get(node, DictPath("metadata#name"))
 		node_schedulable = not deep_get(node, DictPath("spec#unschedulable"), False)
-		node_roles = kh.get_node_roles(node)
+		node_roles = kh.get_node_roles(cast(Dict, node))
 		node_taints = deep_get(node, DictPath("spec#taints"), [])
 		node_statuses.append({
 			"name": node_name,
@@ -2815,7 +2829,7 @@ def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> 
 
 	return node_statuses, kh
 
-def get_control_planes(fail_on_empty = True) -> List[Tuple[str, str]]:
+def get_control_planes(fail_on_empty: bool = True) -> List[Tuple[str, str]]:
 	"""
 	Get a list of control planes defined in the inventory
 

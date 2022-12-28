@@ -181,7 +181,7 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 #
 # fetch_urls is a list of tuples:
 # (URL to file or archive, file to extract, URL to checksum, type of checksum)
-def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str], Optional[str]]], permissions = 0o644) -> bool:
+def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str], Optional[str]]], permissions: int = 0o644) -> bool:
 	"""
 	Download files; if the file is a tar file it can extract a file.
 	If checksum information is provided it can also fetch a checksum and compare against.

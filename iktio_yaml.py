@@ -5,14 +5,14 @@
 YAML I/O helpers for Intel Kubernetes Toolkit
 """
 
-from typing import Dict, Iterator, Optional
+from typing import Dict, Iterator, List, Optional, Union
 import yaml
 
 import iktio
-from ikttypes import FilePath
+from ikttypes import FilePath, SecurityChecks
 
 # pylint: disable-next=too-many-arguments
-def secure_write_yaml(path: FilePath, data, permissions: Optional[int] = None, replace_empty = False, replace_null = False, sort_keys = True, write_mode = "w") -> None:
+def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions: Optional[int] = None, replace_empty: bool = False, replace_null: bool = False, sort_keys: bool = True, write_mode: str = "w") -> None:
 	"""
 	Dump a dict to a file in YAML-format in a safe manner
 
@@ -37,7 +37,7 @@ def secure_write_yaml(path: FilePath, data, permissions: Optional[int] = None, r
 		yaml_str = yaml_str.replace(r"null", "")
 	iktio.secure_write_string(path, yaml_str, permissions = permissions, write_mode = write_mode)
 
-def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool = False) -> Dict:
+def secure_read_yaml(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> Dict:
 	"""
 	Read data in YAML-format from a file in a safe manner
 
@@ -56,7 +56,7 @@ def secure_read_yaml(path: FilePath, checks = None, directory_is_symlink: bool =
 	string = iktio.secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
 	return yaml.safe_load(string)
 
-def secure_read_yaml_all(path: FilePath, checks = None, directory_is_symlink: bool = False) -> Iterator[Dict]:
+def secure_read_yaml_all(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> Iterator[Dict]:
 	"""
 	Read all dicts in YAML-format from a file in a safe manner
 	Note: since the return type from safe_load_all() is an iterator evaluation does not happen until

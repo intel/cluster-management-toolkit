@@ -13,7 +13,7 @@ import errno
 import os
 from pathlib import Path, PurePath
 import sys
-from typing import cast, List, Optional, Tuple
+from typing import cast, Dict, List, Optional, Tuple
 
 try:
 	from natsort import natsorted
@@ -497,10 +497,20 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 		sys.exit(errno.ENOENT)
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-	vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
+	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+	if status != 200:
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": API-server returned ", "default"),
+			  ANSIThemeString(f"{status}", "errorvalue"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+	if vlist is None:
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
 
 	for node in vlist:
-		roles = kh.get_node_roles(node)
+		roles = kh.get_node_roles(cast(Dict, node))
 		if "control-plane" in roles:
 			groups = ["all", "controlplane", cluster_name]
 		else:

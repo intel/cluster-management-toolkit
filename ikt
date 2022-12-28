@@ -165,10 +165,21 @@ def get_control_planes() -> List[Tuple[str, List[str]]]:
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-	vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
+	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+	if status != 200:
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": API-server returned ", "default"),
+			  ANSIThemeString(f"{status}", "errorvalue"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+	if vlist is None:
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
 	for node in vlist:
 		name = deep_get(node, DictPath("metadata#name"))
-		node_roles = kh.get_node_roles(node)
+		node_roles = kh.get_node_roles(cast(Dict, node))
 		if "control-plane" in node_roles or "master" in node_roles:
 			ipaddresses = []
 			for address in deep_get(node, DictPath("status#addresses")):
@@ -322,13 +333,24 @@ def get_selection(selection: List[str], kind: Optional[Tuple[str, str]] = None) 
 		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-		vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
+		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+		if status != 200:
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": API-server returned ", "default"),
+				  ANSIThemeString(f"{status}", "errorvalue"),
+				  ANSIThemeString("; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+		if vlist is None:
+			iktprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+
 		for node in vlist:
 			name = deep_get(node, DictPath("metadata#name"))
 			if all_items == False and name not in selection:
 				continue
 
-			node_roles = kh.get_node_roles(node)
+			node_roles = kh.get_node_roles(cast(Dict, node))
 			if "control-plane" in node_roles or "master" in node_roles:
 				items2.append(name)
 				continue

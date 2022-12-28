@@ -169,8 +169,8 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 	return HostNameStatus.OK
 
 # pylint: disable=too-many-arguments,line-too-long
-def check_path(path: FilePath, parent_owner_allowlist: List[str] = None, owner_allowlist: List[str] = None,
-	       checks: List[SecurityChecks] = None, exit_on_critical: bool = False, message_on_error: bool = False) -> List[SecurityStatus]:
+def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = None, owner_allowlist: Optional[List[str]] = None,
+	       checks: Optional[List[SecurityChecks]] = None, exit_on_critical: bool = False, message_on_error: bool = False) -> List[SecurityStatus]:
 	"""
 	Verifies that a path meets certain security criteria;
 	if the path fails to meet the criteria the function returns False and optionally
@@ -500,7 +500,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path) from e
 			raise OSError from e
 
-def secure_write_string(path: FilePath, string: str, permissions: int = None, write_mode: str = "w", allow_relative_path: bool = False) -> None:
+def secure_write_string(path: FilePath, string: str, permissions: Optional[int] = None, write_mode: str = "w", allow_relative_path: bool = False) -> None:
 	"""
 	Write a string to a file in a safe manner
 
@@ -567,7 +567,7 @@ def secure_write_string(path: FilePath, string: str, permissions: int = None, wr
 			if write_mode == "x":
 				raise FilePathAuditError("Violated rules: SecurityStatus.EXISTS", path = path) from e
 
-def secure_read(path: FilePath, checks: List[SecurityChecks] = None, directory_is_symlink: bool = False, read_mode: str = "r") -> Union[str, bytes]:
+def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False, read_mode: str = "r") -> Union[str, bytes]:
 	"""
 	Read a string from a file in a safe manner
 
@@ -650,7 +650,7 @@ def secure_read(path: FilePath, checks: List[SecurityChecks] = None, directory_i
 
 	return string
 
-def secure_read_string(path: FilePath, checks: List[SecurityChecks] = None, directory_is_symlink: bool = False) -> str:
+def secure_read_string(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> str:
 	"""
 	Read a string from a file in a safe manner
 
@@ -666,7 +666,7 @@ def secure_read_string(path: FilePath, checks: List[SecurityChecks] = None, dire
 
 	return cast(str, secure_read(path, checks = checks, directory_is_symlink = directory_is_symlink, read_mode = "r"))
 
-def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
+def secure_which(path: FilePath, fallback_allowlist: List[str], security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
 	"""
 	Path is the default path where the file expected to be found,
 	or if no such default path exists, just the base name of the file.
@@ -735,7 +735,7 @@ def secure_which(path: FilePath, fallback_allowlist, security_policy: SecurityPo
 	tmp_allowlist = []
 	for directory in fallback_allowlist:
 		if directory.startswith("{HOME}"):
-			directory.replace("{HOME}", HOMEDIR, count = 1)
+			directory.replace("{HOME}", HOMEDIR, 1)
 
 		tmp_allowlist.append(directory)
 
@@ -840,7 +840,7 @@ def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = 
 
 	return violations
 
-def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False, permissions = None) -> List[SecurityStatus]:
+def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False, permissions: Optional[int] = None) -> List[SecurityStatus]:
 	"""
 	Copy a file
 		Parameters:

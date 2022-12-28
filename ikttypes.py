@@ -24,13 +24,13 @@ class ANSIThemeString:
 		self.string = string
 		self.themeref = themeref
 
-	def __str__(self):
+	def __str__(self) -> str:
 		return self.string
 
-	def __len__(self):
+	def __len__(self) -> int:
 		return len(self.string)
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return f"ANSIThemeString(string=\"{self.string}\", themeref=\"{self.themeref}\")"
 
 FilePath = NewType("FilePath", str)

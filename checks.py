@@ -15,7 +15,7 @@ import os
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Dict, Generator, List, Tuple, Union
+from typing import Dict, Generator, List, Optional, Tuple, Union
 
 from ansible_helper import ansible_configuration
 from ansible_helper import ansible_run_playbook_on_selection, ansible_print_play_results
@@ -452,6 +452,8 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, i
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
+	if vlist is None or _status != 200:
+		vlist = []
 
 	# Safe
 	version_regex = re.compile(r"^v(\d+)\.(\d+)\..*")
@@ -985,7 +987,7 @@ def check_file_permissions(cluster_name: str, kubeconfig: Dict, iktconfig_dict: 
 	return critical, error, warning, note
 
 # pylint: disable-next=unused-argument
-def run_playbook(playbookpath: FilePath, hosts = None, extra_values = None, quiet = False) -> Tuple[int, Dict]:
+def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optional[Dict] = None, quiet: bool = False) -> Tuple[int, Dict]:
 	"""
 	Run a playbook
 

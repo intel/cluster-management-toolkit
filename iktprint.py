@@ -79,7 +79,7 @@ def clear_screen() -> int:
 
 	return subprocess.run([cpath], check = False).returncode
 
-def __themearray_to_string(themearray) -> str:
+def __themearray_to_string(themearray: List[ANSIThemeString]) -> str:
 	if theme is None or themepath is None:
 		sys.exit("__themearray_to_string() used without calling init_iktprint() first; this is a programming error.")
 
@@ -106,12 +106,12 @@ def __themearray_to_string(themearray) -> str:
 
 	return string
 
-def themearray_len(themearray) -> int:
+def themearray_len(themearray: List[ANSIThemeString]) -> int:
 	"""
 	Return the length of a themearray
 
 		Parameters:
-			themearray (list[(str, str)]): The themearray to return the length of
+			themearray (list[ANSIThemeString]): The themearray to return the length of
 		Return:
 			The length of the themearray
 	"""
