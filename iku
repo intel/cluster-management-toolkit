@@ -1878,7 +1878,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						else:
 							_values.append((tuple(value), "raw"))
 				else:
-					value = deep_get_with_fallback(obj, path, default)
+					value = deep_get_with_fallback(obj, path, default, fallback_on_empty = fallback_on_empty)
 					_values.append((value, vtype))
 
 			values = []
