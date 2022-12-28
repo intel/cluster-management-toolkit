@@ -475,12 +475,16 @@ def get_list_as_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 
 	vlist: List[Any] = []
 	if "path" in kwargs:
-		path = deep_get(kwargs, DictPath("path"))
+		raw_path = deep_get(kwargs, DictPath("path"))
+		if isinstance(raw_path, str):
+			raw_path = [raw_path]
+		paths = []
+		for path in raw_path:
+			paths.append(DictPath(path))
 		_regex = deep_get(kwargs, DictPath("regex"))
 		if _regex is not None:
 			compiled_regex = re.compile(_regex)
-		items = deep_get(obj, DictPath(path), [])
-		for item in items:
+		for item in deep_get_with_fallback(obj, paths, []):
 			if _regex is not None:
 				tmp = compiled_regex.match(item)
 				if tmp is not None:
@@ -527,11 +531,16 @@ def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs:
 	vlist: List[Any] = []
 
 	if "path" in kwargs and "fields" in kwargs:
-		path = deep_get(kwargs, DictPath("path"))
+		raw_path = deep_get(kwargs, DictPath("path"))
+		if isinstance(raw_path, str):
+			raw_path = [raw_path]
+		paths = []
+		for path in raw_path:
+			paths.append(DictPath(path))
 		fields = deep_get(kwargs, DictPath("fields"), [])
 		pass_ref = deep_get(kwargs, DictPath("pass_ref"), False)
 		override_types = deep_get(kwargs, DictPath("override_types"), [])
-		for item in deep_get(obj, DictPath(path), []):
+		for item in deep_get_with_fallback(obj, paths, []):
 			tmp = []
 			for i, field in enumerate(fields):
 				default = ""
