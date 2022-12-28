@@ -10,3 +10,50 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "Infrastructure Info (Config)"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["infrastructure_name", "infrastructure_topology", "api_server_header", "api_server_url", "api_server_internal_uri", "etcd_discovery_domain", "platform_header", "platform_platform", "platform_status_type", "cloud_config"]
+    rows:
+      api_server_header:
+        header: [["API-server:", ["main", "infoheader"]]]
+      api_server_internal_uri:
+        header: [["  URL:", ["main", "infoheader"]]]
+        path: "status#apiServerInternalURI"
+        type: "str"
+      api_server_url:
+        header: [["  URL:", ["main", "infoheader"]]]
+        path: "status#apiServerURL"
+        type: "str"
+      cloud_config:
+        header: [["Cloud Config:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#cloudConfig#name"
+          pathtype: "value"
+          type: "str"
+          fallback_on_empty: true
+          default: "<empty>"
+      etcd_discovery_domain:
+        header: [["etcd Discovery Domain:", ["main", "infoheader"]]]
+        path: "status#etcdDiscoveryDomain"
+        type: "str"
+      infrastructure_name:
+        header: [["I", ["main", "infoheader_shortcut"]], ["nfrastructure Name:", ["main", "infoheader"]]]
+        path: "status#infrastructureName"
+        type: "str"
+      infrastructure_topology:
+        header: [["Infrastructure Topology:", ["main", "infoheader"]]]
+        path: "status#infrastructureTopology"
+        type: "str"
+      platform_header:
+        header: [["Platform:", ["main", "infoheader"]]]
+      platform_platform:
+        header: [["  Platform:", ["main", "infoheader"]]]
+        path: "status#platform"
+        type: "str"
+      platform_status_type:
+        header: [["  Status (Type):", ["main", "infoheader"]]]
+        path: "status#platformStatus#type"
+        type: "str"

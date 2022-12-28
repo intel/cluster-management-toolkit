@@ -10,3 +10,53 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "Network Info (Config)"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["network_type", "cluster_network_mtu"]
+    rows:
+      cluster_network_mtu:
+        header: [["Cluster Network MTU:", ["main", "infoheader"]]]
+        path: "status#clusterNetworkMTU"
+        type: "raw"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      network_type:
+        header: [["Network Type:", ["main", "infoheader"]]]
+        paths:
+        - path: ["status#networkType", "spec#networkType"]
+          pathtype: "value"
+          type: "str"
+  shortcuts:
+    "Show Cluster Network":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show cluster network"
+      widget: "windowwidget"
+      title: "Cluster Network:"
+      headers: ["CIDR:", "Host Prefix:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: ["status#clusterNetwork", "spec#clusterNetwork"]
+        fields:
+        - "cidr"
+        - "hostPrefix"
+      # This isn't supported for now
+      sortcolumn: "cidr"
+    "Show Service Network":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show service network"
+      title: "Service Network:"
+      widget: "windowwidget"
+      headers: ["CIDR:"]
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: ["status#serviceNetwork", "spec#serviceNetwork"]
+      # This isn't supported for now
+      sortcolumn: "cidr"

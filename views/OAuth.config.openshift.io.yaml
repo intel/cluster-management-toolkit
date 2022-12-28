@@ -10,3 +10,69 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "OAuth Info (Config)"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_version", "login_name", "access_token_max_age"]
+    rows:
+      access_token_max_age:
+        header: [["Access Token Max Age:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#tokenConfig#accessTokenMaxAgeSeconds"], "s"]
+          pathtype: "tuple"
+          type: "raw"
+          default: [0, ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "unit"
+          field_separators:
+          - type: "no_pad"
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
+      login_name:
+        header: [["Login Name:", ["main", "infoheader"]]]
+        path: "spec#templates#login#name"
+        type: "str"
+  shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"
+    "List Identity Providers":
+      key: "i"
+      modifier: "shift"
+      read_only: true
+      helptext: "List identity providers"
+      widget: "windowwidget"
+      title: "Identity Providers:"
+      headers: ["Type:", "Name:", "Mapping Method:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#identityProviders"
+        fields:
+        - "type"
+        - "name"
+        - "mappingMethod"
+      # This isn't supported for now
+      sortcolumn: "type"
