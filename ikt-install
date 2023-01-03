@@ -60,6 +60,7 @@ MISC_SYMLINKS = [
 
 PACKAGES_WITH_PIP_FALLBACK = {
 	"python3-ansible-runner": "ansible-runner",
+	"python3-validators": "validators",
 }
 
 PACKAGES_WITHOUT_FALLBACK = [
@@ -230,10 +231,16 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 	return list(pkgs), list(fallbacks)
 
 # pylint: disable-next=unused-argument
-def install(options: List[Tuple[str, str]], args: List[str]) -> None:
+def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Create directories, install configuration files, create symlinks,
 	and optionally install packages necessary to run iKT
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+		Returns:
+			status (int): 0 on success, errno on failure
 	"""
 
 	verbose: bool = False
@@ -314,6 +321,8 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> None:
 			  ANSIThemeString("$PATH", "argument"),
 			  ANSIThemeString(".", "default")])
 
+	return 0
+
 COMMANDLINE = {
 	# Default command
 	"__global_options": {
@@ -331,6 +340,7 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("HTTPS proxy to use if installing fallback packages from PIP on the format ", "description"),
 						ANSIThemeString("[user:passwd@]proxy:port", "argument")],
 				"requires_arg": True,
+				"validator": "url",
 			},
 			"--verbose": {
 				"description": [ANSIThemeString("Be more verbose", "description")],
@@ -353,7 +363,7 @@ COMMANDLINE = {
 	},
 }
 
-def main() -> None:
+def main() -> int:
 	"""
 	Main function for the program
 	"""

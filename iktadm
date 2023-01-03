@@ -3696,6 +3696,8 @@ COMMANDLINE = {
 						ANSIThemeString("TASK", "argument"),
 						ANSIThemeString(" instead of running all tasks", "description")],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (0, None),
 			},
 			"--skip-tasks": {
 				"values": [ANSIThemeString("TASK", "argument"),
@@ -3706,6 +3708,9 @@ COMMANDLINE = {
 						ANSIThemeString(",", "separator"),
 						ANSIThemeString("...", "argument")],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (0, None),
+				"list_separator": ",",
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
@@ -3832,6 +3837,9 @@ COMMANDLINE = {
 						ANSIThemeString(",", "separator"),
 						ANSIThemeString("...", "argument")],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (0, None),
+				"list_separator": ",",
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
@@ -3908,6 +3916,8 @@ COMMANDLINE = {
 						ANSIThemeString("TASK", "argument"),
 						ANSIThemeString(" instead of running all tasks", "description")],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (0, None),
 			},
 			"--skip-tasks": {
 				"values": [ANSIThemeString("TASK", "argument"),
@@ -3918,6 +3928,9 @@ COMMANDLINE = {
 						ANSIThemeString(",", "separator"),
 						ANSIThemeString("...", "argument")],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (0, None),
+				"list_separator": ",",
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
@@ -3967,6 +3980,8 @@ COMMANDLINE = {
 						ANSIThemeString("TASK", "argument"),
 						ANSIThemeString(" instead of running all tasks", "description")],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (0, None),
 			},
 			"--skip-tasks": {
 				"values": [ANSIThemeString("TASK", "argument"),
@@ -3977,6 +3992,9 @@ COMMANDLINE = {
 						ANSIThemeString(",", "separator"),
 						ANSIThemeString("...", "argument")],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (0, None),
+				"list_separator": ",",
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
@@ -4022,6 +4040,8 @@ COMMANDLINE = {
 						ANSIThemeString("TASK", "argument"),
 						ANSIThemeString(" instead of running all tasks", "description")],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (0, None),
 			},
 			"--skip-tasks": {
 				"values": [ANSIThemeString("TASK", "argument"),
@@ -4032,6 +4052,8 @@ COMMANDLINE = {
 						ANSIThemeString(",", "separator"),
 						ANSIThemeString("...", "argument")],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (0, None),
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
@@ -4072,8 +4094,14 @@ COMMANDLINE = {
 			 ANSIThemeString("...", "argument"),
 			 ANSIThemeString(" is not specified all control planes will be tainted.", "description")],
 		],
-		"min_args": 0,
-		"max_args": 1,
+		"optional_args": [
+			{
+				"name": "controlplane",
+				"string": [ANSIThemeString("CONTROLPLANE", "argument")],
+				"validator": "hostname_or_ip",
+				"list_separator": ",",
+			}
+		],
 		"callback": taint_control_plane,
 	},
 	"Untaint Control Plane": {
@@ -4096,8 +4124,14 @@ COMMANDLINE = {
 			 ANSIThemeString(" is not specified all control planes will be untainted", "description")],
 
 		],
-		"min_args": 0,
-		"max_args": 1,
+		"optional_args": [
+			{
+				"name": "controlplane",
+				"string": [ANSIThemeString("CONTROLPLANE", "argument")],
+				"validator": "hostname_or_ip",
+				"list_separator": ",",
+			}
+		],
 		"callback": untaint_control_plane,
 	},
 	"Audit": {
@@ -4134,8 +4168,13 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you are checking are already configured for login using an SSH key", "description")],
 			},
 		},
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "controlplane",
+				"string": [ANSIThemeString("CONTROLPLANE", "argument")],
+				"validator": "hostname_or_ip",
+			}
+		],
 		"callback": preflight_check,
 	},
 	"Troubleshoot": {

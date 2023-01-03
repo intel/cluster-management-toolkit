@@ -6,12 +6,17 @@ This module parses command line options and generate helptexts
 
 import errno
 import sys
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
+try:
+	import validators
+except ModuleNotFoundError:
+	validators = None
 
 import about
 
-from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath
+import iktlib
 from iktprint import themearray_len, iktprint, init_iktprint
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath
 
 programname = None
 programversion = None
@@ -19,6 +24,61 @@ programdescription = None
 programauthors = None
 
 commandline = None
+
+def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool = True, exit_on_failure: bool = True) -> bool:
+	"""
+	Checks whether value can be represented as an integer,
+	and whether it's within the range [min, max].
+
+		Parameters:
+			min (int): The minimum value
+			max (int): The maximum value
+			value (any): The representation of value
+			error_on_failure (bool): Print an error message on failure
+			exit_on_failure (bool): Exit on failure
+		Returns:
+			result (bool): True if the value can be represented as int, False if not
+	"""
+
+	if not isinstance(value, int) and not value.isdigit():
+		if error_on_failure == True:
+			iktprint([ANSIThemeString(f"{programname}", "programname"),
+				  ANSIThemeString(": “", "default"),
+				  ANSIThemeString(f"{value}", "option"),
+				  ANSIThemeString("“ is not an integer.", "default")], stderr = True)
+		if exit_on_failure == True:
+			sys.exit(errno.EINVAL)
+		return False
+
+	if minval is None:
+		minval = -sys.maxsize
+		maxval_str = ""
+	else:
+		minval_str = str(minval)
+
+	if maxval is None:
+		maxval = sys.maxsize
+		maxval_str = ""
+	else:
+		maxval_str = str(maxval)
+
+	if minval > maxval:
+		raise ValueError("minval > maxval: This is a programming error!")
+
+	if not minval <= int(value) <= maxval:
+		if error_on_failure == True:
+			iktprint([ANSIThemeString(f"{programname}", "programname"),
+				  ANSIThemeString(": “", "default"),
+				  ANSIThemeString(f"{value}", "option"),
+				  ANSIThemeString("“ is not in the range [", "default"),
+				  ANSIThemeString(minval_str, "emphasis"),
+				  ANSIThemeString(", ", "default"),
+				  ANSIThemeString(maxval_str, "emphasis"),
+				  ANSIThemeString("].", "default")], stderr = True)
+		if exit_on_failure == True:
+			sys.exit(errno.EINVAL)
+		return False
+	return True
 
 # pylint: disable-next=unused-argument
 def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
@@ -260,7 +320,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	return 0
 
-def __find_command(__commandline: Dict, arg: str) -> Tuple[str, Optional[Callable[[Tuple[str, str], List[str]], None]], str, int, int]:
+def __find_command(__commandline: Dict, arg: str) -> Tuple[str, Optional[Callable[[Tuple[str, str], List[str]], None]], str, int, int, List[Dict], List[Dict]]:
 	command = None
 	commandname = ""
 	min_args = 0
@@ -275,13 +335,19 @@ def __find_command(__commandline: Dict, arg: str) -> Tuple[str, Optional[Callabl
 			if cmd == arg:
 				commandname = cmd
 				command = deep_get(value, DictPath("callback"))
-				min_args = deep_get(value, DictPath("min_args"), 0)
-				max_args = deep_get(value, DictPath("max_args"), 0)
+				required_args = deep_get(value, DictPath("required_args"), [])
+				optional_args = deep_get(value, DictPath("optional_args"), [])
+				min_args = deep_get(value, DictPath("min_args"))
+				max_args = deep_get(value, DictPath("max_args"))
+				if min_args is None:
+					min_args = len(required_args)
+				if max_args is None:
+					max_args = min_args + len(optional_args)
 				break
 		if command is not None:
 			break
 
-	return commandname, command, key, min_args, max_args
+	return commandname, command, key, min_args, max_args, required_args, optional_args
 
 COMMANDLINEDEFAULTS = {
 	"Help": {
@@ -313,7 +379,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 			__programauthors (str): The authors of the program (used in version information)
 		Returns:
 			(command, options, args):
-				command (str): The command to call
+				command (callable): The command to call
 				options (list[(str, str)]): The options to pass to the command
 				args (list[str]): The arguments to pass to the command
 	"""
@@ -356,11 +422,11 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 
 		# Have we got a command to execute?
 		if command is None:
-			commandname, command, key, min_args, max_args = __find_command(commandline, argv[i])
+			commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, argv[i])
 
 			if command is None:
 				if default_command is not None:
-					commandname, command, key, min_args, max_args = __find_command(commandline, default_command)
+					commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, default_command)
 
 				if command is None:
 					iktprint([ANSIThemeString(f"{programname}", "programname"),
@@ -427,6 +493,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 
 					# Does this option require arguments?
 					requires_arg = deep_get(commandline, DictPath(f"{__key}#options#{option}#requires_arg"), False)
+
 					if requires_arg == True:
 						i += 1
 						if i >= len(argv):
@@ -441,13 +508,32 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 							sys.exit(errno.EINVAL)
 						arg = argv[i]
 
+					# Validate the argument
+					validator = deep_get(commandline, DictPath(f"{__key}#options#{option}#validator"), "")
+					list_separator = deep_get(commandline, DictPath(f"{__key}#options#{option}#list_separator"))
+					minval, maxval = deep_get(commandline, DictPath(f"{__key}#options#{option}#valid_range"), (None, None))
+
+					if validator == "url" and validators is not None:
+						tmp_arg = arg
+						if not tmp_arg.startswith("http"):
+							tmp_arg = f"https://{arg}"
+
+						# Workaround; it seems validators.url accepts usernames that start with 
+						if arg.startswith("-") or not validators.url(tmp_arg):
+							iktprint([ANSIThemeString(f"{programname}", "programname"),
+								  ANSIThemeString(": “", "default"),
+								  ANSIThemeString(f"{tmp_arg}", "option"),
+								  ANSIThemeString("“ is not a valid URL.", "default")], stderr = True)
+							sys.exit(errno.EINVAL)
+					elif validator == "int":
+						_result = validator_int(minval, maxval, arg)
 					options.append((option, arg))
 		else:
 			args.append(argv[i])
 		i += 1
 
 	if command is None and default_command is not None:
-		commandname, command, key, min_args, max_args = __find_command(commandline, default_command)
+		commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, default_command)
 
 	if max_args == 0 and len(args) > 0:
 		iktprint([ANSIThemeString(f"{programname}", "programname"),
@@ -502,5 +588,43 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 	else:
 		# Are there implicit options?
 		options += deep_get(commandline, DictPath(f"{key}#implicit_options"), [])
+
+	# Validate the args against required_args and optional_args
+	for i, arg in enumerate(required_args + optional_args):
+		validator = deep_get(arg, DictPath("validator"), "")
+		list_separator = deep_get(arg, DictPath("list_separator"))
+		minval, maxval = deep_get(arg, DictPath("valid_range"), (None, None))
+
+		if list_separator is None:
+			arglist = [args[i]]
+		else:
+			arglist = args[i].split(list_separator)
+
+		for subarg in arglist:
+			if validator in ("hostname", "hostname_or_ip", "ip"):
+				valid_dns_label = iktlib.validate_name("dns-label", subarg)
+				valid_ipv4_address = validators.ipv4(subarg)
+				valid_ipv6_address = validators.ipv6(subarg)
+
+				if validator == "hostname" and not valid_dns_label:
+					iktprint([ANSIThemeString(f"{programname}", "programname"),
+						  ANSIThemeString(": “", "default"),
+						  ANSIThemeString(f"{subarg}", "option"),
+						  ANSIThemeString("“ is not a valid hostname.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+				if validator == "ip" and not valid_ipv4_address and not valid_ipv6_address:
+					iktprint([ANSIThemeString(f"{programname}", "programname"),
+						  ANSIThemeString(": “", "default"),
+						  ANSIThemeString(f"{subarg}", "option"),
+						  ANSIThemeString("“ is not a valid IP-address.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+				if validator == "hostname_or_ip" and not valid_dns_label and not valid_ipv4_address and not valid_ipv6_address:
+					iktprint([ANSIThemeString(f"{programname}", "programname"),
+						  ANSIThemeString(": “", "default"),
+						  ANSIThemeString(f"{subarg}", "option"),
+						  ANSIThemeString("“ is neither a valid hostname nor a valid IP-address.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+			elif validator == "int":
+				_result = validator_int(minval, maxval, subarg)
 
 	return command, options, args
