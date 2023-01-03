@@ -9496,7 +9496,7 @@ def create_namespace(stdscr, **kwargs):
 	_retval = clear_screen()
 
 	# Verify that the name of the new namespace is valid
-	if kh.validate_name("dns-label", name) == False:
+	if iktlib.validate_name("dns-label", name) == False:
 		msg = [ANSIThemeString("Error: ", "error"),
 		       ANSIThemeString("“", "default"),
 		       ANSIThemeString(name, "argument"),
