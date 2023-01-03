@@ -525,7 +525,7 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 		SecurityChecks.IS_FILE,
 	]
 
-	if allow_relative_path is False:
+	if allow_relative_path == False:
 		checks += [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
 			SecurityChecks.RESOLVES_TO_SELF,

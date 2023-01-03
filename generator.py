@@ -26,7 +26,7 @@ def format_list(items, fieldlen: int, pad, ralign: bool, selected: bool,
 	array: List[Union[ThemeRef, ThemeString]] = []
 	totallen = 0
 
-	if item_separator == None:
+	if item_separator is None:
 		item_separator = ThemeRef("separators", "list", selected)
 
 	if ellipsis is None:
@@ -189,7 +189,7 @@ def map_value(value, references = None, selected: bool = False, default_field_co
 	elif isinstance(reference_value, (str, bool)) or len(ranges) == 0:
 		string = str(output_value)
 		_string = string
-		if match_case is False:
+		if match_case == False:
 			matched = False
 			if string in _mapping and string.lower() in _mapping and string != string.lower():
 				raise ValueError("When using match_case == False the mapping cannot contain keys that only differ in case")

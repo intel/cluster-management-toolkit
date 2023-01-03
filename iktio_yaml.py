@@ -5,7 +5,7 @@
 YAML I/O helpers for Intel Kubernetes Toolkit
 """
 
-from typing import Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 import yaml
 
 import iktio
@@ -37,7 +37,7 @@ def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions
 		yaml_str = yaml_str.replace(r"null", "")
 	iktio.secure_write_string(path, yaml_str, permissions = permissions, write_mode = write_mode)
 
-def secure_read_yaml(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> Dict:
+def secure_read_yaml(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> Any:
 	"""
 	Read data in YAML-format from a file in a safe manner
 
@@ -45,7 +45,7 @@ def secure_read_yaml(path: FilePath, checks: Optional[List[SecurityChecks]] = No
 			path (FilePath): The path to read from
 			directory_is_symlink (bool): The directory that the path points to is a symlink
 		Returns:
-			yaml_data (yaml): The read YAML-data
+			yaml_data (any): The read YAML-data
 		Raises:
 			yaml.composer.ComposerError
 			yaml.parser.ParserError
@@ -56,7 +56,7 @@ def secure_read_yaml(path: FilePath, checks: Optional[List[SecurityChecks]] = No
 	string = iktio.secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
 	return yaml.safe_load(string)
 
-def secure_read_yaml_all(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> Iterator[Dict]:
+def secure_read_yaml_all(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> Iterator[Any]:
 	"""
 	Read all dicts in YAML-format from a file in a safe manner
 	Note: since the return type from safe_load_all() is an iterator evaluation does not happen until
@@ -67,7 +67,7 @@ def secure_read_yaml_all(path: FilePath, checks: Optional[List[SecurityChecks]] 
 			path (FilePath): The path to read from
 			directory_is_symlink (bool): The directory that the path points to is a symlink
 		Returns:
-			iterator[dict]: An iterator of dicts
+			iterator[any]: An iterator of data
 		Raises:
 			FileNotFoundError
 			ikttypes.FilePathAuditError

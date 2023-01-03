@@ -3136,7 +3136,7 @@ class UIProps:
 						kind = deep_get(on_activation, DictPath("kind"), self.view)
 						on_activation.pop("kind", None)
 						_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
-					if _retval != None:
+					if _retval is not None:
 						self.force_update()
 					return _retval
 		elif bstate == curses.BUTTON1_CLICKED:
@@ -3168,7 +3168,7 @@ class UIProps:
 							kind = deep_get(on_activation, DictPath("kind"), self.view)
 							on_activation.pop("kind", None)
 							_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
-						if _retval != None:
+						if _retval is not None:
 							self.force_update()
 						return _retval
 			# clicks on the vertical scrollbar
@@ -3248,7 +3248,7 @@ class UIProps:
 				kind = deep_get(on_activation, DictPath("kind"), self.view)
 				on_activation.pop("kind", None)
 				_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
-			if _retval != None:
+			if _retval is not None:
 				self.force_update()
 			return _retval
 

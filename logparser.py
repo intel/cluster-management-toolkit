@@ -779,8 +779,8 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 	if tmp is not None:
 		date = tmp[1]
 		hmsms = tmp[2]
-		
-		if reformat_timestamps is True:
+
+		if reformat_timestamps == True:
 			ts = f"{date} {hmsms} +0000"
 		else:
 			ts = f"{date}T{hmsms}Z"
@@ -988,7 +988,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 
 	if logentry is not None and isinstance(logentry, dict):
 		# If msg_first we reorder the dict
-		if logparser_configuration.msg_first is True:
+		if logparser_configuration.msg_first == True:
 			_d = {}
 			for key in messages + errors:
 				value = logentry.get(key, None)
@@ -1003,10 +1003,10 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 
 		msg = deep_get_with_fallback(logentry, messages, "")
 		level = deep_get_with_fallback(logentry, severities, None)
-		if logparser_configuration.pop_severity is True:
+		if logparser_configuration.pop_severity == True:
 			for _sev in severities:
 				logentry.pop(_sev, None)
-		if logparser_configuration.pop_ts is True:
+		if logparser_configuration.pop_ts == True:
 			for _ts in timestamps:
 				logentry.pop(_ts, None)
 
@@ -1028,7 +1028,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 						if i < len(_separators):
 							facility += _separators[i]
 
-		if logparser_configuration.pop_facility is True:
+		if logparser_configuration.pop_facility == True:
 			for _fac in facilities:
 				if isinstance(_fac, str):
 					logentry.pop(_fac, None)
@@ -1054,7 +1054,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 			if msg == "":
 				message = str(logentry)
 			else:
-				if logparser_configuration.msg_extract is True:
+				if logparser_configuration.msg_extract == True:
 					# pop the first matching _msg
 					for _msg in messages:
 						if _msg in logentry:
@@ -1085,7 +1085,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 			else:
 				errorseverity = LogLevel.ERR
 
-			if logparser_configuration.msg_extract is True:
+			if logparser_configuration.msg_extract == True:
 				message = msg
 				# Pop the first matching _msg
 				for _msg in messages:
