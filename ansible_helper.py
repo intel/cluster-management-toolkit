@@ -1152,13 +1152,13 @@ def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: Li
 	if len(msg_lines) > 0:
 		iktprint([ANSIThemeString("msg:", "header")])
 		for line in msg_lines:
-			iktprint([ANSIThemeString(line, "default")])
+			iktprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")])
 		iktprint([ANSIThemeString("", "default")])
 
 	if len(stdout_lines) > 0 or len(msg_lines) == 0 and len(stderr_lines) == 0:
 		iktprint([ANSIThemeString("stdout:", "header")])
 		for line in stdout_lines:
-			iktprint([ANSIThemeString(f"{line}", "default")])
+			iktprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")])
 		if len(stdout_lines) == 0:
 			iktprint([ANSIThemeString("<no output>", "none")])
 		iktprint([ANSIThemeString("", "default")])
@@ -1167,7 +1167,7 @@ def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: Li
 	if len(stderr_lines) > 0 or retval != 0:
 		iktprint([ANSIThemeString("stderr:", "header")])
 		for line in stderr_lines:
-			iktprint([ANSIThemeString(f"{line}", "default")], stderr = True)
+			iktprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")], stderr = True)
 		if len(stderr_lines) == 0:
 			iktprint([ANSIThemeString("<no output>", "none")])
 		iktprint([ANSIThemeString("", "default")])
