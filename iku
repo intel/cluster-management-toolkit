@@ -3261,7 +3261,7 @@ def get_pv_status(pv):
 		status_group = StatusGroup.NOT_OK
 	return reason, status_group
 
-def get_pod_log_by_name_namespace_container(name, namespace, container, tail_lines = default_tail_lines):
+def get_pod_log_by_name_namespace_container(name: str, namespace: str, container: str, tail_lines: int = default_tail_lines) -> Tuple[str, bool]:
 	internal_error = False
 
 	rawmsg, status = kh.read_namespaced_pod_log(name, namespace, container = container, tail_lines = tail_lines)
