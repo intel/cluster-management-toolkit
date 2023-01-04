@@ -10297,11 +10297,13 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 		readonly = deep_get(action_list, DictPath(f"{item[2]}#read_only"), False)
 		metadata = deep_get(action_list, DictPath(f"{item[2]}#metadata"), [])
 		tmp = []
-		for _str, _fmt in metadata:
-			if type(_fmt) == list:
-				tmp.append((_str, tuple(_fmt)))
+		for md in metadata:
+			if isinstance(md, ThemeString):
+				tmp.append(md)
+			elif isinstance(md[1], list):
+				tmp.append(ThemeString(md[0], ThemeAttr(md[1][0], md[1][1])))
 			else:
-				tmp.append((_str, _fmt))
+				raise ValueError(f"Unknown type for metadata {type(md)} for metadata {md}; expected ThemeString(str, ThemeAttr) or [str, [str, str]]")
 		metadata = tmp
 		if singleonly == True and single_item == False:
 			continue
