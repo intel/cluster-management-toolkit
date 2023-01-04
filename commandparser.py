@@ -323,6 +323,8 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 def __find_command(__commandline: Dict, arg: str) -> Tuple[str, Optional[Callable[[Tuple[str, str], List[str]], None]], str, int, int, List[Dict], List[Dict]]:
 	command = None
 	commandname = ""
+	required_args = []
+	optional_args = []
 	min_args = 0
 	max_args = 0
 	key = ""
