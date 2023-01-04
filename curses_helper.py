@@ -93,7 +93,7 @@ class ThemeString:
 		return len(self.string)
 
 	def __repr__(self) -> str:
-		return f"ThemeString(\"{self.string}\", {repr(self.themeattr)}, \"{self.selected}\")"
+		return f"ThemeString(\"{self.string}\", {repr(self.themeattr)}, {self.selected})"
 
 	def get_themeattr(self) -> ThemeAttr:
 		"""
@@ -172,7 +172,7 @@ class ThemeRef:
 		return len(str(self))
 
 	def __repr__(self) -> str:
-		return f"ThemeRef(\"{self.context}\", \"{self.key}\", \"{self.selected}\")"
+		return f"ThemeRef(\"{self.context}\", \"{self.key}\", {self.selected})"
 
 	def to_themearray(self) -> List[ThemeString]:
 		"""
