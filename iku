@@ -5044,8 +5044,28 @@ def genericlistloop(stdscr, view):
 				ThemeString(f"{serverstatus}", ThemeAttr("statusbar", "default")),
 			]
 
-			for key, path in deep_get(viewref, DictPath("statusmsg"), []):
-				value = str(deep_get(listview_args, DictPath(path), "<unset>"))
+			for status_data in deep_get(viewref, DictPath("statusmsg"), []):
+				if len(status_data) == 2:
+					key, path = status_data
+					default_status = "<unset>"
+				else:
+					key, path, default_status = status_data
+
+				# If path is a list the first item tells what source to use and the second
+				# what path to fetch the value from
+				if isinstance(path, list):
+					if path[0] == "config":
+						src_obj = iktlib.iktconfig
+					#elif path[0] == "obj":
+					#	value_path = obj
+					elif path[0] == "var":
+						src_obj = listview_args
+					value_path = DictPath(path[1])
+				else:
+					src_obj = listview_args
+					value_path = DictPath(path)
+
+				value = str(deep_get(src_obj, value_path, default_status))
 				if len(statusarray2) > 0:
 					statusarray2 += [ThemeRef("separators", "statusbar")]
 				statusarray2 += [
