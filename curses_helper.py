@@ -2227,7 +2227,7 @@ class UIProps:
 		ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
 
 		timestamparray: List[Union[ThemeRef, ThemeString]] = [
-			ThemeString(rtee, ThemeAttr("main", "statusbar")),
+			ThemeString(rtee, ThemeAttr("main", "default")),
 		]
 
 		if len(self.helpstring) > 0:
@@ -2241,7 +2241,7 @@ class UIProps:
 
 		if self.borders == True:
 			timestamparray += [
-				ThemeString(ltee, ThemeAttr("main", "statusbar")),
+				ThemeString(ltee, ThemeAttr("main", "default")),
 			]
 
 		xpos -= themearray_len(timestamparray)
