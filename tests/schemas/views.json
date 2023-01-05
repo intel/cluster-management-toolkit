@@ -863,7 +863,7 @@
 		"simple_path": {
 			"description": "A path to use with deep_get()/deep_set()",
 			"type": "string",
-			"pattern": "^[_a-z][A-Za-z0-9#_/.=-]*[A-Za-z0-9=]$"
+			"pattern": "^[_A-Za-z][A-Za-z0-9#_/.=-]*[A-Za-z0-9=]$"
 		},
 		"view_name": {
 			"description": "The name of a view, as used from the command line; view names starting with __ are skipped",
@@ -1421,17 +1421,57 @@
 					"type": "array",
 					"items": {
 						"description": "An item to add to the status bar",
-						"type": "array",
-						"prefixItems": [
+						"oneOf": [
 							{
-								"description": "The header for the entry",
-								"type": "string"
-							}, {
-								"description": "The path to get the value from",
-								"$ref": "#/definitions/simple_path"
+								"type": "array",
+								"prefixItems": [
+									{
+										"description": "The header for the entry",
+										"type": "string"
+									}, {
+										"description": "The path to get the value from",
+										"$ref": "#/definitions/simple_path"
+									}
+								],
+								"items": false
+							},
+							{
+								"type": "array",
+								"prefixItems": [
+									{
+										"description": "The header for the entry",
+										"type": "string"
+									}, {
+										"oneOf": [
+											{
+												"description": "The path to get the value from",
+												"$ref": "#/definitions/simple_path"
+											},
+											{
+												"type": "array",
+												"prefixItems": [
+													{
+														"description": "The source to get the value from",
+														"enum": [
+															"config",
+															"var"
+														]
+													}, {
+														"description": "The path to get the value from",
+														"$ref": "#/definitions/simple_path"
+													}
+												],
+												"items": false
+											}
+										]
+									}, {
+										"description": "The default value to use if the path is empty",
+										"type": "string"
+									}
+								],
+								"items": false
 							}
-						],
-						"items": false
+						]
 					},
 					"minItems": 1
 				}
@@ -2014,7 +2054,7 @@
 															"minItems": 1
 														},
 														"path": {
-															"$ref": "#/definitions/simple_path"
+															"$ref": "#/definitions/path"
 														},
 														"pass_ref": {
 															"description": "Pass a reference to the list entry along with its elements",
