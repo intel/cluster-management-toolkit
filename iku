@@ -2560,11 +2560,26 @@ def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]],
 	"""
 
 	path = deep_get(kwargs, DictPath("path"))
+	subpath = deep_get(kwargs, DictPath("subpath"))
+	path_fields = deep_get(kwargs, DictPath("path_fields"))
 
 	# As a special case passing the empty string as path will return the object instead of a list
 	if path == "":
 		return obj, 200
-	return deep_get(obj, DictPath(path)), 200
+
+	# If a subpath and path_fields are set path_fields from path will be merged into subpath
+	# and the subpath lists are flattened into the path list.
+	if subpath is not None and path_fields is not None:
+		vlist = []
+		for item in deep_get(obj, DictPath(path), []):
+			for subobj in deep_get(item, DictPath(subpath), []):
+				for path_field in path_fields:
+					subobj[path_field] = deep_get(item, DictPath(path_field))
+				vlist.append(subobj)
+	else:
+		vlist = deep_get(obj, DictPath(path))
+
+	return vlist, 200
 
 # pylint: disable-next=unused-argument
 def listgetter_policy_rules(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:

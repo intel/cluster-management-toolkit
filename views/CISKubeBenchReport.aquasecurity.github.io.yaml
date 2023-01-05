@@ -84,3 +84,165 @@ listview:
             - context: "types"
               type: "watermark_medium"
       align: "right"
+infoview:
+  name: "CSI Kube-Bench Report Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["scanner", "vendor", "fail", "warn", "info", "pass"]
+    rows:
+      fail:
+        header: [["Fail:", ["main", "infoheader"]]]
+        path: "report#summary#failCount"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_high"
+      info:
+        header: [["Info:", ["main", "infoheader"]]]
+        path: "report#summary#infoCount"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_medium"
+      pass:
+        header: [["Pass:", ["main", "infoheader"]]]
+        path: "report#summary#passCount"
+        type: "raw"
+        formatting:
+          field_colors:
+          - context: "main"
+            type: "status_ok"
+      scanner:
+        header: [["Scanner:", ["main", "infoheader"]]]
+        paths:
+        - path: [["report#scanner#name"], ["report#scanner#version"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      vendor:
+        header: [["Vendor:", ["main", "infoheader"]]]
+        path: "report#scanner#vendor"
+        type: "str"
+      warn:
+        header: [["Warn:", ["main", "infoheader"]]]
+        path: "report#summary#warnCount"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_medium"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "report#sections"
+      subpath: "tests"
+      path_fields:
+      - "node_type"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["section", "test", "fail", "warn", "info", "pass"]
+        sortcolumn: "severity"
+    fields:
+      section:
+        header: "Section:"
+        path: "node_type"
+        type: "str"
+      fail:
+        header: "Fail:"
+        path: "fail"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_high"
+      info:
+        header: "Info:"
+        path: "info"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_medium"
+      pass:
+        header: "Pass:"
+        path: "pass"
+        type: "int"
+        formatting:
+          field_colors:
+          - context: "main"
+            type: "status_ok"
+      test:
+        header: "Test:"
+        path: "desc"
+        type: "str"
+      warn:
+        header: "Warn:"
+        path: "warn"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_medium"
