@@ -7085,14 +7085,24 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	annotations = deep_get(viewref, DictPath("annotations"), "metadata#annotations")
 	extraref = deep_get(viewref, DictPath("extraref"))
 	data = deep_get(viewref, DictPath("data"), None)
-	name_path = deep_get(viewref, DictPath("name_path"), "metadata#name")
-	namespace_path = deep_get(viewref, DictPath("namespace_path"), "metadata#namespace")
-	creation_timestamp_path = deep_get(viewref, DictPath("creation_timestamp_path"), "metadata#creationTimestamp")
 	if data is not None:
 		data = obj
 	viewoverride = deep_get(viewref, DictPath("viewoverride"), view)
 	infopadheight = 0
 	if "infopad" in viewref:
+		if "name_path" in viewref:
+			name_path = deep_get(viewref, DictPath("name_path"))
+		else:
+			name_path = "metadata#name"
+		if "namespace_path" in viewref:
+			namespace_path = deep_get(viewref, DictPath("namespace_path"))
+		else:
+			namespace_path = "metadata#namespace"
+		if "creation_timestamp_path" in viewref:
+			creation_timestamp_path = deep_get(viewref, DictPath("creation_timestamp_path"))
+		else:
+			creation_timestamp_path = "metadata#creationTimestamp"
+
 		# Number of fields added conditionally
 		if name_path is not None and len(name_path) > 0 and deep_get(obj, DictPath(name_path)) is not None:
 			infopadheight += 1
@@ -11295,10 +11305,6 @@ def populate_views(force_refresh: bool = False) -> None:
 						header.append(ThemeString(string, ThemeAttr(formatting[0], formatting[1])))
 					row_fields[row]["header"] = header
 
-			name_path = deep_get(d, DictPath("infoview#infopad#name_path"))
-			namespace_path = deep_get(d, DictPath("infoview#infopad#namespace_path"), "")
-			creation_timestamp_path = deep_get(d, DictPath("infoview#infopad#creation_timestamp_path"), "")
-
 			listpad = deep_get(d, DictPath("infoview#listpad"), {})
 
 			on_activation = deep_get(listpad, DictPath("on_activation"))
@@ -11353,19 +11359,20 @@ def populate_views(force_refresh: bool = False) -> None:
 				"annotations": annotations,
 				"shortcuts": {},
 			}
-			objgetter = deep_get(d, DictPath("infoview#infopad#objgetter"))
+			objgetter = deep_get(infopad, DictPath("objgetter"))
 			if objgetter is not None:
 				infoview_entry["objgetter"] = deep_get(objgetter_allowlist, DictPath(objgetter))
 
 			if len(listpad) > 0:
 				infoview_entry["listpad"]["on_activation"] = on_activation
 
-			if name_path is not None:
-				infoview_entry["name_path"] = name_path
-			if namespace_path is None or len(namespace_path) > 0:
-				infoview_entry["namespace_path"] = namespace_path
-			if creation_timestamp_path is None or len(creation_timestamp_path) > 0:
-				infoview_entry["creation_timestamp_path"] = creation_timestamp_path
+			if infopad is not None:
+				if "name_path" in infopad:
+					infoview_entry["name_path"] = deep_get(infopad, DictPath("name_path"))
+				if "namespace_path" in infopad:
+					infoview_entry["namespace_path"] = deep_get(infopad, DictPath("namespace_path"))
+				if "creation_timestamp_path" in infopad:
+					infoview_entry["creation_timestamp_path"] = deep_get(infopad, DictPath("creation_timestamp_path"))
 
 			list_listgetter = deep_get(listpad, DictPath("listgetter"))
 			list_listgetter_args = deep_get(listpad, DictPath("listgetter_args"), {})

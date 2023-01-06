@@ -1,0 +1,49 @@
+kind: "__CISKubeBenchReportTestData"
+api_family: "aquasecurity.github.io"
+default_command: "__"
+infoview:
+  name: "CIS Kube-Bench Report Test Data"
+  infopad:
+    name_path: null
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["test", "status"]
+    rows:
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "PASS":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "WARN":
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              "FAIL":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      test:
+        header: [["Test:", ["main", "infoheader"]]]
+        paths:
+        - path: [["test_number"], ["test_desc"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "generic"
+          field_separators:
+          - type: "id_prefix"
+  logpad:
+    infogetter: "logpad_msg_getter"
+    infogetter_args:
+      path: "remediation"
+    timestamps: false

@@ -1,0 +1,139 @@
+kind: "__CISKubeBenchReportTestSetData"
+api_family: "aquasecurity.github.io"
+default_command: "__"
+infoview:
+  name: "CIS Kube-Bench Report Test Set Data"
+  infopad:
+    name_path: null
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["test_set", "category", "fail", "warn", "info", "pass"]
+    rows:
+      test_set:
+        header: [["Test Set:", ["main", "infoheader"]]]
+        paths:
+        - path: [["section"], ["desc"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "generic"
+          field_separators:
+          - type: "id_prefix"
+      fail:
+        header: [["Fail:", ["main", "infoheader"]]]
+        path: "fail"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_high"
+      info:
+        header: [["Info:", ["main", "infoheader"]]]
+        path: "info"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_medium"
+      pass:
+        header: [["Pass:", ["main", "infoheader"]]]
+        path: "pass"
+        type: "raw"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      category:
+        header: [["Category:", ["main", "infoheader"]]]
+        path: "node_type"
+        type: "str"
+      test_set_id:
+        header: [["Test Set ID#:", ["main", "infoheader"]]]
+        path: "section"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      warn:
+        header: [["Warn:", ["main", "infoheader"]]]
+        path: "warn"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_medium"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__CISKubeBenchReportTestData"
+      api_family: "aquasecurity.github.io"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "results"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["test_id", "description", "status"]
+        sortcolumn: "test_id"
+    fields:
+      description:
+        header: "Description:"
+        path: "test_desc"
+        type: "str"
+      status:
+        header: "Status:"
+        path: "status"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "PASS":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "WARN":
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              "FAIL":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      test_id:
+        header: "ID#:"
+        path: "test_number"
+        type: "str"
+        align: right
+        formatting:
+          field_colors:
+          - type: "numerical"

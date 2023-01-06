@@ -89,8 +89,31 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["scanner", "vendor", "fail", "warn", "info", "pass"]
+        fields: ["controller", "scanner", "vendor", "fail", "warn", "info", "pass", "update_timestamp"]
     rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
       fail:
         header: [["Fail:", ["main", "infoheader"]]]
         path: "report#summary#failCount"
@@ -131,8 +154,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - context: "main"
-            type: "status_ok"
+          - type: "numerical"
       scanner:
         header: [["Scanner:", ["main", "infoheader"]]]
         paths:
@@ -145,6 +167,13 @@ infoview:
           - type: "version"
           field_separators:
           - type: "version"
+      update_timestamp:
+        header: [["Last Update:", ["main", "infoheader"]]]
+        paths:
+        - path: ["report#updateTimestamp"]
+          type: "timestamp"
+          default: -1
+        formatter: "timestamp"
       vendor:
         header: [["Vendor:", ["main", "infoheader"]]]
         path: "report#scanner#vendor"
@@ -167,6 +196,10 @@ infoview:
               - context: "types"
                 type: "watermark_medium"
   listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__CISKubeBenchReportTestSetData"
+      api_family: "aquasecurity.github.io"
     listgetter: "listgetter_path"
     listgetter_args:
       path: "report#sections"
@@ -176,17 +209,26 @@ infoview:
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["section", "test", "fail", "warn", "info", "pass"]
-        sortcolumn: "severity"
+        fields: ["test_set_id", "test_set", "category", "fail", "warn", "info", "pass"]
+        sortcolumn: "test_set_id"
     fields:
-      section:
-        header: "Section:"
+      category:
+        header: "Category:"
         path: "node_type"
         type: "str"
+      test_set_id:
+        header: "ID#:"
+        path: "section"
+        type: "str"
+        align: right
+        formatting:
+          field_colors:
+          - type: "numerical"
       fail:
         header: "Fail:"
         path: "fail"
         type: "raw"
+        align: right
         formatter: "value_mapper"
         formatting:
           mapping:
@@ -204,6 +246,7 @@ infoview:
         header: "Info:"
         path: "info"
         type: "raw"
+        align: right
         formatter: "value_mapper"
         formatting:
           mapping:
@@ -221,18 +264,19 @@ infoview:
         header: "Pass:"
         path: "pass"
         type: "int"
+        align: right
         formatting:
           field_colors:
-          - context: "main"
-            type: "status_ok"
-      test:
-        header: "Test:"
+          - type: "numerical"
+      test_set:
+        header: "Test Set:"
         path: "desc"
         type: "str"
       warn:
         header: "Warn:"
         path: "warn"
         type: "raw"
+        align: right
         formatter: "value_mapper"
         formatting:
           mapping:
@@ -246,3 +290,15 @@ infoview:
               field_colors:
               - context: "types"
                 type: "watermark_medium"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
