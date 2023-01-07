@@ -1584,6 +1584,9 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 
 					if isinstance(tmp, list):
 						for _tmp in tmp:
+							if isinstance(_tmp, bool):
+								_tmp = f"__{str(_tmp)}"
+
 							if _tmp in substitutions:
 								value.append(substitutions.get(_tmp))
 							elif "__default" in substitutions:
@@ -2559,6 +2562,34 @@ def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]],
 				retval (int): The return value
 	"""
 
+	vlist = []
+
+	paths = deep_get(kwargs, DictPath("paths"))
+
+	if paths is not None:
+		ppaths = []
+
+		for path in paths:
+			ppath = deep_get(path, DictPath("path"))
+			ptype = deep_get(path, DictPath("type"))
+			key_name = deep_get(path, DictPath("key_name"))
+			key_value = deep_get(path, DictPath("key_value"))
+
+			if ptype == "list":
+				for item in deep_get(obj, DictPath(ppath)):
+					tmpitem = copy.deepcopy(item)
+					if key_name is not None and key_value is not None:
+						tmpitem[key_name] = key_value
+					vlist.append(tmpitem)
+			else:
+				for key in deep_get(obj, DictPath(ppath), []):
+					for item in deep_get(obj, DictPath(f"{ppath}#{key}"), []):
+						tmpitem = copy.deepcopy(item)
+						if key_name is not None and key_value is not None:
+							tmpitem[key_name] = key_value
+						vlist.append(tmpitem)
+		return vlist, 200
+
 	path = deep_get(kwargs, DictPath("path"))
 	subpath = deep_get(kwargs, DictPath("subpath"))
 	path_fields = deep_get(kwargs, DictPath("path_fields"))
@@ -2570,7 +2601,6 @@ def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]],
 	# If a subpath and path_fields are set path_fields from path will be merged into subpath
 	# and the subpath lists are flattened into the path list.
 	if subpath is not None and path_fields is not None:
-		vlist = []
 		for item in deep_get(obj, DictPath(path), []):
 			for subobj in deep_get(item, DictPath(subpath), []):
 				for path_field in path_fields:

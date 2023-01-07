@@ -11,10 +11,14 @@ listview:
   group: "Security"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "danger_count", "warning_count", "scanner", "age"]
+      fields: ["namespace", "name", "scanner", "severity_danger", "severity_warning", "severity_pass", "age"]
       sortcolumn: "namespace"
   fields:
-    danger_count:
+    scanner:
+      header: "Scanner:"
+      path: "report#scanner#name"
+      type: "str"
+    severity_danger:
       header: "Danger:"
       path: "report#summary#dangerCount"
       type: "raw"
@@ -31,11 +35,16 @@ listview:
             field_colors:
             - context: "types"
               type: "watermark_medium"
-    scanner:
-      header: "Scanner:"
-      path: "report#scanner#name"
-      type: "str"
-    warning_count:
+      align: "right"
+    severity_pass:
+      header: "Pass:"
+      path: "report#summary#passCount"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    severity_warning:
       header: "Warning:"
       path: "report#summary#warningCount"
       type: "raw"
@@ -53,3 +62,178 @@ listview:
             - context: "types"
               type: "watermark_medium"
       align: "right"
+infoview:
+  name: "Config Audit Report Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "scanner", "vendor", "severity_header", "severity_danger", "severity_warning", "severity_pass"]
+    rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      scanner:
+        header: [["Scanner:", ["main", "infoheader"]]]
+        paths:
+        - path: [["report#scanner#name"], ["report#scanner#version"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      severity_header:
+        header: [["Severity:", ["main", "infoheader"]]]
+      severity_danger:
+        header: [["   Danger:", ["main", "infoheader"]]]
+        path: "report#summary#dangerCount"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_high"
+      severity_pass:
+        header: [["     Pass:", ["main", "infoheader"]]]
+        path: "report#summary#passCount"
+        type: "raw"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      severity_warning:
+        header: [["  Warning:", ["main", "infoheader"]]]
+        path: "report#summary#warningCount"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_medium"
+      vendor:
+        header: [["Vendor:", ["main", "infoheader"]]]
+        path: "report#scanner#vendor"
+        type: "str"
+  listpad:
+    #on_activation:
+    #  call: "resourceinfodispatch"
+    #  kind: "__CISKubeBenchReportTestSetData"
+    #  api_family: "aquasecurity.github.io"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      paths:
+      - path: "report#checks"
+        type: "list"
+        key_name: "__type"
+        key_value: "Basic"
+      - path: "report#containerChecks"
+        type: "dict"
+        key_name: "__type"
+        key_value: "Container"
+      - path: "report#podChecks"
+        type: "list"
+        key_name: "__type"
+        key_value: "Pod"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["type", "category", "test_case", "scope", "severity", "result"]
+        sortcolumn: "result"
+    fields:
+      category:
+        header: "Category:"
+        path: "category"
+        type: "str"
+      result:
+        header: "Result:"
+        paths:
+        - path: "success"
+          pathtype: "remap"
+          substitutions:
+            __True: "Success"
+            __False: "Fail"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Success":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Fail":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      scope:
+        header: "Scope:"
+        paths:
+        - path: [["scope#type"], ["scope#value"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "generic"
+          field_separators:
+          - type: "kind"
+      severity:
+        header: "Severity:"
+        path: "severity"
+        type: "str"
+      test_case:
+        header: "Test Case:"
+        path: "message"
+        type: "str"
+      type:
+        header: "Type:"
+        path: "__type"
+        type: "str"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
