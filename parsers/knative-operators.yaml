@@ -1,6 +1,8 @@
 - name: "knative-operators"
   show_in_selector: false
   matchkeys:
+  - pod_name: "operator-webhook"
+    container_name: "operator-webhook"
   - pod_name: "knative-operator"
     container_name: "knative-operator"
   - pod_name: "storage-version-migration-serving-serving"
@@ -12,3 +14,11 @@
     options:
       severities:
       - "severity"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Trace["
+      loglevel: "debug"
+    - matchtype: "startswith"
+      matchkey: "http2: server: error"
+      loglevel: "error"
