@@ -2391,6 +2391,7 @@ class KubernetesHelper:
 					cluster (str): The name of the cluster
 					authinfo (str): The name of the user
 					namespace (str): The name of the namespace
+					server (str): The API-server of the cluster
 		"""
 
 		contexts = []
@@ -2419,7 +2420,11 @@ class KubernetesHelper:
 			namespace = deep_get(context, DictPath("namespace"), "default")
 			authinfo = deep_get(context, DictPath("context#user"))
 			cluster = deep_get(context, DictPath("context#cluster"))
-			contexts.append((current, name, cluster, authinfo, namespace))
+			server = ""
+			for cluster_data in deep_get(kubeconfig, DictPath("clusters"), []):
+				if cluster == deep_get(cluster_data, DictPath("name")):
+					server = deep_get(cluster_data, DictPath("cluster#server"))
+			contexts.append((current, name, cluster, authinfo, namespace, server))
 		return contexts
 
 	def list_clusters(self, config_path: Optional[FilePath] = None) -> List[Tuple[str, str]]:

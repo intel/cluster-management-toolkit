@@ -12,7 +12,7 @@ listview:
   is_taggable: false
   field_indexes:
     Normal:
-      fields: ["current", "name", "cluster", "authinfo", "namespace"]
+      fields: ["current", "name", "cluster", "authinfo", "namespace", "server"]
       sortcolumn: "cluster"
   fields:
     authinfo:
@@ -38,6 +38,13 @@ listview:
       formatting:
         field_colors:
         - type: "namespace"
+    server:
+      header: "Server:"
+      path: "server"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "url"
   shortcuts:
     "Switch Context":
       key: "enter"
