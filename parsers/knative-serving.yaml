@@ -5,6 +5,8 @@
     container_name: "webhook"
   - pod_name: "net-istio-webhook"
     container_name: "webhook"
+  - pod_name: "net-kourier-controller"
+    container_name: "controller"
   - container_name: "domainmapping-webhook"
   - pod_name: "net-istio-controller"
   - image_regex: '^.*knative.*serving.*'
@@ -26,3 +28,6 @@
     - matchtype: "startswith"
       matchkey: "http2: server: error"
       loglevel: "warning"
+    - matchtype: "startswith"
+      matchkey: "Trace["
+      loglevel: "debug"
