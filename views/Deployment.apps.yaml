@@ -175,7 +175,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["label_selector", "set_based_selector", "node_selector", "priority_class", "update_strategy", "available"]
+        fields: ["label_selector", "set_based_selector", "node_selector", "priority_class", "update_strategy", "replicas", "available"]
     rows:
       available:
         header: [["Available:", ["main", "infoheader"]]]
@@ -228,6 +228,39 @@ infoview:
         header: [["P", ["main", "infoheader_shortcut"]], ["riority Class:", ["main", "infoheader"]]]
         path: "spec#template#spec#priorityClassName"
         type: "str"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#replicas"], " Desired", ["status#replicas"], " Current", ["status#readyReplicas"], " Ready", ["status#updatedReplicas"], " Up to Date", ["status#unavailableReplicas"], " Unavailable"]
+          pathtype: "tuple"
+          default: [0, "", 0, "", 0, "", 0, "", 0, ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          field_separators:
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
       set_based_selector:
         header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
