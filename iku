@@ -204,7 +204,7 @@ def processor_timestamp(obj: Dict, field: str) -> str:
 	string = value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 	return string
 
-def processor_timestamp_with_age(obj: Dict, field: str, formatting) -> str:
+def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str:
 	values = getattr(obj, field)
 
 	if len(values) > 2 and len(deep_get(formatting, DictPath("field_colors"), [])) < 2:
@@ -232,8 +232,8 @@ def processor_timestamp_with_age(obj: Dict, field: str, formatting) -> str:
 			# If there is no formatting for this field we assume that
 			# it is a generic string
 			if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
-				formatting = ThemeAttr("types", "generic")
-				array += [values[i], formatting]
+				fmt = ThemeAttr("types", "generic")
+				array += [values[i], fmt]
 			elif formatting["field_colors"][i] == ThemeAttr("types", "timestamp"):
 				if values[i] is None:
 					array += [
@@ -390,7 +390,7 @@ default_processor = {
 	generators.generator_timestamp: processor_timestamp,
 }
 
-def update_field_widths(field_dict: Dict, field_names: List[str], objects) -> int:
+def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[Type]) -> int:
 	linelen = 0
 	pos = 0
 
@@ -1013,7 +1013,7 @@ def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: st
 
 # pylint: disable-next=too-many-arguments
 def process_value(field_name: str, value: Any, vtype: str, view: str, field_index: str, action: str,
-		  formatter, replace_quotes: str, _regex: str) -> Union[int, float, str, List[str], datetime, None]:
+		  formatter: str, replace_quotes: str, _regex: str) -> Union[int, float, str, List[str], datetime, None]:
 	override_kind = deep_get_with_fallback(iktlib.iktconfig, [
 				DictPath(f"{view}#kind_format_{field_index}"),
 				DictPath(f"{view}#kind_format"),
@@ -1109,12 +1109,12 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 		new_value = value
 	return new_value
 
-def transform_filter(transformations: Dict, value: DictPath):
+def transform_filter(transformations: Dict, value: DictPath) -> Any:
 	if value in transformations:
 		value = deep_get(transformations, value)
 	return value
 
-def when_filter(when_path: Dict, item: Dict, key = None, value = None):
+def when_filter(when_path: Dict, item: Dict, key: Optional[str] = None, value: Any = None) -> bool:
 	# When is a list of when-conditions,
 	# all of which have to evaluate to true
 	when_conditions = deep_get(when_path, DictPath("when"), [])
@@ -1997,7 +1997,7 @@ def get_device_model(obj: Dict, device: DictPath) -> str:
 # Takes a list and splits it into four lists;
 # exacts, strings starting _and_ ending with "*", strings starting with "*",
 # and strings ending with "*"
-def split_matchlist(matchlist, exacts, prefixes, suffixes, ins):
+def split_matchlist(matchlist, exacts: List[str], prefixes: List[str], suffixes: List[str], ins: List[str]):
 	tmp_exacts = []
 	tmp_prefixes = []
 	tmp_suffixes = []
@@ -2021,7 +2021,7 @@ def split_matchlist(matchlist, exacts, prefixes, suffixes, ins):
 		tmp_ins = ins
 	return tmp_exacts, tuple(tmp_prefixes), tuple(tmp_suffixes), tmp_ins
 
-def check_matchlists(item, exacts, prefixes, suffixes, ins):
+def check_matchlists(item, exacts: List[str], prefixes: List[str], suffixes: List[str], ins: List[str]) -> bool:
 	if item in exacts:
 		return True
 	for _in in ins:
@@ -3060,9 +3060,9 @@ def get_eps_subsets_info(**kwargs):
 
 	return subsets
 
-def cpu_usage_to_millicores(cpu_usage):
+def cpu_usage_to_millicores(cpu_usage: str) -> str:
 	if cpu_usage == "0":
-		return float(cpu_usage)
+		return cpu_usage
 	if cpu_usage.endswith("n"):
 		cpu_usage = f"{float(cpu_usage[:-1]) / 1000000:0.1f}"
 		return cpu_usage
@@ -3075,7 +3075,7 @@ def cpu_usage_to_millicores(cpu_usage):
 	raise Exception(f"Unknown cpu usage metrics: {cpu_usage}")
 
 # pylint: disable-next=unused-argument
-def listgetter_configmap_data(obj, **kwargs):
+def listgetter_configmap_data(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
 	vlist = []
 
 	cm_name = deep_get(obj, DictPath("metadata#name"))
@@ -3234,7 +3234,7 @@ def decode_value(value):
 
 	return vtype, value
 
-def get_key_value_info(**kwargs):
+def get_key_value_info(**kwargs: Dict):
 	info = []
 
 	vlist = deep_get(kwargs, DictPath("_vlist"))
@@ -3276,7 +3276,7 @@ class ResourceInfo:
 	def __repr__(self):
 		return repr((self.resource_tuple, self.ref, self.rtype, self.kind, self.status, self.status_group, self.restarts, self.message, self.age))
 
-def get_pv_from_pvc_name(pvc_name):
+def get_pv_from_pvc_name(pvc_name: str):
 	pv = None
 	pv_name = None
 	field_selector = f"metadata.name={pvc_name}"
@@ -3293,7 +3293,7 @@ def get_pv_from_pvc_name(pvc_name):
 
 	return pv, pv_name
 
-def get_pv_status(pv):
+def get_pv_status(pv) -> Tuple[str, StatusGroup]:
 	phase = deep_get(pv, DictPath("status#phase"))
 
 	if phase in ("Bound", "Available"):
@@ -4201,7 +4201,7 @@ def get_pod_restarts_total(pod):
 	return restarts, restarted_at
 
 # pylint: disable-next=unused-argument
-def set_cluster_context(stdscr, **kwargs):
+def set_cluster_context(stdscr: curses.window, **kwargs) -> None:
 	global force_refresh_apis # pylint: disable=global-statement
 
 	selected = deep_get(kwargs, DictPath("selected"))
@@ -4513,7 +4513,7 @@ def get_pod_info(**kwargs) -> List[Type]:
 
 	return info
 
-def generate_listheader(uip: UIProps, headerpad, field_list, is_taggable = False):
+def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_taggable: bool = False) -> None:
 	headerarray: List[Union[ThemeRef, ThemeString]] = []
 	first = True
 
@@ -4580,7 +4580,7 @@ def generate_listheader(uip: UIProps, headerpad, field_list, is_taggable = False
 	uip.tabstops = tabstops
 
 # pylint: disable-next=too-many-arguments
-def generate_list(uip: UIProps, listpad, data, field_list, ypos, is_selected, is_taggable = False, is_tagged = False):
+def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, ypos: int, is_selected: bool, is_taggable: bool = False, is_tagged: bool = False) -> None:
 	first = True
 
 	i = 0
@@ -4907,7 +4907,7 @@ def fieldgenerator(view, field_index: str, field_indexes, fields, denylist: List
 
 	return tmp_fields, field_names, sortcolumn, sortorder_reverse
 
-def genericlistloop(stdscr, view):
+def genericlistloop(stdscr: curses.window, view) -> Retval:
 	global selected_namespace # pylint: disable=global-statement
 	global initial_name # pylint: disable=global-statement
 	global initial_namespace # pylint: disable=global-statement
@@ -4969,6 +4969,7 @@ def genericlistloop(stdscr, view):
 	async_cookie = None
 	async_cb = None
 	async_retrigger_timeout = None
+	uip.list_needs_regeneration(True)
 
 	while True:
 		uip.countdown_to_update()
@@ -5047,7 +5048,7 @@ def genericlistloop(stdscr, view):
 			linelen = update_field_widths(field_dict, field_names, uip.info)
 			if is_taggable == True:
 				linelen += len("✓ ")
-			uip.resize_listpad(listlen, linelen)
+			uip.resize_listpad(linelen)
 
 			tagged_items = set()
 
@@ -5060,7 +5061,7 @@ def genericlistloop(stdscr, view):
 			else:
 				interval = "Manual"
 
-			statusarray1 = [
+			statusarray1: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Fields: ", ThemeAttr("statusbar", "infoheader")),
 				ThemeString(field_index, ThemeAttr("statusbar", "highlight"))
 			]
@@ -5071,8 +5072,7 @@ def genericlistloop(stdscr, view):
 					ThemeString("Label selector: ", ThemeAttr("statusbar", "infoheader")),
 					ThemeString(f"{label_selector}", ThemeAttr("statusbar", "highlight"))
 				]
-			statusarray2 = [
-			]
+			statusarray2: List[Union[ThemeRef, ThemeString]] = []
 			if read_only_mode == True:
 				statusarray2 += [ThemeString("Read Only Mode", ThemeAttr("statusbar", "highlight"))]
 
@@ -5122,16 +5122,17 @@ def genericlistloop(stdscr, view):
 			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
 			uip.addthemearray(statusbar, statusarray2, y = 1, x = 0)
 
-		# Output list
-		y = 0
-
 		uip.update_sorted_list()
-		generate_listheader(uip, headerpad, field_dict, is_taggable = is_taggable)
-		for item in uip.sorted_list:
-			uip.select_if_y(y, item)
-			is_tagged = item in tagged_items
-			generate_list(uip, listpad, item, field_dict, y, uip.is_selected(item), is_taggable = is_taggable, is_tagged = is_tagged)
-			y += 1
+		if uip.is_list_regenerated() == False:
+			generate_list_header(uip, headerpad, field_dict, is_taggable = is_taggable)
+			# Output the visible part of the list
+			uip.selected = None
+			for y in range(uip.yoffset, min(uip.yoffset + uip.mincurypos + uip.maxcurypos + 1, uip.listlen)):
+				item = uip.sorted_list[y]
+				uip.select_if_y(y, item)
+				is_tagged = item in tagged_items
+				generate_list_row(uip, listpad, item, field_dict, y - uip.yoffset, uip.is_selected(item), is_taggable = is_taggable, is_tagged = is_tagged)
+			uip.list_needs_regeneration(False)
 
 		uip.refresh_window()
 		uip.refresh_listpad()
@@ -5193,7 +5194,7 @@ def genericlistloop(stdscr, view):
 			field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes,
 												fields = deep_get(views, DictPath(f"{view}#fields")), denylist = denylist)
 			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
-			uip.resize_listpad(height = -1, width = -1)
+			uip.resize_listpad(width = -1)
 			uip.refresh_all()
 			uip.force_update()
 		elif c == curses.KEY_F7:
@@ -5324,9 +5325,7 @@ def genericlistloop(stdscr, view):
 					return retval
 
 				uip.force_update()
-				tagged_items.clear()
 				continue
-			tagged_items.clear()
 		elif c == ord("N"):
 			if is_namespaced == False:
 				continue
@@ -5374,8 +5373,10 @@ def genericlistloop(stdscr, view):
 			if selected is not None:
 				if selected in tagged_items:
 					tagged_items.discard(selected)
+					uip.list_needs_regeneration(True)
 				else:
 					tagged_items.add(selected)
+					uip.list_needs_regeneration(True)
 				# After we tag an item we advance the cursor (when possible);
 				# this way we can select multiple continuous items in a straight-forward manner
 				uip.move_cur_with_offset(1)
@@ -5394,6 +5395,7 @@ def genericlistloop(stdscr, view):
 					if tmp is not None and len(tmp[0]) > 0:
 						if item not in tagged_items:
 							tagged_items.add(item)
+							uip.list_needs_regeneration(True)
 				except re.error:
 					continue
 		elif c == ord("") and is_taggable == True:
@@ -5413,6 +5415,7 @@ def genericlistloop(stdscr, view):
 
 					if tmp is not None and len(tmp[0]) > 0:
 						tagged_items.discard(item)
+						uip.list_needs_regeneration(True)
 				except re.error:
 					continue
 		elif c == ord("l") and is_taggable == True and vlist is not None and listlen > 0:
@@ -5420,6 +5423,7 @@ def genericlistloop(stdscr, view):
 			if len(tagged_items) == 0:
 				selected = uip.get_selected()
 				tagged_items.add(selected)
+				uip.list_needs_regeneration(True)
 			labellist = []
 			labels = []
 			if "namespace" in deep_get(vlist[0], DictPath("metadata"), "") and hasattr(item, "namespace"):
@@ -5444,6 +5448,7 @@ def genericlistloop(stdscr, view):
 						labels.append((key, labelref[key]))
 			if len(labels) == 0:
 				tagged_items.clear()
+				uip.list_needs_regeneration(True)
 				continue
 			for key, value in natsorted(labels):
 				labellist.append({
@@ -5453,6 +5458,7 @@ def genericlistloop(stdscr, view):
 			label_headers = ["Label:", "Value:"]
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, labellist, headers = label_headers, title = "Labels", cursor = False)
 			tagged_items.clear()
+			uip.list_needs_regeneration(True)
 			uip.refresh_all()
 			curses.doupdate()
 		elif c == ord("f") and is_taggable == True and vlist is not None and listlen > 0:
@@ -5461,6 +5467,7 @@ def genericlistloop(stdscr, view):
 			if len(tagged_items) == 0:
 				selected = uip.get_selected()
 				tagged_items.add(selected)
+				uip.list_needs_regeneration(True)
 
 			labellist = []
 			labels = []
@@ -5501,6 +5508,7 @@ def genericlistloop(stdscr, view):
 				label_selector = make_selector(selectors)
 				uip.force_update()
 			tagged_items.clear()
+			uip.list_needs_regeneration(True)
 			uip.refresh_all()
 			curses.doupdate()
 		elif c == ord("A") and view == "Inventory" and len(tagged_items) == 0:
@@ -5575,6 +5583,7 @@ def genericlistloop(stdscr, view):
 			if len(tagged_items) == 0:
 				selected = uip.get_selected()
 				tagged_items.add(selected)
+				uip.list_needs_regeneration(True)
 				autoitem = True
 
 			for item in tagged_items:
@@ -5594,6 +5603,7 @@ def genericlistloop(stdscr, view):
 
 			if len(items) == 0:
 				tagged_items.clear()
+				uip.list_needs_regeneration(True)
 				continue
 
 			action_title = deep_get(viewref, DictPath("actions#title"), "Perform action on tagged items")
@@ -5621,6 +5631,7 @@ def genericlistloop(stdscr, view):
 			if len(actions) == 0:
 				if autoitem == True:
 					tagged_items.clear()
+					uip.list_needs_regeneration(True)
 				continue
 
 			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, actions, title = action_title)
@@ -5749,8 +5760,10 @@ def genericlistloop(stdscr, view):
 
 				uip.force_update()
 				tagged_items.clear()
+				uip.list_needs_regeneration(True)
 				continue
 			tagged_items.clear()
+			uip.list_needs_regeneration(True)
 
 		shortcuts = deep_get(viewref, DictPath("shortcuts"), {})
 
@@ -5800,7 +5813,7 @@ def genericlistloop(stdscr, view):
 			query = deep_get(value, DictPath("query"))
 			queryval = deep_get(value, DictPath("queryval"))
 			queryfunc = deep_get(value, DictPath("queryfunc"))
-			force_update = deep_get(value, DictPath("force_update"), True)
+			force_update = deep_get(value, DictPath("force_update"), False)
 
 			selection_vars = None
 
@@ -6096,7 +6109,7 @@ clusteroverview_shortcuts = {
 	},
 }
 
-def clusteroverviewloop(stdscr, view):
+def clusteroverviewloop(stdscr: curses.window, view):
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
@@ -6265,21 +6278,21 @@ def clusteroverviewloop(stdscr, view):
 
 			# Resize the list pad to fit the heatmaps
 			# XXX this needs to be fixed when we add more information
-			uip.resize_listpad(max(len(node_heatmap), len(pod_heatmap)), -1)
+			uip.resize_listpad(-1)
 
-		namearray = [
+		namearray: List[Union[ThemeRef, ThemeString]] = [
 			ThemeString("Control Plane: ", ThemeAttr("main", "infoheader")),
 			ThemeString(f"{name}", ThemeAttr("types", "generic"))
 		]
-		contextarray = [
+		contextarray: List[Union[ThemeRef, ThemeString]] = [
 			ThemeString("Cluster Context: ", ThemeAttr("main", "infoheader")),
 			ThemeString(f"{kh.context_name}", ThemeAttr("types", "generic"))
 		]
-		internaliparray = [
+		internaliparray: List[Union[ThemeRef, ThemeString]] = [
 			ThemeString("Internal IP-address(es): ", ThemeAttr("main", "infoheader")),
 		]
 		internaliparray += generators.format_list(iips, 0, 0, False, False)
-		externaliparray = [
+		externaliparray: List[Union[ThemeRef, ThemeString]] = [
 			ThemeString("External IP-address(es): ", ThemeAttr("main", "infoheader")),
 		]
 		externaliparray += generators.format_list(eips, 0, 0, False, False)
@@ -6293,7 +6306,7 @@ def clusteroverviewloop(stdscr, view):
 		uip.addthemearray(infopad, externaliparray, y = 3, x = 0)
 
 		if len(loadavg_raw) > 0 and len(meminfo_raw) > 0 and len(stat_raw) > 0:
-			tasksarray = [
+			tasksarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Tasks: ", ThemeAttr("main", "infoheader")),
 				ThemeString(f"{running}", ThemeAttr("types", "numerical")),
 				ThemeRef("separators", "fraction"),
@@ -6301,24 +6314,24 @@ def clusteroverviewloop(stdscr, view):
 				ThemeString("running", ThemeAttr("types", "generic")),
 			]
 
-			cpuarray = [
+			cpuarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString(" CPU: ", ThemeAttr("main", "infoheader")),
 			]
-			cpuusagearray = [
+			cpuusagearray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString(f"{str(100 * cputimetotalused // cputimetotal).rjust(3)}", ThemeAttr("types", "numerical")),
 				ThemeRef("separators", "percentage"),
 			]
-			memarray = [
+			memarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString(" Mem: ", ThemeAttr("main", "infoheader")),
 			]
-			memusagearray = [
+			memusagearray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString(str(100 * memused // memtotal).rjust(3), ThemeAttr("types", "numerical")),
 				ThemeRef("separators", "percentage"),
 			]
-			swaparray = [
+			swaparray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Swap: ", ThemeAttr("main", "infoheader")),
 			]
-			disabledarray = [
+			disabledarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Disabled", ThemeAttr("main", "highlight")),
 			]
 
@@ -6358,7 +6371,7 @@ def clusteroverviewloop(stdscr, view):
 					# Note: These are NOT themestrings!
 					(swapused, ThemeAttr("types", "swap_used"))
 				])
-				swapusagearray = [
+				swapusagearray: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString(f"{100 * swapused // swaptotal}", ThemeAttr("main", "dim")),
 					ThemeRef("separators", "percentage"),
 				]
@@ -6370,17 +6383,17 @@ def clusteroverviewloop(stdscr, view):
 			node_heatmap_xpos = 0
 			pod_heatmap_xpos = heatmap_width - 1
 			uip.addthemearray(listpad, [ThemeString("Node heatmap:", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node"))], y = 0, x = node_heatmap_xpos)
-			selectednodearray = [
+			selectednodearray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("N", ThemeAttr("main", "listheader")),
 				ThemeString("o", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node")),
 				ThemeString("de: ", ThemeAttr("main", "listheader")),
 				ThemeString(f"{nodeinfo[selected_node].name}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
 			]
-			selectednodestatusarray = [
+			selectednodestatusarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Status: ", ThemeAttr("main", "infoheader")),
 				ThemeString(f"{nodeinfo[selected_node].status}".ljust(heatmap_width), color_status_group(nodeinfo[selected_node].status_group)),
 			]
-			selectednodetaintsarray = [
+			selectednodetaintsarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Taints: ", ThemeAttr("main", "infoheader")),
 			]
 			selectednodetaintsarray += generators.format_list(nodeinfo[selected_node].taints, 0, 0, False, False, field_colors = [ThemeAttr("types", "key"), ThemeAttr("types", "value")], field_separators = [ThemeRef("separators", "keyvalue_taint")])
@@ -6398,23 +6411,23 @@ def clusteroverviewloop(stdscr, view):
 				y += 1
 
 			uip.addthemearray(listpad, [ThemeString("Pod heatmap:", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod"))], y = 0, x = pod_heatmap_xpos)
-			selectedpodarray = [
+			selectedpodarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("P", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
 				ThemeString("od: ", ThemeAttr("main", "listheader")),
 				ThemeString(f"{podinfo[selected_pod].name}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
 			]
-			selectedpodnamespacearray = [
+			selectedpodnamespacearray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("N", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
 				ThemeString("amespace: ", ThemeAttr("main", "listheader")),
 				ThemeString(f"{podinfo[selected_pod].namespace}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
 			]
-			selectedpodnodearray = [
+			selectedpodnodearray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("N", ThemeAttr("main", "infoheader")),
 				ThemeString("o", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
 				ThemeString("de: ", ThemeAttr("main", "infoheader")),
 				ThemeString(f"{podinfo[selected_pod].node}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
 			]
-			selectedpodstatusarray = [
+			selectedpodstatusarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Status: ", ThemeAttr("main", "infoheader")),
 				ThemeString(f"{podinfo[selected_pod].status}".ljust(heatmap_width), color_status_group(podinfo[selected_pod].status_group)),
 			]
@@ -6669,7 +6682,7 @@ def check_cni_updates(cni: str, current_version: str) -> str:
 
 	return candidate_version
 
-def update_cni(stdscr, cni, current_version, candidate_version, dry_run = False) -> bool:
+def update_cni(stdscr: curses.window, cni, current_version, candidate_version, dry_run = False) -> bool:
 	"""
 	Update the CNI
 
@@ -6747,7 +6760,7 @@ cniloop_shortcuts = {
 	},
 }
 
-def cniloop(stdscr, view):
+def cniloop(stdscr: curses.window, view):
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
@@ -6783,7 +6796,7 @@ def cniloop(stdscr, view):
 
 			if len(_cnis) == 0:
 				cni = "<unknown>"
-				cnistr = [
+				cnistr: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString(f"{cni}", color_status_group(StatusGroup.UNKNOWN))
 				]
 				cni_version = "N/A"
@@ -6825,11 +6838,11 @@ def cniloop(stdscr, view):
 				ThemeString(f"{cni_status[0]}", color_status_group(cni_status[1]))
 			]
 
-			versionarray = [
+			versionarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Version: ", ThemeAttr("main", "infoheader")),
 			]
 			versionarray += cni_version_str
-			candidateversionarray = [
+			candidateversionarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Candidate version: ", ThemeAttr("main", "infoheader")),
 			]
 
@@ -6837,11 +6850,11 @@ def cniloop(stdscr, view):
 			candidateversionarray.append(ThemeString(f"{candidate_version}", ThemeAttr("types", "version")))
 
 
-			namearray = [
+			namearray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Container Network Interface: ", ThemeAttr("main", "infoheader")),
 			]
 			namearray += cnistr
-			statusarray = [
+			statusarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Status: ", ThemeAttr("main", "infoheader")),
 			]
 			statusarray += cni_status_str
@@ -6875,7 +6888,7 @@ def cniloop(stdscr, view):
 		if retval == Retval.RETURNFULL:
 			return retval
 
-def decode_and_view_data(stdscr, **kwargs):
+def decode_and_view_data(stdscr: curses.window, **kwargs):
 	if "selected" not in kwargs:
 		return None
 
@@ -6901,7 +6914,7 @@ def decode_and_view_data(stdscr, **kwargs):
 		formatter = formatters.format_none
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
-def decode_and_view_file_templates(stdscr, **kwargs):
+def decode_and_view_file_templates(stdscr: curses.window, **kwargs):
 	selection = deep_get(kwargs, DictPath("selection"), {})
 	if len(selection) == 0:
 		return None
@@ -6935,7 +6948,7 @@ def decode_and_view_file_templates(stdscr, **kwargs):
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
 # pylint: disable-next=unused-argument
-def export_data(stdscr, **kwargs):
+def export_data(stdscr: curses.window, **kwargs):
 	selected = deep_get(kwargs, "selected")
 	obj = deep_get(kwargs, "obj")
 
@@ -7427,7 +7440,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 				listlen = uip.update_info(info)
 				linelen = update_field_widths(field_dict, field_names, uip.info)
-				uip.resize_listpad(listlen, linelen)
+				uip.resize_listpad(linelen)
 			elif logpad is not None:
 				if formatter is not None:
 					formatted_obj = formatter(obj, raw = raw_output)
@@ -7512,11 +7525,15 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			y = 0
 
 			uip.update_sorted_list()
-			generate_listheader(uip, headerpad, field_dict)
-			for item in uip.sorted_list:
-				uip.select_if_y(y, item)
-				generate_list(uip, listpad, item, field_dict, y, uip.is_selected(item))
-				y += 1
+			if uip.is_list_regenerated() == False:
+				generate_list_header(uip, headerpad, field_dict)
+				# Output the visible part of the list
+				uip.selected = None
+				for y in range(uip.yoffset, min(uip.yoffset + uip.mincurypos + uip.maxcurypos + 1, uip.listlen)):
+					item = uip.sorted_list[y]
+					uip.select_if_y(y, item)
+					generate_list_row(uip, listpad, item, field_dict, y - uip.yoffset, uip.is_selected(item))
+				uip.list_needs_regeneration(False)
 
 		# Output logpad if we have one
 		if logpad is not None and uip.refresh == True:
@@ -7552,7 +7569,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				current_match = False
 				if len(uip.search_matches) > 0:
 					line_match = uip.yoffset + y in uip.search_matches
-					match_prefix = [ThemeRef("separators", "matchbullet")]
+					match_prefix: List[Union[ThemeRef, ThemeString]] = [ThemeRef("separators", "matchbullet")]
 					if line_match == False:
 						match_prefix = [ThemeString("".ljust(len(themearray_to_string(match_prefix))), ThemeAttr("types", "generic"))]
 					if uip.match_index is not None and uip.yoffset + y == uip.match_index:
@@ -7574,7 +7591,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					if y + yadd + i >= uip.logpadheight:
 						break
 					if i == 0 and timestamps is not None:
-						uip.addthemearray(tspad, tsthemearray, y = y + yadd, x = 0)
+						uip.addthemearray(cast(curses.window, tspad), tsthemearray, y = y + yadd, x = 0)
 					ypos, xpos = uip.addthemearray(logpad, _line, y = y + yadd + i, x = 0, selected = current_match)
 					maxx = max(maxx, xpos)
 				yadd += i
@@ -7697,7 +7714,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes,
 											        fields = deep_get(viewref, DictPath("fields")), denylist = denylist)
 			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
-			uip.resize_listpad(height = -1, width = -1)
+			uip.resize_listpad(width = -1)
 			uip.refresh_all()
 			uip.force_update()
 		elif c == ord("R") and logpad is not None:
@@ -7976,7 +7993,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			if force_update == True:
 				uip.force_update()
 
-def eventdispatch(stdscr, **kwargs):
+def eventdispatch(stdscr: curses.window, **kwargs):
 	obj = deep_get(kwargs, DictPath("obj"))
 	if obj is None:
 		return Retval.RETURNDONE
@@ -8014,7 +8031,7 @@ def log_add_line(timestamps, facilities, severities, messages, timestamp, facili
 
 	return timestamps, facilities, severities, messages
 
-def containerinfoloop(stdscr, container, kind, obj, **kwargs):
+def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 	global override_tail_lines # pylint: disable=global-statement
 
 	multilog_containers_full = deep_get(kwargs, DictPath("multilog_containers_full"), [])
@@ -8372,37 +8389,37 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						break
 
 				status, status_group, restarts, message, _age = datagetter.get_container_status(src_statuses, containername)
-				containerarray = [
+				containerarray: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString("Container: ", ThemeAttr("main", "infoheader")),
 					ThemeString(f"{containername}{containertypearray}", ThemeAttr("types", "generic"))
 				]
-				statusarray = [
+				statusarray: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString("Status: ", ThemeAttr("main", "infoheader")),
 					ThemeString(f"{status}", color_status_group(status_group))
 				]
 				if message != "":
 					statusarray.append(ThemeString(f" ({message})", ThemeAttr("types", "generic")))
-				restartsarray = [
+				restartsarray: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString("Restarts: ", ThemeAttr("main", "infoheader")),
 					ThemeString(f"{restarts}", ThemeAttr("types", "numerical"))
 				]
-				podarray = [
+				podarray: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString("Pod: ", ThemeAttr("main", "infoheader")),
 					ThemeString(f"{pod_info.name}", ThemeAttr("types", "generic")),
 				]
-				containeridarray = [
+				containeridarray: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString("Container ID: ", ThemeAttr("main", "infoheader")),
 					ThemeString(f"{deep_get(container_status, DictPath('containerID'))}", ThemeAttr("types", "generic")),
 				]
 				image_name, image_version = get_image_tuple(deep_get(container_status, DictPath("image")))
-				imagearray = [
+				imagearray: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString("Image: ", ThemeAttr("main", "infoheader")),
 					ThemeString(f"{image_name}", ThemeAttr("types", "generic")),
 					ThemeRef("separators", "version"),
 					ThemeString(f"{image_version}", ThemeAttr("types", "version")),
 				]
 				image_id = deep_get(container_status, DictPath("imageID"))
-				imageidarray = [
+				imageidarray: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString("I", ThemeAttr("main", "infoheader_shortcut")),
 					ThemeString("mage ID: ", ThemeAttr("main", "infoheader")),
 					ThemeString(f"{image_id}", ThemeAttr("types", "generic")),
@@ -8424,7 +8441,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						ThemeString("Pod: ", ThemeAttr("main", "infoheader")),
 						ThemeString(f"{podname}", ThemeAttr("types", "generic")),
 					]
-					namespacearray = [
+					namespacearray: List[Union[ThemeRef, ThemeString]] = [
 						ThemeString("Namespace: ", ThemeAttr("main", "infoheader")),
 						ThemeString(f"{namespace}", ThemeAttr("types", "namespace")),
 					]
@@ -8481,7 +8498,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 			# We have two different widths of the statusbar
 			if uip.maxx - uip.minx > 108:
 				# Wide version
-				statusarray1 = [
+				statusarray1: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString("Updates: ", ThemeAttr("statusbar", "infoheader")),
 					ThemeString(f"{interval}", ThemeAttr("statusbar", "highlight")),
 					ThemeRef("separators", "statusbar"),
@@ -8503,8 +8520,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 					ThemeString(f"{loglimit}", ThemeAttr("statusbar", "highlight")),
 					ThemeString(")", ThemeAttr("statusbar", "default")),
 				]
-				statusarray2 = [
-				]
+				statusarray2: List[Union[ThemeRef, ThemeString]] = []
 				if fold_msg == False:
 					statusarray2 += [
 						ThemeString("Unfolding messages", ThemeAttr("statusbar", "highlight")),
@@ -8634,7 +8650,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				# FIXME
 				if only_new_dates == True:
 					if new_date == True:
-						tsthemearray = [ThemeString(datestamp, ThemeAttr("logview", datetype))]
+						tsthemearray: List[Union[ThemeRef, ThemeString]] = [ThemeString(datestamp, ThemeAttr("logview", datetype))]
 						new_date = False
 						# If we do empty lines for new dates we need something like this
 						# uip.addstr(logpad, "", y = y + yadd, x = 0)
@@ -8678,7 +8694,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				else:
 					severity = severities[uip.yoffset + y]
 
-				msgstrarray = []
+				msgstrarray: List[ThemeRef, ThemeString] = []
 
 				if len(severity_prefix) > 0:
 					_prefix, _severity_type, _suffix = severity_prefix
@@ -8697,15 +8713,15 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 						_severity = f"{_prefix}{_severity.lower()}{_suffix}"
 
 					if len(timestamp.strip()) != 0 or y >= len(timestamps):
-						msgstrarray.append((f"{_severity}", color_log_severity(severity)))
+						msgstrarray.append(ThemeString(f"{_severity}", color_log_severity(severity)))
 					else:
-						msgstrarray.append(("".ljust(len(f"{_severity}")), color_log_severity(severity)))
+						msgstrarray.append(ThemeString("".ljust(len(f"{_severity}")), color_log_severity(severity)))
 
 				if facility_extended is not None and len(facility_extended) > 0:
 					msgstrarray += facility_extended
 
 				if facility != "":
-					facilitystr = [
+					facilitystr: List[Union[ThemeRef, ThemeString]] = [
 						ThemeRef("separators", "facility_prefix"),
 						ThemeString(facility, ThemeAttr("logview", "facility")),
 						ThemeRef("separators", "facility_suffix"),
@@ -8732,7 +8748,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 				for i, msgstrarray in enumerate(msgstrarrays):
 					if y + yadd + i >= uip.logpadheight:
 						break
-					if i == 0:
+					if i == 0 and tspad is not None:
 						uip.addthemearray(tspad, tsthemearray, y = y + yadd, x = 0)
 					cury, curx = uip.addthemearray(logpad, msgstrarray, y = y + yadd + i, x = 0)
 					maxlen = max(maxlen, themearray_len(msgstrarray))
@@ -8985,7 +9001,7 @@ def containerinfoloop(stdscr, container, kind, obj, **kwargs):
 
 			secure_write_string(filename, data, allow_relative_path = True)
 
-def do_command(stdscr, **kwargs) -> None:
+def do_command(stdscr: curses.window, **kwargs) -> None:
 	"""
 	Execute a command on localhost
 	XXX: This should be renamed
@@ -9045,7 +9061,7 @@ def do_command(stdscr, **kwargs) -> None:
 	stdscr.refresh()
 
 # pylint: disable-next=too-many-arguments
-def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
+def executecommand(stdscr: curses.window, obj, container, msg, command, waitforkeypress):
 	"""
 	Executes a command in a container
 	XXX: This should be renamed
@@ -9116,7 +9132,7 @@ def executecommand(stdscr, obj, container, msg, command, waitforkeypress):
 		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
-def listviewdispatch(stdscr, **kwargs):
+def listviewdispatch(stdscr: curses.window, **kwargs):
 	obj = deep_get(kwargs, DictPath("obj"))
 	selection = deep_get(kwargs, DictPath("selection"))
 	if obj is None and selection is None:
@@ -9159,7 +9175,7 @@ def listviewdispatch(stdscr, **kwargs):
 
 	return Retval.RETURNDONE
 
-def patch_object(stdscr, **kwargs):
+def patch_object(stdscr: curses.window, **kwargs):
 	kind = deep_get(kwargs, DictPath("kind"))
 	name = deep_get(kwargs, DictPath("name"))
 	namespace = deep_get(kwargs, DictPath("namespace"))
@@ -9171,7 +9187,7 @@ def patch_object(stdscr, **kwargs):
 
 # This dispatches to info views; as soon as one is added this function will
 # dispatch to that view.
-def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
+def resourceinfodispatch(stdscr: curses.window, obj, kind, info = None, **kwargs):
 	if obj is None:
 		return None
 
@@ -9198,14 +9214,14 @@ def resourceinfodispatch(stdscr, obj, kind, info = None, **kwargs):
 
 	return None
 
-def resourceinfodispatch_from_pod_resource_list(stdscr, obj = None, kind = None, info = None, **kwargs):
+def resourceinfodispatch_from_pod_resource_list(stdscr: curses.window, obj = None, kind = None, info = None, **kwargs):
 	kind = deep_get(obj, DictPath("kind"))
 	api_family = deep_get(obj, DictPath("api_group"), "")
 	obj = deep_get(obj, DictPath("ref"))
 	return resourceinfodispatch(stdscr, obj, (kind, api_family), info, **kwargs)
 
 # Do not pass both direct and _path versions at the same time
-def resourceinfodispatch_with_lookup(stdscr, **kwargs):
+def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 	obj = deep_get(kwargs, DictPath("obj"))
 	if obj is None:
 		if "selected_obj" in kwargs:
@@ -9362,7 +9378,7 @@ def resourceinfodispatch_with_lookup(stdscr, **kwargs):
 
 	return resourceinfodispatch(stdscr, obj, kind)
 
-def resourceinfodispatch_with_lookup_on_activation(stdscr, obj, kind, **kwargs):
+def resourceinfodispatch_with_lookup_on_activation(stdscr: curses.window, obj, kind, **kwargs):
 	if "obj" not in kwargs:
 		kwargs["obj"] = obj
 	if kind not in kwargs:
@@ -9393,7 +9409,7 @@ def listgetter_namespaced_resources(obj, **kwargs):
 	return vlist, status
 
 # Iterate over the list of items and execute command on all of them
-def executecommand_multiple(stdscr, msg, command, items, waitforkeypress) -> None:
+def executecommand_multiple(stdscr: curses.window, msg, command, items, waitforkeypress) -> None:
 	item = None
 
 	curses.endwin()
@@ -9432,7 +9448,7 @@ def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Di
 def run_playbook(playbook: Dict, nodes: List[str], values: Optional[Dict] = None) -> Tuple[int, Dict]:
 	return __run_playbook(FilePath(cast(str, playbook.get("playbook"))), nodes, values = values)
 
-def view_obj(stdscr, **kwargs):
+def view_obj(stdscr: curses.window, **kwargs):
 	selection = deep_get(kwargs, DictPath("selection"))
 	if selection is not None:
 		obj = selection
@@ -9463,7 +9479,7 @@ def view_obj(stdscr, **kwargs):
 		formatter = _formatter
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
-def view_yaml(stdscr, **kwargs):
+def view_yaml(stdscr: curses.window, **kwargs):
 	selection = deep_get(kwargs, DictPath("selection"))
 	if selection is not None:
 		obj = selection
@@ -9488,7 +9504,7 @@ def view_yaml(stdscr, **kwargs):
 	formatter = formatters.format_yaml
 	return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""), title = title, formatter = formatter)
 
-def view_pod_logs(stdscr, **kwargs):
+def view_pod_logs(stdscr: curses.window, **kwargs):
 	containers = []
 	containers_full = []
 	items = deep_get(kwargs, DictPath("_tagged_items"), [])
@@ -9517,7 +9533,7 @@ def view_pod_logs(stdscr, **kwargs):
 def action_view_pod_logs(uip: UIProps, items, action, values, kind, **kwargs):
 	return view_pod_logs(uip.stdscr, **values)
 
-def view_last_applied_configuration(stdscr, **kwargs):
+def view_last_applied_configuration(stdscr: curses.window, **kwargs):
 	obj = deep_get(kwargs, DictPath("obj"))
 
 	last_applied_configuration = deep_get(obj, DictPath("metadata#annotations#kubectl.kubernetes.io/last-applied-configuration"), {})
@@ -9564,7 +9580,7 @@ def force_delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
 	values["__force"] = True
 	return delete_resource(uip, items = items, action = action, values = values, kind = kind)
 
-def create_namespace(stdscr, **kwargs):
+def create_namespace(stdscr: curses.window, **kwargs):
 	selection_vars = deep_get(kwargs, DictPath("selection_vars"))
 	name = deep_get(selection_vars, DictPath("namespace"))
 
@@ -9589,7 +9605,7 @@ def create_namespace(stdscr, **kwargs):
 		       ANSIThemeString(name, "argument"),
 		       ANSIThemeString("“", "default")]
 		iktprint(msg)
-		msg, _status = kh.create_namespace(name)
+		_msg, _status = kh.create_namespace(name)
 
 	print("\n")
 
@@ -9962,7 +9978,7 @@ def format_commandline(args: List[str], implicit_command: bool = True) -> List[A
 
 	return themearray
 
-def edit_resource(stdscr, **kwargs) -> None:
+def edit_resource(stdscr: curses.window, **kwargs) -> None:
 	obj = deep_get(kwargs, DictPath("obj"))
 	kind = deep_get(kwargs, DictPath("kind"))
 	name = deep_get(obj, DictPath("metadata#name"))
@@ -10252,7 +10268,7 @@ def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs):
 
 nodeplaybooks = {} # type: ignore
 
-def ssh_to_host(stdscr, **kwargs):
+def ssh_to_host(stdscr: curses.window, **kwargs):
 	if "selected" in kwargs:
 		selected = deep_get(kwargs, DictPath("selected"))
 		if type(selected) == tuple:
@@ -10610,7 +10626,10 @@ def populate_playbooklist(context, actions, action_list, control_plane_selected,
 force_refresh_apis = False
 
 def format_selection_list(uip: UIProps, refresh_apis = False):
+	global force_refresh_apis # pylint: disable=global-statement
+
 	if force_refresh_apis == True:
+		force_refresh_apis = False
 		refresh_apis = True
 
 	hide_unavailable = deep_get_with_fallback(iktlib.iktconfig, [DictPath("Selector#hide_unavailable_apis"), DictPath("Global#hide_unavailable_apis")], True)
@@ -11254,6 +11273,7 @@ def populate_views(force_refresh: bool = False) -> None:
 				queryval = deep_get(_shortcuts[shortcut], DictPath("queryval"))
 				query = deep_get(_shortcuts[shortcut], DictPath("query"))
 				read_only = deep_get(_shortcuts[shortcut], DictPath("read_only"), False)
+				force_update = deep_get(_shortcuts[shortcut], DictPath("force_update"), True)
 
 				if key is None or helptext is None or action is None or "<missing>" in (key, helptext, action):
 					sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
@@ -11276,7 +11296,8 @@ def populate_views(force_refresh: bool = False) -> None:
 					"queryfunc": queryfunc,
 					"queryval": queryval,
 					"query": query,
-					"read_only": read_only
+					"read_only": read_only,
+					"force_update": force_update,
 				}
 				if action == "call":
 					_action_call = deep_get(action_call_allowlist, DictPath(action_call))
@@ -11582,7 +11603,7 @@ def list_namespaces() -> None:
 	else:
 		iktprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": API-server returned ", "default"),
-			  ANSIThemeString(status, "errorvalue")], stderr = True)
+			  ANSIThemeString(f"{status}", "errorvalue")], stderr = True)
 
 def list_views() -> None:
 	"""

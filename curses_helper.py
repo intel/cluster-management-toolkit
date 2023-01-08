@@ -837,7 +837,7 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int, width
 	# (y, x Upper arrow), (y, x Lower arrow), (y, x, len horizontal dragger)
 	return leftarrow, rightarrow, hdragger
 
-def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) -> List[List[ThemeString]]:
+def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
 	Given list[StatusGroup] and an index to the selected item and the max width,
 	generate an array of themearrays
@@ -2014,6 +2014,9 @@ class UIProps:
 		self.headerpadwidth = 0
 		self.headerpad: Optional[curses.window] = None
 		self.listlen: int = 0
+		# This one really is a misnomer and could possible be confused with the infopad
+		self.sort_triggered = False
+		self.regenerate_list = False
 		self.info: List[Type] = []
 		# This is a list of the xoffset for all headers in listviews
 		self.tabstops: List[int] = []
@@ -2075,6 +2078,13 @@ class UIProps:
 			del self.logpad
 
 	def update_sorted_list(self) -> None:
+		if self.sort_triggered == False:
+			return
+		self.sort_triggered = False
+		self.list_needs_regeneration(True)
+		self.yoffset = 0
+		self.curypos = 0
+
 		sortkey1, sortkey2 = self.get_sortkeys()
 		try:
 			self.sorted_list = natsorted(self.info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse)
@@ -2085,6 +2095,7 @@ class UIProps:
 	def update_info(self, info: List[Type]) -> int:
 		self.info = info
 		self.listlen = len(self.info)
+		self.sort_triggered = True
 
 		return self.listlen
 
@@ -2101,6 +2112,14 @@ class UIProps:
 	def force_update(self) -> None:
 		self.update_count = 0
 		self.refresh = True
+		self.sort_triggered = True
+		self.list_needs_regeneration(True)
+
+	def force_refresh(self) -> None:
+		self.list_needs_regeneration(True)
+		self.refresh_all()
+		self.refresh_window()
+		self.update_window()
 
 	def disable_update(self) -> None:
 		self.update_count = -1
@@ -2114,6 +2133,12 @@ class UIProps:
 
 	def is_update_triggered(self) -> bool:
 		return self.update_count == 0
+
+	def list_needs_regeneration(self, regenerate_list: bool) -> None:
+		self.regenerate_list = regenerate_list
+
+	def is_list_regenerated(self) -> bool:
+		return self.regenerate_list != True
 
 	def select(self, selection: Union[None, int]) -> None:
 		self.selected = selection
@@ -2406,22 +2431,19 @@ class UIProps:
 		else:
 			self.listpadypos = ypos
 		self.listpadxpos = xpos
-		self.listpadheight = listheight
+		self.listpadheight = self.maxy - 2 - self.listpadypos
 		self.listpadwidth = max(width, self.listpadminwidth)
-		self.listpad = curses.newpad(max(self.listpadheight, self.maxy), self.listpadwidth)
+		self.listpad = curses.newpad(self.listpadheight, self.listpadwidth)
 		self.selected = None
 
 		return self.headerpad, self.listpad
 
 	# Pass -1 to keep the current height/width
-	def resize_listpad(self, height: int, width: int) -> None:
+	def resize_listpad(self, width: int) -> None:
 		if self.listpad is None:
 			return
+		self.listpadheight = self.maxy - 2 - self.listpadypos
 		self.listpadminwidth = self.maxx
-		if height != -1:
-			self.listpadheight = height
-		else:
-			height = self.listpadheight
 		self.listpad.erase()
 		if width != -1:
 			self.listpadwidth = max(width + 1, self.listpadminwidth)
@@ -2429,10 +2451,10 @@ class UIProps:
 			width = self.listpadwidth
 
 		if self.borders == True:
-			self.maxcurypos = min(height - 1, self.maxy - self.listpadypos - 3)
+			self.maxcurypos = min(self.listpadheight - 1, self.listlen - 1)
 		else:
-			self.maxcurypos = min(height - 1, self.maxy - self.listpadypos - 2)
-		self.maxyoffset = height - (self.maxcurypos - self.mincurypos) - 1
+			self.maxcurypos = min(self.listpadheight - 1, self.listlen - 1)
+		self.maxyoffset = self.listlen - (self.maxcurypos - self.mincurypos) - 1
 		self.headerpadwidth = self.listpadwidth
 		self.maxxoffset = max(0, self.listpadwidth - self.listpadminwidth)
 
@@ -2457,11 +2479,11 @@ class UIProps:
 		if self.listpad is not None:
 			if self.borders == True:
 				try:
-					self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 3, maxx)
+					self.listpad.noutrefresh(0, self.xoffset, self.listpadypos, xpos, self.maxy - 3, maxx)
 				except curses.error:
 					pass
 				# pylint: disable-next=line-too-long
-				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, x = maxx + 1, miny = self.listpadypos, maxy = self.maxy - 3, height = self.listpadheight, yoffset = self.yoffset, clear_color = ThemeAttr("main", "boxdrawing"))
+				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, x = maxx + 1, miny = self.listpadypos, maxy = self.maxy - 3, height = self.listlen, yoffset = self.yoffset, clear_color = ThemeAttr("main", "boxdrawing"))
 				# pylint: disable-next=line-too-long
 				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, y = self.maxy - 2, minx = self.listpadxpos, maxx = maxx, width = self.listpadwidth - 1, xoffset = self.xoffset, clear_color = ThemeAttr("main", "boxdrawing"))
 			else:
@@ -2599,7 +2621,7 @@ class UIProps:
 
 		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos)
 
-	def init_statusbar(self) -> Optional[curses.window]:
+	def init_statusbar(self) -> curses.window:
 		"""
 		Initialise the statusbar
 
@@ -2609,7 +2631,7 @@ class UIProps:
 
 		self.resize_statusbar()
 
-		return self.statusbar
+		return cast(curses.window, self.statusbar)
 
 	def refresh_statusbar(self) -> None:
 		"""
@@ -2737,6 +2759,7 @@ class UIProps:
 			self.yoffset = 0
 		else:
 			raise Exception("FIXME")
+		self.list_needs_regeneration(True)
 
 	def move_cur_with_offset(self, movement: int) -> None:
 		newcurypos = self.curypos + movement
@@ -2746,7 +2769,7 @@ class UIProps:
 		# at the end of the list, it is prudent not to move,
 		# even if the caller so requests.
 		# It is just good manners, really.
-		if self.yoffset + newcurypos > self.listpadheight:
+		if self.yoffset + newcurypos > self.listlen:
 			newcurypos = min(newcurypos, self.maxcurypos)
 			newyoffset = self.maxyoffset
 		elif newcurypos > self.maxcurypos:
@@ -2756,8 +2779,10 @@ class UIProps:
 			newyoffset = max(self.yoffset + (newcurypos - self.mincurypos), 0)
 			newcurypos = self.mincurypos
 
-		self.curypos = newcurypos
-		self.yoffset = newyoffset
+		if self.curypos != newcurypos or self.yoffset != newyoffset:
+			self.curypos = newcurypos
+			self.yoffset = newyoffset
+			self.list_needs_regeneration(True)
 
 	def find_all_matches_by_searchkey(self, messages, searchkey: str) -> None:
 		self.match_index = None
@@ -3043,6 +3068,7 @@ class UIProps:
 				match = 1
 
 		self.sortkey1, self.sortkey2 = self.get_sortkeys()
+		self.sort_triggered = True
 
 	def prev_sortcolumn(self) -> None:
 		if self.sortcolumn is None or self.sortcolumn == "":
@@ -3057,6 +3083,7 @@ class UIProps:
 				match = 1
 
 		self.sortkey1, self.sortkey2 = self.get_sortkeys()
+		self.sort_triggered = True
 
 	def get_sortcolumn(self) -> str:
 		return self.sortcolumn
@@ -3137,7 +3164,7 @@ class UIProps:
 						on_activation.pop("kind", None)
 						_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 					if _retval is not None:
-						self.force_update()
+						self.force_refresh()
 					return _retval
 		elif bstate == curses.BUTTON1_CLICKED:
 			# clicks on list items
@@ -3169,7 +3196,7 @@ class UIProps:
 							on_activation.pop("kind", None)
 							_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 						if _retval is not None:
-							self.force_update()
+							self.force_refresh()
 						return _retval
 			# clicks on the vertical scrollbar
 			elif (y, x) == (self.upperarrow):
@@ -3249,7 +3276,7 @@ class UIProps:
 				on_activation.pop("kind", None)
 				_retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
 			if _retval is not None:
-				self.force_update()
+				self.force_refresh()
 			return _retval
 
 		return Retval.NOMATCH
@@ -3297,6 +3324,8 @@ class UIProps:
 			# Reverse the sort order
 			if self.listpad is not None and self.reversible == True:
 				self.sortorder_reverse = not self.sortorder_reverse
+				self.sort_triggered = True
+			return Retval.MATCH
 		elif c == curses.KEY_SLEFT:
 			# For listpads we switch sort column with this; for logpads we move half a page left/right
 			if self.listpad is not None:
