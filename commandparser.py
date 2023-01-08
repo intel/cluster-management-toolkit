@@ -520,7 +520,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 						if not tmp_arg.startswith("http"):
 							tmp_arg = f"https://{arg}"
 
-						# Workaround; it seems validators.url accepts usernames that start with 
+						# Workaround; it seems validators.url accepts usernames that start with "-"
 						if arg.startswith("-") or not validators.url(tmp_arg):
 							iktprint([ANSIThemeString(f"{programname}", "programname"),
 								  ANSIThemeString(": “", "default"),
