@@ -11174,6 +11174,14 @@ def populate_views(force_refresh: bool = False) -> None:
 
 			field_indexes = {}
 			_indexes = deep_get(d, DictPath("listview#field_indexes"), {})
+			confkind = kind
+			if len(api_family) > 0:
+				confkind = f"{confkind}.{api_family}"
+			custom_index = deep_get(iktlib.iktconfig, DictPath(f"{confkind}#listview#field_indexes#Custom"), [])
+			if len(custom_index) == 0:
+				custom_index = deep_get(iktlib.iktconfig, DictPath(f"{name}#listview#field_indexes#Custom"), [])
+			if len(custom_index) > 0:
+				_indexes["Custom"] = custom_index
 
 			if len(_indexes) == 0:
 				sys.exit(f"View-file {view_file} is invalid: field_indexes is either missing or empty for the list view. Aborting.")
@@ -11387,6 +11395,14 @@ def populate_views(force_refresh: bool = False) -> None:
 
 			listpad_field_indexes = {}
 			_indexes = deep_get(listpad, DictPath("field_indexes"), {})
+			confkind = kind
+			if len(api_family) > 0:
+				confkind = f"{confkind}.{api_family}"
+			custom_index = deep_get(iktlib.iktconfig, DictPath(f"{confkind}#infoview#listpad#field_indexes#Custom"), [])
+			if len(custom_index) == 0:
+				custom_index = deep_get(iktlib.iktconfig, DictPath(f"{name}#infoview#listpad#field_indexes#Custom"), [])
+			if len(custom_index) > 0:
+				_indexes["Custom"] = custom_index
 
 			for key in _indexes:
 				if isinstance(_indexes[key], list):
