@@ -1,0 +1,56 @@
+kind: "GpuAllocationState"
+api_family: "gpu.dra.intel.com"
+default_command: "gpuallocationstates"
+command:
+- "gpuallocstates"
+- "gpuallocstate"
+listview:
+  name: "GPU Allocation States"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "claim_allocations", "age"]
+      sortcolumn: "namespace"
+  fields:
+    claim_allocations:
+      header: "Allocations:"
+      paths:
+      - path: "spec#resourceClaimAllocations"
+        pathtype: "count"
+        type: "numerical"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+infoview:
+  name: "GPU Allocation State Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["node_name"]
+    rows:
+      node_name:
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "Node"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "host"
+  shortcuts:
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        owner_reference_path: "metadata#ownerReferences"

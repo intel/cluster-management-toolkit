@@ -1784,6 +1784,11 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						else:
 							for tmp in value:
 								_values.append((tmp, vtype))
+				elif ptype == "count":
+					count = 0
+					for p in path:
+						count += len(deep_get(obj, DictPath(p), {}))
+					_values.append((count, vtype))
 				elif ptype == "split":
 					value = []
 					separator = deep_get(_path, DictPath("separator"), ",")
