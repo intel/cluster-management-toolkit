@@ -2737,6 +2737,13 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 					  ANSIThemeString(" was specified; continuing installation.", "default")], stderr = True)
 		cni = new_cni
 
+	if cni not in cni_data and cni not in cni_upgrade_data:
+		iktprint([ANSIThemeString("Error", "error"),
+			  ANSIThemeString(": ", "default"),
+			  ANSIThemeString(f"{cni}", "argument"),
+			  ANSIThemeString(" is not a valid/supported CNI; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
 	if len(args) > 1:
 		new_pod_network_cidr = args[1]
 	else:
