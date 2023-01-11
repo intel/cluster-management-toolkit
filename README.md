@@ -65,7 +65,7 @@ _Docker_, and _Containerd_; notably _http_proxy_, _https_proxy_, _no_proxy_.
 ## Setting up a new cluster using __iKT__
 
 0. _OPTIONAL_: Add customisations to `~/.ikt/ikt.yaml.d/` to override the defaults in `~/.ikt/ikt.yaml`
-1. `iktadm preflight-check`
+1. `iktadm preflight-check HOSTNAME` # Where HOSTNAME is the host you intend to use as control plane
 2. `iktadm prepare CLUSTER_NAME [KUBERNETES_VERSION]`
    _or_
    `iktadm prepare --control-plane HOSTNAME CLUSTER_NAME [KUBERNETES_VERSION]`
