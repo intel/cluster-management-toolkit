@@ -2392,7 +2392,7 @@ class KubernetesHelper:
 	programname = ""
 	programversion = ""
 
-	def list_contexts(self, config_path: Optional[FilePath] = None) -> List[Tuple[bool, str, str, str, str]]:
+	def list_contexts(self, config_path: Optional[FilePath] = None) -> List[Tuple[bool, str, str, str, str, str]]:
 		"""
 		Given the path to a kubeconfig file, returns the available contexts
 

@@ -851,7 +851,7 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 	"""
 
 	array = []
-	row = []
+	row: List[Union[ThemeRef, ThemeString]] = []
 	block = deep_get(theme, DictPath("boxdrawing#smallblock"), "■")
 	selectedblock = deep_get(theme, DictPath("boxdrawing#block"), "█")
 	x = 0
@@ -1997,7 +1997,7 @@ class UIProps:
 		# Should there be a timestamp in the upper right corner?
 		self.timestamp = True
 
-		self.selected = None
+		self.selected: Union[None, Type] = None
 
 		# For generic information
 		self.infopadminwidth = 0
@@ -2140,20 +2140,20 @@ class UIProps:
 	def is_list_regenerated(self) -> bool:
 		return self.regenerate_list != True
 
-	def select(self, selection: Union[None, int]) -> None:
+	def select(self, selection: Union[None, Type]) -> None:
 		self.selected = selection
 
-	def select_if_y(self, y: int, selection: int) -> None:
+	def select_if_y(self, y: int, selection: Type) -> None:
 		if self.yoffset + self.curypos == y:
 			self.select(selection)
 
-	def is_selected(self, selected: Union[None, int]) -> bool:
+	def is_selected(self, selected: Union[None, Type]) -> bool:
 		if selected is None:
 			return False
 
 		return self.selected == selected
 
-	def get_selected(self) -> Union[None, int]:
+	def get_selected(self) -> Union[None, Type]:
 		return self.selected
 
 	# Default behaviour:
