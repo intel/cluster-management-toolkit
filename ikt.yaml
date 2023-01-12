@@ -14,23 +14,33 @@
 # will occur. Too insane values will be silently overriden.
 # Incorrect syntax and non-existing keys will cause exceptions.
 #
-# You can specify the default field to sort list by using:
-# VIEW:
-#   sortcolumn: COLUMN
+# Some views have multiple different sets of defaults;
+# there may be "Wide", "Normal", and in some case also "Narrow".
+# To change the sortcolumn for one of these you can use:
 #
-# You can also specify what fields to show in list using:
-# VIEW:
-#   custom_fields: [FIELD1, FIELD2, ...]
-#   *or*
-#   custom_fields:
-#   - FIELD1
-#   - FIELD2
-#   ...
+# {VIEW,kind.api_version}:
+#   listview:
+#    field_indexes:
+#      {Wide,Normal,Narrow}:
+#        sortcolumn: SORTCOLUMN
+#        sortorder_reverse: {true,false}
 #
-# With a few exceptions, all fields are valid sortcolumns.
+# You can also add a custom view (that will be used as default):
+#
+# {VIEW,kind.api_version}:
+#   listview:
+#    field_indexes:
+#      Custom:
+#        sortcolumn: SORTCOLUMN
+#        sortorder_reverse: {true,false}
+#
+# With a few exceptions, all fields valid for the view are
+# also valid sortcolumns.
+#
 # The list of valid fields for each view is available using
 # iku list-views; it will list all VIEWs, their default
-# sort field, and all fields in the order they will be shown.
+# sortcolumn, and all fields in the order they will be shown
+# by default.
 #
 # Note that the defaults are shown; the list does NOT take
 # into account customisations that have been made in this file.
@@ -40,7 +50,7 @@
 # see when using the program.
 #
 # Finally, "name" and "namespace" will *always* be included
-# in the list, even if excluded (if not includede they will be
+# in the list, even if excluded (if not included they will be
 # prepended to the list, meaning that if a custom order is
 # preferred you should make sure to include them).
 #
@@ -53,7 +63,7 @@ Global:
   # theme: "default"
 
   # Default indentation level when dumping YAML
-  # indent: 4
+  # indent: 2
 
   # The default view to use when calling iku without
   # arguments; to get the selector either use "Selector"
@@ -87,7 +97,7 @@ Ansible:
   # This determines the parallelism of the commands being executed;
   # the default used by ansible is 5, which makes things slow in any
   # reasonably sized Kubernetes cluster
-  # forks: 50
+  # forks: 10
 
   # User for ansible connections
   # Unless the user you are running iku as is the same as the user to login as on nodes

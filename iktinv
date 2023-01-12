@@ -1172,7 +1172,7 @@ def main() -> int:
 		command = inventory
 
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 5)
+	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 10)
 	ansible_configuration["ansible_user"] = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_user"))
 	ansible_configuration["ansible_password"] = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_password"))
 	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktlib.iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)

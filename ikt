@@ -2120,7 +2120,7 @@ def main() -> int:
 						   commandline, theme = DEFAULT_THEME_FILE)
 
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 5)
+	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 10)
 	ansible_user = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_user"))
 	if ansible_user is None or len(ansible_user) == 0:
 		ansible_user = getuser()

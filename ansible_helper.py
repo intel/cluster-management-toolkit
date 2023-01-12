@@ -24,7 +24,7 @@ from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAudi
 ansible_results: Dict = {}
 
 ansible_configuration: Dict = {
-	"ansible_forks": 5,
+	"ansible_forks": 10,
 	"ansible_password": None,
 	"ansible_user": None,
 	"disable_strict_host_key_checking": False,

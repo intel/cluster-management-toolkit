@@ -9914,7 +9914,7 @@ def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwa
 
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 
-	indent = deep_get(iktlib.iktconfig, DictPath("Global#indent"), 4)
+	indent = deep_get(iktlib.iktconfig, DictPath("Global#indent"), 2)
 
 	diff = []
 
@@ -11182,23 +11182,24 @@ def populate_views(force_refresh: bool = False) -> None:
 			confkind = kind
 			if len(api_family) > 0:
 				confkind = f"{confkind}.{api_family}"
-			custom_index = deep_get(iktlib.iktconfig, DictPath(f"{confkind}#listview#field_indexes#Custom"), [])
-			if len(custom_index) == 0:
-				custom_index = deep_get(iktlib.iktconfig, DictPath(f"{name}#listview#field_indexes#Custom"), [])
+			custom_index = deep_get_with_fallback(iktlib.iktconfig, [DictPath(f"{confkind}#listview#field_indexes#Custom"), DictPath(f"{name}#listview#field_indexes#Custom")], [])
 			if len(custom_index) > 0:
 				_indexes["Custom"] = custom_index
 
 			if len(_indexes) == 0:
 				sys.exit(f"View-file {view_file} is invalid: field_indexes is either missing or empty for the list view. Aborting.")
 
-			for key in _indexes:
-				if isinstance(_indexes[key], list):
-					field_indexes[key] = {}
-					field_indexes[key]["fields"] = copy.deepcopy(_indexes[key])
-					field_indexes[key]["sortcolumn"] = sortcolumn
-					field_indexes[key]["sortorder_reverse"] = sortorder_reverse
-				else:
-					field_indexes = copy.deepcopy(_indexes)
+			field_indexes = copy.deepcopy(_indexes)
+
+			# Allow for overriding the default sortcolumn and sortorder_reverse
+			for field_index, data in field_indexes.items():
+				if field_index in deep_get_with_fallback(iktlib.iktconfig, [DictPath(f"{confkind}#listview#field_indexes"), DictPath(f"{name}#listview#field_indexes")], {}):
+					default_field_index_sortcolumn = deep_get(data, DictPath("sortcolumn"), sortcolumn)
+					default_field_index_sortorder_reverse = deep_get(data, DictPath("sortorder_reverse"), sortorder_reverse)
+					field_index_sortcolumn = deep_get_with_fallback(iktlib.iktconfig, [DictPath(f"{confkind}#listview#field_indexes#{field_index}#sortcolumn"), DictPath(f"{name}#listview#field_indexes#{field_index}#sortcolumn")], default_field_index_sortcolumn)
+					field_index_sortorder_reverse = deep_get_with_fallback(iktlib.iktconfig, [DictPath(f"{confkind}#listview#field_indexes#{field_index}#sortorder_reverse"), DictPath(f"{name}#listview#field_indexes#{field_index}#sortorder_reverse")], default_field_index_sortorder_reverse)
+					field_indexes[field_index]["sortcolumn"] = field_index_sortcolumn
+					field_indexes[field_index]["sortorder_reverse"] = field_index_sortorder_reverse
 
 			if name is None or group is None or "<missing>" in (name, group):
 				sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing, empty or None:\n"
@@ -11882,7 +11883,7 @@ def main() -> None:
 	curses_configuration.mousescroll_up = deep_get(iktlib.iktconfig, DictPath("Mouse#scrollup"), 0)
 	curses_configuration.mousescroll_down = deep_get(iktlib.iktconfig, DictPath("Mouse#scrolldown"), 0)
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 5)
+	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 10)
 	ansible_user = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_user"))
 	if ansible_user is None or len(ansible_user) == 0:
 		ansible_user = getuser()
