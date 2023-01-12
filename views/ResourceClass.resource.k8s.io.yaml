@@ -1,0 +1,29 @@
+kind: "ResourceClass"
+api_family: "resource.k8s.io"
+default_command: "resourceclasses"
+command:
+- "resclasses"
+- "resclass"
+listview:
+  name: "Resource Classes"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["name", "driver", "age"]
+  fields:
+    driver:
+      header: "Driver:"
+      path: "driverName"
+      type: "str"
+infoview:
+  name: "Resource Class Info"
+  group: "Dynamic Resource Allocation"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["driver"]
+    rows:
+      driver:
+        header: [["Driver:", ["main", "infoheader"]]]
+        path: "driverName"
+        type: "str"

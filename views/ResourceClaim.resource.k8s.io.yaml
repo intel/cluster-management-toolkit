@@ -1,0 +1,134 @@
+kind: "ResourceClaim"
+api_family: "resource.k8s.io"
+default_command: "resourceclaims"
+command:
+- "resclaims"
+- "resclaim"
+listview:
+  name: "Resource Claims"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "driver",  "age"]
+      sortcolumn: "namespace"
+  fields:
+    driver:
+      header: "Driver:"
+      path: "status#driverName"
+      type: "str"
+infoview:
+  name: "Resource Claim Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "parameters_ref", "resource_class", "driver", "allocation_mode", "reserved_for"]
+    rows:
+      allocation_mode:
+        header: [["Allocation Mode:", ["main", "infoheader"]]]
+        path: "spec#allocationMode"
+        type: "str"
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      driver:
+        header: [["Driver:", ["main", "infoheader"]]]
+        path: "status#driverName"
+        type: "str"
+      parameters_ref:
+        header: [["P", ["main", "infoheader_shortcut"]], ["arameters Ref:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#parametersRef#kind"], ["spec#parametersRef#apiVersion"], ["spec#parametersRef#name"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      reserved_for:
+        header: [["R", ["main", "infoheader_shortcut"]], ["eserved For:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#reservedFor"
+          pathtype: "items"
+          subpaths:
+          - "resource"
+          - "name"
+          type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "generic"
+          field_separators:
+          - type: "kind"
+          ellipsise: 3
+      resource_class:
+        header: [["Resource Class:", ["main", "infoheader"]]]
+        path: "spec#resourceClassName"
+        type: "str"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open parameters":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for parameters"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        api_version_path: "spec#parametersRef#apiGroup"
+        kind_path: "spec#parametersRef#kind"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#parametersRef#name"
+    "Show reservations list":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "List reservations"
+      widget: "windowwidget"
+      title: "Reserved For:"
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#reservedFor"
+        fields:
+        - resource
+        - name
+        - uid
+      # Not supported for now
+      sortcolumn: "resource"

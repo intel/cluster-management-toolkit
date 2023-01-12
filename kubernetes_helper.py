@@ -1924,6 +1924,24 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api_family": ["apis/reporting.kio.kasten.io/v1alpha1/"],
 		"api": "reports",
 	},
+	# resource.k8s.io
+	("PodScheduling", "resource.k8s.io"): {
+		"api_family": ["apis/resource.k8s.io/v1alpha1/"],
+		"api": "podschedulings",
+	},
+	("ResourceClaim", "resource.k8s.io"): {
+		"api_family": ["apis/resource.k8s.io/v1alpha1/"],
+		"api": "resourceclaims",
+	},
+	("ResourceClaimTemplate", "resource.k8s.io"): {
+		"api_family": ["apis/resource.k8s.io/v1alpha1/"],
+		"api": "resourceclaimtemplates",
+	},
+	("ResourceClass", "resource.k8s.io"): {
+		"api_family": ["apis/resource.k8s.io/v1alpha1/"],
+		"api": "resourceclasses",
+		"namespaced": False,
+	},
 	# route.openshift.io
 	("Route", "route.openshift.io"): {
 		"api_family": ["apis/route.openshift.io/v1/"],

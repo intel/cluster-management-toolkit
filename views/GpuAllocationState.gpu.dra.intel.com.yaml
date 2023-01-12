@@ -9,9 +9,19 @@ listview:
   group: "Dynamic Resource Allocation"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "claim_allocations", "age"]
+      fields: ["namespace", "name", "allocatable", "claim_allocations", "age"]
       sortcolumn: "namespace"
   fields:
+    allocatable:
+      header: "Allocatable:"
+      paths:
+      - path: "spec#allocatableGpus"
+        pathtype: "count"
+        type: "numerical"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
     claim_allocations:
       header: "Allocations:"
       paths:
@@ -43,6 +53,44 @@ infoview:
         formatting:
           field_colors:
           - type: "host"
+  listpad:
+    listgetter: "listgetter_dict_list"
+    listgetter_args:
+      path: "spec#allocatableGpus"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["device", "type", "model", "memory", "max_vfs"]
+        sortcolumn: "device"
+    fields:
+      device:
+        header: "Device:"
+        path: "value#cdiDevice"
+        type: "str"
+      max_vfs:
+        header: "Max VFs:"
+        path: "value#maxvfs"
+        type: "numerical"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      memory:
+        header: "Mem (MiB):"
+        path: "value#memory"
+        type: "numerical"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      model:
+        header: "Model:"
+        path: "value#model"
+        type: "str"
+      type:
+        header: "Type:"
+        path: "value#type"
+        type: "str"
   shortcuts:
     "Open Node":
       key: "d"
@@ -54,3 +102,22 @@ infoview:
         _pass_obj: true
         kind: "Node"
         owner_reference_path: "metadata#ownerReferences"
+    "Show Claim Requests":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List claim requests"
+      widget: "windowwidget"
+      title: "Claim Requests:"
+      headers: ["Request:", "Count:", "Mem (MiB):", "Type:", "Devices:"]
+      itemgetter: "get_dict_list"
+      itemgetter_args:
+        path: "spec#resourceClaimRequests"
+        fields:
+        - "key"
+        - "value#spec#count"
+        - "value#spec#memory"
+        - "value#spec#type"
+        - "value#devices"
+      # Not supported for now
+      sortcolumn: "key"

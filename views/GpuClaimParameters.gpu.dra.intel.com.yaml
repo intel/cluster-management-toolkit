@@ -1,0 +1,61 @@
+kind: "GpuClaimParameters"
+api_family: "gpu.dra.intel.com"
+default_command: "gpuclaimparameters"
+command:
+- "gpuclaimparams"
+listview:
+  name: "GPU Claim Parameters"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "count", "mem", "type", "age"]
+      sortcolumn: "namespace"
+  fields:
+    count:
+      header: "Count:"
+      path: "spec#count"
+      type: "numerical"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    mem:
+      header: "Mem (MiB):"
+      path: "spec#memory"
+      type: "numerical"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    type:
+      header: "Type:"
+      path: "spec#type"
+      type: "str"
+infoview:
+  name: "GPU Claim Parameter Info"
+  group: "Dynamic Resource Allocation"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["count", "mem", "type"]
+    rows:
+      count:
+        header: [["Count:", ["main", "infoheader"]]]
+        path: "spec#count"
+        type: "numerical"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      mem:
+        header: [["Mem (MiB):", ["main", "infoheader"]]]
+        path: "spec#memory"
+        type: "numerical"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      type:
+        header: [["Type:", ["main", "infoheader"]]]
+        path: "spec#type"
+        type: "str"

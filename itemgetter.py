@@ -519,6 +519,45 @@ def get_list_as_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 	return vlist
 
 # pylint: disable-next=unused-argument
+def get_dict_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Any]:
+	"""
+	Given a path to a dict, generate a list with all items as a list of dicts
+	with the key and the value in the fields as "key" and "value", respectively,
+	where value can itself be any type, not just simple types; fields is then
+	used to further specify the path to the individual fields to form the final
+	list from.
+
+		Parameters:
+			kh (KubernetesHelper): Unused
+			obj (dict): The object to get data from
+			kwargs (dict): Additional parameters
+		Returns:
+			list[dict]: A list of data
+	"""
+
+	vlist: List[Any] = []
+	tmp_vlist = []
+
+	path = deep_get(kwargs, DictPath("path"))
+	fields = deep_get(kwargs, DictPath("fields"))
+
+	for key, value in deep_get(obj, DictPath(path), {}).items():
+		tmp_vlist.append({"key": key, "value": value})
+
+	for item in tmp_vlist:
+		obj = []
+		for field in fields:
+			tmp = deep_get(item, DictPath(field))
+			if tmp is not None:
+				tmp = str(tmp)
+			else:
+				tmp = "<none>"
+			obj.append(tmp)
+		vlist.append(tuple(obj))
+
+	return vlist
+
+# pylint: disable-next=unused-argument
 def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Any]:
 	"""
 	Get the specified fields from a dict list in list format
@@ -905,6 +944,7 @@ itemgetter_allowlist = {
 	"get_endpoint_slices": get_endpoint_slices,
 	"get_image_list": get_image_list,
 	"get_key_value": get_key_value,
+	"get_dict_list": get_dict_list,
 	"get_list_as_list": get_list_as_list,
 	"get_list_fields": get_list_fields,
 	"get_package_version_list": get_package_version_list,

@@ -3369,6 +3369,7 @@ def resource_kind_to_rtype(resource):
 		("PriorityClass", "scheduling.k8s.io"): "[priority_class]",
 		("ReplicaSet", "apps"): "[controller]",
 		("ReplicationController", ""): "[controller]",
+		("ResourceClaim", "resource.k8s.io"): "[resource_claim]",
 		("Role", "rbac.authorization.k8s.io"): "[role]",
 		("RoleBinding", "rbac.authorization.k8s.io"): "[role_binding]",
 		("RuntimeClass", "node.k8s.io"): "[runtime_class]",
@@ -3931,6 +3932,33 @@ def get_pod_resource_list(obj, **kwargs):
 				"message": "",
 				"age": -1,
 			})
+
+	if "resourceclaim" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+		kind = ("ResourceClaim", "resource.k8s.io")
+		rtype = resource_kind_to_rtype(kind)
+
+		_vlist, status = kh.get_list_by_kind_namespace(kind, pod_namespace)
+		for item in _vlist:
+			owr = deep_get(item, DictPath("metadata#ownerReferences"), [])
+			for owner_reference in owr:
+				if deep_get(owner_reference, DictPath("controller"), False) == True and \
+				   deep_get(owner_reference, DictPath("kind"), "") == "Pod" and \
+				   deep_get(owner_reference, DictPath("name"), "") == pod_name:
+					name = deep_get(item, DictPath("metadata#name"))
+					resource_tuple = ("", "", name)
+					vlist.append({
+						"ref": item,
+						"namespace": pod_namespace,
+						"name": name,
+						"kind": kind[0],
+						"api_group": kind[1],
+						"type": rtype,
+						"resource_tuple": resource_tuple,
+						"status": "",
+						"restarts": "",
+						"message": "",
+						"age": -1,
+					})
 
 	return vlist, 200
 
@@ -5785,6 +5813,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 					"_named_title": True,
 					"_pass_obj": True,
 				},
+				"force_update": True,
 			}
 		# Always include the shortcut for edit resource, unless overridden
 		if deep_get(viewref, DictPath("shortcuts#Edit resource")) is None:
@@ -5798,6 +5827,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 					"_pass_obj": True,
 					"_pass_kind": True,
 				},
+				"force_update": True,
 			}
 
 		for key, value in shortcuts.items():
@@ -7243,7 +7273,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			"action_args": {
 				"title": "YAML dump",
 				"_pass_obj": True,
-			}
+			},
 		}
 
 	# Always include the shortcut for last applied configuration, unless overridden
