@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Requires: python3 (>= 3.6)
+# Requires: python3 (>= 3.8)
 
 """
 datagetters are used for data extraction that's too complext to be expressed by parameters to generic_infogetter

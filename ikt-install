@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Requires: python3 (>= 3.6)
+# Requires: python3 (>= 3.8)
 
 """
 This program installs Intel Kubernetes Toolkit
@@ -12,11 +12,13 @@ For usage, see:
 import errno
 import os
 from pathlib import Path
+import re
 import subprocess
+from subprocess import PIPE, STDOUT
 import sys
 from typing import Dict, List, Set, Tuple
 
-from ikttypes import ANSIThemeString, FilePath, SecurityPolicy
+from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, LogLevel, SecurityPolicy
 from iktpaths import BINDIR, HOMEDIR, IKTDIR, IKT_LOGS_DIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
 from iktpaths import ANSIBLE_PLAYBOOK_DIRNAME, IKT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
@@ -63,16 +65,19 @@ PACKAGES_WITH_PIP_FALLBACK = {
 	"python3-validators": "validators",
 }
 
-PACKAGES_WITHOUT_FALLBACK = [
-	"ansible",
-	"python3-natsort",
-	"python3-openssl",
-	"python3-paramiko",
-	"python3-pip",
-	"python3-ujson",
-	"python3-urllib3",
-	"sshpass",
-]
+PACKAGES_WITHOUT_FALLBACK = {
+	"ansible": {},
+	"python3-natsort": {},
+	"python3-openssl": {},
+	"python3-paramiko": {},
+	"python3-pip": {},
+	"python3-ujson": {},
+	"python3-urllib3": {
+		"recommended minimum": "1.26.0",
+		"reason": "TLSv1.1 is still enabled in older versions",
+	},
+	"sshpass": {},
+}
 
 CONFIGURATION_FILES = [
 	(FilePath(os.path.join(os.getcwd(), IKT_CONFIG_FILENAME)), IKT_CONFIG_FILE, 0o644)
@@ -118,7 +123,7 @@ def copy_files(files: List[Tuple[FilePath, FilePath, int]], verbose: bool = Fals
 		_violations = secure_copy(src, dst, verbose = verbose, permissions = permissions)
 
 # pylint: disable-next=unused-argument
-def install_software(packages: List[str], verbose: bool = False) -> None:
+def install_software(packages: Dict, verbose: bool = False) -> None:
 	"""
 	Batch install Debian packages
 
@@ -145,8 +150,59 @@ def install_software(packages: List[str], verbose: bool = False) -> None:
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	args = [sudo_path, apt_get_path, "install"] + packages
+	args = [sudo_path, apt_get_path, "install"] + list(packages.keys())
+
 	_retval = subprocess.run(args, check = False).returncode
+
+	try:
+		apt_cache_path = secure_which(FilePath("/usr/bin/apt-cache"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+	except FileNotFoundError:
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("apt-cache", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	try:
+		dpkg_path = secure_which(FilePath("/usr/bin/dpkg"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+	except FileNotFoundError:
+		iktprint([ANSIThemeString("Critical", "critical"),
+			  ANSIThemeString(": Could not find ", "default"),
+			  ANSIThemeString("dpkg", "path"),
+			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	# Check if the installed versions are new enough
+	for pkg, data in packages.items():
+		recommended_minimum = deep_get(data, DictPath("recommended minimum"), "")
+		reason = deep_get(data, DictPath("reason"), "")
+		severity = deep_get(data, DictPath("severity"), LogLevel.ERR)
+		if len(recommended_minimum) == 0:
+			continue
+		args = [apt_cache_path, "policy"] + [pkg]
+		result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+		pkg_version = None
+		compiled_regex = re.compile(r".*Installed: (.*)")
+		for line in result.stdout.decode("utf-8").splitlines():
+			tmp = compiled_regex.match(line)
+			if tmp is None:
+				continue
+
+			pkg_version = tmp[1]
+			break
+		if pkg_version is not None:
+			args = [dpkg_path, "--compare-versions", recommended_minimum, "lt", pkg_version]
+			retval = subprocess.run(args, check = False).returncode
+			if retval == 1:
+				iktprint([ANSIThemeString("\nWarning:", "warning"),
+					  ANSIThemeString(" The installed version of package ", "default"),
+					  ANSIThemeString(f"{pkg}", "path"),
+					  ANSIThemeString(" (", "default"),
+					  ANSIThemeString(f"{pkg_version}", "version"),
+					  ANSIThemeString(") is older than the recommended minimum version: ", "default"),
+					  ANSIThemeString(f"{recommended_minimum}", "version")], stderr = True)
+				iktprint([ANSIThemeString("   Risk:", "emphasis"),
+					  ANSIThemeString(f" {reason}\n", "default")], stderr = True)
 
 # pylint: disable-next=unused-argument
 def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verbose: bool = False, dryrun: bool = False) -> Tuple[List[str], List[str]]:
@@ -174,7 +230,7 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 	except FileNotFoundError:
 		iktprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
-			  ANSIThemeString("sudo", "path"),
+			  ANSIThemeString("apt-cache", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
@@ -268,13 +324,17 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if confirm == True:
 		iktprint([ANSIThemeString("Important:", "warning"), ANSIThemeString(" The following actions will be taken that will modify the system:", "default")])
 		pkgs: List[str] = []
+		pkgs_without_fallback: Dict = {}
 		pkgs_fallback: List[str] = []
 
 		if install_dependencies == True:
 			pkgs, pkgs_fallback = install_software_with_pip_fallback(PACKAGES_WITH_PIP_FALLBACK, dryrun = True)
+			pkgs_without_fallback = PACKAGES_WITHOUT_FALLBACK
+			for pkg in pkgs:
+				pkgs_without_fallback[pkg] = {}
 			iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString("Install the following system software:", "action")])
 			iktprint([ANSIThemeString("  Note", "warning"), ANSIThemeString(": This requires sudo permissions", "emphasis")])
-			for pkg in PACKAGES_WITHOUT_FALLBACK + pkgs:
+			for pkg in pkgs_without_fallback:
 				iktprint([ANSIThemeString(f"    {pkg}", "path")])
 			for pkg in pkgs_fallback:
 				iktprint([ANSIThemeString(f"    {pkg}", "path"), ANSIThemeString(" (Using package from PIP)", "emphasis")])

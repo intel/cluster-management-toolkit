@@ -8,7 +8,7 @@ import errno
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
 try:
-	import validators
+	import validators # type: ignore
 except ModuleNotFoundError:
 	validators = None
 

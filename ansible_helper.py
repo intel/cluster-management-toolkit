@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Requires: python3 (>= 3.6)
+# Requires: python3 (>= 3.8)
 
 """
 Helper for iKT to run Ansible playbooks
