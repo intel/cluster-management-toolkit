@@ -1094,7 +1094,7 @@ def check_control_plane(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dic
 						  ANSIThemeString(f"{ansible_os_family}", "programname"),
 						  ANSIThemeString(" currently the only supported OS family for control planes is ", "default"),
 						  ANSIThemeString("Debian", "programname"),
-						  ANSIThemeString("; aborting.", "default\n")], stderr = True)
+						  ANSIThemeString("; aborting.\n", "default")], stderr = True)
 					break
 
 			if taskname == "Check whether the host is a Kubernetes control plane":
