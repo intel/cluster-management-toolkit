@@ -37,7 +37,7 @@ def join_securitystatus_set(separator: str, securitystatuses: Set[SecurityStatus
 	for securitystatus in sorted(securitystatuses):
 		if len(securitystatus_str) > 0:
 			securitystatus_str += separator
-		securitystatus_str += str(securitystatus)
+		securitystatus_str += repr(securitystatus)
 
 	return securitystatus_str
 
@@ -439,7 +439,11 @@ def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
 			violations.remove(SecurityStatus.DOES_NOT_EXIST)
 			ignoring_non_existing = True
 		except ValueError:
+			# This is to allow remove when DOES_NOT_EXIST isn't in violations
 			pass
+
+	if len(violations) == 0:
+		violations = [SecurityStatus.OK]
 
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))
@@ -480,7 +484,11 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 			violations.remove(SecurityStatus.DOES_NOT_EXIST)
 			ignoring_non_existing = True
 		except ValueError:
+			# This is to allow remove when DOES_NOT_EXIST isn't in violations
 			pass
+
+	if len(violations) == 0:
+		violations = [SecurityStatus.OK]
 
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))
@@ -493,10 +501,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 		except OSError as e:
 			if "[Errno 39] Directory not empty" in str(e):
 				violations.append(SecurityStatus.DIR_NOT_EMPTY)
-				violation_strings = []
-				for violation in violations:
-					violation_strings.append(str(violation))
-				violations_joined = ",".join(violation_strings)
+				violations_joined = join_securitystatus_set(",", set(violations))
 				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path) from e
 			raise OSError from e
 
@@ -534,10 +539,7 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 	violations = check_path(path, checks = checks)
 
 	if violations != [SecurityStatus.OK]:
-		violation_strings = []
-		for violation in violations:
-			violation_strings.append(str(violation))
-		violations_joined = ",".join(violation_strings)
+		violations_joined = join_securitystatus_set(",", set(violations))
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
 
 	if "b" in write_mode:
@@ -552,7 +554,7 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 					f.write(string)
 		except FileExistsError as e:
 			if write_mode == "xb":
-				raise FilePathAuditError("Violated rules: SecurityStatus.EXISTS", path = path) from e
+				raise FilePathAuditError(f"Violated rules: {repr(SecurityStatus.EXISTS)}", path = path) from e
 	else:
 		# We have no default recourse if this write fails, so if the caller can handle the failure
 		# they have to capture the exception
@@ -565,7 +567,7 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 					f.write(string)
 		except FileExistsError as e:
 			if write_mode == "x":
-				raise FilePathAuditError("Violated rules: SecurityStatus.EXISTS", path = path) from e
+				raise FilePathAuditError(f"Violated rules: {repr(SecurityStatus.EXISTS)}", path = path) from e
 
 def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False, read_mode: str = "r") -> Union[str, bytes]:
 	"""

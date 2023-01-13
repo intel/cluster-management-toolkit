@@ -231,7 +231,7 @@ def test_secure_rmdir(checkdata: Dict) -> Tuple[int, str]:
 		fail = set(violations_string.split(","))
 
 	if fail != expect and expect is not None:
-		return 1, f"expected {expect}, got {violations_string}"
+		return 1, f"expected {expect} (type: {type(expect)}), got {fail} (type: {type(fail)})"
 
 	# Even when expect is None it's still a FAIL if the directory stays behind
 	if (expect is None or fail != expect) and Path(path).is_dir():
@@ -345,7 +345,7 @@ def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
 
 	try:
 		secure_write_string(path, string = "Random text", permissions = permissions, write_mode = write_mode)
-		violations_set = {"SecurityStatus.OK"}
+		violations_set = {repr(SecurityStatus.OK)}
 	except FilePathAuditError as e:
 		tmp = re.match(r".*Violated rules: (.*)", str(e))
 		if tmp is None:
@@ -353,13 +353,13 @@ def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
 		violations_string = tmp[1]
 		violations_set = set(violations_string.split(","))
 
-	if violations_set == {"SecurityStatus.OK"}:
+	if violations_set == {repr(SecurityStatus.OK)}:
 		if not Path(path).is_file():
-			violations_set.add("SecurityStatus.DOES_NOT_EXIST")
+			violations_set.add(repr(SecurityStatus.DOES_NOT_EXIST))
 		else:
 			path_stat = Path(path).stat()
 			if path_stat.st_mode & 0o777 != permissions:
-				violations_set.add("SecurityStatus.PERMISSIONS")
+				violations_set.add(repr(SecurityStatus.PERMISSIONS))
 
 	if expect is not None and violations_set != expect:
 		return 1, f"expected {', '.join(expect)}, got {', '.join(violations_set)}"
@@ -385,7 +385,7 @@ def test_secure_write_yaml(checkdata: Dict) -> Tuple[int, str]:
 			"valid_yaml": True,
 		}
 		secure_write_yaml(path, data = data, permissions = permissions)
-		violations_set = {"SecurityStatus.OK"}
+		violations_set = {repr(SecurityStatus.OK)}
 	except FilePathAuditError as e:
 		tmp = re.match(r".*Violated rules: (.*)", str(e))
 		if tmp is None:
@@ -393,13 +393,13 @@ def test_secure_write_yaml(checkdata: Dict) -> Tuple[int, str]:
 		violations_string = tmp[1]
 		violations_set = set(violations_string.split(","))
 
-	if violations_set == {"SecurityStatus.OK"}:
+	if violations_set == {repr(SecurityStatus.OK)}:
 		if not Path(path).is_file():
-			violations_set.add("SecurityStatus.DOES_NOT_EXIST")
+			violations_set.add(repr(SecurityStatus.DOES_NOT_EXIST))
 		else:
 			path_stat = Path(path).stat()
 			if path_stat.st_mode & 0o777 != permissions:
-				violations_set.add("SecurityStatus.PERMISSIONS")
+				violations_set.add(repr(SecurityStatus.PERMISSIONS))
 
 	if expect is not None and violations_set != expect:
 		return 1, f"expected {', '.join(expect)}, got {', '.join(violations_set)}"
@@ -775,12 +775,12 @@ testcases = {
 	"31: Deleting non-empty directory (secure_rmdir)": {
 		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
 		"test": test_secure_rmdir,
-		"expect": {"SecurityStatus.DIR_NOT_EMPTY"},
+		"expect": {repr(SecurityStatus.DIR_NOT_EMPTY)},
 	},
 	"32: Deleting non-directory (secure_rmdir)": {
 		"path": FilePath(f"{TEST_DIR}/08-not_utf8.txt"),
 		"test": test_secure_rmdir,
-		"expect": {"SecurityStatus.IS_NOT_DIR"},
+		"expect": {repr(SecurityStatus.IS_NOT_DIR)},
 	},
 	"33: Creating testdir; exist_ok = True (secure_mkdir)": {
 		"path": FilePath(f"{TEST_DIR}/testdir"),
@@ -816,33 +816,33 @@ testcases = {
 	"36: Deleting directory (secure_rm)": {
 		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
 		"test": test_secure_rm,
-		"expect": {"SecurityStatus.IS_NOT_FILE"},
+		"expect": {repr(SecurityStatus.IS_NOT_FILE)},
 	},
 	"37: Writing text to a file (secure_write_string)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_write_string,
 		"permissions": 0o600,
-		"expect": {"SecurityStatus.OK"},
+		"expect": {repr(SecurityStatus.OK)},
 	},
 	"38: Appending text to a file (secure_write_string)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_write_string,
 		"write_mode": "a",
 		"permissions": 0o600,
-		"expect": {"SecurityStatus.OK"},
+		"expect": {repr(SecurityStatus.OK)},
 	},
 	"39: Writing string to existing file (secure_write_string)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_write_string,
 		"write_mode": "x",
 		"permissions": 0o600,
-		"expect": {"SecurityStatus.EXISTS"},
+		"expect": {repr(SecurityStatus.EXISTS)},
 	},
 	"40: Writing YAML to a file (secure_write_yaml)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_write_yaml,
 		"permissions": 0o600,
-		"expect": {"SecurityStatus.OK"},
+		"expect": {repr(SecurityStatus.OK)},
 	},
 	"41: Deleting testfile (secure_rm)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
