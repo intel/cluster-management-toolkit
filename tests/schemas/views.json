@@ -787,6 +787,7 @@
 				"age",
 				"appenditems",
 				"comparison",
+				"count",
 				"dictfields",
 				"dictlist",
 				"items",
@@ -1363,6 +1364,9 @@
 											"description": "Should the program ask for confirmation before performing the action",
 											"type": "boolean"
 										},
+										"force_update": {
+											"type": "boolean"
+										},
 										"helptext": {
 											"type": "string"
 										},
@@ -1421,57 +1425,36 @@
 					"type": "array",
 					"items": {
 						"description": "An item to add to the status bar",
-						"oneOf": [
+						"type": "array",
+						"prefixItems": [
 							{
+								"description": "The header for the entry",
+								"type": "string"
+							}, {
 								"type": "array",
 								"prefixItems": [
 									{
-										"description": "The header for the entry",
-										"type": "string"
+										"description": "The source to get the value from",
+										"enum": [
+											"config",
+											"var"
+										]
 									}, {
 										"description": "The path to get the value from",
 										"$ref": "#/definitions/simple_path"
 									}
 								],
-								"items": false
-							},
-							{
-								"type": "array",
-								"prefixItems": [
-									{
-										"description": "The header for the entry",
-										"type": "string"
-									}, {
-										"oneOf": [
-											{
-												"description": "The path to get the value from",
-												"$ref": "#/definitions/simple_path"
-											},
-											{
-												"type": "array",
-												"prefixItems": [
-													{
-														"description": "The source to get the value from",
-														"enum": [
-															"config",
-															"var"
-														]
-													}, {
-														"description": "The path to get the value from",
-														"$ref": "#/definitions/simple_path"
-													}
-												],
-												"items": false
-											}
-										]
-									}, {
-										"description": "The default value to use if the path is empty",
-										"type": "string"
-									}
-								],
-								"items": false
+								"items": false,
+								"minItems": 2,
+								"maxItems": 2
+							}, {
+								"description": "The default value to use if the path is empty",
+								"type": "string"
 							}
-						]
+						],
+						"items": false,
+						"minItems": 2,
+						"maxItems": 3
 					},
 					"minItems": 1
 				}
@@ -2017,6 +2000,7 @@
 												"get_endpoint_slices",
 												"get_image_list",
 												"get_key_value",
+												"get_dict_list",
 												"get_list_as_list",
 												"get_list_fields",
 												"get_package_version_list",

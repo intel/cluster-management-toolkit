@@ -163,14 +163,13 @@ listview:
       key: "e"
       modifier: "shift"
       read_only: true
-      read_only: true
       helptext: "Show / Hide evicted pods"
       action: "toggle_var"
       action_args:
         var: "filters#evicted#enabled"
       force_update: true
   statusmsg:
-  - ["Hide evicted pods: ", "filters#evicted#enabled"]
+  - ["Hide evicted pods: ", ["var", "filters#evicted#enabled"]]
 infoview:
   name: "Pod Info"
   infopad:
