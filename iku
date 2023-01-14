@@ -5813,7 +5813,8 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 					"_named_title": True,
 					"_pass_obj": True,
 				},
-				"force_update": True,
+				"force_update": False,
+				"force_refresh": True,
 			}
 		# Always include the shortcut for edit resource, unless overridden
 		if deep_get(viewref, DictPath("shortcuts#Edit resource")) is None:
@@ -5827,7 +5828,8 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 					"_pass_obj": True,
 					"_pass_kind": True,
 				},
-				"force_update": True,
+				"force_update": False,
+				"force_refresh": True,
 			}
 
 		for key, value in shortcuts.items():
@@ -5848,7 +5850,10 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			query = deep_get(value, DictPath("query"))
 			queryval = deep_get(value, DictPath("queryval"))
 			queryfunc = deep_get(value, DictPath("queryfunc"))
+			# Force update data
 			force_update = deep_get(value, DictPath("force_update"), False)
+			# Force update UI
+			force_refresh = deep_get(value, DictPath("force_refresh"), False)
 
 			selection_vars = None
 
@@ -5911,6 +5916,9 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 					retval = action_call(uip.stdscr, **action_args)
 					if retval is not None and retval == Retval.RETURNFULL:
 						return retval
+
+			if force_refresh == True:
+				uip.force_refresh()
 
 			if force_update == True:
 				uip.force_update()
@@ -11318,6 +11326,7 @@ def populate_views(force_refresh: bool = False) -> None:
 				query = deep_get(_shortcuts[shortcut], DictPath("query"))
 				read_only = deep_get(_shortcuts[shortcut], DictPath("read_only"), False)
 				force_update = deep_get(_shortcuts[shortcut], DictPath("force_update"), True)
+				force_refresh = deep_get(_shortcuts[shortcut], DictPath("force_refresh"), True)
 
 				if key is None or helptext is None or action is None or "<missing>" in (key, helptext, action):
 					sys.exit(f"View-file {view_file} is invalid: the following fields cannot be missing or None for a shortcut:\n"
@@ -11342,6 +11351,7 @@ def populate_views(force_refresh: bool = False) -> None:
 					"query": query,
 					"read_only": read_only,
 					"force_update": force_update,
+					"force_refresh": force_refresh,
 				}
 				if action == "call":
 					_action_call = deep_get(action_call_allowlist, DictPath(action_call))
