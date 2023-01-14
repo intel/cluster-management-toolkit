@@ -7,3 +7,47 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "DNS Info (Operator)"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_ip", "cluster_domain", "loglevel", "operator_loglevel", "upstream_resolvers_header", "upstream_resolvers_policy", "upstream_resolvers_upstreams"]
+    rows:
+      cluster_domain:
+        header: [["Cluster Domain:", ["main", "infoheader"]]]
+        path: "status#clusterDomain"
+        type: "str"
+      cluster_ip:
+        header: [["Cluster IP:", ["main", "infoheader"]]]
+        path: "status#clusterIP"
+        type: "str"
+      loglevel:
+        header: [["Loglevel:", ["main", "infoheader"]]]
+        path: "spec#logLevel"
+        type: "str"
+      operator_loglevel:
+        header: [["Operator Loglevel:", ["main", "infoheader"]]]
+        path: "spec#operatorLogLevel"
+        type: "str"
+      upstream_resolvers_header:
+        header: [["Upstream Resolvers:", ["main", "infoheader"]]]
+      upstream_resolvers_policy:
+        header: [["  Policy:", ["main", "infoheader"]]]
+        path: "spec#upstreamResolvers#policy"
+        type: "str"
+      upstream_resolvers_upstreams:
+        header: [["  Upstreams:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#upstreamResolvers#upstreams"
+          pathtype: "items"
+          subpaths:
+          - "type"
+          - "port"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "port"
+          field_separators:
+          - type: "port"

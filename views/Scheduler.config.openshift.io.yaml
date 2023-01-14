@@ -10,3 +10,25 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "Scheduler Info (Config)"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["default_node_selector", "control_planes_schedulable", "profile"]
+    rows:
+      control_planes_schedulable:
+        header: [["Control Planes Schedulable:", ["main", "infoheader"]]]
+        path: "spec#mastersSchedulable"
+        type: "bool"
+        default: false
+      default_node_selector:
+        header: [["Default Node Selector:", ["main", "infoheader"]]]
+        path: "spec#defaultNodeSelector"
+        type: "str"
+        default: "<unset>"
+      profile:
+        header: [["Profile:", ["main", "infoheader"]]]
+        path: "spec#profile"
+        type: "str"
+        default: "LowNodeUtilization"
