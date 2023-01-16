@@ -52,6 +52,7 @@ except ModuleNotFoundError:
 
 from iktpaths import HOMEDIR, PARSER_DIR
 
+from iktlog import IKTLogType, IKTLog
 from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name
 
 from iktio_yaml import secure_read_yaml, secure_read_yaml_all
@@ -1209,7 +1210,7 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 
 	event = tmp[1]
 
-	if event in ("AddPod", "DeletePod", "AddNamespace", "DeleteNamespace") or (event in ("UpdatePod", "UpdateNamespace") and not "} {" in tmp[2]):
+	if event in ("AddPod", "DeletePod", "AddNamespace", "AddNetworkPolicy", "DeleteNamespace") or (event in ("UpdatePod", "UpdateNamespace") and not "} {" in tmp[2]):
 		msg = tmp[2]
 		_message, _severity, _facility, remnants = split_json_style_raw(message = msg, severity = severity, facility = facility, fold_msg = fold_msg, options = options, merge_msg = True)
 		new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", "severity_info"))]
@@ -1252,7 +1253,11 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
 				       ThemeString(" [State modified]", ThemeAttr("logview", "modified"))]
 	else:
-		sys.exit(f"json_event: Unknown EVENT type:\n{message}")
+		IKTLog(IKTLogType.DEBUG, [
+				[ANSIThemeString("Unknown EVENT type: ", "default"),
+				 ANSIThemeString(f"{event}", "argument")],
+		       ], severity = LogLevel.ERR, facility = "logparser.py:json_event()")
+		return message, severity, facility, remnants
 
 	return new_message, severity, facility, remnants
 
