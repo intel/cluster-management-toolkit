@@ -16,6 +16,8 @@ For usage, see:
 	ikt help
 """
 
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
 import errno
 from getpass import getuser
 import hashlib
@@ -24,11 +26,6 @@ from pathlib import Path, PurePath
 import re
 import sys
 from typing import cast, Dict, List, Optional, Sequence, Tuple
-
-try:
-	import OpenSSL
-except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
 from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, HostNameStatus
 from iktpaths import IKT_CONFIG_FILE, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
@@ -1140,10 +1137,9 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			try:
 				ca_cert = secure_read_string(FilePath(ca_cert_path))
 				if len(ca_cert) > 0:
-					x509obj = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, ca_cert) # type: ignore
-					pubkey = x509obj.get_pubkey()
-					pubkeyasn1 = OpenSSL.crypto.dump_publickey(OpenSSL.crypto.FILETYPE_ASN1, pubkey) # type: ignore
-					ca_cert_hash = hashlib.sha256(pubkeyasn1).hexdigest()
+					x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
+					pubkeyder = x509obj.public_key().public_bytes(encoding = serialization.Encoding.DER, format = serialization.PublicFormat.SubjectPublicKeyInfo)
+					ca_cert_hash = hashlib.sha256(pubkeyder).hexdigest()
 			except FileNotFoundError:
 				pass
 

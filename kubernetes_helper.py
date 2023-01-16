@@ -8,6 +8,8 @@ Kubernetes helpers used by iKT
 # pylint: disable=line-too-long
 
 import base64
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
 import hashlib
 # ujson is much faster than json,
 # but it might not be available
@@ -30,11 +32,6 @@ try:
 	import urllib3
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-urllib3")
-
-try:
-	import OpenSSL
-except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-openssl")
 
 from iktpaths import KUBE_CONFIG_FILE
 from iktlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
@@ -2958,11 +2955,10 @@ class KubernetesHelper:
 			ca_cert = deep_get(ref, DictPath("data#ca.crt"), "")
 
 		# we have the CA cert; now to extract the public key and hash it
-		if ca_cert != "":
-			x509obj = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, ca_cert) # type: ignore
-			pubkey = x509obj.get_pubkey()
-			pubkeyasn1 = OpenSSL.crypto.dump_publickey(OpenSSL.crypto.FILETYPE_ASN1, pubkey) # type: ignore
-			ca_cert_hash = hashlib.sha256(pubkeyasn1).hexdigest()
+		if len(ca_cert) > 0:
+			x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
+			pubkeyder = x509obj.public_key().public_bytes(encoding = serialization.Encoding.DER, format = serialization.PublicFormat.SubjectPublicKeyInfo)
+			ca_cert_hash = hashlib.sha256(pubkeyder).hexdigest()
 
 		return ca_cert_hash
 
