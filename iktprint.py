@@ -61,6 +61,7 @@ fallback_theme = {
 		"yaml_key": "\033[1;36m",                       # cyan + bright
 		"yaml_key_separator": "\033[0;37m",             # white
 		"yaml_value": "\033[0m",                        # reset
+		"namespace": "\033[0;36m",                      # cyan
 	}
 }
 
@@ -231,7 +232,7 @@ def init_iktprint(themefile: Optional[FilePath]) -> None:
 	global themepath # pylint: disable=global-statement
 
 	# If we get None as theme we use the builtin fallback theme
-	if themepath is None:
+	if themefile is None:
 		theme = fallback_theme
 		themepath = FilePath("<built-in default>")
 		return
