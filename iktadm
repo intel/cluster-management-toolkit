@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.8)
 # Requires: python3-natsort
-# Requires: python3-openssl
 # Requires: python3-paramiko
 
 # pylint: disable=line-too-long
@@ -3591,6 +3590,9 @@ troubleshoot_checks = [
 		"preconditions": [
 			"clusterinfo",
 		],
+	}, {
+		"description": "Check required pods and their statuses",
+		"call": checks.check_running_pods,
 	},
 	# Check kube-controller-manager, kube-scheduler, and cloud-controller-manager;
 	# they should match, but can be up to one version older,

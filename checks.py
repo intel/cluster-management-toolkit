@@ -590,6 +590,245 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, i
 
 	return critical, error, warning, note
 
+required_pods = {
+	"api-server": [
+		{
+			"any_of": ["kube-apiserver", "coredns"],
+		},
+	],
+	"coredns": [
+		{
+			"any_of": ["coredns"],
+		},
+	],
+	"etcd": [
+		{
+			"any_of": ["etcd"],
+		},
+	],
+	"kube-controller-manager": [
+		{
+			"any_of": ["kube-controller-manager"],
+		},
+	],
+	# DaemonSet
+	"kube-proxy": [
+		{
+			"any_of": ["kube-proxy"],
+		},
+	],
+	"kube-scheduler": [
+		{
+			"any_of": ["kube-scheduler"],
+		},
+	],
+	"CNI": [
+		{
+			# antrea; DaemonSet
+			"any_of": ["antrea-agent"],
+		},
+		{
+			# calico; Deployment
+			"all_of": ["calico-api-server", "calico-kube-controllers"],
+		},
+		{
+			# canal; DaemonSet
+			"any_of": ["canal"],
+		},
+		{
+			# cilium; Deployment
+			"any_of": ["cilium-operator"],
+		},
+		{
+			# flannel; DaemonSet
+			"any_of": ["kube-flannel-ds"],
+		},
+		{
+			# kilo; DaemonSet
+			"any_of": ["kilo"],
+		},
+		{
+			# kube-ovn; DaemonSet
+			"any_of": ["kube-ovn-cni"],
+		},
+		{
+			# kube-router; DaemonSet
+			"any_of": ["kube-router"],
+		},
+		{
+			# weave; DaemonSet
+			"any_of": ["weave-net"],
+		},
+	],
+}
+
+# pylint: disable-next=too-many-arguments,unused-argument
+def check_running_pods(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict, user: str,
+		       critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[int, int, int, int]:
+	"""
+	This checks what pods are running and their status
+
+		Parameters:
+			cluster_name (str): The name of the cluster (unused)
+			kubeconfig (dict)): The kubeconfig file (unused)
+			iktconfig_dict (dict): The iktconfig file (unused)
+			critical (int): The current count of critical severity security issues
+			error (int): The current count of error severity security issues
+			warning (int): The current count of warning severity security issues
+			note (int): The current count of note severity security issues
+			kwargs (dict): Additional parameters
+		Returns:
+			(critical, error, warning, note):
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
+	"""
+
+	iktprint([ANSIThemeString("\n[Checking required pods]", "phase")])
+
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+	vlist, _status = kh.get_list_by_kind_namespace(("Pod", ""), "")
+
+	pods = []
+
+	for obj in vlist:
+		name = deep_get(obj, DictPath("metadata#name"), "")
+		namespace = deep_get(obj, DictPath("metadata#namespace"), "")
+		node_name = deep_get(obj, DictPath("spec#node_name"), "")
+		conditions = deep_get(obj, DictPath("status#conditions"), [])
+		phase = deep_get(obj, DictPath("status#phase"), "")
+		owr = deep_get(obj, DictPath("metadata#ownerReferences"), [])
+
+		pods.append({
+			"name": name,
+			"namespace": namespace,
+			"node_name": node_name,
+			"conditions": conditions,
+			"phase": phase,
+			"owr": owr,
+		})
+
+	# Next check for all required pods
+
+	for rp, rp_data in required_pods.items():
+		iktprint([ANSIThemeString("•", "separator"),
+			  ANSIThemeString(f" {rp}", "programname")])
+
+		any_of_available = {}
+		any_of_available["__expected"] = []
+		all_of_available = {}
+		all_of_available["__expected"] = []
+		match_count = 0
+
+		for rp_match in rp_data:
+			any_of = deep_get(rp_match, DictPath("any_of"), [])
+			all_of = deep_get(rp_match, DictPath("all_of"), [])
+
+			if len(any_of) > 0:
+				any_of_available["__expected"] += any_of
+			if len(all_of) > 0:
+				all_of_available["__expected"] += [all_of]
+
+			for pod_prefix in any_of:
+				for pod in pods:
+					pod_name = pod["name"]
+					pod_namespace = pod["namespace"]
+					if pod_name.startswith(pod_prefix):
+						if pod_prefix in any_of_available:
+							any_of_available[pod_prefix].append((pod_name, pod_namespace))
+						else:
+							any_of_available[pod_prefix] = [(pod_name, pod_namespace)]
+
+			for pod_prefix in all_of:
+				for pod in pods:
+					pod_name = pod["name"]
+					pod_namespace = pod["namespace"]
+					if pod_name.startswith(pod_prefix):
+						if pod_prefix in all_of_available:
+							all_of_available[pod_prefix].append((pod_name, pod_namespace))
+						else:
+							all_of_available[pod_prefix] = [(pod_name, pod_namespace)]
+
+			if len(any_of) > 0 == len(any_of_available) > 0 and len(all_of) == len(all_of_available):
+				match_count += 1
+
+		# Remove duplicates
+		any_of_available_expected = list(set(any_of_available["__expected"]))
+		any_of_available_expected += all_of_available["__expected"]
+
+		if match_count > 1:
+			iktprint([ANSIThemeString("   ", "default"),
+				  ANSIThemeString("Warning", "warning"),
+				  ANSIThemeString(": multiple possibly conflicting options were detected for ", "programname"),
+				  ANSIThemeString(f"{rp}", "programname")])
+			warning += 1
+		elif len(any_of_available) == 1:
+			if len(rp_data) == 1 and len(all_of_available["__expected"]) == 0:
+				iktprint([ANSIThemeString(f"   ", "default"),
+					  ANSIThemeString(f"Error", "error"),
+					  ANSIThemeString(f": at least one of the following pods is expected to be running:", "default")])
+			elif any_of_available_expected != 1:
+				iktprint([ANSIThemeString(f"   ", "default"),
+					  ANSIThemeString(f"Error", "error"),
+					  ANSIThemeString(f": exactly one of the following pods or sets of pods is expected to be running:", "default")])
+			tmp_str = [ANSIThemeString("     ", "default")]
+			first = True
+			for expected in any_of_available_expected:
+				if not first:
+					tmp_str.append(ANSIThemeString(", ", "separator"))
+
+				if isinstance(expected, list):
+					tmp_str.append(ANSIThemeString("[", "separator"))
+					tmp_str += ansithemestring_join_tuple_list(expected, formatting = "programname")
+					tmp_str.append(ANSIThemeString("]", "separator"))
+				else:
+					tmp_str.append(ANSIThemeString(f"{expected}", "programname"))
+				first = False
+			iktprint(tmp_str)
+			error += 1
+
+		# The pods are running, but are they healthy and ready?
+		first = True
+		for pod_prefix, pod_list in any_of_available.items():
+			if pod_prefix == "__expected":
+				continue
+			for pod in pod_list:
+				pod_name, pod_namespace = pod
+				for pod_data in pods:
+					if (deep_get(pod_data, DictPath("name"), "") == pod_name and
+					    deep_get(pod_data, DictPath("namespace"), "") == pod_namespace):
+						phase = deep_get(pod_data, DictPath("phase"), "")
+						conditions = deep_get(pod_data, DictPath("conditions"), [])
+						ready = "NotReady"
+						for condition in conditions:
+							if (deep_get(condition, DictPath("type"), "") == "Ready" and
+							    deep_get(condition, DictPath("status"), "False") == "True"):
+								ready = "Ready"
+						if phase != "Running" or ready != "Ready":
+							if first == True:
+								iktprint([ANSIThemeString(f"   ", "default"),
+									  ANSIThemeString(f"Error", "error"),
+									  ANSIThemeString(f": The following pods should be in phase Running, condition Ready:", "default")])
+								first = False
+							iktprint([ANSIThemeString(f"     ", "default"),
+								  ANSIThemeString(f"{pod_namespace}", "namespace"),
+								  ANSIThemeString(f"/", "separator"),
+								  ANSIThemeString(f"{pod_name}", "namespace"),
+								  ANSIThemeString(f" (Phase: ", "default"),
+								  ANSIThemeString(f"{phase}", "emphasis"),
+								  ANSIThemeString(f", ", "separator"),
+								  ANSIThemeString(f"Condition: ", "default"),
+								  ANSIThemeString(f"{ready}", "emphasis"),
+								  ANSIThemeString(f")", "default")])
+							error += 1
+
+	print()
+
+	return critical, error, warning, note
+
 recommended_directory_permissions = [
 	{
 		"path": BINDIR,
