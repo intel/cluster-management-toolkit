@@ -62,6 +62,11 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
 			if str(e) in ("[Errno -3] Temporary failure in name resolution", "[Errno -2] Name or service not known"):
 				continue
 			raise socket.gaierror(f"{str(e)}\nhost: {host}")
+		except paramiko.ssh_exception.SSHException as e:
+			iktprint.iktprint([ANSIThemeString("\nError", "error"),
+					   ANSIThemeString(f": {e}; aborting.", "default")], stderr = True)
+			sys.exit(errno.EIO)
+
 		try:
 			transport.connect()
 			key = transport.get_remote_server_key()
