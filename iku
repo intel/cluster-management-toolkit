@@ -4208,11 +4208,15 @@ def get_control_plane() -> Tuple[Dict, str]:
 	if len(control_planes) == 0 and len(vlist) == 1:
 		control_planes.append((vlist[0], deep_get(vlist[0], DictPath("metadata#name"))))
 
-	if len(control_planes) > 1:
+	if len(control_planes) == 0:
+		iktprint([ANSIThemeString("Error", "warning"),
+			  ANSIThemeString(": None of the nodes in the cluster are labelled as control planes. The cluster is most likely misconfigured.", "default")], stderr = True)
+		return {}, ""
+	elif len(control_planes) > 1:
 		iktprint([ANSIThemeString("Warning", "warning"),
 			  ANSIThemeString(": Multiple control planes not supported yet, found multiple; returning first entry:", "default")], stderr = True)
 		for control_plane in control_planes:
-			print(f"  {control_plane[1]}")
+			iktprint([ANSIThemeString(f"  {control_plane[1]}", "default")], stderr = True)
 
 	return control_planes[0][0], control_planes[0][1]
 
