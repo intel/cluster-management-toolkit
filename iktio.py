@@ -923,16 +923,16 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 		return [SecurityStatus.EXISTS]
 
 	# We do not need to inspect the content, so open it in binary mode
-	with open(src, "rb") as fr:
-		content = fr.read()
-		# We should not need "xb", since we have already checked that dst does not exist,
-		# but better be safe than sorry
-		if permissions is None:
-			with open(dst, "xb") as fw:
-				fw.write(content)
-		else:
-			with open(dst, "xb", opener = partial(os.open, mode = permissions)) as fw:
-				fw.write(content)
+	# We should not need "xb", since we have already checked that dst does not exist,
+	# but better be safe than sorry
+	if permissions is None:
+		with open(src, "rb") as fr, open(dst, "xb") as fw:
+			content = fr.read()
+			fw.write(content)
+	else:
+		with open(src, "rb") as fr, open(dst, "xb", opener = partial(os.open, mode = permissions)) as fw:
+			content = fr.read()
+			fw.write(content)
 	return [SecurityStatus.OK]
 
 # pylint: disable-next=too-many-return-statements
