@@ -2800,6 +2800,8 @@ class KubernetesHelper:
 		cni += self.__identify_cni("kilo", ("DaemonSet", "apps"), "metadata.name=kilo", "kilo")
 		# Kube-OVN:
 		cni += self.__identify_cni("kube-ovn", ("DaemonSet", "apps"), "metadata.name=kube-ovn-cni", "cni-server")
+		# OpenShift-SDN:
+		cni += self.__identify_cni("sdn", ("DaemonSet", "apps"), "metadata.name=sdn", "sdn")
 		# Kube-router:
 		cni += self.__identify_cni("kube-router", ("DaemonSet", "apps"), "metadata.name=kube-router", "kube-router")
 		# Weave:
