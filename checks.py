@@ -329,7 +329,7 @@ def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, iktco
 			  ANSIThemeString(" version is more than one minor version newer than that of ", "default"),
 			  ANSIThemeString("kube-apiserver", "programname"),
 			  ANSIThemeString(";", "default")], stderr = True)
-		iktprint([ANSIThemeString("         this might work, but it is generally recommended to keep the versions in sync.", "default")], stderr = True)
+		iktprint([ANSIThemeString("           this might work, but it is generally recommended to keep the versions in sync.", "default")], stderr = True)
 		warning += 1
 		mismatch = True
 	elif kubectl_minor_version < server_minor_version and kubectl_minor_version + 1 == server_minor_version:
@@ -593,12 +593,12 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, i
 required_pods = {
 	"api-server": [
 		{
-			"any_of": ["kube-apiserver", "coredns"],
+			"any_of": ["kube-apiserver"],
 		},
 	],
 	"coredns": [
 		{
-			"any_of": ["coredns"],
+			"any_of": ["coredns", "dns-default"],
 		},
 	],
 	"etcd": [
@@ -615,11 +615,17 @@ required_pods = {
 	"kube-proxy": [
 		{
 			"any_of": ["kube-proxy"],
+			"note": [ANSIThemeString("Note", "note"),
+				 ANSIThemeString(": Optional for ", "default"),
+				 ANSIThemeString("CRC", "programname"),
+				 ANSIThemeString("/", "separator"),
+				 ANSIThemeString("OpenShift", "programname"),
+				 ANSIThemeString(".", "default")],
 		},
 	],
 	"kube-scheduler": [
 		{
-			"any_of": ["kube-scheduler"],
+			"any_of": ["kube-scheduler", "openshift-kube-scheduler"],
 		},
 	],
 	"CNI": [
@@ -654,6 +660,10 @@ required_pods = {
 		{
 			# kube-router; DaemonSet
 			"any_of": ["kube-router"],
+		},
+		{
+			# sdn; DaemonSet
+			"any_of": ["sdn"],
 		},
 		{
 			# weave; DaemonSet
@@ -726,6 +736,7 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict
 		for rp_match in rp_data:
 			any_of = deep_get(rp_match, DictPath("any_of"), [])
 			all_of = deep_get(rp_match, DictPath("all_of"), [])
+			additional_info = deep_get(rp_match, DictPath("note"), [])
 
 			if len(any_of) > 0:
 				any_of_available["__expected"] += any_of
@@ -759,22 +770,24 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict
 		any_of_available_expected = list(set(any_of_available["__expected"]))
 		any_of_available_expected += all_of_available["__expected"]
 
+		all_ok = True
 		if match_count > 1:
-			iktprint([ANSIThemeString("   ", "default"),
+			iktprint([ANSIThemeString("    ", "default"),
 				  ANSIThemeString("Warning", "warning"),
 				  ANSIThemeString(": multiple possibly conflicting options were detected for ", "programname"),
 				  ANSIThemeString(f"{rp}", "programname")])
 			warning += 1
+			all_ok = False
 		elif len(any_of_available) == 1:
 			if len(rp_data) == 1 and len(all_of_available["__expected"]) == 0:
-				iktprint([ANSIThemeString(f"   ", "default"),
+				iktprint([ANSIThemeString(f"    ", "default"),
 					  ANSIThemeString(f"Error", "error"),
 					  ANSIThemeString(f": at least one of the following pods is expected to be running:", "default")])
 			elif any_of_available_expected != 1:
-				iktprint([ANSIThemeString(f"   ", "default"),
+				iktprint([ANSIThemeString(f"    ", "default"),
 					  ANSIThemeString(f"Error", "error"),
 					  ANSIThemeString(f": exactly one of the following pods or sets of pods is expected to be running:", "default")])
-			tmp_str = [ANSIThemeString("     ", "default")]
+			tmp_str = [ANSIThemeString("      ", "default")]
 			first = True
 			for expected in any_of_available_expected:
 				if not first:
@@ -789,6 +802,7 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict
 				first = False
 			iktprint(tmp_str)
 			error += 1
+			all_ok = False
 
 		# The pods are running, but are they healthy and ready?
 		first = True
@@ -809,11 +823,11 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict
 								ready = "Ready"
 						if phase != "Running" or ready != "Ready":
 							if first == True:
-								iktprint([ANSIThemeString(f"   ", "default"),
+								iktprint([ANSIThemeString(f"    ", "default"),
 									  ANSIThemeString(f"Error", "error"),
 									  ANSIThemeString(f": The following pods should be in phase Running, condition Ready:", "default")])
 								first = False
-							iktprint([ANSIThemeString(f"     ", "default"),
+							iktprint([ANSIThemeString(f"      ", "default"),
 								  ANSIThemeString(f"{pod_namespace}", "namespace"),
 								  ANSIThemeString(f"/", "separator"),
 								  ANSIThemeString(f"{pod_name}", "namespace"),
@@ -824,6 +838,11 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, iktconfig_dict: Dict
 								  ANSIThemeString(f"{ready}", "emphasis"),
 								  ANSIThemeString(f")", "default")])
 							error += 1
+							all_ok = False
+		if all_ok:
+			iktprint([ANSIThemeString("    OK\n", "success")])
+		elif len(additional_info) > 0:
+			iktprint([ANSIThemeString("    ", "default")] + additional_info)
 
 	print()
 
