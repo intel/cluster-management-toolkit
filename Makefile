@@ -1,5 +1,5 @@
 yaml_dirs = parsers themes views playbooks
-python_executables = ikt iktadm ikt-install iktinv iku tests/validate_yaml tests/check_theme_use tests/iotests
+python_executables = cmt cmtadm cmt-install cmtinv cmu tests/validate_yaml tests/check_theme_use tests/iotests
 
 checks: bandit yamllint validate_yaml validate_playbooks
 
@@ -13,7 +13,7 @@ yamllint:
 	@for dir in $(yaml_dirs); do \
 		yamllint $$dir/*.yaml || /bin/true; \
 	done; \
-	yamllint ikt.yaml || /bin/true
+	yamllint cmt.yaml || /bin/true
 
 mypy-strict:
 	@for file in $(python_executables) *.py; do \
@@ -26,7 +26,7 @@ mypy:
 	done
 
 export_src:
-	git archive --format zip --output ~/ikt-$(shell date -I).zip origin/main
+	git archive --format zip --output ~/cmt-$(shell date -I).zip origin/main
 
 validate_yaml:
 	./tests/validate_yaml || /bin/true
@@ -45,12 +45,12 @@ parser_bundle:
 setup_tests:
 	@(cd tests ;\
 	 test -L ansible_helper.py || ln -s ../ansible_helper.py . ;\
-	 test -L iktio.py || ln -s ../iktio.py . ;\
-	 test -L iktio_yaml.py || ln -s ../iktio_yaml.py . ;\
-	 test -L iktlib.py || ln -s ../iktlib.py . ;\
-	 test -L iktpaths.py || ln -s ../iktpaths.py . ;\
-	 test -L iktprint.py || ln -s ../iktprint.py . ;\
-	 test -L ikttypes.py || ln -s ../ikttypes.py . ;\
+	 test -L cmtio.py || ln -s ../cmtio.py . ;\
+	 test -L cmtio_yaml.py || ln -s ../cmtio_yaml.py . ;\
+	 test -L cmtlib.py || ln -s ../cmtlib.py . ;\
+	 test -L cmtpaths.py || ln -s ../cmtpaths.py . ;\
+	 test -L ansithemeprint.py || ln -s ../ansithemeprint.py . ;\
+	 test -L cmttypes.py || ln -s ../cmttypes.py . ;\
 	 test -L networkio.py || ln -s ../networkio.py . ;\
 	 test -d testpaths || mkdir testpaths );\
 	(cd tests/testpaths ;\

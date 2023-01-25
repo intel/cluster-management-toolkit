@@ -9,10 +9,10 @@ import sys
 from typing import Any, Callable, Dict, List, Optional, Union
 import yaml
 
-from ikttypes import deep_get, DictPath
+from cmttypes import deep_get, DictPath
 
-import iktlib
-from iktlib import split_msg
+import cmtlib
+from cmtlib import split_msg
 
 from curses_helper import ThemeAttr, ThemeRef, ThemeString
 
@@ -234,7 +234,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 	"""
 
 	dumps: List[List[Union[ThemeRef, ThemeString]]] = []
-	indent = deep_get(iktlib.iktconfig, DictPath("Global#indent"), 2)
+	indent = deep_get(cmtlib.cmtconfig, DictPath("Global#indent"), 2)
 
 	if isinstance(lines, str):
 		lines = [lines]

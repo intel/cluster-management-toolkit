@@ -1,12 +1,12 @@
 #! /usr/bin/env python3
 
 """
-This module contains helptexts for iku
+This module contains helptexts for cmu
 """
 
 from about import PROGRAM_SUITE_FULL_NAME, PROGRAM_SUITE_VERSION, UI_PROGRAM_NAME, UI_PROGRAM_VERSION
 
-from ikttypes import ANSIThemeString
+from ansithemeprint import ANSIThemeString
 from curses_helper import ThemeAttr, ThemeString
 
 # Improve to handle embedded color codes; probably through storing the log messages
@@ -14,21 +14,16 @@ from curses_helper import ThemeAttr, ThemeString
 
 about = [
 	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString("   ████   ", ThemeAttr("main", "logo_bullet")), ThemeString("████    ◢███◤  ████████████████   ", ThemeAttr("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ", ThemeAttr("main", "logo_bullet")), ThemeString("████   ◢███◤         ████         ", ThemeAttr("main", "logo_letter"))]),
-	(0, [ThemeString("          ████  ◢███◤          ████         ", ThemeAttr("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████ ◢███◤           ████         ", ThemeAttr("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████◢███◤            ████         ", ThemeAttr("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████◥███◣            ████         ", ThemeAttr("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████ ◥███◣           ████         ", ThemeAttr("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████  ◥███◣          ████         ", ThemeAttr("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████   ◥███◣         ████         ", ThemeAttr("main", "logo_letter"))]),
-	(0, [ThemeString("   ████   ████    ◥███◣        ████         ", ThemeAttr("main", "logo_letter"))]),
+	(0, [ThemeString("    ◢███ ██████  ████ ◣  ◢█████  ████ █████████    ", ThemeAttr("main", "logo_dark"))]),
+	(0, [ThemeString("    ████         ████ █◣◢██████       ████         ", ThemeAttr("main", "logo_medium"))]),
+	(0, [ThemeString("    ████         ████ ████◤████       ████         ", ThemeAttr("main", "logo_bright"))]),
+	(0, [ThemeString("    ████         ████ ◥██◤ ████       ████         ", ThemeAttr("main", "logo_medium"))]),
+	(0, [ThemeString("    ◥███ ██████  ████  ◥◤  ████       ████         ", ThemeAttr("main", "logo_dark"))]),
 	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION}", ThemeAttr("main", "about_version"))]), # pylint: disable=line-too-long
+	(0, [ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION} ", ThemeAttr("main", "about_version"))]), # pylint: disable=line-too-long
 	(0, [ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))]), # pylint: disable=line-too-long
 	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString(" Copyright © 2019-2022 Intel Corporation", ThemeAttr("main", "about_text_highlight"))]),
+	(0, [ThemeString(" Copyright © 2019-2023 Intel Corporation", ThemeAttr("main", "about_text_highlight"))]),
 	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
 	(0, [ThemeString(" Author(s):", ThemeAttr("main", "about_text_highlight"))]),
 	(0, [ThemeString(" David Weinehall", ThemeAttr("main", "about_text"))]),

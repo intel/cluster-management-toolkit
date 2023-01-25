@@ -14,9 +14,9 @@ except ModuleNotFoundError:
 
 import about
 
-import iktlib
-from iktprint import themearray_len, iktprint, init_iktprint
-from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath
+import cmtlib
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, themearray_len
+from cmttypes import deep_get, DictPath, FilePath
 
 programname = None
 programversion = None
@@ -42,10 +42,10 @@ def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool =
 
 	if not isinstance(value, int) and not value.isdigit():
 		if error_on_failure == True:
-			iktprint([ANSIThemeString(f"{programname}", "programname"),
-				  ANSIThemeString(": “", "default"),
-				  ANSIThemeString(f"{value}", "option"),
-				  ANSIThemeString("“ is not an integer.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+					ANSIThemeString(": “", "default"),
+					ANSIThemeString(f"{value}", "option"),
+					ANSIThemeString("“ is not an integer.", "default")], stderr = True)
 		if exit_on_failure == True:
 			sys.exit(errno.EINVAL)
 		return False
@@ -67,14 +67,14 @@ def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool =
 
 	if not minval <= int(value) <= maxval:
 		if error_on_failure == True:
-			iktprint([ANSIThemeString(f"{programname}", "programname"),
-				  ANSIThemeString(": “", "default"),
-				  ANSIThemeString(f"{value}", "option"),
-				  ANSIThemeString("“ is not in the range [", "default"),
-				  ANSIThemeString(minval_str, "emphasis"),
-				  ANSIThemeString(", ", "default"),
-				  ANSIThemeString(maxval_str, "emphasis"),
-				  ANSIThemeString("].", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+					ANSIThemeString(": “", "default"),
+					ANSIThemeString(f"{value}", "option"),
+					ANSIThemeString("“ is not in the range [", "default"),
+					ANSIThemeString(minval_str, "emphasis"),
+					ANSIThemeString(", ", "default"),
+					ANSIThemeString(maxval_str, "emphasis"),
+					ANSIThemeString("].", "default")], stderr = True)
 		if exit_on_failure == True:
 			sys.exit(errno.EINVAL)
 		return False
@@ -93,9 +93,10 @@ def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0
 	"""
 
-	iktprint([ANSIThemeString(f"{programname} ", "programname"), ANSIThemeString(f"{programversion}", "version")])
-	iktprint([ANSIThemeString(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"),
-		  ANSIThemeString(f"{about.PROGRAM_SUITE_VERSION}", "version")])
+	ansithemeprint([ANSIThemeString(f"{programname} ", "programname"),
+			ANSIThemeString(f"{programversion}", "version")])
+	ansithemeprint([ANSIThemeString(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"),
+			ANSIThemeString(f"{about.PROGRAM_SUITE_VERSION}", "version")])
 	print()
 	print(about.COPYRIGHT)
 	print(about.LICENSE)
@@ -138,13 +139,13 @@ def __sub_usage(command: str) -> int:
 	if len(values) > 0:
 		headerstring += [ANSIThemeString(" ", "separator")] + values
 
-	iktprint(headerstring)
+	ansithemeprint(headerstring)
 	print()
-	iktprint(description)
+	ansithemeprint(description)
 	print()
 	if len(extended_description) > 0:
 		for line in extended_description:
-			iktprint([ANSIThemeString("  ", "description")] + line)
+			ansithemeprint([ANSIThemeString("  ", "description")] + line)
 		print()
 
 	if len(options) > 0:
@@ -153,7 +154,7 @@ def __sub_usage(command: str) -> int:
 			optionlen = len(option) + 4 + themearray_len(deep_get(optiondata, DictPath("values"), ""))
 			max_optionlen = max(max_optionlen, optionlen)
 
-		iktprint([ANSIThemeString("Options:", "description")])
+		ansithemeprint([ANSIThemeString("Options:", "description")])
 		for option, optiondata in options.items():
 			optionline = [ANSIThemeString(f"  {option}", "option")]
 			values = deep_get(optiondata, DictPath("values"), [])
@@ -164,11 +165,11 @@ def __sub_usage(command: str) -> int:
 				optionline += [ANSIThemeString(f" ", "option")] + values
 			pad = " ".rjust(max_optionlen - themearray_len(optionline))
 			optionline += [ANSIThemeString(pad, "description")] + description
-			iktprint(optionline)
+			ansithemeprint(optionline)
 
 			pad = " ".rjust(max_optionlen)
 			for extended_line in extended_description:
-				iktprint([ANSIThemeString(pad, "description")] + extended_line)
+				ansithemeprint([ANSIThemeString(pad, "description")] + extended_line)
 
 	return 0
 
@@ -230,9 +231,9 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 				 ANSIThemeString("]", "separator"),
 				 ANSIThemeString("...", "argument")]
 
-	iktprint(headerstring)
+	ansithemeprint(headerstring)
 	print()
-	iktprint([ANSIThemeString(programdescription, "description")])
+	ansithemeprint([ANSIThemeString(programdescription, "description")])
 	print()
 
 	if has_commands == True:
@@ -311,12 +312,12 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# We cannot do ljust() directly on the string, since it would include the formatting
 	for cmd in commands:
 		string = cmd[1] + [ANSIThemeString("".ljust(maxlen - cmd[0] + 2), "default")] + cmd[2]
-		iktprint(string)
+		ansithemeprint(string)
 
 	if "extended_description" in commandline:
 		print()
 		for line in deep_get(commandline, DictPath("extended_description"), []):
-			iktprint(line)
+			ansithemeprint(line)
 
 	return 0
 
@@ -402,7 +403,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 	commandline = {**__commandline, **COMMANDLINEDEFAULTS}
 
 	if theme is not None:
-		init_iktprint(theme)
+		init_ansithemeprint(theme)
 
 	commandname = None
 	command = None
@@ -414,12 +415,12 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 
 	while i < len(argv):
 		if "\x00" in argv[i]:
-			iktprint([ANSIThemeString(f"{programname}", "programname"),
-				  ANSIThemeString(": argument “", "default"),
-				  ANSIThemeString(argv[i].replace("\x00", "<NUL>"), "command"),
-				  ANSIThemeString("“ contains NUL-bytes (replaced here);\n", "default"),
-				  ANSIThemeString("this is either a programming error, a system error, file or memory corruption, ", "default"),
-				  ANSIThemeString("or a deliberate attempt to bypass security; aborting.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+					ANSIThemeString(": argument “", "default"),
+					ANSIThemeString(argv[i].replace("\x00", "<NUL>"), "command"),
+					ANSIThemeString("“ contains NUL-bytes (replaced here);\n", "default"),
+					ANSIThemeString("this is either a programming error, a system error, file or memory corruption, ", "default"),
+					ANSIThemeString("or a deliberate attempt to bypass security; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
 		# Have we got a command to execute?
@@ -431,14 +432,14 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 					commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, default_command)
 
 				if command is None:
-					iktprint([ANSIThemeString(f"{programname}", "programname"),
-						  ANSIThemeString(": unrecognised command “", "default"),
-						  ANSIThemeString(f"{argv[i]}", "command"),
-						  ANSIThemeString("“.", "default")], stderr = True)
-					iktprint([ANSIThemeString("Try “", "default"),
-						  ANSIThemeString(f"{programname} ", "programname"),
-						  ANSIThemeString("help", "command"),
-						  ANSIThemeString("“ for more information.", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+							ANSIThemeString(": unrecognised command “", "default"),
+							ANSIThemeString(f"{argv[i]}", "command"),
+							ANSIThemeString("“.", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString("Try “", "default"),
+							ANSIThemeString(f"{programname} ", "programname"),
+							ANSIThemeString("help", "command"),
+							ANSIThemeString("“ for more information.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 
 				# If we defaulted we do not want to consume any options
@@ -452,14 +453,14 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 
 			if len(args) > 0:
 				# I came here to have an argument, but this is an option!
-				iktprint([ANSIThemeString(f"{programname}", "programname"),
-					  ANSIThemeString(": option “", "default"),
-					  ANSIThemeString(f"{argv[i]}", "option"),
-					  ANSIThemeString("“ found after arguments.", "default")], stderr = True)
-				iktprint([ANSIThemeString("Try “", "default"),
-					  ANSIThemeString(f"{programname} ", "programname"),
-					  ANSIThemeString("help", "command"),
-					  ANSIThemeString("“ for more information.", "default")], stderr = True)
+				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+						ANSIThemeString(": option “", "default"),
+						ANSIThemeString(f"{argv[i]}", "option"),
+						ANSIThemeString("“ found after arguments.", "default")], stderr = True)
+				ansithemeprint([ANSIThemeString("Try “", "default"),
+						ANSIThemeString(f"{programname} ", "programname"),
+						ANSIThemeString("help", "command"),
+						ANSIThemeString("“ for more information.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 			else:
 				# Is this option valid for this command?
@@ -478,16 +479,16 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 							break
 
 				if match is None:
-					iktprint([ANSIThemeString(f"{programname}", "programname"),
-						  ANSIThemeString(": “", "default"),
-						  ANSIThemeString(f"{commandname}", "command"),
-						  ANSIThemeString("“ does not support option “", "default"),
-						  ANSIThemeString(f"{argv[i]}", "option"),
-						  ANSIThemeString("“.", "default")], stderr = True)
-					iktprint([ANSIThemeString("Try “", "default"),
-						  ANSIThemeString(f"{programname} ", "programname"),
-						  ANSIThemeString("help", "command"),
-						  ANSIThemeString("“ for more information.", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+							ANSIThemeString(": “", "default"),
+							ANSIThemeString(f"{commandname}", "command"),
+							ANSIThemeString("“ does not support option “", "default"),
+							ANSIThemeString(f"{argv[i]}", "option"),
+							ANSIThemeString("“.", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString("Try “", "default"),
+							ANSIThemeString(f"{programname} ", "programname"),
+							ANSIThemeString("help", "command"),
+							ANSIThemeString("“ for more information.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 				else:
 					arg = None
@@ -499,14 +500,14 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 					if requires_arg == True:
 						i += 1
 						if i >= len(argv):
-							iktprint([ANSIThemeString(f"{programname}", "programname"),
-								  ANSIThemeString(": “", "default"),
-								  ANSIThemeString(f"{option}", "option"),
-								  ANSIThemeString("“ requires an argument.", "default")], stderr = True)
-							iktprint([ANSIThemeString("Try “", "default"),
-								  ANSIThemeString(f"{programname} ", "programname"),
-								  ANSIThemeString("help", "command"),
-								  ANSIThemeString("“ for more information.", "default")], stderr = True)
+							ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+									ANSIThemeString(": “", "default"),
+									ANSIThemeString(f"{option}", "option"),
+									ANSIThemeString("“ requires an argument.", "default")], stderr = True)
+							ansithemeprint([ANSIThemeString("Try “", "default"),
+									ANSIThemeString(f"{programname} ", "programname"),
+									ANSIThemeString("help", "command"),
+									ANSIThemeString("“ for more information.", "default")], stderr = True)
 							sys.exit(errno.EINVAL)
 						arg = argv[i]
 
@@ -522,10 +523,10 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 
 						# Workaround; it seems validators.url accepts usernames that start with "-"
 						if arg.startswith("-") or not validators.url(tmp_arg):
-							iktprint([ANSIThemeString(f"{programname}", "programname"),
-								  ANSIThemeString(": “", "default"),
-								  ANSIThemeString(f"{tmp_arg}", "option"),
-								  ANSIThemeString("“ is not a valid URL.", "default")], stderr = True)
+							ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+									ANSIThemeString(": “", "default"),
+									ANSIThemeString(f"{tmp_arg}", "option"),
+									ANSIThemeString("“ is not a valid URL.", "default")], stderr = True)
 							sys.exit(errno.EINVAL)
 					elif validator == "int":
 						_result = validator_int(minval, maxval, arg)
@@ -538,54 +539,54 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 		commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, default_command)
 
 	if max_args == 0 and len(args) > 0:
-		iktprint([ANSIThemeString(f"{programname}", "programname"),
-			  ANSIThemeString(": “", "default"),
-			  ANSIThemeString(f"{commandname}", "command"),
-			  ANSIThemeString("“ does not accept arguments.", "default")], stderr = True)
-		iktprint([ANSIThemeString("Try “", "default"),
-			  ANSIThemeString(f"{programname} ", "programname"),
-			  ANSIThemeString("help", "command"),
-			  ANSIThemeString("“ for more information.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+				ANSIThemeString(": “", "default"),
+				ANSIThemeString(f"{commandname}", "command"),
+				ANSIThemeString("“ does not accept arguments.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Try “", "default"),
+				ANSIThemeString(f"{programname} ", "programname"),
+				ANSIThemeString("help", "command"),
+				ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif len(args) < min_args and min_args != max_args:
-		iktprint([ANSIThemeString(f"{programname}", "programname"),
-			  ANSIThemeString(": “", "default"),
-			  ANSIThemeString(f"{commandname}", "command"),
-			  ANSIThemeString(f"“ requires at least {min_args} arguments.", "default")], stderr = True)
-		iktprint([ANSIThemeString("Try “", "default"),
-			  ANSIThemeString(f"{programname} ", "programname"),
-			  ANSIThemeString("help", "command"),
-			  ANSIThemeString("“ for more information.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+				ANSIThemeString(": “", "default"),
+				ANSIThemeString(f"{commandname}", "command"),
+				ANSIThemeString(f"“ requires at least {min_args} arguments.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Try “", "default"),
+				ANSIThemeString(f"{programname} ", "programname"),
+				ANSIThemeString("help", "command"),
+				ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif len(args) != min_args and min_args == max_args:
-		iktprint([ANSIThemeString(f"{programname}", "programname"),
-			  ANSIThemeString(": “", "default"),
-			  ANSIThemeString(f"{commandname}", "command"),
-			  ANSIThemeString(f"“ requires exactly {min_args} arguments.", "default")], stderr = True)
-		iktprint([ANSIThemeString("Try “", "default"),
-			  ANSIThemeString(f"{programname} ", "programname"),
-			  ANSIThemeString("help", "command"),
-			  ANSIThemeString("“ for more information.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+				ANSIThemeString(": “", "default"),
+				ANSIThemeString(f"{commandname}", "command"),
+				ANSIThemeString(f"“ requires exactly {min_args} arguments.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Try “", "default"),
+				ANSIThemeString(f"{programname} ", "programname"),
+				ANSIThemeString("help", "command"),
+				ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	elif len(args) > max_args:
-		iktprint([ANSIThemeString(f"{programname}", "programname"),
-			  ANSIThemeString(": “", "default"),
-			  ANSIThemeString(f"{commandname}", "command"),
-			  ANSIThemeString(f"“ requires at most {max_args} arguments.", "default")], stderr = True)
-		iktprint([ANSIThemeString("Try “", "default"),
-			  ANSIThemeString(f"{programname} ", "programname"),
-			  ANSIThemeString("help", "command"),
-			  ANSIThemeString("“ for more information.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+				ANSIThemeString(": “", "default"),
+				ANSIThemeString(f"{commandname}", "command"),
+				ANSIThemeString(f"“ requires at most {max_args} arguments.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Try “", "default"),
+				ANSIThemeString(f"{programname} ", "programname"),
+				ANSIThemeString("help", "command"),
+				ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	# The command was called without any command and no default was defined; this is an error
 	if command is None:
-		iktprint([ANSIThemeString(f"{programname}", "programname"),
-			  ANSIThemeString(": missing operand.", "default")], stderr = True)
-		iktprint([ANSIThemeString("Try “", "default"),
-			  ANSIThemeString(f"{programname} ", "programname"),
-			  ANSIThemeString("help", "command"),
-			  ANSIThemeString("“ for more information.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+				ANSIThemeString(": missing operand.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Try “", "default"),
+				ANSIThemeString(f"{programname} ", "programname"),
+				ANSIThemeString("help", "command"),
+				ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	else:
 		# Are there implicit options?
@@ -604,27 +605,27 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 
 		for subarg in arglist:
 			if validator in ("hostname", "hostname_or_ip", "ip"):
-				valid_dns_label = iktlib.validate_name("dns-label", subarg)
+				valid_dns_label = cmtlib.validate_name("dns-label", subarg)
 				valid_ipv4_address = validators.ipv4(subarg)
 				valid_ipv6_address = validators.ipv6(subarg)
 
 				if validator == "hostname" and not valid_dns_label:
-					iktprint([ANSIThemeString(f"{programname}", "programname"),
-						  ANSIThemeString(": “", "default"),
-						  ANSIThemeString(f"{subarg}", "option"),
-						  ANSIThemeString("“ is not a valid hostname.", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+							ANSIThemeString(": “", "default"),
+							ANSIThemeString(f"{subarg}", "option"),
+							ANSIThemeString("“ is not a valid hostname.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 				if validator == "ip" and not valid_ipv4_address and not valid_ipv6_address:
-					iktprint([ANSIThemeString(f"{programname}", "programname"),
-						  ANSIThemeString(": “", "default"),
-						  ANSIThemeString(f"{subarg}", "option"),
-						  ANSIThemeString("“ is not a valid IP-address.", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+							ANSIThemeString(": “", "default"),
+							ANSIThemeString(f"{subarg}", "option"),
+							ANSIThemeString("“ is not a valid IP-address.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 				if validator == "hostname_or_ip" and not valid_dns_label and not valid_ipv4_address and not valid_ipv6_address:
-					iktprint([ANSIThemeString(f"{programname}", "programname"),
-						  ANSIThemeString(": “", "default"),
-						  ANSIThemeString(f"{subarg}", "option"),
-						  ANSIThemeString("“ is neither a valid hostname nor a valid IP-address.", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+							ANSIThemeString(": “", "default"),
+							ANSIThemeString(f"{subarg}", "option"),
+							ANSIThemeString("“ is neither a valid hostname nor a valid IP-address.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 			elif validator == "int":
 				_result = validator_int(minval, maxval, subarg)

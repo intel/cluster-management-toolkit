@@ -2,63 +2,63 @@
 # Requires: python3 (>= 3.8)
 
 """
-This file contains paths used by iKT
+This file contains paths used by CMT
 """
 
 import os
 from pathlib import Path, PurePath
 from typing import List
 
-from ikttypes import FilePath
+from cmttypes import FilePath
 
 HOMEDIR = FilePath(str(Path.home()))
 
 BIN_DIRNAME = "bin"
 BINDIR = FilePath(str(PurePath(HOMEDIR).joinpath(BIN_DIRNAME)))
 
-IKT_DIRNAME = ".ikt"
-IKTDIR = FilePath(str(PurePath(HOMEDIR).joinpath(IKT_DIRNAME)))
+CMT_DIRNAME = ".cmt"
+CMTDIR = FilePath(str(PurePath(HOMEDIR).joinpath(CMT_DIRNAME)))
 
 LOGS_DIRNAME = "logs"
-IKT_LOGS_DIR = FilePath(str(PurePath(IKTDIR).joinpath(LOGS_DIRNAME)))
+CMT_LOGS_DIR = FilePath(str(PurePath(CMTDIR).joinpath(LOGS_DIRNAME)))
 AUDIT_LOG_FILENAME = "audit_log.yaml"
-AUDIT_LOG_FILE = FilePath(str(PurePath(IKT_LOGS_DIR).joinpath(AUDIT_LOG_FILENAME)))
+AUDIT_LOG_FILE = FilePath(str(PurePath(CMT_LOGS_DIR).joinpath(AUDIT_LOG_FILENAME)))
 DEBUG_LOG_FILENAME = "debug_log.yaml"
-DEBUG_LOG_FILE = FilePath(str(PurePath(IKT_LOGS_DIR).joinpath(DEBUG_LOG_FILENAME)))
+DEBUG_LOG_FILE = FilePath(str(PurePath(CMT_LOGS_DIR).joinpath(DEBUG_LOG_FILENAME)))
 
-IKT_CONFIG_FILENAME = "ikt.yaml"
-IKT_CONFIG_FILE = FilePath(str(PurePath(IKTDIR).joinpath(IKT_CONFIG_FILENAME)))
+CMT_CONFIG_FILENAME = "cmt.yaml"
+CMT_CONFIG_FILE = FilePath(str(PurePath(CMTDIR).joinpath(CMT_CONFIG_FILENAME)))
 
-IKT_CONFIG_FILE_DIRNAME = f"{IKT_CONFIG_FILENAME}.d"
-IKT_CONFIG_FILE_DIR = FilePath(os.path.join(IKTDIR, IKT_CONFIG_FILE_DIRNAME))
+CMT_CONFIG_FILE_DIRNAME = f"{CMT_CONFIG_FILENAME}.d"
+CMT_CONFIG_FILE_DIR = FilePath(os.path.join(CMTDIR, CMT_CONFIG_FILE_DIRNAME))
 
-IKT_INSTALLATION_INFO_FILE = FilePath(os.path.join(IKTDIR, "installation_info.yaml"))
+CMT_INSTALLATION_INFO_FILE = FilePath(os.path.join(CMTDIR, "installation_info.yaml"))
 
 DEPLOYMENT_DIRNAME = "deployments"
-DEPLOYMENT_DIR = FilePath(os.path.join(IKTDIR, DEPLOYMENT_DIRNAME))
+DEPLOYMENT_DIR = FilePath(os.path.join(CMTDIR, DEPLOYMENT_DIRNAME))
 
 THEME_DIRNAME = "themes"
-THEME_DIR = FilePath(os.path.join(IKTDIR, THEME_DIRNAME))
+THEME_DIR = FilePath(os.path.join(CMTDIR, THEME_DIRNAME))
 DEFAULT_THEME_FILE = FilePath(os.path.join(THEME_DIR, "default.yaml"))
 
 ANSIBLE_DIRNAME = "ansible"
-ANSIBLE_DIR = FilePath(os.path.join(IKTDIR, ANSIBLE_DIRNAME))
+ANSIBLE_DIR = FilePath(os.path.join(CMTDIR, ANSIBLE_DIRNAME))
 
 ANSIBLE_PLAYBOOK_DIRNAME = "playbooks"
-ANSIBLE_PLAYBOOK_DIR = FilePath(os.path.join(IKTDIR, ANSIBLE_PLAYBOOK_DIRNAME))
+ANSIBLE_PLAYBOOK_DIR = FilePath(os.path.join(CMTDIR, ANSIBLE_PLAYBOOK_DIRNAME))
 
 ANSIBLE_LOG_DIRNAME = "logs"
 ANSIBLE_LOG_DIR = FilePath(os.path.join(ANSIBLE_DIR, ANSIBLE_LOG_DIRNAME))
 ANSIBLE_INVENTORY = FilePath(os.path.join(ANSIBLE_DIR, "inventory.yaml"))
 
-IKT_HOOKS_DIRNAME = "hooks"
-IKT_HOOKS_DIR = FilePath(os.path.join(IKTDIR, IKT_HOOKS_DIRNAME))
+CMT_HOOKS_DIRNAME = "hooks"
+CMT_HOOKS_DIR = FilePath(os.path.join(CMTDIR, CMT_HOOKS_DIRNAME))
 
 PARSER_DIRNAME = "parsers"
-PARSER_DIR = FilePath(os.path.join(IKTDIR, PARSER_DIRNAME))
+PARSER_DIR = FilePath(os.path.join(CMTDIR, PARSER_DIRNAME))
 
 VIEW_DIRNAME = "views"
-VIEW_DIR = FilePath(os.path.join(IKTDIR, VIEW_DIRNAME))
+VIEW_DIR = FilePath(os.path.join(CMTDIR, VIEW_DIRNAME))
 
 KUBE_CONFIG_DIR = FilePath(os.path.join(HOMEDIR, ".kube"))
 KUBE_CONFIG_FILE = FilePath(os.path.join(KUBE_CONFIG_DIR, "config"))

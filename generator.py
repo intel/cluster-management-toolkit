@@ -10,9 +10,9 @@ from datetime import datetime
 from typing import cast, List, Union
 
 from curses_helper import color_status_group, themearray_len, ThemeAttr, ThemeRef, ThemeString
-import iktlib
-from iktlib import datetime_to_timestamp, timestamp_to_datetime
-from ikttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
+import cmtlib
+from cmtlib import datetime_to_timestamp, timestamp_to_datetime
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
 
 def format_list(items, fieldlen: int, pad, ralign: bool, selected: bool,
 		item_separator = None,
@@ -300,7 +300,7 @@ def generator_age_raw(value, selected: bool) -> List[Union[ThemeRef, ThemeString
 	elif isinstance(value, str):
 		string = value
 	else:
-		string = iktlib.seconds_to_age(value, negative_is_skew = True)
+		string = cmtlib.seconds_to_age(value, negative_is_skew = True)
 
 	if string in ("<none>", "<unset>", "<unknown>"):
 		fmt = ThemeAttr("types", "none")

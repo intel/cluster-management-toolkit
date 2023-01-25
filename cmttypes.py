@@ -2,36 +2,12 @@
 # Requires: python3 (>= 3.8)
 
 """
-This file contains custom types used to define types used by iKT
+This file contains custom types used to define types used by CMT
 """
 
 from enum import auto, Enum, IntEnum
 from functools import reduce
 from typing import Any, Dict, List, NewType, Optional, Union
-
-class ANSIThemeString:
-	"""
-	A themed string for printing with ANSI control codes
-
-		Parameters:
-			string: A string
-			themeref: The reference to use when doing a looking in themes
-	"""
-
-	def __init__(self, string: str, themeref: str) -> None:
-		if not isinstance(string, str) or not isinstance(themeref, str):
-			raise TypeError("ANSIThemeString only accepts (str, str)")
-		self.string = string
-		self.themeref = themeref
-
-	def __str__(self) -> str:
-		return self.string
-
-	def __len__(self) -> int:
-		return len(self.string)
-
-	def __repr__(self) -> str:
-		return f"ANSIThemeString(string=\"{self.string}\", themeref=\"{self.themeref}\")"
 
 FilePath = NewType("FilePath", str)
 DictPath = NewType("DictPath", str)
@@ -125,7 +101,7 @@ class SecurityChecks(Enum):
 
 class SecurityPolicy(Enum):
 	"""
-	Security policies used by iKT
+	Security policies used by CMT
 	"""
 	# Only allows exact matches
 	STRICT = auto()
@@ -137,7 +113,7 @@ class SecurityPolicy(Enum):
 
 class LogLevel(IntEnum):
 	"""
-	Loglevels used by iKT
+	Loglevels used by CMT
 	"""
 	EMERG = 0
 	ALERT = 1
@@ -191,7 +167,7 @@ class Retval(Enum):
 
 class StatusGroup(IntEnum):
 	"""
-	Status groups used by iKT
+	Status groups used by CMT
 	"""
 	NEUTRAL = 8
 	DONE = 7

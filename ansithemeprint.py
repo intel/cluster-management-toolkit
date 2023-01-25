@@ -12,14 +12,38 @@ import subprocess
 import sys
 from typing import cast, List, Optional, Sequence, Union
 
-from ikttypes import ANSIThemeString, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
-import iktio
+from cmttypes import FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
+import cmtio
 try:
 	import yaml # pylint: disable=unused-import
-	from iktio_yaml import secure_read_yaml
+	from cmtio_yaml import secure_read_yaml
 	use_fallback_theme = False
 except ModuleNotFoundError:
 	use_fallback_theme = True
+
+class ANSIThemeString:
+	"""
+	A themed string for printing with ANSI control codes
+
+		Parameters:
+			string: A string
+			themeref: The reference to use when doing a looking in themes
+	"""
+
+	def __init__(self, string: str, themeref: str) -> None:
+		if not isinstance(string, str) or not isinstance(themeref, str):
+			raise TypeError("ANSIThemeString only accepts (str, str)")
+		self.string = string
+		self.themeref = themeref
+
+	def __str__(self) -> str:
+		return self.string
+
+	def __len__(self) -> int:
+		return len(self.string)
+
+	def __repr__(self) -> str:
+		return f"ANSIThemeString(string=\"{self.string}\", themeref=\"{self.themeref}\")"
 
 theme = None
 themepath = None
@@ -74,7 +98,7 @@ def clear_screen() -> int:
 	"""
 
 	try:
-		cpath = iktio.secure_which(FilePath("/usr/bin/clear"), fallback_allowlist = [], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+		cpath = cmtio.secure_which(FilePath("/usr/bin/clear"), fallback_allowlist = [], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	except FileNotFoundError:
 		return errno.ENOENT
 
@@ -82,12 +106,12 @@ def clear_screen() -> int:
 
 def __themearray_to_string(themearray: List[ANSIThemeString]) -> str:
 	if theme is None or themepath is None:
-		sys.exit("__themearray_to_string() used without calling init_iktprint() first; this is a programming error.")
+		sys.exit("__themearray_to_string() used without calling init_ansithemestring() first; this is a programming error.")
 
 	string: str = ""
 	for themestring in themearray:
 		if not isinstance(themestring, ANSIThemeString):
-			raise TypeError(f"__themarray_to_string() only accepts themestrings; this themearray consists of:\n{themearray}")
+			raise TypeError(f"__themarray_to_string() only accepts arrays of AnsiThemeString; this themearray consists of:\n{themearray}")
 
 		theme_attr_ref = themestring.themeref
 		theme_string = str(themestring)
@@ -150,7 +174,7 @@ def ansithemestring_join_tuple_list(items: Sequence[Union[str, ANSIThemeString]]
 
 	return themearray
 
-def iktinput(themearray: List[ANSIThemeString]) -> str:
+def ansithemeinput(themearray: List[ANSIThemeString]) -> str:
 	"""
 	Print a themearray and input a string;
 	a themearray is a list of format strings of the format:
@@ -163,7 +187,7 @@ def iktinput(themearray: List[ANSIThemeString]) -> str:
 	"""
 
 	if theme is None or themepath is None:
-		sys.exit("iktinput() used without calling init_iktprint() first; this is a programming error.")
+		sys.exit("ansithemeinput() used without calling init_ansithemeprint() first; this is a programming error.")
 
 	string = __themearray_to_string(themearray)
 	try:
@@ -174,7 +198,7 @@ def iktinput(themearray: List[ANSIThemeString]) -> str:
 	tmp = tmp.replace("\x00", "<NUL>")
 	return tmp
 
-def iktinput_password(themearray: List[ANSIThemeString]) -> str:
+def ansithemeinput_password(themearray: List[ANSIThemeString]) -> str:
 	"""
 	Print a themearray and input a password;
 	a themearray is a list of format strings of the format:
@@ -187,7 +211,7 @@ def iktinput_password(themearray: List[ANSIThemeString]) -> str:
 	"""
 
 	if theme is None or themepath is None:
-		sys.exit("iktinput_password() used without calling init_iktprint() first; this is a programming error.")
+		sys.exit("ansithemeinput_password() used without calling init_ansithemeprint() first; this is a programming error.")
 
 	string = __themearray_to_string(themearray)
 	try:
@@ -199,7 +223,7 @@ def iktinput_password(themearray: List[ANSIThemeString]) -> str:
 		tmp = tmp.replace("\x00", "<NUL>")
 	return tmp
 
-def iktprint(themearray: List[ANSIThemeString], stderr: bool = False) -> None:
+def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False) -> None:
 	"""
 	Print a themearray;
 	a themearray is a list of format strings of the format:
@@ -211,7 +235,7 @@ def iktprint(themearray: List[ANSIThemeString], stderr: bool = False) -> None:
 	"""
 
 	if theme is None or themepath is None:
-		sys.exit("iktprint() used without calling init_iktprint() first; this is a programming error.")
+		sys.exit("ansithemeprint() used without calling init_ansithemeprint() first; this is a programming error.")
 
 	string = __themearray_to_string(themearray)
 
@@ -220,9 +244,9 @@ def iktprint(themearray: List[ANSIThemeString], stderr: bool = False) -> None:
 	else:
 		print(string)
 
-def init_iktprint(themefile: Optional[FilePath]) -> None:
+def init_ansithemeprint(themefile: Optional[FilePath]) -> None:
 	"""
-	Initialise iktprint
+	Initialise ansithemeprint
 
 		Parameters:
 			themefile (str): Path to the theme to use
@@ -253,7 +277,7 @@ def init_iktprint(themefile: Optional[FilePath]) -> None:
 
 	theme_dir = FilePath(str(PurePath(themefile).parent))
 
-	violations = iktio.check_path(theme_dir, checks = checks)
+	violations = cmtio.check_path(theme_dir, checks = checks)
 	if violations != [SecurityStatus.OK]:
 		violation_strings = []
 		for violation in violations:
@@ -282,8 +306,8 @@ def init_iktprint(themefile: Optional[FilePath]) -> None:
 			theme = secure_read_yaml(themefile, checks = checks)
 		except FileNotFoundError:
 			theme = fallback_theme
-			iktprint([ANSIThemeString("Warning", "warning"),
-				  ANSIThemeString(": themefile ”", "default"),
-				  ANSIThemeString(f"{themefile}", "path"),
-				  ANSIThemeString("” does not exist; using built-in fallback theme.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("Warning", "warning"),
+					ANSIThemeString(": themefile ”", "default"),
+					ANSIThemeString(f"{themefile}", "path"),
+					ANSIThemeString("” does not exist; using built-in fallback theme.", "default")], stderr = True)
 			return

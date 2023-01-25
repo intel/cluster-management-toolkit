@@ -2,7 +2,7 @@
 # Requires: python3 (>= 3.8)
 
 """
-I/O helpers for Intel Kubernetes Toolkit
+I/O helpers
 """
 
 import errno
@@ -16,10 +16,11 @@ from subprocess import PIPE, STDOUT
 import sys
 from typing import cast, Dict, List, Optional, Set, Union
 
-from ikttypes import ANSIThemeString, FilePath, HostNameStatus, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
-from iktpaths import HOMEDIR
+from cmttypes import FilePath, HostNameStatus, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
+from cmtpaths import HOMEDIR
 
-import iktprint
+import ansithemeprint
+from ansithemeprint import ANSIThemeString
 
 def join_securitystatus_set(separator: str, securitystatuses: Set[SecurityStatus]) -> str:
 	"""
@@ -57,7 +58,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 		if message_on_error == True:
 			msg = [ANSIThemeString("Error", "error"),
 			       ANSIThemeString(": A FQDN or hostname cannot be empty.", "default")]
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		return HostNameStatus.DNS_SUBDOMAIN_EMPTY
 	if "\x00" in fqdn:
 		stripped_fqdn = fqdn.replace("\x00", "<NUL>")
@@ -65,9 +66,9 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 		       ANSIThemeString(": the FQDN / hostname ", "default"),
 		       ANSIThemeString(stripped_fqdn, "hostname")]
 		msg += [ANSIThemeString(" contains NUL-bytes (replaced here);\n"
-			"this is either a programming error, a system error, file or memory corruption, "
-			"or a deliberate attempt to bypass security; aborting.", "default")]
-		iktprint.iktprint(msg, stderr = True)
+					"this is either a programming error, a system error, file or memory corruption, "
+					"or a deliberate attempt to bypass security; aborting.", "default")]
+		ansithemeprint.ansithemeprint(msg, stderr = True)
 		sys.exit(errno.EINVAL)
 	if len(fqdn) > 253:
 		if message_on_error == True:
@@ -76,7 +77,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 			       ANSIThemeString(fqdn, "hostname")]
 			msg = [ANSIThemeString(" is invalid; ", "default"),
 			       ANSIThemeString("a FQDN cannot be more than 253 characters long.", "default")]
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		return HostNameStatus.DNS_SUBDOMAIN_TOO_LONG
 	if fqdn != fqdn.lower():
 		if message_on_error == True:
@@ -85,7 +86,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 			       ANSIThemeString(fqdn, "hostname"),
 			       ANSIThemeString(" is invalid; ", "default"),
 			       ANSIThemeString("a FQDN / hostname must be lowercase.", "default")]
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		return HostNameStatus.DNS_SUBDOMAIN_WRONG_CASE
 	if fqdn.startswith(".") or fqdn.endswith(".") or ".." in fqdn:
 		if message_on_error == True:
@@ -94,7 +95,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 			       ANSIThemeString(fqdn, "hostname"),
 			       ANSIThemeString(" is invalid; ", "default"),
 			       ANSIThemeString("a FQDN / hostname cannot begin or end with “.“, and must not have consecutive “.“.", "default")]
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		return HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT
 
 	dnslabels = fqdn.split(".")
@@ -108,7 +109,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 				       ANSIThemeString(dnslabel, "hostname"),
 				       ANSIThemeString(" is invalid; ", "default"),
 			               ANSIThemeString("a DNS label cannot start with the ACE prefix “xn--“.", "default")]
-				iktprint.iktprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr = True)
 			return HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA
 
 		# This indirectly checks non-IDNA labels for max length too
@@ -123,7 +124,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 					       ANSIThemeString(dnslabel, "hostname"),
 					       ANSIThemeString(" is invalid; ", "default")]
 					msg += [ANSIThemeString("a DNS label cannot be more than 63 characters long.", "default")]
-					iktprint.iktprint(msg, stderr = True)
+					ansithemeprint.ansithemeprint(msg, stderr = True)
 				return HostNameStatus.DNS_LABEL_TOO_LONG
 			if "label empty or too long" in str(e):
 				if message_on_error == True:
@@ -132,7 +133,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 					       ANSIThemeString(dnslabel, "hostname"),
 					       ANSIThemeString(" is invalid; ", "default")]
 					msg += [ANSIThemeString("a decoded Punycode (IDNA) DNS label cannot be more than 63 characters long.", "default")]
-					iktprint.iktprint(msg, stderr = True)
+					ansithemeprint.ansithemeprint(msg, stderr = True)
 				return HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG
 			raise
 
@@ -150,7 +151,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 				msg += [ANSIThemeString(" is invalid; a DNS label must be in the format ", "default"),
 				        ANSIThemeString("[a-z0-9]([-a-z0-9]*[a-z0-9])?", "hostname"),
 				        ANSIThemeString(" after Punycode decoding.", "default")]
-				iktprint.iktprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr = True)
 			return HostNameStatus.DNS_LABEL_INVALID_CHARACTERS
 
 		if dnslabel.startswith("-") or dnslabel.endswith("-"):
@@ -164,7 +165,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 						ANSIThemeString(")", "default")]
 				msg += [ANSIThemeString(" is invalid; ", "default"),
 					ANSIThemeString("a DNS label cannot begin or end with “-“.", "default")]
-				iktprint.iktprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr = True)
 			return HostNameStatus.DNS_LABEL_INVALID_FORMAT
 	return HostNameStatus.OK
 
@@ -230,9 +231,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(" does not exist", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
-				iktprint.iktprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.PARENT_DOES_NOT_EXIST)
 		return violations
 
@@ -244,9 +245,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(" exists but is not a directory; this is either a configuration error or a security issue", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
-				iktprint.iktprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.PARENT_IS_NOT_DIR)
 		return violations
 
@@ -256,13 +257,13 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(": The parent of the target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" is not owned by one of (", "default")] +\
-			      iktprint.ansithemestring_join_tuple_list(parent_owner_allowlist, formatting = "emphasis", separator = ANSIThemeString(", ", "separator")) +\
+			      ansithemeprint.ansithemestring_join_tuple_list(parent_owner_allowlist, formatting = "emphasis", separator = ANSIThemeString(", ", "separator")) +\
 			      [ANSIThemeString(")", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
-				iktprint.iktprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.PARENT_OWNER_NOT_IN_ALLOWLIST)
 
 	parent_path_stat = parent_entry.stat()
@@ -275,9 +276,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(" is world writable", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
-				iktprint.iktprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.PARENT_PERMISSIONS)
 
 	parent_entry_resolved = parent_entry.resolve()
@@ -295,9 +296,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
-				iktprint.iktprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF)
 
 	# Are there any path shenanigans going on?
@@ -314,9 +315,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
-				iktprint.iktprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.PATH_NOT_RESOLVING_TO_SELF)
 
 	if not path_entry.exists():
@@ -332,13 +333,13 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(": The target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" is not owned by one of (", "default")] +\
-			      iktprint.ansithemestring_join_tuple_list(owner_allowlist, formatting = "emphasis", separator = ANSIThemeString(", ", "separator")) +\
+			      ansithemeprint.ansithemestring_join_tuple_list(owner_allowlist, formatting = "emphasis", separator = ANSIThemeString(", ", "separator")) +\
 			      [ANSIThemeString(")", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
-				iktprint.iktprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.OWNER_NOT_IN_ALLOWLIST)
 
 	path_stat = path_entry.stat()
@@ -351,9 +352,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(" is world writable", "default")]
 			if exit_on_critical == True:
 				msg.append(ANSIThemeString("; aborting.", "default"))
-				iktprint.iktprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.PERMISSIONS)
 
 	if SecurityChecks.IS_SYMLINK in checks and not path_entry.is_symlink():
@@ -362,7 +363,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(": The target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" exists but is not a symlink; this is either a configuration error or a security issue", "default")]
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_NOT_SYMLINK)
 
 	# is_file() returns True even if path is a symlink to a file rather than a file
@@ -372,7 +373,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(": The target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" exists but is not a file; this is either a configuration error or a security issue", "default")]
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_NOT_FILE)
 
 	# is_file() returns True even if path is a symlink to a file rather than a file
@@ -382,7 +383,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(": The target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" exists but is not a directory; this is either a configuration error or a security issue", "default")]
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_NOT_DIR)
 
 	if SecurityChecks.IS_NOT_EXECUTABLE in checks and os.access(path, os.X_OK) and not path_entry.is_dir():
@@ -391,7 +392,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(": The target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" is executable but should not be; skipping", "default")]
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_EXECUTABLE)
 
 	if SecurityChecks.IS_EXECUTABLE in checks and not os.access(path, os.X_OK):
@@ -400,7 +401,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ANSIThemeString(": The target path ", "default"),
 			       ANSIThemeString(f"{path}", "path"),
 			       ANSIThemeString(" exists but is not executable; skipping", "default")]
-			iktprint.iktprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_NOT_EXECUTABLE)
 
 	if len(violations) == 0:
@@ -415,7 +416,7 @@ def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
 		Parameters:
 			path (FilePath): The path to the file to remove
 		Raises:
-			ikttypes.FilePathAuditError
+			cmttypes.FilePathAuditError
 			FileNotFoundError
 	"""
 
@@ -460,7 +461,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 			path (FilePath): The path to the directory to remove
 			ignore_non_existing
 		Raises:
-			ikttypes.FilePathAuditError
+			cmttypes.FilePathAuditError
 			FileNotFoundError
 	"""
 
@@ -516,7 +517,7 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 			write_mode (str): [w, a, x, wb, ab, xb] Write, Append, Exclusive Write, text or binary
 			allow_relative_path (bool): Is it acceptable to have the path not resolve to self?
 		Raises:
-			ikttypes.FilePathAuditError
+			cmttypes.FilePathAuditError
 	"""
 
 	if write_mode not in ("a", "ab", "w", "wb", "x", "xb"):
@@ -581,7 +582,7 @@ def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, d
 		Returns:
 			string (union[str, bytes]): The read string
 		Raises:
-			ikttypes.FilePathAuditError
+			cmttypes.FilePathAuditError
 	"""
 
 	if read_mode not in ("r", "rb"):
@@ -663,7 +664,7 @@ def secure_read_string(path: FilePath, checks: Optional[List[SecurityChecks]] = 
 		Returns:
 			string (str): The read string
 		Raises:
-			ikttypes.FilePathAuditError
+			cmttypes.FilePathAuditError
 	"""
 
 	return cast(str, secure_read(path, checks = checks, directory_is_symlink = directory_is_symlink, read_mode = "r"))
@@ -795,7 +796,7 @@ def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = 
 	"""
 
 	if verbose == True:
-		iktprint.iktprint([ANSIThemeString("Creating directory ", "default"),
+		ansithemeprint.ansithemeprint([ANSIThemeString("Creating directory ", "default"),
 				   ANSIThemeString(f"{directory}", "path"),
 				   ANSIThemeString(" with permissions ", "default"),
 				   ANSIThemeString(f"{permissions:03o}", "emphasis")])
@@ -856,7 +857,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 	"""
 
 	if verbose == True:
-		iktprint.iktprint([ANSIThemeString("Copying file ", "default"),
+		ansithemeprint.ansithemeprint([ANSIThemeString("Copying file ", "default"),
 				   ANSIThemeString(f"{src}", "path"),
 				   ANSIThemeString(" to ", "default"),
 				   ANSIThemeString(f"{dst}", "path")])
@@ -877,7 +878,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 	if violations != [SecurityStatus.OK]:
 		if verbose == True:
 			violations_joined = join_securitystatus_set(",", set(violations))
-			iktprint.iktprint([ANSIThemeString("Critical", "critical"),
+			ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "critical"),
 					   ANSIThemeString(": The source path ", "default"),
 					   ANSIThemeString(f"{src}", "path"),
 					   ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr = True)
@@ -902,7 +903,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 	if violations != [SecurityStatus.OK]:
 		if verbose == True:
 			violations_joined = join_securitystatus_set(",", set(violations))
-			iktprint.iktprint([ANSIThemeString("Critical", "critical"),
+			ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "critical"),
 					   ANSIThemeString(": The target path ", "default"),
 					   ANSIThemeString(f"{dst_path_parent}", "path"),
 					   ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr = True)
@@ -914,7 +915,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 
 	if dst_path.exists():
 		if verbose == True:
-			iktprint.iktprint([ANSIThemeString("Error", "error"),
+			ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
 					   ANSIThemeString(": The target path ", "default"),
 					   ANSIThemeString(f"{dst}", "path"),
 					   ANSIThemeString(" already exists; refusing to overwrite.", "default")], stderr = True)
@@ -951,7 +952,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 	user = getuser()
 
 	if verbose == True:
-		iktprint.iktprint([ANSIThemeString("Creating symbolic link ", "default"),
+		ansithemeprint.ansithemeprint([ANSIThemeString("Creating symbolic link ", "default"),
 				   ANSIThemeString(f"{dst}", "path"),
 				   ANSIThemeString(" pointing to ", "default"),
 				   ANSIThemeString(f"{src}", "path")])
@@ -965,37 +966,37 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 	# Are there any path shenanigans going on?
 	if dst_path_parent != dst_path_parent_resolved:
 		if verbose == True:
-			iktprint.iktprint([ANSIThemeString("Critical", "critical"),
+			ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "critical"),
 					   ANSIThemeString(": The target path ", "default"),
 					   ANSIThemeString(f"{dst}", "path"),
 					   ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue.", "default")], stderr = True)
 		if exit_on_failure == True:
 			if verbose == True:
-				iktprint.iktprint([ANSIThemeString("Aborting.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ANSIThemeString("Aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		elif verbose == True:
-			iktprint.iktprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+			ansithemeprint.ansithemeprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
 		return [SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF]
 
 	dst_path_parent_path = Path(dst_path_parent)
 
 	if not dst_path_parent_path.is_dir():
 		if verbose == True:
-			iktprint.iktprint([ANSIThemeString("Error", "error"),
+			ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
 					   ANSIThemeString(": The parent of the target path ", "default"),
 					   ANSIThemeString(f"{dst}", "path"),
 					   ANSIThemeString(" is not a directory.", "default")], stderr = True)
 		if exit_on_failure == True:
 			if verbose == True:
-				iktprint.iktprint([ANSIThemeString("Aborting.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ANSIThemeString("Aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		elif verbose == True:
-			iktprint.iktprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+			ansithemeprint.ansithemeprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
 		return [SecurityStatus.PARENT_IS_NOT_DIR]
 
 	if dst_path_parent_path.owner() not in ("root", user):
 		if verbose == True:
-			iktprint.iktprint([ANSIThemeString("Error", "error"),
+			ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
 					   ANSIThemeString(": The parent of the target path ", "default"),
 					   ANSIThemeString(f"{dst}", "path"),
 					   ANSIThemeString(" is not owned by ", "default"),
@@ -1005,26 +1006,26 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 					   ANSIThemeString(".", "default")], stderr = True)
 		if exit_on_failure == True:
 			if verbose == True:
-				iktprint.iktprint([ANSIThemeString("Aborting.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ANSIThemeString("Aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		elif verbose == True:
-			iktprint.iktprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+			ansithemeprint.ansithemeprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
 		return [SecurityStatus.PARENT_OWNER_NOT_IN_ALLOWLIST]
 
 	parent_path_stat = dst_path_parent_path.stat()
 	parent_path_permissions = parent_path_stat.st_mode & 0o002
 
 	if parent_path_permissions != 0:
-		iktprint.iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "critical"),
 				   ANSIThemeString(": The parent of the target path ", "default"),
 				   ANSIThemeString(f"{dst}", "path"),
 				   ANSIThemeString(" is world writable.", "default")], stderr = True)
 		if exit_on_failure == True:
 			if verbose == True:
-				iktprint.iktprint([ANSIThemeString("Aborting.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ANSIThemeString("Aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		elif verbose == True:
-			iktprint.iktprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+			ansithemeprint.ansithemeprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
 		return [SecurityStatus.PARENT_PERMISSIONS]
 
 	# Verify that the source path exists and that the owner and permissions are reliable; we do not make further assumptions
@@ -1043,31 +1044,31 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))
 		if verbose == True:
-			iktprint.iktprint([ANSIThemeString("Critical", "critical"),
+			ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "critical"),
 					   ANSIThemeString(": The source path ", "default"),
 					   ANSIThemeString(f"{src}", "path"),
 					   ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr = True)
 		if exit_on_failure == True:
 			if verbose == True:
-				iktprint.iktprint([ANSIThemeString("Aborting.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ANSIThemeString("Aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		elif verbose == True:
-			iktprint.iktprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+			ansithemeprint.ansithemeprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
 		return violations
 
 	# Since the parent path resolves safely, we can unlink dst_path if it is a symlink
 	if dst_path.is_symlink():
 		if replace_existing == False:
 			if verbose == True:
-				iktprint.iktprint([ANSIThemeString("Critical", "critical"),
+				ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "critical"),
 						   ANSIThemeString(": The source path ", "default"),
 						   ANSIThemeString(f"{src}", "path"),
 						   ANSIThemeString(" exists and replace_existing = False.", "default")], stderr = True)
 			if exit_on_failure == True:
 				if verbose == True:
-					iktprint.iktprint([ANSIThemeString("Aborting.", "default")], stderr = True)
+					ansithemeprint.ansithemeprint([ANSIThemeString("Aborting.", "default")], stderr = True)
 			elif verbose == True:
-				iktprint.iktprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
 			return [SecurityStatus.EXISTS]
 
 		dst_path.unlink()

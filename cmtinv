@@ -3,10 +3,10 @@
 # Requires: python3-natsort
 
 """
-This program is used to query or modify the iKT inventory list
+This program is used to query or modify the Ansible inventory
 
 For usage, see:
-	iktinv help
+	cmtinv help
 """
 
 import errno
@@ -20,12 +20,12 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath
-from iktpaths import HOMEDIR, SSH_DIR
-from iktpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
+from cmttypes import deep_get, DictPath, FilePath
+from cmtpaths import HOMEDIR, SSH_DIR
+from cmtpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
 
-import iktio
-import iktio_yaml
+import cmtio
+import cmtio_yaml
 
 from commandparser import parse_commandline
 
@@ -36,10 +36,10 @@ from ansible_helper import ansible_set_hostvars, ansible_set_groupvars, ansible_
 from ansible_helper import ansible_unset_groupvars, ansible_create_groups, ansible_ping
 from ansible_helper import ANSIBLE_INVENTORY
 
-import iktlib
-from iktlib import read_iktconfig
+import cmtlib
+from cmtlib import read_cmtconfig
 
-from iktprint import iktprint
+from ansithemeprint import ANSIThemeString, ansithemeprint
 
 import about
 PROGRAMDESCRIPTION = "Query or modify the host inventory"
@@ -71,14 +71,14 @@ def set_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 		try:
 			key, value = keyval.split(":")
 		except ValueError:
-			iktprint([ANSIThemeString("Error", "error"),
+			ansithemeprint([ANSIThemeString("Error", "error"),
 				  ANSIThemeString(": Setting a variable requires a ", "default"),
 				  ANSIThemeString("KEY", "argument"),
 				  ANSIThemeString(":", "separator"),
 				  ANSIThemeString("VALUE ", "argument"),
 				  ANSIThemeString("pair.", "default")], stderr = True)
 			print()
-			iktprint([ANSIThemeString("Try “", "default"),
+			ansithemeprint([ANSIThemeString("Try “", "default"),
 				  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
 				  ANSIThemeString("help", "command"),
 				  ANSIThemeString("“ for more information.", "default")], stderr = True)
@@ -119,14 +119,14 @@ def set_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 		try:
 			key, value = keyval.split(":")
 		except ValueError:
-			iktprint([ANSIThemeString("Error", "error"),
+			ansithemeprint([ANSIThemeString("Error", "error"),
 				  ANSIThemeString(": Setting a variable requires a ", "default"),
 				  ANSIThemeString("KEY", "argument"),
 				  ANSIThemeString(":", "separator"),
 				  ANSIThemeString("VALUE ", "argument"),
 				  ANSIThemeString("pair.", "default")], stderr = True)
 			print()
-			iktprint([ANSIThemeString("Try “", "default"),
+			ansithemeprint([ANSIThemeString("Try “", "default"),
 				  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
 				  ANSIThemeString("help", "command"),
 				  ANSIThemeString("“ for more information.", "default")], stderr = True)
@@ -247,7 +247,7 @@ def add_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	# We should not try to add "all" (it may cause unexpected issues with variables)
 	if "all" in groups:
-		iktprint([ANSIThemeString("Warning", "warning"),
+		ansithemeprint([ANSIThemeString("Warning", "warning"),
 			  ANSIThemeString(": Ignoring attempt to add group “", "default"), ANSIThemeString("all", "argument"), ANSIThemeString("“.", "default")], stderr = True)
 		groups.remove("all")
 		if len(groups) == 0:
@@ -307,14 +307,14 @@ def add_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 				hostvars.append((key, value))
 		elif opt == "--groups":
 			if len(groups) > 0:
-				iktprint([ANSIThemeString("Error", "error"), ANSIThemeString(": Invalid option; “", "default"),
+				ansithemeprint([ANSIThemeString("Error", "error"), ANSIThemeString(": Invalid option; “", "default"),
 					  ANSIThemeString(f"{opt}", "option"),
 					  ANSIThemeString("“ cannot be used with ", "default"),
 					  ANSIThemeString("HOST", "argument"), ANSIThemeString(",", "separator"), ANSIThemeString("... ", "argument"),
 					  ANSIThemeString("GROUP", "argument"), ANSIThemeString(",", "separator"), ANSIThemeString("... ", "argument"),
 					  ANSIThemeString("syntax.", "default")], stderr = True)
 				print()
-				iktprint([ANSIThemeString("Try “", "default"),
+				ansithemeprint([ANSIThemeString("Try “", "default"),
 					  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
 					  ANSIThemeString("“ for more information.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
@@ -396,10 +396,10 @@ def remove_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 			raise Exception(f"Programming error; invalid option {opt}")
 
 	if "all" in groups:
-		iktprint([ANSIThemeString("Error", "error"),
+		ansithemeprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": The group “", "default"), ANSIThemeString("all", "argument"), ANSIThemeString("“ cannot be removed.", "default")], stderr = True)
 		print()
-		iktprint([ANSIThemeString("Try “", "default"),
+		ansithemeprint([ANSIThemeString("Try “", "default"),
 			  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
 			  ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
@@ -412,14 +412,14 @@ def remove_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	if forceneeded == True and force == False:
 		if forceneeded == True:
-			iktprint([ANSIThemeString("Error", "error"), ANSIThemeString(": The following groups are non-empty:", "default")])
+			ansithemeprint([ANSIThemeString("Error", "error"), ANSIThemeString(": The following groups are non-empty:", "default")])
 			for group, hosts in extrahosts:
-				iktprint(format_members(group, hosts))
+				ansithemeprint(format_members(group, hosts))
 		print()
-		iktprint([ANSIThemeString("Removing groups that still contain hosts requires specifying “", "default"),
+		ansithemeprint([ANSIThemeString("Removing groups that still contain hosts requires specifying “", "default"),
 			  ANSIThemeString("--force", "option"), ANSIThemeString("“.", "default")], stderr = True)
 		print()
-		iktprint([ANSIThemeString("Try “", "default"),
+		ansithemeprint([ANSIThemeString("Try “", "default"),
 			  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
 			  ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
@@ -440,7 +440,7 @@ def get_cluster_name() -> Optional[str]:
 	"""
 
 	try:
-		d1 = iktio_yaml.secure_read_yaml(KUBE_CONFIG_FILE)
+		d1 = cmtio_yaml.secure_read_yaml(KUBE_CONFIG_FILE)
 	except FileNotFoundError:
 		return None
 
@@ -480,10 +480,10 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	# Is there a pre-existing inventory?
 	if Path(ANSIBLE_INVENTORY).is_file() and force == False:
-		iktprint([ANSIThemeString("Error", "error"), ANSIThemeString(": Overwriting an existing inventory requires specifying “", "default"),
+		ansithemeprint([ANSIThemeString("Error", "error"), ANSIThemeString(": Overwriting an existing inventory requires specifying “", "default"),
 			  ANSIThemeString("--force", "option"), ANSIThemeString("“.", "default")], stderr = True)
 		print()
-		iktprint([ANSIThemeString("Try “", "default"),
+		ansithemeprint([ANSIThemeString("Try “", "default"),
 			  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
 			  ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
@@ -492,20 +492,20 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 	cluster_name = get_cluster_name()
 	if cluster_name is None:
-		iktprint([ANSIThemeString("Error", "error"),
+		ansithemeprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": Could not obtain cluster name; do you have a cluster available? Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 	if status != 200:
-		iktprint([ANSIThemeString("Error", "error"),
+		ansithemeprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": API-server returned ", "default"),
 			  ANSIThemeString(f"{status}", "errorvalue"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	if vlist is None:
-		iktprint([ANSIThemeString("Error", "error"),
+		ansithemeprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
@@ -528,13 +528,13 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# Finally import the hostkey into authorized_keys
 	pubkey = None
 
-	tmp = iktio.secure_read_string(FilePath(str(PurePath(SSH_DIR).joinpath("id_ecdsa.pub"))))
+	tmp = cmtio.secure_read_string(FilePath(str(PurePath(SSH_DIR).joinpath("id_ecdsa.pub"))))
 	if tmp is not None:
 		tmplines = tmp.splitlines()
 		pubkey = tmplines[0]
 
 	if pubkey is None or len(pubkey) == 0:
-		iktprint([ANSIThemeString("Error", "error"),
+		ansithemeprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": Failed to read ", "default"),
 			  ANSIThemeString(f"{HOMEDIR}/.ssh/id_ecdsa.pub", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -597,20 +597,20 @@ def remove_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	if "all" in groups and forceneeded == True and (force == False or len(groups) > 1):
 		if forceneeded == True:
-			iktprint([ANSIThemeString("Error", "error"),
+			ansithemeprint([ANSIThemeString("Error", "error"),
 				  ANSIThemeString(": The following hosts are parts of other groups than “", "default"),
 				  ANSIThemeString("all", "argument"), ANSIThemeString("“:", "default")])
 			for host, groups in extragroups:
-				iktprint(format_members(host, groups))
+				ansithemeprint(format_members(host, groups))
 		print()
-		iktprint([ANSIThemeString("Removing hosts from “", "default"),
+		ansithemeprint([ANSIThemeString("Removing hosts from “", "default"),
 			  ANSIThemeString("all", "argument"),
 			  ANSIThemeString("“ requires specifying “", "default"), ANSIThemeString("--force", "option"), ANSIThemeString("“", "default")], stderr = True)
-		iktprint([ANSIThemeString("unless “", "default"),
+		ansithemeprint([ANSIThemeString("unless “", "default"),
 			  ANSIThemeString("all", "argument"),
 			  ANSIThemeString("“ is the only group or the hosts are not members of other groups.", "default")], stderr = True)
 		print()
-		iktprint([ANSIThemeString("Try “", "default"),
+		ansithemeprint([ANSIThemeString("Try “", "default"),
 			  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
 			  ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
@@ -656,7 +656,7 @@ def inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 		groups = args[0].split(",")
 
 	for item in ansible_get_inventory_pretty(groups = groups, highlight = True, include_groupvars = include_groupvars, include_hostvars = include_hostvars):
-		iktprint(item)
+		ansithemeprint(item)
 
 	return 0
 
@@ -682,7 +682,7 @@ def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 			raise Exception(f"Programming error; invalid option {opt}")
 
 	for item in ansible_get_inventory_pretty(groups = None, highlight = True, include_groupvars = include_groupvars, include_hosts = False):
-		iktprint(item)
+		ansithemeprint(item)
 
 	return 0
 
@@ -710,7 +710,7 @@ def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	groups = ["all"]
 
 	for item in ansible_get_inventory_pretty(groups = groups, highlight = True, include_hostvars = include_hostvars):
-		iktprint(item)
+		ansithemeprint(item)
 
 	return 0
 
@@ -745,7 +745,7 @@ def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 				if group_or_host in _all:
 					selection.append(group_or_host)
 				else:
-					iktprint([ANSIThemeString("Warning", "warning"),
+					ansithemeprint([ANSIThemeString("Warning", "warning"),
 						  ANSIThemeString(": Skipping unknown host or group “", "default"),
 						  ANSIThemeString(group_or_host, "argument"),
 						  ANSIThemeString("“", "default")], stderr = True)
@@ -788,12 +788,12 @@ def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 	maxlen = max(maxlen, len(header))
 
 	if len(hoststatuses) > 0:
-		iktprint([ANSIThemeString(header, "header"),
+		ansithemeprint([ANSIThemeString(header, "header"),
 			  ANSIThemeString(f"{''.ljust(maxlen - len(header))}  ", "default"),
 			  ANSIThemeString("Status:", "header")])
 
 		for hostname, status, status_group in hoststatuses:
-			iktprint([ANSIThemeString(f"{hostname.ljust(maxlen)}  ", "default"),
+			ansithemeprint([ANSIThemeString(f"{hostname.ljust(maxlen)}  ", "default"),
 				  ANSIThemeString(f"{status}", status_group)])
 
 	return 0
@@ -1162,20 +1162,20 @@ def main() -> int:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 
 	# Then initialise the configuration file
-	read_iktconfig()
+	read_cmtconfig()
 
 	command, options, args = parse_commandline(about.INVENTORY_PROGRAM_NAME, about.INVENTORY_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   COMMANDLINE, default_command = "inventory", theme = DEFAULT_THEME_FILE)
 
-	# iktinv was called without any parameters; assuming inventory
+	# cmtinv was called without any parameters; assuming inventory
 	if command is None:
 		command = inventory
 
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 10)
-	ansible_configuration["ansible_user"] = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_user"))
-	ansible_configuration["ansible_password"] = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_password"))
-	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktlib.iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
+	ansible_configuration["ansible_forks"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)
+	ansible_configuration["ansible_user"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#ansible_user"))
+	ansible_configuration["ansible_password"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#ansible_password"))
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(cmtlib.cmtconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
 
 	return command(options, args)
 

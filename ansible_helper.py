@@ -2,7 +2,7 @@
 # Requires: python3 (>= 3.8)
 
 """
-Helper for iKT to run Ansible playbooks
+Ansible-related helpers
 """
 
 from datetime import datetime
@@ -12,14 +12,14 @@ import sys
 from typing import cast, Dict, List, Optional, Set, Tuple, Union
 import yaml
 
-import iktlib
-from iktio import check_path, secure_mkdir, secure_rm, secure_rmdir
-from iktio_yaml import secure_read_yaml, secure_write_yaml
-from iktpaths import HOMEDIR
-from iktpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
-from iktpaths import ANSIBLE_INVENTORY
-from iktprint import iktprint
-from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus
+import cmtlib
+from cmtio import check_path, secure_mkdir, secure_rm, secure_rmdir
+from cmtio_yaml import secure_read_yaml, secure_write_yaml
+from cmtpaths import HOMEDIR
+from cmtpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
+from cmtpaths import ANSIBLE_INVENTORY
+from ansithemeprint import ANSIThemeString, ansithemeprint
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus
 
 ansible_results: Dict = {}
 
@@ -35,15 +35,15 @@ ansible_configuration: Dict = {
 try:
 	import ansible_runner # type: ignore
 except ModuleNotFoundError:
-	sys.exit("ansible_runner not available; try (re-)running ikt-install")
+	sys.exit("ansible_runner not available; try (re-)running cmt-install")
 
 # Exit if the ansible directory does not exist
 if not Path(ANSIBLE_DIR).exists():
-	sys.exit(f"{ANSIBLE_DIR} not found; try (re-)running ikt-install")
+	sys.exit(f"{ANSIBLE_DIR} not found; try (re-)running cmt-install")
 
 # Exit if the ansible log directory does not exist
 if not Path(ANSIBLE_LOG_DIR).exists():
-	sys.exit(f"{ANSIBLE_LOG_DIR} not found; try (re-)running ikt-install")
+	sys.exit(f"{ANSIBLE_LOG_DIR} not found; try (re-)running cmt-install")
 
 def get_playbook_path(playbook: FilePath) -> FilePath:
 	"""
@@ -60,7 +60,7 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 	path = ""
 
 	# Check if there's a local playbook overriding this one
-	local_playbooks = deep_get(iktlib.iktconfig, DictPath("Ansible#local_playbooks"), [])
+	local_playbooks = deep_get(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), [])
 	for playbook_path in local_playbooks:
 		# Substitute {HOME}/ for {HOMEDIR}
 		if playbook_path.startswith("{HOME}/"):
@@ -157,7 +157,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 
 def ansible_get_inventory_dict() -> Dict:
 	"""
-        Get the iKT inventory and return it as a dict
+        Get the Ansible inventory and return it as a dict
 
 		Returns:
 			d (dict): A dictionary with an Ansible inventory
@@ -183,7 +183,7 @@ def ansible_get_inventory_dict() -> Dict:
 def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: bool = False,
 				 include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True) -> List[List[ANSIThemeString]]:
 	"""
-        Get the iKT inventory and return it neatly formatted
+        Get the Ansible inventory and return it neatly formatted
 
 		Parameters:
 			groups (list[str]): What groups to include
@@ -1138,39 +1138,39 @@ def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: Li
 	"""
 
 	if unreachable == True:
-		iktprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "error")], stderr = True)
+		ansithemeprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "error")], stderr = True)
 	elif skipped == True:
-		iktprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task} [skipped]", "skip")], stderr = True)
-		iktprint([ANSIThemeString("", "default")])
+		ansithemeprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task} [skipped]", "skip")], stderr = True)
+		ansithemeprint([ANSIThemeString("", "default")])
 		return
 	elif retval != 0:
-		iktprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "error"),
+		ansithemeprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "error"),
 			  ANSIThemeString(" (retval: ", "default"), ANSIThemeString(f"{retval}", "errorvalue"), ANSIThemeString(")", "default")], stderr = True)
 	else:
-		iktprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "success")])
+		ansithemeprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "success")])
 
 	if len(msg_lines) > 0:
-		iktprint([ANSIThemeString("msg:", "header")])
+		ansithemeprint([ANSIThemeString("msg:", "header")])
 		for line in msg_lines:
-			iktprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")])
-		iktprint([ANSIThemeString("", "default")])
+			ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")])
+		ansithemeprint([ANSIThemeString("", "default")])
 
 	if len(stdout_lines) > 0 or len(msg_lines) == 0 and len(stderr_lines) == 0:
-		iktprint([ANSIThemeString("stdout:", "header")])
+		ansithemeprint([ANSIThemeString("stdout:", "header")])
 		for line in stdout_lines:
-			iktprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")])
+			ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")])
 		if len(stdout_lines) == 0:
-			iktprint([ANSIThemeString("<no output>", "none")])
-		iktprint([ANSIThemeString("", "default")])
+			ansithemeprint([ANSIThemeString("<no output>", "none")])
+		ansithemeprint([ANSIThemeString("", "default")])
 
 	# If retval is not 0 we do not really care if stderr is empty
 	if len(stderr_lines) > 0 or retval != 0:
-		iktprint([ANSIThemeString("stderr:", "header")])
+		ansithemeprint([ANSIThemeString("stderr:", "header")])
 		for line in stderr_lines:
-			iktprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")], stderr = True)
+			ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")], stderr = True)
 		if len(stderr_lines) == 0:
-			iktprint([ANSIThemeString("<no output>", "none")])
-		iktprint([ANSIThemeString("", "default")])
+			ansithemeprint([ANSIThemeString("<no output>", "none")])
+		ansithemeprint([ANSIThemeString("", "default")])
 
 def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 	"""
@@ -1182,7 +1182,7 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 	"""
 
 	if retval != 0 and len(__ansible_results) == 0:
-		iktprint([ANSIThemeString("Failed to execute playbook; retval: ", "error"), ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
+		ansithemeprint([ANSIThemeString("Failed to execute playbook; retval: ", "error"), ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
 	else:
 		for host in __ansible_results:
 			plays = __ansible_results[host]
@@ -1199,11 +1199,11 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 					header_output = True
 
 					if unreachable == True:
-						iktprint([ANSIThemeString(f"[{host}]", "error")])
+						ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
 					elif retval == 0:
-						iktprint([ANSIThemeString(f"[{host}]", "success")])
+						ansithemeprint([ANSIThemeString(f"[{host}]", "success")])
 					else:
-						iktprint([ANSIThemeString(f"[{host}]", "error")])
+						ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
 
 				msg_lines = deep_get(play, DictPath("msg_lines"), "")
 				stdout_lines = deep_get(play, DictPath("stdout_lines"), "")

@@ -1,12 +1,12 @@
 # Note: while you can do all configuration here, the recommended
 # way to change the configuration options is to put your changes
-# in ikt.yaml.d, split into separate files for each category.
+# in cmt.yaml.d, split into separate files for each category.
 # This way you can keep the default configuration as a reference.
 # This also simplifies a workflow where site-local configurations
 # can be imported without having to touch the distributed version
-# of ikt.yaml.
+# of cmt.yaml.
 #
-# Using ikt.yaml.d also makes it easier to debug configuration
+# Using cmt.yaml.d also makes it easier to debug configuration
 # issues.
 #
 # Using this configuration file you can change the defaults
@@ -109,8 +109,8 @@ Ansible:
   # Password for users
   # If you use a password here you should use an ansible vault!
   # but the safest way is to only provide your password while running
-  # "iktadm prepare <host>" and "ikt prepare <host>";
-  # ikt will keep the password in memory until hosts have been prepared,
+  # "cmtadm prepare <host>" and "cmt prepare <host>";
+  # cmt will keep the password in memory until hosts have been prepared,
   # but after that it will rely on ssh host keys and passwordless sudo.
   # ansible_password:
 
@@ -129,7 +129,7 @@ Ansible:
   # you can use "{HOME}/", so for instance:
   # local_playbooks:
   # - "{HOME}/local_playbooks"
-  # - "/opt/ikt/playbooks"
+  # - "/opt/cmt/playbooks"
   # - ...
 
 # Settings to use when configuring docker
@@ -279,7 +279,7 @@ Pods:
   # you can use "{HOME}/", so for instance:
   # local_parsers:
   # - "{HOME}/local_parsers"
-  # - "/opt/ikt/parsers"
+  # - "/opt/cmt/parsers"
   # - ...
 
 Debug:

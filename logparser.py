@@ -50,15 +50,15 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from iktpaths import HOMEDIR, PARSER_DIR
+from cmtpaths import HOMEDIR, PARSER_DIR
 
-from iktlog import IKTLogType, IKTLog
-from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name
+from cmtlog import CMTLogType, CMTLog
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name
 
-from iktio_yaml import secure_read_yaml, secure_read_yaml_all
+from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 
-import iktlib
-from iktlib import none_timestamp
+import cmtlib
+from cmtlib import none_timestamp
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
 
 from curses_helper import themearray_to_string, ThemeAttr, ThemeRef, ThemeString
@@ -1253,7 +1253,7 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
 				       ThemeString(" [State modified]", ThemeAttr("logview", "modified"))]
 	else:
-		IKTLog(IKTLogType.DEBUG, [
+		CMTLog(CMTLogType.DEBUG, [
 				[ANSIThemeString("Unknown EVENT type: ", "default"),
 				 ANSIThemeString(f"{event}", "argument")],
 		       ], severity = LogLevel.ERR, facility = "logparser.py:json_event()")
@@ -2585,7 +2585,7 @@ def init_parser_list() -> bool:
 	# Start by adding files from the parsers directory
 
 	parser_dirs = []
-	parser_dirs += deep_get(iktlib.iktconfig, DictPath("Pods#local_parsers"), [])
+	parser_dirs += deep_get(cmtlib.cmtconfig, DictPath("Pods#local_parsers"), [])
 	parser_dirs.append(PARSER_DIR)
 
 	parser_files = []

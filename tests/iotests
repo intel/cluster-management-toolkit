@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 """
-A checker that validates iktio, iktio_yaml, and networkio
+A checker that validates cmtio, cmtio_yaml, and networkio
 
 Usage: ./tests/iotests
 """
@@ -11,19 +11,19 @@ from types import GeneratorType
 from typing import cast, Dict, Tuple
 import yaml
 
-from iktio import check_path, join_securitystatus_set
-from iktio import secure_copy, secure_mkdir, secure_read, secure_read_string, secure_rm, secure_rmdir, secure_symlink, secure_which, secure_write_string
-from iktio_yaml import secure_read_yaml, secure_read_yaml_all, secure_write_yaml
+from cmtio import check_path, join_securitystatus_set
+from cmtio import secure_copy, secure_mkdir, secure_read, secure_read_string, secure_rm, secure_rmdir, secure_symlink, secure_which, secure_write_string
+from cmtio_yaml import secure_read_yaml, secure_read_yaml_all, secure_write_yaml
 from networkio import verify_checksum
-from iktprint import iktprint, init_iktprint
-from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 
 CHECKSUMS_DIR = FilePath(str(Path.cwd().joinpath("checksums")))
 TEST_DIR = FilePath(str(Path.cwd().joinpath("testpaths")))
 
 def test_check_path(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio.check_path() works correctly
+	Test whether cmtio.check_path() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -42,7 +42,7 @@ def test_check_path(checkdata: Dict) -> Tuple[int, str]:
 
 def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio.secure_read_string() works correctly
+	Test whether cmtio.secure_read_string() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -73,7 +73,7 @@ def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
 
 def test_secure_read_yaml(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio.secure_read_yaml() works correctly
+	Test whether cmtio.secure_read_yaml() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -105,7 +105,7 @@ def test_secure_read_yaml(checkdata: Dict) -> Tuple[int, str]:
 
 def test_secure_read_yaml_all(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio.secure_read_yaml_all() works correctly
+	Test whether cmtio.secure_read_yaml_all() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -136,7 +136,7 @@ def test_secure_read_yaml_all(checkdata: Dict) -> Tuple[int, str]:
 
 def test_secure_which(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio.secure_which() works correctly
+	Test whether cmtio.secure_which() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -168,7 +168,7 @@ def test_secure_which(checkdata: Dict) -> Tuple[int, str]:
 
 def test_secure_rm(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio.secure_rm() works correctly
+	Test whether cmtio.secure_rm() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -204,7 +204,7 @@ def test_secure_rm(checkdata: Dict) -> Tuple[int, str]:
 
 def test_secure_rmdir(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio.secure_rmdir() works correctly
+	Test whether cmtio.secure_rmdir() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -240,7 +240,7 @@ def test_secure_rmdir(checkdata: Dict) -> Tuple[int, str]:
 
 def test_secure_mkdir(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio.secure_mkdir() works correctly
+	Test whether cmtio.secure_mkdir() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -270,7 +270,7 @@ def test_secure_mkdir(checkdata: Dict) -> Tuple[int, str]:
 
 def test_secure_copy(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio.secure_copy() works correctly
+	Test whether cmtio.secure_copy() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -302,7 +302,7 @@ def test_secure_copy(checkdata: Dict) -> Tuple[int, str]:
 
 def test_secure_symlink(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio.secure_symlink() works correctly
+	Test whether cmtio.secure_symlink() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -329,7 +329,7 @@ def test_secure_symlink(checkdata: Dict) -> Tuple[int, str]:
 
 def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio.secure_write_string() works correctly
+	Test whether cmtio.secure_write_string() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -367,7 +367,7 @@ def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
 
 def test_secure_write_yaml(checkdata: Dict) -> Tuple[int, str]:
 	"""
-	Test whether iktio_yaml.secure_write_yaml() works correctly
+	Test whether cmtio_yaml.secure_write_yaml() works correctly
 
 		Parameters:
 			testcase (str): The name of the testcase
@@ -1135,7 +1135,7 @@ def main() -> int:
 	success = 0
 	failed_testcases = []
 
-	init_iktprint(themefile = None)
+	init_ansithemeprint(themefile = None)
 
 	for testcase, testcase_data in testcases.items():
 		test = deep_get(testcase_data, DictPath("test"))
@@ -1143,23 +1143,23 @@ def main() -> int:
 		if failed == 1:
 			fail += 1
 			failed_testcases.append(testcase)
-			iktprint([ANSIThemeString("FAIL", "error"),
-				  ANSIThemeString(f": Testcase: {testcase}; {msg}", "default")])
+			ansithemeprint([ANSIThemeString("FAIL", "error"),
+					ANSIThemeString(f": Testcase: {testcase}; {msg}", "default")])
 		else:
-			iktprint([ANSIThemeString("PASS", "success"),
-				  ANSIThemeString(f": Testcase: {testcase}", "default")])
+			ansithemeprint([ANSIThemeString("PASS", "success"),
+					ANSIThemeString(f": Testcase: {testcase}", "default")])
 			if not testcase.startswith("--"):
 				success += 1
 
-	iktprint([ANSIThemeString("\nSummary:", "header")])
-	iktprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
-	iktprint([ANSIThemeString(f"  PASS: {success}", "success")])
+	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
 
 	if fail > 0:
-		iktprint([ANSIThemeString("\nFailed testcases:", "header")])
+		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
 		for testcase in failed_testcases:
-			iktprint([ANSIThemeString("  • ", "separator"),
-				  ANSIThemeString(testcase, "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("  • ", "separator"),
+					ANSIThemeString(testcase, "default")], stderr = True)
 
 	return fail
 

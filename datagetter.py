@@ -2,14 +2,14 @@
 # Requires: python3 (>= 3.8)
 
 """
-datagetters are used for data extraction that's too complext to be expressed by parameters to generic_infogetter
+Datagetters are used for data extraction that's too complex to be expressed by parameters to generic_infogetter
 """
 
 import re
 from typing import Any, Callable, Dict, List, Tuple, Union
 
-from iktlib import get_since, timestamp_to_datetime
-from ikttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
+from cmtlib import get_since, timestamp_to_datetime
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
 import kubernetes_helper
 from kubernetes_helper import get_node_status, kind_tuple_to_name
 
@@ -520,7 +520,11 @@ def datagetter_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict, pat
 # pylint: disable-next=unused-argument
 def datagetter_api_support(kh: kubernetes_helper.KubernetesHelper, obj: Dict, path: DictPath, default: List[str]) -> Tuple[List[str], Dict]:
 	"""
-	A datagetter that returns the level of support that iKT has for an API
+	A datagetter that returns the level of support that CMT provides for an API;
+	can be one of:
+	* Known (CMT has an API definition)
+	* List (CMT has a list view)
+	* Info (CMT has an info view)
 
 		Parameters:
 			kh (KubernetesHelper): A reference to a KubernetesHelper object

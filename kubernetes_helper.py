@@ -2,7 +2,7 @@
 # Requires: python3 (>= 3.8)
 
 """
-Kubernetes helpers used by iKT
+Kubernetes helpers used by CMT
 """
 
 # pylint: disable=line-too-long
@@ -33,11 +33,11 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-urllib3")
 
-from iktpaths import KUBE_CONFIG_FILE
-from iktlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
-from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, FilePathAuditError, SecurityChecks, StatusGroup
-from iktio import execute_command_with_response, secure_which
-from iktio_yaml import secure_read_yaml, secure_write_yaml
+from cmtpaths import KUBE_CONFIG_FILE
+from cmtlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, FilePathAuditError, SecurityChecks, StatusGroup
+from cmtio import execute_command_with_response, secure_which
+from cmtio_yaml import secure_read_yaml, secure_write_yaml
 
 # A list of all K8s resources we have some knowledge about
 kubernetes_resources: Dict[Any, Any] = {

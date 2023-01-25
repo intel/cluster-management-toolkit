@@ -8,7 +8,7 @@
 # pylint: disable=line-too-long
 
 """
-A curses-based UI for iKT
+A curses-based UI for Cluster Management
 """
 
 import ast
@@ -48,19 +48,19 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from ikttypes import ANSIThemeString, deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
-from iktpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, IKT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
-from iktpaths import DEFAULT_THEME_FILE, IKT_CONFIG_FILE, SSH_ARGS, SSH_BIN_PATH
+from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
+from cmtpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
+from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, SSH_ARGS, SSH_BIN_PATH
 
-from iktio import execute_command, execute_command_with_response, secure_read_string, secure_which, secure_write_string
-from iktio_yaml import secure_read_yaml, secure_read_yaml_all
+from cmtio import execute_command, execute_command_with_response, secure_read_string, secure_which, secure_write_string
+from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 
 import logparser as logparsers
 from logparser import logparser, logparser_initialised, LogLevel, logparser_configuration
 from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
-import iktlib
-from iktlib import clamp, disksize_to_human, get_package_versions, make_set_expression_list, none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple, read_iktconfig
+import cmtlib
+from cmtlib import clamp, disksize_to_human, get_package_versions, make_set_expression_list, none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple, read_cmtconfig
 from curses_helper import curses_configuration, color_log_severity, format_helptext, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, themearray_wrap_line, themearray_to_string, themearray_len, ThemeAttr, ThemeRef, ThemeString
 
 import datagetter
@@ -85,7 +85,7 @@ import helptexts
 
 from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, make_selector, update_api_status as kh_update_api_status
 
-from iktprint import ansithemestring_join_tuple_list, clear_screen, iktinput, iktprint, init_iktprint
+from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, clear_screen, ansithemeinput, ansithemeprint, init_ansithemeprint
 
 import about
 
@@ -126,7 +126,7 @@ def gather_cluster_info() -> None:
 	Gather information about the cluster necessary for running playbooks
 	"""
 
-	iktprint([ANSIThemeString("[Gathering cluster information]\n", "phase")])
+	ansithemeprint([ANSIThemeString("[Gathering cluster information]\n", "phase")])
 
 	# Set global variables that need to be available when executing playbooks
 	join_token = kh.get_join_token()
@@ -145,12 +145,12 @@ def gather_cluster_info() -> None:
 	if len(control_plane_k8s_version) == 0:
 		sys.exit(f"Failed to get kubeadm version from control plane “{control_plane_name}“; aborting.")
 
-	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), None)
-	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), None)
-	no_proxy = deep_get(iktlib.iktconfig, DictPath("Network#no_proxy"), None)
-	insecure_registries = deep_get(iktlib.iktconfig, DictPath("Docker#insecure_registries"), [])
-	registry_mirrors = deep_get(iktlib.iktconfig, DictPath("Containerd#registry_mirrors"), [])
-	packages = deep_get(iktlib.iktconfig, DictPath("Packages"), {})
+	http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), None)
+	https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), None)
+	no_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#no_proxy"), None)
+	insecure_registries = deep_get(cmtlib.cmtconfig, DictPath("Docker#insecure_registries"), [])
+	registry_mirrors = deep_get(cmtlib.cmtconfig, DictPath("Containerd#registry_mirrors"), [])
+	packages = deep_get(cmtlib.cmtconfig, DictPath("Packages"), {})
 
 	values = {
 		"control_plane_ip": control_plane_ip,
@@ -367,7 +367,7 @@ def processor_list_with_status(obj: Dict, field: str, item_separator: ThemeRef, 
 
 def processor_age(obj: Dict, field: str) -> str:
 	seconds = getattr(obj, field)
-	return iktlib.seconds_to_age(seconds, negative_is_skew = True)
+	return cmtlib.seconds_to_age(seconds, negative_is_skew = True)
 
 def processor_mem(obj: Dict, field: str) -> str:
 	free, total = getattr(obj, field)
@@ -1014,7 +1014,7 @@ def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: st
 # pylint: disable-next=too-many-arguments
 def process_value(field_name: str, value: Any, vtype: str, view: str, field_index: str, action: str,
 		  formatter: str, replace_quotes: str, _regex: str) -> Union[int, float, str, List[str], datetime, None]:
-	override_kind = deep_get_with_fallback(iktlib.iktconfig, [
+	override_kind = deep_get_with_fallback(cmtlib.cmtconfig, [
 				DictPath(f"{view}#kind_format_{field_index}"),
 				DictPath(f"{view}#kind_format"),
 				DictPath(f"Global#kind_format_{field_index}"),
@@ -1060,7 +1060,7 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 		if type(value) not in (list, tuple):
 			raise Exception(f"Field {field_name}: type({value}) is {vtype}; for type {vtype} pathtype must be a multi-element type")
 		_values = []
-		override_kind = deep_get_with_fallback(iktlib.iktconfig,
+		override_kind = deep_get_with_fallback(cmtlib.cmtconfig,
 						       [DictPath(f"{view}#kind_format_{field_index}"),
 						        DictPath(f"{view}#kind_format"),
 							DictPath(f"Global#kind_format_{field_index}"),
@@ -1834,7 +1834,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
 
 						if vtype == "api_group":
-							override_kind = deep_get_with_fallback(iktlib.iktconfig, [DictPath(f"{view}#kind_format_{field_index}"),
+							override_kind = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath(f"{view}#kind_format_{field_index}"),
 														  DictPath(f"{view}#kind_format"),
 														  DictPath(f"Global#kind_format_{field_index}"),
 														  DictPath("Global#kind_format")], "mixed")
@@ -1977,7 +1977,7 @@ def generic_infogetter(**kwargs: Dict) -> List[Dict]:
 	if len(field_dict) == 0 or len(field_names) == 0:
 		sys.exit(f"generic_infogetter() received empty field_dict {field_dict} or field_names {field_names}; this is a programming error")
 
-	# If we know the view we can use it to get overrides from ikt.yaml
+	# If we know the view we can use it to get overrides from cmt.yaml
 	view = deep_get(kwargs, DictPath("_view"), "")
 	for obj in vlist:
 		if len(extra_data) > 0:
@@ -2132,9 +2132,9 @@ def listgetter_ansible_volumes(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], s
 			continue
 		device = os.path.basename(device)
 
-		if check_matchlist(mountpoint, deep_get(iktlib.iktconfig, DictPath("Inventory#mountpoint_skiplist"), ["/boot/efi", "/var/lib/origin/*", "/run/*", "*@docker*"])):
+		if check_matchlist(mountpoint, deep_get(cmtlib.cmtconfig, DictPath("Inventory#mountpoint_skiplist"), ["/boot/efi", "/var/lib/origin/*", "/run/*", "*@docker*"])):
 			continue
-		if check_matchlist(device, deep_get(iktlib.iktconfig, DictPath("Inventory#device_skiplist"), ["loop*"])):
+		if check_matchlist(device, deep_get(cmtlib.cmtconfig, DictPath("Inventory#device_skiplist"), ["loop*"])):
 			continue
 
 		model = get_device_model(obj, device)
@@ -2397,7 +2397,7 @@ def get_promrules_info(**kwargs: Dict) -> List[Type]:
 				rule["_extra_data"] = _extra_data
 			ref = rule
 			age = deep_get(rule, DictPath("for"), "")
-			duration = iktlib.age_to_seconds(age)
+			duration = cmtlib.age_to_seconds(age)
 			info.append(type("InfoClass", (), {
 				"group": name,
 				"ref": ref,
@@ -2963,7 +2963,7 @@ def get_subsets_info(**kwargs):
 		return []
 
 	# Policy for subsets expansion
-	expand_subsets = deep_get(iktlib.iktconfig, DictPath("Endpoints#expand_subsets"), "None")
+	expand_subsets = deep_get(cmtlib.cmtconfig, DictPath("Endpoints#expand_subsets"), "None")
 
 	for subset in deep_get(obj, DictPath("subsets"), []):
 		ready_addresses = []
@@ -3488,7 +3488,7 @@ def get_pod_resource_list(obj, **kwargs):
 			"age": age,
 		})
 
-	if "node" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+	if "node" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 		kind = ("Node", "")
 		rtype = resource_kind_to_rtype(kind)
 		name = deep_get(obj, DictPath("spec#nodeName"))
@@ -3529,15 +3529,15 @@ def get_pod_resource_list(obj, **kwargs):
 		owr_name = deep_get(owr, DictPath("name"), "")
 		is_controller = deep_get(owr, DictPath("controller"), False)
 		if is_controller == True:
-			if "controller" in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+			if "controller" in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 				continue
 			rtype = "[controller]"
 		elif owr_kind == ("CronJob", "batch"):
-			if "cronjob" in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+			if "cronjob" in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 				continue
 			rtype = "[cronjob]"
 		else:
-			if "owner_reference" in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+			if "owner_reference" in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 				continue
 			rtype = "[owner_reference]"
 
@@ -3578,7 +3578,7 @@ def get_pod_resource_list(obj, **kwargs):
 			"age": -1,
 		})
 
-	if "persistent_volume_claim" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+	if "persistent_volume_claim" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 		for volume in deep_get(obj, DictPath("spec#volumes"), []):
 			if deep_get(volume, DictPath("persistentVolumeClaim")) is None:
 				continue
@@ -3610,7 +3610,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "service_account" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("spec#serviceAccountName")) is not None:
+	if "service_account" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("spec#serviceAccountName")) is not None:
 		kind = ("ServiceAccount", "")
 		rtype = resource_kind_to_rtype(kind)
 
@@ -3634,7 +3634,7 @@ def get_pod_resource_list(obj, **kwargs):
 	for vol in deep_get(obj, DictPath("spec#volumes"), []):
 		status = ""
 
-		if deep_get(vol, DictPath("secret")) is not None and "secret" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+		if deep_get(vol, DictPath("secret")) is not None and "secret" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 			kind = ("Secret", "")
 			rtype = resource_kind_to_rtype(kind)
 			secret_name = deep_get(vol, DictPath("secret#secretName"))
@@ -3660,7 +3660,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-		if deep_get(vol, DictPath("configMap")) is not None and "config_map" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+		if deep_get(vol, DictPath("configMap")) is not None and "config_map" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 			kind = ("ConfigMap", "")
 			rtype = resource_kind_to_rtype(kind)
 			cm_name = deep_get(vol, DictPath("configMap#name"))
@@ -3690,7 +3690,7 @@ def get_pod_resource_list(obj, **kwargs):
 			})
 
 	for vol in deep_get(obj, DictPath("spec#imagePullSecrets"), []):
-		if "secret" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+		if "secret" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 			kind = ("Secret", "")
 			rtype = "[image_pull_secret]"
 			secret_name = deep_get(vol, DictPath("name"))
@@ -3710,7 +3710,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "event" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+	if "event" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 		#kind = ("Event", "events.k8s.io")
 		kind = ("Event", "")
 		rtype = resource_kind_to_rtype(kind)
@@ -3749,7 +3749,7 @@ def get_pod_resource_list(obj, **kwargs):
 					"age": seen,
 				})
 
-	if "pod_disruption_budget" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+	if "pod_disruption_budget" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 		# XXX: Are there are other means of specifying what pod to apply the PDB to than this?
 		if "app" in deep_get(obj, DictPath("metadata#labels"), {}):
 			kind = ("PodDisruptionBudget", "policy")
@@ -3774,7 +3774,7 @@ def get_pod_resource_list(obj, **kwargs):
 					"age": -1,
 				})
 
-	if "pod_metrics" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+	if "pod_metrics" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 		kind = ("PodMetrics", "metrics.k8s.io")
 		podmetrics = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
 		if podmetrics is not None:
@@ -3795,7 +3795,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "antrea_agent" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-agent":
+	if "antrea_agent" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-agent":
 		# OK, this pod is an antrea-agent, so we should look for one that matches it
 		kind = ("AntreaAgentInfo", "crd.antrea.io")
 		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
@@ -3829,7 +3829,7 @@ def get_pod_resource_list(obj, **kwargs):
 				})
 				break
 
-	if "antrea_controller" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-controller":
+	if "antrea_controller" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-controller":
 		# OK, this pod is an antrea-agent, so we should look for one that matches it
 		kind = ("AntreaControllerInfo", "crd.antrea.io")
 		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
@@ -3862,7 +3862,7 @@ def get_pod_resource_list(obj, **kwargs):
 				})
 				break
 
-	if "cilium_endpoint" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+	if "cilium_endpoint" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 		# Check if there's a matching cilium endpoint
 		kind = ("CiliumEndpoint", "cilium.io")
 		ref = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
@@ -3883,7 +3883,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "service" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+	if "service" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 		# Find service(s) that has a selector that points to this pod
 		kind = ("Service", "")
 		rtype = resource_kind_to_rtype(kind)
@@ -3912,7 +3912,7 @@ def get_pod_resource_list(obj, **kwargs):
 					"age": -1,
 				})
 
-	if "runtimeclass" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+	if "runtimeclass" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 		kind = ("RuntimeClass", "node.k8s.io")
 		name = deep_get(obj, DictPath("spec#runtimeClassName"))
 		ref = kh.get_ref_by_kind_name_namespace(kind, name, "")
@@ -3933,7 +3933,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "resourceclaim" not in deep_get(iktlib.iktconfig, DictPath("Pods#filter_resources"), []):
+	if "resourceclaim" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
 		kind = ("ResourceClaim", "resource.k8s.io")
 		rtype = resource_kind_to_rtype(kind)
 
@@ -3993,7 +3993,7 @@ def get_inventory_list(**kwargs):
 		inventory_dict["all"]["hosts"][host]["status"] = "UNKNOWN"
 
 	# Do we want to ping the hosts?
-	ping_hosts = deep_get(iktlib.iktconfig, DictPath("Inventory#ping_hosts"), "Always")
+	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("Inventory#ping_hosts"), "Always")
 
 	async_cookie = None
 
@@ -4209,14 +4209,14 @@ def get_control_plane() -> Tuple[Dict, str]:
 		control_planes.append((vlist[0], deep_get(vlist[0], DictPath("metadata#name"))))
 
 	if len(control_planes) == 0:
-		iktprint([ANSIThemeString("Error", "warning"),
+		ansithemeprint([ANSIThemeString("Error", "warning"),
 			  ANSIThemeString(": None of the nodes in the cluster are labelled as control planes. The cluster is most likely misconfigured.", "default")], stderr = True)
 		return {}, ""
 	elif len(control_planes) > 1:
-		iktprint([ANSIThemeString("Warning", "warning"),
+		ansithemeprint([ANSIThemeString("Warning", "warning"),
 			  ANSIThemeString(": Multiple control planes not supported yet, found multiple; returning first entry:", "default")], stderr = True)
 		for control_plane in control_planes:
-			iktprint([ANSIThemeString(f"  {control_plane[1]}", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString(f"  {control_plane[1]}", "default")], stderr = True)
 
 	return control_planes[0][0], control_planes[0][1]
 
@@ -5138,7 +5138,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				# what path to fetch the value from
 				if isinstance(path, list):
 					if path[0] == "config":
-						src_obj = iktlib.iktconfig
+						src_obj = cmtlib.cmtconfig
 					#elif path[0] == "obj":
 					#	value_path = obj
 					elif path[0] == "var":
@@ -6766,10 +6766,10 @@ def update_cni(stdscr: curses.window, cni, current_version, candidate_version, d
 		curses.endwin()
 		_retval = clear_screen()
 
-		iktprint([ANSIThemeString("Updating Cilium:", "phase")])
+		ansithemeprint([ANSIThemeString("Updating Cilium:", "phase")])
 		print()
 		retval = execute_command(args)
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 
 	return retval
 
@@ -7302,7 +7302,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			}
 		}
 
-	if deep_get(iktlib.iktconfig, DictPath("Internal#sanity_check_views"), False) == True:
+	if deep_get(cmtlib.cmtconfig, DictPath("Internal#sanity_check_views"), False) == True:
 		sanity = True
 		_shortcuts = {}
 		for shortcut in shortcuts:
@@ -7893,7 +7893,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					if not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
 						containername = deep_get(w_ref, DictPath("name"), "")
 					if w_command == [ "<ephemeral>" ]:
-						ephemeral_image = deep_get(iktlib.iktconfig, DictPath("Debug#ephemeral_image"), "busybox")
+						ephemeral_image = deep_get(cmtlib.cmtconfig, DictPath("Debug#ephemeral_image"), "busybox")
 						msg = [ANSIThemeString("Creating ephemeral ", "action"),
 						       ANSIThemeString(ephemeral_image, "programname"),
 						       ANSIThemeString(" container sharing process namespace with ", "action"),
@@ -8102,19 +8102,19 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 	# Number of lines of log to show by default
 	if override_tail_lines is None:
-		override_tail_lines = deep_get(iktlib.iktconfig, DictPath("Pods#logsize"), default_tail_lines)
+		override_tail_lines = deep_get(cmtlib.cmtconfig, DictPath("Pods#logsize"), default_tail_lines)
 
 	tail_lines = override_tail_lines
 
 	uip.continuous_log = False
-	merge_repeats = deep_get(iktlib.iktconfig, DictPath("Pods#merge_repeated_messages"), False)
+	merge_repeats = deep_get(cmtlib.cmtconfig, DictPath("Pods#merge_repeated_messages"), False)
 	saved_merge_repeats = merge_repeats
 	raw_logs = False
-	tmp_log_level = deep_get(iktlib.iktconfig, DictPath("Pods#loglevel"), "Info")
+	tmp_log_level = deep_get(cmtlib.cmtconfig, DictPath("Pods#loglevel"), "Info")
 	log_level = name_to_loglevel(tmp_log_level)
-	show_borders = deep_get(iktlib.iktconfig, DictPath("Pods#show_borders"), True)
+	show_borders = deep_get(cmtlib.cmtconfig, DictPath("Pods#show_borders"), True)
 	uip.toggle_borders(show_borders)
-	show_timestamps = deep_get(iktlib.iktconfig, DictPath("Pods#show_timestamps"), True)
+	show_timestamps = deep_get(cmtlib.cmtconfig, DictPath("Pods#show_timestamps"), True)
 	uip.toggle_timestamps(show_timestamps)
 	# Currently not working properly
 	compact_timestamps = False
@@ -8124,7 +8124,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 	highlight_new_dates = False
 	wrap_lines = False
 	# Show severity as text
-	severity_prefix = deep_get(iktlib.iktconfig, DictPath("Pods#severity_prefix"), [])
+	severity_prefix = deep_get(cmtlib.cmtconfig, DictPath("Pods#severity_prefix"), [])
 	# Backwards compatibility
 	if type(severity_prefix) is bool:
 		if severity_prefix == False:
@@ -8134,12 +8134,12 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 	# This decides whether or not compound log messages,
 	# such as Python dicts and JSON, should be expanded
-	fold_msg = deep_get(iktlib.iktconfig, DictPath("Pods#fold_msg"), True)
+	fold_msg = deep_get(cmtlib.cmtconfig, DictPath("Pods#fold_msg"), True)
 	saved_fold_msg = fold_msg
 
 	# This decides whether or not to show the facility,
 	# and if so how it is to be displayed
-	show_facility = deep_get(iktlib.iktconfig, DictPath("Pods#show_facility"), "Full")
+	show_facility = deep_get(cmtlib.cmtconfig, DictPath("Pods#show_facility"), "Full")
 	override_parser = None
 	_parser = None
 
@@ -9089,13 +9089,13 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
 	curses.endwin()
 	_retval = clear_screen()
 	if len(msg) > 0:
-		iktprint(msg)
+		ansithemeprint(msg)
 		print()
 
 	try:
 		cpath = secure_which(FilePath(args[0]), fallback_allowlist = fallback_allowlist, security_policy = security_policy)
 	except FileNotFoundError:
-		iktprint([ANSIThemeString("Error", "error"),
+		ansithemeprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": “", "default"),
 			  ANSIThemeString(f"{args[0]}", "programname"),
 			  ANSIThemeString("“ does not exist.\n", "default")], stderr = True)
@@ -9104,7 +9104,7 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
 		_retval = subprocess.run(args, check = False).returncode
 
 	if waitforkeypress:
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
 # pylint: disable-next=too-many-arguments
@@ -9118,7 +9118,7 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
 			  ANSIThemeString("kubectl", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -9127,22 +9127,22 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 	# This should probably be done using connect_get_namespaced_pod_exec()
 	curses.endwin()
 	_retval = clear_screen()
-	iktprint(msg)
+	ansithemeprint(msg)
 	print()
 	if obj is not None:
 		obj_name = deep_get(obj, DictPath("metadata#name"))
 		obj_namespace = deep_get(obj, DictPath("metadata#namespace"))
 		# This is a request to create a new ephemeral container
 		if command == ["<ephemeral>"]:
-			ephemeral_image = deep_get(iktlib.iktconfig, DictPath("Debug#ephemeral_image"), "busybox")
+			ephemeral_image = deep_get(cmtlib.cmtconfig, DictPath("Debug#ephemeral_image"), "busybox")
 			args = [kubectl_path, "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image]
 			_result = subprocess.run(args, check = False)
 		elif command == ["<dnsutils>"]:
-			dnsutils_image = deep_get(iktlib.iktconfig, DictPath("Debug#network_image"), "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
+			dnsutils_image = deep_get(cmtlib.cmtconfig, DictPath("Debug#network_image"), "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
 			args = [kubectl_path, "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
 			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 			if result.returncode != 0:
-				iktprint([ANSIThemeString("Error", "error"),
+				ansithemeprint([ANSIThemeString("Error", "error"),
 					  ANSIThemeString(": Failed to create debug image", "default")], stderr = True)
 			else:
 				output = result.stdout.decode('utf-8')
@@ -9155,11 +9155,11 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 					sys.exit(f"executecommand failed to parse output; {output}; aborting.")
 
 				# Wait for the pod to be ready
-				iktprint([ANSIThemeString("Waiting for debug pod to be ready (timeout: 60s).", "default")])
+				ansithemeprint([ANSIThemeString("Waiting for debug pod to be ready (timeout: 60s).", "default")])
 				args = [kubectl_path, "wait", "--for=condition=ready", "--timeout=60s", "-n", "default", "pod", pod_name]
 				result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 				if result.returncode != 0:
-					iktprint([ANSIThemeString("Error", "error"),
+					ansithemeprint([ANSIThemeString("Error", "error"),
 						  ANSIThemeString(": The pod failed to become ready before timeout.", "default")], stderr = True)
 				else:
 					# Attach to the debug container
@@ -9167,7 +9167,7 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 					_result = subprocess.run(args, check = False)
 
 				# Delete the pod
-				iktprint([ANSIThemeString("Forcibly deleting pod.", "default")])
+				ansithemeprint([ANSIThemeString("Forcibly deleting pod.", "default")])
 				message, status = kh.delete_obj_by_kind_name_namespace(("Pod", ""), pod_name, "default", force = True)
 		else:
 			args = [kubectl_path, "exec", obj_name, "-n", obj_namespace, "-i", "-t", "--container", container, "--"] + command
@@ -9176,7 +9176,7 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 		sys.exit("Called executecommand() with obj == None")
 
 	if waitforkeypress:
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
 def listviewdispatch(stdscr: curses.window, **kwargs):
@@ -9471,17 +9471,17 @@ def executecommand_multiple(stdscr: curses.window, msg, command, items, waitfork
 
 	if waitforkeypress or retval > 0:
 		if retval > 0:
-			iktprint([ANSIThemeString("Error", "error"),
+			ansithemeprint([ANSIThemeString("Error", "error"),
 				  ANSIThemeString(": ", "default")] +\
 				  format_commandline(args) +\
 				  [ANSIThemeString(" returned ", "default"),
 				  ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
 def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Dict] = None) -> Tuple[int, Dict]:
-	http_proxy = deep_get(iktlib.iktconfig, DictPath("Network#http_proxy"), "")
-	https_proxy = deep_get(iktlib.iktconfig, DictPath("Network#https_proxy"), "")
+	http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
+	https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
 	use_proxy = "no"
 	if (http_proxy is not None and len(http_proxy) > 0) or (https_proxy is not None and len(https_proxy) > 0):
 		use_proxy = "yes"
@@ -9635,30 +9635,30 @@ def create_namespace(stdscr: curses.window, **kwargs):
 	_retval = clear_screen()
 
 	# Verify that the name of the new namespace is valid
-	if iktlib.validate_name("dns-label", name) == False:
+	if cmtlib.validate_name("dns-label", name) == False:
 		msg = [ANSIThemeString("Error: ", "error"),
 		       ANSIThemeString("“", "default"),
 		       ANSIThemeString(name, "argument"),
 		       ANSIThemeString("“ is not a valid name", "default")]
-		iktprint(msg, stderr = True)
+		ansithemeprint(msg, stderr = True)
 	elif kh.get_ref_by_kind_name_namespace(("Namespace", ""), name, "") is not None:
 		msg = [ANSIThemeString("Error: ", "error"),
 		       ANSIThemeString("namespace “", "default"),
 		       ANSIThemeString(name, "argument"),
 		       ANSIThemeString("“ already exists", "default")]
-		iktprint(msg, stderr = True)
+		ansithemeprint(msg, stderr = True)
 	else:
 		msg = [ANSIThemeString("Creating namespace “", "default"),
 		       ANSIThemeString(name, "argument"),
 		       ANSIThemeString("“", "default")]
-		iktprint(msg)
+		ansithemeprint(msg)
 		_msg, _status = kh.create_namespace(name)
 
 	print("\n")
 
 	waitforkeypress = True
 	if waitforkeypress:
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
 # Valid kinds:
@@ -9668,7 +9668,7 @@ def __pause_resource(kind, namespace, name):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
 			  ANSIThemeString("kubectl", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -9685,7 +9685,7 @@ def __resume_resource(kind, namespace, name):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
 			  ANSIThemeString("kubectl", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -9704,7 +9704,7 @@ def __restart_resource(kind, namespace, name):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
 			  ANSIThemeString("kubectl", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -9728,7 +9728,7 @@ def __scale_replicas(kind, namespace, name, scale):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
 			  ANSIThemeString("kubectl", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -9743,7 +9743,7 @@ def __edit_resource(kind, namespace, name):
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
 			  ANSIThemeString("kubectl", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -9762,7 +9762,7 @@ def apply_configuration_from_file(uip: UIProps, items, action, values, kind, **k
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
 			  ANSIThemeString("kubectl", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -9805,7 +9805,7 @@ def __apply_or_create_configuration_from_url(resource_url, create = False):
 		result = subprocess.run(args, universal_newlines = True, check = False)
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
 			  ANSIThemeString("kubectl", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -9888,7 +9888,7 @@ def create_resource_from_file(uip: UIProps, items, action, values, kind, **kwarg
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
 			  ANSIThemeString("kubectl", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -9941,7 +9941,7 @@ def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwa
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
 		curses.endwin()
-		iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
 			  ANSIThemeString("kubectl", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -9956,7 +9956,7 @@ def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwa
 
 	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 
-	indent = deep_get(iktlib.iktconfig, DictPath("Global#indent"), 2)
+	indent = deep_get(cmtlib.cmtconfig, DictPath("Global#indent"), 2)
 
 	diff = []
 
@@ -10040,12 +10040,12 @@ def edit_resource(stdscr: curses.window, **kwargs) -> None:
 	waitforkeypress = False
 	if waitforkeypress or retval > 0:
 		if retval > 0:
-			iktprint([ANSIThemeString("\nError", "error"),
+			ansithemeprint([ANSIThemeString("\nError", "error"),
 				  ANSIThemeString(": ", "default")] +\
 				 format_commandline(args, implicit_command = False) +\
 				 [ANSIThemeString(" returned ", "default"),
 				  ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
 # pylint: disable=unused-argument
@@ -10064,13 +10064,13 @@ def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs
 		       ANSIThemeString(name, "argument"),
 		       ANSIThemeString("“ scale: ", "default"),
 		       ANSIThemeString(old_scale, "emphasis")]
-		iktprint(msg)
+		ansithemeprint(msg)
 
 	print("\n")
 
 	waitforkeypress = True
 	if waitforkeypress:
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
@@ -10085,13 +10085,13 @@ def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs
 		       ANSIThemeString(namespace, "argument"),
 		       ANSIThemeString("::", "separator"),
 		       ANSIThemeString(name, "argument")]
-		iktprint(msg)
+		ansithemeprint(msg)
 
 	print("\n")
 
 	waitforkeypress = True
 	if waitforkeypress:
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
@@ -10112,13 +10112,13 @@ def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs):
 		       ANSIThemeString(old_scale, "emphasis"),
 		       ANSIThemeString(" => ", "default"),
 		       ANSIThemeString(scale, "emphasis")]
-		iktprint(msg)
+		ansithemeprint(msg)
 
 	print("\n")
 
 	waitforkeypress = True
 	if waitforkeypress:
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # Valid kinds:
@@ -10135,13 +10135,13 @@ def pause_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs):
 		       ANSIThemeString(namespace, "argument"),
 		       ANSIThemeString("::", "separator"),
 		       ANSIThemeString(name, "argument")]
-		iktprint(msg)
+		ansithemeprint(msg)
 
 	print("\n")
 
 	waitforkeypress = True
 	if waitforkeypress:
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # Valid kinds:
@@ -10158,13 +10158,13 @@ def resume_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs)
 		       ANSIThemeString(namespace, "argument"),
 		       ANSIThemeString("::", "separator"),
 		       ANSIThemeString(name, "argument")]
-		iktprint(msg)
+		ansithemeprint(msg)
 
 	print("\n")
 
 	waitforkeypress = True
 	if waitforkeypress:
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # Valid kinds:
@@ -10186,13 +10186,13 @@ def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
 		       ANSIThemeString(old_scale, "emphasis"),
 		       ANSIThemeString(" => ", "default"),
 		       ANSIThemeString("0", "emphasis")]
-		iktprint(msg)
+		ansithemeprint(msg)
 
 	print("\n")
 
 	waitforkeypress = True
 	if waitforkeypress:
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
@@ -10227,13 +10227,13 @@ def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs) 
 	curses.endwin()
 	_retval = clear_screen()
 
-	iktprint(msg)
+	ansithemeprint(msg)
 
 	try:
 		result = subprocess.run(args, check = False)
 		retval = result.returncode
 	except FileNotFoundError:
-		iktprint([ANSIThemeString("Error", "error"),
+		ansithemeprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": Command “", "default"),
 			  ANSIThemeString(f"{args[0]}", "programname"),
 			  ANSIThemeString("“ not found", "default")])
@@ -10241,7 +10241,7 @@ def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs) 
 
 	waitforkeypress = True
 	if waitforkeypress or retval > 0:
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
@@ -10259,7 +10259,7 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs) -> None:
 	if action.get("requires_cluster_info") == True:
 		gather_cluster_info()
 
-	iktprint(msg)
+	ansithemeprint(msg)
 
 	# If run_before is set we have one or several playbooks that need to be run before this one
 	runbefore = action.get("run_before", [])
@@ -10300,7 +10300,7 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs) -> None:
 
 	waitforkeypress = True
 	if waitforkeypress or retval > 0:
-		iktinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
@@ -10351,16 +10351,16 @@ def ssh_to_host(stdscr: curses.window, **kwargs):
 
 	inventory = ansible_get_inventory_dict()
 
-	# ansible_user in the inventory overrides that defined in ikt.yaml
+	# ansible_user in the inventory overrides that defined in cmt.yaml
 	# thus we get these in ascending over of priority
 	# if no user is specified we assume that we are to use the user we are running as
-	sshuser = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_user"))
+	sshuser = deep_get(cmtlib.cmtconfig, DictPath("Ansible#ansible_user"))
 	sshuser = deep_get(inventory, DictPath("all#vars#ansible_user"), sshuser)
 	sshuser = deep_get(inventory, DictPath(f"all#hosts#{host}#ansible_user"), sshuser)
 
 	curses.endwin()
 	_retval = clear_screen()
-	iktprint(msg)
+	ansithemeprint(msg)
 
 	try:
 		ssh_path = secure_which(SSH_BIN_PATH, fallback_allowlist = [])
@@ -10368,7 +10368,7 @@ def ssh_to_host(stdscr: curses.window, **kwargs):
 		# Once we have support for logging we should probably just log an error
 		# and return here instead
 		curses.endwin()
-		iktprint([ANSIThemeString("Critical", "critical"),
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
 			  ANSIThemeString(": Could not find ", "default"),
 			  ANSIThemeString("ssh", "path"),
 			  ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -10592,7 +10592,7 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Opti
 
 # pylint: disable-next=too-many-arguments
 def populate_playbooklist(context, actions, action_list, control_plane_selected, single_item = False, cluster_available = True):
-	local_playbooks = deep_get(iktlib.iktconfig, DictPath("Ansible#local_playbooks"), [])
+	local_playbooks = deep_get(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), [])
 	for playbook_path in local_playbooks:
 		# Substitute {HOME}/ for {HOMEDIR}
 		if playbook_path.startswith(("{HOME}/", "{HOME}\\")):
@@ -10679,9 +10679,9 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 		force_refresh_apis = False
 		refresh_apis = True
 
-	hide_unavailable = deep_get_with_fallback(iktlib.iktconfig, [DictPath("Selector#hide_unavailable_apis"), DictPath("Global#hide_unavailable_apis")], True)
-	categorise = deep_get(iktlib.iktconfig, DictPath("Selector#categorise"), True)
-	sortcolumn = deep_get(iktlib.iktconfig, DictPath("Selector#sortcolumn"), "family")
+	hide_unavailable = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath("Selector#hide_unavailable_apis"), DictPath("Global#hide_unavailable_apis")], True)
+	categorise = deep_get(cmtlib.cmtconfig, DictPath("Selector#categorise"), True)
+	sortcolumn = deep_get(cmtlib.cmtconfig, DictPath("Selector#sortcolumn"), "family")
 
 	if sortcolumn == "family":
 		if categorise == True:
@@ -10802,10 +10802,10 @@ def selectwindow(uip: UIProps, refresh_apis = False) -> Retval:
 		if tmpselection is not None:
 			if type(tmpselection) == int and tmpselection < 0:
 				if tmpselection == -curses.KEY_F6:
-					if deep_get(iktlib.iktconfig, DictPath("Selector")) is None:
-						deep_set(iktlib.iktconfig, DictPath("Selector"), {})
-					categorise = not deep_get(iktlib.iktconfig, DictPath("Selector#categorise"), True)
-					deep_set(iktlib.iktconfig, DictPath("Selector#categorise"), categorise, create_path = True)
+					if deep_get(cmtlib.cmtconfig, DictPath("Selector")) is None:
+						deep_set(cmtlib.cmtconfig, DictPath("Selector"), {})
+					categorise = not deep_get(cmtlib.cmtconfig, DictPath("Selector#categorise"), True)
+					deep_set(cmtlib.cmtconfig, DictPath("Selector#categorise"), categorise, create_path = True)
 					items = format_selection_list(uip, refresh_apis)
 					uip.refresh_all()
 					continue
@@ -11123,7 +11123,7 @@ def populate_views(force_refresh: bool = False) -> None:
 	# Get a full list of views from all view directories
 	# Start by adding files from the views directory
 	view_dirs = []
-	view_dirs += deep_get(iktlib.iktconfig, DictPath("General#local_views"), [])
+	view_dirs += deep_get(cmtlib.cmtconfig, DictPath("General#local_views"), [])
 
 	views = {**views_special}
 
@@ -11224,7 +11224,7 @@ def populate_views(force_refresh: bool = False) -> None:
 			confkind = kind
 			if len(api_family) > 0:
 				confkind = f"{confkind}.{api_family}"
-			custom_index = deep_get_with_fallback(iktlib.iktconfig, [DictPath(f"{confkind}#listview#field_indexes#Custom"), DictPath(f"{name}#listview#field_indexes#Custom")], [])
+			custom_index = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath(f"{confkind}#listview#field_indexes#Custom"), DictPath(f"{name}#listview#field_indexes#Custom")], [])
 			if len(custom_index) > 0:
 				_indexes["Custom"] = custom_index
 
@@ -11235,11 +11235,11 @@ def populate_views(force_refresh: bool = False) -> None:
 
 			# Allow for overriding the default sortcolumn and sortorder_reverse
 			for field_index, data in field_indexes.items():
-				if field_index in deep_get_with_fallback(iktlib.iktconfig, [DictPath(f"{confkind}#listview#field_indexes"), DictPath(f"{name}#listview#field_indexes")], {}):
+				if field_index in deep_get_with_fallback(cmtlib.cmtconfig, [DictPath(f"{confkind}#listview#field_indexes"), DictPath(f"{name}#listview#field_indexes")], {}):
 					default_field_index_sortcolumn = deep_get(data, DictPath("sortcolumn"), sortcolumn)
 					default_field_index_sortorder_reverse = deep_get(data, DictPath("sortorder_reverse"), sortorder_reverse)
-					field_index_sortcolumn = deep_get_with_fallback(iktlib.iktconfig, [DictPath(f"{confkind}#listview#field_indexes#{field_index}#sortcolumn"), DictPath(f"{name}#listview#field_indexes#{field_index}#sortcolumn")], default_field_index_sortcolumn)
-					field_index_sortorder_reverse = deep_get_with_fallback(iktlib.iktconfig, [DictPath(f"{confkind}#listview#field_indexes#{field_index}#sortorder_reverse"), DictPath(f"{name}#listview#field_indexes#{field_index}#sortorder_reverse")], default_field_index_sortorder_reverse)
+					field_index_sortcolumn = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath(f"{confkind}#listview#field_indexes#{field_index}#sortcolumn"), DictPath(f"{name}#listview#field_indexes#{field_index}#sortcolumn")], default_field_index_sortcolumn)
+					field_index_sortorder_reverse = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath(f"{confkind}#listview#field_indexes#{field_index}#sortorder_reverse"), DictPath(f"{name}#listview#field_indexes#{field_index}#sortorder_reverse")], default_field_index_sortorder_reverse)
 					field_indexes[field_index]["sortcolumn"] = field_index_sortcolumn
 					field_indexes[field_index]["sortorder_reverse"] = field_index_sortorder_reverse
 
@@ -11448,9 +11448,9 @@ def populate_views(force_refresh: bool = False) -> None:
 			confkind = kind
 			if len(api_family) > 0:
 				confkind = f"{confkind}.{api_family}"
-			custom_index = deep_get(iktlib.iktconfig, DictPath(f"{confkind}#infoview#listpad#field_indexes#Custom"), [])
+			custom_index = deep_get(cmtlib.cmtconfig, DictPath(f"{confkind}#infoview#listpad#field_indexes#Custom"), [])
 			if len(custom_index) == 0:
-				custom_index = deep_get(iktlib.iktconfig, DictPath(f"{name}#infoview#listpad#field_indexes#Custom"), [])
+				custom_index = deep_get(cmtlib.cmtconfig, DictPath(f"{name}#infoview#listpad#field_indexes#Custom"), [])
 			if len(custom_index) > 0:
 				_indexes["Custom"] = custom_index
 
@@ -11628,7 +11628,7 @@ def setupui(stdscr: curses.window) -> None:
 	# Disable CTRL+C, CTRL+Z, etc.
 	curses.raw()
 	# Enable mouse support
-	enable_mouse = deep_get(iktlib.iktconfig, DictPath("Mouse#enable"), True)
+	enable_mouse = deep_get(cmtlib.cmtconfig, DictPath("Mouse#enable"), True)
 	if enable_mouse == True:
 		curses_helper.set_mousemask(-1)
 	else:
@@ -11643,13 +11643,13 @@ def setupui(stdscr: curses.window) -> None:
 			viewfunc(stdscr, defaultview)
 		else:
 			curses.endwin()
-			iktprint([ANSIThemeString("Error", "error"),
+			ansithemeprint([ANSIThemeString("Error", "error"),
 				  ANSIThemeString(": Unknown view “", "default"),
 				  ANSIThemeString(defaultview, "argument"),
 				  ANSIThemeString("“; check “", "default"),
-				  ANSIThemeString(IKT_CONFIG_FILE, "path"),
+				  ANSIThemeString(CMT_CONFIG_FILE, "path"),
 				  ANSIThemeString("“ and all files in “", "default"),
-				  ANSIThemeString(IKT_CONFIG_FILE_DIR, "path"),
+				  ANSIThemeString(CMT_CONFIG_FILE_DIR, "path"),
 				  ANSIThemeString("“ for typos.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 
@@ -11660,14 +11660,14 @@ def list_namespaces() -> None:
 
 	tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
 	if status == 200:
-		iktprint([ANSIThemeString("Valid namespaces: ", "default")] +\
+		ansithemeprint([ANSIThemeString("Valid namespaces: ", "default")] +\
 			  ansithemestring_join_tuple_list([deep_get(item, DictPath("metadata#name")) for item in tmp], formatting = "argument", separator = ANSIThemeString(", ", "separator")) +\
 			 [ANSIThemeString(".", "separator")])
 	elif status in (42503, 42504):
-		iktprint([ANSIThemeString("Error", "error"),
+		ansithemeprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": API-server unavailable", "default")], stderr = True)
 	else:
-		iktprint([ANSIThemeString("Error", "error"),
+		ansithemeprint([ANSIThemeString("Error", "error"),
 			  ANSIThemeString(": API-server returned ", "default"),
 			  ANSIThemeString(f"{status}", "errorvalue")], stderr = True)
 
@@ -11716,43 +11716,43 @@ def list_views() -> None:
 			maxkindlen = max(maxkindlen, len(f"{kind}.{api_group}"))
 		maxviewlen = max(maxviewlen, len(view))
 
-	iktprint([ANSIThemeString("View:", "header"),
+	ansithemeprint([ANSIThemeString("View:", "header"),
 		  ANSIThemeString(f"{''.ljust(maxviewlen + 2 - len('View:'))}", "default"),
 		  ANSIThemeString("Kind:", "header"),
 		  ANSIThemeString(f"{''.ljust(maxkindlen + 2 - len('Kind:'))}", "default"),
 		  ANSIThemeString("Supported fields:", "header")])
 	for view, kind, fields in viewfields:
 		joined_fields = ansithemestring_join_tuple_list(fields, separator = ANSIThemeString(", ", "separator"))
-		iktprint([ANSIThemeString(f"{view.ljust(maxviewlen + 2)}{kind.ljust(maxkindlen + 2)}", "default")] + joined_fields)
+		ansithemeprint([ANSIThemeString(f"{view.ljust(maxviewlen + 2)}{kind.ljust(maxkindlen + 2)}", "default")] + joined_fields)
 
-	iktprint([ANSIThemeString("\nList views can be customised to only show select fields by editing “", "default"),
-		  ANSIThemeString(IKT_CONFIG_FILE, "path"),
+	ansithemeprint([ANSIThemeString("\nList views can be customised to only show select fields by editing “", "default"),
+		  ANSIThemeString(CMT_CONFIG_FILE, "path"),
 		  ANSIThemeString("“.\n", "default")])
-	iktprint([ANSIThemeString("Simply add “", "default"),
+	ansithemeprint([ANSIThemeString("Simply add “", "default"),
 		  ANSIThemeString("field:", "emphasis"),
 		  ANSIThemeString("“ followed by a list of the fields you want the list to a section named like", "default")])
-	iktprint([ANSIThemeString("the list view you want to customise.\n", "default")])
+	ansithemeprint([ANSIThemeString("the list view you want to customise.\n", "default")])
 
-	iktprint([ANSIThemeString("Note that the fields “", "default"),
+	ansithemeprint([ANSIThemeString("Note that the fields “", "default"),
 		  ANSIThemeString("name", "emphasis"),
 		  ANSIThemeString("“ and, if applicable “", "default"),
 		  ANSIThemeString("namespace", "emphasis"),
 		  ANSIThemeString("“, will unconditionally", "default")])
-	iktprint([ANSIThemeString("be included even if the list of fields does not include them; including them", "default")])
-	iktprint([ANSIThemeString("in the list will only allow reordering the fields.\n", "default")])
+	ansithemeprint([ANSIThemeString("be included even if the list of fields does not include them; including them", "default")])
+	ansithemeprint([ANSIThemeString("in the list will only allow reordering the fields.\n", "default")])
 
-	iktprint([ANSIThemeString("The fields in this list are those supported by ", "default"),
+	ansithemeprint([ANSIThemeString("The fields in this list are those supported by ", "default"),
 		  ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
 		  ANSIThemeString("; it is NOT an exhaustive list", "default")])
-	iktprint([ANSIThemeString("of fields available in the resource.\n", "default")])
+	ansithemeprint([ANSIThemeString("of fields available in the resource.\n", "default")])
 
-	iktprint([ANSIThemeString("If a field is marked ", "default"),
+	ansithemeprint([ANSIThemeString("If a field is marked ", "default"),
 		  ANSIThemeString("<field>", "emphasis"),
 		  ANSIThemeString(" it is the explicit sortcolumn.", "default")])
-	iktprint([ANSIThemeString("If the field is marked ", "default"),
+	ansithemeprint([ANSIThemeString("If the field is marked ", "default"),
 		  ANSIThemeString("[field]", "note"),
 		  ANSIThemeString(" it is the implicit sortcolumn.", "default")])
-	iktprint([ANSIThemeString("Note: the brackets (“<“, “>“, “[“, and “]“) are not part of the field names.", "default")])
+	ansithemeprint([ANSIThemeString("Note: the brackets (“<“, “>“, “[“, and “]“) are not part of the field names.", "default")])
 
 def usage() -> int:
 	"""
@@ -11764,7 +11764,7 @@ def usage() -> int:
 	helptext = [ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname")]
 	helptext += helptexts.usage
 
-	iktprint(helptext)
+	ansithemeprint(helptext)
 
 	return 0
 
@@ -11775,9 +11775,9 @@ def version() -> int:
 			0
 	"""
 
-	iktprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
+	ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
 		  ANSIThemeString(f"{about.UI_PROGRAM_VERSION}", "version")])
-	iktprint([ANSIThemeString(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"),
+	ansithemeprint([ANSIThemeString(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"),
 		  ANSIThemeString(f"{about.PROGRAM_SUITE_VERSION}", "version")])
 	print()
 	print(about.COPYRIGHT)
@@ -11799,11 +11799,11 @@ def set_default_view(view: str) -> None:
 	if defaultview == "":
 		defaultview = view
 	else:
-		iktprint([ANSIThemeString(about.UI_PROGRAM_NAME, "programname"),
+		ansithemeprint([ANSIThemeString(about.UI_PROGRAM_NAME, "programname"),
 			  ANSIThemeString(": ", "default"),
 			  ANSIThemeString("VIEW", "argument"),
 			  ANSIThemeString(" can only be specified once.", "default")], stderr = True)
-		iktprint([ANSIThemeString("Try “", "default"),
+		ansithemeprint([ANSIThemeString("Try “", "default"),
 			  ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
 			  ANSIThemeString("help", "command"),
 			  ANSIThemeString("“ for more information.", "default")], stderr = True)
@@ -11844,7 +11844,7 @@ def customise_listviews() -> None:
 			continue
 
 		# OK, we've now (hopefully) skipped all views that do not have a list view
-		fields: List[str] = deep_get(iktlib.iktconfig, DictPath(f"{view}#fields"), [])
+		fields: List[str] = deep_get(cmtlib.cmtconfig, DictPath(f"{view}#fields"), [])
 		if len(fields) == 0:
 			continue
 
@@ -11857,7 +11857,7 @@ def customise_listviews() -> None:
 
 		for field in fields:
 			if field not in fields:
-				iktprint([ANSIThemeString("Error", "error"),
+				ansithemeprint([ANSIThemeString("Error", "error"),
 					  ANSIThemeString(": “", "default"),
 					  ANSIThemeString(field, "option"),
 					  ANSIThemeString("“ is not a valid field for the view “", "default"),
@@ -11865,7 +11865,7 @@ def customise_listviews() -> None:
 					  ANSIThemeString("“; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 			elif field in custom_fields:
-				iktprint([ANSIThemeString("Warning", "warning"),
+				ansithemeprint([ANSIThemeString("Warning", "warning"),
 					  ANSIThemeString(": “", "default"),
 					  ANSIThemeString(field, "option"),
 					  ANSIThemeString("“ is specified twice (or more) for the view “", "default"),
@@ -11876,13 +11876,13 @@ def customise_listviews() -> None:
 		viewref["fields_custom"] = list(custom_fields)
 
 		# Next up it is time for the field denylist
-		if "denylist" in deep_get(iktlib.iktconfig, DictPath(f"{view}"), {}):
-			denylist = deep_get(iktlib.iktconfig, DictPath(f"{view}#fields"), [])
+		if "denylist" in deep_get(cmtlib.cmtconfig, DictPath(f"{view}"), {}):
+			denylist = deep_get(cmtlib.cmtconfig, DictPath(f"{view}#fields"), [])
 			viewref["field_denylist"] = denylist
 
 	# As a special case, the configuration option "Inventory#ping_hosts"
 	# modifies the denylist, but *only* if the field denylist is unset
-	ping_hosts = deep_get(iktlib.iktconfig, DictPath("Inventory#ping_hosts"), "Lazy")
+	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("Inventory#ping_hosts"), "Lazy")
 	inv_name = "Inventory"
 	if inv_name not in views:
 		inv_name = "*Inventory"
@@ -11906,11 +11906,11 @@ def main() -> None:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 
 	# Then initialise the configuration file
-	read_iktconfig()
+	read_cmtconfig()
 
 	defaultthemefile = DEFAULT_THEME_FILE
 
-	themefile = deep_get(iktlib.iktconfig, DictPath("Global#theme"))
+	themefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
 	if themefile is None or len(themefile) == 0:
 		themefile = defaultthemefile
 	elif themefile.startswith("{HOME}/"):
@@ -11918,23 +11918,23 @@ def main() -> None:
 	elif "/" not in themefile:
 		themefile = FilePath(os.path.join(THEME_DIR, themefile))
 	read_theme(themefile, defaultthemefile)
-	init_iktprint(themefile)
+	init_ansithemeprint(themefile)
 
-	tmpdefaultview = deep_get(iktlib.iktconfig, DictPath("Global#defaultview"), "")
+	tmpdefaultview = deep_get(cmtlib.cmtconfig, DictPath("Global#defaultview"), "")
 	curses_configuration.abouttext = helptexts.about
-	curses_configuration.mousescroll_enable = deep_get(iktlib.iktconfig, DictPath("Mouse#enablescroll"), False)
+	curses_configuration.mousescroll_enable = deep_get(cmtlib.cmtconfig, DictPath("Mouse#enablescroll"), False)
 	# These values are ignored when scrolling is disabled, so the defaults do not matter
-	curses_configuration.mousescroll_up = deep_get(iktlib.iktconfig, DictPath("Mouse#scrollup"), 0)
-	curses_configuration.mousescroll_down = deep_get(iktlib.iktconfig, DictPath("Mouse#scrolldown"), 0)
+	curses_configuration.mousescroll_up = deep_get(cmtlib.cmtconfig, DictPath("Mouse#scrollup"), 0)
+	curses_configuration.mousescroll_down = deep_get(cmtlib.cmtconfig, DictPath("Mouse#scrolldown"), 0)
 	# Used by the ansible module
-	ansible_configuration["ansible_forks"] = deep_get(iktlib.iktconfig, DictPath("Ansible#forks"), 10)
-	ansible_user = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_user"))
+	ansible_configuration["ansible_forks"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)
+	ansible_user = deep_get(cmtlib.cmtconfig, DictPath("Ansible#ansible_user"))
 	if ansible_user is None or len(ansible_user) == 0:
 		ansible_user = getuser()
 	ansible_configuration["ansible_user"] = ansible_user
-	ansible_configuration["ansible_password"] = deep_get(iktlib.iktconfig, DictPath("Ansible#ansible_password"))
-	ansible_configuration["disable_strict_host_key_checking"] = deep_get(iktlib.iktconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
-	ansible_configuration["save_logs"] = deep_get(iktlib.iktconfig, DictPath("Ansible#save_logs"), True)
+	ansible_configuration["ansible_password"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#ansible_password"))
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(cmtlib.cmtconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
+	ansible_configuration["save_logs"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#save_logs"), True)
 
 	y = 1
 
@@ -11943,7 +11943,7 @@ def main() -> None:
 
 		if arg == "list-views":
 			# Customises the list views
-			iktprint([ANSIThemeString("Stand by, updating list of supported views...\n", "default")])
+			ansithemeprint([ANSIThemeString("Stand by, updating list of supported views...\n", "default")])
 
 			init_kubernetes_client()
 			populate_views()
@@ -11967,9 +11967,9 @@ def main() -> None:
 			version()
 			sys.exit(0)
 		elif arg.startswith("--"):
-			iktprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
+			ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
 				  ANSIThemeString(": unrecognised option", "default")], stderr = True)
-			iktprint([ANSIThemeString("Try “", "default"),
+			ansithemeprint([ANSIThemeString("Try “", "default"),
 				  ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
 				  ANSIThemeString("help", "command"),
 				  ANSIThemeString("“ for more information.", "default")], stderr = True)
@@ -11977,17 +11977,17 @@ def main() -> None:
 		elif len(defaultview) == 0:
 			init_kubernetes_client()
 			# Customises the list views
-			iktprint([ANSIThemeString("Populating list of supported views...\n", "default")])
+			ansithemeprint([ANSIThemeString("Populating list of supported views...\n", "default")])
 
 			populate_views()
 			customise_listviews()
 
 			tmpview = checkforview(arg.lower())
 			if tmpview is None:
-				iktprint([ANSIThemeString("Unsupported or unavailable view “", "default"),
+				ansithemeprint([ANSIThemeString("Unsupported or unavailable view “", "default"),
 					  ANSIThemeString(f"{arg.lower()}", "command"),
 					  ANSIThemeString("“;", "default")], stderr = True)
-				iktprint([ANSIThemeString("Use “", "default"),
+				ansithemeprint([ANSIThemeString("Use “", "default"),
 					  ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
 					  ANSIThemeString("list-views", "command"),
 					  ANSIThemeString("“ to list available views.", "default")], stderr = True)
@@ -12003,9 +12003,9 @@ def main() -> None:
 				tmp = re.match(r"^([^/]+)/(.+)$", arg)
 				if tmp is not None:
 					if "/" in tmp[1]:
-						iktprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
+						ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
 							  ANSIThemeString(": invalid syntax; format is either NAMESPACE/NAME or NAME NAMESPACE", "default")], stderr = True)
-						iktprint([ANSIThemeString("Try “", "default"),
+						ansithemeprint([ANSIThemeString("Try “", "default"),
 							  ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
 							  ANSIThemeString("help", "command"),
 							  ANSIThemeString("“ for more information.", "default")], stderr = True)
@@ -12017,9 +12017,9 @@ def main() -> None:
 					initial_name = arg
 			elif initial_namespace is None:
 				if "/" in arg:
-					iktprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
+					ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
 						  ANSIThemeString(": invalid syntax; format is either NAMESPACE/NAME or NAME NAMESPACE", "default")], stderr = True)
-					iktprint([ANSIThemeString("Try “", "default"),
+					ansithemeprint([ANSIThemeString("Try “", "default"),
 						  ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
 						  ANSIThemeString("help", "command"),
 						  ANSIThemeString("“ for more information.", "default")], stderr = True)
@@ -12029,9 +12029,9 @@ def main() -> None:
 			elif initial_container is None:
 				initial_container = arg
 			else:
-				iktprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
+				ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
 					  ANSIThemeString(": unrecognised option", "default")], stderr = True)
-				iktprint([ANSIThemeString("Try “", "default"),
+				ansithemeprint([ANSIThemeString("Try “", "default"),
 					  ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
 					  ANSIThemeString("help", "command"),
 					  ANSIThemeString("“ for more information.", "default")], stderr = True)
@@ -12040,11 +12040,11 @@ def main() -> None:
 
 	if defaultview == "":
 		if initial_name is not None:
-			iktprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
+			ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
 				  ANSIThemeString(": unsupported view “", "default"),
 				  ANSIThemeString(f"{initial_name}", "command"),
 				  ANSIThemeString("“.", "default")], stderr = True)
-			iktprint([ANSIThemeString("Try “", "default"),
+			ansithemeprint([ANSIThemeString("Try “", "default"),
 				  ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
 				  ANSIThemeString("help", "command"),
 				  ANSIThemeString("“ for more information.", "default")], stderr = True)
@@ -12065,9 +12065,9 @@ def main() -> None:
 			tmp = re.match(r"^([^:]+):(.*)$", initial_name)
 			if tmp is not None:
 				if ":" in tmp[1]:
-					iktprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
+					ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
 						  ANSIThemeString(": invalid syntax;", "default")], stderr = True)
-					iktprint([ANSIThemeString("Format is either ", "default"),
+					ansithemeprint([ANSIThemeString("Format is either ", "default"),
 						  ANSIThemeString("NAMESPACE/NAME:", "argument"),
 						  ANSIThemeString("{", "separator"),
 						  ANSIThemeString("CONTAINER", "argument"),
@@ -12081,7 +12081,7 @@ def main() -> None:
 						  ANSIThemeString(",", "separator"),
 						  ANSIThemeString("CONFIGMAP", "argument"),
 						  ANSIThemeString("}", "separator")], stderr = True)
-					iktprint([ANSIThemeString("Try “", "default"),
+					ansithemeprint([ANSIThemeString("Try “", "default"),
 						  ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
 						  ANSIThemeString("help", "command"),
 						  ANSIThemeString("“ for more information.", "default")], stderr = True)
@@ -12092,9 +12092,9 @@ def main() -> None:
 
 	# Containers and Config Maps can have a third level (container/data)
 	if initial_container is not None and defaultview.lstrip("*") not in ("Pods", "Config Maps"):
-		iktprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
+		ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
 			  ANSIThemeString(": invalid syntax;", "default")], stderr = True)
-		iktprint([ANSIThemeString("CONTAINER", "argument"),
+		ansithemeprint([ANSIThemeString("CONTAINER", "argument"),
 			  ANSIThemeString("/", "separator"),
 			  ANSIThemeString("CONFIGMAP", "argument"),
 			  ANSIThemeString(" only makes sense in ", "default"),
@@ -12102,7 +12102,7 @@ def main() -> None:
 			  ANSIThemeString("/", "separator"),
 			  ANSIThemeString("configmap", "command"),
 			  ANSIThemeString(" view.", "default")], stderr = True)
-		iktprint([ANSIThemeString("Try “", "default"),
+		ansithemeprint([ANSIThemeString("Try “", "default"),
 			  ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
 			  ANSIThemeString("help", "command"),
 			  ANSIThemeString("“ for more information.", "default")], stderr = True)
@@ -12112,12 +12112,12 @@ def main() -> None:
 	os.environ.setdefault('ESCDELAY', '25')
 
 	init_kubernetes_client()
-	iktprint([ANSIThemeString("Checking available Kubernetes APIs\n", "default")])
+	ansithemeprint([ANSIThemeString("Checking available Kubernetes APIs\n", "default")])
 	_available_api_families, _status, _modified = kh.get_available_api_families()
 
 	# Customises the list views if necessary
 	if len(infoviews) == 0:
-		iktprint([ANSIThemeString("Populating list of supported views...\n", "default")])
+		ansithemeprint([ANSIThemeString("Populating list of supported views...\n", "default")])
 		populate_views()
 		customise_listviews()
 

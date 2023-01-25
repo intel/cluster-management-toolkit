@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 """
-Curses-based UI for iKT
+Curses-based User Interface helpers
 """
 
 # Before calling into this helper you need to call init_colors()
@@ -23,15 +23,15 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from iktio import check_path
-from iktio_yaml import secure_read_yaml
-from iktlog import IKTLogType, IKTLog
-from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval
-from ikttypes import SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
+from cmtio import check_path
+from cmtio_yaml import secure_read_yaml
+from cmtlog import CMTLogType, CMTLog
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval
+from cmttypes import SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
 
-from iktprint import iktprint
+from ansithemeprint import ANSIThemeString, ansithemeprint
 
-import iktlib
+import cmtlib
 
 theme: Dict = {}
 themefile: Optional[FilePath] = None
@@ -63,7 +63,7 @@ class ThemeString:
 
 	def __init__(self, string: str, themeattr: ThemeAttr, selected: bool = False) -> None:
 		if not isinstance(string, str):
-			IKTLog(IKTLogType.DEBUG, [
+			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("ThemeString()", "emphasis"),
 					 ANSIThemeString(" initialised with invalid argument(s):",  "error")],
 					[ANSIThemeString("string (type: ", "error")],
@@ -127,7 +127,7 @@ class ThemeRef:
 
 	def __init__(self, context: str, key: str, selected: bool = False) -> None:
 		if not isinstance(context, str) or not isinstance(key, str) or (selected is not None and not isinstance(selected, bool)):
-			IKTLog(IKTLogType.DEBUG, [
+			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("ThemeRef()", "emphasis"),
 					 ANSIThemeString(" initialised with invalid argument(s):",  "error")],
 					[ANSIThemeString("context (type: ", "error")],
@@ -154,7 +154,7 @@ class ThemeRef:
 		string = ""
 		array = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
 		if array is None:
-			IKTLog(IKTLogType.DEBUG, [
+			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("The ThemeRef(", "error")],
 					[ANSIThemeString(f"{self.context}", "argument")],
 					[ANSIThemeString(", ", "error")],
@@ -185,7 +185,7 @@ class ThemeRef:
 		themearray = []
 		array = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
 		if array is None:
-			IKTLog(IKTLogType.DEBUG, [
+			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("The ThemeRef(", "error")],
 					[ANSIThemeString(f"{self.context}", "argument")],
 					[ANSIThemeString(", ", "error")],
@@ -220,7 +220,7 @@ class ThemeArray:
 
 	def __init__(self, array: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> None:
 		if array is None:
-			IKTLog(IKTLogType.DEBUG, [
+			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("ThemeArray()", "emphasis"),
 					 ANSIThemeString(" initialised with an empty array:",  "error")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
@@ -229,7 +229,7 @@ class ThemeArray:
 		newarray: List[Union[ThemeRef, ThemeString]] = []
 		for item in array:
 			if not isinstance(item, (ThemeRef, ThemeString)):
-				IKTLog(IKTLogType.DEBUG, [
+				CMTLog(CMTLogType.DEBUG, [
 						[ANSIThemeString("ThemeArray()", "emphasis"),
 						 ANSIThemeString(" initialised with invalid type ",  "error"),
 						 ANSIThemeString(f"{type(item)}", "argument"),
@@ -257,7 +257,7 @@ class ThemeArray:
 		"""
 
 		if not isinstance(item, (ThemeRef, ThemeString)):
-			IKTLog(IKTLogType.DEBUG, [
+			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("ThemeArray.append()", "emphasis"),
 					 ANSIThemeString(" called with invalid type ",  "error"),
 					 ANSIThemeString(f"{type(item)}", "argument"),
@@ -376,7 +376,7 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 	col, attr = color
 
 	if not isinstance(attr, str):
-		IKTLog(IKTLogType.DEBUG, [
+		CMTLog(CMTLogType.DEBUG, [
 				[ANSIThemeString("Invalid color attribute used in theme; attribute has to be a string and one of:", "default")],
 				[ANSIThemeString("“", "default"),
 				 ANSIThemeString("normal", "emphasis"),
@@ -389,7 +389,7 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 		       ], severity = LogLevel.ERR, facility = str(themefile))
 		attr = "normal"
 	elif attr not in ["normal", "bright"]:
-		IKTLog(IKTLogType.DEBUG, [
+		CMTLog(CMTLogType.DEBUG, [
 				[ANSIThemeString("Invalid color attribute “", "default"),
 				 ANSIThemeString(f"{attr}", "emphasis"),
 				 ANSIThemeString("“ used in theme; attribute has to be a string and one of:", "default")],
@@ -407,7 +407,7 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 		col = col.lower()
 
 	if not isinstance(col, str) or col not in color_map:
-		IKTLog(IKTLogType.DEBUG, [
+		CMTLog(CMTLogType.DEBUG, [
 				[ANSIThemeString("Invalid color type “", "default"),
 				 ANSIThemeString(f"{col}", "emphasis"),
 				 ANSIThemeString("“ used in theme; color has to be a string and one of:", "default"),
@@ -422,7 +422,7 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 
 	curses_color = deep_get(color_map, DictPath(col))
 	if curses_color is None:
-		IKTLog(IKTLogType.DEBUG, [
+		CMTLog(CMTLogType.DEBUG, [
 				[ANSIThemeString("Invalid {color_type} color “", "default"),
 				 ANSIThemeString(f"{col}", "emphasis"),
 				 ANSIThemeString("“ used in theme; valid colors are:", "default"),
@@ -446,7 +446,7 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 	try:
 		curses.init_pair(color_nr, fg, bg)
 		if fg == bg:
-			IKTLog(IKTLogType.DEBUG, [
+			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString(f"__init_pair()", "emphasis"),
 					 ANSIThemeString(" called with a color pair where fg == bg (",  "error"),
 					 ANSIThemeString(f"{fg}", "argument"),
@@ -459,7 +459,7 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 	except (curses.error, ValueError) as e:
 		if str(e) in ("init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
-			IKTLog(IKTLogType.DEBUG, [
+			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString(f"init_pair()", "emphasis"),
 					 ANSIThemeString(" failed; attempting to limit fg & bg to ",  "error"),
 					 ANSIThemeString("0", "argument"),
@@ -478,7 +478,7 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 				fg = curses.COLOR_BLUE
 				bright_black_remapped = True
 			if fg & 7 == bg & 7:
-				IKTLog(IKTLogType.DEBUG, [
+				CMTLog(CMTLogType.DEBUG, [
 						[ANSIThemeString(f"__init_pair()", "emphasis"),
 						 ANSIThemeString(" called with a color pair where fg == bg (",  "error"),
 						 ANSIThemeString(f"{fg}", "argument"),
@@ -1028,8 +1028,8 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int,
 				addthemearray(win, [ThemeString(dimmedblock, ThemeAttr("main", "progressbar"))], y = 1, x = x + 1)
 		except curses.error:
 			curses.endwin()
-			iktprint([ANSIThemeString("Critical", "critical"),
-				  ANSIThemeString(": Live resizing progressbar() is currently broken; this is a known issue.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(": Live resizing progressbar() is currently broken; this is a known issue.", "default")], stderr = True)
 			sys.exit(errno.ENOTSUP)
 
 	win.noutrefresh()
@@ -1273,7 +1273,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 	tmp_attr = deep_get(theme, DictPath(f"{context}#{key}"))
 
 	if tmp_attr is None:
-		IKTLog(IKTLogType.DEBUG, [
+		CMTLog(CMTLogType.DEBUG, [
 				[ANSIThemeString("Could not find the tuple (", "default"),
 				 ANSIThemeString(f"{context}", "emphasis"),
 				 ANSIThemeString(", ", "default"),
@@ -1310,7 +1310,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 
 	for item in attr:
 		if not isinstance(item, str):
-			IKTLog(IKTLogType.DEBUG, [
+			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("Invalid text attribute used in theme; attribute has to be a string and one of:", "default")],
 					[ANSIThemeString("“", "default"),
 					 ANSIThemeString("dim", "emphasis"),
@@ -1334,7 +1334,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 		elif item == "underline":
 			tmp |= curses.A_UNDERLINE
 		else:
-			IKTLog(IKTLogType.DEBUG, [
+			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("Invalid text attribute “", "default"),
 					 ANSIThemeString(f"{item}", "emphasis"),
 					 ANSIThemeString("“ used in theme; attribute has to be one of:", "default")],
@@ -1356,7 +1356,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 
 	curses_col = __color[col][selected]
 	if curses_col is None:
-		IKTLog(IKTLogType.DEBUG, [
+		CMTLog(CMTLogType.DEBUG, [
 				[ANSIThemeString("themeattr_to_curses()", "emphasis")],
 				[ANSIThemeString("called with non-existing (color, selected) tuple ", "error")],
 				[ANSIThemeString(f"{col}", "argument")],
@@ -1423,7 +1423,7 @@ def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected:
 		elif isinstance(substring, ThemeRef):
 			themearray_flattened += substring.to_themearray()
 		else:
-			IKTLog(IKTLogType.DEBUG, [
+			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("themearray_flatten()", "emphasis"),
 					 ANSIThemeString(" called with invalid type ",  "error"),
 					 ANSIThemeString(f"{type(substring)}", "argument"),
@@ -1757,8 +1757,8 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 		c = stdscr.getch()
 		if c == curses.KEY_RESIZE:
 			curses.endwin()
-			iktprint([ANSIThemeString("Critical", "critical"),
-				  ANSIThemeString(": Live resizing windowwidget() is currently broken; this is a known issue.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(": Live resizing windowwidget() is currently broken; this is a known issue.", "default")], stderr = True)
 			sys.exit(errno.ENOTSUP)
 		if c == 27:	# ESCAPE
 			selection = ""
@@ -1945,7 +1945,7 @@ def get_annotations(annotations: Optional[Dict]) -> Optional[List[Dict]]:
 # pylint: disable-next=too-many-instance-attributes,too-many-public-methods
 class UIProps:
 	"""
-	The class used for the iKT UI
+	The class used for the UI
 	"""
 
 	def __init__(self, stdscr: curses.window) -> None:
@@ -2878,7 +2878,7 @@ class UIProps:
 			# OK, from here we want to go to next entry
 			if y == pos:
 				if sortkey == "age" or self.sortkey1 == "seen":
-					current = iktlib.seconds_to_age(getattr(entry, sortkey))
+					current = cmtlib.seconds_to_age(getattr(entry, sortkey))
 				else:
 					current = getattr(entry, sortkey)
 			elif y > pos:
@@ -2887,7 +2887,7 @@ class UIProps:
 						newpos = y - pos
 						break
 				elif sortkey == "age" or self.sortkey1 == "seen":
-					if current != iktlib.seconds_to_age(getattr(entry, sortkey)):
+					if current != cmtlib.seconds_to_age(getattr(entry, sortkey)):
 						newpos = y - pos
 						break
 				else:
@@ -2918,7 +2918,7 @@ class UIProps:
 		for entry in natsorted(info, key = attrgetter(sortkey1, sortkey2)):
 			if current is None:
 				if sortkey == "age" or self.sortkey1 == "seen":
-					current = iktlib.seconds_to_age(getattr(entry, sortkey))
+					current = cmtlib.seconds_to_age(getattr(entry, sortkey))
 				else:
 					current = getattr(entry, sortkey)
 
@@ -2930,8 +2930,8 @@ class UIProps:
 					current = entry.name
 					newpos = y - pos
 			elif sortkey == "age":
-				if current != iktlib.seconds_to_age(getattr(entry, sortkey)):
-					current = iktlib.seconds_to_age(getattr(entry, sortkey))
+				if current != cmtlib.seconds_to_age(getattr(entry, sortkey)):
+					current = cmtlib.seconds_to_age(getattr(entry, sortkey))
 					newpos = y - pos
 			else:
 				if current != getattr(entry, sortkey):
@@ -2955,7 +2955,7 @@ class UIProps:
 		for y in range(pos, len(sorted_list)):
 			tmp2 = getattr(sorted_list[y], self.sortcolumn)
 			if self.sortkey1 in ("age", "first_seen", "last_restart", "seen"):
-				tmp2 = [iktlib.seconds_to_age(tmp2)]
+				tmp2 = [cmtlib.seconds_to_age(tmp2)]
 			else:
 				if isinstance(tmp2, (list, tuple)):
 					if isinstance(tmp2[0], tuple):
@@ -2990,7 +2990,7 @@ class UIProps:
 		for y in reversed(range(0, pos)):
 			tmp2 = getattr(sorted_list[y], self.sortcolumn)
 			if self.sortkey1 in ("age", "seen"):
-				tmp2 = [iktlib.seconds_to_age(tmp2)]
+				tmp2 = [cmtlib.seconds_to_age(tmp2)]
 			else:
 				if isinstance(tmp2, (list, tuple)):
 					tmp2 = map(str, tmp2)
