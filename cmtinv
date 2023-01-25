@@ -72,16 +72,16 @@ def set_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 			key, value = keyval.split(":")
 		except ValueError:
 			ansithemeprint([ANSIThemeString("Error", "error"),
-				  ANSIThemeString(": Setting a variable requires a ", "default"),
-				  ANSIThemeString("KEY", "argument"),
-				  ANSIThemeString(":", "separator"),
-				  ANSIThemeString("VALUE ", "argument"),
-				  ANSIThemeString("pair.", "default")], stderr = True)
+					ANSIThemeString(": Setting a variable requires a ", "default"),
+					ANSIThemeString("KEY", "argument"),
+					ANSIThemeString(":", "separator"),
+					ANSIThemeString("VALUE ", "argument"),
+					ANSIThemeString("pair.", "default")], stderr = True)
 			print()
 			ansithemeprint([ANSIThemeString("Try “", "default"),
-				  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
-				  ANSIThemeString("help", "command"),
-				  ANSIThemeString("“ for more information.", "default")], stderr = True)
+					ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
+					ANSIThemeString("help", "command"),
+					ANSIThemeString("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		hostvars.append((key, value))
 
@@ -120,16 +120,16 @@ def set_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 			key, value = keyval.split(":")
 		except ValueError:
 			ansithemeprint([ANSIThemeString("Error", "error"),
-				  ANSIThemeString(": Setting a variable requires a ", "default"),
-				  ANSIThemeString("KEY", "argument"),
-				  ANSIThemeString(":", "separator"),
-				  ANSIThemeString("VALUE ", "argument"),
-				  ANSIThemeString("pair.", "default")], stderr = True)
+					ANSIThemeString(": Setting a variable requires a ", "default"),
+					ANSIThemeString("KEY", "argument"),
+					ANSIThemeString(":", "separator"),
+					ANSIThemeString("VALUE ", "argument"),
+					ANSIThemeString("pair.", "default")], stderr = True)
 			print()
 			ansithemeprint([ANSIThemeString("Try “", "default"),
-				  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
-				  ANSIThemeString("help", "command"),
-				  ANSIThemeString("“ for more information.", "default")], stderr = True)
+					ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
+					ANSIThemeString("help", "command"),
+					ANSIThemeString("“ for more information.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		groupvars.append((key, value))
 
@@ -248,7 +248,9 @@ def add_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# We should not try to add "all" (it may cause unexpected issues with variables)
 	if "all" in groups:
 		ansithemeprint([ANSIThemeString("Warning", "warning"),
-			  ANSIThemeString(": Ignoring attempt to add group “", "default"), ANSIThemeString("all", "argument"), ANSIThemeString("“.", "default")], stderr = True)
+				ANSIThemeString(": Ignoring attempt to add group “", "default"),
+				ANSIThemeString("all", "argument"),
+				ANSIThemeString("“.", "default")], stderr = True)
 		groups.remove("all")
 		if len(groups) == 0:
 			return 0
@@ -307,16 +309,22 @@ def add_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 				hostvars.append((key, value))
 		elif opt == "--groups":
 			if len(groups) > 0:
-				ansithemeprint([ANSIThemeString("Error", "error"), ANSIThemeString(": Invalid option; “", "default"),
-					  ANSIThemeString(f"{opt}", "option"),
-					  ANSIThemeString("“ cannot be used with ", "default"),
-					  ANSIThemeString("HOST", "argument"), ANSIThemeString(",", "separator"), ANSIThemeString("... ", "argument"),
-					  ANSIThemeString("GROUP", "argument"), ANSIThemeString(",", "separator"), ANSIThemeString("... ", "argument"),
-					  ANSIThemeString("syntax.", "default")], stderr = True)
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": Invalid option; “", "default"),
+						ANSIThemeString(f"{opt}", "option"),
+						ANSIThemeString("“ cannot be used with ", "default"),
+						ANSIThemeString("HOST", "argument"),
+						ANSIThemeString(",", "separator"),
+						ANSIThemeString("... ", "argument"),
+						ANSIThemeString("GROUP", "argument"),
+						ANSIThemeString(",", "separator"),
+						ANSIThemeString("... ", "argument"),
+						ANSIThemeString("syntax.", "default")], stderr = True)
 				print()
 				ansithemeprint([ANSIThemeString("Try “", "default"),
-					  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
-					  ANSIThemeString("“ for more information.", "default")], stderr = True)
+						ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
+						ANSIThemeString("help", "command"),
+						ANSIThemeString("“ for more information.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 			groups = optarg.split(",")
 		else:
@@ -397,11 +405,14 @@ def remove_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	if "all" in groups:
 		ansithemeprint([ANSIThemeString("Error", "error"),
-			  ANSIThemeString(": The group “", "default"), ANSIThemeString("all", "argument"), ANSIThemeString("“ cannot be removed.", "default")], stderr = True)
+				ANSIThemeString(": The group “", "default"),
+				ANSIThemeString("all", "argument"),
+				ANSIThemeString("“ cannot be removed.", "default")], stderr = True)
 		print()
 		ansithemeprint([ANSIThemeString("Try “", "default"),
-			  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
-			  ANSIThemeString("“ for more information.", "default")], stderr = True)
+				ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
+				ANSIThemeString("help", "command"),
+				ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	for group in groups:
@@ -412,16 +423,19 @@ def remove_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	if forceneeded == True and force == False:
 		if forceneeded == True:
-			ansithemeprint([ANSIThemeString("Error", "error"), ANSIThemeString(": The following groups are non-empty:", "default")])
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": The following groups are non-empty:", "default")])
 			for group, hosts in extrahosts:
 				ansithemeprint(format_members(group, hosts))
 		print()
 		ansithemeprint([ANSIThemeString("Removing groups that still contain hosts requires specifying “", "default"),
-			  ANSIThemeString("--force", "option"), ANSIThemeString("“.", "default")], stderr = True)
+				ANSIThemeString("--force", "option"),
+				ANSIThemeString("“.", "default")], stderr = True)
 		print()
 		ansithemeprint([ANSIThemeString("Try “", "default"),
-			  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
-			  ANSIThemeString("“ for more information.", "default")], stderr = True)
+				ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
+				ANSIThemeString("help", "command"),
+				ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	retval = ansible_remove_groups(inventory = ANSIBLE_INVENTORY, groups = groups, force = force)
@@ -480,12 +494,15 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	# Is there a pre-existing inventory?
 	if Path(ANSIBLE_INVENTORY).is_file() and force == False:
-		ansithemeprint([ANSIThemeString("Error", "error"), ANSIThemeString(": Overwriting an existing inventory requires specifying “", "default"),
-			  ANSIThemeString("--force", "option"), ANSIThemeString("“.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Overwriting an existing inventory requires specifying “", "default"),
+				ANSIThemeString("--force", "option"),
+				ANSIThemeString("“.", "default")], stderr = True)
 		print()
 		ansithemeprint([ANSIThemeString("Try “", "default"),
-			  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
-			  ANSIThemeString("“ for more information.", "default")], stderr = True)
+				ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
+				ANSIThemeString("help", "command"),
+				ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	# We ideally want to iterate over all clusters here, but for now we only import the current-context
@@ -493,20 +510,20 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 	cluster_name = get_cluster_name()
 	if cluster_name is None:
 		ansithemeprint([ANSIThemeString("Error", "error"),
-			  ANSIThemeString(": Could not obtain cluster name; do you have a cluster available? Aborting.", "default")], stderr = True)
+				ANSIThemeString(": Could not obtain cluster name; do you have a cluster available? Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 	if status != 200:
 		ansithemeprint([ANSIThemeString("Error", "error"),
-			  ANSIThemeString(": API-server returned ", "default"),
-			  ANSIThemeString(f"{status}", "errorvalue"),
-			  ANSIThemeString("; aborting.", "default")], stderr = True)
+				ANSIThemeString(": API-server returned ", "default"),
+				ANSIThemeString(f"{status}", "errorvalue"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 	if vlist is None:
 		ansithemeprint([ANSIThemeString("Error", "error"),
-			  ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
+				ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	for node in vlist:
@@ -535,9 +552,9 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	if pubkey is None or len(pubkey) == 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
-			  ANSIThemeString(": Failed to read ", "default"),
-			  ANSIThemeString(f"{HOMEDIR}/.ssh/id_ecdsa.pub", "path"),
-			  ANSIThemeString("; aborting.", "default")], stderr = True)
+				ANSIThemeString(": Failed to read ", "default"),
+				ANSIThemeString(f"{HOMEDIR}/.ssh/id_ecdsa.pub", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	values = {
@@ -598,21 +615,25 @@ def remove_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if "all" in groups and forceneeded == True and (force == False or len(groups) > 1):
 		if forceneeded == True:
 			ansithemeprint([ANSIThemeString("Error", "error"),
-				  ANSIThemeString(": The following hosts are parts of other groups than “", "default"),
-				  ANSIThemeString("all", "argument"), ANSIThemeString("“:", "default")])
+					ANSIThemeString(": The following hosts are parts of other groups than “", "default"),
+					ANSIThemeString("all", "argument"),
+					ANSIThemeString("“:", "default")])
 			for host, groups in extragroups:
 				ansithemeprint(format_members(host, groups))
 		print()
 		ansithemeprint([ANSIThemeString("Removing hosts from “", "default"),
-			  ANSIThemeString("all", "argument"),
-			  ANSIThemeString("“ requires specifying “", "default"), ANSIThemeString("--force", "option"), ANSIThemeString("“", "default")], stderr = True)
+				ANSIThemeString("all", "argument"),
+				ANSIThemeString("“ requires specifying “", "default"),
+				ANSIThemeString("--force", "option"),
+				ANSIThemeString("“", "default")], stderr = True)
 		ansithemeprint([ANSIThemeString("unless “", "default"),
-			  ANSIThemeString("all", "argument"),
-			  ANSIThemeString("“ is the only group or the hosts are not members of other groups.", "default")], stderr = True)
+				ANSIThemeString("all", "argument"),
+				ANSIThemeString("“ is the only group or the hosts are not members of other groups.", "default")], stderr = True)
 		print()
 		ansithemeprint([ANSIThemeString("Try “", "default"),
-			  ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"), ANSIThemeString("help", "command"),
-			  ANSIThemeString("“ for more information.", "default")], stderr = True)
+				ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
+				ANSIThemeString("help", "command"),
+				ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	retval = True
@@ -746,9 +767,9 @@ def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 					selection.append(group_or_host)
 				else:
 					ansithemeprint([ANSIThemeString("Warning", "warning"),
-						  ANSIThemeString(": Skipping unknown host or group “", "default"),
-						  ANSIThemeString(group_or_host, "argument"),
-						  ANSIThemeString("“", "default")], stderr = True)
+							ANSIThemeString(": Skipping unknown host or group “", "default"),
+							ANSIThemeString(group_or_host, "argument"),
+							ANSIThemeString("“", "default")], stderr = True)
 			else:
 				selection += hosts
 		# Eliminate duplicates
@@ -789,12 +810,12 @@ def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	if len(hoststatuses) > 0:
 		ansithemeprint([ANSIThemeString(header, "header"),
-			  ANSIThemeString(f"{''.ljust(maxlen - len(header))}  ", "default"),
-			  ANSIThemeString("Status:", "header")])
+				ANSIThemeString(f"{''.ljust(maxlen - len(header))}  ", "default"),
+				ANSIThemeString("Status:", "header")])
 
 		for hostname, status, status_group in hoststatuses:
 			ansithemeprint([ANSIThemeString(f"{hostname.ljust(maxlen)}  ", "default"),
-				  ANSIThemeString(f"{status}", status_group)])
+					ANSIThemeString(f"{status}", status_group)])
 
 	return 0
 

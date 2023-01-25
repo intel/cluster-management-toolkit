@@ -254,7 +254,9 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 				indent = tmp2[1]
 				listmarker = tmp2[2]
 				item = tmp2[4]
-				dump[i] = [ANSIThemeString(indent, "default"), ANSIThemeString(listmarker, "yaml_list"), ANSIThemeString(item, "yaml_value")]
+				dump[i] = [ANSIThemeString(indent, "default"),
+					   ANSIThemeString(listmarker, "yaml_list"),
+					   ANSIThemeString(item, "yaml_value")]
 				continue
 
 			# Is it key: value?
@@ -263,7 +265,9 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 				key = tmp2[1]
 				separator = tmp2[2]
 				value = tmp2[3]
-				dump[i] = [ANSIThemeString(key, "yaml_key"), ANSIThemeString(separator, "yaml_key_separator"), ANSIThemeString(value, "yaml_value")]
+				dump[i] = [ANSIThemeString(key, "yaml_key"),
+					   ANSIThemeString(separator, "yaml_key_separator"),
+					   ANSIThemeString(value, "yaml_value")]
 				continue
 
 			# Nope, then we will use default format
@@ -1138,16 +1142,22 @@ def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: Li
 	"""
 
 	if unreachable == True:
-		ansithemeprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "error")], stderr = True)
+		ansithemeprint([ANSIThemeString("• ", "separator"),
+				ANSIThemeString(f"{task}", "error")], stderr = True)
 	elif skipped == True:
-		ansithemeprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task} [skipped]", "skip")], stderr = True)
+		ansithemeprint([ANSIThemeString("• ", "separator"),
+				ANSIThemeString(f"{task} [skipped]", "skip")], stderr = True)
 		ansithemeprint([ANSIThemeString("", "default")])
 		return
 	elif retval != 0:
-		ansithemeprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "error"),
-			  ANSIThemeString(" (retval: ", "default"), ANSIThemeString(f"{retval}", "errorvalue"), ANSIThemeString(")", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("• ", "separator"),
+				ANSIThemeString(f"{task}", "error"),
+				ANSIThemeString(" (retval: ", "default"),
+				ANSIThemeString(f"{retval}", "errorvalue"),
+				ANSIThemeString(")", "default")], stderr = True)
 	else:
-		ansithemeprint([ANSIThemeString("• ", "separator"), ANSIThemeString(f"{task}", "success")])
+		ansithemeprint([ANSIThemeString("• ", "separator"),
+				ANSIThemeString(f"{task}", "success")])
 
 	if len(msg_lines) > 0:
 		ansithemeprint([ANSIThemeString("msg:", "header")])
@@ -1182,7 +1192,8 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 	"""
 
 	if retval != 0 and len(__ansible_results) == 0:
-		ansithemeprint([ANSIThemeString("Failed to execute playbook; retval: ", "error"), ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
+		ansithemeprint([ANSIThemeString("Failed to execute playbook; retval: ", "error"),
+				ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
 	else:
 		for host in __ansible_results:
 			plays = __ansible_results[host]
