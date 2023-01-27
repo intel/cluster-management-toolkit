@@ -2080,10 +2080,10 @@ def __find_requested_version(distro: str, version: Optional[str] = None) -> str:
 		raise Exception("No support for other distros implemented")
 
 	_major, minor, _patchrev = requested_version.split(".")
-	if int(minor) < 11:
+	if int(minor) < 15:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Kubernetes versions older than ", "default"),
-				ANSIThemeString("1.11", "version"),
+				ANSIThemeString("1.15", "version"),
 				ANSIThemeString(" are not supported by ", "default"),
 				ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
 				ANSIThemeString("; aborting.", "default")], stderr = True)
