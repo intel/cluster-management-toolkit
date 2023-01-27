@@ -23,6 +23,7 @@ except ModuleNotFoundError:
 	DecodeException = json.decoder.JSONDecodeError # type: ignore
 import os
 import re
+import ssl
 import sys
 import tempfile
 from typing import Any, AnyStr, cast, Dict, List, Optional, Sequence, Tuple, Union
@@ -32,6 +33,19 @@ try:
 	import urllib3
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-urllib3")
+
+# Acceptable ciphers
+CIPHERS = [
+	# TLS v1.3
+	"TLS_AES_256_GCM_SHA384",
+	"TLS_AES_128_GCM_SHA256",
+	"TLS_CHACHA20_POLY1305_SHA256",
+	# TLS v1.2
+	"ECDHE-RSA-AES256-GCM-SHA384",
+	"ECDHE-ECDSA-AES256-GCM-SHA384",
+	"ECDHE-RSA-AES128-GCM-SHA256",
+	"ECDHE-ECDSA-AES128-GCM-SHA256",
+]
 
 from cmtpaths import KUBE_CONFIG_FILE
 from cmtlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
@@ -2646,6 +2660,12 @@ class KubernetesHelper:
 		else:
 			urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+		ssl_context = ssl.SSLContext()
+		# Disable anything older than TLSv1.2
+		ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
+		# Only permit a limited set of acceptable ciphers
+		ssl_context.set_ciphers(":".join(CIPHERS))
+
 		# If we have a cert we also have a key
 		if cert is not None:
 			key = str(key)
@@ -2664,7 +2684,8 @@ class KubernetesHelper:
 					cert_reqs = "CERT_REQUIRED",
 					ca_certs = self.tmp_ca_certs_file.name, # type: ignore
 					cert_file = self.tmp_cert_file.name,
-					key_file = self.tmp_key_file.name)
+					key_file = self.tmp_key_file.name,
+					ssl_context = ssl_context)
 			else:
 				self.pool_manager = urllib3.PoolManager(
 					cert_reqs = "CERT_NONE",
@@ -2675,7 +2696,8 @@ class KubernetesHelper:
 			if insecuretlsskipverify == False:
 				self.pool_manager = urllib3.PoolManager(
 					cert_reqs = "CERT_REQUIRED",
-					ca_certs = self.tmp_ca_certs_file.name) # type: ignore
+					ca_certs = self.tmp_ca_certs_file.name, # type: ignore
+					ssl_context = ssl_context)
 			else:
 				self.pool_manager = urllib3.PoolManager(
 					cert_reqs = "CERT_NONE",

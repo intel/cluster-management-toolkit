@@ -85,13 +85,19 @@ Selector:
   # categorise: true
 
 # Networking:
-# These settings are for the system, not internal to K8s.
+# These settings are for the system, not internal to Kubernetes.
 # They are used for communicating with other computers outside the context
 # of Kubernetes network, for instance when fetching updates.
 Network:
   http_proxy:
   https_proxy:
   no_proxy:
+  # Adding a host to this list enables use of less secure protocols
+  # when connecting to that host; all known flawed protocols
+  # remains disabled though.
+  # This might be necessary for compatibility with older systems.
+  # If ["ALL"] (uppercase only) is specified, relaxed SSH is used for all hosts
+  relaxed_ssh_hosts: []
 
 Ansible:
   # This determines the parallelism of the commands being executed;

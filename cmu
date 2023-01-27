@@ -50,7 +50,7 @@ except ModuleNotFoundError:
 
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
 from cmtpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
-from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, SSH_ARGS, SSH_BIN_PATH
+from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, SSH_ARGS_RELAXED, SSH_ARGS_STRICT, SSH_BIN_PATH
 
 from cmtio import execute_command, execute_command_with_response, secure_read_string, secure_which, secure_write_string
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
@@ -10376,6 +10376,12 @@ def ssh_to_host(stdscr: curses.window, **kwargs):
 
 	if sshuser is not None:
 		host = f"{sshuser}@{host}"
+
+	relaxed_ssh_hosts = deep_get(cmtlib.cmtconfig, DictPath("Network#relaxed_ssh_hosts"), [])
+	if relaxed_ssh_hosts == ["ALL"] or host in relaxed_ssh_hosts:
+		SSH_ARGS = SSH_ARGS_RELAXED
+	else:
+		SSH_ARGS = SSH_ARGS_STRICT
 	args = [ssh_path] + SSH_ARGS + [host]
 
 	subprocess.run(args, check = False)
