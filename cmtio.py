@@ -636,10 +636,7 @@ def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, d
 	violations = check_path(path, checks = checks)
 
 	if violations != [SecurityStatus.OK]:
-		violation_strings = []
-		for violation in violations:
-			violation_strings.append(str(violation))
-		violations_joined = ",".join(violation_strings)
+		violations_joined = join_securitystatus_set(",", set(violations))
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
 
 	# We have no default recourse if this write fails, so if the caller can handle the failure

@@ -66,6 +66,18 @@ DEFAULT_POD_NETWORK_CIDR = "10.244.0.0/16"
 
 no_password = False
 
+cri_data: Dict = {
+	"containerd": {
+		"socket": "unix:///run/containerd/containerd.sock",
+	},
+	"cri-o": {
+		"socket": "unix:///run/crio/crio.sock",
+	},
+	"docker-shim": {
+		"socket": "unix:///run/dockershim.sock",
+	}
+}
+
 prepare_targets: Dict = {
 	"kubeadm": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
@@ -76,7 +88,6 @@ prepare_targets: Dict = {
 			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
 		],
 		"deb_packages": [
-			"docker.io",
 		],
 	},
 	"localhost": {
@@ -113,6 +124,8 @@ setup_control_plane_targets: Dict = {
 			"kubectl",
 			"kubelet",
 		],
+		"extra_values": {
+		},
 	},
 	"localhost": {
 		"pretty_name": [("host system", "programname")],
@@ -1390,13 +1403,11 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict) 
 	distro = installation_info[cluster_name]["distro"]
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets[distro]["playbooks"]))
-	cri = installation_info[cluster_name]["cri"]
 	extra_values = {
 		"packages": prepare_targets[distro].get("deb_packages", []),
 		"held_packages": prepare_targets[distro].get("deb_packages_held", []),
 		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
-		"cri": cri,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -1476,11 +1487,16 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict) -> Non
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets[distro]["playbooks"]))
+	cri = installation_info[cluster_name]["cri"]
+	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
+	extra_values_setup = deep_get(setup_control_plane_targets[distro], DictPath("extra_values"), {})
 	extra_values = {
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
+		"cri_socket": cri_socket,
 		"packages": setup_control_plane_targets[distro].get("deb_packages", []),
 		"held_packages": setup_control_plane_targets[distro].get("deb_packages_held", []),
+		**extra_values_setup,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -2166,8 +2182,6 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = "controlplane", skip_all = False)
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = cluster_name, skip_all = True)
 
-	cri = None
-
 	for opt, optarg in options:
 		if opt == "--control-plane":
 			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [optarg], group = "controlplane", skip_all = False)
@@ -2193,53 +2207,11 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 				phase = __validate_task_index(prepare_tasks, phase)
 		elif opt == "--save-ansible-logs":
 			ansible_configuration["save_logs"] = True
-		elif opt == "--cri":
-			if optarg in ("dockershim", "containerd", "manual"):
-				cri = optarg
-			else:
-				ansithemeprint([ANSIThemeString("Error", "error"),
-						ANSIThemeString(": Unknown CRI “", "default"),
-						ANSIThemeString(optarg, "argument"),
-						ANSIThemeString("“ specified; aborting.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
 		elif opt == "-Y":
 			confirm = False
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
-	if len(args) > 1:
-		_version = args[1].split(".")
-		if len(_version) == 1 or len(_version) >= 2 and int(_version[1]) >= 24:
-			if cri == "dockershim":
-				ansithemeprint([ANSIThemeString("Error", "error"),
-						ANSIThemeString(": CRI cannot be “", "default"),
-						ANSIThemeString("dockershim", "argument"),
-						ANSIThemeString("“ for ", "default"),
-						ANSIThemeString("Kubernetes ", "programname"),
-						ANSIThemeString(">= ", "default"),
-						ANSIThemeString("1.24", "version"),
-						ANSIThemeString("; aborting.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-			elif cri is None:
-				cri = "containerd"
-		else:
-			if cri is None:
-				cri = "dockershim"
-	else:
-		if cri is None:
-			cri = "containerd"
-		elif cri == "dockershim":
-			ansithemeprint([ANSIThemeString("Error", "error"),
-					ANSIThemeString(": CRI cannot be “", "default"),
-					ANSIThemeString("dockershim", "argument"),
-					ANSIThemeString("“ for ", "default"),
-					ANSIThemeString("Kubernetes ", "programname"),
-					ANSIThemeString(">= ", "default"),
-					ANSIThemeString("1.24", "version"),
-					ANSIThemeString("; aborting.", "default")], stderr = True)
-			sys.exit(errno.EINVAL)
-
-	installation_info = update_installation_info(cri = cri)
 	show_configuration()
 
 	if confirm == True:
@@ -2262,47 +2234,6 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 		requested_version = __find_requested_version(distro, args[1])
 	else:
 		requested_version = __find_requested_version(distro)
-
-	# We need one final sanity check; we cannot install Kubernetes >= 1.26 if containerd < 1.6
-	if cri == "containerd":
-		ansible_retval, ansible_results = run_playbook(FilePath(f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml"), hosts = controlplanes, quiet = True)
-		if ansible_retval != 0:
-			print()
-			ansithemeprint([ANSIThemeString("Critical", "critical"),
-					ANSIThemeString(": failed to get package versions; aborting.", "default")], stderr = True)
-			update_installation_info(phase = "preparing")
-			sys.exit(errno.ENOENT)
-
-		for host, results in ansible_results.items():
-			for result in results:
-				if deep_get(result, DictPath("task"), "") != "package versions":
-					continue
-				data = deep_get(result, DictPath("msg_lines"), [])
-				containerd_version = ""
-				for package in data:
-					if package.startswith(("containerd:", "containerd.io:")):
-						containerd_version = package.split(" ")[1]
-						break
-				containerd_version_split = containerd_version.split(".")
-				requested_version_split = requested_version.split(".")
-
-				if int(containerd_version_split[0]) < 2 and int(containerd_version_split[1]) < 6 and int(requested_version_split[0]) >= 1 and int(requested_version_split[1]) >= 26:
-					print()
-					ansithemeprint([ANSIThemeString("Critical", "critical"),
-							ANSIThemeString(": containerd ", "programname"),
-							ANSIThemeString("versions < ", "default"),
-							ANSIThemeString("1.6", "version"),
-							ANSIThemeString(" do not work with ", "default"),
-							ANSIThemeString("Kubernetes", "programname"),
-							ANSIThemeString(" >= ", "default"),
-							ANSIThemeString("1.26", "version"),
-							ANSIThemeString("; either use an older version of ", "default"),
-							ANSIThemeString("Kubernetes", "programname"),
-							ANSIThemeString(" or a newer version of ", "default"),
-							ANSIThemeString("containerd", "programname"),
-							ANSIThemeString("; aborting.", "default")], stderr = True)
-					update_installation_info(phase = "preparing")
-					sys.exit(errno.ENOTSUP)
 
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Updating installation information", "action")])
@@ -2676,6 +2607,9 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	if state == "prepared":
 		phase = 0
 
+	cri = None
+	enable_dra = False
+
 	for opt, optarg in options:
 		if opt == "--start-at-task":
 			phase = __validate_task_index(setup_control_plane_tasks, optarg)
@@ -2693,14 +2627,77 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 				sys.exit(0)
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
+		elif opt == "--cri":
+			if optarg in ("dockershim", "containerd", "cri-o"):
+				cri = optarg
+			else:
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": Unknown CRI “", "default"),
+						ANSIThemeString(optarg, "argument"),
+						ANSIThemeString("“ specified; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
 		elif opt == "--override-cni":
 			override_cni = True
 		elif opt == "--save-ansible-logs":
 			ansible_configuration["save_logs"] = True
+		elif opt == "--enable-dra":
+			enable_dra = True
 		elif opt == "-Y":
 			confirm = False
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
+
+	if enable_dra == True:
+		setup_control_plane_targets[distro]["extra_values"] = {
+			"api_server_feature_gates": "DynamicResourceAllocation=true",
+			"api_server_runtime_config_api_alpha_enabled": "true",
+			"controller_manager_feature_gates": "DynamicResourceAllocation=true",
+			"kubelet_feature_gates": "{ DynamicResourceAllocation: true }",
+			"kubeproxy_feature_gates": "{ DynamicResourceAllocation: true }",
+			"scheduler_feature_gates": "DynamicResourceAllocation=true",
+		}
+	else:
+		setup_control_plane_targets[distro]["extra_values"] = {
+			"api_server_feature_gates": "",
+			"api_server_runtime_config_api_alpha_enabled": "false",
+			"controller_manager_feature_gates": "",
+			"kubelet_feature_gates": "{}",
+			"kubeproxy_feature_gates": "{}",
+			"scheduler_feature_gates": "",
+		}
+
+	requested_major, requested_minor, _rest = requested_version.split(".")
+
+	# Add major/minor to extra_values
+	setup_control_plane_targets["kubeadm"]["extra_values"]["kubernetes_major_minor_version"] = f"{requested_major}.{requested_minor}"
+
+	if cri is None:
+		if int(requested_minor) < 24:
+			cri = "dockershim"
+		else:
+			cri = "containerd"
+	else:
+		if int(requested_minor) >= 24 and cri == "dockershim":
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": CRI cannot be “", "default"),
+					ANSIThemeString("dockershim", "argument"),
+					ANSIThemeString("“ for ", "default"),
+					ANSIThemeString("Kubernetes ", "programname"),
+					ANSIThemeString(">= ", "default"),
+					ANSIThemeString("1.24", "version"),
+					ANSIThemeString("; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+
+	installation_info = update_installation_info(cri = cri)
+
+	# Add the CRI to the setup playbooks for the control plane;
+	# the list is short enough that doing prepend isn't a performance issue
+	if cri == "docker-shim":
+		setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_docker.io.yaml"))))
+	elif cri == "containerd":
+		setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml"))))
+	elif cri == "cri-o":
+		setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml"))))
 
 	if cni is None or cni == "<none>":
 		if len(args) == 0:
@@ -3739,52 +3736,6 @@ COMMANDLINE = {
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
 			},
-			"--cri": {
-				"values": [ANSIThemeString("CRI", "argument")],
-				"description": [ANSIThemeString("Use ", "description"),
-						ANSIThemeString("CRI", "argument"),
-						ANSIThemeString(" instead of the default CRI", "description")],
-				"extended_description": [
-					[ANSIThemeString("Valid options for CRI (Container Runtime Interface) are:", "description")],
-					[ANSIThemeString("dockershim", "argument"),
-					 ANSIThemeString(" (", "description"),
-					 ANSIThemeString("Kubernetes", "programname"),
-					 ANSIThemeString(" < ", "description"),
-					 ANSIThemeString("1.24", "version"),
-					 ANSIThemeString(")", "description"),
-					 ANSIThemeString(", ", "separator"),
-					 ANSIThemeString("containerd", "argument"),
-					 ANSIThemeString(", ", "separator"),
-					],
-					[ANSIThemeString("manual", "argument"),
-					 ANSIThemeString(" (do not install a CRI; this requires you to manually install and configure the CRI).", "description"),
-					],
-					[ANSIThemeString("The default CRI is ", "description"),
-					 ANSIThemeString("dockershim", "argument"),
-					 ANSIThemeString(" for ", "description"),
-					 ANSIThemeString("Kubernetes", "programname"),
-					 ANSIThemeString(" < ", "description"),
-					 ANSIThemeString("1.24", "version")],
-					[ANSIThemeString("and ", "description"),
-					 ANSIThemeString("containerd", "argument"),
-					 ANSIThemeString(" for ", "description"),
-					 ANSIThemeString("Kubernetes", "programname"),
-					 ANSIThemeString(" >= ", "description"),
-					 ANSIThemeString("1.24", "version"),
-					 ANSIThemeString(".", "description")],
-					[ANSIThemeString("Note", "note"),
-					 ANSIThemeString(": ", "description"),
-					 ANSIThemeString("Kubernetes", "programname"),
-					 ANSIThemeString(" >= ", "description"),
-					 ANSIThemeString("1.26", "version"),
-					 ANSIThemeString(" requires ", "description"),
-					 ANSIThemeString("containerd", "programname"),
-					 ANSIThemeString(" >= ", "description"),
-					 ANSIThemeString("1.6", "version"),
-					 ANSIThemeString(".", "description")],
-				],
-				"requires_arg": True,
-			},
 			"-Y": {
 				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
 			},
@@ -3864,6 +3815,53 @@ COMMANDLINE = {
 						ANSIThemeString("iku", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
+			},
+			"--cri": {
+				"values": [ANSIThemeString("CRI", "argument")],
+				"description": [ANSIThemeString("Use ", "description"),
+						ANSIThemeString("CRI", "argument"),
+						ANSIThemeString(" instead of the default CRI", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid options for CRI (Container Runtime Interface) are:", "description")],
+					[ANSIThemeString("dockershim", "argument"),
+					 ANSIThemeString(" (", "description"),
+					 ANSIThemeString("Kubernetes", "programname"),
+					 ANSIThemeString(" < ", "description"),
+					 ANSIThemeString("1.24", "version"),
+					 ANSIThemeString(")", "description"),
+					 ANSIThemeString(", ", "separator"),
+					 ANSIThemeString("containerd", "argument"),
+					 ANSIThemeString(", ", "separator"),
+					 ANSIThemeString("cri-o", "argument"),
+					],
+					[ANSIThemeString("The default CRI is ", "description"),
+					 ANSIThemeString("dockershim", "argument"),
+					 ANSIThemeString(" for ", "description"),
+					 ANSIThemeString("Kubernetes", "programname"),
+					 ANSIThemeString(" < ", "description"),
+					 ANSIThemeString("1.24", "version")],
+					[ANSIThemeString("and ", "description"),
+					 ANSIThemeString("containerd", "argument"),
+					 ANSIThemeString(" for ", "description"),
+					 ANSIThemeString("Kubernetes", "programname"),
+					 ANSIThemeString(" >= ", "description"),
+					 ANSIThemeString("1.24", "version"),
+					 ANSIThemeString(".", "description")],
+					[ANSIThemeString("Note", "note"),
+					 ANSIThemeString(": ", "description"),
+					 ANSIThemeString("Kubernetes", "programname"),
+					 ANSIThemeString(" >= ", "description"),
+					 ANSIThemeString("1.26", "version"),
+					 ANSIThemeString(" requires ", "description"),
+					 ANSIThemeString("containerd", "programname"),
+					 ANSIThemeString(" >= ", "description"),
+					 ANSIThemeString("1.6", "version"),
+					 ANSIThemeString(".", "description")],
+				],
+				"requires_arg": True,
+			},
+			"--enable-dra": {
+				"description": [ANSIThemeString("Enable the feature gates necessary to use Dynamic Resource Allocation (DRA)", "description")],
 			},
 			"--override-cni": {
 				"description": [ANSIThemeString("Allow a change of CNI even if installation started with a different CNI", "description")],

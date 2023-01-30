@@ -186,7 +186,7 @@ def get_control_planes() -> List[Tuple[str, List[str]]]:
 
 	return controlplanes
 
-def show_configuration(hosts: List[str]) -> None:
+def show_configuration(hosts: List[str], cri: Optional[str] = None) -> None:
 	"""
 	Show cluster configuration
 
@@ -221,6 +221,9 @@ def show_configuration(hosts: List[str]) -> None:
 			ANSIThemeString("Configuration:", "action")])
 	ansithemeprint([ANSIThemeString("        Cluster Name: ", "action"),
 			ANSIThemeString(f"{cluster_name}", "hostname")])
+	if cri is not None:
+		ansithemeprint([ANSIThemeString("                 CRI: ", "action"),
+				ANSIThemeString(f"{cri}", "programname")])
 	ansithemeprint([ANSIThemeString("          HTTP Proxy: ", "action"),
 			__format_none(http_proxy, "url"),
 			ANSIThemeString(" (", "default"),
@@ -245,8 +248,8 @@ def show_configuration(hosts: List[str]) -> None:
 	ansithemeprint([ANSIThemeString("            No Proxy: ", "action"),
 			__format_none(no_proxy_env, "url"),
 			ANSIThemeString(" (Environment)", "default")])
-	ansithemeprint([ANSIThemeString("", "default")])
 
+	ansithemeprint([ANSIThemeString("", "default")])
 	ansithemeprint([ANSIThemeString("• ", "separator"),
 			ANSIThemeString("Control Plane(s):", "action")])
 
@@ -807,6 +810,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	ignore_existing = False
 	no_password = False
 	from_file = False
+	confirm = True
 
 	for opt, optarg in options:
 		if opt == "--ignore-existing":
@@ -819,6 +823,8 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 			ansible_configuration["forks"] = optarg
 		elif opt == "--from-file":
 			from_file = True
+		elif opt == "-Y":
+			confirm = False
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -905,7 +911,6 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	show_configuration(non_existing)
 
-	confirm = True
 	if confirm == True:
 		input_retval = ansithemeinput([ANSIThemeString("\nStart host preparation? [y/", "default"),
 					       ANSIThemeString("N", "emphasis"),
@@ -924,6 +929,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		request_ansible_password()
 
 	prepare_playbooks = [
+		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_passwordless_ansible.yaml"))),
 		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_node.yaml")))
 	]
 	playbooks = populate_playbooks_from_paths(prepare_playbooks)
@@ -944,6 +950,18 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	ansithemeprint([ANSIThemeString("\nHosts successfully prepared", "success")])
 	return 0
 
+cri_data: Dict = {
+	"containerd": {
+		"socket": "unix:///run/containerd/containerd.sock",
+	},
+	"cri-o": {
+		"socket": "unix:///run/crio/crio.sock",
+	},
+	"docker-shim": {
+		"socket": "unix:///run/dockershim.sock",
+	}
+}
+
 def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Add nodes to the cluster
@@ -960,6 +978,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	from_file = False
 	ca_cert_path = ""
 	cri = None
+	confirm = True
 
 	for opt, optarg in options:
 		if opt == "--ignore-existing":
@@ -973,7 +992,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "--forks":
 			ansible_configuration["forks"] = optarg
 		elif opt == "--cri":
-			if optarg in ("dockershim", "containerd", "manual"):
+			if optarg in ("dockershim", "containerd", "cri-o"):
 				cri = optarg
 			else:
 				ansithemeprint([ANSIThemeString("Error", "error"),
@@ -983,6 +1002,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				sys.exit(errno.EINVAL)
 		elif opt == "--from-file":
 			from_file = True
+		elif opt == "-Y":
+			confirm = False
 		else:
 			raise Exception(f"Programming error; invalid option {opt}")
 
@@ -1071,9 +1092,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 					ANSIThemeString("--ignore-non-existing", "option"),
 					ANSIThemeString("“ was specified.", "default")], stderr = True)
 
-	show_configuration(non_existing)
+	show_configuration(non_existing, cri = cri)
 
-	confirm = True
 	if confirm == True:
 		input_retval = ansithemeinput([ANSIThemeString("\nStart node setup? [y/", "default"),
 					       ANSIThemeString("N", "emphasis"),
@@ -1188,10 +1208,15 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				ANSIThemeString(f" package version from control-plane at {control_plane_ip}; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	# 1.24.2-00
-	_version = kubeadm_version.split(".")
-	if int(_version[1]) >= 24:
-		if cri == "dockershim":
+	version_major, version_minor, _rest = kubeadm_version.split(".")
+
+	if cri is None:
+		if int(version_minor) < 24:
+			cri = "dockershim"
+		else:
+			cri = "containerd"
+	else:
+		if int(version_minor) >= 24 and cri == "dockershim":
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": CRI cannot be “", "default"),
 					ANSIThemeString("dockershim", "argument"),
@@ -1201,13 +1226,18 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 					ANSIThemeString("1.24", "version"),
 					ANSIThemeString("; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
-		elif cri is None:
-			cri = "containerd"
-	else:
-		if cri is None:
-			cri = "dockershim"
 
-	add_playbooks = [
+	# Add the CRI to the setup playbooks for the control plane;
+	# the list is short enough that doing prepend isn't a performance issue
+	if cri == "docker-shim":
+		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_docker.io.yaml")))]
+	elif cri == "containerd":
+		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml")))]
+	elif cri == "cri-o":
+		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml")))]
+	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
+
+	add_playbooks += [
 		# cmt does not use run_before/run_after/add_to_groups/remove_from_groups,
 		# so we have to do all of that explicitly
 		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
@@ -1221,7 +1251,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		"join_token": join_token,
 		"ca_cert_hash": ca_cert_hash,
 		"control_plane_k8s_version": kubeadm_version,
-		"cri": cri,
+		"cri_socket": cri_socket,
+		"kubernetes_major_minor_version": f"{version_major}.{version_minor}",
 	}
 	retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
 	if retval == True:
@@ -1808,6 +1839,9 @@ CMT_COMMANDLINE = {
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
 			},
+			"-Y": {
+				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
+			},
 		},
 		"min_args": 1,
 		"max_args": 1,
@@ -1857,9 +1891,7 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString(", ", "separator"),
 					 ANSIThemeString("containerd", "argument"),
 					 ANSIThemeString(", ", "separator"),
-					],
-					[ANSIThemeString("manual", "argument"),
-					 ANSIThemeString(" (do not install a CRI; this requires you to manually install and configure the CRI)", "description"),
+					 ANSIThemeString("cri-o", "argument"),
 					],
 					[ANSIThemeString("The default CRI is ", "description"),
 					 ANSIThemeString("dockershim", "argument"),
@@ -1902,6 +1934,9 @@ CMT_COMMANDLINE = {
 					        ANSIThemeString("iku", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
+			},
+			"-Y": {
+				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
 			},
 		},
 		"min_args": 1,
