@@ -45,11 +45,10 @@
       kubeadm config --config {{ cluster_config.path }} images pull
     when: "port_check.rc == 1"
   - name: "Initialising Kubernetes cluster"  # noqa fqcn-builtins
-    command: "kubeadm init --config {{ cluster_config.path }} --skip-token-print"
+    command: "kubeadm init --config {{ cluster_config.path }}"
     when: "port_check.rc == 1"
   - name: "Creating permanent join token"  # noqa fqcn-builtins
     command: "kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command"
-    when: "port_check.rc == 1"
   - name: "Remove temporary cluster configuration file"
     ansible.builtin.file:
       path: "{{ cluster_config.path }}"
