@@ -2980,7 +2980,14 @@ class KubernetesHelper:
 
 		# we have the CA cert; now to extract the public key and hash it
 		if len(ca_cert) > 0:
-			x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
+			try:
+				x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
+			except TypeError as e:
+				if "load_pem_x509_certificate() missing 1 required positional argument: 'backend'" in str(e):
+					from cryptography.hazmat.primitives import default_backend
+					x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend = default_backend)
+				else:
+					raise
 			pubkeyder = x509obj.public_key().public_bytes(encoding = serialization.Encoding.DER, format = serialization.PublicFormat.SubjectPublicKeyInfo)
 			ca_cert_hash = hashlib.sha256(pubkeyder).hexdigest()
 

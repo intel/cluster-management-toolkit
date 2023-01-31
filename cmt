@@ -868,7 +868,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		sys.exit(errno.EINVAL)
 
 	# Correlate the list of hosts with the nodes in the cluster
-	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+	nodes, non_existing, controlplanes = get_selection(selection, kind = ("Node", ""))
 
 	if len(nodes) > 0 or len(controlplanes) > 0:
 		if ignore_existing == False:
@@ -1050,7 +1050,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		sys.exit(errno.EINVAL)
 
 	# Correlate the list of hosts with the nodes in the cluster
-	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+	nodes, non_existing, controlplanes = get_selection(selection, kind = ("Node", ""))
 
 	if len(nodes) > 0 or len(controlplanes) > 0:
 		if ignore_existing == False:
@@ -1157,7 +1157,14 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			try:
 				ca_cert = secure_read_string(FilePath(ca_cert_path))
 				if len(ca_cert) > 0:
-					x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
+					try:
+						x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
+					except TypeError as e:
+						if "load_pem_x509_certificate() missing 1 required positional argument: 'backend'" in str(e):
+							from cryptography.hazmat.primitives import default_backend
+							x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend = default_backend)
+						else:
+							raise
 					pubkeyder = x509obj.public_key().public_bytes(encoding = serialization.Encoding.DER, format = serialization.PublicFormat.SubjectPublicKeyInfo)
 					ca_cert_hash = hashlib.sha256(pubkeyder).hexdigest()
 			except FileNotFoundError:
