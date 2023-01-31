@@ -66,6 +66,9 @@
       dest: "{{ node_config.path }}"
       src: "templates/config/nodeconfig.yaml.j2"
       mode: "0640"
+  - name: "Modprobing br_netfilter"
+    shell: |
+      /usr/sbin/modprobe br_netfilter
   - name: "Enabling kubelet"
     ansible.builtin.systemd:
       name: "kubelet"

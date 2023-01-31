@@ -29,7 +29,7 @@
   - name: "Configuring crictl"
     ansible.builtin.template:
       dest: "/etc/crictl.yaml"
-      src: "templates/etc/crictl.yaml.j2"
+      src: "templates/etc/crictl-containerd.yaml.j2"
       mode: "0644"
       force: true
   - name: "Creating /etc/containerd"
@@ -80,3 +80,4 @@
       name: "kubelet"
       daemon_reload: true
       state: "restarted"
+    failed_when: false
