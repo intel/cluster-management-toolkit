@@ -6769,7 +6769,7 @@ def update_cni(stdscr: curses.window, cni, current_version, candidate_version, d
 		ansithemeprint([ANSIThemeString("Updating Cilium:", "phase")])
 		print()
 		retval = execute_command(args)
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 
 	return retval
 
@@ -9104,7 +9104,7 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
 		_retval = subprocess.run(args, check = False).returncode
 
 	if waitforkeypress:
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
 # pylint: disable-next=too-many-arguments
@@ -9176,7 +9176,7 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 		sys.exit("Called executecommand() with obj == None")
 
 	if waitforkeypress:
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
 def listviewdispatch(stdscr: curses.window, **kwargs):
@@ -9476,7 +9476,7 @@ def executecommand_multiple(stdscr: curses.window, msg, command, items, waitfork
 				       format_commandline(args) +\
 				       [ANSIThemeString(" returned ", "default"),
 					ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
 def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Dict] = None) -> Tuple[int, Dict]:
@@ -9658,7 +9658,7 @@ def create_namespace(stdscr: curses.window, **kwargs):
 
 	waitforkeypress = True
 	if waitforkeypress:
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
 # Valid kinds:
@@ -10045,7 +10045,7 @@ def edit_resource(stdscr: curses.window, **kwargs) -> None:
 				       format_commandline(args, implicit_command = False) +\
 				       [ANSIThemeString(" returned ", "default"),
 					ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
 # pylint: disable=unused-argument
@@ -10070,7 +10070,7 @@ def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs
 
 	waitforkeypress = True
 	if waitforkeypress:
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
@@ -10091,7 +10091,7 @@ def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs
 
 	waitforkeypress = True
 	if waitforkeypress:
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
@@ -10118,7 +10118,7 @@ def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs):
 
 	waitforkeypress = True
 	if waitforkeypress:
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # Valid kinds:
@@ -10141,7 +10141,7 @@ def pause_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs):
 
 	waitforkeypress = True
 	if waitforkeypress:
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # Valid kinds:
@@ -10164,7 +10164,7 @@ def resume_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs)
 
 	waitforkeypress = True
 	if waitforkeypress:
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # Valid kinds:
@@ -10192,7 +10192,7 @@ def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
 
 	waitforkeypress = True
 	if waitforkeypress:
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
@@ -10241,7 +10241,7 @@ def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs) 
 
 	waitforkeypress = True
 	if waitforkeypress or retval > 0:
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
@@ -10300,7 +10300,7 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs) -> None:
 
 	waitforkeypress = True
 	if waitforkeypress or retval > 0:
-		cmtinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	uip.stdscr.refresh()
 
 # pylint: disable=unused-argument
