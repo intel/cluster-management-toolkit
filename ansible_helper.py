@@ -13,7 +13,7 @@ from typing import cast, Dict, List, Optional, Set, Tuple, Union
 import yaml
 
 import cmtlib
-from cmtio import check_path, secure_mkdir, secure_rm, secure_rmdir
+from cmtio import check_path, join_securitystatus_set, secure_mkdir, secure_rm, secure_rmdir
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
 from cmtpaths import HOMEDIR
 from cmtpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
@@ -123,10 +123,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 
 		violations = check_path(playbook_dir, checks = checks)
 		if violations != [SecurityStatus.OK]:
-			violation_strings = []
-			for violation in violations:
-				violation_strings.append(str(violation))
-			violations_joined = ",".join(violation_strings)
+			violations_joined = join_securitystatus_set(",", set(violations))
 			raise FilePathAuditError(f"Violated rules: {violations_joined}", path = playbook_dir)
 
 		# We do not want to check that parent resolves to itself,

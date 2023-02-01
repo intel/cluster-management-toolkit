@@ -43,7 +43,7 @@ from ansible_helper import ansible_configuration, ansible_get_inventory_dict, an
 from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results, populate_playbooks_from_paths
 
 import cmtio
-from cmtio import check_path, execute_command, execute_command_with_response, secure_mkdir
+from cmtio import check_path, execute_command, execute_command_with_response, join_securitystatus_set, secure_mkdir
 from cmtio import secure_read_string, secure_rm, secure_which, secure_write_string
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
 from networkio import download_files, scan_and_add_ssh_keys
@@ -346,29 +346,6 @@ def check_and_print_status(retval: bool) -> None:
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-def patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> None:
-	"""
-	Patch the configuration for Flannel
-
-		Parameters:
-			cni_path (FilePath): The path to the CNI configuration to patch
-			pod_network_cidr (str): The CIDR for the pod network
-	"""
-
-	violations = check_path(cni_path)
-	if violations != [SecurityStatus.OK]:
-		violation_strings = []
-		for violation in violations:
-			violation_strings.append(str(violation))
-		violations_joined = ",".join(violation_strings)
-		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
-
-	# Ideally we should patch this using a round-trip capable YAML parser,
-	# such as ruamel
-	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$#\1Network:": "{pod_network_cidr}",#'
-	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-	check_and_print_status(execute_command(args))
-
 def patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> None:
 	"""
 	Patch the configuration for Calico
@@ -380,16 +357,57 @@ def patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> None:
 
 	violations = check_path(cni_path)
 	if violations != [SecurityStatus.OK]:
-		violation_strings = []
-		for violation in violations:
-			violation_strings.append(str(violation))
-		violations_joined = ",".join(violation_strings)
+		violations_joined = join_securitystatus_set(",", set(violations))
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
 
 	# Ideally we should patch this using a round-trip capable YAML parser,
 	# such as ruamel
 	sedstr = fr's#cidr: 192.168.0.0/16$#cidr: {pod_network_cidr}#'
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
+	check_and_print_status(execute_command(args))
+
+def patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> None:
+	"""
+	Patch the configuration for Flannel
+
+		Parameters:
+			cni_path (FilePath): The path to the CNI configuration to patch
+			pod_network_cidr (str): The CIDR for the pod network
+	"""
+
+	violations = check_path(cni_path)
+	if violations != [SecurityStatus.OK]:
+		violations_joined = join_securitystatus_set(",", set(violations))
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
+
+	# Ideally we should patch this using a round-trip capable YAML parser,
+	# such as ruamel
+	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$#\1Network:": "{pod_network_cidr}",#'
+	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
+	check_and_print_status(execute_command(args))
+
+def patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> None:
+	"""
+	Patch the configuration for Weave
+
+		Parameters:
+			cni_path (FilePath): The path to the CNI configuration to patch
+			pod_network_cidr (str): The CIDR for the pod network
+	"""
+
+	violations = check_path(cni_path)
+	if violations != [SecurityStatus.OK]:
+		violations_joined = join_securitystatus_set(",", set(violations))
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
+
+	# Ideally we should patch this using a round-trip capable YAML parser,
+	# such as ruamel
+	sedstr_remove_existing = r'/^                - name: IPALLOC_RANGE$/,+1d'
+	args = ["/usr/bin/sed", "-i", "-e", sedstr_remove_existing, cni_path]
+	execute_command(args)
+
+	sedstr_add_new = fr's#^\(                - name: INIT_CONTAINER\)$#                - name: IPALLOC_RANGE\n                  value: {pod_network_cidr}\n\1#'
+	args = ["/usr/bin/sed", "-i", "-e", sedstr_add_new, cni_path]
 	check_and_print_status(execute_command(args))
 
 # XXX: We should convert all of cni_data to use this format instead,
@@ -496,6 +514,7 @@ cni_data = {
 		"url": "https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s-1.11.yaml",
 		"type": "yaml",
 		"filename": "weave.yaml",
+		"patch": patch_cni_weave,
 	},
 }
 

@@ -28,7 +28,7 @@ except ModuleNotFoundError:
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus
 from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path
-from cmtio import check_path
+from cmtio import check_path, join_securitystatus_set
 from cmtio_yaml import secure_read_yaml
 
 def objgetter_ansible_facts(obj: Dict) -> Dict:
@@ -98,10 +98,7 @@ def objgetter_ansible_log(obj: str) -> Dict:
 
 	violations = check_path(playbook_dir, checks = checks)
 	if violations != [SecurityStatus.OK]:
-		violation_strings = []
-		for violation in violations:
-			violation_strings.append(str(violation))
-		violations_joined = ",".join(violation_strings)
+		violations_joined = join_securitystatus_set(",", set(violations))
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = playbook_dir)
 
 	# We do not want to check that parent resolves to itself,

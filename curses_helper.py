@@ -23,7 +23,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from cmtio import check_path
+from cmtio import check_path, join_securitystatus_set
 from cmtio_yaml import secure_read_yaml
 from cmtlog import CMTLogType, CMTLog
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval
@@ -530,10 +530,7 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 
 	violations = check_path(theme_dir, checks = checks)
 	if violations != [SecurityStatus.OK]:
-		violation_strings = []
-		for violation in violations:
-			violation_strings.append(str(violation))
-		violations_joined = ",".join(violation_strings)
+		violations_joined = join_securitystatus_set(",", set(violations))
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = theme_dir)
 
 	# We do not want to check that parent resolves to itself,

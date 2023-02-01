@@ -727,9 +727,9 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 		ansithemeprint([ANSIThemeString("•", "separator"),
 				ANSIThemeString(f" {rp}", "programname")])
 
-		any_of_available = {}
+		any_of_available: Dict = {}
 		any_of_available["__expected"] = []
-		all_of_available = {}
+		all_of_available: Dict = {}
 		all_of_available["__expected"] = []
 		match_count = 0
 

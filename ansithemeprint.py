@@ -279,10 +279,7 @@ def init_ansithemeprint(themefile: Optional[FilePath]) -> None:
 
 	violations = cmtio.check_path(theme_dir, checks = checks)
 	if violations != [SecurityStatus.OK]:
-		violation_strings = []
-		for violation in violations:
-			violation_strings.append(str(violation))
-		violations_joined = ",".join(violation_strings)
+		violations_joined = cmtio.join_securitystatus_set(",", set(violations))
 		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = theme_dir)
 
 	# We do not want to check that parent resolves to itself,
