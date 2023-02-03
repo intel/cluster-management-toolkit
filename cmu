@@ -6431,7 +6431,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 		if len(nodeinfo) > 0:
 			node_heatmap_xpos = 0
-			pod_heatmap_xpos = heatmap_width - 3
+			pod_heatmap_xpos = uip.maxx - heatmap_width - 3
 			uip.addthemearray(listpad, [ThemeString("Node heatmap:", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node"))], y = 0, x = node_heatmap_xpos)
 			selectednodearray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("No", ThemeAttr("main", "listheader")),
