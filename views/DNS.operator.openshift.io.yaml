@@ -12,8 +12,20 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_ip", "cluster_domain", "loglevel", "operator_loglevel", "upstream_resolvers_header", "upstream_resolvers_policy", "upstream_resolvers_upstreams"]
+        fields: ["cluster_ip", "cluster_domain", "loglevel", "operator_loglevel", "upstream_resolvers_header", "upstream_resolvers_policy", "upstream_resolvers_upstreams", "cache_header", "cache_positive_ttl", "cache_negative_ttl"]
     rows:
+      cache_header:
+        header: [["Cache:", ["main", "infoheader"]]]
+      cache_positive_ttl:
+        header: [["  Positive TTL:", ["main", "infoheader"]]]
+        path: "spec#cache#negativeTTL"
+        type: "str"
+        formatter: "numerical_with_units"
+      cache_negative_ttl:
+        header: [["  Negative TTL:", ["main", "infoheader"]]]
+        path: "spec#cache#negativeTTL"
+        type: "str"
+        formatter: "numerical_with_units"
       cluster_domain:
         header: [["Cluster Domain:", ["main", "infoheader"]]]
         path: "status#clusterDomain"
@@ -22,6 +34,7 @@ infoview:
         header: [["Cluster IP:", ["main", "infoheader"]]]
         path: "status#clusterIP"
         type: "str"
+        formatter: "address"
       loglevel:
         header: [["Loglevel:", ["main", "infoheader"]]]
         path: "spec#logLevel"

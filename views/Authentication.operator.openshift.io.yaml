@@ -1,9 +1,99 @@
 kind: "Authentication"
 api_family: "operator.openshift.io"
 default_command: "authentications.operator.openshift.io"
+command:
+- "authentications.operator"
+- "authentication.operator"
+- "authop"
 listview:
   name: "Authentications (Operator)"
   group: "OpenShift"
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "Authentication Info (Operator)"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "ready_replicas"]
+    rows:
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
+      loglevel:
+        header: [["Loglevel:", ["main", "infoheader"]]]
+        path: "spec#logLevel"
+        type: "str"
+      management_state:
+        header: [["Management State:", ["main", "infoheader"]]]
+        path: "spec#managementState"
+        type: "str"
+      operator_loglevel:
+        header: [["Operator Loglevel:", ["main", "infoheader"]]]
+        path: "spec#operatorLogLevel"
+        type: "str"
+      ready_replicas:
+        header: [["Ready Replicas:", ["main", "infoheader"]]]
+        path: "status#readyReplicas"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+  shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"
+    "List generations":
+      key: "g"
+      read_only: true
+      helptext: "List generations"
+      widget: "windowwidget"
+      title: "Generations:"
+      selectable: true
+      headers: ["Resource:", "Group:", "Namespace:", "Name:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#generations"
+        fields:
+        - "resource"
+        - "group"
+        - "namespace"
+        - "name"
+      # Not supported for now
+      sortcolumn: "resource"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind_path: 0
+        api_family_path: 1
+        namespace_path: 2
+        name_path: 3
+    "View observed configuration":
+      key: "o"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show observed configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Observed Configuration"
+        _pass_obj: true
+        path: "spec#observedConfig"
