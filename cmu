@@ -1334,6 +1334,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 		else:
 			default = deep_get(field, DictPath("default"))
 		global_default = default
+		fallback_on_empty = deep_get(field, DictPath("fallback_on_empty"), False)
 		formatter = deep_get(field, DictPath("formatter"))
 		action = None
 		replace_quotes = None
@@ -1351,7 +1352,10 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 			if path is not None:
 				if deep_get(field, DictPath("type")) is None:
 					raise Exception(f"Field {name}: the path field has no default type; type must always be specified")
-				_values.append((deep_get(obj, DictPath(path), global_default), deep_get(field, DictPath("type"))))
+				tmp_value = deep_get(obj, DictPath(path), global_default)
+				if tmp_value is not None and isinstance(tmp_value, (str, list)) and len(tmp_value) == 0 and fallback_on_empty == True:
+					tmp_value = global_default
+				_values.append((tmp_value, deep_get(field, DictPath("type"))))
 
 			_path = None
 			for _path in paths:
@@ -5995,7 +5999,7 @@ def __open_reference(**kwargs):
 	namespace = deep_get(kwargs, DictPath("namespace"))
 	node = deep_get(kwargs, DictPath("node"))
 
-	if keypress == ord("o"):
+	if keypress == ord("d"):
 		if node is None:
 			return Retval.MATCH, {}
 		name = node
@@ -6058,8 +6062,8 @@ clusteroverview_shortcuts = {
 		"Show information about the program",
 	],
 	"Open info page for Node": {
-		"helptext": ("O", "Open info page for Node"),
-		"shortcut": ord("o"),
+		"helptext": ("D", "Open info page for Node"),
+		"shortcut": ord("d"),
 		"helpgroup": 2,
 		"action": "key_callback",
 		"action_call": __open_reference,
@@ -6431,9 +6435,9 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			pod_heatmap_xpos = heatmap_width - 1
 			uip.addthemearray(listpad, [ThemeString("Node heatmap:", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node"))], y = 0, x = node_heatmap_xpos)
 			selectednodearray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("N", ThemeAttr("main", "listheader")),
-				ThemeString("o", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node")),
-				ThemeString("de: ", ThemeAttr("main", "listheader")),
+				ThemeString("No", ThemeAttr("main", "listheader")),
+				ThemeString("d", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node")),
+				ThemeString("e: ", ThemeAttr("main", "listheader")),
 				ThemeString(f"{nodeinfo[selected_node].name}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
 			]
 			selectednodestatusarray: List[Union[ThemeRef, ThemeString]] = [
@@ -6469,9 +6473,9 @@ def clusteroverviewloop(stdscr: curses.window, view):
 				ThemeString(f"{podinfo[selected_pod].namespace}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
 			]
 			selectedpodnodearray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("N", ThemeAttr("main", "infoheader")),
-				ThemeString("o", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
-				ThemeString("de: ", ThemeAttr("main", "infoheader")),
+				ThemeString("No", ThemeAttr("main", "infoheader")),
+				ThemeString("d", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+				ThemeString("e: ", ThemeAttr("main", "infoheader")),
 				ThemeString(f"{podinfo[selected_pod].node}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
 			]
 			selectedpodstatusarray: List[Union[ThemeRef, ThemeString]] = [
