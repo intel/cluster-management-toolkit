@@ -6324,8 +6324,9 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			podinfo = get_pod_info(**{"_vlist": vlist})
 			pod_statuses = [s.status_group for s in podinfo]
 
-			node_heatmap = curses_helper.generate_heatmap(((uip.maxx - uip.minx - 1) // 2) - 1, node_statuses, selected_node)
-			pod_heatmap = curses_helper.generate_heatmap(((uip.maxx - uip.minx - 1) // 2) - 1, pod_statuses, selected_pod)
+			heatmap_width = ((uip.maxx - uip.minx - 1) // 2) - 2
+			node_heatmap = curses_helper.generate_heatmap(heatmap_width, node_statuses, selected_node)
+			pod_heatmap = curses_helper.generate_heatmap(heatmap_width, pod_statuses, selected_pod)
 
 			# Resize the list pad to fit the heatmaps
 			# XXX this needs to be fixed when we add more information
@@ -6428,11 +6429,9 @@ def clusteroverviewloop(stdscr: curses.window, view):
 				]
 				uip.addthemearray(infopad, swapusagearray, y = 8, x = (uip.infopadwidth - 8))
 
-		heatmap_width = 0
 		if len(nodeinfo) > 0:
-			heatmap_width = ((uip.maxx - uip.minx - 1) // 2) - 1
 			node_heatmap_xpos = 0
-			pod_heatmap_xpos = heatmap_width - 1
+			pod_heatmap_xpos = heatmap_width - 3
 			uip.addthemearray(listpad, [ThemeString("Node heatmap:", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node"))], y = 0, x = node_heatmap_xpos)
 			selectednodearray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("No", ThemeAttr("main", "listheader")),
