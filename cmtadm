@@ -699,7 +699,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 					patch_cni_call = deep_get(url, DictPath("patch"))
 					if patch_cni_call is not None:
 						patch_cni_call(new_path, pod_network_cidr)
-					execute_command_with_response([kubectl_path, "apply", "-f", new_path])
+					execute_command_with_response([kubectl_path, "create", "-f", new_path])
 		else:
 			ansithemeprint([ANSIThemeString("No newer version available.", "default")])
 	elif install_command is not None and version is None or len(version) == 0:
@@ -878,7 +878,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		patch_cni(cni_path, pod_network_cidr)
 
 	if filetype == "yaml":
-		args = ["/usr/bin/kubectl", "apply", "--context=<<<context>>>", "-f", cni_path]
+		args = ["/usr/bin/kubectl", "create", "--context=<<<context>>>", "-f", cni_path]
 	elif filetype == "installer":
 		args = deep_get(cni_data, DictPath(f"{cni}#command"))
 
