@@ -327,7 +327,9 @@ def generator_age(obj, field, fieldlen: int, pad: int, ralign: bool, selected: b
 
 	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
 
-def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting) -> List[Union[ThemeRef, ThemeString]]:
+	item_separator = deep_get(formatting, DictPath("item_separator"))
+
 	items = getattr(obj, field, [])
 	if items is None:
 		items = []
@@ -348,25 +350,23 @@ def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selecte
 		string = str(separator)
 		separator_lookup[string] = separator
 
-	vlist = []
+	array = []
 	field_colors = []
 	field_separators = []
 
 	subnet = False
-	first = True
 
 	for item in items:
 		_vlist = []
 		tmp = ""
 		for ch in item:
 			if ch in separator_lookup:
-				_vlist.append(tmp)
-				if first == True:
+				if len(tmp) > 0:
 					if subnet == True:
-						field_colors.append(ThemeAttr("types", "ipmask"))
+						_vlist.append(ThemeString(tmp, ThemeAttr("types", "ipmask"), selected))
 					else:
-						field_colors.append(ThemeAttr("types", "address"))
-					field_separators.append(separator_lookup[ch])
+						_vlist.append(ThemeString(tmp, ThemeAttr("types", "address"), selected))
+				_vlist.append(separator_lookup[ch])
 				tmp = ""
 
 				if ch == "/":
@@ -375,16 +375,15 @@ def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selecte
 				tmp += ch
 
 		if len(tmp) > 0:
-			_vlist.append(tmp)
-			if first == True:
-				if subnet == True:
-					field_colors.append(ThemeAttr("types", "ipmask"))
-				else:
-					field_colors.append(ThemeAttr("types", "address"))
-		first = False
-		vlist.append(tuple(_vlist))
+			if subnet == True:
+				_vlist.append(ThemeString(tmp, ThemeAttr("types", "ipmask"), selected))
+			else:
+				_vlist.append(ThemeString(tmp, ThemeAttr("types", "address"), selected))
+		if len(array) > 0:
+			array.append(item_separator)
+		array += _vlist
 
-	return format_list(vlist, fieldlen, pad, ralign, selected, field_separators = field_separators, field_colors = field_colors)
+	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
 
 def generator_basic(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	array: List[Union[ThemeRef, ThemeString]] = []
