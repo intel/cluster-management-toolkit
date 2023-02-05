@@ -254,6 +254,11 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api": "pods",
 	},
 	# networking.k8s.io
+	("ClusterCIDR", "networking.k8s.io"): {
+		"api_family": ["apis/networking.k8s.io/v1alpha1/"],
+		"api": "clustercidrs",
+		"namespaced": False,
+	},
 	("Ingress", "networking.k8s.io"): {
 		"api_family": ["apis/networking.k8s.io/v1/", "apis/networking.k8s.io/v1beta1/"],
 		"api": "ingresses",

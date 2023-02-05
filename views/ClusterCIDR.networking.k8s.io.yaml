@@ -1,0 +1,59 @@
+kind: "ClusterCIDR"
+api_family: "networking.k8s.io"
+default_command: "clustercidrs"
+listview:
+  name: "Cluster CIDR"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["name", "ipv4_cidr", "ipv6_cidr", "per_node_host_bits"]
+      sortcolumn: "name"
+  fields:
+    ipv4_cidr:
+      header: "CIDR (IPv4):"
+      path: "spec#ipv4"
+      default: "<unset>"
+      type: "raw"
+      formatter: "address"
+    ipv6_cidr:
+      header: "CIDR (IPv6):"
+      path: "spec#ipv6"
+      default: "<unset>"
+      type: "raw"
+      formatter: "address"
+    per_node_host_bits:
+      header: "Host Bits / Node:"
+      path: "spec#perNodeHostBits"
+      type: "numerical"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+infoview:
+  name: "Cluster CIDR Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cidr_header", "cidr_ipv4", "cidr_ipv6", "per_node_host_bits"]
+    rows:
+      cidr_header:
+        header: [["CIDR:", ["main", "infoheader"]]]
+      cidr_ipv4:
+        header: [["  IPv4:", ["main", "infoheader"]]]
+        path: "spec#ipv4"
+        default: "<unset>"
+        type: "raw"
+        formatter: "address"
+      cidr_ipv6:
+        header: [["  IPv6:", ["main", "infoheader"]]]
+        path: "spec#ipv6"
+        default: "<unset>"
+        type: "raw"
+        formatter: "address"
+      per_node_host_bits:
+        header: [["Host Bits / Node:", ["main", "infoheader"]]]
+        path: "spec#perNodeHostBits"
+        type: "numerical"
+        formatting:
+          field_colors:
+          - type: "numerical"
