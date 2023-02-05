@@ -705,11 +705,15 @@ def get_log_info(**kwargs: Dict) -> List[Type]:
 		("Latest boot, last 1h", "[dmesg]", ["-k", "-b", "--since", "1 hour ago", "--lines", "10000"], "glog"),
 		("Latest 1000 lines", "[kubelet]", ["--lines", "1000", "-u", "kubelet"], "glog"),
 		("Latest 1000 lines", "[containerd]", ["--lines", "1000", "-u", "containerd"], "key_value"),
+		("Latest 1000 lines", "[cri-o]", ["--lines", "1000", "-u", "crio"], "key_value"),
 	]
 
 	try:
 		for name, action, log, parser in logs:
 			response = execute_command_with_response(args + log)
+			if len(response) == 0:
+				continue
+
 			# The first entry in the obj list holds metadata
 			split_response = [{
 				"parser": parser,
@@ -737,8 +741,6 @@ def get_log_info(**kwargs: Dict) -> List[Type]:
 				"log_type": "journalctl",
 			}))
 	except FileNotFoundError:
-		pass
-	except IndexError:
 		pass
 
 	# Get the list of available Ansible logs
@@ -2217,6 +2219,42 @@ def get_journalctl_log(obj: Dict, **kwargs: Dict):
 					facilities.append("")
 					severities.append(remnant_severity)
 					messages.append(remnant)
+
+	return (timestamps, facilities, severities, messages)
+
+def get_traceflow(obj: Dict, **kwargs: Dict):
+	timestamps = []
+	facilities = []
+	severities = []
+	messages = []
+
+	for result in deep_get(obj, DictPath("status#results"), []):
+		node = deep_get(result, DictPath("node"), "<unset>")
+		nodestr_len = len(node) + themearray_len([ThemeRef("separators", "facility_prefix"), ThemeRef("separators", "facility_suffix"), ThemeRef("separators", "facility_padding")])
+		tmp_timestamp = deep_get(result, DictPath("timestamp"), -1)
+		if tmp_timestamp >= 0:
+			saved_timestamp = str(datetime.fromtimestamp(tmp_timestamp))
+		else:
+			saved_timestamp = ""
+		message = []
+		for observation in deep_get(result, DictPath("observations"), []):
+			facility = node
+			timestamp = saved_timestamp
+			for key, value in sorted(observation.items()):
+				facilities.append(facility)
+				timestamps.append(timestamp)
+				message = []
+				if len(facility) == 0 and len(node) > 0:
+					message.append(ThemeString("".ljust(nodestr_len), ThemeAttr("main", "default")))
+				message += [
+					ThemeString(key, ThemeAttr("types", "yaml_key")),
+					ThemeRef("separators", "yaml_key_separator"),
+					ThemeRef("separators", "space"),
+					ThemeString(value, ThemeAttr("types", "yaml_value")),
+				]
+				messages.append(message)
+				facility = ""
+				timestamp = ""
 
 	return (timestamps, facilities, severities, messages)
 
@@ -7329,7 +7367,10 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 	helptext = generate_helptext(view, "infoview", additional_helptexts, shortcuts = shortcuts)
 
-	uip.init_window(field_dict, windowheader = windowheader, view = viewoverride, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, reversible = reversible, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation, extraref = extraref, data = obj)
+	uip.init_window(field_dict, windowheader = windowheader, helptext = helptext,
+			view = viewoverride,
+			sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, reversible = reversible,
+			activatedfun = activatedfun, on_activation = on_activation, extraref = extraref, data = obj)
 
 	# For generic information
 	if infopadheight > 0:
@@ -7646,6 +7687,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					maxx = max(maxx, xpos)
 				yadd += i
 			uip.resize_logpad(-1, maxx)
+			uip.update_window()
 
 		uip.refresh_window()
 		uip.refresh_infopad()
@@ -10976,6 +11018,7 @@ infogetter_allowlist = {
 	"get_journalctl_log": get_journalctl_log,
 	"get_task_log": get_task_log,
 	"get_themearrays": get_themearrays,
+	"get_traceflow": get_traceflow,
 }
 
 # Listgetters acceptable for direct use in view files
