@@ -58,13 +58,13 @@
       path: "/etc/systemd/system/containerd.service.d"
       state: "directory"
       mode: "0755"
-  - name: "Configuring containerd/http-proxy.conf"
+  - name: "Creating /etc/systemd/system/containerd.service.d/http-proxy.conf"
     ansible.builtin.template:
       dest: "/etc/systemd/system/containerd.service.d/http-proxy.conf"
       src: "templates/etc/systemd/system/containerd.service.d/http-proxy.conf.j2"
       mode: "0644"
       force: true
-  - name: "Configuring containerd/ip_forward.conf"
+  - name: "Creating /etc/systemd/system/containerd.service.d/ip-forward.conf"
     ansible.builtin.template:
       dest: "/etc/systemd/system/containerd.service.d/ip-forward.conf"
       src: "templates/etc/systemd/system/containerd.service.d/ip-forward.conf.j2"

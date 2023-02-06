@@ -89,6 +89,12 @@
       src: "templates/etc/systemd/system/cri-o.service.d/http-proxy.conf.j2"
       mode: "0644"
       force: true
+  - name: "Creating /etc/systemd/system/cri-o.service.d/ip-forward.conf"
+    ansible.builtin.template:
+      dest: "/etc/systemd/system/cri-o.service.d/ip-forward.conf"
+      src: "templates/etc/systemd/system/cri-o.service.d/ip-forward.conf.j2"
+      mode: "0644"
+      force: true
   - name: "Removing files in /etc/cni/net.d that conflict with CNIs"
     ansible.builtin.file:
       path: "{{ item }}"
