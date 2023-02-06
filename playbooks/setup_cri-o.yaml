@@ -102,8 +102,18 @@
     with_items:
     - "/etc/cni/net.d/100-crio-bridge.conflist"
     - "/etc/cni/net.d/200-loopback.conflist"
+  - name: "Ensure that br_netfilter is loaded on boot"
+    lineinfile:
+      path: /etc/modules
+      line: "br_netfilter"
+      insertafter: EOF
+      state: present
+  - name: "Load br_netfilter if it isn't already loaded"
+    shell: |
+      modprobe br_netfilter
   - name: "Restarting cri-o"
     ansible.builtin.systemd:
       name: "crio"
       daemon_reload: true
       state: "restarted"
+      enabled: true
