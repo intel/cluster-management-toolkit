@@ -1106,4 +1106,4 @@ def execute_command_with_response(args: List[str]) -> str:
 			stdout (str): The stdout from the execution
 	"""
 	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
-	return result.stdout.decode("utf-8")
+	return result.stdout.decode("utf-8", errors = "replace")

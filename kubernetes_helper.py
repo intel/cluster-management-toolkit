@@ -3307,11 +3307,11 @@ class KubernetesHelper:
 		elif status == 422:
 			# Unprocessable entity
 			# The content and syntax is correct, but the request cannot be processed
-			msg = result.data.decode("utf-8")
+			msg = result.data.decode("utf-8", errors = "replace")
 			message = f"422: Unprocessable Entity; method: {method}, URL: {url}; header_params: {header_params}; message: {msg}"
 		elif status == 500:
 			# Internal Server Error
-			msg = result.data.decode("utf-8")
+			msg = result.data.decode("utf-8", errors = "replace")
 			message = f"500: Internal Server Error; method: {method}, URL: {url}; header_params: {header_params}; message: {msg}"
 		elif status == 503:
 			# Service Unavailable
@@ -3759,7 +3759,7 @@ a				the return value from __rest_helper_patch
 		data, _message, status = self.__rest_helper_generic_json(method = "GET", url = url, query_params = query_params)
 		if status == 200 and data is not None:
 			if isinstance(data, bytes):
-				msg = data.decode("utf-8").splitlines()
+				msg = data.decode("utf-8", errors = "replace").splitlines()
 			elif isinstance(data, str):
 				msg = data.splitlines()
 		elif status == 204:
@@ -3832,7 +3832,7 @@ a				the return value from __rest_helper_patch
 
 		if status == 200 and data is not None:
 			if isinstance(data, bytes):
-				msg = data.decode("utf-8")
+				msg = data.decode("utf-8", errors = "replace")
 			elif isinstance(data, str):
 				msg = data
 		elif status == 204:

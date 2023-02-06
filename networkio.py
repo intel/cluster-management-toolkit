@@ -154,7 +154,7 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 	regex = re.compile(r"^([0-9a-f]+)\s+(\S+)$")
 	match_checksum = None
 
-	for line in checksum.decode("utf-8").splitlines():
+	for line in checksum.decode("utf-8", errors = "replace").splitlines():
 		if filename is None:
 			match_checksum = line
 			break

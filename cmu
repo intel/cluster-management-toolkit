@@ -4069,7 +4069,7 @@ def get_inventory_list(**kwargs):
 			ips = []
 
 			# Get all interfaces with global scope
-			output = subprocess.check_output(["/usr/sbin/ip", "-o", "addr", "show", "scope", "global"]).decode("utf-8")
+			output = subprocess.check_output(["/usr/sbin/ip", "-o", "addr", "show", "scope", "global"]).decode("utf-8", errors = "replace")
 			# Safe
 			iface_addr_regex = re.compile(r"^\d+:\s+([^\s]+)\s+inet6?\s+([^/]*)/")
 
@@ -9190,7 +9190,7 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 				ansithemeprint([ANSIThemeString("Error", "error"),
 						ANSIThemeString(": Failed to create debug image", "default")], stderr = True)
 			else:
-				output = result.stdout.decode('utf-8')
+				output = result.stdout.decode("utf-8", errors = "replace")
 				# Safe
 				tmp = re.match(r"^Creating debugging pod (\S+) with container (\S+) .*", output)
 				if tmp is not None:
