@@ -121,7 +121,7 @@ def __sub_usage(command: str) -> int:
 
 	commandinfo = {}
 
-	for key, value in commandline.items():
+	for _key, value in commandline.items():
 		if command in deep_get(value, "command"):
 			commandinfo = value
 			break
@@ -162,7 +162,7 @@ def __sub_usage(command: str) -> int:
 			extended_description = deep_get(optiondata, DictPath("extended_description"), [])
 
 			if len(values) > 0:
-				optionline += [ANSIThemeString(f" ", "option")] + values
+				optionline += [ANSIThemeString(" ", "option")] + values
 			pad = " ".rjust(max_optionlen - themearray_len(optionline))
 			optionline += [ANSIThemeString(pad, "description")] + description
 			ansithemeprint(optionline)
