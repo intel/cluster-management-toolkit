@@ -1,7 +1,10 @@
 yaml_dirs = parsers themes views playbooks
 python_executables = cmt cmtadm cmt-install cmtinv cmu tests/validate_yaml tests/check_theme_use tests/iotests
+test_lib_symlinks = ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py networkio.py
 
 checks: bandit yamllint validate_yaml validate_playbooks
+
+clean: remove_test_symlinks
 
 bandit:
 	bandit -c .bandit $(python_executables) *.py || /bin/true
@@ -42,17 +45,21 @@ parser_bundle:
 		cat $$file >> parsers/BUNDLE.yaml; \
 	done
 
-setup_tests:
+remove_test_symlinks:
 	@(cd tests ;\
-	 test -L ansible_helper.py || ln -s ../ansible_helper.py . ;\
-	 test -L cmtio.py || ln -s ../cmtio.py . ;\
-	 test -L cmtio_yaml.py || ln -s ../cmtio_yaml.py . ;\
-	 test -L cmtlib.py || ln -s ../cmtlib.py . ;\
-	 test -L cmtpaths.py || ln -s ../cmtpaths.py . ;\
-	 test -L ansithemeprint.py || ln -s ../ansithemeprint.py . ;\
-	 test -L cmttypes.py || ln -s ../cmttypes.py . ;\
-	 test -L networkio.py || ln -s ../networkio.py . ;\
-	 test -d testpaths || mkdir testpaths );\
+	  for file in $(test_lib_symlinks); do \
+		rm -f $$file; \
+	  done)
+
+create_test_symlinks:
+	@(cd tests ;\
+	  for file in $(test_lib_symlinks); do \
+		test -L $$file || ln -s ../$$file . ;\
+	  done)
+
+setup_tests: create_test_symlinks
+	@(cd tests ;\
+	  test -d testpaths || mkdir testpaths );\
 	(cd tests/testpaths ;\
 	 test -f 01-wrong_permissions || touch 01-wrong_permissions ;\
 	 test -L 02-symlink || ln -s 05-not_executable.sh 02-symlink ;\
