@@ -409,12 +409,22 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Do not install dependencies", "description")],
 			},
 			"--no-fallback": {
-				"description": [ANSIThemeString("Do not use Python packages from PIP if no system package exist", "description")],
+				"description": [ANSIThemeString("Do not fallback to Python packages from PIP", "description")],
+				"extended_description": [
+					[ANSIThemeString("If a distribution package cannot be found", "description")],
+					[ANSIThemeString("cmt-install", "programname"),
+					 ANSIThemeString(" will, by default, install packages using PIP.", "description")],
+					[ANSIThemeString("This option can be used to disable that behaviour", "description")],
+				],
 			},
 			"--pip-proxy": {
 				"values": [ANSIThemeString("PROXY", "argument")],
-				"description": [ANSIThemeString("HTTPS proxy to use if installing fallback packages from PIP on the format ", "description"),
-						ANSIThemeString("[user:passwd@]proxy:port", "argument")],
+				"description": [ANSIThemeString("Proxy to use for PIP", "description")],
+				"extended_description": [
+					[ANSIThemeString("HTTPS proxy to use if fallback packages are installed", "description")],
+					[ANSIThemeString("from PIP. Format: ", "description"),
+					 ANSIThemeString("[user:passwd@]proxy:port", "argument")],
+				],
 				"requires_arg": True,
 				"validator": "url",
 			},

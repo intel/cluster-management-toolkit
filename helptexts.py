@@ -203,43 +203,36 @@ usage += [ANSIThemeString("VIEW", "command"),
 usage += [ANSIThemeString("VIEW ", "command"), ANSIThemeString("NAME ", "argument"),
 	  ANSIThemeString("[", "separator"), ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString("]", "separator"),
           ANSIThemeString("    start in ", "description"), ANSIThemeString("VIEW", "command"),
-	  ANSIThemeString(" for the object matching ", "description"), ANSIThemeString("NAME", "argument"), ANSIThemeString(" and, optionally, ", "description"),
-	  ANSIThemeString("NAMESPACE\n", "argument")]
+	  ANSIThemeString(" for the object matching\n", "description")]
+usage += [ANSIThemeString("                         NAME", "argument"), ANSIThemeString(" and, optionally, ", "description"), ANSIThemeString("NAMESPACE\n", "argument")]
 usage += [ANSIThemeString("VIEW ", "command"), ANSIThemeString("NAMESPACE/NAME", "argument"),
           ANSIThemeString("      same as above; alternate syntax\n", "description")]
 usage += [ANSIThemeString("pod ", "command"), ANSIThemeString("NAME NAMESPACE CONTAINER\n", "argument")]
 usage += [ANSIThemeString("pod ", "command"), ANSIThemeString("[", "separator"), ANSIThemeString("NAMESPACE/", "argument"), ANSIThemeString("]", "separator"),
 	  ANSIThemeString("NAME:", "argument"), ANSIThemeString("[", "separator"), ANSIThemeString("CONTAINER", "argument"), ANSIThemeString("]\n", "separator")]
-usage += [ANSIThemeString("                         start in container info view matching ", "description"),
-	  ANSIThemeString("NAME", "argument"), ANSIThemeString(", ", "description"),
+usage += [ANSIThemeString("                         start in container info view matching\n", "description")]
+usage += [ANSIThemeString("                         NAME", "argument"), ANSIThemeString(", ", "description"),
 	  ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString(", ", "description"),
-	  ANSIThemeString("CONTAINER", "argument"), ANSIThemeString(";\n", "description")]
-usage += [ANSIThemeString("                         if ", "description"),
-	  ANSIThemeString("NAME", "argument"),
-	  ANSIThemeString(" has exactly one container, then ", "description"),
-	  ANSIThemeString("NAME:", "argument"), ANSIThemeString(" opens that container\n", "description")]
+	  ANSIThemeString("CONTAINER", "argument"), ANSIThemeString("\n", "description")]
 usage += [ANSIThemeString("configmap ", "command"), ANSIThemeString("NAME NAMESPACE CONFIGMAP\n", "argument")]
 usage += [ANSIThemeString("configmap ", "command"), ANSIThemeString("[", "separator"), ANSIThemeString("NAMESPACE/", "argument"), ANSIThemeString("]", "separator"), # pylint: disable=line-too-long
 	  ANSIThemeString("NAME:", "argument"), ANSIThemeString("[", "separator"), ANSIThemeString("CONFIGMAP", "argument"), ANSIThemeString("]\n", "separator")]
-usage += [ANSIThemeString("                         start in the configmap info view matching ", "description"),
-	  ANSIThemeString("NAME", "argument"), ANSIThemeString(", ", "description"),
+usage += [ANSIThemeString("                         start in the configmap info view matching\n", "description")]
+usage += [ANSIThemeString("                         NAME", "argument"), ANSIThemeString(", ", "description"),
 	  ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString(", ", "description"),
-	  ANSIThemeString("CONFIGMAP", "argument"), ANSIThemeString(";\n", "description")]
-usage += [ANSIThemeString("                         if ", "description"),
-	  ANSIThemeString("NAME", "argument"),
-	  ANSIThemeString(" has exactly one configmap, then ", "description"),
-	  ANSIThemeString("NAME:", "argument"), ANSIThemeString(" opens that configmap\n", "description")]
-usage += [ANSIThemeString("\n", "description")]
-usage += [ANSIThemeString("  --read-only ", "option"),
-          ANSIThemeString("           disable all commands that modify state", "description")]
-usage += [ANSIThemeString("\n", "description")]
-usage += [ANSIThemeString("  --namespace ", "option"), ANSIThemeString("NAMESPACE", "argument"),
-          ANSIThemeString("  only show namespace ", "description"), ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString(" (valid for all namespaced views)\n", "description")] # pylint: disable=line-too-long
+	  ANSIThemeString("CONFIGMAP", "argument"), ANSIThemeString("\n", "description")]
 usage += [ANSIThemeString("\n", "description")]
 usage += [ANSIThemeString("list-views     ", "command"),
           ANSIThemeString("          list view information and exit\n", "description")]
 usage += [ANSIThemeString("list-namespaces", "command"),
           ANSIThemeString("          list valid namespaces and exit\n", "description")]
+usage += [ANSIThemeString("\n", "description")]
+usage += [ANSIThemeString("Global Options:\n", "description")]
+usage += [ANSIThemeString("  --read-only ", "option"),
+          ANSIThemeString("           disable all commands that modify state", "description")]
+usage += [ANSIThemeString("\n", "description")]
+usage += [ANSIThemeString("  --namespace ", "option"), ANSIThemeString("NAMESPACE", "argument"),
+          ANSIThemeString("  only show namespace ", "description"), ANSIThemeString("NAMESPACE\n", "argument")]
 usage += [ANSIThemeString("\n", "description")]
 usage += [ANSIThemeString("help", "command"), ANSIThemeString("|", "separator"), ANSIThemeString("--help", "command"),
           ANSIThemeString("              display this help and exit\n", "description")]
