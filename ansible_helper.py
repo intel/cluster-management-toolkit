@@ -152,6 +152,49 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 
 	return playbooks
 
+def ansible_print_action_summary(playbooks: List[FilePath], extra_vars: Dict = None) -> None:
+	"""
+	Given a list of playbook paths, print a summary of the actions that will be performed
+
+		Parameters:
+			playbook (str): The name of the playbook to print a summary for
+	"""
+
+	# We do not want to check that parent resolves to itself,
+	# because when we have an installation with links directly to the git repo
+	# the playbooks directory will be a symlink
+	checks = [
+		SecurityChecks.RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_FILE,
+	]
+
+	ansithemeprint([ANSIThemeString("\n• ", "separator"),
+			ANSIThemeString("Playbooks to be executed:", "action")])
+	for playbook in playbooks:
+		playbook_string, playbook_path = playbook
+		playbook_data = secure_read_yaml(playbook_path, checks = checks)
+
+		ansithemeprint(playbook_string +
+			       [ANSIThemeString(" (path: ", "default"),
+				ANSIThemeString(f"{playbook_path}", "path"),
+			        ANSIThemeString(")", "default")])
+		# None of our playbooks have more than one play per file
+		summary = deep_get(playbook_data[0], DictPath("vars#metadata#summary"), {})
+		if len(summary) == 0:
+			ansithemeprint([ANSIThemeString("      Error", "error"),
+					ANSIThemeString(": playbook lacks a summary; please file a bug report if this isn't a locally modified playbook!", "default")],
+				       stderr = True)
+		for section_description, section_data in summary.items():
+			ansithemeprint([ANSIThemeString(f"      {section_description}:", "emphasis")])
+			for section_item in section_data:
+				description = deep_get(section_item, DictPath("description"), "")
+				ansithemeprint([ANSIThemeString(f"        {description}", "default")])
+
 def ansible_get_inventory_dict() -> Dict:
 	"""
         Get the Ansible inventory and return it as a dict

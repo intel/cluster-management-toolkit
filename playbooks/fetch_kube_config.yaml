@@ -3,6 +3,11 @@
   vars:
     metadata:
       description: "Copy /etc/kubernetes/admin.conf from control plane to .kube on localhost"
+      summary:
+        "Created directories":
+        - description: "localhost:/home/{{ ansible_user }}/.kube (0o700)"
+        "Fetched files":
+        - description: "remote:/etc/kubernetes/admin.conf => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
       playbook_types:
       - "internal"
       category: "Setup"

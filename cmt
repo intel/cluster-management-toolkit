@@ -33,7 +33,7 @@ from cmtpaths import CMT_CONFIG_FILE, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
 from commandparser import parse_commandline
 
 from ansible_helper import ansible_configuration, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts
-from ansible_helper import ansible_print_play_results, populate_playbooks_from_paths
+from ansible_helper import ansible_print_action_summary, ansible_print_play_results, populate_playbooks_from_paths
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import cmtlib
@@ -251,16 +251,17 @@ def show_configuration(hosts: List[str], cri: Optional[str] = None) -> None:
 
 	ansithemeprint([ANSIThemeString("", "default")])
 	ansithemeprint([ANSIThemeString("• ", "separator"),
-			ANSIThemeString("Control Plane(s):", "action")])
+			ANSIThemeString("Control Planes:", "action")])
 
 	for controlplane in controlplanes:
-		ansithemeprint([ANSIThemeString("            Hostname: ", "action"),
+		ansithemeprint([ANSIThemeString("  • ", "separator"),
 				ANSIThemeString(f"{controlplane[0]} ", "emphasis"),
 				ANSIThemeString("(", "default")] +
 			       ansithemestring_join_tuple_list(controlplane[1], formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
 			       [ANSIThemeString(")", "default")])
 
-	ansithemeprint([ANSIThemeString("\nTarget Hosts:", "header")])
+	ansithemeprint([ANSIThemeString("\n• ", "separator"),
+			ANSIThemeString("Target Hosts:", "action")])
 	for host in hosts:
 		ansithemeprint([ANSIThemeString("  • ", "separator"),
 				ANSIThemeString(host, "hostname")])
@@ -906,10 +907,17 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 			ansithemeprint([ANSIThemeString("\nAborting", "error"),
 					ANSIThemeString(": Nodes not added to the inventory.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
-		else:
-			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = not_in_inventory, skip_all = False)
 
 	show_configuration(non_existing)
+
+	prepare_playbooks = [
+		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_passwordless_ansible.yaml"))),
+		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_node.yaml")))
+	]
+	playbooks = populate_playbooks_from_paths(prepare_playbooks)
+	ansible_print_action_summary(playbooks)
+
+	ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = not_in_inventory, skip_all = False)
 
 	if confirm == True:
 		input_retval = ansithemeinput([ANSIThemeString("\nStart host preparation? [y/", "default"),
@@ -927,12 +935,6 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# We most likely will not be able to connect to the remote host without a password
 	if no_password == False:
 		request_ansible_password()
-
-	prepare_playbooks = [
-		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_passwordless_ansible.yaml"))),
-		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_node.yaml")))
-	]
-	playbooks = populate_playbooks_from_paths(prepare_playbooks)
 
 	extra_values = {
 		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),

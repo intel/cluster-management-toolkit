@@ -3,6 +3,9 @@
     metadata:
       description: "List Network Adapters"
       category: "Information"
+      summary:
+        "Information gathering":
+        - description: "Lists Network Adapters"
       read_only: true
   gather_facts: false
   tasks:
@@ -39,23 +42,31 @@
         addr=$(cat /sys/class/net/${dev}/address)
         operstate=$(cat /sys/class/net/${dev}/operstate)
         ipaddrs=""
-        tmp="$(/sbin/ifconfig ${dev} | grep -E "inet|inet6" | sed -e 's/.*\(inet .*\)netmask.*/\1/;s/.*\(inet6 .*\)prefixlen.*/\1/')"
+        if [ -x /usr/sbin/ip ]; then
+          tmp="$(/usr/bin/ip addr show dev ${dev} | grep inet | tr -s ' ' | cut -f 2,3 -d' ' | sed -e 's/\/.*//' | tr '\n' ' ')"
+        else
+          tmp="$(/sbin/ifconfig ${dev} | grep "inet" | sed -e 's/.*\(inet .*\)netmask.*/\1/;s/.*\(inet6 .*\)prefixlen.*/\1/')"
+        fi
         ipaddrs=$(echo ${tmp})
         printf -- "%s [%s]: (%s) %s\n" "${dev}" "${addr}" "${operstate}" "${ipaddrs}"
         printf -- "driver: %s\n" "${driver}"
         # Is this a wireless adapter?
         if [ x"${dev##wl}" != x"${dev}" ]; then
-          # If so ifconfig is of no use
-          receive=$(/sbin/iw wlp2s0 link | grep "rx bitrate" | sed -e 's,.*rx bitrate: \(.*MBit/s\).*,\1,')
-          transmit=$(/sbin/iw wlp2s0 link | grep "tx bitrate" | sed -e 's,.*tx bitrate: \(.*MBit/s\).*,\1,')
-          if [ -z "${transmit}" ]; then
-                transmit="[unknown]"
+          if [ ! -x /sbin/iw ]; then
+            printf -- "\n/sbin/iw not available; unable to display detailed information about wireless network interfaces\n" > /dev/stderr
+          else
+            # If so ifconfig is of no use
+            receive=$(/sbin/iw "${dev}" link | grep "rx bitrate" | sed -e 's,.*rx bitrate: \(.*MBit/s\).*,\1,')
+            transmit=$(/sbin/iw "${dev}" link | grep "tx bitrate" | sed -e 's,.*tx bitrate: \(.*MBit/s\).*,\1,')
+            if [ -z "${transmit}" ]; then
+              transmit="[unknown]"
+            fi
+            if [ -z "${receive}" ]; then
+              receive="[unknown]"
+            fi
+            printf -- "transmit: %s\n" "${transmit}"
+            printf -- "receive: %s\n" "${receive}"
           fi
-          if [ -z "${receive}" ]; then
-                receive="[unknown]"
-          fi
-          printf -- "transmit: %s\n" "${transmit}"
-          printf -- "receive: %s\n" "${receive}"
         else
           supported=$(/sbin/ethtool ${dev} 2> /dev/null | sed -e 's/^\(\t[[:alpha:]]\)/\f\1/' | awk 'BEGIN { RS="\f" } /^\tSupported link modes/ { print }' | sed -e 's/Supported link modes: //')
           advertised=$(/sbin/ethtool ${dev} 2> /dev/null | sed -e 's/^\(\t[[:alpha:]]\)/\f\1/' | awk 'BEGIN { RS="\f" } /^\tAdvertised link modes/ { print }' | sed -e 's/Advertised link modes: //')

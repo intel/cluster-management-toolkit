@@ -2,6 +2,13 @@
   vars:
     metadata:
       description: "Prepare node"
+      summary:
+        "Modified files":
+        - description: "/etc/fstab (swap disabled)"
+        - description: "/etc/selinux/config (SELinux set to permissive mode)"
+          conditions: "Red Hat and derivatives"
+        "Modified systemd units":
+        - description: "All swap-type units masked"
       playbook_types:
       - "internal"
       category: "Setup"
