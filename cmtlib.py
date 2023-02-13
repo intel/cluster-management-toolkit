@@ -14,12 +14,6 @@ from typing import Dict, List, Optional, Tuple, Union
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy
 from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR
 import cmtio
-import cmtio_yaml
-
-try:
-	from natsort import natsorted
-except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 cmtconfig = {}
 
@@ -164,6 +158,13 @@ def read_cmtconfig() -> Dict:
 		Returns:
 			cmtconfig (Dict): A reference to the global cmtconfig dict
 	"""
+
+	import cmtio_yaml
+
+	try:
+		from natsort import natsorted
+	except ModuleNotFoundError:
+		sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 	global cmtconfig # pylint: disable=global-statement
 
@@ -528,6 +529,11 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 		Returns:
 			deb_versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
 	"""
+
+	try:
+		from natsort import natsorted
+	except ModuleNotFoundError:
+		sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 	deb_versions = []
 
