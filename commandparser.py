@@ -594,6 +594,9 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 
 	# Validate the args against required_args and optional_args
 	for i, arg in enumerate(required_args + optional_args):
+		if i >= len(args):
+			break
+
 		validator = deep_get(arg, DictPath("validator"), "")
 		list_separator = deep_get(arg, DictPath("list_separator"))
 		minval, maxval = deep_get(arg, DictPath("valid_range"), (None, None))
