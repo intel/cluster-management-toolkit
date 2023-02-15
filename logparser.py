@@ -2383,6 +2383,43 @@ def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 	return message, remnants
 
 # pylint: disable-next=unused-argument
+def raw_formatter(message: str, severity: Optional[LogLevel] = None, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
+			Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], Optional[LogLevel], str]:
+	assert options is not None
+
+	format_rules = deep_get(options, DictPath("format_rules"), {})
+
+	if len(format_rules) == 0:
+		raise Exception("format_rules is empty")
+
+	# Iterate until first matching rule, if any
+	for format_rule in format_rules:
+		matchtype = deep_get(format_rule, DictPath("matchtype"), "")
+		matchkey = deep_get(format_rule, DictPath("matchkey"), "")
+		formatting = deep_get(format_rule, DictPath("formatting"), {})
+
+		if matchtype == "regex":
+			tmp = re.match(matchkey, message)
+			if tmp is None or len(tmp.groups()) == 0:
+				continue
+			tmp_msg = []
+
+			field_colors = deep_get(formatting, DictPath("field_colors"), [])
+			for color_index, group in enumerate(tmp.groups()):
+				if len(field_colors) == 0:
+					tmp_msg.append(ThemeString(group, ThemeAttr("types", "generic")))
+				elif color_index > len(field_colors):
+					tmp_msg.append(ThemeString(group, ThemeAttr(field_colors[-1]["context"], field_colors[-1]["type"])))
+				else:
+					tmp_msg.append(ThemeString(group, ThemeAttr(field_colors[color_index]["context"], field_colors[color_index]["type"])))
+			message = tmp_msg
+			break
+		else:
+			raise TypeError(f"Unsupported matchtype {matchtype}")
+
+	return message, severity, facility
+
+# pylint: disable-next=unused-argument
 def custom_splitter(message: str, severity: Optional[LogLevel] = None, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 			Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], Optional[LogLevel], str]:
 	assert options is not None
@@ -2499,6 +2536,9 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 			# Multiparsers
 			if _filter[0] == "bracketed_timestamp_severity_facility":
 				message, severity, facility = split_bracketed_timestamp_severity_facility(message, default = _filter[1])
+			elif _filter[0] == "raw_formatter":
+				_parser_options = _filter[1]
+				message, severity, facility = raw_formatter(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 			elif _filter[0] == "custom_splitter":
 				_parser_options = _filter[1]
 				message, severity, facility = custom_splitter(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
@@ -2693,6 +2733,7 @@ def init_parser_list() -> bool:
 								   "json_with_leading_message",
 								   "key_value",
 								   "key_value_with_leading_message",
+								   "raw_formatter",
 								   "yaml_line"):
 							options = {}
 							for key, value in deep_get(rule, DictPath("options"), {}).items():
