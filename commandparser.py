@@ -5,6 +5,7 @@ This module parses command line options and generate helptexts
 """
 
 import errno
+import re
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
 try:
@@ -601,6 +602,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 		list_separator = deep_get(arg, DictPath("list_separator"))
 		minval, maxval = deep_get(arg, DictPath("valid_range"), (None, None))
 		allowlist = deep_get(arg, DictPath("allowlist"), [])
+		validator_regex = deep_get(arg, DictPath("regex"), r"")
 
 		if list_separator is None:
 			arglist = [args[i]]
@@ -643,6 +645,14 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 						       ] + arg["string"] + [ANSIThemeString(".", "default")], stderr = True)
 					ansithemeprint([ANSIThemeString("Valid options are: ", "description")], stderr = True)
 					ansithemeprint(ansithemestring_join_tuple_list(allowlist, formatting = "argument", separator = ANSIThemeString(", ", "separator")))
+					sys.exit(errno.EINVAL)
+			elif validator == "regex":
+				tmp = re.match(validator_regex, subarg)
+				if tmp is None:
+					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+							ANSIThemeString(": “", "default"),
+							ANSIThemeString(f"{subarg}", "option"),
+							ANSIThemeString("“ is not a valid version number", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 
 	return command, options, args

@@ -3823,8 +3823,14 @@ COMMANDLINE = {
 				],
 			},
 		},
-		"min_args": 0,
-		"max_args": 1,
+		"optional_args": [
+			{
+				"name": "clustername",
+				"string": [ANSIThemeString("CLUSTER_NAME", "argument")],
+				"validator": "hostname",
+				"list_separator": ",",
+			}
+		],
 		"callback": import_cluster,
 	},
 	"Prepare Installation": {
@@ -3855,6 +3861,7 @@ COMMANDLINE = {
 						ANSIThemeString("HOST", "argument"),
 						ANSIThemeString(" as control plane ", "description")],
 				"requires_arg": True,
+				"validator": "hostname_or_ip",
 			},
 			"--resume": {
 				"description": [ANSIThemeString("Resume preparation; can be used if preparation was aborted", "description")],
@@ -4028,6 +4035,8 @@ COMMANDLINE = {
 					 ANSIThemeString(".", "description")],
 				],
 				"requires_arg": True,
+				"validator": "allowlist",
+				"allowlist": ["containerd", "cri-o", "docker-shim"],
 			},
 			"--enable-dra": {
 				"description": [ANSIThemeString("Enable the feature gates necessary to use Dynamic Resource Allocation (DRA)", "description")],
@@ -4108,8 +4117,14 @@ COMMANDLINE = {
 			 ANSIThemeString("cilium", "argument"),
 			 ANSIThemeString(" are supported).", "description")],
 		],
-		"min_args": 0,
-		"max_args": 1,
+		"optional_args": [
+			{
+				"name": "cni",
+				"string": [ANSIThemeString("CNI", "argument")],
+				"validator": "allowlist",
+				"allowlist": ["calico", "cilium"],
+			}
+		],
 		"callback": upgrade_cni,
 	},
 	"Upgrade Control Plane": {
@@ -4185,8 +4200,14 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
 			},
 		},
-		"min_args": 0,
-		"max_args": 1,
+		"optional_args": [
+			{
+				"name": "version",
+				"string": [ANSIThemeString("KUBERNETES_VERSION", "argument")],
+				"validator": "regex",
+				"regex": r"^\d+\.\d+\.\d+(-\d+)?$"
+			}
+		],
 		"callback": upgrade_control_plane,
 	},
 	"Teardown Control Plane": {
@@ -4382,6 +4403,9 @@ COMMANDLINE = {
 				"values": [ANSIThemeString("USERGROUP", "argument")],
 				"description": [ANSIThemeString("If your system uses usergroups, specify your usergroup here", "description")],
 				"requires_arg": True,
+				"validator": "regex",
+				# regex taken from debian; other distros might be stricter or possible more permissive
+				"regex": r"^[a-z_][a-z0-9_-]*[$]?$",
 			},
 		},
 		"min_args": 0,
