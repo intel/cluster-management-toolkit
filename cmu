@@ -99,7 +99,7 @@ initial_name = None
 initial_namespace = None
 initial_container = None
 
-# Is iku running in read only-mode?
+# Is cmu running in read only-mode?
 read_only_mode = False
 
 # Namespace
@@ -135,7 +135,7 @@ def gather_cluster_info() -> None:
 	_control_plane_node, control_plane_name = get_control_plane()
 
 	# This is tricky: we get this from the Debian package;
-	# since we cannot assume that we are running iku on the [main] control plane
+	# since we cannot assume that we are running cmu on the [main] control plane
 	# we have to ask the [main] control plane, via ansible, what version of kubeadm it is running
 	package_versions = get_package_versions(control_plane_name)
 	control_plane_k8s_version = ""

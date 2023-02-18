@@ -18,7 +18,7 @@
 # Return format is timestamp, facility, severity, message
 
 """
-Log parsers for iku
+Log parsers for cmu
 """
 
 # pylint: disable=line-too-long

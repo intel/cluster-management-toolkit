@@ -875,7 +875,7 @@ recommended_directory_permissions = [
 		"justification": [ANSIThemeString("If other users can read, create or replace files in ", "default"),
 				  ANSIThemeString(f"{CMT_LOGS_DIR}", "path"),
 				  ANSIThemeString(" they can cause ", "default"),
-				  ANSIThemeString("iku", "command"),
+				  ANSIThemeString("cmu", "command"),
 				  ANSIThemeString(" to malfunction and possibly hide signs of a compromised cluster ", "default"),
 				  ANSIThemeString("and may be able to obtain sensitive information from audit messages", "default")]
 	},
@@ -959,7 +959,7 @@ recommended_directory_permissions = [
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{THEME_DIR}", "path"),
 				  ANSIThemeString(" they can cause ", "default"),
-				  ANSIThemeString("iku", "command"),
+				  ANSIThemeString("cmu", "command"),
 				  ANSIThemeString(" to malfunction", "default")]
 	},
 	{
@@ -970,7 +970,7 @@ recommended_directory_permissions = [
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{PARSER_DIR}", "path"),
 				  ANSIThemeString(" they can cause ", "default"),
-				  ANSIThemeString("iku", "command"),
+				  ANSIThemeString("cmu", "command"),
 				  ANSIThemeString(" to malfunction and possibly hide signs of a compromised cluster", "default")]
 	},
 	{
@@ -981,7 +981,7 @@ recommended_directory_permissions = [
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{VIEW_DIR}", "path"),
 				  ANSIThemeString(" they can cause ", "default"),
-				  ANSIThemeString("iku", "command"),
+				  ANSIThemeString("cmu", "command"),
 				  ANSIThemeString(" to malfunction and possibly hide signs of a compromised cluster", "default")]
 	},
 ]
@@ -1012,7 +1012,7 @@ recommended_file_permissions = [
 		"justification": [ANSIThemeString("If others users can modify executables they can obtain elevated privileges", "default")]
 	},
 	{
-		"path": FilePath(os.path.join(BINDIR, "iku")),
+		"path": FilePath(os.path.join(BINDIR, "cmu")),
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o002,
 		"executable": True,
