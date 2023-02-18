@@ -40,7 +40,8 @@ from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_
 from commandparser import parse_commandline
 
 from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_set_vars
-from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_print_play_results, populate_playbooks_from_paths
+from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_get_hosts_by_group
+from ansible_helper import ansible_print_play_results, populate_playbooks_from_paths
 
 import cmtio
 from cmtio import check_path, execute_command, execute_command_with_response, join_securitystatus_set, secure_mkdir
@@ -411,7 +412,7 @@ def patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> None:
 	check_and_print_status(execute_command(args))
 
 # XXX: We should convert all of cni_data to use this format instead,
-#      and move all of this code to a separate file to allow it to be used both from iku and cmtadm
+#      and move all of this code to a separate file to allow it to be used both from cmu and cmtadm
 cni_upgrade_data = {
 	"calico": {
 		"executable": {
@@ -733,6 +734,140 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 			ansithemeprint([ANSIThemeString("No newer version available.", "default")])
 
 # pylint: disable-next=unused-argument
+def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
+	"""
+	Install and configure the specified CNI
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): The CNI to install and configure (optional; if not specified the default CNI will be used)
+	"""
+
+	confirm = True
+
+	if not Path(CMT_INSTALLATION_INFO_FILE).is_file():
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Could not find reliable installation information. Aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	installation_info = get_installation_info()
+	cluster_name = installation_info["installation_target"]
+	cni = installation_info[cluster_name]["cni"]
+	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
+	admin_name = f"kubernetes-admin+{cluster_name}"
+	context_name = f"{admin_name}@{cluster_name}"
+
+	if cni not in ("", "<none>", "<unknown>"):
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": The cluster already has a CNI installed; aborting.", "default")], stderr = True)
+		sys.exit(errno.EEXIST)
+
+	confirm = True
+
+	if len(args) == 0:
+		ansithemeprint([ANSIThemeString("Note", "note"),
+				ANSIThemeString(": No CNI specified; defaulting to ", "default"),
+				ANSIThemeString(f"{DEFAULT_CNI}", "programname"),
+				ANSIThemeString(".", "default")], stderr = True)
+		cni = DEFAULT_CNI
+	else:
+		cni = args[0]
+
+	if confirm == True:
+		retval = ansithemeinput([ANSIThemeString("\nSetup CNI (", "default"),
+					 ANSIThemeString(f"{cni}", "argument"),
+					 ANSIThemeString(")? [y/", "default"),
+					 ANSIThemeString("N", "emphasis"),
+					 ANSIThemeString("]: ", "default")])
+		if retval.lower() not in ("y", "yes"):
+			ansithemeprint([ANSIThemeString("\nAborting:", "error"),
+					ANSIThemeString(" User stopped CNI setup.", "default")], stderr = True)
+			sys.exit(errno.EINTR)
+
+	ansithemeprint([ANSIThemeString("\n[Installing and configuring CNI]", "phase")])
+	result = __setup_cni(cni, pod_network_cidr, context_name, cluster_name)
+	if result == True:
+		update_installation_info(cluster_name = cluster_name, cni = cni)
+
+# pylint: disable-next=unused-argument
+def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
+	"""
+	Teardown the CNI
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Unused
+	"""
+
+	confirm = True
+
+	if not Path(CMT_INSTALLATION_INFO_FILE).is_file():
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Could not find reliable installation information. Aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	installation_info = get_installation_info()
+	cluster_name = installation_info["installation_target"]
+	cni = installation_info[cluster_name]["cni"]
+	if cni in ("", "<none>", "<unknown>"):
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": No CNI installed; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	directory = FilePath(str(PurePath(DEPLOYMENT_DIR).joinpath("cni")))
+	cni_filename = deep_get(cni_data, DictPath(f"{cni}#filename"))
+	if cni_filename is None:
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": No data found for CNI. This is most likely a programming error; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	cni_path = FilePath(str(PurePath(directory).joinpath(cni_filename)))
+
+	security_violations = check_path(cni_path)
+
+	if security_violations != [SecurityStatus.OK]:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": The CNI deployment file is either missing or unsafe to use; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	all_nodes_in_cluster = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, cluster_name)
+	if len(all_nodes_in_cluster) == 0:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": The inventory for this cluster does not contain any hosts; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	if confirm == True:
+		retval = ansithemeinput([ANSIThemeString("\nUninstall CNI (", "default"),
+					 ANSIThemeString(f"{cni}", "argument"),
+					 ANSIThemeString(")? [y/", "default"),
+					 ANSIThemeString("N", "emphasis"),
+					 ANSIThemeString("]: ", "default")])
+		if retval.lower() not in ("y", "yes"):
+			ansithemeprint([ANSIThemeString("\nAborting:", "error"),
+					ANSIThemeString(" User stopped CNI removal.", "default")], stderr = True)
+			sys.exit(errno.EINTR)
+
+	ansithemeprint([ANSIThemeString("\n[Removing CNI and configuration]", "phase")])
+
+	# OK, we have a path to the CNI; this should be enough to remove it
+	kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	execute_command_with_response([kubectl_path, "delete", "-f", cni_path])
+
+	uninstall_cni_playbooks = [
+		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("teardown_cni.yaml"))),
+	]
+	playbooks = populate_playbooks_from_paths(uninstall_cni_playbooks)
+
+	retval = run_playbooks(playbooks = playbooks, hosts = all_nodes_in_cluster)
+	if retval == True:
+		ansithemeprint([ANSIThemeString("OK", "ok")])
+		update_installation_info(cluster_name = cluster_name, cni = "<none>")
+	else:
+		ansithemeprint([ANSIThemeString("NOT OK", "notok"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+# pylint: disable-next=unused-argument
 def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Upgrade the specified CNI to the latest version
@@ -808,7 +943,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	else:
 		ansithemeprint([ANSIThemeString("\nCNI upgrade successful", "success")])
 
-def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name: str) -> None:
+def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name: str) -> bool:
 	"""
 	Setup a CNI
 
@@ -817,6 +952,8 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 			pod_network_cidr (str): The CIDR of the pod network
 			context_name (str): The name of the cluster context
 			cluster_name (str): The name of the cluster
+		Returns:
+			result (bool): True on success, False on failure
 	"""
 
 	if cni not in cni_data and cni not in cni_upgrade_data:
@@ -828,7 +965,8 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 
 	if cni in cni_upgrade_data:
 		upgrade_cni(options = [("install", "")], args = [])
-		return
+		# FIXME
+		return True
 
 	version_url = deep_get(cni_data, DictPath(f"{cni}#version_url"))
 	version_regex = deep_get(cni_data, DictPath(f"{cni}#version_regex"))
@@ -887,7 +1025,9 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		"<<<context>>>": context_name,
 	}
 
-	check_and_print_status(execute_command(substitute_list(args, substitutions)))
+	result = execute_command(substitute_list(args, substitutions))
+	check_and_print_status(result)
+	return result
 
 def check_for_ssh_key() -> bool:
 	"""
@@ -3677,7 +3817,10 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
 			},
 			"--no-password": {
-				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you are preparing are already configured for login using an SSH key", "description")],
+				"description": [ANSIThemeString("Do not prompt for a password", "description")],
+				"extended_description": [
+					[ANSIThemeString("Use this if the hosts you are preparing are already configured for login using an SSH key", "description")],
+				],
 			},
 		},
 		"min_args": 0,
@@ -3747,11 +3890,14 @@ COMMANDLINE = {
 						ANSIThemeString("--skip-tasks", "option")],
 			},
 			"--no-password": {
-				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you are preparing are already configured for login using an SSH key", "description")],
+				"description": [ANSIThemeString("Do not prompt for a password", "description")],
+				"extended_description": [
+					[ANSIThemeString("Use this if the hosts you are preparing are already configured for login using an SSH key", "description")],
+				],
 			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
-						ANSIThemeString("iku", "programname"),
+						ANSIThemeString("cmu", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
 			},
@@ -3789,6 +3935,8 @@ COMMANDLINE = {
 			 ANSIThemeString("kube-router", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("weave", "argument"),
+			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString("none", "argument"),
 			],
 			[ANSIThemeString("By default ", "description"),
 			 ANSIThemeString("cilium", "argument"),
@@ -3796,6 +3944,8 @@ COMMANDLINE = {
 			[ANSIThemeString("and ", "description"),
 			 ANSIThemeString("10.244.0.0/16", "argument"),
 			 ANSIThemeString(" will be used as pod network CIDR.", "description")],
+			[ANSIThemeString("If you wish to postpone the choice of CNI you can specify ", "description"),
+			 ANSIThemeString("none", "argument")],
 		],
 		"options": {
 			"--resume": {
@@ -3831,7 +3981,7 @@ COMMANDLINE = {
 			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
-						ANSIThemeString("iku", "programname"),
+						ANSIThemeString("cmu", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
 			},
@@ -3881,6 +4031,11 @@ COMMANDLINE = {
 			},
 			"--enable-dra": {
 				"description": [ANSIThemeString("Enable the feature gates necessary to use Dynamic Resource Allocation (DRA)", "description")],
+				"extended_description": [
+					[ANSIThemeString("Currently only ", "description"),
+					 ANSIThemeString("cri-o", "argument"),
+					 ANSIThemeString(" supports DRA.", "description")],
+				],
 			},
 			"--override-cni": {
 				"description": [ANSIThemeString("Allow a change of CNI even if installation started with a different CNI", "description")],
@@ -3892,6 +4047,53 @@ COMMANDLINE = {
 		"min_args": 0,
 		"max_args": 2,
 		"callback": setup_control_plane,
+	},
+	"Setup CNI": {
+		"command": ["setup-cni"],
+		"values": [ANSIThemeString("[", "separator"),
+			   ANSIThemeString("CNI", "argument"),
+			   ANSIThemeString("]", "separator")],
+		"description": [ANSIThemeString("Install and configure CNI", "description")],
+		"extended_description": [
+			[ANSIThemeString("Valid options for CNI (Container Network Interface, aka Pod Network): ", "description")],
+			[ANSIThemeString("antrea", "argument"),
+			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString("calico", "argument"),
+			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString("canal", "argument"),
+			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString("cilium", "argument"),
+			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString("flannel", "argument"),
+			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString("kube-router", "argument"),
+			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString("weave", "argument"),
+			],
+			[ANSIThemeString("By default ", "description"),
+			 ANSIThemeString("cilium", "argument"),
+			 ANSIThemeString(" will be used as CNI", "description")],
+		],
+		"optional_args": [
+			{
+				"name": "cni",
+				"string": [ANSIThemeString("CNI", "argument")],
+				"validator": "allowlist",
+				"allowlist": ["antrea", "calico", "canal", "cilium", "flannel", "kube-router", "weave"],
+				"default": DEFAULT_CNI,
+			}
+		],
+		"callback": setup_cni,
+	},
+	"Uninstall CNI": {
+		"command": ["uninstall-cni"],
+		"description": [ANSIThemeString("Uninstall the CNI", "description")],
+		"extended_description": [
+			[ANSIThemeString("This should be used in case you want to switch to another CNI", "description")],
+		],
+		"min_args": 0,
+		"max_args": 0,
+		"callback": teardown_cni,
 	},
 	"Upgrade CNI": {
 		"command": ["upgrade-cni"],
@@ -3975,7 +4177,7 @@ COMMANDLINE = {
 			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
-						ANSIThemeString("iku", "programname"),
+						ANSIThemeString("cmu", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
 			},
@@ -4033,7 +4235,7 @@ COMMANDLINE = {
 			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
-						ANSIThemeString("iku", "programname"),
+						ANSIThemeString("cmu", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
 			},
@@ -4092,7 +4294,7 @@ COMMANDLINE = {
 			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
-						ANSIThemeString("iku", "programname"),
+						ANSIThemeString("cmu", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
 			},
@@ -4192,7 +4394,10 @@ COMMANDLINE = {
 		"description": [ANSIThemeString("Check for potential pitfalls that may prevent installation from succeeding", "description")],
 		"options": {
 			"--no-password": {
-				"description": [ANSIThemeString("Do not prompt for a password; use this if the hosts you are checking are already configured for login using an SSH key", "description")],
+				"description": [ANSIThemeString("Do not prompt for a password", "description")],
+				"extended_description": [
+					[ANSIThemeString("Use this if the hosts you are checking are already configured for login using an SSH key", "description")],
+				],
 			},
 		},
 		"required_args": [

@@ -15,7 +15,7 @@ except ModuleNotFoundError:
 import about
 
 import cmtlib
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, themearray_len
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, themearray_len, ansithemestring_join_tuple_list
 from cmttypes import deep_get, DictPath, FilePath
 
 programname = None
@@ -600,6 +600,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 		validator = deep_get(arg, DictPath("validator"), "")
 		list_separator = deep_get(arg, DictPath("list_separator"))
 		minval, maxval = deep_get(arg, DictPath("valid_range"), (None, None))
+		allowlist = deep_get(arg, DictPath("allowlist"), [])
 
 		if list_separator is None:
 			arglist = [args[i]]
@@ -632,5 +633,16 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 					sys.exit(errno.EINVAL)
 			elif validator == "int":
 				_result = validator_int(minval, maxval, subarg)
+			elif validator == "allowlist":
+				_result = subarg in allowlist
+				if _result is False:
+					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+							ANSIThemeString(": “", "default"),
+							ANSIThemeString(f"{subarg}", "option"),
+							ANSIThemeString("“ is not a valid option for ", "default"),
+						       ] + arg["string"] + [ANSIThemeString(".", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString("Valid options are: ", "description")], stderr = True)
+					ansithemeprint(ansithemestring_join_tuple_list(allowlist, formatting = "argument", separator = ANSIThemeString(", ", "separator")))
+					sys.exit(errno.EINVAL)
 
 	return command, options, args
