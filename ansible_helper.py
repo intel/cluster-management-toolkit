@@ -723,6 +723,9 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 		d = secure_read_yaml(inventory)
 
 	for host in hosts:
+		# Kubernetes doesn't like uppercase hostnames
+		host = host.lower()
+
 		# All nodes go into the "hosts" group of the "all" group,
 		# no matter if the caller also supplies a group, unless
 		# skip_all has been specified; the exception being
