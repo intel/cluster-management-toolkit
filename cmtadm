@@ -3723,6 +3723,8 @@ def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	control_planes = [args[0]]
 
+	ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = control_planes, skip_all = False)
+
 	__task_request_ansible_password(None)
 
 	clean_run = run_checks(preflight_checks, hosts = control_planes)
