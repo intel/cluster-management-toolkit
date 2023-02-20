@@ -152,7 +152,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 
 	return playbooks
 
-def ansible_print_action_summary(playbooks: List[FilePath], extra_vars: Dict = None) -> None:
+def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], extra_vars: Optional[Dict] = None) -> None:
 	"""
 	Given a list of playbook paths, print a summary of the actions that will be performed
 
@@ -177,7 +177,7 @@ def ansible_print_action_summary(playbooks: List[FilePath], extra_vars: Dict = N
 			ANSIThemeString("Playbooks to be executed:", "action")])
 	for playbook in playbooks:
 		playbook_string, playbook_path = playbook
-		playbook_data = secure_read_yaml(playbook_path, checks = checks)
+		playbook_data = secure_read_yaml(FilePath(playbook_path), checks = checks)
 
 		ansithemeprint(playbook_string +
 			       [ANSIThemeString(" (path: ", "default"),

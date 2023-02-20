@@ -837,12 +837,12 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 		sys.exit(errno.ENOENT)
 
 	if confirm == True:
-		retval = ansithemeinput([ANSIThemeString("\nUninstall CNI (", "default"),
-					 ANSIThemeString(f"{cni}", "argument"),
-					 ANSIThemeString(")? [y/", "default"),
-					 ANSIThemeString("N", "emphasis"),
-					 ANSIThemeString("]: ", "default")])
-		if retval.lower() not in ("y", "yes"):
+		input_retval = ansithemeinput([ANSIThemeString("\nUninstall CNI (", "default"),
+					       ANSIThemeString(f"{cni}", "argument"),
+					       ANSIThemeString(")? [y/", "default"),
+					       ANSIThemeString("N", "emphasis"),
+					       ANSIThemeString("]: ", "default")])
+		if input_retval.lower() not in ("y", "yes"):
 			ansithemeprint([ANSIThemeString("\nAborting:", "error"),
 					ANSIThemeString(" User stopped CNI removal.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
@@ -2833,6 +2833,8 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	if cri is None:
 		if int(requested_minor) < 24:
 			cri = "dockershim"
+		elif enable_dra == True:
+			cri = "cri-o"
 		else:
 			cri = "containerd"
 	else:
@@ -3783,8 +3785,8 @@ COMMANDLINE = {
 		"description": [ANSIThemeString("Update the package cache and show software versions", "description")],
 		"extended_description": [
 			[ANSIThemeString("Note", "note"),
-			 ANSIThemeString(": some of the listed software may not be relevant", "description")],
-			[ANSIThemeString("to the configuration in use.", "description")],
+			 ANSIThemeString(": some of the listed software may not be", "description")],
+			[ANSIThemeString("relevant to the configuration in use.", "description")],
 		],
 		"options": {
 			"--no-cache-update": {
@@ -3802,24 +3804,26 @@ COMMANDLINE = {
 			   ANSIThemeString(",", "separator"),
 			   ANSIThemeString("...", "argument"),
 			   ANSIThemeString("]", "separator")],
-		"description": [ANSIThemeString(f"Import existing cluster(s) and prepare them for use with {about.PROGRAM_SUITE_NAME}", "description")],
+		"description": [ANSIThemeString(f"Import existing cluster(s) and for use with {about.PROGRAM_SUITE_NAME}", "description")],
 		"extended_description": [
 			[ANSIThemeString("If ", "description"),
 			 ANSIThemeString("CLUSTER_NAME", "argument"),
 			 ANSIThemeString(",", "separator"),
 			 ANSIThemeString("...", "argument"),
-			 ANSIThemeString(" is not specified all clusters in ", "description"),
+			 ANSIThemeString(" is not specified", "description")],
+			[ANSIThemeString("all clusters in ", "description"),
 			 ANSIThemeString(f"{HOMEDIR}/.kube/config", "path")],
 			[ANSIThemeString("will be imported.", "description")],
 		],
 		"options": {
 			"-Y": {
-				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
+				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 			"--no-password": {
 				"description": [ANSIThemeString("Do not prompt for a password", "description")],
 				"extended_description": [
-					[ANSIThemeString("Use this if the hosts you are preparing are already configured for login using an SSH key", "description")],
+					[ANSIThemeString("Use this if the hosts you are importing", "description")],
+					[ANSIThemeString("are already configured for login using an SSH key", "description")],
 				],
 			},
 		},
@@ -3839,23 +3843,25 @@ COMMANDLINE = {
 			   ANSIThemeString(" [", "separator"),
 			   ANSIThemeString("KUBERNETES_VERSION", "argument"),
 			   ANSIThemeString("]", "separator")],
-		"description": [ANSIThemeString("Install and configure pre-requisites; run this before ", "description"),
-				ANSIThemeString("setup-control-plane", "command")],
+		"description": [ANSIThemeString("Install and configure pre-requisites", "description")],
 		"extended_description": [
-			[ANSIThemeString("If no version is specified the newest available version will be used.", "description")],
+			[ANSIThemeString("Run this before ", "description"),
+			 ANSIThemeString("setup-control-plane", "command"),
+			 ANSIThemeString(".", "description")],
+			[ANSIThemeString("If ", "description"),
+			 ANSIThemeString("KUBERNETES_VERSION", "argument"),
+			 ANSIThemeString(" is not specified", "description")],
+			[ANSIThemeString("the newest available version will be used.", "description")],
 		],
 		"options": {
 			"--control-plane": {
 				"values": [ANSIThemeString("HOST", "argument")],
 				"extended_description": [
 					[ANSIThemeString("Note", "note"),
-					 ANSIThemeString(": ", "description"),
+					 ANSIThemeString(": if possible ", "description"),
 					 ANSIThemeString("HOST", "argument"),
-					 ANSIThemeString(" should be a resolvable hostname; using IP-addresses may cause issues.", "description")],
-					[ANSIThemeString("If the host intended for use as control plane in the cluster does not have a resolvable", "description")],
-					[ANSIThemeString("hostname it is recommended to use ", "description"),
-					 ANSIThemeString("/etc/hosts", "path"),
-					 ANSIThemeString(" for this purpose.", "description")],
+					 ANSIThemeString(" should be a resolvable", "description")],
+					[ANSIThemeString("hostname; using an IP-address may cause issues", "description")],
 				],
 				"description": [ANSIThemeString("Use ", "description"),
 						ANSIThemeString("HOST", "argument"),
@@ -3864,7 +3870,11 @@ COMMANDLINE = {
 				"validator": "hostname_or_ip",
 			},
 			"--resume": {
-				"description": [ANSIThemeString("Resume preparation; can be used if preparation was aborted", "description")],
+				"description": [ANSIThemeString("Resume preparation", "description")],
+				"extended_description": [
+					[ANSIThemeString("This can be used to resume operations", "description")],
+					[ANSIThemeString("if preparation was aborted", "description")],
+				],
 			},
 			"--start-at-task": {
 				"values": [ANSIThemeString("TASK", "argument")],
@@ -3890,26 +3900,32 @@ COMMANDLINE = {
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
-						ANSIThemeString("TASK", "argument"),
-						ANSIThemeString(" to use with ", "description"),
-						ANSIThemeString("--start-at-task", "option"),
-						ANSIThemeString(" and ", "description"),
+						ANSIThemeString("TASK", "argument")],
+				"extended_description": [
+					       [ANSIThemeString("List valid values to use with ", "description"),
+						ANSIThemeString("--start-at-task", "option")],
+					       [ANSIThemeString("and ", "description"),
 						ANSIThemeString("--skip-tasks", "option")],
+				],
 			},
 			"--no-password": {
 				"description": [ANSIThemeString("Do not prompt for a password", "description")],
 				"extended_description": [
-					[ANSIThemeString("Use this if the hosts you are preparing are already configured for login using an SSH key", "description")],
+					[ANSIThemeString("Use this if the hosts you are preparing", "description")],
+					[ANSIThemeString("are already configured for login using an SSH key", "description")],
 				],
 			},
 			"--save-ansible-logs": {
-				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
+				"description": [ANSIThemeString("Save logs from Ansible runs", "description")],
+				"extended_description": [
+					       [ANSIThemeString("The logs can be viewed using “", "description"),
 						ANSIThemeString("cmu", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
+				],
 			},
 			"-Y": {
-				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
+				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
 		"min_args": 0,
@@ -3928,7 +3944,8 @@ COMMANDLINE = {
 		],
 		"description": [ANSIThemeString("Setup and launch the control plane", "description")],
 		"extended_description": [
-			[ANSIThemeString("Valid options for CNI (Container Network Interface, aka Pod Network): ", "description")],
+			[ANSIThemeString("Valid options for CNI", "description")],
+			[ANSIThemeString("(Container Network Interface, aka Pod Network): ", "description")],
 			[ANSIThemeString("antrea", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("calico", "argument"),
@@ -3936,8 +3953,8 @@ COMMANDLINE = {
 			 ANSIThemeString("canal", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("cilium", "argument"),
-			 ANSIThemeString(", ", "separator"),
-			 ANSIThemeString("flannel", "argument"),
+			 ANSIThemeString(", ", "separator")],
+			[ANSIThemeString("flannel", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("kube-router", "argument"),
 			 ANSIThemeString(", ", "separator"),
@@ -3951,12 +3968,17 @@ COMMANDLINE = {
 			[ANSIThemeString("and ", "description"),
 			 ANSIThemeString("10.244.0.0/16", "argument"),
 			 ANSIThemeString(" will be used as pod network CIDR.", "description")],
-			[ANSIThemeString("If you wish to postpone the choice of CNI you can specify ", "description"),
+			[ANSIThemeString("If you wish to postpone the choice of CNI", "description")],
+			[ANSIThemeString("you can specify ", "description"),
 			 ANSIThemeString("none", "argument")],
 		],
 		"options": {
 			"--resume": {
-				"description": [ANSIThemeString("Resume installation; can be used if installation was aborted", "description")],
+				"description": [ANSIThemeString("Resume setup", "description")],
+				"extended_description": [
+					[ANSIThemeString("This can be used to resume operations", "description")],
+					[ANSIThemeString("if control plane setup was aborted", "description")],
+				],
 			},
 			"--start-at-task": {
 				"values": [ANSIThemeString("TASK", "argument")],
@@ -3980,17 +4002,22 @@ COMMANDLINE = {
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
-						ANSIThemeString("TASK", "argument"),
-						ANSIThemeString(" to use with ", "description"),
-						ANSIThemeString("--start-at-task", "option"),
-						ANSIThemeString(" and ", "description"),
+						ANSIThemeString("TASK", "argument")],
+				"extended_description": [
+					       [ANSIThemeString("List valid values to use with ", "description"),
+						ANSIThemeString("--start-at-task", "option")],
+					       [ANSIThemeString("and ", "description"),
 						ANSIThemeString("--skip-tasks", "option")],
+				],
 			},
 			"--save-ansible-logs": {
-				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
+				"description": [ANSIThemeString("Save logs from Ansible runs", "description")],
+				"extended_description": [
+					       [ANSIThemeString("The logs can be viewed using “", "description"),
 						ANSIThemeString("cmu", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
+				],
 			},
 			"--cri": {
 				"values": [ANSIThemeString("CRI", "argument")],
@@ -3998,7 +4025,8 @@ COMMANDLINE = {
 						ANSIThemeString("CRI", "argument"),
 						ANSIThemeString(" instead of the default CRI", "description")],
 				"extended_description": [
-					[ANSIThemeString("Valid options for CRI (Container Runtime Interface) are:", "description")],
+					[ANSIThemeString("Valid options for CRI", "description")],
+					[ANSIThemeString("(Container Runtime Interface) are:", "description")],
 					[ANSIThemeString("dockershim", "argument"),
 					 ANSIThemeString(" (", "description"),
 					 ANSIThemeString("Kubernetes", "programname"),
@@ -4010,47 +4038,64 @@ COMMANDLINE = {
 					 ANSIThemeString(", ", "separator"),
 					 ANSIThemeString("cri-o", "argument"),
 					],
-					[ANSIThemeString("The default CRI is ", "description"),
-					 ANSIThemeString("dockershim", "argument"),
-					 ANSIThemeString(" for ", "description"),
+					[ANSIThemeString("Default CRI:", "description")],
+					[ANSIThemeString("dockershim", "argument"),
+					 ANSIThemeString(" (", "description"),
 					 ANSIThemeString("Kubernetes", "programname"),
 					 ANSIThemeString(" < ", "description"),
-					 ANSIThemeString("1.24", "version")],
-					[ANSIThemeString("and ", "description"),
-					 ANSIThemeString("containerd", "argument"),
-					 ANSIThemeString(" for ", "description"),
+					 ANSIThemeString("1.24", "version"),
+					 ANSIThemeString(")", "description"),
+					 ANSIThemeString(", ", "separator")],
+					[ANSIThemeString("containerd", "argument"),
+					 ANSIThemeString(" (", "description"),
 					 ANSIThemeString("Kubernetes", "programname"),
 					 ANSIThemeString(" >= ", "description"),
 					 ANSIThemeString("1.24", "version"),
-					 ANSIThemeString(".", "description")],
+					 ANSIThemeString(")", "description"),
+					 ANSIThemeString(", ", "separator")],
+					[ANSIThemeString("cri-o", "argument"),
+					 ANSIThemeString(" (", "description"),
+					 ANSIThemeString("Kubernetes", "programname"),
+					 ANSIThemeString(" >= ", "description"),
+					 ANSIThemeString("1.24", "version"),
+					 ANSIThemeString(" with ", "description"),
+					 ANSIThemeString("--enable-dra", "option"),
+					 ANSIThemeString(")", "description")],
 					[ANSIThemeString("Note", "note"),
 					 ANSIThemeString(": ", "description"),
 					 ANSIThemeString("Kubernetes", "programname"),
 					 ANSIThemeString(" >= ", "description"),
 					 ANSIThemeString("1.26", "version"),
-					 ANSIThemeString(" requires ", "description"),
-					 ANSIThemeString("containerd", "programname"),
+					 ANSIThemeString(" requires", "description")],
+					[ANSIThemeString("containerd", "programname"),
 					 ANSIThemeString(" >= ", "description"),
 					 ANSIThemeString("1.6", "version"),
-					 ANSIThemeString(".", "description")],
+					 ANSIThemeString(" or ", "description"),
+					 ANSIThemeString("cri-o", "programname")],
 				],
 				"requires_arg": True,
 				"validator": "allowlist",
 				"allowlist": ["containerd", "cri-o", "docker-shim"],
 			},
 			"--enable-dra": {
-				"description": [ANSIThemeString("Enable the feature gates necessary to use Dynamic Resource Allocation (DRA)", "description")],
+				"description": [ANSIThemeString("Enable DRA", "description")],
 				"extended_description": [
+					[ANSIThemeString("Enables the feature gates necessary to use", "description")],
+					[ANSIThemeString("Dynamic Resource Allocation (DRA).", "description")],
 					[ANSIThemeString("Currently only ", "description"),
 					 ANSIThemeString("cri-o", "argument"),
-					 ANSIThemeString(" supports DRA.", "description")],
+					 ANSIThemeString(" supports DRA", "description")],
 				],
 			},
 			"--override-cni": {
-				"description": [ANSIThemeString("Allow a change of CNI even if installation started with a different CNI", "description")],
+				"description": [ANSIThemeString("Override CNI", "description")],
+				"extended_description": [
+					[ANSIThemeString("Allow a change of CNI even if installation", "description")],
+					[ANSIThemeString("started with a different CNI", "description")],
+				],
 			},
 			"-Y": {
-				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
+				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
 		"min_args": 0,
@@ -4064,7 +4109,8 @@ COMMANDLINE = {
 			   ANSIThemeString("]", "separator")],
 		"description": [ANSIThemeString("Install and configure CNI", "description")],
 		"extended_description": [
-			[ANSIThemeString("Valid options for CNI (Container Network Interface, aka Pod Network): ", "description")],
+			[ANSIThemeString("Valid options for CNI", "description")],
+			[ANSIThemeString("(Container Network Interface, aka Pod Network): ", "description")],
 			[ANSIThemeString("antrea", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("calico", "argument"),
@@ -4072,12 +4118,14 @@ COMMANDLINE = {
 			 ANSIThemeString("canal", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("cilium", "argument"),
-			 ANSIThemeString(", ", "separator"),
-			 ANSIThemeString("flannel", "argument"),
+			 ANSIThemeString(", ", "separator")],
+			[ANSIThemeString("flannel", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("kube-router", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("weave", "argument"),
+			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString("none", "argument"),
 			],
 			[ANSIThemeString("By default ", "description"),
 			 ANSIThemeString("cilium", "argument"),
@@ -4098,7 +4146,8 @@ COMMANDLINE = {
 		"command": ["uninstall-cni"],
 		"description": [ANSIThemeString("Uninstall the CNI", "description")],
 		"extended_description": [
-			[ANSIThemeString("This should be used in case you want to switch to another CNI", "description")],
+			[ANSIThemeString("This should be used in case", "description")],
+			[ANSIThemeString("you want to switch to another CNI", "description")],
 		],
 		"min_args": 0,
 		"max_args": 0,
@@ -4111,11 +4160,11 @@ COMMANDLINE = {
 			   ANSIThemeString("]", "separator")],
 		"description": [ANSIThemeString("Upgrade the CNI", "description")],
 		"extended_description": [
-			[ANSIThemeString("Upgrades the CNI (currently only ", "description"),
+			[ANSIThemeString("Currently only ", "description"),
 			 ANSIThemeString("calico", "argument"),
 			 ANSIThemeString(" and ", "description"),
 			 ANSIThemeString("cilium", "argument"),
-			 ANSIThemeString(" are supported).", "description")],
+			 ANSIThemeString(" are supported", "description")],
 		],
 		"optional_args": [
 			{
@@ -4134,25 +4183,30 @@ COMMANDLINE = {
 			   ANSIThemeString("]", "separator")],
 		"description": [ANSIThemeString("Upgrade the control plane", "description")],
 		"extended_description": [
-			[ANSIThemeString("Upgrades the control plane to ", "description"),
+			[ANSIThemeString("If ", "description"),
 			 ANSIThemeString("KUBERNETES_VERSION", "argument"),
-			 ANSIThemeString(" if specified;", "description")],
-			[ANSIThemeString("if no version is specified the newest available version will be used.", "description")],
-			[ANSIThemeString("Upgrading requires all nodes to be drained first.  Once the control plane", "description")],
-			[ANSIThemeString("has been upgraded you ", "description"),
-			 ANSIThemeString("must", "emphasis"),
-			 ANSIThemeString(" upgrade all nodes to the same version.", "description")],
+			 ANSIThemeString(" is not specified", "description")],
+			[ANSIThemeString("the newest available version will be used.", "description")],
+			[ANSIThemeString("Upgrading requires all nodes to be drained first.", "description")],
+			[ANSIThemeString("Once the control plane has been uppgraded you ", "description"),
+			 ANSIThemeString("must", "emphasis")],
+			[ANSIThemeString("upgrade all nodes to the same version.", "description")],
 			[ANSIThemeString("Important", "emphasis"),
 			 ANSIThemeString(": skipping PATCH REVISIONS is acceptable,", "description")],
-			[ANSIThemeString("but when upgrading to a newer MINOR version all intermediate MINOR versions", "description")],
-			[ANSIThemeString("must be installed first; this applies to nodes too.", "description")],
+			[ANSIThemeString("but when upgrading to a newer MINOR version", "description")],
+			[ANSIThemeString("all intermediate MINOR versions must be", "description")],
+			[ANSIThemeString("installed first; this applies to nodes too", "description")],
 		],
 		"options": {
 			"--no-cache-update": {
 				"description": [ANSIThemeString("Do not update the APT cache", "description")],
 			},
 			"--resume": {
-				"description": [ANSIThemeString("Resume upgrade; can be used if upgrade was aborted", "description")],
+				"description": [ANSIThemeString("Resume upgrade", "description")],
+				"extended_description": [
+					[ANSIThemeString("This can be used to resume operations", "description")],
+					[ANSIThemeString("if upgrade was aborted", "description")],
+				],
 			},
 			"--start-at-task": {
 				"values": [ANSIThemeString("TASK", "argument")],
@@ -4178,26 +4232,35 @@ COMMANDLINE = {
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
-						ANSIThemeString("TASK", "argument"),
-						ANSIThemeString(" to use with ", "description"),
-						ANSIThemeString("--start-at-task", "option"),
-						ANSIThemeString(" and ", "description"),
+						ANSIThemeString("TASK", "argument")],
+				"extended_description": [
+					       [ANSIThemeString("List valid values to use with ", "description"),
+						ANSIThemeString("--start-at-task", "option")],
+					       [ANSIThemeString("and ", "description"),
 						ANSIThemeString("--skip-tasks", "option")],
+				],
 			},
 			"--reinstall": {
-				"description": [ANSIThemeString("Allow installing an already installed Kubernetes version", "description")],
+				"description": [ANSIThemeString("Allow installing the same version", "description")],
+				"extended_description": [
+					       [ANSIThemeString("This option allows you to install the same", "description")],
+					       [ANSIThemeString("version that's already running in the cluster", "description")],
+				],
 			},
 			"--override": {
 				"description": [ANSIThemeString("Override/rebuild installation info", "description")],
 			},
 			"--save-ansible-logs": {
-				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
+				"description": [ANSIThemeString("Save logs from Ansible runs", "description")],
+				"extended_description": [
+					       [ANSIThemeString("The logs can be viewed using “", "description"),
 						ANSIThemeString("cmu", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
+				],
 			},
 			"-Y": {
-				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
+				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
 		"optional_args": [
@@ -4215,14 +4278,20 @@ COMMANDLINE = {
 		"description": [ANSIThemeString("Tear down the control plane", "description")],
 		"extended_description": [
 			[ANSIThemeString("Note", "emphasis"),
-			 ANSIThemeString(": Before running this command all nodes must have been removed first", "description")],
-			[ANSIThemeString("The configuration for the control plane and any software installed", "description")],
-			[ANSIThemeString("during installation will NOT be removed.", "description")],
+			 ANSIThemeString(": Before running this command all nodes", "description")],
+			[ANSIThemeString("must have been removed first.", "description")],
+			[ANSIThemeString("The configuration for the control plane", "description")],
+			[ANSIThemeString("and any software installed during setup", "description")],
+			[ANSIThemeString("will NOT be removed", "description")],
 
 		],
 		"options": {
 			"--resume": {
-				"description": [ANSIThemeString("Resume teardown; can be used if teardown was aborted", "description")],
+				"description": [ANSIThemeString("Resume teardown", "description")],
+				"extended_description": [
+					[ANSIThemeString("This can be used to resume operations", "description")],
+					[ANSIThemeString("if teardownwas aborted", "description")],
+				],
 			},
 			"--start-at-task": {
 				"values": [ANSIThemeString("TASK", "argument")],
@@ -4248,20 +4317,25 @@ COMMANDLINE = {
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
-						ANSIThemeString("TASK", "argument"),
-						ANSIThemeString(" to use with ", "description"),
-						ANSIThemeString("--start-at-task", "option"),
-						ANSIThemeString(" and ", "description"),
+						ANSIThemeString("TASK", "argument")],
+				"extended_description": [
+					       [ANSIThemeString("List valid values to use with ", "description"),
+						ANSIThemeString("--start-at-task", "option")],
+					       [ANSIThemeString("and ", "description"),
 						ANSIThemeString("--skip-tasks", "option")],
+				],
 			},
 			"--save-ansible-logs": {
-				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
+				"description": [ANSIThemeString("Save logs from Ansible runs", "description")],
+				"extended_description": [
+					       [ANSIThemeString("The logs can be viewed using “", "description"),
 						ANSIThemeString("cmu", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
+				],
 			},
 			"-Y": {
-				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
+				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
 		"min_args": 0,
@@ -4270,15 +4344,15 @@ COMMANDLINE = {
 	},
 	"Purge Control Plane": {
 		"command": ["purge-control-plane"],
-		"description": [ANSIThemeString("Purge configuration and installed software", "description")],
+		"description": [ANSIThemeString("Purge configuration and packages", "description")],
 		"extended_description": [
 			[ANSIThemeString("purge-control-plane", "command"),
 			 ANSIThemeString(" will run ", "description"),
-			 ANSIThemeString("teardown-control-plane", "command"),
-			 ANSIThemeString(" first if necessary.", "description")],
-			[ANSIThemeString("Software and configuration needed for ", "description"),
-			 ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
-			 ANSIThemeString(" will not be purged.", "description")],
+			 ANSIThemeString("teardown-control-plane", "command")],
+			[ANSIThemeString("first if necessary.", "description")],
+			[ANSIThemeString("Software and configuration needed for ", "description")],
+			[ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
+			 ANSIThemeString(" itself will not be purged.", "description")],
 		],
 		"options": {
 			"--resume": {
@@ -4307,20 +4381,25 @@ COMMANDLINE = {
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
-						ANSIThemeString("TASK", "argument"),
-						ANSIThemeString(" to use with ", "description"),
-						ANSIThemeString("--start-at-task", "option"),
-						ANSIThemeString(" and ", "description"),
+						ANSIThemeString("TASK", "argument")],
+				"extended_description": [
+					       [ANSIThemeString("List valid values to use with ", "description"),
+						ANSIThemeString("--start-at-task", "option")],
+					       [ANSIThemeString("and ", "description"),
 						ANSIThemeString("--skip-tasks", "option")],
+				],
 			},
 			"--save-ansible-logs": {
-				"description": [ANSIThemeString("Save logs from Ansible runs; the logs can be viewed using “", "description"),
+				"description": [ANSIThemeString("Save logs from Ansible runs", "description")],
+				"extended_description": [
+					       [ANSIThemeString("The logs can be viewed using “", "description"),
 						ANSIThemeString("cmu", "programname"),
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
+				],
 			},
 			"-Y": {
-				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
+				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
 		"min_args": 0,
@@ -4336,13 +4415,15 @@ COMMANDLINE = {
 			   ANSIThemeString("]", "separator")],
 		"description": [ANSIThemeString("Mark control plane(s) as tainted", "description")],
 		"extended_description": [
-			[ANSIThemeString("If you have previously marked your control plane(s) as untainted", "description")],
-			[ANSIThemeString("you can mark them as tainted again using this command.", "description")],
+			[ANSIThemeString("If you have previously marked your control plane(s)", "description")],
+			[ANSIThemeString("as untainted you can mark them as tainted", "description")],
+			[ANSIThemeString("using this command.", "description")],
 			[ANSIThemeString("If ", "description"),
 			 ANSIThemeString("CONTROLPLANE", "argument"),
 			 ANSIThemeString(",", "separator"),
 			 ANSIThemeString("...", "argument"),
-			 ANSIThemeString(" is not specified all control planes will be tainted.", "description")],
+			 ANSIThemeString(" is not specified", "description")],
+			[ANSIThemeString("all control planes will be tainted", "description")],
 		],
 		"optional_args": [
 			{
@@ -4363,15 +4444,18 @@ COMMANDLINE = {
 			   ANSIThemeString("]", "separator")],
 		"description": [ANSIThemeString("Mark control plane(s) as untainted", "description")],
 		"extended_description": [
-			[ANSIThemeString("Per default control planes are marked as tainted; workloads that lack ", "description")],
-			[ANSIThemeString("tolerations will not be scheduled to them", "description")],
-			[ANSIThemeString("If you are running a single-node cluster, or if the control plane is very", "description")],
-			[ANSIThemeString("powerful it might be useful to permit workloads on control plane(s) too", "description")],
+			[ANSIThemeString("By default control planes are marked as tainted;", "description")],
+			[ANSIThemeString("workloads that lack tolerations will not be", "description")],
+			[ANSIThemeString("scheduled to control planes. If you are running", "description")],
+			[ANSIThemeString("a single-node cluster, or if the control plane", "description")],
+			[ANSIThemeString("is very powerful it might be useful to permit", "description")],
+			[ANSIThemeString("workloads on control plane(s) too.", "description")],
 			[ANSIThemeString("If ", "description"),
 			 ANSIThemeString("CONTROLPLANE", "argument"),
 			 ANSIThemeString(",", "separator"),
 			 ANSIThemeString("...", "argument"),
-			 ANSIThemeString(" is not specified all control planes will be untainted", "description")],
+			 ANSIThemeString(" is not specified", "description")],
+			[ANSIThemeString("all control planes will be untainted", "description")],
 
 		],
 		"optional_args": [
@@ -4389,19 +4473,22 @@ COMMANDLINE = {
 		"description": [ANSIThemeString("Search for potential security issues in the cluster", "description")],
 		"extended_description": [
 			[ANSIThemeString("Note", "emphasis"),
-			 ANSIThemeString(": If the system is configured to use ", "description"),
-			 ANSIThemeString("usergroups", "emphasis")],
-			[ANSIThemeString("(every user have their own group that only they belong to) ", "description")],
-			[ANSIThemeString("be sure to specify that group using the ", "description"),
+			 ANSIThemeString(": If the system is configured", "description")],
+			[ANSIThemeString("to use ", "description"),
+			 ANSIThemeString("usergroups", "emphasis"),
+			 ANSIThemeString(" (every user have their own group", "description")],
+			[ANSIThemeString("that only they belong to), be sure to specify", "description")],
+			[ANSIThemeString("that group using the ", "description"),
 			 ANSIThemeString("--usergroup ", "option"),
 			 ANSIThemeString("USERGROUP", "argument"),
 			 ANSIThemeString(" option,", "description")],
-			[ANSIThemeString("to prevent the permission checker from complain about insecure permissions",  "description")],
+			[ANSIThemeString("to prevent the permission checker",  "description")],
+			[ANSIThemeString("from complaining about insecure permissions",  "description")],
 		],
 		"options": {
 			"--usergroup": {
 				"values": [ANSIThemeString("USERGROUP", "argument")],
-				"description": [ANSIThemeString("If your system uses usergroups, specify your usergroup here", "description")],
+				"description": [ANSIThemeString("The usergroup", "description")],
 				"requires_arg": True,
 				"validator": "regex",
 				# regex taken from debian; other distros might be stricter or possible more permissive
@@ -4415,12 +4502,17 @@ COMMANDLINE = {
 	"Preflight Check": {
 		"command": ["preflight-check"],
 		"values": [ANSIThemeString("CONTROLPLANE", "argument")],
-		"description": [ANSIThemeString("Check for potential pitfalls that may prevent installation from succeeding", "description")],
+		"description": [ANSIThemeString("Preflight check", "description")],
+		"extended_description": [
+			[ANSIThemeString("Check for potential pitfalls that may prevent", "description")],
+			[ANSIThemeString("preparation or setup from succeeding", "description")],
+		],
 		"options": {
 			"--no-password": {
 				"description": [ANSIThemeString("Do not prompt for a password", "description")],
 				"extended_description": [
-					[ANSIThemeString("Use this if the hosts you are checking are already configured for login using an SSH key", "description")],
+					[ANSIThemeString("Use this if the hosts you are preparing", "description")],
+					[ANSIThemeString("are already configured for login using an SSH key", "description")],
 				],
 			},
 		},

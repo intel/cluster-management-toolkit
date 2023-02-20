@@ -143,6 +143,21 @@ def themearray_len(themearray: List[ANSIThemeString]) -> int:
 
 	return sum(map(len, themearray))
 
+def themearray_ljust(themearray: List[ANSIThemeString], width: int) -> List[ANSIThemeString]:
+	"""
+	Return a ljust:ed themearray (will always pad with ANSIThemeString("", "default"))
+
+		Parameters:
+			themearray (list[ANSIThemeString]): The themearray to ljust
+		Return:
+			The ljust:ed themearray
+	"""
+
+	tlen = themearray_len(themearray)
+	if tlen < width:
+		themearray = themearray + [ANSIThemeString("".ljust(width - tlen), "default")]
+	return themearray
+
 def ansithemestring_join_tuple_list(items: Sequence[Union[str, ANSIThemeString]],
 				    formatting: str = "default", separator: ANSIThemeString = ANSIThemeString(", ", "separator")) -> List[ANSIThemeString]:
 	"""

@@ -16,7 +16,7 @@ except ModuleNotFoundError:
 import about
 
 import cmtlib
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, themearray_len, ansithemestring_join_tuple_list
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, themearray_len, themearray_ljust, ansithemestring_join_tuple_list
 from cmttypes import deep_get, DictPath, FilePath
 
 programname = None
@@ -247,7 +247,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 			continue
 
 		if key.startswith("spacer"):
-			commands.append((0, [ANSIThemeString("", "default")], [ANSIThemeString("", "default")]))
+			commands.append(([ANSIThemeString("", "default")], [ANSIThemeString("", "default")]))
 			continue
 
 		tmp = []
@@ -269,10 +269,10 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 		tlen = themearray_len(tmp)
 		maxlen = max(maxlen, tlen)
 		if tlen > 0:
-			commands.append((tlen, tmp, deep_get(value, DictPath("description"))))
+			commands.append((tmp, deep_get(value, DictPath("description"))))
 
 		for line in deep_get(value, DictPath("extended_description"), []):
-			commands.append((0, [ANSIThemeString("", "default")], line))
+			commands.append(([ANSIThemeString("", "default")], line))
 
 		for option in deep_get(value, DictPath("options"), []):
 			indent = ""
@@ -283,7 +283,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 				for _opt in option:
 					# The first string is the initial indentation
 					if len(tmp2) > 1:
-						tmp2.append(ANSIThemeString(f"{separator}", "separator"))
+						tmp2.append(ANSIThemeString(f"  ", "separator"))
 					tmp2.append(ANSIThemeString(f"{_opt}", "option"))
 			elif key.startswith("__"):
 				tmp2.append(ANSIThemeString(f"  {option}", "option"))
@@ -300,20 +300,25 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 			description = deep_get(value, DictPath(f"options#{option}#description"))
 			if len(indent) > 0:
 				description = [ANSIThemeString(indent, "default")] + description
-			commands.append((tlen, tmp2, description))
+			commands.append((tmp2, description))
 			for line in deep_get(value, DictPath(f"options#{option}#extended_description"), []):
 				if len(indent) > 0:
-					commands.append((tlen, [ANSIThemeString("".ljust(tlen), "default")], [ANSIThemeString(indent, "default")] + line))
+					commands.append(([ANSIThemeString("", "default")], [ANSIThemeString(indent, "default")] + line))
 				else:
-					commands.append((tlen, [ANSIThemeString("".ljust(tlen), "default")], line))
+					commands.append(([ANSIThemeString("", "default")], line))
 
-	# cmd[0]: unformatted length of command/option
-	# cmd[1]: formatted cmd/option
-	# cmd[2]: formatted description
-	# We cannot do ljust() directly on the string, since it would include the formatting
+	# cmd[0]: formatted cmd/option
+	# cmd[1]: formatted description
 	for cmd in commands:
-		string = cmd[1] + [ANSIThemeString("".ljust(maxlen - cmd[0] + 2), "default")] + cmd[2]
-		ansithemeprint(string)
+		if themearray_len(cmd[0]) > 27 or themearray_len(cmd[0]) + 2 + themearray_len(cmd[1]) > 79 or themearray_len(cmd[1]) > 51:
+			ansithemeprint(cmd[0])
+			string = themearray_ljust([ANSIThemeString("", "default")], 29) + cmd[1]
+			ansithemeprint(string)
+			#if themearray_len(string) > 79:
+			#	sys.exit(f"FIXME: {themearray_len(string)} > 79 characters; please file a bug report.")
+		else:
+			string = themearray_ljust(cmd[0], 29) + cmd[1]
+			ansithemeprint(string)
 
 	if "extended_description" in commandline:
 		print()
