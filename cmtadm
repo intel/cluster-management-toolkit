@@ -3788,15 +3788,13 @@ COMMANDLINE = {
 		"extended_description": [
 			[ANSIThemeString("Note", "note"),
 			 ANSIThemeString(": some of the listed software may not be", "description")],
-			[ANSIThemeString("relevant to the configuration in use.", "description")],
+			[ANSIThemeString("relevant to the configuration in use", "description")],
 		],
 		"options": {
 			"--no-cache-update": {
 				"description": [ANSIThemeString("Do not update the APT cache", "description")],
 			},
 		},
-		"min_args": 0,
-		"max_args": 0,
 		"callback": check_for_updates,
 	},
 	"Import Cluster": {
@@ -3815,7 +3813,7 @@ COMMANDLINE = {
 			 ANSIThemeString(" is not specified", "description")],
 			[ANSIThemeString("all clusters in ", "description"),
 			 ANSIThemeString(f"{HOMEDIR}/.kube/config", "path")],
-			[ANSIThemeString("will be imported.", "description")],
+			[ANSIThemeString("will be imported", "description")],
 		],
 		"options": {
 			"-Y": {
@@ -3853,7 +3851,7 @@ COMMANDLINE = {
 			[ANSIThemeString("If ", "description"),
 			 ANSIThemeString("KUBERNETES_VERSION", "argument"),
 			 ANSIThemeString(" is not specified", "description")],
-			[ANSIThemeString("the newest available version will be used.", "description")],
+			[ANSIThemeString("the newest available version will be used", "description")],
 		],
 		"options": {
 			"--control-plane": {
@@ -3930,8 +3928,21 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
-		"min_args": 0,
-		"max_args": 2,
+		"required_args": [
+			{
+				"name": "clustername",
+				"string": [ANSIThemeString("CLUSTER_NAME", "argument")],
+				"validator": "hostname",
+			}
+		],
+		"optional_args": [
+			{
+				"name": "version",
+				"string": [ANSIThemeString("KUBERNETES_VERSION", "argument")],
+				"validator": "regex",
+				"regex": r"^\d+\.\d+\.\d+(-\d+)?$"
+			}
+		],
 		"callback": prepare_installation,
 	},
 	"Setup Control Plane": {
@@ -4100,8 +4111,19 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
-		"min_args": 0,
-		"max_args": 2,
+		"optional_args": [
+			{
+				"name": "cni",
+				"string": [ANSIThemeString("CNI", "argument")],
+				"validator": "allowlist",
+				"allowlist": ["antrea", "calico", "canal", "cilium", "flannel", "kube-router", "weave", "none"],
+			},
+			{
+				"name": "pod_network_cidr",
+				"string": [ANSIThemeString("POD_NETWORK_CIDR", "argument")],
+				"validator": "cidr",
+			},
+		],
 		"callback": setup_control_plane,
 	},
 	"Setup CNI": {
@@ -4151,8 +4173,6 @@ COMMANDLINE = {
 			[ANSIThemeString("This should be used in case", "description")],
 			[ANSIThemeString("you want to switch to another CNI", "description")],
 		],
-		"min_args": 0,
-		"max_args": 0,
 		"callback": teardown_cni,
 	},
 	"Upgrade CNI": {
@@ -4292,7 +4312,7 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Resume teardown", "description")],
 				"extended_description": [
 					[ANSIThemeString("This can be used to resume operations", "description")],
-					[ANSIThemeString("if teardownwas aborted", "description")],
+					[ANSIThemeString("if teardown was aborted", "description")],
 				],
 			},
 			"--start-at-task": {
@@ -4340,8 +4360,6 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
-		"min_args": 0,
-		"max_args": 0,
 		"callback": teardown_control_plane,
 	},
 	"Purge Control Plane": {
@@ -4354,7 +4372,7 @@ COMMANDLINE = {
 			[ANSIThemeString("first if necessary.", "description")],
 			[ANSIThemeString("Software and configuration needed for ", "description")],
 			[ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
-			 ANSIThemeString(" itself will not be purged.", "description")],
+			 ANSIThemeString(" itself will not be purged", "description")],
 		],
 		"options": {
 			"--resume": {
@@ -4404,8 +4422,6 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
-		"min_args": 0,
-		"max_args": 0,
 		"callback": purge_control_plane,
 	},
 	"Taint Control Plane": {
@@ -4497,8 +4513,6 @@ COMMANDLINE = {
 				"regex": r"^[a-z_][a-z0-9_-]*[$]?$",
 			},
 		},
-		"min_args": 0,
-		"max_args": 0,
 		"callback": audit,
 	},
 	"Preflight Check": {
@@ -4530,8 +4544,6 @@ COMMANDLINE = {
 	"Troubleshoot": {
 		"command": ["troubleshoot"],
 		"description": [ANSIThemeString("Search for potential problems in the cluster", "description")],
-		"min_args": 0,
-		"max_args": 0,
 		"callback": troubleshoot,
 	},
 	"spacer1": {

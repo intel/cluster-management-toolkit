@@ -5,6 +5,7 @@ This module parses command line options and generate helptexts
 """
 
 import errno
+from pathlib import Path
 import re
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -615,12 +616,37 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 			arglist = args[i].split(list_separator)
 
 		for subarg in arglist:
-			if validator in ("hostname", "hostname_or_ip", "ip"):
+			if validator == "cidr":
+				valid = False
+				if "/" in subarg:
+					ip, netmask = subarg.split("/")
+					valid_ipv4_address = validators.ipv4(ip)
+					valid_ipv6_address = validators.ipv6(ip)
+					try:
+						if valid_ipv4_address and 0 < int(netmask) <= 32:
+							valid = True
+						if valid_ipv6_address and 0 < int(netmask) <= 128:
+							valid = True
+					except ValueError:
+						pass
+
+				if not valid:
+					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+							ANSIThemeString(": “", "default"),
+							ANSIThemeString(f"{subarg}", "option"),
+							ANSIThemeString("“ is not a valid POD Network CIDR.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+			elif validator in ("hostname", "hostname_or_path", "hostname_or_ip", "ip"):
 				valid_dns_label = cmtlib.validate_name("dns-label", subarg)
 				valid_ipv4_address = validators.ipv4(subarg)
 				valid_ipv6_address = validators.ipv6(subarg)
 
-				if validator == "hostname" and not valid_dns_label:
+				if validator in ("hostname", "hostname_or_path") and not valid_dns_label:
+					# If validation failed as subname we check if it's a valid path;
+					# this will need deeper checks in the main function
+					if validator == "hostname_or_path":
+						if Path(args[i]).isfile():
+							break
 					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
 							ANSIThemeString(": “", "default"),
 							ANSIThemeString(f"{subarg}", "option"),
@@ -637,6 +663,49 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 							ANSIThemeString(": “", "default"),
 							ANSIThemeString(f"{subarg}", "option"),
 							ANSIThemeString("“ is neither a valid hostname nor a valid IP-address.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+			elif validator in ("taint", "untaint"):
+				# Format: dns-subdomain[:dns-label]={NoSchedule,PreferNoSchedule,NoExecute}
+				valid = False
+				if "=" in subarg:
+					key_value, effect = subarg.split("=")
+				else:
+					key_value = subarg
+					effect = ""
+
+				if ":" in key_value:
+					key, value = key_value.split(":")
+				else:
+					key = key_value
+					value = ""
+
+				valid_key = cmtlib.validate_name("dns-subdomain", key)
+				if len(value) > 0:
+					valid_value = cmtlib.validate_name("dns-label", value)
+				else:
+					valid_value = True
+
+				valid_effect = effect in ("NoSchedule", "PreferNoSchedule", "NoExecute")
+				if len(effect) == 0 and validator == "untaint":
+					valid_effect = True
+
+				if not valid_key:
+					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+							ANSIThemeString(": “", "default"),
+							ANSIThemeString(f"{key}", "option"),
+							ANSIThemeString("“ is not a valid taint-key.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+				if not valid_value:
+					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+							ANSIThemeString(": “", "default"),
+							ANSIThemeString(f"{value}", "option"),
+							ANSIThemeString("“ is not a valid taint-value.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+				if not valid_effect:
+					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+							ANSIThemeString(": “", "default"),
+							ANSIThemeString(f"{effect}", "option"),
+							ANSIThemeString("“ is not a valid taint-effect.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 			elif validator == "int":
 				_result = validator_int(minval, maxval, subarg)

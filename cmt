@@ -1613,8 +1613,18 @@ CMT_COMMANDLINE = {
 				"description": [ANSIThemeString("Include control planes when ALL is used", "description")],
 			},
 		},
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "node",
+				"string": [ANSIThemeString("NODE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("ALL", "argument")],
+				"validator": "hostname",
+				"list_separator": ",",
+			}
+		],
 		"callback": cordon_nodes,
 	},
 	"Drain Node": {
@@ -1662,8 +1672,18 @@ CMT_COMMANDLINE = {
 				"description": [ANSIThemeString("Include control planes when ALL is used", "description")],
 			},
 		},
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "node",
+				"string": [ANSIThemeString("NODE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("ALL", "argument")],
+				"validator": "hostname",
+				"list_separator": ",",
+			}
+		],
 		"callback": drain_nodes,
 	},
 	"Drain Node (Force)": {
@@ -1700,8 +1720,18 @@ CMT_COMMANDLINE = {
 			("--delete-emptydir-data", None),
 			("--ignore-daemonsets", None),
 		],
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "node",
+				"string": [ANSIThemeString("NODE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("ALL", "argument")],
+				"validator": "hostname",
+				"list_separator": ",",
+			}
+		],
 		"callback": drain_nodes,
 	},
 	"Uncordon Node": {
@@ -1720,8 +1750,18 @@ CMT_COMMANDLINE = {
 				"description": [ANSIThemeString("Include control planes when ALL is used", "description")],
 			},
 		},
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "node",
+				"string": [ANSIThemeString("NODE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("ALL", "argument")],
+				"validator": "hostname",
+				"list_separator": ",",
+			}
+		],
 		"callback": uncordon_nodes,
 	},
 	"Taint Node": {
@@ -1769,8 +1809,26 @@ CMT_COMMANDLINE = {
 				],
 			}
 		},
-		"min_args": 2,
-		"max_args": 2,
+		"required_args": [
+			{
+				"name": "node",
+				"string": [ANSIThemeString("NODE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("ALL", "argument")],
+				"validator": "hostname",
+				"list_separator": ",",
+			}, {
+				"name": "taint",
+				"string": [ANSIThemeString("KEY", "argument"),
+					   ANSIThemeString("[:", "separator"),
+					   ANSIThemeString("VALUE", "argument"),
+					   ANSIThemeString("]=", "separator"),
+					   ANSIThemeString("EFFECT", "argument")],
+				"validator": "taint",
+			}
+		],
 		"callback": taint_nodes,
 	},
 	"Untaint Node": {
@@ -1813,8 +1871,27 @@ CMT_COMMANDLINE = {
 				"description": [ANSIThemeString("Include control planes when ALL is used", "description")],
 			},
 		},
-		"min_args": 2,
-		"max_args": 2,
+		"required_args": [
+			{
+				"name": "node",
+				"string": [ANSIThemeString("NODE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("ALL", "argument")],
+				"validator": "hostname",
+				"list_separator": ",",
+			}, {
+				"name": "taint",
+				"string": [ANSIThemeString("KEY", "argument"),
+					   ANSIThemeString("[:", "separator"),
+					   ANSIThemeString("VALUE", "argument"),
+					   ANSIThemeString("]=[", "separator"),
+					   ANSIThemeString("EFFECT", "argument"),
+					   ANSIThemeString("]", "separator")],
+				"validator": "untaint",
+			}
+		],
 		"callback": untaint_nodes,
 	},
 	"Prepare Host": {
@@ -1884,15 +1961,27 @@ CMT_COMMANDLINE = {
 				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "hosts_or_hostfile_path",
+				"string": [ANSIThemeString("HOST", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("PATH", "argument")],
+				"validator": "hostname_or_path",
+				"list_separator": ",",
+			}
+		],
 		"callback": prepare_hosts,
 	},
 	"Add Node": {
 		"command": ["add-node", "add-nodes"],
 		"values": [ANSIThemeString("HOST", "argument"),
 			   ANSIThemeString(",", "separator"),
-			   ANSIThemeString("...", "argument")],
+			   ANSIThemeString("...", "argument"),
+			   ANSIThemeString("|", "separator"),
+			   ANSIThemeString("PATH", "argument")],
 		"description": [ANSIThemeString("Add ", "description"),
 				ANSIThemeString("HOST", "argument"),
 				ANSIThemeString(",", "separator"),
@@ -1979,6 +2068,8 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString(")", "description")],
 				],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (5, 256),
 			},
 			"--from-file": {
 				"description": [ANSIThemeString("Treat the argument to ", "description"),
@@ -2009,8 +2100,18 @@ CMT_COMMANDLINE = {
 				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "hosts_or_hostfile_path",
+				"string": [ANSIThemeString("HOST", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("PATH", "argument")],
+				"validator": "hostname_or_path",
+				"list_separator": ",",
+			}
+		],
 		"callback": add_nodes,
 	},
 	"Remove Node": {
@@ -2046,6 +2147,8 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString(")", "description")],
 				],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (5, 256),
 			},
 			"--purge": {
 				"description": [ANSIThemeString("Purge hosts if teardown completes successfully", "description")],
@@ -2060,8 +2163,18 @@ CMT_COMMANDLINE = {
 				],
 			},
 		},
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "node",
+				"string": [ANSIThemeString("NODE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("ALL", "argument")],
+				"validator": "hostname",
+				"list_separator": ",",
+			},
+		],
 		"callback": remove_nodes,
 	},
 	"Purge": {
@@ -2098,6 +2211,8 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString(")", "description")],
 				],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (5, 256),
 			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs", "description")],
@@ -2109,8 +2224,18 @@ CMT_COMMANDLINE = {
 				],
 			},
 		},
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "hosts",
+				"string": [ANSIThemeString("HOST", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("ALL", "argument")],
+				"validator": "hostname",
+				"list_separator": ",",
+			},
+		],
 		"callback": purge_hosts,
 	},
 	"Upgrade Node": {
@@ -2150,6 +2275,8 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString(")", "description")],
 				],
 				"requires_arg": True,
+				"validator": "int",
+				"valid_range": (5, 256),
 			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs", "description")],
@@ -2161,8 +2288,18 @@ CMT_COMMANDLINE = {
 				],
 			},
 		},
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "node",
+				"string": [ANSIThemeString("NODE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("ALL", "argument")],
+				"validator": "hostname",
+				"list_separator": ",",
+			},
+		],
 		"callback": upgrade_nodes,
 	},
 	"spacer1": {
