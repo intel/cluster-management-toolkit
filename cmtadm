@@ -3831,9 +3831,11 @@ COMMANDLINE = {
 			{
 				"name": "clustername",
 				"string": [ANSIThemeString("CLUSTER_NAME", "argument")],
-				"validator": "hostname",
-				"list_separator": ",",
-			}
+				"validation": {
+					"validator": "hostname",
+					"list_separator": ",",
+				},
+			},
 		],
 		"callback": import_cluster,
 	},
@@ -3867,7 +3869,9 @@ COMMANDLINE = {
 						ANSIThemeString("HOST", "argument"),
 						ANSIThemeString(" as control plane ", "description")],
 				"requires_arg": True,
-				"validator": "hostname_or_ip",
+				"validation": {
+					"validator": "hostname_or_ip",
+				},
 			},
 			"--resume": {
 				"description": [ANSIThemeString("Resume preparation", "description")],
@@ -3882,8 +3886,10 @@ COMMANDLINE = {
 						ANSIThemeString("TASK", "argument"),
 						ANSIThemeString(" instead of running all tasks", "description")],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (0, None),
+				"validation": {
+					"validator": "int",
+					"valid_range": (0, None),
+				},
 			},
 			"--skip-tasks": {
 				"values": [ANSIThemeString("TASK", "argument"),
@@ -3894,9 +3900,11 @@ COMMANDLINE = {
 						ANSIThemeString(",", "separator"),
 						ANSIThemeString("...", "argument")],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (0, None),
-				"list_separator": ",",
+				"validation": {
+					"validator": "int",
+					"valid_range": (0, None),
+					"list_separator": ",",
+				},
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
@@ -3932,16 +3940,21 @@ COMMANDLINE = {
 			{
 				"name": "clustername",
 				"string": [ANSIThemeString("CLUSTER_NAME", "argument")],
-				"validator": "hostname",
-			}
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+				},
+			},
 		],
 		"optional_args": [
 			{
 				"name": "version",
 				"string": [ANSIThemeString("KUBERNETES_VERSION", "argument")],
-				"validator": "regex",
-				"regex": r"^\d+\.\d+\.\d+(-\d+)?$"
-			}
+				"validation": {
+					"validator": "regex",
+					"regex": r"^\d+\.\d+(\.\d+-\d+|\.\d+|)$"
+				},
+			},
 		],
 		"callback": prepare_installation,
 	},
@@ -3999,6 +4012,10 @@ COMMANDLINE = {
 						ANSIThemeString("TASK", "argument"),
 						ANSIThemeString(" instead of running all tasks", "description")],
 				"requires_arg": True,
+				"validation": {
+					"validator": "int",
+					"valid_range": (0, None),
+				},
 			},
 			"--skip-tasks": {
 				"values": [ANSIThemeString("TASK", "argument"),
@@ -4009,9 +4026,11 @@ COMMANDLINE = {
 						ANSIThemeString(",", "separator"),
 						ANSIThemeString("...", "argument")],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (0, None),
-				"list_separator": ",",
+				"validation": {
+					"validator": "int",
+					"valid_range": (0, None),
+					"list_separator": ",",
+				},
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
@@ -4087,8 +4106,10 @@ COMMANDLINE = {
 					 ANSIThemeString("cri-o", "programname")],
 				],
 				"requires_arg": True,
-				"validator": "allowlist",
-				"allowlist": ["containerd", "cri-o", "docker-shim"],
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": ["containerd", "cri-o", "docker-shim"],
+				},
 			},
 			"--enable-dra": {
 				"description": [ANSIThemeString("Enable DRA", "description")],
@@ -4115,13 +4136,17 @@ COMMANDLINE = {
 			{
 				"name": "cni",
 				"string": [ANSIThemeString("CNI", "argument")],
-				"validator": "allowlist",
-				"allowlist": ["antrea", "calico", "canal", "cilium", "flannel", "kube-router", "weave", "none"],
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": ["antrea", "calico", "canal", "cilium", "flannel", "kube-router", "weave", "none"],
+				},
 			},
 			{
 				"name": "pod_network_cidr",
 				"string": [ANSIThemeString("POD_NETWORK_CIDR", "argument")],
-				"validator": "cidr",
+				"validation": {
+					"validator": "cidr",
+				},
 			},
 		],
 		"callback": setup_control_plane,
@@ -4159,10 +4184,12 @@ COMMANDLINE = {
 			{
 				"name": "cni",
 				"string": [ANSIThemeString("CNI", "argument")],
-				"validator": "allowlist",
-				"allowlist": ["antrea", "calico", "canal", "cilium", "flannel", "kube-router", "weave"],
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": ["antrea", "calico", "canal", "cilium", "flannel", "kube-router", "weave"],
+				},
 				"default": DEFAULT_CNI,
-			}
+			},
 		],
 		"callback": setup_cni,
 	},
@@ -4192,9 +4219,11 @@ COMMANDLINE = {
 			{
 				"name": "cni",
 				"string": [ANSIThemeString("CNI", "argument")],
-				"validator": "allowlist",
-				"allowlist": ["calico", "cilium"],
-			}
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": ["calico", "cilium"],
+				},
+			},
 		],
 		"callback": upgrade_cni,
 	},
@@ -4236,8 +4265,10 @@ COMMANDLINE = {
 						ANSIThemeString("TASK", "argument"),
 						ANSIThemeString(" instead of running all tasks", "description")],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (0, None),
+				"validation": {
+					"validator": "int",
+					"valid_range": (0, None),
+				},
 			},
 			"--skip-tasks": {
 				"values": [ANSIThemeString("TASK", "argument"),
@@ -4248,9 +4279,11 @@ COMMANDLINE = {
 						ANSIThemeString(",", "separator"),
 						ANSIThemeString("...", "argument")],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (0, None),
-				"list_separator": ",",
+				"validation": {
+					"validator": "int",
+					"valid_range": (0, None),
+					"list_separator": ",",
+				},
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
@@ -4289,9 +4322,11 @@ COMMANDLINE = {
 			{
 				"name": "version",
 				"string": [ANSIThemeString("KUBERNETES_VERSION", "argument")],
-				"validator": "regex",
-				"regex": r"^\d+\.\d+\.\d+(-\d+)?$"
-			}
+				"validation": {
+					"validator": "regex",
+					"regex": r"^\d+\.\d+(\.\d+-\d+|\.\d+|)$"
+				},
+			},
 		],
 		"callback": upgrade_control_plane,
 	},
@@ -4321,8 +4356,10 @@ COMMANDLINE = {
 						ANSIThemeString("TASK", "argument"),
 						ANSIThemeString(" instead of running all tasks", "description")],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (0, None),
+				"validation": {
+					"validator": "int",
+					"valid_range": (0, None),
+				},
 			},
 			"--skip-tasks": {
 				"values": [ANSIThemeString("TASK", "argument"),
@@ -4333,9 +4370,11 @@ COMMANDLINE = {
 						ANSIThemeString(",", "separator"),
 						ANSIThemeString("...", "argument")],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (0, None),
-				"list_separator": ",",
+				"validation": {
+					"validator": "int",
+					"valid_range": (0, None),
+					"list_separator": ",",
+				},
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
@@ -4369,9 +4408,9 @@ COMMANDLINE = {
 			[ANSIThemeString("purge-control-plane", "command"),
 			 ANSIThemeString(" will run ", "description"),
 			 ANSIThemeString("teardown-control-plane", "command")],
-			[ANSIThemeString("first if necessary.", "description")],
-			[ANSIThemeString("Software and configuration needed for ", "description")],
-			[ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
+			[ANSIThemeString("first if necessary. Software and configuration", "description")],
+			[ANSIThemeString("needed for ", "description"),
+			 ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
 			 ANSIThemeString(" itself will not be purged", "description")],
 		],
 		"options": {
@@ -4384,8 +4423,10 @@ COMMANDLINE = {
 						ANSIThemeString("TASK", "argument"),
 						ANSIThemeString(" instead of running all tasks", "description")],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (0, None),
+				"validation": {
+					"validator": "int",
+					"valid_range": (0, None),
+				},
 			},
 			"--skip-tasks": {
 				"values": [ANSIThemeString("TASK", "argument"),
@@ -4396,8 +4437,10 @@ COMMANDLINE = {
 						ANSIThemeString(",", "separator"),
 						ANSIThemeString("...", "argument")],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (0, None),
+				"validation": {
+					"validator": "int",
+					"valid_range": (0, None),
+				},
 			},
 			"--list-tasks": {
 				"description": [ANSIThemeString("List valid values for ", "description"),
@@ -4447,9 +4490,11 @@ COMMANDLINE = {
 			{
 				"name": "controlplane",
 				"string": [ANSIThemeString("CONTROLPLANE", "argument")],
-				"validator": "hostname_or_ip",
-				"list_separator": ",",
-			}
+				"validation": {
+					"validator": "hostname_or_ip",
+					"list_separator": ",",
+				},
+			},
 		],
 		"callback": taint_control_plane,
 	},
@@ -4480,9 +4525,11 @@ COMMANDLINE = {
 			{
 				"name": "controlplane",
 				"string": [ANSIThemeString("CONTROLPLANE", "argument")],
-				"validator": "hostname_or_ip",
-				"list_separator": ",",
-			}
+				"validation": {
+					"validator": "hostname_or_ip",
+					"list_separator": ",",
+				},
+			},
 		],
 		"callback": untaint_control_plane,
 	},
@@ -4508,9 +4555,11 @@ COMMANDLINE = {
 				"values": [ANSIThemeString("USERGROUP", "argument")],
 				"description": [ANSIThemeString("The usergroup", "description")],
 				"requires_arg": True,
-				"validator": "regex",
-				# regex taken from debian; other distros might be stricter or possible more permissive
-				"regex": r"^[a-z_][a-z0-9_-]*[$]?$",
+				"validation": {
+					"validator": "regex",
+					# regex taken from debian; other distros might be stricter or possible more permissive
+					"regex": r"^[a-z_][a-z0-9_-]*[$]?$",
+				},
 			},
 		},
 		"callback": audit,
@@ -4536,8 +4585,10 @@ COMMANDLINE = {
 			{
 				"name": "controlplane",
 				"string": [ANSIThemeString("CONTROLPLANE", "argument")],
-				"validator": "hostname_or_ip",
-			}
+				"validation": {
+					"validator": "hostname_or_ip",
+				},
+			},
 		],
 		"callback": preflight_check,
 	},

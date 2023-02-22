@@ -839,10 +839,27 @@ COMMANDLINE = {
 					   ANSIThemeString("...", "argument")],
 				"description": [ANSIThemeString("Set these group variables", "description")],
 				"requires_arg": True,
+				"validation": {
+					"validator": "regex",
+					# The key is limited, the value is free-form
+					"regex": r"^[a-z_][a-z0-9_]*:.+$",
+					"list_separator": ",",
+				},
 			},
 		},
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "groups",
+				"string": [ANSIThemeString("GROUP", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
+			},
+		],
 		"callback": add_groups,
 	},
 	"Add Hosts to Inventory": {
@@ -862,6 +879,12 @@ COMMANDLINE = {
 					   ANSIThemeString("...", "argument")],
 				"description": [ANSIThemeString("Add the hosts to these groups", "description")],
 				"requires_arg": True,
+				"validation": {
+					"validator": "regex",
+					# The key is limited, the value is free-form
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
 			},
 			"--vars": {
 				"values": [ANSIThemeString("KEY", "argument"),
@@ -871,10 +894,39 @@ COMMANDLINE = {
 					   ANSIThemeString("...", "argument")],
 				"description": [ANSIThemeString("Set these host variables", "description")],
 				"requires_arg": True,
+				"validation": {
+					"validator": "regex",
+					# The key is limited, the value is free-form
+					"regex": r"^[a-z_][a-z0-9_]*:.+$",
+					"list_separator": ",",
+				},
 			},
 		},
-		"min_args": 1,
-		"max_args": 2,
+		"required_args": [
+			{
+				"name": "hosts",
+				"string": [ANSIThemeString("HOST", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "hostname_or_ip",
+					"list_separator": ",",
+				},
+			},
+		],
+		"optional_args": [
+			{
+				"name": "groups",
+				"string": [ANSIThemeString("GROUP", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
+			},
+		],
 		"callback": add_hosts,
 	},
 	# This is purely for the benefit of the helptext generator
@@ -911,8 +963,19 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Show variables", "description")],
 			},
 		},
-		"min_args": 0,
-		"max_args": 1,
+		"optional_args": [
+			{
+				"name": "groups",
+				"string": [ANSIThemeString("GROUP", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
+			},
+		],
 		"callback": inventory,
 	},
 	"List Hosts": {
@@ -923,8 +986,6 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Show host variables", "description")],
 			},
 		},
-		"min_args": 0,
-		"max_args": 0,
 		"callback": list_hosts,
 	},
 	"List Groups": {
@@ -935,8 +996,6 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Show group variables", "description")],
 			},
 		},
-		"min_args": 0,
-		"max_args": 0,
 		"callback": list_groups,
 	},
 	"Ping": {
@@ -957,8 +1016,19 @@ COMMANDLINE = {
 				ANSIThemeString(" (Default: “", "description"),
 				ANSIThemeString("all", "argument"),
 				ANSIThemeString("“)", "description")],
-		"min_args": 0,
-		"max_args": 1,
+		"optional_args": [
+			{
+				"name": "groups_or_hosts",
+				"string": [ANSIThemeString("[", "separator"),
+					   ANSIThemeString("GROUP/HOST", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("]", "separator")],
+				"validation": {
+					"validator": "hostname_or_ip",
+				},
+			},
+		],
 		"callback": ping,
 	},
 	"Rebuild Inventory": {
@@ -980,8 +1050,6 @@ COMMANDLINE = {
 						ANSIThemeString(" inventory to be overwritten", "description")],
 			},
 		},
-		"min_args": 0,
-		"max_args": 0,
 		"callback": rebuild_inventory,
 	},
 	"Remove Groups": {
@@ -1007,8 +1075,19 @@ COMMANDLINE = {
 						ANSIThemeString(" groups", "description")],
 			},
 		},
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "groups",
+				"string": [ANSIThemeString("GROUP", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
+			},
+		],
 		"callback": remove_groups,
 	},
 	"Remove Hosts from ALL Groups": {
@@ -1029,8 +1108,29 @@ COMMANDLINE = {
 						ANSIThemeString(" removal of hosts from inventory", "description")],
 			},
 		},
-		"min_args": 2,
-		"max_args": 2,
+		"required_args": [
+			{
+				"name": "hosts",
+				"string": [ANSIThemeString("HOST", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "hostname_or_ip",
+					"list_separator": ",",
+				},
+			},
+			{
+				"name": "groups",
+				"string": [ANSIThemeString("GROUP", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
+			},
+		],
 		"callback": remove_hosts,
 	},
 	# This is purely for the benefit of the helptext generator
@@ -1070,8 +1170,22 @@ COMMANDLINE = {
 			 ANSIThemeString("all", "argument"),
 			 ANSIThemeString("“", "description")],
 		],
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "global_vars",
+				"string": [ANSIThemeString("KEY", "argument"),
+					   ANSIThemeString(":", "separator"),
+					   ANSIThemeString("VALUE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					# The key is limited, the value is free-form
+					"regex": r"^[a-z_][a-z0-9_]*:.+$",
+					"list_separator": ",",
+				},
+			},
+		],
 		"callback": set_global_vars,
 	},
 	"Set Group Variables": {
@@ -1094,8 +1208,33 @@ COMMANDLINE = {
 				ANSIThemeString("GROUP", "argument"),
 				ANSIThemeString(",", "separator"),
 				ANSIThemeString("...", "argument")],
-		"min_args": 2,
-		"max_args": 2,
+		"required_args": [
+			{
+				"name": "group_vars",
+				"string": [ANSIThemeString("KEY", "argument"),
+					   ANSIThemeString(":", "separator"),
+					   ANSIThemeString("VALUE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					# The key is limited, the value is free-form
+					"regex": r"^[a-z_][a-z0-9_]*:.+$",
+					"list_separator": ",",
+				},
+			},
+			{
+				"name": "groups",
+				"string": [ANSIThemeString("GROUP", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
+			},
+		],
 		"callback": set_group_vars,
 	},
 	"Set Host Variables": {
@@ -1118,8 +1257,32 @@ COMMANDLINE = {
 				ANSIThemeString("HOST", "argument"),
 				ANSIThemeString(",", "separator"),
 				ANSIThemeString("...", "argument")],
-		"min_args": 2,
-		"max_args": 2,
+		"required_args": [
+			{
+				"name": "host_vars",
+				"string": [ANSIThemeString("KEY", "argument"),
+					   ANSIThemeString(":", "separator"),
+					   ANSIThemeString("VALUE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					# The key is limited, the value is free-form
+					"regex": r"^[a-z_][a-z0-9_]*:.+$",
+					"list_separator": ",",
+				},
+			},
+			{
+				"name": "hosts",
+				"string": [ANSIThemeString("HOST", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "hostname_or_ip",
+					"list_separator": ",",
+				},
+			},
+		],
 		"callback": set_host_vars,
 	},
 	"Unset Global Variables": {
@@ -1133,8 +1296,21 @@ COMMANDLINE = {
 			 ANSIThemeString("all", "argument"),
 			 ANSIThemeString("“", "description")],
 		],
-		"min_args": 1,
-		"max_args": 1,
+		"required_args": [
+			{
+				"name": "global_vars",
+				"string": [ANSIThemeString("KEY", "argument"),
+					   ANSIThemeString(":", "separator"),
+					   ANSIThemeString("VALUE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
+			},
+		],
 		"callback": unset_global_vars,
 	},
 	"Unset Group Variables": {
@@ -1149,8 +1325,32 @@ COMMANDLINE = {
 				ANSIThemeString("GROUP", "argument"),
 				ANSIThemeString(",", "separator"),
 				ANSIThemeString("...", "argument")],
-		"min_args": 2,
-		"max_args": 2,
+		"required_args": [
+			{
+				"name": "group_vars",
+				"string": [ANSIThemeString("KEY", "argument"),
+					   ANSIThemeString(":", "separator"),
+					   ANSIThemeString("VALUE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
+			},
+			{
+				"name": "groups",
+				"string": [ANSIThemeString("GROUP", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
+			},
+		],
 		"callback": unset_group_vars,
 	},
 	"Unset Host Variables": {
@@ -1165,8 +1365,31 @@ COMMANDLINE = {
 				ANSIThemeString("HOST", "argument"),
 				ANSIThemeString(",", "separator"),
 				ANSIThemeString("...", "argument")],
-		"min_args": 2,
-		"max_args": 2,
+		"required_args": [
+			{
+				"name": "host_vars",
+				"string": [ANSIThemeString("KEY", "argument"),
+					   ANSIThemeString(":", "separator"),
+					   ANSIThemeString("VALUE", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
+			},
+			{
+				"name": "hosts",
+				"string": [ANSIThemeString("HOST", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "hostname_or_ip",
+					"list_separator": ",",
+				},
+			},
+		],
 		"callback": unset_host_vars,
 	},
 	"spacer1": {

@@ -1621,9 +1621,11 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("...", "argument"),
 					   ANSIThemeString("|", "separator"),
 					   ANSIThemeString("ALL", "argument")],
-				"validator": "hostname",
-				"list_separator": ",",
-			}
+				"validation": {
+					"validator": "hostname",
+					"list_separator": ",",
+				},
+			},
 		],
 		"callback": cordon_nodes,
 	},
@@ -1680,9 +1682,11 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("...", "argument"),
 					   ANSIThemeString("|", "separator"),
 					   ANSIThemeString("ALL", "argument")],
-				"validator": "hostname",
-				"list_separator": ",",
-			}
+				"validation": {
+					"validator": "hostname",
+					"list_separator": ",",
+				},
+			},
 		],
 		"callback": drain_nodes,
 	},
@@ -1728,9 +1732,11 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("...", "argument"),
 					   ANSIThemeString("|", "separator"),
 					   ANSIThemeString("ALL", "argument")],
-				"validator": "hostname",
-				"list_separator": ",",
-			}
+				"validation": {
+					"validator": "hostname",
+					"list_separator": ",",
+				},
+			},
 		],
 		"callback": drain_nodes,
 	},
@@ -1758,9 +1764,11 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("...", "argument"),
 					   ANSIThemeString("|", "separator"),
 					   ANSIThemeString("ALL", "argument")],
-				"validator": "hostname",
-				"list_separator": ",",
-			}
+				"validation": {
+					"validator": "hostname",
+					"list_separator": ",",
+				},
+			},
 		],
 		"callback": uncordon_nodes,
 	},
@@ -1817,8 +1825,10 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("...", "argument"),
 					   ANSIThemeString("|", "separator"),
 					   ANSIThemeString("ALL", "argument")],
-				"validator": "hostname",
-				"list_separator": ",",
+				"validation": {
+					"validator": "hostname",
+					"list_separator": ",",
+				},
 			}, {
 				"name": "taint",
 				"string": [ANSIThemeString("KEY", "argument"),
@@ -1826,8 +1836,10 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("VALUE", "argument"),
 					   ANSIThemeString("]=", "separator"),
 					   ANSIThemeString("EFFECT", "argument")],
-				"validator": "taint",
-			}
+				"validation": {
+					"validator": "taint",
+				},
+			},
 		],
 		"callback": taint_nodes,
 	},
@@ -1879,8 +1891,10 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("...", "argument"),
 					   ANSIThemeString("|", "separator"),
 					   ANSIThemeString("ALL", "argument")],
-				"validator": "hostname",
-				"list_separator": ",",
+				"validation": {
+					"validator": "hostname",
+					"list_separator": ",",
+				},
 			}, {
 				"name": "taint",
 				"string": [ANSIThemeString("KEY", "argument"),
@@ -1889,8 +1903,10 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("]=[", "separator"),
 					   ANSIThemeString("EFFECT", "argument"),
 					   ANSIThemeString("]", "separator")],
-				"validator": "untaint",
-			}
+				"validation": {
+					"validator": "untaint",
+				},
+			},
 		],
 		"callback": untaint_nodes,
 	},
@@ -1930,6 +1946,10 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString(")", "description")],
 				],
 				"requires_arg": True,
+				"validation": {
+					"validator": "int",
+					"valid_range": (5, 256),
+				},
 			},
 			"--from-file": {
 				"description": [ANSIThemeString("Treat the argument to ", "description"),
@@ -1969,9 +1989,11 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("...", "argument"),
 					   ANSIThemeString("|", "separator"),
 					   ANSIThemeString("PATH", "argument")],
-				"validator": "hostname_or_path",
-				"list_separator": ",",
-			}
+				"validation": {
+					"validator": "hostname_or_path",
+					"list_separator": ",",
+				},
+			},
 		],
 		"callback": prepare_hosts,
 	},
@@ -2001,6 +2023,9 @@ CMT_COMMANDLINE = {
 						ANSIThemeString("PATH", "argument"),
 						ANSIThemeString(" as token CA certificate", "description")],
 				"requires_arg": True,
+				"validation": {
+					"validator": "path",
+				},
 			},
 			"--cri": {
 				"values": [ANSIThemeString("CRI", "argument")],
@@ -2052,8 +2077,10 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString("cri-o", "programname")],
 				],
 				"requires_arg": True,
-				"validator": "allowlist",
-				"allowlist": ["containerd", "cri-o", "docker-shim"],
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": ["containerd", "cri-o", "docker-shim"],
+				},
 			},
 			"--forks": {
 				"values": [ANSIThemeString("FORKS", "argument")],
@@ -2068,8 +2095,10 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString(")", "description")],
 				],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (5, 256),
+				"validation": {
+					"validator": "int",
+					"valid_range": (5, 256),
+				},
 			},
 			"--from-file": {
 				"description": [ANSIThemeString("Treat the argument to ", "description"),
@@ -2108,9 +2137,11 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("...", "argument"),
 					   ANSIThemeString("|", "separator"),
 					   ANSIThemeString("PATH", "argument")],
-				"validator": "hostname_or_path",
-				"list_separator": ",",
-			}
+				"validation": {
+					"validator": "hostname_or_path",
+					"list_separator": ",",
+				},
+			},
 		],
 		"callback": add_nodes,
 	},
@@ -2147,8 +2178,10 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString(")", "description")],
 				],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (5, 256),
+				"validation": {
+					"validator": "int",
+					"valid_range": (5, 256),
+				},
 			},
 			"--purge": {
 				"description": [ANSIThemeString("Purge hosts if teardown completes successfully", "description")],
@@ -2171,8 +2204,10 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("...", "argument"),
 					   ANSIThemeString("|", "separator"),
 					   ANSIThemeString("ALL", "argument")],
-				"validator": "hostname",
-				"list_separator": ",",
+				"validation": {
+					"validator": "hostname",
+					"list_separator": ",",
+				},
 			},
 		],
 		"callback": remove_nodes,
@@ -2211,8 +2246,10 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString(")", "description")],
 				],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (5, 256),
+				"validation": {
+					"validator": "int",
+					"valid_range": (5, 256),
+				},
 			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs", "description")],
@@ -2232,8 +2269,10 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("...", "argument"),
 					   ANSIThemeString("|", "separator"),
 					   ANSIThemeString("ALL", "argument")],
-				"validator": "hostname",
-				"list_separator": ",",
+				"validation": {
+					"validator": "hostname",
+					"list_separator": ",",
+				},
 			},
 		],
 		"callback": purge_hosts,
@@ -2275,8 +2314,10 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString(")", "description")],
 				],
 				"requires_arg": True,
-				"validator": "int",
-				"valid_range": (5, 256),
+				"validation": {
+					"validator": "int",
+					"valid_range": (5, 256),
+				},
 			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs", "description")],
@@ -2296,8 +2337,10 @@ CMT_COMMANDLINE = {
 					   ANSIThemeString("...", "argument"),
 					   ANSIThemeString("|", "separator"),
 					   ANSIThemeString("ALL", "argument")],
-				"validator": "hostname",
-				"list_separator": ",",
+				"validation": {
+					"validator": "hostname",
+					"list_separator": ",",
+				},
 			},
 		],
 		"callback": upgrade_nodes,

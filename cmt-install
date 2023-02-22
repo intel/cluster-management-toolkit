@@ -428,7 +428,9 @@ COMMANDLINE = {
 					[ANSIThemeString("[user:passwd@]proxy:port", "argument")],
 				],
 				"requires_arg": True,
-				"validator": "url",
+				"validation": {
+					"validator": "url",
+				},
 			},
 			"--verbose": {
 				"description": [ANSIThemeString("Be more verbose", "description")],
@@ -441,8 +443,6 @@ COMMANDLINE = {
 	"__default": {
 		"command": ["__default"],
 		"description": [ANSIThemeString("", "")],
-		"min_args": 0,
-		"max_args": 0,
 		"callback": install,
 	},
 	"spacer1": {
