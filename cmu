@@ -55,6 +55,8 @@ from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, SSH_ARGS_RELAXED, SSH_
 from cmtio import execute_command, execute_command_with_response, secure_read_string, secure_which, secure_write_string
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 
+from commandparser import parse_commandline
+
 import logparser as logparsers
 from logparser import logparser, logparser_initialised, LogLevel, logparser_configuration
 from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
@@ -5140,7 +5142,16 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			else:
 				interval = "Manual"
 
-			statusarray1: List[Union[ThemeRef, ThemeString]] = [
+			statusarray1: List[Union[ThemeRef, ThemeString]] = []
+
+			if view != "Contexts" and ("namespace" in denylist or "namespace" in field_names):
+				statusarray1 += [ThemeString("Namespace: ", ThemeAttr("statusbar", "infoheader")),
+						 ThemeString(f"{selected_namespace if len(selected_namespace) > 0 else '<All>'}", ThemeAttr("statusbar", "highlight"))]
+
+			if len(statusarray1) > 0:
+				statusarray1 += [ThemeRef("separators", "statusbar")]
+
+			statusarray1 += [
 				ThemeString("Fields: ", ThemeAttr("statusbar", "infoheader")),
 				ThemeString(field_index, ThemeAttr("statusbar", "highlight"))
 			]
@@ -5154,12 +5165,6 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			statusarray2: List[Union[ThemeRef, ThemeString]] = []
 			if read_only_mode == True:
 				statusarray2 += [ThemeString("Read Only Mode", ThemeAttr("statusbar", "highlight"))]
-
-			if view != "Contexts" and ("namespace" in denylist or "namespace" in field_names):
-				if len(statusarray2) > 0:
-					statusarray2 += [ThemeRef("separators", "statusbar")]
-				statusarray2 += [ThemeString("Namespace: ", ThemeAttr("statusbar", "infoheader")),
-						 ThemeString(f"{selected_namespace if len(selected_namespace) > 0 else '<All>'}", ThemeAttr("statusbar", "highlight"))]
 
 			if len(statusarray2) > 0:
 				statusarray2 += [ThemeRef("separators", "statusbar")]
@@ -11705,10 +11710,13 @@ def setupui(stdscr: curses.window) -> None:
 					ANSIThemeString("“ for typos.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 
-def list_namespaces() -> None:
+# pylint: disable-next=unused-argument
+def list_namespaces(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	List all available namespaces
 	"""
+
+	init_kubernetes_client()
 
 	tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
 	if status == 200:
@@ -11723,7 +11731,8 @@ def list_namespaces() -> None:
 				ANSIThemeString(": API-server returned ", "default"),
 				ANSIThemeString(f"{status}", "errorvalue")], stderr = True)
 
-def list_views() -> None:
+# pylint: disable-next=unused-argument
+def list_views(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	List available views and their supported fields and default sort column
 	"""
@@ -11731,6 +11740,13 @@ def list_views() -> None:
 	viewfields = []
 	maxviewlen = 0
 	maxkindlen = 0
+
+	# Customises the list views
+	ansithemeprint([ANSIThemeString("Stand by, updating list of supported views...\n", "default")])
+
+	init_kubernetes_client()
+	populate_views()
+	customise_listviews()
 
 	for view in natsorted(views):
 		viewref = views[view]
@@ -11805,61 +11821,6 @@ def list_views() -> None:
 			ANSIThemeString("[field]", "note"),
 			ANSIThemeString(" it is the implicit sortcolumn.", "default")])
 	ansithemeprint([ANSIThemeString("Note: the brackets (“<“, “>“, “[“, and “]“) are not part of the field names.", "default")])
-
-def usage() -> int:
-	"""
-	Display usage information
-		Returns:
-			0
-	"""
-
-	helptext = [ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname")]
-	helptext += helptexts.usage
-
-	ansithemeprint(helptext)
-
-	return 0
-
-def version() -> int:
-	"""
-	Display version information
-		Returns:
-			0
-	"""
-
-	ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
-			ANSIThemeString(f"{about.UI_PROGRAM_VERSION}", "version")])
-	ansithemeprint([ANSIThemeString(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"),
-			ANSIThemeString(f"{about.PROGRAM_SUITE_VERSION}", "version")])
-	print()
-	print(about.COPYRIGHT)
-	print(about.LICENSE)
-	print()
-	print(PROGRAMAUTHORS)
-	return 0
-
-def set_default_view(view: str) -> None:
-	"""
-	Set the view to open when the program starts
-
-		Parameters:
-			view (str): The view to open
-	"""
-
-	global defaultview # pylint: disable=global-statement
-
-	if defaultview == "":
-		defaultview = view
-	else:
-		ansithemeprint([ANSIThemeString(about.UI_PROGRAM_NAME, "programname"),
-				ANSIThemeString(": ", "default"),
-				ANSIThemeString("VIEW", "argument"),
-				ANSIThemeString(" can only be specified once.", "default")], stderr = True)
-		ansithemeprint([ANSIThemeString("Try “", "default"),
-				ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
-				ANSIThemeString("help", "command"),
-				ANSIThemeString("“ for more information.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
 
 def checkforview(arg: Union[str, Tuple[str, str]]) -> Optional[str]:
 	"""
@@ -11941,17 +11902,249 @@ def customise_listviews() -> None:
 	if ping_hosts == "Never" and "field_denylist" not in views[inv_name]:
 		views[inv_name]["field_denylist"] = ["status"]
 
-def main() -> None:
-	"""
-	Main function for the program
-	"""
-
+def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 	global initial_name # pylint: disable=global-statement
 	global initial_namespace # pylint: disable=global-statement
 	global initial_container # pylint: disable=global-statement
 	global read_only_mode # pylint: disable=global-statement
 	global selected_namespace # pylint: disable=global-statement
 	global defaultview # pylint: disable=global-statement
+
+	tmpdefaultview = deep_get(cmtlib.cmtconfig, DictPath("Global#defaultview"), "")
+
+	for opt, optarg in options:
+		if opt == "--namespace":
+			selected_namespace = optarg
+		elif opt == "--read-only":
+			read_only_mode = True
+
+	init_kubernetes_client()
+	# Customises the list views
+	ansithemeprint([ANSIThemeString("Populating list of supported views...\n", "default")])
+
+	populate_views()
+	customise_listviews()
+
+	if len(args) > 0:
+		tmpview = checkforview(args[0].lower())
+		if tmpview is None:
+			ansithemeprint([ANSIThemeString("Unsupported or unavailable view “", "default"),
+					ANSIThemeString(f"{args[0].lower()}", "command"),
+					ANSIThemeString("“;", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("Use “", "default"),
+					ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
+					ANSIThemeString("list-views", "command"),
+					ANSIThemeString("“ to list available views.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+		defaultview = tmpview
+	else:
+		if tmpdefaultview is not None and tmpdefaultview != "":
+			defaultview = tmpdefaultview
+		else:
+			defaultview = "Selector"
+
+	if len(args) > 1:
+		# The argument is either OBJECT, NAMESPACE/OBJECT, OBJECT:MEMBER, or NAMESPACE/OBJECT:MEMBER
+		initial_name = args[1]
+		if "/" in initial_name:
+			initial_namespace, initial_name = initial_name.split("/")
+		if ":" in initial_name:
+			initial_name, initial_container = initial_name.split(":")
+			
+		if initial_container is not None and len(initial_container) > 0 and defaultview not in ("Pods", "ConfigMaps"):
+			ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
+					ANSIThemeString(": invalid syntax;", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("Specifying a member", "description"),
+					ANSIThemeString(" is only supported for ", "default"),
+					ANSIThemeString("pod", "command"),
+					ANSIThemeString(" and ", "description"),
+					ANSIThemeString("configmap", "command"),
+					ANSIThemeString(" view.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("Try “", "default"),
+					ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
+					ANSIThemeString("help", "command"),
+					ANSIThemeString("“ for more information.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+
+	# We do not need escape sequences, so cut down on the delay to 25ms
+	os.environ.setdefault('ESCDELAY', '25')
+
+	init_kubernetes_client()
+	ansithemeprint([ANSIThemeString("Checking available Kubernetes APIs\n", "default")])
+	_available_api_families, _status, _modified = kh.get_available_api_families()
+
+	# Customises the list views if necessary
+	if len(infoviews) == 0:
+		ansithemeprint([ANSIThemeString("Populating list of supported views...\n", "default")])
+		populate_views()
+		customise_listviews()
+
+	wrapper(setupui)
+
+COMMANDLINE = {
+	# This is purely for the benefit of the helptext generator
+	"View": {
+		"command": ["VIEW"],
+		"description": [ANSIThemeString("start in ", "description"),
+				ANSIThemeString("VIEW", "command")],
+	},
+	"View [NAMESPACE/]OBJECT[:MEMBER]": {
+		"command": ["VIEW"],
+		"values": [ANSIThemeString("[", "separator"),
+			   ANSIThemeString("NAMESPACE/", "argument"),
+			   ANSIThemeString("]", "separator"),
+			   ANSIThemeString("OBJECT", "argument"),
+			   ANSIThemeString("[", "separator"),
+			   ANSIThemeString(":", "argument"),
+			   ANSIThemeString("[", "separator"),
+			   ANSIThemeString("MEMBER", "argument"),
+			   ANSIThemeString("]]", "separator")],
+		"description": [ANSIThemeString("start in ", "description"),
+				ANSIThemeString("VIEW", "command"),
+				ANSIThemeString(" for ", "description"),
+				ANSIThemeString("OBJECT", "argument")],
+		"extended_description": [
+			[ANSIThemeString("Sometimes ", "description"),
+			 ANSIThemeString("OBJECT", "argument"),
+			 ANSIThemeString(" may need to be qualified by using ", "description")],
+			[ANSIThemeString("NAMESPACE", "argument"),
+			 ANSIThemeString(", but if there's only one unique match", "description")],
+			[ANSIThemeString(about.UI_PROGRAM_NAME, "programname"),
+			 ANSIThemeString(" will open that match. If an object has members", "description")],
+			[ANSIThemeString("(containers or configmaps), these can be opened", "description")],
+			[ANSIThemeString("using the ", "description"),
+			 ANSIThemeString(":MEMBER", "argument"),
+			 ANSIThemeString(" syntax. If there's only one", "description")],
+			[ANSIThemeString("member specifying ", "description"),
+			 ANSIThemeString(":", "argument"),
+			 ANSIThemeString(" is sufficient", "description")],
+		],
+	},
+	"spacer1": {
+		"command": [""],
+		"description": [ANSIThemeString("", "description")],
+	},
+	"List Namespaces": {
+		"command": ["list-namespaces"],
+		"description": [ANSIThemeString("List valid namespaces and exit", "description")],
+		"callback": list_namespaces,
+	},
+	"List Views": {
+		"command": ["list-views"],
+		"description": [ANSIThemeString("List view information and exit", "description")],
+		"callback": list_views,
+	},
+	"__*": {
+		"command": ["*"],
+		"optional_args": [
+			{
+				"name": "view",
+				"string": [ANSIThemeString("VIEW", "command")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-zA-Z][a-zA-Z0-9.-]*?[a-zA-Z0-9]$"
+				},
+			},
+			{
+				"name": "object_namespace_member",
+				"string": [ANSIThemeString("NAME", "argument")],
+				"validation": {
+					"validator": "regex",
+					# In order:
+					# object (RFC-1123 dns-subdomain)
+					# object (RFC-1123 dns-subdomain):container (RFC-1123 dns-label)
+					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain)
+					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain):container (RFC-1123 dns-label)
+					"regex": r"^(" \
+						 r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]|" \
+						 r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]:[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]|" \
+						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]|" \
+						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]:[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]" \
+						 r")$",
+				},
+			},
+			{
+				"name": "namespace",
+				"string": [ANSIThemeString("NAMESPACE", "command")],
+				"validation": {
+					"validator": "regex",
+					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain)
+					"regex": r"^(" \
+						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]|" \
+						 r")$",
+				},
+			},
+			{
+				"name": "member",
+				"string": [ANSIThemeString("CONTAINER", "command"),
+					   ANSIThemeString("/", "separator"),
+					   ANSIThemeString("CONFIGMAP", "command")],
+				"validation": {
+					"validator": "regex",
+					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain)
+					"regex": r"^(" \
+						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]|" \
+						 r")$",
+				},
+			},
+		],
+		"callback": open_view,
+	},
+	"extended_description": [
+		[ANSIThemeString("If ", "description"),
+		 ANSIThemeString("VIEW", "argument"),
+		 ANSIThemeString(" is not specified ", "description"),
+		 ANSIThemeString(about.UI_PROGRAM_NAME, "programname"),
+		 ANSIThemeString(" will show a list with all available views", "description")],
+		[ANSIThemeString("", "separator")],
+		[ANSIThemeString("Note", "note"),
+		 ANSIThemeString(": ", "description"),
+		 ANSIThemeString(CMT_CONFIG_FILE, "path"),
+		 ANSIThemeString(" can be used to set a ", "description"),
+		 ANSIThemeString("VIEW", "argument"),
+		 ANSIThemeString(" to use", "description")],
+		[ANSIThemeString("if no view is specified.", "description"),
+		 ANSIThemeString(" To override this and open the selector instead,", "description")],
+		[ANSIThemeString("simply use “", "description"),
+		 ANSIThemeString(about.UI_PROGRAM_NAME, "programname"),
+		 ANSIThemeString(" selector", "argument"),
+		 ANSIThemeString("“", "description")],
+	],
+	"spacer2": {
+		"command": [""],
+		"description": [ANSIThemeString("", "description")],
+	},
+	"__global_options": {
+		"command": ["__global_options"],
+		"description": [ANSIThemeString("", "")],
+		"options": {
+			"--read-only": {
+				"description": [ANSIThemeString("disable all commands that modify state", "description")],
+			},
+			"--namespace": {
+				"description": [ANSIThemeString("only show namespace ", "description"),
+						ANSIThemeString("NAMESPACE", "argument")],
+				"requires_arg": True,
+				"validation": {
+					"validator": "regex",
+					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain)
+					"regex": r"^(" \
+						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]|" \
+						 r")$",
+				},
+			},
+		},
+	},
+	"spacer3": {
+		"command": [""],
+		"description": [ANSIThemeString("", "description")],
+	},
+}
+
+def main() -> None:
+	"""
+	Main function for the program
+	"""
 
 	# Before doing anything else, make sure that the user is not running as root
 	if os.geteuid() == 0:
@@ -11970,9 +12163,7 @@ def main() -> None:
 	elif "/" not in themefile:
 		themefile = FilePath(os.path.join(THEME_DIR, themefile))
 	read_theme(themefile, defaultthemefile)
-	init_ansithemeprint(themefile)
 
-	tmpdefaultview = deep_get(cmtlib.cmtconfig, DictPath("Global#defaultview"), "")
 	curses_configuration.abouttext = helptexts.about
 	curses_configuration.mousescroll_enable = deep_get(cmtlib.cmtconfig, DictPath("Mouse#enablescroll"), False)
 	# These values are ignored when scrolling is disabled, so the defaults do not matter
@@ -11988,192 +12179,10 @@ def main() -> None:
 	ansible_configuration["disable_strict_host_key_checking"] = deep_get(cmtlib.cmtconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
 	ansible_configuration["save_logs"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#save_logs"), True)
 
-	y = 1
+	command, options, args = parse_commandline(about.UI_PROGRAM_NAME, about.UI_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
+						   COMMANDLINE, default_command = "*", theme = themefile)
 
-	while y < len(sys.argv):
-		arg = sys.argv[y]
-
-		if arg == "list-views":
-			# Customises the list views
-			ansithemeprint([ANSIThemeString("Stand by, updating list of supported views...\n", "default")])
-
-			init_kubernetes_client()
-			populate_views()
-			customise_listviews()
-
-			list_views()
-			sys.exit(0)
-		elif arg == "--namespace":
-			selected_namespace = sys.argv[y + 1]
-			y += 1
-		elif arg == "--read-only":
-			read_only_mode = True
-		elif arg == "list-namespaces":
-			init_kubernetes_client()
-			list_namespaces()
-			sys.exit(0)
-		elif arg in ("help", "--help"):
-			usage()
-			sys.exit(0)
-		elif arg in ("version", "--version"):
-			version()
-			sys.exit(0)
-		elif arg.startswith("--"):
-			ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
-					ANSIThemeString(": unrecognised option", "default")], stderr = True)
-			ansithemeprint([ANSIThemeString("Try “", "default"),
-					ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
-					ANSIThemeString("help", "command"),
-					ANSIThemeString("“ for more information.", "default")], stderr = True)
-			sys.exit(errno.EINVAL)
-		elif len(defaultview) == 0:
-			init_kubernetes_client()
-			# Customises the list views
-			ansithemeprint([ANSIThemeString("Populating list of supported views...\n", "default")])
-
-			populate_views()
-			customise_listviews()
-
-			tmpview = checkforview(arg.lower())
-			if tmpview is None:
-				ansithemeprint([ANSIThemeString("Unsupported or unavailable view “", "default"),
-						ANSIThemeString(f"{arg.lower()}", "command"),
-						ANSIThemeString("“;", "default")], stderr = True)
-				ansithemeprint([ANSIThemeString("Use “", "default"),
-						ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
-						ANSIThemeString("list-views", "command"),
-						ANSIThemeString("“ to list available views.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-			defaultview = tmpview
-			y += 1
-			continue
-		else:
-			# After we've received a view we assume that non-flag arguments
-			# that follow are used as shortcuts to a specific item
-			if initial_name is None:
-				# Safe
-				tmp = re.match(r"^([^/]+)/(.+)$", arg)
-				if tmp is not None:
-					if "/" in tmp[1]:
-						ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
-								ANSIThemeString(": invalid syntax; format is either NAMESPACE/NAME or NAME NAMESPACE", "default")], stderr = True)
-						ansithemeprint([ANSIThemeString("Try “", "default"),
-								ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
-								ANSIThemeString("help", "command"),
-								ANSIThemeString("“ for more information.", "default")], stderr = True)
-						sys.exit(errno.EINVAL)
-					else:
-						initial_namespace = tmp[1]
-						initial_name = tmp[2]
-				else:
-					initial_name = arg
-			elif initial_namespace is None:
-				if "/" in arg:
-					ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
-							ANSIThemeString(": invalid syntax; format is either NAMESPACE/NAME or NAME NAMESPACE", "default")], stderr = True)
-					ansithemeprint([ANSIThemeString("Try “", "default"),
-							ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
-							ANSIThemeString("help", "command"),
-							ANSIThemeString("“ for more information.", "default")], stderr = True)
-					sys.exit(errno.EINVAL)
-				else:
-					initial_namespace = arg
-			elif initial_container is None:
-				initial_container = arg
-			else:
-				ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
-						ANSIThemeString(": unrecognised option", "default")], stderr = True)
-				ansithemeprint([ANSIThemeString("Try “", "default"),
-						ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
-						ANSIThemeString("help", "command"),
-						ANSIThemeString("“ for more information.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-		y += 1
-
-	if defaultview == "":
-		if initial_name is not None:
-			ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
-					ANSIThemeString(": unsupported view “", "default"),
-					ANSIThemeString(f"{initial_name}", "command"),
-					ANSIThemeString("“.", "default")], stderr = True)
-			ansithemeprint([ANSIThemeString("Try “", "default"),
-					ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
-					ANSIThemeString("help", "command"),
-					ANSIThemeString("“ for more information.", "default")], stderr = True)
-			sys.exit(errno.EINVAL)
-
-		if tmpdefaultview is not None and tmpdefaultview != "":
-			defaultview = tmpdefaultview
-		else:
-			set_default_view("Selector")
-
-	if initial_name is not None:
-		# Role, RoleBinding, ClusterRole, and ClusterRoleBinding can contain ":"
-		# Most resources do not allow ":" at all, and for pods we use it to indicate a container name
-		colon_allowlist = ["Roles", "Role Bindings", "Cluster Roles", "Cluster Role Bindings", "Logs"]
-
-		if defaultview.lstrip("*") not in colon_allowlist:
-			# Safe
-			tmp = re.match(r"^([^:]+):(.*)$", initial_name)
-			if tmp is not None:
-				if ":" in tmp[1]:
-					ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
-							ANSIThemeString(": invalid syntax;", "default")], stderr = True)
-					ansithemeprint([ANSIThemeString("Format is either ", "default"),
-							ANSIThemeString("NAMESPACE/NAME:", "argument"),
-							ANSIThemeString("{", "separator"),
-							ANSIThemeString("CONTAINER", "argument"),
-							ANSIThemeString(",", "separator"),
-							ANSIThemeString("CONFIGMAP", "argument"),
-							ANSIThemeString("}", "separator"),
-							ANSIThemeString(" or ", "default"),
-							ANSIThemeString("NAME NAMESPACE ", "argument"),
-							ANSIThemeString("{", "separator"),
-							ANSIThemeString("CONTAINER", "argument"),
-							ANSIThemeString(",", "separator"),
-							ANSIThemeString("CONFIGMAP", "argument"),
-							ANSIThemeString("}", "separator")], stderr = True)
-					ansithemeprint([ANSIThemeString("Try “", "default"),
-							ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
-							ANSIThemeString("help", "command"),
-							ANSIThemeString("“ for more information.", "default")], stderr = True)
-					sys.exit(errno.EINVAL)
-				else:
-					initial_name = tmp[1]
-					initial_container = tmp[2]
-
-	# Containers and Config Maps can have a third level (container/data)
-	if initial_container is not None and defaultview.lstrip("*") not in ("Pods", "Config Maps"):
-		ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
-				ANSIThemeString(": invalid syntax;", "default")], stderr = True)
-		ansithemeprint([ANSIThemeString("CONTAINER", "argument"),
-				ANSIThemeString("/", "separator"),
-				ANSIThemeString("CONFIGMAP", "argument"),
-				ANSIThemeString(" only makes sense in ", "default"),
-				ANSIThemeString("pod", "command"),
-				ANSIThemeString("/", "separator"),
-				ANSIThemeString("configmap", "command"),
-				ANSIThemeString(" view.", "default")], stderr = True)
-		ansithemeprint([ANSIThemeString("Try “", "default"),
-				ANSIThemeString(f"{about.UI_PROGRAM_NAME} ", "programname"),
-				ANSIThemeString("help", "command"),
-				ANSIThemeString("“ for more information.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
-
-	# We do not need escape sequences, so cut down on the delay to 25ms
-	os.environ.setdefault('ESCDELAY', '25')
-
-	init_kubernetes_client()
-	ansithemeprint([ANSIThemeString("Checking available Kubernetes APIs\n", "default")])
-	_available_api_families, _status, _modified = kh.get_available_api_families()
-
-	# Customises the list views if necessary
-	if len(infoviews) == 0:
-		ansithemeprint([ANSIThemeString("Populating list of supported views...\n", "default")])
-		populate_views()
-		customise_listviews()
-
-	wrapper(setupui)
+	return command(options, args)
 
 if __name__ == "__main__":
 	main()

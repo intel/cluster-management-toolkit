@@ -84,7 +84,7 @@ def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool =
 		return False
 	return True
 
-def validate_argument(arg: str, arg_string: str, options: Dict, terminate_on_failure: bool = True) -> bool:
+def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict, terminate_on_failure: bool = True) -> bool:
 	result = False
 
 	validator = deep_get(options, DictPath("validator"), "")
@@ -593,7 +593,9 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 			if command is None:
 				if default_command is not None:
 					commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, default_command)
-
+				elif "__*" in commandline:
+					commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, "*")
+				
 				if command is None:
 					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
 							ANSIThemeString(": unrecognised command “", "default"),
