@@ -600,6 +600,11 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api": "ciliumidentities",
 		"namespaced": False,
 	},
+	("CiliumLoadBalancerIPPool", "cilium.io"): {
+		"api_family": ["apis/cilium.io/v2alpha1/"],
+		"api": "ciliumloadbalancerippools",
+		"namespaced": False,
+	},
 	("CiliumLocalRedirectPolicy", "cilium.io"): {
 		"api_family": ["apis/cilium.io/v2/"],
 		"api": "ciliumlocalredirectpolicies",
@@ -612,6 +617,10 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api_family": ["apis/cilium.io/v2/"],
 		"api": "ciliumnodes",
 		"namespaced": False,
+	},
+	("CiliumNodeConfig", "cilium.io"): {
+		"api_family": ["apis/cilium.io/v2alpha1/"],
+		"api": "ciliumnodeconfigs",
 	},
 	# clone.kubevirt.io
 	("VirtualMachineClone", "clone.kubevirt.io"): {
@@ -1940,6 +1949,11 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api_family": ["apis/reporting.kio.kasten.io/v1alpha1/"],
 		"api": "reports",
 	},
+	# resolution.tekton.dev
+	("ResolutionRequest", "resolution.tekton.dev"): {
+		"api_family": ["apis/resolution.tekton.dev/v1beta1/"],
+		"api": "resolutionrequests",
+	},
 	# resource.k8s.io
 	("PodScheduling", "resource.k8s.io"): {
 		"api_family": ["apis/resource.k8s.io/v1alpha1/"],
@@ -2107,6 +2121,44 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api": "controllerinfos",
 		"namespaced": False,
 	},
+	# tekton.dev
+	("ClusterTask", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "clustertasks",
+		"namespaced": False,
+	},
+	("CustomRun", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "customruns",
+	},
+	("PipelineResource", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1alpha1/"],
+		"api": "pipelineresources",
+	},
+	("PipelineRun", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "pipelineruns",
+	},
+	("Pipeline", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "pipelines",
+	},
+	("Run", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1alpha1/"],
+		"api": "runs",
+	},
+	("TaskRun", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "taskruns",
+	},
+	("Task", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "tasks",
+	},
+	("VerificationPolicy", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1alpha1/"],
+		"api": "verificationpolicies",
+	},
 	# telemetry.intel.com
 	("TASPolicy", "telemetry.intel.com"): {
 		"api_family": ["apis/telemetry.intel.com/v1alpha1/"],
@@ -2177,6 +2229,37 @@ kubernetes_resources: Dict[Any, Any] = {
 	("TraefikService", "traefik.containo.us"): {
 		"api_family": ["apis/traefik.containo.us/v1alpha1/"],
 		"api": "traefikservices",
+	},
+	# triggers.tekton.dev
+	("ClusterInterceptor", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1alpha1/"],
+		"api": "clusterinterceptors",
+		"namespaced": False,
+	},
+	("ClusterTriggerBinding", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1beta1/"],
+		"api": "clustertriggerbindings",
+		"namespaced": False,
+	},
+	("EventListener", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1beta1/"],
+		"api": "eventlisteners",
+	},
+	("Interceptor", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1alpha1/"],
+		"api": "interceptors",
+	},
+	("TriggerBinding", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1beta1/"],
+		"api": "triggerbindings",
+	},
+	("Trigger", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1beta1/"],
+		"api": "triggers",
+	},
+	("TriggerTemplate", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1beta1/"],
+		"api": "triggertemplates",
 	},
 	# tuned.openshift.io
 	("Profile", "tuned.openshift.io"): {
