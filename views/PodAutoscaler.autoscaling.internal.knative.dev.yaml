@@ -1,0 +1,13 @@
+kind: "PodAutoscaler"
+api_family: "autoscaling.internal.knative.dev"
+default_command: "podautoscaler.autoscaling.internal.knative.dev"
+command:
+- "podautoscalers.knative"
+- "podautoscaler.knative"
+listview:
+  name: "Pod Autoscalers (KNative)"
+  group: "KNative"
+  field_indexes:
+    Normal:
+      # fields: ["namespace", "name", "desired_scale", "actual_scale", "age", "ready", "reason"]
+      fields: ["namespace", "name", "age"]

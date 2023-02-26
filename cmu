@@ -6982,15 +6982,21 @@ def cniloop(stdscr: curses.window, view):
 			return retval
 
 def decode_and_view_data(stdscr: curses.window, **kwargs):
-	if "selected" not in kwargs:
+	if "selected" in kwargs:
+		bvalue = kwargs["selected"].value
+		title = kwargs["selected"].key
+		bvtype = kwargs["selected"].vtype
+		vtype, value = decode_value(bvalue)
+		if bvalue == value:
+			vtype = bvtype
+	elif "path" in kwargs:
+		obj = deep_get(kwargs, DictPath("obj"), {})
+		path = deep_get(kwargs, DictPath("path"), "")
+		bvalue = deep_get(obj, DictPath(path), "")
+		title = deep_get(kwargs, DictPath("title"), "")
+		vtype, value = decode_value(bvalue)
+	else:
 		return None
-
-	bvalue = kwargs["selected"].value
-	title = kwargs["selected"].key
-	bvtype = kwargs["selected"].vtype
-	vtype, value = decode_value(bvalue)
-	if bvalue == value:
-		vtype = bvtype
 
 	if vtype == "empty" or vtype.startswith(("base64-binary", "gzip")):
 		return None
