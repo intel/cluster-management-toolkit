@@ -2026,7 +2026,7 @@ kubernetes_resources: Dict[Any, Any] = {
 	# serving.knative.dev
 	("Configuration", "serving.knative.dev"): {
 		"api_family": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/", "apis/serving.knative.dev/v1alpha2/", "apis/serving.knative.dev/v1alpha1/"],
-		"api": "configations",
+		"api": "configurations",
 	},
 	("DomainMapping", "serving.knative.dev"): {
 		"api_family": ["apis/serving.knative.dev/v1alpha1/"],
