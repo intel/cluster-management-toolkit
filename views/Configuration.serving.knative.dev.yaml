@@ -1,11 +1,11 @@
-kind: "Metric"
-api_family: "autoscaling.internal.knative.dev"
-default_command: "metric.autoscaling.internal.knative.dev"
+kind: "Configuration"
+api_family: "serving.knative.dev"
+default_command: "configurations.serving.knative.dev"
 command:
-- "metrics.knative"
-- "metric.knative"
+- "configurations.knative"
+- "configuration.knative"
 listview:
-  name: "Metric (Knative)"
+  name: "Configuration (Knative)"
   group: "Knative"
   field_indexes:
     Normal:
@@ -56,11 +56,11 @@ listview:
               - context: "main"
                 type: "status_not_ok"
 infoview:
-  name: "Metric Info (Knative)"
+  name: "Configuration Info (Knative)"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "scrape_target", "panic_window", "stable_window"]
+        fields: ["controller", "latest_created_revision", "latest_ready_revision"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -85,24 +85,14 @@ infoview:
           field_separators:
           - type: "kind_api_group"
           - type: "kind"
-      panic_window:
-        header: [["Panic Window:", ["main", "infoheader"]]]
-        path: "spec#panicWindow"
-        type: "int"
-        formatting:
-          field_colors:
-          - type: "numerical"
-      scrape_target:
-        header: [["Scrape Target:", ["main", "infoheader"]]]
-        path: "spec#scrapeTarget"
+      latest_created_revision:
+        header: [["Latest Crea", ["main", "infoheader"]], ["t", ["main", "infoheader_shortcut"]], ["ed Revision:", ["main", "infoheader"]]]
+        path: "status#latestCreatedRevisionName"
         type: "str"
-      stable_window:
-        header: [["Stable Window:", ["main", "infoheader"]]]
-        path: "spec#stableWindow"
-        type: "int"
-        formatting:
-          field_colors:
-          - type: "numerical"
+      latest_ready_revision:
+        header: [["Latest ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["eady Revision:", ["main", "infoheader"]]]
+        path: "status#latestReadyRevisionName"
+        type: "str"
   shortcuts:
     "Open controller":
       key: "c"
@@ -115,3 +105,40 @@ infoview:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
+    "Open latest created revision":
+      key: "t"
+      read_only: true
+      helptext: "Open info page for latest created Revision"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Revision"
+        api_family: "serving.knative.dev"
+        name_path: "status#latestCreatedRevisionName"
+        namespace_path: "metadata#namespace"
+    "Open latest ready revision":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for latest ready Revision"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Revision"
+        api_family: "serving.knative.dev"
+        name_path: "status#latestReadyRevisionName"
+        namespace_path: "metadata#namespace"
+    "View Pod Template":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Pod Template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Pod Template"
+        _named_title: true
+        _pass_obj: true
+        path: "spec#template"

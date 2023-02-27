@@ -10,7 +10,7 @@ command:
 - "knimg"
 listview:
   name: "Images (Knative)"
-  group: "Caching"
+  group: "Knative"
   field_indexes:
     Normal:
       fields: ["namespace", "name", "age"]
@@ -20,9 +20,44 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["image"]
+        fields: ["controller", "image"]
     rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
       image:
         header: [["Image:", ["main", "infoheader"]]]
         path: "spec#image"
         type: "str"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

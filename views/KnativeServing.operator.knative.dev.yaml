@@ -2,11 +2,11 @@ kind: "KnativeServing"
 api_family: "operator.knative.dev"
 default_command: "knativeserving"
 listview:
-  name: "KNative Servings"
-  group: "KNative"
+  name: "Knative Servings"
+  group: "Knative"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "version", "ready", "age"]
+      fields: ["namespace", "name", "version", "age", "ready", "reason"]
       sortcolumn: "namespace"
   fields:
     ready:
@@ -31,6 +31,28 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_not_ok"
+    reason:
+      header: "Reason:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "message"
+        when:
+        - key: "type"
+          eq: "Ready"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
     version:
       header: "Version:"
       path: "status#version"
@@ -39,7 +61,7 @@ listview:
         field_colors:
         - type: "version"
 infoview:
-  name: "KNative Serving Info"
+  name: "Knative Serving Info"
   infopad:
     row_indexes:
       Normal:

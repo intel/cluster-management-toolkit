@@ -1,11 +1,11 @@
-kind: "Metric"
-api_family: "autoscaling.internal.knative.dev"
-default_command: "metric.autoscaling.internal.knative.dev"
+kind: "Revision"
+api_family: "serving.knative.dev"
+default_command: "revisions.serving.knative.dev"
 command:
-- "metrics.knative"
-- "metric.knative"
+- "revisions.knative"
+- "revision.knative"
 listview:
-  name: "Metric (Knative)"
+  name: "Revisions (Knative)"
   group: "Knative"
   field_indexes:
     Normal:
@@ -56,12 +56,26 @@ listview:
               - context: "main"
                 type: "status_not_ok"
 infoview:
-  name: "Metric Info (Knative)"
+  name: "Revision Info (Knative)"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "scrape_target", "panic_window", "stable_window"]
+        fields: ["controller", "container_concurrency", "actual_replicas", "enable_service_links", "timeout"]
     rows:
+      actual_replicas:
+        header: [["Actual Replicas:", ["main", "infoheader"]]]
+        path: "status#actualReplicas"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      container_concurrency:
+        header: [["Container Concurrency:", ["main", "infoheader"]]]
+        path: "spec#containerConcurrency"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
@@ -85,24 +99,22 @@ infoview:
           field_separators:
           - type: "kind_api_group"
           - type: "kind"
-      panic_window:
-        header: [["Panic Window:", ["main", "infoheader"]]]
-        path: "spec#panicWindow"
-        type: "int"
-        formatting:
-          field_colors:
-          - type: "numerical"
-      scrape_target:
-        header: [["Scrape Target:", ["main", "infoheader"]]]
-        path: "spec#scrapeTarget"
+      enable_service_links:
+        header: [["Enable ServiceLinks:", ["main", "infoheader"]]]
+        path: "spec#enableServiceLinks"
         type: "str"
-      stable_window:
-        header: [["Stable Window:", ["main", "infoheader"]]]
-        path: "spec#stableWindow"
-        type: "int"
+      timeout:
+        header: [["Timeout:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#timeoutSeconds"], "s"]
+          pathtype: "tuple"
+        formatter: "list"
         formatting:
           field_colors:
           - type: "numerical"
+          - type: "unit"
+          field_separators:
+          - type: "no_pad"
   shortcuts:
     "Open controller":
       key: "c"
@@ -115,3 +127,32 @@ infoview:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
+    "List container statuses":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "List container statuses"
+      widget: "windowwidget"
+      title: "Container statuses:"
+      headers: ["Name:", "Image Digest:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#containerStatuses"
+        fields:
+        - "name"
+        - "imageDigest"
+      # Not supported for now
+      sortcolumn: "name"
+    "View containers":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "View containers configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Containers configuration"
+        _named_title: true
+        _pass_obj: true
+        include_root: true
+        path: "spec#containers"

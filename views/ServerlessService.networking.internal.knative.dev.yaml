@@ -1,15 +1,20 @@
-kind: "PodAutoscaler"
-api_family: "autoscaling.internal.knative.dev"
-default_command: "podautoscalers.autoscaling.internal.knative.dev"
+kind: "ServerlessService"
+api_family: "networking.internal.knative.dev"
+default_command: "serverlessservices.networking.internal.knative.dev"
 command:
-- "podautoscalers.knative"
-- "podautoscaler.knative"
+- "serverlessservices.knative"
+- "serverlessservice.knative"
+- "serverlesssvcs.knative"
+- "serverlesssvc.knative"
+- "srvlsvcs.knative"
+- "srvlsvc.knative"
 listview:
-  name: "Pod Autoscalers (Knative)"
+  name: "Serverless Services (Knative)"
   group: "Knative"
   field_indexes:
     Normal:
       fields: ["namespace", "name", "age", "ready", "reason"]
+      sortcolumn: "namespace"
   fields:
     ready:
       header: "Ready:"
@@ -56,11 +61,11 @@ listview:
               - context: "main"
                 type: "status_not_ok"
 infoview:
-  name: "Pod Autoscaler Info (Knative)"
+  name: "Serverless Service Info (Knative)"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "protocol_type", "reachability", "scale_target_reference"]
+        fields: ["controller", "object_ref", "service", "private_service", "protocol_type", "mode", "number_of_activators"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -85,18 +90,21 @@ infoview:
           field_separators:
           - type: "kind_api_group"
           - type: "kind"
-      protocol_type:
-        header: [["Protocol Type:", ["main", "infoheader"]]]
-        path: "spec#protocolType"
+      mode:
+        header: [["Mode:", ["main", "infoheader"]]]
+        path: "spec#mode"
         type: "str"
-      reachability:
-        header: [["Reachability:", ["main", "infoheader"]]]
-        path: "spec#reachability"
-        type: "str"
-      scale_target_reference:
-        header: [["S", ["main", "infoheader_shortcut"]], ["cale Target Reference:", ["main", "infoheader"]]]
+      number_of_activators:
+        header: [["Number of Activators:", ["main", "infoheader"]]]
+        path: "spec#numActivators"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      object_ref:
+        header: [["O", ["main", "infoheader_shortcut"]], ["bject Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#scaleTargetRef#kind"], ["spec#scaleTargetRef#apiVersion"], ["spec#scaleTargetRef#name"]]
+        - path: [["spec#objectRef#kind"], ["spec#objectRef#apiVersion"], ["spec#objectRef#name"]]
           pathtype: "tuple"
           type: ["kind", "api_group", "name"]
         formatter: "list"
@@ -108,6 +116,18 @@ infoview:
           field_separators:
           - type: "kind_api_group"
           - type: "kind"
+      private_service:
+        header: [["P", ["main", "infoheader_shortcut"]], ["rivate Service:", ["main", "infoheader"]]]
+        path: "status#privateServiceName"
+        type: "str"
+      protocol_type:
+        header: [["Protocol Type:", ["main", "infoheader"]]]
+        path: "spec#protocolType"
+        type: "str"
+      service:
+        header: [["S", ["main", "infoheader_shortcut"]], ["ervice:", ["main", "infoheader"]]]
+        path: "status#serviceName"
+        type: "str"
   shortcuts:
     "Open controller":
       key: "c"
@@ -120,16 +140,40 @@ infoview:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
-    "Scale Target Reference":
-      key: "s"
+    "Open object reference":
+      key: "o"
       modifier: "shift"
       read_only: true
-      helptext: "Open info page for scale target reference"
+      helptext: "Open info page for object reference"
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        kind_path: "spec#scaleTargetRef#kind"
-        api_version_path: "spec#scaleTargetRef#apiVersion"
-        name_path: "spec#scaleTargetRef#name"
+        kind_path: "spec#objectRef#kind"
+        api_version_path: "spec#objectRef#apiVersion"
+        name_path: "spec#objectRef#name"
+        namespace_path: "metadata#namespace"
+    "Open service":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Service"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Service"
+        name_path: "status#serviceName"
+        namespace_path: "metadata#namespace"
+    "Open private service":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for private Service"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Service"
+        name_path: "status#privateServiceName"
         namespace_path: "metadata#namespace"

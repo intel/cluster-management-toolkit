@@ -1,11 +1,11 @@
-kind: "Metric"
-api_family: "autoscaling.internal.knative.dev"
-default_command: "metric.autoscaling.internal.knative.dev"
+kind: "Route"
+api_family: "serving.knative.dev"
+default_command: "routes.serving.knative.dev"
 command:
-- "metrics.knative"
-- "metric.knative"
+- "routes.knative"
+- "route.knative"
 listview:
-  name: "Metric (Knative)"
+  name: "Routes (Knative)"
   group: "Knative"
   field_indexes:
     Normal:
@@ -56,11 +56,11 @@ listview:
               - context: "main"
                 type: "status_not_ok"
 infoview:
-  name: "Metric Info (Knative)"
+  name: "Route Info (Knative)"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "scrape_target", "panic_window", "stable_window"]
+        fields: ["controller", "url"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -85,24 +85,10 @@ infoview:
           field_separators:
           - type: "kind_api_group"
           - type: "kind"
-      panic_window:
-        header: [["Panic Window:", ["main", "infoheader"]]]
-        path: "spec#panicWindow"
-        type: "int"
-        formatting:
-          field_colors:
-          - type: "numerical"
-      scrape_target:
-        header: [["Scrape Target:", ["main", "infoheader"]]]
-        path: "spec#scrapeTarget"
+      url:
+        header: [["URL:", ["main", "infoheader"]]]
+        path: "status#address#url"
         type: "str"
-      stable_window:
-        header: [["Stable Window:", ["main", "infoheader"]]]
-        path: "spec#stableWindow"
-        type: "int"
-        formatting:
-          field_colors:
-          - type: "numerical"
   shortcuts:
     "Open controller":
       key: "c"
@@ -115,3 +101,19 @@ infoview:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
+    "Show traffic info":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show traffic info"
+      widget: "windowwidget"
+      headers: ["Revision Name:", "Percent:", "Latest:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#traffic"
+        fields:
+        - "revisionName"
+        - "percent"
+        - "latestRevision"
+      # This isn't supported for now
+      sortcolumn: "revision_name"
