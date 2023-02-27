@@ -2,11 +2,11 @@
 # Requires: python3 (>= 3.8)
 
 """
-This program installs Intel Kubernetes Toolkit
+This program installs Cluster Management Toolkit for Kubernetes
 (and optionally its dependencies)
 
 For usage, see:
-	./ikt-install help
+	./cmt-install help
 """
 
 import errno
@@ -18,39 +18,39 @@ from subprocess import PIPE, STDOUT
 import sys
 from typing import Dict, List, Set, Tuple
 
-from ikttypes import ANSIThemeString, deep_get, DictPath, FilePath, LogLevel, SecurityPolicy
-from iktpaths import BINDIR, HOMEDIR, IKTDIR, IKT_LOGS_DIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, IKT_CONFIG_FILE_DIR, IKT_HOOKS_DIR
-from iktpaths import ANSIBLE_PLAYBOOK_DIR, IKT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
-from iktpaths import ANSIBLE_PLAYBOOK_DIRNAME, IKT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
+from cmttypes import deep_get, DictPath, FilePath, LogLevel, SecurityPolicy
+from cmtpaths import BINDIR, HOMEDIR, CMTDIR, CMT_LOGS_DIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
+from cmtpaths import ANSIBLE_PLAYBOOK_DIR, CMT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
+from cmtpaths import ANSIBLE_PLAYBOOK_DIRNAME, CMT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
 
-from iktio import execute_command_with_response, secure_copy, secure_mkdir, secure_symlink, secure_which
+from cmtio import execute_command_with_response, secure_copy, secure_mkdir, secure_symlink, secure_which
 
 from commandparser import parse_commandline
-from iktprint import iktprint, iktinput
+from ansithemeprint import ANSIThemeString, ansithemeprint, ansithemeinput
 
 import about
-PROGRAMDESCRIPTION = "Setup Intel Kubernetes Toolkit"
+PROGRAMDESCRIPTION = f"Setup {about.PROGRAM_SUITE_FULL_NAME}"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
 DIRECTORIES = [
 	(BINDIR, 0o755),
-	(IKTDIR, 0o755),
-	(IKT_LOGS_DIR, 0o750),
+	(CMTDIR, 0o755),
+	(CMT_LOGS_DIR, 0o750),
 	(DEPLOYMENT_DIR, 0o755),
 	(ANSIBLE_DIR, 0o755),
 	(ANSIBLE_LOG_DIR, 0o755),
-	(IKT_CONFIG_FILE_DIR, 0o755),
-	(IKT_HOOKS_DIR, 0o755),
-	(FilePath(os.path.join(IKT_HOOKS_DIR, "pre-upgrade.d")), 0o755),
-	(FilePath(os.path.join(IKT_HOOKS_DIR, "post-upgrade.d")), 0o755),
+	(CMT_CONFIG_FILE_DIR, 0o755),
+	(CMT_HOOKS_DIR, 0o755),
+	(FilePath(os.path.join(CMT_HOOKS_DIR, "pre-upgrade.d")), 0o755),
+	(FilePath(os.path.join(CMT_HOOKS_DIR, "post-upgrade.d")), 0o755),
 ]
 
 EXECUTABLE_SYMLINKS = [
 	# These are Python scripts
-	(FilePath(os.path.join(os.getcwd(), "iktadm")), FilePath(os.path.join(BINDIR, "iktadm"))),
-	(FilePath(os.path.join(os.getcwd(), "iktinv")), FilePath(os.path.join(BINDIR, "iktinv"))),
-	(FilePath(os.path.join(os.getcwd(), "ikt")), FilePath(os.path.join(BINDIR, "ikt"))),
-	(FilePath(os.path.join(os.getcwd(), "iku")), FilePath(os.path.join(BINDIR, "iku"))),
+	(FilePath(os.path.join(os.getcwd(), "cmtadm")), FilePath(os.path.join(BINDIR, "cmtadm"))),
+	(FilePath(os.path.join(os.getcwd(), "cmtinv")), FilePath(os.path.join(BINDIR, "cmtinv"))),
+	(FilePath(os.path.join(os.getcwd(), "cmt")), FilePath(os.path.join(BINDIR, "cmt"))),
+	(FilePath(os.path.join(os.getcwd(), "cmu")), FilePath(os.path.join(BINDIR, "cmu"))),
 ]
 
 MISC_SYMLINKS = [
@@ -76,11 +76,12 @@ PACKAGES_WITHOUT_FALLBACK = {
 		"recommended minimum": "1.26.0",
 		"reason": "TLSv1.1 is still enabled in older versions",
 	},
+	"python3-yaml": {},
 	"sshpass": {},
 }
 
 CONFIGURATION_FILES = [
-	(FilePath(os.path.join(os.getcwd(), IKT_CONFIG_FILENAME)), IKT_CONFIG_FILE, 0o644)
+	(FilePath(os.path.join(os.getcwd(), CMT_CONFIG_FILENAME)), CMT_CONFIG_FILE, 0o644)
 ]
 
 def create_directories(directories: List[Tuple[FilePath, int]], verbose: bool = False) -> None:
@@ -135,19 +136,19 @@ def install_software(packages: Dict, verbose: bool = False) -> None:
 	try:
 		sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
-		iktprint([ANSIThemeString("Critical", "critical"),
-			  ANSIThemeString(": Could not find ", "default"),
-			  ANSIThemeString("sudo", "path"),
-			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not find ", "default"),
+				ANSIThemeString("sudo", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	try:
 		apt_get_path = secure_which(FilePath("/usr/bin/apt-get"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
-		iktprint([ANSIThemeString("Critical", "critical"),
-			  ANSIThemeString(": Could not find ", "default"),
-			  ANSIThemeString("apt-get", "path"),
-			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not find ", "default"),
+				ANSIThemeString("apt-get", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	args = [sudo_path, apt_get_path, "install"] + list(packages.keys())
@@ -157,19 +158,19 @@ def install_software(packages: Dict, verbose: bool = False) -> None:
 	try:
 		apt_cache_path = secure_which(FilePath("/usr/bin/apt-cache"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
-		iktprint([ANSIThemeString("Critical", "critical"),
-			  ANSIThemeString(": Could not find ", "default"),
-			  ANSIThemeString("apt-cache", "path"),
-			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not find ", "default"),
+				ANSIThemeString("apt-cache", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	try:
 		dpkg_path = secure_which(FilePath("/usr/bin/dpkg"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
-		iktprint([ANSIThemeString("Critical", "critical"),
-			  ANSIThemeString(": Could not find ", "default"),
-			  ANSIThemeString("dpkg", "path"),
-			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not find ", "default"),
+				ANSIThemeString("dpkg", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	# Check if the installed versions are new enough
@@ -194,15 +195,15 @@ def install_software(packages: Dict, verbose: bool = False) -> None:
 			args = [dpkg_path, "--compare-versions", recommended_minimum, "lt", pkg_version]
 			retval = subprocess.run(args, check = False).returncode
 			if retval == 1:
-				iktprint([ANSIThemeString("\nWarning:", "warning"),
-					  ANSIThemeString(" The installed version of package ", "default"),
-					  ANSIThemeString(f"{pkg}", "path"),
-					  ANSIThemeString(" (", "default"),
-					  ANSIThemeString(f"{pkg_version}", "version"),
-					  ANSIThemeString(") is older than the recommended minimum version: ", "default"),
-					  ANSIThemeString(f"{recommended_minimum}", "version")], stderr = True)
-				iktprint([ANSIThemeString("   Risk:", "emphasis"),
-					  ANSIThemeString(f" {reason}\n", "default")], stderr = True)
+				ansithemeprint([ANSIThemeString("\nWarning:", "warning"),
+						ANSIThemeString(" The installed version of package ", "default"),
+						ANSIThemeString(f"{pkg}", "path"),
+						ANSIThemeString(" (", "default"),
+						ANSIThemeString(f"{pkg_version}", "version"),
+						ANSIThemeString(") is older than the recommended minimum version: ", "default"),
+						ANSIThemeString(f"{recommended_minimum}", "version")], stderr = True)
+				ansithemeprint([ANSIThemeString("   Risk:", "emphasis"),
+						ANSIThemeString(f" {reason}\n", "default")], stderr = True)
 
 # pylint: disable-next=unused-argument
 def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verbose: bool = False, dryrun: bool = False) -> Tuple[List[str], List[str]]:
@@ -228,10 +229,10 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 	try:
 		apt_cache_path = secure_which(FilePath("/usr/bin/apt-cache"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
-		iktprint([ANSIThemeString("Critical", "critical"),
-			  ANSIThemeString(": Could not find ", "default"),
-			  ANSIThemeString("apt-cache", "path"),
-			  ANSIThemeString("; aborting.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not find ", "default"),
+				ANSIThemeString("apt-cache", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	args = [apt_cache_path, "madison"] + list(packages.keys())
@@ -251,19 +252,19 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 		try:
 			sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
 		except FileNotFoundError:
-			iktprint([ANSIThemeString("Critical", "critical"),
-				  ANSIThemeString(": Could not find ", "default"),
-				  ANSIThemeString("sudo", "path"),
-				  ANSIThemeString("; aborting.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(": Could not find ", "default"),
+					ANSIThemeString("sudo", "path"),
+					ANSIThemeString("; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 
 		try:
 			apt_get_path = secure_which(FilePath("/usr/bin/apt-get"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
 		except FileNotFoundError:
-			iktprint([ANSIThemeString("Critical", "critical"),
-				  ANSIThemeString(": Could not find ", "default"),
-				  ANSIThemeString("apt-get", "path"),
-				  ANSIThemeString("; aborting.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(": Could not find ", "default"),
+					ANSIThemeString("apt-get", "path"),
+					ANSIThemeString("; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 
 		args = [sudo_path, apt_get_path, "install"] + list(pkgs)
@@ -273,10 +274,10 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 		try:
 			pip3_path = secure_which(FilePath("pip3"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 		except FileNotFoundError:
-			iktprint([ANSIThemeString("Critical", "critical"),
-				  ANSIThemeString(": Could not find ", "default"),
-				  ANSIThemeString("pip3", "path"),
-				  ANSIThemeString("; aborting.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(": Could not find ", "default"),
+					ANSIThemeString("pip3", "path"),
+					ANSIThemeString("; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		args = [pip3_path, "install"]
 		if len(pip_proxy) > 0:
@@ -290,7 +291,7 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Create directories, install configuration files, create symlinks,
-	and optionally install packages necessary to run iKT
+	and optionally install packages necessary to run CMT
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
@@ -322,7 +323,8 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 			raise Exception(f"Programming error; invalid option {opt}")
 
 	if confirm == True:
-		iktprint([ANSIThemeString("Important:", "warning"), ANSIThemeString(" The following actions will be taken that will modify the system:", "default")])
+		ansithemeprint([ANSIThemeString("Important:", "warning"),
+				ANSIThemeString(" The following actions will be taken that will modify the system:", "default")])
 		pkgs: List[str] = []
 		pkgs_without_fallback: Dict = {}
 		pkgs_fallback: List[str] = []
@@ -332,36 +334,51 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 			pkgs_without_fallback = PACKAGES_WITHOUT_FALLBACK
 			for pkg in pkgs:
 				pkgs_without_fallback[pkg] = {}
-			iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString("Install the following system software:", "action")])
-			iktprint([ANSIThemeString("  Note", "warning"), ANSIThemeString(": This requires sudo permissions", "emphasis")])
+			ansithemeprint([ANSIThemeString("\n• ", "separator"),
+					ANSIThemeString("Install the following system software:", "action")])
+			ansithemeprint([ANSIThemeString("  Note", "warning"),
+					ANSIThemeString(": This requires sudo permissions", "emphasis")])
 			for pkg in pkgs_without_fallback:
-				iktprint([ANSIThemeString(f"    {pkg}", "path")])
+				ansithemeprint([ANSIThemeString(f"    {pkg}", "path")])
 			for pkg in pkgs_fallback:
-				iktprint([ANSIThemeString(f"    {pkg}", "path"), ANSIThemeString(" (Using package from PIP)", "emphasis")])
+				ansithemeprint([ANSIThemeString(f"    {pkg}", "path"),
+						ANSIThemeString(" (Using package from PIP)", "emphasis")])
 
-		iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString("Create the following new directories:", "action")])
+		ansithemeprint([ANSIThemeString("\n• ", "separator"),
+				ANSIThemeString("Create the following new directories:", "action")])
 		for name, _permissions in DIRECTORIES:
-			iktprint([ANSIThemeString(f"    {name}", "path")])
-		iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString("Install the following configuration files:", "action")])
+			ansithemeprint([ANSIThemeString(f"    {name}", "path")])
+		ansithemeprint([ANSIThemeString("\n• ", "separator"),
+				ANSIThemeString("Install the following configuration files:", "action")])
 		for src, dst, _permissions in CONFIGURATION_FILES:
-			iktprint([ANSIThemeString(f"     {dst}", "path")])
-		iktprint([ANSIThemeString("\n• ", "separator"), ANSIThemeString("Create the following symlinks:", "action")])
+			ansithemeprint([ANSIThemeString(f"     {dst}", "path")])
+		ansithemeprint([ANSIThemeString("\n• ", "separator"),
+				ANSIThemeString("Create the following symlinks:", "action")])
 		for src, dst in MISC_SYMLINKS:
-			iktprint([ANSIThemeString(f"    {src}", "path"), ANSIThemeString(" ⇨ ", "emphasis"), ANSIThemeString(f"{dst}", "path")])
+			ansithemeprint([ANSIThemeString(f"    {src}", "path"),
+					ANSIThemeString(" ⇨ ", "emphasis"),
+					ANSIThemeString(f"{dst}", "path")])
 		for src, dst in EXECUTABLE_SYMLINKS:
-			iktprint([ANSIThemeString(f"    {src}", "path"), ANSIThemeString(" ⇨ ", "emphasis"), ANSIThemeString(f"{dst}", "path")])
+			ansithemeprint([ANSIThemeString(f"    {src}", "path"),
+					ANSIThemeString(" ⇨ ", "emphasis"),
+					ANSIThemeString(f"{dst}", "path")])
 
 		if install_dependencies == True and allow_fallback == False and len(pkgs_fallback) > 0:
-			iktprint([ANSIThemeString("\n", "default"), ANSIThemeString("Error", "error"),
-				  ANSIThemeString(": Installation would require fallback to PIP, but “", "default"),
-				  ANSIThemeString("--no-fallback", "option"),
-				  ANSIThemeString("“ was specified; aborting.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("\n", "default"),
+					ANSIThemeString("Error", "error"),
+					ANSIThemeString(": Installation would require fallback to PIP, but “", "default"),
+					ANSIThemeString("--no-fallback", "option"),
+					ANSIThemeString("“ was specified; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
-		retval = iktinput([ANSIThemeString("\nInstall ", "default"), ANSIThemeString("iKT", "programname"),
-				   ANSIThemeString("? [y/", "default"), ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
+		retval = ansithemeinput([ANSIThemeString("\nInstall ", "default"),
+					 ANSIThemeString(about.PROGRAM_SUITE_NAME, "programname"),
+					 ANSIThemeString("? [y/", "default"),
+					 ANSIThemeString("N", "emphasis"),
+					 ANSIThemeString("]: ", "default")])
 		if retval.lower() not in ("y", "yes"):
-			iktprint([ANSIThemeString("\nAborting:", "error"), ANSIThemeString(" User stopped installation.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("\nAborting:", "error"),
+					ANSIThemeString(" User stopped installation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
 	if install_dependencies == True:
@@ -373,13 +390,13 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 	create_symlinks(symlinks = MISC_SYMLINKS + EXECUTABLE_SYMLINKS, verbose = verbose)
 
 	if bindir_exists == False:
-		iktprint([ANSIThemeString("\nWarning", "warning"),
-			  ANSIThemeString(": ", "default"),
-			  ANSIThemeString(f"{BINDIR}", "path"),
-			  ANSIThemeString(" did not exist before installation; you will most likely need to ", "default"),
-			  ANSIThemeString("logout and login again (or spawn a new shell/terminal) to have it added to ", "default"),
-			  ANSIThemeString("$PATH", "argument"),
-			  ANSIThemeString(".", "default")])
+		ansithemeprint([ANSIThemeString("\nWarning", "warning"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{BINDIR}", "path"),
+				ANSIThemeString(" did not exist before installation; you will most likely need to ", "default"),
+				ANSIThemeString("logout and login again (or spawn a new shell/terminal) to have it added to ", "default"),
+				ANSIThemeString("$PATH", "argument"),
+				ANSIThemeString(".", "default")])
 
 	return 0
 
@@ -393,28 +410,39 @@ COMMANDLINE = {
 				"description": [ANSIThemeString("Do not install dependencies", "description")],
 			},
 			"--no-fallback": {
-				"description": [ANSIThemeString("Do not use Python packages from PIP if no system package exist", "description")],
+				"description": [ANSIThemeString("Do not fallback to Python packages from PIP", "description")],
+				"extended_description": [
+					[ANSIThemeString("If a distribution package cannot be found", "description")],
+					[ANSIThemeString("cmt-install", "programname"),
+					 ANSIThemeString(" will, by default, install packages", "description")],
+					[ANSIThemeString("using PIP.", "description")],
+					[ANSIThemeString("This option can be used to disable that behaviour", "description")],
+				],
 			},
 			"--pip-proxy": {
 				"values": [ANSIThemeString("PROXY", "argument")],
-				"description": [ANSIThemeString("HTTPS proxy to use if installing fallback packages from PIP on the format ", "description"),
-						ANSIThemeString("[user:passwd@]proxy:port", "argument")],
+				"description": [ANSIThemeString("Proxy to use for PIP", "description")],
+				"extended_description": [
+					[ANSIThemeString("HTTPS proxy to use if fallback packages are", "description")],
+					[ANSIThemeString("installed from PIP. Format:", "description")],
+					[ANSIThemeString("[user:passwd@]proxy:port", "argument")],
+				],
 				"requires_arg": True,
-				"validator": "url",
+				"validation": {
+					"validator": "url",
+				},
 			},
 			"--verbose": {
 				"description": [ANSIThemeString("Be more verbose", "description")],
 			},
 			"-Y": {
-				"description": [ANSIThemeString("Do not ask for confirmation before performing actions", "description")],
+				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
 	},
 	"__default": {
 		"command": ["__default"],
 		"description": [ANSIThemeString("", "")],
-		"min_args": 0,
-		"max_args": 0,
 		"callback": install,
 	},
 	"spacer1": {

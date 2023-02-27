@@ -15,10 +15,10 @@ except ModuleNotFoundError:
 
 from curses_helper import ThemeAttr, ThemeString, WidgetLineAttrs
 
-from ikttypes import deep_get, deep_get_with_fallback, DictPath
+from cmttypes import deep_get, deep_get_with_fallback, DictPath
 
-import iktlib
-from iktlib import disksize_to_human, get_package_versions, get_since, make_set_expression, split_msg, timestamp_to_datetime
+import cmtlib
+from cmtlib import disksize_to_human, get_package_versions, get_since, make_set_expression, split_msg, timestamp_to_datetime
 
 import kubernetes_helper
 
@@ -609,7 +609,7 @@ def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs:
 							value = "<unset>"
 						else:
 							timestamp = timestamp_to_datetime(_value)
-							value = iktlib.seconds_to_age(get_since(timestamp))
+							value = cmtlib.seconds_to_age(get_since(timestamp))
 					else:
 						value = _value
 				else:

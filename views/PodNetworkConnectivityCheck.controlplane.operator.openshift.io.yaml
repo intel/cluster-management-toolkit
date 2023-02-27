@@ -1,6 +1,9 @@
 kind: "PodNetworkConnectivityCheck"
 api_family: "controlplane.operator.openshift.io"
 default_command: "podnetworkconnectivitychecks"
+command:
+- "podnetconnchecks"
+- "podnetconncheck"
 listview:
   name: "Pod Network Connectivity Checks"
   group: "OpenShift"
@@ -8,3 +11,60 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Pod Network Connectivity Check Info (Operator)"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["node", "source_pod", "target_endpoint", "tls_client_cert_name"]
+    rows:
+      node:
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "Node"
+        default: "<none>"
+      source_pod:
+        header: [["Source ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["od:", ["main", "infoheader"]]]
+        path: "spec#sourcePod"
+        type: "str"
+      target_endpoint:
+        header: [["Target Endpoint:", ["main", "infoheader"]]]
+        path: "spec#sourcePad"
+        default: "<none>"
+        type: "raw"
+        formatter: "address"
+      tls_client_cert_name:
+        header: [["TLS Client Certificate:", ["main", "infoheader"]]]
+        path: "spec#tlsClientCert#name"
+        default: "<unset>"
+        fallback_on_empty: true
+        type: "str"
+  shortcuts:
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open Pod":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for source Pod"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Pod"
+        name_path: "spec#sourcePod"
+        namespace_path: "metadata#namespace"

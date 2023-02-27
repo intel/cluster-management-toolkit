@@ -3,12 +3,7 @@
     metadata:
       description: "Setup Containerd"
       playbook_types:
-      - "inventory"
-      - "node"
-      confirm: true
-      allow_on_control_plane: "single"
-      requires_cluster_info: true
-      category: "Setup"
+      - "internal"
   gather_subset:
   - "!min"
   - "!all"
@@ -34,7 +29,7 @@
   - name: "Configuring crictl"
     ansible.builtin.template:
       dest: "/etc/crictl.yaml"
-      src: "templates/etc/crictl.yaml.j2"
+      src: "templates/etc/crictl-containerd.yaml.j2"
       mode: "0644"
       force: true
   - name: "Creating /etc/containerd"
@@ -63,13 +58,13 @@
       path: "/etc/systemd/system/containerd.service.d"
       state: "directory"
       mode: "0755"
-  - name: "Configuring containerd/http-proxy.conf"
+  - name: "Creating /etc/systemd/system/containerd.service.d/http-proxy.conf"
     ansible.builtin.template:
       dest: "/etc/systemd/system/containerd.service.d/http-proxy.conf"
       src: "templates/etc/systemd/system/containerd.service.d/http-proxy.conf.j2"
       mode: "0644"
       force: true
-  - name: "Configuring containerd/ip_forward.conf"
+  - name: "Creating /etc/systemd/system/containerd.service.d/ip-forward.conf"
     ansible.builtin.template:
       dest: "/etc/systemd/system/containerd.service.d/ip-forward.conf"
       src: "templates/etc/systemd/system/containerd.service.d/ip-forward.conf.j2"
@@ -85,3 +80,4 @@
       name: "kubelet"
       daemon_reload: true
       state: "restarted"
+    failed_when: false

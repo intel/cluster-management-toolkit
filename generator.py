@@ -10,9 +10,9 @@ from datetime import datetime
 from typing import cast, List, Union
 
 from curses_helper import color_status_group, themearray_len, ThemeAttr, ThemeRef, ThemeString
-import iktlib
-from iktlib import datetime_to_timestamp, timestamp_to_datetime
-from ikttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
+import cmtlib
+from cmtlib import datetime_to_timestamp, timestamp_to_datetime
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
 
 def format_list(items, fieldlen: int, pad, ralign: bool, selected: bool,
 		item_separator = None,
@@ -300,7 +300,7 @@ def generator_age_raw(value, selected: bool) -> List[Union[ThemeRef, ThemeString
 	elif isinstance(value, str):
 		string = value
 	else:
-		string = iktlib.seconds_to_age(value, negative_is_skew = True)
+		string = cmtlib.seconds_to_age(value, negative_is_skew = True)
 
 	if string in ("<none>", "<unset>", "<unknown>"):
 		fmt = ThemeAttr("types", "none")
@@ -327,7 +327,9 @@ def generator_age(obj, field, fieldlen: int, pad: int, ralign: bool, selected: b
 
 	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
 
-def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting) -> List[Union[ThemeRef, ThemeString]]:
+	item_separator = deep_get(formatting, DictPath("item_separator"))
+
 	items = getattr(obj, field, [])
 	if items is None:
 		items = []
@@ -348,25 +350,23 @@ def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selecte
 		string = str(separator)
 		separator_lookup[string] = separator
 
-	vlist = []
+	array = []
 	field_colors = []
 	field_separators = []
 
 	subnet = False
-	first = True
 
 	for item in items:
 		_vlist = []
 		tmp = ""
 		for ch in item:
 			if ch in separator_lookup:
-				_vlist.append(tmp)
-				if first == True:
+				if len(tmp) > 0:
 					if subnet == True:
-						field_colors.append(ThemeAttr("types", "ipmask"))
+						_vlist.append(ThemeString(tmp, ThemeAttr("types", "ipmask"), selected))
 					else:
-						field_colors.append(ThemeAttr("types", "address"))
-					field_separators.append(separator_lookup[ch])
+						_vlist.append(ThemeString(tmp, ThemeAttr("types", "address"), selected))
+				_vlist.append(separator_lookup[ch])
 				tmp = ""
 
 				if ch == "/":
@@ -375,16 +375,15 @@ def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selecte
 				tmp += ch
 
 		if len(tmp) > 0:
-			_vlist.append(tmp)
-			if first == True:
-				if subnet == True:
-					field_colors.append(ThemeAttr("types", "ipmask"))
-				else:
-					field_colors.append(ThemeAttr("types", "address"))
-		first = False
-		vlist.append(tuple(_vlist))
+			if subnet == True:
+				_vlist.append(ThemeString(tmp, ThemeAttr("types", "ipmask"), selected))
+			else:
+				_vlist.append(ThemeString(tmp, ThemeAttr("types", "address"), selected))
+		if len(array) > 0:
+			array.append(item_separator)
+		array += _vlist
 
-	return format_list(vlist, fieldlen, pad, ralign, selected, field_separators = field_separators, field_colors = field_colors)
+	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
 
 def generator_basic(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
 	array: List[Union[ThemeRef, ThemeString]] = []

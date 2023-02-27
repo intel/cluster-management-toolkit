@@ -1,7 +1,10 @@
 yaml_dirs = parsers themes views playbooks
-python_executables = ikt iktadm ikt-install iktinv iku tests/validate_yaml tests/check_theme_use tests/iotests
+python_executables = cmt cmtadm cmt-install cmtinv cmu tests/validate_yaml tests/check_theme_use tests/iotests
+test_lib_symlinks = ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py networkio.py
 
 checks: bandit yamllint validate_yaml validate_playbooks
+
+clean: remove_test_symlinks
 
 bandit:
 	bandit -c .bandit $(python_executables) *.py || /bin/true
@@ -13,7 +16,7 @@ yamllint:
 	@for dir in $(yaml_dirs); do \
 		yamllint $$dir/*.yaml || /bin/true; \
 	done; \
-	yamllint ikt.yaml || /bin/true
+	yamllint cmt.yaml || /bin/true
 
 mypy-strict:
 	@for file in $(python_executables) *.py; do \
@@ -26,7 +29,7 @@ mypy:
 	done
 
 export_src:
-	git archive --format zip --output ~/ikt-$(shell date -I).zip origin/main
+	git archive --format zip --output ~/cmt-$(shell date -I).zip origin/main
 
 validate_yaml:
 	./tests/validate_yaml || /bin/true
@@ -42,17 +45,21 @@ parser_bundle:
 		cat $$file >> parsers/BUNDLE.yaml; \
 	done
 
-setup_tests:
+remove_test_symlinks:
 	@(cd tests ;\
-	 test -L ansible_helper.py || ln -s ../ansible_helper.py . ;\
-	 test -L iktio.py || ln -s ../iktio.py . ;\
-	 test -L iktio_yaml.py || ln -s ../iktio_yaml.py . ;\
-	 test -L iktlib.py || ln -s ../iktlib.py . ;\
-	 test -L iktpaths.py || ln -s ../iktpaths.py . ;\
-	 test -L iktprint.py || ln -s ../iktprint.py . ;\
-	 test -L ikttypes.py || ln -s ../ikttypes.py . ;\
-	 test -L networkio.py || ln -s ../networkio.py . ;\
-	 test -d testpaths || mkdir testpaths );\
+	  for file in $(test_lib_symlinks); do \
+		rm -f $$file; \
+	  done)
+
+create_test_symlinks:
+	@(cd tests ;\
+	  for file in $(test_lib_symlinks); do \
+		test -L $$file || ln -s ../$$file . ;\
+	  done)
+
+setup_tests: create_test_symlinks
+	@(cd tests ;\
+	  test -d testpaths || mkdir testpaths );\
 	(cd tests/testpaths ;\
 	 test -f 01-wrong_permissions || touch 01-wrong_permissions ;\
 	 test -L 02-symlink || ln -s 05-not_executable.sh 02-symlink ;\

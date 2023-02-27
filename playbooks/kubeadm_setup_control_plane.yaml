@@ -19,6 +19,16 @@
     register: "port_check"
     failed_when: false
     changed_when: false
+  - name: "Creating temporary file for cluster configuration"
+    ansible.builtin.tempfile:
+      state: file
+      suffix: temp
+    register: cluster_config
+  - name: "Creating cluster configuration"
+    ansible.builtin.template:
+      dest: "{{ cluster_config.path }}"
+      src: "templates/config/clusterconfig.yaml.j2"
+      mode: "0640"
   - name: "Enabling kubelet"
     ansible.builtin.systemd:
       name: "kubelet"
@@ -32,11 +42,15 @@
       else
         export https_proxy=
       fi
-      kubeadm config images pull
+      kubeadm config --config {{ cluster_config.path }} images pull
     when: "port_check.rc == 1"
   - name: "Initialising Kubernetes cluster"  # noqa fqcn-builtins
-    command: "kubeadm init --skip-token-print --pod-network-cidr={{ pod_network_cidr }}"
+    command: "kubeadm init --config {{ cluster_config.path }}"
     when: "port_check.rc == 1"
   - name: "Creating permanent join token"  # noqa fqcn-builtins
     command: "kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command"
-    when: "port_check.rc == 1"
+  - name: "Remove temporary cluster configuration file"
+    ansible.builtin.file:
+      path: "{{ cluster_config.path }}"
+      state: absent
+    when: cluster_config.path is defined

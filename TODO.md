@@ -4,15 +4,15 @@
 * Check that all ThemeAttrs, ThemeRefs, and ANSIThemeString attrs exist
 
 ## All
-* When running either ikt or iku, check whether .ssh/id_ecdsa.pub is in authorized_keys
-  in .ikt/ansible/inventory.yaml; if not, add it.
+* When running either cmt or cmu, check whether .ssh/id_ecdsa.pub is in authorized_keys
+  in .cmt/ansible/inventory.yaml; if not, add it.
 * Rewrite command_parser to treat options passed before a command as global,
   and to allow options interspersed with arguments.
 * Add `--dry-run` support for more commands.
 * Is it possible to rewrite the generator/processor system in a way that processors
   could be completely eliminated.
 
-## iku
+## cmu
 * Bundle all Core APIs into one file and load them all using secure_read_yaml_all();
   the same should be done for parser-files; this *should* lead to a slight performance
   improvement; note that the files should be kept separate and only bundle upon "build"
@@ -35,10 +35,10 @@
 * Make generic_infogetter consistent WRT to paths:
   ["literal", ["path"], [["alternate1", "alternate2"]]]
 
-iktinv:
+cmtinv:
 * Optionally limit rebuild-inventory to a subset of clusters.
 
-iktadm:
+cmtadm:
 * Stop installation if containerd < 1.6 and kubernetes >= 1.26.
 * We might have to wait before running the install CNI step to ensure that the  cluster can accept requests.
 * Add command to import kube-config (requires cluster-name--unless unique) and a path.
@@ -51,7 +51,7 @@ iktadm:
   newer versions of Kubernetes. Config-checks needs to check all nodes, not just
   the control plane.
 * troubleshoot:
-  * Check that the config-files as installed/created at install time by iktadm/ikt
+  * Check that the config-files as installed/created at install time by cmtadm/cmt
     are in sync with what's on the machines in the cluster at present, and if not,
     warn about the difference.
     The differences *may* be intentional, so we cannot indiscriminately overwrite them,
@@ -59,7 +59,7 @@ iktadm:
     if `--verbose` is passed) and provide a helpful message about what playbook to
     run to update the files.
   * Add a security warning about file permissions.
-  * Add a security warning ansible_pass being used in iktconfig.
+  * Add a security warning ansible_pass being used in cmtconfig.
 
 logparser:
 * All handling of message needs to be rewritten; as soon as a message gets formatted as a themearray

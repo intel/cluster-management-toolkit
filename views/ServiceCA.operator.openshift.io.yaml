@@ -52,6 +52,7 @@ infoview:
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "status#version"
+        default: "<unset>"
         type: "raw"
         formatting:
           field_colors:
@@ -69,6 +70,31 @@ infoview:
         owner_reference_path: "metadata#ownerReferences"
         kind: "ClusterVersion"
         api_family: "config.openshift.io"
+    "List generations":
+      key: "g"
+      read_only: true
+      helptext: "List generations"
+      widget: "windowwidget"
+      title: "Generations:"
+      selectable: true
+      headers: ["Resource:", "Group:", "Namespace:", "Name:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#generations"
+        fields:
+        - "resource"
+        - "group"
+        - "namespace"
+        - "name"
+      # Not supported for now
+      sortcolumn: "resource"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind_path: 0
+        api_group_path: 1
+        namespace_path: 2
+        name_path: 3
     "View observed configuration":
       key: "o"
       modifier: "shift"

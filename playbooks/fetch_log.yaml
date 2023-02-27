@@ -1,9 +1,12 @@
 - hosts: "selection"
   vars:
     unit: "kubelet"
-    logpath: "/home/tao/.ikt/ansible/logs"
+    logpath: "/home/tao/.cmt/ansible/logs"
     metadata:
       description: "Fetch a journald log for the specified unit"
+      summary:
+        "Fetched files":
+        - description: "Fetch a journald log file for remote:{{ unit }} => localhost:/home/{{ ansible_user }}/.cmt/ansible/{{ timestamp }}_{{ unit }}"
       query:
         string: "Unit to fetch log for"
         function: "string"

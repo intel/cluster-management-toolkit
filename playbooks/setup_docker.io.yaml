@@ -1,0 +1,50 @@
+- hosts: "selection:&controlplane:!nas:!nodes"
+  vars:
+    metadata:
+      description: "Seetup docker.io"
+      playbook_types:
+      - "internal"
+  gather_subset:
+  - "!min"
+  - "!all"
+  - "distribution"
+  become: true
+  become_user: "root"
+  tasks:
+  - name: "Updating package cache"
+    ansible.builtin.apt: "update_cache=yes force_apt_get=yes"
+    when: "ansible_os_family == 'Debian'"
+  - name: "Installing docker.io"  # noqa package-latest
+    ansible.builtin.apt:
+      name: "docker.io"
+      state: "latest"
+      force_apt_get: true
+    when: "ansible_os_family == 'Debian'"
+  - name: "Creating /etc/docker"
+    ansible.builtin.file:
+      path: "/etc/docker"
+      state: "directory"
+      mode: "0755"
+  - name: "Configuring Docker daemon"
+    ansible.builtin.template:
+      dest: "/etc/docker/daemon.json"
+      src: "templates/etc/docker/daemon.json.j2"
+      mode: "0644"
+      force: true
+  - name: "Creating /etc/systemd/system/docker.service.d"
+    ansible.builtin.file:
+      path: "/etc/systemd/system/docker.service.d"
+      state: "directory"
+      mode: "0755"
+  - name: "Configuring docker/http-proxy.conf"
+    ansible.builtin.template:
+      dest: "/etc/systemd/system/docker.service.d/http-proxy.conf"
+      src: "templates/etc/systemd/system/docker.service.d/http-proxy.conf.j2"
+      mode: "0644"
+      force: true
+  - name: "Restarting Docker"
+    ansible.builtin.systemd:
+      name: "docker"
+      enabled: true
+      daemon_reload: true
+      state: "restarted"

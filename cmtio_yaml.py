@@ -2,14 +2,14 @@
 # Requires: python3 (>= 3.8)
 
 """
-YAML I/O helpers for Intel Kubernetes Toolkit
+YAML I/O helpers
 """
 
 from typing import Any, Dict, Iterator, List, Optional, Union
 import yaml
 
-import iktio
-from ikttypes import FilePath, SecurityChecks
+import cmtio
+from cmttypes import FilePath, SecurityChecks
 
 # pylint: disable-next=too-many-arguments
 def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions: Optional[int] = None, replace_empty: bool = False, replace_null: bool = False, sort_keys: bool = True, write_mode: str = "w") -> None:
@@ -24,7 +24,7 @@ def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions
 			replace_null (bool): True strips null
 			write_mode (str): [w, a, x] Write, Append, Exclusive Write
 		Raises:
-			ikttypes.FilePathAuditError
+			cmttypes.FilePathAuditError
 	"""
 
 	if write_mode not in ("a", "w", "x"):
@@ -35,7 +35,7 @@ def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions
 		yaml_str = yaml_str.replace(r"''", "")
 	if replace_null == True:
 		yaml_str = yaml_str.replace(r"null", "")
-	iktio.secure_write_string(path, yaml_str, permissions = permissions, write_mode = write_mode)
+	cmtio.secure_write_string(path, yaml_str, permissions = permissions, write_mode = write_mode)
 
 def secure_read_yaml(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> Any:
 	"""
@@ -50,10 +50,10 @@ def secure_read_yaml(path: FilePath, checks: Optional[List[SecurityChecks]] = No
 			yaml.composer.ComposerError
 			yaml.parser.ParserError
 			FileNotFoundError
-			ikttypes.FilePathAuditError
+			cmttypes.FilePathAuditError
 	"""
 
-	string = iktio.secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
+	string = cmtio.secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
 	return yaml.safe_load(string)
 
 def secure_read_yaml_all(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> Iterator[Any]:
@@ -70,8 +70,8 @@ def secure_read_yaml_all(path: FilePath, checks: Optional[List[SecurityChecks]] 
 			iterator[any]: An iterator of data
 		Raises:
 			FileNotFoundError
-			ikttypes.FilePathAuditError
+			cmttypes.FilePathAuditError
 	"""
 
-	string = iktio.secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
+	string = cmtio.secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
 	return yaml.safe_load_all(string)

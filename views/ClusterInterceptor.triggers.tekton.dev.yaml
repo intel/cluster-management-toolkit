@@ -1,0 +1,72 @@
+kind: "ClusterInterceptor"
+api_family: "triggers.tekton.dev"
+default_command: "clusterinterceptors"
+command:
+- "clusterinterceptors.tekton"
+- "clusterinterceptor.tekton"
+listview:
+  name: "Cluster Interceptors"
+  group: "CI/CD"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Cluster Interceptor Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["address", "service_header", "service_reference", "service_path", "service_port"]
+    rows:
+      address:
+        header: [["Address:", ["main", "infoheader"]]]
+        path: "status#address#url"
+        type: "str"
+      service_header:
+        header: [["S", ["main", "infoheader_shortcut"]], ["ervice:", ["main", "infoheader"]]]
+      service_path:
+        header: [["  Path:", ["main", "infoheader"]]]
+        path: "spec#clientConfig#service#path"
+        type: "str"
+      service_port:
+        header: [["  Port:", ["main", "infoheader"]]]
+        path: "spec#clientConfig#service#port"
+        type: "numerical"
+        formatting:
+          field_colors:
+          - type: "port"
+      service_reference:
+        header: [["  Reference:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#clientConfig#service#namespace"], ["spec#clientConfig#service#name"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "namespace"
+          - type: "default"
+          field_separators:
+          - type: "namespace"
+  shortcuts:
+    "Service":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Service"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Service"
+        name_path: "spec#clientConfig#service#name"
+        namespace_path: "spec#clientConfig#service#namespace"
+    "View serving certs":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "View CA bundle"
+      action: "call"
+      action_call: "decode_and_view_data"
+      action_args:
+        title: "CA bundle"
+        _pass_obj: true
+        path: "spec#clientConfig#caBundle"

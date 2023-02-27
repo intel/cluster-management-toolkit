@@ -2,7 +2,7 @@
 # Requires: python3 (>= 3.8)
 
 """
-Structured log module for iKT
+Structured log module for CMT
 """
 
 from datetime import datetime
@@ -10,20 +10,22 @@ from enum import auto, Enum
 import sys
 from typing import cast, Dict, List, Optional, Union
 
-from iktpaths import AUDIT_LOG_FILE, DEBUG_LOG_FILE
-from ikttypes import ANSIThemeString, FilePath, LogLevel
-from iktio_yaml import secure_write_yaml
+from cmtpaths import AUDIT_LOG_FILE, DEBUG_LOG_FILE
+from cmttypes import FilePath, LogLevel
+from cmtio_yaml import secure_write_yaml
 
-class IKTLogType(Enum):
+from ansithemeprint import ANSIThemeString
+
+class CMTLogType(Enum):
 	"""
-	Type of log passed to IKTLog
+	Type of log passed to CMTLog
 	"""
 	AUDIT = auto()
 	DEBUG = auto()
 
-class IKTLog:
+class CMTLog:
 	"""
-	A structured log format used by iKT that serialises to YAML on disk. To ensure that we can use
+	A structured log format used by CMT that serialises to YAML on disk. To ensure that we can use
 	append we use a list; this means that the performance is worse when reading the log,
 	but we do not need to read the file to do an append.
 
@@ -54,7 +56,7 @@ class IKTLog:
 		}
 
 		if not isinstance(message, list):
-			raise TypeError(f"IKTLog only accepts log messages as List[str] or List[themearray]; received {type(message)}")
+			raise TypeError(f"CMTLog only accepts log messages as List[str] or List[themearray]; received {type(message)}")
 
 		if isinstance(message[0], str):
 			log_entry["strarray"] = cast(List[str], message)
@@ -73,7 +75,7 @@ class IKTLog:
 		return log_entry
 
 	# pylint: disable-next=too-many-arguments
-	def __init__(self, path: Union[IKTLogType, FilePath], message: Union[List[List[ANSIThemeString]], List[str]],
+	def __init__(self, path: Union[CMTLogType, FilePath], message: Union[List[List[ANSIThemeString]], List[str]],
 		     severity: LogLevel = LogLevel.INFO, timestamp: Optional[datetime] = None, facility: str = ""):
 		# Figure out what the caller was
 		file = None
@@ -87,19 +89,19 @@ class IKTLog:
 			function = str(frame.f_code.co_name) # type: ignore
 			lineno = int(frame.f_lineno) # type: ignore
 
-		if path == IKTLogType.DEBUG:
+		if path == CMTLogType.DEBUG:
 			self.path = DEBUG_LOG_FILE
-		elif path == IKTLogType.AUDIT:
+		elif path == CMTLogType.AUDIT:
 			self.path = AUDIT_LOG_FILE
 		else:
 			self.path = cast(FilePath, path)
 
 		log_entry = self.__format_entry(message, severity, timestamp, facility, file, function, lineno)
-		if isinstance(path, IKTLogType):
+		if isinstance(path, CMTLogType):
 			self.logtype = path
 
 		# The audit log is always synchronous
-		if path == IKTLogType.AUDIT:
+		if path == CMTLogType.AUDIT:
 			secure_write_yaml(AUDIT_LOG_FILE, [log_entry], permissions = 0o640, write_mode = "a")
 		else:
 			self.log.append(log_entry)
@@ -132,7 +134,7 @@ class IKTLog:
 		log_entry = self.__format_entry(message, severity, timestamp, facility, file, function, lineno)
 
 		# The audit log is always synchronous; calling it like this is incorrect, but we want audit messages to be successful, so we just log an extra message
-		if self.logtype == IKTLogType.AUDIT:
+		if self.logtype == CMTLogType.AUDIT:
 			warning_log_entry = {
 				"timestamp": timestamp,
 				"severity": str(LogLevel.WARNING),
@@ -140,7 +142,7 @@ class IKTLog:
 				"file": file,
 				"function": function,
 				"lineno": lineno,
-				"strarray": ["IKTLog.add() called from a synchronous log; this is a programming error."]
+				"strarray": ["CMTLog.add() called from a synchronous log; this is a programming error."]
 			}
 			secure_write_yaml(AUDIT_LOG_FILE, [warning_log_entry], permissions = 0o640, write_mode = "a")
 			secure_write_yaml(AUDIT_LOG_FILE, [log_entry], permissions = 0o640, write_mode = "a")
@@ -152,7 +154,7 @@ class IKTLog:
 		Flush the log to storage
 		"""
 
-		if self.logtype == IKTLogType.AUDIT:
+		if self.logtype == CMTLogType.AUDIT:
 			# Figure out what the caller was
 			file = None
 			function = None
@@ -172,7 +174,7 @@ class IKTLog:
 				"file": file,
 				"function": function,
 				"lineno": lineno,
-				"strarray": ["IKTLog.flush() called from a synchronous log; this is a programming error."]
+				"strarray": ["CMTLog.flush() called from a synchronous log; this is a programming error."]
 			}
 			secure_write_yaml(AUDIT_LOG_FILE, [warning_log_entry], permissions = 0o640, write_mode = "a")
 		elif len(self.log) > 0:

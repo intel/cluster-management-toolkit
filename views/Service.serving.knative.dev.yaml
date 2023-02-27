@@ -2,6 +2,10 @@ kind: "Service"
 api_family: "serving.knative.dev"
 default_command: "knservices"
 command:
+- "services.knative"
+- "service.knative"
+- "svcs.knative"
+- "svc.knative"
 - "knservice"
 - "knsvcs"
 - "knsvc"
@@ -46,7 +50,7 @@ listview:
     url:
       header: "URL:"
       path: "status#address#url"
-      type: str
+      type: "str"
 infoview:
   name: "Service Info (KNative)"
   infopad:
@@ -87,7 +91,7 @@ infoview:
       url:
         header: [["URL:", ["main", "infoheader"]]]
         path: "status#address#url"
-        type: str
+        type: "str"
   shortcuts:
     "Show traffic info":
       key: "t"

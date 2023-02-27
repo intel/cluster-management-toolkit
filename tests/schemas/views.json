@@ -1,5 +1,5 @@
 {
-	"description": "A definition of a list and/or info view for iKT",
+	"description": "A definition of a list and/or info view",
 	"type": "object",
 	"definitions": {
 		"api_family": {
@@ -195,7 +195,7 @@
 				"float",
 				"hex",
 				"identify",
-				"iktlib.format_ini",
+				"cmtlib.format_ini",
 				"list",
 				"list_with_status",
 				"mem",
@@ -1364,6 +1364,9 @@
 											"description": "Should the program ask for confirmation before performing the action",
 											"type": "boolean"
 										},
+										"force_refresh": {
+											"type": "boolean"
+										},
 										"force_update": {
 											"type": "boolean"
 										},
@@ -1401,7 +1404,7 @@
 											"type": "string"
 										},
 										"read_only": {
-											"description": "Shortcuts not explicitly marked as read only will be disabled when iku is started with --read-only",
+											"description": "Shortcuts not explicitly marked as read only will be disabled when cmu is started with --read-only",
 											"type": "boolean"
 										},
 										"title": {
@@ -1583,6 +1586,10 @@
 												"default": {
 													"description": "The fallback value to use if no data is available",
 													"type": [ "number", "string", "boolean", "object", "array", "null" ]
+												},
+												"fallback_on_empty": {
+													"description": "Normally an existing, but empty, field is treated as valid; this option allows for using the fallback path if the field is empty",
+												"type": "boolean"
 												},
 												"formatter": {
 													"$ref": "#/definitions/formatter"
@@ -2118,7 +2125,7 @@
 											"type": "string"
 										},
 										"read_only": {
-											"description": "Shortcuts not explicitly marked as read only will be disabled when iku is started with --read-only",
+											"description": "Shortcuts not explicitly marked as read only will be disabled when cmu is started with --read-only",
 											"type": "boolean"
 										},
 										"selectable": {

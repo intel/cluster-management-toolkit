@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 """
 A checker that validates views, parser files, and themes
-for Intel Kubernetes Toolkit against a predefined schema
+for Cluster Management Toolkit for Kubernetes against a predefined schema
 
 For usage, see:
 	./tests/validate_yaml help
@@ -37,7 +37,7 @@ def usage() -> None:
 	print("validate_yaml [OPTION]... TYPE PATH...")
 	print("validate_yaml [OPTION]... SCHEMA PATH...")
 	print("")
-	print("Validate YAML files used by iKT")
+	print("Validate YAML files used by CMT")
 	print("")
 	print("themes|views|parsers                 Validate all YAML-files in the default directory for the specified type")
 	print("themes|views|parsers|SCHEMA PATH...  Validate all YAML-files at PATH for the specified type")
@@ -46,7 +46,7 @@ def usage() -> None:
 	print("If no arguments are specified all YAML-files will be validated")
 	print("If SCHEMA isn't one of themes|views|parsers it's be expected to be a path to a valid JSON schema file")
 	print("")
-	print("Built-in paths are relative to the base directory of the iKT source code")
+	print("Built-in paths are relative to the base directory of the CMT source code")
 	print("")
 	print("Note: Validating Ansible playbooks is out of scope for this program; use ansible-lint")
 	print("")

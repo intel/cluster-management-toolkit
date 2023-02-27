@@ -1,12 +1,12 @@
 # Note: while you can do all configuration here, the recommended
 # way to change the configuration options is to put your changes
-# in ikt.yaml.d, split into separate files for each category.
+# in cmt.yaml.d, split into separate files for each category.
 # This way you can keep the default configuration as a reference.
 # This also simplifies a workflow where site-local configurations
 # can be imported without having to touch the distributed version
-# of ikt.yaml.
+# of cmt.yaml.
 #
-# Using ikt.yaml.d also makes it easier to debug configuration
+# Using cmt.yaml.d also makes it easier to debug configuration
 # issues.
 #
 # Using this configuration file you can change the defaults
@@ -38,7 +38,7 @@
 # also valid sortcolumns.
 #
 # The list of valid fields for each view is available using
-# iku list-views; it will list all VIEWs, their default
+# cmu list-views; it will list all VIEWs, their default
 # sortcolumn, and all fields in the order they will be shown
 # by default.
 #
@@ -65,7 +65,7 @@ Global:
   # Default indentation level when dumping YAML
   # indent: 2
 
-  # The default view to use when calling iku without
+  # The default view to use when calling cmu without
   # arguments; to get the selector either use "Selector"
   # or comment this out
   # defaultview: ""
@@ -85,13 +85,19 @@ Selector:
   # categorise: true
 
 # Networking:
-# These settings are for the system, not internal to K8s.
+# These settings are for the system, not internal to Kubernetes.
 # They are used for communicating with other computers outside the context
 # of Kubernetes network, for instance when fetching updates.
 Network:
   http_proxy:
   https_proxy:
   no_proxy:
+  # Adding a host to this list enables use of less secure protocols
+  # when connecting to that host; all known flawed protocols
+  # remains disabled though.
+  # This might be necessary for compatibility with older systems.
+  # If ["ALL"] (uppercase only) is specified, relaxed SSH is used for all hosts
+  relaxed_ssh_hosts: []
 
 Ansible:
   # This determines the parallelism of the commands being executed;
@@ -100,7 +106,7 @@ Ansible:
   # forks: 10
 
   # User for ansible connections
-  # Unless the user you are running iku as is the same as the user to login as on nodes
+  # Unless the user you are running cmu as is the same as the user to login as on nodes
   # you probably want to specify this either here or in the inventory
   #
   # This user will also be used when ssh:ing to nodes
@@ -109,8 +115,8 @@ Ansible:
   # Password for users
   # If you use a password here you should use an ansible vault!
   # but the safest way is to only provide your password while running
-  # "iktadm prepare <host>" and "ikt prepare <host>";
-  # ikt will keep the password in memory until hosts have been prepared,
+  # "cmtadm prepare <host>" and "cmt prepare <host>";
+  # cmt will keep the password in memory until hosts have been prepared,
   # but after that it will rely on ssh host keys and passwordless sudo.
   # ansible_password:
 
@@ -129,7 +135,7 @@ Ansible:
   # you can use "{HOME}/", so for instance:
   # local_playbooks:
   # - "{HOME}/local_playbooks"
-  # - "/opt/ikt/playbooks"
+  # - "/opt/cmt/playbooks"
   # - ...
 
 # Settings to use when configuring docker
@@ -279,7 +285,7 @@ Pods:
   # you can use "{HOME}/", so for instance:
   # local_parsers:
   # - "{HOME}/local_parsers"
-  # - "/opt/ikt/parsers"
+  # - "/opt/cmt/parsers"
   # - ...
 
 Debug:

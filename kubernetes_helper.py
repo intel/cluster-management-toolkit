@@ -2,7 +2,7 @@
 # Requires: python3 (>= 3.8)
 
 """
-Kubernetes helpers used by iKT
+Kubernetes helpers used by CMT
 """
 
 # pylint: disable=line-too-long
@@ -23,6 +23,7 @@ except ModuleNotFoundError:
 	DecodeException = json.decoder.JSONDecodeError # type: ignore
 import os
 import re
+import ssl
 import sys
 import tempfile
 from typing import Any, AnyStr, cast, Dict, List, Optional, Sequence, Tuple, Union
@@ -33,11 +34,24 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-urllib3")
 
-from iktpaths import KUBE_CONFIG_FILE
-from iktlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
-from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, FilePathAuditError, SecurityChecks, StatusGroup
-from iktio import execute_command_with_response, secure_which
-from iktio_yaml import secure_read_yaml, secure_write_yaml
+# Acceptable ciphers
+CIPHERS = [
+	# TLS v1.3
+	"TLS_AES_256_GCM_SHA384",
+	"TLS_AES_128_GCM_SHA256",
+	"TLS_CHACHA20_POLY1305_SHA256",
+	# TLS v1.2
+	"ECDHE-RSA-AES256-GCM-SHA384",
+	"ECDHE-ECDSA-AES256-GCM-SHA384",
+	"ECDHE-RSA-AES128-GCM-SHA256",
+	"ECDHE-ECDSA-AES128-GCM-SHA256",
+]
+
+from cmtpaths import KUBE_CONFIG_FILE
+from cmtlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, FilePathAuditError, SecurityChecks, StatusGroup
+from cmtio import execute_command_with_response, secure_which
+from cmtio_yaml import secure_read_yaml, secure_write_yaml
 
 # A list of all K8s resources we have some knowledge about
 kubernetes_resources: Dict[Any, Any] = {
@@ -240,6 +254,11 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api": "pods",
 	},
 	# networking.k8s.io
+	("ClusterCIDR", "networking.k8s.io"): {
+		"api_family": ["apis/networking.k8s.io/v1alpha1/"],
+		"api": "clustercidrs",
+		"namespaced": False,
+	},
 	("Ingress", "networking.k8s.io"): {
 		"api_family": ["apis/networking.k8s.io/v1/", "apis/networking.k8s.io/v1beta1/"],
 		"api": "ingresses",
@@ -581,6 +600,11 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api": "ciliumidentities",
 		"namespaced": False,
 	},
+	("CiliumLoadBalancerIPPool", "cilium.io"): {
+		"api_family": ["apis/cilium.io/v2alpha1/"],
+		"api": "ciliumloadbalancerippools",
+		"namespaced": False,
+	},
 	("CiliumLocalRedirectPolicy", "cilium.io"): {
 		"api_family": ["apis/cilium.io/v2/"],
 		"api": "ciliumlocalredirectpolicies",
@@ -593,6 +617,10 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api_family": ["apis/cilium.io/v2/"],
 		"api": "ciliumnodes",
 		"namespaced": False,
+	},
+	("CiliumNodeConfig", "cilium.io"): {
+		"api_family": ["apis/cilium.io/v2alpha1/"],
+		"api": "ciliumnodeconfigs",
 	},
 	# clone.kubevirt.io
 	("VirtualMachineClone", "clone.kubevirt.io"): {
@@ -1921,6 +1949,11 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api_family": ["apis/reporting.kio.kasten.io/v1alpha1/"],
 		"api": "reports",
 	},
+	# resolution.tekton.dev
+	("ResolutionRequest", "resolution.tekton.dev"): {
+		"api_family": ["apis/resolution.tekton.dev/v1beta1/"],
+		"api": "resolutionrequests",
+	},
 	# resource.k8s.io
 	("PodScheduling", "resource.k8s.io"): {
 		"api_family": ["apis/resource.k8s.io/v1alpha1/"],
@@ -2088,6 +2121,44 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api": "controllerinfos",
 		"namespaced": False,
 	},
+	# tekton.dev
+	("ClusterTask", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "clustertasks",
+		"namespaced": False,
+	},
+	("CustomRun", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "customruns",
+	},
+	("PipelineResource", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1alpha1/"],
+		"api": "pipelineresources",
+	},
+	("PipelineRun", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "pipelineruns",
+	},
+	("Pipeline", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "pipelines",
+	},
+	("Run", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1alpha1/"],
+		"api": "runs",
+	},
+	("TaskRun", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "taskruns",
+	},
+	("Task", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1beta1/"],
+		"api": "tasks",
+	},
+	("VerificationPolicy", "tekton.dev"): {
+		"api_family": ["apis/tekton.dev/v1alpha1/"],
+		"api": "verificationpolicies",
+	},
 	# telemetry.intel.com
 	("TASPolicy", "telemetry.intel.com"): {
 		"api_family": ["apis/telemetry.intel.com/v1alpha1/"],
@@ -2158,6 +2229,37 @@ kubernetes_resources: Dict[Any, Any] = {
 	("TraefikService", "traefik.containo.us"): {
 		"api_family": ["apis/traefik.containo.us/v1alpha1/"],
 		"api": "traefikservices",
+	},
+	# triggers.tekton.dev
+	("ClusterInterceptor", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1alpha1/"],
+		"api": "clusterinterceptors",
+		"namespaced": False,
+	},
+	("ClusterTriggerBinding", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1beta1/"],
+		"api": "clustertriggerbindings",
+		"namespaced": False,
+	},
+	("EventListener", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1beta1/"],
+		"api": "eventlisteners",
+	},
+	("Interceptor", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1alpha1/"],
+		"api": "interceptors",
+	},
+	("TriggerBinding", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1beta1/"],
+		"api": "triggerbindings",
+	},
+	("Trigger", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1beta1/"],
+		"api": "triggers",
+	},
+	("TriggerTemplate", "triggers.tekton.dev"): {
+		"api_family": ["apis/triggers.tekton.dev/v1beta1/"],
+		"api": "triggertemplates",
 	},
 	# tuned.openshift.io
 	("Profile", "tuned.openshift.io"): {
@@ -2646,6 +2748,12 @@ class KubernetesHelper:
 		else:
 			urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+		ssl_context = ssl.SSLContext()
+		# Disable anything older than TLSv1.2
+		ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
+		# Only permit a limited set of acceptable ciphers
+		ssl_context.set_ciphers(":".join(CIPHERS))
+
 		# If we have a cert we also have a key
 		if cert is not None:
 			key = str(key)
@@ -2664,7 +2772,8 @@ class KubernetesHelper:
 					cert_reqs = "CERT_REQUIRED",
 					ca_certs = self.tmp_ca_certs_file.name, # type: ignore
 					cert_file = self.tmp_cert_file.name,
-					key_file = self.tmp_key_file.name)
+					key_file = self.tmp_key_file.name,
+					ssl_context = ssl_context)
 			else:
 				self.pool_manager = urllib3.PoolManager(
 					cert_reqs = "CERT_NONE",
@@ -2675,7 +2784,8 @@ class KubernetesHelper:
 			if insecuretlsskipverify == False:
 				self.pool_manager = urllib3.PoolManager(
 					cert_reqs = "CERT_REQUIRED",
-					ca_certs = self.tmp_ca_certs_file.name) # type: ignore
+					ca_certs = self.tmp_ca_certs_file.name, # type: ignore
+					ssl_context = ssl_context)
 			else:
 				self.pool_manager = urllib3.PoolManager(
 					cert_reqs = "CERT_NONE",
@@ -2958,7 +3068,14 @@ class KubernetesHelper:
 
 		# we have the CA cert; now to extract the public key and hash it
 		if len(ca_cert) > 0:
-			x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
+			try:
+				x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
+			except TypeError as e:
+				if "load_pem_x509_certificate() missing 1 required positional argument: 'backend'" in str(e):
+					from cryptography.hazmat.primitives import default_backend
+					x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend = default_backend)
+				else:
+					raise
 			pubkeyder = x509obj.public_key().public_bytes(encoding = serialization.Encoding.DER, format = serialization.PublicFormat.SubjectPublicKeyInfo)
 			ca_cert_hash = hashlib.sha256(pubkeyder).hexdigest()
 
@@ -3273,11 +3390,11 @@ class KubernetesHelper:
 		elif status == 422:
 			# Unprocessable entity
 			# The content and syntax is correct, but the request cannot be processed
-			msg = result.data.decode("utf-8")
+			msg = result.data.decode("utf-8", errors = "replace")
 			message = f"422: Unprocessable Entity; method: {method}, URL: {url}; header_params: {header_params}; message: {msg}"
 		elif status == 500:
 			# Internal Server Error
-			msg = result.data.decode("utf-8")
+			msg = result.data.decode("utf-8", errors = "replace")
 			message = f"500: Internal Server Error; method: {method}, URL: {url}; header_params: {header_params}; message: {msg}"
 		elif status == 503:
 			# Service Unavailable
@@ -3725,7 +3842,7 @@ a				the return value from __rest_helper_patch
 		data, _message, status = self.__rest_helper_generic_json(method = "GET", url = url, query_params = query_params)
 		if status == 200 and data is not None:
 			if isinstance(data, bytes):
-				msg = data.decode("utf-8").splitlines()
+				msg = data.decode("utf-8", errors = "replace").splitlines()
 			elif isinstance(data, str):
 				msg = data.splitlines()
 		elif status == 204:
@@ -3798,7 +3915,7 @@ a				the return value from __rest_helper_patch
 
 		if status == 200 and data is not None:
 			if isinstance(data, bytes):
-				msg = data.decode("utf-8")
+				msg = data.decode("utf-8", errors = "replace")
 			elif isinstance(data, str):
 				msg = data
 		elif status == 204:

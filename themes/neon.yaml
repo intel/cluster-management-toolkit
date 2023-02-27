@@ -1,4 +1,4 @@
-# This file contains the default theme for iKT.
+# This file contains an example alternative theme.
 
 # About colours:
 # Curses only defined 8 colours
@@ -565,8 +565,9 @@ color_pairs_curses:
   type_facility_extended: [["yellow", "normal"], ["black", "normal"]]
   type_haproxy_label: [["green", "normal"], ["black", "normal"]]
   type_haproxy_setting: [["magenta", "normal"], ["black", "normal"]]
-  logo_bullet: [["cyan", "bright"], ["blue", "bright"]]
-  logo_letter: [["white", "bright"], ["blue", "bright"]]
+  logo_dark: [["magenta", "bright"], ["blue", "bright"]]
+  logo_medium: [["cyan", "bright"], ["blue", "bright"]]
+  logo_bright: [["white", "bright"], ["blue", "bright"]]
   about_text_highlight: [["cyan", "bright"], ["blue", "bright"]]
   about_text: [["white", "normal"], ["blue", "bright"]]
   about_version: [["white", "bright"], ["blue", "bright"]]
@@ -577,7 +578,7 @@ boxdrawing:
   # isn't a problem since they can be allocated wider than the visible
   # area, but for stdscr this is an issue.
   #
-  # The workaround is to use addch for such characters (iku implements this),
+  # The workaround is to use addch for such characters (cmu implements this),
   # but not all characters are supported by addch(); it's accepting unicode.
   #
   # If you change this and the program crashes, this is most likely the reason.
@@ -616,8 +617,9 @@ boxdrawing:
 main:
   # Used for all "normal text"
   default: "default"
-  logo_bullet: "logo_bullet"
-  logo_letter: "logo_letter"
+  logo_bright: "logo_bright"
+  logo_medium: "logo_medium"
+  logo_dark: "logo_dark"
   about_text_highlight: ["about_text_highlight", "bold"]
   about_text: "about_text"
   about_version: "about_version"

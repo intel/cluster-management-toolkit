@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 """
-Helpers used by various components of iKT
+Helpers used by various components of CMT
 """
 
 from datetime import datetime, timezone, timedelta, date
@@ -11,17 +11,11 @@ import re
 import sys
 from typing import Dict, List, Optional, Tuple, Union
 
-from ikttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy
-from iktpaths import IKT_CONFIG_FILE, IKT_CONFIG_FILE_DIR
-import iktio
-import iktio_yaml
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy
+from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR
+import cmtio
 
-try:
-	from natsort import natsorted
-except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
-
-iktconfig = {}
+cmtconfig = {}
 
 def validate_name(rtype: str, name: str) -> bool:
 	"""
@@ -157,27 +151,34 @@ def split_msg(rawmsg: str) -> List[str]:
 	tmp = rawmsg.replace("\x00", "<NUL>")
 	return list(map(str.rstrip, tmp.splitlines()))
 
-def read_iktconfig() -> Dict:
+def read_cmtconfig() -> Dict:
 	"""
-	Read ikt.yaml and ikt.yaml.d/*.yaml and update the global iktconfig dict
+	Read cmt.yaml and cmt.yaml.d/*.yaml and update the global cmtconfig dict
 
 		Returns:
-			iktconfig (Dict): A reference to the global iktconfig dict
+			cmtconfig (Dict): A reference to the global cmtconfig dict
 	"""
 
-	global iktconfig # pylint: disable=global-statement
+	import cmtio_yaml
 
-	if not Path(IKT_CONFIG_FILE).is_file():
+	try:
+		from natsort import natsorted
+	except ModuleNotFoundError:
+		sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+
+	global cmtconfig # pylint: disable=global-statement
+
+	if not Path(CMT_CONFIG_FILE).is_file():
 		return {}
 
 	# Read the base configuration file
-	iktconfig = iktio_yaml.secure_read_yaml(IKT_CONFIG_FILE)
+	cmtconfig = cmtio_yaml.secure_read_yaml(CMT_CONFIG_FILE)
 
-	# Now read ikt.yaml.d/* if available
-	if not Path(IKT_CONFIG_FILE_DIR).is_dir():
-		return iktconfig
+	# Now read cmt.yaml.d/* if available
+	if not Path(CMT_CONFIG_FILE_DIR).is_dir():
+		return cmtconfig
 
-	for path in natsorted(Path(IKT_CONFIG_FILE_DIR).iterdir()):
+	for path in natsorted(Path(CMT_CONFIG_FILE_DIR).iterdir()):
 		filename = PurePath(str(path)).name
 
 		# Only read entries that end with .y{,a}ml
@@ -187,13 +188,13 @@ def read_iktconfig() -> Dict:
 			continue
 
 		# Read the conflet files
-		moreiktconfig = iktio_yaml.secure_read_yaml(FilePath(str(path)))
+		morecmtconfig = cmtio_yaml.secure_read_yaml(FilePath(str(path)))
 
 		# Handle config files without any values defined
-		if moreiktconfig is not None:
-			iktconfig = {**iktconfig, **moreiktconfig}
+		if morecmtconfig is not None:
+			cmtconfig = {**cmtconfig, **morecmtconfig}
 
-	return iktconfig
+	return cmtconfig
 
 # Helper functions
 def versiontuple(ver: str) -> Tuple[str, ...]:
@@ -529,11 +530,16 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 			deb_versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
 	"""
 
+	try:
+		from natsort import natsorted
+	except ModuleNotFoundError:
+		sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+
 	deb_versions = []
 
-	apt_cache_path = iktio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	apt_cache_path = cmtio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	args = [apt_cache_path, "policy"] + deb_packages
-	response = iktio.execute_command_with_response(args)
+	response = cmtio.execute_command_with_response(args)
 	split_response = response.splitlines()
 	# Safe
 	installed_regex = re.compile(r"^\s*Installed: (.*)")
@@ -563,9 +569,9 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 			else:
 				candidate_version = ""
 			# We have the current and candidate version now; get all the other versions of the same package
-			apt_cache_path = iktio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+			apt_cache_path = cmtio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 			_args = [apt_cache_path, "madison", package]
-			_response = iktio.execute_command_with_response(_args)
+			_response = cmtio.execute_command_with_response(_args)
 			_split_response = _response.splitlines()
 			all_versions = []
 			for version in _split_response:
