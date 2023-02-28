@@ -2792,6 +2792,7 @@ class KubernetesHelper:
 					ca_certs = None)
 
 		self.cluster_unreachable = False
+		self.cluster_name = cluster_name
 		self.context_name = context_name
 
 		# If we are switching contexts, update the config file
@@ -2960,12 +2961,14 @@ class KubernetesHelper:
 		self.programversion = programversion
 		self.cluster_unreachable = True
 		self.context_name = ""
+		self.cluster_name = ""
 
 		self.set_context(config_path = config_path)
 
 	def __del__(self) -> None:
 		self.__close_certs()
 		self.context_name = ""
+		self.cluster_name = ""
 
 	def is_cluster_reachable(self) -> bool:
 		"""
