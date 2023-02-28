@@ -1,4 +1,5 @@
 - hosts: "selection:!nas"
+  name: "Setup CRI-O"
   vars:
     metadata:
       description: "Setup CRI-O"
@@ -40,6 +41,7 @@
       remote_src: true
       src: "{{ tempdir.path }}/Release.key.gpg"
       dest: "/usr/local/keyrings/cri-o-keyring.gpg"
+      mode: "0644"
   - name: "Configuring package repository for CRI-O"
     ansible.builtin.template:
       src: "templates/etc/apt/sources.list.d/cri-o.list.j2"
@@ -58,7 +60,9 @@
       dest: "/etc/apt/preferences.d/cri-o"
       mode: "0644"
   - name: "Updating package cache"
-    ansible.builtin.apt: "update_cache=yes force_apt_get=yes"
+    ansible.builtin.apt:
+      update_cache: true
+      force_apt_get: true
     when: "ansible_os_family == 'Debian'"
   - name: "Installing cri-o"  # noqa package-latest
     ansible.builtin.apt:
@@ -103,12 +107,12 @@
     - "/etc/cni/net.d/100-crio-bridge.conflist"
     - "/etc/cni/net.d/200-loopback.conflist"
   - name: "Ensure that br_netfilter is loaded on boot"
-    lineinfile:
-      path: /etc/modules
+    ansible.builtin.lineinfile:
+      path: "/etc/modules"
       line: "br_netfilter"
-      insertafter: EOF
-      state: present
-  - name: "Load br_netfilter if it isn't already loaded"
+      insertafter: "EOF"
+      state: "present"
+  - name: "Load br_netfilter if it isn't already loaded"  # noqa fqcn-builtins
     shell: |
       modprobe br_netfilter
   - name: "Restarting cri-o"

@@ -1,4 +1,5 @@
 - hosts: "selection"
+  name: "Setup a Kubernetes control plane using kubeadm"
   vars:
     metadata:
       description: "Setup a Kubernetes control plane using kubeadm"
@@ -13,7 +14,7 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Checking if cluster is already running"  # noqa fqcn-builtins
+  - name: "Checking if cluster is already running"  # noqa fqcn-builtins risky-shell-pipe
     shell: |
       lsof -i -P -n | grep 6443.*LISTEN > /dev/null
     register: "port_check"
@@ -21,9 +22,9 @@
     changed_when: false
   - name: "Creating temporary file for cluster configuration"
     ansible.builtin.tempfile:
-      state: file
-      suffix: temp
-    register: cluster_config
+      state: "file"
+      suffix: "temp"
+    register: "cluster_config"
   - name: "Creating cluster configuration"
     ansible.builtin.template:
       dest: "{{ cluster_config.path }}"
@@ -52,5 +53,5 @@
   - name: "Remove temporary cluster configuration file"
     ansible.builtin.file:
       path: "{{ cluster_config.path }}"
-      state: absent
-    when: cluster_config.path is defined
+      state: "absent"
+    when: "cluster_config.path is defined"

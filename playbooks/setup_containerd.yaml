@@ -1,4 +1,5 @@
 - hosts: "selection:!nas"
+  name: "Setup Containerd"
   vars:
     metadata:
       description: "Setup Containerd"
@@ -12,7 +13,9 @@
   become_user: "root"
   tasks:
   - name: "Updating package cache"
-    ansible.builtin.apt: "update_cache=yes force_apt_get=yes"
+    ansible.builtin.apt:
+      update_cache: true
+      force_apt_get: true
     when: "ansible_os_family == 'Debian'"
   - name: "Installing containerd"  # noqa package-latest
     ansible.builtin.apt:

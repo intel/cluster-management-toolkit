@@ -1,4 +1,5 @@
 - hosts: "selection"
+  name: "Get package versions"
   vars:
     metadata:
       description: "Get package versions"
@@ -22,7 +23,7 @@
     ansible.builtin.package_facts:
       manager: "rpm"
     when: "ansible_os_family == 'RedHat'"
-  - name: "package versions"
+  - name: "Package versions"
     ansible.builtin.debug:
       msg: |
         ansible: {% if (ansible_facts.packages['ansible'] is defined) %}{{ ansible_facts.packages['ansible'][0].version }}{% else %}N/A{% endif %}

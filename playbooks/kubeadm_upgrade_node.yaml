@@ -1,4 +1,5 @@
 - hosts: "selection"
+  name: "Update a Kubernetes node using kubeadm"
   vars:
     metadata:
       description: "Update a Kubernetes node using kubeadm"
@@ -17,7 +18,9 @@
   become_user: "root"
   tasks:
   - name: "Updating package cache"
-    ansible.builtin.apt: "update_cache=yes force_apt_get=yes"
+    ansible.builtin.apt:
+      update_cache: true
+      force_apt_get: true
     when: "ansible_os_family == 'Debian'"
   - name: "Unmarking packages as held"  # noqa fqcn-builtins
     shell: |
@@ -36,7 +39,8 @@
       apt-mark hold kubeadm kubelet kubectl || true
     when: "ansible_os_family == 'Debian'"
   - name: "Updating package cache"
-    ansible.builtin.dnf: "update_cache=yes"
+    ansible.builtin.dnf:
+      update_cache: true
     when: "ansible_os_family == 'RedHat'"
   - name: "Unmarking packages as held"  # noqa fqcn-builtins
     shell: |

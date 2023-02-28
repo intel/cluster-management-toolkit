@@ -1,4 +1,5 @@
 - hosts: "selection"
+  name: "Add Kubernetes repository"
   vars:
     metadata:
       description: "Add Kubernetes repository"
@@ -71,7 +72,9 @@
       mode: "0644"
     when: "(ansible_os_family == 'Debian') and (use_proxy == 'yes')"
   - name: "Updating package cache"
-    ansible.builtin.apt: "update_cache=yes force_apt_get=yes"
+    ansible.builtin.apt:
+      update_cache: true
+      force_apt_get: true
     when: "ansible_os_family == 'Debian'"
   - name: "Configuring package repository for Kubernetes"
     ansible.builtin.template:
