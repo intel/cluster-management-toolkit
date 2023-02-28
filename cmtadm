@@ -487,7 +487,7 @@ cni_data = {
 		"filename": "calico.yaml",
 	},
 	"canal": {
-		"url": "https://docs.projectcalico.org/manifests/canal.yaml",
+		"url": "https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/canal-etcd.yaml",
 		"type": "yaml",
 		"filename": "canal.yaml",
 	},
@@ -745,6 +745,12 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	confirm = True
 
+	for opt, _optarg in options:
+		if opt == "-Y":
+			confirm = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
+
 	if not Path(CMT_INSTALLATION_INFO_FILE).is_file():
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Could not find reliable installation information. Aborting.", "default")], stderr = True)
@@ -761,8 +767,6 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": The cluster already has a CNI installed; aborting.", "default")], stderr = True)
 		sys.exit(errno.EEXIST)
-
-	confirm = True
 
 	if len(args) == 0:
 		ansithemeprint([ANSIThemeString("Note", "note"),
@@ -800,6 +804,12 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 
 	confirm = True
+
+	for opt, _optarg in options:
+		if opt == "-Y":
+			confirm = False
+		else:
+			raise Exception(f"Programming error; invalid option {opt}")
 
 	if not Path(CMT_INSTALLATION_INFO_FILE).is_file():
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -878,6 +888,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 
 	kh = None
+	pod_network_cidr = None
 
 	if len(args) > 0:
 		cni = args[0]
@@ -964,7 +975,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		sys.exit(errno.EINVAL)
 
 	if cni in cni_upgrade_data:
-		upgrade_cni(options = [("install", "")], args = [])
+		upgrade_cni(options = [("install", "")], args = [cni])
 		# FIXME
 		return True
 
@@ -2368,8 +2379,6 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
 			confirm = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	show_configuration()
 
@@ -2803,8 +2812,6 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			enable_dra = True
 		elif opt == "-Y":
 			confirm = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	if enable_dra == True:
 		setup_control_plane_targets[distro]["extra_values"] = {
@@ -3103,8 +3110,6 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
 			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
 			confirm = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	show_configuration()
 
@@ -3180,8 +3185,6 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
 			confirm = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	# If there is still an installed cluster or if the teardown has not finished, teardown the cluster before purging
 	if state in ("installed", "upgraded", "tearing_down"):
@@ -3308,8 +3311,6 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
 			confirm = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	# XXX: How do we check that nodes are drained? We can check whether they are cordoned
 	node_status, _kh = __get_node_info()
@@ -4173,13 +4174,16 @@ COMMANDLINE = {
 			 ANSIThemeString("kube-router", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("weave", "argument"),
-			 ANSIThemeString(", ", "separator"),
-			 ANSIThemeString("none", "argument"),
 			],
 			[ANSIThemeString("By default ", "description"),
 			 ANSIThemeString("cilium", "argument"),
 			 ANSIThemeString(" will be used as CNI", "description")],
 		],
+		"options": {
+			"-Y": {
+				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
+			},
+		},
 		"optional_args": [
 			{
 				"name": "cni",
@@ -4200,6 +4204,11 @@ COMMANDLINE = {
 			[ANSIThemeString("This should be used in case", "description")],
 			[ANSIThemeString("you want to switch to another CNI", "description")],
 		],
+		"options": {
+			"-Y": {
+				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
+			},
+		},
 		"callback": teardown_cni,
 	},
 	"Upgrade CNI": {
