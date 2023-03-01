@@ -367,6 +367,26 @@ def patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> None:
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	check_and_print_status(execute_command(args))
 
+def patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> None:
+	"""
+	Patch the configuration for Canal
+
+		Parameters:
+			cni_path (FilePath): The path to the CNI configuration to patch
+			pod_network_cidr (str): The CIDR for the pod network
+	"""
+
+	violations = check_path(cni_path)
+	if violations != [SecurityStatus.OK]:
+		violations_joined = join_securitystatus_set(",", set(violations))
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
+
+	# Ideally we should patch this using a round-trip capable YAML parser,
+	# such as ruamel
+	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16"\(,.*\)$#\1Network:": "{pod_network_cidr}"\2#'
+	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
+	check_and_print_status(execute_command(args))
+
 def patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> None:
 	"""
 	Patch the configuration for Flannel
@@ -407,7 +427,7 @@ def patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> None:
 	args = ["/usr/bin/sed", "-i", "-e", sedstr_remove_existing, cni_path]
 	execute_command(args)
 
-	sedstr_add_new = fr's#^\(                - name: INIT_CONTAINER\)$#                - name: IPALLOC_RANGE\n                  value: {pod_network_cidr}\n\1#'
+	sedstr_add_new = fr's#^\(.*\)\(- name: INIT_CONTAINER\)$#\1- name: IPALLOC_RANGE\n\1  value: {pod_network_cidr}\n\1\2#'
 	args = ["/usr/bin/sed", "-i", "-e", sedstr_add_new, cni_path]
 	check_and_print_status(execute_command(args))
 
@@ -490,6 +510,7 @@ cni_data = {
 		"url": "https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/canal-etcd.yaml",
 		"type": "yaml",
 		"filename": "canal.yaml",
+		"patch": patch_cni_canal,
 	},
 	"cilium": {
 		"version_url": "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
@@ -504,7 +525,7 @@ cni_data = {
 		"url": "https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml",
 		"type": "yaml",
 		"filename": "flannel.yaml",
-		"patch_cni": patch_cni_flannel,
+		"patch": patch_cni_flannel,
 	},
 	"kube-router": {
 		"url": "https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml",
@@ -1001,7 +1022,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 	checksum_url = substitute_string(checksum_url, substitutions)
 
 	filename = deep_get(cni_data, DictPath(f"{cni}#filename"))
-	patch_cni = deep_get(cni_data, DictPath(f"{cni}#patch_cni"), None)
+	patch_cni = deep_get(cni_data, DictPath(f"{cni}#patch"), None)
 	filetype = deep_get(cni_data, DictPath(f"{cni}#type"))
 	if filetype is None:
 		raise ValueError(f"type for {cni} is missing; this is a programming error.")
