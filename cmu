@@ -532,20 +532,82 @@ def get_metrics_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 
 	return vlist, status
 
+def setup_host_ping(inventory_dict: Dict, async_cb, ping_hosts: str = "Lazy"):
+	async_cookie = None
+
+	if ping_hosts in ("Always", "Lazy"):
+		# Trigger an asynchronous host ping
+		async_cookie = ansible_ping_async(None, inventory_dict)
+
+	return async_cookie, async_cb
+
+# pylint: disable-next=unused-argument
+def get_list_async_cb(vlist, async_cookie, **kwargs):
+	retrigger = deep_get(kwargs, DictPath("retrigger"), False)
+	inventory_dict = deep_get(kwargs, DictPath("inventory_dict"), None)
+
+	if retrigger == True and async_cookie is None:
+		# FIXME
+		async_cookie = ansible_ping_async(None, inventory_dict)
+		return vlist, async_cookie, kwargs
+
+	if async_cookie is None:
+		return vlist, async_cookie, kwargs
+
+	# If there is no new data yet (the run has not completed), return
+	__ansible_results = ansible_async_get_data(async_cookie)
+	if __ansible_results is None:
+		return vlist, async_cookie, kwargs
+
+	host_status = {}
+
+	for host, result in __ansible_results.items():
+		for task in result:
+			unreachable = deep_get(task, DictPath("unreachable"))
+			skipped = deep_get(task, DictPath("skipped"))
+			stderr_lines = deep_get(task, DictPath("stderr_lines"))
+			retval = deep_get(task, DictPath("retval"))
+			status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
+			host_status[host] = status
+
+	key = deep_get(kwargs, DictPath("key"), "name")
+
+	# Update status
+	for i, host in enumerate(vlist):
+		vlist[i]["status"] = deep_get(host_status, DictPath(host[key]), "UNKNOWN")
+	async_cookie = None
+
+	return vlist, async_cookie, kwargs
+
 # pylint: disable-next=unused-argument
 def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 	vlist = []
 	status = 200
 
+	# Do we want to ping the hosts?
+	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("Context#ping_hosts"), "Lazy")
+
 	_vlist = kh.list_contexts()
 
 	tag_prefix = str(ThemeRef("separators", "tag"))
+
+	inventory_dict = {
+		"all": {
+			"hosts": {},
+		}
+	}
 
 	for _current, name, cluster, authinfo, namespace, server in _vlist:
 		if _current == True:
 			current = tag_prefix
 		else:
 			current = "".ljust(len(tag_prefix))
+
+		server_address = ""
+		tmp = re.match(r"^(https?://)(.+)(:\d+)$", server)
+		if tmp is not None:
+			server_address = tmp[2]
+
 		vlist.append({
 			"current": current,
 			"name": name,
@@ -553,9 +615,20 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 			"authinfo": authinfo,
 			"namespace": namespace,
 			"server": server,
+			"server_address": server_address,
+			# Before we ping the hosts their status is unknown
+			"status": "UNKNOWN",
 		})
 
-	return vlist, status
+		if len(server_address) > 0:
+			inventory_dict["all"]["hosts"][server_address] = {}
+			inventory_dict["all"]["hosts"][server_address]["status"] = "UNKNOWN"
+			inventory_dict["all"]["vars"] = {}
+
+	async_cookie, async_cb = setup_host_ping(inventory_dict, get_list_async_cb, ping_hosts)
+	key = deep_get(kwargs, DictPath("key"), "name")
+
+	return vlist, status, async_cookie, async_cb, { "key": key, "inventory_dict": inventory_dict }
 
 def get_image_tuple(image: str) -> Tuple[str, str]:
 	"""
@@ -4116,7 +4189,7 @@ def get_inventory_list(**kwargs):
 
 	async_cb = get_inventory_list_async_cb
 
-	return vlist, status, async_cookie, async_cb
+	return vlist, status, async_cookie, async_cb, {}
 
 # pylint: disable-next=unused-argument
 def get_inventory_list_async_cb(vlist, async_cookie, **kwargs):
@@ -5047,6 +5120,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 
 	async_cookie = None
 	async_cb = None
+	async_cb_args = {}
 	async_retrigger_timeout = None
 	uip.list_needs_regeneration(True)
 
@@ -5057,7 +5131,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			if async_cookie is not None:
 				# Note: by default async_cb will be called every 100ms until it receives all data;
 				# make *SURE* that it only checks for new data and returns immediately if not
-				vlist, async_cookie = async_cb(vlist, async_cookie)
+				vlist, async_cookie, async_cb_args = async_cb(vlist, async_cookie, **async_cb_args)
 				if async_cookie is None:
 					uip.force_update()
 					# Retrigger every 5 seconds; this might be revisited later
@@ -5066,7 +5140,8 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				if async_retrigger_timeout is not None and async_cb is not None:
 					if async_retrigger_timeout == 0:
 						async_retrigger_timeout = None
-						vlist, async_cookie = async_cb(vlist, async_cookie, retrigger = True)
+						async_cb_args["retrigger"] = True
+						vlist, async_cookie, async_cb_args = async_cb(vlist, async_cookie, **async_cb_args)
 					else:
 						async_retrigger_timeout -= 1
 
@@ -5109,7 +5184,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				infogetter_extra_vars["_vlist"] = vlist
 			elif listgetter_async is not None:
 				if async_cb is None:
-					vlist, status, async_cookie, async_cb = listgetter_async(**listgetter_args)
+					vlist, status, async_cookie, async_cb, async_cb_args = listgetter_async(**listgetter_args)
 				infogetter_extra_vars["_vlist"] = vlist
 			else:
 				status = "OK"
@@ -11040,7 +11115,6 @@ infogetter_allowlist = {
 listgetter_allowlist = {
 	# Used by listview, listpad
 	"generic_listgetter": generic_listgetter,
-	"get_context_list": get_context_list,
 	"get_metrics_list": get_metrics_list,
 	"get_pod_containers_list": get_pod_containers_list,
 	# Used by listpad
@@ -11067,6 +11141,7 @@ listgetter_allowlist = {
 # Asynchronous listgetters acceptable for direct use in view files
 listgetter_async_allowlist = {
 	# Used by listpad
+	"get_context_list": get_context_list,
 	"get_inventory_list": get_inventory_list,
 }
 

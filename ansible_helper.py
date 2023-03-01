@@ -1376,7 +1376,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 
 	return ansible_run_playbook(playbook, d)
 
-def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[str], values: Optional[Dict] = None) -> ansible_runner.runner.Runner:
+def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[str], values: Optional[Dict] = None, inventory: Optional[Dict] = None) -> ansible_runner.runner.Runner:
 	"""
 	Run a playbook on selected nodes
 
@@ -1400,7 +1400,10 @@ def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[
 	#
 	# Also, if ansible_user is not set ansible will implicitly use the local user. Pass this
 	# as ansible user to make scripts that tries to access ansible_user function properly.
-	d = ansible_get_inventory_dict()
+	if inventory is None:
+		d = ansible_get_inventory_dict()
+	else:
+		d = inventory
 
 	if values is None:
 		values = {}
@@ -1456,7 +1459,7 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 
 	return host_status
 
-def ansible_ping_async(selection: Optional[List[str]]) -> ansible_runner.runner.Runner:
+def ansible_ping_async(selection: Optional[List[str]], inventory: Optional[Dict] = None) -> ansible_runner.runner.Runner:
 	"""
 	Ping all selected hosts asynchronously
 
@@ -1466,10 +1469,13 @@ def ansible_ping_async(selection: Optional[List[str]]) -> ansible_runner.runner.
 			The result from ansible_run_playbook_async()
 	"""
 
-	if selection is None:
-		selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+	if inventory is None:
+		if selection is None:
+			selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+	else:
+		selection = list(deep_get(inventory, DictPath("all#hosts"), {}))
 
-	return ansible_run_playbook_on_selection_async(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection)
+	return ansible_run_playbook_on_selection_async(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection, inventory = inventory)
 
 def __ansible_run_async_finished_cb(runner_obj: ansible_runner.runner.Runner, **kwargs: Dict) -> None:
 	# pylint: disable-next=global-variable-not-assigned
