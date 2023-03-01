@@ -433,11 +433,15 @@ def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict) -> Tuple[s
 					if deep_get(container, DictPath("ready")) == False:
 						reason = deep_get(container, DictPath("state#waiting#reason"), "").rstrip()
 						if reason is not None and len(reason) > 0:
+							if reason == "CrashLoopBackOff":
+								status_group = StatusGroup.NOT_OK
 							return reason, status_group
 				for container in deep_get(obj, DictPath("status#containerStatuses"), []):
 					if deep_get(container, DictPath("ready")) == False:
 						reason = deep_get(container, DictPath("state#waiting#reason"), "").rstrip()
 						if reason is not None and len(reason) > 0:
+							if reason == "CrashLoopBackOff":
+								status_group = StatusGroup.NOT_OK
 							return reason, status_group
 
 		return status, status_group
