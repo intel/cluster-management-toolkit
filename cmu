@@ -40,7 +40,7 @@ import socket
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
-from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 import yaml
 
 try:
@@ -235,7 +235,9 @@ def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str
 			# it is a generic string
 			if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
 				fmt = ThemeAttr("types", "generic")
-				array += [values[i], fmt]
+				array += [
+					ThemeString(values[i], fmt)
+				]
 			elif formatting["field_colors"][i] == ThemeAttr("types", "timestamp"):
 				if values[i] is None:
 					array += [
@@ -532,7 +534,7 @@ def get_metrics_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 
 	return vlist, status
 
-def setup_host_ping(inventory_dict: Dict, async_cb, ping_hosts: str = "Lazy"):
+def setup_host_ping(inventory_dict: Dict, async_cb: Callable, ping_hosts: str = "Lazy") -> Tuple[Any, Callable]:
 	async_cookie = None
 
 	if ping_hosts in ("Always", "Lazy"):
@@ -542,26 +544,23 @@ def setup_host_ping(inventory_dict: Dict, async_cb, ping_hosts: str = "Lazy"):
 	return async_cookie, async_cb
 
 # pylint: disable-next=unused-argument
-def get_list_async_cb(vlist, async_cookie, **kwargs):
+def get_list_async_cb(vlist: List[Dict], async_cookie: Any, **kwargs: Dict) -> Tuple[List[Dict], Any, Dict]:
 	retrigger = deep_get(kwargs, DictPath("retrigger"), False)
 	inventory_dict = deep_get(kwargs, DictPath("inventory_dict"), None)
 
-	if retrigger == True and async_cookie is None:
-		# FIXME
-		async_cookie = ansible_ping_async(None, inventory_dict)
-		return vlist, async_cookie, kwargs
-
 	if async_cookie is None:
+		if retrigger == True:
+			async_cookie = ansible_ping_async(None, inventory_dict)
 		return vlist, async_cookie, kwargs
 
 	# If there is no new data yet (the run has not completed), return
-	__ansible_results = ansible_async_get_data(async_cookie)
-	if __ansible_results is None:
+	results = ansible_async_get_data(async_cookie)
+	if results is None:
 		return vlist, async_cookie, kwargs
 
 	host_status = {}
 
-	for host, result in __ansible_results.items():
+	for host, result in results.items():
 		for task in result:
 			unreachable = deep_get(task, DictPath("unreachable"))
 			skipped = deep_get(task, DictPath("skipped"))
@@ -580,31 +579,33 @@ def get_list_async_cb(vlist, async_cookie, **kwargs):
 	return vlist, async_cookie, kwargs
 
 # pylint: disable-next=unused-argument
-def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
+def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Dict]:
 	vlist = []
 	status = 200
 
 	# Do we want to ping the hosts?
 	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("Context#ping_hosts"), "Lazy")
 
-	_vlist = kh.list_contexts()
+	context_list = kh.list_contexts()
 
 	tag_prefix = str(ThemeRef("separators", "tag"))
 
-	inventory_dict = {
+	inventory_dict: Dict = {
 		"all": {
 			"hosts": {},
 		}
 	}
 
-	for _current, name, cluster, authinfo, namespace, server in _vlist:
-		if _current == True:
+	server_address_regex = re.compile(r"^(https?://)(.+)(:\d+)$")
+
+	for is_current_context, name, cluster, authinfo, namespace, server in context_list:
+		if is_current_context == True:
 			current = tag_prefix
 		else:
 			current = "".ljust(len(tag_prefix))
 
 		server_address = ""
-		tmp = re.match(r"^(https?://)(.+)(:\d+)$", server)
+		tmp = server_address_regex.match(server)
 		if tmp is not None:
 			server_address = tmp[2]
 
@@ -627,8 +628,9 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 
 	async_cookie, async_cb = setup_host_ping(inventory_dict, get_list_async_cb, ping_hosts)
 	key = deep_get(kwargs, DictPath("key"), "name")
+	retrigger_timeout = deep_get(kwargs, DictPath("retrigger_timeout"), 50)
 
-	return vlist, status, async_cookie, async_cb, { "key": key, "inventory_dict": inventory_dict }
+	return vlist, status, async_cookie, async_cb, { "key": key, "inventory_dict": inventory_dict, "retrigger_timeout": retrigger_timeout }
 
 def get_image_tuple(image: str) -> Tuple[str, str]:
 	"""
@@ -4078,8 +4080,8 @@ def get_pod_resource_list(obj, **kwargs):
 	return vlist, 200
 
 # pylint: disable-next=unused-argument
-def get_inventory_list(**kwargs):
-	vlist = []
+def get_inventory_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Dict]:
+	vlist: List[Dict] = []
 	nodes = []
 
 	control_plane_node, control_plane_name = get_control_plane()
@@ -4187,43 +4189,9 @@ def get_inventory_list(**kwargs):
 			"status": _status,
 		})
 
-	async_cb = get_inventory_list_async_cb
+	async_cb = get_list_async_cb
 
 	return vlist, status, async_cookie, async_cb, {}
-
-# pylint: disable-next=unused-argument
-def get_inventory_list_async_cb(vlist, async_cookie, **kwargs):
-	retrigger = deep_get(kwargs, DictPath("retrigger"), False)
-
-	if retrigger == True and async_cookie is None:
-		async_cookie = ansible_ping_async(None)
-		return vlist, async_cookie
-
-	if async_cookie is None:
-		return vlist, async_cookie
-
-	# If there is no new data yet (the run has not completed), return
-	__ansible_results = ansible_async_get_data(async_cookie)
-	if __ansible_results is None:
-		return vlist, async_cookie
-
-	host_status = {}
-
-	for host, result in __ansible_results.items():
-		for task in result:
-			unreachable = deep_get(task, DictPath("unreachable"))
-			skipped = deep_get(task, DictPath("skipped"))
-			stderr_lines = deep_get(task, DictPath("stderr_lines"))
-			retval = deep_get(task, DictPath("retval"))
-			status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
-			host_status[host] = status
-
-	# Update status
-	for i, host in enumerate(vlist):
-		vlist[i]["status"] = deep_get(host_status, DictPath(host["name"]), "UNKNOWN")
-	async_cookie = None
-
-	return vlist, async_cookie
 
 def get_node_addresses(name, addresses):
 	iips = []
@@ -5134,8 +5102,8 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				vlist, async_cookie, async_cb_args = async_cb(vlist, async_cookie, **async_cb_args)
 				if async_cookie is None:
 					uip.force_update()
-					# Retrigger every 5 seconds; this might be revisited later
-					async_retrigger_timeout = 50
+					# Retrigger every 5 seconds by default
+					async_retrigger_timeout = deep_get(async_cb_args, DictPath("retrigger_timeout"), 50)
 			else:
 				if async_retrigger_timeout is not None and async_cb is not None:
 					if async_retrigger_timeout == 0:
@@ -6046,6 +6014,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 
 			if force_update == True:
 				uip.force_update()
+				async_cb = None
 
 def __switch_resource_map(**kwargs):
 	uip = deep_get(kwargs, DictPath("uip"))

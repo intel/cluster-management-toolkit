@@ -7,6 +7,7 @@ listview:
   listgetter_async: "get_context_list"
   listgetter_args:
     key: "server_address"
+    retrigger_timeout: 300
   on_activation:
     call: null
   name: "Contexts"
@@ -105,5 +106,6 @@ listview:
       action_call: "set_cluster_context"
       action_args:
         _pass_selected: true
+      force_update: true
     "Edit Resource": null
     "View YAML dump": null
