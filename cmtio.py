@@ -650,7 +650,7 @@ def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, d
 	# We have no default recourse if this write fails, so if the caller can handle the failure
 	# they have to capture the exception
 	if read_mode == "r":
-		with open(path, "r", encoding = "utf-8") as f:
+		with open(path, "r", encoding = "utf-8", errors = "replace") as f:
 			string: Union[str, bytes] = f.read()
 	else:
 		with open(path, "rb") as bf:
