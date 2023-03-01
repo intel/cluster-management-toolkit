@@ -105,7 +105,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 		# Only process playbooks
 		tmp = yaml_regex.match(pathname)
 		if tmp is None:
-			raise Exception(f"The playbook filename “{pathname}“ does not end with .yaml or .yml; this is most likely a programming error.")
+			raise ValueError(f"The playbook filename “{pathname}“ does not end with .yaml or .yml; this is most likely a programming error.")
 
 		playbookname = tmp[1]
 
@@ -152,6 +152,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 
 	return playbooks
 
+# pylint: disable-next=unused-argument
 def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], extra_vars: Optional[Dict] = None) -> None:
 	"""
 	Given a list of playbook paths, print a summary of the actions that will be performed
@@ -517,13 +518,13 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 	changed = False
 
 	if groups is None or len(groups) == 0:
-		raise Exception("ansible_set_vars: groups is empty or groups; this is a programming error")
+		raise ValueError("ansible_set_vars: groups is empty or groups; this is a programming error")
 
 	if groupvars is None or groupvars == []:
-		raise Exception("ansible_set_vars: groupvars is empty or None; this is a programming error")
+		raise ValueError("ansible_set_vars: groupvars is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
-		raise Exception("ansible_set_vars: the inventory does not exist; this is a programming error")
+		raise FileNotFoundError("ansible_set_vars: the inventory does not exist; this is a programming error")
 
 	d = secure_read_yaml(inventory)
 
@@ -564,13 +565,13 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 	changed = False
 
 	if hosts is None or len(hosts) == 0:
-		raise Exception("ansible_set_vars: hosts is empty or None; this is a programming error")
+		raise ValueError("ansible_set_vars: hosts is empty or None; this is a programming error")
 
 	if hostvars is None or hostvars == []:
-		raise Exception("ansible_set_vars: hostvars is empty or None; this is a programming error")
+		raise ValueError("ansible_set_vars: hostvars is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
-		raise Exception("ansible_set_vars: the inventory does not exist; this is a programming error")
+		raise FileNotFoundError("ansible_set_vars: the inventory does not exist; this is a programming error")
 
 	d = secure_read_yaml(inventory)
 
@@ -608,13 +609,13 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 	changed = False
 
 	if groups is None or len(groups) == 0:
-		raise Exception("ansible_set_vars: groups is empty or groups; this is a programming error")
+		raise ValueError("ansible_set_vars: groups is empty or groups; this is a programming error")
 
 	if groupvars is None or groupvars == []:
-		raise Exception("ansible_set_vars: groupvars is empty or None; this is a programming error")
+		raise ValueError("ansible_set_vars: groupvars is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
-		raise Exception("ansible_set_vars: the inventory does not exist; this is a programming error")
+		raise FileNotFoundError("ansible_set_vars: the inventory does not exist; this is a programming error")
 
 	d = secure_read_yaml(inventory)
 
@@ -660,13 +661,13 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 	changed = False
 
 	if hosts is None or len(hosts) == 0:
-		raise Exception("ansible_set_vars: hosts is empty or None; this is a programming error")
+		raise ValueError("ansible_set_vars: hosts is empty or None; this is a programming error")
 
 	if hostvars is None or hostvars == []:
-		raise Exception("ansible_set_vars: hostvars is empty or None; this is a programming error")
+		raise ValueError("ansible_set_vars: hostvars is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
-		raise Exception("ansible_set_vars: the inventory does not exist; this is a programming error")
+		raise FileNotFoundError("ansible_set_vars: the inventory does not exist; this is a programming error")
 
 	d = secure_read_yaml(inventory)
 
@@ -781,11 +782,11 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[
 
 	# Treat empty or zero-length hosts as a programming error
 	if hosts is None or len(hosts) == 0:
-		raise Exception("None or zero-length hosts; this is a programming error")
+		raise ValueError("None or zero-length hosts; this is a programming error")
 
 	# Treat empty or zero-length group as a programming error
 	if group is None or len(group) == 0:
-		raise Exception("None or zero-length group; this is a programming error")
+		raise ValueError("None or zero-length group; this is a programming error")
 
 	if not Path(inventory).is_file():
 		return False
@@ -821,7 +822,7 @@ def ansible_remove_groups(inventory: FilePath, groups: List[str], force: bool = 
 
 	# Treat empty or zero-length groups as a programming error
 	if groups is None or len(groups) == 0:
-		raise Exception("None or zero-length group; this is a programming error")
+		raise ValueError("None or zero-length group; this is a programming error")
 
 	if not Path(inventory).is_file():
 		return False
@@ -864,7 +865,7 @@ def ansible_get_logs() -> List[Tuple[str, str, FilePath, datetime]]:
 			name = tmp[2]
 			logs.append((filename, name, FilePath(str(path)), date))
 		else:
-			raise Exception(f"Could not parse {filename}")
+			raise ValueError(f"Could not parse {filename}")
 	return logs
 
 def ansible_extract_failure(retval: int, error_msg_lines: List[str], skipped: bool = False, unreachable: bool = False) -> str:

@@ -122,7 +122,7 @@ def __themearray_to_string(themearray: List[ANSIThemeString]) -> str:
 				reset = theme["term"]["reset"]
 				string += f"{attr}{theme_string}{reset}"
 			else:
-				raise Exception(f"attribute (“term“, “{theme_attr_ref}“) does not exist in {themepath}")
+				raise KeyError(f"attribute (“term“, “{theme_attr_ref}“) does not exist in {themepath}")
 		else:
 			string += theme_string
 

@@ -87,7 +87,7 @@ import helptexts
 
 from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, make_selector, update_api_status as kh_update_api_status
 
-from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, clear_screen, ansithemeinput, ansithemeprint, init_ansithemeprint
+from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, clear_screen, ansithemeinput, ansithemeprint
 
 import about
 
@@ -696,12 +696,10 @@ def get_log_info(**kwargs: Dict) -> List[Type]:
 
 	info: List[Type] = []
 
-	# Fetch kubelet log, if available (for now only useful if run on the control-plane)
+	# Fetch kubelet log, if available (for now only useful if run on the control plane)
 	sudo_path = secure_which(FilePath("sudo"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	journalctl_path = secure_which(FilePath(os.path.join(BINDIR, "journalctl")), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	args = [sudo_path, journalctl_path, "--no-pager", "-o", "json"]
-
-	kubelet_logs = []
 
 	logs = [
 		("Latest boot, last 1h", "[dmesg]", ["-k", "-b", "--since", "1 hour ago", "--lines", "10000"], "glog"),
@@ -1062,7 +1060,7 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 		new_value = __process_timestamp(value, action, formatter)
 	elif type(vtype) == list:
 		if type(value) not in (list, tuple):
-			raise Exception(f"Field {field_name}: type({value}) is {vtype}; for type {vtype} pathtype must be a multi-element type")
+			raise ValueError(f"Field {field_name}: type({value}) is {vtype}; for type {vtype} pathtype must be a multi-element type")
 		_values = []
 		override_kind = deep_get_with_fallback(cmtlib.cmtconfig,
 						       [DictPath(f"{view}#kind_format_{field_index}"),
@@ -1096,7 +1094,7 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 			elif _vtype == "skip":
 				_values.append("")
 			else:
-				raise Exception(f"Field {field_name}: type[{i}] ({vtype}) is unknown")
+				raise ValueError(f"Field {field_name}: type[{i}] ({vtype}) is unknown")
 		if type(value) == list:
 			new_value = _values
 		elif type(value) == tuple:
@@ -1109,7 +1107,7 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 
 		# Is a custom type used for theming?
 		if vtype not in theme["types"]:
-			raise Exception(f"Unknown value type {vtype}; the view file is probably invalid")
+			raise ValueError(f"Unknown value type {vtype}; the view file is probably invalid")
 		new_value = value
 	return new_value
 
@@ -1344,7 +1342,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 		replace_quotes = None
 
 		if (path is None and len(paths) == 0 or path is not None and len(paths) > 0) and datagetter is None:
-			raise Exception(f"Field {name}: exactly one of path and paths must be non-empty unless a datagetter is specified\npath={path}\npaths={paths}\ndatagetter={datagetter}")
+			raise ValueError(f"Field {name}: exactly one of path and paths must be non-empty unless a datagetter is specified\npath={path}\npaths={paths}\ndatagetter={datagetter}")
 
 		if datagetter is not None:
 			d[name], extradata = datagetter(kh, obj, path, default)
@@ -1355,7 +1353,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 
 			if path is not None:
 				if deep_get(field, DictPath("type")) is None:
-					raise Exception(f"Field {name}: the path field has no default type; type must always be specified")
+					raise ValueError(f"Field {name}: the path field has no default type; type must always be specified")
 				tmp_value = deep_get(obj, DictPath(path), global_default)
 				if tmp_value is not None and isinstance(tmp_value, (str, list)) and len(tmp_value) == 0 and fallback_on_empty == True:
 					tmp_value = global_default
@@ -1368,7 +1366,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 				path = deep_get(_path, DictPath("path"))
 				mpaths = deep_get(_path, DictPath("paths"))
 				if path is not None and mpaths is not None or path is None and mpaths is None:
-					raise Exception(f"Field {name}: exactly one of path & paths must be used in a 'paths:' block\npath={path}\npaths={paths}")
+					raise ValueError(f"Field {name}: exactly one of path & paths must be used in a 'paths:' block\npath={path}\npaths={paths}")
 
 				if mpaths is None:
 					if type(path) == str:
@@ -1550,7 +1548,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 
 					try:
 						if len(lookup_name) == 0:
-							lookup_obj, status = kh.get_list_by_kind_namespace((lookup_kind, lookup_api_group), lookup_namespace, label_selector = lookup_selector)
+							lookup_obj, _status = kh.get_list_by_kind_namespace((lookup_kind, lookup_api_group), lookup_namespace, label_selector = lookup_selector)
 						else:
 							lookup_obj = kh.get_ref_by_kind_name_namespace((lookup_kind, lookup_api_group), lookup_name, lookup_namespace)
 					except NameError:
@@ -1603,7 +1601,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							else:
 								value.append(_tmp)
 					else:
-						raise Exception(f"remap is not supported yet for type {type(tmp)}")
+						raise ValueError(f"remap is not supported yet for type {type(tmp)}")
 					if len(value) == 0:
 						if default is None:
 							continue
@@ -1860,7 +1858,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						lookup_api_family = deep_get(_path, DictPath("lookup#api_family"))
 						lookup_status = deep_get(_path, DictPath("lookup#status"))
 					else:
-						raise Exception(f"Field {name}: currently status_tuple only supports 'lookup'")
+						raise ValueError(f"Field {name}: currently status_tuple only supports 'lookup'")
 					path = deep_get(_path, DictPath("path"))
 					value = deep_get(obj, DictPath(path))
 					tmp = kh.get_ref_by_kind_name_namespace((lookup_kind, lookup_api_family), value, "")
@@ -2049,7 +2047,7 @@ def check_matchlist(item, matchlist):
 	exacts, prefixes, suffixes, ins = split_matchlist(matchlist, exacts = [], prefixes = [], suffixes = [], ins = [])
 	return check_matchlists(item, exacts = exacts, prefixes = prefixes, suffixes = suffixes, ins = ins)
 
-# pylint disable-next=unused-argument
+# pylint: disable-next=unused-argument
 def listgetter_noop(obj: Dict, **kwargs: Dict) -> Tuple[Dict, str]:
 	"""
 	A noop listgetter that returns an empty list
@@ -2965,7 +2963,7 @@ def format_controller(controller, show_kind: str):
 			else:
 				controller = (f"{controller[0][0]}.{controller[0][1]}", f"{controller[1]}")
 		else:
-			raise Exception(f"unknown value passed to show_kind: {show_kind}")
+			raise ValueError(f"unknown value passed to show_kind: {show_kind}")
 	else:
 		controller = ("", f"{controller[1]}")
 
@@ -3121,7 +3119,7 @@ def cpu_usage_to_millicores(cpu_usage: str) -> str:
 	if cpu_usage.endswith("u"):
 		cpu_usage = f"{float(cpu_usage[:-1]):0.1f}"
 		return cpu_usage
-	raise Exception(f"Unknown cpu usage metrics: {cpu_usage}")
+	raise ValueError(f"Unknown cpu usage metrics: {cpu_usage}")
 
 # pylint: disable-next=unused-argument
 def listgetter_configmap_data(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
@@ -3262,7 +3260,7 @@ def decode_value(value):
 			else:
 				vtype = "string"
 				value = tmp
-		except UnicodeDecodeError as e:
+		except UnicodeDecodeError:
 			vtype = "base64-binary"
 
 			try:
@@ -4778,10 +4776,10 @@ def get_formatting(field: str, formatting: str, default: Union[Union[dict, Theme
 		raise TypeError(f"Formatting must be either list[union[dict, ThemeAttr, ThemeRef, ThemeString]] or list[list[dict]]; is type: {type(items)}")
 
 	if default is None:
-		raise Exception(f"default cannot be None for field {field}, formatting {formatting}; this is a programming error")
+		raise ValueError(f"default cannot be None for field {field}, formatting {formatting}; this is a programming error")
 
 	if len(items) < 1:
-		raise Exception(f"field {field}, formatting {formatting}: format list item is empty; this is likely an error in the view file")
+		raise ValueError(f"field {field}, formatting {formatting}: format list item is empty; this is likely an error in the view file")
 
 	if formatting in ("item_separator", "field_separators", "ellipsis", "field_prefixes", "field_suffixes"):
 		default_context = "separators"
@@ -4864,7 +4862,7 @@ def get_formatter(field):
 		generator = generators.generator_value_mapper
 		processor = None
 	else:
-		raise Exception(f"Unknown formatter {formatter}")
+		raise ValueError(f"Unknown formatter {formatter}")
 
 	theme = get_theme_ref()
 	if deep_get(field, DictPath("formatting#field_colors")) is None:
@@ -5368,7 +5366,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 								elif ptype == "<dir>":
 									fmt = ThemeAttr("windowwidget", "highlight")
 								else:
-									raise Exception(f"Unknown ptype {ptype}")
+									raise ValueError(f"Unknown ptype {ptype}")
 								file_list.append({
 									"lineattrs": WidgetLineAttrs.NORMAL,
 									"columns": [[ThemeString(f"{filename}", fmt)], [ThemeString(f"{ptype}", ThemeAttr("windowwidget", "description"))]],
@@ -5801,7 +5799,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 								elif ptype == "<dir>":
 									fmt = ThemeAttr("windowwidget", "highlight")
 								else:
-									raise Exception(f"Unknown ptype {ptype}")
+									raise ValueError(f"Unknown ptype {ptype}")
 								file_list.append({
 									"lineattrs": WidgetLineAttrs.NORMAL,
 									"columns": [[ThemeString(f"{filename}", fmt)], [ThemeString(f"{ptype}", ThemeAttr("windowwidget", "description"))]],
@@ -6780,6 +6778,7 @@ def check_cni_updates(cni: str, current_version: str) -> str:
 
 	return candidate_version
 
+# pylint: disable-next=unused-argument
 def update_cni(stdscr: curses.window, cni, current_version, candidate_version, dry_run = False) -> bool:
 	"""
 	Update the CNI
@@ -7011,7 +7010,7 @@ def decode_and_view_data(stdscr: curses.window, **kwargs):
 	elif vtype.startswith("base64-utf-8"):
 		obj = base64.b64decode(value).decode("utf-8")
 	else:
-		raise Exception(f"Trying to export unknown vtype: {vtype}")
+		raise TypeError(f"Trying to export unknown vtype: {vtype}")
 	if title.endswith((".crt", "tls.key", ".pem", "CAKey")) or type(obj) == str and obj.startswith(("-----BEGIN", "-----END")):
 		formatter = formatters.format_crt
 	else:
@@ -7089,7 +7088,7 @@ def export_data(stdscr: curses.window, **kwargs):
 		tmp = base64.b64decode(value)
 		secure_write_string(filename, tmp, write_mode = "wb")
 	else:
-		raise Exception(f"Trying to export unknown vtype: {vtype}")
+		raise TypeError(f"Trying to export unknown vtype: {vtype}")
 
 def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
 	helptext = []
@@ -7411,7 +7410,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	logpad = deep_get(viewref, DictPath("logpad"))
 	if logpad is not None:
 		if listpad is not None:
-			raise Exception("We cannot have listpad and logpad simultaneously")
+			raise ValueError("We cannot have listpad and logpad simultaneously")
 
 		show_timestamps = deep_get_with_fallback(viewref, [DictPath("logpad#timestamps"), DictPath("timestamps")], True)
 		uip.toggle_timestamps(show_timestamps)
@@ -8712,7 +8711,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					]
 				if uip.maxx - uip.minx > 128 and logparser_configuration.using_bundles == True:
 					statusarray2 += [
-						ThemeString(f" (Bundle)", ThemeAttr("statusbar", "dim")),
+						ThemeString(" (Bundle)", ThemeAttr("statusbar", "dim")),
 					]
 
 			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
@@ -9283,6 +9282,7 @@ def listviewdispatch(stdscr: curses.window, **kwargs):
 
 	return Retval.RETURNDONE
 
+# pylint: disable-next=unused-argument
 def patch_object(stdscr: curses.window, **kwargs):
 	kind = deep_get(kwargs, DictPath("kind"))
 	name = deep_get(kwargs, DictPath("name"))
@@ -9598,7 +9598,6 @@ def view_yaml(stdscr: curses.window, **kwargs):
 		return None
 	path = deep_get(kwargs, DictPath("path"))
 	if path is not None:
-		include_root = deep_get(kwargs, DictPath("include_root"), False)
 		if deep_get(kwargs, DictPath("include_root"), False) == True:
 			_obj = {f"{path.rsplit('#')[-1]}": deep_get(obj, DictPath(path))}
 		else:
@@ -9838,7 +9837,7 @@ def apply_configuration_from_file(uip: UIProps, items, action, values, kind, **k
 	elif rtype == "Kustomization":
 		args = [kubectl_path, "apply", "-k", resource_path]
 	else:
-		raise Exception(f"Unknown resource type {rtype}; this is a programming error.")
+		raise TypeError(f"Unknown resource type {rtype}; this is a programming error.")
 
 	result = subprocess.run(args, universal_newlines = True, check = False)
 	return result.returncode, args
@@ -9942,7 +9941,7 @@ def create_resource_from_file(uip: UIProps, items, action, values, kind, **kwarg
 	resource_path, rtype = values["resource_path"]
 	resource_list = []
 
-	result = 0
+	_result = 0
 	args = []
 
 	try:
@@ -9990,7 +9989,7 @@ def create_resource_from_file(uip: UIProps, items, action, values, kind, **kwarg
 		raise TypeError(f"Unknown resource type {rtype}; this is a programming error.")
 
 	if len(args) > 0:
-		result = subprocess.run(args, universal_newlines = True, check = False).returncode
+		_result = subprocess.run(args, universal_newlines = True, check = False).returncode
 
 	return Retval.MATCH
 
@@ -10605,7 +10604,7 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Opti
 		# Sanity check
 		if queryfunc is not None:
 			if queryfunc not in ("string", "yesno", "filechooser"):
-				raise Exception(f"unknown queryfunc “{queryfunc}“ provided")
+				raise ValueError(f"unknown queryfunc “{queryfunc}“ provided")
 
 		confirm = deep_get(d[0], DictPath("vars#metadata#confirm"), False)
 		tmpallowoncontrolplane = deep_get(d[0], DictPath("vars#metadata#allow_on_control_plane"))
@@ -10619,7 +10618,7 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Opti
 			allowoncontrolplane = False
 			singleoncontrolplane = False
 		else:
-			raise Exception(f"{playbookpath}: Invalid values for allow-on-control-plane")
+			raise ValueError(f"{playbookpath}: Invalid values for allow-on-control-plane")
 
 		requiresclusterinfo = deep_get_with_fallback(d[0], [DictPath("vars#metadata#requires_cluster_info"), DictPath("vars#metadata#requires-cluster-info")], False)
 		runbefore = deep_get_with_fallback(d[0], [DictPath("vars#metadata#run_before"), DictPath("vars#metadata#run-before")], [])
@@ -10772,7 +10771,7 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 		# Repopulate the list of views, on the offhand chance that a view file has been added
 		populate_views(force_refresh = refresh_apis)
 		curses.doupdate()
-	available_api_families, _status, _modified = kh.get_available_api_families()
+	available_api_families, _status, _modified = kh.get_available_kinds()
 
 	items = []
 	order = []
@@ -10809,7 +10808,7 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 			api_group = ""
 
 		if group is None:
-			raise Exception(f"group should not be None unless skip=True; view: {view_name}")
+			raise ValueError(f"group should not be None unless skip=True; view: {view_name}")
 
 		order.append((view_name, group, api_group))
 
@@ -11178,7 +11177,7 @@ def map_key(view_file: str, shortcut: str, activatedfun, key: str, modifier: str
 def populate_views(force_refresh: bool = False) -> None:
 	global views # pylint: disable=global-statement
 
-	tmp_available_api_families, _status, _modified = kh.get_available_api_families(force_refresh = force_refresh)
+	tmp_available_api_families, _status, _modified = kh.get_available_kinds(force_refresh = force_refresh)
 	available_api_families = set()
 	for kind, kind_data in tmp_available_api_families.items():
 		if deep_get(kind_data, DictPath("available"), False) == True:
@@ -11566,19 +11565,19 @@ def populate_views(force_refresh: bool = False) -> None:
 			list_infogetter_args = deep_get(listpad, DictPath("infogetter_args"))
 			if list_infogetter is None:
 				if len(listpad) > 0:
-					raise Exception("View-file {view_file} is invalid: listpad specified, but no infogetter is provided")
+					raise ValueError("View-file {view_file} is invalid: listpad specified, but no infogetter is provided")
 			else:
 				infoview_entry["listpad"]["infogetter"] = deep_get(infogetter_allowlist, DictPath(list_infogetter))
 				if infoview_entry["listpad"]["infogetter"] is None:
-					raise Exception("View-file {view_file} is invalid: infogetter {list_infogetter} for listpad is not in infogetter_allowlist")
+					raise ValueError("View-file {view_file} is invalid: infogetter {list_infogetter} for listpad is not in infogetter_allowlist")
 				infoview_entry["listpad"]["infogetter_args"] = list_infogetter_args
 			if list_listgetter is None:
 				if len(listpad) > 0:
-					raise Exception("View-file {view_file} is invalid: listpad specified, but no listgetter is provided")
+					raise ValueError("View-file {view_file} is invalid: listpad specified, but no listgetter is provided")
 			else:
 				infoview_entry["listpad"]["listgetter"] = deep_get(listgetter_allowlist, DictPath(list_listgetter))
 				if infoview_entry["listpad"]["listgetter"] is None:
-					raise Exception("View-file {view_file} is invalid: listgetter {list_listgetter} for listpad is not in listgetter_allowlist")
+					raise ValueError("View-file {view_file} is invalid: listgetter {list_listgetter} for listpad is not in listgetter_allowlist")
 				infoview_entry["listpad"]["listgetter_args"] = list_listgetter_args
 
 			shortcuts = {}
@@ -11672,7 +11671,7 @@ def populate_views(force_refresh: bool = False) -> None:
 				log_infogetter = deep_get(logpad, DictPath("infogetter"))
 				if log_infogetter is None:
 					if len(logpad) > 0:
-						raise Exception("View-file {view_file} is invalid: logpad specified, but no infogetter is provided")
+						raise ValueError("View-file {view_file} is invalid: logpad specified, but no infogetter is provided")
 				logpad["infogetter"] = deep_get(infogetter_allowlist, DictPath(log_infogetter))
 				infoview_entry["logpad"] = copy.deepcopy(logpad)
 
@@ -11961,7 +11960,7 @@ def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 			initial_namespace, initial_name = initial_name.split("/")
 		if ":" in initial_name:
 			initial_name, initial_container = initial_name.split(":")
-			
+
 		if initial_container is not None and len(initial_container) > 0 and defaultview not in ("Pods", "ConfigMaps"):
 			ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
 					ANSIThemeString(": invalid syntax;", "default")], stderr = True)
@@ -11982,7 +11981,7 @@ def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	init_kubernetes_client()
 	ansithemeprint([ANSIThemeString("Checking available Kubernetes APIs\n", "default")])
-	_available_api_families, _status, _modified = kh.get_available_api_families()
+	_available_api_families, _status, _modified = kh.get_available_kinds()
 
 	# Customises the list views if necessary
 	if len(infoviews) == 0:

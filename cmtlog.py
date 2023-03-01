@@ -82,8 +82,9 @@ class CMTLog:
 		function = None
 		lineno = None
 		try:
-			raise Exception
-		except Exception: # pylint: disable=broad-except
+			# This is to get the necessary stack info
+			raise UserWarning
+		except UserWarning:
 			frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
 			file = str(frame.f_code.co_filename) # type: ignore
 			function = str(frame.f_code.co_name) # type: ignore
@@ -124,8 +125,9 @@ class CMTLog:
 		function = None
 		lineno = None
 		try:
-			raise Exception
-		except Exception: # pylint: disable=broad-except
+			# This is to get the necessary stack info
+			raise UserWarning
+		except UserWarning:
 			frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
 			file = str(frame.f_code.co_filename) # type: ignore
 			function = str(frame.f_code.co_name) # type: ignore
@@ -160,8 +162,9 @@ class CMTLog:
 			function = None
 			lineno = None
 			try:
-				raise Exception
-			except Exception: # pylint: disable=broad-except
+				# This is to get the necessary stack info
+				raise UserWarning
+			except UserWarning:
 				frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
 				file = str(frame.f_code.co_filename) # type: ignore
 				function = str(frame.f_code.co_name) # type: ignore

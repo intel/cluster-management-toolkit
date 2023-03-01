@@ -548,9 +548,17 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 		# they have to capture the exception
 		try:
 			if permissions is None:
+				# This code path will only be used for binary writes,
+				# but pylint seems to stupid to realise this, so it complains
+				# about missing encoding, hence we have to override that warning
+				# pylint: disable-next=unspecified-encoding
 				with open(path, write_mode) as f:
 					f.write(string)
 			else:
+				# This code path will only be used for binary writes,
+				# but pylint seems to stupid to realise this, so it complains
+				# about missing encoding, hence we have to override that warning
+				# pylint: disable-next=unspecified-encoding
 				with open(path, write_mode, opener = partial(os.open, mode = permissions)) as f:
 					f.write(string)
 		except FileExistsError as e:

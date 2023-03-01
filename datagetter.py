@@ -543,7 +543,7 @@ def datagetter_api_support(kh: kubernetes_helper.KubernetesHelper, obj: Dict, pa
 	kind = deep_get(obj, DictPath("spec#names#kind"), "")
 	api_family = deep_get(obj, DictPath("spec#group"), "")
 
-	available_apis, _status, _modified = kh.get_available_api_families()
+	available_apis, _status, _modified = kh.get_available_kinds()
 
 	available_views = []
 

@@ -84,12 +84,23 @@ def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool =
 		return False
 	return True
 
-def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict, terminate_on_failure: bool = True) -> bool:
+def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict) -> bool:
+	"""
+	Validate an argument or argument list
+
+		Parameters:
+			arg (str): The argument to validate
+			arg_string (ansithemearray): A ansithemearray with the formatted representation of the expected data format
+			options (dict): Options to pass to the validators
+		Returns:
+			True on success, False on failure
+	"""
+
 	result = False
 
 	validator = deep_get(options, DictPath("validator"), "")
-	list_separator = deep_get(options, DictPath(f"list_separator"))
-	minval, maxval = deep_get(options, DictPath(f"valid_range"), (None, None))
+	list_separator = deep_get(options, DictPath("list_separator"))
+	minval, maxval = deep_get(options, DictPath("valid_range"), (None, None))
 	allowlist = deep_get(options, DictPath("allowlist"), [])
 	validator_regex = deep_get(options, DictPath("regex"), r"")
 
@@ -440,7 +451,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 				for _opt in option:
 					# The first string is the initial indentation
 					if len(tmp2) > 1:
-						tmp2.append(ANSIThemeString(f"  ", "separator"))
+						tmp2.append(ANSIThemeString("  ", "separator"))
 					tmp2.append(ANSIThemeString(f"{_opt}", "option"))
 			elif key.startswith("__"):
 				tmp2.append(ANSIThemeString(f"  {option}", "option"))
@@ -595,7 +606,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 					commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, default_command)
 				elif "__*" in commandline:
 					commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, "*")
-				
+
 				if command is None:
 					ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
 							ANSIThemeString(": unrecognised command “", "default"),
@@ -749,7 +760,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 			break
 
 		# Validate the argument
-		validator_options = deep_get(arg, DictPath(f"validation"), {})
+		validator_options = deep_get(arg, DictPath("validation"), {})
 
 		# validate_argument() will terminate by default if validation fails
 		_result = validate_argument(args[i], arg["string"], validator_options)

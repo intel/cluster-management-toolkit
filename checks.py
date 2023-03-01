@@ -780,13 +780,13 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 			all_ok = False
 		elif len(any_of_available) == 1:
 			if len(rp_data) == 1 and len(all_of_available["__expected"]) == 0:
-				ansithemeprint([ANSIThemeString(f"    ", "default"),
-						ANSIThemeString(f"Error", "error"),
-						ANSIThemeString(f": at least one of the following pods is expected to be running:", "default")])
+				ansithemeprint([ANSIThemeString("    ", "default"),
+						ANSIThemeString("Error", "error"),
+						ANSIThemeString(": at least one of the following pods is expected to be running:", "default")])
 			elif any_of_available_expected != 1:
-				ansithemeprint([ANSIThemeString(f"    ", "default"),
-						ANSIThemeString(f"Error", "error"),
-						ANSIThemeString(f": exactly one of the following pods or sets of pods is expected to be running:", "default")])
+				ansithemeprint([ANSIThemeString("    ", "default"),
+						ANSIThemeString("Error", "error"),
+						ANSIThemeString(": exactly one of the following pods or sets of pods is expected to be running:", "default")])
 			tmp_str = [ANSIThemeString("      ", "default")]
 			first = True
 			for expected in any_of_available_expected:
@@ -823,20 +823,20 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 								ready = "Ready"
 						if phase != "Running" or ready != "Ready":
 							if first == True:
-								ansithemeprint([ANSIThemeString(f"    ", "default"),
-										ANSIThemeString(f"Error", "error"),
-										ANSIThemeString(f": The following pods should be in phase Running, condition Ready:", "default")])
+								ansithemeprint([ANSIThemeString("    ", "default"),
+										ANSIThemeString("Error", "error"),
+										ANSIThemeString(": The following pods should be in phase Running, condition Ready:", "default")])
 								first = False
-							ansithemeprint([ANSIThemeString(f"      ", "default"),
+							ansithemeprint([ANSIThemeString("      ", "default"),
 									ANSIThemeString(f"{pod_namespace}", "namespace"),
-									ANSIThemeString(f"/", "separator"),
+									ANSIThemeString("/", "separator"),
 									ANSIThemeString(f"{pod_name}", "namespace"),
-									ANSIThemeString(f" (Phase: ", "default"),
+									ANSIThemeString(" (Phase: ", "default"),
 									ANSIThemeString(f"{phase}", "emphasis"),
-									ANSIThemeString(f", ", "separator"),
-									ANSIThemeString(f"Condition: ", "default"),
+									ANSIThemeString(", ", "separator"),
+									ANSIThemeString("Condition: ", "default"),
 									ANSIThemeString(f"{ready}", "emphasis"),
-									ANSIThemeString(f")", "default")])
+									ANSIThemeString(")", "default")])
 							error += 1
 							all_ok = False
 		if all_ok:

@@ -68,6 +68,7 @@ def format_none(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union
 		dumps.append([ThemeString(line, ThemeAttr("types", "generic"))])
 	return dumps
 
+# pylint: disable-next=unused-argument
 def format_diff_line(line: str, override_formatting: Optional[Union[ThemeAttr, Dict]] = None) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Formats a single line of a diff
@@ -78,31 +79,6 @@ def format_diff_line(line: str, override_formatting: Optional[Union[ThemeAttr, D
 		Returns:
 			themearray: a themearray
 	"""
-
-	if override_formatting is None:
-		override_formatting = {}
-
-	if isinstance(override_formatting, dict):
-		# Since we do not necessarily override all
-		# formatting we need to set defaults;
-		# doing it here instead of in the code makes
-		# it easier to change the defaults of necessary
-		generic_format = ThemeAttr("types", "generic")
-		comment_format = ThemeAttr("types", "yaml_comment")
-		key_format = ThemeAttr("types", "yaml_key")
-		value_format = ThemeAttr("types", "yaml_value")
-		list_format: Union[ThemeRef, ThemeString] = ThemeRef("separators", "yaml_list")
-		separator_format = ThemeAttr("types", "generic")
-		reference_format = ThemeAttr("types", "yaml_reference")
-	elif isinstance(override_formatting, ThemeAttr):
-		generic_format = override_formatting
-		comment_format = override_formatting
-		key_format = override_formatting
-		value_format = override_formatting
-		list_format = ThemeString("- ", override_formatting)
-		separator_format = override_formatting
-		reference_format = override_formatting
-		override_formatting = {}
 
 	tmpline: List[Union[ThemeRef, ThemeString]] = []
 

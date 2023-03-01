@@ -16,8 +16,6 @@ For usage, see:
 	cmt help
 """
 
-from cryptography import x509
-from cryptography.hazmat.primitives import serialization
 import errno
 from getpass import getuser
 import hashlib
@@ -26,6 +24,9 @@ from pathlib import Path, PurePath
 import re
 import sys
 from typing import cast, Dict, List, Optional, Sequence, Tuple
+
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
 
 from cmttypes import deep_get, DictPath, FilePath, HostNameStatus
 from cmtpaths import CMT_CONFIG_FILE, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
@@ -157,6 +158,15 @@ def get_cluster_name() -> Optional[str]:
 	return cluster_name
 
 def get_control_planes() -> List[Tuple[str, List[str]]]:
+	"""
+	Get the list of control planes
+
+		Returns:
+			[(name, ipaddresses)]: The list of control planes
+				name (str): The name of the control plane
+				ipaddresses ([str]): A list of IP-addresses for the control plane
+	"""
+
 	controlplanes = []
 
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
@@ -314,7 +324,7 @@ def get_selection(selection: List[str], kind: Optional[Tuple[str, str]] = None) 
 	items2 = []
 
 	if kind is None:
-		raise Exception("kind is None; this is a programming error")
+		raise ValueError("kind is None; this is a programming error")
 
 	if selection is None:
 		raise ValueError("selection is None; this is a programming error")
@@ -386,8 +396,6 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			include_control_planes = True
 		elif opt == "--no-header":
 			header = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	selection = args[0].split(",")
 
@@ -470,8 +478,6 @@ def drain_nodes(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 			include_control_planes = True
 		elif opt == "--no-header":
 			header = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	selection = args[0].split(",")
 
@@ -523,8 +529,6 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			include_control_planes = True
 		elif opt == "--no-header":
 			header = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	selection = args[0].split(",")
 
@@ -595,8 +599,6 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			header = False
 		elif opt == "--overwrite":
 			overwrite = True
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	selection = args[0].split(",")
 	taint = args[1]
@@ -721,8 +723,6 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			include_control_planes = True
 		elif opt == "--no-header":
 			header = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	selection = args[0].split(",")
 	taint = args[1]
@@ -826,8 +826,6 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 			from_file = True
 		elif opt == "-Y":
 			confirm = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	if from_file == True:
 		hostfile = args[0]
@@ -1006,8 +1004,6 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			from_file = True
 		elif opt == "-Y":
 			confirm = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	if from_file == True:
 		hostfile = args[0]
@@ -1163,6 +1159,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 						x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
 					except TypeError as e:
 						if "load_pem_x509_certificate() missing 1 required positional argument: 'backend'" in str(e):
+							# This is to handle systems that doesn't have the latest version of cryptography
+							# pylint: disable-next=import-outside-toplevel,no-name-in-module
 							from cryptography.hazmat.primitives import default_backend
 							x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend = default_backend)
 						else:
@@ -1183,7 +1181,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("get_versions.yaml"))), selection = [control_plane_ip])
 	if len(ansible_results) == 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(f": Failed to get package versions from control-plane at {control_plane_ip} (retval: {retval}); aborting.", "default")], stderr = True)
+				ANSIThemeString(f": Failed to get package versions from control plane at {control_plane_ip} (retval: {retval}); aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	tmp = []
@@ -1195,7 +1193,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	if len(tmp) == 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(f": Failed to get package versions from control-plane at {control_plane_ip} (playbook returned no valid data); aborting.", "default")], stderr = True)
+				ANSIThemeString(f": Failed to get package versions from control plane at {control_plane_ip} (playbook returned no valid data); aborting.", "default")], stderr = True)
 		sys.exit(errno.EBADMSG)
 
 	kubeadm_version = ""
@@ -1214,7 +1212,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Failed to get ", "default"),
 				ANSIThemeString("kubeadm", "programname"),
-				ANSIThemeString(f" package version from control-plane at {control_plane_ip}; aborting.", "default")], stderr = True)
+				ANSIThemeString(f" package version from control plane at {control_plane_ip}; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	version_major, version_minor, _rest = kubeadm_version.split(".")
@@ -1300,8 +1298,6 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
 			ansible_configuration["forks"] = optarg
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
@@ -1309,7 +1305,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +\
 			       ansithemestring_join_tuple_list(controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +\
-			       [ANSIThemeString(" are control-plane(s) and should be removed using ", "default"),
+			       [ANSIThemeString(" are control plane(s) and should be removed using ", "default"),
 				ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
@@ -1417,8 +1413,6 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
 			ansible_configuration["forks"] = optarg
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	nodes, _non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
@@ -1426,7 +1420,7 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +\
 			       ansithemestring_join_tuple_list(controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +\
-			       [ANSIThemeString(" are control-plane(s) and should be removed using ", "default"),
+			       [ANSIThemeString(" are control plane(s) and should be removed using ", "default"),
 				ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
@@ -1518,8 +1512,6 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
 			ansible_configuration["forks"] = optarg
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
@@ -1527,7 +1519,7 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +\
 			       ansithemestring_join_tuple_list(controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +\
-			       [ANSIThemeString(" are control-plane(s) and should be upgraded using ", "default"),
+			       [ANSIThemeString(" are control plane(s) and should be upgraded using ", "default"),
 				ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
@@ -1589,8 +1581,6 @@ def get_resource(options: List[Tuple[str, str]], args: List[str]) -> None:
 			namespaces = None
 		elif "--namespace" in opt:
 			namespaces = optarg.split(",")
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	# We might have to get the resources across multiple namespaces, so we need to do multiple requests
 	return
@@ -2293,7 +2283,7 @@ CMT_COMMANDLINE = {
 			 ANSIThemeString("NODE", "argument"),
 			 ANSIThemeString(",", "separator"),
 			 ANSIThemeString("...", "argument")],
-			[ANSIThemeString("to the version on the control-plane(s);", "description")],
+			[ANSIThemeString("to the version on the control plane(s);", "description")],
 			[ANSIThemeString("run this on all nodes after running", "description")],
 			[ANSIThemeString("“", "description"),
 			 ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),

@@ -12,6 +12,46 @@ from typing import Any, Dict, List, NewType, Optional, Union
 FilePath = NewType("FilePath", str)
 DictPath = NewType("DictPath", str)
 
+class UnknownError(Exception):
+	"""
+	Exception raised when an error occurs that we have no further information about
+
+		Attributes:
+			message: Additional information about the error
+	"""
+
+	def __init__(self, message: str) -> None:
+		self.message = message
+		super().__init__(message)
+
+	def __str__(self) -> str:
+		if len(self.message) == 0:
+			message = "No further details were provided"
+		else:
+			message = self.message
+
+		return message
+
+class ProgrammingError(Exception):
+	"""
+	Exception raised when a condition occured that is most likely caused by a programming error
+
+		Attributes:
+			message: Additional information about the error
+	"""
+
+	def __init__(self, message: str) -> None:
+		self.message = message
+		super().__init__(message)
+
+	def __str__(self) -> str:
+		if len(self.message) == 0:
+			message = "No further details were provided"
+		else:
+			message = self.message
+
+		return message
+
 class FilePathAuditError(Exception):
 	"""
 	Exception raised when a security check fails on a FilePath
@@ -202,7 +242,7 @@ def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = F
 	"""
 
 	if dictionary is None or path is None or len(path) == 0:
-		raise Exception(f"deep_set: dictionary {dictionary} or path {path} invalid/unset")
+		raise ValueError(f"deep_set: dictionary {dictionary} or path {path} invalid/unset")
 
 	ref = dictionary
 	pathsplit = path.split("#")
@@ -214,7 +254,7 @@ def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = F
 
 			ref = deep_get(ref, DictPath(pathsplit[i]))
 			if ref is None or not isinstance(ref, dict):
-				raise Exception(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
+				raise ValueError(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
 		elif create_path == True:
 			if i == len(pathsplit) - 1:
 				ref[pathsplit[i]] = value

@@ -12,7 +12,8 @@ import cmtio
 from cmttypes import FilePath, SecurityChecks
 
 # pylint: disable-next=too-many-arguments
-def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions: Optional[int] = None, replace_empty: bool = False, replace_null: bool = False, sort_keys: bool = True, write_mode: str = "w") -> None:
+def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions: Optional[int] = None, \
+		      replace_empty: bool = False, replace_null: bool = False, sort_keys: bool = True, write_mode: str = "w") -> None:
 	"""
 	Dump a dict to a file in YAML-format in a safe manner
 

@@ -20,7 +20,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-from cmttypes import deep_get, DictPath, FilePath
+from cmttypes import deep_get, DictPath, FilePath, ProgrammingError, UnknownError
 from cmtpaths import HOMEDIR, SSH_DIR
 from cmtpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
 
@@ -59,10 +59,6 @@ def set_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	del options
 
 	hostvars = []
-	hosts = []
-
-	if args is None or len(args) == 0:
-		raise Exception("Programming error; no hosts provided")
 
 	hosts = args[1].split(",")
 	keyvals = args[0].split(",")
@@ -89,7 +85,7 @@ def set_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if len(hostvars) > 0:
 		retval = ansible_set_hostvars(inventory = ANSIBLE_INVENTORY, hosts = hosts, hostvars = hostvars)
 		if retval == False:
-			raise Exception(f"Programming error: failed to set vars for hosts {hosts}")
+			raise ProgrammingError(f"Programming error: failed to set vars for hosts {hosts}")
 
 	return 0
 
@@ -107,10 +103,6 @@ def set_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	del options
 
 	groupvars = []
-	groups = []
-
-	if args is None or len(args) == 0:
-		raise Exception("Programming error; no groups provided")
 
 	groups = args[1].split(",")
 	keyvals = args[0].split(",")
@@ -137,7 +129,7 @@ def set_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if len(groupvars) > 0:
 		retval = ansible_set_groupvars(inventory = ANSIBLE_INVENTORY, groups = groups, groupvars = groupvars)
 		if retval == False:
-			raise Exception(f"Programming error: failed to set vars for groups {groups}")
+			raise ProgrammingError(f"Programming error: failed to set vars for groups {groups}")
 
 	return 0
 
@@ -167,12 +159,6 @@ def unset_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	del options
 
-	hostvars = []
-	hosts = []
-
-	if args is None or len(args) == 0:
-		raise Exception("Programming error; no hosts provided")
-
 	hosts = args[1].split(",")
 	hostvars = args[0].split(",")
 
@@ -180,7 +166,7 @@ def unset_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if len(hostvars) > 0:
 		retval = ansible_unset_hostvars(inventory = ANSIBLE_INVENTORY, hosts = hosts, hostvars = hostvars)
 		if retval == False:
-			raise Exception(f"Programming error: failed to unset vars for hosts {hosts}")
+			raise ProgrammingError(f"Programming error: failed to unset vars for hosts {hosts}")
 
 	return 0
 
@@ -197,12 +183,6 @@ def unset_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	del options
 
-	groupvars = []
-	groups = []
-
-	if args is None or len(args) == 0:
-		raise Exception("Programming error; no groups provided")
-
 	groups = args[1].split(",")
 	groupvars = args[0].split(",")
 
@@ -210,7 +190,7 @@ def unset_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if len(groupvars) > 0:
 		retval = ansible_unset_groupvars(inventory = ANSIBLE_INVENTORY, groups = groups, groupvars = groupvars)
 		if retval == False:
-			raise Exception(f"Programming error: failed to unset vars for groups {groups}")
+			raise ProgrammingError(f"Programming error: failed to unset vars for groups {groups}")
 
 	return 0
 
@@ -237,11 +217,7 @@ def add_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0
 	"""
 
-	groups = []
 	groupvars = []
-
-	if args is None or len(args) == 0:
-		raise Exception("Programming error; no groups provided")
 
 	groups = args[0].split(",")
 
@@ -261,20 +237,18 @@ def add_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 			for var in tmp:
 				key, value = var.split(":")
 				groupvars.append((key, value))
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	# Add the groups
 	retval = ansible_create_groups(inventory = ANSIBLE_INVENTORY, groups = groups)
 
 	if retval == False:
-		raise Exception(f"Programming error: failed to add {groups} to inventory")
+		raise ProgrammingError(f"Programming error: failed to add {groups} to inventory")
 
 	# Set vars
 	if len(groupvars) > 0:
 		retval = ansible_set_groupvars(inventory = ANSIBLE_INVENTORY, groups = groups, groupvars = groupvars)
 		if retval == False:
-			raise Exception(f"Programming error: failed to set vars {groupvars} for groups {groups}")
+			raise ProgrammingError(f"Programming error: failed to set vars {groupvars} for groups {groups}")
 
 	return 0
 
@@ -291,10 +265,6 @@ def add_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	groups = []
 	hostvars = []
-	hosts = []
-
-	if args is None or len(args) == 0:
-		raise Exception("Programming error; no hosts provided")
 
 	hosts = args[0].split(",")
 
@@ -327,8 +297,6 @@ def add_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 						ANSIThemeString("“ for more information.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 			groups = optarg.split(",")
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	retval = True
 	# Add the host to every specified group
@@ -336,7 +304,7 @@ def add_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, skip_all = False)
 
 		if retval == False:
-			raise Exception(f"Programming error: failed to add {hosts}")
+			raise ProgrammingError(f"Programming error: failed to add {hosts}")
 	else:
 		group = ""
 
@@ -344,13 +312,13 @@ def add_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 			retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group, skip_all = False)
 
 		if retval == False:
-			raise Exception(f"Programming error: failed to add {hosts} to group {group}")
+			raise ProgrammingError(f"Programming error: failed to add {hosts} to group {group}")
 
 	# Set vars
 	if len(hostvars) > 0:
 		retval = ansible_set_hostvars(inventory = ANSIBLE_INVENTORY, hosts = hosts, hostvars = hostvars)
 		if retval == False:
-			raise Exception(f"Programming error: failed to set vars for hosts {hosts}")
+			raise ProgrammingError(f"Programming error: failed to set vars for hosts {hosts}")
 
 	return 0
 
@@ -387,21 +355,15 @@ def remove_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0
 	"""
 
-	groups = []
 	extrahosts = []
 	forceneeded = False
 	force = False
-
-	if args is None or len(args) == 0:
-		raise Exception("Programming error; no groups provided")
 
 	groups = args[0].split(",")
 
 	for opt, _optarg in options:
 		if opt == "--force":
 			force = True
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	if "all" in groups:
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -441,7 +403,7 @@ def remove_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 	retval = ansible_remove_groups(inventory = ANSIBLE_INVENTORY, groups = groups, force = force)
 
 	if retval == False:
-		raise Exception(f"Programming error: failed to remove {groups}")
+		raise ProgrammingError(f"Programming error: failed to remove {groups}")
 
 	return 0
 
@@ -489,8 +451,6 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 	for opt, _optarg in options:
 		if opt == "--force":
 			force = True
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	# Is there a pre-existing inventory?
 	if Path(ANSIBLE_INVENTORY).is_file() and force == False:
@@ -540,7 +500,7 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 			retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group, skip_all = False)
 
 		if retval == False:
-			raise Exception(f"Programming error: failed to add {hosts} to group {group}")
+			raise ProgrammingError(f"Programming error: failed to add {hosts} to group {group}")
 
 	# Finally import the hostkey into authorized_keys
 	pubkey = None
@@ -575,14 +535,10 @@ def remove_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0
 	"""
 
-	hosts = []
 	groups = ["all"]
 	extragroups = []
 	forceneeded = False
 	force = False
-
-	if args is None or len(args) == 0:
-		raise Exception("Programming error; no hosts provided")
 
 	hosts = args[0].split(",")
 
@@ -609,8 +565,6 @@ def remove_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	for opt, _optarg in options:
 		if opt == "--force":
 			force = True
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	if "all" in groups and forceneeded == True and (force == False or len(groups) > 1):
 		if forceneeded == True:
@@ -646,7 +600,7 @@ def remove_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		retval = ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group)
 
 		if retval == False:
-			raise Exception(f"Programming error: failed to remove {hosts} to group {group}")
+			raise ProgrammingError(f"Programming error: failed to remove {hosts} to group {group}")
 
 	return 0
 
@@ -668,8 +622,6 @@ def inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if opt == "--include-vars":
 			include_groupvars = True
 			include_hostvars = True
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	groups = None
 
@@ -699,8 +651,6 @@ def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 	for opt, _optarg in options:
 		if opt == "--include-vars":
 			include_groupvars = True
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	for item in ansible_get_inventory_pretty(groups = None, highlight = True, include_groupvars = include_groupvars, include_hosts = False):
 		ansithemeprint(item)
@@ -725,8 +675,6 @@ def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	for opt, _optarg in options:
 		if opt == "--include-vars":
 			include_hostvars = True
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	groups = ["all"]
 
@@ -783,7 +731,7 @@ def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 	output = ansible_ping(selection = selection)
 
 	if output is None or len(output) == 0:
-		raise Exception("Internal error; ansible -m ping failed")
+		raise UnknownError("Internal error; ansible -m ping failed")
 
 	maxlen = 0
 

@@ -545,15 +545,15 @@ def get_dict_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: D
 		tmp_vlist.append({"key": key, "value": value})
 
 	for item in tmp_vlist:
-		obj = []
+		newobj: List[Tuple] = []
 		for field in fields:
 			tmp = deep_get(item, DictPath(field))
 			if tmp is not None:
 				tmp = str(tmp)
 			else:
 				tmp = "<none>"
-			obj.append(tmp)
-		vlist.append(tuple(obj))
+			newobj.append(tmp)
+		vlist.append(tuple(newobj))
 
 	return vlist
 
@@ -613,7 +613,7 @@ def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs:
 					else:
 						value = _value
 				else:
-					raise Exception(f"Unhandled type {type(_value)} for {field}={value}")
+					raise ValueError(f"Unhandled type {type(_value)} for {field}={value}")
 				tmp.append(value)
 			if pass_ref == True:
 				vlist.append({"fields": tmp, "ref": item})

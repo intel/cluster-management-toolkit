@@ -6,10 +6,9 @@ This file contains helpers that provide an obj for use in info views,
 for cases where the obj provided from the list view is not sufficient
 """
 
-from datetime import datetime
 from pathlib import Path, PurePath
 import sys
-from typing import Dict, List, Union
+from typing import Dict, List
 # ujson is much faster than json,
 # but it might not be available
 try:
@@ -38,7 +37,7 @@ def objgetter_ansible_facts(obj: Dict) -> Dict:
 		Parameters:
 			obj (dict): The obj to use as reference
 		Returns:
-			obj (dict): An ansible facts object
+			ar (dict): An ansible facts object
 	"""
 
 	hostname = deep_get(obj, DictPath("name"), "")
@@ -56,6 +55,15 @@ def objgetter_ansible_facts(obj: Dict) -> Dict:
 	return ar
 
 def objgetter_journalctl_log(obj: List[Dict]) -> Dict:
+	"""
+		Format a journalctl log message
+
+		Parameters:
+			obj (dict): The obj to get data from
+		Returns:
+			data (dict): A journalctl facts object
+	"""
+
 	data = {
 		# This should only be logs from one host, so we can get the hostname
 		"name": deep_get(obj[0], DictPath("name")),

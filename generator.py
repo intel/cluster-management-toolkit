@@ -350,9 +350,9 @@ def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selecte
 		string = str(separator)
 		separator_lookup[string] = separator
 
-	array = []
-	field_colors = []
-	field_separators = []
+	array: List[Union[ThemeRef, ThemeString]] = []
+	field_colors: List[ThemeAttr] = []
+	field_separators: List[ThemeRef] = []
 
 	subnet = False
 

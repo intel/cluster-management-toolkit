@@ -63,6 +63,8 @@ import formatter as formatters # pylint: disable=wrong-import-order,deprecated-m
 
 from curses_helper import themearray_to_string, ThemeAttr, ThemeRef, ThemeString
 
+from ansithemeprint import ANSIThemeString
+
 class logparser_configuration:
 	"""
 	Various configuration options used by the logparsers
@@ -822,15 +824,15 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 			ThemeString(f" {number3}", ThemeAttr("logview", "severity_info")),
 			ThemeString(f" {number4} \"", ThemeAttr("logview", "severity_info")),
 			ThemeString(f"{client}", ThemeAttr("logview", "url")),
-			ThemeString(f"\" \"", ThemeAttr("logview", "severity_info")),
+			ThemeString("\" \"", ThemeAttr("logview", "severity_info")),
 			ThemeString(str0, ThemeAttr("logview", "url")),
-			ThemeString(f"\" \"", ThemeAttr("logview", "severity_info")),
+			ThemeString("\" \"", ThemeAttr("logview", "severity_info")),
 			ThemeString(str1, ThemeAttr("logview", "url")),
-			ThemeString(f"\" \"", ThemeAttr("logview", "severity_info")),
+			ThemeString("\" \"", ThemeAttr("logview", "severity_info")),
 			ThemeString(str2, ThemeAttr("logview", "url")),
-			ThemeString(f"\" \"", ThemeAttr("logview", "severity_info")),
+			ThemeString("\" \"", ThemeAttr("logview", "severity_info")),
 			ThemeString(str3, ThemeAttr("logview", "url")),
-			ThemeString(f"\"", ThemeAttr("logview", "severity_info")),
+			ThemeString("\"", ThemeAttr("logview", "severity_info")),
 		]
 		return new_message, severity, facility
 
@@ -1330,7 +1332,7 @@ def custom_override_severity(message: Union[str, List], severity: Optional[LogLe
 			if tmp is None:
 				continue
 		else:
-			raise Exception(f"Unknown override_type '{override_type}'; this is a programming error.")
+			raise ValueError(f"Unknown override_type '{override_type}'; this is a programming error.")
 
 		severity = override_loglevel
 
@@ -1503,7 +1505,7 @@ def expand_header_key_value(message: str, severity: LogLevel, remnants = None, f
 			# Now add key: value into the dict
 			if tmp2[1].startswith("”"):
 				if not tmp2[1].endswith("”"):
-					raise Exception(f"expand_header_key_value(): unbalanced quotes in item: {item}")
+					raise ValueError(f"expand_header_key_value(): unbalanced quotes in item: {item}")
 
 				res[tmp2[0]] = tmp2[1][1:-1]
 			else:
@@ -1782,6 +1784,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 						tmp.append(format_key_value(d_key, d_value, LogLevel.NOTICE, force_severity = True))
 					else:
 						d_value, __severity = custom_override_severity(d_value, severity, overrides = severity_overrides)
+						# pylint: disable-next=superfluous-parens
 						tmp.append(format_key_value(d_key, d_value, __severity, force_severity = (__severity != severity)))
 				else:
 					tmp.append(f"{d_key}={d_value}")
@@ -2015,7 +2018,7 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 					ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_dir")),
 				]
 			else:
-				raise Exception("Unhandled suffix {suffix} in line {message}")
+				raise ValueError(f"Unhandled suffix {suffix} in line {message}")
 	# pipe
 	elif etype == "p":
 		_message += [
@@ -2390,7 +2393,7 @@ def raw_formatter(message: str, severity: Optional[LogLevel] = None, facility: s
 	format_rules = deep_get(options, DictPath("format_rules"), {})
 
 	if len(format_rules) == 0:
-		raise Exception("format_rules is empty")
+		raise ValueError("format_rules is empty")
 
 	# Iterate until first matching rule, if any
 	for format_rule in format_rules:
@@ -2438,7 +2441,7 @@ def custom_splitter(message: str, severity: Optional[LogLevel] = None, facility:
 
 	# The bare minimum for these rules is
 	if compiled_regex is None or message_field is None:
-		raise Exception("parser rule is missing regex or message field")
+		raise ValueError("parser rule is missing regex or message field")
 
 	tmp = compiled_regex.match(message)
 
@@ -2612,7 +2615,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser_rules")
 parsers = []
 
-def init_parser_list() -> bool:
+def init_parser_list():
 	"""
 	Initialise the list of parsers
 	"""
@@ -2816,7 +2819,7 @@ def logparser_initialised(parser: Optional[Parser] = None, message: str = "", fo
 	message, timestamp = split_iso_timestamp(message, none_timestamp())
 
 	if parser is None:
-		raise Exception("logparser_initialised called with parser == None")
+		raise ValueError("logparser_initialised() called with parser == None")
 
 	options = {
 		"__line": line,

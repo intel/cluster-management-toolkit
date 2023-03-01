@@ -625,7 +625,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 	"""
 
 	if upgradetype not in ("CNI", "executable"):
-		raise Exception(f"Unknown upgradetype {upgradetype}; this is a programming error.")
+		raise ValueError(f"Unknown upgradetype {upgradetype}; this is a programming error.")
 
 	# FIXME: for now we hardcode this
 	arch = "amd64"
@@ -661,6 +661,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 								  candidate_version_regex)
 
 	if "urls" in deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}")):
+		# pylint: disable-next=too-many-boolean-expressions
 		if (version is None or len(version) == 0) or version is not None and (candidate_version is None or len(candidate_version) == 0) or version < candidate_version:
 			new_version = "".join(candidate_version)
 
@@ -929,8 +930,6 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 		if opt == "install":
 			install_cni = True
 			action_str = "Installing"
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	if cni not in cni_upgrade_data:
 		ansithemeprint([ANSIThemeString(f"{action_str} ", "default"),
@@ -986,7 +985,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 
 	url = deep_get(cni_data, DictPath(f"{cni}#url"))
 	if url is None:
-		raise Exception(f"URL for {cni} is empty; this is a programming error.")
+		raise ValueError(f"URL for {cni} is empty; this is a programming error.")
 
 	checksum_url = deep_get(cni_data, DictPath(f"{cni}#checksum_url"))
 	checksum_type = deep_get(cni_data, DictPath(f"{cni}#checksum_type"))
@@ -1005,7 +1004,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 	patch_cni = deep_get(cni_data, DictPath(f"{cni}#patch_cni"), None)
 	filetype = deep_get(cni_data, DictPath(f"{cni}#type"))
 	if filetype is None:
-		raise Exception(f"type for {cni} is missing; this is a programming error.")
+		raise ValueError(f"type for {cni} is missing; this is a programming error.")
 	if filetype == "yaml":
 		secure_mkdir(DEPLOYMENT_DIR)
 		directory = FilePath(os.path.join(DEPLOYMENT_DIR, "cni"))
@@ -1453,7 +1452,7 @@ def __playbook_paths_from_path(playbook_path: FilePath) -> List[FilePath]:
 	"""
 
 	if playbook_path is None:
-		raise Exception("No path passed to __playbook_paths_from_path; this is a programming error.")
+		raise ValueError("No path passed to __playbook_paths_from_path(); this is a programming error.")
 
 	playbook_paths = []
 
@@ -2263,7 +2262,7 @@ def __find_requested_version(distro: str, version: Optional[str] = None) -> str:
 					ANSIThemeString("; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 	else:
-		raise Exception("No support for other distros implemented")
+		raise ValueError(f"No support for distro {distro} implemented")
 
 	_major, minor, _patchrev = requested_version.split(".")
 	if int(minor) < 15:
@@ -2602,8 +2601,6 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 	for opt, _optarg in options:
 		if opt == "--no-cache-update":
 			update_cache = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	ansithemeprint([ANSIThemeString("\n[Checking for software updates]", "phase")])
 
@@ -3673,8 +3670,6 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 	for opt, optarg in options:
 		if opt == "--usergroup":
 			usergroup = optarg
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	kwargs = {
 		"usergroup": usergroup
@@ -3717,9 +3712,7 @@ def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 	global no_password # pylint: disable=global-statement
 
 	for opt, _optarg in options:
-		if opt == "-Y":
-			confirm = False
-		elif opt == "--no-password":
+		if opt == "--no-password":
 			no_password = True
 
 	control_planes = [args[0]]

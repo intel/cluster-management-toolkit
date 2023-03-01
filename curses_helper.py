@@ -26,7 +26,7 @@ except ModuleNotFoundError:
 from cmtio import check_path, join_securitystatus_set
 from cmtio_yaml import secure_read_yaml
 from cmtlog import CMTLogType, CMTLog
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, LogLevel, Retval
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, ProgrammingError, LogLevel, Retval
 from cmttypes import SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
 
 from ansithemeprint import ANSIThemeString, ansithemeprint
@@ -68,17 +68,17 @@ class ThemeString:
 					 ANSIThemeString(" initialised with invalid argument(s):",  "error")],
 					[ANSIThemeString("string (type: ", "error")],
 					[ANSIThemeString(f"{type(string)}", "argument")],
-					[ANSIThemeString(f", expected str):", "error")],
+					[ANSIThemeString(", expected str):", "error")],
 					[ANSIThemeString(f"{string}", "default")],
 					[ANSIThemeString("themeattr (type: ", "error")],
 					[ANSIThemeString(f"{type(themeattr)}", "argument")],
-					[ANSIThemeString(f", expected ThemeAttr):", "error")],
+					[ANSIThemeString(", expected ThemeAttr):", "error")],
 					[ANSIThemeString(f"{themeattr}", "default")],
 					[ANSIThemeString("selected (type: ", "error")],
 					[ANSIThemeString(f"{type(selected)}", "argument")],
-					[ANSIThemeString(f", expected bool):", "error")],
+					[ANSIThemeString(", expected bool):", "error")],
 					[ANSIThemeString(f"{selected}", "default")],
-					[ANSIThemeString(f"Backtrace:", "error")],
+					[ANSIThemeString("Backtrace:", "error")],
 					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise TypeError(f"ThemeString only accepts (str, ThemeAttr[, bool]); received ThemeString({string}, {themeattr}, selected)")
@@ -132,17 +132,17 @@ class ThemeRef:
 					 ANSIThemeString(" initialised with invalid argument(s):",  "error")],
 					[ANSIThemeString("context (type: ", "error")],
 					[ANSIThemeString(f"{type(context)}", "argument")],
-					[ANSIThemeString(f", expected str):", "error")],
+					[ANSIThemeString(", expected str):", "error")],
 					[ANSIThemeString(f"{context}", "default")],
 					[ANSIThemeString("key (type: ", "error")],
 					[ANSIThemeString(f"{type(key)}", "argument")],
-					[ANSIThemeString(f", expected str):", "error")],
+					[ANSIThemeString(", expected str):", "error")],
 					[ANSIThemeString(f"{key}", "default")],
 					[ANSIThemeString("selected (type: ", "error")],
 					[ANSIThemeString(f"{type(selected)}", "argument")],
-					[ANSIThemeString(f", expected bool):", "error")],
+					[ANSIThemeString(", expected bool):", "error")],
 					[ANSIThemeString(f"{selected}", "default")],
-					[ANSIThemeString(f"Backtrace:", "error")],
+					[ANSIThemeString("Backtrace:", "error")],
 					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise TypeError("ThemeRef only accepts (str, str[, bool])")
@@ -159,8 +159,8 @@ class ThemeRef:
 					[ANSIThemeString(f"{self.context}", "argument")],
 					[ANSIThemeString(", ", "error")],
 					[ANSIThemeString(f"{self.key}", "argument")],
-					[ANSIThemeString(f") does not exist.", "error")],
-					[ANSIThemeString(f"Backtrace:", "error")],
+					[ANSIThemeString(") does not exist.", "error")],
+					[ANSIThemeString("Backtrace:", "error")],
 					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise ValueError(f"The ThemeRef(\"{self.context}\", \"{self.key}\") does not exist")
@@ -190,8 +190,8 @@ class ThemeRef:
 					[ANSIThemeString(f"{self.context}", "argument")],
 					[ANSIThemeString(", ", "error")],
 					[ANSIThemeString(f"{self.key}", "argument")],
-					[ANSIThemeString(f") does not exist.", "error")],
-					[ANSIThemeString(f"Backtrace:", "error")],
+					[ANSIThemeString(") does not exist.", "error")],
+					[ANSIThemeString("Backtrace:", "error")],
 					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise ValueError(f"The ThemeRef(\"{self.context}\", \"{self.key}\") does not exist")
@@ -235,7 +235,7 @@ class ThemeArray:
 						 ANSIThemeString(f"{type(item)}", "argument"),
 						 ANSIThemeString("; substring:", "error")],
 						[ANSIThemeString(f"{item}", "default")],
-						[ANSIThemeString(f"Backtrace:", "error")],
+						[ANSIThemeString("Backtrace:", "error")],
 						[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 				       ], severity = LogLevel.ERR, facility = str(themefile))
 				raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
@@ -263,7 +263,7 @@ class ThemeArray:
 					 ANSIThemeString(f"{type(item)}", "argument"),
 					 ANSIThemeString("; substring:", "error")],
 					[ANSIThemeString(f"{item}", "default")],
-					[ANSIThemeString(f"Backtrace:", "error")],
+					[ANSIThemeString("Backtrace:", "error")],
 					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
@@ -447,26 +447,26 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 		curses.init_pair(color_nr, fg, bg)
 		if fg == bg:
 			CMTLog(CMTLogType.DEBUG, [
-					[ANSIThemeString(f"__init_pair()", "emphasis"),
+					[ANSIThemeString("__init_pair()", "emphasis"),
 					 ANSIThemeString(" called with a color pair where fg == bg (",  "error"),
 					 ANSIThemeString(f"{fg}", "argument"),
 					 ANSIThemeString(",", "error"),
 					 ANSIThemeString(f"{bg}", "argument"),
 					 ANSIThemeString(")", "error")],
-					[ANSIThemeString(f"Backtrace:", "error")],
+					[ANSIThemeString("Backtrace:", "error")],
 					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 	except (curses.error, ValueError) as e:
 		if str(e) in ("init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
 			CMTLog(CMTLogType.DEBUG, [
-					[ANSIThemeString(f"init_pair()", "emphasis"),
+					[ANSIThemeString("init_pair()", "emphasis"),
 					 ANSIThemeString(" failed; attempting to limit fg & bg to ",  "error"),
 					 ANSIThemeString("0", "argument"),
 					 ANSIThemeString("-", "error"),
 					 ANSIThemeString("7", "argument"),
 					 ANSIThemeString(")", "error")],
-					[ANSIThemeString(f"Backtrace:", "error")],
+					[ANSIThemeString("Backtrace:", "error")],
 					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			       ], severity = LogLevel.DEBUG, facility = str(themefile))
 
@@ -479,13 +479,13 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 				bright_black_remapped = True
 			if fg & 7 == bg & 7:
 				CMTLog(CMTLogType.DEBUG, [
-						[ANSIThemeString(f"__init_pair()", "emphasis"),
+						[ANSIThemeString("__init_pair()", "emphasis"),
 						 ANSIThemeString(" called with a color pair where fg == bg (",  "error"),
 						 ANSIThemeString(f"{fg}", "argument"),
 						 ANSIThemeString(",", "error"),
 						 ANSIThemeString(f"{bg}", "argument"),
 						 ANSIThemeString(f"{bright_black_remapped}", "argument")],
-						[ANSIThemeString(f"Backtrace:", "error")],
+						[ANSIThemeString("Backtrace:", "error")],
 						[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 				       ], severity = LogLevel.ERR, facility = str(themefile))
 				raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg}; bright black remapped: {bright_black_remapped})") from e
@@ -1359,8 +1359,8 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 				[ANSIThemeString(f"{col}", "argument")],
 				[ANSIThemeString(", ", "error")],
 				[ANSIThemeString(f"{selected}", "argument")],
-				[ANSIThemeString(f").", "error")],
-				[ANSIThemeString(f"Backtrace:", "error")],
+				[ANSIThemeString(").", "error")],
+				[ANSIThemeString("Backtrace:", "error")],
 				[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 		       ], severity = LogLevel.ERR, facility = str(themefile))
 		raise KeyError(f"themeattr_to_curses: (color: {col}, selected: {selected}) not found")
@@ -1426,7 +1426,7 @@ def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected:
 					 ANSIThemeString(f"{type(substring)}", "argument"),
 					 ANSIThemeString("; substring:", "error")],
 					[ANSIThemeString(f"{substring}", "default")],
-					[ANSIThemeString(f"Backtrace:", "error")],
+					[ANSIThemeString("Backtrace:", "error")],
 					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise TypeError(f"themearray_flatten() called with invalid type {type(substring)}")
@@ -1660,6 +1660,8 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 	while selection is None:
 		for _y, item in enumerate(items):
 			if cursor == True:
+				# These parentheses helps readability
+				# pylint: disable-next=superfluous-parens
 				_selected = (yoffset + curypos == _y)
 			else:
 				_selected = False
@@ -1682,9 +1684,9 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 						tmpstring = str(string)
 						attribute = string.themeattr
 					else:
-						sys.exit(f"In windowwidget(); we want to get rid of this: items={items}")
-						tmpstring = string[0]
-						attribute = string[1]
+						raise ProgrammingError(f"In windowwidget(); we want to get rid of this: items={items}")
+						#tmpstring = string[0]
+						#attribute = string[1]
 					strlen = len(tmpstring)
 					length += strlen
 
@@ -2493,7 +2495,7 @@ class UIProps:
 	def recalculate_logpad_xpos(self, tspadxpos: int = -1, timestamps: Optional[bool] = None) -> None:
 		if tspadxpos == -1:
 			if self.tspadxpos is None:
-				raise Exception("logpad is not initialised and no tspad xpos provided")
+				raise ProgrammingError("logpad is not initialised and no tspad xpos provided")
 
 		if timestamps is None:
 			timestamps = self.tspadxpos != self.logpadxpos
@@ -2655,6 +2657,7 @@ class UIProps:
 		else:
 			self.statusbar = curses.newpad(2, self.maxx + 1)
 
+	# pylint: disable-next=too-many-arguments
 	def addthemearray(self, win: curses.window,
 			  array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
 		"""
@@ -2755,7 +2758,7 @@ class UIProps:
 			self.curypos = self.mincurypos
 			self.yoffset = 0
 		else:
-			raise Exception("FIXME")
+			raise ProgrammingError("FIXME")
 		self.list_needs_regeneration(True)
 
 	def move_cur_with_offset(self, movement: int) -> None:

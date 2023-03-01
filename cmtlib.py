@@ -159,9 +159,13 @@ def read_cmtconfig() -> Dict:
 			cmtconfig (Dict): A reference to the global cmtconfig dict
 	"""
 
+	# This is for the benefit of avoiding dependency cycles
+	# pylint: disable-next=import-outside-toplevel
 	import cmtio_yaml
 
 	try:
+		# This is for the benefit of avoiding dependency cycles
+		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
 	except ModuleNotFoundError:
 		sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
@@ -236,7 +240,7 @@ def age_to_seconds(age: str) -> int:
 			s = 0 if tmp[4] is None else int(tmp[4][:-1])
 			seconds = d * 24 * 60 * 60 + h * 60 * 60 + m * 60 + s
 	else:
-		raise Exception(f"age regex did not match; age: {age}")
+		raise ValueError(f"age regex did not match; age: {age}")
 
 	return seconds
 
@@ -517,7 +521,7 @@ def __extract_version(line: str) -> str:
 
 	tmp = line.split("|")
 	if len(tmp) != 3:
-		raise Exception("Error: Failed to extract a version; this is (most likely) a programming error.")
+		raise ValueError("Error: Failed to extract a version; this is (most likely) a programming error.")
 	return tmp[1].strip()
 
 def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, List[str]]]:
@@ -531,6 +535,8 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 	"""
 
 	try:
+		# This is for the benefit of avoiding dependency cycles
+		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
 	except ModuleNotFoundError:
 		sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")

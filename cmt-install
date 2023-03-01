@@ -18,7 +18,7 @@ from subprocess import PIPE, STDOUT
 import sys
 from typing import Dict, List, Set, Tuple
 
-from cmttypes import deep_get, DictPath, FilePath, LogLevel, SecurityPolicy
+from cmttypes import deep_get, DictPath, FilePath, SecurityPolicy
 from cmtpaths import BINDIR, HOMEDIR, CMTDIR, CMT_LOGS_DIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, CMT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIRNAME, CMT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
@@ -177,7 +177,6 @@ def install_software(packages: Dict, verbose: bool = False) -> None:
 	for pkg, data in packages.items():
 		recommended_minimum = deep_get(data, DictPath("recommended minimum"), "")
 		reason = deep_get(data, DictPath("reason"), "")
-		severity = deep_get(data, DictPath("severity"), LogLevel.ERR)
 		if len(recommended_minimum) == 0:
 			continue
 		args = [apt_cache_path, "policy"] + [pkg]
@@ -319,8 +318,6 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 			pip_proxy = optarg
 		elif opt == "-Y":
 			confirm = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	if confirm == True:
 		ansithemeprint([ANSIThemeString("Important:", "warning"),

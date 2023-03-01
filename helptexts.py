@@ -6,7 +6,6 @@ This module contains helptexts for cmu
 
 from about import PROGRAM_SUITE_FULL_NAME, PROGRAM_SUITE_VERSION, UI_PROGRAM_NAME, UI_PROGRAM_VERSION
 
-from ansithemeprint import ANSIThemeString
 from curses_helper import ThemeAttr, ThemeString
 
 # Improve to handle embedded color codes; probably through storing the log messages
@@ -191,50 +190,3 @@ containerinfo = [
 	("[Tab]", "Jump to next elevated severity"),
 	("[Shift] + [Tab]", "Jump to previous elevated severity"),
 ] + spacer + logmovement
-
-usage  = [ANSIThemeString("[", "separator"), ANSIThemeString("COMMAND", "command"), ANSIThemeString("]", "separator"),
-	  ANSIThemeString(" [", "separator"), ANSIThemeString("OPTION", "option"), ANSIThemeString("]", "separator"), ANSIThemeString("...", "option"),
-	  ANSIThemeString(" [", "separator"), ANSIThemeString("ARGUMENT", "argument"), ANSIThemeString("]", "separator"), ANSIThemeString("...\n", "argument")]
-usage += [ANSIThemeString("\n", "description")]
-usage += [ANSIThemeString("UI for managing Kubernetes clusters\n", "description")]
-usage += [ANSIThemeString("\n", "description")]
-usage += [ANSIThemeString("VIEW", "command"),
-          ANSIThemeString("                     start in ", "description"), ANSIThemeString("VIEW\n", "command")]
-usage += [ANSIThemeString("VIEW ", "command"), ANSIThemeString("NAME ", "argument"),
-	  ANSIThemeString("[", "separator"), ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString("]", "separator"),
-          ANSIThemeString("    start in ", "description"), ANSIThemeString("VIEW", "command"),
-	  ANSIThemeString(" for the object matching\n", "description")]
-usage += [ANSIThemeString("                         NAME", "argument"), ANSIThemeString(" and, optionally, ", "description"), ANSIThemeString("NAMESPACE\n", "argument")]
-usage += [ANSIThemeString("VIEW ", "command"), ANSIThemeString("NAMESPACE/NAME", "argument"),
-          ANSIThemeString("      same as above; alternate syntax\n", "description")]
-usage += [ANSIThemeString("pod ", "command"), ANSIThemeString("NAME NAMESPACE CONTAINER\n", "argument")]
-usage += [ANSIThemeString("pod ", "command"), ANSIThemeString("[", "separator"), ANSIThemeString("NAMESPACE/", "argument"), ANSIThemeString("]", "separator"),
-	  ANSIThemeString("NAME:", "argument"), ANSIThemeString("[", "separator"), ANSIThemeString("CONTAINER", "argument"), ANSIThemeString("]\n", "separator")]
-usage += [ANSIThemeString("                         start in container info view matching\n", "description")]
-usage += [ANSIThemeString("                         NAME", "argument"), ANSIThemeString(", ", "description"),
-	  ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString(", ", "description"),
-	  ANSIThemeString("CONTAINER", "argument"), ANSIThemeString("\n", "description")]
-usage += [ANSIThemeString("configmap ", "command"), ANSIThemeString("NAME NAMESPACE CONFIGMAP\n", "argument")]
-usage += [ANSIThemeString("configmap ", "command"), ANSIThemeString("[", "separator"), ANSIThemeString("NAMESPACE/", "argument"), ANSIThemeString("]", "separator"), # pylint: disable=line-too-long
-	  ANSIThemeString("NAME:", "argument"), ANSIThemeString("[", "separator"), ANSIThemeString("CONFIGMAP", "argument"), ANSIThemeString("]\n", "separator")]
-usage += [ANSIThemeString("                         start in the configmap info view matching\n", "description")]
-usage += [ANSIThemeString("                         NAME", "argument"), ANSIThemeString(", ", "description"),
-	  ANSIThemeString("NAMESPACE", "argument"), ANSIThemeString(", ", "description"),
-	  ANSIThemeString("CONFIGMAP", "argument"), ANSIThemeString("\n", "description")]
-usage += [ANSIThemeString("\n", "description")]
-usage += [ANSIThemeString("list-views     ", "command"),
-          ANSIThemeString("          list view information and exit\n", "description")]
-usage += [ANSIThemeString("list-namespaces", "command"),
-          ANSIThemeString("          list valid namespaces and exit\n", "description")]
-usage += [ANSIThemeString("\n", "description")]
-usage += [ANSIThemeString("Global Options:\n", "description")]
-usage += [ANSIThemeString("  --read-only ", "option"),
-          ANSIThemeString("           disable all commands that modify state", "description")]
-usage += [ANSIThemeString("\n", "description")]
-usage += [ANSIThemeString("  --namespace ", "option"), ANSIThemeString("NAMESPACE", "argument"),
-          ANSIThemeString("  only show namespace ", "description"), ANSIThemeString("NAMESPACE\n", "argument")]
-usage += [ANSIThemeString("\n", "description")]
-usage += [ANSIThemeString("help", "command"), ANSIThemeString("|", "separator"), ANSIThemeString("--help", "command"),
-          ANSIThemeString("              display this help and exit\n", "description")]
-usage += [ANSIThemeString("version", "command"), ANSIThemeString("|", "separator"), ANSIThemeString("--version", "command"),
-          ANSIThemeString("        output version information and exit\n", "description")]
