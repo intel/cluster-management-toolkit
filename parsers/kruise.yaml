@@ -1,0 +1,12 @@
+- name: "kruise"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "kruise-daemon"
+  parser_rules:
+  - name: "glog"
+- name: "kruise"
+  matchkeys:
+  - pod_name: "kruise-controller-manager"
+  parser_rules:
+  - name: "glog"
+  - name: "key_value_with_leading_message"
