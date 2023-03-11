@@ -7,14 +7,14 @@ listview:
   group: "Workloads"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "controller", "phase", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
-      sortcolumn: "phase"
+      fields: ["namespace", "name", "controller", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+      sortcolumn: "pod_status"
     Normal:
-      fields: ["namespace", "name", "controller", "phase", "node_name", "age", "restarts", "last_restart"]
-      sortcolumn: "phase"
+      fields: ["namespace", "name", "controller", "pod_status", "node_name", "age", "restarts", "last_restart"]
+      sortcolumn: "pod_status"
     Compact:
-      fields: ["namespace", "name", "phase", "age", "restarts", "last_restart"]
-      sortcolumn: "phase"
+      fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+      sortcolumn: "pod_status"
   fields:
     containers:
       header: "Containers:"
@@ -79,44 +79,6 @@ listview:
       formatting:
         field_colors:
         - type: "host"
-    phase:
-      header: "Phase:"
-      paths:
-      - path: "metadata"
-        pathtype: "substitution"
-        substitute: "Terminating"
-        else: ["status#phase"]
-        when:
-        - key: "metadata"
-          notmissing: "deletionTimestamp"
-      formatter: "value_mapper"
-      formatting:
-        mapping:
-          mappings:
-            "Failed":
-              field_colors:
-              - context: "main"
-                type: "status_not_ok"
-            "Pending":
-              field_colors:
-              - context: "main"
-                type: "status_pending"
-            "Running":
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            "Succeeded":
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            "Terminating":
-              field_colors:
-              - context: "main"
-                type: "status_pending"
-            "Unknown":
-              field_colors:
-              - context: "main"
-                type: "status_unknown"
     pod_ip:
       header: "Pod IP:"
       path: "status#podIP"
