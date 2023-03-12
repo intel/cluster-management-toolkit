@@ -1,0 +1,44 @@
+kind: "BackupStorageLocation"
+api_family: "velero.io"
+default_command: "backupstoragelocations"
+command:
+- "backstorelocs"
+- "backstoreloc"
+listview:
+  name: "Backup Storage Locations"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "phase", "last_validated", "default", "age"]
+  fields:
+    default:
+      header: "Default:"
+      path: "spec#default"
+      type: "bool"
+    last_validated:
+      header: "Last Validated:"
+      path: "status#lastValidated"
+      type: "age"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+infoview:
+  name: "Backup Storage Location Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["default", "object_storage", "provider"]
+    rows:
+      default:
+        header: [["Default:", ["main", "infoheader"]]]
+        path: "spec#default"
+        type: "bool"
+      object_storage:
+        header: [["Object Storage:", ["main", "infoheader"]]]
+        path: "spec#objectStorage#bucket"
+        type: "str"
+      provider:
+        header: [["Provider:", ["main", "infoheader"]]]
+        path: "spec#provider"
+        type: "str"

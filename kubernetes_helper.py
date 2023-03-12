@@ -398,6 +398,71 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api": "apirequestcounts",
 		"namespaced": False,
 	},
+	# apps.kruise.io
+	("AdvancedCronJob", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "advancedcronjobs",
+	},
+	("BroadcastJob", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "broadcastjobs",
+	},
+	("CloneSet", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "clonesets",
+	},
+	("ContainerRecreateRequest", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "containerrecreaterequests",
+	},
+	("DaemonSet", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "daemonsets",
+	},
+	("ImagePullJob", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "imagepulljobs",
+	},
+	("NodeImage", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "nodeimages",
+		"namespaced": False,
+	},
+	("NodePodProbe", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "nodepodprobes",
+		"namespaced": False,
+	},
+	("PersistentPodState", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "persistentpodstates",
+	},
+	("PodProbeMarker", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "podprobemarkers",
+	},
+	("ResourceDistribution", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "resourcedistributions",
+		"namespaced": False,
+	},
+	("SidecarSet", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "sidecarsets",
+		"namespaced": False,
+	},
+	("StatefulSet", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1beta1/"],
+		"api": "statefulsets",
+	},
+	("UnitedDeployment", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "uniteddeployments",
+	},
+	("WorkloadSpread", "apps.kruise.io"): {
+		"api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+		"api": "workloadspreads",
+	},
 	# apps.openshift.io
 	("DeploymentConfig", "apps.openshift.io"): {
 		"api_paths": ["apis/apps.openshift.io/v1/"],
@@ -1881,6 +1946,11 @@ kubernetes_resources: Dict[Any, Any] = {
 		"api": "performanceprofiles",
 		"namespaced": False,
 	},
+	# policy.kruise.io
+	("PodUnavailableBudget", "policy.kruise.io"): {
+		"api_paths": ["apis/policy.kruise.io/v1alpha1/"],
+		"api": "podunavailablebudgets",
+	},
 	# policy.linkerd.io
 	("AuthorizationPolicy", "policy.linkerd.io"): {
 		"api_paths": ["apis/policy.linkerd.io/v1alpha1/"],
@@ -2295,6 +2365,51 @@ kubernetes_resources: Dict[Any, Any] = {
 	#	"api": "useridentitymappings",
 	#	"namespaced": False,
 	#},
+	# velero.io
+	("BackupRepository", "velero.io"): {
+		"api_paths": ["apis/velero.io/v1/"],
+		"api": "backuprepositories",
+	},
+	("Backup", "velero.io"): {
+		"api_paths": ["apis/velero.io/v1/"],
+		"api": "backups",
+	},
+	("BackupStorageLocation", "velero.io"): {
+		"api_paths": ["apis/velero.io/v1/"],
+		"api": "backupstoragelocations",
+	},
+	("DeleteBackupRequest", "velero.io"): {
+		"api_paths": ["apis/velero.io/v1/"],
+		"api": "deletebackuprequests",
+	},
+	("DownloadRequest", "velero.io"): {
+		"api_paths": ["apis/velero.io/v1/"],
+		"api": "downloadrequests",
+	},
+	("PodVolumeBackup", "velero.io"): {
+		"api_paths": ["apis/velero.io/v1/"],
+		"api": "podvolumebackups",
+	},
+	("PodVolumeRestore", "velero.io"): {
+		"api_paths": ["apis/velero.io/v1/"],
+		"api": "podvolumerestores",
+	},
+	("Restore", "velero.io"): {
+		"api_paths": ["apis/velero.io/v1/"],
+		"api": "restores",
+	},
+	("Schedule", "velero.io"): {
+		"api_paths": ["apis/velero.io/v1/"],
+		"api": "schedules",
+	},
+	("ServerStatusRequest", "velero.io"): {
+		"api_paths": ["apis/velero.io/v1/"],
+		"api": "serverstatusrequests",
+	},
+	("VolumeSnapshotLocation", "velero.io"): {
+		"api_paths": ["apis/velero.io/v1/"],
+		"api": "volumesnapshotlocations",
+	},
 	# virt.virtink.smartx.com
 	("VirtualMachine", "virt.virtink.smartx.com"): {
 		"api_paths": ["apis/virt.virtink.smartx.com/v1alpha1/"],

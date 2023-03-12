@@ -1,0 +1,23 @@
+kind: "VolumeSnapshotLocation"
+api_family: "velero.io"
+default_command: "volumesnapshotlocations"
+command:
+- "volsnaplocs"
+- "volsnaploc"
+listview:
+  name: "Volume Snapshot Locations"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+infoview:
+  name: "Volume Snapshot Location Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["provider"]
+    rows:
+      provider:
+        header: [["Provider:", ["main", "infoheader"]]]
+        path: "spec#provider"
+        type: "str"
