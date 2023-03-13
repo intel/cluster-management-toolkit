@@ -2874,7 +2874,7 @@ class UIProps:
 		# next (existing) letter when sorted by name
 		# next status when sorted by status
 		# next node when sorted by node
-		for entry in natsorted(info, key = attrgetter(sortkey1, sortkey2)):
+		for entry in natsorted(info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse):
 			# OK, from here we want to go to next entry
 			if y == pos:
 				if sortkey == "age" or self.sortkey1 == "seen":
@@ -2915,7 +2915,7 @@ class UIProps:
 		# prev (existing) letter when sorted by name
 		# prev status when sorted by status
 		# prev node when sorted by node
-		for entry in natsorted(info, key = attrgetter(sortkey1, sortkey2)):
+		for entry in natsorted(info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse):
 			if current is None:
 				if sortkey == "age" or self.sortkey1 == "seen":
 					current = cmtlib.seconds_to_age(getattr(entry, sortkey))
@@ -3026,7 +3026,7 @@ class UIProps:
 			return None
 
 		# Search within sort category
-		sorted_list = natsorted(self.info, key = attrgetter(self.sortkey1, self.sortkey2))
+		sorted_list = natsorted(self.info, key = attrgetter(self.sortkey1, self.sortkey2), reverse = self.sortorder_reverse)
 		first_match = None
 		unique_match = None
 		match_count = 0
