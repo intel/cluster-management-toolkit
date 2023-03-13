@@ -2875,23 +2875,25 @@ class UIProps:
 		# next status when sorted by status
 		# next node when sorted by node
 		for entry in natsorted(info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse):
+			entryval = getattr(entry, sortkey)
+
 			# OK, from here we want to go to next entry
 			if y == pos:
 				if sortkey == "age" or self.sortkey1 == "seen":
-					current = cmtlib.seconds_to_age(getattr(entry, sortkey))
+					current = cmtlib.seconds_to_age(entryval)
 				else:
-					current = getattr(entry, sortkey)
+					current = entryval
 			elif y > pos:
 				if sortkey == "name":
-					if current[0] != entry.name[0]:
+					if current[0] != entryval[0]:
 						newpos = y - pos
 						break
 				elif sortkey == "age" or self.sortkey1 == "seen":
-					if current != cmtlib.seconds_to_age(getattr(entry, sortkey)):
+					if current != cmtlib.seconds_to_age(entryval):
 						newpos = y - pos
 						break
 				else:
-					if current != getattr(entry, sortkey):
+					if current != entryval:
 						newpos = y - pos
 						break
 			y += 1
@@ -2906,7 +2908,7 @@ class UIProps:
 		pos = self.curypos + self.yoffset
 		y = 0
 		newpos = 0
-		current = ""
+		current = None
 		sortkey1, sortkey2 = self.get_sortkeys()
 		sortkey = sortkey2 if sortkey1 == "status_group" else sortkey1
 
@@ -2916,26 +2918,27 @@ class UIProps:
 		# prev status when sorted by status
 		# prev node when sorted by node
 		for entry in natsorted(info, key = attrgetter(sortkey1, sortkey2), reverse = self.sortorder_reverse):
+			entryval = getattr(entry, sortkey)
 			if current is None:
 				if sortkey == "age" or self.sortkey1 == "seen":
-					current = cmtlib.seconds_to_age(getattr(entry, sortkey))
+					current = cmtlib.seconds_to_age(entryval)
 				else:
-					current = getattr(entry, sortkey)
+					current = entryval
 
 			if y == pos:
 				break
 
 			if sortkey == "name":
-				if current[0] != entry.name[0]:
-					current = entry.name
+				if current[0] != entryval[0]:
+					current = entryval
 					newpos = y - pos
 			elif sortkey == "age":
 				if current != cmtlib.seconds_to_age(getattr(entry, sortkey)):
-					current = cmtlib.seconds_to_age(getattr(entry, sortkey))
+					current = cmtlib.seconds_to_age(entryval)
 					newpos = y - pos
 			else:
-				if current != getattr(entry, sortkey):
-					current = getattr(entry, sortkey)
+				if current != entryval:
+					current = entryval
 					newpos = y - pos
 			y += 1
 
