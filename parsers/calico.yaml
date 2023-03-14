@@ -40,6 +40,16 @@
   parser_rules:
   - name: "glog"
   - name: "key_value"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Version:"
+      loglevel: "notice"
+- name: "calico"
+  matchkeys:
+  - container_name: "csi-node-driver-registrar"
+  parser_rules:
+  - name: "glog"
 - name: "calico"
   matchkeys:
   - container_name: "calico-node"
