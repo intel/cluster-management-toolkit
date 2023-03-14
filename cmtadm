@@ -435,6 +435,7 @@ def patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> None:
 #      and move all of this code to a separate file to allow it to be used both from cmu and cmtadm
 cni_upgrade_data = {
 	"calico": {
+		# Latest version can be found from tagname in https://api.github.com/repos/projectcalico/calico/releases/latest
 		"executable": {
 			"version_command": ["kubectl", "calico", "version"],
 			# Safe
@@ -448,6 +449,7 @@ cni_upgrade_data = {
 				}
 			]
 		},
+		# Latest version can be found from tagname in https://api.github.com/repos/projectcalico/calico/releases/latest
 		"CNI": {
 			"urls": [
 				{
