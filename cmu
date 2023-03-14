@@ -3986,6 +3986,7 @@ def get_pod_resource_list(obj, **kwargs):
 		if ref is not None:
 			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = ("", "", pod_name)
+			status = deep_get(ref, DictPath("status#state"), "Unknown")
 			vlist.append({
 				"ref": ref,
 				"namespace": pod_namespace,
@@ -3994,7 +3995,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"api_group": kind[1],
 				"type": rtype,
 				"resource_tuple": resource_tuple,
-				"status": "",
+				"status": status.capitalize(),
 				"restarts": "",
 				"message": "",
 				"age": -1,
