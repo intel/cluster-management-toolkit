@@ -1503,7 +1503,8 @@ ignoreinput = False
 #	"retval": the value to return if this items is selected (any type is allowed)
 # }
 # pylint: disable-next=too-many-arguments,line-too-long
-def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, items, headers = None, title: str = "", preselection: Union[str, Set[int]] = "",
+def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
+		 items, headers = None, title: str = "", preselection: Union[str, Set[int]] = "",
 		 cursor: bool = True, taggable: bool = False, confirm: bool = False, confirm_buttons = None, **kwargs):
 	stdscr.refresh()
 	global ignoreinput # pylint: disable=global-statement
@@ -1515,19 +1516,19 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 	if confirm_buttons is None:
 		confirm_buttons = []
 
-	# This is used by the About text and old-style helptexts
-	if isinstance(items[0], tuple) and isinstance(items[0][0], int):
-		tmpitems = []
-		for item in items:
-			tmpitems.append({
-				"lineattrs": item[0],
-				"columns": list(item[1:]),
-				"retval": None,
-			})
-		items = tmpitems
-	# This is used by old-style helptexts
-	elif isinstance(items[0], tuple) and isinstance(items[0][0], str):
-		items = format_helptext(items)
+	if isinstance(items[0], tuple):
+		# This is used by the About text
+		if isinstance(items[0][0], int):
+			tmpitems = []
+			for item in items:
+				tmpitems.append({
+					"lineattrs": item[0],
+					"columns": list(item[1:]),
+					"retval": None,
+				})
+			items = tmpitems
+		else:
+			raise ValueException(f"The text passed to windowwidget() is of invalid format:\n\n{items}")
 
 	columns = len(items[0]["columns"])
 	lengths = [0] * columns
@@ -3311,12 +3312,14 @@ class UIProps:
 			sys.exit()
 		elif c == curses.KEY_F1 or c == ord("H"):
 			if self.helptext is not None:
-				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, self.helptext, title = "Help", cursor = False)
+				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
+					     items = self.helptext, title = "Help", cursor = False)
 			self.refresh_all()
 			return Retval.MATCH
 		elif c == curses.KEY_F12:
 			if curses_configuration.abouttext is not None:
-				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, curses_configuration.abouttext, title = "About", cursor = False)
+				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
+					     items = curses_configuration.abouttext, title = "About", cursor = False)
 			self.refresh_all()
 			return Retval.MATCH
 		elif c == curses.KEY_F5:
@@ -3531,8 +3534,8 @@ class UIProps:
 			if self.annotations is not None:
 				title = ""
 
-				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, self.annotations,
-					     headers = annotation_headers, title = title, cursor = False)
+				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
+					     items = self.annotations, headers = annotation_headers, title = title, cursor = False)
 
 				self.refresh_all()
 				return Retval.MATCH
@@ -3540,8 +3543,8 @@ class UIProps:
 			if self.labels is not None:
 				title = ""
 
-				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, self.labels,
-					     headers = label_headers, title = title, cursor = False)
+				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
+					     items = self.labels, headers = label_headers, title = title, cursor = False)
 
 				self.refresh_all()
 				return Retval.MATCH
@@ -3575,14 +3578,16 @@ class UIProps:
 	# pylint: disable-next=unused-argument
 	def __show_about(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
 		if curses_configuration.abouttext is not None:
-			windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, curses_configuration.abouttext, title = "About", cursor = False)
+			windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
+				     items = curses_configuration.abouttext, title = "About", cursor = False)
 		self.refresh_all()
 		return Retval.MATCH, {}
 
 	def __show_help(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
 		helptext = deep_get(kwargs, DictPath("helptext"))
 
-		windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2, helptext, title = "Help", cursor = False)
+		windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
+			     items = helptext, title = "Help", cursor = False)
 		self.refresh_all()
 		return Retval.MATCH, {}
 

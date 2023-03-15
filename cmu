@@ -8194,7 +8194,8 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 	uip = UIProps(stdscr)
 
-	uip.init_window(field_list = None, windowheader = "Container Info", helptext = helptexts.containerinfo)
+	helptext = format_helptext(helptexts.containerinfo)
+	uip.init_window(field_list = None, windowheader = "Container Info", helptext = helptext)
 
 	# For generic information
 	infopad = uip.init_infopad(height = 7, width = -1, ypos = 1, xpos = 1)
