@@ -27,7 +27,6 @@ from cmtpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PL
 from cmtpaths import DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
 from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE, SSH_BIN_PATH
 import cmtlib
-from cmtlib import check_deb_versions
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, ansithemeprint
 
 from kubernetes_helper import kubectl_get_version
@@ -322,7 +321,7 @@ def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, cmtco
 				ANSIThemeString(": ", "default")], stderr = True)
 		ansithemeprint([ANSIThemeString(f"    {about.PROGRAM_SUITE_NAME}", "programname"),
 				ANSIThemeString(" has not been tested for any other major version of Kubernetes ", "default")], stderr = True)
-		ansithemeprint([ANSIThemeString(f"    than ", "default"),
+		ansithemeprint([ANSIThemeString("    than ", "default"),
 				ANSIThemeString("v1", "version"),
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOTSUP)
@@ -786,7 +785,7 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 					ANSIThemeString(":", "default")], stderr = True)
 			ansithemeprint([ANSIThemeString("      Multiple possibly conflicting options were detected for ", "default"),
 					ANSIThemeString(f"{rp}", "programname"),
-					ANSIThemeString(f".\n", "default")], stderr = True)
+					ANSIThemeString(".\n", "default")], stderr = True)
 			warning += 1
 			all_ok = False
 
@@ -795,7 +794,7 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 
 			for any_of_matches, all_of_matches in matches:
 				all_pods += any_of_matches
-				for key, value in all_of_matches.items():
+				for _key, value in all_of_matches.items():
 					all_pods += value
 
 			first = True
@@ -803,10 +802,8 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 			for obj in all_pods:
 				pod_name = deep_get(obj, DictPath("metadata#name"), "")
 				pod_namespace = deep_get(obj, DictPath("metadata#namespace"), "")
-				node_name = deep_get(obj, DictPath("spec#node_name"), "")
 				conditions = deep_get(obj, DictPath("status#conditions"), [])
 				phase = deep_get(obj, DictPath("status#phase"), "")
-				owr = deep_get(obj, DictPath("metadata#ownerReferences"), [])
 
 				ready = "NotReady"
 				for condition in conditions:
@@ -1157,7 +1154,7 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 				if path_permissions & alertmask != 0:
 					ansithemeprint([ANSIThemeString("  ", "default"),
 							ANSIThemeString(f"{severity.capitalize()}", severity),
-							ANSIThemeString(f":", "default")], stderr = True)
+							ANSIThemeString(":", "default")], stderr = True)
 					ansithemeprint([ANSIThemeString(f"    The permissions for the {pathtype} ", "default"),
 							ANSIThemeString(f"{entry}", "path"),
 							ANSIThemeString(" are ", "default"),
