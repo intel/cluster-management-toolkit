@@ -3700,12 +3700,13 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	clean_run = run_checks(security_audit_checks, **kwargs)
 
-	if clean_run == True:
-		ansithemeprint([ANSIThemeString("\nImportant:", "emphasis"),
-				ANSIThemeString(" cmtadm", "programname"),
+	if clean_run:
+		ansithemeprint([ANSIThemeString("\nImportant", "emphasis"),
+				ANSIThemeString(":", "default")])
+		ansithemeprint([ANSIThemeString("  cmtadm", "programname"),
 				ANSIThemeString(" audit", "command"),
 				ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
-		ansithemeprint([ANSIThemeString("a perfect score is not a guarantee that your installation is secure.", "default")])
+		ansithemeprint([ANSIThemeString("  a perfect score is not a guarantee that your installation is secure.", "default")])
 
 preflight_checks = [
 	{
@@ -3746,12 +3747,13 @@ def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	clean_run = run_checks(preflight_checks, hosts = control_planes)
 
-	if clean_run == True:
-		ansithemeprint([ANSIThemeString("\nImportant:", "emphasis"),
-				ANSIThemeString(" cmtadm", "programname"),
+	if clean_run:
+		ansithemeprint([ANSIThemeString("\nImportant", "emphasis"),
+				ANSIThemeString(":", "default")])
+		ansithemeprint([ANSIThemeString("  cmtadm", "programname"),
 				ANSIThemeString(" preflight-check", "command"),
 				ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
-		ansithemeprint([ANSIThemeString("a perfect score is not a guarantee that installation will succeed.", "default")])
+		ansithemeprint([ANSIThemeString("  a perfect score is not a guarantee that installation will succeed.", "default")])
 
 troubleshoot_checks = [
 	# First start with the really basic: does the cluster respond?
@@ -3791,12 +3793,13 @@ def troubleshoot(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	clean_run = run_checks(troubleshoot_checks)
 
-	if clean_run == True:
-		ansithemeprint([ANSIThemeString("\nImportant:", "emphasis"),
-				ANSIThemeString(" cmtadm", "programname"),
+	if clean_run:
+		ansithemeprint([ANSIThemeString("\nImportant", "emphasis"),
+				ANSIThemeString(":", "default")])
+		ansithemeprint([ANSIThemeString("  cmtadm", "programname"),
 				ANSIThemeString(" troubleshoot", "command"),
 				ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
-		ansithemeprint([ANSIThemeString("a perfect score is not a guarantee that your cluster is problem free.", "default")])
+		ansithemeprint([ANSIThemeString("  a perfect score is not a guarantee that your cluster is problem free.", "default")])
 
 COMMANDLINE = {
 	"Check Versions": {

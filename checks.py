@@ -15,7 +15,7 @@ import os
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Dict, Generator, List, Optional, Tuple, Union
+from typing import cast, Dict, Generator, List, Optional, Tuple, Union
 
 from ansible_helper import ansible_configuration
 from ansible_helper import ansible_run_playbook_on_selection, ansible_print_play_results
@@ -107,8 +107,10 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, cmtconfig_dict
 			ANSIThemeString(f"{user}", "path"),
 			ANSIThemeString(" is in ", "phase"),
 			ANSIThemeString("/etc/sudoers", "path"),
-			ANSIThemeString(" or ", "default"),
+			ANSIThemeString(" or ", "phase"),
 			ANSIThemeString("/etc/sudoers.d", "path"),
+			ANSIThemeString(" on ", "phase"),
+			ANSIThemeString("localhost", "hostname"),
 			ANSIThemeString("]", "phase")])
 	args = ["/usr/bin/sudo", "-l"]
 	result = execute_command_with_response(args)
@@ -122,22 +124,27 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, cmtconfig_dict
 		tmp = sudo_msg_regex.match(line)
 		if tmp is not None:
 			ansithemeprint([ANSIThemeString("  Error", "error"),
-					ANSIThemeString(": ", "default"),
+					ANSIThemeString(": ", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("    The user ", "default"),
 					ANSIThemeString(user, "path"),
 					ANSIThemeString(" is not in ", "default"),
 					ANSIThemeString("/etc/sudoers", "path"),
 					ANSIThemeString(" or ", "default"),
-					ANSIThemeString("/etc/sudoers.d\n", "path")], stderr = True)
+					ANSIThemeString("/etc/sudoers.d", "path"),
+					ANSIThemeString(".\n", "default")], stderr = True)
 			error += 1
 			sudoer = False
 			break
 
-	if sudoer == True:
-		ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])
+	if sudoer:
+		ansithemeprint([ANSIThemeString("  OK\n", "ok")])
 
 		ansithemeprint([ANSIThemeString("[Checking whether", "phase"),
 				ANSIThemeString(f" {user} ", "path"),
-				ANSIThemeString("can perform passwordless sudo]", "phase")])
+				ANSIThemeString("can perform passwordless sudo", "phase"),
+				ANSIThemeString(" on ", "phase"),
+				ANSIThemeString("localhost", "hostname"),
+				ANSIThemeString("]", "phase")])
 		args = ["/usr/bin/sudo", "-l"]
 		result = execute_command_with_response(args)
 		passwordless_sudo = False
@@ -152,11 +159,12 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, cmtconfig_dict
 				passwordless_sudo = True
 				break
 
-		if passwordless_sudo == False:
+		if not passwordless_sudo:
 			ansithemeprint([ANSIThemeString("  Error", "error"),
-					ANSIThemeString(": ", "default"),
+					ANSIThemeString(": ", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("    The user ", "default"),
 					ANSIThemeString(user, "path"),
-					ANSIThemeString(" cannot perform passwordless sudo\n", "default")], stderr = True)
+					ANSIThemeString(" cannot perform passwordless sudo.\n", "default")], stderr = True)
 			error += 1
 
 	return critical, error, warning, note
@@ -184,11 +192,16 @@ def check_known_hosts_hashing(cluster_name: str, kubeconfig: Dict, cmtconfig_dic
 				note (int): The new count of note severity security issues
 	"""
 
-	ansithemeprint([ANSIThemeString("[Checking whether ", "phase"),
-			ANSIThemeString("ssh", "command"),
-			ANSIThemeString(" known_hosts hashing is enabled]", "phase")])
+	ansithemeprint([ANSIThemeString("[Checking whether hashing of ", "phase"),
+			ANSIThemeString(".ssh/known_hosts", "path"),
+			ANSIThemeString(" is enabled on ", "phase"),
+			ANSIThemeString("localhost", "hostname"),
+			ANSIThemeString("]", "phase")])
 	ansithemeprint([ANSIThemeString("  Note", "note"),
-			ANSIThemeString(": this test is not 100% reliable since ssh settings can vary based on target host\n", "default")])
+			ANSIThemeString(":", "default")])
+	ansithemeprint([ANSIThemeString("    Since ", "default"),
+			ANSIThemeString("ssh", "programname"),
+			ANSIThemeString(" settings can vary per host this test is not 100% reliable.\n", "default")])
 	args = [SSH_BIN_PATH, "-G", "localhost"]
 	result = execute_command_with_response(args)
 
@@ -199,10 +212,13 @@ def check_known_hosts_hashing(cluster_name: str, kubeconfig: Dict, cmtconfig_dic
 		tmp = hashknownhosts_regex.match(line)
 		if tmp is not None:
 			ansithemeprint([ANSIThemeString("  Warning", "warning"),
-					ANSIThemeString(": ", "default"),
-					ANSIThemeString("ssh", "command"),
-					ANSIThemeString(" known_hosts hashing is enabled; this may cause issues with ", "default"),
-					ANSIThemeString("paramiko\n", "command")], stderr = True)
+					ANSIThemeString(":", "default")])
+			ansithemeprint([ANSIThemeString("    Hashing of ", "default"),
+					ANSIThemeString(".ssh/known_hosts", "path"),
+					ANSIThemeString(" is enabled;", "default"),
+					ANSIThemeString(" this may cause issues with ", "default"),
+					ANSIThemeString("paramiko", "programname"),
+					ANSIThemeString(".\n", "default")], stderr = True)
 			warning += 1
 			break
 
@@ -303,9 +319,10 @@ def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, cmtco
 	if server_major_version != 1:
 		ansithemeprint([ANSIThemeString("  ", "default"),
 				ANSIThemeString("Critical", "critical"),
-				ANSIThemeString(": ", "default"),
-				ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
-				ANSIThemeString(" has not been tested for any other major version of Kubernetes than ", "default"),
+				ANSIThemeString(": ", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString(f"    {about.PROGRAM_SUITE_NAME}", "programname"),
+				ANSIThemeString(" has not been tested for any other major version of Kubernetes ", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString(f"    than ", "default"),
 				ANSIThemeString("v1", "version"),
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOTSUP)
@@ -313,104 +330,59 @@ def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, cmtco
 	if kubectl_minor_version > server_minor_version and kubectl_minor_version == server_minor_version + 1:
 		ansithemeprint([ANSIThemeString("  ", "default"),
 				ANSIThemeString("Note", "note"),
-				ANSIThemeString(": The ", "default"),
+				ANSIThemeString(":", "default")])
+		ansithemeprint([ANSIThemeString("    The ", "default"),
 				ANSIThemeString("kubectl", "programname"),
 				ANSIThemeString(" version is one minor version newer than that of ", "default"),
 				ANSIThemeString("kube-apiserver", "programname"),
 				ANSIThemeString(";", "default")])
-		ansithemeprint([ANSIThemeString("      this is a supported configuration, but it is generally recommended to keep the versions in sync.", "default")])
+		ansithemeprint([ANSIThemeString("    this is a supported configuration, but it is generally recommended to keep", "default")])
+		ansithemeprint([ANSIThemeString("    the versions in sync.", "default")])
 		note += 1
 		mismatch = True
 	elif kubectl_minor_version > server_minor_version:
 		ansithemeprint([ANSIThemeString("  ", "default"),
-				ANSIThemeString("Warning", "note"),
-				ANSIThemeString(": The ", "default"),
+				ANSIThemeString("Warning", "warning"),
+				ANSIThemeString(":", "default")])
+		ansithemeprint([ANSIThemeString("    The ", "default"),
 				ANSIThemeString("kubectl", "programname"),
-				ANSIThemeString(" version is more than one minor version newer than that of ", "default"),
+				ANSIThemeString(" version is more than one minor version newer than", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("    that of ", "default"),
 				ANSIThemeString("kube-apiserver", "programname"),
-				ANSIThemeString(";", "default")], stderr = True)
-		ansithemeprint([ANSIThemeString("           this might work, but it is generally recommended to keep the versions in sync.", "default")], stderr = True)
+				ANSIThemeString("; this might work, but it is generally recommended", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("    to keep the versions in sync.", "default")], stderr = True)
 		warning += 1
 		mismatch = True
 	elif kubectl_minor_version < server_minor_version and kubectl_minor_version + 1 == server_minor_version:
 		ansithemeprint([ANSIThemeString("  ", "default"),
-				ANSIThemeString("Warning", "note"),
-				ANSIThemeString(": The ", "default"),
+				ANSIThemeString("Warning", "warning"),
+				ANSIThemeString(":", "default")])
+		ansithemeprint([ANSIThemeString("    The ", "default"),
 				ANSIThemeString("kubectl", "programname"),
 				ANSIThemeString(" version is one minor version older than that of ", "default"),
 				ANSIThemeString("kube-apiserver", "programname"),
 				ANSIThemeString(";", "default")])
-		ansithemeprint([ANSIThemeString("      this is a supported configuration, but it is generally recommended to keep the versions in sync.", "default")])
+		ansithemeprint([ANSIThemeString("    this is a supported configuration, but it is generally recommended to keep", "default")])
+		ansithemeprint([ANSIThemeString("    the versions in sync.", "default")], stderr = True)
 		warning += 1
 		mismatch = True
 	elif kubectl_minor_version < server_minor_version:
 		ansithemeprint([ANSIThemeString("  ", "default"),
-				ANSIThemeString("Error", "note"),
-				ANSIThemeString(": The ", "default"),
+				ANSIThemeString("Error", "error"),
+				ANSIThemeString(":", "default")])
+		ansithemeprint([ANSIThemeString("    The ", "default"),
 				ANSIThemeString("kubectl", "programname"),
 				ANSIThemeString(" version is much older than that of ", "default"),
 				ANSIThemeString("kube-apiserver", "programname"),
 				ANSIThemeString(";", "default")], stderr = True)
-		ansithemeprint([ANSIThemeString("       this is NOT supported and is likely to cause issues.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("    this is ", "default"),
+				ANSIThemeString("NOT", "emphasis"),
+				ANSIThemeString(" supported and is likely to cause issues.", "default")], stderr = True)
 		error += 1
 		mismatch = True
 
 	if mismatch == False:
-		ansithemeprint([ANSIThemeString("OK", "ok")])
-
-	return critical, error, warning, note
-
-# pylint: disable-next=too-many-arguments,unused-argument
-def check_containerd_and_docker(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-				critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[int, int, int, int]:
-	"""
-	This checks whether docker-ce / containerd.io is installed instead of docker.io / containerd
-
-		Parameters:
-			cluster_name (str): The name of the cluster
-			kubeconfig (dict)): The kubeconfig file
-			cmtconfig_dict (dict): The cmtconfig file
-			critical (int): The current count of critical severity security issues
-			error (int): The current count of error severity security issues
-			warning (int): The current count of warning severity security issues
-			note (int): The current count of note severity security issues
-			kwargs (dict): Additional parameters
-		Returns:
-			(critical, error, warning, note):
-				critical (int): The new count of critical severity security issues
-				error (int): The new count of error severity security issues
-				warning (int): The new count of warning severity security issues
-				note (int): The new count of note severity security issues
-	"""
-
-	ansithemeprint([ANSIThemeString("[Checking whether ", "phase"),
-			ANSIThemeString("docker-ce / containerd.io", "path"),
-			ANSIThemeString(" is installed instead of ", "phase"),
-			ANSIThemeString("docker.io / containerd", "path"),
-			ANSIThemeString("]", "phase")])
-	ansithemeprint([ANSIThemeString("  Note", "emphasis"),
-			ANSIThemeString(": this is only an issue if you intend to use this host as a control plane or node\n", "default")])
-	deb_versions = check_deb_versions(["docker.io", "containerd", "docker-ce", "containerd.io"])
-	conflict = False
-	for package, _installed_version, _candidate_version, _all_versions in deb_versions:
-		if package in ("docker-ce", "containerd.io"):
-			ansithemeprint([ANSIThemeString("  Error", "error"),
-					ANSIThemeString(": ", "default"),
-					ANSIThemeString("docker-ce / containerd.io", "path"),
-					ANSIThemeString(" is installed; use ", "default"),
-					ANSIThemeString("docker.io / containerd", "path"),
-					ANSIThemeString(" instead\n", "default")], stderr = True)
-			ansithemeprint([ANSIThemeString("  ", "default"),
-					ANSIThemeString("Suggested fix:", "header")])
-			ansithemeprint([ANSIThemeString("    sudo apt ", "programname"),
-					ANSIThemeString("install ", "command"),
-					ANSIThemeString("docker.io containerd docker-ce- containerd.io-\n", "argument")])
-			error += 1
-			conflict = True
-			break
-
-	if conflict == False:
-		ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])
+		ansithemeprint([ANSIThemeString("  OK", "ok")])
 
 	return critical, error, warning, note
 
@@ -444,7 +416,11 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, c
 	mismatch = False
 
 	# Kubernetes API based checks
-	ansithemeprint([ANSIThemeString("\n[Checking kubelet & kube-proxy versions]", "phase")])
+	ansithemeprint([ANSIThemeString("\n[Checking ", "phase"),
+			ANSIThemeString("kubelet", "programname"),
+			ANSIThemeString(" & ", "phase"),
+			ANSIThemeString("kube-proxy", "programname"),
+			ANSIThemeString(" versions]", "phase")])
 
 	_kubectl_major_version, _kubectl_minor_version, _kubectl_git_version, server_major_version, server_minor_version, _server_git_version = kubectl_get_version()
 
@@ -586,35 +562,35 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, c
 			mismatch = True
 
 	if mismatch == False:
-		ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])
+		ansithemeprint([ANSIThemeString("  OK", "ok")])
 
 	return critical, error, warning, note
 
-required_pods = {
+required_pods: Dict[str, List[Dict[str, List]]] = {
 	"api-server": [
 		{
-			"any_of": ["kube-apiserver"],
+			"any_of": [("kube-system", "kube-apiserver")],
 		},
 	],
 	"coredns": [
 		{
-			"any_of": ["coredns", "dns-default"],
+			"any_of": [("kube-system", "coredns"), ("", "dns-default")],
 		},
 	],
 	"etcd": [
 		{
-			"any_of": ["etcd"],
+			"any_of": [("kube-system", "etcd")],
 		},
 	],
 	"kube-controller-manager": [
 		{
-			"any_of": ["kube-controller-manager"],
+			"any_of": [("kube-system", "kube-controller-manager")],
 		},
 	],
 	# DaemonSet
 	"kube-proxy": [
 		{
-			"any_of": ["kube-proxy"],
+			"any_of": [("kube-system", "kube-proxy")],
 			"note": [ANSIThemeString("Note", "note"),
 				 ANSIThemeString(": Optional for ", "default"),
 				 ANSIThemeString("CRC", "programname"),
@@ -625,52 +601,111 @@ required_pods = {
 	],
 	"kube-scheduler": [
 		{
-			"any_of": ["kube-scheduler", "openshift-kube-scheduler"],
+			# FIXME
+			"any_of": [("kube-system", "kube-scheduler"), ("", "openshift-kube-scheduler")],
 		},
 	],
 	"CNI": [
 		{
 			# antrea; DaemonSet
-			"any_of": ["antrea-agent"],
+			# FIXME
+			"any_of": [("kube-system", "antrea-agent")],
 		},
 		{
 			# calico; Deployment
-			"all_of": ["calico-api-server", "calico-kube-controllers"],
+			"all_of": [("calico-apiserver", "calico-apiserver"), ("calico-system", "calico-kube-controllers")],
 		},
 		{
 			# canal; DaemonSet
-			"any_of": ["canal"],
+			# FIXME
+			"any_of": [("", "canal")],
 		},
 		{
 			# cilium; Deployment
-			"any_of": ["cilium-operator"],
+			# FIXME
+			"any_of": [("", "cilium-operator")],
 		},
 		{
 			# flannel; DaemonSet
-			"any_of": ["kube-flannel-ds"],
+			# FIXME
+			"any_of": [("", "kube-flannel-ds")],
 		},
 		{
 			# kilo; DaemonSet
-			"any_of": ["kilo"],
+			# FIXME
+			"any_of": [("", "kilo")],
 		},
 		{
 			# kube-ovn; DaemonSet
-			"any_of": ["kube-ovn-cni"],
+			# FIXME
+			"any_of": [("", "kube-ovn-cni")],
 		},
 		{
 			# kube-router; DaemonSet
-			"any_of": ["kube-router"],
+			# FIXME
+			"any_of": [("", "kube-router")],
 		},
 		{
 			# sdn; DaemonSet
-			"any_of": ["sdn"],
+			# FIXME
+			"any_of": [("", "sdn")],
 		},
 		{
 			# weave; DaemonSet
-			"any_of": ["weave-net"],
+			# FIXME
+			"any_of": [("", "weave-net")],
 		},
 	],
 }
+
+def get_pod_set(pods: List[Dict], any_of: List[Tuple[str, str]], all_of: List[Tuple[str, str]]) -> Tuple[List[Dict], Dict[Tuple[str, str], List[Dict]]]:
+	"""
+	Given an any_of list (namespace, pod_prefix), and an all_of list (namespace, pod_prefix),
+	returns all pod objects (if any)
+
+		Parameters:
+			pods ([pod]): A list of pod objects
+			any_of ([(str, str)]): A list of (namespace, name-prefix) of which at least one must exist
+			all_of ({[(str, str)]}): A list of (namespace, name-prefix) of which all must exist
+		Returns:
+			([any_of], [all_of]):
+				any_of ([(str, str)]): A list of (namespace, name) for pods matching the any_of criteria
+				all_of ([(str, str)]): A dict indexed by (namespace, name-prefix)
+						       of list of (namespace, name) for pods matching the all_of criteria
+	"""
+
+	any_of_matches: List[Dict] = []
+	all_of_matches: Dict[Tuple[str, str], List[Dict]] = {}
+
+	for obj in pods:
+		pod_name = deep_get(obj, DictPath("metadata#name"), "")
+		pod_namespace = deep_get(obj, DictPath("metadata#namespace"), "")
+		for match_namespace, match_name in any_of:
+			# If we're instructed to match namespace and the namespace doesn't match, skip this pod
+			if len(match_namespace) > 0 and match_namespace != pod_namespace:
+				continue
+			# If the pod name doesn't start with the name prefix, skip this pod
+			if not pod_name.startswith(match_name):
+				continue
+			any_of_matches.append(obj)
+
+		for match_namespace, match_name in all_of:
+			# If we're instructed to match namespace and the namespace doesn't match, skip this pod
+			if len(match_namespace) > 0 and match_namespace != pod_namespace:
+				continue
+			# If the pod name doesn't start with the name prefix, skip this pod
+			if not pod_name.startswith(match_name):
+				continue
+			if (match_namespace, match_name) not in all_of_matches:
+				all_of_matches[(match_namespace, match_name)] = []
+			all_of_matches[(match_namespace, match_name)].append(obj)
+
+	# If either condition fails, return empty lists
+	if len(all_of) > 0 and len(all_of_matches) == 0 or len(any_of) > 0 and len(any_of_matches) == 0:
+		any_of_matches = []
+		all_of_matches = {}
+
+	return (any_of_matches, all_of_matches)
 
 # pylint: disable-next=too-many-arguments,unused-argument
 def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
@@ -680,7 +715,7 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 
 		Parameters:
 			cluster_name (str): The name of the cluster (unused)
-			kubeconfig (dict)): The kubeconfig file (unused)
+			kubeconfig (dict): The kubeconfig file (unused)
 			cmtconfig_dict (dict): The cmtconfig file (unused)
 			critical (int): The current count of critical severity security issues
 			error (int): The current count of error severity security issues
@@ -700,145 +735,103 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-	vlist, _status = kh.get_list_by_kind_namespace(("Pod", ""), "")
-
-	pods = []
-
-	for obj in vlist:
-		name = deep_get(obj, DictPath("metadata#name"), "")
-		namespace = deep_get(obj, DictPath("metadata#namespace"), "")
-		node_name = deep_get(obj, DictPath("spec#node_name"), "")
-		conditions = deep_get(obj, DictPath("status#conditions"), [])
-		phase = deep_get(obj, DictPath("status#phase"), "")
-		owr = deep_get(obj, DictPath("metadata#ownerReferences"), [])
-
-		pods.append({
-			"name": name,
-			"namespace": namespace,
-			"node_name": node_name,
-			"conditions": conditions,
-			"phase": phase,
-			"owr": owr,
-		})
-
-	# Next check for all required pods
+	pods, _status = kh.get_list_by_kind_namespace(("Pod", ""), "")
+	all_ok = True
 
 	for rp, rp_data in required_pods.items():
 		ansithemeprint([ANSIThemeString("•", "separator"),
 				ANSIThemeString(f" {rp}", "programname")])
 
-		any_of_available: Dict = {}
-		any_of_available["__expected"] = []
-		all_of_available: Dict = {}
-		all_of_available["__expected"] = []
-		match_count = 0
+		matches = []
 
 		for rp_match in rp_data:
 			any_of = deep_get(rp_match, DictPath("any_of"), [])
 			all_of = deep_get(rp_match, DictPath("all_of"), [])
 			additional_info = deep_get(rp_match, DictPath("note"), [])
+			any_of_matches, all_of_matches = get_pod_set(cast(List[Dict], pods), any_of, all_of)
 
-			if len(any_of) > 0:
-				any_of_available["__expected"] += any_of
-			if len(all_of) > 0:
-				all_of_available["__expected"] += [all_of]
+			if len(any_of_matches) > 0 or len(all_of_matches) > 0:
+				matches.append((any_of_matches, all_of_matches))
 
-			for pod_prefix in any_of:
-				for pod in pods:
-					pod_name = pod["name"]
-					pod_namespace = pod["namespace"]
-					if pod_name.startswith(pod_prefix):
-						if pod_prefix in any_of_available:
-							any_of_available[pod_prefix].append((pod_name, pod_namespace))
-						else:
-							any_of_available[pod_prefix] = [(pod_name, pod_namespace)]
+		if len(matches) == 0:
+			if len(any_of) > 0 and len(any_of_matches) == 0:
+				ansithemeprint([ANSIThemeString("    ", "default"),
+						ANSIThemeString("Error", "error"),
+						ANSIThemeString(": at least one of the following pods is expected to be running:", "default")], stderr = True)
+				for expected_namespace, expected_name in any_of:
+					if len(expected_namespace) == 0:
+						expected_namespace = "<any>"
+					ansithemeprint([ANSIThemeString(f"      {expected_namespace}", "namespace"),
+							ANSIThemeString("::", "separator"),
+							ANSIThemeString(f"{expected_name}", "default")], stderr = True)
+				all_ok = False
+				error += 1
 
-			for pod_prefix in all_of:
-				for pod in pods:
-					pod_name = pod["name"]
-					pod_namespace = pod["namespace"]
-					if pod_name.startswith(pod_prefix):
-						if pod_prefix in all_of_available:
-							all_of_available[pod_prefix].append((pod_name, pod_namespace))
-						else:
-							all_of_available[pod_prefix] = [(pod_name, pod_namespace)]
+			if len(all_of) > 0 and len(all_of_matches) == 0:
+				ansithemeprint([ANSIThemeString("    ", "default"),
+						ANSIThemeString("Error", "error"),
+						ANSIThemeString(": All of the following pods are expected to be running:", "default")], stderr = True)
+				for expected_namespace, expected_name in any_of:
+					if len(expected_namespace) == 0:
+						expected_namespace = "<any>"
+					ansithemeprint([ANSIThemeString(f"      {expected_namespace}", "namespace"),
+							ANSIThemeString("::", "separator"),
+							ANSIThemeString(f"{expected_name}", "default")], stderr = True)
+				all_ok = False
+				error += 1
 
-			if len(any_of) > 0 == len(any_of_available) > 0 and len(all_of) == len(all_of_available):
-				match_count += 1
-
-		# Remove duplicates
-		any_of_available_expected = list(set(any_of_available["__expected"]))
-		any_of_available_expected += all_of_available["__expected"]
-
-		all_ok = True
-		if match_count > 1:
+		if len(matches) > 1:
 			ansithemeprint([ANSIThemeString("    ", "default"),
 					ANSIThemeString("Warning", "warning"),
-					ANSIThemeString(": multiple possibly conflicting options were detected for ", "programname"),
-					ANSIThemeString(f"{rp}", "programname")])
+					ANSIThemeString(":", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("      Multiple possibly conflicting options were detected for ", "default"),
+					ANSIThemeString(f"{rp}", "programname"),
+					ANSIThemeString(f".\n", "default")], stderr = True)
 			warning += 1
 			all_ok = False
-		elif len(any_of_available) == 1:
-			if len(rp_data) == 1 and len(all_of_available["__expected"]) == 0:
-				ansithemeprint([ANSIThemeString("    ", "default"),
-						ANSIThemeString("Error", "error"),
-						ANSIThemeString(": at least one of the following pods is expected to be running:", "default")])
-			elif any_of_available_expected != 1:
-				ansithemeprint([ANSIThemeString("    ", "default"),
-						ANSIThemeString("Error", "error"),
-						ANSIThemeString(": exactly one of the following pods or sets of pods is expected to be running:", "default")])
-			tmp_str = [ANSIThemeString("      ", "default")]
+
+		if len(matches) > 0:
+			all_pods = []
+
+			for any_of_matches, all_of_matches in matches:
+				all_pods += any_of_matches
+				for key, value in all_of_matches.items():
+					all_pods += value
+
 			first = True
-			for expected in any_of_available_expected:
-				if not first:
-					tmp_str.append(ANSIThemeString(", ", "separator"))
 
-				if isinstance(expected, list):
-					tmp_str.append(ANSIThemeString("[", "separator"))
-					tmp_str += ansithemestring_join_tuple_list(expected, formatting = "programname")
-					tmp_str.append(ANSIThemeString("]", "separator"))
-				else:
-					tmp_str.append(ANSIThemeString(f"{expected}", "programname"))
-				first = False
-			ansithemeprint(tmp_str)
-			error += 1
-			all_ok = False
+			for obj in all_pods:
+				pod_name = deep_get(obj, DictPath("metadata#name"), "")
+				pod_namespace = deep_get(obj, DictPath("metadata#namespace"), "")
+				node_name = deep_get(obj, DictPath("spec#node_name"), "")
+				conditions = deep_get(obj, DictPath("status#conditions"), [])
+				phase = deep_get(obj, DictPath("status#phase"), "")
+				owr = deep_get(obj, DictPath("metadata#ownerReferences"), [])
 
-		# The pods are running, but are they healthy and ready?
-		first = True
-		for pod_prefix, pod_list in any_of_available.items():
-			if pod_prefix == "__expected":
-				continue
-			for pod in pod_list:
-				pod_name, pod_namespace = pod
-				for pod_data in pods:
-					if (deep_get(pod_data, DictPath("name"), "") == pod_name and
-					    deep_get(pod_data, DictPath("namespace"), "") == pod_namespace):
-						phase = deep_get(pod_data, DictPath("phase"), "")
-						conditions = deep_get(pod_data, DictPath("conditions"), [])
-						ready = "NotReady"
-						for condition in conditions:
-							if (deep_get(condition, DictPath("type"), "") == "Ready" and
-							    deep_get(condition, DictPath("status"), "False") == "True"):
-								ready = "Ready"
-						if phase != "Running" or ready != "Ready":
-							if first == True:
-								ansithemeprint([ANSIThemeString("    ", "default"),
-										ANSIThemeString("Error", "error"),
-										ANSIThemeString(": The following pods should be in phase Running, condition Ready:", "default")])
-								first = False
-							ansithemeprint([ANSIThemeString("      ", "default"),
-									ANSIThemeString(f"{pod_namespace}", "namespace"),
-									ANSIThemeString("/", "separator"),
-									ANSIThemeString(f"{pod_name}", "namespace"),
-									ANSIThemeString(" (Phase: ", "default"),
-									ANSIThemeString(f"{phase}", "emphasis"),
-									ANSIThemeString(", ", "separator"),
-									ANSIThemeString("Condition: ", "default"),
-									ANSIThemeString(f"{ready}", "emphasis"),
-									ANSIThemeString(")", "default")])
-							error += 1
-							all_ok = False
+				ready = "NotReady"
+				for condition in conditions:
+					if (deep_get(condition, DictPath("type"), "") == "Ready" and
+					    deep_get(condition, DictPath("status"), "False") == "True"):
+						ready = "Ready"
+				if phase != "Running" or ready != "Ready":
+					if first == True:
+						ansithemeprint([ANSIThemeString("    ", "default"),
+								ANSIThemeString("Error", "error"),
+								ANSIThemeString(":", "default")], stderr = True)
+						ansithemeprint([ANSIThemeString("      The following pods should be in phase Running, condition Ready:", "default")])
+						first = False
+					ansithemeprint([ANSIThemeString("        ", "default"),
+							ANSIThemeString(f"{pod_namespace}", "namespace"),
+							ANSIThemeString("::", "separator"),
+							ANSIThemeString(f"{pod_name}", "namespace"),
+							ANSIThemeString(" (", "default"),
+							ANSIThemeString(f"{phase}", "emphasis"),
+							ANSIThemeString("; ", "separator"),
+							ANSIThemeString(f"{ready}", "emphasis"),
+							ANSIThemeString(")", "default")])
+					error += 1
+					all_ok = False
+
 		if all_ok:
 			ansithemeprint([ANSIThemeString("    OK\n", "success")])
 		elif len(additional_info) > 0:
@@ -863,7 +856,7 @@ recommended_directory_permissions = [
 		"alertmask": 0o022,
 		"usergroup_alertmask": 0o002,
 		"severity": "critical",
-		"justification": [ANSIThemeString("If other users can create or replace files in ", "default"),
+		"justification": [ANSIThemeString("    If other users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{CMTDIR}", "path"),
 				  ANSIThemeString(" they may be able to obtain elevated privileges", "default")]
 	},
@@ -872,12 +865,13 @@ recommended_directory_permissions = [
 		"alertmask": 0o077,
 		"usergroup_alertmask": 0o027,
 		"severity": "error",
-		"justification": [ANSIThemeString("If other users can read, create or replace files in ", "default"),
-				  ANSIThemeString(f"{CMT_LOGS_DIR}", "path"),
-				  ANSIThemeString(" they can cause ", "default"),
-				  ANSIThemeString("cmu", "command"),
-				  ANSIThemeString(" to malfunction and possibly hide signs of a compromised cluster ", "default"),
-				  ANSIThemeString("and may be able to obtain sensitive information from audit messages", "default")]
+		"justification": [ANSIThemeString("    If other users can read, create or replace files in ", "default"),
+				  ANSIThemeString(f"{CMT_LOGS_DIR}\n", "path"),
+				  ANSIThemeString("    they can cause ", "default"),
+				  ANSIThemeString("cmu", "programname"),
+				  ANSIThemeString(" to malfunction and possibly hide signs\n", "default"),
+				  ANSIThemeString("    of a compromised cluster and may be able to obtain sensitive information\n", "default"),
+				  ANSIThemeString("    from audit messages.", "default")]
 	},
 	{
 		"path": CMT_CONFIG_FILE_DIR,
@@ -959,7 +953,7 @@ recommended_directory_permissions = [
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{THEME_DIR}", "path"),
 				  ANSIThemeString(" they can cause ", "default"),
-				  ANSIThemeString("cmu", "command"),
+				  ANSIThemeString("cmu", "programname"),
 				  ANSIThemeString(" to malfunction", "default")]
 	},
 	{
@@ -970,7 +964,7 @@ recommended_directory_permissions = [
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{PARSER_DIR}", "path"),
 				  ANSIThemeString(" they can cause ", "default"),
-				  ANSIThemeString("cmu", "command"),
+				  ANSIThemeString("cmu", "programname"),
 				  ANSIThemeString(" to malfunction and possibly hide signs of a compromised cluster", "default")]
 	},
 	{
@@ -981,7 +975,7 @@ recommended_directory_permissions = [
 		"justification": [ANSIThemeString("If others users can create or replace files in ", "default"),
 				  ANSIThemeString(f"{VIEW_DIR}", "path"),
 				  ANSIThemeString(" they can cause ", "default"),
-				  ANSIThemeString("cmu", "command"),
+				  ANSIThemeString("cmu", "programname"),
 				  ANSIThemeString(" to malfunction and possibly hide signs of a compromised cluster", "default")]
 	},
 ]
@@ -1163,16 +1157,19 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 				if path_permissions & alertmask != 0:
 					ansithemeprint([ANSIThemeString("  ", "default"),
 							ANSIThemeString(f"{severity.capitalize()}", severity),
-							ANSIThemeString(f": The permissions for the {pathtype} ", "default"),
+							ANSIThemeString(f":", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString(f"    The permissions for the {pathtype} ", "default"),
 							ANSIThemeString(f"{entry}", "path"),
 							ANSIThemeString(" are ", "default"),
 							ANSIThemeString(f"{path_permissions:03o}", "emphasis"),
-							ANSIThemeString("; the recommended permissions are ", "default"),
+							ANSIThemeString(";", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString("    the recommended permissions are ", "default"),
 							ANSIThemeString(f"{recommended_permissions:03o}", "emphasis"),
-							ANSIThemeString(" (or stricter)", "default")], stderr = True)
+							ANSIThemeString(" (or stricter).", "default")], stderr = True)
 					ansithemeprint([ANSIThemeString("  ", "default"),
 							ANSIThemeString("Justification", "emphasis"),
-							ANSIThemeString(": ", "default")] + justification, stderr = True)
+							ANSIThemeString(": ", "default")], stderr = True)
+					ansithemeprint(justification, stderr = True)
 					print()
 
 					if severity == "critical":
@@ -1343,13 +1340,16 @@ def check_control_plane(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dic
 				ansible_os_family = deep_get(taskdata, DictPath("ansible_facts#ansible_os_family"), "")
 				continue
 
-			if taskname == "Checking whether the host runs an Operating System supported for control planes":
+			if taskname == "Checking whether the host runs an OS supported for control planes":
 				if deep_get(taskdata, DictPath("retval")) != 0:
 					critical += 1
-					ansithemeprint([ANSIThemeString("Critical", "critical"),
-							ANSIThemeString(": Unsupported Operating System ", "default"),
+					ansithemeprint([ANSIThemeString("  ", "default"),
+							ANSIThemeString("Critical", "critical"),
+							ANSIThemeString(":", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString("    Unsupported Operating System ", "default"),
 							ANSIThemeString(f"{ansible_os_family}", "programname"),
-							ANSIThemeString(" currently the only supported OS family for control planes is ", "default"),
+							ANSIThemeString("; currently the only supported OS family", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString("    for control planes is ", "default"),
 							ANSIThemeString("Debian", "programname"),
 							ANSIThemeString("; aborting.\n", "default")], stderr = True)
 					break
@@ -1357,17 +1357,21 @@ def check_control_plane(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dic
 			if taskname == "Check whether the host is a Kubernetes control plane":
 				if deep_get(taskdata, DictPath("retval")) != 0:
 					critical += 1
-					ansithemeprint([ANSIThemeString("Critical", "critical"),
-							ANSIThemeString(": Host ", "default"),
+					ansithemeprint([ANSIThemeString("  ", "default"),
+							ANSIThemeString("Critical", "critical"),
+							ANSIThemeString(":", "default")])
+					ansithemeprint([ANSIThemeString("    Host ", "default"),
 							ANSIThemeString(f"{host}", "hostname"),
-							ANSIThemeString(" seems to already be running a Kubernetes api-server; aborting.\n", "default")], stderr = True)
+							ANSIThemeString(" seems to already be running a Kubernetes API-server; aborting.\n", "default")], stderr = True)
 					break
 
 			if taskname == "Check whether the host is a Kubernetes node":
 				if deep_get(taskdata, DictPath("retval")) != 0:
 					critical += 1
-					ansithemeprint([ANSIThemeString("Critical", "critical"),
-							ANSIThemeString(": Host ", "default"),
+					ansithemeprint([ANSIThemeString("  ", "default"),
+							ANSIThemeString("Critical", "critical"),
+							ANSIThemeString(":", "default")], stderr = True)
+					ansithemeprint([ANSIThemeString("    Host ", "default"),
 							ANSIThemeString(f"{host}", "hostname"),
 							ANSIThemeString(" seems to already have a running kubelet; aborting.\n", "default")], stderr = True)
 					break

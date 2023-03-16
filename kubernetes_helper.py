@@ -58,7 +58,7 @@ CIPHERS = [
 ]
 
 # A list of all K8s resources we have some knowledge about
-kubernetes_resources: Dict[Any, Any] = {
+kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	# core API
 	# ComponentStatus is deprecated
 	("ComponentStatus", ""): {

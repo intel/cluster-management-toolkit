@@ -1528,7 +1528,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 				})
 			items = tmpitems
 		else:
-			raise ValueException(f"The text passed to windowwidget() is of invalid format:\n\n{items}")
+			raise ValueError(f"The text passed to windowwidget() is of invalid format:\n\n{items}")
 
 	columns = len(items[0]["columns"])
 	lengths = [0] * columns
@@ -2929,7 +2929,7 @@ class UIProps:
 			if y == pos:
 				break
 
-			if sortkey == "name":
+			if sortkey == "name" and current is not None and len(current) > 0:
 				if current[0] != entryval[0]:
 					current = entryval
 					newpos = y - pos
