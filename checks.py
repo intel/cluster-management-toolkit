@@ -595,7 +595,7 @@ required_pods: Dict[str, List[Dict[str, List]]] = {
 				 ANSIThemeString("CRC", "programname"),
 				 ANSIThemeString("/", "separator"),
 				 ANSIThemeString("OpenShift", "programname"),
-				 ANSIThemeString(".", "default")],
+				 ANSIThemeString(".\n", "default")],
 		},
 	],
 	"kube-scheduler": [
@@ -802,6 +802,7 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 			for obj in all_pods:
 				pod_name = deep_get(obj, DictPath("metadata#name"), "")
 				pod_namespace = deep_get(obj, DictPath("metadata#namespace"), "")
+				pod_node = deep_get(obj, DictPath("spec#nodeName"), "<unset>")
 				conditions = deep_get(obj, DictPath("status#conditions"), [])
 				phase = deep_get(obj, DictPath("status#phase"), "")
 
@@ -825,7 +826,9 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 							ANSIThemeString(f"{phase}", "emphasis"),
 							ANSIThemeString("; ", "separator"),
 							ANSIThemeString(f"{ready}", "emphasis"),
-							ANSIThemeString(")", "default")])
+							ANSIThemeString(")", "default"),
+							ANSIThemeString(" on node ", "default"),
+							ANSIThemeString(f"{pod_node}", "hostname")], stderr = True)
 					error += 1
 					all_ok = False
 
