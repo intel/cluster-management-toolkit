@@ -1232,6 +1232,8 @@ def when_filter(when_path: Dict, item: Dict, key: Optional[str] = None, value: A
 
 		# Check for none
 		if _value is None:
+			if key is None:
+				raise ValueError("key is None")
 			value = deep_get(item, DictPath(key))
 
 		# These check whether the key has a value
@@ -7097,8 +7099,8 @@ def decode_and_view_file_templates(stdscr: curses.window, **kwargs):
 
 # pylint: disable-next=unused-argument
 def export_data(stdscr: curses.window, **kwargs):
-	selected = deep_get(kwargs, "selected")
-	obj = deep_get(kwargs, "obj")
+	selected = deep_get(kwargs, DictPath("selected"))
+	obj = deep_get(kwargs, DictPath("obj"))
 
 	if selected is None and obj is None:
 		return
@@ -8353,7 +8355,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 			parser = ""
 			prev_timestamp = None
 			prev_facility = ""
-			prev_severity = ""
+			prev_severity = LogLevel.INFO
 			prev_message = ""
 			prev_remnants = None
 			repeat_count = 0
@@ -8852,23 +8854,23 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 				if len(severity_prefix) > 0:
 					_prefix, _severity_type, _suffix = severity_prefix
 					if _severity_type.lower() == "letter":
-						_severity = lvl_to_letter_severity(severity)
+						_severity_str = lvl_to_letter_severity(severity)
 					elif _severity_type.lower() == "4letter":
-						_severity = lvl_to_4letter_severity(severity)
+						_severity_str = lvl_to_4letter_severity(severity)
 					elif _severity_type.lower() == "full":
-						_severity = lvl_to_word_severity(severity)
+						_severity_str = lvl_to_word_severity(severity)
 
 					if _severity_type.startswith(("LE", "4LE", "FU")):
-						_severity = f"{_prefix}{_severity.upper()}{_suffix}"
+						_severity_str = f"{_prefix}{_severity_str.upper()}{_suffix}"
 					elif _severity_type.startswith(("Le", "4Le", "Fu")):
-						_severity = f"{_prefix}{_severity.capitalize()}{_suffix}"
+						_severity_str = f"{_prefix}{_severity_str.capitalize()}{_suffix}"
 					else:
-						_severity = f"{_prefix}{_severity.lower()}{_suffix}"
+						_severity_str = f"{_prefix}{_severity_str.lower()}{_suffix}"
 
 					if len(timestamp.strip()) != 0 or y >= len(timestamps):
-						msgstrarray.append(ThemeString(f"{_severity}", color_log_severity(severity)))
+						msgstrarray.append(ThemeString(f"{_severity_str}", color_log_severity(severity)))
 					else:
-						msgstrarray.append(ThemeString("".ljust(len(f"{_severity}")), color_log_severity(severity)))
+						msgstrarray.append(ThemeString("".ljust(len(f"{_severity_str}")), color_log_severity(severity)))
 
 				if facility_extended is not None and len(facility_extended) > 0:
 					msgstrarray += facility_extended
@@ -9143,14 +9145,14 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					facility = f"<{facilities[y]}> "
 
 				if uip.yoffset + y >= len(severities):
-					severity = f"{lvl_to_4letter_severity(LogLevel.INFO)}: "
+					severity_str = f"{lvl_to_4letter_severity(LogLevel.INFO)}: "
 				else:
-					severity = f"{lvl_to_4letter_severity(severities[y])}: "
+					severity_str = f"{lvl_to_4letter_severity(severities[y])}: "
 
 				if raw_logs:
 					data += f"{timestamp}  {messages[y]}\n"
 				else:
-					data += f"{timestamp}  {severity}{facility}{messages[y]}\n"
+					data += f"{timestamp}  {severity_str}{facility}{messages[y]}\n"
 
 			secure_write_string(filename, data, allow_relative_path = True)
 

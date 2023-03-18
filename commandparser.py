@@ -291,7 +291,7 @@ def __sub_usage(command: str) -> int:
 	commandinfo = {}
 
 	for _key, value in commandline.items():
-		if command in deep_get(value, "command"):
+		if command in deep_get(value, DictPath("command")):
 			commandinfo = value
 			break
 

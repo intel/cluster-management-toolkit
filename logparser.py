@@ -493,7 +493,7 @@ def iptables(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString
 			old_messages.append(themearray_to_string(themearray))
 
 	for i, items in enumerate(old_messages):
-		tmp_message = []
+		tmp_message: List[Union[ThemeRef, ThemeString]] = []
 		for j, item in enumerate(items.split(" ")):
 			if j == 0:
 				if item.startswith("/sbin/iptables"):
@@ -903,7 +903,8 @@ def split_glog(message: str, severity: Optional[LogLevel] = None, facility: str 
 # 2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}
 # 2022-12-13T22:23:45.808Z\tINFO\tsetup\tstarting manager
 # Assumption: datetime\tSEVERITY\t{facility if lowercase, else message}[\tjson]
-def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True) -> Tuple[str, Optional[LogLevel], str]:
+def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True) ->\
+				Tuple[str, Optional[LogLevel], str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	"""
 	Extract messages of the format datetime\tSEVERITY\t[facility\t]message[\tjson]
 
