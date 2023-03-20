@@ -1376,7 +1376,8 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 
 	return ansible_run_playbook(playbook, d)
 
-def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[str], values: Optional[Dict] = None, inventory: Optional[Dict] = None) -> ansible_runner.runner.Runner:
+def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[str], values: Optional[Dict] = None,
+					    inventory: Optional[Dict] = None) -> ansible_runner.runner.Runner:
 	"""
 	Run a playbook on selected nodes
 
@@ -1475,7 +1476,8 @@ def ansible_ping_async(selection: Optional[List[str]], inventory: Optional[Dict]
 	else:
 		selection = list(deep_get(inventory, DictPath("all#hosts"), {}))
 
-	return ansible_run_playbook_on_selection_async(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection, inventory = inventory)
+	return ansible_run_playbook_on_selection_async(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))),
+						       selection = selection, inventory = inventory)
 
 def __ansible_run_async_finished_cb(runner_obj: ansible_runner.runner.Runner, **kwargs: Dict) -> None:
 	# pylint: disable-next=global-variable-not-assigned
