@@ -533,6 +533,7 @@ def iptables(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString
 # ::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -
 # 10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"
 # 10.244.0.1 - - [29/Jan/2022:10:33:50 +0000] "GET /v0/healthz/ HTTP/1.1" 200 3 "http://10.244.0.123:8000/v0/healthz" "kube-probe/1.23"
+# 10.32.0.1 - - [20/Mar/2023:11:38:13 +0000] "GET /api/v1/series?match%5B%5D=collectd_gpu_sysman_frequency_mhz&start=1679311983&end=1679312283 HTTP/1.1" 200 528 "-" "Grafana/8.3.10" 368 0.002 [monitoring-prometheus-k8s-9090] [] 10.40.0.30:9090 528 0.004 200 5997e385f9f1e248446d28a810c4
 # [2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 200 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""
 # pylint: disable-next=unused-argument
 def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
@@ -657,11 +658,12 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 			       r"(\d+?)"
 			       r"(\s+\d+?\s\")"
 			       r"([^\"]*)"
-			       r"(\"\s\")"
-			       r"([^\"]*)"
-			       r"(\"$|\"\s\")"
+			       r"(\")"
+			       r"(\s|$)"
+			       r"(\"|.*$)"
 			       r"([^\"]*|$)"
-			       r"(\"$|$)", message)
+			       r"(\"|$)"
+			       r"(\s.*$|$)", message)
 
 		if tmp is not None:
 			address1 = ipaddress
@@ -693,11 +695,11 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 				severity = LogLevel.ERR
 			separator6 = tmp[15]
 			address4 = tmp[16]
-			separator7 = tmp[17]
-			address5 = tmp[18]
-			separator8 = tmp[19]
-			address6 = tmp[20]
-			separator9 = tmp[21]
+			separator7 = tmp[17] + tmp[18] + tmp[19]
+			address5 = tmp[20]
+			separator8 = tmp[21]
+			remainder = tmp[22]
+
 			new_message = [
 				ThemeString(address1, ThemeAttr("logview", "hostname")),
 				ThemeString(separator1, ThemeAttr("logview", "severity_info")),
@@ -711,12 +713,12 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 				ThemeString(separator6, ThemeAttr("logview", "severity_info")),
 				ThemeString(address4, ThemeAttr("logview", "url")),
 				ThemeString(separator7, ThemeAttr("logview", "severity_info")),
-				ThemeString(address5, ThemeAttr("logview", "url")),
-				ThemeString(separator8, ThemeAttr("logview", "severity_info")),
 			]
-			if address6 is not None:
-				new_message.append(ThemeString(address6, ThemeAttr("logview", "url")))
-				new_message.append(ThemeString(separator9, ThemeAttr("logview", "severity_info")))
+			if address5 is not None:
+				new_message.append(ThemeString(address5, ThemeAttr("logview", "url")))
+				new_message.append(ThemeString(separator8, ThemeAttr("logview", "severity_info")))
+			if remainder is not None:
+				new_message.append(ThemeString(remainder, ThemeAttr("logview", "default")))
 
 			return new_message, severity, facility
 
@@ -902,7 +904,10 @@ def split_glog(message: str, severity: Optional[LogLevel] = None, facility: str 
 
 # 2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}
 # 2022-12-13T22:23:45.808Z\tINFO\tsetup\tstarting manager
+# 1.677757754464991e+09\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}
 # Assumption: datetime\tSEVERITY\t{facility if lowercase, else message}[\tjson]
+# or
+#             secondssinceepoch\tSEVERITY\t{facility if lowercase, else message}[\tjson]
 def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True) ->\
 				Tuple[str, Optional[LogLevel], str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	"""
@@ -921,7 +926,7 @@ def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, fa
 
 	fields = message.split("\t")
 	# If the first field is not a timestamp we cannot trust the rest of the message to be what we hope for
-	if len(fields) < 4 or len(fields[0]) != 24:
+	if len(fields) < 4 or len(fields[0]) != 24 and not fields[0].endswith("e+09"):
 		return message, severity, facility, remnants
 
 	severity = str_to_severity(fields[1], severity)
