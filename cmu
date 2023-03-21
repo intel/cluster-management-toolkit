@@ -65,7 +65,7 @@ import cmtlib
 from cmtlib import clamp, disksize_to_human, get_package_versions, make_set_expression_list, none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple, read_cmtconfig
 from curses_helper import curses_configuration, color_log_severity, format_helptext, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, themearray_wrap_line, themearray_to_string, themearray_len, ThemeAttr, ThemeRef, ThemeString
 
-import datagetter
+import datagetter as datagetters
 from datagetter import datagetter_allowlist
 import generator as generators
 from generator import generator_allowlist
@@ -295,14 +295,14 @@ def processor_list(obj: Dict, field: str, item_separator: ThemeRef, field_separa
 				string += themearray_to_string([field_separators[min(i - 1, len(field_separators) - 1)]])
 
 			if field_prefixes is not None and i < len(field_prefixes):
-				if type(field_prefixes[i]) == tuple:
+				if isinstance(field_prefixes[i], tuple):
 					string += themearray_to_string([field_prefixes[i]])
 				else:
 					for _item in field_prefixes[i]:
 						string += themearray_to_string([_item])
 			string += tmp
 			if field_suffixes is not None and i < len(field_suffixes):
-				if type(field_suffixes[i]) == tuple:
+				if isinstance(field_suffixes[i], tuple):
 					string += themearray_to_string([field_suffixes[i]])
 				else:
 					for _item in field_suffixes[i]:
@@ -337,7 +337,7 @@ def processor_list_with_status(obj: Dict, field: str, item_separator: ThemeRef, 
 			strings.append(themearray_to_string([ellipsis]))
 			break
 
-		if type(item) is not tuple:
+		if not isinstance(item, tuple):
 			item = (item, None)
 
 		# Join all elements of the field into one string
@@ -849,7 +849,7 @@ def get_pod_containers_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 			node_name = deep_get(obj, DictPath("spec#nodeName"))
 			for container in deep_get(obj, DictPath("spec#containers")):
 				container_name = deep_get(container, DictPath("name"))
-				reason, status_group, _restarts, _message, _age = datagetter.get_container_status(deep_get(obj, DictPath("status#containerStatuses")), container_name)
+				reason, status_group, _restarts, _message, _age = datagetters.get_container_status(deep_get(obj, DictPath("status#containerStatuses")), container_name)
 				container_status = None
 				for container_status in deep_get(obj, DictPath("status#containerStatuses"), []):
 					if deep_get(container_status, DictPath("name")) == container_name:
@@ -1004,7 +1004,7 @@ def __process_string(value: str, replace_quotes: str) -> str:
 	# We do not want any newlines, and extra trailing whitespace
 	if value is None:
 		value = ""
-	if type(value) == str:
+	if isinstance(value, str):
 		value = value.replace("\n", "\\n").rstrip()
 		if replace_quotes == "pretty":
 			value = value.replace("\\\"", "“")
@@ -1039,7 +1039,7 @@ def __process_regex_to_sequence(values: Union[str, List[str]], match_regex: str,
 	compiled_regex = re.compile(match_regex)
 
 	if len(values) > 0:
-		if type(values) == str:
+		if isinstance(values, str):
 			values = [values]
 		compiled_regex = re.compile(match_regex)
 		for item in values:
@@ -1060,7 +1060,7 @@ def __process_regex_to_sequence(values: Union[str, List[str]], match_regex: str,
 	return new_values
 
 def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: str, formatter: str) -> Union[datetime, int]:
-	if action in ("earliest", "latest") and type(value) in (list, tuple):
+	if action in ("earliest", "latest") and isinstance(value, (list, tuple)):
 		tmp_timestamp: datetime = none_timestamp()
 		for tmp1 in value:
 			if tmp1 is None or tmp1 == -1:
@@ -1102,14 +1102,14 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 	if vtype == "str":
 		new_value = __process_string(value, replace_quotes)
 	elif vtype in ("float", "int", "bool"):
-		if type(value) in (list, tuple) and action == "sum":
+		if isinstance(value, (list, tuple)) and action == "sum":
 			new_value = __process_sum_numerical(value)
-		elif type(value) == tuple:
+		elif isinstance(value, tuple):
 			new_value = __process_stringify_list(value)
 		else:
 			new_value = str(value)
 	elif vtype in ("cpu_usage", "cpu_usage_round"):
-		if action == "sum" and type(value) == list:
+		if isinstance(value, list) and action == "sum":
 			new_value = __process_sum_cpu_usage(value)
 		elif vtype == "cpu_usage_round":
 			tmp_float = normalise_cpu_usage_to_millicores(value)
@@ -1118,7 +1118,7 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 			tmp_float = normalise_cpu_usage_to_millicores(value)
 			new_value = f"{tmp_float:0.1f}"
 	elif vtype == "mem_usage":
-		if action == "sum" and type(value) == list:
+		if isinstance(value, list) and action == "sum":
 			new_value = __process_sum_mem_usage(value)
 		else:
 			tmp_int = normalise_mem_to_bytes(value)
@@ -1133,8 +1133,8 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 			new_value = str(len(cast(Union[str, Sequence], value)))
 	elif vtype == "timestamp":
 		new_value = __process_timestamp(value, action, formatter)
-	elif type(vtype) == list:
-		if type(value) not in (list, tuple):
+	elif isinstance(vtype, list):
+		if not isinstance(value, (list, tuple)):
 			raise ValueError(f"Field {field_name}: type({value}) is {vtype}; for type {vtype} pathtype must be a multi-element type")
 		_values = []
 		override_kind = deep_get_with_fallback(cmtlib.cmtconfig,
@@ -1170,9 +1170,9 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 				_values.append("")
 			else:
 				raise ValueError(f"Field {field_name}: type[{i}] ({vtype}) is unknown")
-		if type(value) == list:
+		if isinstance(value, list):
 			new_value = _values
-		elif type(value) == tuple:
+		elif isinstance(value, tuple):
 			new_value = tuple(cast(List, _values))
 	elif vtype == "raw":
 		# Do not convert this type
@@ -1270,13 +1270,13 @@ def when_filter(when_path: Dict, item: Dict, key: Optional[str] = None, value: A
 			return False
 
 		# dict-based checks
-		if when_isdict is not None and type(value) != dict:
+		if when_isdict is not None and not isinstance(value, dict):
 			return False
-		if when_notisdict is not None and type(value) == dict:
+		if when_notisdict is not None and isinstance(value, dict):
 			return False
-		if when_dicthaskey is not None and (type(value) != dict or when_dicthaskey not in value):
+		if when_dicthaskey is not None and (not isinstance(value, dict) or when_dicthaskey not in value):
 			return False
-		if when_notdicthaskey is not None and (type(value) != dict or when_notdicthaskey in value):
+		if when_notdicthaskey is not None and (not isinstance(value, dict) or when_notdicthaskey in value):
 			return False
 
 		# Set-based checks
@@ -1318,7 +1318,7 @@ def transform_list(vlist, transform):
 
 	# This handles both lists and dicts
 	for key in vlist:
-		if not type(vlist) == dict:
+		if not isinstance(vlist, dict):
 			value = None
 		else:
 			value = vlist[key]
@@ -1406,7 +1406,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 		paths = deep_get(field, DictPath("paths"), [])
 		datagetter = deep_get(field, DictPath("datagetter"))
 		if datagetter is not None:
-			if type(datagetter) == str:
+			if isinstance(datagetter, str):
 				datagetter = deep_get(datagetter_allowlist, DictPath(datagetter))
 		if "default" not in field:
 			default = ""
@@ -1446,7 +1446,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					raise ValueError(f"Field {name}: exactly one of path & paths must be used in a 'paths:' block\npath={path}\npaths={paths}")
 
 				if mpaths is None:
-					if type(path) == str:
+					if isinstance(path, str):
 						path = [path]
 					mpaths = [path]
 
@@ -1533,9 +1533,9 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							continue
 						_regexes_key = deep_get(_path, DictPath("key#regex"), [])
 						_regexes_value = deep_get(_path, DictPath("value#regex"), [])
-						if type(_regexes_key) == str:
+						if isinstance(_regexes_key, str):
 							_regexes_key = [_regexes_key]
-						if type(_regexes_value) == str:
+						if isinstance(_regexes_value, str):
 							_regexes_value = [_regexes_value]
 						_key = transform_filter(deep_get(_path, DictPath("key#transform"), {}), _key)
 						_value = transform_filter(deep_get(_path, DictPath("value#transform"), {}), _value)
@@ -1581,7 +1581,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						_values.append((tmp, vtype))
 				elif ptype == "match_expression":
 					tmp = deep_get_with_fallback(obj, path)
-					if type(tmp) == list:
+					if isinstance(tmp, list):
 						value = []
 						subpath = deep_get(_path, DictPath("subpath"))
 						if subpath is None:
@@ -1596,20 +1596,20 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						else:
 							for tmp in value:
 								_values.append((tmp, "raw"))
-					elif type(tmp) == dict:
+					elif isinstance(tmp, dict):
 						value = make_set_expression_list(tmp)
 						_values.append((value, "raw"))
 					else:
 						_values.append((default, "raw"))
 				elif ptype == "lookup":
 					lookup_kind, lookup_api_group, lookup_namespace, lookup_name, tmp_lookup_selector = path
-					if type(lookup_kind) == list:
+					if isinstance(lookup_kind, list):
 						lookup_kind = deep_get_with_fallback(obj, lookup_kind, "")
-					if type(lookup_api_group) == list:
+					if isinstance(lookup_api_group, list):
 						lookup_api_group = deep_get_with_fallback(obj, lookup_api_group, "")
-					if type(lookup_namespace) == list:
+					if isinstance(lookup_namespace, list):
 						lookup_namespace = deep_get_with_fallback(obj, lookup_namespace, "")
-					if type(lookup_name) == list:
+					if isinstance(lookup_name, list):
 						lookup_name = deep_get_with_fallback(obj, lookup_name, "")
 					if len(tmp_lookup_selector) == 0:
 						lookup_selector = ""
@@ -1618,7 +1618,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						for ls in tmp_lookup_selector:
 							ls_key = ls[0]
 							ls_value = ls[1]
-							if type(ls_value) == list:
+							if isinstance(ls_value, list):
 								ls_value = deep_get_with_fallback(obj, ls_value)
 							_lookup_selector[ls_key] = ls_value
 						lookup_selector = make_selector(_lookup_selector)
@@ -1632,13 +1632,13 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						unknown = deep_get(_path, DictPath("unknown"), "Unknown Kind")
 						_values.append((unknown, "raw"))
 						continue
-					if type(lookup_obj) == dict and when_filter(_path, item = lookup_obj) == False:
+					if isinstance(lookup_obj, dict) and when_filter(_path, item = lookup_obj) == False:
 						continue
 					subpaths = deep_get(_path, DictPath("subpaths"), [])
 					value = []
 					if len(subpaths) > 0:
 						tmp = []
-						if type(lookup_obj) == dict:
+						if isinstance(lookup_obj, dict):
 							lookup_obj = [lookup_obj]
 
 						for _lookup_obj in lookup_obj:
@@ -1691,7 +1691,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					tmp = deep_get_with_fallback(obj, path)
 					if tmp is None:
 						tmp = []
-					if type(tmp) == dict:
+					if isinstance(tmp, dict):
 						tmp = [tmp]
 					for _tmp in tmp:
 						if when_filter(_path, item = _tmp) == False:
@@ -1701,7 +1701,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					else:
 						if "else" in _path:
 							tmp = deep_get(_path, DictPath("else"))
-							if type(tmp) == list:
+							if isinstance(tmp, list):
 								tmp = deep_get_with_fallback(obj, tmp)
 							if len(tmp) > 0:
 								value.append(tmp)
@@ -1724,7 +1724,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						_values.append((duration, "raw"))
 				elif ptype == "comparison":
 					# Input is two paths; output is the value of the first path and -2/-1/0/1 (for type mismatch, lt, eq, gt)
-					if type(default) == list and len(default) == 2:
+					if isinstance(default, list) and len(default) == 2:
 						_default1 = default[0]
 						_default2 = default[1]
 					else:
@@ -1748,7 +1748,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					start_time_index = -1
 					end_time_index = -1
 					for i in range(0, len(mpaths)):
-						if type(mpaths[i]) == list:
+						if isinstance(mpaths[i], list):
 							if start_time_index == -1:
 								start_time_index = i
 								start_time = deep_get_with_fallback(obj, mpaths[i], default = None)
@@ -1780,7 +1780,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					value = []
 					items = []
 					for mpath in mpaths:
-						if type(mpath) == str:
+						if isinstance(mpath, str):
 							mpath = [mpath]
 						tmp = deep_get_list(obj, mpath, default = [], fallback_on_empty = fallback_on_empty)
 						# XXX: This is to avoid breaking anything
@@ -1797,7 +1797,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 
 						tmp = []
 						for i in range(0, len(subpaths)):
-							if type(default) == list:
+							if isinstance(default, list):
 								if i < len(default):
 									_default = default[i]
 								else:
@@ -1808,16 +1808,16 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							if (vtype in ("int", "float") or action in ["sum"]) and type(default) not in (int, float):
 								_default = 0
 
-							if type(subpaths[i]) == dict:
+							if isinstance(subpaths[i], dict):
 								_subpath = deep_get(subpaths[i], DictPath("str"))
 								if _subpath is not None:
 									tmp.append(_subpath)
 								else:
 									_subpath = deep_get(subpaths[i], DictPath("subpath"))
-									if type(_subpath) == str:
+									if isinstance(_subpath, str):
 										_subpath = [_subpath]
 									_regexes = deep_get(subpaths[i], DictPath("regex"), [])
-									if type(_regexes) == str:
+									if isinstance(_regexes, str):
 										_regexes = [_regexes]
 									_raw = deep_get_with_fallback(item, _subpath, _default)
 									_raw = transform_filter(deep_get(subpaths[i], DictPath("transform"), {}), _raw)
@@ -1834,26 +1834,26 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 								prefix = deep_get(_path, DictPath("prefix"), [])
 								suffix = deep_get(_path, DictPath("suffix"), [])
 								_subpath = subpaths[i]
-								if type(_subpath) == str:
+								if isinstance(_subpath, str):
 									_subpath = [_subpath]
 								_tmp = deep_get_with_fallback(item, _subpath, _default)
-								if type(prefix) == str:
-									if type(_tmp) == str:
+								if isinstance(prefix, str):
+									if isinstance(_tmp, str):
 										_tmp = prefix + _tmp
 									else:
 										_tmp = [prefix] + _tmp
 								else:
 									tmp += prefix
 
-								if type(suffix) == str:
-									if type(_tmp) == str:
+								if isinstance(suffix, str):
+									if isinstance(_tmp, str):
 										_tmp += suffix
 									else:
 										_tmp += [suffix]
 
 								tmp.append(_tmp)
 
-								if type(suffix) == list:
+								if isinstance(suffix, list):
 									tmp += suffix
 						if len(tmp) == 1:
 							value.append(tmp[0])
@@ -1883,7 +1883,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					value = []
 					_raw = deep_get_with_fallback(obj, path, "")
 					_regexes = deep_get(_path, DictPath("regex"), [])
-					if type(_regexes) == str:
+					if isinstance(_regexes, str):
 						_regexes = [_regexes]
 					for _regex in _regexes:
 						_tmp = re.match(_regex, _raw)
@@ -1899,7 +1899,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					if when_filter(_path, item = obj) == False:
 						continue
 					for i in range(0, len(path)):
-						if type(default) == list:
+						if isinstance(default, list):
 							if i < len(default):
 								_default = default[i]
 							else:
@@ -1911,7 +1911,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							_default = 0
 
 						# This is a literal string, not a path
-						if type(path[i]) == str:
+						if isinstance(path[i], str):
 							tmp = path[i]
 						else:
 							tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
@@ -1925,7 +1925,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 								tmp = ""
 							vtype = "kind"
 						value.append(tmp)
-					if type(deep_get(_path, DictPath("substitute"))) == list:
+					if isinstance(deep_get(_path, DictPath("substitute")), list):
 						value = deep_get(_path, DictPath("substitute"))
 					value = tuple(value)
 					_values.append((value, vtype))
@@ -1953,7 +1953,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					_values.append((value, "raw"))
 				elif ptype == "dictfields":
 					subpaths = deep_get_with_fallback(_path, [DictPath("subpaths"), DictPath("subpath")], [])
-					if type(subpaths) == str:
+					if isinstance(subpaths, str):
 						subpaths = [[subpaths]]
 					for mpath in mpaths:
 						tmp = deep_get_with_fallback(obj, mpath)
@@ -1961,7 +1961,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							continue
 						value = []
 						for key in subpaths:
-							if type(key) == str:
+							if isinstance(key, str):
 								value.append(key)
 							else:
 								value.append(deep_get_with_fallback(tmp, key, default))
@@ -1977,13 +1977,13 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 
 			for value, _vtype in _values:
 				_regex = deep_get(_path, DictPath("regex"))
-				if type(_vtype) == list:
+				if isinstance(_vtype, list):
 					if value is None or len(value) == 0:
 						value = []
-				if type(value) == list and _vtype == "raw":
+				if isinstance(value, list) and _vtype == "raw":
 					values += value
 					continue
-				if type(value) == list and type(_vtype) == list:
+				if isinstance(value, list) and isinstance(_vtype, list):
 					tmp = []
 					for _value in value:
 						tmp.append(process_value(name, _value, _vtype, view, field_index, action, formatter, replace_quotes, _regex))
@@ -1994,7 +1994,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 			if len(values) == 0:
 				values = global_default
 
-			if type(values) == list and len(values) == 1 and formatter != "list":
+			if isinstance(values, list) and len(values) == 1 and formatter != "list":
 				d[name] = values[0]
 			else:
 				d[name] = values
@@ -2139,6 +2139,7 @@ def listgetter_noop(obj: Dict, **kwargs: Dict) -> Tuple[Dict, str]:
 
 	return [], "OK"
 
+# pylint: disable-next=unused-argument
 def listgetter_matchrules(obj: Dict, **kwargs: Dict) -> Tuple[Dict, str]:
 	"""
 	Extract match rules from an object
@@ -2299,6 +2300,7 @@ def get_journalctl_log(obj: Dict, **kwargs: Dict):
 
 	return (timestamps, facilities, severities, messages)
 
+# pylint: disable-next=unused-argument
 def get_traceflow(obj: Dict, **kwargs: Dict):
 	timestamps = []
 	facilities = []
@@ -2335,6 +2337,7 @@ def get_traceflow(obj: Dict, **kwargs: Dict):
 
 	return (timestamps, facilities, severities, messages)
 
+# pylint: disable-next=unused-argument
 def get_task_log(obj: Dict, **kwargs: Dict):
 	field = []
 
@@ -2369,6 +2372,7 @@ def get_task_log(obj: Dict, **kwargs: Dict):
 
 	return field
 
+# pylint: disable-next=unused-argument
 def get_themearrays(obj: Dict, **kwargs: Dict) -> Dict:
 	return obj
 
@@ -3592,7 +3596,7 @@ def get_pod_resource_list(obj, **kwargs):
 		ref = container
 		name = deep_get(container, DictPath("name"))
 		resource_tuple = ("", "", name)
-		status, status_group, restarts, message, age = datagetter.get_container_status(container_status, name)
+		status, status_group, restarts, message, age = datagetters.get_container_status(container_status, name)
 		vlist.append({
 			"ref": ref,
 			"namespace": pod_namespace,
@@ -4254,7 +4258,7 @@ def get_node_info(vlist, extra_vars) -> List[Type]:
 		status, status_group, taints, _full_taints = get_node_status(obj)
 		kubelet_version = deep_get(obj, DictPath("status#nodeInfo#kubeletVersion"))
 		container_runtime = deep_get(obj, DictPath("status#nodeInfo#containerRuntimeVersion"))
-		os = deep_get(obj, DictPath("status#nodeInfo#osImage"))
+		operating_system = deep_get(obj, DictPath("status#nodeInfo#osImage"))
 		kernel = deep_get(obj, DictPath("status#nodeInfo#kernelVersion"))
 
 		info.append(type("InfoClass", (), {
@@ -4266,7 +4270,7 @@ def get_node_info(vlist, extra_vars) -> List[Type]:
 			"age": age,
 			"kubelet_version": kubelet_version,
 			"internal_ips": internal_ips,
-			"os": os,
+			"os": operating_system,
 			"kernel": kernel,
 			"container_runtime": container_runtime,
 			"cpu": cpu,
@@ -4377,14 +4381,14 @@ def filter_list_entry(obj, caller_obj, filters):
 				if rtype == "":
 					key = deep_get(rule, DictPath("key"), "")
 					values = deep_get(rule, DictPath("values"), [])
-					if type(values) == dict:
+					if isinstance(values, dict):
 						if deep_get(rule, DictPath("values#source"), "object") == "caller":
 							src = caller_obj
 						else:
 							src = obj
 						values_path = deep_get(rule, DictPath("values#path"), "")
 						values = deep_get(src, DictPath(values_path), [])
-						if type(values) == str:
+						if isinstance(values, str):
 							values = [values]
 
 					_listref = deep_get(rule, DictPath("list"))
@@ -4406,7 +4410,7 @@ def filter_list_entry(obj, caller_obj, filters):
 					matched = False
 					for _dict in target_dict:
 						for key, value in deep_get(rule, DictPath("fields"), {}).items():
-							if type(value) == dict:
+							if isinstance(value, dict):
 								if deep_get(value, DictPath("source"), "object") == "caller":
 									src = caller_obj
 								else:
@@ -4441,14 +4445,14 @@ def filter_list_entry(obj, caller_obj, filters):
 			for rule in block:
 				key = deep_get(rule, DictPath("key"), "")
 				values = deep_get(rule, DictPath("values"), [])
-				if type(values) == dict:
+				if isinstance(values, dict):
 					if deep_get(rule, DictPath("values#source"), "object") == "caller":
 						src = caller_obj
 					else:
 						src = obj
 					values_path = deep_get(rule, DictPath("values#path"), "")
 					values = deep_get(src, DictPath(values_path), [])
-					if type(values) == str:
+					if isinstance(values, str):
 						values = [values]
 				if deep_get(obj, DictPath(key), "").rstrip() in values:
 					skip = True
@@ -4607,7 +4611,7 @@ def get_pod_info(**kwargs) -> List[Type]:
 		controller = format_controller(controller, show_kind)
 
 		pod_ip = deep_get(obj, DictPath("status#podIP"), "<unset>")
-		status, status_group = datagetter.get_pod_status(kh, obj)
+		status, status_group = datagetters.get_pod_status(kh, obj)
 		pod_restarts, restarted_at = get_pod_restarts_total(obj)
 		if restarted_at == -1:
 			last_restart = -1
@@ -4727,7 +4731,7 @@ def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, yp
 		generator = field_list[field].get("generator")
 		if generator is None:
 			continue
-		if type(generator) == str:
+		if isinstance(generator, str):
 			generator = deep_get(generator_allowlist, DictPath(generator), generators.generator_basic)
 
 		fieldlen = field_list[field]["fieldlen"]
@@ -4772,14 +4776,14 @@ builtin_fields = {
 	},
 	"api_support": {
 		"header": "API Support:",
-		"datagetter": datagetter.datagetter_api_support,
+		"datagetter": datagetters.datagetter_api_support,
 		"formatter": "list",
 	},
 	"mem": {
 		"header": "Mem% / Total:",
 		# Safe
 		"path": (r"^(\d+).*", ["status#allocatable#memory", "status#capacity#memory"]),
-		"datagetter": datagetter.datagetter_regex_split_to_tuples,
+		"datagetter": datagetters.datagetter_regex_split_to_tuples,
 		"generator": generators.generator_mem,
 		"ralign": True,
 	},
@@ -4802,7 +4806,7 @@ builtin_fields = {
 	},
 	"pod_status": {
 		"header": "Status:",
-		"datagetter": datagetter.datagetter_pod_status,
+		"datagetter": datagetters.datagetter_pod_status,
 		"generator": generators.generator_status,
 	},
 }
@@ -4859,7 +4863,7 @@ def get_formatter(field):
 
 	formatter = deep_get(field, DictPath("formatter"))
 	generator = deep_get(field, DictPath("generator"), generators.generator_basic)
-	if type(generator) == str:
+	if isinstance(generator, str):
 		generator = deep_get(generator_allowlist, DictPath(generator), generators.generator_basic)
 	processor = deep_get(field, DictPath("processor"))
 
@@ -5141,7 +5145,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			listgetter_args["label_selector"] = label_selector
 
 			if listgetter is not None:
-				if type(listgetter) == str:
+				if isinstance(listgetter, str):
 					listgetter = deep_get(listgetter_allowlist, DictPath(listgetter))
 
 				# pylint: disable-next=comparison-with-callable
@@ -5353,7 +5357,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				for action in actionlist:
 					description = deep_get(actionlist, DictPath(f"{action}#description"))
 					tmpdescription = ""
-					if type(description) == str:
+					if isinstance(description, str):
 						tmpdescription = description
 					else:
 						for i in range(0, len(description)):
@@ -5363,7 +5367,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 						tmpdescription += metadata[0]
 					if tmpdescription == selection:
 						actionfunc = deep_get(actionlist, DictPath(f"{action}#actionfunc"), command_hosts)
-						if type(actionfunc) == str:
+						if isinstance(actionfunc, str):
 							actionfunc = deep_get(actionfunc_allowlist, DictPath(actionfunc))
 						# These are only relevant for node and inventory view
 						allowoncontrolplane = deep_get(actionlist, DictPath(f"{action}#allow_on_control_plane"), True)
@@ -5480,7 +5484,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 
 			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, namespace_list, title = "Select Namespace", cursor = True, preselection = preselection)
 			selection = None
-			if tmpselection is not None and type(tmpselection) == str:
+			if tmpselection is not None and isinstance(tmpselection, str):
 				selection = tmpselection
 
 			if selection is not None and len(selection) > 0:
@@ -5563,7 +5567,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				continue
 
 			for obj in vlist:
-				if type(itemlist[0]) == tuple:
+				if isinstance(itemlist[0], tuple):
 					if (deep_get(obj, DictPath("metadata#namespace"), ""), deep_get(obj, DictPath("metadata#name"))) not in itemlist:
 						continue
 				else:
@@ -5608,7 +5612,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				continue
 
 			for obj in vlist:
-				if type(itemlist[0]) == tuple:
+				if isinstance(itemlist[0], tuple):
 					if (deep_get(obj, DictPath("metadata#namespace"), ""), deep_get(obj, DictPath("metadata#name"))) not in itemlist:
 						continue
 				else:
@@ -5779,7 +5783,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				for action in actionlist:
 					description = deep_get(actionlist, DictPath(f"{action}#description"))
 					tmpdescription = ""
-					if type(description) == str:
+					if isinstance(description, str):
 						tmpdescription = description
 					else:
 						for i in range(0, len(description)):
@@ -5794,7 +5798,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 								actionfunc = action_execute_command
 						else:
 							actionfunc = deep_get(actionlist, DictPath(f"{action}#actionfunc"), command_hosts)
-							if type(actionfunc) == str:
+							if isinstance(actionfunc, str):
 								actionfunc = deep_get(actionfunc_allowlist, DictPath(actionfunc))
 						action_args = deep_get(actionlist, DictPath(f"{action}#action_args"), {})
 						# These are only relevant for node and inventory view
@@ -5936,7 +5940,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			if shortcut_keys is None:
 				continue
 
-			if type(shortcut_keys) != list:
+			if not isinstance(shortcut_keys, list):
 				shortcut_keys = [shortcut_keys]
 
 			if c not in shortcut_keys:
@@ -6879,10 +6883,11 @@ def __update_cni(uip: UIProps, **kwargs):
 	if update_cni(uip.stdscr, cni, cni_version, candidate_version, dry_run = True) == False:
 		return Retval.MATCH
 
-		# Try to download and install an update for weave
-		if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Update {cni} to version {candidate_version}:", default = False):
-			update_cni(uip.stdscr, cni, cni_version, candidate_version)
-		uip.refresh_all()
+	# Try to download and install an update
+	if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Update {cni} to version {candidate_version}:", default = False):
+		update_cni(uip.stdscr, cni, cni_version, candidate_version)
+	uip.refresh_all()
+
 	return Retval.MATCH, {}
 
 cniloop_shortcuts = {
@@ -7058,7 +7063,7 @@ def decode_and_view_data(stdscr: curses.window, **kwargs):
 		obj = base64.b64decode(value).decode("utf-8")
 	else:
 		raise TypeError(f"Trying to export unknown vtype: {vtype}")
-	if title.endswith((".crt", "tls.key", ".pem", "CAKey")) or type(obj) == str and obj.startswith(("-----BEGIN", "-----END")):
+	if title.endswith((".crt", "tls.key", ".pem", "CAKey")) or isinstance(obj, str) and obj.startswith(("-----BEGIN", "-----END")):
 		formatter = formatters.format_crt
 	else:
 		formatter = formatters.format_none
@@ -7213,7 +7218,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 	# If obj is a tuple we got the object as obj[0]
 	# params as obj[1]
-	if type(obj) is tuple:
+	if isinstance(obj, tuple):
 		objparams = obj[1]
 		obj = obj[0]
 	else:
@@ -7226,7 +7231,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	if formatter_path is not None:
 		formatter = deep_get(obj, DictPath(formatter_path))
 	elif formatter is not None:
-		if type(formatter) == str:
+		if isinstance(formatter, str):
 			_formatter = deep_get(formatter_allowlist, DictPath(formatter))
 			if _formatter is None:
 				raise ValueError(f"{formatter} is not in formatter_allowlist")
@@ -7412,7 +7417,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			_shortcut = shortcuts[shortcut].get("shortcut")
 			if _shortcut is None:
 				continue
-			if type(_shortcut) != list:
+			if not isinstance(_shortcut, list):
 				_shortcut = [_shortcut]
 			for _sc in _shortcut:
 				if _sc in _shortcuts:
@@ -7514,9 +7519,9 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				elif _label_selector_key_values is not None:
 					label_selectors = {}
 					for label_key, label_value in _label_selector_key_values:
-						if type(label_value) == str:
+						if isinstance(label_value, str):
 							label_selectors[label_key] = label_value
-						elif type(label_value) == list:
+						elif isinstance(label_value, list):
 							label_selectors[label_key] = deep_get_with_fallback(obj, label_value)
 					listgetter_args["label_selector"] = make_selector(label_selectors)
 				if len(deep_get(listgetter_args, DictPath("label_selector"), "")) == 0 and deep_get(listgetter_args, DictPath("_none_on_empty_selector"), False):
@@ -7525,7 +7530,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				if len(_field_selector) > 0:
 					field_selectors = {}
 					for field_key, field_value in _field_selector.items():
-						if type(field_value) == list:
+						if isinstance(field_value, list):
 							field_selectors[field_key] = deep_get_with_fallback(obj, field_value)
 						else:
 							field_selectors[field_key] = field_value
@@ -7583,7 +7588,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 				extra_data = {}
 				for key, value in deep_get(infogetter_args, DictPath("_extra_data"), {}).items():
-					if type(value) == list:
+					if isinstance(value, list):
 						tmp = deep_get_with_fallback(obj, value)
 						extra_data[key] = tmp
 					else:
@@ -7662,7 +7667,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 					if timestamp is None:
 						field = [ThemeRef("strings", "unset")]
-					elif type(timestamp) == datetime:
+					elif isinstance(timestamp, datetime):
 						field = format_timestamp(timestamp)
 					else:
 						timestamp = timestamp_to_datetime(timestamp)
@@ -7777,7 +7782,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					elif view == ("ConfigMap", "") and item.type in (rtype[4] for rtype in cmdata_format):
 						name = item.data
 						ikind = deep_get(viewref, DictPath("listpad#on_activation#kind"), "")
-						if type(ikind) == str:
+						if isinstance(ikind, str):
 							iapi_family = deep_get(viewref, DictPath("listpad#on_activation#api_family"), "")
 							ikind = kh.guess_kind((ikind, iapi_family))
 					else:
@@ -7889,7 +7894,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			if shortcut_keys is None:
 				continue
 
-			if type(shortcut_keys) != list:
+			if not isinstance(shortcut_keys, list):
 				shortcut_keys = [shortcut_keys]
 
 			if c not in shortcut_keys:
@@ -7906,26 +7911,26 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					w_itemgetter = deep_get(value, DictPath("itemgetter"))
 					if w_itemgetter is None:
 						continue
-					if type(w_itemgetter) == str:
+					if isinstance(w_itemgetter, str):
 						w_itemgetter = deep_get(itemgetter_allowlist, DictPath(w_itemgetter))
 					w_itemgetter_args = deep_get(value, DictPath("itemgetter_args"), {})
 					w_selectable = deep_get(value, DictPath("selectable"), False)
-					w_kind = deep_get(value, DictPath("kind"), view)
+					# w_kind = deep_get(value, DictPath("kind"), view)
 					if "_slow_task_msg" in w_itemgetter_args:
-						w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = deep_get(w_itemgetter_args, DictPath("_slow_task_msg")))
+						_w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = deep_get(w_itemgetter_args, DictPath("_slow_task_msg")))
 					w_items = w_itemgetter(kh, obj, **w_itemgetter_args)
 
 					# If the first element is an integer we assume that we've been provided
 					# a pre-formatted list. Otherwise we apply formatting if available.
 					# If not available we try to provide some sensible defaults.
-					if w_items is not None and len(w_items) > 0 and (type(w_items[0]) == dict or type(w_items[0]) in (list, tuple) and type(w_items[0][0]) != int):
+					if w_items is not None and len(w_items) > 0 and (isinstance(w_items[0], dict) or isinstance(w_items[0], (list, tuple)) and type(w_items[0][0]) != int):
 						tmp_items = []
 						w_formatting = deep_get(value, DictPath("formatting"), [ThemeAttr("windowwidget", "default")])
 						lineattrs = WidgetLineAttrs.NORMAL
 						# w_item is a line
 						for w_item in w_items:
 							ref = None
-							if type(w_item) == dict:
+							if isinstance(w_item, dict):
 								ref = deep_get(w_item, DictPath("ref"))
 								w_item = deep_get(w_item, DictPath("fields"))
 							# w_item[i] is a column
@@ -7942,7 +7947,9 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 					if w_items is not None and len(w_items) > 0:
 						w_sortcolumn = deep_get(value, DictPath("sortcolumn"))
-						tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items = w_items, headers = w_headers, title = w_title, cursor = w_selectable)
+						tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2,
+											  items = w_items, headers = w_headers, title = w_title,
+											  cursor = w_selectable, sortcolumn = w_sortcolumn)
 						if len(tmpselection) == 0:
 							continue
 						changed = True
@@ -7960,7 +7967,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					curses.doupdate()
 					# Check this condition before confirming
 					w_confirm = deep_get(value, DictPath("confirm"), False)
-					if type(w_confirm) == str:
+					if isinstance(w_confirm, str):
 						if w_confirm == "path_exists":
 							w_confirm = os.path.exists(w_result)
 						else:
@@ -8071,13 +8078,13 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					if len(_command) > 0:
 						command = []
 						for _cmd in _command:
-							if type(_cmd) == list:
+							if isinstance(_cmd, list):
 								command.append(deep_get_with_fallback(obj, _cmd))
 							else:
 								command.append(_cmd)
 					# Check this condition before confirming
 					w_confirm = deep_get(value, DictPath("confirm"), False)
-					if type(w_confirm) == str:
+					if isinstance(w_confirm, str):
 						if w_confirm == "path_exists":
 							w_confirm = os.path.exists(w_result)
 						else:
@@ -8119,7 +8126,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					kind = deep_get(value, DictPath("kind"))
 					if kind is None:
 						kind_path = deep_get(value, DictPath("kind_path"), "")
-						if type(kind_path) == tuple:
+						if isinstance(kind_path, tuple):
 							kind = (deep_get(obj, DictPath(kind_path[0])), deep_get(obj, DictPath(kind_path[1])))
 						else:
 							kind = deep_get(obj, DictPath(kind_path))
@@ -8137,7 +8144,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 						if retval is not None and retval == Retval.RETURNFULL:
 							return retval
 					elif len(kind) > 0:
-						if type(kind) == str:
+						if isinstance(kind, str):
 							kind = kh.guess_kind(kind)
 						ref = kh.get_ref_by_kind_name_namespace(kind, call_name, call_namespace)
 						retval = call(uip.stdscr, ref, kind)
@@ -8234,7 +8241,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 	# Show severity as text
 	severity_prefix = deep_get(cmtlib.cmtconfig, DictPath("Pods#severity_prefix"), [])
 	# Backwards compatibility
-	if type(severity_prefix) is bool:
+	if type(severity_prefix) == bool:
 		if severity_prefix == False:
 			severity_prefix = []
 		else:
@@ -8356,7 +8363,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 			prev_timestamp = None
 			prev_facility = ""
 			prev_severity = LogLevel.INFO
-			prev_message = ""
+			prev_message = [ThemeString("", ThemeAttr("logview", "default"))]
 			prev_remnants = None
 			repeat_count = 0
 
@@ -8385,7 +8392,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 							break
 						return Retval.RETURNDONE
 
-				if type(_line) == tuple:
+				if isinstance(_line, tuple):
 					line, podname, containername, image, facility_extended = _line
 					# We need to identify parser again and again and again for every line
 					_parser = None
@@ -8407,12 +8414,10 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 				# we signal this by returning message == ["start_block", processor],
 				# then continue parsing until we either get ["end_block", *],
 				# ["break", *], or reach the end of the file
-				if type(message) == list and message[0] == "start_block" and raw_logs == False:
+				if isinstance(message, tuple) and message[0] == "start_block" and raw_logs == False:
 					_logentries = [(timestamp, facility, severity, remnants)]
 					processor = message
-					options = {}
-					if len(processor) == 3:
-						options = processor[2]
+					options = processor[2]
 					_block_state = "none"
 					for j in range(i, len(splitmsg)):
 						processor, _logentry = processor[1](splitmsg[j], fold_msg = fold_msg, options = options)
@@ -8452,18 +8457,14 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					message = remnants
 					remnants = None
 
-				# If this is a (themestr, severity) tuple, ignore the severity;
-				# it is only necessary for remnants since the severity is passed separarely
-				if type(message) == tuple:
-					message, _ = message
-
 				total_msgs += 1
 
 				if severity > log_level:
 					hidden_msgs += 1
 					continue
 
-				if prev_message == message and prev_facility == facility and prev_severity == severity and (prev_message != "" or prev_remnants is not None) and prev_remnants == remnants:
+				if prev_message == message and prev_facility == facility and prev_severity == severity and \
+				   (themearray_len(prev_message) > 0 or prev_remnants is not None) and prev_remnants == remnants:
 					repeat_count += 1
 					prev_timestamp = timestamp
 					if merge_repeats:
@@ -8484,7 +8485,8 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					prev_message = message
 					prev_remnants = remnants
 
-				timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, message, facility_extended)
+				timestamps, facilities, severities, messages = \
+						log_add_line(timestamps, facilities, severities, messages, timestamp, facility, severity, message, facility_extended)
 
 				if remnants is not None and len(remnants) > 0:
 					# Remnants are used for unfolding multi-line messages that have been folded into one,
@@ -8495,10 +8497,10 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					# (string(newline separated strings), severity)
 					# or
 					# [(string, severity), ...]
-					if type(remnants) == tuple:
+					if isinstance(remnants, tuple):
 						tmpmessages, severity = remnants
 
-						if type(tmpmessages) == list:
+						if isinstance(tmpmessages, list):
 							for message in tmpmessages:
 								timestamps, facilities, severities, messages = log_add_line(timestamps, facilities, severities, messages, None, "".ljust(len(facility)), severity, message, facility_extended)
 						else:
@@ -8543,7 +8545,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					if deep_get(container_status, DictPath("name")) == containername:
 						break
 
-				status, status_group, restarts, message, _age = datagetter.get_container_status(src_statuses, containername)
+				status, status_group, restarts, message, _age = datagetters.get_container_status(src_statuses, containername)
 				containerarray: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString("Container: ", ThemeAttr("main", "infoheader")),
 					ThemeString(f"{containername}{containertypearray}", ThemeAttr("types", "generic"))
@@ -8783,7 +8785,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 				else:
 					timestamp = str(timestamps[uip.yoffset + y]).ljust(uip.tspadwidth)
 					datestamp = timestamp[0:len("YYYY-MM-DD ")]
-					if current_datestamp is not None and type(timestamps[uip.yoffset + y]) == datetime and datestamp != current_datestamp:
+					if current_datestamp is not None and isinstance(timestamps[uip.yoffset + y], datetime) and datestamp != current_datestamp:
 						current_datestamp = datestamp
 						new_date = True
 				hourstamp = timestamp[len("YYYY-MM-DD "):]
@@ -8822,7 +8824,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					facility = ""
 				elif show_facility == "Short":
 					_facility = facilities[uip.yoffset + y]
-					if type(_facility) == tuple:
+					if isinstance(_facility, tuple):
 						facility_extended, _facility = _facility
 					if _facility is None:
 						_facility = ""
@@ -8839,7 +8841,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 						facility = _facility
 				else:
 					facility = facilities[uip.yoffset + y]
-					if type(facility) == tuple:
+					if isinstance(facility, tuple):
 						facility_extended, facility = facility
 					if facility is None:
 						facility = ""
@@ -8888,7 +8890,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					msgstrarray += facilitystr
 
 				msg = messages[uip.yoffset + y]
-				if type(msg) != list:
+				if not isinstance(msg, list):
 					msgstrarray.append(ThemeString(msg, color_log_severity(severity)))
 				else:
 					msgstrarray += msg
@@ -9154,7 +9156,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 				else:
 					data += f"{timestamp}  {severity_str}{facility}{messages[y]}\n"
 
-			secure_write_string(filename, data, allow_relative_path = True)
+			secure_write_string(FilePath(filename), data, allow_relative_path = True)
 
 def do_command(stdscr: curses.window, **kwargs) -> None:
 	"""
@@ -9178,14 +9180,14 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
 
 	args = []
 	for arg in _args:
-		if type(arg) == str:
+		if isinstance(arg, str):
 			args.append(arg)
-		elif type(arg) == list:
+		elif isinstance(arg, list):
 			for path in arg:
 				tmp = deep_get(obj, DictPath(path))
-				if type(tmp) == str:
+				if isinstance(tmp, str):
 					args.append(tmp)
-				elif type(tmp) == list:
+				elif isinstance(tmp, list):
 					args += tmp
 				else:
 					sys.exit("widget_args: command requested incorrect data type; only str and list are valid")
@@ -9588,7 +9590,7 @@ def executecommand_multiple(stdscr: curses.window, msg, command, items, waitfork
 		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
 	stdscr.refresh()
 
-def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Dict] = None) -> Tuple[int, Dict]:
+def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Dict] = None) -> int:
 	http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
 	https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
 	use_proxy = "no"
@@ -9628,7 +9630,7 @@ def view_obj(stdscr: curses.window, **kwargs):
 			obj = deep_get(obj, DictPath(path))
 	else:
 		obj = [obj]
-	if type(formatter) == str:
+	if isinstance(formatter, str):
 		_formatter = deep_get(formatter_allowlist, DictPath(formatter))
 		if _formatter is None:
 			raise ValueError(f"{formatter} is not in formatter_allowlist")
@@ -9910,7 +9912,7 @@ def __apply_or_create_configuration_from_url(resource_url, create = False):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 		args = [kubectl_path, "apply", "-f", resource_url]
-		result = subprocess.run(args, universal_newlines = True, check = False)
+		_result = subprocess.run(args, universal_newlines = True, check = False)
 	except FileNotFoundError:
 		curses.endwin()
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -10426,9 +10428,9 @@ nodeplaybooks = {} # type: ignore
 def ssh_to_host(stdscr: curses.window, **kwargs):
 	if "selected" in kwargs:
 		selected = deep_get(kwargs, DictPath("selected"))
-		if type(selected) == tuple:
+		if isinstance(selected, tuple):
 			host = selected[0]
-		elif type(selected) == str:
+		elif isinstance(selected, str):
 			host = selected
 		else:
 			ref = getattr(selected, "ref")
@@ -10628,7 +10630,7 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Opti
 			}
 			continue
 
-		if type(d) != list:
+		if not isinstance(d, list):
 			# This entry could not be parsed; add a dummy entry
 			action_list[playbookname] = {
 				"description": playbookpath,
@@ -11399,7 +11401,7 @@ def populate_views(force_refresh: bool = False) -> None:
 				activatedfun = genericinfoloop
 			else:
 				activatedfun = deep_get(on_activation, DictPath("call"))
-				if type(activatedfun) == str:
+				if isinstance(activatedfun, str):
 					_activatedfun = deep_get(activatedfun_allowlist, DictPath(cast(str, activatedfun)))
 					if _activatedfun is None:
 						sys.exit(f"{activatedfun} is not in the activatedfun allow list")
@@ -12009,7 +12011,7 @@ def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 		if ":" in initial_name:
 			initial_name, initial_container = initial_name.split(":")
 
-		if initial_container is not None and len(initial_container) > 0 and defaultview not in ("Pods", "ConfigMaps"):
+		if initial_container is not None and len(initial_container) > 0 and defaultview not in ("Pods", "Config Maps"):
 			ansithemeprint([ANSIThemeString(f"{about.UI_PROGRAM_NAME}", "programname"),
 					ANSIThemeString(": invalid syntax;", "default")], stderr = True)
 			ansithemeprint([ANSIThemeString("Specifying a member", "description"),
@@ -12094,6 +12096,36 @@ COMMANDLINE = {
 	},
 	"__*": {
 		"command": ["*"],
+		"command_alias": "VIEW",
+		"values": [ANSIThemeString("[", "separator"),
+			   ANSIThemeString("NAMESPACE/", "argument"),
+			   ANSIThemeString("]", "separator"),
+			   ANSIThemeString("OBJECT", "argument"),
+			   ANSIThemeString("[", "separator"),
+			   ANSIThemeString(":", "argument"),
+			   ANSIThemeString("[", "separator"),
+			   ANSIThemeString("MEMBER", "argument"),
+			   ANSIThemeString("]]", "separator")],
+		"description": [ANSIThemeString("start in ", "description"),
+				ANSIThemeString("VIEW", "command"),
+				ANSIThemeString(" for ", "description"),
+				ANSIThemeString("OBJECT", "argument")],
+		"extended_description": [
+			[ANSIThemeString("Sometimes ", "description"),
+			 ANSIThemeString("OBJECT", "argument"),
+			 ANSIThemeString(" may need to be qualified by using ", "description")],
+			[ANSIThemeString("NAMESPACE", "argument"),
+			 ANSIThemeString(", but if there's only one unique match", "description")],
+			[ANSIThemeString(about.UI_PROGRAM_NAME, "programname"),
+			 ANSIThemeString(" will open that match. If an object has members", "description")],
+			[ANSIThemeString("(containers or configmaps), these can be opened", "description")],
+			[ANSIThemeString("using the ", "description"),
+			 ANSIThemeString(":MEMBER", "argument"),
+			 ANSIThemeString(" syntax. If there's only one", "description")],
+			[ANSIThemeString("member specifying ", "description"),
+			 ANSIThemeString(":", "argument"),
+			 ANSIThemeString(" is sufficient", "description")],
+		],
 		"optional_args": [
 			{
 				"name": "view",
@@ -12114,12 +12146,12 @@ COMMANDLINE = {
 					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain)
 					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain):container (RFC-1123 dns-label)
 					"regex": r"^(" \
-						 r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]|" \
-						 r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]:|" \
-						 r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]:[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]|" \
-						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]|" \
-						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]:|" \
-						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]:[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]" \
+						 r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?|" \
+						 r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:|" \
+						 r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]?|" \
+						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?|" \
+						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:|" \
+						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]?" \
 						 r")$",
 				},
 			},
@@ -12143,7 +12175,7 @@ COMMANDLINE = {
 					"validator": "regex",
 					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain)
 					"regex": r"^(" \
-						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]|" \
+						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]?|" \
 						 r")$",
 				},
 			},

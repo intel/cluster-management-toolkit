@@ -285,15 +285,21 @@ def __sub_usage(command: str) -> int:
 
 	assert commandline is not None
 
-	headerstring = [ANSIThemeString(f"{programname}", "programname"),
-			ANSIThemeString(f" {command}", "command")]
-
 	commandinfo = {}
+	headerstring = None
 
 	for _key, value in commandline.items():
 		if command in deep_get(value, DictPath("command")):
+			commandstring = deep_get(value, DictPath("command_alias"), command)
+			headerstring = [ANSIThemeString(f"{programname}", "programname"),
+					ANSIThemeString(f" {commandstring}", "command")]
 			commandinfo = value
 			break
+
+	if headerstring is None:
+		ansithemeprint([ANSIThemeString("Error", "warning"),
+				ANSIThemeString(f": Could not find help entry for command {command}; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
 	values = deep_get(commandinfo, DictPath("values"), [])
 	options = deep_get(commandinfo, DictPath("options"), [])
@@ -367,7 +373,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	globaloptioncount = 0
 
 	for key, value in commandline.items():
-		if key in ("__default", "extended_description") or key.startswith("spacer"):
+		if key in ("__default", "__*", "extended_description") or key.startswith("spacer"):
 			continue
 
 		if key.startswith("__"):
@@ -411,7 +417,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 		print("Global Options:")
 
 	for key, value in commandline.items():
-		if key in ("__default", "extended_description"):
+		if key in ("__default", "extended_description", "__*"):
 			continue
 
 		if key.startswith("spacer"):

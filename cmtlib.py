@@ -487,7 +487,7 @@ def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
 	tmp = []
 
 	for result in deep_get(ansible_results, DictPath(hostname), []):
-		if deep_get(result, DictPath("task"), "") == "package versions":
+		if deep_get(result, DictPath("task"), "") == "Package versions":
 			tmp = deep_get(result, DictPath("msg_lines"), [])
 			break
 

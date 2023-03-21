@@ -115,6 +115,12 @@ class ThemeString:
 
 		return self.selected
 
+	def __eq__(self, obj) -> bool:
+		if not isinstance(obj, ThemeString):
+			return False
+
+		return repr(obj) == repr(self)
+
 class ThemeRef:
 	"""
 	A reference to a themed string; while the type definition is the same as ThemeAttr its use is different.
@@ -209,6 +215,12 @@ class ThemeRef:
 
 		return self.selected
 
+	def __eq__(self, obj) -> bool:
+		if not isinstance(obj, ThemeRef):
+			return False
+
+		return repr(obj) == repr(self)
+
 class ThemeArray:
 	"""
 	An array of themed strings and references to themed strings
@@ -299,6 +311,12 @@ class ThemeArray:
 				references += f", {repr(item)}"
 			first = False
 		return f"ThemeArray({references})"
+
+	def __eq__(self, obj) -> bool:
+		if not isinstance(obj, ThemeArray):
+			return False
+
+		return repr(obj) == repr(self)
 
 def format_helptext(helptext: List[Tuple[str, str]]) -> List[Dict]:
 	"""
