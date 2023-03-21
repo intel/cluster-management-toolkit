@@ -1733,6 +1733,10 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "workloadgroups",
 	},
 	# nfd.k8s-sigs.io
+	("NodeFeature", "nfd.k8s-sigs.io"): {
+		"api_paths": ["apis/nfd.k8s-sigs.io/v1alpha1/"],
+		"api": "nodefeatures",
+	},
 	("NodeFeatureRule", "nfd.k8s-sigs.io"): {
 		"api_paths": ["apis/nfd.k8s-sigs.io/v1alpha1/"],
 		"api": "nodefeaturerules",
@@ -2435,8 +2439,8 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "overlappingrangeipreservations",
 	},
 	# xgboostjob.kubeflow.org
-	("XGBoostJob", "xgboostjob.kubeflow.org"): {
-		"api_paths": ["apis/xgboostjob.kubeflow.org/v1/"],
+	("XGBoostJob", "kubeflow.org"): {
+		"api_paths": ["apis/kubeflow.org/v1/"],
 		"api": "xgboostjobs",
 	},
 }
