@@ -42,7 +42,7 @@ except ModuleNotFoundError:
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import cast, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import cast, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 import yaml
 
 try:
@@ -61,7 +61,7 @@ import cmtlib
 from cmtlib import none_timestamp
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
 
-from curses_helper import themearray_to_string, ThemeAttr, ThemeRef, ThemeString
+from curses_helper import themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString
 
 from ansithemeprint import ANSIThemeString
 
@@ -2078,13 +2078,14 @@ def substitute_bullets(message: str, prefix: str) -> str:
 	return message
 
 def python_traceback_scanner(message: str, fold_msg: bool = True, options: Optional[Dict] = None) ->\
-					Tuple[List, Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+					Tuple[Tuple[str, Optional[Callable], Dict],
+					      Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
 	# pylint: disable=unused-argument
 	timestamp = none_timestamp()
 	facility = ""
 	severity = LogLevel.ERR
 	message, _timestamp = split_iso_timestamp(message, none_timestamp())
-	processor = ["block", python_traceback_scanner]
+	processor: Tuple[str, Optional[Callable], Dict] = ("block", python_traceback_scanner, {})
 
 	# Default case
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = [
@@ -2110,25 +2111,28 @@ def python_traceback_scanner(message: str, fold_msg: bool = True, options: Optio
 				  ThemeString(tmp[2], ThemeAttr("logview", "severity_info"))],
 				 severity),
 			]
-			processor = ["end_block", None]
+			processor = ("end_block", None, {})
 		elif message.lstrip() == message:
-			processor = ["break", None]
+			processor = ("break", None, {})
 
 	return processor, (timestamp, facility, severity, remnants)
 
 # pylint: disable-next=unused-argument
 def python_traceback(message: str, fold_msg: bool = True) ->\
-				Tuple[Union[str, List], List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+				Tuple[Union[str, Tuple[str, Optional[Callable], Dict]],
+				      List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
 	if message == "Traceback (most recent call last):":
 		remnants = [([ThemeString(message, ThemeAttr("logview", "severity_error"))], LogLevel.ERR)]
-		return ["start_block", python_traceback_scanner], remnants
+		processor: Tuple[str, Optional[Callable], Dict] = ("start_block", python_traceback_scanner, {})
+		return processor, remnants
 
 	return message, remnants
 
 def json_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dict] = None) ->\
-				Tuple[List, Tuple[datetime, str, LogLevel, Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]]:
+				Tuple[Tuple[str, Optional[Callable], Dict],
+				      Tuple[datetime, str, LogLevel, Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]]:
 	# pylint: disable=unused-argument
 	allow_empty_lines = deep_get(options, DictPath("allow_empty_lines"), True)
 	timestamp = none_timestamp()
@@ -2137,23 +2141,27 @@ def json_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 	message, _timestamp = split_iso_timestamp(message, none_timestamp())
 
 	if message == "}".rstrip():
-		remnants = formatters.format_yaml_line(message, override_formatting = {})
-		processor: List = ["end_block", None]
+		remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
+		processor: Tuple[str, Optional[Callable], Dict] = ("end_block", None, {})
 	elif message.lstrip() != message:
-		remnants = formatters.format_yaml_line(message, override_formatting = {})
-		processor = ["block", json_line_scanner]
+		remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
+		processor = ("block", json_line_scanner, {})
 	elif len(message.strip()) == 0 and allow_empty_lines == True:
-		remnants = formatters.format_yaml_line(message, override_formatting = {})
-		processor = ["block", json_line_scanner]
+		remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
+		processor = ("block", json_line_scanner, {})
 	else:
 		remnants = None
-		processor = ["break", None]
+		processor = ("break", None, {})
 
 	return processor, (timestamp, facility, severity, remnants)
 
 # pylint: disable-next=unused-argument
 def json_line(message: str, fold_msg: bool = True, severity: Optional[LogLevel] = LogLevel.INFO, options: Optional[Dict] = None) ->\
-			Tuple[List, Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+			Tuple[Union[str, Tuple[str, Optional[Callable], Dict]],
+			      List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+	if options is None:
+		options = {}
+
 	remnants: Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = []
 	matched = False
 
@@ -2184,17 +2192,21 @@ def json_line(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 
 	if matched == True:
 		if format_block_start == True:
-			remnants = formatters.format_yaml_line(message, override_formatting = {})
+			remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
 		else:
-			remnants = message
-		processor = ["start_block", json_line_scanner, options]
+			remnants = [(ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")), severity)]
+		processor: Tuple[str, Optional[Callable], Dict] = ("start_block", json_line_scanner, options)
 		return processor, remnants
 
 	return message, []
 
 # pylint: disable-next=unused-argument
 def yaml_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dict] = None) ->\
-				Tuple[List, Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+				Tuple[Tuple[str, Optional[Callable], Dict],
+				      Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+	if options is None:
+		options = {}
+
 	timestamp = none_timestamp()
 	facility = ""
 	severity = LogLevel.INFO
@@ -2229,27 +2241,27 @@ def yaml_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 
 	if matched == True:
 		remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
-		processor = ["block", yaml_line_scanner, options]
+		processor: Tuple[str, Optional[Callable], Dict] = ("block", yaml_line_scanner, options)
 	else:
 		if process_block_end == True:
 			if format_block_end == True:
-				remnants = formatters.format_yaml_line(message, override_formatting = {})
+				remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
 			else:
-				remnants = [ThemeString(message, ThemeAttr("logview", "severity_info"))]
-			processor = ["end_block", None]
+				remnants = [(ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")), severity)]
+			processor = ("end_block", None, {})
 		else:
-			processor = ["end_block_not_processed", None]
+			processor = ("end_block_not_processed", None, {})
 
 	return processor, (timestamp, facility, severity, remnants)
 
 # pylint: disable-next=unused-argument
 def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel.INFO, options: Optional[Dict] = None) ->\
-			Tuple[Union[str, List], Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+			Tuple[Union[str, Tuple[str, Optional[Callable], Dict]],
+			      Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
 	if options is None:
 		options = {}
 
-	remnants: Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = []
-	response: Union[str, List] = []
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 	matched = False
 
 	block_start = deep_get(options, DictPath("block_start"), [{
@@ -2281,17 +2293,18 @@ def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	if matched == True:
 		if format_block_start == True:
-			remnants = formatters.format_yaml_line(message, override_formatting = {})
+			remnants = [(formatters.format_yaml_line(message, override_formatting = {}), severity)]
 		else:
-			remnants = message
-		response = ["start_block", yaml_line_scanner, options]
-		return response, remnants
+			remnants = [(ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")), severity)]
+		processor: Tuple[str, Optional[Callable], Dict] = ("start_block", yaml_line_scanner, options)
+		return processor, remnants
 
 	return message, remnants
 
 # pylint: disable-next=unused-argument
 def diff_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dict] = None) ->\
-				Tuple[List, Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+				Tuple[Tuple[str, Optional[Callable], Dict],
+				      Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
 	timestamp = none_timestamp()
 	facility = ""
 	severity = LogLevel.INFO
@@ -2325,28 +2338,28 @@ def diff_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 				matched = False
 
 	if matched == True:
-		remnants = formatters.format_diff_line(message, override_formatting = {})
-		processor = ["block", diff_line_scanner, options]
+		remnants = [(formatters.format_diff_line(message, override_formatting = {}), severity)]
+		processor: Tuple[str, Optional[Callable], Dict] = ("block", diff_line_scanner, options)
 	else:
 		if process_block_end == True:
 			if format_block_end == True:
-				remnants = formatters.format_diff_line(message, override_formatting = {})
+				remnants = [(formatters.format_diff_line(message, override_formatting = {}), severity)]
 			else:
-				remnants = [ThemeString(message, ThemeAttr("logview", "severity_info"))]
-			processor = ["end_block", None]
+				remnants = [(ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")), severity)]
+			processor = ("end_block", None, {})
 		else:
-			processor = ["end_block_not_processed", None]
+			processor = ("end_block_not_processed", None, {})
 
 	return processor, (timestamp, facility, severity, remnants)
 
 # pylint: disable-next=unused-argument
 def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel.INFO, options: Optional[Dict] = None) ->\
-			Tuple[Union[str, List], Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+			Tuple[Tuple[str, Optional[Callable], Dict],
+			      List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	if options is None:
 		options = {}
 
-	remnants: Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = []
-	response: Union[str, List] = []
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 	matched = False
 
 	block_start = deep_get(options, DictPath("block_start"), [{
@@ -2378,11 +2391,11 @@ def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	if matched == True:
 		if format_block_start == True:
-			remnants = formatters.format_diff_line(message, override_formatting = {})
+			remnants = [(formatters.format_diff_line(message, override_formatting = {}), severity)]
 		else:
-			remnants = message
-		response = ["start_block", diff_line_scanner, options]
-		return response, remnants
+			remnants = [(ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")), severity)]
+		processor: Tuple[str, Optional[Callable], Dict] = ("start_block", diff_line_scanner, options)
+		return processor, remnants
 
 	return message, remnants
 
@@ -2487,7 +2500,10 @@ def custom_splitter(message: str, severity: Optional[LogLevel] = None, facility:
 	return message, severity, facility
 
 def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool = True, options: Optional[Dict] = None) ->\
-				Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+				Tuple[str,
+				      LogLevel,
+				      Union[List[Union[ThemeRef, ThemeString]], Tuple[str, Optional[Callable], Dict]],
+				      List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	facility = ""
 	severity = None
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
@@ -2605,13 +2621,19 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 
-		if isinstance(message, list) and message[0] == "start_block":
+		if isinstance(message, tuple) and message[0] == "start_block":
 			break
 
 	if severity is None:
 		severity = LogLevel.INFO
 
-	return facility, severity, message, remnants
+	# As a step towards always using ThemeString, convert all regular strings
+	if isinstance(message, str):
+		rmessage = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+	else:
+		rmessage = message
+
+	return facility, severity, rmessage, remnants
 
 Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser_rules")
 parsers = []
@@ -2798,7 +2820,11 @@ def get_parser_list() -> Set[Parser]:
 
 # We've already defined the parser, so no need to do it again
 def logparser_initialised(parser: Optional[Parser] = None, message: str = "", fold_msg: bool = True, line: int = 0) ->\
-				Tuple[datetime, str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+				Tuple[datetime,
+				      str,
+				      LogLevel,
+				      Union[List[Union[ThemeRef, ThemeString]], Tuple[str, Optional[Callable], Dict]],
+				      List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	"""
 	This is used when the parser is already initialised.
 
@@ -2812,8 +2838,8 @@ def logparser_initialised(parser: Optional[Parser] = None, message: str = "", fo
 				timestamp (datetime): A timestamp
 				facility (str): The log facility
 				severity (int): Loglevel
-				message (str): An unformatted string
-				remnants (list[(ThemeArray, LogLevel)]): Formatted remainders with severity
+				message (rstr): An unformatted string
+				remnants ([(ThemeArray, LogLevel)]): Formatted remainders with severity
 	"""
 
 	# First extract the Kubernetes timestamp
@@ -2825,19 +2851,26 @@ def logparser_initialised(parser: Optional[Parser] = None, message: str = "", fo
 	options = {
 		"__line": line,
 	}
-	facility, severity, message, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
+	facility, severity, rmessage, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
 
-	if len(message) > 16383:
+	if isinstance(rmessage, list) and themearray_len(cast(List[Union[ThemeRef, ThemeString]], rmessage)) > 16383:
 		remnants = [([ThemeString(message[0:16383], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 		severity = LogLevel.ERR
-		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)"
+		rmessage = [ThemeString(f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)",
+					ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 
-	return timestamp, facility, severity, message, remnants
+	return timestamp, facility, severity, rmessage, remnants
 
 # pylint: disable-next=too-many-arguments
 def logparser(pod_name: str, container_name: str, image_name: str, message: str, fold_msg: bool = True,
 	      override_parser: Optional[Parser] = None, container_type: str = "container", line: int = 0) ->\
-			Tuple[datetime, str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]], Tuple[Optional[str], str], Parser]:
+			Tuple[datetime,
+			      str,
+			      LogLevel,
+			      Union[List[Union[ThemeRef, ThemeString]], Tuple[str, Optional[Callable], Dict]],
+			      List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]],
+			      Tuple[Optional[str], str],
+			      Parser]:
 	"""
 	This (re-)initialises the parser; it will identify what parser rules to use
 	helped by pod_name, container_name, and image_name;
@@ -2858,8 +2891,8 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 				timestamp (datetime): A timestamp
 				facility (str): The log facility
 				severity (int): Loglevel
-				message (str): An unformatted string
-				remnants (list[(ThemeArray, LogLevel)]): Formatted remainders with severity
+				rmessage (ThemeArray): An unformatted string
+				remnants ([tuple[ThemeArray, LogLevel]]): Formatted remainders with severity
 				lparser (str): Subidentifiers to help explain what rules in the parser file are used
 				uparser (str): Name of the parser file used
 				parser (opaque): A reference to the parser rules that are used
@@ -2871,6 +2904,8 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 	if len(parsers) == 0:
 		init_parser_list()
 
+	rmessage = None
+
 	if override_parser is not None:
 		# Any other timestamps (as found in the logs) are ignored
 		parser = None
@@ -2879,8 +2914,11 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 				options = {
 					"__line": line,
 				}
-				facility, severity, message, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
-		return timestamp, facility, severity, message, remnants, ("<override>", str(override_parser)), parser
+				facility, severity, rmessage, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
+		# As a step towards always using ThemeString, convert all regular strings
+		if rmessage is None:
+			rmessage = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+		return timestamp, facility, severity, rmessage, remnants, ("<override>", str(override_parser)), parser
 
 	if image_name.startswith("docker-pullable://"):
 		image_name = image_name[len("docker-pullable://"):]
@@ -2902,12 +2940,13 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 				tmp = image_regex.match(_image_name)
 				regex_match = tmp is not None
 
-			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and _image_name.startswith(image_prefix) and container_type  == _container_type and regex_match == True:
+			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and \
+			   _image_name.startswith(image_prefix) and container_type  == _container_type and regex_match == True:
 				uparser = parser.parser_name
 				options = {
 					"__line": line,
 				}
-				facility, severity, message, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
+				facility, severity, rmessage, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
 
 				_lparser = []
 				if len(pod_prefix) > 0:
@@ -2921,15 +2960,20 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 
 		if lparser is not None:
 			break
+
 	if uparser is None and (lparser is None or len(lparser) == 0):
 		lparser = "<unknown format>"
 		uparser = "basic_8601"
 		parser = Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("raw", "", "", "container", None)], parser_rules = ["ts_8601"])
-		facility, severity, message, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = {})
+		facility, severity, rmessage, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = {})
 
-	if len(message) > 16383:
+	if rmessage is None:
+		rmessage = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+
+	if isinstance(rmessage, list) and themearray_len(cast(List[Union[ThemeRef, ThemeString]], rmessage)) > 16383:
 		remnants = [([ThemeString(message[0:16383], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 		severity = LogLevel.ERR
-		message = f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)"
+		rmessage = [ThemeString(f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)",
+					ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 
-	return timestamp, facility, severity, message, remnants, (lparser, str(uparser)), parser
+	return timestamp, facility, severity, rmessage, remnants, (lparser, uparser), parser
