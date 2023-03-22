@@ -6015,6 +6015,12 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 					retval = action_call(uip.stdscr, **action_args)
 					if retval is not None and retval == Retval.RETURNFULL:
 						return retval
+				elif action == "command" and action_args is not None:
+					a_command = deep_get_with_fallback(value, [DictPath("action_args#command"), DictPath("command")], [])
+					if len(w_command) == 0:
+						continue
+					do_command(uip.stdscr, **action_args)
+					changed = True
 
 			if force_refresh == True:
 				uip.force_refresh()
