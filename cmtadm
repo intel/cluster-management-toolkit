@@ -989,6 +989,13 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 			result (bool): True on success, False on failure
 	"""
 
+	if cni == "none":
+		ansithemeprint([ANSIThemeString("Note", "note"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"none", "argument"),
+				ANSIThemeString(" specified; skipping CNI installation.", "default")], stderr = True)
+		return True
+
 	if cni not in cni_data and cni not in cni_upgrade_data:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default"),
@@ -2921,7 +2928,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 						ANSIThemeString(" was specified; continuing installation.", "default")], stderr = True)
 		cni = new_cni
 
-	if cni not in cni_data and cni not in cni_upgrade_data:
+	if cno != "none" and cni not in cni_data and cni not in cni_upgrade_data:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{cni}", "argument"),
