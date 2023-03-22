@@ -1146,13 +1146,14 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 
 	return message, severity, facility, []
 
-def merge_message(message: str, remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = None, severity: LogLevel = LogLevel.INFO) ->\
+def merge_message(message: Union[str, List[Union[ThemeRef, ThemeString]]],
+		  remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = None, severity: LogLevel = LogLevel.INFO) ->\
 			Tuple[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	"""
 	Given message + remnants, merge the message into the remnants and return an empty message
 
 		Parameters:
-			message (str): The string to merge into remnants
+			message (str|themearray): The string to merge into remnants
 			remnants (list[(themearray, LogLevel)]): The list of remnants
 			severity (LogLevel): The severity for message
 		Returns:
@@ -1161,10 +1162,17 @@ def merge_message(message: str, remnants: Optional[List[Tuple[List[Union[ThemeRe
 				remnants (list[(themearray, LogLevel)]): Remnants with message preprended
 	"""
 
-	if remnants is not None:
-		remnants.insert(0, ([ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+	# This is a ThemeArray
+	if isinstance(message, List):
+		if remnants is not None:
+			remnants = [(message, severity)] + remnants
+		else:
+			remnants = message
 	else:
-		remnants = [([ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
+		if remnants is not None:
+			remnants.insert(0, ([ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
+		else:
+			remnants = [([ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 	message = ""
 
 	return message, remnants
@@ -2585,12 +2593,14 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 					# No leading message
 					if len(parts[0]) == 0:
 						message, severity, facility, remnants = split_json_style("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
-					else:
+					elif parts[0].rstrip() != parts[0]:
+						parts[0] = parts[0].rstrip()
+						# It isn't leading message + JSON unless there's whitespace in-between
 						_message, severity, facility, remnants = split_json_style("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 						_severity = severity
 						if _severity is None:
 							_severity = LogLevel.INFO
-						_message, remnants = merge_message(_message, remnants, severity = severity)
+						_message, remnants = merge_message(_message, remnants, severity = _severity)
 						message = [ThemeString(parts[0], ThemeAttr("logview", f"severity_{loglevel_to_name(_severity).lower()}"))]
 			elif _filter[0] == "json_event":
 				_parser_options = _filter[1]
