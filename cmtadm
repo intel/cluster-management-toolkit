@@ -2928,7 +2928,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 						ANSIThemeString(" was specified; continuing installation.", "default")], stderr = True)
 		cni = new_cni
 
-	if cno != "none" and cni not in cni_data and cni not in cni_upgrade_data:
+	if cni != "none" and cni not in cni_data and cni not in cni_upgrade_data:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{cni}", "argument"),
