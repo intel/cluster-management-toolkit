@@ -230,3 +230,13 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_not_ok"
+  shortcuts:
+    "SSH to VM":
+      key: "s"
+      modifier: "shift"
+      read_only: false
+      helptext: "SSH to VM"
+      widget: "command"
+      widget_args:
+        command: ["virtctl", "ssh", "--local-ssh", "--local-ssh-opts", "-o StrictHostKeyChecking=no", "-n", ["metadata#namespace"], ["metadata#name"]]
+        _pass_obj: true
