@@ -7,3 +7,226 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "Installation Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields:
+        - "configuration_header"
+        - "configuration_calico_network_header"
+        - "configuration_calico_network_bgp"
+        - "configuration_calico_network_hostports"
+        - "configuration_calico_network_linux_dataplane"
+        - "configuration_calico_network_mtu"
+        - "configuration_calico_network_multi_interface_mode"
+        - "configuration_calico_network_node_address_detection_v4"
+        - "configuration_control_plane_replicas"
+        - "configuration_flex_volume_path"
+        - "configuration_kubelet_volume_plugin_path"
+        - "configuration_node_update_strategy"
+        - "configuration_variant"
+        - "status_header"
+        - "status_calico_network_header"
+        - "status_calico_network_bgp"
+        - "status_calico_network_hostports"
+        - "status_calico_network_linux_dataplane"
+        - "status_calico_network_mtu"
+        - "status_calico_network_multi_interface_mode"
+        - "status_calico_network_node_address_detection_v4"
+        - "status_control_plane_replicas"
+        - "status_flex_volume_path"
+        - "status_kubelet_volume_plugin_path"
+        - "status_node_update_strategy"
+        - "status_variant"
+    rows:
+      configuration_calico_network_bgp:
+        header: [["    BGP:", ["main", "infoheader"]]]
+        path: "spec#calicoNetwork#bgp"
+        type: "str"
+      configuration_calico_network_header:
+        header: [["  Calico Network:", ["main", "infoheader"]]]
+      configuration_calico_network_hostports:
+        header: [["    Host Ports:", ["main", "infoheader"]]]
+        path: "spec#calicoNetwork#hostPorts"
+        type: "str"
+      configuration_calico_network_linux_dataplane:
+        header: [["    Linux Dataplane:", ["main", "infoheader"]]]
+        path: "spec#calicoNetwork#linuxDataplane"
+        type: "str"
+      configuration_calico_network_mtu:
+        header: [["    MTU:", ["main", "infoheader"]]]
+        path: "spec#calicoNetwork#mtu"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      configuration_calico_network_multi_interface_mode:
+        header: [["    Multi-Interface Mode:", ["main", "infoheader"]]]
+        path: "spec#calicoNetwork#multiInterfaceMode"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      configuration_calico_network_node_address_detection_v4:
+        header: [["    Node Address Detection v4:", ["main", "infoheader"]]]
+        path: "spec#calicoNetwork#nodeAddressAutodetectionV4#firstFound"
+        type: "bool"
+      configuration_control_plane_replicas:
+        header: [["  Control Plane Replicas:", ["main", "infoheader"]]]
+        path: "spec#controlPlaneReplicas"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      configuration_flex_volume_path:
+        header: [["  Flex Volume Path:", ["main", "infoheader"]]]
+        path: "spec#flexVolumePath"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      configuration_header:
+        header: [["Configuration:", ["main", "infoheader"]]]
+      configuration_kubelet_volume_plugin_path:
+        header: [["  Kubelet Volume Plugin Path:", ["main", "infoheader"]]]
+        path: "spec#kubeletVolumePluginPath"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      configuration_node_update_strategy:
+        header: [["  Node Update Strategy:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#nodeUpdateStrategy#type"], " (", "Max Surge: ", ["spec#nodeUpdateStrategy#rollingUpdate#maxSurge"], "Max Unavailable: ", ["spec#nodeUpdateStrategy#rollingUpdate#maxUnavailable"], ")"]
+          pathtype: "tuple"
+          when:
+          - key: "spec#nodeUpdateStrategy#type"
+            eq: "RollingUpdate"
+        - path: [["spec#nodeUpdateStrategy#type"]]
+          pathtype: "tuple"
+          when:
+          - key: "spec#nodeUpdateStrategy#type"
+            eq: "Recreate"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "generic"
+          - context: "main"
+            type: "infoheader"
+          # Ideally we want to achieve numerical with unit here
+          - type: "numerical"
+          - context: "main"
+            type: "infoheader"
+          # Ideally we want to achieve numerical with unit here
+          - type: "numerical"
+          - type: "generic"
+          field_separators:
+          - type: "no_pad"
+          - type: "no_pad"
+          - type: "no_pad"
+          - type: "list"
+          - type: "no_pad"
+          - type: "no_pad"
+      configuration_variant:
+        header: [["  Variant:", ["main", "infoheader"]]]
+        path: "spec#variant"
+        type: "str"
+      status_calico_network_bgp:
+        header: [["    BGP:", ["main", "infoheader"]]]
+        path: "status#computed#calicoNetwork#bgp"
+        type: "str"
+      status_calico_network_header:
+        header: [["  Calico Network:", ["main", "infoheader"]]]
+      status_calico_network_hostports:
+        header: [["    Host Ports:", ["main", "infoheader"]]]
+        path: "status#computed#calicoNetwork#hostPorts"
+        type: "str"
+      status_calico_network_linux_dataplane:
+        header: [["    Linux Dataplane:", ["main", "infoheader"]]]
+        path: "status#computed#calicoNetwork#linuxDataplane"
+        type: "str"
+      status_calico_network_mtu:
+        header: [["    MTU:", ["main", "infoheader"]]]
+        path: "status#computed#calicoNetwork#mtu"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      status_calico_network_multi_interface_mode:
+        header: [["    Multi-Interface Mode:", ["main", "infoheader"]]]
+        path: "status#computed#calicoNetwork#multiInterfaceMode"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      status_calico_network_node_address_detection_v4:
+        header: [["    Node Address Detection v4:", ["main", "infoheader"]]]
+        path: "status#computed#calicoNetwork#nodeAddressAutodetectionV4#firstFound"
+        type: "bool"
+      status_control_plane_replicas:
+        header: [["  Control Plane Replicas:", ["main", "infoheader"]]]
+        path: "status#computed#controlPlaneReplicas"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      status_flex_volume_path:
+        header: [["  Flex Volume Path:", ["main", "infoheader"]]]
+        path: "status#computed#flexVolumePath"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      status_header:
+        header: [["Status:", ["main", "infoheader"]]]
+      status_kubelet_volume_plugin_path:
+        header: [["  Kubelet Volume Plugin Path:", ["main", "infoheader"]]]
+        path: "status#computed#kubeletVolumePluginPath"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      status_node_update_strategy:
+        header: [["  Node Update Strategy:", ["main", "infoheader"]]]
+        paths:
+        - path: [["status#computed#nodeUpdateStrategy#type"], " (", "Max Surge: ", ["status#computed#nodeUpdateStrategy#rollingUpdate#maxSurge"], "Max Unavailable: ", ["status#computed#nodeUpdateStrategy#rollingUpdate#maxUnavailable"], ")"]
+          pathtype: "tuple"
+          when:
+          - key: "spec#nodeUpdateStrategy#type"
+            eq: "RollingUpdate"
+        - path: [["spec#nodeUpdateStrategy#type"]]
+          pathtype: "tuple"
+          when:
+          - key: "spec#nodeUpdateStrategy#type"
+            eq: "Recreate"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "generic"
+          - context: "main"
+            type: "infoheader"
+          # Ideally we want to achieve numerical with unit here
+          - type: "numerical"
+          - context: "main"
+            type: "infoheader"
+          # Ideally we want to achieve numerical with unit here
+          - type: "numerical"
+          - type: "generic"
+          field_separators:
+          - type: "no_pad"
+          - type: "no_pad"
+          - type: "no_pad"
+          - type: "list"
+          - type: "no_pad"
+          - type: "no_pad"
+      status_non_privileged:
+        header: [["  Non-Privileged:", ["main", "infoheader"]]]
+        path: "status#nonPrivileged"
+        type: "str"
+      status_variant:
+        header: [["  Variant:", ["main", "infoheader"]]]
+        path: "status#variant"
+        type: "str"
