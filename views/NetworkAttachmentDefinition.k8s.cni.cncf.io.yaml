@@ -15,3 +15,19 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Network Attachment Definition Info"
+  infopad:
+  shortcuts:
+    "View configuration":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show network attachment configuration"
+      action: "call"
+      action_call: "view_obj"
+      action_args:
+        title: "Network Attachment Configuration"
+        formatter: "reformat_json"
+        _pass_obj: true
+        path: "spec#config"
