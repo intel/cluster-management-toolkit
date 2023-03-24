@@ -1201,7 +1201,7 @@ def __task_add_ssh_keys_to_inventory(installation_info: Dict) -> None:
 	pubkey = None
 	d = ansible_get_inventory_dict()
 	__vars = deep_get(d, DictPath("all#vars"), {})
-	__authorized_keys = __vars.get("authorized_keys", [])
+	__authorized_keys = deep_get(__vars, DictPath("authorized_keys"), [])
 	found_key = False
 
 	for path in Path(SSH_DIR).iterdir():
