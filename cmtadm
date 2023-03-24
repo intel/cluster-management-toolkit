@@ -1134,8 +1134,9 @@ def add_ssh_keys_to_authorized_keys() -> bool:
 					if line == pubkey[0]:
 						exists = True
 						break
-		except FileNotFoundError:
-			pass
+		except FilePathAuditError as e:
+			if "SecurityStatus.DOES_NOT_EXIST" in str(e):
+				pass
 
 		if exists == False:
 			secure_write_string(authorized_keys_path, f"{pubkey}\n", write_mode = "a")
