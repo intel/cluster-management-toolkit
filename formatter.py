@@ -4,6 +4,18 @@
 Format text as themearrays
 """
 
+# ujson is much faster than json,
+# but it might not be available
+try:
+	import ujson as json
+	json_is_ujson = True
+	# The exception raised by ujson when parsing fails is different
+	# from what json raises
+	DecodeException = ValueError
+except ModuleNotFoundError:
+	import json # type: ignore
+	json_is_ujson = False
+	DecodeException = json.decoder.JSONDecodeError # type: ignore
 import re
 import sys
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -16,6 +28,32 @@ from cmtlib import split_msg
 
 from curses_helper import ThemeAttr, ThemeRef, ThemeString
 
+if json_is_ujson:
+	def json_dumps(obj) -> str:
+		"""
+		Dump JSON object to text format; ujson version
+
+			Parameters:
+				obj (dict): The JSON object to dump
+			Returns:
+				str: The serialized JSON object
+		"""
+
+		indent = 2
+		return json.dumps(obj, indent = indent, escape_forward_slashes = False)
+else:
+	def json_dumps(obj) -> str:
+		"""
+		Dump JSON object to text format; json version
+
+			Parameters:
+				obj (dict): The JSON object to dump
+			Returns:
+				str: The serialized JSON object
+		"""
+
+		indent = 2
+		return json.dumps(obj, indent = indent)
 def __str_representer(dumper: yaml.Dumper, data: Any) -> yaml.Node:
 	"""
 	Reformat yaml with |-style str
@@ -213,7 +251,14 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 	indent = deep_get(cmtlib.cmtconfig, DictPath("Global#indent"), 2)
 
 	if isinstance(lines, str):
-		lines = [lines]
+		if deep_get(kwargs, DictPath("json"), False) == True:
+			try:
+				d = json.loads(lines)
+				lines = [json_dumps(d)]
+			except DecodeException:
+				return format_none(lines)
+		else:
+			lines = [lines]
 
 	generic_format = ThemeAttr("types", "generic")
 
@@ -258,6 +303,10 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 			dumps.append([ThemeString("", generic_format)])
 
 	return dumps
+
+def reformat_json(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[ThemeRef, ThemeString]]]:
+	kwargs["json"] = True
+	return format_yaml(lines, **kwargs)
 
 KEY_HEADERS = [
 	"-----BEGIN CERTIFICATE-----",
@@ -1102,4 +1151,5 @@ formatter_allowlist = {
 	"format_toml": format_toml,
 	"format_xml": format_xml,
 	"format_yaml": format_yaml,
+	"reformat_json": reformat_json,
 }
