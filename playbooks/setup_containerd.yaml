@@ -3,6 +3,34 @@
   vars:
     metadata:
       description: "Setup Containerd"
+      summary:
+        "Created directories":
+        - description: "/etc/containerd"
+        - description: "/etc/systemd/system/kubelet.service.d"
+        - description: "/etc/systemd/system/containerd.service.d"
+        "Created files":
+        - description: "/etc/containerd/config.toml"
+        - description: "/etc/systemd/system/kubelet.service.d/containerd-cri.conf (use containerd as CRI for Kubernetes)"
+        - description: "/etc/systemd/system/containerd.service.d/http-proxy.conf (proxy settings for containerd)"
+        - description: "/etc/systemd/system/containerd.service.d/ip-forward.conf (enable IP-forwarding when using containerd)"
+        "Installed packages":
+        - description: "containerd"
+          conditions:
+          - "Debian and derivatives"
+        - description: "runc"
+          conditions:
+          - "Debian and derivatives"
+        "Modified files":
+        - description: "/etc/crictl.yaml (use containerd by default)"
+        - description: "/etc/modules (ensure that br_netfilter is loaded)"
+        "Other actions":
+        - description: "Updates package cache"
+          conditions:
+          - "Debian and derivatives"
+        - description: "modprobe br_netfilter"
+        "Restarted services":
+        - description: "containerd"
+        - description: "kubelet"
       playbook_types:
       - "internal"
   gather_subset:
@@ -73,6 +101,15 @@
       src: "templates/etc/systemd/system/containerd.service.d/ip-forward.conf.j2"
       mode: "0644"
       force: true
+  - name: "Ensure that br_netfilter is loaded on boot"
+    ansible.builtin.lineinfile:
+      path: "/etc/modules"
+      line: "br_netfilter"
+      insertafter: "EOF"
+      state: "present"
+  - name: "Load br_netfilter if it isn't already loaded"  # noqa fqcn-builtins no-changed-when
+    shell: |
+      modprobe br_netfilter
   - name: "Restarting Containerd"
     ansible.builtin.systemd:
       name: "containerd"

@@ -3,6 +3,55 @@
   vars:
     metadata:
       description: "Setup CRI-O"
+      summary:
+        "Created directories":
+        - description: "/usr/local/keyrings"
+          conditions:
+          - "Debian and derivatives"
+        - description: "/etc/cri-o"
+        - description: "/etc/systemd/system/kubelet.service.d"
+        - description: "/etc/systemd/system/containerd.service.d"
+        "Created files":
+        - description: "/usr/local/keyrings/cri-o-keyring.gpg (GPG key for CRI-O APT repository)"
+          conditions:
+          - "Debian and derivatives"
+        - description: "/etc/apt/sources.list.d/cri-o.list (APT repository for CRI-O)"
+          conditions:
+          - "Debian and derivatives"
+        - description: "/etc/apt/apt.conf.d/01proxy-cri-o (Proxy settings for CRI-O APT repository)"
+          conditions:
+          - "Debian and derivatives"
+        - description: "/etc/apt/preferences.d/cri-o (APT pinning for CRI-O APT repository)"
+          conditions:
+          - "Debian and derivatives"
+        - description: "/etc/systemd/system/kubelet.service.d/cri-o-cri.conf (use CRI-O as CRI for Kubernetes)"
+        - description: "/etc/systemd/system/cri-o.service.d/http-proxy.conf (proxy settings for CRI-O)"
+        - description: "/etc/systemd/system/cri-o.service.d/ip-forward.conf (enable IP-forwarding when using CRI-O)"
+        "Downloaded files":
+        - description: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_11/Release.key"
+          conditions:
+          - "Debian and derivatives"
+        "Installed packages":
+        - description: "cri-o"
+          conditions:
+          - "Debian and derivatives"
+        - description: "cri-o-runc"
+          conditions:
+          - "Debian and derivatives"
+        "Modified files":
+        - description: "/etc/crictl.yaml (use CRI-O by default)"
+        - description: "/etc/modules (ensure that br_netfilter is loaded)"
+        "Removed files":
+        - description: "/etc/cni/net.d/100-crio-bridge.conflist (Conflicts with CNIs)"
+        - description: "/etc/cni/net.d/200-loopback.conflist (Conflicts with CNIs)"
+        "Other actions":
+        - description: "Updates package cache"
+          conditions:
+          - "Debian and derivatives"
+        - description: "modprobe br_netfilter"
+        "Restarted services":
+        - description: "crio"
+        - description: "kubelet"
       playbook_types:
       - "internal"
   gather_subset:
@@ -33,7 +82,7 @@
     environment:
       https_proxy: "{{ https_proxy }}"
     when: "ansible_os_family == 'Debian'"
-  - name: "Dearmoring CRI-O key"  # noqa fqcn-builtins
+  - name: "Dearmoring CRI-O key"  # noqa fqcn-builtins no-changed-when
     shell: |
       gpg --dearmor "{{ tempdir.path }}/Release.key"
   - name: "Copying dearmored CRI-O key to /usr/local/keyrings"
@@ -59,6 +108,7 @@
       src: "templates/etc/apt/preferences.d/cri-o"
       dest: "/etc/apt/preferences.d/cri-o"
       mode: "0644"
+    when: "ansible_os_family == 'Debian'"
   - name: "Updating package cache"
     ansible.builtin.apt:
       update_cache: true
@@ -112,7 +162,7 @@
       line: "br_netfilter"
       insertafter: "EOF"
       state: "present"
-  - name: "Load br_netfilter if it isn't already loaded"  # noqa fqcn-builtins
+  - name: "Load br_netfilter if it isn't already loaded"  # noqa fqcn-builtins no-changed-when
     shell: |
       modprobe br_netfilter
   - name: "Restarting cri-o"
