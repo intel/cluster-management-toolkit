@@ -1187,7 +1187,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	tmp = []
 
 	for result in deep_get(ansible_results, DictPath(control_plane_ip), []):
-		if deep_get(result, DictPath("task"), "") == "package versions":
+		if deep_get(result, DictPath("task"), "") == "Package versions":
 			tmp = deep_get(result, DictPath("msg_lines"), [])
 			break
 
