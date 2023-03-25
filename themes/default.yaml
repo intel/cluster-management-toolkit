@@ -579,7 +579,8 @@ boxdrawing:
   # area, but for stdscr this is an issue.
   #
   # The workaround is to use addch for such characters (cmu implements this),
-  # but not all characters are supported by addch(); it's accepting unicode.
+  # but not all characters are supported by addch(); it does not support unicode.
+  # The same limitation applies to border().
   #
   # If you change this and the program crashes, this is most likely the reason.
   # You have been warned.
