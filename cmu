@@ -9717,7 +9717,11 @@ def delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
 	force = deep_get(values, DictPath("__force"), False)
 
 	for item in items:
-		namespace, name = item
+		if isinstance(item, tuple):
+			namespace, name = item
+		else:
+			namespace = None
+			name = item
 		message, status = kh.delete_obj_by_kind_name_namespace(kind, name, namespace, force = force)
 		if status != 200:
 			win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = message)
