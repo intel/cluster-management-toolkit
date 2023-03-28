@@ -15,7 +15,9 @@ from typing import cast, List, Optional, Sequence, Union
 from cmttypes import FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 import cmtio
 try:
-	import yaml # pylint: disable=unused-import
+	# python3-yaml is installed by cmt-install; thus we cannot rely on yaml being importable
+	# pylint: disable-next=unused-import
+	import yaml # noqa
 	from cmtio_yaml import secure_read_yaml
 	use_fallback_theme = False
 except ModuleNotFoundError:

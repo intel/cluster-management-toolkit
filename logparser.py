@@ -718,7 +718,7 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 				new_message.append(ThemeString(address5, ThemeAttr("logview", "url")))
 				new_message.append(ThemeString(separator8, ThemeAttr("logview", "severity_info")))
 			if remainder is not None:
-				new_message.append(ThemeString(remainder, ThemeAttr("logview", "default")))
+				new_message.append(ThemeString(remainder, ThemeAttr("types", "generic")))
 
 			return new_message, severity, facility
 
@@ -1490,106 +1490,6 @@ def expand_event(message: str, severity: LogLevel, remnants: Optional[List[Tuple
 			  ThemeString(raw_message[eventend + 3:len(raw_message)], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 
 	return severity, message, remnants
-
-# pylint: disable-next=too-many-nested-blocks
-def expand_header_key_value(message: str, severity: LogLevel, remnants = None, fold_msg: bool = True) -> Tuple[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
-	if fold_msg == True or (remnants is not None and len(remnants) > 0):
-		return message, remnants
-
-	header = ""
-
-	# Split into substrings based on spaces
-	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
-
-	# pylint: disable-next=too-many-nested-blocks
-	if tmp is not None and len(tmp) > 0:
-		if "=" not in tmp[0]:
-			header = f"{tmp[0]}: "
-			tmp = tmp[1:]
-
-		res = {}
-		for item in tmp:
-			# First split into [key, value]
-			tmp2 = item.split("=", 1)
-			if len(tmp2) < 2:
-				# We found a non key=value item; treat the entire string as non-key=value
-				res = {}
-				break
-
-			# Now add key: value into the dict
-			if tmp2[1].startswith("”"):
-				if not tmp2[1].endswith("”"):
-					raise ValueError(f"expand_header_key_value(): unbalanced quotes in item: {item}")
-
-				res[tmp2[0]] = tmp2[1][1:-1]
-			else:
-				# Now we restore the quotation marks; fancy quotes should be paired,
-				# and since we cannot do that we should not pretend that we did
-				res[tmp2[0]] = tmp2[1].replace("”", "\"")
-
-		if len(res) > 0:
-			if res.get("msg") is not None:
-				message = f"{header}{res['msg']}"
-			else:
-				message = header
-
-			for entry, value in res.items():
-				if severity > LogLevel.INFO:
-					tmpseverity = LogLevel.INFO
-
-				tmpseverity = severity
-
-				# We have already extracted the message and we already have a timestamp
-				if entry in ("msg", "ts", "time"):
-					continue
-
-				if entry in ("caller", "source", "Topic"):
-					if facility == "":
-						facility = value
-				elif entry == "level":
-					# This is used as severity by prometheus
-					s = str_to_severity(value, -1)
-					if s != -1 and s < severity:
-						severity = s
-					continue
-				elif entry == "err":
-					# alertmanager sometimes folds up multiple errors on one line;
-					# try to unfold them
-					tmpseverity = severity
-					# DoS
-					tmp = re.match(r"(\d+ errors occurred:)(.*)", value)
-					if tmp is not None:
-						remnants.append(([ThemeString(f"{entry}: {tmp[1]}\n", ThemeAttr("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
-						s = tmp[2].replace("\\t", "").split("\\n")
-						for line in s:
-							if len(line) > 0:
-								if line.startswith("* "):
-									remnants.append(([ThemeString("   {line}\n", ThemeAttr("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
-								else:
-									remnants.append(([ThemeString("   * {line}\n", ThemeAttr("logview", f"severity_{loglevel_to_name(tmpseverity).lower()}"))], tmpseverity))
-						continue
-				elif entry == "error":
-					tmpseverity = severity
-				# Should we highlight this too?
-				#elif entry == "cluster-version":
-				#	tmpseverity = LogLevel.NOTICE
-				elif entry in ("version", "git-commit"):
-					tmpseverity = LogLevel.NOTICE
-				elif entry == "Workflow":
-					if message.startswith("Syncing Workflow") and value in message:
-						continue
-				elif entry == "component":
-					# this should have LogLevel.INFO or lower severity
-					tmpseverity = max(LogLevel.INFO, severity, tmpseverity)
-
-				remnants.append(([ThemeString(entry, ThemeAttr("types", "key")),
-						  ThemeRef("separators", "keyvalue_log"),
-						  ThemeString(value, ThemeAttr("types", "value"))], tmpseverity))
-			if len(message) == 0:
-				message = remnants[0]
-				remnants.pop(0)
-
-	return message, remnants
 
 def format_key_value(key: str, value: str, severity: LogLevel, force_severity: bool = False) -> List[Union[ThemeRef, ThemeString]]:
 	if key in ("error", "err"):

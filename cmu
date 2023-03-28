@@ -3075,6 +3075,7 @@ class SubsetsInfo:
 		self.ports = ports
 		self.status = status
 		self.status_group = status_group
+
 	def __repr__(self):
 		return repr((self.addresses, self.ports, self.status, self.status_group))
 
@@ -3144,6 +3145,7 @@ class EPSSubsetsInfo:
 		self.status_group = status_group
 		self.target_ref = target_ref
 		self.topology = topology
+
 	def __repr__(self):
 		return repr((self.addresstype, self.addresses, self.ports_eps, self.status, self.status_group, self.target_ref, self.topology))
 
@@ -3238,6 +3240,7 @@ class StrategyInfo:
 		self.name = name
 		self.operator = operator
 		self.target = target
+
 	def __repr__(self):
 		return repr((self.strategy, self.name, self.operator, self.target))
 
@@ -3296,6 +3299,7 @@ class RQItemInfo:
 		self.resource = resource
 		self.used = used
 		self.hard = hard
+
 	def __repr__(self):
 		return repr((self.resource, self.used, self.hard))
 
@@ -3322,6 +3326,7 @@ class KeyValueInfo:
 		self.value = value
 		self.vtype = vtype
 		self.vlen = vlen
+
 	def __repr__(self):
 		return repr((self.key, self.decoded_value, self.value, self.vtype, self.vlen))
 
@@ -3401,6 +3406,7 @@ class ResourceInfo:
 		self.restarts = restarts
 		self.message = message
 		self.age = age
+
 	def __repr__(self):
 		return repr((self.resource_tuple, self.ref, self.rtype, self.kind, self.status, self.status_group, self.restarts, self.message, self.age))
 
@@ -5185,10 +5191,10 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			# The data in some fields might become shorter, so we need to trigger a clear
 			uip.statusbar.erase()
 
-			if uip.continuous_log == True:
-				interval = "Continuous"
-			else:
-				interval = "Manual"
+			# if uip.continuous_log == True:
+			# 	interval = "Continuous"
+			# else:
+			# 	interval = "Manual"
 
 			statusarray1: List[Union[ThemeRef, ThemeString]] = []
 
@@ -8367,7 +8373,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 			prev_timestamp = None
 			prev_facility = ""
 			prev_severity = LogLevel.INFO
-			prev_message = [ThemeString("", ThemeAttr("logview", "default"))]
+			prev_message = [ThemeString("", ThemeAttr("types", "generic"))]
 			prev_remnants = None
 			repeat_count = 0
 
@@ -9587,8 +9593,8 @@ def executecommand_multiple(stdscr: curses.window, msg, command, items, waitfork
 	if waitforkeypress or retval > 0:
 		if retval > 0:
 			ansithemeprint([ANSIThemeString("Error", "error"),
-					ANSIThemeString(": ", "default")] +\
-				       format_commandline(args) +\
+					ANSIThemeString(": ", "default")] +
+				       format_commandline(args) +
 				       [ANSIThemeString(" returned ", "default"),
 					ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
 		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
@@ -10159,8 +10165,8 @@ def edit_resource(stdscr: curses.window, **kwargs) -> None:
 	if waitforkeypress or retval > 0:
 		if retval > 0:
 			ansithemeprint([ANSIThemeString("\nError", "error"),
-					ANSIThemeString(": ", "default")] +\
-				       format_commandline(args, implicit_command = False) +\
+					ANSIThemeString(": ", "default")] +
+				       format_commandline(args, implicit_command = False) +
 				       [ANSIThemeString(" returned ", "default"),
 					ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
 		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
@@ -11788,8 +11794,8 @@ def list_namespaces(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
 	if status == 200:
-		ansithemeprint([ANSIThemeString("Valid namespaces: ", "default")] +\
-			  ansithemestring_join_tuple_list([deep_get(item, DictPath("metadata#name")) for item in tmp], formatting = "argument", separator = ANSIThemeString(", ", "separator")) +\
+		ansithemeprint([ANSIThemeString("Valid namespaces: ", "default")] +
+			  ansithemestring_join_tuple_list([deep_get(item, DictPath("metadata#name")) for item in tmp], formatting = "argument", separator = ANSIThemeString(", ", "separator")) +
 			 [ANSIThemeString(".", "separator")])
 	elif status in (42503, 42504):
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -12154,13 +12160,13 @@ COMMANDLINE = {
 					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain)
 					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain):container (RFC-1123 dns-label)
 					"regex": r"^(" \
-						 r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?|" \
-						 r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:|" \
-						 r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]?|" \
-						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?|" \
-						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:|" \
-						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]?" \
-						 r")$",
+					         r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?|" \
+					         r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:|" \
+					         r"[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]?|" \
+					         r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?|" \
+					         r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:|" \
+					         r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]/[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]?:[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]?" \
+					         r")$",
 				},
 			},
 			{
@@ -12170,8 +12176,8 @@ COMMANDLINE = {
 					"validator": "regex",
 					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain)
 					"regex": r"^(" \
-						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]|" \
-						 r")$",
+					         r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]|" \
+					         r")$",
 				},
 			},
 			{
@@ -12183,8 +12189,8 @@ COMMANDLINE = {
 					"validator": "regex",
 					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain)
 					"regex": r"^(" \
-						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]?|" \
-						 r")$",
+					         r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]?|" \
+					         r")$",
 				},
 			},
 		],
@@ -12229,8 +12235,8 @@ COMMANDLINE = {
 					"validator": "regex",
 					# namespace (RFC-1123 dns-label)/name (RFC-1123 dns-subdomain)
 					"regex": r"^(" \
-						 r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]|" \
-						 r")$",
+					         r"[a-z0-9][a-z0-9.-]{0,61}[a-z0-9]|" \
+					         r")$",
 				},
 			},
 		},

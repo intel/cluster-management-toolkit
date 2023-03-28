@@ -58,9 +58,10 @@ def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
 
 	try:
 		string = secure_read_string(path)
-		if expect == "string":
-			if isinstance(string, str):
-				result = True
+		if expect == "string" and isinstance(string, str):
+			result = True
+		elif expect == "�" and isinstance(string, str) and "�" in string:
+			result = True
 	except Exception as e: # pylint: disable=broad-except
 		if type(e) == expect: # pylint: disable=unidiomatic-typecheck
 			result = True
@@ -697,7 +698,7 @@ testcases = {
 	"19: Invalid UTF-8": {
 		"path": FilePath(f"{TEST_DIR}/08-not_utf8.txt"),
 		"test": test_secure_read_string,
-		"expect": UnicodeDecodeError,
+		"expect": "�",
 	},
 	"20: Invalid single YAML (secure_read_yaml)": {
 		"path": FilePath(f"{TEST_DIR}/09-this_is_not_valid.yaml"),

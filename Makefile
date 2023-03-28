@@ -2,6 +2,11 @@ yaml_dirs = parsers themes views playbooks
 python_executables = cmt cmtadm cmt-install cmtinv cmu tests/validate_yaml tests/check_theme_use tests/iotests
 test_lib_symlinks = ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py networkio.py
 
+FLAKE8_IGNORE := W191,E501,E305,E251,E302,E261,E101,E126,E128,E265,E712,E201,E202,E122,E241,E713,W504,E115,E222,E303,E231,E221,E116,E129,E127,E124
+# This is the warning about unused assignments; flake8 doesn't recognise "_<variable>" to capture unused return values;
+# pylint does, so we rely on that one to handle it instead.
+FLAKE8_IGNORE := $(FLAKE8_IGNORE),F841
+
 checks: bandit yamllint validate_yaml validate_playbooks
 
 clean: remove_test_symlinks
@@ -11,6 +16,9 @@ bandit:
 
 pylint:
 	@pylint --rcfile .pylint $(python_executables) *.py || /bin/true
+
+flake8:
+	@flake8 --ignore $(FLAKE8_IGNORE) $(python_executables) *.py || /bin/true
 
 yamllint:
 	@for dir in $(yaml_dirs); do \

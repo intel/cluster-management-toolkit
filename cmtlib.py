@@ -475,7 +475,8 @@ def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
 			package_versions (list[tuple(package (str), version (str))]): The list of package versions
 	"""
 
-	import ansible_helper # pylint: disable=unused-import,import-outside-toplevel
+	# pylint: disable-next=unused-import,import-outside-toplevel
+	import ansible_helper # noqa
 	from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path # pylint: disable=import-outside-toplevel
 
 	get_versions_path = get_playbook_path(FilePath("get_versions.yaml"))
