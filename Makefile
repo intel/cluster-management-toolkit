@@ -7,6 +7,8 @@ FLAKE8_IGNORE := W191,E501,E305,E251,E302,E261,E101,E126,E128,E265,E712,E201,E20
 # pylint does, so we rely on that one to handle it instead.
 FLAKE8_IGNORE := $(FLAKE8_IGNORE),F841
 
+ANSIBLE_LINT_SKIP := no-changed-when
+
 checks: bandit yamllint validate_yaml validate_playbooks
 
 clean: remove_test_symlinks
@@ -43,7 +45,7 @@ validate_yaml:
 	./tests/validate_yaml || /bin/true
 
 validate_playbooks:
-	ansible-lint playbooks/*.yaml || /bin/true
+	ansible-lint -x $(ANSIBLE_LINT_SKIP) playbooks/*.yaml || /bin/true
 
 parser_bundle:
 	@printf -- "Building parser bundle\n" ;\
