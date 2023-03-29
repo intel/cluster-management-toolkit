@@ -12,9 +12,9 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Checking that cluster is running"  # noqa fqcn-builtins risky-shell-pipe
+  - name: "Checking that cluster is running"  # noqa fqcn-builtins
     shell: |
-      lsof -i -P -n | grep 6443.*LISTEN > /dev/null
+      lsof -i:6443 -sTCP:LISTEN -t > /dev/null
     register: "port_check"
     failed_when: false
     changed_when: false

@@ -18,15 +18,15 @@
     ansible.builtin.fail:
       msg: "Only Debian-derivatives and Red Hat-derivatives are supported as nodes"
     when: "(ansible_os_family not in ['Debian', 'RedHat']) and (role == 'node')"
-  - name: "hide_on_ok: Checking if the host is a Kubernetes control plane"  # noqa fqcn-builtins risky-shell-pipe name[casing]
+  - name: "hide_on_ok: Checking if the host is a Kubernetes control plane"  # noqa fqcn-builtins name[casing]
     shell: |
-      lsof -i -P -n | grep 6443.*LISTEN > /dev/null
+      lsof -i:6443 -sTCP:LISTEN -t > /dev/null
     register: "port_check_control_plane"
     failed_when: false
     changed_when: false
-  - name: "hide_on_ok: Checking if the host is a Kubernetes node"  # noqa fqcn-builtins risky-shell-pipe name[casing]
+  - name: "hide_on_ok: Checking if the host is a Kubernetes node"  # noqa fqcn-builtins name[casing]
     shell: |
-      lsof -i -P -n | grep 10250.*LISTEN > /dev/null
+      lsof -i:10250 -sTCP:LISTEN -t > /dev/null
     register: "port_check_node"
     failed_when: false
     changed_when: false
