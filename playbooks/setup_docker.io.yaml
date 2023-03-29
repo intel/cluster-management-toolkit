@@ -3,6 +3,23 @@
   vars:
     metadata:
       description: "Seetup docker.io"
+      summary:
+        "Created directories":
+        - description: "/etc/docker"
+        - description: "/etc/systemd/system/docker.service.d"
+        "Created files":
+        - description: "/etc/docker/daemon.json"
+        - description: "/etc/systemd/system/docker.service.d/http-proxy.conf (proxy settings for docker)"
+        "Installed packages":
+        - description: "docker.io"
+          conditions:
+          - "Debian and derivatives"
+        "Other actions":
+        - description: "Updates package cache"
+          conditions:
+          - "Debian and derivatives"
+        "Restarted services":
+        - description: "docker"
       playbook_types:
       - "internal"
   gather_subset:

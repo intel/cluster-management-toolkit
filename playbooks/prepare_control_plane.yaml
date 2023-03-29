@@ -5,6 +5,13 @@
       description: "Prepare control plane"
       playbook_types:
       - "internal"
+      summary:
+        "Masked units":
+        - description: "All swap units"
+        "Modified files":
+        - description: "/etc/fstab (disables mounting of swapfiles and swap partitions)"
+        "Other actions":
+        - description: "Unmounts all swap partitions"
   gather_subset:
   - "!min"
   - "!all"
