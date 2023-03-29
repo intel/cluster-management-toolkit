@@ -201,6 +201,7 @@
 				"mem",
 				"numerical",
 				"numerical_with_units",
+				"reformat_json",
 				"timestamp",
 				"timestamp_with_age",
 				"value_mapper"
@@ -839,7 +840,7 @@
 					{
 						"description": "A string fragment",
 						"type": "string",
-						"pattern": "^([A-Za-z0-9# ]|[A-Za-z0-9# ][A-Za-z0-9()#./ :-]*)$"
+						"pattern": "^([A-Za-z0-9#: ]|[A-Za-z0-9#: ][A-Za-z0-9()#.,/ :+-]*)$"
 					}, {
 						"description": "formatting to use for the string fragment",
 						"type": "array",
@@ -1172,6 +1173,7 @@
 					"oneOf": [
 						{
 							"enum": [
+								"get_context_list",
 								"get_inventory_list"
 							]
 						}, {
@@ -1312,6 +1314,33 @@
 												"api_version_path": {
 													"description": "Path to get the API version of the object from, optionally with fallback(s)",
 													"$ref": "#/definitions/path"
+												},
+												"command": {
+													"description": "Command to execute; only valid if widget is 'command'; use nested arrays to denote paths",
+													"type": "array",
+													"prefixItems": [
+														{
+															"description": "A shell command to execute",
+															"type": "string"
+														}
+													],
+													"items": {
+														"anyOf": [
+															{
+																"description": "An option or argument to pass to the command",
+																"type": "string"
+															}, {
+																"description": "A path to fetch the option or argument to pass to the command from",
+																"type": "array",
+																"items": {
+																	"$ref": "#/definitions/simple_path"
+																},
+																"minItems": 1,
+																"maxItems": 1
+															}
+														]
+													},
+													"minItems": 1
 												},
 												"kind": {
 													"$ref": "#/definitions/kind"
@@ -1716,7 +1745,8 @@
 								"logpad_msg_getter",
 								"get_journalctl_log",
 								"get_task_log",
-								"get_themearrays"
+								"get_themearrays",
+								"get_traceflow"
 							]
 						},
 						"infogetter_args": {
