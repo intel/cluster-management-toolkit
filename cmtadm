@@ -2584,7 +2584,8 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 		install_ansible_posix()
 
-		retval, ansible_results = run_playbook(FilePath(f"{ANSIBLE_PLAYBOOK_DIR}/prepare_passwordless_ansible.yaml"), hosts = [controlplane], extra_values = extra_values, quiet = True)
+		retval, ansible_results = run_playbook(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_passwordless_ansible.yaml"))),
+						       hosts = [controlplane], extra_values = extra_values, quiet = True)
 		if retval != 0:
 			break
 
@@ -2594,7 +2595,8 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 		else:
 			cni = tmp_cni[0][0]
 
-		retval, ansible_results = run_playbook(FilePath(f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml"), hosts = [controlplane], extra_values = extra_values, quiet = True)
+		retval, ansible_results = run_playbook(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("get_versions.yaml"))),
+						       hosts = [controlplane], extra_values = extra_values, quiet = True)
 		distro = "<unknown>"
 		version = "<unknown>"
 		if retval == 0:
