@@ -3,10 +3,17 @@
   vars:
     metadata:
       description: "Check whether host is suitable for use as a Control Plane / Node"
+      summary:
+        "Other actions":
+        - description: "Checks whether the host OS is supported by CMT for control planes"
+        - description: "Checks whether the host OS is supported by CMT for nodes"
+        - description: "Checks whether the host is a Kubernetes API-server"
+        - description: "Checks whether the host is a Kubernetes node"
       playbook_types:
       - "internal"
       gather_facts: true
       category: "Setup"
+      read_only: true
   become: true
   become_user: "root"
   tasks:

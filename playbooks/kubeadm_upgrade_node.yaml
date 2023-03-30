@@ -3,6 +3,19 @@
   vars:
     metadata:
       description: "Update a Kubernetes node using kubeadm"
+      summary:
+        "Kubernetes actions":
+        - description: "Upgrades Kubernetes node"
+        "Other actions":
+        - description: "Updates package cache"
+          conditions:
+          - "Debian and derivatives || Red Hat and derivatives"
+        "Restarted services":
+        - description: "kubelet"
+        "Updated packages":
+        - description: "kubeadm"
+        - description: "kubectl"
+        - description: "kubelet"
       time_consumption: "Slow"
       playbook_types:
       - "node"

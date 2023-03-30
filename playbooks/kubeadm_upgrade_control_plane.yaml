@@ -3,6 +3,19 @@
   vars:
     metadata:
       description: "Upgrade a Kubernetes control plane using kubeadm"
+      summary:
+        "Kubernetes actions":
+        - description: "Upgrades Kubernetes control plane"
+        "Other actions":
+        - description: "Updates package cache"
+          conditions:
+          - "Debian and derivatives || Red Hat and derivatives"
+        "Restarted services":
+        - description: "kubelet"
+        "Updated packages":
+        - description: "kubeadm"
+        - description: "kubectl"
+        - description: "kubelet"
       time_consumption: "Slow"
       playbook_types:
       - "internal"

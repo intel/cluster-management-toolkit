@@ -3,6 +3,22 @@
   vars:
     metadata:
       description: "Setup Kubernetes node"
+      summary:
+        "Enabled services":
+        - description: "kubelet"
+        "Installed packages":
+        - description: "kubeadm"
+        - description: "kubectl"
+        - description: "kubelet"
+        "Kubernetes actions":
+        - description: "Creates a permanent join token"
+        "Other actions":
+        - description: "Updates package cache"
+          conditions:
+          - "Debian and derivatives"
+        - description: "modprobe br_netfilter"
+        - description: "Configures Kubernetes node"
+        - description: "Joins the Kubernetes node to the cluster"
       time_consumption: "Slow"
       playbook_types:
       - "internal"

@@ -3,6 +3,14 @@
   vars:
     metadata:
       description: "Purge kubeadm"
+      summary:
+        "Removed directories":
+        - description: "/etc/kubernetes"
+        - description: "/etc/systemd/system/kubelet.service.d"
+        - description: "/var/lib/etcd"
+        - description: "/var/lib/kubelet"
+        "Removed packages":
+        - description: "{{ packages }}"
       time_consumption: "Moderately slow"
       playbook_types:
       - "internal"
