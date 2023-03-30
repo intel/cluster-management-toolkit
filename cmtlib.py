@@ -149,6 +149,11 @@ def split_msg(rawmsg: str) -> List[str]:
 	tmp = rawmsg.replace("\r\n", "\n")
 	# We also replace all \x00 with <NUL>
 	tmp = rawmsg.replace("\x00", "<NUL>")
+	# And remove all control characters
+	tmp = re.sub(r"\n", "<<<newline>>>", tmp)
+	tmp = re.sub(r"[\x00-\x1f\x7f-\x9f]", "\uFFFD", tmp)
+	tmp = re.sub(r"<<<newline>>>", "\n", tmp)
+
 	return list(map(str.rstrip, tmp.splitlines()))
 
 def read_cmtconfig() -> Dict:
