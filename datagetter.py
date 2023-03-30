@@ -441,7 +441,7 @@ def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict) -> Tuple[s
 					if deep_get(container, DictPath("ready")) == False:
 						reason = deep_get(container, DictPath("state#waiting#reason"), "").rstrip()
 						if reason is not None and len(reason) > 0:
-							if reason in ("CrashLoopBackOff", "ErrImagePull"):
+							if reason in ("CrashLoopBackOff", "ErrImageNeverPull", "ErrImagePull"):
 								status_group = StatusGroup.NOT_OK
 							return reason, status_group
 
