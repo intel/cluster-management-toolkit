@@ -35,6 +35,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-urllib3")
 
 from cmtpaths import KUBE_CONFIG_FILE
+import cmtlib
 from cmtlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
 from cmtlog import CMTLogType, CMTLog
 from cmttypes import LogLevel
@@ -2895,29 +2896,61 @@ class KubernetesHelper:
 			self.tmp_key_file.write(key.encode("utf-8"))
 			self.tmp_key_file.flush()
 
+			cluster_https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), None)
+
 			if insecuretlsskipverify == False:
-				self.pool_manager = urllib3.PoolManager(
-					cert_reqs = "CERT_REQUIRED",
-					ca_certs = self.tmp_ca_certs_file.name, # type: ignore
-					cert_file = self.tmp_cert_file.name,
-					key_file = self.tmp_key_file.name,
-					ssl_context = ssl_context)
+				if cluster_https_proxy is None:
+					self.pool_manager = urllib3.PoolManager(
+						cert_reqs = "CERT_REQUIRED",
+						ca_certs = self.tmp_ca_certs_file.name, # type: ignore
+						cert_file = self.tmp_cert_file.name,
+						key_file = self.tmp_key_file.name,
+						ssl_context = ssl_context)
+				else:
+					self.pool_manager = urllib3.ProxyManager(
+						cluster_https_proxy,
+						cert_reqs = "CERT_REQUIRED",
+						ca_certs = self.tmp_ca_certs_file.name, # type: ignore
+						cert_file = self.tmp_cert_file.name,
+						key_file = self.tmp_key_file.name,
+						ssl_context = ssl_context)
 			else:
-				self.pool_manager = urllib3.PoolManager(
-					cert_reqs = "CERT_NONE",
-					ca_certs = None,
-					cert_file = self.tmp_cert_file.name,
-					key_file = self.tmp_key_file.name)
+				if cluster_https_proxy is None:
+					self.pool_manager = urllib3.PoolManager(
+						cert_reqs = "CERT_NONE",
+						ca_certs = None,
+						cert_file = self.tmp_cert_file.name,
+						key_file = self.tmp_key_file.name)
+				else:
+					self.pool_manager = urllib3.ProxyManager(
+						cluster_https_proxy,
+						cert_reqs = "CERT_NONE",
+						ca_certs = None,
+						cert_file = self.tmp_cert_file.name,
+						key_file = self.tmp_key_file.name)
 		elif self.token is not None:
 			if insecuretlsskipverify == False:
-				self.pool_manager = urllib3.PoolManager(
-					cert_reqs = "CERT_REQUIRED",
-					ca_certs = self.tmp_ca_certs_file.name, # type: ignore
-					ssl_context = ssl_context)
+				if cluster_https_proxy is None:
+					self.pool_manager = urllib3.PoolManager(
+						cert_reqs = "CERT_REQUIRED",
+						ca_certs = self.tmp_ca_certs_file.name, # type: ignore
+						ssl_context = ssl_context)
+				else:
+					self.pool_manager = urllib3.ProxyManager(
+						cluster_https_proxy,
+						cert_reqs = "CERT_REQUIRED",
+						ca_certs = self.tmp_ca_certs_file.name, # type: ignore
+						ssl_context = ssl_context)
 			else:
-				self.pool_manager = urllib3.PoolManager(
-					cert_reqs = "CERT_NONE",
-					ca_certs = None)
+				if cluster_https_proxy is None:
+					self.pool_manager = urllib3.PoolManager(
+						cert_reqs = "CERT_NONE",
+						ca_certs = None)
+				else:
+					self.pool_manager = urllib3.ProxyManager(
+						cluster_https_proxy,
+						cert_reqs = "CERT_NONE",
+						ca_certs = None)
 
 		self.cluster_unreachable = False
 		self.cluster_name = cluster_name
@@ -3491,11 +3524,19 @@ class KubernetesHelper:
 			else:
 				result = self.pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
 			status = result.status
-		except urllib3.exceptions.MaxRetryError:
+		except urllib3.exceptions.MaxRetryError as e:
 			# No route to host does not have a HTTP response; make one up...
 			# 503 is Service Unavailable; this is generally temporary, but to distinguish it from a real 503
 			# we prefix it...
-			status = 42503
+			if "CERTIFICATE_VERIFY_FAILED" in str(e):
+				# Client Handshake Failed (Cloudflare)
+				status = 525
+				if "certificate verify failed" in str(e):
+					tmp = re.match(r".*SSL: CERTIFICATE_VERIFY_FAILED.*certificate verify failed: (.*) \(_ssl.*", str(e))
+					if tmp is not None:
+						message = f"; {tmp[1]}"
+			else:
+				status = 42503
 		except urllib3.exceptions.ConnectTimeoutError:
 			# Connection timed out; the API-server might not be available, suffer from too high load, or similar
 			# 504 is Gateway Timeout; using 42504 to indicate connection timeout thus seems reasonable
@@ -3552,6 +3593,10 @@ class KubernetesHelper:
 			# Internal Server Error
 			msg = result.data.decode("utf-8", errors = "replace")
 			message = f"500: Internal Server Error; method: {method}, URL: {url}; header_params: {header_params}; message: {msg}"
+		elif status == 502:
+			# Bad Gateway
+			# Either a malfunctioning or a malicious proxy
+			message = "502: Bad Gateway"
 		elif status == 503:
 			# Service Unavailable
 			# This is might be a CRD that has failed to deploy properly
@@ -3560,6 +3605,9 @@ class KubernetesHelper:
 			# Gateway Timeout
 			# A request was made for an unrecognised resourceVersion, and timed out waiting for it to become available
 			message = f"504: Gateway Timeout; method: {method}, URL: {url}; header_params: {header_params}"
+		elif status == 525:
+			# SSL Handshake Failed (Cloudflare)
+			message = f"525: Client Handshake Failed{message}"
 		elif status == 42503:
 			message = f"No route to host; method: {method}, URL: {url}; header_params: {header_params}"
 		else:
