@@ -160,6 +160,8 @@ SSH_ARGS_STRICT: List[str] = [
 SSH_ARGS_RELAXED: List[str] = [
 	# Accepted cryptos
 	"-c", SSH_ARGS_RELAXED_CRYPTOS,
+	# Accepted CA signature algorithms
+	"-o", f"CASignatureAlgorithms={SSH_ARGS_RELAXED_CA_SIGNATURE_ALGORITHMS}",
 	# Accepted key exchange algorithms
 	"-o", f"KexAlgorithms={SSH_ARGS_RELAXED_KEX}",
 	# Accepted MACs
