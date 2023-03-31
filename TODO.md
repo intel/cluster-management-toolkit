@@ -1,9 +1,8 @@
 # TODO
 
-## Testing / Validation
-* Check that all ThemeAttrs, ThemeRefs, and ANSIThemeString attrs exist
-
 ## All
+* listgetters need to support passing both a label selector and a match selector
+  in listgetter_args
 * When running either cmt or cmu, check whether .ssh/id_ecdsa.pub is in authorized_keys
   in .cmt/ansible/inventory.yaml; if not, add it.
 * Rewrite command_parser to treat options passed before a command as global,
@@ -11,6 +10,8 @@
 * Add `--dry-run` support for more commands.
 * Is it possible to rewrite the generator/processor system in a way that processors
   could be completely eliminated.
+* Introduce .kube/current-context and have all clusters in .kube have their own files
+  (named config-clustername) rather than merging the config-files
 
 ## cmu
 * Bundle all Core APIs into one file and load them all using secure_read_yaml_all();
@@ -31,7 +32,6 @@
   Note: this would need quite a bit of a rewrite, but it would probably be healthy
   and hopefully cut down on the amount of special cases.
 * Audit and make a list of all necessary types
-* config map YAML-parser should handle single-line files (optionally unfolding)
 * Make generic_infogetter consistent WRT to paths:
   ["literal", ["path"], [["alternate1", "alternate2"]]]
 
@@ -39,10 +39,7 @@ cmtinv:
 * Optionally limit rebuild-inventory to a subset of clusters.
 
 cmtadm:
-* Stop installation if containerd < 1.6 and kubernetes >= 1.26.
-* We might have to wait before running the install CNI step to ensure that the  cluster can accept requests.
 * Add command to import kube-config (requires cluster-name--unless unique) and a path.
-* Pass cluster_name to `kubeadm init` using ClusterConfiguration + clusterName.
 * prepare_passwordless_ansible won't work on localhost; we're not passing the password,
   and the password might not be the same on the remote system and the local system anyway.
 * Add `pre-upgrade-check` that checks whether relevant config files (notably containerd)
@@ -71,15 +68,8 @@ logparser:
 * We cannot replace tabs with spaces in the logparser; we need to do it in the printers instead;
   this way we know the real line length (due to facility etc. we might not have the same starting point
   for every line, so expanding tabs into spaces won't work properly).
+  | Currently we strip tabs; if we want to handle them we need to modify cmtlib.py:split_msg()
 
 kubernetes_helper:
 * Replace playbooks/drain_node.yaml with cordon_node() + post evictions (or delete if PodDisruptionBudget causes issues)
   for all non-DaemonSet pods.
-
-curses_helper:
-* Make themearrays treat lists as tuples; this would make it possible to remove special casing for views.
-* themearrays should only handle two types of fragments:
-  (("key", "value"), selected)--lookup of predefined strings, with selected being bool.
-  (("str", ("key", "value")), selected)--str to be formatted, lookup to formatting, with selected being bool.
-* themearrays can be flattened to a format that curses understands (flattening should do all lookups, etc);
-  flattened themearrays are then used to get the length of a themearray and the string without formatting.
