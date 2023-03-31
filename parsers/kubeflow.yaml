@@ -7,3 +7,49 @@
   - name: "glog"
   - name: "tab_separated"
   - name: "key_value"
+- name: "tensorflow"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "tensorflow-mnist-launcher"
+    container_name: "mpi"
+  parser_rules:
+  - name: "custom_splitter"
+    options:
+      regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6}: ([A-Z]) ([^]]+)] (.*)'
+      severity:
+        field: 1
+        transform: "letter"
+      facility:
+        fields:
+        - 2
+      message:
+        field: 3
+  - name: "custom_splitter"
+    options:
+      regex: '^()\[(\d+)\] \d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6}: ([A-Z]) ([^]]+)] (.*)'
+      severity:
+        field: 3
+        transform: "letter"
+      facility:
+        fields:
+        - 4
+        - 2
+        - 1
+        separators:
+        - "|"
+        - "|"
+      message:
+        field: 5
+  - name: "custom_splitter"
+    options:
+      regex: '^()\[(\d+)\] (.*)'
+      facility:
+        fields:
+        - 1
+        - 2
+        - 1
+        separators:
+        - "|"
+        - "|"
+      message:
+        field: 3

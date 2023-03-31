@@ -1,0 +1,196 @@
+kind: "MPIJob"
+api_family: "kubeflow.org"
+default_command: "mpijobs"
+listview:
+  name: "MPI Jobs"
+  group: "Kubeflow"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age", "state"]
+      sortcolumn: "state"
+  fields:
+    state:
+      header: "State:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "type"
+        index: -1
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            MPIJobCreated:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Running:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Succeeded:
+              field_colors:
+              - context: "main"
+                type: "status_done"
+infoview:
+  name: "MPI Job Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["slots_per_worker", "state"]
+    rows:
+      slots_per_worker:
+        header: [["Slots per worker:", ["main", "infoheader"]]]
+        path: "spec#slotsPerWorker"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "type"
+          index: -1
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              MPIJobCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Running:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Succeeded:
+                field_colors:
+                - context: "main"
+                  type: "status_done"
+  listpad:
+    listgetter: "generic_listgetter"
+    listgetter_args:
+      _kind: "Pod"
+      _label_selector_key_values:
+        - [ "mpi-job-name", [ "metadata#name" ] ]
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "Pod"
+    field_indexes:
+      Wide:
+        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        sortcolumn: "pod_status"
+      Normal:
+        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+      Compact:
+        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+    fields:
+      containers:
+        header: "Containers:"
+        paths:
+        - paths:
+          - "spec#initContainers"
+          - "spec#containers"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          - subpath: "image"
+            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+          type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      controller:
+        header: "Controller:"
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      last_restart:
+        header: "Latest Restart:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: "items"
+          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+          when:
+          - key: "restartCount"
+            gt: 0
+          action: "latest"
+          type: "timestamp"
+        default: -1
+        formatter: "age"
+        align: "right"
+      node_name:
+        header: "Node:"
+        path: "spec#nodeName"
+        type: "host"
+        default: "<none>"
+        formatting:
+          field_colors:
+          - type: "host"
+      pod_ip:
+        header: "Pod IP:"
+        path: "status#podIP"
+        default: "<unset>"
+        type: "address"
+        formatter: "address"
+      restarts:
+        header: "Restarts:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: "items"
+          subpath: "restartCount"
+          action: "sum"
+          type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+        default: 0
+  shortcuts:
+    "View Launcher Replica Specs":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show launcher replica specs"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Launcher replica specs"
+        _pass_obj: true
+        path: "spec#mpiReplicaSpecs#Launcher"
+    "View Worker Replica Specs":
+      key: "w"
+      read_only: true
+      helptext: "Show worker replica specs"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Worker replica specs"
+        _pass_obj: true
+        path: "spec#mpiReplicaSpecs#Worker"

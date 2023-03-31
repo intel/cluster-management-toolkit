@@ -1779,10 +1779,16 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						subpaths = [subpath]
 					value = []
 					items = []
+					index = deep_get(_path, DictPath("index"))
 					for mpath in mpaths:
 						if isinstance(mpath, str):
 							mpath = [mpath]
 						tmp = deep_get_list(obj, mpath, default = [], fallback_on_empty = fallback_on_empty)
+						if index is not None:
+							try:
+								tmp = [tmp[index]]
+							except IndexError:
+								pass
 						# XXX: This is to avoid breaking anything
 						# Ideally the "appenditems" behaviour should be the only one,
 						# but requires rewriting a lot of files
