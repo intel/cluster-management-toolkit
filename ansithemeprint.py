@@ -106,6 +106,17 @@ def clear_screen() -> int:
 
 	return subprocess.run([cpath], check = False).returncode
 
+def __themearray_to_raw_string(themearray: List[ANSIThemeString]) -> str:
+	string: str = ""
+	for themestring in themearray:
+		if not isinstance(themestring, ANSIThemeString):
+			raise TypeError(f"__themarray_to_string() only accepts arrays of AnsiThemeString; this themearray consists of:\n{themearray}")
+
+		theme_string = str(themestring)
+		string += theme_string
+
+	return string
+
 def __themearray_to_string(themearray: List[ANSIThemeString]) -> str:
 	if theme is None or themepath is None:
 		sys.exit("__themearray_to_string() used without calling init_ansithemestring() first; this is a programming error.")
