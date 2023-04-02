@@ -3405,9 +3405,116 @@ class KubernetesHelper:
 
 		raise NameError(f"Could not guess kubernetes resource for kind: {kind}")
 
+	def get_api_resources(self) -> Tuple[int, List[Tuple]]:
+		"""
+		Return information about all API-resources available in the cluster
+
+			Returns:
+				((status, api_resources)):
+					status (int): The HTTP response
+					api_resources ([dict]): Information about all available API-resources
+		"""
+
+		# If the list is not empty, but the cluster is unreachable, return it unchanged
+		if self.cluster_unreachable == True:
+			return 42503, []
+
+		api_resources = []
+		core_apis = {}
+
+		# First get all core APIs
+		method = "GET"
+		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/api/v1"
+		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
+
+		if status == 200 and raw_data is not None:
+			# Success
+			try:
+				core_apis = json.loads(raw_data)
+			except DecodeException:
+				# We got a response, but the data is malformed
+				return kubernetes_resources, 42422, []
+		else:
+			# Something went wrong
+			self.cluster_unreachable = True
+			return status, []
+
+		group_version = deep_get(core_apis, DictPath("groupVersion"), "")
+
+		for api in deep_get(core_apis, DictPath("resources"), []):
+			name = deep_get(api, DictPath("name"), "")
+			shortnames = deep_get(api, DictPath("shortNames"), [])
+			api_version = group_version
+			namespaced = deep_get(api, DictPath("namespaced"), False)
+			kind = deep_get(api, DictPath("kind"), "")
+			verbs = deep_get(api, DictPath("verbs"), [])
+			api_resources.append((name, shortnames, api_version, namespaced, kind, verbs))
+
+		# Now fetch non-core APIs
+		non_core_apis = {}
+		non_core_api_dict = {}
+
+		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis"
+		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
+
+		if status == 200 and raw_data is not None:
+			# Success
+			try:
+				non_core_apis = json.loads(raw_data)
+			except DecodeException:
+				# We got a response, but the data is malformed
+				pass
+		else:
+			# No non-core APIs found; this is a bit worrying, but OK...
+			pass
+
+		for api_group in deep_get(non_core_apis, DictPath("groups"), []):
+			name = deep_get(api_group, DictPath("name"), "")
+			versions = deep_get(api_group, DictPath("versions"), [])
+
+			# Now we need to check what kinds this api_group supports
+			# and using what version
+			for version in versions:
+				group_version = deep_get(version, DictPath("groupVersion"))
+				if group_version is None:
+					# This should not happen, but ignore it
+					continue
+				url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis/{group_version}"
+				raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
+
+				if status != 200 or raw_data is None:
+					# Could not get API info; this is worrying, but ignore it
+					continue
+				try:
+					data = json.loads(raw_data)
+				except DecodeException:
+					# We got a response, but the data is malformed
+					continue
+
+				resources = deep_get(data, DictPath("resources"), [])
+				for resource in resources:
+					kind = deep_get(resource, DictPath("kind"), "")
+					if len(kind) == 0:
+						continue
+
+					name = deep_get(resource, DictPath("name"), "")
+					shortnames = deep_get(resource, DictPath("shortNames"), [])
+					api_version = group_version
+					namespaced = deep_get(resource, DictPath("namespaced"), False)
+					kind = deep_get(resource, DictPath("kind"), "")
+					verbs = deep_get(resource, DictPath("verbs"), [])
+					kind_tuple = (kind, api_version.split("/")[0])
+					# Let's hope we get them in the right order...
+					if kind_tuple in non_core_api_dict:
+						continue
+					non_core_api_dict[kind_tuple] = (name, shortnames, api_version, namespaced, kind, verbs)
+		api_resources += list(non_core_api_dict.values())
+
+		return status, api_resources
+
 	def get_available_kinds(self, force_refresh: bool = False) -> Tuple[Dict, int, bool]:
 		"""
-		Return a list of Kinds known by both kubernetes_helper and the API-server
+		Return a dict of Kinds known by both kubernetes_helper and the API-server
 
 			Parameters:
 				force_refresh (bool): Flush the list (if existing) and create a new one

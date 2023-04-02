@@ -27,6 +27,49 @@ programauthors = None
 
 commandline = None
 
+def validator_bool(value: Any, error_on_failure: bool = True, exit_on_failure: bool = True) -> bool:
+	"""
+	Checks whether the value represents a bool.
+
+		Parameters:
+			value (any): The representation of value
+			error_on_failure (bool): Print an error message on failure
+			exit_on_failure (bool): Exit on failure
+		Returns:
+			result (bool): True if the value can be represented as bool, False if not
+			retval (bool): True if value is True, False if value is False
+	"""
+
+	result = False
+	if isinstance(value, bool):
+		result = True
+		retval = value
+	elif isinstance(value, int):
+		if value == 0:
+			result = True
+			retval = False
+		elif value == 1:
+			result = True
+			retval = True
+	elif isinstance(value, str):
+		if value.lower() in ("1", "y", "yes", "true"):
+			result = True
+			retval = True
+		elif value.lower() in ("0", "n", "no", "false"):
+			result = True
+			retval = False
+
+	if result == False:
+		if error_on_failure == True:
+			ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+					ANSIThemeString(": “", "default"),
+					ANSIThemeString(f"{value}", "option"),
+					ANSIThemeString("“ is not a boolean.", "default")], stderr = True)
+		if exit_on_failure == True:
+			sys.exit(errno.EINVAL)
+
+	return result, retval
+
 def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool = True, exit_on_failure: bool = True) -> bool:
 	"""
 	Checks whether value can be represented as an integer,
@@ -211,6 +254,8 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 				ansithemeprint(ansithemestring_join_tuple_list(["NoSchedule", "PreferNoSchedule", "NoExecute"],
 									       formatting = "argument", separator = ANSIThemeString(", ", "separator")), stderr = True)
 				sys.exit(errno.EINVAL)
+		elif validator == "bool":
+			_result = validator_bool(subarg)
 		elif validator == "int":
 			_result = validator_int(minval, maxval, subarg)
 		elif validator == "allowlist":

@@ -19,6 +19,7 @@ For usage, see:
 import errno
 from getpass import getuser
 import hashlib
+from operator import itemgetter
 import os
 from pathlib import Path, PurePath
 import re
@@ -31,6 +32,7 @@ from cryptography.hazmat.primitives import serialization
 from cmttypes import deep_get, DictPath, FilePath, HostNameStatus
 from cmtpaths import CMT_CONFIG_FILE, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
 
+import commandparser
 from commandparser import parse_commandline
 
 from ansible_helper import ansible_configuration, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts
@@ -1570,6 +1572,172 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	ansithemeprint([ANSIThemeString("\nNode upgrade successful", "success")])
 	return 0
 
+def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
+	"""
+	List available API-resources
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+		Returns:
+			0 on success, exits with errno on failure
+	"""
+
+	namespaced_only = False
+	namespaced_selector = True
+	verb_selector = []
+	wide = False
+	sortkey = 1
+	header = True
+	api_version_selector = None
+
+	for opt, optarg in options:
+		if opt == "--api-group":
+			api_version_selector = optarg
+		elif opt == "--namespaced":
+			namespaced_only = True
+			_isbool, namespaced_selector = commandparser.validator_bool(optarg)
+		elif opt == "--no-header":
+			header = False
+		elif opt == "--sort-by":
+			if optarg == "name":
+				sortkey = 0
+			elif optarg in ("apiversion", "api_version"):
+				sortkey = 2
+			elif optarg == "namespaced":
+				sortkey = 3
+			elif optarg == "kind":
+				sortkey = 4
+		elif opt == "--verbs":
+			verb_selector = optarg.split(",")
+		elif opt == "--wide":
+			wide = True
+
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+	result, api_resources = kh.get_api_resources()
+
+	name_header = ""
+	shortnames_header = ""
+	api_version_header = ""
+	namespaced_header = ""
+	kind_header = ""
+	verbs_header = ""
+
+	if header:
+		name_header = "Name:"
+		shortnames_header = "Shortnames:"
+		api_version_header = "API-Version:"
+		namespaced_header = "Namespaced:"
+		kind_header = "Kind:"
+		verbs_header = "Verbs:"
+
+	name_len = len(name_header)
+	shortnames_len = len(shortnames_header)
+	api_version_len = len(api_version_header)
+	namespaced_len = len(namespaced_header)
+	kind_len = len(kind_header)
+	verbs_len = len(verbs_header)
+
+	for name, shortnames, api_version, namespaced, kind, verbs in sorted(api_resources, key = itemgetter(sortkey)):
+		if namespaced_only and namespaced != namespaced_selector:
+			continue
+
+		if "/" in name:
+			continue
+
+		if set(verb_selector) & set(verbs) != set(verb_selector):
+			continue
+
+		if api_version_selector is not None:
+			if len(api_version_selector) == 0:
+				if "/" in api_version:
+					continue
+			else:
+				if "/" in api_version_selector and api_version_selector != api_version:
+					continue
+				if api_version_selector != api_version.split("/")[0]:
+					continue
+
+		name_len = max(name_len, len(name))
+		shortnames_len_tmp = 0
+		shortnames_formatted = ansithemestring_join_tuple_list(shortnames, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		for shortname in shortnames_formatted:
+			shortnames_len_tmp += len(shortname)
+		shortnames_len = max(shortnames_len, shortnames_len_tmp)
+		api_version_len = max(api_version_len, len(api_version))
+		namespaced_len = max(namespaced_len, len(f"{namespaced}"))
+		kind_len = max(kind_len, len(kind))
+
+	if header:
+		if wide:
+			ansithemeprint([ANSIThemeString("Name:", "header"),
+					ANSIThemeString("".ljust(name_len - len(name_header) + 2), "default"),
+					ANSIThemeString("Shortnames:", "header"),
+					ANSIThemeString("".ljust(shortnames_len - len(shortnames_header) + 2), "default"),
+					ANSIThemeString("API-version:", "header"),
+					ANSIThemeString("".ljust(api_version_len - len(api_version_header) + 2), "default"),
+					ANSIThemeString("Namespaced:", "header"),
+					ANSIThemeString("".ljust(namespaced_len - len(namespaced_header) + 2), "default"),
+					ANSIThemeString("Kind:", "header"),
+					ANSIThemeString("".ljust(kind_len - len(kind_header) + 2), "default"),
+					ANSIThemeString("Verbs:", "header")])
+		else:
+			ansithemeprint([ANSIThemeString("Name:", "header"),
+					ANSIThemeString("".ljust(name_len - len(name_header) + 2), "default"),
+					ANSIThemeString("Shortnames:", "header"),
+					ANSIThemeString("".ljust(shortnames_len - len(shortnames_header) + 2), "default"),
+					ANSIThemeString("API-version:", "header"),
+					ANSIThemeString("".ljust(api_version_len - len(api_version_header) + 2), "default"),
+					ANSIThemeString("Namespaced:", "header"),
+					ANSIThemeString("".ljust(namespaced_len - len(namespaced_header) + 2), "default"),
+					ANSIThemeString("Kind:", "header")])
+
+	for name, shortnames, api_version, namespaced, kind, verbs in sorted(api_resources, key = itemgetter(sortkey)):
+		if namespaced_only and namespaced != namespaced_selector:
+			continue
+
+		if "/" in name:
+			continue
+
+		if set(verb_selector) & set(verbs) != set(verb_selector):
+			continue
+
+		if api_version_selector is not None:
+			if len(api_version_selector) == 0:
+				if "/" in api_version:
+					continue
+			else:
+				if "/" in api_version_selector and api_version_selector != api_version:
+					continue
+				if api_version_selector != api_version.split("/")[0]:
+					continue
+
+		shortnames_len_tmp = 0
+		shortnames_formatted = ansithemestring_join_tuple_list(shortnames, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		for shortname in shortnames_formatted:
+			shortnames_len_tmp += len(shortname)
+		if len(shortnames_formatted) == 0:
+			shortnames_formatted = [ANSIThemeString("", "default")]
+		if wide:
+			ansithemeprint([ANSIThemeString(f"{name}".ljust(name_len + 2), "default")] +
+				       shortnames_formatted +
+				       [ANSIThemeString("".ljust(shortnames_len - shortnames_len_tmp + 2), "default"),
+					ANSIThemeString(f"{api_version}".ljust(api_version_len + 2), "version"),
+					ANSIThemeString(f"{namespaced}".ljust(namespaced_len + 2), "default"),
+					ANSIThemeString(f"{kind}".ljust(kind_len + 2), "default")] +
+				       ansithemestring_join_tuple_list(verbs, formatting = "default", separator = ANSIThemeString(",", "separator")))
+		else:
+			ansithemeprint([ANSIThemeString(f"{name}".ljust(name_len + 2), "default")] +
+				       shortnames_formatted +
+				       [ANSIThemeString("".ljust(shortnames_len - shortnames_len_tmp + 2), "default"),
+					ANSIThemeString(f"{api_version}".ljust(api_version_len + 2), "version"),
+					ANSIThemeString(f"{namespaced}".ljust(namespaced_len + 2), "default"),
+					ANSIThemeString(f"{kind}", "default")])
+
+	return result
+
 # pylint: disable-next=pointless-string-statement
 """
 def get_resource(options: List[Tuple[str, str]], args: List[str]) -> None:
@@ -2334,6 +2502,87 @@ CMT_COMMANDLINE = {
 			},
 		],
 		"callback": upgrade_nodes,
+	},
+	"List API-resources": {
+		"command": ["api-resources"],
+		"description": [ANSIThemeString("Display available API-resources", "description")],
+		"options": {
+			"--api-group": {
+				"values": [ANSIThemeString("API_GROUP", "argument")],
+				"description": [ANSIThemeString("Limit output to ", "description"),
+						ANSIThemeString("API_GROUP", "description")],
+				"extended_description": [
+					[ANSIThemeString("If the version part of ", "description"),
+					 ANSIThemeString("API_GROUP", "argument"),
+					 ANSIThemeString(" is omitted,", "description")],
+					[ANSIThemeString("all versions of the API-GROUP are included.", "description")],
+					[ANSIThemeString("To only show core APIs, use ", "description"),
+					 ANSIThemeString("\"\"", "argument"),
+					 ANSIThemeString(".", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "regex",
+					"regex": r"^([a-z][a-z0-9.-]*[a-z0-9]?)?",
+				},
+			},
+			"--namespaced": {
+				"values": [ANSIThemeString("true", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("false", "argument")],
+				"description": [ANSIThemeString("Limit output to namespaced or cluster-wide", "description")],
+				"extended_description": [
+					[ANSIThemeString("If ", "description"),
+					 ANSIThemeString("true", "argument"),
+					 ANSIThemeString(" only namespaced resources will be listed.", "description")],
+					[ANSIThemeString("If ", "description"),
+					 ANSIThemeString("false", "argument"),
+					 ANSIThemeString(" only cluster-wide resources will be", "description")],
+					[ANSIThemeString("listed. By default all resources are listed.", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "bool",
+				},
+			},
+			"--no-header": {
+				"description": [ANSIThemeString("Do not output list headers", "description")],
+			},
+			"--sort-by": {
+				"values": [ANSIThemeString("SORTKEY", "argument")],
+				"description": [ANSIThemeString("Sort the output by ", "description"),
+						ANSIThemeString("SORTKEY", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid sortkeys are: ", "description")],
+					[ANSIThemeString("name", "argument")],
+					[ANSIThemeString("apiversion", "argument")],
+					[ANSIThemeString("namespaced", "argument")],
+					[ANSIThemeString("kind", "argument")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z]+",
+					"list_separator": ",",
+				},
+			},
+			"--verbs": {
+				"values": [ANSIThemeString("VERB", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"description": [ANSIThemeString("Limit output by supported verbs", "description")],
+				"requires_arg": True,
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z]+",
+					"list_separator": ",",
+				},
+			},
+			"--wide": {
+				"description": [ANSIThemeString("Wide output format", "description")],
+			},
+		},
+		"callback": list_api_resources,
 	},
 	"spacer1": {
 		"command": [""],
