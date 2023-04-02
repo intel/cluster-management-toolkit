@@ -1,0 +1,235 @@
+kind: "AdmissionReport"
+api_family: "kyverno.io"
+default_command: "admissionreports"
+command:
+- "admrs"
+- "admr"
+listview:
+  name: "Admission Reports"
+  group: "Kyverno"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "fail", "error", "warn", "skip", "pass", "age"]
+      sortcolumn: "namespace"
+  fields:
+    error:
+      header: "Error:"
+      path: "spec#summary#error"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_high"
+      align: "right"
+    fail:
+      header: "Fail:"
+      path: "spec#summary#fail"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_high"
+      align: "right"
+    pass:
+      header: "Pass:"
+      path: "spec#summary#pass"
+      type: "raw"
+      formatting:
+        field_colors:
+        - context: "types"
+          type: "watermark_low"
+      align: "right"
+    skip:
+      header: "Skip:"
+      path: "spec#summary#skip"
+      type: "raw"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    warn:
+      header: "Warn:"
+      path: "spec#summary#warn"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_medium"
+      align: "right"
+infoview:
+  name: "Admission Report Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["owner", "severity_header", "fail", "error", "warn", "skip", "pass"]
+    rows:
+      error:
+        header: [["  Error:", ["main", "infoheader"]]]
+        path: "spec#summary#error"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_high"
+      fail:
+        header: [["   Fail:", ["main", "infoheader"]]]
+        path: "spec#summary#fail"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_high"
+      owner:
+        header: [["O", ["main", "infoheader_shortcut"]], ["wner:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#owner#kind"], ["spec#owner#apiVersion"], ["spec#owner#name"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      pass:
+        header: [["   Pass:", ["main", "infoheader"]]]
+        path: "spec#summary#pass"
+        type: "raw"
+        formatting:
+          field_colors:
+          - context: "types"
+            type: "watermark_low"
+      severity_header:
+        header: [["Severity:", ["main", "infoheader"]]]
+      skip:
+        header: [["   Skip:", ["main", "infoheader"]]]
+        path: "spec#summary#skip"
+        type: "raw"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      warn:
+        header: [["   Warn:", ["main", "infoheader"]]]
+        path: "spec#summary#warn"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_medium"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#results"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["result", "rule", "message"]
+        sortcolumn: "result"
+    fields:
+      message:
+        header: "Message:"
+        path: "message"
+        type: "str"
+      result:
+        header: "Result:"
+        path: "result"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              error:
+                field_colors:
+                - context: "types"
+                  type: "watermark_high"
+              fail:
+                field_colors:
+                - context: "types"
+                  type: "watermark_high"
+              warn:
+                field_colors:
+                - context: "types"
+                  type: "watermark_medium"
+              pass:
+                field_colors:
+                - context: "types"
+                  type: "watermark_low"
+              skip:
+                field_colors:
+                - type: "generic"
+      rule:
+        header: "Rule:"
+        path: "rule"
+        type: "str"
+  shortcuts:
+    "Open owner":
+      key: "o"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for owner"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        name_path: "spec#owner#name"
+        kind_path: "spec#owner#kind"
+        api_version_path: "spec#owner#apiVersion"

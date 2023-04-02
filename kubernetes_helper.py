@@ -1511,6 +1511,55 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/kubevirt.io/v1/"],
 		"api": "virtualmachines",
 	},
+	# kyverno.io
+	("AdmissionReport", "kyverno.io"): {
+		"api_paths": ["apis/kyverno.io/v1alpha2/"],
+		"api": "admissionreports",
+	},
+	("BackgroundScanReport", "kyverno.io"): {
+		"api_paths": ["apis/kyverno.io/v1alpha2/"],
+		"api": "backgroundscanreports",
+	},
+	("CleanupPolicy", "kyverno.io"): {
+		"api_paths": ["apis/kyverno.io/v2alpha1/"],
+		"api": "cleanuppolicies",
+	},
+	("ClusterAdmissionReport", "kyverno.io"): {
+		"api_paths": ["apis/kyverno.io/v1alpha2/"],
+		"api": "clusteradmissionreports",
+		"namespaced": False,
+	},
+	("ClusterBackgroundScanReport", "kyverno.io"): {
+		"api_paths": ["apis/kyverno.io/v1alpha2/"],
+		"api": "clusterbackgroundscanreports",
+		"namespaced": False,
+	},
+	("ClusterCleanupPolicy", "kyverno.io"): {
+		"api_paths": ["apis/kyverno.io/v2alpha1/"],
+		"api": "clustercleanuppolicies",
+		"namespaced": False,
+	},
+	("ClusterPolicy", "kyverno.io"): {
+		"api_paths": ["apis/kyverno.io/v1/"],
+		"api": "clusterpolicies",
+		"namespaced": False,
+	},
+	("GenerateRequest", "kyverno.io"): {
+		"api_paths": ["apis/kyverno.io/v1/"],
+		"api": "generaterequests",
+	},
+	("Policy", "kyverno.io"): {
+		"api_paths": ["apis/kyverno.io/v1/"],
+		"api": "policies",
+	},
+	("PolicyException", "kyverno.io"): {
+		"api_paths": ["apis/kyverno.io/v2alpha1/"],
+		"api": "policyexceptions",
+	},
+	("UpdateRequest", "kyverno.io"): {
+		"api_paths": ["apis/kyverno.io/v1beta1/"],
+		"api": "updaterequests",
+	},
 	# linkerd.io
 	("ServiceProfile", "linkerd.io"): {
 		"api_paths": ["apis/linkerd.io/v1alpha2/"],
@@ -2429,6 +2478,16 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/webconsole.openshift.io/v1/"],
 		"api": "openshiftwebconsoleconfigs",
 		"namespaced": False,
+	},
+	# wgpolicyk8s.io
+	("ClusterPolicyReport", "wgpolicyk8s.io"): {
+		"api_paths": ["apis/wgpolicyk8s.io/v1alpha2/"],
+		"api": "clusterpolicyreports",
+		"namespaced": False,
+	},
+	("PolicyReport", "wgpolicyk8s.io"): {
+		"api_paths": ["apis/wgpolicyk8s.io/v1alpha2/"],
+		"api": "policyreports",
 	},
 	# whereabouts.cni.cncf.io
 	("IPPool", "whereabouts.cni.cncf.io"): {

@@ -9496,7 +9496,8 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 
 	if owner_reference_path is not None and obj is not None:
 		# Search for a controller, or the first reference that matches the kind if specified
-		for ref in deep_get(obj, DictPath(owner_reference_path), []):
+		owner_references = deep_get(obj, DictPath(owner_reference_path), [])
+		for ref in owner_references:
 			ref_name = deep_get(ref, DictPath("name"))
 
 			# We only want to dispatch if there's an owner reference
@@ -9511,9 +9512,10 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 			else:
 				ref_api_family = ""
 			ref_kind = (ref_kind, ref_api_family)
+			accept_only_owner = deep_get(kwargs, DictPath("accept_only_owner"), False)
 			if deep_get(ref, DictPath("controller"), False) == True:
 				controller = (ref_kind, ref_name)
-			elif kind is not None and kind == ref_kind or holder_identity is not None:
+			elif kind is not None and kind == ref_kind or holder_identity is not None or accept_only_owner and len(owner_references) == 1:
 				if non_controller is None:
 					non_controller = (ref_kind, ref_name)
 
