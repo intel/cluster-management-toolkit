@@ -12296,6 +12296,10 @@ def main() -> None:
 	command, options, args = parse_commandline(about.UI_PROGRAM_NAME, about.UI_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   COMMANDLINE, default_command = "*", theme = themefile)
 
+	for opt, _optarg in options:
+		if opt == "--developer-mode":
+			cmtconfig["Debug#developer_mode"] = True
+
 	return command(options, args)
 
 if __name__ == "__main__":
