@@ -8001,6 +8001,10 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					w_args = deep_get(value, DictPath("widget_args"), {})
 					if "_pass_obj" in w_args:
 						w_args["obj"] = obj
+					elif "_pass_selected_obj" in w_args:
+						selected = uip.get_selected()
+						if selected is not None:
+							w_args["obj"] = getattr(selected, "ref")
 					do_command(uip.stdscr, **w_args)
 					changed = True
 				elif widget == "executecommand":
