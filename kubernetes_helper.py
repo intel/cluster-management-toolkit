@@ -828,7 +828,7 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	},
 	("OperatorHub", "config.openshift.io"): {
 		"api_paths": ["apis/config.openshift.io/v1/"],
-		"api": "operatorhub",
+		"api": "operatorhubs",
 		"namespaced": False,
 	},
 	("Project", "config.openshift.io"): {
@@ -1566,6 +1566,10 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "serviceprofiles",
 	},
 	# machine.openshift.io
+	("ControlPlaneMachineSet", "machine.openshift.io"): {
+		"api_paths": ["apis/machine.openshift.io/v1/"],
+		"api": "controlplanemachinesets",
+	},
 	("MachineHealthCheck", "machine.openshift.io"): {
 		"api_paths": ["apis/machine.openshift.io/v1beta1/"],
 		"api": "machinehealthchecks",
@@ -1942,6 +1946,10 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "olmconfigs",
 		"namespaced": False,
 	},
+	("OperatorCondition", "operators.coreos.com"): {
+		"api_paths": ["apis/operators.coreos.com/v2/"],
+		"api": "operatorconditions",
+	},
 	("OperatorGroup", "operators.coreos.com"): {
 		"api_paths": ["apis/operators.coreos.com/v1/"],
 		"api": "operatorgroups",
@@ -1950,10 +1958,6 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/operators.coreos.com/v1/"],
 		"api": "operators",
 		"namespaced": False,
-	},
-	("OperatorCondition", "operators.coreos.com"): {
-		"api_paths": ["apis/operators.coreos.com/v2/"],
-		"api": "operatorconditions",
 	},
 	("Subscription", "operators.coreos.com"): {
 		"api_paths": ["apis/operators.coreos.com/v1alpha1/"],
