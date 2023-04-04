@@ -444,6 +444,10 @@
 						"description": "Normally an existing, but empty, field is treated as valid; this option allows for using the fallback path if the field is empty",
 						"type": "boolean"
 					},
+					"index": {
+						"description": "Array index",
+						"type": "integer"
+					},
 					"key": {
 						"description": "Used in conjunction with pathtype 'key_value' to transform the key of a key/value pairs",
 						"type": "object",
@@ -1773,6 +1777,10 @@
 										"action_args": {
 											"type": "object",
 											"properties": {
+												"accept_only_owner": {
+													"description": "If there's only one owner reference, use it, even if it's not a controller",
+													"type": "boolean"
+												},
 												"api_family": {
 													"$ref": "#/definitions/api_family"
 												},
