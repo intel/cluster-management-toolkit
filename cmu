@@ -1191,7 +1191,7 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 	return new_value
 
 def transform_filter(transformations: Dict, value: DictPath) -> Any:
-	if value in transformations:
+	if len(transformations) > 0 and value in transformations:
 		value = deep_get(transformations, value)
 	return value
 
