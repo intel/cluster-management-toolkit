@@ -2941,6 +2941,7 @@ class KubernetesHelper:
 		ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
 		# Only permit a limited set of acceptable ciphers
 		ssl_context.set_ciphers(":".join(CIPHERS))
+		cluster_https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), None)
 
 		# If we have a cert we also have a key
 		if cert is not None:
@@ -2954,8 +2955,6 @@ class KubernetesHelper:
 
 			self.tmp_key_file.write(key.encode("utf-8"))
 			self.tmp_key_file.flush()
-
-			cluster_https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), None)
 
 			if insecuretlsskipverify == False:
 				if cluster_https_proxy is None:

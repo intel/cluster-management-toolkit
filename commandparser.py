@@ -27,7 +27,7 @@ programauthors = None
 
 commandline = None
 
-def validator_bool(value: Any, error_on_failure: bool = True, exit_on_failure: bool = True) -> bool:
+def validator_bool(value: Any, error_on_failure: bool = True, exit_on_failure: bool = True) -> Tuple[bool, bool]:
 	"""
 	Checks whether the value represents a bool.
 
@@ -41,6 +41,7 @@ def validator_bool(value: Any, error_on_failure: bool = True, exit_on_failure: b
 	"""
 
 	result = False
+
 	if isinstance(value, bool):
 		result = True
 		retval = value
@@ -255,7 +256,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 									       formatting = "argument", separator = ANSIThemeString(", ", "separator")), stderr = True)
 				sys.exit(errno.EINVAL)
 		elif validator == "bool":
-			_result = validator_bool(subarg)
+			_result, _value = validator_bool(subarg)
 		elif validator == "int":
 			_result = validator_int(minval, maxval, subarg)
 		elif validator == "allowlist":

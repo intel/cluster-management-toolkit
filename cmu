@@ -62,8 +62,12 @@ from logparser import logparser, logparser_initialised, LogLevel, logparser_conf
 from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import cmtlib
-from cmtlib import clamp, disksize_to_human, get_package_versions, make_set_expression_list, none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since, split_msg, versiontuple, read_cmtconfig
-from curses_helper import curses_configuration, color_log_severity, format_helptext, get_mousemask, color_status_group, UIProps, WidgetLineAttrs, get_theme_ref, read_theme, themearray_wrap_line, themearray_to_string, themearray_len, ThemeAttr, ThemeRef, ThemeString
+from cmtlib import clamp, disksize_to_human, get_package_versions, make_set_expression_list
+from cmtlib import none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since
+from cmtlib import split_msg, versiontuple, read_cmtconfig
+from curses_helper import curses_configuration, color_log_severity, format_helptext, get_mousemask, color_status_group
+from curses_helper import UIProps, WidgetLineAttrs, get_theme_ref, read_theme
+from curses_helper import themearray_wrap_line, themearray_to_string, themearray_len, ThemeAttr, ThemeRef, ThemeString
 
 import datagetter as datagetters
 from datagetter import datagetter_allowlist
@@ -12298,7 +12302,7 @@ def main() -> None:
 
 	for opt, _optarg in options:
 		if opt == "--developer-mode":
-			cmtconfig["Debug#developer_mode"] = True
+			cmtlib.cmtconfig["Debug#developer_mode"] = True
 
 	return command(options, args)
 

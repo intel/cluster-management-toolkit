@@ -1156,19 +1156,22 @@ def __task_check_and_create_ssh_key(installation_info: Dict) -> None:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
 
+	# FIXME
+	confirm = True
+
 	if check_for_ssh_key() == False:
-		retval = ansithemeinput([ANSIThemeString("Warning", "warning"),
-					 ANSIThemeString(": No ssh key found in ", "default"),
-					 ANSIThemeString(f"{HOMEDIR}/.ssh", "path"),
-					 ANSIThemeString("; create one now? (No will abort the installation) [y/", "default"),
-					 ANSIThemeString("N", "emphasis"),
-					 ANSIThemeString("]: ", "default")])
-		if retval.lower() not in ("y", "yes"):
-			ansithemeprint([ANSIThemeString("\nAborting:", "error"),
-					ANSIThemeString(" No ssh key available.", "default")], stderr = True)
-			sys.exit(errno.ENOENT)
-		else:
-			check_and_print_status(create_ssh_key())
+		if confirm:
+			retval = ansithemeinput([ANSIThemeString("Warning", "warning"),
+						 ANSIThemeString(": No ssh key found in ", "default"),
+						 ANSIThemeString(f"{HOMEDIR}/.ssh", "path"),
+						 ANSIThemeString("; create one now? (No will abort the installation) [y/", "default"),
+						 ANSIThemeString("N", "emphasis"),
+						 ANSIThemeString("]: ", "default")])
+			if retval.lower() not in ("y", "yes"):
+				ansithemeprint([ANSIThemeString("\nAborting:", "error"),
+						ANSIThemeString(" No ssh key available.", "default")], stderr = True)
+				sys.exit(errno.ENOENT)
+		check_and_print_status(create_ssh_key())
 
 # pylint: disable-next=unused-argument
 def __task_scan_and_add_ssh_keys(installation_info: Dict) -> None:
@@ -1896,7 +1899,9 @@ def __task_uncordon_control_planes(installation_info: Dict) -> None:
 					ANSIThemeString(": Cluster not available; aborting", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
-			ansithemeprint([ANSIThemeString("\n  API call returned error:", "error")], stderr = True)
+			ansithemeprint([ANSIThemeString("\n  ", "default"),
+					ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(": API call returned error:", "default")], stderr = True)
 			ansithemeprint([ANSIThemeString(f"    {message}", "error")], stderr = True)
 			sys.exit(errno.EINVAL)
 
@@ -2378,9 +2383,8 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 			ansithemeprint([ANSIThemeString("\nAborting:", "error"),
 					ANSIThemeString(" No available control plane in inventory.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
-		else:
-			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = "controlplane", skip_all = False)
-			ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = cluster_name, skip_all = True)
+		ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = "controlplane", skip_all = False)
+		ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = [hostname], group = cluster_name, skip_all = True)
 
 	for opt, optarg in options:
 		if opt == "--control-plane":

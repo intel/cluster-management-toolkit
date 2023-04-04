@@ -437,7 +437,8 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			ansithemeprint([ANSIThemeString("  Cordoned", "success")])
 			print(message)
 		elif status == 42503:
-			ansithemeprint([ANSIThemeString("\nCritical", "critical"),
+			ansithemeprint([ANSIThemeString("", "default")])
+			ansithemeprint([ANSIThemeString("Critical", "critical"),
 					ANSIThemeString(": Cluster not available; aborting", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
@@ -570,7 +571,8 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			ansithemeprint([ANSIThemeString("  Uncordoned", "success")])
 			print(message)
 		elif status == 42503:
-			ansithemeprint([ANSIThemeString("\nCritical", "critical"),
+			ansithemeprint([ANSIThemeString("", "default")])
+			ansithemeprint([ANSIThemeString("Critical", "critical"),
 					ANSIThemeString(": Cluster not available; aborting", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
@@ -884,7 +886,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 				       ansithemestring_join_tuple_list(nodes + controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are already part of the cluster; ignoring them since “", "description"),
 					ANSIThemeString("--ignore-existing", "option"),
-					ANSIThemeString("“ was specified.", "default")], stderr = True)
+					ANSIThemeString("“ was specified.", "default")])
 
 	if len(non_existing) == 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -899,14 +901,21 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 			not_in_inventory.append(host)
 
 	if len(not_in_inventory) > 0:
-		input_retval = ansithemeinput([ANSIThemeString("\nWarning", "warning"), ANSIThemeString(": ", "default")] +
-					      ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
-					      [ANSIThemeString(" are not defined in the inventory; do you want to add them now? (No will abort the installation) [y/", "default"),
-					       ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
-		if input_retval.lower() not in ("y", "yes"):
-			ansithemeprint([ANSIThemeString("\nAborting", "error"),
-					ANSIThemeString(": Nodes not added to the inventory.", "default")], stderr = True)
-			sys.exit(errno.EINTR)
+		if confirm:
+			input_retval = ansithemeinput([ANSIThemeString("\nWarning", "warning"),
+						       ANSIThemeString(": ", "default")] +
+						      ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+						      [ANSIThemeString(" are not defined in the inventory; do you want to add them now? (No will abort the installation) [y/", "default"),
+						       ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
+			if input_retval.lower() not in ("y", "yes"):
+				ansithemeprint([ANSIThemeString("\nAborting", "error"),
+						ANSIThemeString(": Nodes not added to the inventory.", "default")], stderr = True)
+				sys.exit(errno.EINTR)
+		else:
+			ansithemeprint([ANSIThemeString("\nNote", "note"),
+					ANSIThemeString(": ", "default")] +
+				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       [ANSIThemeString(" are not defined in the inventory; adding them now.", "default")])
 
 	show_configuration(non_existing)
 
@@ -919,7 +928,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = not_in_inventory, skip_all = False)
 
-	if confirm == True:
+	if confirm:
 		input_retval = ansithemeinput([ANSIThemeString("\nStart host preparation? [y/", "default"),
 					       ANSIThemeString("N", "emphasis"),
 					       ANSIThemeString("]: ", "default")])
@@ -1027,7 +1036,10 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				hosts_raw = f.readlines()
 
 			if hosts_raw is None:
-				ansithemeprint([("Error", "error"), (": Failed to read hostnames from ", "default"), (f"{hostfile}", "path"), ("; aborting.", "default")], stderr = True)
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": Failed to read hostnames from ", "default"),
+						ANSIThemeString(f"{hostfile}", "path"),
+						ANSIThemeString("; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
 			# strip newlines
@@ -1065,7 +1077,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				       ansithemestring_join_tuple_list(nodes + controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are already part of the cluster; ignoring them since “", "description"),
 					ANSIThemeString("--ignore-existing", "option"),
-					ANSIThemeString("“ was specified.", "default")], stderr = True)
+					ANSIThemeString("“ was specified.", "default")])
 
 	if len(non_existing) == 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -1081,20 +1093,22 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	if len(not_in_inventory) > 0:
 		if ignore_non_existing == False:
-			ansithemeprint([ANSIThemeString("Error", "error"), ANSIThemeString(": ", "default")] +
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": ", "default")] +
 				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are not defined in the inventory; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
-			ansithemeprint([ANSIThemeString("Warning", "warning"), ANSIThemeString(": ", "default")] +
+			ansithemeprint([ANSIThemeString("Warning", "warning"),
+					ANSIThemeString(": ", "default")] +
 				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are not defined in the invetory; ignoring them since “", "description"),
 					ANSIThemeString("--ignore-non-existing", "option"),
-					ANSIThemeString("“ was specified.", "default")], stderr = True)
+					ANSIThemeString("“ was specified.", "default")])
 
 	show_configuration(non_existing, cri = cri)
 
-	if confirm == True:
+	if confirm:
 		input_retval = ansithemeinput([ANSIThemeString("\nStart node setup? [y/", "default"),
 					       ANSIThemeString("N", "emphasis"),
 					       ANSIThemeString("]: ", "default")])
@@ -1112,25 +1126,29 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	join_token = kh.get_join_token()
 	if len(join_token) == 0:
-		input_retval = ansithemeinput([ANSIThemeString("Error", "error"),
-					       ANSIThemeString(": No join token found; create a one now? (No will abort the installation) [y/", "default"),
-					       ANSIThemeString("N", "emphasis"),
-					       ANSIThemeString("]: ", "default")])
-		if input_retval.lower() not in ("y", "yes"):
-			ansithemeprint([ANSIThemeString("\nAborting", "error"),
-					ANSIThemeString(": No join token available.", "default")], stderr = True)
-			sys.exit(errno.ENOENT)
+		if confirm:
+			input_retval = ansithemeinput([ANSIThemeString("Warning", "warning"),
+						       ANSIThemeString(": No join token found; create one now? (No will abort the installation) [y/", "default"),
+						       ANSIThemeString("N", "emphasis"),
+						       ANSIThemeString("]: ", "default")])
+			if input_retval.lower() not in ("y", "yes"):
+				ansithemeprint([ANSIThemeString("\nAborting", "error"),
+						ANSIThemeString(": No join token available.", "default")], stderr = True)
+				sys.exit(errno.ENOENT)
 		else:
-			create_join_token_playbooks = [
-				FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_create_join_token.yaml")))
-			]
-			playbooks = populate_playbooks_from_paths(create_join_token_playbooks)
-			retval = run_playbooks(playbooks = playbooks, hosts = controlplanes)
-			join_token = kh.get_join_token()
-			if len(join_token) == 0:
-				ansithemeprint([ANSIThemeString("Critical", "critical"),
-						ANSIThemeString(": Failed to create join token; aborting", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
+			ansithemeprint([ANSIThemeString("Note", "note"),
+					ANSIThemeString(": No join token found; creating one now.", "default")])
+
+		create_join_token_playbooks = [
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_create_join_token.yaml")))
+		]
+		playbooks = populate_playbooks_from_paths(create_join_token_playbooks)
+		retval = run_playbooks(playbooks = playbooks, hosts = controlplanes)
+		join_token = kh.get_join_token()
+		if len(join_token) == 0:
+			ansithemeprint([ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(": Failed to create join token; aborting", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
 
 	ca_cert_hash = ""
 	if len(ca_cert_path) == 0:
@@ -1325,7 +1343,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				       ansithemestring_join_tuple_list(non_existing, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are not part of the cluster; attempting to purge them anyway since “", "description"),
 					ANSIThemeString("--force", "option"),
-					ANSIThemeString("“ was specified.", "default")], stderr = True)
+					ANSIThemeString("“ was specified.", "default")])
 			nodes += non_existing
 
 	if len(nodes) == 0:
@@ -1458,7 +1476,7 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are not in the inventory; ignoring them since “", "description"),
 					ANSIThemeString("--ignore-non-existing", "option"),
-					ANSIThemeString("“ was specified.", "default")], stderr = True)
+					ANSIThemeString("“ was specified.", "default")])
 
 	if len(selection) == 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
