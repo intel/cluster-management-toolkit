@@ -318,6 +318,9 @@ class ThemeArray:
 
 		return repr(obj) == repr(self)
 
+	def to_list(self) -> List[Union[ThemeRef, ThemeString]]:
+		return self.array
+
 def format_helptext(helptext: List[Tuple[str, str]]) -> List[Dict]:
 	"""
 	Given a helptext in the format [(key, description)], format it in a way suitable for windowwidget
@@ -1258,6 +1261,30 @@ def themearray_to_string(themearray: Union[ThemeArray, List[Union[ThemeRef, Them
 		string += str(fragment)
 
 	return string
+
+def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]], max_len: int) -> Union[ThemeArray, List[Union[ThemeRef, ThemeString]]]:
+	output_format = type(themearray)
+	truncated_themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]] = []
+
+	# For the time being (until we implement proper iteration over ThemeArray elements) this is needed
+	if output_format == ThemeArray:
+		themearray = themearray.to_list()
+
+	for element in themearray:
+		max_element_len = max_len - themearray_len(truncated_themearray)
+		if len(element) > max_element_len:
+			string = str(element)
+			attr = element.get_themeattr()
+			selected = element.get_selected()
+			truncated_themearray.append(ThemeString(string[0:max_element_len], attr, selected = selected))
+			break
+		else:
+			truncated_themearray.append(element)
+
+	if output_format == ThemeArray:
+		truncated_themearray = ThemeArray(truncated_themearray)
+
+	return truncated_themearray
 
 def themearray_len(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]]) -> int:
 	"""

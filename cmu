@@ -67,7 +67,7 @@ from cmtlib import none_timestamp, timestamp_to_datetime, datetime_to_timestamp,
 from cmtlib import split_msg, versiontuple, read_cmtconfig
 from curses_helper import curses_configuration, color_log_severity, format_helptext, get_mousemask, color_status_group
 from curses_helper import UIProps, WidgetLineAttrs, get_theme_ref, read_theme
-from curses_helper import themearray_wrap_line, themearray_to_string, themearray_len, ThemeAttr, ThemeRef, ThemeString
+from curses_helper import themearray_wrap_line, themearray_to_string, themearray_len, themearray_truncate, ThemeAttr, ThemeRef, ThemeString
 
 import datagetter as datagetters
 from datagetter import datagetter_allowlist
@@ -7770,7 +7770,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					if uip.match_index is not None and uip.yoffset + y == uip.match_index:
 						current_match = True
 					message = match_prefix + message
-				if wrap_lines == True:
+				if wrap_lines:
 					sideadjust = 0
 					if uip.borders == False:
 						sideadjust = 2
@@ -7781,7 +7781,14 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					message = [ThemeString(message, color_log_severity(severity))]
 				if facility is not None:
 					message = facility + message
-				_lines = themearray_wrap_line(message, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
+				untruncated_len = themearray_len(message)
+				if wrap_lines or untruncated_len < 16384:
+					_lines = themearray_wrap_line(message, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
+				else:
+					_lines = [themearray_truncate(message, 16383)]
+					_lines.append([ThemeString(f"Line too long ({untruncated_len} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)",
+						       ThemeAttr("logview", f"severity_{loglevel_to_name(LogLevel.ERR).lower()}"))])
+
 				for i, _line in enumerate(_lines):
 					if y + yadd + i >= uip.logpadheight:
 						break
