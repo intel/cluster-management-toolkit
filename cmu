@@ -6688,6 +6688,7 @@ cmdata_format = [
 	("kube-system", "antrea", "antrea-agent", "", "YAML"),
 	("kube-system", "antrea", "antrea-controller", "", "YAML"),
 	("kube-system", "antrea", "antrea-cni", "", "JSON"),
+	("kube-system", "cluster-config", "install-config", "", "YAML"),
 	("kube-system", "", "cni_network_config", "", "JSON"),
 	("kube-system", "coredns", "Corefile", "", "CaddyFile"),
 	("kube-system", "rke2-coredns", "Corefile", "", "CaddyFile"),
@@ -6704,6 +6705,19 @@ cmdata_format = [
 	# Openshift
 	("", "dns-default", "Corefile", "", "CaddyFile"),
 	("", "v4-0-config-system-cliconfig", "v4-0-config-system-cliconfig", "", "JSON"),
+	("openshift-authentication", "v4-0-config-system-metadata", "oauthMetadata", "", "JSON"),
+	("openshift-config-managed", "oauth-openshift", "oauthMetadata", "", "JSON"),
+	("openshift-kube-apiserver", "check-endpoints-kubeconfig", "kubeconfig", "", "YAML"),
+	("openshift-kube-apiserver", "config", "kubeconfig", "", "JSON"),
+	("openshift-kube-apiserver", "control-plane-node-kubeconfig", "kubeconfig", "", "YAML"),
+	("openshift-kube-apiserver", "kube-apiserver-cert-syncer-kubeconfig", "kubeconfig", "", "YAML"),
+	("openshift-kube-apiserver", "oauth-metadata", "oauthMetadata", "", "JSON"),
+	("openshift-kube-controller-manager", "controller-manager-kubeconfig", "kubeconfig", "", "JSON"),
+	("openshift-kube-controller-manager", "kube-controller-cert-syncer-kubeconfig", "kubeconfig", "", "JSON"),
+	("openshift-kube-scheduler", "kube-scheduler-cert-syncer-kubeconfig", "kubeconfig", "", "JSON"),
+	("openshift-kube-scheduler", "scheduler-kubeconfig", "kubeconfig", "", "JSON"),
+	("openshift-machine-config-operator", "coreos-bootimages", "stream", "", "JSON"),
+	("openshift-operator", "applied-cluster", "applied", "", "JSON"),
 	# Keep last; match everything that does not match anything
 	("", "", "", "", "Text"),
 ]
@@ -6711,6 +6725,9 @@ cmdata_format = [
 # These are based on the data itself
 cmdata_header = [
 	("/bin/sh", "Shell Script"),
+	("/usr/bin/env bash", "BASH"),
+	("/usr/bin/env perl", "Perl"),
+	("/usr/bin/env python", "Python"),
 	("/bin/bash", "BASH"),
 	("/bin/dash", "Shell Script"),
 	("/bin/zsh", "ZSH"),
