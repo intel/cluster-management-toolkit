@@ -10,7 +10,6 @@
         - description: "/etc/systemd/system/containerd.service.d"
         "Created files":
         - description: "/etc/containerd/config.toml"
-        - description: "/etc/systemd/system/kubelet.service.d/containerd-cri.conf (use containerd as CRI for Kubernetes)"
         - description: "/etc/systemd/system/containerd.service.d/http-proxy.conf (proxy settings for containerd)"
         - description: "/etc/systemd/system/containerd.service.d/ip-forward.conf (enable IP-forwarding when using containerd)"
         "Installed packages":
@@ -78,12 +77,6 @@
       path: "/etc/systemd/system/kubelet.service.d"
       state: "directory"
       mode: "0755"
-  - name: "Configuring containerd-cri"
-    ansible.builtin.template:
-      dest: "/etc/systemd/system/kubelet.service.d/containerd-cri.conf"
-      src: "templates/etc/systemd/system/kubelet.service.d/containerd-cri.conf.j2"
-      mode: "0644"
-      force: true
   - name: "Creating /etc/systemd/system/containerd.service.d"
     ansible.builtin.file:
       path: "/etc/systemd/system/containerd.service.d"
