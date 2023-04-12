@@ -29,8 +29,8 @@ from typing import cast, Dict, List, Optional, Sequence, Tuple
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 
-from cmttypes import deep_get, DictPath, FilePath, HostNameStatus
-from cmtpaths import CMT_CONFIG_FILE, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, HostNameStatus
+from cmtpaths import CMT_CONFIG_FILE, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE, VIEW_DIR
 
 import commandparser
 from commandparser import parse_commandline
@@ -45,7 +45,7 @@ from cmtio import execute_command, secure_read_string, validate_fqdn
 from cmtio_yaml import secure_read_yaml
 from networkio import scan_and_add_ssh_keys
 
-from kubernetes_helper import get_node_status, kubectl_get_version
+from kubernetes_helper import get_node_status, kubectl_get_version, update_api_status as kh_update_api_status
 
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, ansithemeprint, ansithemeinput, ansithemeinput_password
 
@@ -1601,20 +1601,41 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0 on success, exits with errno on failure
 	"""
 
-	namespaced_only = False
-	namespaced_selector = True
+	namespaced_only = None
+	local_only = None
 	verb_selector = []
 	wide = False
 	sortkey = 1
 	header = True
 	api_version_selector = None
+	known_filter = {
+		"known": None,
+		"list": None,
+		"info": None,
+	}
 
 	for opt, optarg in options:
 		if opt == "--api-group":
 			api_version_selector = optarg
+		elif opt == "--known":
+			optarg_list = optarg.split(",")
+			for optarg in optarg_list:
+				if optarg == "known":
+					known_filter["known"] = True
+				elif optarg in ("!known", "not-known", "unknown"):
+					known_filter["known"] = False
+				elif optarg == "list":
+					known_filter["list"] = True
+				elif optarg in ("!list", "not-list"):
+					known_filter["list"] = False
+				elif optarg == "info":
+					known_filter["info"] = True
+				elif optarg in ("!info", "not-info"):
+					known_filter["info"] = False
+		elif opt == "--local":
+			_result, local_only = commandparser.validator_bool(optarg)
 		elif opt == "--namespaced":
-			namespaced_only = True
-			_isbool, namespaced_selector = commandparser.validator_bool(optarg)
+			_isbool, namespaced_only = commandparser.validator_bool(optarg)
 		elif opt == "--no-header":
 			header = False
 		elif opt == "--sort-by":
@@ -1635,6 +1656,12 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	result, api_resources = kh.get_api_resources()
+	kubernetes_resources = None
+	if wide or \
+	   known_filter["known"] is not None or \
+	   known_filter["list"] is not None or \
+	   known_filter["info"] is not None:
+		kubernetes_resources, _result2, _modified = kh.get_available_kinds()
 
 	name_header = ""
 	shortnames_header = ""
@@ -1650,6 +1677,8 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		namespaced_header = "Namespaced:"
 		kind_header = "Kind:"
 		verbs_header = "Verbs:"
+		cmt_support_header = "CMT-support:"
+		local_view_header = "Local view:"
 
 	name_len = len(name_header)
 	shortnames_len = len(shortnames_header)
@@ -1657,9 +1686,56 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 	namespaced_len = len(namespaced_header)
 	kind_len = len(kind_header)
 	verbs_len = len(verbs_header)
+	cmt_support_len = len(cmt_support_header)
+	local_view_len = len(local_view_header)
+
+	viewdir = os.path.join(VIEW_DIR)
+	if not os.path.isdir(viewdir):
+		sys.exit(f"{viewdir} does not exist; please re-run {about.INSTALL_PROGRAM_NAME}")
+
+	# Get a full list of views from all view directories
+	# Start by adding files from the views directory
+	view_dirs = []
+	if local_only is None or local_only is not None and local_only == True:
+		view_dirs += deep_get(cmtlib.cmtconfig, DictPath("General#local_views"), [])
+	if local_only is None or local_only is not None and local_only == False:
+		view_dirs.append(viewdir)
 
 	for name, shortnames, api_version, namespaced, kind, verbs in sorted(api_resources, key = itemgetter(sortkey)):
-		if namespaced_only and namespaced != namespaced_selector:
+		if kubernetes_resources is not None:
+			try:
+				api_group = ""
+				if "/" in api_version:
+					api_group = api_version.split("/")[0]
+				kind_tuple = kh.guess_kind((name, api_group))
+
+				# OK, this is a kind known by CMT that is available in the cluster;
+				# now check whether there's a view file and where it has list/info views
+				if kind_tuple == ("Event", ""):
+					filename = "Event.events.k8s.io.yaml"
+				elif len(kind_tuple[1]) == 0:
+					filename = f"{kind}.yaml"
+				else:
+					filename = f"{kind}.{api_group}.yaml"
+				for view_dir in view_dirs:
+					view_file = FilePath(os.path.join(view_dir, filename))
+					try:
+						d = secure_read_yaml(view_file, directory_is_symlink = True)
+						has_list_view = "listview" in d
+						has_info_view = "infoview" in d
+						is_local = view_dir != viewdir
+						kh_update_api_status(kind_tuple, listview = has_list_view, infoview = has_info_view, local = is_local)
+						# This won't do any updates except get the updated list & info view flags
+						kubernetes_resources, _result2, _modified = kh.get_available_kinds()
+					except FilePathAuditError as e:
+						if "SecurityStatus.DOES_NOT_EXIST" in str(e):
+							continue
+					except yaml.parser.ParserError:
+						sys.exit(f"View-file {view_file} is invalid; aborting.")
+			except NameError:
+				kind_tuple = None
+
+		if namespaced_only is not None and namespaced != namespaced_only:
 			continue
 
 		if "/" in name:
@@ -1667,6 +1743,54 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		if set(verb_selector) & set(verbs) != set(verb_selector):
 			continue
+
+		cmt_support = []
+		local_view = ""
+
+		if kubernetes_resources is not None:
+			list_support = False
+			info_support = False
+			if kind_tuple in kubernetes_resources:
+				if "list" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("list")) == True:
+					list_support = True
+					cmt_support.append("List")
+				if "info" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("info")) == True:
+					info_support = True
+					cmt_support.append("Info")
+				if "local" in kubernetes_resources[kind_tuple]:
+					if deep_get(kubernetes_resources[kind_tuple], DictPath("local")) == True:
+						local_view = "True"
+					else:
+						local_view = "False"
+
+			if known_filter["known"] is not None:
+				if "list" not in verbs:
+					continue
+
+				if known_filter["known"] == False and kind_tuple in kubernetes_resources:
+					continue
+
+				if known_filter["known"] == True:
+					if kind_tuple not in kubernetes_resources:
+						continue
+
+					if known_filter["list"] is not None:
+						if known_filter["list"] and \
+								("list" not in kubernetes_resources[kind_tuple] or not list_support):
+							continue
+
+						if not known_filter["list"] and \
+								"list" in kubernetes_resources[kind_tuple] and list_support:
+							continue
+
+					if known_filter["info"] is not None:
+						if known_filter["info"] and \
+								("info" not in kubernetes_resources[kind_tuple] or not info_support):
+							continue
+
+						if not known_filter["info"] and \
+								"info" in kubernetes_resources[kind_tuple] and info_support:
+							continue
 
 		if api_version_selector is not None:
 			if len(api_version_selector) == 0:
@@ -1681,39 +1805,56 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		name_len = max(name_len, len(name))
 		shortnames_len_tmp = 0
 		shortnames_formatted = ansithemestring_join_tuple_list(shortnames, formatting = "default", separator = ANSIThemeString(",", "separator"))
-		for shortname in shortnames_formatted:
-			shortnames_len_tmp += len(shortname)
+		for item in shortnames_formatted:
+			shortnames_len_tmp += len(item)
 		shortnames_len = max(shortnames_len, shortnames_len_tmp)
 		api_version_len = max(api_version_len, len(api_version))
 		namespaced_len = max(namespaced_len, len(f"{namespaced}"))
 		kind_len = max(kind_len, len(kind))
+		verbs_len_tmp = 0
+		verbs_formatted = ansithemestring_join_tuple_list(verbs, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		for item in verbs_formatted:
+			verbs_len_tmp += len(item)
+		verbs_len = max(verbs_len, verbs_len_tmp)
+		cmt_support_len_tmp = 0
+		cmt_support_formatted = ansithemestring_join_tuple_list(cmt_support, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		for item in cmt_support_formatted:
+			cmt_support_len_tmp += len(item)
+		cmt_support_len = max(cmt_support_len, cmt_support_len_tmp)
+		local_view_len = max(local_view_len, len(local_view))
 
 	if header:
+		tmp_header = [ANSIThemeString(name_header, "header"),
+			      ANSIThemeString("".ljust(name_len - len(name_header) + 2), "default"),
+			      ANSIThemeString(shortnames_header, "header"),
+			      ANSIThemeString("".ljust(shortnames_len - len(shortnames_header) + 2), "default"),
+			      ANSIThemeString(api_version_header, "header"),
+			      ANSIThemeString("".ljust(api_version_len - len(api_version_header) + 2), "default"),
+			      ANSIThemeString(namespaced_header, "header"),
+			      ANSIThemeString("".ljust(namespaced_len - len(namespaced_header) + 2), "default"),
+			      ANSIThemeString(kind_header, "header"),
+			      ANSIThemeString("".ljust(kind_len - len(kind_header) + 2), "default")]
+
 		if wide:
-			ansithemeprint([ANSIThemeString("Name:", "header"),
-					ANSIThemeString("".ljust(name_len - len(name_header) + 2), "default"),
-					ANSIThemeString("Shortnames:", "header"),
-					ANSIThemeString("".ljust(shortnames_len - len(shortnames_header) + 2), "default"),
-					ANSIThemeString("API-version:", "header"),
-					ANSIThemeString("".ljust(api_version_len - len(api_version_header) + 2), "default"),
-					ANSIThemeString("Namespaced:", "header"),
-					ANSIThemeString("".ljust(namespaced_len - len(namespaced_header) + 2), "default"),
-					ANSIThemeString("Kind:", "header"),
-					ANSIThemeString("".ljust(kind_len - len(kind_header) + 2), "default"),
-					ANSIThemeString("Verbs:", "header")])
-		else:
-			ansithemeprint([ANSIThemeString("Name:", "header"),
-					ANSIThemeString("".ljust(name_len - len(name_header) + 2), "default"),
-					ANSIThemeString("Shortnames:", "header"),
-					ANSIThemeString("".ljust(shortnames_len - len(shortnames_header) + 2), "default"),
-					ANSIThemeString("API-version:", "header"),
-					ANSIThemeString("".ljust(api_version_len - len(api_version_header) + 2), "default"),
-					ANSIThemeString("Namespaced:", "header"),
-					ANSIThemeString("".ljust(namespaced_len - len(namespaced_header) + 2), "default"),
-					ANSIThemeString("Kind:", "header")])
+			tmp_header += [ANSIThemeString(verbs_header, "header"),
+				       ANSIThemeString("".ljust(verbs_len - len(verbs_header) + 2), "default"),
+				       ANSIThemeString(cmt_support_header, "header"),
+				       ANSIThemeString("".ljust(cmt_support_len - len(cmt_support_header) + 2), "default"),
+				       ANSIThemeString(local_view_header, "header"),
+				       ANSIThemeString("".ljust(local_view_len - len(local_view_header) + 2), "default")]
+		ansithemeprint(tmp_header)
 
 	for name, shortnames, api_version, namespaced, kind, verbs in sorted(api_resources, key = itemgetter(sortkey)):
-		if namespaced_only and namespaced != namespaced_selector:
+		if kubernetes_resources is not None:
+			try:
+				api_group = ""
+				if "/" in api_version:
+					api_group = api_version.split("/")[0]
+				kind_tuple = kh.guess_kind((name, api_group))
+			except NameError:
+				kind_tuple = None
+
+		if namespaced_only is not None and namespaced != namespaced_only:
 			continue
 
 		if "/" in name:
@@ -1721,6 +1862,55 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		if set(verb_selector) & set(verbs) != set(verb_selector):
 			continue
+
+		cmt_support = []
+		local_view = ""
+
+		if kubernetes_resources is not None:
+			list_support = False
+			info_support = False
+
+			if kind_tuple in kubernetes_resources:
+				if "list" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("list")) == True:
+					list_support = True
+					cmt_support.append("List")
+				if "info" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("info")) == True:
+					info_support = True
+					cmt_support.append("Info")
+				if "local" in kubernetes_resources[kind_tuple]:
+					if deep_get(kubernetes_resources[kind_tuple], DictPath("local")) == True:
+						local_view = "True"
+					else:
+						local_view = "False"
+
+			if known_filter["known"] is not None:
+				if "list" not in verbs:
+					continue
+
+				if known_filter["known"] == False and kind_tuple in kubernetes_resources:
+					continue
+
+				if known_filter["known"] == True:
+					if kind_tuple not in kubernetes_resources:
+						continue
+
+					if known_filter["list"] is not None:
+						if known_filter["list"] and \
+								("list" not in kubernetes_resources[kind_tuple] or not list_support):
+							continue
+
+						if not known_filter["list"] and \
+								"list" in kubernetes_resources[kind_tuple] and list_support:
+							continue
+
+					if known_filter["info"] is not None:
+						if known_filter["info"] and \
+								("info" not in kubernetes_resources[kind_tuple] or not info_support):
+							continue
+
+						if not known_filter["info"] and \
+								"info" in kubernetes_resources[kind_tuple] and info_support:
+							continue
 
 		if api_version_selector is not None:
 			if len(api_version_selector) == 0:
@@ -1734,25 +1924,40 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		shortnames_len_tmp = 0
 		shortnames_formatted = ansithemestring_join_tuple_list(shortnames, formatting = "default", separator = ANSIThemeString(",", "separator"))
-		for shortname in shortnames_formatted:
-			shortnames_len_tmp += len(shortname)
+		for item in shortnames_formatted:
+			shortnames_len_tmp += len(item)
 		if len(shortnames_formatted) == 0:
 			shortnames_formatted = [ANSIThemeString("", "default")]
+
+		verbs_len_tmp = 0
+		verbs_formatted = ansithemestring_join_tuple_list(verbs, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		for item in verbs_formatted:
+			verbs_len_tmp += len(item)
+		if len(verbs_formatted) == 0:
+			verbs_formatted = [ANSIThemeString("", "default")]
+
+		cmt_support_len_tmp = 0
+		cmt_support_formatted = ansithemestring_join_tuple_list(cmt_support, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		for item in cmt_support_formatted:
+			cmt_support_len_tmp += len(item)
+		if len(cmt_support_formatted) == 0:
+			cmt_support_formatted = [ANSIThemeString("", "default")]
+
+		tmp_str = [ANSIThemeString(f"{name}".ljust(name_len + 2), "default")] + \
+			  shortnames_formatted + \
+			  [ANSIThemeString("".ljust(shortnames_len - shortnames_len_tmp + 2), "default"),
+			   ANSIThemeString(f"{api_version}".ljust(api_version_len + 2), "version"),
+			   ANSIThemeString(f"{namespaced}".ljust(namespaced_len + 2), "default"),
+			   ANSIThemeString(f"{kind}".ljust(kind_len + 2), "default")]
+
 		if wide:
-			ansithemeprint([ANSIThemeString(f"{name}".ljust(name_len + 2), "default")] +
-				       shortnames_formatted +
-				       [ANSIThemeString("".ljust(shortnames_len - shortnames_len_tmp + 2), "default"),
-					ANSIThemeString(f"{api_version}".ljust(api_version_len + 2), "version"),
-					ANSIThemeString(f"{namespaced}".ljust(namespaced_len + 2), "default"),
-					ANSIThemeString(f"{kind}".ljust(kind_len + 2), "default")] +
-				       ansithemestring_join_tuple_list(verbs, formatting = "default", separator = ANSIThemeString(",", "separator")))
-		else:
-			ansithemeprint([ANSIThemeString(f"{name}".ljust(name_len + 2), "default")] +
-				       shortnames_formatted +
-				       [ANSIThemeString("".ljust(shortnames_len - shortnames_len_tmp + 2), "default"),
-					ANSIThemeString(f"{api_version}".ljust(api_version_len + 2), "version"),
-					ANSIThemeString(f"{namespaced}".ljust(namespaced_len + 2), "default"),
-					ANSIThemeString(f"{kind}", "default")])
+			tmp_str += verbs_formatted + \
+				   [ANSIThemeString("".ljust(verbs_len - verbs_len_tmp + 2), "default")] + \
+				   cmt_support_formatted + \
+				   [ANSIThemeString("".ljust(cmt_support_len - cmt_support_len_tmp + 2), "default"),
+				    ANSIThemeString(f"{local_view}".ljust(local_view_len + 2), "default")]
+
+		ansithemeprint(tmp_str)
 
 	return result
 
@@ -2528,7 +2733,7 @@ CMT_COMMANDLINE = {
 			"--api-group": {
 				"values": [ANSIThemeString("API_GROUP", "argument")],
 				"description": [ANSIThemeString("Limit output to ", "description"),
-						ANSIThemeString("API_GROUP", "description")],
+						ANSIThemeString("API_GROUP", "argument")],
 				"extended_description": [
 					[ANSIThemeString("If the version part of ", "description"),
 					 ANSIThemeString("API_GROUP", "argument"),
@@ -2542,6 +2747,85 @@ CMT_COMMANDLINE = {
 				"validation": {
 					"validator": "regex",
 					"regex": r"^([a-z][a-z0-9.-]*[a-z0-9]?)?",
+				},
+			},
+			"--known": {
+				"values": [ANSIThemeString("FILTER", "argument")],
+				"description": [ANSIThemeString("Limit output to ", "description"),
+						ANSIThemeString("FILTER", "argument")],
+				"extended_description": [
+					[ANSIThemeString("Valid values are ", "description"),
+					 ANSIThemeString("unknown", "argument"),
+					 ANSIThemeString(" or a combination of ", "description")],
+					[ANSIThemeString("known", "argument"),
+					 ANSIThemeString(", ", "separator"),
+					 ANSIThemeString("list", "argument"),
+					 ANSIThemeString("/", "separator"),
+					 ANSIThemeString("not-list", "argument"),
+					 ANSIThemeString(" and ", "description"),
+					 ANSIThemeString("info", "argument"),
+					 ANSIThemeString("/", "separator"),
+					 ANSIThemeString("not-info", "argument"),
+					 ANSIThemeString(".", "description")],
+					[ANSIThemeString("unknown", "argument"),
+					 ANSIThemeString(" limits the output to APIs that are", "description")],
+					[ANSIThemeString("unknown by ", "description"),
+					 ANSIThemeString("CMT", "programname"),
+					 ANSIThemeString(".", "description")],
+					[ANSIThemeString("known", "argument"),
+					 ANSIThemeString(" limits the output to APIs that are", "description")],
+					[ANSIThemeString("known by ", "description"),
+					 ANSIThemeString("CMT", "programname"),
+					 ANSIThemeString("; augment this with ", "description")],
+					[ANSIThemeString("list", "argument"),
+					 ANSIThemeString("/", "separator"),
+					 ANSIThemeString("not-list", "argument"),
+					 ANSIThemeString(" and ", "description"),
+					 ANSIThemeString("info", "argument"),
+					 ANSIThemeString("/", "separator"),
+					 ANSIThemeString("not-info", "argument")],
+					[ANSIThemeString("to limit the output based on whether ", "description"),
+					 ANSIThemeString("CMT", "programname")],
+					[ANSIThemeString("has ", "description"),
+					 ANSIThemeString("list", "emphasis"),
+					 ANSIThemeString(" and ", "description"),
+					 ANSIThemeString("info", "emphasis"),
+					 ANSIThemeString(" views available.", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"known",
+						"!known", "not-known", "unknown",
+						"list",
+						"!list", "not-list",
+						"info",
+						"!info", "not-info"
+					],
+					"list_separator": ",",
+				},
+			},
+			"--local": {
+				"values": [ANSIThemeString("true", "argument"),
+					   ANSIThemeString("|", "separator"),
+					   ANSIThemeString("false", "argument")],
+				"description": [ANSIThemeString("Limit output to only local or upstream view-files", "description")],
+				"extended_description": [
+					[ANSIThemeString("If ", "description"),
+					 ANSIThemeString("true", "argument"),
+					 ANSIThemeString(" only locally added view-files are", "description")],
+					[ANSIThemeString("considered when determining API-support level.", "description")],
+					[ANSIThemeString("If ", "description"),
+					 ANSIThemeString("false", "argument"),
+					 ANSIThemeString(" only upstream view-files are considered", "description")],
+					[ANSIThemeString("when determining API-support level.", "description")],
+					[ANSIThemeString("By default both local and upstream view-files", "description")],
+					[ANSIThemeString("are considered.", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "bool",
 				},
 			},
 			"--namespaced": {

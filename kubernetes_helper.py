@@ -2529,7 +2529,7 @@ def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
 		name = name.rstrip(".")
 	return name
 
-def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: bool = False) -> None:
+def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: bool = False, local: bool = False) -> None:
 	"""
 	Update kubernetes_resources for a kind to indicate whether or not there are list and infoviews for them
 
@@ -2537,6 +2537,7 @@ def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: b
 			kind ((kind, api_group)): The kind tuple
 			listview (bool): Does this kind have a list view
 			infoview (bool): Does this kind have an info view
+			local (bool): The view is a local addition
 	"""
 
 	# There are other kind of views than just Kubernetes APIs; just ignore them
@@ -2544,6 +2545,7 @@ def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: b
 		return
 	kubernetes_resources[kind]["list"] = listview
 	kubernetes_resources[kind]["info"] = infoview
+	kubernetes_resources[kind]["local"] = local
 
 def kubectl_get_version() -> Tuple[int, int, str, int, int, str]:
 	"""
