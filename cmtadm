@@ -2847,6 +2847,15 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 		elif opt == "-Y":
 			confirm = False
 
+	requested_major, requested_minor, _rest = requested_version.split(".")
+
+	if requested_minor < 23:
+		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"
+		init_configuration_api_version = "kubeadm.k8s.io/v1beta2"
+	else:
+		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+		init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+
 	if enable_dra == True:
 		setup_control_plane_targets[distro]["extra_values"] = {
 			"api_server_feature_gates": "DynamicResourceAllocation=true",
@@ -2855,6 +2864,8 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			"kubelet_feature_gates": "{ DynamicResourceAllocation: true }",
 			"kubeproxy_feature_gates": "{ DynamicResourceAllocation: true }",
 			"scheduler_feature_gates": "DynamicResourceAllocation=true",
+			"cluster_configuration_api_version": cluster_configuration_api_version,
+			"init_configuration_api_version": init_configuration_api_version,
 		}
 	else:
 		setup_control_plane_targets[distro]["extra_values"] = {
@@ -2864,9 +2875,9 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			"kubelet_feature_gates": "{}",
 			"kubeproxy_feature_gates": "{}",
 			"scheduler_feature_gates": "",
+			"cluster_configuration_api_version": cluster_configuration_api_version,
+			"init_configuration_api_version": init_configuration_api_version,
 		}
-
-	requested_major, requested_minor, _rest = requested_version.split(".")
 
 	# Add major/minor to extra_values
 	setup_control_plane_targets["kubeadm"]["extra_values"]["kubernetes_major_minor_version"] = f"{requested_major}.{requested_minor}"

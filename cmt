@@ -1272,6 +1272,11 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	]
 	playbooks = populate_playbooks_from_paths(add_playbooks)
 
+	if version_major < 23:
+		join_configuration_api_version = "kubeadm.k8s.io/v1beta2"
+	else:
+		join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+
 	extra_values = {
 		"control_plane_ip": control_plane_ip,
 		"control_plane_port": control_plane_port,
@@ -1280,6 +1285,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		"control_plane_k8s_version": kubeadm_version,
 		"cri_socket": cri_socket,
 		"kubernetes_major_minor_version": f"{version_major}.{version_minor}",
+		"join_configuration_api_version": join_configuration_api_version,
 	}
 	retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
 	if retval == True:
