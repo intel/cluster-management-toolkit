@@ -2830,7 +2830,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
 		elif opt == "--cri":
-			if optarg in ("dockershim", "containerd", "cri-o"):
+			if optarg in ("docker-shim", "containerd", "cri-o"):
 				cri = optarg
 			else:
 				ansithemeprint([ANSIThemeString("Error", "error"),
@@ -2849,7 +2849,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	requested_major, requested_minor, _rest = requested_version.split(".")
 
-	if requested_minor < 23:
+	if int(requested_minor) < 23:
 		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"
 		init_configuration_api_version = "kubeadm.k8s.io/v1beta2"
 	else:
@@ -2884,16 +2884,16 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	if cri is None:
 		if int(requested_minor) < 24:
-			cri = "dockershim"
+			cri = "docker-shim"
 		elif enable_dra == True:
 			cri = "cri-o"
 		else:
 			cri = "containerd"
 	else:
-		if int(requested_minor) >= 24 and cri == "dockershim":
+		if int(requested_minor) >= 24 and cri == "docker-shim":
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": CRI cannot be “", "default"),
-					ANSIThemeString("dockershim", "argument"),
+					ANSIThemeString("docker-shim", "argument"),
 					ANSIThemeString("“ for ", "default"),
 					ANSIThemeString("Kubernetes ", "programname"),
 					ANSIThemeString(">= ", "default"),
@@ -3444,7 +3444,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 				version_tuple = version.split(".")
 				major_minor = f"{version_tuple[0]}.{version_tuple[1]}"
 				if int(version_tuple[1]) > int(installed_version_tuple[1]) and int(version_tuple[1]) <= int(requested_version_tuple[1]) and (major_minor not in minor_versions or minor_versions[major_minor] < version_tuple[2]):
-					minor_versions[major_minor] = version_tuple[2]
+					minor_versions[major_minor] = version_tuple[2].split("-")[0]
 			for version, minor_version in minor_versions.items():
 				ansithemeprint([ANSIThemeString("• ", "separator"),
 						ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
@@ -4104,7 +4104,7 @@ COMMANDLINE = {
 				"extended_description": [
 					[ANSIThemeString("Valid options for CRI", "description")],
 					[ANSIThemeString("(Container Runtime Interface) are:", "description")],
-					[ANSIThemeString("dockershim", "argument"),
+					[ANSIThemeString("docker-shim", "argument"),
 					 ANSIThemeString(" (", "description"),
 					 ANSIThemeString("Kubernetes", "programname"),
 					 ANSIThemeString(" < ", "description"),
@@ -4116,7 +4116,7 @@ COMMANDLINE = {
 					 ANSIThemeString("cri-o", "argument"),
 					],
 					[ANSIThemeString("Default CRI:", "description")],
-					[ANSIThemeString("dockershim", "argument"),
+					[ANSIThemeString("docker-shim", "argument"),
 					 ANSIThemeString(" (", "description"),
 					 ANSIThemeString("Kubernetes", "programname"),
 					 ANSIThemeString(" < ", "description"),

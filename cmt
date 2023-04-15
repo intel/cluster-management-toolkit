@@ -1003,7 +1003,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "--forks":
 			ansible_configuration["forks"] = optarg
 		elif opt == "--cri":
-			if optarg in ("dockershim", "containerd", "cri-o"):
+			if optarg in ("docker-shim", "containerd", "cri-o"):
 				cri = optarg
 			else:
 				ansithemeprint([ANSIThemeString("Error", "error"),
@@ -1239,14 +1239,14 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	if cri is None:
 		if int(version_minor) < 24:
-			cri = "dockershim"
+			cri = "docker-shim"
 		else:
 			cri = "containerd"
 	else:
-		if int(version_minor) >= 24 and cri == "dockershim":
+		if int(version_minor) >= 24 and cri == "docker-shim":
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": CRI cannot be “", "default"),
-					ANSIThemeString("dockershim", "argument"),
+					ANSIThemeString("docker-shim", "argument"),
 					ANSIThemeString("“ for ", "default"),
 					ANSIThemeString("Kubernetes ", "programname"),
 					ANSIThemeString(">= ", "default"),
@@ -1272,7 +1272,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	]
 	playbooks = populate_playbooks_from_paths(add_playbooks)
 
-	if version_major < 23:
+	if int(version_minor) < 23:
 		join_configuration_api_version = "kubeadm.k8s.io/v1beta2"
 	else:
 		join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
@@ -2422,7 +2422,7 @@ CMT_COMMANDLINE = {
 				"extended_description": [
 					[ANSIThemeString("Valid options for CRI", "description")],
 					[ANSIThemeString("(Container Runtime Interface) are:", "description")],
-					[ANSIThemeString("dockershim", "argument"),
+					[ANSIThemeString("docker-shim", "argument"),
 					 ANSIThemeString(" (", "description"),
 					 ANSIThemeString("Kubernetes", "programname"),
 					 ANSIThemeString(" < ", "description"),
@@ -2434,7 +2434,7 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString("cri-o", "argument"),
 					],
 					[ANSIThemeString("Default CRI:", "description")],
-					[ANSIThemeString("dockershim", "argument"),
+					[ANSIThemeString("docker-shim", "argument"),
 					 ANSIThemeString(" (", "description"),
 					 ANSIThemeString("Kubernetes", "programname"),
 					 ANSIThemeString(" < ", "description"),
