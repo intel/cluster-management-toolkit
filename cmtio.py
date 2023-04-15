@@ -356,6 +356,19 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.PERMISSIONS)
 
+	if path_entry.exists() and SecurityChecks.PERMISSIONS in checks and not os.access(path, os.R_OK):
+		if message_on_error == True:
+			msg = [ansithemeprint.ANSIThemeString("Critical", "critical"),
+			       ansithemeprint.ANSIThemeString(": The target path ", "default"),
+			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
+			       ansithemeprint.ANSIThemeString(" cannot be read", "default")]
+			if exit_on_critical == True:
+				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
+				ansithemeprint.ansithemeprint(msg, stderr = True)
+				sys.exit(errno.EINVAL)
+			ansithemeprint.ansithemeprint(msg, stderr = True)
+		violations.append(SecurityStatus.PERMISSIONS)
+
 	if SecurityChecks.IS_SYMLINK in checks and not path_entry.is_symlink():
 		if message_on_error == True:
 			msg = [ansithemeprint.ANSIThemeString("Error", "error"),

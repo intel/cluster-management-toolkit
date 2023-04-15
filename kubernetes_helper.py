@@ -2819,6 +2819,7 @@ class KubernetesHelper:
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
 			SecurityChecks.OWNER_IN_ALLOWLIST,
 			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.CAN_READ_IF_EXISTS,
 			SecurityChecks.PERMISSIONS,
 			SecurityChecks.PARENT_PERMISSIONS,
 			SecurityChecks.IS_FILE,
@@ -2830,6 +2831,8 @@ class KubernetesHelper:
 			return False
 		except FilePathAuditError as e:
 			if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
+				return False
+			if "SecurityStatus.PERMISSIONS" in str(e):
 				return False
 			raise
 

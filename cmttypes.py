@@ -132,6 +132,7 @@ class SecurityChecks(Enum):
 	PARENT_OWNER_IN_ALLOWLIST = auto()
 	PERMISSIONS = auto()
 	PARENT_PERMISSIONS = auto()
+	CAN_READ_IF_EXISTS = auto()
 	EXISTS = auto()
 	IS_FILE = auto()
 	IS_DIR = auto()
