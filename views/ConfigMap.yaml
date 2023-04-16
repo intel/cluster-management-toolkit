@@ -51,13 +51,43 @@ infoview:
         path: "type"
         type: "str"
   shortcuts:
+    "Attempt to display Certificate info":
+      key: "c"
+      modifier: "shift"
+      read_only: false
+      helptext: "Attempt to display certificate information"
+      widget: "command"
+      widget_args:
+        command: ["openssl", "x509", "-text", "-noout"]
+        _pass_selected_obj: true
+        input_path: "data"
+        wait_for_keypress: true
     "Export":
       key: "e"
       modifier: "shift"
       read_only: false
-      helptext: "Decode and export selected configmap to a file"
+      helptext: "Export selected configmap to a file"
       widget: "inputbox"
       inputtitle: "Export to file:"
+      confirm: "path_exists"
+      confirmtitle: "File already exists; overwrite?:"
+      action: "call"
+      action_call: "export_data"
+      action_args:
+        _pass_result: true
+        _pass_selected: true
+        _pass_obj: true
+        _extra_args:
+          base_path: "data"
+          name_attr: "data"
+          raw_export: true
+    "Decode and Export":
+      key: "d"
+      modifier: "shift"
+      read_only: false
+      helptext: "Decode and export selected configmap to a file"
+      widget: "inputbox"
+      inputtitle: "Decode and Export to file:"
       confirm: "path_exists"
       confirmtitle: "File already exists; overwrite?:"
       action: "call"

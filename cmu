@@ -7150,6 +7150,7 @@ def export_data(stdscr: curses.window, **kwargs):
 	extra_args = deep_get(kwargs, DictPath("_extra_args"), {})
 	base_path = deep_get(extra_args, DictPath("base_path"))
 	name_attr = deep_get(extra_args, DictPath("name_attr"), "value")
+	raw_export = deep_get(extra_args, DictPath("raw_export"), False)
 
 	value = None
 	if selected is not None:
@@ -7168,7 +7169,7 @@ def export_data(stdscr: curses.window, **kwargs):
 
 	vtype, value = decode_value(value)
 
-	if vtype.startswith("string"):
+	if vtype.startswith("string") or raw_export:
 		secure_write_string(filename, value)
 	elif vtype.startswith("base64-utf-8"):
 		tmp = base64.b64decode(value).decode("utf-8")
@@ -9220,11 +9221,24 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
 	fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
 
 	_args = deep_get(kwargs, DictPath("command"))
+	input_path = deep_get(kwargs, DictPath("input_path"))
 
 	if len(_args) == 0:
 		return
 
 	obj = deep_get(kwargs, DictPath("obj"), {})
+
+	if input_path is not None:
+		if len(input_path) > 0:
+			command_input = deep_get(obj, DictPath(input_path))
+		else:
+			command_input = obj
+		if not isinstance(command_input, str):
+			command_input = None
+		else:
+			command_input = command_input.encode("utf-8")
+	else:
+		command_input = None
 
 	args = []
 	for arg in _args:
@@ -9240,7 +9254,7 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
 				else:
 					sys.exit("widget_args: command requested incorrect data type; only str and list are valid")
 
-	waitforkeypress = deep_get(kwargs, DictPath("waitforkeypress"), False)
+	waitforkeypress = deep_get_with_fallback(kwargs, [DictPath("wait_for_keypress"), DictPath("waitforkeypress")], False)
 
 	msg = deep_get(kwargs, DictPath("msg"), "")
 
@@ -9259,7 +9273,7 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
 				ANSIThemeString("“ does not exist.\n", "default")], stderr = True)
 		waitforkeypress = True
 	else:
-		_retval = subprocess.run(args, check = False).returncode
+		_retval = subprocess.run(args, check = False, input = command_input).returncode
 
 	if waitforkeypress:
 		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
