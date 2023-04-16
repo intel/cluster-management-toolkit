@@ -311,6 +311,8 @@ def reformat_json(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Unio
 KEY_HEADERS = [
 	"-----BEGIN CERTIFICATE-----",
 	"-----END CERTIFICATE-----",
+	"-----BEGIN PKCS7-----",
+	"-----END PKCS7-----",
 	"-----BEGIN PUBLIC KEY-----",
 	"-----END PUBLIC KEY-----",
 	"-----BEGIN PRIVATE KEY-----",
