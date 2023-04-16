@@ -78,7 +78,7 @@
     when: "ansible_os_family == 'RedHat'"
   - name: "Planning upgrade"  # noqa fqcn-builtins
     shell: |
-      kubeadm upgrade plan
+      kubeadm upgrade plan {{ requested_control_plane_k8s_version.split("-")[0] }}
     changed_when: false
   - name: "Pulling Kubernetes images"  # noqa fqcn-builtins
     shell: |
