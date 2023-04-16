@@ -9770,6 +9770,10 @@ def delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
 			name = item
 		message, status = kh.delete_obj_by_kind_name_namespace(kind, name, namespace, force = force)
 		if status != 200:
+			# Status messages can be very verbose; delete everything from URL and on
+			tmp = re.match(r"^(.+?), URL:.*", message)
+			if tmp is not None:
+				message = tmp[1]
 			win = curses_helper.alert(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = message)
 			success = False
 			break
