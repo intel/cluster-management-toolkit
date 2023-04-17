@@ -47,6 +47,10 @@ class ANSIThemeString:
 	def __repr__(self) -> str:
 		return f"ANSIThemeString(string=\"{self.string}\", themeref=\"{self.themeref}\")"
 
+	def format(self, themeref: str) -> "ANSIThemeString":
+		self.themeref = themeref
+		return self
+
 theme = None
 themepath = None
 
@@ -143,6 +147,16 @@ def __themearray_to_string(themearray: List[ANSIThemeString]) -> str:
 		string = string.replace("\x0033", "\033")
 
 	return string
+
+def themearray_override_formatting(themearray: List[ANSIThemeString], formatting: Optional[str]) -> List[ANSIThemeString]:
+	new_themearray = []
+
+	for themestr in themearray:
+		if formatting is not None:
+			themestr = themestr.format(formatting)
+		new_themearray.append(themestr)
+
+	return new_themearray
 
 def themearray_len(themearray: List[ANSIThemeString]) -> int:
 	"""

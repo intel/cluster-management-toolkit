@@ -3427,7 +3427,7 @@ class KubernetesHelper:
 		if self.cluster_unreachable == True:
 			return 42503, []
 
-		api_resources = []
+		api_resources: List[Tuple] = []
 		core_apis = {}
 
 		# First get all core APIs
@@ -3441,7 +3441,7 @@ class KubernetesHelper:
 				core_apis = json.loads(raw_data)
 			except DecodeException:
 				# We got a response, but the data is malformed
-				return kubernetes_resources, 42422, []
+				return 42422, []
 		else:
 			# Something went wrong
 			self.cluster_unreachable = True

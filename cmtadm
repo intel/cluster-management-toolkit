@@ -55,6 +55,7 @@ from cmtlib import check_deb_versions, read_cmtconfig
 import kubernetes_helper
 
 from ansithemeprint import ANSIThemeString, ansithemeinput, ansithemeinput_password, ansithemeprint
+from ansithemeprint import themearray_override_formatting
 
 import checks
 
@@ -2119,14 +2120,24 @@ def __validate_task_index(tasks: List[Tuple[List[ANSIThemeString], Callable[[Dic
 		sys.exit(errno.ERANGE)
 	return phase
 
-def __list_phases(phases: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]]) -> None:
+def __list_phases(phases: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]], start_phase: Optional[int] = 0, phase_skiplist: Optional[List] = None) -> None:
 	"""
 	Helper that lists installation phases
 	"""
 
+	if start_phase is None:
+		start_phase = 0
+	if phase_skiplist is None:
+		phase_skiplist = []
+
 	for i, phase in enumerate(phases):
-		tmp = [ANSIThemeString(f"{str(i).rjust(2)}: ", "emphasis")]
-		tmp += phase[0]
+		if i < start_phase or i in phase_skiplist:
+			tmp = [ANSIThemeString(f"{str(i).rjust(2)}: ", "skip")]
+			override_formatting = "skip"
+		else:
+			tmp = [ANSIThemeString(f"{str(i).rjust(2)}: ", "emphasis")]
+			override_formatting = None
+		tmp += themearray_override_formatting(phase[0], override_formatting)
 		ansithemeprint(tmp)
 
 def __expand_index_list(index_list: str) -> Set[int]:
@@ -2394,6 +2405,8 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 			no_password = True
 		elif opt == "--start-at-task":
 			phase = __validate_task_index(prepare_tasks, optarg)
+			if "--skip-tasks" not in options:
+				phase_skiplist = set()
 		elif opt == "--skip-tasks":
 			skip_phases = __expand_index_list(optarg)
 			for __phase in skip_phases:
@@ -2414,7 +2427,9 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 		elif opt == "-Y":
 			confirm = False
 
-	show_configuration()
+	installation_info = update_installation_info(cluster_name = cluster_name, phase = phase, phase_skiplist = list(phase_skiplist))
+
+	show_configuration(action = "Preparing cluster:", tasks = prepare_tasks)
 
 	if confirm == True:
 		retval = ansithemeinput([ANSIThemeString("\nStart control plane preparation? [y/", "default"),
@@ -2677,7 +2692,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 	check_versions(deb_packages, version_checks)
 	print()
 
-def show_configuration() -> None:
+def show_configuration(action: str = "", tasks: Optional[List] = None) -> None:
 	"""
 	Show cluster configuration
 	"""
@@ -2711,6 +2726,9 @@ def show_configuration() -> None:
 	no_proxy_env = os.getenv("no_proxy")
 	if no_proxy_env is not None and no_proxy_env == "":
 		no_proxy_env = None
+
+	if len(action) > 0:
+		ansithemeprint([ANSIThemeString(action, "emphasis")])
 
 	ansithemeprint([ANSIThemeString("\n[Summary]", "phase")])
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
@@ -2767,6 +2785,16 @@ def show_configuration() -> None:
 					ANSIThemeString(f"{controlplane[1]}", "emphasis"),
 					ANSIThemeString(")", "default")])
 
+	if tasks is not None:
+		ansithemeprint([ANSIThemeString("", "default")])
+		ansithemeprint([ANSIThemeString("Pending tasks (", "action"),
+				ANSIThemeString("Dimmed", "skip"),
+				ANSIThemeString(" tasks are either skipped or completed):\n", "action")])
+
+		phase = installation_info[cluster_name]["phase"]
+		phase_skiplist = installation_info[cluster_name]["phase_skiplist"]
+		__list_phases(tasks, start_phase = phase, phase_skiplist = phase_skiplist)
+
 def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Setup a control plane
@@ -2815,6 +2843,8 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	for opt, optarg in options:
 		if opt == "--start-at-task":
 			phase = __validate_task_index(setup_control_plane_tasks, optarg)
+			if "--skip-tasks" not in options:
+				phase_skiplist = set()
 		elif opt == "--skip-tasks":
 			skip_phases = __expand_index_list(optarg)
 			for __phase in skip_phases:
@@ -2969,7 +2999,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	update_installation_info(cni = cni, pod_network_cidr = pod_network_cidr, state = "installing", phase = phase, phase_skiplist = list(phase_skiplist))
 
-	show_configuration()
+	show_configuration(action = "Setting up control plane:", tasks = setup_control_plane_tasks)
 
 	if confirm == True:
 		retval = ansithemeinput([ANSIThemeString("\nStart installation? [y/", "default"),
@@ -3137,6 +3167,8 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
 	for opt, optarg in options:
 		if opt == "--start-at-task":
 			phase = __validate_task_index(teardown_control_plane_tasks, optarg)
+			if "--skip-tasks" not in options:
+				phase_skiplist = set()
 		elif opt == "--skip-tasks":
 			skip_phases = __expand_index_list(optarg)
 			for __phase in skip_phases:
@@ -3150,13 +3182,14 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
 						ANSIThemeString(": Ignoring request to resume a completed teardown. Exiting.", "default")], stderr = True)
 				sys.exit(0)
 
-			phase = __validate_task_index(setup_control_plane_tasks, phase)
+			phase = __validate_task_index(teardown_control_plane_tasks, phase)
 		elif opt == "--save-ansible-logs":
 			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
 			confirm = False
 
-	show_configuration()
+	installation_info = update_installation_info(state = "tearing_down", phase = phase, phase_skiplist = list(phase_skiplist))
+	show_configuration(action = "Tearing down control plane", tasks = teardown_control_plane_tasks)
 
 	if confirm == True:
 		retval = ansithemeinput([ANSIThemeString("\nStart teardown? [y/", "default"),
@@ -3201,9 +3234,9 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
-	if state is None or state in ("preparing", "installing", "upgrading"):
+	if state is None or state not in ("prepared", "torn_down", "purging"):
 		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": Invalid installation state; there's no fully installed cluster; aborting.", "default")], stderr = True)
+				ANSIThemeString(": Invalid installation state; there's no prepared or torn down cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if len(options) == 0:
@@ -3211,41 +3244,40 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	for opt, optarg in options:
 		if opt == "--start-at-task":
-			phase = __validate_task_index(teardown_control_plane_tasks, optarg)
+			phase = __validate_task_index(purge_control_plane_tasks, optarg)
+			sys.exit(f"{phase=}")
+			if "--skip-tasks" not in options:
+				phase_skiplist = set()
 		elif opt == "--skip-tasks":
 			skip_phases = __expand_index_list(optarg)
 			for __phase in skip_phases:
-				__validate_task_index(teardown_control_plane_tasks, __phase)
+				__validate_task_index(purge_control_plane_tasks, __phase)
 			phase_skiplist = set(skip_phases)
 		elif opt == "--resume":
 			if phase is None or phase == "<none>":
 				phase = 0
 			elif phase == "<done>":
 				ansithemeprint([ANSIThemeString("Warning", "warning"),
-						ANSIThemeString(": Ignoring request to resume a completed teardown. Exiting.", "default")], stderr = True)
+						ANSIThemeString(": Ignoring request to resume a completed purge. Exiting.", "default")], stderr = True)
 				sys.exit(0)
 
-			phase = __validate_task_index(setup_control_plane_tasks, phase)
+			phase = __validate_task_index(purge_control_plane_tasks, phase)
 		elif opt == "--save-ansible-logs":
 			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
 			confirm = False
 
-	# If there is still an installed cluster or if the teardown has not finished, teardown the cluster before purging
-	if state in ("installed", "upgraded", "tearing_down"):
-		teardown_control_plane(options, args)
-		state = "torn_down"
-	else:
-		show_configuration()
+	installation_info = update_installation_info(state = "purging", phase = phase, phase_skiplist = list(phase_skiplist))
+	show_configuration(action = "Purging control plane:", tasks = purge_control_plane_tasks)
 
-		if confirm == True:
-			retval = ansithemeinput([ANSIThemeString("\nStart purge? [y/", "default"),
-						 ANSIThemeString("N", "emphasis"),
-						 ANSIThemeString("]: ", "default")])
-			if retval.lower() not in ("y", "yes"):
-				ansithemeprint([ANSIThemeString("\nAborting:", "error"),
-						ANSIThemeString(" User stopped purge.", "default")], stderr = True)
-				sys.exit(errno.EINTR)
+	if confirm == True:
+		retval = ansithemeinput([ANSIThemeString("\nStart purge? [y/", "default"),
+					 ANSIThemeString("N", "emphasis"),
+					 ANSIThemeString("]: ", "default")])
+		if retval.lower() not in ("y", "yes"):
+			ansithemeprint([ANSIThemeString("\nAborting:", "error"),
+					ANSIThemeString(" User stopped purge.", "default")], stderr = True)
+			sys.exit(errno.EINTR)
 
 	ansithemeprint([ANSIThemeString("\n\n[Purging cluster configuration and software]", "phase")])
 
@@ -3332,6 +3364,8 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	for opt, optarg in options:
 		if opt == "--start-at-task":
 			phase = __validate_task_index(upgrade_control_plane_tasks, optarg)
+			if "--skip-tasks" not in options:
+				phase_skiplist = set()
 		elif opt == "--skip-tasks":
 			skip_phases = __expand_index_list(optarg)
 			for __phase in skip_phases:
@@ -3493,7 +3527,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	upgrade_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
 	upgrade_control_plane_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
 
-	show_configuration()
+	show_configuration(action = "Upgrading control plane:", tasks = upgrade_control_plane_tasks)
 
 	if confirm == True:
 		retval = ansithemeinput([ANSIThemeString("\nStart upgrade? [y/", "default"),
@@ -4458,11 +4492,8 @@ COMMANDLINE = {
 		"command": ["purge-control-plane"],
 		"description": [ANSIThemeString("Purge configuration and packages", "description")],
 		"extended_description": [
-			[ANSIThemeString("purge-control-plane", "command"),
-			 ANSIThemeString(" will run ", "description"),
-			 ANSIThemeString("teardown-control-plane", "command")],
-			[ANSIThemeString("first if necessary. Software and configuration", "description")],
-			[ANSIThemeString("needed for ", "description"),
+			[ANSIThemeString("Software and configuration needed", "description")],
+			[ANSIThemeString("for ", "description"),
 			 ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
 			 ANSIThemeString(" itself will not be purged", "description")],
 		],
@@ -4493,6 +4524,7 @@ COMMANDLINE = {
 				"validation": {
 					"validator": "int",
 					"valid_range": (0, None),
+					"list_separator": ",",
 				},
 			},
 			"--list-tasks": {
