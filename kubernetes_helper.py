@@ -1511,6 +1511,25 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/kubevirt.io/v1/"],
 		"api": "virtualmachines",
 	},
+	# kueue.x-k8s.io
+	("ClusterQueue", "kueue.x-k8s.io"): {
+		"api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
+		"api": "clusterqueues",
+		"namespaced": False,
+	},
+	("ResourceFlavor", "kueue.x-k8s.io"): {
+		"api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
+		"api": "resourceflavors",
+		"namespaced": False,
+	},
+	("LocalQueue", "kueue.x-k8s.io"): {
+		"api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
+		"api": "localqueues",
+	},
+	("Workload", "kueue.x-k8s.io"): {
+		"api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
+		"api": "workloads",
+	},
 	# kyverno.io
 	("AdmissionReport", "kyverno.io"): {
 		"api_paths": ["apis/kyverno.io/v1alpha2/"],

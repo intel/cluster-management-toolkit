@@ -1,0 +1,118 @@
+kind: "LocalQueue"
+api_family: "kueue.x-k8s.io"
+default_command: "localqueues"
+command:
+- "localqs"
+- "localq"
+listview:
+  name: "Local Queues"
+  group: "Job Queueing"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "cluster_queue", "pending_workloads", "admitted_workloads", "age"]
+  fields:
+    admitted_workloads:
+      header: "Admitted Workloads:"
+      path: "status#admittedWorkloads"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    cluster_queue:
+      header: "Cluster Queue:"
+      path: "spec#clusterQueue"
+      type: "str"
+    pending_workloads:
+      header: "Pending Workloads:"
+      path: "status#pendingWorkloads"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+infoview:
+  name: "Local Queue Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_queue", "workloads_header", "workloads_pending", "workloads_admitted"]
+    rows:
+      cluster_queue:
+        header: [["C", ["main", "infoheader_shortcut"]], ["luster Queue:", ["main", "infoheader"]]]
+        path: "spec#clusterQueue"
+        type: "str"
+      workloads_header:
+        header: [["Workloads:", ["main", "infoheader"]]]
+      workloads_admitted:
+        header: [["  Admitted:", ["main", "infoheader"]]]
+        path: "status#admittedWorkloads"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      workloads_pending:
+        header: [["  Pending:", ["main", "infoheader"]]]
+        path: "status#pendingWorkloads"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+  listpad:
+    listgetter: "generic_listgetter"
+    listgetter_args:
+      _kind: "Workload"
+      _api_family: "kueue.x-k8s.io"
+      _pass_obj: true
+      filters:
+        cluster_queue:
+          enabled: true
+          allow:
+          - key: "spec#queueName"
+            values:
+              source: "caller"
+              path: "metadata#name"
+          - key: "metadata#namespace"
+            values:
+              source: "caller"
+              path: "metadata#namespace"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "Workload"
+      api_family: "kueue.x-k8s.io"
+    field_indexes:
+      Normal:
+        fields: ["namespace", "name", "queue", "priority", "admitted_by", "age"]
+    fields:
+      admitted_by:
+        header: "Admitted By:"
+        path: "status#admittedBy"
+        type: "str"
+      priority:
+        header: "Priority:"
+        path: "spec#priority"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      queue:
+        header: "Queue:"
+        path: "spec#queueName"
+        type: "str"
+  shortcuts:
+    "Cluster Queue":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open Cluster Queue"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ClusterQueue"
+        api_family: "kueue.x-k8s.io"
+        name_path: "spec#clusterQueue"

@@ -1,0 +1,44 @@
+kind: "ResourceFlavor"
+api_family: "kueue.x-k8s.io"
+default_command: "resourceflavors"
+command:
+- "resflavors"
+- "resflavor"
+listview:
+  name: "Resource Flavors"
+  group: "Job Queueing"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Resource Flavor Info"
+  infopad:
+  shortcuts:
+    "Show Node Labels":
+      key: "o"
+      read_only: true
+      helptext: "Show node labels"
+      widget: "windowwidget"
+      title: "Node labels:"
+      headers: ["Label:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#nodeLabels"
+      # This isn't supported for now
+      sortcolumn: "label"
+    "Show Node Taints":
+      key: "t"
+      read_only: true
+      helptext: "Show node taints"
+      widget: "windowwidget"
+      title: "Node taints:"
+      headers: ["Key:", "Value:", "Effect:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#nodeTaints"
+        fields:
+        - "key"
+        - "value"
+        - "effect"
+      # This isn't supported for now
+      sortcolumn: "key"

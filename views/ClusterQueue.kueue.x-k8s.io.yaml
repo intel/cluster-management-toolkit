@@ -1,0 +1,179 @@
+kind: "ClusterQueue"
+api_family: "kueue.x-k8s.io"
+default_command: "clusterqueues"
+command:
+- "clusterqs"
+- "clusterq"
+listview:
+  name: "Cluster Queues"
+  group: "Job Queueing"
+  field_indexes:
+    Normal:
+      fields: ["name", "cohort", "strategy", "pending_workloads", "admitted_workloads", "age"]
+  fields:
+    admitted_workloads:
+      header: "Admitted Workloads:"
+      path: "status#admittedWorkloads"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    cohort:
+      header: "Cohort:"
+      path: "spec#cohort"
+      type: "raw"
+      default: "<unset>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
+            __default:
+              field_colors:
+              - context: "types"
+                type: "generic"
+    pending_workloads:
+      header: "Pending Workloads:"
+      path: "status#pendingWorkloads"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    strategy:
+      header: "Strategy:"
+      path: "spec#queueingStrategy"
+      type: "str"
+infoview:
+  name: "Cluster Queue Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["namespace_selector", "cohort", "strategy", "workloads_header", "workloads_pending", "workloads_admitted", "preemption_header", "preemption_reclaim_within_cohort", "preemption_within_cluster_queue"]
+    rows:
+      cohort:
+        header: [["Cohort:", ["main", "infoheader"]]]
+        path: "spec#cohort"
+        type: "raw"
+        default: "<unset>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
+              __default:
+                field_colors:
+                - context: "types"
+                  type: "generic"
+      namespace_selector:
+        header: [["Namespace Selector:", ["main", "infoheader"]]]
+        path: "spec#namespaceSelector#matchNames"
+        type: "raw"
+        formatter: "list"
+      preemption_header:
+        header: [["Preemption:", ["main", "infoheader"]]]
+      preemption_reclaim_within_cohort:
+        header: [["  Reclaim Within Cohort:", ["main", "infoheader"]]]
+        path: "spec#preemption#reclaimWithinCohort"
+        type: "str"
+      preemption_within_cluster_queue:
+        header: [["  Within Cluster Queue:", ["main", "infoheader"]]]
+        path: "spec#preemption#withinClusterQueue"
+        type: "str"
+      strategy:
+        header: [["Strategy:", ["main", "infoheader"]]]
+        path: "spec#queueingStrategy"
+        type: "str"
+      workloads_header:
+        header: [["Workloads:", ["main", "infoheader"]]]
+      workloads_admitted:
+        header: [["  Admitted:", ["main", "infoheader"]]]
+        path: "status#admittedWorkloads"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      workloads_pending:
+        header: [["  Pending:", ["main", "infoheader"]]]
+        path: "status#pendingWorkloads"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+  listpad:
+    listgetter: "generic_listgetter"
+    listgetter_args:
+      _kind: "LocalQueue"
+      _api_family: "kueue.x-k8s.io"
+      _pass_obj: true
+      filters:
+        cluster_queue:
+          enabled: true
+          allow:
+          - key: "spec#clusterQueue"
+            values:
+              source: "caller"
+              path: "metadata#name"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "LocalQueue"
+      api_family: "kueue.x-k8s.io"
+    field_indexes:
+      Normal:
+        fields: ["namespace", "name", "cluster_queue", "pending_workloads", "admitted_workloads", "age"]
+    fields:
+      admitted_workloads:
+        header: "Admitted Workloads:"
+        path: "status#admittedWorkloads"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      cluster_queue:
+        header: "Cluster Queue:"
+        path: "spec#clusterQueue"
+        type: "str"
+      pending_workloads:
+        header: "Pending Workloads:"
+        path: "status#pendingWorkloads"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+  shortcuts:
+    "Flavors Usage":
+      key: "f"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show flavors usage"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Flavors Usage"
+        _pass_obj: true
+        path: "status#flavorsUsage"
+        include_root: true
+    "Resource Groups":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show resource groups"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Resource Groups"
+        _pass_obj: true
+        path: "spec#resourceGroups"
+        include_root: true

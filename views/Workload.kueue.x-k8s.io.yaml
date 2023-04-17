@@ -1,0 +1,108 @@
+kind: "Workload"
+api_family: "kueue.x-k8s.io"
+default_command: "workloads"
+listview:
+  name: "Workloads"
+  group: "Job Queueing"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "queue", "priority", "admitted_by", "age"]
+  fields:
+    admitted_by:
+      header: "Admitted By:"
+      path: "status#admittedBy"
+      type: "str"
+    priority:
+      header: "Priority:"
+      path: "spec#priority"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    queue:
+      header: "Queue:"
+      path: "spec#queueName"
+      type: "str"
+infoview:
+  name: "Workload Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "queue", "priority", "admitted_by"]
+    rows:
+      admitted_by:
+        header: [["Admitted By:", ["main", "infoheader"]]]
+        path: "status#admittedBy"
+        type: "str"
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      priority:
+        header: [["Priority:", ["main", "infoheader"]]]
+        path: "spec#priority"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      queue:
+        header: [["Q", ["main", "infoheader_shortcut"]], ["ueue:", ["main", "infoheader"]]]
+        path: "spec#queueName"
+        type: "str"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open Queue":
+      key: "q"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for queue"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "spec#queueName"
+        namespace_path: "metadata#namespace"
+        kind: "LocalQueue"
+        api_family: "kueue.x-k8s.io"
+    "Podsets":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show pod sets"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Pod Sets"
+        _pass_obj: true
+        path: "spec#podSets"
+        include_root: true
