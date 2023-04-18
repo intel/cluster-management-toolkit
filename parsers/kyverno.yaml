@@ -1,0 +1,13 @@
+- name: "kyverno"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "kyverno-admission-controller"
+  - pod_name: "kyverno-admission-controller"
+    container_name: "kyverno-pre"
+    container_type: "init_container"
+  - pod_name: "kyverno-background-controller"
+  - pod_name: "kyverno-cleanup-controller"
+  - pod_name: "kyverno-reports-controller"
+  parser_rules:
+  - name: "glog"
+  - name: "key_value_with_leading_message"

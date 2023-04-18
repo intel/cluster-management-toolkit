@@ -1,0 +1,81 @@
+kind: "Policy"
+api_family: "kyverno.io"
+default_command: "policy"
+command:
+- "kypolicies"
+- "kypolicy"
+- "kypols"
+- "kypol"
+listview:
+  name: "Policies"
+  group: "Kyverno"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "background", "validation_failure_action", "age"]
+      sortcolumn: "namespace"
+  fields:
+    background:
+      header: "Background:"
+      path: "spec#background"
+      type: "bool"
+      default: true
+    validation_failure_action:
+      header: "Validation Failure Action:"
+      path: "spec#validationFailureAction"
+      type: "str"
+      default: "Audit"
+infoview:
+  name: "Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["background", "apply_rules", "failure_policy", "validate_schema", "validation_failure_action", "generate_existing", "mutate_existing_on_policy_update", "webhook_timeout"]
+    rows:
+      apply_rules:
+        header: [["Apply Rules:", ["main", "infoheader"]]]
+        path: "spec#applyRules"
+        type: "str"
+        default: "All"
+      background:
+        header: [["Background:", ["main", "infoheader"]]]
+        path: "spec#background"
+        type: "bool"
+        default: true
+      failure_policy:
+        header: [["Failure Policy:", ["main", "infoheader"]]]
+        path: "spec#failurePolicy"
+        type: "str"
+        default: "Fail"
+      generate_existing:
+        header: [["Generate Existing:", ["main", "infoheader"]]]
+        path: "spec#generateExisting"
+        type: "bool"
+        default: false
+      mutate_existing_on_policy_update:
+        header: [["Mutate Existing on Policy Update:", ["main", "infoheader"]]]
+        path: "spec#mutateExistingOnPolicyUpdate"
+        type: "bool"
+        default: false
+      validate_schema:
+        header: [["Validate Schema:", ["main", "infoheader"]]]
+        path: "spec#schemaValidation"
+        type: "bool"
+        default: true
+      validation_failure_action:
+        header: [["Validation Failure Action:", ["main", "infoheader"]]]
+        path: "spec#validationFailureAction"
+        type: "str"
+        default: "Audit"
+      webhook_timeout:
+        header: [["Webhook Timeout:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#webhookTimeoutSeconds"], "s"]
+          pathtype: "tuple"
+          default: "10"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "unit"
+          field_separators:
+          - type: "no_pad"

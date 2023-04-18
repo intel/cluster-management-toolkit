@@ -1,0 +1,102 @@
+kind: "ClusterPolicy"
+api_family: "kyverno.io"
+default_command: "clusterpolicy"
+command:
+- "kyclusterpolicies"
+- "kyclusterpolicy"
+- "kyclusterpols"
+- "kyclusterpol"
+listview:
+  name: "Cluster Policies"
+  group: "Kyverno"
+  field_indexes:
+    Normal:
+      fields: ["name", "background", "validation_failure_action", "age"]
+  fields:
+    background:
+      header: "Background:"
+      path: "spec#background"
+      type: "bool"
+      default: true
+    validation_failure_action:
+      header: "Validation Failure Action:"
+      path: "spec#validationFailureAction"
+      type: "str"
+      default: "Audit"
+infoview:
+  name: "Cluster Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["background", "apply_rules", "failure_policy", "validate_schema", "validation_failure_action", "generate_existing", "mutate_existing_on_policy_update", "webhook_timeout"]
+    rows:
+      apply_rules:
+        header: [["Apply Rules:", ["main", "infoheader"]]]
+        path: "spec#applyRules"
+        type: "str"
+        default: "All"
+      background:
+        header: [["Background:", ["main", "infoheader"]]]
+        path: "spec#background"
+        type: "bool"
+        default: true
+      failure_policy:
+        header: [["Failure Policy:", ["main", "infoheader"]]]
+        path: "spec#failurePolicy"
+        type: "str"
+        default: "Fail"
+      generate_existing:
+        header: [["Generate Existing:", ["main", "infoheader"]]]
+        path: "spec#generateExisting"
+        type: "bool"
+        default: false
+      mutate_existing_on_policy_update:
+        header: [["Mutate Existing on Policy Update:", ["main", "infoheader"]]]
+        path: "spec#mutateExistingOnPolicyUpdate"
+        type: "bool"
+        default: false
+      validate_schema:
+        header: [["Validate Schema:", ["main", "infoheader"]]]
+        path: "spec#schemaValidation"
+        type: "bool"
+        default: true
+      validation_failure_action:
+        header: [["Validation Failure Action:", ["main", "infoheader"]]]
+        path: "spec#validationFailureAction"
+        type: "str"
+        default: "Audit"
+      webhook_timeout:
+        header: [["Webhook Timeout:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#webhookTimeoutSeconds"], "s"]
+          pathtype: "tuple"
+          default: "10"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "unit"
+          field_separators:
+          - type: "no_pad"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__ClusterPolicyRule"
+      api_family: "kyverno.io"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#rules"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "match"]
+        sortcolumn: "name"
+    fields:
+      match:
+        header: "Match:"
+        path: "match"
+        type: "str"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"

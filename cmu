@@ -2386,6 +2386,25 @@ def get_task_log(obj: Dict, **kwargs: Dict):
 def get_themearrays(obj: Dict, **kwargs: Dict) -> Dict:
 	return obj
 
+def logpad_yaml(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+	"""
+	Takes an object and dumps it as formatted YAML
+
+		Parameters:
+			obj (dict): The dict to dump formatted as YAML
+			kwargs (Dict): Additional parameters
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
+	try:
+		tmp = yaml.dump(obj)
+		messages = formatters.format_yaml(tmp)
+	except yaml.YAMLError:
+		messages = []
+
+	return messages
+
 def logpad_msg_getter(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
 	messages: List[List[Union[ThemeRef, ThemeString]]] = []
 
@@ -11152,6 +11171,7 @@ infogetter_allowlist = {
 	"get_svcmon_endpoints_info": get_svcmon_endpoints_info,
 	# Used by logpad
 	"logpad_msg_getter": logpad_msg_getter,
+	"logpad_yaml": logpad_yaml,
 	"get_journalctl_log": get_journalctl_log,
 	"get_task_log": get_task_log,
 	"get_themearrays": get_themearrays,
