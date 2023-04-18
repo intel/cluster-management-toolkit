@@ -10,14 +10,18 @@
         "Created files":
         - description: "/etc/docker/daemon.json"
         - description: "/etc/systemd/system/docker.service.d/http-proxy.conf (proxy settings for docker)"
+        - description: "/etc/systemd/system/docker.service.d/ip-forward.conf (enable IP-forwarding when using docker)"
         "Installed packages":
         - description: "docker.io"
           conditions:
           - "Debian and derivatives"
+        "Modified files":
+        - description: "/etc/modules (ensure that br_netfilter is loaded)"
         "Other actions":
         - description: "Updates package cache"
           conditions:
           - "Debian and derivatives"
+        - description: "modprobe br_netfilter"
         "Restarted services":
         - description: "docker"
       playbook_types:
@@ -56,12 +60,27 @@
       path: "/etc/systemd/system/docker.service.d"
       state: "directory"
       mode: "0755"
-  - name: "Configuring docker/http-proxy.conf"
+  - name: "Creating /etc/systemd/system/docker.service.d/http-proxy.conf"
     ansible.builtin.template:
       dest: "/etc/systemd/system/docker.service.d/http-proxy.conf"
       src: "templates/etc/systemd/system/docker.service.d/http-proxy.conf.j2"
       mode: "0644"
       force: true
+  - name: "Creating /etc/systemd/system/docker.service.d/ip-forward.conf"
+    ansible.builtin.template:
+      dest: "/etc/systemd/system/docker.service.d/ip-forward.conf"
+      src: "templates/etc/systemd/system/docker.service.d/ip-forward.conf.j2"
+      mode: "0644"
+      force: true
+  - name: "Ensure that br_netfilter is loaded on boot"
+    ansible.builtin.lineinfile:
+      path: "/etc/modules"
+      line: "br_netfilter"
+      insertafter: "EOF"
+      state: "present"
+  - name: "Load br_netfilter if it isn't already loaded"  # noqa fqcn-builtins no-changed-when
+    shell: |
+      modprobe br_netfilter
   - name: "Restarting Docker"
     ansible.builtin.systemd:
       name: "docker"

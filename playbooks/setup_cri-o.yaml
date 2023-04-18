@@ -5,14 +5,14 @@
       description: "Setup CRI-O"
       summary:
         "Created directories":
-        - description: "/usr/local/keyrings"
+        - description: "/etc/apt/keyrings"
           conditions:
           - "Debian and derivatives"
         - description: "/etc/cri-o"
         - description: "/etc/systemd/system/kubelet.service.d"
         - description: "/etc/systemd/system/containerd.service.d"
         "Created files":
-        - description: "/usr/local/keyrings/cri-o-keyring.gpg (GPG key for CRI-O APT repository)"
+        - description: "/etc/apt/keyrings/cri-o-keyring.gpg (GPG key for CRI-O APT repository)"
           conditions:
           - "Debian and derivatives"
         - description: "/etc/apt/sources.list.d/cri-o.list (APT repository for CRI-O)"
@@ -61,9 +61,9 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Creating /usr/local/keyrings"
+  - name: "Creating /etc/apt/keyrings"
     ansible.builtin.file:
-      path: "/usr/local/keyrings"
+      path: "/etc/apt/keyrings"
       state: "directory"
       mode: "0755"
     when: "ansible_os_family == 'Debian'"
@@ -85,11 +85,11 @@
   - name: "Dearmoring CRI-O key"  # noqa fqcn-builtins no-changed-when
     shell: |
       gpg --dearmor "{{ tempdir.path }}/Release.key"
-  - name: "Copying dearmored CRI-O key to /usr/local/keyrings"
+  - name: "Copying dearmored CRI-O key to /etc/apt/keyrings"
     ansible.builtin.copy:
       remote_src: true
       src: "{{ tempdir.path }}/Release.key.gpg"
-      dest: "/usr/local/keyrings/cri-o-keyring.gpg"
+      dest: "/etc/apt/keyrings/cri-o-keyring.gpg"
       mode: "0644"
   - name: "Configuring package repository for CRI-O"
     ansible.builtin.template:

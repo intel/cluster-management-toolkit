@@ -1,0 +1,4 @@
+# /etc/systemd/system/containerd.service.d/ip_forward.conf extension to containerd.service file
+[Service]
+# needed for containers to be able to access external services
+ExecStartPre=sysctl -w net.ipv4.ip_forward=1

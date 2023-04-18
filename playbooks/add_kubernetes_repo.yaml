@@ -5,7 +5,7 @@
       description: "Add Kubernetes repository"
       summary:
         "Created directories":
-        - description: "/usr/local/keyrings"
+        - description: "/etc/apt/keyrings"
           conditions:
           - "Debian and derivatives"
         "Downloaded files":
@@ -13,7 +13,7 @@
           conditions:
           - "Debian and derivatives"
         "Created files":
-        - description: "/usr/local/keyrings/packages.cloud.google.com-keyring.gpg"
+        - description: "/etc/apt/keyrings/kubernetes-archive-keyring.gpg"
           conditions:
           - "Debian and derivatives"
         - description: "/etc/apt/sources.list.d/kubernetes.list"
@@ -43,16 +43,16 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Creating /usr/local/keyrings"
+  - name: "Creating /etc/apt/keyrings"
     ansible.builtin.file:
-      path: "/usr/local/keyrings"
+      path: "/etc/apt/keyrings"
       state: "directory"
       mode: "0755"
     when: "ansible_os_family == 'Debian'"
   - name: "Fetching Kubernetes repository key"
     ansible.builtin.get_url:
       url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
-      dest: "/usr/local/keyrings/packages.cloud.google.com-keyring.gpg"
+      dest: "/etc/apt/keyrings/kubernetes-archive-keyring.gpg"
       mode: "0644"
       force: true
       use_proxy: "{{ use_proxy }}"

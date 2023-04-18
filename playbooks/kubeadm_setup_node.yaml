@@ -16,7 +16,6 @@
         - description: "Updates package cache"
           conditions:
           - "Debian and derivatives"
-        - description: "modprobe br_netfilter"
         - description: "Configures Kubernetes node"
         - description: "Joins the Kubernetes node to the cluster"
       time_consumption: "Slow"
@@ -85,9 +84,6 @@
       dest: "{{ node_config.path }}"
       src: "templates/config/nodeconfig.yaml.j2"
       mode: "0640"
-  - name: "Modprobing br_netfilter"  # noqa fqcn-builtins
-    shell: |
-      /usr/sbin/modprobe br_netfilter
   - name: "Enabling kubelet"
     ansible.builtin.systemd:
       name: "kubelet"
