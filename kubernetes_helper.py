@@ -2705,6 +2705,118 @@ def get_image_version(image: str, default: str = "<undefined>") -> str:
 		image_version = default
 	return image_version
 
+def list_contexts(config_path: Optional[FilePath] = None) -> List[Tuple[bool, str, str, str, str, str]]:
+	"""
+	Given the path to a kubeconfig file, returns the available contexts
+
+		Parameters:
+			config_path (FilePath): The path to the kubeconfig file
+		Returns:
+			contexts (list[(current, name, cluster, authinfo, namespace)]):
+				current (bool): Is this the current context?
+				name (str): The name of the context
+				cluster (str): The name of the cluster
+				authinfo (str): The name of the user
+				namespace (str): The name of the namespace
+				server (str): The API-server of the cluster
+	"""
+
+	contexts = []
+
+	if config_path is None:
+		# Read kubeconfig
+		config_path = KUBE_CONFIG_FILE
+
+	try:
+		kubeconfig = secure_read_yaml(FilePath(str(config_path)))
+	except FilePathAuditError as e:
+		if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
+			return []
+	except FileNotFoundError:
+		# We can handle FileNotFoundError and PARENT_DOES_NOT_EXIST;
+		# other exceptions might be security related, so we let them raise
+		return []
+	except yaml.parser.ParserError as e:
+		e.args += (f"{config_path} is not valid YAML; aborting.", )
+		raise
+
+	current_context = deep_get(kubeconfig, DictPath("current-context"), "")
+
+	for context in deep_get(kubeconfig, DictPath("contexts"), []):
+		name = deep_get(context, DictPath("name"))
+		# In this case the parentheses really help legibility
+		# pylint: disable-next=superfluous-parens
+		current = (name == current_context)
+		namespace = deep_get(context, DictPath("namespace"), "default")
+		authinfo = deep_get(context, DictPath("context#user"))
+		cluster = deep_get(context, DictPath("context#cluster"))
+		server = ""
+		for cluster_data in deep_get(kubeconfig, DictPath("clusters"), []):
+			if cluster == deep_get(cluster_data, DictPath("name")):
+				server = deep_get(cluster_data, DictPath("cluster#server"))
+		contexts.append((current, name, cluster, authinfo, namespace, server))
+	return contexts
+
+# pylint: disable-next=too-many-return-statements
+def set_context(config_path: Optional[FilePath] = None, name: Optional[str] = None) -> Optional[str]:
+	"""
+	Change context
+
+		Parameters:
+			config_path (FilePath): The path to the kubeconfig file
+			name (str): The context to change to
+		Returns:
+			context (str): The name of the new current-context, or None on failure
+	"""
+
+	# We need a context name
+	if name is None or len(name) == 0:
+		return None
+
+	if config_path is None:
+		# Read kubeconfig
+		config_path = KUBE_CONFIG_FILE
+
+	config_path = FilePath(str(config_path))
+
+	# We are semi-OK with the file not existing
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.CAN_READ_IF_EXISTS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.IS_FILE,
+	]
+
+	try:
+		kubeconfig = secure_read_yaml(config_path, checks = checks)
+	except FileNotFoundError:
+		return None
+	except FilePathAuditError as e:
+		if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
+			return None
+		if "SecurityStatus.PERMISSIONS" in str(e):
+			return None
+		raise
+
+	current_context = deep_get(kubeconfig, DictPath("current-context"), "")
+
+	new_context = None
+
+	# Find out whether the new context exists
+	for context in deep_get(kubeconfig, DictPath("contexts"), []):
+		if deep_get(context, DictPath("name"), "") == name:
+			new_context = name
+			break
+
+	if new_context is not None:
+		kubeconfig["current-context"] = new_context
+		secure_write_yaml(config_path, kubeconfig, permissions = 0o600, sort_keys = False)
+
+	return new_context
+
 # pylint: disable-next=too-many-instance-attributes,too-many-public-methods
 class KubernetesHelper:
 	"""
@@ -2718,56 +2830,7 @@ class KubernetesHelper:
 	programversion = ""
 
 	def list_contexts(self, config_path: Optional[FilePath] = None) -> List[Tuple[bool, str, str, str, str, str]]:
-		"""
-		Given the path to a kubeconfig file, returns the available contexts
-
-			Parameters:
-				config_path (FilePath): The path to the kubeconfig file
-			Returns:
-				contexts (list[(current, name, cluster, authinfo, namespace)]):
-					current (bool): Is this the current context?
-					name (str): The name of the context
-					cluster (str): The name of the cluster
-					authinfo (str): The name of the user
-					namespace (str): The name of the namespace
-					server (str): The API-server of the cluster
-		"""
-
-		contexts = []
-
-		if config_path is None:
-			# Read kubeconfig
-			config_path = KUBE_CONFIG_FILE
-
-		try:
-			kubeconfig = secure_read_yaml(FilePath(str(config_path)))
-		except FilePathAuditError as e:
-			if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
-				return []
-		except FileNotFoundError:
-			# We can handle FileNotFoundError and PARENT_DOES_NOT_EXIST;
-			# other exceptions might be security related, so we let them raise
-			return []
-		except yaml.parser.ParserError as e:
-			e.args += (f"{config_path} is not valid YAML; aborting.", )
-			raise
-
-		current_context = deep_get(kubeconfig, DictPath("current-context"), "")
-
-		for context in deep_get(kubeconfig, DictPath("contexts"), []):
-			name = deep_get(context, DictPath("name"))
-			# In this case the parentheses really help legibility
-			# pylint: disable-next=superfluous-parens
-			current = (name == current_context)
-			namespace = deep_get(context, DictPath("namespace"), "default")
-			authinfo = deep_get(context, DictPath("context#user"))
-			cluster = deep_get(context, DictPath("context#cluster"))
-			server = ""
-			for cluster_data in deep_get(kubeconfig, DictPath("clusters"), []):
-				if cluster == deep_get(cluster_data, DictPath("name")):
-					server = deep_get(cluster_data, DictPath("cluster#server"))
-			contexts.append((current, name, cluster, authinfo, namespace, server))
-		return contexts
+		return list_contexts(config_path)
 
 	def list_clusters(self, config_path: Optional[FilePath] = None) -> List[Tuple[str, str]]:
 		"""

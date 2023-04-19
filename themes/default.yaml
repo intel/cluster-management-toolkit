@@ -58,6 +58,8 @@ term:
   yaml_key_separator: "\033[0;37m"              # white
   yaml_value: "\033[0m"                         # reset
   namespace: "\033[0;36m"                       # cyan
+  numerical: "\033[0;36m"                       # cyan
+  tag: "\033[1;37m"                             # white + bright
 
 # colors:
 #   black: [0, 0, 0]
@@ -70,7 +72,9 @@ term:
 #   white: [1000, 1000, 1000]
 
 color_pairs_curses:
-  tag: [["white", "bright"], ["black", "normal"]]
+  tag:
+    unselected: [["white", "bright"], ["black", "normal"]]
+    selected: [["black", "bright"], ["white", "normal"]]
   default:
     unselected: [["white", "normal"], ["black", "normal"]]
     selected: [["black", "normal"], ["white", "normal"]]
