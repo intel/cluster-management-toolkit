@@ -46,6 +46,7 @@ infoview:
       call: "resourceinfodispatch_with_lookup_on_activation"
       kind: "CSIDriver"
       api_family: "storage.k8s.io"
+      name_path: "name"
     field_indexes:
       Normal:
         fields: ["name", "node_id", "topology_keys", "allocatable_count"]
@@ -71,6 +72,7 @@ infoview:
         path: "topologyKeys"
         type: "raw"
         formatter: "list"
+        default: "<none>"
   shortcuts:
     "Open Node":
       key: "d"

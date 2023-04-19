@@ -30,7 +30,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["attach_required", "pod_info_on_mount", "fs_group_policy", "requires_republish", "storage_capacity", "volume_lifecycle_modes"]
+        fields: ["attach_required", "pod_info_on_mount", "fs_group_policy", "selinux_mount", "requires_republish", "storage_capacity", "volume_lifecycle_modes"]
     rows:
       attach_required:
         header: [["Attach Required:", ["main", "infoheader"]]]
@@ -47,6 +47,10 @@ infoview:
       requires_republish:
         header: [["Requires Republish:", ["main", "infoheader"]]]
         path: "spec#requiresRepublish"
+        type: "bool"
+      selinux_mount:
+        header: [["SELinux Mount:", ["main", "infoheader"]]]
+        path: "spec#seLinuxMount"
         type: "bool"
       storage_capacity:
         header: [["Storage Capacity:", ["main", "infoheader"]]]

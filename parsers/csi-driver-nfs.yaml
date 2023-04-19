@@ -1,0 +1,14 @@
+- name: "csi-driver-nfs"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "csi-nfs"
+  parser_rules:
+  - name: "glog"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Version: "
+      loglevel: "notice"
+    - matchtype: "startswith"
+      matchkey: "Driver: nfs.csi.k8s.io version: "
+      loglevel: "notice"

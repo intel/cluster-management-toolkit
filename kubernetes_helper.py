@@ -331,16 +331,16 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	},
 	# snapshot.storage.k8s.io
 	("VolumeSnapshot", "snapshot.storage.k8s.io"): {
-		"api_paths": ["apis/snapshot.storage.k8s.io/v1beta1/"],
+		"api_paths": ["apis/snapshot.storage.k8s.io/v1/", "apis/snapshot.storage.k8s.io/v1beta1/"],
 		"api": "volumesnapshots",
 	},
 	("VolumeSnapshotClass", "snapshot.storage.k8s.io"): {
-		"api_paths": ["apis/snapshot.storage.k8s.io/v1beta1/"],
+		"api_paths": ["apis/snapshot.storage.k8s.io/v1/", "apis/snapshot.storage.k8s.io/v1beta1/"],
 		"api": "volumesnapshotclasses",
 		"namespaced": False,
 	},
 	("VolumeSnapshotContent", "snapshot.storage.k8s.io"): {
-		"api_paths": ["apis/snapshot.storage.k8s.io/v1beta1/"],
+		"api_paths": ["apis/snapshot.storage.k8s.io/v1/", "apis/snapshot.storage.k8s.io/v1beta1/"],
 		"api": "volumesnapshotcontent",
 		"namespaced": False,
 	},

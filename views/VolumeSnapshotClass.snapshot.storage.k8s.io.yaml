@@ -4,9 +4,20 @@ default_command: "volumesnapshotclasses"
 command:
 - "volsnapclasses"
 - "volsnapclass"
+- "vsclasses"
+- "vsclass"
 listview:
   name: "Volume Snapshot Classes"
   group: "Storage & Backups"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "driver", "deletion_policy", "age"]
+  fields:
+    deletion_policy:
+      header: "Deletion Policy:"
+      path: "deletionPolicy"
+      type: "str"
+    driver:
+      header: "Driver:"
+      path: "driver"
+      type: "str"
