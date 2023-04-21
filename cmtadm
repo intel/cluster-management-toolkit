@@ -773,8 +773,6 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	for opt, _optarg in options:
 		if opt == "-Y":
 			confirm = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	if not Path(CMT_INSTALLATION_INFO_FILE).is_file():
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -833,8 +831,6 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	for opt, _optarg in options:
 		if opt == "-Y":
 			confirm = False
-		else:
-			raise Exception(f"Programming error; invalid option {opt}")
 
 	if not Path(CMT_INSTALLATION_INFO_FILE).is_file():
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -3207,6 +3203,7 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
 	run_tasks(tasks = teardown_control_plane_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "torn_down")
 	ansithemeprint([ANSIThemeString("\nCluster teardown successful", "success")])
 
+# pylint: disable-next=unused-argument
 def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Purge an existing control plane
@@ -3245,7 +3242,6 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	for opt, optarg in options:
 		if opt == "--start-at-task":
 			phase = __validate_task_index(purge_control_plane_tasks, optarg)
-			sys.exit(f"{phase=}")
 			if "--skip-tasks" not in options:
 				phase_skiplist = set()
 		elif opt == "--skip-tasks":

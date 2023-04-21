@@ -25,6 +25,7 @@ from pathlib import Path, PurePath
 import re
 import sys
 from typing import cast, Dict, List, Optional, Sequence, Tuple
+import yaml
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
@@ -1711,7 +1712,7 @@ def use_context(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	i = 0
 
-	for current, name, cluster, authinfo, namespace, server in contexts:
+	for current, name, _cluster, _authinfo, _namespace, _server in contexts:
 		if context_index is not None and context_index == i:
 			context_name = name
 		i += 1
@@ -1734,6 +1735,7 @@ def use_context(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	return 0
 
+# pylint: disable-next=unused-argument
 def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	List available API-resources
