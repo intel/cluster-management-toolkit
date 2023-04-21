@@ -2217,6 +2217,10 @@
 													},
 													"minItems": 1
 												},
+												"input_path": {
+													"description": "Path to data to pass to stdin",
+													"$ref": "#/definitions/simple_path"
+												},
 												"kinds": {
 													"description": "A list of kinds that the action can be executed on",
 													"type": "array",
@@ -2243,12 +2247,16 @@
 													},
 													"minItems": 1
 												},
-												"waitforkeypress": {
+												"wait_for_keypress": {
 													"description": "Wait for a keypress before returning from command",
 													"type": "boolean"
 												},
 												"_pass_obj": {
 													"description": "Pass obj to command",
+													"type": "boolean"
+												},
+												"_pass_selected_obj": {
+													"description": "Pass selected obj to command",
 													"type": "boolean"
 												}
 											},

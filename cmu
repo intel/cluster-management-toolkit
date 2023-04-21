@@ -8071,7 +8071,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					if len(w_command) == 0:
 						continue
 
-					w_waitforkeypress = deep_get_with_fallback(value, [DictPath("widget_args#waitforkeypress"), DictPath("waitforkeypress")], False)
+					w_waitforkeypress = deep_get(value, DictPath("widget_args#wait_for_keypress"), False)
 					if not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
 						containername = deep_get(w_ref, DictPath("name"), "")
 					if w_command == [ "<ephemeral>" ]:
@@ -9273,7 +9273,7 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
 				else:
 					sys.exit("widget_args: command requested incorrect data type; only str and list are valid")
 
-	waitforkeypress = deep_get_with_fallback(kwargs, [DictPath("wait_for_keypress"), DictPath("waitforkeypress")], False)
+	waitforkeypress = deep_get(kwargs, DictPath("wait_for_keypress"), False)
 
 	msg = deep_get(kwargs, DictPath("msg"), "")
 
