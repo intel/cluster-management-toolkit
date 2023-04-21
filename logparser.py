@@ -50,6 +50,11 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
+try:
+	import validators # type: ignore
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: you probably need to install python3-validators")
+
 from cmtpaths import HOMEDIR, PARSER_DIR
 
 from cmtlog import CMTLogType, CMTLog
@@ -556,22 +561,13 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 
 	# If the message starts with a timestamp without a leading IP-address, skip this
 	if not message.startswith("["):
-		# First match the IP-address; it is either IPv4 or IPv6
-		# DoS (And probably not entirely correct)
-		tmp = re.match(r"^(([a-f0-9:]+:+)+[a-f0-9.]+?[a-f0-9])( - - .*)", message)
+		# First try to check if it's an IP-address
+		# Safe
+		tmp = re.match(r"^([a-f0-9:][a-f0-9:.]+[a-f0-9])( - - .*)", message)
 		if tmp is not None:
-			ipaddress = tmp[1]
-			message = message[len(ipaddress):]
-		else:
-			# This actually makes sure that the IPv4 address is valid
-			# Safe
-			tmp = re.match(r"^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
-				         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
-				         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\."
-				         r"(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d))( - - .*)", message)
-			if tmp is not None:
+			if validators.ipv4(tmp[1]) or validators.ipv6(tmp[1]):
 				ipaddress = tmp[1]
-				message = tmp[6]
+				message = tmp[2]
 
 	# Short format
 	if len(ipaddress) > 0:
