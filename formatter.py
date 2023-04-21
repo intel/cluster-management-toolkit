@@ -741,7 +741,7 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 	# Safe
 	tag_named_regex = re.compile(r"^(.+?)(\s*>|\s*\?>|\s*$|\s+.*)")
 	# Safe
-	tag_close_regex = re.compile(r"^(\s*)(/>|\?>|-->|>)(.*)")
+	tag_close_regex = re.compile(r"^(\s*)(/>|\?>|-->|--!>|>)(.*)")
 	# Safe
 	remainder_regex = re.compile(r"^(\s*\S+?)(=|)(\"[^\"]+?\"|)(\s*$|\s*/>|\s*\?>|\s*-->|\s*>|\s+)(.*|)")
 
