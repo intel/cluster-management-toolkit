@@ -2764,10 +2764,11 @@ def logparser_initialised(parser: Optional[Parser] = None, message: str = "", fo
 	}
 	facility, severity, rmessage, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
 
-	if isinstance(rmessage, list) and themearray_len(cast(List[Union[ThemeRef, ThemeString]], rmessage)) > 16383:
-		remnants = [([ThemeString(message[0:16383], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
+	max_untruncated_len = 16384
+	if isinstance(rmessage, list) and themearray_len(cast(List[Union[ThemeRef, ThemeString]], rmessage)) > max_untruncated_len - 1:
+		remnants = [([ThemeString(message[0:max_untruncated_len - 1], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 		severity = LogLevel.ERR
-		rmessage = [ThemeString(f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)",
+		rmessage = [ThemeString(f"Line too long ({len(message)} bytes); truncated to {max_untruncated_len} bytes (Use line wrapping to see the entire message)",
 					ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 
 	return timestamp, facility, severity, rmessage, remnants
@@ -2881,10 +2882,11 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 	if rmessage is None:
 		rmessage = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 
-	if isinstance(rmessage, list) and themearray_len(cast(List[Union[ThemeRef, ThemeString]], rmessage)) > 16383:
-		remnants = [([ThemeString(message[0:16383], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
+	max_untruncated_len = 16384
+	if isinstance(rmessage, list) and themearray_len(cast(List[Union[ThemeRef, ThemeString]], rmessage)) > max_untruncated_len - 1:
+		remnants = [([ThemeString(message[0:max_untruncated_len - 1], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity)]
 		severity = LogLevel.ERR
-		rmessage = [ThemeString(f"Line too long ({len(message)} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)",
+		rmessage = [ThemeString(f"Line too long ({len(message)} bytes); truncated to {max_untruncated_len} bytes (Use line wrapping to see the entire message)",
 					ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 
 	return timestamp, facility, severity, rmessage, remnants, (lparser, uparser), parser

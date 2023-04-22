@@ -7802,11 +7802,12 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				if facility is not None:
 					message = facility + message
 				untruncated_len = themearray_len(message)
-				if wrap_lines or untruncated_len < 16384:
+				max_untruncated_len = 16384
+				if wrap_lines or untruncated_len < max_untruncated_len:
 					_lines = themearray_wrap_line(message, maxwidth, wrap_marker = (uip.borders or get_mousemask() != 0))
 				else:
-					_lines = [themearray_truncate(message, 16383)]
-					_lines.append([ThemeString(f"Line too long ({untruncated_len} bytes); truncated to 16384 bytes (Use line wrapping to see the entire message)",
+					_lines = [themearray_truncate(message, max_untruncated_len - 1)]
+					_lines.append([ThemeString(f"Line too long ({untruncated_len} bytes); truncated to {max_untruncated_len} bytes (Use line wrapping to see the entire message)",
 						       ThemeAttr("logview", f"severity_{loglevel_to_name(LogLevel.ERR).lower()}"))])
 
 				for i, _line in enumerate(_lines):

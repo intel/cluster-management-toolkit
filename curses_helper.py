@@ -1267,10 +1267,14 @@ def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, Theme
 	truncated_themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]] = []
 
 	# For the time being (until we implement proper iteration over ThemeArray elements) this is needed
-	if output_format == ThemeArray:
+	if isinstance(themearray, ThemeArray):
 		themearray = themearray.to_list()
 
-	for element in themearray:
+	# To be able to truncate a themearray that can contain themerefs we need to flatten the array
+	# (replace the themerefs with the corresponding themearray) first
+	themearray_flattened = themearray_flatten(themearray)
+
+	for element in themearray_flattened:
 		max_element_len = max_len - themearray_len(truncated_themearray)
 		if len(element) > max_element_len:
 			string = str(element)
@@ -1282,7 +1286,7 @@ def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, Theme
 			truncated_themearray.append(element)
 
 	if output_format == ThemeArray:
-		truncated_themearray = ThemeArray(truncated_themearray)
+		truncated_themearray = ThemeArray(cast(List[Union[ThemeRef, ThemeString]], truncated_themearray))
 
 	return truncated_themearray
 
