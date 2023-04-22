@@ -1,11 +1,14 @@
 kind: "ClusterPolicy"
 api_family: "kyverno.io"
-default_command: "clusterpolicy"
+default_command: "clusterpolicies.kyverno"
 command:
+- "clusterpolicy.kyverno"
 - "kyclusterpolicies"
 - "kyclusterpolicy"
 - "kyclusterpols"
 - "kyclusterpol"
+- "kyclrpols"
+- "kyclrpol"
 listview:
   name: "Cluster Policies"
   group: "Kyverno"
@@ -24,7 +27,7 @@ listview:
       type: "str"
       default: "Audit"
 infoview:
-  name: "Cluster Policy Info"
+  name: "Cluster Policy Info (Kyverno)"
   infopad:
     row_indexes:
       Normal:
