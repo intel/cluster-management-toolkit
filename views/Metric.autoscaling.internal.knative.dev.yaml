@@ -1,11 +1,14 @@
 kind: "Metric"
 api_family: "autoscaling.internal.knative.dev"
-default_command: "metric.autoscaling.internal.knative.dev"
+default_command: "metrics.autoscaling.internal.knative.dev"
 command:
+- "metric.autoscaling.internal.knative.dev"
 - "metrics.knative"
 - "metric.knative"
+- "knmetrics"
+- "knmetric"
 listview:
-  name: "Metric (Knative)"
+  name: "Metrics"
   group: "Knative"
   field_indexes:
     Normal:
@@ -56,7 +59,7 @@ listview:
               - context: "main"
                 type: "status_not_ok"
 infoview:
-  name: "Metric Info (Knative)"
+  name: "Metric Info"
   infopad:
     row_indexes:
       Normal:

@@ -66,35 +66,21 @@ Global:
   # indent: 2
 
   # The default view to use when calling cmu without
-  # arguments; to get the selector either use "Selector"
+  # arguments; to get the selector either use "selector"
   # or comment this out
   # defaultview: ""
 
-Selector:
-  # Hide unavailable APIs in the selector menu
-  # the list of available APIs can be updated by accessing the selection
-  # menu using F3 instead of F2
-  # If this option is set to false, unavailable APIs will be listed
-  # but dimmed out and unselectable instead
-  # hide_unavailable_apis: true
-  #
-  # The primary sort column (valid options: name, family)
-  # sortcolumn: "family"
-  #
-  # Categorise the views
-  # categorise: true
-
-# Networking:
-# These settings are for the system, not internal to Kubernetes.
-# They are used for communicating with other computers outside the context
-# of Kubernetes network, for instance when fetching updates.
 Network:
+  # These settings are for the system, not internal to Kubernetes.
+  # They are used for communicating with other computers outside the context
+  # of Kubernetes network, for instance when fetching updates.
   http_proxy:
   https_proxy:
   no_proxy:
+
   # Adding a host to this list enables use of less secure protocols
-  # when connecting to that host; all known flawed protocols
-  # remains disabled though.
+  # when connecting to that host; all known flawed protocols will still
+  # remain disabled though.
   # This might be necessary for compatibility with older systems.
   # If ["ALL"] (uppercase only) is specified, relaxed SSH is used for all hosts
   relaxed_ssh_hosts: []
@@ -138,14 +124,25 @@ Ansible:
   # - "/opt/cmt/playbooks"
   # - ...
 
-# Settings to use when configuring docker
-Docker:
-  # insecure_registries:
-
 Containerd:
   # Registry mirrors for containerd; format:
   # [ mirror, endpoint ]
   # registry_mirrors:
+
+Debug:
+  # The image to use when creating ephemeral containers
+  # Good choices are, for instance, busybox (simple)
+  # or debian (powerful)
+  # ephemeral_image: "busybox"
+
+  # The image to use when debugging networking issues
+  # Good choices are, for instance, dnsutils (simple)
+  # or debian (powerful)
+  # network_image: "registry.k8s.io/e2e-test-images/jessie-dnsutils:1.3"
+
+Docker:
+  # Settings to use when configuring docker
+  # insecure_registries:
 
 Mouse:
   # Enable or disable mouse support by default (can still be toggled on/off in the program as needed)
@@ -168,7 +165,81 @@ Mouse:
   # - 0b1000000000000000000000
   # scrolldown: 0b1000000000000000000000000000
 
-Nodes:
+Packages:
+  # Use this section to specify preferred versions of packages to install
+  # using playbooks; having the information here is preferred over hardcoding
+  # the versions in the playbooks.
+  # - "<package name>":
+  #     suffix: "-<suffix>"
+  #     version: "<debian package version>"
+
+# Views prefixed with "__" are artificial views; they do not correspond
+# to Kubernetes APIs
+__Selector:
+  # Hide unavailable APIs in the selector menu
+  # the list of available APIs can be updated by accessing the selection
+  # menu using F3 instead of F2
+  # If this option is set to false, unavailable APIs will be listed
+  # but dimmed out and unselectable instead
+  # hide_unavailable_apis: true
+  #
+  # The primary sort column (valid options: name, family)
+  # sortcolumn: "family"
+  #
+  # Categorise the views
+  # categorise: true
+
+Endpoints:
+  # By default all addresses and ports are joined
+  # into two categories; ready and not ready.
+  # When there are a lot of services running on one node,
+  # or multiple nodes supporting one service,
+  # or even multiple nodes all running multiple services,
+  # this can result in extremely long lines.
+  #
+  # Using this option you can split the subsets into multiple entries.
+  # Valid options:
+  # "None" -- No expansion occurs (default)
+  # "Address" -- Each address gets its own entry
+  # "Port" -- Each service gets its own entry
+  # "Both" -- Each adress/service combination gets its own entry
+  # expand_subsets: "None"
+
+Event:
+  # For the "regarding" field this specifies whether the format should be along the lines of
+  # mixed: "<kind>.<api_family>/<source>" (for core APIs this is equivalent to "kind") (default)
+  # kind: "<kind>/<source>"
+  # or
+  # skip: "<source>"
+  # kind_format: "mixed"
+
+__Inventory:
+  # Mountpoints to skip in the list of mounts for a host;
+  # virtual file systems such as /proc, /sys, etc are always skipped.
+  # You can use * as a prefix or suffix (but not infix) to do partial matches
+  # mountpoint_skiplist:
+  # - "/boot/efi"
+  # - "/var/lib/origin/*"
+  # - "/run/*"
+  # - "*@docker*"
+
+  # Devices to skip in the list of mounts for a host; devices that have no
+  # corresponding ansible_device are skipped unless they are NFS mounts
+  # (support other network filesystems will be added later)
+  # You can use * as a prefix or suffix or both to do partial matches,
+  # but infix ("a*b") is not supported
+  # device_skiplist:
+  # - "loop*"
+
+  # Pinging the hosts to get their status is done using ansible
+  # and can thus be a slow operation (roughly 3 seconds!);
+  # configure the ping behaviour using this option:
+  # "Never" -- Do not ping nodes
+  # "Lazy" -- Only ping nodes on refresh
+  # "Always" -- Ping nodes on start and on refresh
+  # ping_hosts: "Lazy"
+
+Node:
   # If you *really* like to play Russian roulette
   # with five bullets in the chamber, you can disable
   # strict host key checking. This makes ssh accept
@@ -179,7 +250,7 @@ Nodes:
   # For test setups it can, however, be convenient.
   # disablestricthostkeychecking: false
 
-Pods:
+Pod:
   # For the "Controller" field this specifies whether the format should be along the lines of
   # mixed: "<kind>.<api_family>/<source>" (for core APIs this is equivalent to "kind") (default)
   # kind: "<kind>/<source>"
@@ -287,72 +358,3 @@ Pods:
   # - "{HOME}/local_parsers"
   # - "/opt/cmt/parsers"
   # - ...
-
-Debug:
-  # The image to use when creating ephemeral containers
-  # Good choices are, for instance, busybox (simple)
-  # or debian (powerful)
-  # ephemeral_image: "busybox"
-
-  # The image to use when debugging networking issues
-  # Good choices are, for instance, dnsutils (simple)
-  # or debian (powerful)
-  # network_image: "registry.k8s.io/e2e-test-images/jessie-dnsutils:1.3"
-
-Inventory:
-  # Mountpoints to skip in the list of mounts for a host;
-  # virtual file systems such as /proc, /sys, etc are always skipped.
-  # You can use * as a prefix or suffix (but not infix) to do partial matches
-  # mountpoint_skiplist:
-  # - "/boot/efi"
-  # - "/var/lib/origin/*"
-  # - "/run/*"
-  # - "*@docker*"
-
-  # Devices to skip in the list of mounts for a host; devices that have no
-  # corresponding ansible_device are skipped unless they are NFS mounts
-  # (support other network filesystems will be added later)
-  # You can use * as a prefix or suffix or both to do partial matches,
-  # but infix ("a*b") is not supported
-  # device_skiplist:
-  # - "loop*"
-
-  # Pinging the hosts to get their status is done using ansible
-  # and can thus be a slow operation (roughly 3 seconds!);
-  # configure the ping behaviour using this option:
-  # "Never" -- Do not ping nodes
-  # "Lazy" -- Only ping nodes on refresh
-  # "Always" -- Ping nodes on start and on refresh
-  # ping_hosts: "Lazy"
-
-Endpoints:
-  # By default all addresses and ports are joined
-  # into two categories; ready and not ready.
-  # When there are a lot of services running on one node,
-  # or multiple nodes supporting one service,
-  # or even multiple nodes all running multiple services,
-  # this can result in extremely long lines.
-  #
-  # Using this option you can split the subsets into multiple entries.
-  # Valid options:
-  # "None" -- No expansion occurs (default)
-  # "Address" -- Each address gets its own entry
-  # "Port" -- Each service gets its own entry
-  # "Both" -- Each adress/service combination gets its own entry
-  # expand_subsets: "None"
-
-# Use this section to specify preferred versions of packages to install
-# using playbooks; having the information here is preferred over hardcoding
-# the versions in the playbooks.
-Packages:
-# - "<package name>":
-#     suffix: "-<suffix>"
-#     version: "<debian package version>"
-
-Events:
-  # For the "regarding" field this specifies whether the format should be along the lines of
-  # mixed: "<kind>.<api_family>/<source>" (for core APIs this is equivalent to "kind") (default)
-  # kind: "<kind>/<source>"
-  # or
-  # skip: "<source>"
-  # kind_format: "mixed"

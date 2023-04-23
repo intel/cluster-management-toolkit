@@ -247,20 +247,20 @@ def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = F
 
 	ref = dictionary
 	pathsplit = path.split("#")
-	for i in range(0, len(pathsplit)):
-		if pathsplit[i] in ref:
-			if i == len(pathsplit) - 1:
-				ref[pathsplit[i]] = value
-				break
 
-			ref = deep_get(ref, DictPath(pathsplit[i]))
-			if ref is None or not isinstance(ref, dict):
-				raise ValueError(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
-		elif create_path == True:
-			if i == len(pathsplit) - 1:
-				ref[pathsplit[i]] = value
-			else:
+	for i in range(0, len(pathsplit)):
+		if ref is None or not isinstance(ref, dict):
+			raise ValueError(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
+
+		if pathsplit[i] not in ref or ref[pathsplit[i]] is None:
+			if create_path:
 				ref[pathsplit[i]] = {}
+
+		if i == len(pathsplit) - 1:
+			ref[pathsplit[i]] = value
+			break
+
+		ref = deep_get(ref, DictPath(pathsplit[i]))
 
 def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) -> Any:
 	"""

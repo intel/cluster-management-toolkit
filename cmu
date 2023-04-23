@@ -588,7 +588,7 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Di
 	status = 200
 
 	# Do we want to ping the hosts?
-	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("Context#ping_hosts"), "Lazy")
+	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("__Context#ping_hosts"), "Lazy")
 
 	context_list = kh.list_contexts()
 
@@ -1096,8 +1096,8 @@ def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: st
 def process_value(field_name: str, value: Any, vtype: str, view: str, field_index: str, action: str,
 		  formatter: str, replace_quotes: str, _regex: str) -> Union[int, float, str, List[str], datetime, None]:
 	override_kind = deep_get_with_fallback(cmtlib.cmtconfig, [
-				DictPath(f"{view}#kind_format_{field_index}"),
-				DictPath(f"{view}#kind_format"),
+				DictPath(f"Views#{view}#kind_format_{field_index}"),
+				DictPath(f"Views#{view}#kind_format"),
 				DictPath(f"Global#kind_format_{field_index}"),
 				DictPath("Global#kind_format")], "mixed")
 
@@ -1142,8 +1142,8 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 			raise ValueError(f"Field {field_name}: type({value}) is {vtype}; for type {vtype} pathtype must be a multi-element type")
 		_values = []
 		override_kind = deep_get_with_fallback(cmtlib.cmtconfig,
-						       [DictPath(f"{view}#kind_format_{field_index}"),
-						        DictPath(f"{view}#kind_format"),
+						       [DictPath(f"Views#{view}#kind_format_{field_index}"),
+						        DictPath(f"Views#{view}#kind_format"),
 							DictPath(f"Global#kind_format_{field_index}"),
 							DictPath("Global#kind_format")], "mixed")
 		for i in range(0, len(value)):
@@ -1927,8 +1927,8 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							tmp = deep_get_with_fallback(obj, path[i], default = _default, fallback_on_empty = fallback_on_empty)
 
 						if vtype == "api_group":
-							override_kind = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath(f"{view}#kind_format_{field_index}"),
-														  DictPath(f"{view}#kind_format"),
+							override_kind = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath(f"Views#{view}#kind_format_{field_index}"),
+														  DictPath(f"Views#{view}#kind_format"),
 														  DictPath(f"Global#kind_format_{field_index}"),
 														  DictPath("Global#kind_format")], "mixed")
 							if override_kind == "skip" or override_kind == "mixed" and "." not in tmp:
@@ -2226,9 +2226,9 @@ def listgetter_ansible_volumes(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], s
 			continue
 		device = os.path.basename(device)
 
-		if check_matchlist(mountpoint, deep_get(cmtlib.cmtconfig, DictPath("Inventory#mountpoint_skiplist"), ["/boot/efi", "/var/lib/origin/*", "/run/*", "*@docker*"])):
+		if check_matchlist(mountpoint, deep_get(cmtlib.cmtconfig, DictPath("__Inventory#mountpoint_skiplist"), ["/boot/efi", "/var/lib/origin/*", "/run/*", "*@docker*"])):
 			continue
-		if check_matchlist(device, deep_get(cmtlib.cmtconfig, DictPath("Inventory#device_skiplist"), ["loop*"])):
+		if check_matchlist(device, deep_get(cmtlib.cmtconfig, DictPath("__Inventory#device_skiplist"), ["loop*"])):
 			continue
 
 		model = get_device_model(obj, device)
@@ -3379,16 +3379,16 @@ def decode_value(value):
 			vtype = "base64-binary"
 
 			try:
-				if len(decoded) >= 2 and decoded[0:1] == [0x1f, 0x8b]:
+				if len(decoded) >= 2 and decoded[0:2] == [0x1f, 0x8b]:
 					vtype = "gzip"
 					value = decoded
-				elif len(decoded) >= 6 and decoded[0:5] == [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x0]:
+				elif len(decoded) >= 6 and decoded[0:6] == [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x0]:
 					vtype = "xz"
 					value = decoded
-				elif len(decoded) >= 3 and decoded[0:2] == [0x42, 0x5a, 0x68]:
+				elif len(decoded) >= 3 and decoded[0:3] == [0x42, 0x5a, 0x68]:
 					vtype = "bz2"
 					value = decoded
-				elif len(decoded) >= 3 and decoded[0:2] == [0x51, 0x46, 0x49]:
+				elif len(decoded) >= 3 and decoded[0:3] == [0x51, 0x46, 0x49]:
 					vtype = "qcow"
 					value = decoded
 			except binascii.Error:
@@ -3646,7 +3646,7 @@ def get_pod_resource_list(obj, **kwargs):
 			"age": age,
 		})
 
-	if "node" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+	if "node" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 		kind = ("Node", "")
 		rtype = resource_kind_to_rtype(kind)
 		name = deep_get(obj, DictPath("spec#nodeName"))
@@ -3687,15 +3687,15 @@ def get_pod_resource_list(obj, **kwargs):
 		owr_name = deep_get(owr, DictPath("name"), "")
 		is_controller = deep_get(owr, DictPath("controller"), False)
 		if is_controller == True:
-			if "controller" in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+			if "controller" in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 				continue
 			rtype = "[controller]"
 		elif owr_kind == ("CronJob", "batch"):
-			if "cronjob" in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+			if "cronjob" in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 				continue
 			rtype = "[cronjob]"
 		else:
-			if "owner_reference" in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+			if "owner_reference" in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 				continue
 			rtype = "[owner_reference]"
 
@@ -3736,7 +3736,7 @@ def get_pod_resource_list(obj, **kwargs):
 			"age": -1,
 		})
 
-	if "persistent_volume_claim" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+	if "persistent_volume_claim" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 		for volume in deep_get(obj, DictPath("spec#volumes"), []):
 			if deep_get(volume, DictPath("persistentVolumeClaim")) is None:
 				continue
@@ -3768,7 +3768,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "service_account" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("spec#serviceAccountName")) is not None:
+	if "service_account" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []) and deep_get(obj, DictPath("spec#serviceAccountName")) is not None:
 		kind = ("ServiceAccount", "")
 		rtype = resource_kind_to_rtype(kind)
 
@@ -3792,7 +3792,7 @@ def get_pod_resource_list(obj, **kwargs):
 	for vol in deep_get(obj, DictPath("spec#volumes"), []):
 		status = ""
 
-		if deep_get(vol, DictPath("secret")) is not None and "secret" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+		if deep_get(vol, DictPath("secret")) is not None and "secret" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 			kind = ("Secret", "")
 			rtype = resource_kind_to_rtype(kind)
 			secret_name = deep_get(vol, DictPath("secret#secretName"))
@@ -3818,7 +3818,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-		if deep_get(vol, DictPath("configMap")) is not None and "config_map" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+		if deep_get(vol, DictPath("configMap")) is not None and "config_map" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 			kind = ("ConfigMap", "")
 			rtype = resource_kind_to_rtype(kind)
 			cm_name = deep_get(vol, DictPath("configMap#name"))
@@ -3848,7 +3848,7 @@ def get_pod_resource_list(obj, **kwargs):
 			})
 
 	for vol in deep_get(obj, DictPath("spec#imagePullSecrets"), []):
-		if "secret" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+		if "secret" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 			kind = ("Secret", "")
 			rtype = "[image_pull_secret]"
 			secret_name = deep_get(vol, DictPath("name"))
@@ -3868,7 +3868,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "event" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+	if "event" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 		#kind = ("Event", "events.k8s.io")
 		kind = ("Event", "")
 		rtype = resource_kind_to_rtype(kind)
@@ -3907,7 +3907,7 @@ def get_pod_resource_list(obj, **kwargs):
 					"age": seen,
 				})
 
-	if "pod_disruption_budget" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+	if "pod_disruption_budget" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 		# XXX: Are there are other means of specifying what pod to apply the PDB to than this?
 		if "app" in deep_get(obj, DictPath("metadata#labels"), {}):
 			kind = ("PodDisruptionBudget", "policy")
@@ -3932,7 +3932,7 @@ def get_pod_resource_list(obj, **kwargs):
 					"age": -1,
 				})
 
-	if "pod_metrics" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+	if "pod_metrics" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 		kind = ("PodMetrics", "metrics.k8s.io")
 		podmetrics = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
 		if podmetrics is not None:
@@ -3953,7 +3953,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "antrea_agent" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-agent":
+	if "antrea_agent" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-agent":
 		# OK, this pod is an antrea-agent, so we should look for one that matches it
 		kind = ("AntreaAgentInfo", "crd.antrea.io")
 		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
@@ -3987,7 +3987,7 @@ def get_pod_resource_list(obj, **kwargs):
 				})
 				break
 
-	if "antrea_controller" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-controller":
+	if "antrea_controller" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-controller":
 		# OK, this pod is an antrea-agent, so we should look for one that matches it
 		kind = ("AntreaControllerInfo", "crd.antrea.io")
 		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
@@ -4020,7 +4020,7 @@ def get_pod_resource_list(obj, **kwargs):
 				})
 				break
 
-	if "cilium_endpoint" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+	if "cilium_endpoint" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 		# Check if there's a matching cilium endpoint
 		kind = ("CiliumEndpoint", "cilium.io")
 		ref = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
@@ -4042,7 +4042,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "service" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+	if "service" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 		# Find service(s) that has a selector that points to this pod
 		kind = ("Service", "")
 		rtype = resource_kind_to_rtype(kind)
@@ -4071,7 +4071,7 @@ def get_pod_resource_list(obj, **kwargs):
 					"age": -1,
 				})
 
-	if "runtimeclass" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+	if "runtimeclass" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 		kind = ("RuntimeClass", "node.k8s.io")
 		name = deep_get(obj, DictPath("spec#runtimeClassName"))
 		ref = kh.get_ref_by_kind_name_namespace(kind, name, "")
@@ -4092,7 +4092,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "resourceclaim" not in deep_get(cmtlib.cmtconfig, DictPath("Pods#filter_resources"), []):
+	if "resourceclaim" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 		kind = ("ResourceClaim", "resource.k8s.io")
 		rtype = resource_kind_to_rtype(kind)
 
@@ -4152,7 +4152,7 @@ def get_inventory_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, 
 		inventory_dict["all"]["hosts"][host]["status"] = "UNKNOWN"
 
 	# Do we want to ping the hosts?
-	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("Inventory#ping_hosts"), "Always")
+	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("__Inventory#ping_hosts"), "Always")
 
 	async_cookie = None
 
@@ -5090,10 +5090,11 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 	field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, DictPath(f"{view}#fields")), denylist = denylist)
 	uip = UIProps(stdscr)
 
-	windowheader = view
 	viewref = views[view]
-
 	kind = viewref["kind"]
+
+	windowheader = view
+
 	if kind is None or kind[0].startswith("__"):
 		is_namespaced = False
 	else:
@@ -7323,15 +7324,19 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	field_denylist = deep_get(viewref, DictPath("field_denylist"), [])
 	field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, DictPath("fields")), denylist = field_denylist)
 
-	# If no window header has been specified that overrides the default, just use the view name with " Info" tacked on at the end
-	# XXX: The fallback should be removed once we use view files for all info views, since the title is mandatory there
 	windowheader = deep_get(viewref, DictPath("windowheader"), f"{view[0]} Info")
+
+	# These are used for anything that uses ResourceViewer
 	if title is not None:
 		windowheader = title
 	elif "title" in kwargs:
 		windowheader = deep_get(kwargs, DictPath("title"))
 	elif "title_path" in kwargs:
 		windowheader = deep_get(obj, DictPath(title_path), windowheader)
+	else:
+		kind = deep_get(viewref, DictPath("kind"))
+		if kind is not None and len(kind[1]) > 0:
+			windowheader = f"{windowheader} ({kind[1]})"
 
 	sortorder_reverse = deep_get(viewref, DictPath("sortorder_reverse"), False)
 	reversible = deep_get(viewref, DictPath("reversible"), True)
@@ -8286,19 +8291,19 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 	# Number of lines of log to show by default
 	if override_tail_lines is None:
-		override_tail_lines = deep_get(cmtlib.cmtconfig, DictPath("Pods#logsize"), default_tail_lines)
+		override_tail_lines = deep_get(cmtlib.cmtconfig, DictPath("Pod#logsize"), default_tail_lines)
 
 	tail_lines = override_tail_lines
 
 	uip.continuous_log = False
-	merge_repeats = deep_get(cmtlib.cmtconfig, DictPath("Pods#merge_repeated_messages"), False)
+	merge_repeats = deep_get(cmtlib.cmtconfig, DictPath("Pod#merge_repeated_messages"), False)
 	saved_merge_repeats = merge_repeats
 	raw_logs = False
-	tmp_log_level = deep_get(cmtlib.cmtconfig, DictPath("Pods#loglevel"), "Info")
+	tmp_log_level = deep_get(cmtlib.cmtconfig, DictPath("Pod#loglevel"), "Info")
 	log_level = name_to_loglevel(tmp_log_level)
-	show_borders = deep_get(cmtlib.cmtconfig, DictPath("Pods#show_borders"), True)
+	show_borders = deep_get(cmtlib.cmtconfig, DictPath("Pod#show_borders"), True)
 	uip.toggle_borders(show_borders)
-	show_timestamps = deep_get(cmtlib.cmtconfig, DictPath("Pods#show_timestamps"), True)
+	show_timestamps = deep_get(cmtlib.cmtconfig, DictPath("Pod#show_timestamps"), True)
 	uip.toggle_timestamps(show_timestamps)
 	# Currently not working properly
 	compact_timestamps = False
@@ -8308,7 +8313,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 	highlight_new_dates = False
 	wrap_lines = False
 	# Show severity as text
-	severity_prefix = deep_get(cmtlib.cmtconfig, DictPath("Pods#severity_prefix"), [])
+	severity_prefix = deep_get(cmtlib.cmtconfig, DictPath("Pod#severity_prefix"), [])
 	# Backwards compatibility
 	if type(severity_prefix) == bool:
 		if severity_prefix == False:
@@ -8318,12 +8323,12 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 	# This decides whether or not compound log messages,
 	# such as Python dicts and JSON, should be expanded
-	fold_msg = deep_get(cmtlib.cmtconfig, DictPath("Pods#fold_msg"), True)
+	fold_msg = deep_get(cmtlib.cmtconfig, DictPath("Pod#fold_msg"), True)
 	saved_fold_msg = fold_msg
 
 	# This decides whether or not to show the facility,
 	# and if so how it is to be displayed
-	show_facility = deep_get(cmtlib.cmtconfig, DictPath("Pods#show_facility"), "Full")
+	show_facility = deep_get(cmtlib.cmtconfig, DictPath("Pod#show_facility"), "Full")
 	override_parser = None
 	_parser = None
 
@@ -10887,9 +10892,9 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 		force_refresh_apis = False
 		refresh_apis = True
 
-	hide_unavailable = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath("Selector#hide_unavailable_apis"), DictPath("Global#hide_unavailable_apis")], True)
-	categorise = deep_get(cmtlib.cmtconfig, DictPath("Selector#categorise"), True)
-	sortcolumn = deep_get(cmtlib.cmtconfig, DictPath("Selector#sortcolumn"), "family")
+	hide_unavailable = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath("__Selector#hide_unavailable_apis"), DictPath("Global#hide_unavailable_apis")], True)
+	categorise = deep_get(cmtlib.cmtconfig, DictPath("__Selector#categorise"), True)
+	sortcolumn = deep_get(cmtlib.cmtconfig, DictPath("__Selector#sortcolumn"), "family")
 
 	if sortcolumn == "family":
 		if categorise == True:
@@ -10919,7 +10924,7 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 	order = []
 
 	# Find the correct sort order
-	for view_name, viewref in views.items():
+	for viewkey, viewref in views.items():
 		kind = None
 		if deep_get(viewref, DictPath("skip"), False) == True:
 			continue
@@ -10944,6 +10949,8 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 			# This should ensure that all deprecated groups end up last, but still sorted
 			group = "ZZZZZ" + group
 
+		view_name = deep_get(viewref, DictPath("windowheader"))
+
 		if kind is not None:
 			api_group = kind[1]
 		else:
@@ -10957,7 +10964,11 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 	currentgroup = ""
 	for item in natsorted(order, key = itemgetter(sortkey1, sortkey2)):
 		view = item[0]
-		viewref = views[view]
+		viewkey = view
+		api_group = item[2]
+		if len(api_group) > 0:
+			viewkey = f"{view} ({api_group})"
+		viewref = views[viewkey]
 
 		# This allows us to override the sort order
 		group = deep_get(viewref, DictPath("group"), "")
@@ -10982,14 +10993,14 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 				"lineattrs": lineattrs,
 				"columns": [[ThemeString(f"{view}", ThemeAttr("windowwidget", "default"))],
 					    [ThemeString("", ThemeAttr("windowwidget", "dim"))]],
-				"retval": view,
+				"retval": viewkey,
 			})
 		else:
 			items.append({
 				"lineattrs": lineattrs,
 				"columns": [[ThemeString(f"{view}", ThemeAttr("windowwidget", "default"))],
 					    [ThemeString(f"<{api_group}>", ThemeAttr("windowwidget", "dim"))]],
-				"retval": view,
+				"retval": viewkey,
 			})
 
 	return items
@@ -11004,16 +11015,16 @@ def selectwindow(uip: UIProps, refresh_apis = False) -> Retval:
 
 	selection = None
 
+	categorise = deep_get(cmtlib.cmtconfig, DictPath("__Selector#categorise"), True)
+
 	while selection is None:
 		extra_args = { "KEY_F6": True }
 		tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items, title = title, preselection = defaultview, **extra_args)
 		if tmpselection is not None:
 			if type(tmpselection) == int and tmpselection < 0:
 				if tmpselection == -curses.KEY_F6:
-					if deep_get(cmtlib.cmtconfig, DictPath("Selector")) is None:
-						deep_set(cmtlib.cmtconfig, DictPath("Selector"), {})
-					categorise = not deep_get(cmtlib.cmtconfig, DictPath("Selector#categorise"), True)
-					deep_set(cmtlib.cmtconfig, DictPath("Selector#categorise"), categorise, create_path = True)
+					categorise = not categorise
+					deep_set(cmtlib.cmtconfig, DictPath("__Selector#categorise"), categorise, create_path = True)
 					items = format_selection_list(uip, refresh_apis)
 					uip.refresh_all()
 					continue
@@ -11216,6 +11227,8 @@ listgetter_async_allowlist = {
 # These views are always defined internally and cannot be disabled
 views_special = {
 	"Selector": {
+		"windowheader": "Selector",
+		"kind": ("__Selector", ""),
 		"windowheader": "",
 		"commandline": ["selector"],
 		"viewfunc": selectorloop,
@@ -11224,6 +11237,8 @@ views_special = {
 		"is_taggable": False,
 	},
 	"Cluster Overview": {
+		"windowheader": "Cluster Overview",
+		"kind": ("__ClusterOverview", ""),
 		"commandline": ["clusteroverview", "clusterinfo", "overview", "co", "ci"],
 		"group": "Administration",
 		"viewfunc": clusteroverviewloop,
@@ -11237,6 +11252,8 @@ views_special = {
 		"check_availability": is_cluster_reachable,
 	},
 	"Container Network Interface Info": {
+		"windowheader": "Container Network Interface Info",
+		"kind": ("__ContainerNetworkInterface", ""),
 		"commandline": ["cni"],
 		"group": "Administration",
 		"viewfunc": cniloop,
@@ -11432,9 +11449,12 @@ def populate_views(force_refresh: bool = False) -> None:
 			field_indexes = {}
 			_indexes = deep_get(d, DictPath("listview#field_indexes"), {})
 			confkind = kind
+			viewname = name
 			if len(api_family) > 0:
 				confkind = f"{confkind}.{api_family}"
-			custom_index = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath(f"{confkind}#listview#field_indexes#Custom"), DictPath(f"{name}#listview#field_indexes#Custom")], [])
+				viewname = f"{viewname} ({api_family})"
+
+			custom_index = deep_get(cmtlib.cmtconfig, DictPath(f"Views#{confkind}#listview#field_indexes#Custom"), [])
 			if len(custom_index) > 0:
 				_indexes["Custom"] = custom_index
 
@@ -11445,11 +11465,11 @@ def populate_views(force_refresh: bool = False) -> None:
 
 			# Allow for overriding the default sortcolumn and sortorder_reverse
 			for field_index, data in field_indexes.items():
-				if field_index in deep_get_with_fallback(cmtlib.cmtconfig, [DictPath(f"{confkind}#listview#field_indexes"), DictPath(f"{name}#listview#field_indexes")], {}):
+				if field_index in deep_get(cmtlib.cmtconfig, DictPath(f"Views#{confkind}#listview#field_indexes"), {}):
 					default_field_index_sortcolumn = deep_get(data, DictPath("sortcolumn"), sortcolumn)
 					default_field_index_sortorder_reverse = deep_get(data, DictPath("sortorder_reverse"), sortorder_reverse)
-					field_index_sortcolumn = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath(f"{confkind}#listview#field_indexes#{field_index}#sortcolumn"), DictPath(f"{name}#listview#field_indexes#{field_index}#sortcolumn")], default_field_index_sortcolumn)
-					field_index_sortorder_reverse = deep_get_with_fallback(cmtlib.cmtconfig, [DictPath(f"{confkind}#listview#field_indexes#{field_index}#sortorder_reverse"), DictPath(f"{name}#listview#field_indexes#{field_index}#sortorder_reverse")], default_field_index_sortorder_reverse)
+					field_index_sortcolumn = deep_get(cmtlib.cmtconfig, DictPath(f"Views#{confkind}#listview#field_indexes#{field_index}#sortcolumn"), default_field_index_sortcolumn)
+					field_index_sortorder_reverse = deep_get(cmtlib.cmtconfig, DictPath(f"Views#{confkind}#listview#field_indexes#{field_index}#sortorder_reverse"), default_field_index_sortorder_reverse)
 					field_indexes[field_index]["sortcolumn"] = field_index_sortcolumn
 					field_indexes[field_index]["sortorder_reverse"] = field_index_sortorder_reverse
 
@@ -11460,9 +11480,9 @@ def populate_views(force_refresh: bool = False) -> None:
 					 f"  group: {group}\n"
 					  "Aborting.")
 
-			if name in views:
-				conflicting_kind = deep_get(views, DictPath(f"{name}#kind"))
-				sys.exit(f"Error when processing view-file {view_file} for kind: {(kind, api_family)}; a view named {name} already exists (for the kind: {conflicting_kind})")
+			if viewname in views:
+				conflicting_kind = deep_get(views[viewname], DictPath("kind"))
+				sys.exit(f"Error when processing view-file {view_file} for kind: {(kind, api_family)}; a view named {viewname} already exists (for the kind: {conflicting_kind})")
 
 			# This complexity is required because if the key is missing we want to use the default,
 			# but if the key is explicitly None we do not want any fallback
@@ -11503,6 +11523,7 @@ def populate_views(force_refresh: bool = False) -> None:
 			listview_entry = {
 				"kind": (kind, api_family),
 				"commandline": command,
+				"windowheader": name,
 				"group": group,
 				"check_availability": check_availability,
 				"field_indexes": field_indexes,
@@ -11581,7 +11602,7 @@ def populate_views(force_refresh: bool = False) -> None:
 
 			# Add the new view
 			has_listview = True
-			views[name] = listview_entry
+			views[viewname] = listview_entry
 
 		infoview_entry = None
 
@@ -11658,9 +11679,7 @@ def populate_views(force_refresh: bool = False) -> None:
 			confkind = kind
 			if len(api_family) > 0:
 				confkind = f"{confkind}.{api_family}"
-			custom_index = deep_get(cmtlib.cmtconfig, DictPath(f"{confkind}#infoview#listpad#field_indexes#Custom"), [])
-			if len(custom_index) == 0:
-				custom_index = deep_get(cmtlib.cmtconfig, DictPath(f"{name}#infoview#listpad#field_indexes#Custom"), [])
+			custom_index = deep_get(cmtlib.cmtconfig, DictPath(f"Views#{confkind}#infoview#listpad#field_indexes#Custom"), [])
 			if len(custom_index) > 0:
 				_indexes["Custom"] = custom_index
 
@@ -11674,6 +11693,7 @@ def populate_views(force_refresh: bool = False) -> None:
 					listpad_field_indexes = copy.deepcopy(_indexes)
 
 			infoview_entry = {
+				"kind": (kind, api_family),
 				"windowheader": name,
 				"field_indexes": listpad_field_indexes,
 				"fields": listpad_fields,
@@ -12010,7 +12030,7 @@ def customise_listviews() -> None:
 			continue
 
 		# OK, we've now (hopefully) skipped all views that do not have a list view
-		fields: List[str] = deep_get(cmtlib.cmtconfig, DictPath(f"{view}#fields"), [])
+		fields: List[str] = deep_get(cmtlib.cmtconfig, DictPath(f"Views#{view}#fields"), [])
 		if len(fields) == 0:
 			continue
 
@@ -12042,18 +12062,15 @@ def customise_listviews() -> None:
 		viewref["fields_custom"] = list(custom_fields)
 
 		# Next up it is time for the field denylist
-		if "denylist" in deep_get(cmtlib.cmtconfig, DictPath(f"{view}"), {}):
-			denylist = deep_get(cmtlib.cmtconfig, DictPath(f"{view}#fields"), [])
+		if "denylist" in deep_get(cmtlib.cmtconfig, DictPath(f"Views#{view}"), {}):
+			denylist = deep_get(cmtlib.cmtconfig, DictPath(f"Views#{view}#fields"), [])
 			viewref["field_denylist"] = denylist
 
 	# As a special case, the configuration option "Inventory#ping_hosts"
 	# modifies the denylist, but *only* if the field denylist is unset
-	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("Inventory#ping_hosts"), "Lazy")
-	inv_name = "Inventory"
-	if inv_name not in views:
-		inv_name = "*Inventory"
-	if ping_hosts == "Never" and "field_denylist" not in views[inv_name]:
-		views[inv_name]["field_denylist"] = ["status"]
+	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("__Inventory#ping_hosts"), "Lazy")
+	if ping_hosts == "Never" and "field_denylist" not in viewref:
+		viewref["field_denylist"] = ["status"]
 
 def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 	global initial_name # pylint: disable=global-statement
@@ -12361,7 +12378,7 @@ def main() -> None:
 		ansible_user = getuser()
 	ansible_configuration["ansible_user"] = ansible_user
 	ansible_configuration["ansible_password"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#ansible_password"))
-	ansible_configuration["disable_strict_host_key_checking"] = deep_get(cmtlib.cmtconfig, DictPath("Nodes#disablestricthostkeychecking"), False)
+	ansible_configuration["disable_strict_host_key_checking"] = deep_get(cmtlib.cmtconfig, DictPath("Node#disablestricthostkeychecking"), False)
 	ansible_configuration["save_logs"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#save_logs"), True)
 
 	command, options, args = parse_commandline(about.UI_PROGRAM_NAME, about.UI_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,

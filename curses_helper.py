@@ -1549,7 +1549,7 @@ ignoreinput = False
 # {
 #	"lineattrs": ...,
 #	"columns": strarray, ...,
-#	"retval": the value to return if this items is selected (any type is allowed)
+#	"retval": the value to return if this item is selected (any type is allowed)
 # }
 # pylint: disable-next=too-many-arguments,line-too-long
 def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
@@ -1698,7 +1698,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 				else:
 					tmp_selection = item["columns"][0][0][0]
 
-				if tmp_selection == preselection:
+				if "retval" in item and item["retval"] == preselection or "retval" not in item and tmp_selection == preselection:
 					curypos, yoffset = move_cur_with_offset(0, height, yoffset, maxcurypos, maxyoffset, _y)
 					break
 		tagged_items = set()
