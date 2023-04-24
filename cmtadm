@@ -432,37 +432,67 @@ def patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> None:
 	args = ["/usr/bin/sed", "-i", "-e", sedstr_add_new, cni_path]
 	check_and_print_status(execute_command(args))
 
+def get_github_version(url: str, version_regex: str) -> str:
+	"""
+	Given a github repository find the latest released version
+
+		Parameters:
+			url (str): The github API URL to check for latest version
+			version_regex (str): A regex
+		Returns:
+			version ([str]): A list of version number elements, or None in case of failure
+	"""
+
+	version = ""
+
+	if url is not None:
+		with tempfile.TemporaryDirectory() as td:
+			check_and_print_status(download_files(td, [(url, "release.yaml", None, None)], permissions = 0o600))
+			tmp = secure_read_yaml(FilePath(f"{td}/release.yaml"))
+			result = deep_get(tmp, DictPath("tag_name"), "")
+			versionoutput = result.splitlines()
+			_version_regex = re.compile(version_regex)
+			for line in versionoutput:
+				tmp = _version_regex.match(line)
+				if tmp is not None:
+					version = list(tmp.groups())
+					break
+
+	return version
+
 # XXX: We should convert all of cni_data to use this format instead,
 #      and move all of this code to a separate file to allow it to be used both from cmu and cmtadm
 cni_upgrade_data = {
 	"calico": {
-		# Latest version can be found from tagname in https://api.github.com/repos/projectcalico/calico/releases/latest
 		"executable": {
+			"candidate_version_function": get_github_version,
+			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
+			# Safe
+			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"version_command": ["kubectl", "calico", "version"],
 			# Safe
 			"version_regex": r"^Client Version:\s+(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
-					"url": "https://github.com/projectcalico/calico/releases/download/v3.25.0/calicoctl-linux-<<<arch>>>",
-					"checksum_url": "https://github.com/projectcalico/calico/releases/download/v3.25.0/SHA256SUMS",
+					"url": "https://github.com/projectcalico/calico/releases/download/<<<version>>>/calicoctl-linux-<<<arch>>>",
+					"checksum_url": "https://github.com/projectcalico/calico/releases/download/<<<version>>>/SHA256SUMS",
 					"checksum_type": "sha256",
 					"filename": "kubectl-calico",
 				}
 			]
 		},
-		# Latest version can be found from tagname in https://api.github.com/repos/projectcalico/calico/releases/latest
 		"CNI": {
+			"candidate_version_function": get_github_version,
+			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
+			# Safe
+			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
-					# "url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/tigera-operator.yaml",
-					"url": "https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/tigera-operator.yaml",
-					# "filename": "tigera-operator-<<<version>>>.yaml",
-					"filename": "tigera-operator-v3.25.0.yaml",
+					"url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/tigera-operator.yaml",
+					"filename": "tigera-operator-<<<version>>>.yaml",
 				}, {
-					# "url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/custom-resources.yaml",
-					"url": "https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/custom-resources.yaml",
-					# "filename": "calico-custom-resources-<<<version>>>.yaml",
-					"filename": "calico-custom-resources-v3.25.0.yaml",
+					"url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/custom-resources.yaml",
+					"filename": "calico-custom-resources-<<<version>>>.yaml",
 					"patch": patch_cni_calico,
 				}
 			]
@@ -608,10 +638,10 @@ def check_version_from_executable(command: FilePath, args: List[str], version_re
 
 		Parameters:
 			command (str): A path to an executable
-			args (list[str]): A list of arguments necessary to show version information
+			args ([str]): A list of arguments necessary to show version information
 			version_regex (str): A regex
 		Returns:
-			version (str): The version number, or None in case of failure
+			version ([str]): A list of version number elements, or None in case of failure
 	"""
 
 	version: List[str] = []
@@ -657,6 +687,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 	version_command_regex = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#version_regex"))
 	candidate_version_url = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_url"))
 	candidate_version_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_command"))
+	candidate_version_function = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_function"))
 	candidate_version_regex = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_regex"))
 	install_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#install"))
 	upgrade_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#upgrade"))
@@ -676,7 +707,10 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 	if candidate_version_url is not None:
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString(f"Checking {upgradetype} candidate version", "action")])
-		candidate_version = check_version_from_url(substitute_string(candidate_version_url, version_substitutions), candidate_version_regex)
+		if candidate_version_function is not None:
+			candidate_version = candidate_version_function(candidate_version_url, candidate_version_regex)
+		else:
+			candidate_version = check_version_from_url(substitute_string(candidate_version_url, version_substitutions), candidate_version_regex)
 	elif candidate_version_command is not None:
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString(f"Checking {upgradetype} candidate version", "action")])
@@ -717,6 +751,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 
 				download_url = substitute_string(download_url, substitutions)
 				checksum_url = substitute_string(checksum_url, substitutions)
+				filename = substitute_string(filename, substitutions)
 
 				check_and_print_status(download_files(directory, [(download_url, filename, checksum_url, checksum_type)], permissions = permissions))
 
