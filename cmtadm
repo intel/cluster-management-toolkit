@@ -2160,7 +2160,7 @@ def __list_phases(phases: List[Tuple[List[ANSIThemeString], Callable[[Dict], Non
 	Helper that lists installation phases
 	"""
 
-	if start_phase is None:
+	if start_phase is None or start_phase == "<none>":
 		start_phase = 0
 	if phase_skiplist is None:
 		phase_skiplist = []
