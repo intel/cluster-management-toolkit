@@ -2874,13 +2874,14 @@ class KubernetesHelper:
 		return clusters
 
 	# pylint: disable-next=too-many-return-statements
-	def set_context(self, config_path: Optional[FilePath] = None, name: Optional[str] = None) -> bool:
+	def set_context(self, config_path: Optional[FilePath] = None, name: Optional[str] = None, unchanged_is_success: bool = False) -> bool:
 		"""
 		Change context
 
 			Parameters:
 				config_path (FilePath): The path to the kubeconfig file
 				name (str): The context to change to
+				unchanged_is_success (bool): True to return success if the context didn't change, False otherwise
 			Returns:
 				status (bool): True on success, False on failure
 		"""
@@ -2937,8 +2938,8 @@ class KubernetesHelper:
 				namespace_name = deep_get(context, DictPath("context#namespace"), "")
 				break
 
-		if unchanged == True and current_context == context_name:
-			return False
+		if unchanged and current_context == context_name:
+			return unchanged_is_success
 
 		control_plane_ip = None
 		control_plane_port = None

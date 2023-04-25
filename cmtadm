@@ -40,7 +40,7 @@ from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_
 from commandparser import parse_commandline
 
 from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_set_vars
-from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_get_hosts_by_group
+from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts, ansible_get_hosts_by_group, get_playbook_path
 from ansible_helper import ansible_print_play_results, populate_playbooks_from_paths
 
 import cmtio
@@ -283,7 +283,8 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
 # pylint: disable-next=too-many-arguments
 def update_installation_info(cluster_name: Optional[str] = None, distro: Optional[str] = None, version: Optional[str] = None, requested_version: Optional[str] = None,
 			     state: Optional[str] = None, phase: Optional[Union[int, str]] = None, phase_skiplist: Optional[List[str]] = None,
-			     cni: Optional[str] = None, pod_network_cidr: Optional[str] = None, cri: Optional[str] = None) -> Dict:
+			     cni: Optional[str] = None, pod_network_cidr: Optional[str] = None, cri: Optional[str] = None,
+			     control_planes: Optional[List[str]] = None) -> Dict:
 	"""
 	Update installation info for a cluster
 
@@ -298,6 +299,7 @@ def update_installation_info(cluster_name: Optional[str] = None, distro: Optiona
 			cni (str): The CNI to use
 			pod_network_cidr (str): The CIDR to use for the pod network
 			cri (str): The CRI to use
+			control_planes ([str]): A list of the control planes
 		Returns:
 			info (dict): The updated installation info
 	"""
@@ -328,6 +330,8 @@ def update_installation_info(cluster_name: Optional[str] = None, distro: Optiona
 		info[cluster_name]["pod_network_cidr"] = pod_network_cidr
 	if cri is not None:
 		info[cluster_name]["cri"] = cri
+	if control_planes is not None:
+		info[cluster_name]["control_planes"] = control_planes
 
 	secure_write_yaml(CMT_INSTALLATION_INFO_FILE, info, sort_keys = False)
 
@@ -2586,14 +2590,21 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 	contexts = kh.list_contexts()
 	current_context = None
 	for ctx in contexts:
-		if ctx[0] == True:
+		if ctx[0]:
 			current_context = ctx[1]
 
 	for cluster_name, context in clusters:
 		if len(args) > 0 and cluster_name not in args[0]:
 			continue
 
-		kh.set_context(name = context)
+		if not kh.set_context(name = context, unchanged_is_success = True):
+			ansithemeprint([ANSIThemeString("Warning", "warning"),
+					ANSIThemeString(": Failed to change to context ", "default"),
+					ANSIThemeString(f"{context}", "hostname"),
+					ANSIThemeString(" for cluster ", "default"),
+					ANSIThemeString(f"{cluster_name}", "hostname"),
+					ANSIThemeString("; skipping.", "default")])
+			continue
 
 		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 		if status != 200:
@@ -2607,14 +2618,16 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 					ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
+		controlplanes = []
 		controlplane = None
 
 		for node in vlist:
 			node_name = deep_get(node, DictPath("metadata#name"))
 			node_roles = kh.get_node_roles(cast(Dict, node))
 			if "control-plane" in node_roles:
-				controlplane = node_name
-				break
+				controlplanes.append(node_name)
+				if controlplane is None:
+					controlplane = node_name
 
 		if controlplane is None:
 			ansithemeprint([ANSIThemeString("Error", "error"),
@@ -2645,24 +2658,45 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 		else:
 			cni = tmp_cni[0][0]
 
-		retval, ansible_results = run_playbook(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("get_versions.yaml"))),
-						       hosts = [controlplane], extra_values = extra_values, quiet = True)
+		pod_network_cidr = kh.get_pod_network_cidr()
+		if pod_network_cidr is None:
+			pod_network_cidr = "<unknown>"
+
+		get_versions_path = get_playbook_path(FilePath("get_versions.yaml"))
+		retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [controlplane])
+
+		if len(ansible_results) == 0:
+			raise ValueError(f"Error: Failed to get package versions from {controlplane} (retval: {retval}); aborting.")
+
 		distro = "<unknown>"
 		version = "<unknown>"
-		if retval == 0:
-			for host in ansible_results: # pylint: disable=consider-using-dict-items
-				if str(host) != controlplane:
-					continue
 
-				data = ansible_results[host]["TASK: package versions"]["msg"].splitlines()
-				for package in data:
-					if package.startswith("kubeadm:"):
-						distro = "kubeadm"
-						version = package.split(" ")[1]
-						break
+		for result in deep_get(ansible_results, DictPath(controlplane), []):
+			if deep_get(result, DictPath("task"), "") == "Package versions":
+				tmp = deep_get(result, DictPath("msg_lines"), [])
 				break
 
-		update_installation_info(cluster_name = cluster_name, distro = distro, version = version, requested_version = "<none>", cni = cni, state = "installed", phase = "<none>", pod_network_cidr = "<FIXME>")
+		if len(tmp) == 0:
+			raise ValueError(f"Error: Received empty version data from {controlplane} (retval: {retval}); aborting.")
+
+		# Safe
+		package_version_regex = re.compile(r"^(.*?): (.*)")
+
+		for line in tmp:
+			tmp2 = package_version_regex.match(line)
+			if tmp2 is None:
+				continue
+			package = tmp2[1]
+			version = tmp2[2]
+			if package == "kubeadm":
+				distro = "kubeadm"
+				update_installation_info(cluster_name = cluster_name, distro = distro, version = version, requested_version = "<none>", cni = cni, state = "installed", phase = "<none>", pod_network_cidr = pod_network_cidr, control_planes = controlplanes)
+				break
+		if distro == "<unknown>":
+			ansithemeprint([ANSIThemeString("Warning", "warning"),
+					ANSIThemeString(": Failed to import cluster ", "default"),
+					ANSIThemeString(f"{cluster_name}", "hostname"),
+					ANSIThemeString("; could not identify distro; skipping.", "default")])
 
 	kh.set_context(name = current_context)
 
