@@ -111,7 +111,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "label_selector", "set_based_selector", "pod_management_policy", "minimum_ready_seconds", "update_strategy", "replicas"]
+        fields: ["controller", "label_selector", "set_based_selector", "pod_management_policy", "minimum_ready_seconds", "update_strategy", "replicas", "replicas_starting_number"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -185,6 +185,14 @@ infoview:
           - type: "no_pad"
           - type: "fraction_spaced"
           - type: "no_pad"
+      replicas_starting_number:
+        header: [["Replicas Starting Number:", ["main", "infoheader"]]]
+        path: "spec#ordinals#start"
+        type: "int"
+        default: "<unset>"
+        formatting:
+          field_colors:
+          - type: "numerical"
       set_based_selector:
         header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
