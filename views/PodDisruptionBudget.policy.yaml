@@ -46,7 +46,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["min_available", "max_unavailable", "label_selector", "set_based_selector", "status_header", "expected_pods", "current_healthy", "desired_healthy", "disruptions_allowed"]
+        fields: ["min_available", "max_unavailable", "label_selector", "set_based_selector", "status_header", "expected_pods", "current_healthy", "desired_healthy", "unhealthy_pod_eviction_policy", "disruptions_allowed"]
     rows:
       current_healthy:
         header: [["  Current Healthy:", ["main", "infoheader"]]]
@@ -121,3 +121,8 @@ infoview:
           - type: "no_pad"
       status_header:
         header: [["Status:", ["main", "infoheader"]]]
+      unhealthy_pod_eviction_policy:
+        header: [["  Unhealthy Pod Eviction Policy:", ["main", "infoheader"]]]
+        path: "status#unhealthyPodEvictionPolicy"
+        type: "str"
+        default: "<unset>"
