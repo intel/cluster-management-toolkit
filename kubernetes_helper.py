@@ -341,7 +341,7 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	},
 	("VolumeSnapshotContent", "snapshot.storage.k8s.io"): {
 		"api_paths": ["apis/snapshot.storage.k8s.io/v1/", "apis/snapshot.storage.k8s.io/v1beta1/"],
-		"api": "volumesnapshotcontent",
+		"api": "volumesnapshotcontents",
 		"namespaced": False,
 	},
 	# storage.k8s.io
@@ -701,6 +701,34 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("CredentialsRequest", "cloudcredential.openshift.io"): {
 		"api_paths": ["apis/cloudcredential.openshift.io/v1/"],
 		"api": "credentialsrequests",
+	},
+	# cluster.loft.sh
+	("ClusterQuota", "cluster.loft.sh"): {
+		"api_paths": ["apis/cluster.loft.sh/v1/"],
+		"api": "clusterquotas",
+		"namespaced": False,
+	},
+	("HelmRelease", "cluster.loft.sh"): {
+		"api_paths": ["apis/cluster.loft.sh/v1/"],
+		"api": "helmreleases",
+	},
+	("LocalClusterAccess", "cluster.loft.sh"): {
+		"api_paths": ["apis/cluster.loft.sh/v1/"],
+		"api": "localclusteraccesses",
+		"namespaced": False,
+	},
+	("SleepModeConfig", "cluster.loft.sh"): {
+		"api_paths": ["apis/cluster.loft.sh/v1/"],
+		"api": "sleepmodeconfigs",
+	},
+	("Space", "cluster.loft.sh"): {
+		"api_paths": ["apis/cluster.loft.sh/v1/"],
+		"api": "spaces",
+		"namespaced": False,
+	},
+	("VirtualCluster", "cluster.loft.sh"): {
+		"api_paths": ["apis/cluster.loft.sh/v1/"],
+		"api": "virtualclusters",
 	},
 	# cluster.x-k8s.io
 	("ClusterClass", "cluster.x-k8s.io"): {
@@ -1454,6 +1482,41 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "ips",
 		"namespaced": False,
 	},
+	("IptablesDnatRule", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "iptables-dnat-rules",
+		"namespaced": False,
+	},
+	("IptablesEIP", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "iptables-eips",
+		"namespaced": False,
+	},
+	("IptablesFIPRule", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "iptables-fip-rules",
+		"namespaced": False,
+	},
+	("IptablesSnatRule", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "iptables-snat-rules",
+		"namespaced": False,
+	},
+	("OvnEip", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "ovn-eips",
+		"namespaced": False,
+	},
+	("OvnFip", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "ovn-fips",
+		"namespaced": False,
+	},
+	("OvnSnatRule", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "ovn-snat-rules",
+		"namespaced": False,
+	},
 	("ProviderNetwork", "kubeovn.io"): {
 		"api_paths": ["apis/kubeovn.io/v1/"],
 		"api": "provider-networks",
@@ -1469,19 +1532,34 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "subnets",
 		"namespaced": False,
 	},
+	("SwitchLBRule", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "switch-lb-rules",
+		"namespaced": False,
+	},
+	("Vip", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "vips",
+		"namespaced": False,
+	},
 	("Vlan", "kubeovn.io"): {
 		"api_paths": ["apis/kubeovn.io/v1/"],
 		"api": "vlans",
 		"namespaced": False,
 	},
-	("VpcNatGateway", "kubeovn.io"): {
-		"api_paths": ["apis/kubeovn.io/v1/"],
-		"api": "vpc-nat-gateways",
-		"namespaced": False,
-	},
 	("Vpc", "kubeovn.io"): {
 		"api_paths": ["apis/kubeovn.io/v1/"],
 		"api": "vpcs",
+		"namespaced": False,
+	},
+	("VpcDns", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "vpc-dnses",
+		"namespaced": False,
+	},
+	("VpcNatGateway", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "vpc-nat-gateways",
 		"namespaced": False,
 	},
 	# kubevirt.io
@@ -1631,6 +1709,93 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("SeldonDeployment", "machinelearning.seldon.io"): {
 		"api_paths": ["apis/machinelearning.seldon.io/v1/", "apis/machinelearning.seldon.io/v1alpha3/", "apis/machinelearning.seldon.io/v1alpha2/"],
 		"api": "seldondeployments",
+	},
+	# management.loft.sh
+	("Announcement", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "announcements",
+		"namespaced": False,
+	},
+	("App", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "apps",
+		"namespaced": False,
+	},
+	("ClusterAccess", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "clusteraccesses",
+		"namespaced": False,
+	},
+	("ClusterRoleTemplate", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "clusterroletemplates",
+		"namespaced": False,
+	},
+	("Cluster", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "clusters",
+		"namespaced": False,
+	},
+	("Event", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "events",
+		"namespaced": False,
+	},
+	("Feature", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "features",
+		"namespaced": False,
+	},
+	("PolicyViolation", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "policyviolations",
+		"namespaced": False,
+	},
+	("Project", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "projects",
+		"namespaced": False,
+	},
+	("ProjectSecret", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "projectsecrets",
+	},
+	("SharedSecret", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "sharedsecrets",
+	},
+	("SpaceConstraint", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "spaceconstraints",
+		"namespaced": False,
+	},
+	("SpaceInstance", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "spaceinstances",
+	},
+	("SpaceTemplate", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "spacetemplates",
+		"namespaced": False,
+	},
+	("Task", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "tasks",
+		"namespaced": False,
+	},
+	("Team", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "teams",
+		"namespaced": False,
+	},
+	("VirtualClusterInstance", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "virtualclusterinstances",
+	},
+	("VirtualClusterTemplate", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "virtualclustertemplates",
+		"namespaced": False,
 	},
 	# messaging.knative.dev
 	("Channel", "messaging.knative.dev"): {
@@ -2265,6 +2430,103 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("NetworkPolicyStats", "stats.antrea.io"): {
 		"api_paths": ["apis/stats.antrea.io/v1alpha1/"],
 		"api": "networkpolicystats",
+	},
+	# storage.loft.sh
+	("AccessKey", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "accesskeys",
+		"namespaced": False,
+	},
+	("App", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "apps",
+		"namespaced": False,
+	},
+	("ClusterAccess", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "clusteraccesses",
+		"namespaced": False,
+	},
+	("ClusterQuota", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "clusterquotas",
+		"namespaced": False,
+	},
+	("ClusterRoleTemplate", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "clusterroletemplates",
+		"namespaced": False,
+	},
+	("Cluster", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "clusters",
+		"namespaced": False,
+	},
+	("LocalClusterAccess", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "localclusteraccesses",
+		"namespaced": False,
+	},
+	("LocalTeam", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "localteams",
+		"namespaced": False,
+	},
+	("LocalUser", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "localusers",
+		"namespaced": False,
+	},
+	("Project", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "projects",
+		"namespaced": False,
+	},
+	("SharedSecret", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "sharedsecrets",
+	},
+	("SpaceConstraint", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "spaceconstraints",
+		"namespaced": False,
+	},
+	("SpaceInstance", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "spaceinstances",
+	},
+	("SpaceTemplate", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "spacetemplates",
+		"namespaced": False,
+	},
+	("Task", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "tasks",
+		"namespaced": False,
+	},
+	("Team", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "teams",
+		"namespaced": False,
+	},
+	("User", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "users",
+		"namespaced": False,
+	},
+	("VirtualClusterInstance", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "virtualclusterinstances",
+	},
+	("VirtualCluster", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "virtualclusters",
+	},
+	("VirtualClusterTemplate", "storage.loft.sh"): {
+		"api_paths": ["apis/storage.loft.sh/v1/"],
+		"api": "virtualclustertemplates",
+		"namespaced": False,
 	},
 	# system.antrea.io
 	("ControllerInfo", "system.antrea.io"): {
