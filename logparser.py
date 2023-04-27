@@ -2094,6 +2094,9 @@ def json_line(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 			elif matchtype == "startswith":
 				if message.startswith(matchkey):
 					matched = True
+			elif matchtype == "endswith":
+				if message.endswith(matchkey):
+					matched = True
 			elif matchtype == "regex":
 				tmp = re.match(matchkey, message)
 				if tmp is not None:

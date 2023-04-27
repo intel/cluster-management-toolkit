@@ -1,0 +1,12 @@
+- name: "lôft"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "loft"
+  parser_rules:
+  - name: "glog"
+  - name: "json_line"
+    options:
+      block_start:
+      - matchtype: "endswith"
+        matchkey: "with policy: {"
+        matchline: "any"
