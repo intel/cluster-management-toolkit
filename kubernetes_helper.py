@@ -1788,6 +1788,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "teams",
 		"namespaced": False,
 	},
+	("User", "management.loft.sh"): {
+		"api_paths": ["apis/management.loft.sh/v1/"],
+		"api": "users",
+		"namespaced": False,
+	},
 	("VirtualClusterInstance", "management.loft.sh"): {
 		"api_paths": ["apis/management.loft.sh/v1/"],
 		"api": "virtualclusterinstances",
@@ -3801,6 +3806,8 @@ class KubernetesHelper:
 			namespaced = deep_get(api, DictPath("namespaced"), False)
 			kind = deep_get(api, DictPath("kind"), "")
 			verbs = deep_get(api, DictPath("verbs"), [])
+			if len(verbs) == 0:
+				continue
 			api_resources.append((name, shortnames, api_version, namespaced, kind, verbs))
 
 		# Now fetch non-core APIs
@@ -3856,6 +3863,8 @@ class KubernetesHelper:
 					namespaced = deep_get(resource, DictPath("namespaced"), False)
 					kind = deep_get(resource, DictPath("kind"), "")
 					verbs = deep_get(resource, DictPath("verbs"), [])
+					if len(verbs) == 0:
+						continue
 					kind_tuple = (kind, api_version.split("/")[0])
 					# Let's hope we get them in the right order...
 					if kind_tuple in non_core_api_dict:
