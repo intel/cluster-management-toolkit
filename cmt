@@ -1754,15 +1754,25 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 	sortkey = 1
 	header = True
 	api_version_selector = None
+	has_data = False
 	known_filter = {
 		"known": None,
 		"list": None,
 		"info": None,
 	}
+	# Valid formats:
+	# table = Normal output format (default)
+	# csv = Comma-separated values
+	# ssv = Space-separated values
+	# tsv = Tab-separated values
+	# entry = Used when adding API support to CMT
+	output_format = "table"
 
 	for opt, optarg in options:
 		if opt == "--api-group":
 			api_version_selector = optarg
+		elif opt == "--format":
+			output_format = optarg
 		elif opt == "--known":
 			optarg_list = optarg.split(",")
 			for optarg in optarg_list:
@@ -1778,6 +1788,8 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 					known_filter["info"] = True
 				elif optarg in ("!info", "not-info"):
 					known_filter["info"] = False
+		elif opt == "--has-data":
+			has_data = True
 		elif opt == "--local":
 			_result, local_only = commandparser.validator_bool(optarg)
 		elif opt == "--namespaced":
@@ -1847,6 +1859,8 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if local_only is None or local_only is not None and local_only == False:
 		view_dirs.append(viewdir)
 
+	filtered_api_resources = []
+
 	for name, shortnames, api_version, namespaced, kind, verbs in sorted(api_resources, key = itemgetter(sortkey)):
 		if kubernetes_resources is not None:
 			try:
@@ -1909,6 +1923,11 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 					else:
 						local_view = "False"
 
+				if has_data:
+					vlist, status = kh.get_list_by_kind_namespace(kind = (kind, api_group), namespace = "")
+					if len(vlist) == 0:
+						continue
+
 			if known_filter["known"] is not None:
 				if "list" not in verbs:
 					continue
@@ -1948,6 +1967,11 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				if api_version_selector != api_version.split("/")[0]:
 					continue
 
+		filtered_api_resources.append((name, shortnames, api_version, namespaced, kind, verbs))
+
+		if output_format != "table":
+			continue
+
 		name_len = max(name_len, len(name))
 		shortnames_len_tmp = 0
 		shortnames_formatted = ansithemestring_join_tuple_list(shortnames, formatting = "default", separator = ANSIThemeString(",", "separator"))
@@ -1968,6 +1992,44 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 			cmt_support_len_tmp += len(item)
 		cmt_support_len = max(cmt_support_len, cmt_support_len_tmp)
 		local_view_len = max(local_view_len, len(local_view))
+
+	if output_format != "table":
+		separator = ""
+		if output_format == "csv":
+			separator = ","
+		elif output_format == "ssv":
+			separator = " "
+		elif output_format == "tsv":
+			separator = "\t"
+
+		output = ""
+
+		for name, shortnames, api_version, namespaced, kind, verbs in filtered_api_resources:
+			api_group = ""
+			api_path = f"api/{api_version}/"
+			kind_string = kind
+			if "/" in api_version:
+				api_group = api_version.split("/")[0]
+				api_path = f"apis/{api_version}/"
+				kind_string += f".{api_group}"
+
+			if output_format == "entry":
+				entry = f"\t(\"{kind}\", \"{api_group}\"): "
+				entry += "{\n"
+				entry += f"\t\t\"api_paths\": [\"{api_path}\"],\n"
+				entry += f"\t\t\"api\": \"{name}\",\n"
+				if not namespaced:
+					entry += f"\t\t\"namespaced\": False,\n"
+				entry += "\t},"
+				print(entry)
+			else:
+				if len(output) > 0:
+					output += f"{separator}"
+				output += f"{kind_string}"
+
+		if len(output) > 0:
+			print(output)
+		sys.exit(0)
 
 	if header:
 		tmp_header = [ANSIThemeString(name_header, "header"),
@@ -1990,7 +2052,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				       ANSIThemeString("".ljust(local_view_len - len(local_view_header) + 2), "default")]
 		ansithemeprint(tmp_header)
 
-	for name, shortnames, api_version, namespaced, kind, verbs in sorted(api_resources, key = itemgetter(sortkey)):
+	for name, shortnames, api_version, namespaced, kind, verbs in filtered_api_resources:
 		if kubernetes_resources is not None:
 			try:
 				api_group = ""
@@ -2927,6 +2989,14 @@ CMT_COMMANDLINE = {
 					"regex": r"^([a-z][a-z0-9.-]*[a-z0-9]?)?",
 				},
 			},
+			"--has-data": {
+				"description": [ANSIThemeString("Only list APIs that have resources", "description")],
+				"extended_description": [
+					[ANSIThemeString("This option will only list APIs that have resources.", "description")],
+					[ANSIThemeString("Note", "note"),
+					 ANSIThemeString(": this can be very slow.", "description")],
+				],
+			},
 			"--known": {
 				"values": [ANSIThemeString("FILTER", "argument")],
 				"description": [ANSIThemeString("Limit output to ", "description"),
@@ -3027,6 +3097,35 @@ CMT_COMMANDLINE = {
 			},
 			"--no-header": {
 				"description": [ANSIThemeString("Do not output list headers", "description")],
+			},
+			"--format": {
+				"values": [ANSIThemeString("FORMAT", "argument")],
+				"description": [ANSIThemeString("Format the output as ", "description"),
+						ANSIThemeString("FORMAT", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid formats are: ", "description")],
+					[ANSIThemeString("table", "argument"),
+					 ANSIThemeString(" (table with information)", "description")],
+					[ANSIThemeString("csv", "argument"),
+					 ANSIThemeString(" (comma-separated values))", "description")],
+					[ANSIThemeString("ssv", "argument"),
+					 ANSIThemeString(" (space-separated values))", "description")],
+					[ANSIThemeString("tsv", "argument"),
+					 ANSIThemeString(" (tab-separated values))", "description")],
+					[ANSIThemeString("entry", "argument"),
+					 ANSIThemeString(" (used when adding API support to CMT)", "description")]
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"table",
+						"csv",
+						"ssv",
+						"tsv",
+						"entry"
+					],
+				},
 			},
 			"--sort-by": {
 				"values": [ANSIThemeString("SORTKEY", "argument")],
