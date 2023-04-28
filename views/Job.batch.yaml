@@ -149,10 +149,18 @@ infoview:
   infopad:
     row_indexes:
       Wide:
-        fields: ["controller", "label_selector", "completions", "completion_time_with_age", "completion_mode", "parallelism", "state"]
+        fields: ["controller", "label_selector", "completions", "completion_time_with_age", "completion_mode", "parallelism", "backoff_limit", "pod_failure_policy", "state"]
       Normal:
         fields: ["controller", "label_selector", "completions", "completion_time", "completion_mode", "parallelism", "state"]
     rows:
+      backoff_limit:
+        header: [["Backoff Limit:", ["main", "infoheader"]]]
+        path: "spec#backoffLimit"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
@@ -231,6 +239,11 @@ infoview:
         formatting:
           field_colors:
           - type: "numerical"
+      pod_failure_policy:
+        header: [["Pod Failure Policy:", ["main", "infoheader"]]]
+        path: "spec#podFailurePolicy"
+        default: "<unset>"
+        type: "str"
       state:
         header: [["State:", ["main", "infoheader"]]]
         paths:

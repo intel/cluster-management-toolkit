@@ -111,8 +111,20 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "label_selector", "set_based_selector", "pod_management_policy", "minimum_ready_seconds", "update_strategy", "replicas", "replicas_starting_number"]
+        fields: ["controller", "label_selector", "set_based_selector", "pod_management_policy", "autoremove_created_pvcs_header", "autoremove_created_pvcs_when_deleted", "autoremove_created_pvcs_when_scaled", "minimum_ready_seconds", "update_strategy", "replicas", "replicas_starting_number"]
     rows:
+      autoremove_created_pvcs_header:
+        header: [["Auto-remove Created PVCs:", ["main", "infoheader"]]]
+      autoremove_created_pvcs_when_deleted:
+        header: [["  When Deleted:", ["main", "infoheader"]]]
+        path: "spec#persistentVolumeClaimRetentionPolicy#whenDeleted"
+        default: "<unset>"
+        type: "str"
+      autoremove_created_pvcs_when_scaled:
+        header: [["  When Scaled:", ["main", "infoheader"]]]
+        path: "spec#persistentVolumeClaimRetentionPolicy#whenScaled"
+        default: "<unset>"
+        type: "str"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
