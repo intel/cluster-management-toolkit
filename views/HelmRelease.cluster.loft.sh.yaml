@@ -1,0 +1,31 @@
+kind: "HelmRelease"
+api_family: "cluster.loft.sh"
+default_command: "helmreleases"
+listview:
+  name: "Helm Releases"
+  group: "Lôft"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "chart", "version", "revision", "age"]
+  fields:
+    chart:
+      header: "Chart:"
+      path: "status#metadata#name"
+      type: "str"
+    revision:
+      header: "Revision:"
+      path: "status#version"
+      type: "int"
+      default: "<unset>"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    version:
+      header: "Version:"
+      path: "status#metadata#version"
+      type: "str"
+      default: "<unset>"
+      formatting:
+        field_colors:
+        - type: "version"

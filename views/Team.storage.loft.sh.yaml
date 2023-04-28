@@ -1,0 +1,107 @@
+kind: "Team"
+api_family: "storage.loft.sh"
+default_command: "teams.storage"
+command:
+- "team.storage"
+listview:
+  name: "Team"
+  group: "Lôft"
+  field_indexes:
+    Normal:
+      fields: ["name", "display_name", "age"]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "spec#displayName"
+      type: "str"
+infoview:
+  name: "Team Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["username", "display_name", "description", "groups"]
+    rows:
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+      groups:
+        header: [["G", ["main", "infoheader_shortcut"]], ["roups:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#groups"
+          pathtype: "list"
+        formatter: "list"
+      username:
+        header: [["Username:", ["main", "infoheader"]]]
+        path: "spec#username"
+        type: "str"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#access"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "subresources", "teams", "verbs"]
+        sortcolumn: "name"
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      subresources:
+        header: "Subresources:"
+        paths:
+        - path: "subresources"
+          pathtype: "list"
+        formatter: "list"
+      teams:
+        header: "Teams:"
+        paths:
+        - path: "teams"
+          pathtype: "list"
+        formatter: "list"
+      verbs:
+        header: "Verbs:"
+        paths:
+        - path: "verbs"
+          pathtype: "list"
+        formatter: "list"
+  shortcuts:
+    "List Groups":
+      key: "g"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Groups that the user has access to"
+      widget: "windowwidget"
+      title: "Groups:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["spec#groups"]
+      # Not supported for now
+      sortcolumn: "groups"
+    "List Cluster Roles":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Cluster Roles that the team has access to"
+      widget: "windowwidget"
+      title: "Cluster Roles:"
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#clusterRoles"
+        fields:
+        - "name"
+      # Not supported for now
+      sortcolumn: "clusterroles"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "ClusterRole"
+        api_family: "rbac.authorization.k8s.io"
+        name_path: 0

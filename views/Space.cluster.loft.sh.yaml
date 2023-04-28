@@ -1,0 +1,32 @@
+kind: "Space"
+api_family: "cluster.loft.sh"
+default_command: "spaces.cluster"
+command:
+- "space.cluster"
+listview:
+  name: "Spaces"
+  group: "Lôft"
+  field_indexes:
+    Normal:
+      fields: ["name", "owner", "phase", "age"]
+  fields:
+    owner:
+      header: "Owner:"
+      path: "status#owner#user#name"
+      type: "str"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "Active":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "Terminating":
+              field_colors:
+              - context: "main"
+                type: "status_pending"

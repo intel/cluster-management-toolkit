@@ -1,0 +1,61 @@
+kind: "Cluster"
+api_family: "management.loft.sh"
+default_command: "clusters.management"
+command:
+- "cluster.management"
+- "clusters.mgmnt"
+- "cluster.mgmnt"
+listview:
+  name: "Clusters"
+  group: "Lôft"
+  field_indexes:
+    Normal:
+      fields: ["name", "local", "phase", "age"]
+  fields:
+    local:
+      header: "Local:"
+      path: "spec#local"
+      type: "str"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "Initialized":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+infoview:
+  name: "Cluster Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "description", "local", "phase"]
+    rows:
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+      local:
+        header: [["Local:", ["main", "infoheader"]]]
+        path: "spec#local"
+        type: "bool"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Initialized":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"

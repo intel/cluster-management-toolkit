@@ -1,0 +1,170 @@
+kind: "User"
+api_family: "management.loft.sh"
+default_command: "users.management"
+command:
+- "user.management"
+- "users.mgmnt"
+- "user.mgmnt"
+listview:
+  name: "Users"
+  group: "Lôft"
+  field_indexes:
+    Normal:
+      fields: ["name", "display_name", "email", "disabled", "age"]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "spec#displayName"
+      type: "str"
+    email:
+      header: "E-Mail:"
+      path: "spec#email"
+      type: "str"
+    disabled:
+      header: "Disabled:"
+      path: "spec#disabled"
+      type: "bool"
+      default: false
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+infoview:
+  name: "User Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["username", "display_name", "disabled", "email", "description", "password_ref", "groups", "teams"]
+    rows:
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+      disabled:
+        header: [["Disabled:", ["main", "infoheader"]]]
+        path: "spec#disabled"
+        type: "bool"
+        default: false
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+      email:
+        header: [["E-Mail:", ["main", "infoheader"]]]
+        path: "spec#email"
+        type: "str"
+      groups:
+        header: [["G", ["main", "infoheader_shortcut"]], ["roups:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#groups"
+          pathtype: "list"
+        formatter: "list"
+      password_ref:
+        header: [["P", ["main", "infoheader_shortcut"]], ["assword Reference:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#passwordRef#secretNamespace"], ["spec#passwordRef#secretName"]]
+          pathtype: "tuple"
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "namespace"
+      teams:
+        header: [["T", ["main", "infoheader_shortcut"]], ["eams:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#teams"
+          pathtype: "list"
+        formatter: "list"
+      username:
+        header: [["Username:", ["main", "infoheader"]]]
+        path: "spec#username"
+        type: "str"
+  shortcuts:
+    "List Cluster Roles":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Cluster Roles that the user has access to"
+      widget: "windowwidget"
+      title: "Cluster Roles:"
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#clusterRoles"
+        fields:
+        - "name"
+      # Not supported for now
+      sortcolumn: "clusterroles"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "ClusterRole"
+        api_family: "rbac.authorization.k8s.io"
+        name_path: 0
+    "List Groups":
+      key: "g"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Groups that the user has access to"
+      widget: "windowwidget"
+      title: "Groups:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["spec#groups"]
+      # Not supported for now
+      sortcolumn: "groups"
+    "List Teams":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Teams that the user belongs to"
+      widget: "windowwidget"
+      title: "Teams:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["status#teams"]
+      # Not supported for now
+      sortcolumn: "teams"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "Team"
+        api_family: "management.loft.sh"
+        name_path: 0
+    "Open Password Reference":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open ConfigMap for password reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ConfigMap"
+        api_family: ""
+        namespace_path: "spec#passwordRef#secretNamespace"
+        name_path: "spec#passwordRef#secretName"
