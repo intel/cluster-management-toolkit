@@ -149,6 +149,8 @@ upgrade_control_plane_targets: Dict = {
 		"playbooks": [
 			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_upgrade_control_plane.yaml"))),
 		],
+		"extra_values": {
+		},
 	},
 	"localhost": {
 		"pretty_name": [("host system", "programname")],
@@ -1983,13 +1985,21 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict) -> N
 
 	cluster_name = installation_info["installation_target"]
 	distro = installation_info[cluster_name]["distro"]
+	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	requested_version = installation_info[cluster_name]["requested_version"]
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], upgrade_control_plane_targets[distro]["playbooks"]))
+	cri = installation_info[cluster_name]["cri"]
+	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
+	extra_values_upgrade = deep_get(upgrade_control_plane_targets[distro], DictPath("extra_values"), {})
 	extra_values = {
+		"cluster_name": cluster_name,
+		"pod_network_cidr": pod_network_cidr,
+		"cri_socket": cri_socket,
 		"packages": upgrade_control_plane_targets[distro].get("deb_packages", []),
 		"held_packages": upgrade_control_plane_targets[distro].get("deb_packages_held", []),
 		"requested_control_plane_k8s_version": requested_version,
+		**extra_values_upgrade,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -3582,6 +3592,22 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 					ANSIThemeString(f"{nodes_to_drain}", "url"),
 					ANSIThemeString("“", "default")])
 			sys.exit(errno.EBUSY)
+
+	requested_major, requested_minor, _rest = requested_version.split(".")
+
+	if int(requested_minor) < 23:
+		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"
+		init_configuration_api_version = "kubeadm.k8s.io/v1beta2"
+	else:
+		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+		init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+
+	upgrade_control_plane_targets[distro]["extra_values"] = {
+		"cluster_configuration_api_version": cluster_configuration_api_version,
+		"init_configuration_api_version": init_configuration_api_version,
+		# Add major/minor to extra_values
+		"kubernetes_major_minor_version": f"{requested_major}.{requested_minor}",
+	}
 
 	installation_info = update_installation_info(state = "upgrading", requested_version = requested_version, phase = 0)
 
