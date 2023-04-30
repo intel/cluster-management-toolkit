@@ -7323,7 +7323,8 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	field_index = "Normal"
 
 	field_denylist = deep_get(viewref, DictPath("field_denylist"), [])
-	field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(viewref, DictPath("fields")), denylist = field_denylist)
+	field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes,
+										fields = deep_get(viewref, DictPath("fields")), denylist = field_denylist)
 
 	windowheader = deep_get(viewref, DictPath("windowheader"), f"{view[0]} Info")
 
@@ -7553,8 +7554,8 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			]
 			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
 
-			# Refresh obj whenever we reload, unless this is a special view
-			if not view[0].startswith("__"):
+			# Refresh obj whenever we reload, unless this is a special view or "no_reload_on_refresh" is true
+			if not view[0].startswith("__") and not deep_get(viewref, DictPath("no_reload_on_refresh"), False):
 				obj = kh.get_ref_by_kind_name_namespace(view, deep_get(obj, DictPath("metadata#name")), deep_get(obj, DictPath("metadata#namespace")))
 
 				if obj is None:
@@ -11709,6 +11710,7 @@ def populate_views(force_refresh: bool = False) -> None:
 				"reversible": reversible,
 				"annotations": annotations,
 				"shortcuts": {},
+				"no_reload_on_refresh": deep_get(d, DictPath("infoview#no_reload_on_refresh"), False),
 			}
 			objgetter = deep_get(infopad, DictPath("objgetter"))
 			if objgetter is not None:
