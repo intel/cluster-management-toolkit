@@ -1,0 +1,22 @@
+- name: "vcluster"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/loftsh/vcluster"
+  parser_rules:
+  - name: "glog"
+- name: "vcluster"
+  show_in_selector: false
+  matchkeys:
+  - container_name: "vcluster"
+    image_name: "/rancher/k3s"
+  parser_rules:
+  - name: "glog"
+  - name: "key_value"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Starting k3s"
+      loglevel: "notice"
+    - matchtype: "startswith"
+      matchkey: "Trace["
+      loglevel: "debug"
