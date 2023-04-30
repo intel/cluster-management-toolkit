@@ -10,4 +10,157 @@ listview:
   group: "Lôft"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "display_name", "age"]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "spec#displayName"
+      type: "str"
+infoview:
+  name: "Project Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "description", "allowed_clusters", "allowed_templates", "members"]
+    rows:
+      allowed_clusters:
+        header: [["Allowed ", ["main", "infoheader"]], ["C", ["main", "infoheader_shortcut"]], ["lusters:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#allowedClusters"
+          pathtype: "items"
+          subpaths:
+          - "name"
+        formatter: "list"
+      allowed_templates:
+        header: [["Allowed ", ["main", "infoheader"]], ["T", ["main", "infoheader_shortcut"]], ["emplates:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#allowedTemplates"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "group"
+          - "name"
+          # The second is really "api_group", not kind, but the version is stripped, so it's detected as a core API
+          type: ["kind", "kind", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+      members:
+        header: [["Members:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#members"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "group"
+          - "clusterRole"
+          - "name"
+          # The second is really "api_group", not kind, but the version is stripped, so it's detected as a core API
+          type: ["kind", "kind", "name", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+          - type: "namespace"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#access"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "subresources", "users", "verbs"]
+        sortcolumn: "name"
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      subresources:
+        header: "Subresources:"
+        paths:
+        - path: "subresources"
+          pathtype: "list"
+        formatter: "list"
+      users:
+        header: "Users:"
+        paths:
+        - path: "users"
+          pathtype: "list"
+        formatter: "list"
+      verbs:
+        header: "Verbs:"
+        paths:
+        - path: "verbs"
+          pathtype: "list"
+        formatter: "list"
+  shortcuts:
+    "List Allowed Clusters":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List allowed Clusters"
+      widget: "windowwidget"
+      title: "Allowed Clusters:"
+      headers: ["Name:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#allowedClusters"
+        fields:
+        - "name"
+      # Not supported for now
+      sortcolumn: "name"
+    "List Allowed Templates":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "List allowed Templates"
+      widget: "windowwidget"
+      title: "Allowed Templates:"
+      headers: ["Kind:", "API-group:", "Name:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#allowedTemplates"
+        fields:
+        - "kind"
+        - "group"
+        - "name"
+      # Not supported for now
+      sortcolumn: "name"
+    "List Members":
+      key: "m"
+      read_only: true
+      helptext: "List members"
+      widget: "windowwidget"
+      title: "Members:"
+      headers: ["Kind:", "API-group:", "Cluster Role:", "Name:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#members"
+        fields:
+        - "kind"
+        - "group"
+        - "clusterRole"
+        - "name"
+      # Not supported for now
+      sortcolumn: "cluster_role"
