@@ -1,0 +1,30 @@
+kind: "VirtualClusterInstance"
+api_family: "management.loft.sh"
+default_command: "virtualclusterinstances.management"
+command:
+- "virtualclusterinstance.management"
+- "virtclrinsts.management"
+- "virtclrinst.management"
+- "vcis.management"
+- "vci.management"
+- "vcis.mgmnt"
+- "vci.mgmnt"
+listview:
+  name: "Virtual Cluster Instances"
+  group: "Lôft"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "phase", "age"]
+  fields:
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "Pending":
+              field_colors:
+              - context: "main"
+                type: "status_pending"

@@ -1,0 +1,69 @@
+kind: "VirtualClusterTemplate"
+api_family: "storage.loft.sh"
+default_command: "virtualclustertemplates.storage"
+command:
+- "virtualclustertemplate.storage"
+- "virtclrtmpls.storage"
+- "virtclrtmpl.storage"
+- "vcts.storage"
+- "vct.storage"
+listview:
+  name: "Virtual Cluster Templates"
+  group: "Lôft"
+  field_indexes:
+    Normal:
+      fields: ["name", "display_name", "age"]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "spec#displayName"
+      type: "str"
+infoview:
+  name: "Virtual Cluster Template Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "description"]
+    rows:
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#access"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["users", "verbs"]
+        sortcolumn: "name"
+    fields:
+      users:
+        header: "Users:"
+        paths:
+        - path: "users"
+          pathtype: "list"
+        formatter: "list"
+      verbs:
+        header: "Verbs:"
+        paths:
+        - path: "verbs"
+          pathtype: "list"
+        formatter: "list"
+  shortcuts:
+    "Virtual Cluster Template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show virtual cluster template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Virtual Cluster Template"
+        _pass_obj: true
+        path: "spec#template"
