@@ -3210,21 +3210,23 @@ class KubernetesHelper:
 
 		control_plane_ip = None
 		control_plane_port = None
+		control_plane_path = None
 		insecuretlsskipverify = False
 		ca_certs = None
 
 		# OK, we have a user and a cluster to look for
 		# Safe
-		host_and_port_regex = re.compile(r"^https?://(.*):(\d+)")
+		host_port_path_regex = re.compile(r"^https?://(.*):(\d+)(.*)")
 
 		for cluster in deep_get(kubeconfig, DictPath("clusters"), []):
 			if deep_get(cluster, DictPath("name")) != cluster_name:
 				continue
 
-			tmp = host_and_port_regex.match(cluster["cluster"]["server"])
+			tmp = host_port_path_regex.match(cluster["cluster"]["server"])
 			if tmp is not None:
 				control_plane_ip = tmp[1]
 				control_plane_port = tmp[2]
+				control_plane_path = tmp[3]
 
 			insecuretlsskipverify = deep_get(cluster, DictPath("cluster#insecure-skip-tls-verify"), False)
 			if insecuretlsskipverify == True:
@@ -3275,7 +3277,7 @@ class KubernetesHelper:
 			return False
 
 		# We cannot authenticate the server correctly
-		if ca_certs is None and insecuretlsskipverify == False:
+		if ca_certs is None and not insecuretlsskipverify:
 			return False
 
 		# OK, we've got the cluster IP and port,
@@ -3286,8 +3288,9 @@ class KubernetesHelper:
 
 		self.control_plane_ip = control_plane_ip
 		self.control_plane_port = control_plane_port
+		self.control_plane_path = control_plane_path
 
-		if insecuretlsskipverify == False:
+		if not insecuretlsskipverify:
 			ca_certs = str(ca_certs)
 			self.tmp_ca_certs_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
 			self.tmp_ca_certs_file.write(ca_certs.encode("utf-8"))
@@ -3315,7 +3318,7 @@ class KubernetesHelper:
 			self.tmp_key_file.write(key.encode("utf-8"))
 			self.tmp_key_file.flush()
 
-			if insecuretlsskipverify == False:
+			if not insecuretlsskipverify:
 				if cluster_https_proxy is None:
 					self.pool_manager = urllib3.PoolManager(
 						cert_reqs = "CERT_REQUIRED",
@@ -3346,7 +3349,7 @@ class KubernetesHelper:
 						cert_file = self.tmp_cert_file.name,
 						key_file = self.tmp_key_file.name)
 		elif self.token is not None:
-			if insecuretlsskipverify == False:
+			if not insecuretlsskipverify:
 				if cluster_https_proxy is None:
 					self.pool_manager = urllib3.PoolManager(
 						cert_reqs = "CERT_REQUIRED",
@@ -3558,17 +3561,18 @@ class KubernetesHelper:
 
 		return self.cluster_unreachable == False
 
-	def get_control_plane_address(self) -> Tuple[str, str]:
+	def get_control_plane_address(self) -> Tuple[str, str, str]:
 		"""
 		Returns the IP-address and port of the control plane
 
 			Returns:
-				(control_plane_ip, control_plane_port): The IP-address and port of the control plane
+				(control_plane_ip, control_plane_port, control_plane_path): The IP-address, port, and path of the control plane
 					control_plane_ip (str): An IP-address
 					control_plane_port (str): A port
+					control_plane_path (str): A path (optional)
 		"""
 
-		return self.control_plane_ip, self.control_plane_port
+		return self.control_plane_ip, self.control_plane_port, self.control_plane_path
 
 	def get_join_token(self) -> str:
 		"""
@@ -3785,7 +3789,7 @@ class KubernetesHelper:
 
 		# First get all core APIs
 		method = "GET"
-		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/api/v1"
+		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/api/v1"
 		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
 		if status == 200 and raw_data is not None:
@@ -3817,7 +3821,7 @@ class KubernetesHelper:
 		non_core_apis = {}
 		non_core_api_dict = {}
 
-		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis"
+		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis"
 		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
 		if status == 200 and raw_data is not None:
@@ -3842,7 +3846,7 @@ class KubernetesHelper:
 				if group_version is None:
 					# This should not happen, but ignore it
 					continue
-				url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis/{group_version}"
+				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis/{group_version}"
 				raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
 				if status != 200 or raw_data is None:
@@ -3899,14 +3903,14 @@ class KubernetesHelper:
 			return kubernetes_resources, 42503, modified
 
 		# It is fairly easy to check if the API-list is "fresh"; just check whether Pod is available
-		if force_refresh == False and deep_get(kubernetes_resources[("Pod", "")], DictPath("available"), False) == True:
+		if not force_refresh and deep_get(kubernetes_resources[("Pod", "")], DictPath("available"), False) == True:
 			return kubernetes_resources, 200, modified
 
 		# First get all core APIs
 		core_apis = {}
 
 		method = "GET"
-		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/api/v1"
+		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/api/v1"
 		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
 		if status == 200 and raw_data is not None:
@@ -3938,7 +3942,7 @@ class KubernetesHelper:
 		# Now fetch non-core APIs
 		non_core_apis = {}
 
-		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis"
+		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis"
 		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
 		if status == 200 and raw_data is not None:
@@ -3970,7 +3974,7 @@ class KubernetesHelper:
 				if _version is None:
 					# This should not happen, but ignore it
 					continue
-				url = f"https://{self.control_plane_ip}:{self.control_plane_port}/apis/{_version}"
+				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis/{_version}"
 				raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
 				if status != 200 or raw_data is None:
@@ -4196,7 +4200,7 @@ class KubernetesHelper:
 
 		# Try the newest API first and iterate backwards
 		for api_path in api_paths:
-			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_path}{namespace_part}{api}{name}"
+			url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
 			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
 			if status in (200, 201, 204, 42503):
 				break
@@ -4253,7 +4257,7 @@ class KubernetesHelper:
 
 		# Try the newest API first and iterate backwards
 		for api_path in api_paths:
-			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_path}{namespace_part}{api}{name}{subresource_part}"
+			url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}{subresource_part}"
 			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
 			if status in (200, 204, 42503):
 				break
@@ -4295,7 +4299,7 @@ class KubernetesHelper:
 
 		# Try the newest API first and iterate backwards
 		for api_path in api_paths:
-			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_path}{namespace_part}{api}{name}"
+			url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
 			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
 			if status in (200, 204, 42503):
 				break
@@ -4351,7 +4355,7 @@ class KubernetesHelper:
 
 		# Try the newest API first and iterate backwards
 		for api_path in api_paths:
-			url = f"https://{self.control_plane_ip}:{self.control_plane_port}/{api_path}{namespace_part}{api}{name}"
+			url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
 			raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
 
 			# All fatal failures are handled in __rest_helper_generic
@@ -4592,7 +4596,7 @@ a				the return value from __rest_helper_patch
 			return [], 42503
 
 		query_params: List[Optional[Tuple[str, Any]]] = []
-		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/metrics"
+		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/metrics"
 		data, _message, status = self.__rest_helper_generic_json(method = "GET", url = url, query_params = query_params)
 		if status == 200 and data is not None:
 			if isinstance(data, bytes):
@@ -4664,7 +4668,7 @@ a				the return value from __rest_helper_patch
 		query_params.append(("timestamps", True))
 
 		method = "GET"
-		url = f"https://{self.control_plane_ip}:{self.control_plane_port}/api/v1/namespaces/{namespace}/pods/{name}/log"
+		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/api/v1/namespaces/{namespace}/pods/{name}/log"
 		data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
 
 		if status == 200 and data is not None:

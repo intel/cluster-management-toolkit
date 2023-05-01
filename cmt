@@ -1201,7 +1201,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 						ANSIThemeString(": No CA certificate available.", "default")], stderr = True)
 				sys.exit(errno.EINTR)
 
-	control_plane_ip, control_plane_port = kh.get_control_plane_address()
+	control_plane_ip, control_plane_port, control_plane_path = kh.get_control_plane_address()
 	# Now that we have the IP address of the API-server we can use that to get the package
 	# version for kubeadm
 	_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("get_versions.yaml"))), selection = [control_plane_ip])
@@ -1286,6 +1286,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	extra_values = {
 		"control_plane_ip": control_plane_ip,
 		"control_plane_port": control_plane_port,
+		"control_plane_path": control_plane_path,
 		"join_token": join_token,
 		"ca_cert_hash": ca_cert_hash,
 		"control_plane_k8s_version": kubeadm_version,

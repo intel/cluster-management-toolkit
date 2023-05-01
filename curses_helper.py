@@ -916,6 +916,7 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeAttr]]) -> curses.window:
 	"""
 	Draw a bar of multiple subsets that sum up to a total
+	FIXME: This should be modified to just return a ThemeArray instead of drawing it
 
 		Parameters:
 			win (curses.window): The curses window to operate on
@@ -931,7 +932,7 @@ def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, 
 	"""
 
 	block = deep_get(theme, DictPath("boxdrawing#smallblock"), "■")
-	barwidth = maxx - minx - 3
+	barwidth = maxx - minx + 1
 	barpos = minx + 1
 
 	win.addstr(y, minx, "[")
@@ -942,10 +943,13 @@ def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, 
 		col = themeattr_to_curses_merged(themeattr)
 		subsetwidth = int((pct / total) * barwidth)
 
-		while rx < subsetwidth and ax < barwidth:
+		while rx < subsetwidth and ax < maxx:
 			win.addstr(y, ax, block, col)
 			rx += 1
 			ax += 1
+	while ax < maxx:
+		win.addstr(y, ax, " ", col)
+		ax += 1
 	win.addstr(y, maxx, "]")
 	return win
 

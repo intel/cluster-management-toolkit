@@ -90,6 +90,9 @@ def format_list(items, fieldlen: int, pad, ralign: bool, selected: bool,
 			if string == "<none>":
 				fmt = ThemeAttr("types", "none")
 				formatted_string = ThemeString(string, fmt, selected)
+			elif string == "<unset>":
+				fmt = ThemeAttr("types", "unset")
+				formatted_string = ThemeString(string, fmt, selected)
 			elif string == "<not ready>":
 				fmt = color_status_group(StatusGroup.NOT_OK)
 				formatted_string = ThemeString(string, fmt, selected)

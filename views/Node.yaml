@@ -38,7 +38,7 @@ listview:
         when:
         - key: "type"
           eq: "InternalIP"
-        default: "<unset>"
+        default: ["<unset>"]
       formatter: "list"
       formatting:
         ellipsise: 3
@@ -206,6 +206,7 @@ infoview:
           when:
           - key: "type"
             eq: "InternalIP"
+          default: ["<unset>"]
         formatter: "address"
       kernel_version:
         header: [["Kernel Version:", ["main", "infoheader"]]]

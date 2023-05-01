@@ -54,6 +54,7 @@ from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, SSH_ARGS_RELAXED, SSH_
 
 from cmtio import execute_command, execute_command_with_response, secure_read_string, secure_which, secure_write_string
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
+from cmtlog import CMTLogType, CMTLog
 
 from commandparser import parse_commandline
 
@@ -137,7 +138,7 @@ def gather_cluster_info() -> None:
 	# Set global variables that need to be available when executing playbooks
 	join_token = kh.get_join_token()
 	ca_cert_hash = kh.get_ca_cert_hash()
-	control_plane_ip, control_plane_port = kh.get_control_plane_address()
+	control_plane_ip, control_plane_port, control_plane_path = kh.get_control_plane_address()
 	_control_plane_node, control_plane_name = get_control_plane()
 
 	# This is tricky: we get this from the Debian package;
@@ -161,6 +162,7 @@ def gather_cluster_info() -> None:
 	values = {
 		"control_plane_ip": control_plane_ip,
 		"control_plane_port": control_plane_port,
+		"control_plane_path": control_plane_path,
 		"join_token": join_token,
 		"ca_cert_hash": ca_cert_hash,
 		"control_plane_k8s_version": control_plane_k8s_version,
@@ -1636,7 +1638,8 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						unknown = deep_get(_path, DictPath("unknown"), "Unknown Kind")
 						_values.append((unknown, "raw"))
 						continue
-					if isinstance(lookup_obj, dict) and when_filter(_path, item = lookup_obj) == False:
+					if lookup_obj is None or isinstance(lookup_obj, dict) and when_filter(_path, item = lookup_obj) == False:
+						_values.append((default, "raw"))
 						continue
 					subpaths = deep_get(_path, DictPath("subpaths"), [])
 					value = []
@@ -4239,6 +4242,8 @@ def get_node_addresses(name, addresses):
 	iips = []
 	eips = []
 
+	new_name = None
+
 	for address in addresses:
 		address_type = deep_get(address, DictPath("type"))
 		address_address = deep_get(address, DictPath("address"))
@@ -4248,10 +4253,12 @@ def get_node_addresses(name, addresses):
 			eips.append(address_address)
 		# handle external IPs too
 		elif address_type == "Hostname":
-			if name is None:
-				name = address_address
-			elif name != address_address:
-				sys.exit("We need to handle multiple hostnames somehow!")
+			if new_name is None:
+				new_name = address_address
+			else:
+				CMTLog(CMTLogType.DEBUG, [
+						[ANSIThemeString(f"We need to handle multiple hostnames in a better way", "default")],
+				       ], severity = LogLevel.ERR)
 		else:
 			continue
 
@@ -4260,10 +4267,10 @@ def get_node_addresses(name, addresses):
 		eips = ["<unset>"]
 	if eips == []:
 		eips = ["<none>"]
-	if name is None:
-		name = "<unset>"
+	if new_name is None:
+		new_name = "<unset>"
 
-	return name, iips, eips
+	return new_name, iips, eips
 
 # pylint: disable-next=unused-argument
 def get_node_info(vlist, extra_vars) -> List[Type]:
@@ -6503,14 +6510,14 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			]
 
 			cpuarray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString(" CPU: ", ThemeAttr("main", "infoheader")),
+				ThemeString("  CPU: ", ThemeAttr("main", "infoheader")),
 			]
 			cpuusagearray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString(f"{str(100 * cputimetotalused // cputimetotal).rjust(3)}", ThemeAttr("types", "numerical")),
 				ThemeRef("separators", "percentage"),
 			]
 			memarray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString(" Mem: ", ThemeAttr("main", "infoheader")),
+				ThemeString("  Mem: ", ThemeAttr("main", "infoheader")),
 			]
 			memusagearray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString(str(100 * memused // memtotal).rjust(3), ThemeAttr("types", "numerical")),
@@ -6533,7 +6540,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			# cpu usage:
 			# low-priority (bold blue) / normal (green) / kernel (red) / virtualized (cyan)
 			# This is aggregate over all CPUs
-			curses_helper.percentagebar(infopad, 6, 6, uip.infopadwidth - 10, cputimetotal, [
+			curses_helper.percentagebar(infopad, 7, 7, uip.infopadwidth - 10, cputimetotal, [
 				# Note: These are NOT themestrings!
 				(cputimeusernice, ThemeAttr("types", "cputime_user_nice")),
 				(cputimeuser, ThemeAttr("types", "cputime_user")),
@@ -6543,7 +6550,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 			# memory usage:
 			# used (green) / buffers (bold blue) / cache (yellow)
-			curses_helper.percentagebar(infopad, 7, 6, uip.infopadwidth - 10, memtotal, [
+			curses_helper.percentagebar(infopad, 8, 7, uip.infopadwidth - 10, memtotal, [
 				# Note: These are NOT themestrings!
 				(memused - memcached - buffers, ThemeAttr("types", "mem")),
 				(buffers, ThemeAttr("types", "buffers")),
