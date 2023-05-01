@@ -764,6 +764,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/clusterctl.cluster.x-k8s.io/v1alpha3/"],
 		"api": "providers",
 	},
+	# config.gatekeeper.sh
+	("Config", "config.gatekeeper.sh"): {
+		"api_paths": ["apis/config.gatekeeper.sh/v1alpha1/"],
+		"api": "configs",
+	},
 	# config.kio.kasten.io
 	("Policy", "config.kio.kasten.io"): {
 		"api_paths": ["apis/config.kio.kasten.io/v1alpha1/"],
@@ -1206,6 +1211,12 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/etcd.database.coreos.com/v1beta2/"],
 		"api": "etcdclusters",
 	},
+	# expansion.gatekeeper.sh
+	("ExpansionTemplate", "expansion.gatekeeper.sh"): {
+		"api_paths": ["apis/expansion.gatekeeper.sh/v1alpha1/"],
+		"api": "expansiontemplate",
+		"namespaced": False,
+	},
 	# export.kubevirt.io
 	("VirtualMachineExport", "export.kubevirt.io"): {
 		"api_paths": ["apis/export.kubevirt.io/v1alpha1/"],
@@ -1215,6 +1226,12 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("WasmPlugin", "extensions.istio.io"): {
 		"api_paths": ["apis/install.istio.io/v1alpha1/"],
 		"api": "wasmplugins",
+	},
+	# externaldata.gatekeeper.sh
+	("Provider", "externaldata.gatekeeper.sh"): {
+		"api_paths": ["apis/externaldata.gatekeeper.sh/v1beta1/"],
+		"api": "providers",
+		"namespaced": False,
 	},
 	# eventing.knative.dev
 	("Broker", "eventing.knative.dev"): {
@@ -1393,10 +1410,20 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/k3s.cattle.io/v1/"],
 		"api": "addons",
 	},
-# k8s.cni.cncf.io
+	# k8s.cni.cncf.io
 	("NetworkAttachmentDefinition", "k8s.cni.cncf.io"): {
 		"api_paths": ["apis/k8s.cni.cncf.io/v1/"],
 		"api": "network-attachment-definitions",
+	},
+	# kamaji.clastix.io
+	("DataStore", "kamaji.clastix.io"): {
+		"api_paths": ["apis/kamaji.clastix.io/v1alpha1/"],
+		"api": "datastores",
+		"namespaced": False,
+	},
+	("TenantControlPlane", "kamaji.clastix.io"): {
+		"api_paths": ["apis/kamaji.clastix.io/v1alpha1/"],
+		"api": "tenantcontrolplanes",
 	},
 	# keda.sh
 	("ClusterTriggerAuthentication", "keda.sh"): {
@@ -1895,6 +1922,27 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("ThanosRuler", "monitoring.coreos.com"): {
 		"api_paths": ["apis/monitoring.coreos.com/v1/"],
 		"api": "thanosrulers",
+	},
+	# mutations.gatekeeper.sh
+	("ModifySet", "mutations.gatekeeper.sh"): {
+		"api_paths": ["apis/mutations.gatekeeper.sh/v1/"],
+		"api": "modifyset",
+		"namespaced": False,
+	},
+	("Assign", "mutations.gatekeeper.sh"): {
+		"api_paths": ["apis/mutations.gatekeeper.sh/v1/"],
+		"api": "assign",
+		"namespaced": False,
+	},
+	("AssignMetadata", "mutations.gatekeeper.sh"): {
+		"api_paths": ["apis/mutations.gatekeeper.sh/v1/"],
+		"api": "assignmetadata",
+		"namespaced": False,
+	},
+	("AssignImage", "mutations.gatekeeper.sh"): {
+		"api_paths": ["apis/mutations.gatekeeper.sh/v1alpha1/"],
+		"api": "assignimage",
+		"namespaced": False,
 	},
 	# network.openshift.io
 	("ClusterNetwork", "network.openshift.io"): {
@@ -2441,6 +2489,23 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/stats.antrea.io/v1alpha1/"],
 		"api": "networkpolicystats",
 	},
+	# status.gatekeeper.sh
+	("MutatorPodStatus", "status.gatekeeper.sh"): {
+		"api_paths": ["apis/status.gatekeeper.sh/v1beta1/"],
+		"api": "mutatorpodstatuses",
+	},
+	("ConstraintTemplatePodStatus", "status.gatekeeper.sh"): {
+		"api_paths": ["apis/status.gatekeeper.sh/v1beta1/"],
+		"api": "constrainttemplatepodstatuses",
+	},
+	("ExpansionTemplatePodStatus", "status.gatekeeper.sh"): {
+		"api_paths": ["apis/status.gatekeeper.sh/v1beta1/"],
+		"api": "expansiontemplatepodstatuses",
+	},
+	("ConstraintPodStatus", "status.gatekeeper.sh"): {
+		"api_paths": ["apis/status.gatekeeper.sh/v1beta1/"],
+		"api": "constraintpodstatuses",
+	},
 	# storage.loft.sh
 	("AccessKey", "storage.loft.sh"): {
 		"api_paths": ["apis/storage.loft.sh/v1/"],
@@ -2605,6 +2670,12 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("Template", "template.openshift.io"): {
 		"api_paths": ["apis/template.openshift.io/v1/"],
 		"api": "templates",
+	},
+	# templates.gatekeeper.sh
+	("ConstraintTemplate", "templates.gatekeeper.sh"): {
+		"api_paths": ["apis/templates.gatekeeper.sh/v1/"],
+		"api": "constrainttemplates",
+		"namespaced": False,
 	},
 	# tensorboard.kubeflow.org
 	("Tensorboard", "tensorboard.kubeflow.org"): {
