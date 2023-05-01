@@ -1,0 +1,12 @@
+- name: "weave"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "gatekeeper-"
+  parser_rules:
+  - name: "ts_8601"
+  - name: "json"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "http: TLS handshake error"
+      loglevel: "error"
