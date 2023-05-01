@@ -1,0 +1,69 @@
+kind: "VirtualCluster"
+api_family: "storage.loft.sh"
+default_command: "virtualclusters.storage"
+command:
+- "virtualcluster.storage"
+- "virtclrs.storage"
+- "virtclr.storage"
+listview:
+  name: "Virtual Clusters"
+  group: "Lôft"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "phase", "age"]
+  fields:
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "Deploying":
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            "Deployed":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+infoview:
+  name: "Virtual Cluster Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["control_plane_ready", "phase"]
+    rows:
+      control_plane_ready:
+        header: [["Control Plane Ready:", ["main", "infoheader"]]]
+        path: "status#controlPlaneReady"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Deploying":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "Deployed":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"

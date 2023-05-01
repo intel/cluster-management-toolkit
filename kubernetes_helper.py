@@ -3744,6 +3744,9 @@ class KubernetesHelper:
 			if kind in kubernetes_resources:
 				return kind
 
+			if (kind[0].capitalize(), kind[1]) in kubernetes_resources:
+				return (kind[0].capitalize(), kind[1])
+
 			if kind[0].startswith("__"):
 				return kind
 

@@ -1,0 +1,38 @@
+kind: "SleepModeConfig"
+api_family: "cluster.loft.sh"
+default_command: "sleepmodeconfigs.cluster"
+command:
+- "sleepmodeconfig.cluster"
+- "sleepmodeconfs.cluster"
+- "sleepmodeconf.cluster"
+listview:
+  name: "Sleep Mode Configs"
+  group: "Lôft"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Sleep Mode Config Info"
+  no_reload_on_refresh: true
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["slept_header", "slept_last_7_days", "slept_last_30_days"]
+    rows:
+      slept_header:
+        header: [["Slept:", ["main", "infoheader"]]]
+      slept_last_30_days:
+        header: [["  Last 30 Days:", ["main", "infoheader"]]]
+        path: "status#sleptLastThirtyDays"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      slept_last_7_days:
+        header: [["  Last 7 Days:", ["main", "infoheader"]]]
+        path: "status#sleptLastSevenDays"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"

@@ -1,16 +1,16 @@
-kind: "VirtualClusterTemplate"
+kind: "ClusterRoleTemplate"
 api_family: "management.loft.sh"
-default_command: "virtualclustertemplates.management"
+default_command: "clusterroletemplates.management"
 command:
-- "virtualclustertemplate.management"
-- "virtclrtmpls.management"
-- "virtclrtmpl.management"
-- "vcts.management"
-- "vct.management"
-- "vcts.mgmnt"
-- "vct.mgmnt"
+- "clusterroletemplate.management"
+- "clusterroletemplates.mgmnt"
+- "clusterroletemplate.mgmnt"
+- "clrroletmpls.management"
+- "clrroletmpl.management"
+- "clrroletmpls.mgmnt"
+- "clrroletmpl.mgmnt"
 listview:
-  name: "Virtual Cluster Templates"
+  name: "Cluster Role Template Instances"
   group: "Lôft"
   field_indexes:
     Normal:
@@ -21,12 +21,19 @@ listview:
       path: "spec#displayName"
       type: "str"
 infoview:
-  name: "Virtual Cluster Template Info"
+  name: "Cluster Role Template Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["display_name", "description"]
+        fields: ["display_name", "description", "clusters"]
     rows:
+      clusters:
+        header: [["Clusters:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#clusters"
+          pathtype: "list"
+          default: ["<none>"]
+        formatter: "list"
       description:
         header: [["Description:", ["main", "infoheader"]]]
         path: "spec#description"
@@ -58,14 +65,13 @@ infoview:
           pathtype: "list"
         formatter: "list"
   shortcuts:
-    "Virtual Cluster Template":
-      key: "t"
-      modifier: "shift"
+    "Cluster Role Template":
+      key: "m"
       read_only: true
-      helptext: "Show virtual cluster template"
+      helptext: "Show cluster role template"
       action: "call"
       action_call: "view_yaml"
       action_args:
-        title: "Virtual Cluster Template"
+        title: "Cluster Role Template"
         _pass_obj: true
-        path: "spec#template"
+        path: "spec#clusterRoleTemplate"

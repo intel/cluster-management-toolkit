@@ -11,3 +11,37 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "Cluster Access Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "description", "clusters"]
+    rows:
+      clusters:
+        header: [["Clusters:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#clusters"
+          pathtype: "list"
+          default: ["<none>"]
+        formatter: "list"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+  shortcuts:
+    "Local Cluster Access Template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show local cluster access template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Local Cluster Access Template"
+        _pass_obj: true
+        path: "spec#localClusterAccessTemplate"

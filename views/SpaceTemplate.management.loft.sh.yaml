@@ -12,4 +12,62 @@ listview:
   group: "Lôft"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "display_name", "age"]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "spec#displayName"
+      type: "str"
+infoview:
+  name: "Space Template Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "description"]
+    rows:
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#access"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "users", "verbs"]
+        sortcolumn: "name"
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      users:
+        header: "Users:"
+        paths:
+        - path: "users"
+          pathtype: "list"
+        formatter: "list"
+      verbs:
+        header: "Verbs:"
+        paths:
+        - path: "verbs"
+          pathtype: "list"
+        formatter: "list"
+  shortcuts:
+    "Space Template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show space template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Space Template"
+        _pass_obj: true
+        path: "spec#template"

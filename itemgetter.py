@@ -6,7 +6,7 @@ Get items from lists for use in windowwidget
 
 import re
 import sys
-from typing import Any, cast, Dict, List, Optional, Tuple
+from typing import Any, cast, Dict, List, Optional, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -521,11 +521,11 @@ def get_list_as_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 # pylint: disable-next=unused-argument
 def get_dict_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Any]:
 	"""
-	Given a path to a dict, generate a list with all items as a list of dicts
-	with the key and the value in the fields as "key" and "value", respectively,
-	where value can itself be any type, not just simple types; fields is then
-	used to further specify the path to the individual fields to form the final
-	list from.
+	Given a path to a dict (or a list of dicts), generate a list with all items
+	as a list of dicts with the key and the value in the fields as "key" and "value",
+	respectively, where value can itself be any type, not just simple types;
+	fields is then used to further specify the path to the individual fields
+	to form the final list from.
 
 		Parameters:
 			kh (KubernetesHelper): Unused
@@ -541,8 +541,14 @@ def get_dict_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: D
 	path = deep_get(kwargs, DictPath("path"))
 	fields = deep_get(kwargs, DictPath("fields"))
 
-	for key, value in deep_get(obj, DictPath(path), {}).items():
-		tmp_vlist.append({"key": key, "value": value})
+	data: Union[Dict, List[Dict]] = deep_get(obj, DictPath(path), {})
+
+	if isinstance(data, dict):
+		data = [data]
+
+	for item in data:
+		for key, value in item.items():
+			tmp_vlist.append({"key": key, "value": value})
 
 	for item in tmp_vlist:
 		newobj: List[Tuple] = []

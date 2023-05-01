@@ -1,0 +1,35 @@
+kind: "Feature"
+api_family: "management.loft.sh"
+default_command: "features.management"
+command:
+- "feature.management"
+- "features.mgmnt"
+- "feature.mgmnt"
+- "features.management"
+- "feature.management"
+- "feats.mgmnt"
+- "feat.mgmnt"
+listview:
+  name: "Feature Instances"
+  group: "Lôft"
+  field_indexes:
+    Normal:
+      fields: ["name", "enabled", "age"]
+  fields:
+    enabled:
+      header: "Enabled:"
+      path: "status#enabled"
+      type: "bool"
+      default: "<unset>"
+infoview:
+  name: "Feature Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["enabled"]
+    rows:
+      enabled:
+        header: [["Enabled:", ["main", "infoheader"]]]
+        path: "status#enabled"
+        type: "bool"
+        default: "<unset>"

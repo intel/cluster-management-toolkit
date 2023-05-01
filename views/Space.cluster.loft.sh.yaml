@@ -8,11 +8,36 @@ listview:
   group: "Lôft"
   field_indexes:
     Normal:
-      fields: ["name", "owner", "phase", "age"]
+      fields: ["name", "owner", "controller", "phase", "age"]
   fields:
+    controller:
+      header: "Controller:"
+      paths:
+      - path: "metadata#ownerReferences"
+        pathtype: "items"
+        subpaths:
+        - "kind"
+        - "apiVersion"
+        - "name"
+        when:
+        - key: "controller"
+          eq: true
+        type: ["kind", "api_group", "name"]
+      default: "<none>"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
+        field_separators:
+        - type: "kind_api_group"
+        - type: "kind"
     owner:
       header: "Owner:"
-      path: "status#owner#user#name"
+      paths:
+      - path: ["status#owner#user#name", "status#owner#team#name"]
+        pathtype: "str"
       type: "str"
     phase:
       header: "Phase:"
@@ -30,3 +55,147 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+infoview:
+  name: "Space Info"
+  # This is necessary because "get" doesn't return the same data as "list"
+  no_reload_on_refresh: true
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "phase",
+                 "owner_header",
+                 "owner_user_header", "owner_user_display_name", "owner_user_name", "owner_user_email", "owner_user_username", "owner_user_subject",
+                 "owner_team_header", "owner_team_display_name", "owner_team_name", "owner_team_email", "owner_team_username", "owner_team_subject",
+                 ]
+    rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Active":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Terminating":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+      owner_header:
+        header: [["Owner:", ["main", "infoheader"]]]
+      owner_team_header:
+        header: [["  ", ["main", "infoheader"]], ["T", ["main", "infoheader_shortcut"]], ["eam:", ["main", "infoheader"]]]
+      owner_team_display_name:
+        header: [["    Display Name:", ["main", "infoheader"]]]
+        path: "status#owner#team#displayName"
+        type: "str"
+        default: "<unset>"
+      owner_team_email:
+        header: [["    E-mail:", ["main", "infoheader"]]]
+        path: "status#owner#team#email"
+        type: "str"
+        default: "<unset>"
+      owner_team_name:
+        header: [["    Name:", ["main", "infoheader"]]]
+        path: "status#owner#team#name"
+        type: "str"
+        default: "<unset>"
+      owner_team_subject:
+        header: [["    Subject:", ["main", "infoheader"]]]
+        path: "status#owner#team#subject"
+        type: "str"
+        default: "<unset>"
+      owner_team_username:
+        header: [["    Username:", ["main", "infoheader"]]]
+        path: "status#owner#team#username"
+        type: "str"
+        default: "<unset>"
+      owner_user_header:
+        header: [["  ", ["main", "infoheader"]], ["U", ["main", "infoheader_shortcut"]], ["ser:", ["main", "infoheader"]]]
+      owner_user_display_name:
+        header: [["    Display Name:", ["main", "infoheader"]]]
+        path: "status#owner#user#displayName"
+        type: "str"
+        default: "<unset>"
+      owner_user_email:
+        header: [["    E-mail:", ["main", "infoheader"]]]
+        path: "status#owner#user#email"
+        type: "str"
+        default: "<unset>"
+      owner_user_name:
+        header: [["    Name:", ["main", "infoheader"]]]
+        path: "status#owner#user#name"
+        type: "str"
+        default: "<unset>"
+      owner_user_subject:
+        header: [["    Subject:", ["main", "infoheader"]]]
+        path: "status#owner#user#subject"
+        type: "str"
+        default: "<unset>"
+      owner_user_username:
+        header: [["    Username:", ["main", "infoheader"]]]
+        path: "status#owner#user#username"
+        type: "str"
+        default: "<unset>"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open Team":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Team"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Team"
+        api_family: "management.loft.sh"
+        name_path: "status#owner#team#name"
+    "Open User":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for User"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "User"
+        api_family: "management.loft.sh"
+        name_path: "status#owner#user#name"

@@ -29,3 +29,44 @@ listview:
       formatting:
         field_colors:
         - type: "version"
+infoview:
+  name: "Helm Release Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["chart", "version", "revision"]
+    rows:
+      chart:
+        header: [["Chart:", ["main", "infoheader"]]]
+        path: "status#metadata#name"
+        type: "str"
+      revision:
+        header: [["Revision:", ["main", "infoheader"]]]
+        path: "status#version"
+        type: "int"
+        default: "<unset>"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "status#metadata#version"
+        type: "str"
+        default: "<unset>"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "View Values":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show values"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Values"
+        _pass_obj: true
+        path: "spec#values"
+        include_root: true

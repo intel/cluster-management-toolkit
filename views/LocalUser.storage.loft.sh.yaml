@@ -8,4 +8,76 @@ listview:
   group: "Lôft"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "display_name", "email", "age"]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "status#displayName"
+      type: "str"
+    email:
+      header: "E-Mail:"
+      path: "status#email"
+      type: "str"
+infoview:
+  name: "Local User Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["username", "display_name", "email", "groups", "teams"]
+    rows:
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "status#displayName"
+        type: "str"
+      email:
+        header: [["E-Mail:", ["main", "infoheader"]]]
+        path: "status#email"
+        type: "str"
+      groups:
+        header: [["G", ["main", "infoheader_shortcut"]], ["roups:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#groups"
+          pathtype: "list"
+        formatter: "list"
+      teams:
+        header: [["T", ["main", "infoheader_shortcut"]], ["eams:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#teams"
+          pathtype: "list"
+        formatter: "list"
+      username:
+        header: [["Username:", ["main", "infoheader"]]]
+        path: "status#username"
+        type: "str"
+  shortcuts:
+    "List Groups":
+      key: "g"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Groups that the user has access to"
+      widget: "windowwidget"
+      title: "Groups:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["status#groups"]
+      # Not supported for now
+      sortcolumn: "groups"
+    "List Teams":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Teams that the user belongs to"
+      widget: "windowwidget"
+      title: "Teams:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["status#teams"]
+      # Not supported for now
+      sortcolumn: "teams"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "Team"
+        api_family: "storage.loft.sh"
+        name_path: 0

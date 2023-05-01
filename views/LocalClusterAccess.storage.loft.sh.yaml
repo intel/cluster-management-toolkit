@@ -11,3 +11,116 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "Local Cluster Access Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "description", "priority", "cluster_roles", "users", "teams"]
+    rows:
+      cluster_roles:
+        header: [["C", ["main", "infoheader_shortcut"]], ["luster Roles:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#clusterRoles"
+          pathtype: "items"
+          subpaths:
+          - "name"
+        formatter: "list"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+      priority:
+        header: [["Priority:", ["main", "infoheader"]]]
+        path: "spec#priority"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      teams:
+        header: [["T", ["main", "infoheader_shortcut"]], ["eams:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#teams"
+          pathtype: "list"
+          default: ["<none>"]
+        formatter: "list"
+      users:
+        header: [["U", ["main", "infoheader_shortcut"]], ["sers:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#users"
+          pathtype: "items"
+          subpaths:
+          - "team"
+          - "user"
+          default: ["<none>"]
+        formatter: "list"
+  shortcuts:
+    "List Cluster Roles":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Cluster Roles that the team has access to"
+      widget: "windowwidget"
+      title: "Cluster Roles:"
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#clusterRoles"
+        fields:
+        - "name"
+      # Not supported for now
+      sortcolumn: "clusterroles"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "ClusterRole"
+        api_family: "rbac.authorization.k8s.io"
+        name_path: 0
+    "List Teams":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Teams affected by this cluster access object"
+      widget: "windowwidget"
+      title: "Teams:"
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#teams"
+        fields:
+        - "name"
+      # Not supported for now
+      sortcolumn: "clusterroles"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "ClusterRole"
+        api_family: "rbac.authorization.k8s.io"
+        name_path: 0
+    "List Users":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Users affected by this cluster access object"
+      widget: "windowwidget"
+      title: "Cluster Roles:"
+      headers: ["User Type:", "Name:"]
+      selectable: true
+      itemgetter: "get_dict_list"
+      itemgetter_args:
+        path: "spec#users"
+        fields:
+        - "key"
+        - "value"
+      # Not supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind_path: 0
+        api_family: "management.loft.sh"
+        name_path: 1

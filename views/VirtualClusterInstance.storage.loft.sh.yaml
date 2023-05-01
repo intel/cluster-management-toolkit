@@ -1,16 +1,12 @@
 kind: "VirtualClusterInstance"
-api_family: "management.loft.sh"
-default_command: "virtualclusterinstances.management"
+api_family: "storage.loft.sh"
+default_command: "virtualclusterinstances.storage"
 command:
-- "virtualclusterinstance.management"
-- "virtualclusterinstances.mgmnt"
-- "virtualclusterinstance.mgmnt"
-- "virtclrinsts.management"
-- "virtclrinst.management"
-- "vcis.management"
-- "vci.management"
-- "vcis.mgmnt"
-- "vci.mgmnt"
+- "virtualclusterinstance.storage"
+- "virtclrinsts.storage"
+- "virtclrinst.storage"
+- "vcis.storage"
+- "vci.storage"
 listview:
   name: "Virtual Cluster Instances"
   group: "Lôft"
@@ -44,7 +40,7 @@ infoview:
       cluster_ref:
         header: [["C", ["main", "infoheader_shortcut"]], ["luster:", ["main", "infoheader"]]]
         paths:
-        - path: ["Cluster", "management.loft.sh", ["spec#clusterRef#cluster"]]
+        - path: ["Cluster", "storage.loft.sh", ["spec#clusterRef#cluster"]]
           pathtype: "tuple"
           type: ["kind", "kind", "name"]
         formatter: "list"
@@ -92,7 +88,7 @@ infoview:
       template_ref:
         header: [["Te", ["main", "infoheader"]], ["m", ["main", "infoheader_shortcut"]], ["plate:", ["main", "infoheader"]]]
         paths:
-        - path: ["Template", "management.loft.sh", ["spec#templateRef#name"]]
+        - path: ["Template", "storage.loft.sh", ["spec#templateRef#name"]]
           pathtype: "tuple"
           type: ["kind", "kind", "name"]
         formatter: "list"
@@ -107,7 +103,7 @@ infoview:
       virtual_cluster_ref:
         header: [["V", ["main", "infoheader_shortcut"]], ["irtual Cluster:", ["main", "infoheader"]]]
         paths:
-        - path: ["VirtualCluster", "management.loft.sh", ["spec#clusterRef#namespace"], ["spec#clusterRef#virtualCluster"]]
+        - path: ["VirtualCluster", "storage.loft.sh", ["spec#clusterRef#namespace"], ["spec#clusterRef#virtualCluster"]]
           pathtype: "tuple"
           type: ["kind", "kind", "name", "name"]
         formatter: "list"
@@ -159,7 +155,7 @@ infoview:
         _pass_obj: true
         name_path: "spec#clusterRef#cluster"
         kind: "Cluster"
-        api_family: "management.loft.sh"
+        api_family: "storage.loft.sh"
     "Open Team":
       key: "t"
       modifier: "shift"
@@ -196,7 +192,7 @@ infoview:
         name_path: "spec#clusterRef#virtualCluster"
         namespace_path: "spec#clusterRef#namespace"
         kind: "VirtualCluster"
-        api_family: "management.loft.sh"
+        api_family: "storage.loft.sh"
     "View Virtual Cluster Configuration":
       key: "v"
       read_only: true
@@ -218,4 +214,4 @@ infoview:
         _pass_obj: true
         name_path: "spec#templateRef#name"
         kind: "VirtualClusterTemplate"
-        api_family: "management.loft.sh"
+        api_family: "storage.loft.sh"

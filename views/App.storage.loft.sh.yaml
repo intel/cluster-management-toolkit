@@ -8,4 +8,86 @@ listview:
   group: "Lôft"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "display_name", "age"]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "spec#displayName"
+      type: "str"
+infoview:
+  name: "App Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "description", "chart_header", "chart_name", "chart_repo_url", "default_namespace", "recommended_app"]
+    rows:
+      chart_header:
+        header: [["Chart:", ["main", "infoheader"]]]
+      chart_name:
+        header: [["  Name:", ["main", "infoheader"]]]
+        path: "spec#config#chart#name"
+        default: "<unset>"
+        type: "str"
+      chart_repo_url:
+        header: [["  Repository URL:", ["main", "infoheader"]]]
+        path: "spec#config#chart#repoURL"
+        default: "<unset>"
+        type: "str"
+      default_namespace:
+        header: [["Default Namespace:", ["main", "infoheader"]]]
+        path: "spec#defaultNamespace"
+        default: "<unset>"
+        type: "str"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+      recommended_app:
+        header: [["Recommended App:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#recommendedApp"
+          pathtype: "list"
+        formatter: "list"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#access"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "users", "verbs"]
+        sortcolumn: "name"
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      users:
+        header: "Users:"
+        paths:
+        - path: "users"
+          pathtype: "list"
+        formatter: "list"
+      verbs:
+        header: "Verbs:"
+        paths:
+        - path: "verbs"
+          pathtype: "list"
+        formatter: "list"
+  shortcuts:
+    "View Parameters":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show parameters"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Parameters"
+        _pass_obj: true
+        path: "spec#parameters"
+        include_root: true

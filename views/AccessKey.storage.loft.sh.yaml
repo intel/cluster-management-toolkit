@@ -8,4 +8,121 @@ listview:
   group: "Lôft"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "display_name", "controller", "age"]
+  fields:
+    controller:
+      header: "Controller:"
+      paths:
+      - path: "metadata#ownerReferences"
+        pathtype: "items"
+        subpaths:
+        - "kind"
+        - "apiVersion"
+        - "name"
+        when:
+        - key: "controller"
+          eq: true
+        type: ["kind", "api_group", "name"]
+      default: "<none>"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
+        field_separators:
+        - type: "kind_api_group"
+        - type: "kind"
+    display_name:
+      header: "Display Name:"
+      path: "spec#displayName"
+      type: "str"
+infoview:
+  name: "Access Key Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["display_name", "user", "controller", "type", "key", "ttl", "ttl_after_last_activity", "last_activity"]
+    rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+        default: "<unset>"
+      key:
+        header: [["Key:", ["main", "infoheader"]]]
+        path: "spec#key"
+        type: "str"
+      last_activity:
+        header: [["Last Activity:", ["main", "infoheader"]]]
+        path: "status#lastActivity"
+        type: "timestamp"
+      ttl:
+        header: [["TTL:", ["main", "infoheader"]]]
+        path: "spec#ttl"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        default: "<unset>"
+      ttl_after_last_activity:
+        header: [["TTL After Last Activity:", ["main", "infoheader"]]]
+        path: "spec#ttlAfterLastActivity"
+        type: "bool"
+        default: "<unset>"
+      type:
+        header: [["Type:", ["main", "infoheader"]]]
+        path: "spec#type"
+        type: "str"
+      user:
+        header: [["U", ["main", "infoheader_shortcut"]], ["ser:", ["main", "infoheader"]]]
+        path: "spec#user"
+        type: "bool"
+        default: "<unset>"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open User":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for User"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "User"
+        api_family: "management.loft.sh"
+        name_path: "spec#user"
