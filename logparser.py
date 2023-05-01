@@ -2312,6 +2312,86 @@ def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 	return message, remnants
 
 # pylint: disable-next=unused-argument
+def ansible_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dict] = None) ->\
+				Tuple[Tuple[str, Optional[Callable], Dict],
+				      Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+	timestamp = none_timestamp()
+	facility = ""
+	severity = LogLevel.INFO
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+	matched = True
+	final_block = deep_get(options, "final_block", False)
+
+	message = strip_iso_timestamp(message)
+
+	if len(message) == 0:
+		options["override_formatting"] = None
+
+	# We're approaching the end
+	if final_block and len(message) == 0:
+		processor = ("end_block", None, {})
+	else:
+		if "final_block" in options:
+			tmp = re.match(r"^.+?:\sok=(\d+)\s+changed=(\d+)\s+unreachable=(\d+)\s+failed=(\d+)\s+skipped=(\d+)\s+rescued=(\d+)\s+ignored=(\d+)", message)
+			if tmp is not None:
+				ok = int(tmp[1])
+				changed = int(tmp[2])
+				unreachable = int(tmp[3])
+				failed = int(tmp[4])
+				skipped = int(tmp[5])
+				rescued = int(tmp[6])
+				ignored = int(tmp[7])
+
+				# These are sorted in order of severity; "highest" wins
+				if ok > 0:
+					options["override_formatting"] = ThemeAttr("main", "status_ok")
+				if changed > 0:
+					options["override_formatting"] = ThemeAttr("logview", "severity_modified")
+				if skipped > 0:
+					options["override_formatting"] = ThemeAttr("logview", "severity_debug")
+				if ignored > 0 or rescued > 0:
+					options["override_formatting"] = ThemeAttr("logview", "severity_warn")
+				if unreachable > 0 or failed > 0:
+					options["override_formatting"] = ThemeAttr("logview", "severity_error")
+
+		if message.startswith("skipping"):
+			options["override_formatting"] = ThemeAttr("logview", "severity_debug")
+		elif message.startswith("ok"):
+			options["override_formatting"] = ThemeAttr("main", "status_ok")
+		elif message.startswith("changed"):
+			options["override_formatting"] = ThemeAttr("logview", "severity_modified")
+		elif message.startswith("fatal"):
+			options["override_formatting"] = ThemeAttr("logview", "severity_error")
+		remnants = formatters.format_ansible_line(message, override_formatting = deep_get(options, DictPath("override_formatting")))
+		if message.startswith("PLAY RECAP"):
+			options["final_block"] = True
+			processor: Tuple[str, Optional[Callable], Dict] = ("final_block", ansible_line_scanner, options)
+		else:
+			processor: Tuple[str, Optional[Callable], Dict] = ("block", ansible_line_scanner, options)
+
+	return processor, (timestamp, facility, severity, remnants)
+
+# pylint: disable-next=unused-argument
+def ansible_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel.INFO, options: Optional[Dict] = None) ->\
+			Tuple[Tuple[str, Optional[Callable], Dict],
+			      List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+	if options is None:
+		options = {}
+
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+	matched = False
+
+	if message.startswith("PLAY [") and message.endswith ("***"):
+		if severity is None:
+			severity = LogLevel.INFO
+		remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
+		options["eof"] = "end_block"
+		processor: Tuple[str, Optional[Callable], Dict] = ("start_block", ansible_line_scanner, options)
+		return processor, remnants
+
+	return message, remnants
+
+# pylint: disable-next=unused-argument
 def raw_formatter(message: str, severity: Optional[LogLevel] = None, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 			Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], Optional[LogLevel], str]:
 	assert options is not None
@@ -2532,6 +2612,9 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 			elif _filter[0] == "diff_line":
 				_parser_options = {**_filter[1], **options}
 				message, remnants = diff_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
+			elif _filter[0] == "ansible_line":
+				_parser_options = {**_filter[1], **options}
+				message, remnants = ansible_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
 			else:
 				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 
@@ -2663,7 +2746,8 @@ def init_parser_list():
 								 "tab_separated",
 								 "ts_8601"):
 							rules.append(rule_name)
-						elif rule_name in ("custom_splitter",
+						elif rule_name in ("ansible_line",
+								   "custom_splitter",
 								   "diff_line",
 								   "http",
 								   "iptables",

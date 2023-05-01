@@ -107,13 +107,36 @@ def format_none(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union
 	return dumps
 
 # pylint: disable-next=unused-argument
+def format_ansible_line(line: str, override_formatting: Optional[Union[ThemeAttr, Dict]] = None) -> List[Union[ThemeRef, ThemeString]]:
+	"""
+	Formats a single line of an Ansible play
+
+		Parameters:
+			line (str): a string
+			override_formatting (dict): Overrides instead of default Ansible-formatting
+		Returns:
+			themearray: a themearray
+	"""
+
+	tmpline: List[Union[ThemeRef, ThemeString]] = []
+	if override_formatting is None:
+		formatting = ThemeAttr("types", "generic")
+	else:
+		formatting = override_formatting
+
+	tmpline += [
+		ThemeString(line, formatting),
+	]
+	return tmpline
+
+# pylint: disable-next=unused-argument
 def format_diff_line(line: str, override_formatting: Optional[Union[ThemeAttr, Dict]] = None) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Formats a single line of a diff
 
 		Parameters:
 			line (str): a string
-			override_formatting (dict): Overrides instead of default YAML-formatting
+			override_formatting (dict): Overrides instead of default diff-formatting
 		Returns:
 			themearray: a themearray
 	"""

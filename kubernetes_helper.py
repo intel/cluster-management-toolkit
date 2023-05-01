@@ -1337,6 +1337,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/ingress.operator.openshift.io/v1/"],
 		"api": "dnsrecords",
 	},
+	# installer.kubesphere.io/v1alpha1
+	("ClusterConfiguration", "installer.kubesphere.io"): {
+		"api_paths": ["apis/installer.kubesphere.io/v1alpha1/"],
+		"api": "clusterconfigurations",
+	},
 	# install.istio.io
 	("IstioOperator", "install.istio.io"): {
 		"api_paths": ["apis/install.istio.io/v1alpha1/"],
