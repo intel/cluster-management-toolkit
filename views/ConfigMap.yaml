@@ -25,6 +25,13 @@ listview:
         pathtype: "value"
         type: "bool"
         default: ""
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
 infoview:
   name: "Config Map Info"
   listpad:
@@ -54,7 +61,7 @@ infoview:
     "Attempt to display Certificate info":
       key: "c"
       modifier: "shift"
-      read_only: false
+      read_only: true
       helptext: "Attempt to display certificate information"
       widget: "command"
       widget_args:
@@ -99,3 +106,25 @@ infoview:
         _extra_args:
           base_path: "data"
           name_attr: "data"
+    "List Pods using this ConfigMap":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Pods using this ConfigMap"
+      widget: "windowwidget"
+      title: "Pods:"
+      headers: ["Namespace:", "Name:"]
+      # This isn't supported for now
+      sortcolumn: "name"
+      itemgetter: "get_pod_configmaps"
+      itemgetter_args:
+        cm_namespace: ["metadata#namespace"]
+        cm_name: ["metadata#name"]
+        pod_name: ""
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "Pod"
+        name_path: 1
+        namespace_path: 0

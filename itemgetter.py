@@ -681,6 +681,63 @@ def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 	return affinities
 
 # pylint: disable-next=unused-argument
+def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> Optional[List[str]]:
+	cm_namespace = deep_get(kwargs, DictPath("cm_namespace"))
+	if isinstance(cm_namespace, list):
+		cm_namespace = deep_get_with_fallback(obj, DictPath(cm_namespace))
+	cm_name = deep_get(kwargs, DictPath("cm_name"))
+	if isinstance(cm_name, list):
+		cm_name = deep_get_with_fallback(obj, DictPath(cm_name))
+	pod_name = deep_get(kwargs, DictPath("pod_name"))
+	if isinstance(pod_name, list):
+		pod_name = deep_get_with_fallback(obj, DictPath(pod_name))
+	if cm_namespace is None or cm_name is None:
+		return None
+
+	vlist = []
+
+	field_selector = ""
+	if pod_name is not None and len(pod_name) > 0:
+		field_selector = f"metadata.name={pod_name}"
+
+	plist, status = kh.get_list_by_kind_namespace(("Pod", ""), cm_namespace, field_selector = field_selector)
+
+	for item in plist:
+		pod_name = deep_get(item, DictPath("metadata#name"), "")
+		matched = False
+		for volume in deep_get(item, DictPath("spec#volumes"), []):
+			if deep_get(volume, DictPath("configMap#name"), "") == cm_name:
+				matched = True
+				vlist.append((cm_namespace, pod_name))
+				break
+			for source in deep_get(volume, DictPath("projected#sources"), []):
+				if deep_get(source, DictPath("configMap#name"), "") == cm_name:
+					matched = True
+					vlist.append((cm_namespace, pod_name))
+					break
+			if matched == True:
+				break
+		if matched == True:
+			continue
+		for container in deep_get(item, DictPath("spec#containers"), []):
+			for env in deep_get(volume, DictPath("env"), []):
+				if deep_get(source, DictPath("ValueFrom#configMapKeyRef#name"), "") == cm_name:
+					matched = True
+					vlist.append((cm_namespace, pod_name))
+					break
+			if matched == True:
+				break
+			for env_from in deep_get(volume, DictPath("envFrom"), []):
+				if deep_get(source, DictPath("configMapKeyRef#name"), "") == cm_name:
+					vlist.append((cm_namespace, pod_name))
+					break
+
+	if len(vlist) == 0:
+		vlist = None
+
+	return vlist
+
+# pylint: disable-next=unused-argument
 def get_prepopulated_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Dict]:
 	items = deep_get(kwargs, DictPath("items"), [])
 
@@ -955,6 +1012,7 @@ itemgetter_allowlist = {
 	"get_list_fields": get_list_fields,
 	"get_package_version_list": get_package_version_list,
 	"get_pod_affinity": get_pod_affinity,
+	"get_pod_configmaps": get_pod_configmaps,
 	"get_pod_tolerations": get_pod_tolerations,
 	"get_prepopulated_list": get_prepopulated_list,
 	"get_resource_list": get_resource_list,
