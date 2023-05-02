@@ -557,6 +557,19 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/batch.volcano.sh/v1alpha1/"],
 		"api": "jobs",
 	},
+	# bmc.tinkerbell.org
+	("Job", "bmc.tinkerbell.org"): {
+		"api_paths": ["apis/bmc.tinkerbell.org/v1alpha1/"],
+		"api": "jobs",
+	},
+	("Machine", "bmc.tinkerbell.org"): {
+		"api_paths": ["apis/bmc.tinkerbell.org/v1alpha1/"],
+		"api": "machines",
+	},
+	("Task", "bmc.tinkerbell.org"): {
+		"api_paths": ["apis/bmc.tinkerbell.org/v1alpha1/"],
+		"api": "tasks",
+	},
 	# bootstrap.cluster.x-k8s.io
 	("KubeadmConfig", "bootstrap.cluster.x-k8s.io"): {
 		"api_paths": ["apis/bootstrap.cluster.x-k8s.io/v1beta1/"],
@@ -2681,6 +2694,23 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("Tensorboard", "tensorboard.kubeflow.org"): {
 		"api_paths": ["apis/tensorboard.kubeflow.org/v1alpha1/"],
 		"api": "tensorboards",
+	},
+	# tinkerbell.org
+	("Hardware", "tinkerbell.org"): {
+		"api_paths": ["apis/tinkerbell.org/v1alpha1/"],
+		"api": "hardware",
+	},
+	("Template", "tinkerbell.org"): {
+		"api_paths": ["apis/tinkerbell.org/v1alpha1/"],
+		"api": "templates",
+	},
+	("WorkflowData", "tinkerbell.org"): {
+		"api_paths": ["apis/tinkerbell.org/v1alpha1/"],
+		"api": "workflowdata",
+	},
+	("Workflow", "tinkerbell.org"): {
+		"api_paths": ["apis/tinkerbell.org/v1alpha1/"],
+		"api": "workflows",
 	},
 	# topology.node.k8s.io
 	("NodeResourceTopology", "topology.node.k8s.io"): {
