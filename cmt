@@ -24,7 +24,7 @@ import os
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import cast, Dict, List, Optional, Sequence, Tuple
+from typing import Any, cast, Dict, List, Optional, Sequence, Tuple
 import yaml
 
 from cryptography import x509
@@ -1202,6 +1202,11 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				sys.exit(errno.EINTR)
 
 	control_plane_ip, control_plane_port, control_plane_path = kh.get_control_plane_address()
+	if control_plane_ip is None:
+		ansithemeprint([ANSIThemeString("\nAborting", "error"),
+				ANSIThemeString(": Could not get the IP-address for the control plane.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
 	# Now that we have the IP address of the API-server we can use that to get the package
 	# version for kubeadm
 	_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("get_versions.yaml"))), selection = [control_plane_ip])
@@ -1756,7 +1761,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 	header = True
 	api_version_selector = None
 	has_data = False
-	known_filter = {
+	known_filter: Dict[str, Any] = {
 		"known": None,
 		"list": None,
 		"info": None,
@@ -1926,7 +1931,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 				if has_data:
 					vlist, status = kh.get_list_by_kind_namespace(kind = (kind, api_group), namespace = "")
-					if len(vlist) == 0:
+					if vlist is None or len(vlist) == 0:
 						continue
 
 			if known_filter["known"] is not None:

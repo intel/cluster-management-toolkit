@@ -3171,6 +3171,9 @@ class KubernetesHelper:
 	tmp_key_file = None
 	programname = ""
 	programversion = ""
+	control_plane_ip = None
+	control_plane_port = None
+	control_plane_path = None
 
 	def list_contexts(self, config_path: Optional[FilePath] = None) -> List[Tuple[bool, str, str, str, str, str]]:
 		return list_contexts(config_path)
@@ -3637,7 +3640,7 @@ class KubernetesHelper:
 
 		return self.cluster_unreachable == False
 
-	def get_control_plane_address(self) -> Tuple[str, str, str]:
+	def get_control_plane_address(self) -> Tuple[Optional[str], Optional[str], Optional[str]]:
 		"""
 		Returns the IP-address and port of the control plane
 
@@ -3645,7 +3648,7 @@ class KubernetesHelper:
 				(control_plane_ip, control_plane_port, control_plane_path): The IP-address, port, and path of the control plane
 					control_plane_ip (str): An IP-address
 					control_plane_port (str): A port
-					control_plane_path (str): A path (optional)
+					control_plane_path (str): A path (can be the empty string)
 		"""
 
 		return self.control_plane_ip, self.control_plane_port, self.control_plane_path

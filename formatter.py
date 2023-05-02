@@ -18,7 +18,7 @@ except ModuleNotFoundError:
 	DecodeException = json.decoder.JSONDecodeError # type: ignore
 import re
 import sys
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Union
 import yaml
 
 from cmttypes import deep_get, DictPath
@@ -122,7 +122,7 @@ def format_ansible_line(line: str, override_formatting: Optional[Union[ThemeAttr
 	if override_formatting is None:
 		formatting = ThemeAttr("types", "generic")
 	else:
-		formatting = override_formatting
+		formatting = cast(ThemeAttr, override_formatting)
 
 	tmpline += [
 		ThemeString(line, formatting),
