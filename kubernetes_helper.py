@@ -75,11 +75,7 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "endpoints",
 	},
 	("Event", ""): {
-		"api_paths": ["/apis/events.k8s.io/v1/", "api/v1/"],
-		"api": "events",
-	},
-	("Event", "events.k8s.io"): {
-		"api_paths": ["/apis/events.k8s.io/v1/", "api/v1/"],
+		"api_paths": ["api/v1/"],
 		"api": "events",
 	},
 	("LimitRange", ""): {
@@ -220,6 +216,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("EndpointSlice", "discovery.k8s.io"): {
 		"api_paths": ["apis/discovery.k8s.io/v1/", "apis/discovery.k8s.io/v1beta1/"],
 		"api": "endpointslices",
+	},
+	# events.k8s.io
+	("Event", "events.k8s.io"): {
+		"api_paths": ["apis/events.k8s.io/v1/"],
+		"api": "events",
 	},
 	# flowcontrol.apiserver.k8s.io
 	("FlowSchema", "flowcontrol.apiserver.k8s.io"): {
@@ -1427,6 +1428,15 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("NetworkAttachmentDefinition", "k8s.cni.cncf.io"): {
 		"api_paths": ["apis/k8s.cni.cncf.io/v1/"],
 		"api": "network-attachment-definitions",
+	},
+	# k8s.otterize.com
+	("ClientIntents", "k8s.otterize.com"): {
+		"api_paths": ["apis/k8s.otterize.com/v1alpha2/"],
+		"api": "clientintents",
+	},
+	("KafkaServerConfig", "k8s.otterize.com"): {
+		"api_paths": ["apis/k8s.otterize.com/v1alpha2/"],
+		"api": "kafkaserverconfigs",
 	},
 	# kamaji.clastix.io
 	("DataStore", "kamaji.clastix.io"): {
@@ -4103,8 +4113,6 @@ class KubernetesHelper:
 						continue
 					if (kind, name) in kubernetes_resources and f"apis/{_version}/" in kubernetes_resources[(kind, name)].get("api_paths", ""):
 						# We are special casing this since the core API is deprecated and handled transparently
-						if (kind, name) == ("Event", "events.k8s.io"):
-							continue
 						if (kind, name) in kubernetes_resources:
 							kubernetes_resources[(kind, name)]["available"] = True
 						continue

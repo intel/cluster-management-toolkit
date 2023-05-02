@@ -11393,7 +11393,7 @@ def populate_views(force_refresh: bool = False) -> None:
 				else:
 					kind = tmp
 					api_family = ""
-				if (kind, api_family) in available_api_families or kind.startswith("__") or (kind == "Event" and (kind, "")) in available_api_families:
+				if (kind, api_family) in available_api_families or kind.startswith("__"):
 					view_files.append(os.path.join(view_dir, filename))
 			else:
 				view_files.append(os.path.join(view_dir, filename))
@@ -11946,7 +11946,7 @@ def list_views(options: List[Tuple[str, str]], args: List[str]) -> None:
 		fieldset = set()
 		sortcolumn = ""
 		# This is necessary because of built-in fields
-		for values in deep_get(viewref, DictPath("field_indexes"), []).values():
+		for values in deep_get(viewref, DictPath("field_indexes"), {}).values():
 			fieldset.update(deep_get(values, DictPath("fields"), []))
 			if len(sortcolumn) == 0:
 				sortcolumn = deep_get(values, DictPath("sortcolumn"), "")
