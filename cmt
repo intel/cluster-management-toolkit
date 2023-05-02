@@ -1757,7 +1757,8 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 	local_only = None
 	verb_selector = []
 	wide = False
-	sortkey = 1
+	sortkey1 = 0
+	sortkey2 = 2
 	header = True
 	api_version_selector = None
 	has_data = False
@@ -1804,13 +1805,17 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 			header = False
 		elif opt == "--sort-by":
 			if optarg == "name":
-				sortkey = 0
+				sortkey1 = 2
+				sortkey2 = 0
 			elif optarg in ("apiversion", "api_version"):
-				sortkey = 2
+				sortkey1 = 4
+				sortkey2 = 2
 			elif optarg == "namespaced":
-				sortkey = 3
+				sortkey1 = 3
+				sortkey2 = 3
 			elif optarg == "kind":
-				sortkey = 4
+				sortkey1 = 2
+				sortkey2 = 4
 		elif opt == "--verbs":
 			verb_selector = optarg.split(",")
 		elif opt == "--wide":
@@ -1867,7 +1872,10 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	filtered_api_resources = []
 
-	for name, shortnames, api_version, namespaced, kind, verbs in sorted(api_resources, key = itemgetter(sortkey)):
+	sorted_list = sorted(api_resources, key = itemgetter(sortkey1))
+	sorted_list = sorted(sorted_list, key = itemgetter(sortkey2))
+
+	for name, shortnames, api_version, namespaced, kind, verbs in sorted_list:
 		if kubernetes_resources is not None:
 			try:
 				api_group = ""
@@ -2010,6 +2018,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		output = ""
 
+		current_api_group = ""
 		for name, shortnames, api_version, namespaced, kind, verbs in filtered_api_resources:
 			api_group = ""
 			api_path = f"api/{api_version}/"
@@ -2020,7 +2029,10 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				kind_string += f".{api_group}"
 
 			if output_format == "entry":
-				entry = f"\t(\"{kind}\", \"{api_group}\"): "
+				entry = ""
+				if current_api_group != api_group:
+					entry += f"\t# {api_group}\n"
+				entry += f"\t(\"{kind}\", \"{api_group}\"): "
 				entry += "{\n"
 				entry += f"\t\t\"api_paths\": [\"{api_path}\"],\n"
 				entry += f"\t\t\"api\": \"{name}\",\n"
@@ -2032,6 +2044,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				if len(output) > 0:
 					output += f"{separator}"
 				output += f"{kind_string}"
+			current_api_group = api_group
 
 		if len(output) > 0:
 			print(output)
