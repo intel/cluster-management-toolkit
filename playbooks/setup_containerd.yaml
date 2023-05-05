@@ -100,6 +100,7 @@
       line: "br_netfilter"
       insertafter: "EOF"
       state: "present"
+      create: true
   - name: "Load br_netfilter if it isn't already loaded"  # noqa fqcn-builtins no-changed-when
     shell: |
       modprobe br_netfilter
