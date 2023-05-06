@@ -1071,10 +1071,10 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	nodes, non_existing, controlplanes = get_selection(selection, kind = ("Node", ""))
 
 	if len(nodes) > 0 or len(controlplanes) > 0:
-		if ignore_existing == False:
+		if not ignore_existing:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       ansithemestring_join_tuple_list(nodes + controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are already part of the cluster; aborting.", "default")], stderr = True)
 			sys.exit(errno.EEXIST)
 		else:
@@ -1092,13 +1092,21 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	# Check if the hosts are part of the inventory
 	inventory = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+	inventory_control_planes = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "controlplane")
+	inventory_nodes = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "nodes")
 	not_in_inventory = []
+	node_in_inventory = []
+	control_plane_in_inventory = []
 	for host in non_existing:
 		if host not in inventory:
 			not_in_inventory.append(host)
+		if host in inventory_control_planes:
+			control_plane_in_inventory.append(host)
+		if host in inventory_nodes:
+			node_in_inventory.append(host)
 
 	if len(not_in_inventory) > 0:
-		if ignore_non_existing == False:
+		if not ignore_non_existing:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
 				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
@@ -1110,6 +1118,36 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are not defined in the invetory; ignoring them since “", "description"),
 					ANSIThemeString("--ignore-non-existing", "option"),
+					ANSIThemeString("“ was specified.", "default")])
+
+	if len(node_in_inventory) > 0:
+		if not ignore_existing:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": ", "default")] +
+				       ansithemestring_join_tuple_list(node_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       [ANSIThemeString(" are already listed as nodes in the inventory; aborting.", "default")], stderr = True)
+			sys.exit(errno.EEXIST)
+		else:
+			ansithemeprint([ANSIThemeString("Warning", "warning"),
+					ANSIThemeString(": ", "default")] +
+				       ansithemestring_join_tuple_list(node_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       [ANSIThemeString(" are already listed as nodes in the inventory; ignoring them since “", "description"),
+					ANSIThemeString("--ignore-existing", "option"),
+					ANSIThemeString("“ was specified.", "default")])
+
+	if len(control_plane_in_inventory) > 0:
+		if not ignore_existing:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": ", "default")] +
+				       ansithemestring_join_tuple_list(control_plane_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       [ANSIThemeString(" are already listed as control planes in the inventory; aborting.", "default")], stderr = True)
+			sys.exit(errno.EEXIST)
+		else:
+			ansithemeprint([ANSIThemeString("Warning", "warning"),
+					ANSIThemeString(": ", "default")] +
+				       ansithemestring_join_tuple_list(control_plane_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       [ANSIThemeString(" are already listed as control planes in the inventory; ignoring them since “", "description"),
+					ANSIThemeString("--ignore-existing", "option"),
 					ANSIThemeString("“ was specified.", "default")])
 
 	show_configuration(non_existing, cri = cri)
