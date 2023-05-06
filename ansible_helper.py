@@ -924,6 +924,26 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 				result: A dict
 	"""
 
+	__retval: Optional[int] = -1
+
+	# Special events
+	if deep_get(event, DictPath("event"), "") == "playbook_on_no_hosts_matched":
+		d: Dict = {
+			"task": "",
+			"start_date": "",
+			"end_date": "",
+			"retval": __retval,
+			"no_hosts_matched": True,
+			"unreachable": False,
+			"status": "NO HOSTS MATCHED",
+			"skipped": False,
+			"stdout_lines": [],
+			"stderr_lines": [],
+			"msg_lines": [],
+			"ansible_facts": {},
+		}
+		return -1, d
+
 	host = deep_get(event, DictPath("event_data#host"), "")
 	if len(host) == 0:
 		return 0, {}
@@ -939,7 +959,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 	unreachable = deep_get(event, DictPath("event_data#res#unreachable"), False)
 
 	if unreachable == True:
-		__retval: Optional[int] = -1
+		__retval = -1
 	elif skipped == True or deep_get(event, DictPath("event"), "") == "runner_on_ok":
 		__retval = 0
 	elif failed == True:
@@ -981,6 +1001,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 		"start_date": start_date_timestamp,
 		"end_date": end_date_timestamp,
 		"retval": __retval,
+		"no_hosts_matched": False,
 		"unreachable": unreachable,
 		"status": "UNKNOWN",
 		"skipped": skipped,
@@ -1145,6 +1166,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 			"start_date": start_date_timestamp,
 			"end_date": end_date_timestamp,
 			"retval": retval,
+			"no_hosts_matched": False,
 			"unreachable": unreachable,
 			"skipped": skipped,
 			"status": status,
@@ -1246,6 +1268,7 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 			for play in plays:
 				task = deep_get(play, DictPath("task"))
 
+				no_hosts_matched = deep_get(play, DictPath("no_hosts_matched"), False)
 				unreachable = deep_get(play, DictPath("unreachable"), False)
 				skipped = deep_get(play, DictPath("skipped"), False)
 				retval = deep_get(play, DictPath("retval"))
@@ -1253,20 +1276,23 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 				if header_output == False:
 					header_output = True
 
-					if unreachable == True:
+					if no_hosts_matched:
+						ansithemeprint([ANSIThemeString("[No hosts matched]", "error")])
+					elif unreachable:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
 					elif retval == 0:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "success")])
 					else:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
 
-				msg_lines = deep_get(play, DictPath("msg_lines"), "")
-				stdout_lines = deep_get(play, DictPath("stdout_lines"), "")
-				stderr_lines = deep_get(play, DictPath("stderr_lines"), "")
-				ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval, unreachable, skipped)
+				if not no_hosts_matched:
+					msg_lines = deep_get(play, DictPath("msg_lines"), "")
+					stdout_lines = deep_get(play, DictPath("stdout_lines"), "")
+					stderr_lines = deep_get(play, DictPath("stderr_lines"), "")
+					ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval, unreachable, skipped)
 				print()
 
-				# Only show unreachable once
+				# Only show no hosts matched and unreachable once
 				if unreachable == True:
 					break
 
