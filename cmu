@@ -3607,8 +3607,6 @@ def get_pod_resource_list(obj, **kwargs):
 	containers = True
 	ephemeral_containers = True
 
-	resource_info = []
-
 	pod_name = deep_get(obj, DictPath("metadata#name"))
 	pod_namespace = deep_get(obj, DictPath("metadata#namespace"))
 
@@ -3895,7 +3893,7 @@ def get_pod_resource_list(obj, **kwargs):
 				seen = get_since(tmp)
 				message = deep_get(event, DictPath("message"), "")
 				message = message.replace("\n", "\\n").rstrip()
-				resource_info.append(ResourceInfo(resource_tuple, event, rtype, kind, status, status_group, -1, message, age = seen))
+
 				vlist.append({
 					"ref": ref,
 					"namespace": pod_namespace,
@@ -3974,7 +3972,7 @@ def get_pod_resource_list(obj, **kwargs):
 							status = "Unhealthy"
 				rtype = resource_kind_to_rtype(kind)
 				resource_tuple = ("", "", name)
-				resource_info.append(ResourceInfo(resource_tuple, ref, rtype, kind, status, status_group, -1, ""))
+
 				vlist.append({
 					"ref": ref,
 					"namespace": pod_namespace,
