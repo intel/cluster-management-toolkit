@@ -2,7 +2,7 @@
 
 ## Preparation
 
-0. _OPTIONAL_: If you want to add a network proxy, see [Configuring a proxy](Configuration.md#Configuring_a_proxy)
+0. _OPTIONAL_: If you want to add a network proxy, see [Configuring a proxy](Configuration.md#configuring-a-proxy)
 1. `cmtadm preflight-check HOSTNAME`
 2. `cmtadm prepare --control-plane HOSTNAME CLUSTER_NAME [KUBERNETES_VERSION]` (`KUBERNETES_VERSION` is only necessary if you _don't_ want to use the latest version of Kubernetes)
 3. _[Wait until cmtadm prepare completes]_
@@ -14,7 +14,7 @@
 
 ## Next steps
 
-If you intend to add worker nodes to your cluster, continue to [Setup a worker node](Setup_worker_nodes.md); if you intend to use the control plane as a worker node, see [Use the control plane as a worker node](#Use_the_control_plane_as_a_worker_node).
+If you intend to add worker nodes to your cluster, continue to [Setup a worker node](Setup_worker_nodes.md); if you intend to use the control plane as a worker node, see [Use the control plane as a worker node](#use-the-control-plane-as-a-worker-node).
 
 ## Use the control plane as a worker node
 

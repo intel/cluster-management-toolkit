@@ -10,4 +10,4 @@ to _kubectl_ or _kubeadm_ whenever necessary.
 ## Getting started
 
 To get started using _CMT_, the first step is
-[installation](Installing_CMT.md#Installing_CMT).
+[installation](Installing_CMT.md#installing-cmt).

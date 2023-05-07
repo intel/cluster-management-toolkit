@@ -2,7 +2,7 @@
 
 ## Preparation
 
-0. _OPTIONAL_: If you want to add a network proxy, see [Configuring a proxy](Configuration.md#Configuring_a_proxy)
+0. _OPTIONAL_: If you want to add a network proxy, see [Configuring a proxy](Configuration.md#configuring-a-proxy)
 1. `cmt prepare HOSTNAME[,HOSTNAME...]`
 2. _[Wait until cmt prepare completes]_
 
