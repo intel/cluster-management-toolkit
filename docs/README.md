@@ -1,6 +1,6 @@
 # Documentation
 
-This is the start page for the ocumentation for __Cluster Management Toolkit for Kubernetes__ (CMT).
+This is the start page for the documentation for __Cluster Management Toolkit for Kubernetes__ (CMT).
 
 If you want to go through the step by step guide, you can start from the [Introduction](Introduction.md#introduction).
 
