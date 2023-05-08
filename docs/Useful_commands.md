@@ -20,12 +20,12 @@
 * `cmt taint ALL KEY[:VALUE][=EFFECT]` (Add taint KEY[:VALUE] with EFFECT to all nodes)
 * `cmt untaint NODE[,...] KEY[:VALUE][=EFFECT]` (Remove taint KEY[:VALUE] with EFFECT from specified nodes)
 * `cmt untaint ALL KEY[:VALUE][=EFFECT]` (Remove taint KEY[:VALUE] with EFFECT from all nodes)
-* `cmtadm upgrade-node NODE,[...]` (Check if the control plane runs a newer version of Kubernetes; if so, upgrade the specified nodes to it)
-* `cmtadm upgrade-node ALL` (Check if the control plane runs a newer version of Kubernetes; if so, upgrade all nodes to it)
-* `cmtadm get-contexts` (List all available contexts)
-* `cmtadm use-context NAME` (Set current context by context name)
-* `cmtadm use-context INDEX` (Set current context by context index)
-* `cmtadm api-resources` (List all available API-resources)
+* `cmt upgrade-node NODE,[...]` (Check if the control plane runs a newer version of Kubernetes; if so, upgrade the specified nodes to it)
+* `cmt upgrade-node ALL` (Check if the control plane runs a newer version of Kubernetes; if so, upgrade all nodes to it)
+* `cmt get-contexts` (List all available contexts)
+* `cmt use-context NAME` (Set current context by context name)
+* `cmt use-context INDEX` (Set current context by context index)
+* `cmt api-resources` (List all available API-resources)
 
 ## Inventory
 * `cmtinv` (Show __CMT__'s Ansible inventory)
