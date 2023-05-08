@@ -9342,7 +9342,7 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 			args = [kubectl_path, "debug", obj_name, "--target", container, "-n", obj_namespace, "-i", "-t", "--image", ephemeral_image]
 			_result = subprocess.run(args, check = False)
 		elif command == ["<dnsutils>"]:
-			dnsutils_image = deep_get(cmtlib.cmtconfig, DictPath("Debug#network_image"), "gcr.io/kubernetes-e2e-test-images/dnsutils:1.3")
+			dnsutils_image = deep_get(cmtlib.cmtconfig, DictPath("Debug#network_image"), "registry.k8s.io/e2e-test-images/jessie-dnsutils:1.7")
 			args = [kubectl_path, "debug", f"node/{obj_name}", "-n", "default", "-i", "-t", "--image", dnsutils_image, "--attach=false"]
 			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 			if result.returncode != 0:
