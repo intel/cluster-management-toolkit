@@ -39,3 +39,6 @@
     8. [Info view](CMU.md#info-view)
     9. [Log view](CMU.md#log-view)
     10. [Ansible playbooks](CMU.md#ansible-playbooks)
+9. [Supported platforms](Supported_platforms.md#supported-platforms)
+    1. [Platform support](Supported_platforms.md#platform-support)
+    2. [What prevents __CMT__ from being supported on other Distributions / Older versions](Supported_platforms.md#what-prevents-cmt-from-being-supported-on-other-distributions-older-versions)
