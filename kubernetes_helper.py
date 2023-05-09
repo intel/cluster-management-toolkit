@@ -3599,6 +3599,7 @@ class KubernetesHelper:
 		cni += self.__identify_cni("antrea", ("DaemonSet", "apps"), "metadata.name=antrea-agent", "antrea-agent")
 		# Canal:
 		cni += self.__identify_cni("canal", ("DaemonSet", "apps"), "metadata.name=canal", "calico-node")
+		cni += self.__identify_cni("canal", ("DaemonSet", "apps"), "metadata.name=rke2-canal", "calico-node")
 		# Calico:
 		# Since canal is a combination of Calico and Flannel we need to skip Calico if Canal is detected
 		if "canal" not in (cni_name for cni_name, cni_version, cni_status in cni):
