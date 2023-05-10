@@ -1,14 +1,15 @@
 # XXX: This won't work with multiple controlplanes; we need to fetch from the first controlplane
 - hosts: "selection:&controlplane"
-  name: "Copy /etc/kubernetes/admin.conf from control plane to .kube on localhost"
+  name: "Copy kubeconfig from control plane to .kube on localhost"
   vars:
     metadata:
-      description: "Copy /etc/kubernetes/admin.conf from control plane to .kube on localhost"
+      description: "Copy kubeconfig from control plane to .kube on localhost"
       summary:
         "Created directories":
         - description: "localhost:/home/{{ ansible_user }}/.kube (0o700)"
         "Fetched files":
         - description: "remote:/etc/kubernetes/admin.conf => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
+        - description: "remote:/etc/rancher/rke2/rke2.yaml => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
       playbook_types:
       - "internal"
       category: "Setup"
@@ -21,13 +22,29 @@
       state: "directory"
       mode: "0700"
     delegate_to: "localhost"
-  - name: "Copying /etc/kubernetes/admin.conf from control plane to localhost"
+  - name: "Attempting to copy /etc/kubernetes/admin.conf from control plane to localhost"
     become: true
     become_user: "root"
     ansible.builtin.fetch:
       src: "/etc/kubernetes/admin.conf"
       dest: "~/.kube/config.{{ cluster_name }}"
       flat: true
+    failed_when: false
+  - name: "Attempting to copy /etc/rancher/rke2/rke2.yaml from control plane to localhost"
+    become: true
+    become_user: "root"
+    ansible.builtin.fetch:
+      src: "/etc/rancher/rke2/rke2.yaml"
+      dest: "~/.kube/config.{{ cluster_name }}"
+      flat: true
+    failed_when: false
+  - name: "Checking whether any of the copies were successful"
+    ansible.builtin.stat:
+      path: "~/.kube/config.{{ cluster_name }}"
+    register: kubeconfig
+  - name: "Failing if kubeconfig is missing"
+    ansible.builtin.fail:
+    when: kubeconfig.stat.exists == False
   - name: "Fix file permissions for config file"
     ansible.builtin.file:
       path: "~/.kube/config.{{ cluster_name }}"
