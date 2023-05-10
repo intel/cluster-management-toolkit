@@ -35,6 +35,10 @@ infoview:
   name: "Validating Webhook Configuration Info"
   infopad:
   listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__ValidatingWebhook"
+      api_family: "admissionregistration.k8s.io"
     listgetter: "listgetter_path"
     listgetter_args:
       path: "webhooks"
