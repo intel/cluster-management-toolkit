@@ -24,7 +24,10 @@ import ssl
 import sys
 import tempfile
 from typing import Any, AnyStr, cast, Dict, List, Optional, Sequence, Tuple, Union
-import yaml
+try:
+	import yaml
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: You probably need to install python3-yaml; did you forget to run cmt-install?")
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
@@ -32,7 +35,7 @@ from cryptography.hazmat.primitives import serialization
 try:
 	import urllib3
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-urllib3")
+	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run cmt-install?")
 
 from cmtpaths import KUBE_CONFIG_FILE
 import cmtlib

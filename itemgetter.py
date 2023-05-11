@@ -11,7 +11,7 @@ from typing import Any, cast, Dict, List, Optional, Tuple, Union
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
 
 from curses_helper import ThemeAttr, ThemeString, WidgetLineAttrs
 

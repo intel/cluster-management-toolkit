@@ -19,7 +19,10 @@ except ModuleNotFoundError:
 import re
 import sys
 from typing import Any, Callable, cast, Dict, List, Optional, Union
-import yaml
+try:
+	import yaml
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: You probably need to install python3-yaml; did you forget to run cmt-install?")
 
 from cmttypes import deep_get, DictPath
 

@@ -686,7 +686,7 @@ def secure_read_string(path: FilePath, checks: Optional[List[SecurityChecks]] = 
 
 	return cast(str, secure_read(path, checks = checks, directory_is_symlink = directory_is_symlink, read_mode = "r"))
 
-def secure_which(path: FilePath, fallback_allowlist: List[str], security_policy: SecurityPolicy = SecurityPolicy.STRICT) -> FilePath:
+def secure_which(path: FilePath, fallback_allowlist: List[str], security_policy: SecurityPolicy = SecurityPolicy.STRICT, executable: bool = True) -> FilePath:
 	"""
 	Path is the default path where the file expected to be found,
 	or if no such default path exists, just the base name of the file.
@@ -707,6 +707,7 @@ def secure_which(path: FilePath, fallback_allowlist: List[str], security_policy:
 			security_policy (SecurityPolicy):
 				The policy to use when deciding whether or not
 				it is OK to use the file at the path.
+			executable (bool): Should the path point to an executable?
 		Returns:
 			path (FilePath): A path to the executable
 		Exceptions:
@@ -721,24 +722,27 @@ def secure_which(path: FilePath, fallback_allowlist: List[str], security_policy:
 		if Path(allowed_path).resolve() == Path(allowed_path):
 			fully_resolved_paths.append(allowed_path)
 
-	violations = check_path(path,
-				checks = [
-					SecurityChecks.PARENT_RESOLVES_TO_SELF,
-					SecurityChecks.RESOLVES_TO_SELF,
-					SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-					SecurityChecks.OWNER_IN_ALLOWLIST,
-					SecurityChecks.PARENT_PERMISSIONS,
-					SecurityChecks.PERMISSIONS,
-					SecurityChecks.EXISTS,
-					SecurityChecks.IS_FILE,
-					SecurityChecks.IS_EXECUTABLE,
-				])
+	checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.RESOLVES_TO_SELF,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.EXISTS,
+		SecurityChecks.IS_FILE,
+	]
+
+	if executable:
+		checks.append(SecurityChecks.IS_EXECUTABLE)
+
+	violations = check_path(path, checks = checks)
+
+	if violations == [SecurityStatus.OK]:
+		return path
 
 	# If we are using SecurityPolicy.STRICT we fail if we cannot find a match here
 	if security_policy == SecurityPolicy.STRICT:
-		if violations == [SecurityStatus.OK]:
-			return path
-
 		raise FileNotFoundError(f"secure_which() could not find an acceptable match for {path}")
 
 	# If the security policy is ALLOWLIST* and fallback_allowlist is not empty,
@@ -764,18 +768,7 @@ def secure_which(path: FilePath, fallback_allowlist: List[str], security_policy:
 	for directory in fallback_allowlist:
 		path = FilePath(os.path.join(directory, name))
 
-		violations = check_path(path,
-					checks = [
-						SecurityChecks.PARENT_RESOLVES_TO_SELF,
-						SecurityChecks.RESOLVES_TO_SELF,
-						SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-						SecurityChecks.OWNER_IN_ALLOWLIST,
-						SecurityChecks.PARENT_PERMISSIONS,
-						SecurityChecks.PERMISSIONS,
-						SecurityChecks.EXISTS,
-						SecurityChecks.IS_FILE,
-						SecurityChecks.IS_EXECUTABLE,
-					])
+		violations = check_path(path, checks = checks)
 
 		if violations != [SecurityStatus.OK]:
 			if security_policy == SecurityPolicy.ALLOWLIST_STRICT:

@@ -171,7 +171,7 @@ def read_cmtconfig() -> Dict:
 		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
 	except ModuleNotFoundError:
-		sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+		sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
 
 	global cmtconfig # pylint: disable=global-statement
 
@@ -543,7 +543,7 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
 	except ModuleNotFoundError:
-		sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+		sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
 
 	deb_versions = []
 
@@ -593,3 +593,58 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 			deb_versions.append((package, installed_version, candidate_version, natsorted_versions))
 
 	return deb_versions
+
+def identify_distro() -> str:
+	"""
+	Identify what distro (Debian, Red Hat, SUSE, etc.) is in use
+
+		Returns:
+			distro (str): The identified distro; empty if no distro could be identified
+	"""
+
+	# Find out what distro this is run on
+	try:
+		distro_path = cmtio.secure_which(FilePath("/etc/os-release"), fallback_allowlist = ["/usr/lib", "/lib"], security_policy = SecurityPolicy.ALLOWLIST_STRICT, executable = False)
+	except FileNotFoundError:
+		ansithemeprint([ANSIThemeString("Error:", "error"),
+				ANSIThemeString(" Cannot find an “", "default"),
+				ANSIThemeString("os-release", "path"),
+				ANSIThemeString("“ file to determine OS distribution; aborting.", "default")])
+		sys.exit(errno.ENOENT)
+
+	distro = None
+
+	distro_id_like = ""
+	distro_id = ""
+
+	with open(distro_path) as f:
+		lines = f.readlines()
+		for line in lines:
+			line = line.strip()
+			key, value = line.split("=")
+			value = value.strip("\"'")
+			if key == "ID_LIKE":
+				distro_id_like = value
+				# If there's an ID_LIKE in the file we're done
+				break
+			if key == "ID":
+				distro_id = value
+				# But if we've only found an ID we cannot be sure
+				# that there won't be an ID_LIKE later on
+
+	if len(distro_id_like) > 0:
+		distro = distro_id_like
+	else:
+		distro = distro_id
+
+	if distro is None or len(distro) == 0:
+		ansithemeprint([ANSIThemeString("Error:", "error"),
+				ANSIThemeString(" Cannot read ID / ID_LIKE from “", "default"),
+				ANSIThemeString("os-release", "path"),
+				ANSIThemeString("“ file to determine OS distribution; aborting.", "default")])
+		sys.exit(errno.ENOENT)
+
+	if distro == "suse opensuse":
+		distro = "suse"
+
+	return distro

@@ -43,17 +43,20 @@ from pathlib import Path, PurePath
 import re
 import sys
 from typing import cast, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
-import yaml
+try:
+	import yaml
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: You probably need to install python3-yaml; did you forget to run cmt-install?")
 
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
 
 try:
 	import validators # type: ignore
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-validators")
+	sys.exit("ModuleNotFoundError: You probably need to install python3-validators; did you forget to run cmt-install?")
 
 from cmtpaths import HOMEDIR, PARSER_DIR
 

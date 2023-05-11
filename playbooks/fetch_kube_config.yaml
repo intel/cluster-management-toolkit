@@ -42,6 +42,7 @@
     ansible.builtin.stat:
       path: "~/.kube/config.{{ cluster_name }}"
     register: kubeconfig
+    delegate_to: "localhost"
   - name: "Failing if kubeconfig is missing"
     ansible.builtin.fail:
     when: kubeconfig.stat.exists == False

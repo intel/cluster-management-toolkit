@@ -23,7 +23,7 @@ except ModuleNotFoundError:
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus
 from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path

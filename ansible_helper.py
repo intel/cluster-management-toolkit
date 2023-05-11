@@ -10,7 +10,10 @@ from pathlib import Path, PurePath
 import re
 import sys
 from typing import cast, Dict, List, Optional, Set, Tuple, Union
-import yaml
+try:
+	import yaml
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: You probably need to install python3-yaml; did you forget to run cmt-install?")
 
 import cmtlib
 from cmtio import check_path, join_securitystatus_set, secure_mkdir, secure_rm, secure_rmdir
@@ -35,7 +38,7 @@ ansible_configuration: Dict = {
 try:
 	import ansible_runner # type: ignore
 except ModuleNotFoundError:
-	sys.exit("ansible_runner not available; try (re-)running cmt-install")
+	sys.exit("ModuleNotFoundError: You probably need to install ansible_runner; did you forget to run cmt-install?")
 
 # Exit if the ansible directory does not exist
 if not Path(ANSIBLE_DIR).exists():
