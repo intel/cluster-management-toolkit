@@ -277,3 +277,14 @@ infoview:
         kind: "PriorityClass"
         api_family: "scheduling.k8s.io"
         name_path: "spec#template#spec#priorityClassName"
+    "Pod template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Pod template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Pod template"
+        _pass_obj: true
+        path: "spec#template"

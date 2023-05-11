@@ -148,10 +148,8 @@ infoview:
   name: "Job Info"
   infopad:
     row_indexes:
-      Wide:
-        fields: ["controller", "label_selector", "completions", "completion_time_with_age", "completion_mode", "parallelism", "backoff_limit", "pod_failure_policy", "state"]
       Normal:
-        fields: ["controller", "label_selector", "completions", "completion_time", "completion_mode", "parallelism", "state"]
+        fields: ["controller", "label_selector", "completions", "completion_time_with_age", "completion_mode", "suspended", "parallelism", "backoff_limit", "pod_failure_policy", "state"]
     rows:
       backoff_limit:
         header: [["Backoff Limit:", ["main", "infoheader"]]]
@@ -202,7 +200,7 @@ infoview:
         path: "spec#completionMode"
         type: "str"
         default: "NonIndexed"
-      completion_time:
+      completion_time_with_age:
         header: [["Completion Time:", ["main", "infoheader"]]]
         paths:
         - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
@@ -289,6 +287,11 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_not_ok"
+      suspended:
+        header: [["Suspended:", ["main", "infoheader"]]]
+        path: "spec#suspend"
+        default: "<unset>"
+        type: "bool"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -403,3 +406,14 @@ infoview:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
+    "Pod template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Pod template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Pod template"
+        _pass_obj: true
+        path: "spec#template"
