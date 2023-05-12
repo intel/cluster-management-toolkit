@@ -105,6 +105,9 @@ prepare_targets: Dict = {
 		"deb_packages": [
 			"ansible",
 		],
+		"suse_packages": [
+			"ansible",
+		],
 	},
 	"rke2": {
 		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
@@ -149,6 +152,12 @@ setup_control_plane_targets: Dict = {
 			"kubectl",
 		],
 		"deb_packages_held": [
+			"kubectl",
+		],
+		"suse_packages": [
+			"kubectl",
+		],
+		"suse_packages_held": [
 			"kubectl",
 		],
 	},
@@ -1662,11 +1671,20 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict) -> No
 			installation_info (dict): A dict with installation information (Unused)
 	"""
 
+	os_distro = identify_distro()
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets["localhost"]["playbooks"]))
+
+	if os_distro == "deb":
+		packages = deep_get(prepare_targets, DictPath("localhost#deb_packages"), [])
+		held_packages = deep_get(prepare_targets, DictPath("localhost#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(prepare_targets, DictPath("localhost#suse_packages"), [])
+		held_packages = deep_get(prepare_targets, DictPath("localhost#suse_packages_held"), [])
+
 	extra_values = {
-		"packages": prepare_targets["localhost"].get("deb_packages", []),
-		"held_packages": prepare_targets["localhost"].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 	}
@@ -1682,11 +1700,20 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict) 
 
 	cluster_name = installation_info["installation_target"]
 	k8s_distro = installation_info[cluster_name]["distro"]
+	os_distro = identify_distro()
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets[k8s_distro]["playbooks"]))
+
+	if os_distro == "deb":
+		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
+		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
+		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+
 	extra_values = {
-		"packages": prepare_targets[k8s_distro].get("deb_packages", []),
-		"held_packages": prepare_targets[k8s_distro].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 	}
@@ -1745,13 +1772,22 @@ def __task_run_setup_playbooks_on_localhost(installation_info: Dict) -> None:
 
 	cluster_name = installation_info["installation_target"]
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
+	os_distro = identify_distro()
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets["localhost"]["playbooks"]))
+
+	if os_distro == "deb":
+		packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages"), [])
+		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages"), [])
+		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages_held"), [])
+
 	extra_values = {
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
-		"packages": setup_control_plane_targets["localhost"].get("deb_packages", []),
-		"held_packages": setup_control_plane_targets["localhost"].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -1765,12 +1801,21 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict) -> Non
 
 	cluster_name = installation_info["installation_target"]
 	k8s_distro = installation_info[cluster_name]["distro"]
+	os_distro = identify_distro()
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets[k8s_distro]["playbooks"]))
 	cri = installation_info[cluster_name]["cri"]
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 	extra_values_setup = deep_get(setup_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
+
+	if os_distro == "deb":
+		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
+		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
+		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+
 	extra_values = {
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
@@ -2000,11 +2045,20 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info: Dict) -> Non
 			installation_info (dict): A dict with installation information (Unused)
 	"""
 
+	os_distro = identify_distro()
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], upgrade_control_plane_targets["localhost"]["playbooks"]))
+
+	if os_distro == "deb":
+		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
+		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
+		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+
 	extra_values = {
-		"packages": upgrade_control_plane_targets["localhost"].get("deb_packages", []),
-		"held_packages": upgrade_control_plane_targets["localhost"].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -2020,6 +2074,7 @@ def __task_run_preupgrade_playbooks_on_control_planes(installation_info: Dict) -
 	selection = __selection_control_planes()
 	paths = __playbook_paths_from_path(FilePath(str(PurePath(CMT_HOOKS_DIR).joinpath("pre-upgrade.d"))))
 	playbooks = populate_playbooks_from_paths(paths)
+
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
 # Run upgrade playbooks on control planes
@@ -2033,6 +2088,7 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict) -> N
 
 	cluster_name = installation_info["installation_target"]
 	k8s_distro = installation_info[cluster_name]["distro"]
+	os_distro = identify_distro()
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	requested_version = installation_info[cluster_name]["requested_version"]
 	selection = __selection_control_planes()
@@ -2040,12 +2096,20 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict) -> N
 	cri = installation_info[cluster_name]["cri"]
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 	extra_values_upgrade = deep_get(upgrade_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
+
+	if os_distro == "deb":
+		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
+		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
+		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+
 	extra_values = {
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
 		"cri_socket": cri_socket,
-		"packages": upgrade_control_plane_targets[k8s_distro].get("deb_packages", []),
-		"held_packages": upgrade_control_plane_targets[k8s_distro].get("deb_packages_held", []),
+		"packages": packages[k8s_distro].get("deb_packages", []),
+		"held_packages": packages[k8s_distro].get("deb_packages_held", []),
 		"requested_control_plane_k8s_version": requested_version,
 		**extra_values_upgrade,
 	}
@@ -2063,6 +2127,7 @@ def __task_run_postupgrade_playbooks_on_control_planes(installation_info: Dict) 
 	selection = __selection_control_planes()
 	paths = __playbook_paths_from_path(FilePath(str(PurePath(CMT_HOOKS_DIR).joinpath("post-upgrade.d"))))
 	playbooks = populate_playbooks_from_paths(paths)
+
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
 # pylint: disable-next=unused-argument
@@ -2099,6 +2164,7 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict) -> 
 	k8s_distro = installation_info[cluster_name]["distro"]
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], teardown_control_plane_targets[k8s_distro]["playbooks"]))
+
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
 def __task_remove_kube_config(installation_info: Dict) -> None:
@@ -2178,11 +2244,20 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict) -> Non
 
 	cluster_name = installation_info["installation_target"]
 	k8s_distro = installation_info[cluster_name]["distro"]
+	os_distro = identify_distro()
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], purge_control_plane_targets[k8s_distro]["playbooks"]))
+
+	if os_distro == "deb":
+		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
+		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
+		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+
 	extra_values = {
-		"packages": purge_control_plane_targets[k8s_distro].get("deb_packages", []),
-		"held_packages": purge_control_plane_targets[k8s_distro].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
