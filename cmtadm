@@ -1675,7 +1675,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict) -> No
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets["localhost"]["playbooks"]))
 
-	if os_distro == "deb":
+	if os_distro == "debian":
 		packages = deep_get(prepare_targets, DictPath("localhost#deb_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath("localhost#deb_packages_held"), [])
 	elif os_distro == "suse":
@@ -1704,7 +1704,7 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict) 
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets[k8s_distro]["playbooks"]))
 
-	if os_distro == "deb":
+	if os_distro == "debian":
 		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
 	elif os_distro == "suse":
@@ -1776,7 +1776,7 @@ def __task_run_setup_playbooks_on_localhost(installation_info: Dict) -> None:
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets["localhost"]["playbooks"]))
 
-	if os_distro == "deb":
+	if os_distro == "debian":
 		packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages_held"), [])
 	elif os_distro == "suse":
@@ -1809,7 +1809,7 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict) -> Non
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 	extra_values_setup = deep_get(setup_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
 
-	if os_distro == "deb":
+	if os_distro == "debian":
 		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
 	elif os_distro == "suse":
@@ -2049,7 +2049,7 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info: Dict) -> Non
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], upgrade_control_plane_targets["localhost"]["playbooks"]))
 
-	if os_distro == "deb":
+	if os_distro == "debian":
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
 	elif os_distro == "suse":
@@ -2097,7 +2097,7 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict) -> N
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 	extra_values_upgrade = deep_get(upgrade_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
 
-	if os_distro == "deb":
+	if os_distro == "debian":
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
 	elif os_distro == "suse":
@@ -2248,7 +2248,7 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict) -> Non
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], purge_control_plane_targets[k8s_distro]["playbooks"]))
 
-	if os_distro == "deb":
+	if os_distro == "debian":
 		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
 	elif os_distro == "suse":
@@ -3441,6 +3441,10 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
+	# If phase is "<done>" it's a holdover from a previous state
+	if phase == "<done>":
+		phase = 0
+
 	for opt, optarg in options:
 		if opt == "--start-at-task":
 			phase = __validate_task_index(teardown_control_plane_tasks, optarg)
@@ -3517,7 +3521,8 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 				ANSIThemeString(": Invalid installation state; there's no prepared or torn down cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	if len(options) == 0:
+	# If phase is "<done>" it's a holdover from a previous state
+	if len(options) == 0 or phase == "<done>":
 		phase = 0
 
 	for opt, optarg in options:

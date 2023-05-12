@@ -17,11 +17,11 @@
   tasks:
   - name: "Killing RKE2 processes"  # noqa fqcn-builtins
     shell: |
-      /opt/rke2/bin/rke2-killall.sh || true
-      /usr/local/bin/rke2-killall.sh || true
+      [ -x /usr/local/bin/rke2-killall.sh ] && /usr/local/bin/rke2-killall.sh
+      [ -x /opt/rke2/bin/rke2-killall.sh ] && /opt/rke2/bin/rke2-killall.sh
     changed_when: false
   - name: "Uninstalling RKE2"  # noqa fqcn-builtins
     shell: |
-      /opt/rke2/bin/rke2-uninstall.sh || true
-      /usr/local/bin/rke2-uninstall.sh || true
+      [ -x /usr/local/bin/rke2-uninstall.sh ] && /usr/local/bin/rke2-uninstall.sh
+      [ -x /opt/rke2/bin/rke2-uninstall.sh ] && /opt/rke2/bin/rke2-uninstall.sh
     changed_when: false
