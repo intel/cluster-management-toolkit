@@ -49,9 +49,21 @@
       dest: "/etc/default/rke2-server"
       mode: "0644"
     when: "port_check.rc == 1"
+  - name: "Creating /etc/rancher/rke2"
+    ansible.builtin.file:
+      path: "/etc/rancher/rke2"
+      state: "directory"
+      mode: "0755"
+  - name: "Configuring RKE2"
+    ansible.builtin.template:
+      dest: "/etc/rancher/rke2/config.yaml"
+      src: "templates/etc/rancher/rke2/config.yaml.j2"
+      mode: "0644"
+      force: true
+    when: "port_check.rc == 1"
   - name: "Running RKE2 installer"  # noqa fqcn-builtins no-changed-when
     shell: |
-      {{ tempdir.path }}/rke2-installer {{ rke2_installer_flags }}
+      {{ tempdir.path }}/rke2-installer
     when: "port_check.rc == 1"
     environment:
       https_proxy: "{{ https_proxy }}"

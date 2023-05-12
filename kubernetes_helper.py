@@ -3514,9 +3514,9 @@ class KubernetesHelper:
 				pod_network_cidr (str): The Pod network CIDR
 		"""
 
-		nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = make_selector({"node-role.kubernetes.io/control-plane": ""}))
+		nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = "node-role.kubernetes.io/control-plane")
 		if nodes is None or len(nodes) == 0 or status != 200:
-			nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = make_selector({"node-role.kubernetes.io/master": ""}))
+			nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = "node-role.kubernetes.io/master")
 		if nodes is None or len(nodes) == 0 or status != 200:
 			return None
 		return deep_get(nodes[0], DictPath("spec#podCIDR"))

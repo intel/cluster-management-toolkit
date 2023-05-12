@@ -1762,6 +1762,8 @@ def use_context(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	i = 0
 
+	current_context = None
+
 	for current, name, _cluster, _authinfo, _namespace, _server in contexts:
 		if context_index is not None and context_index == i:
 			context_name = name
@@ -1769,7 +1771,7 @@ def use_context(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if current is True:
 			current_context = name
 
-	if current_context == context_name:
+	if current_context is not None and current_context == context_name:
 		ansithemeprint([ANSIThemeString("Context not modified", "default")])
 		return 0
 

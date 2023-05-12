@@ -1091,6 +1091,20 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		sys.exit(errno.EINVAL)
 
 	if cni in cni_upgrade_data:
+		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+		# upgrade_cni doesn't take a context, so we need to set the current context before calling it,
+		# otherwise we might end up performing the changes on the wrong cluster
+		if not kh.set_context(name = context_name, unchanged_is_success = True):
+			ansithemeprint([ANSIThemeString("Warning", "warning"),
+					ANSIThemeString(": Failed to change to context ", "default"),
+					ANSIThemeString(f"{context_name}", "hostname"),
+					ANSIThemeString(" for cluster ", "default"),
+					ANSIThemeString(f"{cluster_name}", "hostname"),
+					ANSIThemeString("; cannot install/upgrade CNI; skipping.", "default")])
+			return False
+
 		upgrade_cni(options = [("install", "")], args = [cni])
 		# FIXME
 		return True
@@ -1152,6 +1166,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		"<<<context>>>": context_name,
 	}
 
+	sys.exit(f"{args=}")
 	result = execute_command(substitute_list(args, substitutions))
 	check_and_print_status(result)
 	return result
@@ -1902,7 +1917,7 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 	# has multiple IP-addresses this will fail
 	if server.startswith("https://127.") or server == "https://::1":
 		ip = socket.gethostbyname(control_plane_name)
-		server = f"https://{ip}.{server.rsplit(':', 1)}"
+		server = f"https://{ip}:{server.rsplit(':', 1)[1]}"
 	insecure_skip_tls_verify = d2["clusters"][0]["cluster"].get("insecure-skip-tls-verify")
 	cluster = {
 		"cluster": {
@@ -2378,6 +2393,8 @@ __setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Di
 	([ANSIThemeString("Run playbooks on ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
 	([ANSIThemeString("Import kube config", "action")], __task_import_kube_config),
+	([ANSIThemeString("Setup ", "action"),
+	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
 ]
 
 setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
@@ -3054,14 +3071,19 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	confirm = True
 	override_cni = False
 
-	# We do not need a cluster name for --list-tasks, so check this first of all
+	installation_info = get_installation_info()
+	cluster_name = installation_info["installation_target"]
+	k8s_distro = installation_info[cluster_name]["distro"]
+
+	if k8s_distro == "kubeadm":
+		setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
+	elif k8s_distro == "rke2":
+		setup_control_plane_tasks = __setup_rke2_control_plane_tasks
+
 	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(setup_control_plane_tasks)
 		sys.exit(0)
 
-	installation_info = get_installation_info()
-	cluster_name = installation_info["installation_target"]
-	k8s_distro = installation_info[cluster_name]["distro"]
 	os_distro = identify_distro()
 	requested_version = installation_info[cluster_name]["requested_version"]
 	state = installation_info[cluster_name]["state"]
@@ -3160,12 +3182,10 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 		# Add major/minor to extra_values
 		setup_control_plane_targets["kubeadm"]["extra_values"]["kubernetes_major_minor_version"] = f"{requested_major}.{requested_minor}"
-		setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
 	elif k8s_distro == "rke2":
 		# Add requested_version to extra_values;
 		# for rke2 this is either vX.YY or latest
 		setup_control_plane_targets["rke2"]["extra_values"]["requested_version"] = requested_version
-		setup_control_plane_tasks = __setup_rke2_control_plane_tasks
 
 	if cri is None:
 		if k8s_distro == "rke2":
@@ -3210,12 +3230,16 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml"))))
 
 	if cni is None or cni == "<none>":
+		if k8s_distro == "rke2":
+			default_cni = "canal"
+		else:
+			default_cni = DEFAULT_CNI
 		if len(args) == 0:
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": No CNI specified; defaulting to ", "default"),
-					ANSIThemeString(f"{DEFAULT_CNI}", "programname"),
+					ANSIThemeString(f"{default_cni}", "programname"),
 					ANSIThemeString(".", "default")], stderr = True)
-			cni = DEFAULT_CNI
+			cni = default_cni
 		elif cni != args[0]:
 			cni = args[0]
 	else:
@@ -3265,14 +3289,12 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 		sys.exit(errno.EINVAL)
 
 	if k8s_distro == "rke2":
-		rke2_installer_flags = deep_get(setup_control_plane_targets, DictPath("rke2#extra_values#rke2_installer_flags"), "").split(",")
-		rke2_installer_flags.append(f"--cluster-cidr {pod_network_cidr}")
-		rke2_installer_flags.append(f"--cni {cni}")
-		# FIXME: for this we need to install the CRI like we do for kubeadm
-		# rke2_installer_flags.append(f"--container-runtime-endpoint {cri_data[cri][socket]}")
 		# For now at least we disable the cloud controller
-		rke2_installer_flags.append(f"--disable-cloud-controller")
-		setup_control_plane_targets["rke2"]["extra_values"]["rke2_installer_flags"] = " ".join(rke2_installer_flags)
+		rke2_disable_cloud_controller = True
+		setup_control_plane_targets["rke2"]["extra_values"]["disable_cloud_controller"] = rke2_disable_cloud_controller
+		# Disable canal since we install the CNI separately
+		rke2_disabled_options_list = ["rke2-canal"]
+		setup_control_plane_targets["rke2"]["extra_values"]["disabled_options_list"] = rke2_disabled_options_list
 
 	update_installation_info(cni = cni, pod_network_cidr = pod_network_cidr, state = "installing", phase = phase, phase_skiplist = list(phase_skiplist))
 
@@ -4352,7 +4374,7 @@ COMMANDLINE = {
 				"string": [ANSIThemeString("KUBERNETES_VERSION", "argument")],
 				"validation": {
 					"validator": "regex",
-					"regex": r"^(kubeadm=|rke2=|)\d+\.\d+(\.\d+-\d+|\.\d+|)$"
+					"regex": r"^(kubeadm=|rke2=v?|)\d+\.\d+(\.\d+-\d+|\.\d+|)$"
 				},
 			},
 		],
@@ -4373,9 +4395,6 @@ COMMANDLINE = {
 			[ANSIThemeString("Valid options for CNI", "description")],
 			[ANSIThemeString("(Container Network Interface, aka Pod Network): ", "description")],
 			[ANSIThemeString("antrea", "argument"),
-			 ANSIThemeString(" (", "description"),
-			 ANSIThemeString("kubeadm", "argument"),
-			 ANSIThemeString(" only)", "description"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("calico", "argument"),
 			 ANSIThemeString(", ", "separator"),
@@ -4384,19 +4403,10 @@ COMMANDLINE = {
 			 ANSIThemeString("cilium", "argument"),
 			 ANSIThemeString(",", "separator")],
 			[ANSIThemeString("flannel", "argument"),
-			 ANSIThemeString(" (", "description"),
-			 ANSIThemeString("kubeadm", "argument"),
-			 ANSIThemeString(" only)", "description"),
 			 ANSIThemeString(", ", "separator") ,
 			 ANSIThemeString("kube-router", "argument"),
-			 ANSIThemeString(" (", "description"),
-			 ANSIThemeString("kubeadm", "argument"),
-			 ANSIThemeString(" only)", "description"),
-			 ANSIThemeString(",", "separator")],
-			[ANSIThemeString("weave", "argument"),
-			 ANSIThemeString(" (", "description"),
-			 ANSIThemeString("kubeadm", "argument"),
-			 ANSIThemeString(" only)", "description"),
+			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString("weave", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("none", "argument")],
 			[ANSIThemeString("By default ", "description"),
