@@ -1105,7 +1105,11 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 					ANSIThemeString("; cannot install/upgrade CNI; skipping.", "default")])
 			return False
 
-		upgrade_cni(options = [("install", "")], args = [cni])
+		# Don't pass CNI as an argument here; installation_info contains that information during installation.
+		# upgrade_cni() will assume that the cluster is functional if run with a CNI, and thus tries to get
+		# all information from the cluster. This will most likely fail during installation, since the cluster
+		# hasn't started fully yet and thus cannot provide the necessary information
+		upgrade_cni(options = [("install", "")])
 		# FIXME
 		return True
 
@@ -1830,6 +1834,9 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict) -> Non
 	elif os_distro == "suse":
 		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+
+	if k8s_distro == "rke2":
+		cri_socket = cri_socket[len("unix://"):]
 
 	extra_values = {
 		"cluster_name": cluster_name,
@@ -3147,6 +3154,37 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 		elif opt == "-Y":
 			confirm = False
 
+	if enable_dra:
+		setup_control_plane_targets[k8s_distro]["extra_values"] = {
+			"api_server_feature_gates": "DynamicResourceAllocation=true",
+			"api_server_runtime_config_api_alpha_enabled": "true",
+			"controller_manager_feature_gates": "DynamicResourceAllocation=true",
+			"scheduler_feature_gates": "DynamicResourceAllocation=true",
+			"kubelet_feature_gates": "{ DynamicResourceAllocation: true }",
+			"kubeproxy_feature_gates": "{ DynamicResourceAllocation: true }",
+		}
+
+		# Override the feature-gate format if the parameters are passed via command-line;
+		# e.g. when using RKE2
+		if k8s_distro == "rke2":
+			setup_control_plane_targets[k8s_distro]["extra_values"]["kubelet_feature_gates"] = "DynamicResourceAllocation=true"
+			setup_control_plane_targets[k8s_distro]["extra_values"]["kubeproxy_feature_gates"] = "DynamicResourceAllocation=true"
+	else:
+		setup_control_plane_targets[k8s_distro]["extra_values"] = {
+			"api_server_feature_gates": "",
+			"api_server_runtime_config_api_alpha_enabled": "false",
+			"controller_manager_feature_gates": "",
+			"kubelet_feature_gates": "{}",
+			"kubeproxy_feature_gates": "{}",
+			"scheduler_feature_gates": "",
+		}
+
+		# Override the feature-gate format if the parameters are passed via command-line;
+		# e.g. when using RKE2
+		if k8s_distro == "rke2":
+			setup_control_plane_targets[k8s_distro]["extra_values"]["kubelet_feature_gates"] = ""
+			setup_control_plane_targets[k8s_distro]["extra_values"]["kubeproxy_feature_gates"] = ""
+
 	if k8s_distro == "kubeadm":
 		requested_major, requested_minor, _rest = requested_version.split(".")
 
@@ -3157,35 +3195,24 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
 			init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
 
-		if enable_dra == True:
-			setup_control_plane_targets[k8s_distro]["extra_values"] = {
-				"api_server_feature_gates": "DynamicResourceAllocation=true",
-				"api_server_runtime_config_api_alpha_enabled": "true",
-				"controller_manager_feature_gates": "DynamicResourceAllocation=true",
-				"kubelet_feature_gates": "{ DynamicResourceAllocation: true }",
-				"kubeproxy_feature_gates": "{ DynamicResourceAllocation: true }",
-				"scheduler_feature_gates": "DynamicResourceAllocation=true",
-				"cluster_configuration_api_version": cluster_configuration_api_version,
-				"init_configuration_api_version": init_configuration_api_version,
-			}
-		else:
-			setup_control_plane_targets[k8s_distro]["extra_values"] = {
-				"api_server_feature_gates": "",
-				"api_server_runtime_config_api_alpha_enabled": "false",
-				"controller_manager_feature_gates": "",
-				"kubelet_feature_gates": "{}",
-				"kubeproxy_feature_gates": "{}",
-				"scheduler_feature_gates": "",
-				"cluster_configuration_api_version": cluster_configuration_api_version,
-				"init_configuration_api_version": init_configuration_api_version,
-			}
-
-		# Add major/minor to extra_values
-		setup_control_plane_targets["kubeadm"]["extra_values"]["kubernetes_major_minor_version"] = f"{requested_major}.{requested_minor}"
+		setup_control_plane_targets[k8s_distro]["extra_values"]["cluster_configuration_api_version"] = cluster_configuration_api_version
+		setup_control_plane_targets[k8s_distro]["extra_values"]["init_configuration_api_version"] = init_configuration_api_version
 	elif k8s_distro == "rke2":
+		requested_major, requested_minor = requested_version[1:].split(".")
+
 		# Add requested_version to extra_values;
 		# for rke2 this is either vX.YY or latest
 		setup_control_plane_targets["rke2"]["extra_values"]["requested_version"] = requested_version
+
+		# For now at least we disable the cloud controller
+		rke2_disable_cloud_controller = True
+		setup_control_plane_targets["rke2"]["extra_values"]["disable_cloud_controller"] = rke2_disable_cloud_controller
+		# Disable canal since we install the CNI separately
+		rke2_disabled_options_list = ["rke2-canal"]
+		setup_control_plane_targets["rke2"]["extra_values"]["disabled_options_list"] = rke2_disabled_options_list
+
+	# Add major/minor to extra_values
+	setup_control_plane_targets[k8s_distro]["extra_values"]["kubernetes_major_minor_version"] = f"{requested_major}.{requested_minor}"
 
 	if cri is None:
 		if k8s_distro == "rke2":
@@ -3197,16 +3224,16 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 		else:
 			cri = "containerd"
 	else:
-		if k8s_distro == "rke2" and cri != "containerd":
-			ansithemeprint([ANSIThemeString("Error", "error"),
-					ANSIThemeString(": Currently “", "default"),
-					ANSIThemeString("containerd", "argument"),
-					ANSIThemeString("“ is the only supported ", "default"),
-					ANSIThemeString("CNI for ", "default"),
-					ANSIThemeString("rke2", "argument"),
-					ANSIThemeString("; aborting.", "default")], stderr = True)
-			sys.exit(errno.EINVAL)
-		if int(requested_minor) >= 24 and cri == "docker-shim":
+		if k8s_distro == "rke2":
+			if cri == "docker-shim":
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": CRI cannot be “", "default"),
+						ANSIThemeString("docker-shim", "argument"),
+						ANSIThemeString("“ for ", "default"),
+						ANSIThemeString("RKE2", "argument"),
+						ANSIThemeString("; aborting.", "default")], stderr = True)
+				sys.exit(errno.ENOTSUP)
+		elif int(requested_minor) >= 24 and cri == "docker-shim":
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": CRI cannot be “", "default"),
 					ANSIThemeString("docker-shim", "argument"),
@@ -3215,7 +3242,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 					ANSIThemeString(">= ", "default"),
 					ANSIThemeString("1.24", "version"),
 					ANSIThemeString("; aborting.", "default")], stderr = True)
-			sys.exit(errno.EINVAL)
+			sys.exit(errno.ENOTSUP)
 
 	installation_info = update_installation_info(cri = cri)
 
@@ -3228,6 +3255,11 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml"))))
 		elif cri == "cri-o":
 			setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml"))))
+	else:
+		if cri == "containerd":
+			setup_control_plane_targets["rke2"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml"))))
+		elif cri == "cri-o":
+			setup_control_plane_targets["rke2"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml"))))
 
 	if cni is None or cni == "<none>":
 		if k8s_distro == "rke2":
@@ -3287,14 +3319,6 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 				ANSIThemeString(" as Pod Network CIDR;\n", "default"),
 				ANSIThemeString("changing this value in the middle of installation is not supported. Aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
-
-	if k8s_distro == "rke2":
-		# For now at least we disable the cloud controller
-		rke2_disable_cloud_controller = True
-		setup_control_plane_targets["rke2"]["extra_values"]["disable_cloud_controller"] = rke2_disable_cloud_controller
-		# Disable canal since we install the CNI separately
-		rke2_disabled_options_list = ["rke2-canal"]
-		setup_control_plane_targets["rke2"]["extra_values"]["disabled_options_list"] = rke2_disabled_options_list
 
 	update_installation_info(cni = cni, pod_network_cidr = pod_network_cidr, state = "installing", phase = phase, phase_skiplist = list(phase_skiplist))
 
@@ -3642,6 +3666,13 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	state = installation_info[cluster_name]["state"]
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
+
+	if  k8s_distro == "rke2":
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": updates are currently not supported for ", "default"),
+				ANSIThemeString(f"RKE2", "programname"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOTSUP)
 
 	if state is None or state == "<none>":
 		ansithemeprint([ANSIThemeString("Error", "error"),

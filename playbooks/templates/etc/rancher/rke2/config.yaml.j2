@@ -1,6 +1,18 @@
 cni:
 - none
 cluster-cidr: {{ pod_network_cidr }}
-# container-runtime-endpoint: {{ cri_socket }}
+container-runtime-endpoint: {{ cri_socket }}
 disable: {{ disabled_options_list }}
 disable-cloud-controller: {{ disable_cloud_controller }}
+kube-apiserver-arg:
+- feature-gates={{ api_server_feature_gates }}
+- runtime-config=api/alpha={{ api_server_runtime_config_api_alpha_enabled }}
+controller-manager-arg:
+- feature-gates={{ controller_manager_feature_gates }}
+kubelet-arg:
+- feature-gates={{ kubelet_feature_gates }}
+- cgroup-driver=systemd
+kube-proxy-arg:
+- feature-gates={{ kubeproxy_feature_gates }}
+kube-scheduler-arg:
+- feature-gates={{ scheduler_feature_gates }}
