@@ -135,6 +135,16 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "mutatingwebhookconfigurations",
 		"namespaced": False,
 	},
+	("ValidatingAdmissionPolicy", "admissionregistration.k8s.io"): {
+		"api_paths": ["apis/admissionregistration.k8s.io/v1alpha1/"],
+		"api": "validatingadmissionpolicies",
+		"namespaced": False,
+	},
+	("ValidatingAdmissionPolicyBinding", "admissionregistration.k8s.io"): {
+		"api_paths": ["apis/admissionregistration.k8s.io/v1alpha1/"],
+		"api": "validatingadmissionpolicybindings",
+		"namespaced": False,
+	},
 	("ValidatingWebhookConfiguration", "admissionregistration.k8s.io"): {
 		"api_paths": ["apis/admissionregistration.k8s.io/v1/", "apis/admissionregistration.k8s.io/v1beta1/"],
 		"api": "validatingwebhookconfigurations",
@@ -233,6 +243,12 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "prioritylevelconfigurations",
 		"namespaced": False,
 	},
+	# internal.apiserver.k8s.io
+	("StorageVersion", "internal.apiserver.k8s.io"): {
+		"api_paths": ["apis/internal.apiserver.k8s.io/v1alpha1/"],
+		"api": "storageversions",
+		"namespaced": False,
+	},
 	# metacontroller.k8s.io
 	("CompositeController", "metacontroller.k8s.io"): {
 		"api_paths": ["apis/metacontroller.k8s.io/v1alpha1/"],
@@ -263,6 +279,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("ClusterCIDR", "networking.k8s.io"): {
 		"api_paths": ["apis/networking.k8s.io/v1alpha1/"],
 		"api": "clustercidrs",
+		"namespaced": False,
+	},
+	("IPAddress", "networking.k8s.io"): {
+		"api_paths": ["apis/networking.k8s.io/v1alpha1/"],
+		"api": "ipaddresses",
 		"namespaced": False,
 	},
 	("Ingress", "networking.k8s.io"): {
@@ -2353,8 +2374,13 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	},
 	# resource.k8s.io
 	("PodScheduling", "resource.k8s.io"): {
+		# => PodSchedulingContext
 		"api_paths": ["apis/resource.k8s.io/v1alpha1/"],
 		"api": "podschedulings",
+	},
+	("PodSchedulingContext", "resource.k8s.io"): {
+		"api_paths": ["apis/resource.k8s.io/v1alpha2/"],
+		"api": "podschedulingcontexts",
 	},
 	("ResourceClaim", "resource.k8s.io"): {
 		"api_paths": ["apis/resource.k8s.io/v1alpha1/"],
