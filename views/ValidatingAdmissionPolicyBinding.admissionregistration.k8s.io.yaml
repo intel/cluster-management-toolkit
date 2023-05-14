@@ -1,0 +1,59 @@
+kind: "ValidatingAdmissionPolicyBinding"
+api_family: "admissionregistration.k8s.io"
+default_command: "validatingadmissionpolicybindings"
+command:
+- "vapolbindings"
+- "vapolbinding"
+- "vapolbs"
+- "vapolb"
+listview:
+  name: "Validating Admission Policy Bindings"
+  group: "API & Extendability"
+  field_indexes:
+    Normal:
+      fields: ["name", "policy", "param_ref", "age"]
+  fields:
+    param_ref:
+      header: "Parameter Reference:"
+      path: "spec#paramRef#name"
+      type: "str"
+      default: "<unset>"
+    policy:
+      header: "Policy:"
+      path: "spec#policyName"
+      type: "str"
+infoview:
+  name: "Validating Admission Policy Binding Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["policy_name", "param_ref", "validation_actions"]
+    rows:
+      param_ref:
+        header: [["Parameter Reference:", ["main", "infoheader"]]]
+        path: "spec#paramRef#name"
+        type: "str"
+        default: "<unset>"
+      policy_name:
+        header: [["P", ["main", "infoheader_shortcut"]], ["olicy:", ["main", "infoheader"]]]
+        path: "spec#policyName"
+        type: "str"
+      validation_actions:
+        header: [["Validation Actions:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#validationActions"
+          pathtype: "list"
+        formatter: "list"
+  shortcuts:
+    "Show ValidatingAdmissionPolicy":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open list page for Validating Admission Policy"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "spec#policyName"
+        kind: "ValidatingAdmissionPolicy"
+        api_family: "admissionregistration.k8s.io"

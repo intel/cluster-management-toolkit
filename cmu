@@ -9435,6 +9435,13 @@ def listviewdispatch(stdscr: curses.window, **kwargs):
 		return Retval.RETURNDONE
 	if api_family is None:
 		api_family = ""
+	if "/" in api_family:
+		api_family, _api_version = api_family.split("/")
+	else:
+		# Is the api_family only a version#? Then it's a core API
+		tmp = re.match(r"^v\d+(alpha\d+|beta\d+|)", api_family)
+		if tmp is not None:
+			api_family = ""
 
 	view = checkforview((kind, api_family))
 
