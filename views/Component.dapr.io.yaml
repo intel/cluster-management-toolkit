@@ -1,0 +1,89 @@
+kind: "Component"
+api_family: "dapr.io"
+default_command: "components"
+command:
+- "components.dapr"
+- "component.dapr"
+- "comps.dapr"
+- "comp.dapr"
+listview:
+  name: "Components"
+  group: "Dapr"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "type", "version", "age"]
+      sortcolumn: "namespace"
+  fields:
+    type:
+      header: "Type:"
+      path: "spec#type"
+      type: "str"
+    version:
+      header: "Version:"
+      path: "spec#version"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+infoview:
+  name: "Component Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["type", "version"]
+    rows:
+      type:
+        header: [["Type:", ["main", "infoheader"]]]
+        path: "spec#type"
+        type: "str"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "spec#version"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#metadata"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "value", "secretkeyref"]
+        sortcolumn: "expression"
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      secretkeyref:
+        header: "Secret Key Reference:"
+        paths:
+        - path: [["secretKeyRef#name"], ["secretKeyRef#key"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_separators:
+          - type: "keyvalue"
+      value:
+        header: "Value:"
+        path: "value"
+        type: "str"
+        default: "<unset>"
+  shortcuts:
+    "Open Secret key reference":
+      key: "k"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open Secret key reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_selected_obj: true
+        name_path: "secretKeyRef#name"
+        _parent_namespace_path: "metadata#namespace"
+        kind: "Secret"
+      force_update: false
+      force_refresh: true

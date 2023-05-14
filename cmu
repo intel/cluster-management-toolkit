@@ -9644,6 +9644,10 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 	if namespace is None and obj is not None:
 		namespace = deep_get_with_fallback(obj, namespace_path)
 
+	parent_namespace = deep_get(kwargs, DictPath("_parent_namespace"), "")
+	if namespace is None and parent_namespace is not None:
+		namespace = parent_namespace
+
         # If the kind is unknown we will get NameError;
 	# in this case we probably do not want to crash
 	try:

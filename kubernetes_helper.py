@@ -1164,6 +1164,23 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/crd.projectcalico.org/v1/"],
 		"api": "networksets",
 	},
+	# dapr.io
+	("Component", "dapr.io"): {
+		"api_paths": ["apis/dapr.io/v1alpha1/"],
+		"api": "components",
+	},
+	("Configuration", "dapr.io"): {
+		"api_paths": ["apis/dapr.io/v1alpha1/"],
+		"api": "configurations",
+	},
+	("Resiliency", "dapr.io"): {
+		"api_paths": ["apis/dapr.io/v1alpha1/"],
+		"api": "resiliencies",
+	},
+	("Subscription", "dapr.io"): {
+		"api_paths": ["apis/dapr.io/v2alpha1/"],
+		"api": "subscriptions",
+	},
 	# deviceplugin.intel.com
 	("DlbDevicePlugin", "deviceplugin.intel.com"): {
 		"api_paths": ["apis/deviceplugin.intel.com/v1/"],

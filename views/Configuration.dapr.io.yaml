@@ -1,0 +1,44 @@
+kind: "Configuration"
+api_family: "dapr.io"
+default_command: "configurations.dapr.io"
+command:
+- "configurations.dapr"
+- "configuration.dapr"
+- "confs.dapr"
+- "conf.dapr"
+listview:
+  name: "Configurations"
+  group: "Dapr"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Configuration Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["metrics_header", "metrics_enabled", "mtls_header", "mtls_enabled", "mtls_allowed_clock_skew", "mtls_workload_cert_ttl"]
+    rows:
+      metrics_header:
+        header: [["Metrics:", ["main", "infoheader"]]]
+      metrics_enabled:
+        header: [["  Enabled:", ["main", "infoheader"]]]
+        path: "spec#metrics#enabled"
+        type: "str"
+      mtls_header:
+        header: [["mTLS:", ["main", "infoheader"]]]
+      mtls_allowed_clock_skew:
+        header: [["  Allowed Clock Skew:", ["main", "infoheader"]]]
+        path: "spec#mtls#allowedClockSkew"
+        type: "str"
+        formatter: "numerical_with_units"
+      mtls_enabled:
+        header: [["  Enabled:", ["main", "infoheader"]]]
+        path: "spec#mtls#enabled"
+        type: "str"
+      mtls_workload_cert_ttl:
+        header: [["  Workload Certificate TTL:", ["main", "infoheader"]]]
+        path: "spec#mtls#workloadCertTTL"
+        type: "str"
+        formatter: "numerical_with_units"
