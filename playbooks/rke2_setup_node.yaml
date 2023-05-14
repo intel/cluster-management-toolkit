@@ -1,15 +1,15 @@
-- hosts: "selection"
-  name: "Setup a Kubernetes control plane using RKE2"
+- hosts: "selection:!nodes:!controlplane:!nas"
+  name: "Setup Kubernetes node using RKE2"
   vars:
     metadata:
-      description: "Setup a Kubernetes control plane using RKE2"
+      description: "Setup Kubernetes node using RKE2"
       summary:
         "Downloaded files":
         - description: "https://get.rke2.io"
         "Enabled services":
-        - description: "rke2-server"
+        - description: "rke2-agent"
         "Other actions":
-        - description: "Configures and starts a Kubernetes control plane"
+        - description: "Configures and starts a Kubernetes node"
       time_consumption: "Slow"
       playbook_types:
       - "internal"
@@ -21,7 +21,7 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Checking if cluster is already running"  # noqa fqcn-builtins
+  - name: "Checking if kubelet is already running"  # noqa fqcn-builtins
     shell: |
       lsof -i:6443 -sTCP:LISTEN -t > /dev/null
     register: "port_check"
@@ -46,7 +46,7 @@
   - name: "Configuring proxy settings"
     ansible.builtin.template:
       src: "templates/etc/default/rke2-server.j2"
-      dest: "/etc/default/rke2-server"
+      dest: "/etc/default/rke2-agent"
       mode: "0644"
     when: "port_check.rc == 1"
   - name: "Creating /etc/rancher/rke2"
@@ -54,10 +54,18 @@
       path: "/etc/rancher/rke2"
       state: "directory"
       mode: "0755"
+  - name: "Read cluster join token"
+    become: no
+    shell: |
+      cat ~/.kube/token.{{ cluster_name }}
+    register: node_token
+    delegate_to: "localhost"
+  - set_fact:
+      node_token={{ node_token.stdout }}
   - name: "Configuring RKE2"
     ansible.builtin.template:
       dest: "/etc/rancher/rke2/config.yaml"
-      src: "templates/etc/rancher/rke2/config.yaml.j2"
+      src: "templates/etc/rancher/rke2/config.agent.yaml.j2"
       mode: "0600"
       force: true
     when: "port_check.rc == 1"
@@ -69,9 +77,10 @@
       https_proxy: "{{ https_proxy }}"
       no_proxy: "{{ no_proxy }}"
       INSTALL_RKE2_CHANNEL: "{{ requested_version }}"
+      INSTALL_RKE2_TYPE: "agent"
   - name: "Enabling and starting RKE2 control plane service"
     ansible.builtin.systemd:
-      name: "rke2-server"
+      name: "rke2-agent"
       daemon_reload: true
       state: "restarted"
       enabled: true
