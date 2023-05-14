@@ -147,7 +147,7 @@ infoview:
           subpath: "type"
           when:
           - key: "type"
-            in: ["ContainersReady", "Degraded", "DiskPressure", "Initialized", "MemoryPressure", "NetworkUnavailable", "OutOfDisk", "PIDPressure", "PodScheduled", "Progressing", "Ready", "PodScheduled"]
+            in: ["ContainersReady", "Degraded", "DiskPressure", "Initialized", "MemoryPressure", "NetworkUnavailable", "OutOfDisk", "PIDPressure", "PodHasNetwork", "PodScheduled", "Progressing", "Ready", "PodScheduled"]
           - key: "status"
             eq: "True"
         - path: "status#conditions"
@@ -155,7 +155,7 @@ infoview:
           subpath: "type"
           when:
           - key: "type"
-            in: ["ContainersReady", "Initialized", "PodScheduled", "Progressing", "Ready"]
+            in: ["ContainersReady", "Initialized", "PodHasNetwork", "PodScheduled", "Progressing", "Ready"]
           - key: "status"
             eq: "False"
           prefix: "!"
@@ -203,6 +203,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_not_ok"
+              "PodHasNetwork":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               "PodScheduled":
                 field_colors:
                 - context: "main"
