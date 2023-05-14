@@ -2389,6 +2389,27 @@ def get_task_log(obj: Dict, **kwargs: Dict):
 def get_themearrays(obj: Dict, **kwargs: Dict) -> Dict:
 	return obj
 
+def logpad_formatted(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+	"""
+	Takes an object and dumps it using the specified format (if possible)
+
+		Parameters:
+			obj (dict): The dict to dump
+			kwargs (Dict): Additional parameters
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
+	path = deep_get(kwargs, DictPath("path"), "")
+	dump_formatter_tmp = deep_get(kwargs, DictPath("formatter"), "format_none")
+	dump_formatter = deep_get(formatter_allowlist, DictPath(dump_formatter_tmp))
+	if dump_formatter is None:
+		raise ValueError(f"{dump_formatter_tmp} is not a valid formatter; the view-file is probably incorrect.")
+
+	messages = dump_formatter(deep_get(obj, path))
+
+	return messages
+
 def logpad_yaml(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
 	Takes an object and dumps it as formatted YAML
@@ -11191,7 +11212,10 @@ infogetter_allowlist = {
 	"get_subsets_info": get_subsets_info,
 	"get_svcmon_endpoints_info": get_svcmon_endpoints_info,
 	# Used by logpad
+	"logpad_formatted": logpad_formatted,
+	# XXX: We should aim to replace this with logpad_formatted
 	"logpad_msg_getter": logpad_msg_getter,
+	# XXX: We should aim to replace this with logpad_formatted
 	"logpad_yaml": logpad_yaml,
 	"get_journalctl_log": get_journalctl_log,
 	"get_task_log": get_task_log,

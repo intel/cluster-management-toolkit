@@ -217,6 +217,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "certificatesigningrequests",
 		"namespaced": False,
 	},
+	("ClusterTrustBundle", "certificates.k8s.io"): {
+		"api_paths": ["apis/certificates.k8s.io/v1alpha1/"],
+		"api": "clustertrustbundles",
+		"namespaced": False,
+	},
 	# coordination.k8s.io
 	("Lease", "coordination.k8s.io"): {
 		"api_paths": ["apis/coordination.k8s.io/v1/"],

@@ -1,0 +1,53 @@
+kind: "ClusterTrustBundle"
+api_family: "certificates.k8s.io"
+default_command: "clustertrustbundles"
+command:
+- "clrtrustbundles"
+- "clrtrustbundle"
+listview:
+  name: "Cluster Trust Bundles"
+  group: "Certificate Management"
+  field_indexes:
+    Normal:
+      fields: ["name", "signername", "age"]
+  fields:
+    signername:
+      header: "Signer:"
+      path: "spec#signerName"
+      type: "str"
+infoview:
+  name: "Cluster Trust Bundle Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["signername"]
+    rows:
+      signername:
+        header: [["Signer:", ["main", "infoheader"]]]
+        path: "spec#signerName"
+        type: "str"
+  logpad:
+    infogetter: "logpad_formatted"
+    timestamps: false
+    infogetter_args:
+      formatter: "format_crt"
+      path: "spec#trustBundle"
+  shortcuts:
+    "Export":
+      key: "e"
+      modifier: "shift"
+      read_only: false
+      helptext: "Export certificate to a file"
+      widget: "inputbox"
+      inputtitle: "Export to file:"
+      confirm: "path_exists"
+      confirmtitle: "File already exists; overwrite?:"
+      action: "call"
+      action_call: "export_data"
+      action_args:
+        _pass_result: true
+        _pass_obj: true
+        _extra_args:
+          base_path: "spec#trustBundle"
+          name_attr: "metadat#name"
+          raw_export: true

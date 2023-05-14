@@ -322,6 +322,10 @@
 					"description": "Extra data to pass to the infogetter",
 					"type": "object"
 				},
+				"formatter": {
+					"description": "If the infogetter is logpad_formatted() this is used to decide what formatter to use",
+					"type": "string"
+				},
 				"path": {
 					"description": "The path to get the information from",
 					"$ref": "#/definitions/simple_path"
@@ -1746,7 +1750,9 @@
 						"infogetter": {
 							"description": "The function to use to get the content for the logpad",
 							"enum": [
+								"logpad_formatted",
 								"logpad_msg_getter",
+								"logpad_yaml",
 								"get_journalctl_log",
 								"get_task_log",
 								"get_themearrays",
