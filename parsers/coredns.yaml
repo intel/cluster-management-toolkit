@@ -14,6 +14,14 @@
       - matchtype: "exact"
         matchkey: "Params from apiserver:"
         matchline: "any"
+  - name: custom_splitter
+    options:
+      regex: '^(plugin/[^:]+): (.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"
