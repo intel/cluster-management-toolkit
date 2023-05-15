@@ -66,10 +66,6 @@
       dnf versionlock add "{{ item }}" || true
     loop: "{{ vars['held_packages'] }}"
     when: "ansible_os_family == 'RedHat'"
-  - name: "Marking packages as held"  # noqa fqcn-builtins
-    shell: |
-      zypper addlock "{{ held_packages | join(' ') }}" || true
-    when: "ansible_os_family == 'Suse'"
   - name: "Updating package cache"
     shell: |
       zypper --gpg-auto-import-keys refresh

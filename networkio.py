@@ -11,6 +11,7 @@ import hashlib
 import os
 from pathlib import Path
 import re
+import shutil
 import socket
 import sys
 import tarfile
@@ -267,9 +268,9 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 		checksum = None
 
 		if checksum_url is not None:
-			if checksum_url.startswith("http"):
+			if checksum_url.startswith("http://"):
 				r1 = pm.request("GET", checksum_url)
-			elif checksum_url.startswith("https"):
+			elif checksum_url.startswith("https://"):
 				r1 = spm.request("GET", checksum_url)
 			else:
 				ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
@@ -284,9 +285,9 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 				retval = False
 				break
 
-		if url.startswith("http"):
+		if url.startswith("http://"):
 			r1 = pm.request("GET", url)
-		elif url.startswith("https"):
+		elif url.startswith("https://"):
 			r1 = spm.request("GET", url)
 		else:
 			ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
@@ -327,13 +328,13 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 							# Here we change to the permissions we are supposed to use
 							os.chmod(f2.name, permissions)
 							# Here we atomically move it in place
-							os.rename(f2.name, f"{directory}/{filename}")
+							shutil.move(f2.name, f"{directory}/{filename}")
 							os.remove(f.name)
 				else:
 					# Here we change to the permissions we are supposed to use
 					os.chmod(f.name, permissions)
 					# Here we atomically move it in place
-					os.rename(f.name, f"{directory}/{filename}")
+					shutil.move(f.name, f"{directory}/{filename}")
 		else:
 			ansithemeprint.ansithemeprint([ANSIThemeString("Error ", "error"),
 						       ANSIThemeString(": Failed to fetch URL ", "default"),

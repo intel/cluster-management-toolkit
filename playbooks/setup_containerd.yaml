@@ -12,13 +12,16 @@
         - description: "/etc/containerd/config.toml"
         - description: "/etc/systemd/system/containerd.service.d/http-proxy.conf (proxy settings for containerd)"
         - description: "/etc/systemd/system/containerd.service.d/ip-forward.conf (enable IP-forwarding when using containerd)"
+        - description: "/etc/zypp/repos.d/openSUSE:Factory.repo"
         "Installed packages":
         - description: "containerd"
           conditions:
           - "Debian and derivatives"
+          - "SUSE and derivatives"
         - description: "runc"
           conditions:
           - "Debian and derivatives"
+          - "SUSE and derivatives"
         "Modified files":
         - description: "/etc/crictl.yaml (use containerd by default)"
         - description: "/etc/modules (ensure that br_netfilter is loaded)"
@@ -26,6 +29,7 @@
         - description: "Updates package cache"
           conditions:
           - "Debian and derivatives"
+          - "SUSE and derivatives"
         - description: "modprobe br_netfilter"
         "Restarted services":
         - description: "containerd"
@@ -56,6 +60,21 @@
       state: "latest"
       force_apt_get: true
     when: "ansible_os_family == 'Debian'"
+  - name: "Configuring package repository for Containerd"
+    ansible.builtin.template:
+      src: "templates/etc/zypp/repos.d/Virtualization_containers.repo.j2"
+      dest: "/etc/zypp/repos.d/Virtualization_containers.repo"
+      mode: "0644"
+    when: "ansible_os_family == 'Suse'"
+  - name: "Updating package cache"
+    shell: |
+      zypper --gpg-auto-import-keys refresh
+    when: "ansible_os_family == 'Suse'"
+  - name: "Installing containerd"  # noqa package-latest
+    shell: |
+      zypper -n remove containerd runc || true
+      zypper -n install -y containerd runc
+    when: "ansible_os_family == 'Suse'"
   - name: "Configuring crictl"
     ansible.builtin.template:
       dest: "/etc/crictl.yaml"

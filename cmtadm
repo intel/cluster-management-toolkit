@@ -1076,6 +1076,14 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 			result (bool): True on success, False on failure
 	"""
 
+	pass_cni = []
+
+	installation_info = get_installation_info()
+	cluster_name = deep_get(installation_info, DictPath("installation_target"))
+	installation_info_cni = deep_get(installation_info, DictPath(f"{cluster_name}#{cni}"))
+	if installation_info_cni is None or installation_info_cni == "<none>":
+		pass_cni = [cni]
+
 	if cni == "none":
 		ansithemeprint([ANSIThemeString("Note", "note"),
 				ANSIThemeString(": ", "default"),
@@ -1109,7 +1117,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		# upgrade_cni() will assume that the cluster is functional if run with a CNI, and thus tries to get
 		# all information from the cluster. This will most likely fail during installation, since the cluster
 		# hasn't started fully yet and thus cannot provide the necessary information
-		upgrade_cni(options = [("install", "")])
+		upgrade_cni(options = [("install", "")], args = pass_cni)
 		# FIXME
 		return True
 

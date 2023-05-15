@@ -26,6 +26,9 @@
         - description: "/etc/yum.repos.d/kubernetes.repo"
           conditions:
           - "Red Hat and derivatives"
+        - description: "/etc/zypp/repos.d/kubernetes.repo"
+          conditions:
+          - "SUSE and derivatives"
         "Installed packages":
         - description: "dnf-plugin-versionlock"
           conditions:
@@ -35,6 +38,7 @@
           conditions:
           - "Debian and derivatives"
           - "Red Hat and derivatives"
+          - "SUSE and derivatives"
   gather_subset:
   - "!min"
   - "!all"
