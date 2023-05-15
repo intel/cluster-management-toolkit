@@ -297,6 +297,15 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 			continue
 
 		if r1.status == 200:
+			# Check that we actually got any data
+			if len(r1.data) == 0:
+				ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "error"),
+							       ANSIThemeString(": File downloaded from ", "default"),
+							       ANSIThemeString(f"{url}", "url"),
+							       ANSIThemeString(" is empty; aborting.", "default")], stderr = True)
+				retval = False
+				break
+
 			# If we have a checksum we need to confirm that the downloaded file matches the checksum
 			if checksum is not None and checksum_type is not None and verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)) == False:
 				ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "error"),
