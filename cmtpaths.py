@@ -175,5 +175,6 @@ SSH_ARGS_RELAXED: List[str] = [
 SSH_KEYGEN_BIN_PATH = FilePath("/usr/bin/ssh-keygen")
 SSH_KEYGEN_ARGS = ["-t", "ecdsa", "-b", "521", "-N", ""]
 
-BASH_COMPLETION_BASE_DIR = FilePath(os.path.join(HOMEDIR, ".local/share/bash-completion"))
-BASH_COMPLETION_DIR = FilePath(os.path.join(HOMEDIR, ".local/share/bash-completion/completions"))
+BASH_COMPLETION_DIRNAME = "bash-completion"
+BASH_COMPLETION_BASE_DIR = FilePath(os.path.join(HOMEDIR, f".local/share/{BASH_COMPLETION_DIRNAME}"))
+BASH_COMPLETION_DIR = FilePath(os.path.join(HOMEDIR, f".local/share/{BASH_COMPLETION_DIRNAME}/completions"))
