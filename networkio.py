@@ -16,6 +16,7 @@ import socket
 import sys
 import tarfile
 import tempfile
+import time
 from typing import List, Optional, Tuple
 
 import paramiko
@@ -264,6 +265,9 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 		spm = urllib3.PoolManager() # type: ignore
 
 	for url, filename, checksum_url, checksum_type in fetch_urls:
+		# In case we're downloading heaps of files it's good manners to rate-limit our requests
+		time.sleep(1)
+
 		# If there's a checksum file, download it first
 		checksum = None
 
@@ -318,6 +322,8 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 			# NamedTemporaryFile with delete = False will create a temporary file owned by user with 0o600 permissions
 			with tempfile.NamedTemporaryFile(delete = False) as f:
 				f.write(r1.data)
+				# We want to use the content before the scope ends, so we need to flush the file
+				f.flush()
 
 				# We'd prefer to do this using BytesIO, but tarfile only supports it from Python 3.9+
 				if tarfile.is_tarfile(f.name) == True:
