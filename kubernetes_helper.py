@@ -2405,15 +2405,15 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "podschedulingcontexts",
 	},
 	("ResourceClaim", "resource.k8s.io"): {
-		"api_paths": ["apis/resource.k8s.io/v1alpha1/"],
+		"api_paths": ["apis/resource.k8s.io/v1alpha2/", "apis/resource.k8s.io/v1alpha1/"],
 		"api": "resourceclaims",
 	},
 	("ResourceClaimTemplate", "resource.k8s.io"): {
-		"api_paths": ["apis/resource.k8s.io/v1alpha1/"],
+		"api_paths": ["apis/resource.k8s.io/v1alpha2/", "apis/resource.k8s.io/v1alpha1/"],
 		"api": "resourceclaimtemplates",
 	},
 	("ResourceClass", "resource.k8s.io"): {
-		"api_paths": ["apis/resource.k8s.io/v1alpha1/"],
+		"api_paths": ["apis/resource.k8s.io/v1alpha2/", "apis/resource.k8s.io/v1alpha1/"],
 		"api": "resourceclasses",
 		"namespaced": False,
 	},
