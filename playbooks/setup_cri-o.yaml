@@ -142,7 +142,7 @@
     when: "ansible_os_family == 'Debian'"
   - name: "Installing cri-o"
     shell: |
-      zypper --repo kubic -n install -f -y cri-o
+      zypper -n install --repo kubic -f -y cri-o
     when: "ansible_os_family == 'Suse'"
   - name: "Installing cri-o-runc"  # noqa package-latest
     ansible.builtin.apt:
