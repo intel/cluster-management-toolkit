@@ -1080,7 +1080,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 
 	installation_info = get_installation_info()
 	cluster_name = deep_get(installation_info, DictPath("installation_target"))
-	installation_info_cni = deep_get(installation_info, DictPath(f"{cluster_name}#{cni}"))
+	installation_info_cni = deep_get(installation_info, DictPath(f"{cluster_name}#cni"))
 	if installation_info_cni is None or installation_info_cni == "<none>":
 		pass_cni = [cni]
 
@@ -1930,9 +1930,12 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 	# We need to substitute this with the real IP-address of the control plane to be able to connect to it remotely
 	# we can only hope that the IP-address is the one we used to connect to the control plane--if the new cluster
 	# has multiple IP-addresses this will fail
-	if server.startswith("https://127.") or server == "https://::1":
-		ip = socket.gethostbyname(control_plane_name)
-		server = f"https://{ip}:{server.rsplit(':', 1)[1]}"
+	#
+	# This only works if the server we're connecting to is remove though; we need to find a solution for this
+	# before we enable this
+	#if server.startswith("https://127.") or server == "https://::1":
+	#	ip = socket.gethostbyname(control_plane_name)
+	#	server = f"https://{ip}:{server.rsplit(':', 1)[1]}"
 	insecure_skip_tls_verify = d2["clusters"][0]["cluster"].get("insecure-skip-tls-verify")
 	cluster = {
 		"cluster": {
@@ -1977,7 +1980,7 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 
 	check_and_print_status(True)
 
-def __task_setup_kubeadm_cni(installation_info: Dict) -> None:
+def __task_setup_cni(installation_info: Dict) -> None:
 	"""
 	An installer task that sets up a CNI
 
@@ -2395,7 +2398,7 @@ __setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[
 	  ANSIThemeString("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
 	([ANSIThemeString("Import kube config", "action")], __task_import_kube_config),
 	([ANSIThemeString("Setup ", "action"),
-	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
+	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_cni),
 ]
 
 __setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]] = [
@@ -2409,7 +2412,7 @@ __setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Di
 	  ANSIThemeString("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
 	([ANSIThemeString("Import kube config", "action")], __task_import_kube_config),
 	([ANSIThemeString("Setup ", "action"),
-	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
+	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_cni),
 ]
 
 setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
