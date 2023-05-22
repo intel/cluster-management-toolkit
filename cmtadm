@@ -3360,6 +3360,12 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	update_installation_info(version = requested_version)
 
 	ansithemeprint([ANSIThemeString("\nControl plane setup successful", "success")])
+	ansithemeprint([ANSIThemeString("\nNote:", "note")])
+	ansithemeprint([ANSIThemeString("If this is an RKE2 installation you need to substitute", "default"),
+			ANSIThemeString("127.0.0.1", "address")])
+	ansithemeprint([ANSIThemeString("in ", "default"),
+			ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
+			ANSIThemeString(f" with the real IP-address of this host.\n", "default")])
 
 def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> Tuple[List[Dict], kubernetes_helper.KubernetesHelper]:
 	if not Path(KUBE_CONFIG_FILE).is_file():
