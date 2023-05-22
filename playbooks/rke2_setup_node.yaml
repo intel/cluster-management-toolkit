@@ -54,15 +54,23 @@
       path: "/etc/rancher/rke2"
       state: "directory"
       mode: "0755"
-  - name: "Read cluster join token"
-    become: no
-    shell: |
-      cat ~/.kube/token.{{ cluster_name }}
-    register: node_token
-    delegate_to: "localhost"
-  - set_fact:
-      node_token={{ node_token.stdout }}
-  - name: "Configuring RKE2"
+    when: "port_check.rc == 1"
+  - name: "Reading RKE2 configuration"
+    ansible.builtin.include_vars:
+      file: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
+      name: config
+    when: "port_check.rc == 1"
+  - name: "Setting facts"
+    become: false
+    ansible.builtin.set_fact:
+      controller_manager_arg: "{{ config['controller-manager-arg'] }}"
+      kube_apiserver_arg: "{{ config['kube-apiserver-arg'] }}"
+      kubelet_arg: "{{ config['kubelet-arg'] }}"
+      kube_proxy_arg: "{{ config['kube-proxy-arg'] }}"
+      kube_scheduler_arg: "{{ config['kube-scheduler-arg'] }}"
+      node_token: "{{ lookup('ansible.builtin.file', '~/.kube/token.{{ cluster_name }}') }}"
+    when: "port_check.rc == 1"
+  - name: "Creating node configuration file"
     ansible.builtin.template:
       dest: "/etc/rancher/rke2/config.yaml"
       src: "templates/etc/rancher/rke2/config.agent.yaml.j2"

@@ -182,7 +182,7 @@
   - name: "Changing apparmor_profile to default"
     ansible.builtin.lineinfile:
       path: "/etc/crio/crio.conf.d/00-default.conf"
-      regexp: "^(apparmor_profile=.*)"
+      regexp: "^(apparmor_profile =.*)"
       line: '# \1'
       backrefs: yes
     when: "ansible_os_family == 'Suse'"
