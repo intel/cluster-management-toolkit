@@ -26,6 +26,9 @@
         - description: "/etc/yum.repos.d/kubernetes.repo"
           conditions:
           - "Red Hat and derivatives"
+        - description: "/etc/zypp/repos.d/kubernetes.repo"
+          conditions:
+          - "SUSE and derivatives"
         "Installed packages":
         - description: "dnf-plugin-versionlock"
           conditions:
@@ -35,6 +38,7 @@
           conditions:
           - "Debian and derivatives"
           - "Red Hat and derivatives"
+          - "SUSE and derivatives"
   gather_subset:
   - "!min"
   - "!all"
@@ -58,12 +62,42 @@
     environment:
       https_proxy: "{{ https_proxy }}"
     when: "ansible_os_family == 'Debian'"
+  - name: "Creating temporary directory for repository keys"
+    ansible.builtin.tempfile:
+      state: "directory"
+      suffix: "temp"
+    register: "tempdir"
+    when: "ansible_os_family == 'Suse'"
+  - name: "Fetching Kubernetes repository keys"
+    ansible.builtin.get_url:
+      url: "https://packages.cloud.google.com/yum/doc/{{ item }}"
+      dest: "{{ tempdir.path }}"
+      mode: "0644"
+      force: true
+      use_proxy: "{{ use_proxy }}"
+    with_items:
+    - "rpm-package-key.gpg"
+    - "yum-key.gpg"
+    environment:
+      https_proxy: "{{ https_proxy }}"
+    when: "ansible_os_family == 'Suse'"
+  - name: "Importing repository keys"
+    shell: |
+      rpm --import "{{ tempdir.path }}/rpm-package-key.gpg"
+      rpm --import "{{ tempdir.path }}/yum-key.gpg"
+    when: "ansible_os_family == 'Suse'"
   - name: "Configuring package repository for Kubernetes"
     ansible.builtin.template:
       src: "templates/etc/apt/sources.list.d/kubernetes.list.j2"
       dest: "/etc/apt/sources.list.d/kubernetes.list"
       mode: "0644"
     when: "ansible_os_family == 'Debian'"
+  - name: "Configuring package repository for Kubernetes"
+    ansible.builtin.template:
+      src: "templates/etc/zypp/repos.d/kubernetes.repo.j2"
+      dest: "/etc/zypp/repos.d/kubernetes.repo"
+      mode: "0644"
+    when: "ansible_os_family == 'Suse'"
   - name: "Configuring package repository proxy for Kubernetes"
     ansible.builtin.template:
       src: "templates/etc/apt/apt.conf.d/01proxy-kubernetes.j2"

@@ -1,4 +1,7 @@
-#! /usr/bin/env python3
+#! /bin/sh
+# vim: filetype=python
+''''eval version=$( ls /usr/bin | grep 'python3\.[0-9]*$' | sed -e 's/.*\.\([0-9]*\)$/\1/' | sort -nr | head -n1 ) && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
 # Requires: ansible
 # Requires: python3 (>= 3.8)
 # Requires: python3-natsort
@@ -25,7 +28,10 @@ from pathlib import Path, PurePath
 import re
 import sys
 from typing import Any, cast, Dict, List, Optional, Sequence, Tuple
-import yaml
+try:
+	import yaml
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: You probably need to install python3-yaml; did you forget to run cmt-install?")
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
@@ -33,7 +39,7 @@ from cryptography.hazmat.primitives import serialization
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, HostNameStatus
 from cmtpaths import CMT_CONFIG_FILE, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE, VIEW_DIR
@@ -46,7 +52,7 @@ from ansible_helper import ansible_print_action_summary, ansible_print_play_resu
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import cmtlib
-from cmtlib import read_cmtconfig
+from cmtlib import identify_distro, read_cmtconfig
 from cmtio import execute_command, secure_read_string, validate_fqdn
 from cmtio_yaml import secure_read_yaml
 from networkio import scan_and_add_ssh_keys
@@ -990,6 +996,9 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0 on success, exits with errno on failure
 	"""
 
+	os_distro = identify_distro()
+	k8s_distro = "kubeadm"
+
 	ignore_existing = False
 	ignore_non_existing = False
 	from_file = False
@@ -1021,6 +1030,15 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			from_file = True
 		elif opt == "-Y":
 			confirm = False
+		elif opt == "--kubernetes-distro":
+			k8s_distro = optarg
+
+	if os_distro == "suse" and k8s_distro != "rke2":
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Currently ", "default"),
+				ANSIThemeString("RKE2", "argument"),
+				ANSIThemeString(" is the only supported Kubernetes distro for SUSE; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOTSUP)
 
 	if from_file == True:
 		hostfile = args[0]
@@ -1168,76 +1186,80 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-	join_token = kh.get_join_token()
-	if len(join_token) == 0:
-		if confirm:
+	join_token = None
+	ca_cert_hash = None
+
+	if k8s_distro == "kubeadm":
+		join_token = kh.get_join_token()
+		if len(join_token) == 0:
+			if confirm:
+				input_retval = ansithemeinput([ANSIThemeString("Warning", "warning"),
+							       ANSIThemeString(": No join token found; create one now? (No will abort the installation) [y/", "default"),
+							       ANSIThemeString("N", "emphasis"),
+							       ANSIThemeString("]: ", "default")])
+				if input_retval.lower() not in ("y", "yes"):
+					ansithemeprint([ANSIThemeString("\nAborting", "error"),
+							ANSIThemeString(": No join token available.", "default")], stderr = True)
+					sys.exit(errno.ENOENT)
+			else:
+				ansithemeprint([ANSIThemeString("Note", "note"),
+						ANSIThemeString(": No join token found; creating one now.", "default")])
+
+			create_join_token_playbooks = [
+				FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_create_join_token.yaml")))
+			]
+			playbooks = populate_playbooks_from_paths(create_join_token_playbooks)
+			retval = run_playbooks(playbooks = playbooks, hosts = controlplanes)
+			join_token = kh.get_join_token()
+			if len(join_token) == 0:
+				ansithemeprint([ANSIThemeString("Critical", "critical"),
+						ANSIThemeString(": Failed to create join token; aborting", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
+
+		ca_cert_hash = ""
+		if len(ca_cert_path) == 0:
+			ca_cert_hash = kh.get_ca_cert_hash()
+		if len(ca_cert_hash) == 0:
+			if len(ca_cert_path) == 0:
+				ca_cert_path = "/etc/kubernetes/pki/ca.crt"
 			input_retval = ansithemeinput([ANSIThemeString("Warning", "warning"),
-						       ANSIThemeString(": No join token found; create one now? (No will abort the installation) [y/", "default"),
+						       ANSIThemeString(": Could not find ", "default"),
+						       ANSIThemeString("ca.crt", "path"),
+						       ANSIThemeString(" or a certificate-controller-token secret; try to use ", "default"),
+						       ANSIThemeString(ca_cert_path, "path"),
+						       ANSIThemeString("? No will abort the installation) [y/", "default"),
 						       ANSIThemeString("N", "emphasis"),
 						       ANSIThemeString("]: ", "default")])
 			if input_retval.lower() not in ("y", "yes"):
 				ansithemeprint([ANSIThemeString("\nAborting", "error"),
-						ANSIThemeString(": No join token available.", "default")], stderr = True)
-				sys.exit(errno.ENOENT)
-		else:
-			ansithemeprint([ANSIThemeString("Note", "note"),
-					ANSIThemeString(": No join token found; creating one now.", "default")])
-
-		create_join_token_playbooks = [
-			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_create_join_token.yaml")))
-		]
-		playbooks = populate_playbooks_from_paths(create_join_token_playbooks)
-		retval = run_playbooks(playbooks = playbooks, hosts = controlplanes)
-		join_token = kh.get_join_token()
-		if len(join_token) == 0:
-			ansithemeprint([ANSIThemeString("Critical", "critical"),
-					ANSIThemeString(": Failed to create join token; aborting", "default")], stderr = True)
-			sys.exit(errno.EINVAL)
-
-	ca_cert_hash = ""
-	if len(ca_cert_path) == 0:
-		ca_cert_hash = kh.get_ca_cert_hash()
-	if len(ca_cert_hash) == 0:
-		if len(ca_cert_path) == 0:
-			ca_cert_path = "/etc/kubernetes/pki/ca.crt"
-		input_retval = ansithemeinput([ANSIThemeString("Warning", "warning"),
-					       ANSIThemeString(": Could not find ", "default"),
-					       ANSIThemeString("ca.crt", "path"),
-					       ANSIThemeString(" or a certificate-controller-token secret; try to use ", "default"),
-					       ANSIThemeString(ca_cert_path, "path"),
-					       ANSIThemeString("? No will abort the installation) [y/", "default"),
-					       ANSIThemeString("N", "emphasis"),
-					       ANSIThemeString("]: ", "default")])
-		if input_retval.lower() not in ("y", "yes"):
-			ansithemeprint([ANSIThemeString("\nAborting", "error"),
-					ANSIThemeString(": No CA certificate available.", "default")], stderr = True)
-			sys.exit(errno.EINTR)
-		else:
-			ca_cert = ""
-			ca_cert_hash = ""
-
-			try:
-				ca_cert = secure_read_string(FilePath(ca_cert_path))
-				if len(ca_cert) > 0:
-					try:
-						x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
-					except TypeError as e:
-						if "load_pem_x509_certificate() missing 1 required positional argument: 'backend'" in str(e):
-							# This is to handle systems that doesn't have the latest version of cryptography
-							# pylint: disable-next=import-outside-toplevel,no-name-in-module
-							from cryptography.hazmat.primitives import default_backend
-							x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend = default_backend)
-						else:
-							raise
-					pubkeyder = x509obj.public_key().public_bytes(encoding = serialization.Encoding.DER, format = serialization.PublicFormat.SubjectPublicKeyInfo)
-					ca_cert_hash = hashlib.sha256(pubkeyder).hexdigest()
-			except FileNotFoundError:
-				pass
-
-			if len(ca_cert_hash) == 0:
-				ansithemeprint([ANSIThemeString("\nAborting", "error"),
 						ANSIThemeString(": No CA certificate available.", "default")], stderr = True)
 				sys.exit(errno.EINTR)
+			else:
+				ca_cert = ""
+				ca_cert_hash = ""
+
+				try:
+					ca_cert = secure_read_string(FilePath(ca_cert_path))
+					if len(ca_cert) > 0:
+						try:
+							x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
+						except TypeError as e:
+							if "load_pem_x509_certificate() missing 1 required positional argument: 'backend'" in str(e):
+								# This is to handle systems that doesn't have the latest version of cryptography
+								# pylint: disable-next=import-outside-toplevel,no-name-in-module
+								from cryptography.hazmat.primitives import default_backend
+								x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend = default_backend)
+							else:
+								raise
+						pubkeyder = x509obj.public_key().public_bytes(encoding = serialization.Encoding.DER, format = serialization.PublicFormat.SubjectPublicKeyInfo)
+						ca_cert_hash = hashlib.sha256(pubkeyder).hexdigest()
+				except FileNotFoundError:
+					pass
+
+				if len(ca_cert_hash) == 0:
+					ansithemeprint([ANSIThemeString("\nAborting", "error"),
+							ANSIThemeString(": No CA certificate available.", "default")], stderr = True)
+					sys.exit(errno.EINTR)
 
 	control_plane_ip, control_plane_port, control_plane_path = kh.get_control_plane_address()
 	if control_plane_ip is None:
@@ -1245,63 +1267,87 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				ANSIThemeString(": Could not get the IP-address for the control plane.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	# Now that we have the IP address of the API-server we can use that to get the package
-	# version for kubeadm
-	_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("get_versions.yaml"))), selection = [control_plane_ip])
-	if len(ansible_results) == 0:
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(f": Failed to get package versions from control plane at {control_plane_ip} (retval: {retval}); aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOENT)
+	# If this is a kubeadm cluster we need the package version for kubeadm;
+	# if it's an RKE2 cluster we try to deduce the channel from the control plane
+	# Kubernetes version
+	if k8s_distro == "kubeadm":
+		_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("get_versions.yaml"))), selection = [control_plane_ip])
+		if len(ansible_results) == 0:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(f": Failed to get package versions from control plane at {control_plane_ip} (retval: {retval}); aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
 
-	tmp = []
+		tmp = []
 
-	for result in deep_get(ansible_results, DictPath(control_plane_ip), []):
-		if deep_get(result, DictPath("task"), "") == "Package versions":
-			tmp = deep_get(result, DictPath("msg_lines"), [])
-			break
+		for result in deep_get(ansible_results, DictPath(control_plane_ip), []):
+			if deep_get(result, DictPath("task"), "") == "Package versions":
+				tmp = deep_get(result, DictPath("msg_lines"), [])
+				break
 
-	if len(tmp) == 0:
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(f": Failed to get package versions from control plane at {control_plane_ip} (playbook returned no valid data); aborting.", "default")], stderr = True)
-		sys.exit(errno.EBADMSG)
+		if len(tmp) == 0:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(f": Failed to get package versions from control plane at {control_plane_ip} (playbook returned no valid data); aborting.", "default")], stderr = True)
+			sys.exit(errno.EBADMSG)
 
-	kubeadm_version = ""
-	# Safe
-	kubeadm_version_regex = re.compile(r"^(.*?): (.*)")
+		kubeadm_version = ""
+		# Safe
+		kubeadm_version_regex = re.compile(r"^(.*?): (.*)")
 
-	for line in tmp:
-		match_tmp = kubeadm_version_regex.match(line)
-		if match_tmp is None:
-			continue
-		if match_tmp[1] == "kubeadm":
-			kubeadm_version = match_tmp[2]
-			break
+		for line in tmp:
+			match_tmp = kubeadm_version_regex.match(line)
+			if match_tmp is None:
+				continue
+			if match_tmp[1] == "kubeadm":
+				kubeadm_version = match_tmp[2]
+				break
 
-	if len(kubeadm_version) == 0:
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": Failed to get ", "default"),
-				ANSIThemeString("kubeadm", "programname"),
-				ANSIThemeString(f" package version from control plane at {control_plane_ip}; aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOENT)
+		if len(kubeadm_version) == 0:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": Failed to get ", "default"),
+					ANSIThemeString("kubeadm", "programname"),
+					ANSIThemeString(f" package version from control plane at {control_plane_ip}; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
 
-	version_major, version_minor, _rest = kubeadm_version.split(".")
+		version_major, version_minor, _rest = kubeadm_version.split(".")
+	elif k8s_distro == "rke2":
+		vlist = get_control_planes()
+		first_control_plane = vlist[0][0]
+		node_data = kh.get_ref_by_kind_name_namespace(("Node", ""), first_control_plane, "")
+		kubelet_version = deep_get(node_data, DictPath("status#nodeInfo#kubeletVersion"), "")
+		tmp = re.match(r"^(v\d+)\.(\d+).*", kubelet_version)
+		if tmp is None:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(f": Failed to get kubelet version from control plane; aborting.", "default")], stderr = True)
+			sys.exit(errno.EBADMSG)
+		rke2_version = f"{tmp[1]}.{tmp[2]}"
+		version_major = tmp[1][1:]
+		version_minor = tmp[2]
 
 	if cri is None:
-		if int(version_minor) < 24:
+		if int(version_minor) < 24 and k8s_distro != "rke2":
 			cri = "docker-shim"
 		else:
 			cri = "containerd"
 	else:
-		if int(version_minor) >= 24 and cri == "docker-shim":
-			ansithemeprint([ANSIThemeString("Error", "error"),
-					ANSIThemeString(": CRI cannot be “", "default"),
-					ANSIThemeString("docker-shim", "argument"),
-					ANSIThemeString("“ for ", "default"),
-					ANSIThemeString("Kubernetes ", "programname"),
-					ANSIThemeString(">= ", "default"),
-					ANSIThemeString("1.24", "version"),
-					ANSIThemeString("; aborting.", "default")], stderr = True)
-			sys.exit(errno.EINVAL)
+		if cri == "docker-shim":
+			if k8s_distro == "rke2":
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": CRI cannot be “", "default"),
+						ANSIThemeString("docker-shim", "argument"),
+						ANSIThemeString("“ for ", "default"),
+						ANSIThemeString("RKE2", "argument"),
+						ANSIThemeString("; aborting.", "default")], stderr = True)
+				sys.exit(errno.ENOTSUP)
+			elif int(version_minor) >= 24:
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": CRI cannot be “", "default"),
+						ANSIThemeString("docker-shim", "argument"),
+						ANSIThemeString("“ for ", "default"),
+						ANSIThemeString("Kubernetes ", "programname"),
+						ANSIThemeString(">= ", "default"),
+						ANSIThemeString("1.24", "version"),
+						ANSIThemeString("; aborting.", "default")], stderr = True)
+				sys.exit(errno.ENOTSUP)
 
 	# Add the CRI to the setup playbooks for the control plane;
 	# the list is short enough that doing prepend isn't a performance issue
@@ -1313,30 +1359,48 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml")))]
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 
-	add_playbooks += [
-		# cmt does not use run_before/run_after/add_to_groups/remove_from_groups,
-		# so we have to do all of that explicitly
-		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
-		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_setup_node.yaml")))
-	]
+	cluster_name = get_cluster_name()
+
+	if k8s_distro == "kubeadm":
+		add_playbooks += [
+			# cmt does not use run_before/run_after/add_to_groups/remove_from_groups,
+			# so we have to do all of that explicitly
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_setup_node.yaml")))
+		]
+
+		if int(version_minor) < 23:
+			join_configuration_api_version = "kubeadm.k8s.io/v1beta2"
+		else:
+			join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+
+		extra_values = {
+			"control_plane_ip": control_plane_ip,
+			"control_plane_port": control_plane_port,
+			"control_plane_path": control_plane_path,
+			"join_token": join_token,
+			"ca_cert_hash": ca_cert_hash,
+			"control_plane_k8s_version": kubeadm_version,
+			"cri_socket": cri_socket,
+			"kubernetes_major_minor_version": f"{version_major}.{version_minor}",
+			"join_configuration_api_version": join_configuration_api_version,
+		}
+	elif k8s_distro == "rke2":
+		add_playbooks += [
+			# cmt does not use run_before/run_after/add_to_groups/remove_from_groups,
+			# so we have to do all of that explicitly
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_setup_node.yaml")))
+		]
+		extra_values = {
+			"control_plane_ip": control_plane_ip,
+			"control_plane_port": control_plane_port,
+			"requested_version": rke2_version,
+			"cri_socket": cri_socket,
+			"cluster_name": cluster_name,
+			"kubernetes_major_minor_version": f"{version_major}.{version_minor}",
+		}
 	playbooks = populate_playbooks_from_paths(add_playbooks)
 
-	if int(version_minor) < 23:
-		join_configuration_api_version = "kubeadm.k8s.io/v1beta2"
-	else:
-		join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
-
-	extra_values = {
-		"control_plane_ip": control_plane_ip,
-		"control_plane_port": control_plane_port,
-		"control_plane_path": control_plane_path,
-		"join_token": join_token,
-		"ca_cert_hash": ca_cert_hash,
-		"control_plane_k8s_version": kubeadm_version,
-		"cri_socket": cri_socket,
-		"kubernetes_major_minor_version": f"{version_major}.{version_minor}",
-		"join_configuration_api_version": join_configuration_api_version,
-	}
 	retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
 	if retval == True:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
@@ -1346,8 +1410,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		sys.exit(errno.EINVAL)
 
 	ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = non_existing, group = "nodes", skip_all = True)
-	# XXX: We need to get the cluster name to do this
-	#ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = non_existing, group = cluster_name, skip_all = True)
+	ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = non_existing, group = cluster_name, skip_all = True)
 	ansithemeprint([ANSIThemeString("\nNodes successfully added", "success")])
 	return 0
 
@@ -1362,6 +1425,9 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0 on success, exits with errno on failure
 	"""
 
+	os_distro = identify_distro()
+	k8s_distro = "kubeadm"
+
 	force = False
 	purge = False
 
@@ -1374,6 +1440,15 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
 			ansible_configuration["forks"] = optarg
+		elif opt == "--kubernetes-distro":
+			k8s_distro = optarg
+
+	if os_distro == "suse" and k8s_distro != "rke2":
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Currently ", "default"),
+				ANSIThemeString("RKE2", "argument"),
+				ANSIThemeString(" is the only supported Kubernetes distro for SUSE; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOTSUP)
 
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
@@ -1431,10 +1506,18 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Tearing down Kubernetes on the nodes", "action")])
-	teardown_playbooks = [
-		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_teardown_node.yaml"))),
-		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("teardown_cni.yaml"))),
-	]
+
+	if k8s_distro == "kubeadm":
+		teardown_playbooks = [
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_teardown_node.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("teardown_cni.yaml"))),
+		]
+	elif k8s_distro == "rke2":
+		teardown_playbooks = [
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_teardown_node.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("teardown_cni.yaml"))),
+		]
+
 	playbooks = populate_playbooks_from_paths(teardown_playbooks)
 
 	extra_values = {}
@@ -1451,11 +1534,13 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if purge == True:
 		purge_hosts(options = [("--ignore-non-existing", None)], args = [",".join(nodes)])
 
+	cluster_name = get_cluster_name()
+
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Removing nodes from the inventory", "action")])
 	ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = "nodes")
-	# XXX: We need to get the cluster name to do this
-	#ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = cluster_name)
+	ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = cluster_name)
+	ansithemeprint([ANSIThemeString("\nNodes successfully removed", "success")])
 	return 0
 
 def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -> int:
@@ -1468,6 +1553,9 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 		Returns:
 			0 on success, exits with errno on failure
 	"""
+
+	os_distro = identify_distro()
+	k8s_distro = "kubeadm"
 
 	ignore_non_existing = False
 
@@ -1489,6 +1577,15 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
 			ansible_configuration["forks"] = optarg
+		elif opt == "--kubernetes-distro":
+			k8s_distro = optarg
+
+	if os_distro == "suse" and k8s_distro != "rke2":
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Currently ", "default"),
+				ANSIThemeString("RKE2", "argument"),
+				ANSIThemeString(" is the only supported Kubernetes distro for SUSE; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOTSUP)
 
 	nodes, _non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
@@ -1541,9 +1638,15 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Purging Kubernetes from the hosts", "action")])
-	purge_playbooks = [
-		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_purge.yaml"))),
-	]
+
+	if k8s_distro == "kubeadm":
+		purge_playbooks = [
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_purge.yaml"))),
+		]
+	elif k8s_distro == "rke2":
+		purge_playbooks = [
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_purge.yaml"))),
+		]
 	playbooks = populate_playbooks_from_paths(purge_playbooks)
 
 	hosts = selection
@@ -1756,6 +1859,8 @@ def use_context(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	i = 0
 
+	current_context = None
+
 	for current, name, _cluster, _authinfo, _namespace, _server in contexts:
 		if context_index is not None and context_index == i:
 			context_name = name
@@ -1763,7 +1868,7 @@ def use_context(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if current is True:
 			current_context = name
 
-	if current_context == context_name:
+	if current_context is not None and current_context == context_name:
 		ansithemeprint([ANSIThemeString("Context not modified", "default")])
 		return 0
 
@@ -2762,6 +2867,35 @@ CMT_COMMANDLINE = {
 			"--ignore-non-existing": {
 				"description": [ANSIThemeString("Ignore hosts that are not part of the inventory", "description")],
 			},
+			"--kubernetes-distro": {
+				"values": [ANSIThemeString("DISTRO", "argument")],
+				"description": [ANSIThemeString("The Kubernetes distro of the control plane", "description")],
+				"extended_description": [
+					[ANSIThemeString("Depending on the Kubernetes distro in use a lot", "description")],
+					[ANSIThemeString("of things during node setup has to be done", "description")],
+					[ANSIThemeString("differently. If this option is not specified ", "description")],
+					[ANSIThemeString("cmt", "programname"),
+					 ANSIThemeString(" will assume that ", "description"),
+					 ANSIThemeString("kubeadm ", "argument"),
+					 ANSIThemeString("is used.", "description")],
+					[ANSIThemeString("Supported options:", "description")],
+					[ANSIThemeString("kubeadm", "argument"),
+					 ANSIThemeString(" (default)", "description")],
+					[ANSIThemeString("rke2", "argument"),
+					 ANSIThemeString(" (default on SUSE)", "description")],
+					[ANSIThemeString("Note", "note"),
+					 ANSIThemeString(": currently ", "description"),
+					 ANSIThemeString("rke2", "argument"),
+					 ANSIThemeString(" is the only supported", "description")],
+					[ANSIThemeString("option on ", "description"),
+					 ANSIThemeString("SUSE", "programname")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "regex",
+					"regex": r"^(kubeadm|rke2)$",
+				},
+			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs", "description")],
 				"extended_description": [
@@ -2827,6 +2961,35 @@ CMT_COMMANDLINE = {
 				"validation": {
 					"validator": "int",
 					"valid_range": (5, 256),
+				},
+			},
+			"--kubernetes-distro": {
+				"values": [ANSIThemeString("DISTRO", "argument")],
+				"description": [ANSIThemeString("The Kubernetes distro of the control plane", "description")],
+				"extended_description": [
+					[ANSIThemeString("Depending on the Kubernetes distro in use a lot", "description")],
+					[ANSIThemeString("of things during node teardown has to be done", "description")],
+					[ANSIThemeString("differently. If this option is not specified ", "description")],
+					[ANSIThemeString("cmt", "programname"),
+					 ANSIThemeString(" will assume that ", "description"),
+					 ANSIThemeString("kubeadm ", "argument"),
+					 ANSIThemeString("is used.", "description")],
+					[ANSIThemeString("Supported options:", "description")],
+					[ANSIThemeString("kubeadm", "argument"),
+					 ANSIThemeString(" (default)", "description")],
+					[ANSIThemeString("rke2", "argument"),
+					 ANSIThemeString(" (default on SUSE)", "description")],
+					[ANSIThemeString("Note", "note"),
+					 ANSIThemeString(": currently ", "description"),
+					 ANSIThemeString("rke2", "argument"),
+					 ANSIThemeString(" is the only supported", "description")],
+					[ANSIThemeString("option on ", "description"),
+					 ANSIThemeString("SUSE", "programname")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "regex",
+					"regex": r"^(kubeadm|rke2)$",
 				},
 			},
 			"--purge": {
@@ -2897,6 +3060,35 @@ CMT_COMMANDLINE = {
 					"valid_range": (5, 256),
 				},
 			},
+			"--kubernetes-distro": {
+				"values": [ANSIThemeString("DISTRO", "argument")],
+				"description": [ANSIThemeString("The Kubernetes distro of the control plane", "description")],
+				"extended_description": [
+					[ANSIThemeString("Depending on the Kubernetes distro in use a lot", "description")],
+					[ANSIThemeString("of things during node teardown has to be done", "description")],
+					[ANSIThemeString("differently. If this option is not specified ", "description")],
+					[ANSIThemeString("cmt", "programname"),
+					 ANSIThemeString(" will assume that ", "description"),
+					 ANSIThemeString("kubeadm ", "argument"),
+					 ANSIThemeString("is used.", "description")],
+					[ANSIThemeString("Supported options:", "description")],
+					[ANSIThemeString("kubeadm", "argument"),
+					 ANSIThemeString(" (default)", "description")],
+					[ANSIThemeString("rke2", "argument"),
+					 ANSIThemeString(" (default on SUSE)", "description")],
+					[ANSIThemeString("Note", "note"),
+					 ANSIThemeString(": currently ", "description"),
+					 ANSIThemeString("rke2", "argument"),
+					 ANSIThemeString(" is the only supported", "description")],
+					[ANSIThemeString("option on ", "description"),
+					 ANSIThemeString("SUSE", "programname")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "regex",
+					"regex": r"^(kubeadm|rke2)$",
+				},
+			},
 			"--save-ansible-logs": {
 				"description": [ANSIThemeString("Save logs from Ansible runs", "description")],
 				"extended_description": [
@@ -2945,6 +3137,12 @@ CMT_COMMANDLINE = {
 			 ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
 			 ANSIThemeString(" upgrade-control-plane", "command"),
 			 ANSIThemeString("“", "description")],
+			[ANSIThemeString("Note", "note"),
+			 ANSIThemeString(": ", "description"),
+			 ANSIThemeString("upgrade-node", "command"),
+			 ANSIThemeString(" is currently not", "description")],
+			[ANSIThemeString("implemented for ", "description"),
+			 ANSIThemeString("rke2", "argument")],
 		],
 		"options": {
 			"--forks": {

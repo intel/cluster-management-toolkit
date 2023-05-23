@@ -5,8 +5,12 @@
 YAML I/O helpers
 """
 
+import sys
 from typing import Any, Dict, Iterator, List, Optional, Union
-import yaml
+try:
+	import yaml
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: You probably need to install python3-yaml; did you forget to run cmt-install?")
 
 import cmtio
 from cmttypes import FilePath, SecurityChecks

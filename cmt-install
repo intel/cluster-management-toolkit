@@ -1,4 +1,7 @@
-#! /usr/bin/env python3
+#! /bin/sh
+# vim: filetype=python
+''''eval version=$( ls /usr/bin | grep 'python3\.[0-9]*$' | sed -e 's/.*\.\([0-9]*\)$/\1/' | sort -nr | head -n1 ) && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
 # Requires: python3 (>= 3.8)
 
 """
@@ -16,7 +19,7 @@ import re
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Union
 
 from cmttypes import deep_get, DictPath, FilePath, SecurityPolicy
 from cmtpaths import BINDIR, HOMEDIR, CMTDIR, CMT_LOGS_DIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
@@ -60,23 +63,116 @@ MISC_SYMLINKS = [
 	(FilePath(os.path.join(os.getcwd(), VIEW_DIRNAME)), VIEW_DIR)
 ]
 
+# Distros in always-fallback-distros will always use pip
+# Distros in never-fallback-distros will never use pip
 PACKAGES_WITH_PIP_FALLBACK = {
-	"python3-ansible-runner": "ansible-runner",
-	"python3-validators": "validators",
+	"python3-ansible-runner": {
+		"fallback": "ansible-runner",
+		"always-fallback-distros": [
+			"suse",
+		],
+	},
+	"python3-cryptography": {
+		"fallback": "cryptography",
+		"always-fallback-distros": [
+			"suse",
+		],
+		"never-fallback-distros": [
+			"debian",
+		],
+	},
+	"python3-natsort": {
+		"fallback": "natsort",
+		"always-fallback-distros": [
+			"suse",
+		],
+		"never-fallback-distros": [
+			"debian",
+		],
+	},
+	"python3-paramiko": {
+		"fallback": "paramiko",
+		"always-fallback-distros": [
+			"suse",
+		],
+		"never-fallback-distros": [
+			"debian",
+		],
+	},
+	"python3-ujson": {
+		"fallback": "ujson",
+		"always-fallback-distros": [
+			"suse",
+		],
+		"never-fallback-distros": [
+			"debian",
+		],
+	},
+	"python3-urllib3": {
+		"fallback": "urllib3",
+		"always-fallback-distros": [
+			"suse",
+		],
+		"never-fallback-distros": [
+			"debian",
+		],
+	},
+	"python3-validators": {
+		"fallback": "validators",
+		"always-fallback-distros": [
+			"suse",
+		],
+	},
+	"python3-yaml": {
+		"fallback": "PyYAML",
+		"always-fallback-distros": [
+			"suse",
+		],
+		"never-fallback-distros": [
+			"debian",
+		],
+	},
 }
 
 PACKAGES_WITHOUT_FALLBACK = {
 	"ansible": {},
-	"python3-cryptography": {},
-	"python3-natsort": {},
-	"python3-paramiko": {},
-	"python3-pip": {},
-	"python3-ujson": {},
+	"python3-cryptography": {
+		"distros": [
+			"debian",
+		],
+	},
+	"python3-natsort": {
+		"distros": [
+			"debian",
+		],
+	},
+	"python3-paramiko": {
+		"distros": [
+			"debian",
+		],
+	},
+	"python3-pip": {
+		"distros": [
+			"debian",
+		],
+	},
+	"python3-ujson": {
+		"distros": [
+			"debian",
+		],
+	},
 	"python3-urllib3": {
 		"recommended minimum": "1.26.0",
 		"reason": "TLSv1.1 is still enabled in older versions",
+		"distros": [
+			"debian",
+		],
 	},
-	"python3-yaml": {},
+	"python3-yaml": {
+		"distros": [
+			"debian",
+		],
+	},
 	"sshpass": {},
 }
 
@@ -124,12 +220,78 @@ def copy_files(files: List[Tuple[FilePath, FilePath, int]], verbose: bool = Fals
 		_violations = secure_copy(src, dst, verbose = verbose, permissions = permissions)
 
 # pylint: disable-next=unused-argument
-def install_software(packages: Dict, verbose: bool = False) -> None:
+def install_software_suse(packages: Union[Dict, Set], verbose: bool = False) -> None:
+	"""
+	Batch install SUSE packages
+
+		Parameters:
+			packages (union(dict, set)): A dict or set of packages to install
+			verbose (bool): Unused
+	"""
+
+	try:
+		sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+	except FileNotFoundError:
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not find ", "default"),
+				ANSIThemeString("sudo", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	try:
+		zypper_path = secure_which(FilePath("/usr/bin/zypper"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+	except FileNotFoundError:
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not find ", "default"),
+				ANSIThemeString("zypper", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	if isinstance(packages, set):
+		packages = dict.fromkeys(packages, {})
+	args = [sudo_path, zypper_path, "-n", "install", "-y"] + list(packages.keys())
+
+	_retval = subprocess.run(args, check = False).returncode
+
+	# Check if the installed versions are new enough
+	for pkg, data in packages.items():
+		recommended_minimum = deep_get(data, DictPath("recommended minimum"), "")
+		reason = deep_get(data, DictPath("reason"), "")
+		if len(recommended_minimum) == 0:
+			continue
+
+		args = [zypper_path, "info"] + [pkg]
+		result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+		pkg_version = None
+		compiled_regex = re.compile(r"^.*Version: (.+?)")
+		for line in result.stdout.decode("utf-8").splitlines():
+			tmp = compiled_regex.match(line)
+			if tmp is None:
+				continue
+
+			pkg_version = tmp[1]
+			break
+		if pkg_version is not None:
+			args = [zypper_path, "versioncmp", pkg_version, recommended_minimum]
+			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+			if "older" in result.stdout.decode("utf-8").splitlines():
+				ansithemeprint([ANSIThemeString("\nWarning:", "warning"),
+						ANSIThemeString(" The installed version of package ", "default"),
+						ANSIThemeString(f"{pkg}", "path"),
+						ANSIThemeString(" (", "default"),
+						ANSIThemeString(f"{pkg_version}", "version"),
+						ANSIThemeString(") is older than the recommended minimum version: ", "default"),
+						ANSIThemeString(f"{recommended_minimum}", "version")], stderr = True)
+				ansithemeprint([ANSIThemeString("   Risk:", "emphasis"),
+						ANSIThemeString(f" {reason}\n", "default")], stderr = True)
+
+# pylint: disable-next=unused-argument
+def install_software_deb(packages: Dict, verbose: bool = False) -> None:
 	"""
 	Batch install Debian packages
 
 		Parameters:
-			packages (list[str]): A list of packages to install
+			packages (union(dict, set)): A dict or set of packages to install
 			verbose (bool): Unused
 	"""
 
@@ -182,7 +344,7 @@ def install_software(packages: Dict, verbose: bool = False) -> None:
 		args = [apt_cache_path, "policy"] + [pkg]
 		result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 		pkg_version = None
-		compiled_regex = re.compile(r".*Installed: (.*)")
+		compiled_regex = re.compile(r"^  Installed: (.+)")
 		for line in result.stdout.decode("utf-8").splitlines():
 			tmp = compiled_regex.match(line)
 			if tmp is None:
@@ -204,85 +366,155 @@ def install_software(packages: Dict, verbose: bool = False) -> None:
 				ansithemeprint([ANSIThemeString("   Risk:", "emphasis"),
 						ANSIThemeString(f" {reason}\n", "default")], stderr = True)
 
-# pylint: disable-next=unused-argument
-def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verbose: bool = False, dryrun: bool = False) -> Tuple[List[str], List[str]]:
+def trim_package_list(packages: Dict, distro: str = "", fallback: bool = False) -> Dict:
 	"""
-	Batch install Debian packages with pip fallback
-	This function tries to install a Python module from a Debian package;
-	if that package does not exist it installs the pip version of the module instead
+	Given a dict of packages, remove any that shouldn't be installed
 
 		Parameters:
-			packages (dict): A dict of packages to install (pkg, fallback)
-			pip_proxy (str): A proxy to use when installing packages
-			verbose (bool): Unused
-			dryrun (bool): Simulate a run without installing packages
+			packages (union(dict, set)): A dict of packages to install
+			distro (str): Supported options "debian", "suse"
+			fallback (bool): Is a package list with fallbacks being processed
 		Returns:
-			(pkgs, fallbacks):
-				pkgs (list[str]): Packages that were, or would be, installed as Debian packages
-				fallbacks (list[str]): Packages that were, or would be, installed using pip
+			trimmed_packages (dict): The trimmed dict of packages
 	"""
 
-	pkgs: Set[str] = set()
-	fallbacks: Set[str] = set()
+	trimmed_packages: Dict = {}
+
+	for pkg, data in packages.items():
+		distros = deep_get(data, DictPath("distros"), [])
+		always_fallback_distros = deep_get(data, DictPath("always-fallback-distros"), [])
+		never_fallback_distros = deep_get(data, DictPath("never-fallback-distros"), [])
+
+		if len(distros) > 0 and distro not in distros:
+			continue
+		if len(never_fallback_distros) > 0 and distro in never_fallback_distros and fallback:
+			continue
+		trimmed_packages[pkg] = data
+
+	return trimmed_packages
+
+# pylint: disable-next=unused-argument
+def install_software(packages: Dict, verbose: bool = False, distro: str = "") -> None:
+	"""
+	Batch install packages
+
+		Parameters:
+			packages (union(dict, set)): A dict of packages to install
+			verbose (bool): Unused
+			distro (str): Supported options "debian", "suse"
+	"""
+
+	if distro == "debian":
+		install_software_deb(packages = packages, verbose = verbose)
+	elif distro == "suse":
+		install_software_suse(packages = packages, verbose = verbose)
+
+# pylint: disable-next=unused-argument
+def install_software_with_pip(packages: List[str], pip_proxy: str = "", verbose: bool = False) -> None:
+	"""
+	Installs Python modules using pip
+
+		Parameters:
+			packages (list[str]): A list of packages to install
+			pip_proxy (str): A proxy to use when installing packages
+			verbose (bool): Unused
+	"""
 
 	try:
-		apt_cache_path = secure_which(FilePath("/usr/bin/apt-cache"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+		pip3_path = secure_which(FilePath("pip3"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": Could not find ", "default"),
-				ANSIThemeString("apt-cache", "path"),
+				ANSIThemeString("pip3", "path"),
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
+	args = [pip3_path, "install"]
+	if len(pip_proxy) > 0:
+		args += ["--proxy", pip_proxy]
+	args += list(packages)
+	_retval = subprocess.run(args, check = False).returncode
 
-	args = [apt_cache_path, "madison"] + list(packages.keys())
-	response = execute_command_with_response(args)
-	split_response = response.splitlines()
+# pylint: disable-next=unused-argument
+def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verbose: bool = False, dryrun: bool = False, distro: str = "") -> Tuple[List[str], List[str]]:
+	"""
+	Batch install packages with pip fallback
+	This function tries to install a Python module from a package;
+	if that package does not exist it installs the pip version of the module instead
 
-	for line in split_response:
-		_pkg = line.split(' ', 1)
-		if _pkg[0] in packages.keys() and _pkg[0] not in pkgs:
-			pkgs.add(_pkg[0])
+		Parameters:
+			packages (union(dict, set)): A dict of packages to install
+			pip_proxy (str): A proxy to use when installing packages
+			verbose (bool): Unused
+			dryrun (bool): Simulate a run without installing packages
+			distro (str): Supported options "debian", "suse"
+		Returns:
+			(pkgs, fallbacks):
+				pkgs (list[str]): Packages that were, or would be, installed as packages
+				fallbacks (list[str]): Packages that were, or would be, installed using pip
+	"""
 
-	for pkg, fallback in packages.items():
-		if pkg not in pkgs:
-			fallbacks.add(fallback)
+	pkgs: Dict = {}
+	fallbacks: Set[str] = set()
 
-	if len(pkgs) > 0 and dryrun == False:
+	if distro == "debian":
 		try:
-			sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+			apt_cache_path = secure_which(FilePath("/usr/bin/apt-cache"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
 		except FileNotFoundError:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
 					ANSIThemeString(": Could not find ", "default"),
-					ANSIThemeString("sudo", "path"),
+					ANSIThemeString("apt-cache", "path"),
 					ANSIThemeString("; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 
+		args = [apt_cache_path, "madison"] + list(packages.keys())
+		response = execute_command_with_response(args)
+		split_response = response.splitlines()
+
+		for line in split_response:
+			_pkg = line.split(' ', 1)
+			if distro not in deep_get(packages, DictPath(f"{_pkg[0]}#always-fallback-distros"), []):
+				if _pkg[0] in packages.keys() and _pkg[0] not in pkgs:
+					pkgs[_pkg[0]] = packages[_pkg[0]]
+
+		for pkg in packages:
+			if pkg not in pkgs:
+				fallbacks.add(deep_get(packages, DictPath(f"{pkg}#fallback")))
+	elif distro == "suse":
 		try:
-			apt_get_path = secure_which(FilePath("/usr/bin/apt-get"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+			zypper_path = secure_which(FilePath("/usr/bin/zypper"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
 		except FileNotFoundError:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
 					ANSIThemeString(": Could not find ", "default"),
-					ANSIThemeString("apt-get", "path"),
+					ANSIThemeString("zypper", "path"),
 					ANSIThemeString("; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 
-		args = [sudo_path, apt_get_path, "install"] + list(pkgs)
-		_retval = subprocess.run(args, check = False).returncode
+		args = [zypper_path, "info"] + list(packages.keys())
+		response = execute_command_with_response(args)
+		split_response = response.splitlines()
 
-	if len(fallbacks) > 0 and dryrun == False:
-		try:
-			pip3_path = secure_which(FilePath("pip3"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
-		except FileNotFoundError:
-			ansithemeprint([ANSIThemeString("Critical", "critical"),
-					ANSIThemeString(": Could not find ", "default"),
-					ANSIThemeString("pip3", "path"),
-					ANSIThemeString("; aborting.", "default")], stderr = True)
-			sys.exit(errno.ENOENT)
-		args = [pip3_path, "install"]
-		if len(pip_proxy) > 0:
-			args += ["--proxy", pip_proxy]
-		args += list(fallbacks)
-		_retval = subprocess.run(args, check = False).returncode
+		information_for_regex = re.compile(r"^Information for package (.+):$")
+		not_found_regex = re.compile(r"^package '([^']+)' not found\.$")
+
+		for line in split_response:
+			tmp = information_for_regex.match(line)
+			if tmp is not None:
+				if distro not in deep_get(packages[tmp[1]], DictPath("always-fallback-distros"), []):
+					if tmp[1] not in pkgs:
+						pkgs[tmp[1]] = packages[tmp[1]]
+					continue
+				else:
+					fallbacks.add(deep_get(packages[tmp[1]], DictPath("fallback")))
+					continue
+			tmp = not_found_regex.match(line)
+			if tmp is not None:
+				fallbacks.add(deep_get(packages[tmp[1]], DictPath("fallback")))
+
+	if len(pkgs) > 0 and not dryrun:
+		install_software(pkgs, verbose = verbose, distro = distro)
+
+	if len(fallbacks) > 0 and not dryrun:
+		install_software_with_pip(list(fallbacks), pip_proxy = pip_proxy, verbose = verbose)
 
 	return list(pkgs), list(fallbacks)
 
@@ -319,20 +551,85 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "-Y":
 			confirm = False
 
-	if confirm == True:
+	# Find out what distro this is run on
+	try:
+		distro_path = secure_which(FilePath("/etc/os-release"), fallback_allowlist = ["/usr/lib", "/lib"], security_policy = SecurityPolicy.ALLOWLIST_STRICT, executable = False)
+	except FileNotFoundError:
+		ansithemeprint([ANSIThemeString("Error:", "error"),
+				ANSIThemeString(" Cannot find an “", "default"),
+				ANSIThemeString("os-release", "path"),
+				ANSIThemeString("“ file to determine OS distribution; aborting.", "default")])
+		sys.exit(errno.ENOENT)
+
+	distro = None
+
+	distro_id_like = ""
+	distro_id = ""
+
+	with open(distro_path) as f:
+		lines = f.readlines()
+		for line in lines:
+			line = line.strip()
+			key, value = line.split("=")
+			value = value.strip("\"'")
+			if key == "ID_LIKE":
+				distro_id_like = value
+				# If there's an ID_LIKE in the file we're done
+				break
+			if key == "ID":
+				distro_id = value
+				# But if we've only found an ID we cannot be sure
+				# that there won't be an ID_LIKE later on
+
+	if len(distro_id_like) > 0:
+		distro = distro_id_like
+	else:
+		distro = distro_id
+
+	if distro is None or len(distro) == 0:
+		ansithemeprint([ANSIThemeString("Error:", "error"),
+				ANSIThemeString(" Cannot read ID_LIKE from “", "default"),
+				ANSIThemeString("os-release", "path"),
+				ANSIThemeString("“ file to determine OS distribution; aborting.", "default")])
+		sys.exit(errno.ENOENT)
+
+	if distro == "suse opensuse":
+		distro = "suse"
+
+	if distro not in ("debian", "suse"):
+		ansithemeprint([ANSIThemeString("Error:", "error"),
+				ANSIThemeString(" distro “", "default"),
+				ANSIThemeString(f"{distro}", "path"),
+				ANSIThemeString("“ is not supported.", "default")])
+		ansithemeprint([ANSIThemeString("Currently only distros based on ", "default"),
+				ANSIThemeString("Debian", "programname"),
+				ANSIThemeString(" or ", "default"),
+				ANSIThemeString("SUSE", "programname"),
+				ANSIThemeString(" are supported.", "default")])
+		sys.exit(errno.ENOTSUP)
+
+	if distro == "suse":
+		ansithemeprint([ANSIThemeString("Note:", "note"),
+				ANSIThemeString(" on SUSE distros older than OpenSUSE 16 you need to install “", "default"),
+				ANSIThemeString("pip", "programname"),
+				ANSIThemeString("“ manually;", "default")])
+		ansithemeprint([ANSIThemeString("depending on your SP-level this may be, for instance, “", "default"),
+				ANSIThemeString("python310-pip", "programname"),
+				ANSIThemeString("“.\n", "default")])
+
+	pkgs_without_fallback: Dict = trim_package_list(packages = PACKAGES_WITHOUT_FALLBACK, distro = distro)
+	pkgs_with_pip_fallback: Dict = trim_package_list(packages = PACKAGES_WITH_PIP_FALLBACK, distro = distro, fallback = True)
+
+	if confirm:
 		ansithemeprint([ANSIThemeString("Important:", "warning"),
 				ANSIThemeString(" The following actions will be taken that will modify the system:", "default")])
 		pkgs: List[str] = []
-		pkgs_without_fallback: Dict = {}
 		pkgs_fallback: List[str] = []
 
-		if install_dependencies == True:
-			pkgs, pkgs_fallback = install_software_with_pip_fallback(PACKAGES_WITH_PIP_FALLBACK, dryrun = True)
-			pkgs_without_fallback = PACKAGES_WITHOUT_FALLBACK
-			for pkg in pkgs:
-				pkgs_without_fallback[pkg] = {}
+		if install_dependencies:
+			pkgs, pkgs_fallback = install_software_with_pip_fallback(pkgs_with_pip_fallback, dryrun = True, distro = distro)
 			ansithemeprint([ANSIThemeString("\n• ", "separator"),
-					ANSIThemeString("Install the following system software:", "action")])
+					ANSIThemeString("Install the following system software (+ any dependencies):", "action")])
 			ansithemeprint([ANSIThemeString("  Note", "warning"),
 					ANSIThemeString(": This requires sudo permissions", "emphasis")])
 			for pkg in pkgs_without_fallback:
@@ -360,7 +657,7 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 					ANSIThemeString(" ⇨ ", "emphasis"),
 					ANSIThemeString(f"{dst}", "path")])
 
-		if install_dependencies == True and allow_fallback == False and len(pkgs_fallback) > 0:
+		if install_dependencies and not allow_fallback and len(pkgs_fallback) > 0:
 			ansithemeprint([ANSIThemeString("\n", "default"),
 					ANSIThemeString("Error", "error"),
 					ANSIThemeString(": Installation would require fallback to PIP, but “", "default"),
@@ -378,15 +675,15 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 					ANSIThemeString(" User stopped installation.", "default")], stderr = True)
 			sys.exit(errno.EINTR)
 
-	if install_dependencies == True:
-		install_software(PACKAGES_WITHOUT_FALLBACK, verbose = verbose)
-		install_software_with_pip_fallback(PACKAGES_WITH_PIP_FALLBACK, verbose = verbose, pip_proxy = pip_proxy)
+	if install_dependencies:
+		install_software(pkgs_without_fallback, verbose = verbose, distro = distro)
+		install_software_with_pip_fallback(pkgs_with_pip_fallback, verbose = verbose, pip_proxy = pip_proxy, distro = distro)
 
 	create_directories(directories = DIRECTORIES, verbose = verbose)
 	copy_files(files = CONFIGURATION_FILES, verbose = verbose)
 	create_symlinks(symlinks = MISC_SYMLINKS + EXECUTABLE_SYMLINKS, verbose = verbose)
 
-	if bindir_exists == False:
+	if not bindir_exists:
 		ansithemeprint([ANSIThemeString("\nWarning", "warning"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{BINDIR}", "path"),
@@ -425,9 +722,6 @@ COMMANDLINE = {
 					[ANSIThemeString("[user:passwd@]proxy:port", "argument")],
 				],
 				"requires_arg": True,
-				"validation": {
-					"validator": "url",
-				},
 			},
 			"--verbose": {
 				"description": [ANSIThemeString("Be more verbose", "description")],

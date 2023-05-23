@@ -10,6 +10,7 @@
         "Fetched files":
         - description: "remote:/etc/kubernetes/admin.conf => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
         - description: "remote:/etc/rancher/rke2/rke2.yaml => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
+        - description: "remote:/var/lib/rancher/rke2/server/node-token => localhost:/home/{{ ansible_user }}/.kube/token.{{ cluster_name }} (0o600)"
       playbook_types:
       - "internal"
       category: "Setup"
@@ -42,11 +43,38 @@
     ansible.builtin.stat:
       path: "~/.kube/config.{{ cluster_name }}"
     register: kubeconfig
+    delegate_to: "localhost"
   - name: "Failing if kubeconfig is missing"
     ansible.builtin.fail:
     when: kubeconfig.stat.exists == False
   - name: "Fix file permissions for config file"
     ansible.builtin.file:
       path: "~/.kube/config.{{ cluster_name }}"
+      mode: "0600"
+    delegate_to: "localhost"
+  - name: "Attempting to copy /etc/rancher/node/password from control plane to localhost"
+    become: true
+    become_user: "root"
+    ansible.builtin.fetch:
+      src: "/var/lib/rancher/rke2/server/node-token"
+      dest: "~/.kube/token.{{ cluster_name }}"
+      flat: true
+    failed_when: false
+  - name: "Fix file permissions for token file"
+    ansible.builtin.file:
+      path: "~/.kube/token.{{ cluster_name }}"
+      mode: "0600"
+    delegate_to: "localhost"
+  - name: "Attempting to copy /etc/rancher/rke2/config.yaml RKE2 config file from control plane to localhost"
+    become: true
+    become_user: "root"
+    ansible.builtin.fetch:
+      src: "/etc/rancher/rke2/config.yaml"
+      dest: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
+      flat: true
+    failed_when: false
+  - name: "Fix file permissions for RKE config file"
+    ansible.builtin.file:
+      path: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
       mode: "0600"
     delegate_to: "localhost"

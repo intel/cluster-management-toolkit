@@ -43,17 +43,20 @@ from pathlib import Path, PurePath
 import re
 import sys
 from typing import cast, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
-import yaml
+try:
+	import yaml
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: You probably need to install python3-yaml; did you forget to run cmt-install?")
 
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
 
 try:
 	import validators # type: ignore
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-validators")
+	sys.exit("ModuleNotFoundError: You probably need to install python3-validators; did you forget to run cmt-install?")
 
 from cmtpaths import HOMEDIR, PARSER_DIR
 
@@ -263,6 +266,9 @@ def lvl_to_word_severity(lvl: LogLevel) -> str:
 def split_bracketed_severity(message: str, default: LogLevel = LogLevel.INFO) -> Tuple[str, LogLevel]:
 	severities = {
 		"[fatal]": LogLevel.CRIT,
+		# This is for ingress-nginx; while alert is higher than crit in syslog terms,
+                # ingress-nginx doesn't seem to use it that way.
+		"[alert]": LogLevel.ERR,
 		"[error]": LogLevel.ERR,
 		"[err]": LogLevel.ERR,
 		"[warning]": LogLevel.WARNING,

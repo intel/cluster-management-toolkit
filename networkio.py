@@ -11,10 +11,12 @@ import hashlib
 import os
 from pathlib import Path
 import re
+import shutil
 import socket
 import sys
 import tarfile
 import tempfile
+import time
 from typing import List, Optional, Tuple
 
 import paramiko
@@ -263,13 +265,16 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 		spm = urllib3.PoolManager() # type: ignore
 
 	for url, filename, checksum_url, checksum_type in fetch_urls:
+		# In case we're downloading heaps of files it's good manners to rate-limit our requests
+		time.sleep(1)
+
 		# If there's a checksum file, download it first
 		checksum = None
 
 		if checksum_url is not None:
-			if checksum_url.startswith("http"):
+			if checksum_url.startswith("http://"):
 				r1 = pm.request("GET", checksum_url)
-			elif checksum_url.startswith("https"):
+			elif checksum_url.startswith("https://"):
 				r1 = spm.request("GET", checksum_url)
 			else:
 				ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
@@ -284,9 +289,9 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 				retval = False
 				break
 
-		if url.startswith("http"):
+		if url.startswith("http://"):
 			r1 = pm.request("GET", url)
-		elif url.startswith("https"):
+		elif url.startswith("https://"):
 			r1 = spm.request("GET", url)
 		else:
 			ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
@@ -296,6 +301,15 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 			continue
 
 		if r1.status == 200:
+			# Check that we actually got any data
+			if len(r1.data) == 0:
+				ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "error"),
+							       ANSIThemeString(": File downloaded from ", "default"),
+							       ANSIThemeString(f"{url}", "url"),
+							       ANSIThemeString(" is empty; aborting.", "default")], stderr = True)
+				retval = False
+				break
+
 			# If we have a checksum we need to confirm that the downloaded file matches the checksum
 			if checksum is not None and checksum_type is not None and verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)) == False:
 				ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "error"),
@@ -308,6 +322,8 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 			# NamedTemporaryFile with delete = False will create a temporary file owned by user with 0o600 permissions
 			with tempfile.NamedTemporaryFile(delete = False) as f:
 				f.write(r1.data)
+				# We want to use the content before the scope ends, so we need to flush the file
+				f.flush()
 
 				# We'd prefer to do this using BytesIO, but tarfile only supports it from Python 3.9+
 				if tarfile.is_tarfile(f.name) == True:
@@ -327,13 +343,13 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 							# Here we change to the permissions we are supposed to use
 							os.chmod(f2.name, permissions)
 							# Here we atomically move it in place
-							os.rename(f2.name, f"{directory}/{filename}")
+							shutil.move(f2.name, f"{directory}/{filename}")
 							os.remove(f.name)
 				else:
 					# Here we change to the permissions we are supposed to use
 					os.chmod(f.name, permissions)
 					# Here we atomically move it in place
-					os.rename(f.name, f"{directory}/{filename}")
+					shutil.move(f.name, f"{directory}/{filename}")
 		else:
 			ansithemeprint.ansithemeprint([ANSIThemeString("Error ", "error"),
 						       ANSIThemeString(": Failed to fetch URL ", "default"),

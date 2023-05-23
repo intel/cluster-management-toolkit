@@ -29,6 +29,11 @@
       update_cache: true
       force_apt_get: true
     when: "ansible_os_family == 'Debian'"
+  - name: "Unmarking packages as held"  # noqa fqcn-builtins
+    shell: |
+      apt-mark unhold "{{ item }}" || true
+    loop: "{{ held_packages }}"
+    when: "ansible_os_family == 'Debian'"
   - name: "Installing custom packages"
     ansible.builtin.apt:
       pkg: "{{ packages }}"
@@ -45,6 +50,11 @@
     ansible.builtin.dnf:
       update_cache: true
     when: "ansible_os_family == 'RedHat'"
+  - name: "Unmarking packages as held"  # noqa fqcn-builtins
+    shell: |
+      dnf versionlock delete "{{ item }}" || true
+    loop: "{{ held_packages }}"
+    when: "ansible_os_family == 'RedHat'"
   - name: "Installing custom packages"
     ansible.builtin.dnf:
       pkg: "{{ packages }}"
@@ -56,3 +66,19 @@
       dnf versionlock add "{{ item }}" || true
     loop: "{{ vars['held_packages'] }}"
     when: "ansible_os_family == 'RedHat'"
+  - name: "Updating package cache"
+    shell: |
+      zypper --gpg-auto-import-keys refresh
+    when: "ansible_os_family == 'Suse'"
+  - name: "Unmarking packages as held"  # noqa fqcn-builtins
+    shell: |
+      zypper removelock "{{ held_packages | join(' ') }}" || true
+    when: "ansible_os_family == 'Suse'"
+  - name: "Installing custom packages"
+    shell: |
+      zypper -n install -f -y "{{ packages | join(' ') }}"
+    when: "ansible_os_family == 'Suse'"
+  - name: "Marking packages as held"  # noqa fqcn-builtins
+    shell: |
+      zypper addlock "{{ held_packages | join(' ') }}" || true
+    when: "ansible_os_family == 'Suse'"

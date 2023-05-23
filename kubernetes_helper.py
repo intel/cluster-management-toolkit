@@ -24,7 +24,10 @@ import ssl
 import sys
 import tempfile
 from typing import Any, AnyStr, cast, Dict, List, Optional, Sequence, Tuple, Union
-import yaml
+try:
+	import yaml
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: You probably need to install python3-yaml; did you forget to run cmt-install?")
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
@@ -32,7 +35,7 @@ from cryptography.hazmat.primitives import serialization
 try:
 	import urllib3
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-urllib3")
+	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run cmt-install?")
 
 from cmtpaths import KUBE_CONFIG_FILE
 import cmtlib
@@ -3559,9 +3562,9 @@ class KubernetesHelper:
 				pod_network_cidr (str): The Pod network CIDR
 		"""
 
-		nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = make_selector({"node-role.kubernetes.io/control-plane": ""}))
+		nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = "node-role.kubernetes.io/control-plane")
 		if nodes is None or len(nodes) == 0 or status != 200:
-			nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = make_selector({"node-role.kubernetes.io/master": ""}))
+			nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = "node-role.kubernetes.io/master")
 		if nodes is None or len(nodes) == 0 or status != 200:
 			return None
 		return deep_get(nodes[0], DictPath("spec#podCIDR"))

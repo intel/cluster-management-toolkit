@@ -27,20 +27,34 @@
         - description: "/etc/systemd/system/kubelet.service.d/cri-o-cri.conf (use CRI-O as CRI for Kubernetes)"
         - description: "/etc/systemd/system/cri-o.service.d/http-proxy.conf (proxy settings for CRI-O)"
         - description: "/etc/systemd/system/cri-o.service.d/ip-forward.conf (enable IP-forwarding when using CRI-O)"
+        - description: "/etc/zypp/repos.d/kubic.repo"
+          conditions:
+          - "SUSE and derivatives"
         "Downloaded files":
-        - description: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_11/Release.key"
+        - description: "https://download.opensuse.org/repositories/devel:/kubic/15.4/repodata/repomd.xml.key"
           conditions:
           - "Debian and derivatives"
+          - "SUSE and derivatives"
+        - description: "https://download.opensuse.org/repositories/security:/netfilter/openSUSE_Leap_15.4/repodata/repomd.xml.key"
+          conditions:
+          - "SUSE and derivatives"
         "Installed packages":
+        - description: "conntrack-tools"
+          conditions:
+          - "SUSE and derivatives"
         - description: "cri-o"
           conditions:
           - "Debian and derivatives"
+          - "SUSE and derivatives"
         - description: "cri-o-runc"
           conditions:
           - "Debian and derivatives"
         "Modified files":
         - description: "/etc/crictl.yaml (use CRI-O by default)"
-        - description: "/etc/modules (ensure that br_netfilter is loaded)"
+        - description: "/etc/crictl.yaml.d/crio.conf.d/00-default.conf (Use systemd as cgroup manager)"
+          conditions:
+          - "Suse and derivatives"
+        - description: "/etc/modules (Ensure that br_netfilter is loaded)"
         "Removed files":
         - description: "/etc/cni/net.d/100-crio-bridge.conflist (Conflicts with CNIs)"
         - description: "/etc/cni/net.d/200-loopback.conflist (Conflicts with CNIs)"
@@ -48,6 +62,7 @@
         - description: "Updates package cache"
           conditions:
           - "Debian and derivatives"
+          - "SUSE and derivatives"
         - description: "modprobe br_netfilter"
         "Restarted services":
         - description: "crio"
@@ -74,29 +89,58 @@
     register: "tempdir"
   - name: "Fetching CRI-O repository key"
     ansible.builtin.get_url:
-      url: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_11/Release.key"
-      dest: "{{ tempdir.path }}"
+      url: "https://download.opensuse.org/repositories/devel:/kubic/15.4/repodata/repomd.xml.key"
+      dest: "{{ tempdir.path }}/kubic.key"
       mode: "0644"
       force: true
       use_proxy: "{{ use_proxy }}"
     environment:
       https_proxy: "{{ https_proxy }}"
-    when: "ansible_os_family == 'Debian'"
+    when: "(ansible_os_family in ['Debian', 'Suse'])"
+  - name: "Fetching security:netfilter repository key"
+    ansible.builtin.get_url:
+      url: "https://download.opensuse.org/repositories/security:/netfilter/openSUSE_Leap_15.4/repodata/repomd.xml.key"
+      dest: "{{ tempdir.path }}/security_netfilter.key"
+      mode: "0644"
+      force: true
+      use_proxy: "{{ use_proxy }}"
+    environment:
+      https_proxy: "{{ https_proxy }}"
+    when: "(ansible_os_family in ['Debian', 'Suse'])"
   - name: "Dearmoring CRI-O key"  # noqa fqcn-builtins no-changed-when
     shell: |
       gpg --dearmor "{{ tempdir.path }}/Release.key"
+    when: "ansible_os_family == 'Debian'"
   - name: "Copying dearmored CRI-O key to /etc/apt/keyrings"
     ansible.builtin.copy:
       remote_src: true
       src: "{{ tempdir.path }}/Release.key.gpg"
       dest: "/etc/apt/keyrings/cri-o-keyring.gpg"
       mode: "0644"
+    when: "ansible_os_family == 'Debian'"
+  - name: "Importing repository keys"
+    shell: |
+      rpm --import "{{ tempdir.path }}/kubic.key"
+      rpm --import "{{ tempdir.path }}/security_netfilter.key"
+    when: "ansible_os_family == 'Suse'"
   - name: "Configuring package repository for CRI-O"
     ansible.builtin.template:
       src: "templates/etc/apt/sources.list.d/cri-o.list.j2"
       dest: "/etc/apt/sources.list.d/cri-o.list"
       mode: "0644"
     when: "ansible_os_family == 'Debian'"
+  - name: "Configuring package repository for CRI-O"
+    ansible.builtin.template:
+      src: "templates/etc/zypp/repos.d/kubic.repo.j2"
+      dest: "/etc/zypp/repos.d/kubic.repo"
+      mode: "0644"
+    when: "ansible_os_family == 'Suse'"
+  - name: "Configuring package repository for conntrack-tools"
+    ansible.builtin.template:
+      src: "templates/etc/zypp/repos.d/security_netfilter.repo.j2"
+      dest: "/etc/zypp/repos.d/security_netfilter.repo"
+      mode: "0644"
+    when: "ansible_os_family == 'Suse'"
   - name: "Configuring package repository proxy for CRI-O"
     ansible.builtin.template:
       src: "templates/etc/apt/apt.conf.d/01proxy-cri-o.j2"
@@ -114,12 +158,34 @@
       update_cache: true
       force_apt_get: true
     when: "ansible_os_family == 'Debian'"
+  - name: "Updating package cache"
+    shell: |
+      zypper --gpg-auto-import-keys refresh
+    when: "ansible_os_family == 'Suse'"
   - name: "Installing cri-o"  # noqa package-latest
     ansible.builtin.apt:
       name: "cri-o"
       state: "latest"
       force_apt_get: true
     when: "ansible_os_family == 'Debian'"
+  - name: "Installing cri-o and dependencies"
+    shell: |
+      zypper -n install conntrack-tools cni-plugins conmon libcontainers-common runc
+      zypper -n install --repo kubic -f -y cri-o
+    when: "ansible_os_family == 'Suse'"
+  - name: "Configure cri-o to use systemd as cgroup manager"
+    ansible.builtin.lineinfile:
+      path: "/etc/crio/crio.conf.d/00-default.conf"
+      regexp: "^cgroup_manager = \"cgroupfs\""
+      line: "cgroup_manager = \"systemd\""
+    when: "ansible_os_family == 'Suse'"
+  - name: "Changing apparmor_profile to default"
+    ansible.builtin.lineinfile:
+      path: "/etc/crio/crio.conf.d/00-default.conf"
+      regexp: "^(apparmor_profile =.*)"
+      line: '# \1'
+      backrefs: yes
+    when: "ansible_os_family == 'Suse'"
   - name: "Installing cri-o-runc"  # noqa package-latest
     ansible.builtin.apt:
       name: "cri-o-runc"

@@ -1,4 +1,7 @@
-#! /usr/bin/env python3
+#! /bin/sh
+# vim: filetype=python
+''''eval version=$( ls /usr/bin | grep 'python3\.[0-9]*$' | sed -e 's/.*\.\([0-9]*\)$/\1/' | sort -nr | head -n1 ) && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
 # Requires: python3 (>= 3.8)
 # Requires: python3-natsort
 # Requires: python3-paramiko
@@ -50,7 +53,7 @@ from cmtio_yaml import secure_read_yaml, secure_write_yaml
 from networkio import download_files, scan_and_add_ssh_keys
 
 import cmtlib
-from cmtlib import check_deb_versions, read_cmtconfig
+from cmtlib import check_deb_versions, identify_distro, read_cmtconfig
 
 import kubernetes_helper
 
@@ -101,8 +104,19 @@ prepare_targets: Dict = {
 		],
 		"deb_packages": [
 			"ansible",
-			# If available
-			# "ansible-mitogen",
+		],
+		"suse_packages": [
+			"ansible",
+		],
+	},
+	"rke2": {
+		"pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
+		"playbooks": [
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_passwordless_ansible.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("install_packages.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_control_plane.yaml"))),
+		],
+		"deb_packages": [
 		],
 	},
 }
@@ -140,6 +154,21 @@ setup_control_plane_targets: Dict = {
 		"deb_packages_held": [
 			"kubectl",
 		],
+		"suse_packages": [
+			"kubectl",
+		],
+		"suse_packages_held": [
+			"kubectl",
+		],
+	},
+	"rke2": {
+		"pretty_name": [("RKE2", "programname")],
+		"playbooks": [
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_setup_control_plane.yaml"))),
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("fetch_kube_config.yaml"))),
+		],
+		"extra_values": {
+		},
 	},
 }
 
@@ -164,6 +193,14 @@ upgrade_control_plane_targets: Dict = {
 			"kubectl",
 		],
 	},
+	"rke2": {
+		"pretty_name": [("RKE2", "programname")],
+		"playbooks": [
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_upgrade_control_plane.yaml"))),
+		],
+		"extra_values": {
+		},
+	},
 }
 
 teardown_control_plane_targets: Dict = {
@@ -172,6 +209,12 @@ teardown_control_plane_targets: Dict = {
 		"playbooks": [
 			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("teardown_cni.yaml"))),
 			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_teardown_control_plane.yaml"))),
+		],
+	},
+	"rke2": {
+		"pretty_name": [("RKE2", "programname")],
+		"playbooks": [
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_teardown_control_plane.yaml"))),
 		],
 	},
 }
@@ -194,6 +237,12 @@ purge_control_plane_targets: Dict = {
 			"kubelet",
 		],
 	},
+	"rke2": {
+		"pretty_name": [("rke2", "programname")],
+		"playbooks": [
+			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_purge.yaml"))),
+		],
+	},
 }
 
 def rebuild_installation_info(state: Optional[str] = None) -> None:
@@ -206,7 +255,7 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 	"""
 
 	cluster_name = None
-	distro = None
+	k8s_distro = None
 	version = None
 
 	controlplanes = __selection_control_planes()
@@ -224,10 +273,10 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 		sys.exit(errno.ENOENT)
 	else:
 		version = deb_versions[0][1]
-		distro = "kubeadm"
+		k8s_distro = "kubeadm"
 
 	cluster_name = get_cluster_name()
-	update_installation_info(cluster_name = cluster_name, distro = distro, version = version, requested_version = "<none>",
+	update_installation_info(cluster_name = cluster_name, distro = k8s_distro, version = version, requested_version = "<none>",
 				 state = state, phase = "<none>", phase_skiplist = [], cni = "<FIXME>", pod_network_cidr = "<FIXME>")
 
 def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
@@ -1027,6 +1076,14 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 			result (bool): True on success, False on failure
 	"""
 
+	pass_cni = []
+
+	installation_info = get_installation_info()
+	cluster_name = deep_get(installation_info, DictPath("installation_target"))
+	installation_info_cni = deep_get(installation_info, DictPath(f"{cluster_name}#cni"))
+	if installation_info_cni is None or installation_info_cni == "<none>":
+		pass_cni = [cni]
+
 	if cni == "none":
 		ansithemeprint([ANSIThemeString("Note", "note"),
 				ANSIThemeString(": ", "default"),
@@ -1042,7 +1099,25 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		sys.exit(errno.EINVAL)
 
 	if cni in cni_upgrade_data:
-		upgrade_cni(options = [("install", "")], args = [cni])
+		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+		# upgrade_cni doesn't take a context, so we need to set the current context before calling it,
+		# otherwise we might end up performing the changes on the wrong cluster
+		if not kh.set_context(name = context_name, unchanged_is_success = True):
+			ansithemeprint([ANSIThemeString("Warning", "warning"),
+					ANSIThemeString(": Failed to change to context ", "default"),
+					ANSIThemeString(f"{context_name}", "hostname"),
+					ANSIThemeString(" for cluster ", "default"),
+					ANSIThemeString(f"{cluster_name}", "hostname"),
+					ANSIThemeString("; cannot install/upgrade CNI; skipping.", "default")])
+			return False
+
+		# Don't pass CNI as an argument here; installation_info contains that information during installation.
+		# upgrade_cni() will assume that the cluster is functional if run with a CNI, and thus tries to get
+		# all information from the cluster. This will most likely fail during installation, since the cluster
+		# hasn't started fully yet and thus cannot provide the necessary information
+		upgrade_cni(options = [("install", "")], args = pass_cni)
 		# FIXME
 		return True
 
@@ -1103,6 +1178,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		"<<<context>>>": context_name,
 	}
 
+	sys.exit(f"{args=}")
 	result = execute_command(substitute_list(args, substitutions))
 	check_and_print_status(result)
 	return result
@@ -1622,11 +1698,20 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict) -> No
 			installation_info (dict): A dict with installation information (Unused)
 	"""
 
+	os_distro = identify_distro()
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets["localhost"]["playbooks"]))
+
+	if os_distro == "debian":
+		packages = deep_get(prepare_targets, DictPath("localhost#deb_packages"), [])
+		held_packages = deep_get(prepare_targets, DictPath("localhost#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(prepare_targets, DictPath("localhost#suse_packages"), [])
+		held_packages = deep_get(prepare_targets, DictPath("localhost#suse_packages_held"), [])
+
 	extra_values = {
-		"packages": prepare_targets["localhost"].get("deb_packages", []),
-		"held_packages": prepare_targets["localhost"].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 	}
@@ -1641,12 +1726,21 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict) 
 	"""
 
 	cluster_name = installation_info["installation_target"]
-	distro = installation_info[cluster_name]["distro"]
+	k8s_distro = installation_info[cluster_name]["distro"]
+	os_distro = identify_distro()
 	selection = __selection_control_planes()
-	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets[distro]["playbooks"]))
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets[k8s_distro]["playbooks"]))
+
+	if os_distro == "debian":
+		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
+		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
+		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+
 	extra_values = {
-		"packages": prepare_targets[distro].get("deb_packages", []),
-		"held_packages": prepare_targets[distro].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 	}
@@ -1705,13 +1799,22 @@ def __task_run_setup_playbooks_on_localhost(installation_info: Dict) -> None:
 
 	cluster_name = installation_info["installation_target"]
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
+	os_distro = identify_distro()
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets["localhost"]["playbooks"]))
+
+	if os_distro == "debian":
+		packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages"), [])
+		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages"), [])
+		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages_held"), [])
+
 	extra_values = {
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
-		"packages": setup_control_plane_targets["localhost"].get("deb_packages", []),
-		"held_packages": setup_control_plane_targets["localhost"].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -1724,24 +1827,36 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict) -> Non
 	"""
 
 	cluster_name = installation_info["installation_target"]
-	distro = installation_info[cluster_name]["distro"]
+	k8s_distro = installation_info[cluster_name]["distro"]
+	os_distro = identify_distro()
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	selection = __selection_control_planes()
-	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets[distro]["playbooks"]))
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets[k8s_distro]["playbooks"]))
 	cri = installation_info[cluster_name]["cri"]
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
-	extra_values_setup = deep_get(setup_control_plane_targets[distro], DictPath("extra_values"), {})
+	extra_values_setup = deep_get(setup_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
+
+	if os_distro == "debian":
+		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
+		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
+		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+
+	if k8s_distro == "rke2":
+		cri_socket = cri_socket[len("unix://"):]
+
 	extra_values = {
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
 		"cri_socket": cri_socket,
-		"packages": setup_control_plane_targets[distro].get("deb_packages", []),
-		"held_packages": setup_control_plane_targets[distro].get("deb_packages_held", []),
+		"packages": setup_control_plane_targets[k8s_distro].get("deb_packages", []),
+		"held_packages": setup_control_plane_targets[k8s_distro].get("deb_packages_held", []),
 		**extra_values_setup,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
-def __task_import_kube_config(installation_info: Dict) -> None:
+def __task_import_kubeconfig(installation_info: Dict) -> None:
 	"""
 	An installer task that merges a Kube config into ~/.kube/config
 
@@ -1749,6 +1864,7 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 			installation_info (dict): A dict with installation information
 	"""
 
+	control_plane_name = __selection_control_planes()[0]
 	cluster_name = installation_info["installation_target"]
 	config_file_name = FilePath(f"{HOMEDIR}/.kube/config.{cluster_name}")
 	admin_name = f"kubernetes-admin+{cluster_name}"
@@ -1810,6 +1926,7 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 
 	cad = d2["clusters"][0]["cluster"].get("certificate-authority-data")
 	server = d2["clusters"][0]["cluster"]["server"]
+
 	insecure_skip_tls_verify = d2["clusters"][0]["cluster"].get("insecure-skip-tls-verify")
 	cluster = {
 		"cluster": {
@@ -1854,7 +1971,68 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 
 	check_and_print_status(True)
 
-def __task_setup_kubeadm_cni(installation_info: Dict) -> None:
+def __task_adjust_kubeconfig_server_address(installation_info: Dict) -> None:
+	"""
+	An installer task that replaces localhost for the real IP-address of the API-server
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+	"""
+
+	control_plane_name = __selection_control_planes()[0]
+	cluster_name = installation_info["installation_target"]
+	config_file_name = FilePath(f"{HOMEDIR}/.kube/config.{cluster_name}")
+
+	try:
+		d = secure_read_yaml(KUBE_CONFIG_FILE)
+	except FileNotFoundError:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Could not open ", "default"),
+				ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	for i, cluster in enumerate(deep_get(d, DictPath("clusters"), [])):
+		if deep_get(cluster, DictPath("name"), "") == cluster_name:
+			# Is this cluster a localhost?
+			server = deep_get(cluster, DictPath("cluster#server"), "")
+			if server.startswith("https://127") or server == "::1":
+				tmp = re.match(r"^(https://)([^:]+)(:.*)", server)
+				if tmp is None:
+					ansithemeprint([ANSIThemeString("Error", "error"),
+							ANSIThemeString(": Failed to extract server address.", "default")])
+					ansithemeprint([ANSIThemeString("This is probably a programming error", "default"),
+							ANSIThemeString("; aborting.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+
+				prefix = tmp[1]
+				server_address = tmp[2]
+				server_port_and_path = tmp[3]
+
+				# Try to figure out the internal IP of the control plane
+				from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+				kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+				obj = kh.get_ref_by_kind_name_namespace(("Node", ""), control_plane_name, "")
+				if obj is None:
+					ansithemeprint([ANSIThemeString("Error", "error"),
+							ANSIThemeString(": Could not find control plane ", "default"),
+							ANSIThemeString(f"{control_plane_name}", "hostname"),
+							ANSIThemeString("; aborting.", "default")], stderr = True)
+					sys.exit(errno.ENOENT)
+				addresses = deep_get(obj, DictPath("status#addresses"), [])
+				internal_ip = None
+				for address in addresses:
+					address_type = deep_get(address, DictPath("type"), "")
+					if  address_type == "InternalIP":
+						internal_ip = deep_get(address, DictPath("address"), "")
+						break
+				if internal_ip is not None and internal_ip != server_address:
+					d["clusters"][i]["cluster"]["server"] = f"{prefix}{internal_ip}{server_port_and_path}"
+
+	secure_write_yaml(KUBE_CONFIG_FILE, d, permissions = 0o600, sort_keys = False)
+
+def __task_setup_cni(installation_info: Dict) -> None:
 	"""
 	An installer task that sets up a CNI
 
@@ -1952,11 +2130,20 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info: Dict) -> Non
 			installation_info (dict): A dict with installation information (Unused)
 	"""
 
+	os_distro = identify_distro()
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], upgrade_control_plane_targets["localhost"]["playbooks"]))
+
+	if os_distro == "debian":
+		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
+		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
+		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+
 	extra_values = {
-		"packages": upgrade_control_plane_targets["localhost"].get("deb_packages", []),
-		"held_packages": upgrade_control_plane_targets["localhost"].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -1972,6 +2159,7 @@ def __task_run_preupgrade_playbooks_on_control_planes(installation_info: Dict) -
 	selection = __selection_control_planes()
 	paths = __playbook_paths_from_path(FilePath(str(PurePath(CMT_HOOKS_DIR).joinpath("pre-upgrade.d"))))
 	playbooks = populate_playbooks_from_paths(paths)
+
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
 # Run upgrade playbooks on control planes
@@ -1984,20 +2172,29 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict) -> N
 	"""
 
 	cluster_name = installation_info["installation_target"]
-	distro = installation_info[cluster_name]["distro"]
+	k8s_distro = installation_info[cluster_name]["distro"]
+	os_distro = identify_distro()
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	requested_version = installation_info[cluster_name]["requested_version"]
 	selection = __selection_control_planes()
-	playbooks = populate_playbooks_from_paths(cast(List[FilePath], upgrade_control_plane_targets[distro]["playbooks"]))
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], upgrade_control_plane_targets[k8s_distro]["playbooks"]))
 	cri = installation_info[cluster_name]["cri"]
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
-	extra_values_upgrade = deep_get(upgrade_control_plane_targets[distro], DictPath("extra_values"), {})
+	extra_values_upgrade = deep_get(upgrade_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
+
+	if os_distro == "debian":
+		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
+		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
+		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+
 	extra_values = {
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
 		"cri_socket": cri_socket,
-		"packages": upgrade_control_plane_targets[distro].get("deb_packages", []),
-		"held_packages": upgrade_control_plane_targets[distro].get("deb_packages_held", []),
+		"packages": packages[k8s_distro].get("deb_packages", []),
+		"held_packages": packages[k8s_distro].get("deb_packages_held", []),
 		"requested_control_plane_k8s_version": requested_version,
 		**extra_values_upgrade,
 	}
@@ -2015,6 +2212,7 @@ def __task_run_postupgrade_playbooks_on_control_planes(installation_info: Dict) 
 	selection = __selection_control_planes()
 	paths = __playbook_paths_from_path(FilePath(str(PurePath(CMT_HOOKS_DIR).joinpath("post-upgrade.d"))))
 	playbooks = populate_playbooks_from_paths(paths)
+
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
 # pylint: disable-next=unused-argument
@@ -2048,12 +2246,13 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict) -> 
 	"""
 
 	cluster_name = installation_info["installation_target"]
-	distro = installation_info[cluster_name]["distro"]
+	k8s_distro = installation_info[cluster_name]["distro"]
 	selection = __selection_control_planes()
-	playbooks = populate_playbooks_from_paths(cast(List[FilePath], teardown_control_plane_targets[distro]["playbooks"]))
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], teardown_control_plane_targets[k8s_distro]["playbooks"]))
+
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
-def __task_remove_kube_config(installation_info: Dict) -> None:
+def __task_remove_kubeconfig(installation_info: Dict) -> None:
 	"""
 	An installer task that removes a cluster configuration from ~/.kube/config
 
@@ -2129,12 +2328,21 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict) -> Non
 	"""
 
 	cluster_name = installation_info["installation_target"]
-	distro = installation_info[cluster_name]["distro"]
+	k8s_distro = installation_info[cluster_name]["distro"]
+	os_distro = identify_distro()
 	selection = __selection_control_planes()
-	playbooks = populate_playbooks_from_paths(cast(List[FilePath], purge_control_plane_targets[distro]["playbooks"]))
+	playbooks = populate_playbooks_from_paths(cast(List[FilePath], purge_control_plane_targets[k8s_distro]["playbooks"]))
+
+	if os_distro == "debian":
+		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
+		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
+	elif os_distro == "suse":
+		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
+		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+
 	extra_values = {
-		"packages": purge_control_plane_targets[distro].get("deb_packages", []),
-		"held_packages": purge_control_plane_targets[distro].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
@@ -2240,9 +2448,24 @@ __setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[
 	  ANSIThemeString("kubectl", "programname")], __task_setup_bash_completion),
 	([ANSIThemeString("Run playbooks on ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
-	([ANSIThemeString("Import kube config", "action")], __task_import_kube_config),
+	([ANSIThemeString("Import kubeconfig", "action")], __task_import_kubeconfig),
 	([ANSIThemeString("Setup ", "action"),
-	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_kubeadm_cni),
+	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_cni),
+]
+
+__setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]] = [
+	([ANSIThemeString("Run playbooks on ", "action"),
+	  ANSIThemeString("localhost", "hostname")], __task_run_setup_playbooks_on_localhost),
+	([ANSIThemeString("Setup ", "action"),
+	  ANSIThemeString("bash completion", "emphasis"),
+	  ANSIThemeString(" for ", "action"),
+	  ANSIThemeString("kubectl", "programname")], __task_setup_bash_completion),
+	([ANSIThemeString("Run playbooks on ", "action"),
+	  ANSIThemeString("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
+	([ANSIThemeString("Import kubeconfig", "action")], __task_import_kubeconfig),
+	([ANSIThemeString("Adjust kubeconfig server-address (if necessary)", "action")], __task_adjust_kubeconfig_server_address),
+	([ANSIThemeString("Setup ", "action"),
+	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_cni),
 ]
 
 setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
@@ -2270,7 +2493,7 @@ teardown_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict],
 	  ANSIThemeString("control planes", "hostname")], __task_drain_control_planes),
 	([ANSIThemeString("Run teardown playbooks on ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_run_teardown_playbooks_on_control_planes),
-	([ANSIThemeString("Remove kube config", "action")], __task_remove_kube_config),
+	([ANSIThemeString("Remove kube config", "action")], __task_remove_kubeconfig),
 ]
 
 purge_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]] = [
@@ -2303,14 +2526,14 @@ def run_tasks(tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]],
 		else:
 			update_installation_info(state = final_state, phase = "<done>")
 
-def __find_requested_version(distro: str, version: Optional[str] = None) -> str:
+def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> str:
 	"""
 	Based on a provided version, try to find a matching package;
 	Passing None will give the latest version, passing major, minor will give the latest patch revision of that version.
 	Passing an exact version will give that version.
 
 		Parameters:
-			distro (str): Currently only kubeadm is supported
+			k8s_distro (str): Currently only kubeadm and rke2 are supported
 			version (str): The requested version string or version substring
 		Returns:
 			requested_version (str): The best matching package version
@@ -2318,7 +2541,7 @@ def __find_requested_version(distro: str, version: Optional[str] = None) -> str:
 
 	requested_version = None
 
-	if distro == "kubeadm":
+	if k8s_distro == "kubeadm":
 		# If version is an exact match for a package version, use it.
 		# If version is a match for a package version with the package revision ("-nn") removed, use the latest matching package revision.
 		# If no version is specified, use the latest package revision.
@@ -2353,10 +2576,23 @@ def __find_requested_version(distro: str, version: Optional[str] = None) -> str:
 					ANSIThemeString(f"{version}", "version"),
 					ANSIThemeString("; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
-	else:
-		raise ValueError(f"No support for distro {distro} implemented")
+	elif k8s_distro == "rke2":
+		if version is None or version == "<none>":
+			return "latest"
 
-	_major, minor, _patchrev = requested_version.split(".")
+		# FIXME: we could fetch the channel file from upstream to get the version list, but for now we just accept any version
+		tmp = re.match(r"^v?(\d+\.\d+).*", version)
+		if tmp is not None:
+			requested_version = tmp[1]
+	else:
+		raise ValueError(f"No support for distro {k8s_distro} implemented")
+
+	if k8s_distro == "kubeadm":
+		_major, minor, _patchrev = requested_version.split(".")
+	else:
+		_major, minor = requested_version.split(".")
+		requested_version = f"v{requested_version}"
+
 	if int(minor) < 15:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Kubernetes versions older than ", "default"),
@@ -2372,6 +2608,14 @@ def __find_requested_version(distro: str, version: Optional[str] = None) -> str:
 				ANSIThemeString(" are not fully supported by ", "default"),
 				ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
 				ANSIThemeString(". Some features may be missing or completely broken.", "default")], stderr = True)
+	elif int(minor) < 21 and k8s_distro == "rke2":
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": RKE2 versions older than ", "default"),
+				ANSIThemeString("1.21", "version"),
+				ANSIThemeString(" are not supported by ", "default"),
+				ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
 
 	return requested_version
 
@@ -2407,7 +2651,8 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 	cluster_name = args[0]
 
 	installation_info = get_installation_info(cluster_name = cluster_name)
-	distro = "kubeadm"
+	k8s_distro = "kubeadm"
+	os_distro = identify_distro()
 	requested_version = installation_info[cluster_name]["requested_version"]
 	state = installation_info[cluster_name]["state"]
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]
@@ -2424,7 +2669,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 	hostname = socket.gethostname()
 
 	# default options
-	installation_info = update_installation_info(cluster_name = cluster_name, distro = distro, requested_version = requested_version, state = "preparing", phase = phase)
+	installation_info = update_installation_info(cluster_name = cluster_name, distro = k8s_distro, requested_version = requested_version, state = "preparing", phase = phase)
 
 	__controlplanes = get_control_planes(fail_on_empty = False)
 	controlplanes = [controlplane[0] for controlplane in __controlplanes]
@@ -2472,7 +2717,22 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 		elif opt == "-Y":
 			confirm = False
 
-	installation_info = update_installation_info(cluster_name = cluster_name, phase = phase, phase_skiplist = list(phase_skiplist))
+	if len(args) > 1:
+		requested_version = args[1]
+
+		if "=" in requested_version:
+			k8s_distro, requested_version = requested_version.split("=")
+			if k8s_distro not in ("kubeadm", "rke2"):
+				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+						ANSIThemeString(": “", "default"),
+						ANSIThemeString(f"{k8s_distro}", "option"),
+						ANSIThemeString("“ is not a supported Kubernetes distribution.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
+
+	if os_distro == "suse":
+		k8s_distro = "rke2"
+
+	installation_info = update_installation_info(cluster_name = cluster_name, distro = k8s_distro, phase = phase, phase_skiplist = list(phase_skiplist))
 
 	show_configuration(action = "Preparing cluster:", tasks = prepare_tasks)
 
@@ -2492,10 +2752,10 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 
 	# Adjust the kube* packages for the control plane(s) and localhost to match the requested cluster version if necessary;
 	# we could not do this before since the apt repository was not available then
-	if len(args) > 1:
-		requested_version = __find_requested_version(distro, args[1])
+	if requested_version is not None:
+		requested_version = __find_requested_version(k8s_distro, requested_version)
 	else:
-		requested_version = __find_requested_version(distro)
+		requested_version = __find_requested_version(k8s_distro)
 
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Updating installation information", "action")])
@@ -2678,7 +2938,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 		if len(ansible_results) == 0:
 			raise ValueError(f"Error: Failed to get package versions from {controlplane} (retval: {retval}); aborting.")
 
-		distro = "<unknown>"
+		k8s_distro = "<unknown>"
 		version = "<unknown>"
 
 		for result in deep_get(ansible_results, DictPath(controlplane), []):
@@ -2699,10 +2959,10 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			package = tmp2[1]
 			version = tmp2[2]
 			if package == "kubeadm":
-				distro = "kubeadm"
-				update_installation_info(cluster_name = cluster_name, distro = distro, version = version, requested_version = "<none>", cni = cni, state = "installed", phase = "<none>", pod_network_cidr = pod_network_cidr, control_planes = controlplanes)
+				k8s_distro = "kubeadm"
+				update_installation_info(cluster_name = cluster_name, distro = k8s_distro, version = version, requested_version = "<none>", cni = cni, state = "installed", phase = "<none>", pod_network_cidr = pod_network_cidr, control_planes = controlplanes)
 				break
-		if distro == "<unknown>":
+		if k8s_distro == "<unknown>":
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": Failed to import cluster ", "default"),
 					ANSIThemeString(f"{cluster_name}", "hostname"),
@@ -2774,7 +3034,7 @@ def show_configuration(action: str = "", tasks: Optional[List] = None) -> None:
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
-	distro = installation_info[cluster_name]["distro"]
+	k8s_distro = installation_info[cluster_name]["distro"]
 	version = installation_info[cluster_name]["version"]
 	requested_version = installation_info[cluster_name]["requested_version"]
 	cni = installation_info[cluster_name]["cni"]
@@ -2811,7 +3071,7 @@ def show_configuration(action: str = "", tasks: Optional[List] = None) -> None:
 	ansithemeprint([ANSIThemeString("        Cluster Name: ", "action"),
 			ANSIThemeString(f"{cluster_name}", "hostname")])
 	ansithemeprint([ANSIThemeString("        Distribution: ", "action"),
-			ANSIThemeString(f"{distro}", "programname")])
+			ANSIThemeString(f"{k8s_distro}", "programname")])
 	ansithemeprint([ANSIThemeString("   Installed Version: ", "action"),
 			__format_none(version, "version")])
 	if requested_version is not None and requested_version != "<none>":
@@ -2882,14 +3142,21 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	confirm = True
 	override_cni = False
 
-	# We do not need a cluster name for --list-tasks, so check this first of all
+	installation_info = get_installation_info()
+
+	cluster_name = installation_info["installation_target"]
+	k8s_distro = installation_info[cluster_name]["distro"]
+
+	if k8s_distro == "kubeadm":
+		setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
+	elif k8s_distro == "rke2":
+		setup_control_plane_tasks = __setup_rke2_control_plane_tasks
+
 	if "--list-tasks" in (tmp[0] for tmp in options):
 		__list_phases(setup_control_plane_tasks)
 		sys.exit(0)
 
-	installation_info = get_installation_info()
-	cluster_name = installation_info["installation_target"]
-	distro = installation_info[cluster_name]["distro"]
+	os_distro = identify_distro()
 	requested_version = installation_info[cluster_name]["requested_version"]
 	state = installation_info[cluster_name]["state"]
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]
@@ -2952,50 +3219,86 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 		elif opt == "-Y":
 			confirm = False
 
-	requested_major, requested_minor, _rest = requested_version.split(".")
-
-	if int(requested_minor) < 23:
-		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"
-		init_configuration_api_version = "kubeadm.k8s.io/v1beta2"
-	else:
-		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
-		init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
-
-	if enable_dra == True:
-		setup_control_plane_targets[distro]["extra_values"] = {
+	if enable_dra:
+		setup_control_plane_targets[k8s_distro]["extra_values"] = {
 			"api_server_feature_gates": "DynamicResourceAllocation=true",
 			"api_server_runtime_config_api_alpha_enabled": "true",
 			"controller_manager_feature_gates": "DynamicResourceAllocation=true",
+			"scheduler_feature_gates": "DynamicResourceAllocation=true",
 			"kubelet_feature_gates": "{ DynamicResourceAllocation: true }",
 			"kubeproxy_feature_gates": "{ DynamicResourceAllocation: true }",
-			"scheduler_feature_gates": "DynamicResourceAllocation=true",
-			"cluster_configuration_api_version": cluster_configuration_api_version,
-			"init_configuration_api_version": init_configuration_api_version,
 		}
+
+		# Override the feature-gate format if the parameters are passed via command-line;
+		# e.g. when using RKE2
+		if k8s_distro == "rke2":
+			setup_control_plane_targets[k8s_distro]["extra_values"]["kubelet_feature_gates"] = "DynamicResourceAllocation=true"
+			setup_control_plane_targets[k8s_distro]["extra_values"]["kubeproxy_feature_gates"] = "DynamicResourceAllocation=true"
 	else:
-		setup_control_plane_targets[distro]["extra_values"] = {
+		setup_control_plane_targets[k8s_distro]["extra_values"] = {
 			"api_server_feature_gates": "",
 			"api_server_runtime_config_api_alpha_enabled": "false",
 			"controller_manager_feature_gates": "",
 			"kubelet_feature_gates": "{}",
 			"kubeproxy_feature_gates": "{}",
 			"scheduler_feature_gates": "",
-			"cluster_configuration_api_version": cluster_configuration_api_version,
-			"init_configuration_api_version": init_configuration_api_version,
 		}
 
+		# Override the feature-gate format if the parameters are passed via command-line;
+		# e.g. when using RKE2
+		if k8s_distro == "rke2":
+			setup_control_plane_targets[k8s_distro]["extra_values"]["kubelet_feature_gates"] = ""
+			setup_control_plane_targets[k8s_distro]["extra_values"]["kubeproxy_feature_gates"] = ""
+
+	if k8s_distro == "kubeadm":
+		requested_major, requested_minor, _rest = requested_version.split(".")
+
+		if int(requested_minor) < 23:
+			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"
+			init_configuration_api_version = "kubeadm.k8s.io/v1beta2"
+		else:
+			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+			init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+
+		setup_control_plane_targets[k8s_distro]["extra_values"]["cluster_configuration_api_version"] = cluster_configuration_api_version
+		setup_control_plane_targets[k8s_distro]["extra_values"]["init_configuration_api_version"] = init_configuration_api_version
+	elif k8s_distro == "rke2":
+		requested_major, requested_minor = requested_version[1:].split(".")
+
+		# Add requested_version to extra_values;
+		# for rke2 this is either vX.YY or latest
+		setup_control_plane_targets["rke2"]["extra_values"]["requested_version"] = requested_version
+
+		# For now at least we disable the cloud controller
+		rke2_disable_cloud_controller = True
+		setup_control_plane_targets["rke2"]["extra_values"]["disable_cloud_controller"] = rke2_disable_cloud_controller
+		# Disable canal since we install the CNI separately
+		rke2_disabled_options_list = ["rke2-canal"]
+		setup_control_plane_targets["rke2"]["extra_values"]["disabled_options_list"] = rke2_disabled_options_list
+
 	# Add major/minor to extra_values
-	setup_control_plane_targets["kubeadm"]["extra_values"]["kubernetes_major_minor_version"] = f"{requested_major}.{requested_minor}"
+	setup_control_plane_targets[k8s_distro]["extra_values"]["kubernetes_major_minor_version"] = f"{requested_major}.{requested_minor}"
 
 	if cri is None:
-		if int(requested_minor) < 24:
+		if k8s_distro == "rke2":
+			cri = "containerd"
+		elif int(requested_minor) < 24:
 			cri = "docker-shim"
 		elif enable_dra == True:
 			cri = "cri-o"
 		else:
 			cri = "containerd"
 	else:
-		if int(requested_minor) >= 24 and cri == "docker-shim":
+		if k8s_distro == "rke2":
+			if cri == "docker-shim":
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": CRI cannot be “", "default"),
+						ANSIThemeString("docker-shim", "argument"),
+						ANSIThemeString("“ for ", "default"),
+						ANSIThemeString("RKE2", "argument"),
+						ANSIThemeString("; aborting.", "default")], stderr = True)
+				sys.exit(errno.ENOTSUP)
+		elif int(requested_minor) >= 24 and cri == "docker-shim":
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": CRI cannot be “", "default"),
 					ANSIThemeString("docker-shim", "argument"),
@@ -3004,26 +3307,36 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 					ANSIThemeString(">= ", "default"),
 					ANSIThemeString("1.24", "version"),
 					ANSIThemeString("; aborting.", "default")], stderr = True)
-			sys.exit(errno.EINVAL)
+			sys.exit(errno.ENOTSUP)
 
 	installation_info = update_installation_info(cri = cri)
 
 	# Add the CRI to the setup playbooks for the control plane;
 	# the list is short enough that doing prepend isn't a performance issue
-	if cri == "docker-shim":
-		setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_docker.io.yaml"))))
-	elif cri == "containerd":
-		setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml"))))
-	elif cri == "cri-o":
-		setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml"))))
+	if k8s_distro == "kubeadm":
+		if cri == "docker-shim":
+			setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_docker.io.yaml"))))
+		elif cri == "containerd":
+			setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml"))))
+		elif cri == "cri-o":
+			setup_control_plane_targets["kubeadm"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml"))))
+	else:
+		if cri == "containerd":
+			setup_control_plane_targets["rke2"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml"))))
+		elif cri == "cri-o":
+			setup_control_plane_targets["rke2"]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml"))))
 
 	if cni is None or cni == "<none>":
+		if k8s_distro == "rke2":
+			default_cni = "canal"
+		else:
+			default_cni = DEFAULT_CNI
 		if len(args) == 0:
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": No CNI specified; defaulting to ", "default"),
-					ANSIThemeString(f"{DEFAULT_CNI}", "programname"),
+					ANSIThemeString(f"{default_cni}", "programname"),
 					ANSIThemeString(".", "default")], stderr = True)
-			cni = DEFAULT_CNI
+			cni = default_cni
 		elif cni != args[0]:
 			cni = args[0]
 	else:
@@ -3087,7 +3400,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	ansithemeprint([ANSIThemeString("\n[Setting up control plane]", "phase")])
 
-	if distro == "kubeadm":
+	if k8s_distro == "kubeadm":
 		setup_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
 		setup_control_plane_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
 		setup_control_plane_targets["kubeadm"]["deb_packages"].remove("kubectl")
@@ -3101,6 +3414,12 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	update_installation_info(version = requested_version)
 
 	ansithemeprint([ANSIThemeString("\nControl plane setup successful", "success")])
+	ansithemeprint([ANSIThemeString("\nNote:", "note")])
+	ansithemeprint([ANSIThemeString("If this is an RKE2 installation you need to substitute", "default"),
+			ANSIThemeString("127.0.0.1", "address")])
+	ansithemeprint([ANSIThemeString("in ", "default"),
+			ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
+			ANSIThemeString(f" with the real IP-address of this host.\n", "default")])
 
 def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> Tuple[List[Dict], kubernetes_helper.KubernetesHelper]:
 	if not Path(KUBE_CONFIG_FILE).is_file():
@@ -3217,12 +3536,12 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
-	distro = installation_info[cluster_name]["distro"]
+	k8s_distro = installation_info[cluster_name]["distro"]
 	state = installation_info[cluster_name]["state"]
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
-	if distro is None or distro == "<none>":
+	if k8s_distro is None or k8s_distro == "<none>":
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Could not find reliable installation information. Aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
@@ -3238,6 +3557,10 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
 				ANSIThemeString(" purge-control-plane", "command"),
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
+
+	# If phase is "<done>" it's a holdover from a previous state
+	if phase == "<done>":
+		phase = 0
 
 	for opt, optarg in options:
 		if opt == "--start-at-task":
@@ -3315,7 +3638,8 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 				ANSIThemeString(": Invalid installation state; there's no prepared or torn down cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	if len(options) == 0:
+	# If phase is "<done>" it's a holdover from a previous state
+	if len(options) == 0 or phase == "<done>":
 		phase = 0
 
 	for opt, optarg in options:
@@ -3407,12 +3731,19 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
-	distro = installation_info[cluster_name]["distro"]
+	k8s_distro = installation_info[cluster_name]["distro"]
 	version = installation_info[cluster_name]["version"]
 	requested_version = installation_info[cluster_name]["requested_version"]
 	state = installation_info[cluster_name]["state"]
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
+
+	if  k8s_distro == "rke2":
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": updates are currently not supported for ", "default"),
+				ANSIThemeString(f"RKE2", "programname"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOTSUP)
 
 	if state is None or state == "<none>":
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -3432,9 +3763,9 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 		phase = 0
 
 	if len(args) > 0:
-		requested_version = __find_requested_version(distro, args[0])
+		requested_version = __find_requested_version(k8s_distro, args[0])
 	else:
-		requested_version = __find_requested_version(distro)
+		requested_version = __find_requested_version(k8s_distro)
 
 	for opt, optarg in options:
 		if opt == "--start-at-task":
@@ -3602,7 +3933,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
 		init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
 
-	upgrade_control_plane_targets[distro]["extra_values"] = {
+	upgrade_control_plane_targets[k8s_distro]["extra_values"] = {
 		"cluster_configuration_api_version": cluster_configuration_api_version,
 		"init_configuration_api_version": init_configuration_api_version,
 		# Add major/minor to extra_values
@@ -3814,7 +4145,7 @@ security_audit_checks = [
 		"call": checks.check_security_disable_strict_host_key_checking,
 	},
 	{
-		"description": "Check for insecure kube config options",
+		"description": "Check for insecure kubeconfig options",
 		"call": checks.check_insecure_kube_config_options,
 		"preconditions": [
 			"clusterinfo",
@@ -4012,7 +4343,9 @@ COMMANDLINE = {
 	"Prepare Installation": {
 		"command": ["prepare"],
 		"values": [ANSIThemeString("CLUSTER_NAME", "argument"),
-			   ANSIThemeString(" [", "separator"),
+			   ANSIThemeString(" [[", "separator"),
+			   ANSIThemeString("KUBERNETES_DISTRO", "argument"),
+			   ANSIThemeString("=]", "separator"),
 			   ANSIThemeString("KUBERNETES_VERSION", "argument"),
 			   ANSIThemeString("]", "separator")],
 		"description": [ANSIThemeString("Install and configure pre-requisites", "description")],
@@ -4023,7 +4356,28 @@ COMMANDLINE = {
 			[ANSIThemeString("If ", "description"),
 			 ANSIThemeString("KUBERNETES_VERSION", "argument"),
 			 ANSIThemeString(" is not specified", "description")],
-			[ANSIThemeString("the newest available version will be used", "description")],
+			[ANSIThemeString("the newest available version will be used.", "description")],
+			[ANSIThemeString("Supported versions for ", "description"),
+			 ANSIThemeString("KUBERNETES_DISTRO", "argument"),
+			 ANSIThemeString(" are:", "description")],
+			[ANSIThemeString("kubeadm", "argument"),
+			 ANSIThemeString(" (default on ", "description"),
+			 ANSIThemeString("Debian", "programname"),
+			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString("Ubuntu", "programname"),
+			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString("Red Hat", "programname"),
+			 ANSIThemeString(")", "description")],
+			[ANSIThemeString("rke2", "argument"),
+			 ANSIThemeString(" (default on ", "description"),
+			 ANSIThemeString("SUSE", "programname"),
+			 ANSIThemeString(")", "description")],
+			[ANSIThemeString("Note", "note"),
+			 ANSIThemeString(": currently ", "description"),
+			 ANSIThemeString("rke2", "argument"),
+			 ANSIThemeString(" is the only supported", "description")],
+			[ANSIThemeString("option on ", "description"),
+			 ANSIThemeString("SUSE", "programname")],
 		],
 		"options": {
 			"--control-plane": {
@@ -4122,7 +4476,7 @@ COMMANDLINE = {
 				"string": [ANSIThemeString("KUBERNETES_VERSION", "argument")],
 				"validation": {
 					"validator": "regex",
-					"regex": r"^\d+\.\d+(\.\d+-\d+|\.\d+|)$"
+					"regex": r"^(kubeadm=|rke2=v?|)\d+\.\d+(\.\d+-\d+|\.\d+|)$"
 				},
 			},
 		],
@@ -4149,15 +4503,14 @@ COMMANDLINE = {
 			 ANSIThemeString("canal", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("cilium", "argument"),
-			 ANSIThemeString(", ", "separator")],
+			 ANSIThemeString(",", "separator")],
 			[ANSIThemeString("flannel", "argument"),
-			 ANSIThemeString(", ", "separator"),
+			 ANSIThemeString(", ", "separator") ,
 			 ANSIThemeString("kube-router", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("weave", "argument"),
 			 ANSIThemeString(", ", "separator"),
-			 ANSIThemeString("none", "argument"),
-			],
+			 ANSIThemeString("none", "argument")],
 			[ANSIThemeString("By default ", "description"),
 			 ANSIThemeString("cilium", "argument"),
 			 ANSIThemeString(" will be used as CNI", "description")],
@@ -4235,12 +4588,16 @@ COMMANDLINE = {
 					 ANSIThemeString(" < ", "description"),
 					 ANSIThemeString("1.24", "version"),
 					 ANSIThemeString(")", "description"),
-					 ANSIThemeString(", ", "separator"),
-					 ANSIThemeString("containerd", "argument"),
+					 ANSIThemeString(", ", "separator")],
+					[ANSIThemeString("containerd", "argument"),
 					 ANSIThemeString(", ", "separator"),
 					 ANSIThemeString("cri-o", "argument"),
 					],
 					[ANSIThemeString("Default CRI:", "description")],
+					[ANSIThemeString("containerd", "argument"),
+					 ANSIThemeString(" (", "description"),
+					 ANSIThemeString("rke2", "argument"),
+					 ANSIThemeString("), ", "description")],
 					[ANSIThemeString("docker-shim", "argument"),
 					 ANSIThemeString(" (", "description"),
 					 ANSIThemeString("Kubernetes", "programname"),
@@ -4424,7 +4781,13 @@ COMMANDLINE = {
 			 ANSIThemeString(": skipping PATCH REVISIONS is acceptable,", "description")],
 			[ANSIThemeString("but when upgrading to a newer MINOR version", "description")],
 			[ANSIThemeString("all intermediate MINOR versions must be", "description")],
-			[ANSIThemeString("installed first; this applies to nodes too", "description")],
+			[ANSIThemeString("installed first; this applies to nodes too.", "description")],
+			[ANSIThemeString("Note", "note"),
+			 ANSIThemeString(": ", "description"),
+			 ANSIThemeString("upgrade-control-plane", "command"),
+			 ANSIThemeString(" is currently not", "description")],
+			[ANSIThemeString("implemented for ", "description"),
+			 ANSIThemeString("rke2", "argument")],
 		],
 		"options": {
 			"--no-cache-update": {

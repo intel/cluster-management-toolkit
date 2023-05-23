@@ -4,8 +4,12 @@
   - pod_name: "rke2-snapshot"
   parser_rules:
   - name: "glog"
+  - name: "key_value"
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"
       matchkey: "Version"
       loglevel: "notice"
+    - matchtype: "startswith"
+      matchkey: "Trace["
+      loglevel: "debug"
