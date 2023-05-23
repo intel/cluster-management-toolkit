@@ -3,10 +3,14 @@
   matchkeys:
   - pod_name: "gpu-aware-scheduling"
   parser_rules:
+  - name: "ts_8601"
   - name: "glog"
   - name: "json"
   - name: "override_severity"
     overrides:
+    - matchtype: "startswith"
+      matchkey: "http: TLS handshake error"
+      loglevel: "error"
     - matchtype: "startswith"
       matchkey: "gpu-aware-scheduling/"
       loglevel: "notice"
