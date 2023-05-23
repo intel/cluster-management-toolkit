@@ -63,11 +63,8 @@
   - name: "Setting facts"
     become: false
     ansible.builtin.set_fact:
-      controller_manager_arg: "{{ config['controller-manager-arg'] }}"
-      kube_apiserver_arg: "{{ config['kube-apiserver-arg'] }}"
       kubelet_arg: "{{ config['kubelet-arg'] }}"
       kube_proxy_arg: "{{ config['kube-proxy-arg'] }}"
-      kube_scheduler_arg: "{{ config['kube-scheduler-arg'] }}"
       node_token: "{{ lookup('ansible.builtin.file', '~/.kube/token.{{ cluster_name }}') }}"
     when: "port_check.rc == 1"
   - name: "Creating node configuration file"

@@ -266,6 +266,9 @@ def lvl_to_word_severity(lvl: LogLevel) -> str:
 def split_bracketed_severity(message: str, default: LogLevel = LogLevel.INFO) -> Tuple[str, LogLevel]:
 	severities = {
 		"[fatal]": LogLevel.CRIT,
+		# This is for ingress-nginx; while alert is higher than crit in syslog terms,
+                # ingress-nginx doesn't seem to use it that way.
+		"[alert]": LogLevel.ERR,
 		"[error]": LogLevel.ERR,
 		"[err]": LogLevel.ERR,
 		"[warning]": LogLevel.WARNING,

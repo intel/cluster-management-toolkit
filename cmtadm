@@ -1856,7 +1856,7 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict) -> Non
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
 
-def __task_import_kube_config(installation_info: Dict) -> None:
+def __task_import_kubeconfig(installation_info: Dict) -> None:
 	"""
 	An installer task that merges a Kube config into ~/.kube/config
 
@@ -1927,15 +1927,6 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 	cad = d2["clusters"][0]["cluster"].get("certificate-authority-data")
 	server = d2["clusters"][0]["cluster"]["server"]
 
-	# We need to substitute this with the real IP-address of the control plane to be able to connect to it remotely
-	# we can only hope that the IP-address is the one we used to connect to the control plane--if the new cluster
-	# has multiple IP-addresses this will fail
-	#
-	# This only works if the server we're connecting to is remove though; we need to find a solution for this
-	# before we enable this
-	#if server.startswith("https://127.") or server == "https://::1":
-	#	ip = socket.gethostbyname(control_plane_name)
-	#	server = f"https://{ip}:{server.rsplit(':', 1)[1]}"
 	insecure_skip_tls_verify = d2["clusters"][0]["cluster"].get("insecure-skip-tls-verify")
 	cluster = {
 		"cluster": {
@@ -1979,6 +1970,67 @@ def __task_import_kube_config(installation_info: Dict) -> None:
 	secure_write_yaml(KUBE_CONFIG_FILE, d1, permissions = 0o600, sort_keys = False)
 
 	check_and_print_status(True)
+
+def __task_adjust_kubeconfig_server_address(installation_info: Dict) -> None:
+	"""
+	An installer task that replaces localhost for the real IP-address of the API-server
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+	"""
+
+	control_plane_name = __selection_control_planes()[0]
+	cluster_name = installation_info["installation_target"]
+	config_file_name = FilePath(f"{HOMEDIR}/.kube/config.{cluster_name}")
+
+	try:
+		d = secure_read_yaml(KUBE_CONFIG_FILE)
+	except FileNotFoundError:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Could not open ", "default"),
+				ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	for i, cluster in enumerate(deep_get(d, DictPath("clusters"), [])):
+		if deep_get(cluster, DictPath("name"), "") == cluster_name:
+			# Is this cluster a localhost?
+			server = deep_get(cluster, DictPath("cluster#server"), "")
+			if server.startswith("https://127") or server == "::1":
+				tmp = re.match(r"^(https://)([^:]+)(:.*)", server)
+				if tmp is None:
+					ansithemeprint([ANSIThemeString("Error", "error"),
+							ANSIThemeString(": Failed to extract server address.", "default")])
+					ansithemeprint([ANSIThemeString("This is probably a programming error", "default"),
+							ANSIThemeString("; aborting.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+
+				prefix = tmp[1]
+				server_address = tmp[2]
+				server_port_and_path = tmp[3]
+
+				# Try to figure out the internal IP of the control plane
+				from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+				kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+				obj = kh.get_ref_by_kind_name_namespace(("Node", ""), control_plane_name, "")
+				if obj is None:
+					ansithemeprint([ANSIThemeString("Error", "error"),
+							ANSIThemeString(": Could not find control plane ", "default"),
+							ANSIThemeString(f"{control_plane_name}", "hostname"),
+							ANSIThemeString("; aborting.", "default")], stderr = True)
+					sys.exit(errno.ENOENT)
+				addresses = deep_get(obj, DictPath("status#addresses"), [])
+				internal_ip = None
+				for address in addresses:
+					address_type = deep_get(address, DictPath("type"), "")
+					if  address_type == "InternalIP":
+						internal_ip = deep_get(address, DictPath("address"), "")
+						break
+				if internal_ip is not None and internal_ip != server_address:
+					d["clusters"][i]["cluster"]["server"] = f"{prefix}{internal_ip}{server_port_and_path}"
+
+	secure_write_yaml(KUBE_CONFIG_FILE, d, permissions = 0o600, sort_keys = False)
 
 def __task_setup_cni(installation_info: Dict) -> None:
 	"""
@@ -2200,7 +2252,7 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict) -> 
 
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {})
 
-def __task_remove_kube_config(installation_info: Dict) -> None:
+def __task_remove_kubeconfig(installation_info: Dict) -> None:
 	"""
 	An installer task that removes a cluster configuration from ~/.kube/config
 
@@ -2396,7 +2448,7 @@ __setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[
 	  ANSIThemeString("kubectl", "programname")], __task_setup_bash_completion),
 	([ANSIThemeString("Run playbooks on ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
-	([ANSIThemeString("Import kube config", "action")], __task_import_kube_config),
+	([ANSIThemeString("Import kubeconfig", "action")], __task_import_kubeconfig),
 	([ANSIThemeString("Setup ", "action"),
 	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_cni),
 ]
@@ -2410,7 +2462,8 @@ __setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Di
 	  ANSIThemeString("kubectl", "programname")], __task_setup_bash_completion),
 	([ANSIThemeString("Run playbooks on ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_run_setup_playbooks_on_control_planes),
-	([ANSIThemeString("Import kube config", "action")], __task_import_kube_config),
+	([ANSIThemeString("Import kubeconfig", "action")], __task_import_kubeconfig),
+	([ANSIThemeString("Adjust kubeconfig server-address (if necessary)", "action")], __task_adjust_kubeconfig_server_address),
 	([ANSIThemeString("Setup ", "action"),
 	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_cni),
 ]
@@ -2440,7 +2493,7 @@ teardown_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict],
 	  ANSIThemeString("control planes", "hostname")], __task_drain_control_planes),
 	([ANSIThemeString("Run teardown playbooks on ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_run_teardown_playbooks_on_control_planes),
-	([ANSIThemeString("Remove kube config", "action")], __task_remove_kube_config),
+	([ANSIThemeString("Remove kube config", "action")], __task_remove_kubeconfig),
 ]
 
 purge_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict], None]]] = [
@@ -3090,6 +3143,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	override_cni = False
 
 	installation_info = get_installation_info()
+
 	cluster_name = installation_info["installation_target"]
 	k8s_distro = installation_info[cluster_name]["distro"]
 
@@ -4091,7 +4145,7 @@ security_audit_checks = [
 		"call": checks.check_security_disable_strict_host_key_checking,
 	},
 	{
-		"description": "Check for insecure kube config options",
+		"description": "Check for insecure kubeconfig options",
 		"call": checks.check_insecure_kube_config_options,
 		"preconditions": [
 			"clusterinfo",
