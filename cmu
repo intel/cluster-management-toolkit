@@ -3379,15 +3379,16 @@ def get_rq_item_info(**kwargs):
 
 class KeyValueInfo:
 	# pylint: disable-next=too-many-arguments
-	def __init__(self, key, decoded_value, value, vtype, vlen):
+	def __init__(self, key, ref, decoded_value, value, vtype, vlen):
 		self.key = key
+		self.ref = ref
 		self.decoded_value = decoded_value
 		self.value = value
 		self.vtype = vtype
 		self.vlen = vlen
 
 	def __repr__(self):
-		return repr((self.key, self.decoded_value, self.value, self.vtype, self.vlen))
+		return repr((self.key, self.decoded_value, self.ref, self.value, self.vtype, self.vlen))
 
 def decode_value(value):
 	# Is this base64?
@@ -3444,11 +3445,24 @@ def get_key_value_info(**kwargs: Dict):
 			value = ""
 			vtype = "empty"
 
+		if vtype.startswith("base64-utf-8"):
+			fully_decoded_value = base64.b64decode(decoded_value).decode("utf-8")
+		else:
+			fully_decoded_value = decoded_value
+
 		if len(decoded_value) > 8192 and len(value) > 0:
 			vtype = f"{vtype} [truncated]"
 			decoded_value = value[0:8192 - 1]
 
-		info.append(KeyValueInfo(key, decoded_value, value, vtype, vlen))
+		ref = {
+			"key": key,
+			"value": value,
+			"decoded_value": decoded_value,
+			"fully_decoded_value": fully_decoded_value,
+			"vtype": vtype,
+			"vlen": vlen,
+		}
+		info.append(KeyValueInfo(key, ref, decoded_value, value, vtype, vlen))
 
 	return info
 
