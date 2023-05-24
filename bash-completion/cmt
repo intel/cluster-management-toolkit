@@ -25,12 +25,12 @@ _cmt() {
 	cri_list="docker-shim containerd cri-o"
 	known_list="known unknown not-known list not-list info not-info"
 	sort_columns="name apiversion namespaced kind"
-	non_options=0
 
+	non_options=0
 	skip_optargs=0
 
 	case "${COMP_WORDS[1]}" in
-	help|version|--help|--version)
+	--help|help|--version|version)
 		COMPREPLY=( $(compgen -W "" -- "$2") )
 		return
 		;;
@@ -58,12 +58,12 @@ _cmt() {
 				COMPREPLY=( $(compgen -W "" -- "$2") )
 				return
 				;;
+			--delete-emptydir-data|--delete-local-data|--disable-eviction|--force|--from-file|--ignore-daemonsets|--ignore-existing|--ignore-non-existing|--include-control-planes|--no-data|--no-header|--no-password|--overwrite|--purge|--save-ansible-logs|--wide|-Y)
+				# The options don't take any arguments
+				;;
 			--api-group|--ca-cert-file|--cri|--forks|--format|--known|--local|--namespaced|--sort-by|--verbs)
 				# These options take 1 argument
 				skip_optargs=1
-				;;
-			--delete-emptydir-data|--delete-local-data|--disable-eviction|--force|--from-file|--ignore-daemonsets|--ignore-existing|--ignore-non-existing|--include-control-planes|--no-data|--no-header|--no-password|--overwrite|--purge|--save-ansible-logs|--wide|-Y)
-				# The options don't take any arguments
 				;;
 			*)
 				# We didn't match any options, so this has to be an argument
@@ -226,7 +226,7 @@ _cmt() {
 			commands="${commands} PATH"
 			;;
 		*)
-			# If we're not using we want HOST,...
+			# If we're not using "--from-file" we want HOST,...
 			commands="${commands} HOST,..."
 			;;
 		esac
