@@ -51,6 +51,15 @@ class ANSIThemeString:
 		self.themeref = themeref
 		return self
 
+	def upper(self) -> "ANSIThemeString":
+		return ANSIThemeString(self.string.upper(), self.themeref)
+
+	def lower(self) -> "ANSIThemeString":
+		return ANSIThemeString(self.string.upper(), self.themeref)
+
+	def capitalize(self) -> "ANSIThemeString":
+		return ANSIThemeString(self.string.capitalize(), self.themeref)
+
 theme = None
 themepath = None
 
