@@ -61,7 +61,7 @@ _cmt() {
 			--delete-emptydir-data|--delete-local-data|--disable-eviction|--force|--from-file|--ignore-daemonsets|--ignore-existing|--ignore-non-existing|--include-control-planes|--no-data|--no-header|--no-password|--overwrite|--purge|--save-ansible-logs|--wide|-Y)
 				# The options don't take any arguments
 				;;
-			--api-group|--ca-cert-file|--cri|--forks|--format|--known|--local|--namespaced|--sort-by|--verbs)
+			--api-group|--ca-cert-file|--color|--cri|--forks|--format|--known|--local|--namespaced|--sort-by|--verbs)
 				# These options take 1 argument
 				skip_optargs=1
 				;;
@@ -99,6 +99,10 @@ _cmt() {
 	case "$3" in
 	--cri)
 		COMPREPLY=( $(compgen -W "${cri_list}" -- "$2") )
+		return
+		;;
+	--color)
+		COMPREPLY=( $(compgen -W "always never" -- "$2") )
 		return
 		;;
 	--format)
@@ -235,12 +239,13 @@ _cmt() {
 		;;
 	api-resources)
 		commands=$(add_option_if_not_in_list "--api-group" ${commands})
+		commands=$(add_option_if_not_in_list "--color" ${commands})
+		commands=$(add_option_if_not_in_list "--format" ${commands})
 		commands=$(add_option_if_not_in_list "--has-data" ${commands})
 		commands=$(add_option_if_not_in_list "--known" ${commands})
 		commands=$(add_option_if_not_in_list "--local" ${commands})
 		commands=$(add_option_if_not_in_list "--namespaced" ${commands})
 		commands=$(add_option_if_not_in_list "--no-header" ${commands})
-		commands=$(add_option_if_not_in_list "--format" ${commands})
 		commands=$(add_option_if_not_in_list "--sort-key" ${commands})
 		commands=$(add_option_if_not_in_list "--verbs" ${commands})
 		commands=$(add_option_if_not_in_list "--wide" ${commands})
