@@ -59,7 +59,7 @@ _cmt() {
 				return
 				;;
 			--delete-emptydir-data|--delete-local-data|--disable-eviction|--force|--from-file|--ignore-daemonsets|--ignore-existing|--ignore-non-existing|--include-control-planes|--no-data|--no-header|--no-password|--overwrite|--purge|--save-ansible-logs|--wide|-Y)
-				# The options don't take any arguments
+				# These options don't take any arguments
 				;;
 			--api-group|--ca-cert-file|--color|--cri|--forks|--format|--known|--local|--namespaced|--sort-by|--verbs)
 				# These options take 1 argument
@@ -146,13 +146,13 @@ _cmt() {
 	drain|force-drain|cordon|uncordon|taint|untaint|remove-node|remove-nodes|upgrade-node|upgrade-nodes)
 		# Ideally we want to handle the special case of lists too [arg1,arg2,arg3,...] in  cases where the args are known
 		if [ ${COMP_CWORD} -eq 2 ]; then
-			nodes=$(kubectl get no --no-headers -o custom-columns='NAME:metadata.name')
+			nodes=$(kubectl get no --no-headers -o custom-columns='NAME:metadata.name' 2> /dev/null)
 			commands="${commands} ${nodes} ALL"
 		else
 			# Options that don't have a parameter
 			case "$3" in
 			--include-control-planes|--delete-emptydir-data|--delete-local-data|--disable-eviction|--ignore-daemonsets|--overwrite|--force|--purge|--save-ansible-logs)
-				nodes=$(kubectl get no --no-headers -o custom-columns='NAME:metadata.name')
+				nodes=$(kubectl get no --no-headers -o custom-columns='NAME:metadata.name' 2> /dev/null)
 				commands="${commands} ${nodes} ALL"
 				;;
 			*)
