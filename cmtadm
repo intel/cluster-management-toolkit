@@ -815,7 +815,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 					patch_cni_call = deep_get(url, DictPath("patch"))
 					if patch_cni_call is not None:
 						patch_cni_call(new_path, pod_network_cidr)
-					execute_command_with_response([kubectl_path, "create", "-f", new_path])
+					execute_command_with_response([kubectl_path, "apply", "--server-side", "-f", new_path])
 		else:
 			ansithemeprint([ANSIThemeString("No newer version available.", "default")])
 	elif install_command is not None and version is None or len(version) == 0:
@@ -1169,7 +1169,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		patch_cni(cni_path, pod_network_cidr)
 
 	if filetype == "yaml":
-		args = ["/usr/bin/kubectl", "create", "--context=<<<context>>>", "-f", cni_path]
+		args = ["/usr/bin/kubectl", "apply", "--server-side", "--context=<<<context>>>", "-f", cni_path]
 	elif filetype == "installer":
 		args = deep_get(cni_data, DictPath(f"{cni}#command"))
 
@@ -1178,7 +1178,6 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		"<<<context>>>": context_name,
 	}
 
-	sys.exit(f"{args=}")
 	result = execute_command(substitute_list(args, substitutions))
 	check_and_print_status(result)
 	return result
@@ -2025,7 +2024,7 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict) -> None:
 				for address in addresses:
 					address_type = deep_get(address, DictPath("type"), "")
 					if  address_type == "InternalIP":
-						internal_ip = deep_get(address, DictPath("address"), "")
+						internal_ip = deep_get(address, DictPath("hostname"), "")
 						break
 				if internal_ip is not None and internal_ip != server_address:
 					d["clusters"][i]["cluster"]["server"] = f"{prefix}{internal_ip}{server_port_and_path}"
@@ -3415,8 +3414,8 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	ansithemeprint([ANSIThemeString("\nControl plane setup successful", "success")])
 	ansithemeprint([ANSIThemeString("\nNote:", "note")])
-	ansithemeprint([ANSIThemeString("If this is an RKE2 installation you need to substitute", "default"),
-			ANSIThemeString("127.0.0.1", "address")])
+	ansithemeprint([ANSIThemeString("If this is an RKE2 installation you may need to substitute ", "default"),
+			ANSIThemeString("127.0.0.1", "hostname")])
 	ansithemeprint([ANSIThemeString("in ", "default"),
 			ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
 			ANSIThemeString(f" with the real IP-address of this host.\n", "default")])
