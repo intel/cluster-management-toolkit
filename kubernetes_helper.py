@@ -1089,6 +1089,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "bgpconfigurations",
 		"namespaced": False,
 	},
+	("BGPFilter", "crd.projectcalico.org"): {
+		"api_paths": ["apis/crd.projectcalico.org/v3/"],
+		"api": "bgpfilters",
+		"namespaced": False,
+	},
 	("BGPPeer", "crd.projectcalico.org"): {
 		"api_paths": ["apis/crd.projectcalico.org/v1/"],
 		"api": "bgppeers",
@@ -2854,6 +2859,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("Tuned", "tuned.openshift.io"): {
 		"api_paths": ["apis/tuned.openshift.io/v1/"],
 		"api": "tuneds",
+	},
+	# upgrade.cattle.io
+	("Plan", "upgrade.cattle.io"): {
+		"api_paths": ["apis/upgrade.cattle.io/v1/"],
+		"api": "plans",
 	},
 	# user.openshift.io
 	("Group", "user.openshift.io"): {
