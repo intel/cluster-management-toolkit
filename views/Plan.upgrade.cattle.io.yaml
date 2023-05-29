@@ -1,0 +1,170 @@
+kind: "Plan"
+api_family: "upgrade.cattle.io"
+default_command: "plans"
+listview:
+  name: "Plans"
+  group: "API & Extendability"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "image", "channel", "version", "age"]
+      sortcolumn: "namespace"
+  fields:
+    channel:
+      header: "Channel:"
+      path: "spec#channel"
+      type: "str"
+      default: "<unset>"
+      formatting:
+        field_colors:
+        - type: "version"
+    image:
+      header: "Image:"
+      path: "spec#upgrade#image"
+      type: "str"
+    version:
+      header: "Version:"
+      path: "spec#version"
+      type: "str"
+      default: "<unset>"
+      formatting:
+        field_colors:
+        - type: "version"
+infoview:
+  name: "Plan Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["service_account", "prepare", "upgrade", "cordon", "drain_header", "drain_delete_local_data", "drain_ignore_daemon_sets", "drain_force", "drain_disable_eviction", "drain_skip_wait_for_delete_timeout", "channel", "version", "node_selector", "concurrency"]
+    rows:
+      channel:
+        header: [["Channel:", ["main", "infoheader"]]]
+        path: "spec#channel"
+        type: "str"
+        default: "<unset>"
+        formatting:
+          field_colors:
+          - type: "version"
+      concurrency:
+        header: [["Concurrency:", ["main", "infoheader"]]]
+        path: "spec#concurrency"
+        type: "str"
+        default: "<unset>"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      cordon:
+        header: [["Cordon:", ["main", "infoheader"]]]
+        path: "spec#cordon"
+        type: "bool"
+        default: "<unset>"
+      drain_header:
+        header: [["Drain:", ["main", "infoheader"]]]
+      drain_delete_local_data:
+        header: [["  Delete Local Data:", ["main", "infoheader"]]]
+        path: "spec#drain#deleteLocalData"
+        type: "bool"
+        default: "<unset>"
+      drain_disable_eviction:
+        header: [["  Disable Eviction:", ["main", "infoheader"]]]
+        path: "spec#drain#disableEviction"
+        type: "bool"
+        default: "<unset>"
+      drain_force:
+        header: [["  Force:", ["main", "infoheader"]]]
+        path: "spec#drain#force"
+        type: "bool"
+        default: "<unset>"
+      drain_ignore_daemon_sets:
+        header: [["  Ignore Daemon Sets:", ["main", "infoheader"]]]
+        path: "spec#drain#ignoreDaemonSets"
+        type: "bool"
+        default: "<unset>"
+      drain_skip_wait_for_delete_timeout:
+        header: [["  Skip Wait for Delete Timeout:", ["main", "infoheader"]]]
+        path: "spec#drain#skipWaitForDeleteTimeout"
+        type: "numerical"
+        default: "<unset>"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      node_selector:
+        header: [["Node Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#nodeSelector#matchExpressions"
+          pathtype: "match_expression"
+          default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"
+      prepare:
+        header: [["P", ["main", "infoheader_shortcut"]], ["repare:", ["main", "infoheader"]]]
+        path: "spec#prepare#image"
+        type: "str"
+      service_account:
+        header: [["S", ["main", "infoheader_shortcut"]], ["ervice Account:", ["main", "infoheader"]]]
+        path: "spec#serviceAccountName"
+        type: "str"
+      upgrade:
+        header: [["U", ["main", "infoheader_shortcut"]], ["pgrade:", ["main", "infoheader"]]]
+        path: "spec#upgrade#image"
+        type: "str"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "spec#version"
+        type: "str"
+        default: "<unset>"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "Service Account":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Service Account"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ServiceAccount"
+        name_path: "spec#serviceAccountName"
+        namespace_path: "metadata#namespace"
+    "Show Preparation":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show preparation configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Preparation Configuration"
+        _pass_obj: true
+        path: "spec#prepare"
+        include_root: true
+    "Show Upgrade":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show upgrade configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Upgrade Configuration"
+        _pass_obj: true
+        path: "spec#upgrade"
+        include_root: true
+    "Show tolerations":
+      key: "t"
+      read_only: true
+      helptext: "Show tolerations"
+      widget: "windowwidget"
+      headers: ["Key:", "Operator:", "Value:", "Effect:", "Timeout:"]
+      itemgetter: "get_pod_tolerations"
+      # This isn't supported for now
+      sortcolumn: "key"
