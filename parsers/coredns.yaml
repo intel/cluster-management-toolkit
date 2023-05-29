@@ -14,7 +14,7 @@
       - matchtype: "exact"
         matchkey: "Params from apiserver:"
         matchline: "any"
-  - name: custom_splitter
+  - name: "custom_splitter"
     options:
       regex: '^(plugin/[^:]+): (.*)'
       facility:
@@ -30,3 +30,4 @@
     - matchtype: "startswith"
       matchkey: "Trace["
       loglevel: "debug"
+  - name: "key_value"
