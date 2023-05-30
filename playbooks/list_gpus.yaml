@@ -9,6 +9,8 @@
         - description: "Lists GPUs (VGA|Display)"
       read_only: true
   gather_facts: false
+  become: true
+  become_user: "root"
   tasks:
   - name: "Listing GPUs"  # noqa fqcn-builtins risky-shell-pipe
     shell: |
