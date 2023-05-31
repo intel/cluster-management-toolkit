@@ -101,7 +101,7 @@
       mode: "0640"
   - name: "Planning upgrade"  # noqa fqcn-builtins
     shell: |
-      kubeadm upgrade plan --config {{ cluster_config.path }} {{ requested_control_plane_k8s_version.split("-")[0] }}
+      kubeadm upgrade plan {{ requested_control_plane_k8s_version.split("-")[0] }}
     changed_when: false
   - name: "Pulling Kubernetes images"  # noqa fqcn-builtins
     shell: |
@@ -114,7 +114,7 @@
     changed_when: false
   - name: "Upgrading control plane"  # noqa fqcn-builtins
     shell: |
-      kubeadm upgrade apply --config {{ cluster_config.path }} -y {{ requested_control_plane_k8s_version.split("-")[0] }}
+      kubeadm upgrade apply -y {{ requested_control_plane_k8s_version.split("-")[0] }}
     changed_when: false
   - name: "Restarting kubelet"
     ansible.builtin.systemd:
