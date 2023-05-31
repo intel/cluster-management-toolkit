@@ -1849,8 +1849,8 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict) -> Non
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
 		"cri_socket": cri_socket,
-		"packages": setup_control_plane_targets[k8s_distro].get("deb_packages", []),
-		"held_packages": setup_control_plane_targets[k8s_distro].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 		**extra_values_setup,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values)
@@ -2192,8 +2192,8 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict) -> N
 		"cluster_name": cluster_name,
 		"pod_network_cidr": pod_network_cidr,
 		"cri_socket": cri_socket,
-		"packages": packages[k8s_distro].get("deb_packages", []),
-		"held_packages": packages[k8s_distro].get("deb_packages_held", []),
+		"packages": packages,
+		"held_packages": held_packages,
 		"requested_control_plane_k8s_version": requested_version,
 		**extra_values_upgrade,
 	}
