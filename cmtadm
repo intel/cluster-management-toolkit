@@ -2129,6 +2129,7 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info: Dict) -> Non
 			installation_info (dict): A dict with installation information (Unused)
 	"""
 
+	k8s_distro = installation_info[cluster_name]["distro"]
 	os_distro = identify_distro()
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], upgrade_control_plane_targets["localhost"]["playbooks"]))
