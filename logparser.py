@@ -2654,7 +2654,7 @@ def init_parser_list():
 	# Start by adding files from the parsers directory
 
 	parser_dirs = []
-	parser_dirs += deep_get(cmtlib.cmtconfig, DictPath("Pods#local_parsers"), [])
+	parser_dirs += deep_get(cmtlib.cmtconfig, DictPath("Pod#local_parsers"), [])
 	parser_dirs.append(PARSER_DIR)
 
 	parser_files = []
