@@ -52,22 +52,32 @@
       state: "directory"
       mode: "0755"
     when: "ansible_os_family == 'Debian'"
+  - name: "Creating temporary directory for repository keys"
+    ansible.builtin.tempfile:
+      state: "directory"
+      suffix: "temp"
+    register: "tempdir"
   - name: "Fetching Kubernetes repository key"
     ansible.builtin.get_url:
       url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
-      dest: "/etc/apt/keyrings/kubernetes-archive-keyring.gpg"
+      dest: "{{ tempdir.path }}/Release.key"
       mode: "0644"
       force: true
       use_proxy: "{{ use_proxy }}"
     environment:
       https_proxy: "{{ https_proxy }}"
     when: "ansible_os_family == 'Debian'"
-  - name: "Creating temporary directory for repository keys"
-    ansible.builtin.tempfile:
-      state: "directory"
-      suffix: "temp"
-    register: "tempdir"
-    when: "ansible_os_family == 'Suse'"
+  - name: "Dearmoring CRI-O key"  # noqa fqcn-builtins no-changed-when
+    shell: |
+      gpg --dearmor "{{ tempdir.path }}/Release.key"
+    when: "ansible_os_family == 'Debian'"
+  - name: "Copying dearmored CRI-O key to /etc/apt/keyrings"
+    ansible.builtin.copy:
+      remote_src: true
+      src: "{{ tempdir.path }}/Release.key.gpg"
+      dest: "/etc/apt/keyrings/kubernetes-archive-keyring.gpg"
+      mode: "0644"
+    when: "ansible_os_family == 'Debian'"
   - name: "Fetching Kubernetes repository keys"
     ansible.builtin.get_url:
       url: "https://packages.cloud.google.com/yum/doc/{{ item }}"
