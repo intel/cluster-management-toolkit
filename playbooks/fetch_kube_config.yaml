@@ -65,6 +65,7 @@
       path: "~/.kube/token.{{ cluster_name }}"
       mode: "0600"
     delegate_to: "localhost"
+    failed_when: false
   - name: "Attempting to copy /etc/rancher/rke2/config.yaml RKE2 config file from control plane to localhost"
     become: true
     become_user: "root"
@@ -78,3 +79,4 @@
       path: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
       mode: "0600"
     delegate_to: "localhost"
+    failed_when: false
