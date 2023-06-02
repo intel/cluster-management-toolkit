@@ -1,0 +1,11 @@
+- name: "intel-gpu-resource-driver"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "intel-gpu-resource-driver-"
+  parser_rules:
+  - name: "glog"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "DriverVersion:"
+      loglevel: "notice"
