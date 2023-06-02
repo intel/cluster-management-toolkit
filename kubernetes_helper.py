@@ -1339,18 +1339,18 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/fpga.intel.com/v2/"],
 		"api": "fpgaregions",
 	},
-	# gpu.dra.intel.com
-	("DeviceClassParameters", "gpu.dra.intel.com"): {
-		"api_paths": ["apis/gpu.dra.intel.com/v1alpha/"],
+	# gpu.resource.intel.com
+	("DeviceClassParameters", "gpu.resource.intel.com"): {
+		"api_paths": ["apis/gpu.resource.intel.com/v1alpha2/"],
 		"api": "deviceclassparameters",
 		"namespaced": False,
 	},
-	("GpuAllocationState", "gpu.dra.intel.com"): {
-		"api_paths": ["apis/gpu.dra.intel.com/v1alpha/"],
+	("GpuAllocationState", "gpu.resource.intel.com"): {
+		"api_paths": ["apis/gpu.resource.intel.com/v1alpha2/"],
 		"api": "gpuallocationstates",
 	},
-	("GpuClaimParameters", "gpu.dra.intel.com"): {
-		"api_paths": ["apis/gpu.dra.intel.com/v1alpha/"],
+	("GpuClaimParameters", "gpu.resource.intel.com"): {
+		"api_paths": ["apis/gpu.resource.intel.com/v1alpha2/"],
 		"api": "gpuclaimparameters",
 	},
 	# helm.cattle.io
