@@ -1,0 +1,279 @@
+add_option_if_not_in_list() {
+	new_option=$1
+	shift
+	options=$*
+
+	for option in ${COMP_WORDS[@]}; do
+		case "${option}" in
+		-*)
+			# OK, it's an option; does it match the one we're passing in?
+			if [ ${option} = ${new_option} ]; then
+				# OK, we found a match and thus we don't add it to options
+				printf  -- "${options}"
+				return
+			fi
+			;;
+		esac
+	done
+
+	printf -- "${options} ${new_option}"
+	return
+}
+
+_cmt() {
+	commands=""
+	cri_list="docker-shim containerd cri-o"
+	known_list="known unknown not-known list not-list info not-info"
+	kubernetes_distro_list="kubeadm rke2"
+	sort_columns="name apiversion namespaced kind"
+
+	non_options=0
+	skip_optargs=0
+
+	case "${COMP_WORDS[1]}" in
+	--help|help|--version|version)
+		COMPREPLY=( $(compgen -W "" -- "$2") )
+		return
+		;;
+	esac
+
+	# We will ignore manual mixes of non-options and options
+	# and let the command parser whine about that instead
+	# 0 programname
+	# 1 command
+	# 2+ options followed by args
+	if [ ${COMP_CWORD} -gt 1 ];  then
+		for optind in $(seq 2 $(( COMP_CWORD - 1 ))); do
+			if [ ${COMP_CWORD} -eq 2 ]; then
+				break
+			fi
+
+			if [ ${skip_optargs} -gt 0 ]; then
+				skip_optargs=$(( skip_optargs - 1 ))
+				continue
+			fi
+
+			case "${COMP_WORDS[${optind}]}" in
+			--help)
+				# No further suggestions
+				COMPREPLY=( $(compgen -W "" -- "$2") )
+				return
+				;;
+			--delete-emptydir-data|--delete-local-data|--disable-eviction|--force|--from-file|--ignore-daemonsets|--ignore-existing|--ignore-non-existing|--include-control-planes|--no-data|--no-header|--no-password|--overwrite|--purge|--save-ansible-logs|--wide|-Y)
+				# These options don't take any arguments
+				;;
+			--api-group|--ca-cert-file|--color|--cri|--forks|--format|--known|--kubernetes-distro|--local|--namespaced|--sort-by|--verbs)
+				# These options take 1 argument
+				skip_optargs=1
+				;;
+			*)
+				# We didn't match any options, so this has to be an argument
+				non_options=$(( non_options + 1 ))
+				;;
+			esac
+		done
+
+		case "${COMP_WORDS[1]}" in
+		taint|untaint)
+			# These commands accept 2 arguments
+			if [ ${non_options} -ge 2 ]; then
+				COMPREPLY=( $(compgen -W "" -- "$2") )
+				return
+			fi
+			;;
+		*)
+			# All other commands accept either 1 or zero
+			# These commands accept 2 arguments
+			if [ ${non_options} -ge 1 ]; then
+				COMPREPLY=( $(compgen -W "" -- "$2") )
+				return
+			fi
+			;;
+		esac
+	fi
+
+	# command followed by option followed by --help is always valid
+	if [ ${COMP_CWORD} -eq 2 ]; then
+		commands=$(add_option_if_not_in_list "--help" ${commands})
+	fi
+
+	case "$3" in
+	--cri)
+		COMPREPLY=( $(compgen -W "${cri_list}" -- "$2") )
+		return
+		;;
+	--color)
+		COMPREPLY=( $(compgen -W "always never" -- "$2") )
+		return
+		;;
+	--format)
+		COMPREPLY=( $(compgen -W "csv entry ssv table tsv" -- "$2") )
+		return
+		;;
+	--known)
+		# This needs to be improved since we can pass multiple options separated by comma
+		COMPREPLY=( $(compgen -W "${known_list}" -- "$2") )
+		return
+		;;
+	--kubernetes-distro)
+		COMPREPLY=( $(compgen -W "${kubernetes_distro_list}" -- "$2") )
+		return
+		;;
+	--local|--namespaced)
+		COMPREPLY=( $(compgen -W "true false" -- "$2") )
+		return
+		;;
+	--sort-by)
+		COMPREPLY=( $(compgen -W "${sort_columns}" -- "$2") )
+		return
+		;;
+	--ca-cert-file)
+		comptopt -o filenames 2> /dev/null
+		COMPREPLY=( $(compgen -f -- $2) )
+		return
+		;;
+	--forks|--api-group|--verbs)
+		# --forks can be any positive integer
+		# --api-group can be any supported API-group (we cannot be bothered to autocomplete I think
+		# --verbs can be custom, so again we probably don't bother
+		COMPREPLY=( $(compgen -W "" -- "$2") )
+		return
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	cordon|drain|force-drain|uncordon|taint|untaint)
+		commands=$(add_option_if_not_in_list "--include-control-planes" ${commands})
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	drain|force-drain|cordon|uncordon|taint|untaint|remove-node|remove-nodes|upgrade-node|upgrade-nodes)
+		# Ideally we want to handle the special case of lists too [arg1,arg2,arg3,...] in  cases where the args are known
+		if [ ${COMP_CWORD} -eq 2 ]; then
+			nodes=$(kubectl get no --no-headers -o custom-columns='NAME:metadata.name' 2> /dev/null)
+			commands="${commands} ${nodes} ALL"
+		else
+			# Options that don't have a parameter
+			case "$3" in
+			--include-control-planes|--delete-emptydir-data|--delete-local-data|--disable-eviction|--ignore-daemonsets|--overwrite|--force|--purge|--save-ansible-logs)
+				nodes=$(kubectl get no --no-headers -o custom-columns='NAME:metadata.name' 2> /dev/null)
+				commands="${commands} ${nodes} ALL"
+				;;
+			*)
+				;;
+			esac
+		fi
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	drain|force-drain)
+		commands=$(add_option_if_not_in_list "--disable-eviction" ${commands})
+		;;
+	taint)
+		commands=$(add_option_if_not_in_list "--overwrite" ${commands})
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	drain)
+		commands=$(add_option_if_not_in_list "--delete-emptydir-data" ${commands})
+		commands=$(add_option_if_not_in_list "--delete-local-data" ${commands})
+		commands=$(add_option_if_not_in_list "--ignore-daemonsets" ${commands})
+		;;
+	prepare|add-node|add-nodes|purge|upgrade-node|upgrade-nodes|remove-node|remove-nodes)
+		commands=$(add_option_if_not_in_list "--forks" ${commands})
+		commands=$(add_option_if_not_in_list "--save-ansible-logs" ${commands})
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	cordon|drain|force-drain|uncordon|taint|untaint)
+		COMPREPLY=( $(compgen -W "${commands}" -- "$2") )
+		return
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	prepare|add-node|add-nodes)
+		commands=$(add_option_if_not_in_list "--ignore-existing" ${commands})
+		;;
+	remove-node|remove-nodes)
+		commands=$(add_option_if_not_in_list "--force" ${commands})
+		commands=$(add_option_if_not_in_list "--purge" ${commands})
+		;;
+	use-context|use-ctx)
+		commands="${commands} NAME INDEX"
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	add-node|add-nodes|purge)
+		commands=$(add_option_if_not_in_list "--ignore-non-existing" ${commands})
+		;;
+	prepare)
+		commands=$(add_option_if_not_in_list "--no-password" ${commands})
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	add-node|add-nodes|remove-node|remove-nodes|purge)
+		commands=$(add_option_if_not_in_list "--kubernetes-distro" ${commands})
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	purge)
+		commands="${commands} HOST,... ALL"
+		;;
+	add-node|add-nodes)
+		commands=$(add_option_if_not_in_list "--ca-cert-file" ${commands})
+		commands=$(add_option_if_not_in_list "--cri" ${commands})
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	prepare|add-node|add-nodes)
+		case "${COMP_WORDS[*]}" in
+		*--from-file*)
+			# If we're using "--from-file" we don't want HOST,...
+			commands="${commands} PATH"
+			;;
+		*)
+			# If we're not using "--from-file" we want HOST,...
+			commands="${commands} HOST,..."
+			;;
+		esac
+		commands=$(add_option_if_not_in_list "--from-file" ${commands})
+		commands=$(add_option_if_not_in_list "-Y" ${commands})
+		;;
+	api-resources)
+		commands=$(add_option_if_not_in_list "--api-group" ${commands})
+		commands=$(add_option_if_not_in_list "--color" ${commands})
+		commands=$(add_option_if_not_in_list "--format" ${commands})
+		commands=$(add_option_if_not_in_list "--has-data" ${commands})
+		commands=$(add_option_if_not_in_list "--known" ${commands})
+		commands=$(add_option_if_not_in_list "--local" ${commands})
+		commands=$(add_option_if_not_in_list "--namespaced" ${commands})
+		commands=$(add_option_if_not_in_list "--no-header" ${commands})
+		commands=$(add_option_if_not_in_list "--sort-key" ${commands})
+		commands=$(add_option_if_not_in_list "--verbs" ${commands})
+		commands=$(add_option_if_not_in_list "--wide" ${commands})
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	api-resources|add-node|add-nodes|prepare|purge|remove-node|remove-nodes|upgrade-node|upgrade-nodes|get-contexts|get-ctx|--help|help|--version|version|use-context|use-ctx)
+		COMPREPLY=( $(compgen -W "${commands}" -- "$2") )
+		return
+		;;
+	*)
+		if [ ${COMP_CWORD} -eq 1 ]; then
+			COMPREPLY=( $(compgen -W "cordon drain force-drain uncordon taint untaint prepare add-node add-nodes remove-node remove-nodes purge upgrade-node upgrade-nodes get-contexts get-ctx use-context use-ctx api-resources help version --help --version" -- "$2") )
+			return
+		fi
+	esac
+}
+
+complete -F _cmt cmt

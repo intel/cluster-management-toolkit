@@ -19,8 +19,10 @@ For usage, see:
 import errno
 from getpass import getuser
 from glob import glob
+import grp
 import os
 from pathlib import Path, PurePath
+import pwd
 import re
 import shutil
 import socket
@@ -4189,6 +4191,32 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 				ANSIThemeString(" audit", "command"),
 				ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
 		ansithemeprint([ANSIThemeString("  a perfect score is not a guarantee that your installation is secure.", "default")])
+	elif len(usergroup) == 0:
+		# Get the username and group for the user;
+		# if they match it's highly likely that the system
+		# is configured to use usergroups
+		uid = os.getuid()
+		username = pwd.getpwuid(uid).pw_name
+		gid = pwd.getpwuid(uid).pw_gid
+		groupname = grp.getgrgid(gid).gr_name
+
+		ansithemeprint([ANSIThemeString("\nNote", "emphasis"),
+				ANSIThemeString(":", "default"),
+				ANSIThemeString(" the username for the current user “", "default"),
+				ANSIThemeString(f"{username}", "argument"),
+				ANSIThemeString(f"“ is the same", "default")])
+		ansithemeprint([ANSIThemeString(f"as its primary group name. This may be an indication ", "default"),
+				ANSIThemeString(f"that the system", "default")])
+		ansithemeprint([ANSIThemeString(f"is configured to use usergroups; if you're seeing warnings related", "default")])
+		ansithemeprint([ANSIThemeString(f"to file permissions this ", "default"),
+				ANSIThemeString(f"might", "emphasis"),
+				ANSIThemeString(f" the cause; if you know (or think) that", "default")])
+		ansithemeprint([ANSIThemeString(f"the system is configured with usergroups you can try:\n", "default")])
+		ansithemeprint([ANSIThemeString(f"  cmtadm ", "programname"),
+				ANSIThemeString(f"audit ", "command"),
+				ANSIThemeString(f"--usergroup ", "option"),
+				ANSIThemeString(f"{username}", "argument")])
+		ansithemeprint([ANSIThemeString(f"\nto see if that resolves the warnings.", "default")])
 
 preflight_checks = [
 	{
@@ -4306,7 +4334,7 @@ COMMANDLINE = {
 			   ANSIThemeString(",", "separator"),
 			   ANSIThemeString("...", "argument"),
 			   ANSIThemeString("]", "separator")],
-		"description": [ANSIThemeString(f"Import existing cluster(s) and for use with {about.PROGRAM_SUITE_NAME}", "description")],
+		"description": [ANSIThemeString(f"Import existing cluster(s) for use with {about.PROGRAM_SUITE_NAME}", "description")],
 		"extended_description": [
 			[ANSIThemeString("If ", "description"),
 			 ANSIThemeString("CLUSTER_NAME", "argument"),

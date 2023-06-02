@@ -1,0 +1,202 @@
+shopt -s extglob
+
+add_option_if_not_in_list() {
+	new_option="${1}"
+	shift
+	options="$*"
+
+	for option in ${COMP_WORDS[@]}; do
+		case "${option}" in
+		-*)
+			# OK, it's an option; does it match the one we're passing in?
+			if [ "${option}" = "${new_option}" ]; then
+				# OK, we found a match and thus we don't add it to options
+				printf -- "${options}"
+				return
+			fi
+			;;
+		esac
+	done
+
+	printf -- "${options} ${new_option}"
+	return
+}
+
+_cmtinv() {
+	commands=""
+	all_commands_help="add-group add-groups add-host add-hosts inventory inv list-groups list-hosts ping rebuild-inventory remove-group remove-groups remove-host remove-hosts set-group-var set-group-vars set-host-var set-host-vars set-var set-vars unset-group-var unset-group-vars unset-host-var unset-host-vars unset-var unset-vars --help help --version version"
+
+	non_options=0
+	skip_optargs=0
+
+	case "${COMP_WORDS[1]}" in
+	--help|help|--version|version)
+		COMPREPLY=( $(compgen -W "" -- "$2") )
+		return
+		;;
+	esac
+
+	# We will ignore manual mixes of non-options and options
+	# and let the command parser whine about that instead
+	# 0 programname
+	# 1 command
+	# 2+ options followed by args
+	if [ ${COMP_CWORD} -gt 1 ];  then
+		for optind in $(seq 2 $(( COMP_CWORD - 1 ))); do
+			if [ ${COMP_CWORD} -eq 2 ]; then
+				break
+			fi
+
+			if [ ${skip_optargs} -gt 0 ]; then
+				skip_optargs=$(( skip_optargs - 1 ))
+				continue
+			fi
+
+			case "${COMP_WORDS[${optind}]}" in
+			--help)
+				# No further suggestions
+				COMPREPLY=( $(compgen -W "" -- "$2") )
+				return
+				;;
+			--force|--include-vars)
+				# These options don't take any arguments
+				;;
+			--color|--format|--groups|--vars)
+				# These options take 1 argument
+				skip_optargs=1
+				;;
+			*)
+				# We didn't match any options, so this has to be an argument
+				non_options=$(( non_options + 1 ))
+				;;
+			esac
+		done
+
+		case "${COMP_WORDS[1]}" in
+		add-host|add-hosts|remove-host|remove-hosts|set-group-var|set-group-vars|set-host-var|set-host-vars|uset-group-var|unset-group-vars|unset-host-var|unset-host-vars)
+			# These commands accept up to two arguments
+			if [ ${non_options} -ge 2 ]; then
+				COMPREPLY=( $(compgen -W "" -- "$2") )
+				return
+			fi
+			;;
+		*)
+			# All other commands accept either 1 or zero
+			# These commands accept 1 or 0 argument
+			if [ ${non_options} -ge 1 ]; then
+				COMPREPLY=( $(compgen -W "" -- "$2") )
+				return
+			fi
+			;;
+		esac
+	fi
+
+	# command followed by option followed by --help is always valid
+	if [ ${COMP_CWORD} -eq 2 ]; then
+		commands=$(add_option_if_not_in_list "--help" ${commands})
+	fi
+
+	case "$3" in
+	--color)
+		COMPREPLY=( $(compgen -W "always never" -- "$2") )
+		return
+		;;
+	--format)
+		COMPREPLY=( $(compgen -W "csv inventory ssv tsv" -- "$2") )
+		return
+		;;
+	--groups)
+		available_groups=$(cmtinv list-groups --color never --format ssv 2> /dev/null)
+		COMPREPLY=( $(compgen -W "${available_groups}" -- "$2") )
+		return
+	esac
+
+	case "$3" in
+	inv|inventory)
+		available_groups=$(cmtinv list-groups --color never --format ssv 2> /dev/null)
+		commands="${commands} ${available_groups}"
+		;;
+	esac
+
+	# We only allow options until we get an argument
+	if [ ${non_options} -eq 0 ]; then
+		case "${COMP_WORDS[1]}" in
+		add-group|add-groups|add-host|add-hosts)
+			commands=$(add_option_if_not_in_list "--vars" ${commands})
+			;;
+		esac
+
+		case "${COMP_WORDS[1]}" in
+		add-host|add-hosts)
+			commands=$(add_option_if_not_in_list "--groups" ${commands})
+			;;
+		esac
+
+		case "${COMP_WORDS[1]}" in
+		list-groups|list-hosts)
+			# If "--include-vars" is used, we shouldn't suggest "--format"
+			# since only "--format inventory" supports showing the variables
+			case "${COMP_WORDS[*]}" in
+			*--include-vars*)
+				;;
+			*)
+				commands=$(add_option_if_not_in_list "--format" ${commands})
+				;;
+			esac
+			;;
+		esac
+
+		case "${COMP_WORDS[1]}" in
+		inventory|inv|list-groups|list-hosts)
+			commands=$(add_option_if_not_in_list "--color" ${commands})
+
+			# If "--format" is used, and it isn't "inventory", we shouldn't suggest --include-vars,
+			# since only the inventory view supports showing the variables
+			case "${COMP_WORDS[*]}" in
+			*--format?csv*|*--format?ssv*|*--format?tsv*)
+				;;
+			*)
+				commands=$(add_option_if_not_in_list "--include-vars" ${commands})
+				;;
+			esac
+			;;
+		esac
+
+		case "${COMP_WORDS[1]}" in
+		rebuild-inventory|remove-group|remove-groups|remove-host|remove-hosts)
+			commands=$(add_option_if_not_in_list "--force" ${commands})
+			;;
+		esac
+	fi
+
+	case "${COMP_WORDS[1]}" in
+	add-host|add-hosts)
+		if [ ${non_options} -eq 1 ]; then
+			available_groups=$(cmtinv list-groups --color never --format ssv 2> /dev/null)
+			commands="${commands} ${available_groups}"
+		fi
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	ping)
+		available_groups=$(cmtinv list-groups --color never --format ssv 2> /dev/null)
+		available_hosts=$(cmtinv list-hosts --color never --format ssv 2> /dev/null)
+		commands="${commands} ${available_groups} ${available_hosts}"
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	add-group|add-groups|add-host|add-hosts|inventory|inv|list-groups|list-hosts|ping|rebuild-inventory|remove-group|remove-groups|remove-host|remove-hosts|set-group-var|set-group-vars|set-host-var|set-host-vars|set-var|set-vars|unset-group-var|unset-group-vars|unset-host-var|unset-host-vars|unset-var|unset-vars)
+		COMPREPLY=( $(compgen -W "${commands}" -- "$2") )
+		return
+		;;
+	*)
+		if [ ${COMP_CWORD} -eq 1 ]; then
+			COMPREPLY=( $(compgen -W "${all_commands_help}" -- "$2") )
+			return
+		fi
+	esac
+}
+
+complete -F _cmtinv cmtinv

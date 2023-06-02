@@ -22,7 +22,7 @@ import sys
 from typing import Dict, List, Set, Tuple, Union
 
 from cmttypes import deep_get, DictPath, FilePath, SecurityPolicy
-from cmtpaths import BINDIR, HOMEDIR, CMTDIR, CMT_LOGS_DIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
+from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BASH_COMPLETION_DIRNAME, BINDIR, HOMEDIR, CMTDIR, CMT_LOGS_DIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, CMT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIRNAME, CMT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
 
@@ -46,6 +46,8 @@ DIRECTORIES = [
 	(CMT_HOOKS_DIR, 0o755),
 	(FilePath(os.path.join(CMT_HOOKS_DIR, "pre-upgrade.d")), 0o755),
 	(FilePath(os.path.join(CMT_HOOKS_DIR, "post-upgrade.d")), 0o755),
+	(BASH_COMPLETION_BASE_DIR, 0o755),
+	(BASH_COMPLETION_DIR, 0o755),
 ]
 
 EXECUTABLE_SYMLINKS = [
@@ -60,7 +62,10 @@ MISC_SYMLINKS = [
 	(FilePath(os.path.join(os.getcwd(), ANSIBLE_PLAYBOOK_DIRNAME)), ANSIBLE_PLAYBOOK_DIR),
 	(FilePath(os.path.join(os.getcwd(), THEME_DIRNAME)), THEME_DIR),
 	(FilePath(os.path.join(os.getcwd(), PARSER_DIRNAME)), PARSER_DIR),
-	(FilePath(os.path.join(os.getcwd(), VIEW_DIRNAME)), VIEW_DIR)
+	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmt")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmt"))),
+	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmtadm")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmtadm"))),
+	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmtinv")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmtinv"))),
+	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmu")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmu"))),
 ]
 
 # Distros in always-fallback-distros will always use pip

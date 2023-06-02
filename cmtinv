@@ -42,7 +42,7 @@ from ansible_helper import ANSIBLE_INVENTORY
 import cmtlib
 from cmtlib import read_cmtconfig
 
-from ansithemeprint import ANSIThemeString, ansithemeprint
+from ansithemeprint import ANSIThemeString, ansithemeprint, ansithemestring_join_tuple_list
 
 import about
 PROGRAMDESCRIPTION = "Query or modify the host inventory"
@@ -618,11 +618,15 @@ def inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0
 	"""
 
+	color = "always"
+
 	include_groupvars = False
 	include_hostvars = False
 
-	for opt, _optarg in options:
-		if opt == "--include-vars":
+	for opt, optarg in options:
+		if opt == "--color":
+			color = optarg
+		elif opt == "--include-vars":
 			include_groupvars = True
 			include_hostvars = True
 
@@ -632,10 +636,11 @@ def inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 		groups = args[0].split(",")
 
 	for item in ansible_get_inventory_pretty(groups = groups, highlight = True, include_groupvars = include_groupvars, include_hostvars = include_hostvars):
-		ansithemeprint(item)
+		ansithemeprint(item, color = color)
 
 	return 0
 
+# pylint: disable-next=unused-argument
 def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	List groups
@@ -647,19 +652,46 @@ def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0
 	"""
 
-	del args
+	color = "always"
+
+	# Valid formats:
+	# inventory = Normal output format (default)
+	# csv = Comma-separated values
+	# ssv = Space-separated values
+	# tsv = Tab-separated values
+	output_format = "inventory"
 
 	include_groupvars = False
 
-	for opt, _optarg in options:
-		if opt == "--include-vars":
+	for opt, optarg in options:
+		if opt == "--color":
+			color = optarg
+		elif opt == "--format":
+			output_format = optarg
+		elif opt == "--include-vars":
 			include_groupvars = True
 
-	for item in ansible_get_inventory_pretty(groups = None, highlight = True, include_groupvars = include_groupvars, include_hosts = False):
-		ansithemeprint(item)
+	if output_format != "inventory":
+		separator = ""
+		if output_format == "csv":
+			separator = ","
+		elif output_format == "ssv":
+			separator = " "
+		elif output_format == "tsv":
+			separator = "\t"
+
+		output = ""
+
+		d = ansible_get_inventory_dict()
+		groups = natsorted(d.keys())
+		ansithemeprint(ansithemestring_join_tuple_list(groups, formatting = "hostname", separator = ANSIThemeString(separator, "separator")), color = color)
+	else:
+		for item in ansible_get_inventory_pretty(groups = None, highlight = True, include_groupvars = include_groupvars, include_hosts = False):
+			ansithemeprint(item, color  = color)
 
 	return 0
 
+# pylint: disable-next=unused-argument
 def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	List hosts
@@ -671,18 +703,49 @@ def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0
 	"""
 
-	del args
+	color = "always"
+
+	# Valid formats:
+	# inventory = Normal output format (default)
+	# csv = Comma-separated values
+	# ssv = Space-separated values
+	# tsv = Tab-separated values
+	output_format = "inventory"
 
 	include_hostvars = False
 
-	for opt, _optarg in options:
-		if opt == "--include-vars":
+	for opt, optarg in options:
+		if opt == "--color":
+			color = optarg
+		elif opt == "--format":
+			output_format = optarg
+		elif opt == "--include-vars":
 			include_hostvars = True
+
 
 	groups = ["all"]
 
-	for item in ansible_get_inventory_pretty(groups = groups, highlight = True, include_hostvars = include_hostvars):
-		ansithemeprint(item)
+	if output_format != "inventory":
+		separator = ""
+		if output_format == "csv":
+			separator = ","
+		elif output_format == "ssv":
+			separator = " "
+		elif output_format == "tsv":
+			separator = "\t"
+
+		output = ""
+
+		d = ansible_get_inventory_dict()
+		hosts = set()
+		for group in groups:
+			for host in deep_get(d, DictPath(f"{group}#hosts"), []):
+				hosts.add(host)
+		hosts = natsorted(list(hosts))
+		ansithemeprint(ansithemestring_join_tuple_list(hosts, formatting = "hostname", separator = ANSIThemeString(separator, "separator")), color = color)
+	else:
+		for item in ansible_get_inventory_pretty(groups = groups, highlight = True, include_hostvars = include_hostvars):
+			ansithemeprint(item, color = color)
 
 	return 0
 
@@ -910,6 +973,25 @@ COMMANDLINE = {
 				ANSIThemeString(",", "separator"),
 				ANSIThemeString("...", "argument")],
 		"options": {
+			"--color": {
+				"values": [ANSIThemeString("WHEN", "argument")],
+				"description": [ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid arguments are: ", "description")],
+					[ANSIThemeString("always", "argument"),
+					 ANSIThemeString(" (always color the output; default)", "description")],
+					[ANSIThemeString("never", "argument"),
+					 ANSIThemeString(" (never color the output)", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"always",
+						"never",
+					],
+				},
+			},
 			"--include-vars": {
 				"description": [ANSIThemeString("Show variables", "description")],
 			},
@@ -933,6 +1015,51 @@ COMMANDLINE = {
 		"command": ["list-hosts"],
 		"description": [ANSIThemeString("List all hosts", "description")],
 		"options": {
+			"--color": {
+				"values": [ANSIThemeString("WHEN", "argument")],
+				"description": [ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid arguments are: ", "description")],
+					[ANSIThemeString("always", "argument"),
+					 ANSIThemeString(" (always color the output; default)", "description")],
+					[ANSIThemeString("never", "argument"),
+					 ANSIThemeString(" (never color the output)", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"always",
+						"never",
+					],
+				},
+			},
+			"--format": {
+				"values": [ANSIThemeString("FORMAT", "argument")],
+				"description": [ANSIThemeString("Format the output as ", "description"),
+						ANSIThemeString("FORMAT", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid formats are: ", "description")],
+					[ANSIThemeString("inventory", "argument"),
+					 ANSIThemeString(" (inventory in tree format)", "description")],
+					[ANSIThemeString("csv", "argument"),
+					 ANSIThemeString(" (comma-separated values)", "description")],
+					[ANSIThemeString("ssv", "argument"),
+					 ANSIThemeString(" (space-separated values)", "description")],
+					[ANSIThemeString("tsv", "argument"),
+					 ANSIThemeString(" (tab-separated values)", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"inventory",
+						"csv",
+						"ssv",
+						"tsv",
+					],
+				},
+			},
 			"--include-vars": {
 				"description": [ANSIThemeString("Show host variables", "description")],
 			},
@@ -943,6 +1070,51 @@ COMMANDLINE = {
 		"command": ["list-groups"],
 		"description": [ANSIThemeString("List all groups", "description")],
 		"options": {
+			"--color": {
+				"values": [ANSIThemeString("WHEN", "argument")],
+				"description": [ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid arguments are: ", "description")],
+					[ANSIThemeString("always", "argument"),
+					 ANSIThemeString(" (always color the output; default)", "description")],
+					[ANSIThemeString("never", "argument"),
+					 ANSIThemeString(" (never color the output)", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"always",
+						"never",
+					],
+				},
+			},
+			"--format": {
+				"values": [ANSIThemeString("FORMAT", "argument")],
+				"description": [ANSIThemeString("Format the output as ", "description"),
+						ANSIThemeString("FORMAT", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid formats are: ", "description")],
+					[ANSIThemeString("inventory", "argument"),
+					 ANSIThemeString(" (inventory in tree format)", "description")],
+					[ANSIThemeString("csv", "argument"),
+					 ANSIThemeString(" (comma-separated values)", "description")],
+					[ANSIThemeString("ssv", "argument"),
+					 ANSIThemeString(" (space-separated values)", "description")],
+					[ANSIThemeString("tsv", "argument"),
+					 ANSIThemeString(" (tab-separated values)", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"inventory",
+						"csv",
+						"ssv",
+						"tsv",
+					],
+				},
+			},
 			"--include-vars": {
 				"description": [ANSIThemeString("Show group variables", "description")],
 			},

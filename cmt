@@ -1910,6 +1910,9 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		"list": None,
 		"info": None,
 	}
+
+	color = "always"
+
 	# Valid formats:
 	# table = Normal output format (default)
 	# csv = Comma-separated values
@@ -1921,6 +1924,8 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 	for opt, optarg in options:
 		if opt == "--api-group":
 			api_version_selector = optarg
+		elif opt == "--color":
+			color = optarg
 		elif opt == "--format":
 			output_format = optarg
 		elif opt == "--known":
@@ -2212,7 +2217,9 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				       ANSIThemeString("".ljust(cmt_support_len - len(cmt_support_header) + 2), "default"),
 				       ANSIThemeString(local_view_header, "header"),
 				       ANSIThemeString("".ljust(local_view_len - len(local_view_header) + 2), "default")]
-		ansithemeprint(tmp_header)
+		if color == "never":
+			tmp_header = [item.upper() for item in tmp_header]
+		ansithemeprint(tmp_header, color = color)
 
 	for name, shortnames, api_version, namespaced, kind, verbs in filtered_api_resources:
 		if kubernetes_resources is not None:
@@ -2327,7 +2334,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				   [ANSIThemeString("".ljust(cmt_support_len - cmt_support_len_tmp + 2), "default"),
 				    ANSIThemeString(f"{local_view}".ljust(local_view_len + 2), "default")]
 
-		ansithemeprint(tmp_str)
+		ansithemeprint(tmp_str, color = color)
 
 	return result
 
@@ -3244,10 +3251,29 @@ CMT_COMMANDLINE = {
 					"regex": r"^([a-z][a-z0-9.-]*[a-z0-9]?)?",
 				},
 			},
+			"--color": {
+				"values": [ANSIThemeString("WHEN", "argument")],
+				"description": [ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid arguments are: ", "description")],
+					[ANSIThemeString("always", "argument"),
+					 ANSIThemeString(" (always color the output; default)", "description")],
+					[ANSIThemeString("never", "argument"),
+					 ANSIThemeString(" (never color the output)", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"always",
+						"never",
+					],
+				},
+			},
 			"--has-data": {
 				"description": [ANSIThemeString("Only list APIs that have resources", "description")],
 				"extended_description": [
-					[ANSIThemeString("This option will only list APIs that have resources.", "description")],
+					[ANSIThemeString("This option will only list APIs that have data.", "description")],
 					[ANSIThemeString("Note", "note"),
 					 ANSIThemeString(": this can be very slow.", "description")],
 				],
@@ -3257,9 +3283,11 @@ CMT_COMMANDLINE = {
 				"description": [ANSIThemeString("Limit output to ", "description"),
 						ANSIThemeString("FILTER", "argument")],
 				"extended_description": [
-					[ANSIThemeString("Valid values are ", "description"),
-					 ANSIThemeString("unknown", "argument"),
-					 ANSIThemeString(" or a combination of ", "description")],
+					[ANSIThemeString("Valid values are:", "description")],
+					[ANSIThemeString("unknown", "argument"),
+					 ANSIThemeString("/", "separator"),
+					 ANSIThemeString("not-known", "argument")],
+					[ANSIThemeString("or a combination of:", "description")],
 					[ANSIThemeString("known", "argument"),
 					 ANSIThemeString(", ", "separator"),
 					 ANSIThemeString("list", "argument"),
@@ -3271,8 +3299,10 @@ CMT_COMMANDLINE = {
 					 ANSIThemeString("not-info", "argument"),
 					 ANSIThemeString(".", "description")],
 					[ANSIThemeString("unknown", "argument"),
-					 ANSIThemeString(" limits the output to APIs that are", "description")],
-					[ANSIThemeString("unknown by ", "description"),
+					 ANSIThemeString("/", "separator"),
+					 ANSIThemeString("not-known", "argument"),
+					 ANSIThemeString(" limits the output to APIs that", "description")],
+					[ANSIThemeString("are unknown to ", "description"),
 					 ANSIThemeString("CMT", "programname"),
 					 ANSIThemeString(".", "description")],
 					[ANSIThemeString("known", "argument"),
@@ -3362,11 +3392,11 @@ CMT_COMMANDLINE = {
 					[ANSIThemeString("table", "argument"),
 					 ANSIThemeString(" (table with information)", "description")],
 					[ANSIThemeString("csv", "argument"),
-					 ANSIThemeString(" (comma-separated values))", "description")],
+					 ANSIThemeString(" (comma-separated values)", "description")],
 					[ANSIThemeString("ssv", "argument"),
-					 ANSIThemeString(" (space-separated values))", "description")],
+					 ANSIThemeString(" (space-separated values)", "description")],
 					[ANSIThemeString("tsv", "argument"),
-					 ANSIThemeString(" (tab-separated values))", "description")],
+					 ANSIThemeString(" (tab-separated values)", "description")],
 					[ANSIThemeString("entry", "argument"),
 					 ANSIThemeString(" (used when adding API support to CMT)", "description")]
 				],

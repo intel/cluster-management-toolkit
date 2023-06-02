@@ -1,0 +1,192 @@
+add_option_if_not_in_list() {
+	new_option=$1
+	shift
+	options=$*
+
+	for option in ${COMP_WORDS[@]}; do
+		case "${option}" in
+		-*)
+			# OK, it's an option; does it match the one we're passing in?
+			if [ ${option} = ${new_option} ]; then
+				# OK, we found a match and thus we don't add it to options
+				printf  -- "${options}"
+				return
+			fi
+			;;
+		esac
+	done
+
+	printf -- "${options} ${new_option}"
+	return
+}
+
+_cmtadm() {
+	commands=""
+	cni_list="antrea calico canal cilium flannel kube-router weave none"
+	cri_list="docker-shim containerd cri-o"
+
+	non_options=0
+	skip_optargs=0
+
+	case "${COMP_WORDS[1]}" in
+	--help|help|--version|version)
+		COMPREPLY=( $(compgen -W "" -- "$2") )
+		return
+		;;
+	esac
+
+	# We will ignore manual mixes of non-options and options
+	# and let the command parser whine about that instead
+	# 0 programname
+	# 1 command
+	# 2+ options followed by args
+	if [ ${COMP_CWORD} -gt 1 ];  then
+		for optind in $(seq 2 $(( COMP_CWORD - 1 ))); do
+			if [ ${COMP_CWORD} -eq 2 ]; then
+				break
+			fi
+
+			if [ ${skip_optargs} -gt 0 ]; then
+				skip_optargs=$(( skip_optargs - 1 ))
+				continue
+			fi
+
+			case "${COMP_WORDS[${optind}]}" in
+			--help)
+				# No further suggestions
+				COMPREPLY=( $(compgen -W "" -- "$2") )
+				return
+				;;
+			--enable-dra|--list-tasks|--no-cache-update|--no-password|--override|--override-cni|--reinstall|--resume|--save-ansible-logs)
+				# These options don't take any arguments
+				;;
+			--control-plane|--cri|--skip-tasks|--start-at-task|--usergroup)
+				# These options take 1 argument
+				skip_optargs=1
+				;;
+			*)
+				# We didn't match any options, so this has to be an argument
+				non_options=$(( non_options + 1 ))
+				;;
+			esac
+		done
+
+		case "${COMP_WORDS[1]}" in
+		taint|untaint)
+			# These commands accept 2 arguments
+			if [ ${non_options} -ge 2 ]; then
+				COMPREPLY=( $(compgen -W "" -- "$2") )
+				return
+			fi
+			;;
+		*)
+			# All other commands accept either 1 or zero
+			# These commands accept 2 arguments
+			if [ ${non_options} -ge 1 ]; then
+				COMPREPLY=( $(compgen -W "" -- "$2") )
+				return
+			fi
+			;;
+		esac
+	fi
+
+	# command followed by option followed by --help is always valid
+	if [ ${COMP_CWORD} -eq 2 ]; then
+		commands=$(add_option_if_not_in_list "--help" ${commands})
+	fi
+
+	case "$3" in
+	--cri)
+		COMPREPLY=( $(compgen -W "${cri_list}" -- "$2") )
+		return
+		;;
+	--control-plane|--start-at-task|--usergroup)
+		# --control-plane is any valid hostname
+		# --skip-tasks is a comma-separated list of integers [0,max_tasks]
+		# --start-at-task can be any positive integer [0,max_tasks]
+		# --usergroup is any valid groupname
+		COMPREPLY=( $(compgen -W "" -- "$2") )
+		return
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	setup-cni)
+		commands=$(add_option_if_not_in_list "${cni_list}" ${commands})
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	setup-control-plane)
+		if [ ${non_options} -eq 0 ]; then
+			commands=$(add_option_if_not_in_list "${cni_list}" ${commands})
+		fi
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	taint-control-plane|untaint-control-plane|teardown-control-plane)
+		control_planes=$(kubectl get no --no-headers | grep -E "control-plane|master" | cut -d' ' -f1)
+		commands=$(add_option_if_not_in_list "${control_planes}" ${commands})
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	import-cluster|prepare|purge-control-plane|setup-cni|setup-control-plane|teardown-control-plane|uninstall-cni|upgrade-control-plane)
+		commands=$(add_option_if_not_in_list "-Y" ${commands})
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	check-versions|cv|upgrade-control-plane)
+		commands=$(add_option_if_not_in_list "--no-cache-update" ${commands})
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	prepare)
+		commands=$(add_option_if_not_in_list "--control-plane" ${commands})
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	setup-control-plane)
+		commands=$(add_option_if_not_in_list "--cri" ${commands})
+		commands=$(add_option_if_not_in_list "--enable-dra" ${commands})
+		commands=$(add_option_if_not_in_list "--override-cni" ${commands})
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	upgrade-control-plane)
+		commands=$(add_option_if_not_in_list "--override" ${commands})
+		commands=$(add_option_if_not_in_list "--reinstall" ${commands})
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	audit)
+		commands=$(add_option_if_not_in_list "--usergroup" ${commands})
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	preflight-check|prepare)
+		commands=$(add_option_if_not_in_list "--no-password" ${commands})
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	prepare|purge-control-plane|setup-control-plane|teardown-control-plane|upgrade-control-plane)
+		commands=$(add_option_if_not_in_list "--list-tasks" ${commands})
+		commands=$(add_option_if_not_in_list "--resume" ${commands})
+		commands=$(add_option_if_not_in_list "--save-ansible-logs" ${commands})
+		commands=$(add_option_if_not_in_list "--skip-tasks" ${commands})
+		commands=$(add_option_if_not_in_list "--start-at-task" ${commands})
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	audit|check-versions|cv|help|--help|import-cluster|preflight-check|prepare|purge-control-plane|setup-cni|setup-control-plane|taint-control-plane|teardown-control-plane|troubleshoot|uninstall-cni|untaint-control-plane|upgrade-cni|upgrade-control-plane|version|--version)
+		COMPREPLY=( $(compgen -W "${commands}" -- "$2") )
+		return
+		;;
+	*)
+		if [ ${COMP_CWORD} -eq 1 ]; then
+			COMPREPLY=( $(compgen -W "audit check-versions cv import-cluster preflight-check prepare purge-control-plane setup-cni setup-control-plane taint-control-plane teardown-control-plane troubleshoot uninstall-cni untaint-control-plane upgrade-control-plane upgrade-cni help version --help --version" -- "$2") )
+			return
+		fi
+	esac
+}
+
+complete -F _cmtadm cmtadm

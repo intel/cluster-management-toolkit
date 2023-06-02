@@ -11954,20 +11954,49 @@ def list_namespaces(options: List[Tuple[str, str]], args: List[str]) -> None:
 	List all available namespaces
 	"""
 
+	color = "always"
+
+	# Valid formats:
+	# default = Normal output format (default)
+	# csv = Comma-separated values
+	# ssv = Space-separated values
+	# tsv = Tab-separated values
+	output_format = "default"
+
+	for opt, optarg in options:
+		if opt == "--color":
+			color = optarg
+		elif opt == "--format":
+			output_format = optarg
+
 	init_kubernetes_client()
 
 	tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
-	if status == 200:
-		ansithemeprint([ANSIThemeString("Valid namespaces: ", "default")] +
-			  ansithemestring_join_tuple_list([deep_get(item, DictPath("metadata#name")) for item in tmp], formatting = "argument", separator = ANSIThemeString(", ", "separator")) +
-			 [ANSIThemeString(".", "separator")])
-	elif status in (42503, 42504):
+	if status in (42503, 42504):
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": API-server unavailable", "default")], stderr = True)
-	else:
+		sys.exit(errno.ENOENT)
+	elif status != 200:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": API-server returned ", "default"),
 				ANSIThemeString(f"{status}", "errorvalue")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	namespaces = [deep_get(item, DictPath("metadata#name")) for item in tmp]
+
+	if output_format == "default":
+		ansithemeprint([ANSIThemeString("Valid namespaces: ", "default")] +
+			       ansithemestring_join_tuple_list(namespaces, formatting = "namespace", separator = ANSIThemeString(", ", "separator")) +
+			       [ANSIThemeString(".", "separator")], color = color)
+	else:
+		if output_format == "csv":
+			separator = ","
+		elif output_format == "ssv":
+			separator = " "
+		elif output_format == "tsv":
+			separator = "\t"
+
+		ansithemeprint(ansithemestring_join_tuple_list(namespaces, formatting = "namespace", separator = ANSIThemeString(separator, "separator")), color = color)
 
 # pylint: disable-next=unused-argument
 def list_views(options: List[Tuple[str, str]], args: List[str]) -> None:
@@ -12263,6 +12292,53 @@ COMMANDLINE = {
 		"command": ["list-namespaces"],
 		"description": [ANSIThemeString("List valid namespaces and exit", "description")],
 		"callback": list_namespaces,
+		"options": {
+			"--color": {
+				"values": [ANSIThemeString("WHEN", "argument")],
+				"description": [ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid arguments are: ", "description")],
+					[ANSIThemeString("always", "argument"),
+					 ANSIThemeString(" (always color the output; default)", "description")],
+					[ANSIThemeString("never", "argument"),
+					 ANSIThemeString(" (never color the output)", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"always",
+						"never",
+					],
+				},
+			},
+			"--format": {
+				"values": [ANSIThemeString("FORMAT", "argument")],
+				"description": [ANSIThemeString("Format the output as ", "description"),
+						ANSIThemeString("FORMAT", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid formats are: ", "description")],
+					[ANSIThemeString("default", "argument"),
+					 ANSIThemeString(" (default format)", "description")],
+					[ANSIThemeString("csv", "argument"),
+					 ANSIThemeString(" (comma-separated values)", "description")],
+					[ANSIThemeString("ssv", "argument"),
+					 ANSIThemeString(" (space-separated values)", "description")],
+					[ANSIThemeString("tsv", "argument"),
+					 ANSIThemeString(" (tab-separated values)", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"default",
+						"csv",
+						"ssv",
+						"tsv",
+					],
+				},
+			},
+		},
 	},
 	"List Views": {
 		"command": ["list-views"],
