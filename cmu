@@ -21,7 +21,7 @@ import copy
 import csv
 import curses
 from curses import wrapper
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import errno
 from getpass import getuser
 import http.client
@@ -1732,8 +1732,15 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					if end_time is None or start_time is None:
 						duration = -1
 					else:
-						timediff = timestamp_to_datetime(end_time) - timestamp_to_datetime(start_time)
-						duration = timediff.days * 24 * 60 * 60 + timediff.seconds
+						datetime_start = timestamp_to_datetime(start_time)
+						if isinstance(end_time, int):
+							datetime_end = timedelta(seconds = end_time)
+							timediff = datetime_start + datetime_end
+							duration = timediff
+						else:
+							datetime_end = timestamp_to_datetime(end_time)
+							timediff = datetime_end - datetime_start
+							duration = timediff.days * 24 * 60 * 60 + timediff.seconds
 						_values.append((duration, "raw"))
 				elif ptype == "comparison":
 					# Input is two paths; output is the value of the first path and -2/-1/0/1 (for type mismatch, lt, eq, gt)
