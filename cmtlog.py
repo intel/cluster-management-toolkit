@@ -5,7 +5,7 @@
 Structured log module for CMT
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import auto, Enum
 import sys
 from typing import cast, Dict, List, Optional, Union
@@ -32,7 +32,7 @@ class CMTLog:
 	The AUDIT log is always synchronous (flushed immediately).
 	All other logs require flush() to be called.
 
-	If no timestamp is passed now() will be used.
+	If no timestamp is passed now(timezone.utc) will be used.
 	"""
 
 	log: List[Dict] = []
@@ -44,7 +44,7 @@ class CMTLog:
 			   severity: LogLevel = LogLevel.INFO, timestamp: Optional[datetime] = None,
 			   facility: str = "", file: str = "", function: str = "", lineno: int = 0) -> Dict:
 		if timestamp is None:
-			timestamp = datetime.now()
+			timestamp = datetime.now(timezone.utc)
 
 		log_entry: Dict = {
 			"timestamp": timestamp,
@@ -171,7 +171,7 @@ class CMTLog:
 				lineno = int(frame.f_lineno) # type: ignore
 
 			warning_log_entry = {
-				"timestamp": datetime.now(),
+				"timestamp": datetime.now(timezone.utc),
 				"severity": str(LogLevel.WARNING),
 				"facility": "",
 				"file": file,
