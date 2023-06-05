@@ -2300,6 +2300,7 @@ class UIProps:
 
 	# pylint: disable-next=unused-argument
 	def update_timestamp(self, ypos: int, xpos: int) -> None:
+		# Elsewhere we use now(timezone.utc), but here we want the local timezone
 		lastupdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 		rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
 		ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
