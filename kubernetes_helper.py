@@ -559,6 +559,24 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "k10clusterroles",
 	},
 	# authorization.openshift.io
+	("ClusterRole", "authorization.openshift.io"): {
+		"api_paths": ["apis/authorization.openshift.io/v1/"],
+		"api": "clusterroles",
+		"namespaced": False,
+	},
+	("ClusterRoleBinding", "authorization.openshift.io"): {
+		"api_paths": ["apis/authorization.openshift.io/v1/"],
+		"api": "clusterrolebindings",
+		"namespaced": False,
+	},
+	("Role", "authorization.openshift.io"): {
+		"api_paths": ["apis/authorization.openshift.io/v1/"],
+		"api": "roles",
+	},
+	("RoleBinding", "authorization.openshift.io"): {
+		"api_paths": ["apis/authorization.openshift.io/v1/"],
+		"api": "rolebindings",
+	},
 	("RoleBindingRestriction", "authorization.openshift.io"): {
 		"api_paths": ["apis/authorization.openshift.io/v1/"],
 		"api": "rolebindingrestrictions",
@@ -875,6 +893,16 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("ImageContentPolicy", "config.openshift.io"): {
 		"api_paths": ["apis/config.openshift.io/v1/"],
 		"api": "imagecontentpolicies",
+		"namespaced": False,
+	},
+	("ImageDigestMirrorSet", "config.openshift.io"): {
+		"api_paths": ["apis/config.openshift.io/v1/"],
+		"api": "imagedigestmirrorsets",
+		"namespaced": False,
+	},
+	("ImageTagMirrorSet", "config.openshift.io"): {
+		"api_paths": ["apis/config.openshift.io/v1/"],
+		"api": "imagetagmirrorsets",
 		"namespaced": False,
 	},
 	("Infrastructure", "config.openshift.io"): {
@@ -1386,6 +1414,10 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/image.openshift.io/v1/"],
 		"api": "imagestreamtags",
 	},
+	("ImageTag", "image.openshift.io"): {
+		"api_paths": ["apis/image.openshift.io/v1/"],
+		"api": "imagetags",
+	},
 	# imageregistry.operator.openshift.io
 	("Config", "imageregistry.operator.openshift.io"): {
 		"api_paths": ["apis/imageregistry.operator.openshift.io/v1/"],
@@ -1398,6 +1430,14 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"namespaced": False,
 	},
 	# infrastructure.cluster.x-k8s.io
+	("Metal3Remediation", "infrastructure.cluster.x-k8s.io"): {
+		"api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+		"api": "metal3remediations",
+	},
+	("Metal3RemediationTemplate", "infrastructure.cluster.x-k8s.io"): {
+		"api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+		"api": "metal3remediationtemplates",
+	},
 	("OpenStackCluster", "infrastructure.cluster.x-k8s.io"): {
 		"api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1alpha4/"],
 		"api": "openstackclusters",
@@ -2144,6 +2184,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "oauthclients",
 		"namespaced": False,
 	},
+	("UserOAuthAccessToken", "oauth.openshift.io"): {
+		"api_paths": ["apis/oauth.openshift.io/v1/"],
+		"api": "useroauthaccesstokens",
+		"namespaced": False,
+	},
 	# opentelemetry.io
 	("OpenTelemetryCollector", "opentelemetry.io"): {
 		"api_paths": ["apis/opentelemetry.io/v1alpha1/"],
@@ -2380,11 +2425,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	# quota.openshift.io
 	("AppliedClusterResourceQuota", "quota.openshift.io"): {
 		"api_paths": ["apis/quota.openshift.io/v1/"],
-		"api": "appliedclusterresourcequota",
+		"api": "appliedclusterresourcequotas",
 	},
 	("ClusterResourceQuota", "quota.openshift.io"): {
 		"api_paths": ["apis/quota.openshift.io/v1/"],
-		"api": "clusterresourcequota",
+		"api": "clusterresourcequotas",
 		"namespaced": False,
 	},
 	# reaper.cassandra-reaper.io
@@ -2465,6 +2510,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"namespaced": False,
 	},
 	# security.openshift.io
+	("RangeAllocation", "security.openshift.io"): {
+		"api_paths": ["apis/security.openshift.io/v1/"],
+		"api": "rangeallocations",
+		"namespaced": False,
+	},
 	("SecurityContextConstraints", "security.openshift.io"): {
 		"api_paths": ["apis/security.openshift.io/v1/"],
 		"api": "securitycontextconstraints",
@@ -4549,7 +4599,7 @@ class KubernetesHelper:
 				# If name is set this is a read request, not a list request
 				if name != "":
 					return d, status
-				return d["items"], status
+				return deep_get(d, DictPath("items"), []), status
 
 			if status in (204, 400, 403, 503):
 				# We did not get any data, but we might not want to fail
