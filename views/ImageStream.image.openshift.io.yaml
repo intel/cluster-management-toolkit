@@ -1,0 +1,38 @@
+kind: "ImageStream"
+api_family: "image.openshift.io"
+default_command: "imagestreams.image.openshift.io"
+command:
+- "imagestream.image.openshift.io"
+- "imagestreams.openshift"
+- "imagestream.openshift"
+- "osimagestreams"
+- "osimagestream"
+- "osimgstreams"
+- "osimgstream"
+listview:
+  name: "Image Streams"
+  group: "OpenShift"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "image_repository", "tags", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+  fields:
+    image_repository:
+      header: "Image Repository:"
+      path: "status#publicDockerImageRepository"
+      type: "str"
+    tags:
+      header: "Tags:"
+      paths:
+      - path: "status#tags"
+        pathtype: "items"
+        subpaths:
+        - "tag"
+      type: "raw"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "version"

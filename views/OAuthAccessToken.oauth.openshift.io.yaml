@@ -1,0 +1,41 @@
+kind: "OAuthAccessToken"
+api_family: "oauth.openshift.io"
+default_command: "oauthaccesstokens.oauth.openshift.io"
+command:
+- "oauthaccesstoken.oauth.openshift.io"
+- "oauthaccesstokens.openshift"
+- "oauthaccesstoken.openshift"
+- "osoauthaccesstokens"
+- "osoauthaccesstoken"
+listview:
+  name: "OAuth Access Tokens"
+  group: "OpenShift"
+  field_indexes:
+    Wide:
+      fields: ["name", "user_name", "client_name", "expiration", "redirect_uri", "scopes", "age"]
+    Normal:
+      fields: ["name", "user_name", "client_name", "expiration", "age"]
+  fields:
+    client_name:
+      header: "Client Name:"
+      path: "clientName"
+      type: "str"
+    expiration:
+      header: "Expiration:"
+      paths:
+      - paths: [["metadata#creationTimestamp"], ["expiresIn"]]
+        pathtype: "timediff"
+      formatter: "timestamp"
+    redirect_uri:
+      header: "Redirect URI:"
+      path: "redirectURI"
+      type: "str"
+    scopes:
+      header: "Scopes:"
+      path: "scopes"
+      type: "raw"
+      formatter: "list"
+    user_name:
+      header: "User Name:"
+      path: "userName"
+      type: "str"

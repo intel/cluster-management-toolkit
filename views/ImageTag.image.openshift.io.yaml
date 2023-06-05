@@ -1,0 +1,48 @@
+kind: "ImageTag"
+api_family: "image.openshift.io"
+default_command: "imagetags.image.openshift.io"
+command:
+- "imagetag.image.openshift.io"
+- "imagetags.openshift"
+- "imagetag.openshift"
+- "osimagetags"
+- "osimagetag"
+- "osimgtags"
+- "osimgtag"
+listview:
+  name: "Image Tags"
+  group: "OpenShift"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "spec", "import_policy", "age"]
+      sortcolumn: "namespace"
+  fields:
+    import_policy:
+      header: "Import Policy:"
+      path: "spec#importPolicy#importMode"
+      type: "str"
+    spec:
+      header: "Spec:"
+      paths:
+      - path: "spec#importPolicy"
+        pathtype: "substitution"
+        when:
+        - key: "scheduled"
+          eq: true
+        substitute: "Scheduled"
+      - path: "status"
+        pathtype: "substitution"
+        when:
+        - key: "tag"
+          eq: "latest"
+        substitute: "Track"
+      - path: "status"
+        pathtype: "substitution"
+        when:
+        - key: "tag"
+          key_exists: true
+        - key: "tag"
+          ne: "latest"
+        substitute: "Tag"
+      default: ["<unknown>"]
+      formatter: "list"

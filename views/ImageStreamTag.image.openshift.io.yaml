@@ -1,0 +1,26 @@
+kind: "ImageStreamTag"
+api_family: "image.openshift.io"
+default_command: "imagestreamtags.image.openshift.io"
+command:
+- "imagestreamtag.image.openshift.io"
+- "imagestreamtags.openshift"
+- "imagestreamtag.openshift"
+- "osimagestreamtags"
+- "osimagestreamtag"
+- "osimgstreamtags"
+- "osimgstreamtag"
+listview:
+  name: "Image Stream Tags"
+  group: "OpenShift"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "image_reference", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+  fields:
+    image_reference:
+      header: "Image Reference:"
+      path: "image#dockerImageReference"
+      type: "str"
