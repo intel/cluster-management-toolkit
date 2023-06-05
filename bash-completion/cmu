@@ -9,7 +9,7 @@ add_option_if_not_in_list() {
 			# OK, it's an option; does it match the one we're passing in?
 			if [ ${option} = ${new_option} ]; then
 				# OK, we found a match and thus we don't add it to options
-				printf  -- "${options}"
+				printf -- "${options}"
 				return
 			fi
 			;;
@@ -38,7 +38,7 @@ _cmu() {
 	# 0 programname
 	# 1 command
 	# 2+ options followed by args
-	if [ ${COMP_CWORD} -gt 1 ];  then
+	if [ ${COMP_CWORD} -gt 1 ]; then
 		for optind in $(seq 2 $(( COMP_CWORD - 1 ))); do
 			if [ ${COMP_CWORD} -eq 2 ]; then
 				break

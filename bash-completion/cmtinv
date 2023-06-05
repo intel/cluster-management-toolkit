@@ -1,5 +1,3 @@
-shopt -s extglob
-
 add_option_if_not_in_list() {
 	new_option="${1}"
 	shift
@@ -41,7 +39,7 @@ _cmtinv() {
 	# 0 programname
 	# 1 command
 	# 2+ options followed by args
-	if [ ${COMP_CWORD} -gt 1 ];  then
+	if [ ${COMP_CWORD} -gt 1 ]; then
 		for optind in $(seq 2 $(( COMP_CWORD - 1 ))); do
 			if [ ${COMP_CWORD} -eq 2 ]; then
 				break
