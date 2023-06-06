@@ -2256,14 +2256,14 @@ def diff_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 				matched = False
 
 	if matched == True:
-		remnants = [(formatters.format_diff_line(message, override_formatting = {}), severity)]
+		remnants = formatters.format_diff_line(message, override_formatting = {})
 		processor: Tuple[str, Optional[Callable], Dict] = ("block", diff_line_scanner, options)
 	else:
 		if process_block_end == True:
 			if format_block_end == True:
-				remnants = [(formatters.format_diff_line(message, override_formatting = {}), severity)]
+				remnants = formatters.format_diff_line(message, override_formatting = {})
 			else:
-				remnants = [(ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")), severity)]
+				remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 			processor = ("end_block", None, {})
 		else:
 			processor = ("end_block_not_processed", None, {})
@@ -2309,9 +2309,9 @@ def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	if matched == True:
 		if format_block_start == True:
-			remnants = [(formatters.format_diff_line(message, override_formatting = {}), severity)]
+			remnants = formatters.format_diff_line(message, override_formatting = {})
 		else:
-			remnants = [(ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")), severity)]
+			remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 		processor: Tuple[str, Optional[Callable], Dict] = ("start_block", diff_line_scanner, options)
 		return processor, remnants
 

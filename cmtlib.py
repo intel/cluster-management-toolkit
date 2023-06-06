@@ -149,6 +149,8 @@ def split_msg(rawmsg: str) -> List[str]:
 	tmp = rawmsg.replace("\r\n", "\n")
 	# We also replace all \x00 with <NUL>
 	tmp = tmp.replace("\x00", "<NUL>")
+	# We also replace non-breaking space with space
+	tmp = tmp.replace("\xa0", " ")
 	# And remove almost all control characters
 	tmp = re.sub(r"[\x00-\x08\x0b-\x1a\x1c-\x1f\x7f-\x9f]", "\uFFFD", tmp)
 
