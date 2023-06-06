@@ -47,3 +47,10 @@
     - matchtype: "startswith"
       matchkey: "Trace["
       loglevel: "debug"
+- name: "openshift-ingress"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "ingress-canary"
+    container_name: "serve-healthcheck-canary"
+  parser_rules:
+  - name: "ts_8601"
