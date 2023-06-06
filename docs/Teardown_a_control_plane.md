@@ -2,9 +2,13 @@
 
 ## Preparation
 
-Tearing down a control plane in essence means tearing down the cluster. To do this you first need to remove all worker nodes from the cluster; see [Remove worker nodes](Remove_worker_node.md#remove-worker-nodes).
+Tearing down a control plane in essence means tearing down the cluster.
+To do this you first need to remove all worker nodes from the cluster;
+see [Remove worker nodes](Remove_worker_node.md#remove-worker-nodes).
 
-Note that __CMT__ and __kubectl__ supports having multiple clusters configured in `~/.kube/config`. Because of this you need to be very, very careful when tearing down a cluster, to ensure that you don't tear down a different cluster than intended.
+Note that __CMT__ and __kubectl__ supports having multiple clusters configured in `~/.kube/config`.
+Because of this you need to be very, very careful when tearing down a cluster,
+to ensure that you don't tear down a different cluster than intended.
 
 ## Tear down the cluster
 

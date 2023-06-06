@@ -17,4 +17,5 @@ If you haven't already cloned the CMT repository, first do so:
 Running `cmt-install` creates necessary symlinks, directories, etc.,
 and installs the packages necessary to run __CMT__. Note that `cmt-install`
 does not perform any cluster setup; all changes takes place on your
-local computer. To create a cluster, check [Setup a control plane](Setup_a_control_plane.md#setting-up-a-control-plane).
+local computer.
+To create a cluster, check [Setup a control plane](Setup_a_control_plane.md#setting-up-a-control-plane).

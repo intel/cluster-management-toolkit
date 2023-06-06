@@ -1,7 +1,8 @@
 # Pre-requisites / tested platforms for the toolkit
 
-The installer, `cmt-install` has only been tested on Debian and Ubuntu.
-Any up to date Debian-derivative is likely work.
+The installer, `cmt-install` has only been tested on Debian, Ubuntu, and openSUSE/SLES.
+Any up to date Debian-derivative is likely work, but openSUSE 15/SLES 15 should work too,
+as long as python38 or later is installed.
 
 If the dependencies are installed manually, any distro or self-compiled
 system that provides recent enough versions of all pre-requisites should be expected to work.
@@ -20,15 +21,20 @@ in path lookup and various I/O-operations.
 
 # Pre-requisites / tested platforms for setting up Kubernetes clusters
 
-The development platform for __CMT__ is Debian and Ubuntu, and those two are thus the most tested platforms. But limited testing has also been performed on RHEL8; some functionality, such as support for _CRI-O_, is currently missing on RHEL, but other than that it should be possible to install a cluster on a RHEL system using `cmtadm`/`cmt`.
+The development platform for __CMT__ is Debian and Ubuntu, and those two are thus the most tested platforms.
+Support for running __CMT__ on openSUSE/SLES systems has been added, but only for RKE2 clusters.
+Limited testing has also been performed on RHEL8; some functionality, such as support for _CRI-O_,
+is currently missing on RHEL, but other than that it should be possible to install a cluster on a RHEL system using `cmtadm`/`cmt`.
 
-Support for Suse is currently work in progress.  Other distributions are not supported at this point. This also applies to Windows.
+Other distributions are not supported at this point. This also applies to Windows.
 
 # Supported hardware architectures
 
 The only supported hardware architecture at the moment is _x86-64_/_amd64_.
-_arm_, _arm64_, _ppc64le_, and _s390x_ are not supported, but may be added if there's enough interest.
+_arm_, _arm64_, _ppc64le_, and _s390x_ are not supported, but may be added if there's interest.
 
 # Other pre-requisites
 
-`cmt-install`, `cmtadm`, `cmt`, and `cmu` requires the user to have _sudo_ access. None of the programs can be run directly as root. The user also needs _sudo_ access on any remote system intended for use as control planes or worker nodes in a cluster.
+`cmt-install`, `cmtadm`, `cmt`, and `cmu` requires the user to have _sudo_ access.
+For security reasons none of the programs can be run directly as root.
+The user also needs _sudo_ access on any remote system intended for use as control planes or worker nodes in a cluster.
