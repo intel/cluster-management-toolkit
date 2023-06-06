@@ -4223,6 +4223,8 @@ def get_inventory_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, 
 		except socket.gaierror as e:
 			if str(e).endswith("Name or service not known"):
 				pass
+			elif str(e).endswith("No address associated with hostname"):
+				pass
 			elif str(e).endswith("Temporary failure in name resolution"):
 				pass
 			else:
