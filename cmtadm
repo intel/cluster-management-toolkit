@@ -1999,7 +1999,7 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict) -> None:
 			server = deep_get(cluster, DictPath("cluster#server"), "")
 			if server.startswith("https://127") or server == "::1":
 				tmp = re.match(r"^(https://)([^:]+)(:.*)", server)
-				if tmp is None:
+				if tmp is None or len(tmp) == 0:
 					ansithemeprint([ANSIThemeString("Error", "error"),
 							ANSIThemeString(": Failed to extract server address.", "default")])
 					ansithemeprint([ANSIThemeString("This is probably a programming error", "default"),
@@ -2028,7 +2028,7 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict) -> None:
 					if  address_type == "InternalIP":
 						internal_ip = deep_get(address, DictPath("hostname"), "")
 						break
-				if internal_ip is not None and internal_ip != server_address:
+				if internal_ip is not None and len(internal_ip) > 0 and internal_ip != server_address:
 					d["clusters"][i]["cluster"]["server"] = f"{prefix}{internal_ip}{server_port_and_path}"
 
 	secure_write_yaml(KUBE_CONFIG_FILE, d, permissions = 0o600, sort_keys = False)
