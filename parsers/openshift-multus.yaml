@@ -3,12 +3,23 @@
   matchkeys:
   - pod_name: "multus"
     container_name: "kube-multus"
+  - pod_name: "multus-additional-cni-plugins"
+  - pod_name: "multus-additional-cni-plugins"
+    container_type: "init_container"
   parser_rules:
   - name: "ts_8601"
   - name: "json"
     options:
       versions:
       - "cniVersion"
+  - name: "custom_splitter"
+    options:
+      regex: '^\[(cnibincopy)\]\s(.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"
