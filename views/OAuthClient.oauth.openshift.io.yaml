@@ -1,0 +1,85 @@
+kind: "OAuthClient"
+api_family: "oauth.openshift.io"
+default_command: "oauthclients.oauth.openshift.io"
+command:
+- "oauthclient.oauth.openshift.io"
+- "oauthclients.openshift"
+- "oauthclient.openshift"
+- "osoauthclients"
+- "osoauthclient"
+listview:
+  name: "OAuth Clients"
+  group: "OpenShift"
+  field_indexes:
+    Wide:
+      fields: ["name", "secret", "www_challenge", "token_max_age", "redirect_uris", "age"]
+    Normal:
+      fields: ["name", "secret", "www_challenge", "token_max_age", "age"]
+  fields:
+    redirect_uris:
+      header: "Redirect URIs:"
+      path: "redirectURIs"
+      type: "raw"
+      formatter: "list"
+    secret:
+      header: "Secret:"
+      path: "secret"
+      type: "str"
+    token_max_age:
+      header: "Token Max Age:"
+      path: "accessTokenMaxAgeSeconds"
+      type: "int"
+      default: "<default>"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    www_challenge:
+      header: "WWW Challenge:"
+      path: "respondWithChallenges"
+      type: "bool"
+      default: false
+infoview:
+  name: "OAuth Client Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["secret", "www_challenge", "token_max_age", "redirect_uris"]
+    rows:
+      secret:
+        header: [["Secret:", ["main", "infoheader"]]]
+        path: "secret"
+        type: "str"
+      token_max_age:
+        header: [["Token Max Age:", ["main", "infoheader"]]]
+        path: "accessTokenMaxAgeSeconds"
+        type: "int"
+        default: "<default>"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      www_challenge:
+        header: [["Respond with Challenge:", ["main", "infoheader"]]]
+        path: "respondWithChallenges"
+        type: "bool"
+        default: false
+      redirect_uris:
+        header: [["R", ["main", "infoheader_shortcut"]], ["edirect URIs:", ["main", "infoheader"]]]
+        path: "redirectURIs"
+        type: "raw"
+        formatter: "list"
+  shortcuts:
+    "Show Redirect URI list":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "List redirect URIs"
+      widget: "windowwidget"
+      title: "Redirect URI:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["redirectURIs"]
+      # Not supported for now
+      sortcolumn: "uri"

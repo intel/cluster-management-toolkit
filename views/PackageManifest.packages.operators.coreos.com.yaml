@@ -9,10 +9,107 @@ listview:
   group: "API & Extendability"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "catalog", "age"]
+      fields: ["namespace", "name", "catalog", "channels", "age"]
       sortcolumn: "namespace"
   fields:
     catalog:
       header: "Catalog:"
       path: "status#catalogSourceDisplayName"
       type: "str"
+    channels:
+      header: "Channels:"
+      path: "status#channels"
+      type: "len"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+infoview:
+  name: "Package Manifest Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["package_name", "catalog_header", "catalog_display_name", "catalog_source", "catalog_namespace", "catalog_publisher", "provider_header", "provider_name", "provider_url", "channels", "default_channel"]
+    rows:
+      catalog_header:
+        header: [["Catalog:", ["main", "infoheader"]]]
+      catalog_display_name:
+        header: [["  Display Name:", ["main", "infoheader"]]]
+        path: "status#catalogSourceDisplayName"
+        type: "str"
+      catalog_namespace:
+        header: [["  ", ["main", "infoheader"]], ["C", ["main", "infoheader_shortcut"]], ["atalog Namespace:", ["main", "infoheader"]]]
+        path: "status#catalogSourceNamespace"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "namespace"
+      catalog_publisher:
+        header: [["  Publisher:", ["main", "infoheader"]]]
+        path: "status#catalogSourcePublisher"
+        type: "str"
+      catalog_source:
+        header: [["  Source:", ["main", "infoheader"]]]
+        path: "status#catalogSource"
+        type: "str"
+      channels:
+        header: [["C", ["main", "infoheader"]], ["h", ["main", "infoheader_shortcut"]], ["annels:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#channels"
+          pathtype: "items"
+          subpaths:
+          - "name"
+        formatter: "list"
+      default_channel:
+        header: [["Default Channel:", ["main", "infoheader"]]]
+        path: "status#defaultChannel"
+        type: "str"
+      package_name:
+        header: [["Package Name:", ["main", "infoheader"]]]
+        path: "status#packageName"
+        type: "str"
+      provider_header:
+        header: [["Provider:", ["main", "infoheader"]]]
+      provider_name:
+        header: [["  Name:", ["main", "infoheader"]]]
+        path: "status#provider#name"
+        type: "str"
+      provider_url:
+        header: [["  URL:", ["main", "infoheader"]]]
+        path: "status#provider#url"
+        type: "str"
+        default: "<unset>"
+  shortcuts:
+    "Catalog Namespace":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for catalog Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Namespace"
+        name_path: "status#catalogSourceNamespace"
+    "Channels":
+      key: "h"
+      read_only: true
+      helptext: "List channels"
+      widget: "windowwidget"
+      title: "Channels:"
+      selectable: true
+      headers: ["Name:", "Display Name:", "Version:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#channels"
+        fields:
+        - "name"
+        - "currentCSVDesc#displayName"
+        - "currentCSVDesc#version"
+        pass_ref: true
+      # Not supported for now
+      sortcolumn: "displayName"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        _pass_selected_obj: true

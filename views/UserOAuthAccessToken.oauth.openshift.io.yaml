@@ -1,20 +1,20 @@
-kind: "OAuthAccessToken"
+kind: "UserOAuthAccessToken"
 api_family: "oauth.openshift.io"
-default_command: "oauthaccesstokens.oauth.openshift.io"
+default_command: "useroauthaccesstokens.oauth.openshift.io"
 command:
-- "oauthaccesstoken.oauth.openshift.io"
-- "oauthaccesstokens.openshift"
-- "oauthaccesstoken.openshift"
-- "osoauthaccesstokens"
-- "osoauthaccesstoken"
+- "useroauthaccesstoken.oauth.openshift.io"
+- "useroauthaccesstokens.openshift"
+- "useroauthaccesstoken.openshift"
+- "osuseroauthaccesstokens"
+- "osuseroauthaccesstoken"
 listview:
-  name: "OAuth Access Tokens"
+  name: "User OAuth Access Tokens"
   group: "OpenShift"
   field_indexes:
     Wide:
       fields: ["name", "user_name", "client_name", "expiration", "redirect_uri", "scopes", "age"]
     Normal:
-      fields: ["name", "user_name", "client_name", "expiration", "age"]
+      fields: ["name", "user_name", "client_name", "expiration", "scopes", "age"]
   fields:
     client_name:
       header: "Client Name:"
@@ -40,7 +40,7 @@ listview:
       path: "userName"
       type: "str"
 infoview:
-  name: "OAuth Access Token Info"
+  name: "User OAuth Access Token Info"
   infopad:
     row_indexes:
       Normal:
