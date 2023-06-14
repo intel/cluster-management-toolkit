@@ -65,7 +65,7 @@ class ThemeString:
 		if not isinstance(string, str):
 			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("ThemeString()", "emphasis"),
-					 ANSIThemeString(" initialised with invalid argument(s):",  "error")],
+					 ANSIThemeString(" initialised with invalid argument(s):", "error")],
 					[ANSIThemeString("string (type: ", "error")],
 					[ANSIThemeString(f"{type(string)}", "argument")],
 					[ANSIThemeString(", expected str):", "error")],
@@ -135,7 +135,7 @@ class ThemeRef:
 		if not isinstance(context, str) or not isinstance(key, str) or (selected is not None and not isinstance(selected, bool)):
 			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("ThemeRef()", "emphasis"),
-					 ANSIThemeString(" initialised with invalid argument(s):",  "error")],
+					 ANSIThemeString(" initialised with invalid argument(s):", "error")],
 					[ANSIThemeString("context (type: ", "error")],
 					[ANSIThemeString(f"{type(context)}", "argument")],
 					[ANSIThemeString(", expected str):", "error")],
@@ -234,7 +234,7 @@ class ThemeArray:
 		if array is None:
 			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("ThemeArray()", "emphasis"),
-					 ANSIThemeString(" initialised with an empty array:",  "error")],
+					 ANSIThemeString(" initialised with an empty array:", "error")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise ValueError("A ThemeArray cannot be None")
 
@@ -243,7 +243,7 @@ class ThemeArray:
 			if not isinstance(item, (ThemeRef, ThemeString)):
 				CMTLog(CMTLogType.DEBUG, [
 						[ANSIThemeString("ThemeArray()", "emphasis"),
-						 ANSIThemeString(" initialised with invalid type ",  "error"),
+						 ANSIThemeString(" initialised with invalid type ", "error"),
 						 ANSIThemeString(f"{type(item)}", "argument"),
 						 ANSIThemeString("; substring:", "error")],
 						[ANSIThemeString(f"{item}", "default")],
@@ -271,7 +271,7 @@ class ThemeArray:
 		if not isinstance(item, (ThemeRef, ThemeString)):
 			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("ThemeArray.append()", "emphasis"),
-					 ANSIThemeString(" called with invalid type ",  "error"),
+					 ANSIThemeString(" called with invalid type ", "error"),
 					 ANSIThemeString(f"{type(item)}", "argument"),
 					 ANSIThemeString("; substring:", "error")],
 					[ANSIThemeString(f"{item}", "default")],
@@ -469,7 +469,7 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 		if fg == bg:
 			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("__init_pair()", "emphasis"),
-					 ANSIThemeString(" called with a color pair where fg == bg (",  "error"),
+					 ANSIThemeString(" called with a color pair where fg == bg (", "error"),
 					 ANSIThemeString(f"{fg}", "argument"),
 					 ANSIThemeString(",", "error"),
 					 ANSIThemeString(f"{bg}", "argument"),
@@ -482,7 +482,7 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 		if str(e) in ("init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
 			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("init_pair()", "emphasis"),
-					 ANSIThemeString(" failed; attempting to limit fg & bg to ",  "error"),
+					 ANSIThemeString(" failed; attempting to limit fg & bg to ", "error"),
 					 ANSIThemeString("0", "argument"),
 					 ANSIThemeString("-", "error"),
 					 ANSIThemeString("7", "argument"),
@@ -501,7 +501,7 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 			if fg & 7 == bg & 7:
 				CMTLog(CMTLogType.DEBUG, [
 						[ANSIThemeString("__init_pair()", "emphasis"),
-						 ANSIThemeString(" called with a color pair where fg == bg (",  "error"),
+						 ANSIThemeString(" called with a color pair where fg == bg (", "error"),
 						 ANSIThemeString(f"{fg}", "argument"),
 						 ANSIThemeString(",", "error"),
 						 ANSIThemeString(f"{bg}", "argument"),
@@ -1475,7 +1475,7 @@ def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected:
 		else:
 			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("themearray_flatten()", "emphasis"),
-					 ANSIThemeString(" called with invalid type ",  "error"),
+					 ANSIThemeString(" called with invalid type ", "error"),
 					 ANSIThemeString(f"{type(substring)}", "argument"),
 					 ANSIThemeString("; substring:", "error")],
 					[ANSIThemeString(f"{substring}", "default")],
@@ -3090,7 +3090,7 @@ class UIProps:
 		match_count = 0
 
 		for y, listitem in enumerate(sorted_list):
-			if hasattr(sorted_list[0],  "namespace"):
+			if hasattr(sorted_list[0], "namespace"):
 				if namespace is not None and listitem.namespace != namespace:
 					continue
 

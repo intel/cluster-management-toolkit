@@ -2025,7 +2025,7 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict) -> None:
 				internal_ip = None
 				for address in addresses:
 					address_type = deep_get(address, DictPath("type"), "")
-					if  address_type == "InternalIP":
+					if address_type == "InternalIP":
 						internal_ip = deep_get(address, DictPath("hostname"), "")
 						break
 				if internal_ip is not None and len(internal_ip) > 0 and internal_ip != server_address:
@@ -3741,7 +3741,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
-	if  k8s_distro == "rke2":
+	if k8s_distro == "rke2":
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": updates are currently not supported for ", "default"),
 				ANSIThemeString(f"RKE2", "programname"),
@@ -4014,7 +4014,7 @@ def taint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 				ansithemeprint([ANSIThemeString("Tainting control plane(s):", "header")])
 				first = False
 			ansithemeprint([ANSIThemeString(node["name"], "hostname")])
-			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/master", None,  None, "NoSchedule"))
+			_message, status = kh.taint_node(node["name"], node["taints"], ("node-role.kubernetes.io/master", None, None, "NoSchedule"))
 			if status == 304:
 				ansithemeprint([ANSIThemeString("  Not modified", "none")])
 			elif status == 200:
@@ -5115,8 +5115,8 @@ COMMANDLINE = {
 			 ANSIThemeString("--usergroup ", "option"),
 			 ANSIThemeString("USERGROUP", "argument"),
 			 ANSIThemeString(" option,", "description")],
-			[ANSIThemeString("to prevent the permission checker",  "description")],
-			[ANSIThemeString("from complaining about insecure permissions",  "description")],
+			[ANSIThemeString("to prevent the permission checker", "description")],
+			[ANSIThemeString("from complaining about insecure permissions", "description")],
 		],
 		"options": {
 			"--usergroup": {

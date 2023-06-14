@@ -62,6 +62,7 @@ VIEW_DIR = FilePath(os.path.join(CMTDIR, VIEW_DIRNAME))
 
 KUBE_CONFIG_DIR = FilePath(os.path.join(HOMEDIR, ".kube"))
 KUBE_CONFIG_FILE = FilePath(os.path.join(KUBE_CONFIG_DIR, "config"))
+KUBE_CREDENTIALS_FILE = FilePath(os.path.join(KUBE_CONFIG_DIR, "credentials"))
 
 SSH_DIR = FilePath(os.path.join(HOMEDIR, ".ssh"))
 SSH_BIN_PATH = FilePath("/usr/bin/ssh")

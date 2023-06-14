@@ -37,12 +37,12 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run cmt-install?")
 
-from cmtpaths import KUBE_CONFIG_FILE
+from cmtpaths import KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
 import cmtlib
 from cmtlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
 from cmtlog import CMTLogType, CMTLog
 from cmttypes import LogLevel
-from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, FilePathAuditError, SecurityChecks, StatusGroup
+from cmttypes import deep_get, deep_get_with_fallback, deep_set, DictPath, FilePath, FilePathAuditError, SecurityChecks, StatusGroup
 from cmtio import execute_command_with_response, secure_which
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
 
@@ -3370,6 +3370,54 @@ class KubernetesHelper:
 
 		return clusters
 
+	def renew_token(self, cluster_name: str, context_name: str) -> None:
+		# If the current cluster_name + context_name
+		# has a matching entry in credentials we (attempt to) authenticate here
+
+		try:
+			credentials = secure_read_yaml(FilePath(str(KUBE_CREDENTIALS_FILE)))
+		except FilePathAuditError as e:
+			if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
+				return
+		except FileNotFoundError:
+			# We can handle FileNotFoundError and PARENT_DOES_NOT_EXIST;
+			# other exceptions might be security related, so we let them raise
+			return
+		except yaml.parser.ParserError as e:
+			e.args += (f"{config_path} is not valid YAML; aborting.", )
+			raise
+
+		# We got ourselves a credentials file;
+		# is there a password for the current cluster + context?
+		name = deep_get(credentials, DictPath(f"clusters#{cluster_name}#contexts#{context_name}#name"), None)
+		password = deep_get(credentials, DictPath(f"clusters#{cluster_name}#contexts#{context_name}#password"), None)
+
+		if name is None or password is None:
+			return
+
+		# This only applies for CRC
+		if "crc" in cluster_name:
+			url = "https://oauth-openshift.apps-crc.testing/oauth/authorize?response_type=token&client_id=openshift-challenging-client"
+			auth = f"{name}:{password}".encode("ascii")
+
+			header_params = {
+				"X-CSRF-Token": "xxx",
+				"Authorization": f"Basic {base64.b64encode(auth).decode('ascii')}",
+				# "Accept": "application/json",
+				# "Content-Type": "application/json",
+				"User-Agent": f"{self.programname} v{self.programversion}",
+			}
+
+			connect_timeout: float = 3.0
+			# This isn't ideal; we might need different cluster proxies for different clusters
+			cluster_https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), None)
+			result = self.pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False)
+			if result.status == 302:
+				location = result.headers.get("Location", "")
+				tmp = re.match(r".*implicit#access_token=([^&]+)", location)
+				if tmp is not None:
+					self.token = tmp[1]
+
 	# pylint: disable-next=too-many-return-statements
 	def set_context(self, config_path: Optional[FilePath] = None, name: Optional[str] = None, unchanged_is_success: bool = False) -> bool:
 		"""
@@ -3479,28 +3527,37 @@ class KubernetesHelper:
 		cert = None
 		key = None
 		self.token = None
+		userindex = None
 
-		for user in deep_get(kubeconfig, DictPath("users"), []):
+		for userindex, user in enumerate(deep_get(kubeconfig, DictPath("users"), [])):
 			if deep_get(user, DictPath("name")) == user_name:
-				# cert
-				ccd = deep_get(user, DictPath("user#client-certificate-data"))
-				if ccd is not None:
-					try:
-						cert = base64.b64decode(ccd).decode("utf-8")
-					except UnicodeDecodeError as e:
-						e.args += (f"failed to decode client-certificate-data: {e}", )
+				if len(deep_get(user, DictPath("user"), {})) == 0:
+					# We didn't get any user data at all;
+					# we might still be able to use a token
+					# if this is CRC
+					if "crc" in cluster_name:
+						self.token = ""
+					break
+				else:
+					# cert
+					ccd = deep_get(user, DictPath("user#client-certificate-data"))
+					if ccd is not None:
+						try:
+							cert = base64.b64decode(ccd).decode("utf-8")
+						except UnicodeDecodeError as e:
+							e.args += (f"failed to decode client-certificate-data: {e}", )
 
-				# key
-				ckd = deep_get(user, DictPath("user#client-key-data"))
-				if ckd is not None:
-					try:
-						key = base64.b64decode(ckd).decode("utf-8")
-					except UnicodeDecodeError as e:
-						e.args += (f"failed to decode client-key-data: {e}", )
-						raise
+					# key
+					ckd = deep_get(user, DictPath("user#client-key-data"))
+					if ckd is not None:
+						try:
+							key = base64.b64decode(ckd).decode("utf-8")
+						except UnicodeDecodeError as e:
+							e.args += (f"failed to decode client-key-data: {e}", )
+							raise
 
-				self.token = deep_get(user, DictPath("user#token"))
-				break
+					self.token = deep_get(user, DictPath("user#token"))
+					break
 
 		# We do not have the cert or token needed to access the server
 		if self.token is None and (cert is None or key is None):
@@ -3533,6 +3590,7 @@ class KubernetesHelper:
 		ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
 		# Only permit a limited set of acceptable ciphers
 		ssl_context.set_ciphers(":".join(CIPHERS))
+		# This isn't ideal; we might need different cluster proxies for different clusters
 		cluster_https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), None)
 
 		# If we have a cert we also have a key
@@ -3601,6 +3659,14 @@ class KubernetesHelper:
 						cluster_https_proxy,
 						cert_reqs = "CERT_NONE",
 						ca_certs = None)
+
+		# The token might have expired, so try to renew it
+		if self.token is not None:
+			self.renew_token(cluster_name, context_name)
+			if userindex is not None:
+				# self.token will only be non-None if the user entry
+				# has a token *or* there's an empty user entry
+				deep_set(dictionary = kubeconfig["users"][userindex], path = DictPath("user#token"), value = self.token, create_path = True)
 
 		self.cluster_unreachable = False
 		self.cluster_name = cluster_name
@@ -4119,7 +4185,7 @@ class KubernetesHelper:
 			Parameters:
 				force_refresh (bool): Flush the list (if existing) and create a new one
 			Returns:
-				((kubernetes_resources,  status, modified)):
+				((kubernetes_resources, status, modified)):
 					kubernetes_resources (dict): A list of all Kinds known
 					by kubernetes_helper, with their support level (list, info) set
 					status (int): The HTTP response
@@ -4282,29 +4348,45 @@ class KubernetesHelper:
 		data = None
 		message = ""
 
-		try:
-			if body is not None:
-				result = self.pool_manager.request(method, url, headers = header_params, body = body, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
+		reauth_retry = 1
+
+		while reauth_retry > 0:
+			try:
+				if body is not None:
+					result = self.pool_manager.request(method, url, headers = header_params, body = body, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
+				else:
+					result = self.pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
+				status = result.status
+			except urllib3.exceptions.MaxRetryError as e:
+				# No route to host does not have a HTTP response; make one up...
+				# 503 is Service Unavailable; this is generally temporary, but to distinguish it from a real 503
+				# we prefix it...
+				if "CERTIFICATE_VERIFY_FAILED" in str(e):
+					# Client Handshake Failed (Cloudflare)
+					status = 525
+					if "certificate verify failed" in str(e):
+						tmp = re.match(r".*SSL: CERTIFICATE_VERIFY_FAILED.*certificate verify failed: (.*) \(_ssl.*", str(e))
+						if tmp is not None:
+							message = f"; {tmp[1]}"
+				else:
+					status = 42503
+			except urllib3.exceptions.ConnectTimeoutError:
+				# Connection timed out; the API-server might not be available, suffer from too high load, or similar
+				# 504 is Gateway Timeout; using 42504 to indicate connection timeout thus seems reasonable
+				status = 42504
+
+			# We don't want to try to renew the token multiple times
+			if reauth_retry == 42:
+				break
+
+			if status == 401:
+				# Unauthorized:
+				# Try to renew the token then retry
+				self.renew_token(self.cluster_name, self.context_name)
+				reauth_retry = 42
 			else:
-				result = self.pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
-			status = result.status
-		except urllib3.exceptions.MaxRetryError as e:
-			# No route to host does not have a HTTP response; make one up...
-			# 503 is Service Unavailable; this is generally temporary, but to distinguish it from a real 503
-			# we prefix it...
-			if "CERTIFICATE_VERIFY_FAILED" in str(e):
-				# Client Handshake Failed (Cloudflare)
-				status = 525
-				if "certificate verify failed" in str(e):
-					tmp = re.match(r".*SSL: CERTIFICATE_VERIFY_FAILED.*certificate verify failed: (.*) \(_ssl.*", str(e))
-					if tmp is not None:
-						message = f"; {tmp[1]}"
-			else:
-				status = 42503
-		except urllib3.exceptions.ConnectTimeoutError:
-			# Connection timed out; the API-server might not be available, suffer from too high load, or similar
-			# 504 is Gateway Timeout; using 42504 to indicate connection timeout thus seems reasonable
-			status = 42504
+				reauth_retry = 0
+
 		if status == 200:
 			# YAY, things went fine!
 			data = result.data
@@ -4325,7 +4407,7 @@ class KubernetesHelper:
 				# We got a response, but the data is malformed
 				message = "400: Bad Request [return data invalid]"
 		elif status == 401:
-			# Unauthorized
+			# Unauthorized:
 			message = f"401: Unauthorized; method: {method}, URL: {url}, header_params: {header_params}"
 		elif status == 403:
 			# Forbidden: request denied
@@ -4377,7 +4459,7 @@ class KubernetesHelper:
 		else:
 			CMTLog(CMTLogType.DEBUG, [
 					[ANSIThemeString("__rest_helper_generic_json():", "emphasis")],
-					[ANSIThemeString(f"Unhandled error: {result.status}",  "error")],
+					[ANSIThemeString(f"Unhandled error: {result.status}", "error")],
 					[ANSIThemeString("method: ", "emphasis"),
 					 ANSIThemeString(f"{method}", "argument")],
 					[ANSIThemeString("URL: ", "emphasis"),

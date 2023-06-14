@@ -25,7 +25,7 @@ from cmttypes import deep_get, DictPath, FilePath
 from cmtpaths import BINDIR, CMTDIR, CMT_LOGS_DIR
 from cmtpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
 from cmtpaths import DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
-from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE, SSH_BIN_PATH
+from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE, SSH_BIN_PATH
 import cmtlib
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, ansithemeprint
 
@@ -1045,6 +1045,14 @@ recommended_file_permissions = [
 		"executable": False,
 		"severity": "critical",
 		"justification": [ANSIThemeString("If others users can read or modify cluster configuration files they can obtain cluster access", "default")]
+	},
+	{
+		"path": KUBE_CREDENTIALS_FILE,
+		"alertmask": 0o077,
+		"usergroup_alertmask": 0o007,
+		"executable": False,
+		"severity": "critical",
+		"justification": [ANSIThemeString("If others users can read or modify cluster credential files they can obtain cluster access", "default")]
 	},
 ]
 
