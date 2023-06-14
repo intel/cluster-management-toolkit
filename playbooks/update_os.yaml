@@ -4,7 +4,7 @@
     metadata:
       description: "Update the Operating System"
       summary:
-        "Updated packages":
+        "Upgraded packages":
         - description: "All packages that can be upgraded"
       confirm: true
       allow_on_control_plane: "single"
@@ -28,3 +28,8 @@
       name: "*"
       state: "latest"
     when: "ansible_os_family == 'RedHat'"
+  - name: "Upgrading all packages"  # noqa package-latest
+    shell:  |
+      zypper refresh
+      zypper -n update -y
+    when: "ansible_os_family == 'Suse"
