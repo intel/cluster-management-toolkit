@@ -2026,7 +2026,7 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict) -> None:
 				for address in addresses:
 					address_type = deep_get(address, DictPath("type"), "")
 					if address_type == "InternalIP":
-						internal_ip = deep_get(address, DictPath("hostname"), "")
+						internal_ip = deep_get(address, DictPath("address"), "")
 						break
 				if internal_ip is not None and len(internal_ip) > 0 and internal_ip != server_address:
 					d["clusters"][i]["cluster"]["server"] = f"{prefix}{internal_ip}{server_port_and_path}"
