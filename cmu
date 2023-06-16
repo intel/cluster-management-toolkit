@@ -3923,6 +3923,7 @@ def get_pod_resource_list(obj, **kwargs):
 		rtype = resource_kind_to_rtype(kind)
 
 		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
+		tmp_vlist = []
 		for event in _vlist:
 			event_involved_object_name = deep_get_with_fallback(event, [DictPath("regarding#name"), DictPath("involvedObject#name")])
 			event_involved_object_namespace = deep_get_with_fallback(event, [DictPath("regarding#namespace"), DictPath("involvedObject#namespace")])
@@ -3942,7 +3943,7 @@ def get_pod_resource_list(obj, **kwargs):
 				message = deep_get(event, DictPath("message"), "")
 				message = message.replace("\n", "\\n").rstrip()
 
-				vlist.append({
+				tmp_vlist.append({
 					"ref": ref,
 					"namespace": pod_namespace,
 					"name": event_name,
@@ -3955,6 +3956,8 @@ def get_pod_resource_list(obj, **kwargs):
 					"message": message,
 					"age": seen,
 				})
+		for event in natsorted(tmp_vlist, key = itemgetter("age")):
+			vlist.append(event)
 
 	if "pod_disruption_budget" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 		# XXX: Are there are other means of specifying what pod to apply the PDB to than this?
