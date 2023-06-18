@@ -247,6 +247,65 @@ purge_control_plane_targets: Dict = {
 	},
 }
 
+def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
+	version = None
+
+	if k8s_distro == "rke2":
+		# This will only work for running clusters
+		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+		if status != 200:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": API-server returned ", "default"),
+					ANSIThemeString(f"{status}", "errorvalue"),
+					ANSIThemeString("; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+		if vlist is None:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
+
+		for node in vlist:
+			name = deep_get(node, DictPath("metadata#name"))
+			if name == controlplane:
+				version = deep_get(node, DictPath("status#nodeInfo#kubeletVersion"))
+				break
+	else:
+		# For kubeadm we try to use the package version
+		get_versions_path = get_playbook_path(FilePath("get_versions.yaml"))
+		retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [controlplane])
+
+		if len(ansible_results) == 0:
+			raise ValueError(f"Error: Failed to get package versions from {controlplane} (retval: {retval}); aborting.")
+
+		k8s_distro = "<unknown>"
+		version = "<unknown>"
+
+		for result in deep_get(ansible_results, DictPath(controlplane), []):
+			if deep_get(result, DictPath("task"), "") == "Package versions":
+				tmp = deep_get(result, DictPath("msg_lines"), [])
+				break
+
+		if len(tmp) == 0:
+			raise ValueError(f"Error: Received empty version data from {controlplane} (retval: {retval}); aborting.")
+
+		# Safe
+		package_version_regex = re.compile(r"^(.*?): (.*)")
+
+		for line in tmp:
+			tmp2 = package_version_regex.match(line)
+			if tmp2 is None:
+				continue
+			package = tmp2[1]
+			package_version = tmp2[2]
+			if package == "kubeadm":
+				version = package_version
+				break
+
+	return version
+
 def rebuild_installation_info(state: Optional[str] = None) -> None:
 	"""
 	If the installation info file does not exist, but a cluster already exists and is part of the inventory,
@@ -256,9 +315,9 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 			state (str): The installation state
 	"""
 
-	cluster_name = None
 	k8s_distro = None
-	version = None
+	controlplane = None
+	cri = "<none>"
 
 	controlplanes = __selection_control_planes()
 	if controlplanes is None or len(controlplanes) == 0:
@@ -267,19 +326,71 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 				ANSIThemeString(": No control plane defined in inventory; cannot rebuild installation info. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	deb_versions = check_deb_versions(["kubeadm"])
-	if len(deb_versions) == 0 or deb_versions[0][1] == "<none>":
+	# This will only work for running clusters
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+	if status != 200:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": API-server returned ", "default"),
+				ANSIThemeString(f"{status}", "errorvalue"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+	if vlist is None:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	for node in vlist:
+		name = deep_get(node, DictPath("metadata#name"))
+		node_roles = kh.get_node_roles(cast(Dict, node))
+		if "control-plane" in node_roles or "master" in node_roles:
+			controlplane = name
+			cri = deep_get(node, DictPath("status#nodeInfo#containerRuntimeVersion"), "")
+			if cri is not None:
+				cri = cri.split(":")[0]
+			ipaddresses = []
+			for address in deep_get(node, DictPath("status#addresses")):
+				if deep_get(address, DictPath("type"), "") == "InternalIP":
+					ipaddresses.append(deep_get(address, DictPath("address")))
+			tmp_k8s_distro = None
+			managed_fields = deep_get(node, DictPath("metadata#managedFields"), [])
+			for managed_field in managed_fields:
+				manager = deep_get(managed_field, DictPath("manager"), "")
+				if manager == "rke2":
+					tmp_k8s_distro = "rke2"
+					break
+				elif manager == "kubeadm":
+					tmp_k8s_distro = "kubeadm"
+					break
+			if tmp_k8s_distro is not None:
+				if k8s_distro is not None:
+					ansithemeprint([ANSIThemeString("Critical", "critical"),
+							ANSIThemeString(": The control planes are reporting conflicting Kubernetes distros; aborting.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+				else:
+					k8s_distro = tmp_k8s_distro
+			controlplanes.append((name, ipaddresses))
+
+	version = get_control_plane_version(controlplane = controlplane, k8s_distro = k8s_distro)
+
+	if version is None or len(version) == 0:
 		ansithemeprint([ANSIThemeString("", "default")])
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
-				ANSIThemeString(": Failed to get kubeadm version; are you sure there's a kubeadm-based cluster installed? Aborting.", "default")], stderr = True)
+				ANSIThemeString(": Failed to get Kubernetes version; currently only kubeadm and RKE2 are supported. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
-	else:
-		version = deb_versions[0][1]
-		k8s_distro = "kubeadm"
 
 	cluster_name = get_cluster_name()
-	update_installation_info(cluster_name = cluster_name, distro = k8s_distro, version = version, requested_version = "<none>",
-				 state = state, phase = "<none>", phase_skiplist = [], cni = "<FIXME>", pod_network_cidr = "<FIXME>")
+	pod_network_cidr = kh.get_pod_network_cidr()
+	cnis = kh.identify_cni()
+	if len(cnis) == 1:
+		cni = cnis[0][0]
+	else:
+		cni = "<unknown>"
+
+	update_installation_info(installation_target = cluster_name, cluster_name = cluster_name, distro = k8s_distro, version = version, requested_version = "<none>",
+				 state = state, phase = "<none>", phase_skiplist = [], cni = cni, cri = cri, pod_network_cidr = pod_network_cidr)
 
 def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
 	"""
@@ -334,7 +445,8 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
 	return info
 
 # pylint: disable-next=too-many-arguments
-def update_installation_info(cluster_name: Optional[str] = None, distro: Optional[str] = None, version: Optional[str] = None, requested_version: Optional[str] = None,
+def update_installation_info(installation_target: Optional[str] = None, cluster_name: Optional[str] = None,
+			     distro: Optional[str] = None, version: Optional[str] = None, requested_version: Optional[str] = None,
 			     state: Optional[str] = None, phase: Optional[Union[int, str]] = None, phase_skiplist: Optional[List[str]] = None,
 			     cni: Optional[str] = None, pod_network_cidr: Optional[str] = None, cri: Optional[str] = None,
 			     control_planes: Optional[List[str]] = None) -> Dict:
@@ -342,6 +454,7 @@ def update_installation_info(cluster_name: Optional[str] = None, distro: Optiona
 	Update installation info for a cluster
 
 		Parameters:
+			installation_target (str): The installation info entry to use
 			cluster_name (str): The name of the cluster to update information for
 			distro (str): The distribution used during installation (currently the only supported distro is kubeadm)
 			version (str): The current version of Kubernetes
@@ -362,7 +475,9 @@ def update_installation_info(cluster_name: Optional[str] = None, distro: Optiona
 	if cluster_name is None:
 		cluster_name = info.get("installation_target")
 
-	if info.get("installation_target") is None:
+	if installation_target is not None:
+		info["installation_target"] = installation_target
+	elif info.get("installation_target") is None:
 		info["installation_target"] = cluster_name
 
 	if distro is not None:
@@ -3486,6 +3601,8 @@ def get_control_planes(fail_on_empty: bool = True) -> List[Tuple[str, str]]:
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
+	if cluster_name is None:
+		cluster_name = get_cluster_name()
 	inventory = ansible_get_inventory_dict()
 	__controlplanes = deep_get(inventory, DictPath("controlplane#hosts"), {})
 	__clusterhosts = deep_get(inventory, DictPath(f"{cluster_name}#hosts"), {})
@@ -3741,13 +3858,6 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
-	if k8s_distro == "rke2":
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": updates are currently not supported for ", "default"),
-				ANSIThemeString(f"RKE2", "programname"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOTSUP)
-
 	if state is None or state == "<none>":
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Unknown installation state; if you believe this is OK (such as when upgrading a cluster not installed using ", "default"),
@@ -3818,139 +3928,146 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Running sanity checks", "action")])
 
-	deb_versions = check_deb_versions(["kubeadm"])
+	if k8s_distro == "kubeadm":
+		deb_versions = check_deb_versions(["kubeadm"])
 
-	if len(deb_versions) == 0:
-		ansithemeprint([ANSIThemeString("Critical", "critical"),
-				ANSIThemeString(": No candidate version for ", "default"),
-				ANSIThemeString("kubeadm", "programname"),
-				ANSIThemeString(" available; aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOENT)
-
-	if requested_version is not None:
-		if requested_version not in deb_versions[0][3]:
-			ansithemeprint([ANSIThemeString("Error", "error"),
-					ANSIThemeString(": The requested version ", "default"),
-					ANSIThemeString(f"{requested_version}", "version"),
-					ANSIThemeString(" is not available; aborting.", "default")], stderr = True)
+		if len(deb_versions) == 0:
+			ansithemeprint([ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(": No candidate version for ", "default"),
+					ANSIThemeString("kubeadm", "programname"),
+					ANSIThemeString(" available; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
-		elif requested_version == version:
-			if allow_reinstall == False:
-				ansithemeprint([ANSIThemeString("Warning", "warning"),
+
+		if requested_version is not None:
+			if requested_version not in deb_versions[0][3]:
+				ansithemeprint([ANSIThemeString("Error", "error"),
 						ANSIThemeString(": The requested version ", "default"),
 						ANSIThemeString(f"{requested_version}", "version"),
-						ANSIThemeString(" is already installed; to reinstall use the option “", "default"),
-						ANSIThemeString("--reinstall", "option"),
-						ANSIThemeString("“.", "default")], stderr = True)
+						ANSIThemeString(" is not available; aborting.", "default")], stderr = True)
+				sys.exit(errno.ENOENT)
+			elif requested_version == version:
+				if allow_reinstall == False:
+					ansithemeprint([ANSIThemeString("Warning", "warning"),
+							ANSIThemeString(": The requested version ", "default"),
+							ANSIThemeString(f"{requested_version}", "version"),
+							ANSIThemeString(" is already installed; to reinstall use the option “", "default"),
+							ANSIThemeString("--reinstall", "option"),
+							ANSIThemeString("“.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+			elif deb_compare_versions(version, requested_version) == True:
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": The requested version ", "default"),
+						ANSIThemeString(f"{requested_version}", "version"),
+						ANSIThemeString(" is older than than the installed version ", "default"),
+						ANSIThemeString(f"{deb_versions[0][1]}", "version"),
+						ANSIThemeString(". Downgrades are not supported; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
-		elif deb_compare_versions(version, requested_version) == True:
-			ansithemeprint([ANSIThemeString("Error", "error"),
-					ANSIThemeString(": The requested version ", "default"),
-					ANSIThemeString(f"{requested_version}", "version"),
-					ANSIThemeString(" is older than than the installed version ", "default"),
-					ANSIThemeString(f"{deb_versions[0][1]}", "version"),
-					ANSIThemeString(". Downgrades are not supported; aborting.", "default")], stderr = True)
-			sys.exit(errno.EINVAL)
-	else:
-		requested_version = deb_versions[0][2]
-		if len(requested_version) == 0 or requested_version == "<none>":
-			ansithemeprint([ANSIThemeString("Note", "note"),
-					ANSIThemeString(": The latest version ", "default"),
-					ANSIThemeString(f"{deb_versions[0][1]}", "version"),
-					ANSIThemeString(" is already installed.", "default")])
-			sys.exit(0)
-
-	# Is this an major, minor, or patchrev upgrade?
-	installed_version_tuple = version.split(".")
-	requested_version_tuple = requested_version.split(".")
-
-	upgrade_type = None
-
-	if installed_version_tuple[0] != requested_version_tuple[0]:
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": Upgrades between ", "default"),
-				ANSIThemeString("MAJOR", "emphasis"),
-				ANSIThemeString(" versions is currently not supported (installed version: ", "default"),
-				ANSIThemeString(f"{deb_versions[0][1]}", "version"),
-				ANSIThemeString(", requested version: ", "default"),
-				ANSIThemeString(f"{requested_version}", "version"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOTSUP)
-	elif installed_version_tuple[1] != requested_version_tuple[1]:
-		if int(requested_version_tuple[1]) - int(installed_version_tuple[1]) > 1:
-			ansithemeprint([ANSIThemeString("Error", "error"),
-					ANSIThemeString(": Skipping ", "default"),
-					ANSIThemeString("MINOR", "emphasis"),
-					ANSIThemeString(" versions is not supported, please perform the following upgrades sequentially:", "default")], stderr = True)
-			minor_versions: Dict = {}
-			for version in reversed(deb_versions[0][3]):
-				version_tuple = version.split(".")
-				major_minor = f"{version_tuple[0]}.{version_tuple[1]}"
-				if int(version_tuple[1]) > int(installed_version_tuple[1]) and int(version_tuple[1]) <= int(requested_version_tuple[1]) and (major_minor not in minor_versions or minor_versions[major_minor] < version_tuple[2]):
-					minor_versions[major_minor] = version_tuple[2].split("-")[0]
-			for version, minor_version in minor_versions.items():
-				ansithemeprint([ANSIThemeString("• ", "separator"),
-						ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
-						ANSIThemeString(" upgrade-control-plane", "command"),
-						ANSIThemeString(f" {version}.{minor_version}", "version")])
-			sys.exit(errno.EINVAL)
 		else:
-			upgrade_type = "minor"
-	else:
-		upgrade_type = "patchrev"
+			requested_version = deb_versions[0][2]
+			if len(requested_version) == 0 or requested_version == "<none>":
+				ansithemeprint([ANSIThemeString("Note", "note"),
+						ANSIThemeString(": The latest version ", "default"),
+						ANSIThemeString(f"{deb_versions[0][1]}", "version"),
+						ANSIThemeString(" is already installed.", "default")])
+				sys.exit(0)
 
-	# If this is an upgrade to a new patchrev the cluster does not have to be drained
-	if upgrade_type == "minor":
-		schedulable_count = 0
-		nodes_to_drain = []
-		for node in node_status:
-			if node["schedulable"] == False:
-				continue
+		# Is this an major, minor, or patchrev upgrade?
+		installed_version_tuple = version.split(".")
+		requested_version_tuple = requested_version.split(".")
 
-			if "control-plane" in node["roles"]:
-				continue
+		upgrade_type = None
 
-			if schedulable_count == 0:
-				ansithemeprint([ANSIThemeString("\nError", "error"),
-						ANSIThemeString(": The following nodes need to be drained; aborting.", "default")])
-			schedulable_count += 1
-			ansithemeprint([ANSIThemeString("• ", "separator"),
-					ANSIThemeString(f"{node['name']}", "emphasis")])
-			nodes_to_drain.append(node['name'])
+		if installed_version_tuple[0] != requested_version_tuple[0]:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": Upgrades between ", "default"),
+					ANSIThemeString("MAJOR", "emphasis"),
+					ANSIThemeString(" versions is currently not supported (installed version: ", "default"),
+					ANSIThemeString(f"{deb_versions[0][1]}", "version"),
+					ANSIThemeString(", requested version: ", "default"),
+					ANSIThemeString(f"{requested_version}", "version"),
+					ANSIThemeString("; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOTSUP)
+		elif installed_version_tuple[1] != requested_version_tuple[1]:
+			if int(requested_version_tuple[1]) - int(installed_version_tuple[1]) > 1:
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": Skipping ", "default"),
+						ANSIThemeString("MINOR", "emphasis"),
+						ANSIThemeString(" versions is not supported, please perform the following upgrades sequentially:", "default")], stderr = True)
+				minor_versions: Dict = {}
+				for version in reversed(deb_versions[0][3]):
+					version_tuple = version.split(".")
+					major_minor = f"{version_tuple[0]}.{version_tuple[1]}"
+					if int(version_tuple[1]) > int(installed_version_tuple[1]) and int(version_tuple[1]) <= int(requested_version_tuple[1]) and (major_minor not in minor_versions or minor_versions[major_minor] < version_tuple[2]):
+						minor_versions[major_minor] = version_tuple[2].split("-")[0]
+				for version, minor_version in minor_versions.items():
+					ansithemeprint([ANSIThemeString("• ", "separator"),
+							ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
+							ANSIThemeString(" upgrade-control-plane", "command"),
+							ANSIThemeString(f" {version}.{minor_version}", "version")])
+				sys.exit(errno.EINVAL)
+			else:
+				upgrade_type = "minor"
+		else:
+			upgrade_type = "patchrev"
 
-		if schedulable_count > 0:
-			ansithemeprint([ANSIThemeString("\nThis can be achieved with: “", "default"),
-					ANSIThemeString("kubectl ", "programname"),
-					ANSIThemeString("drain ", "command"),
-					ANSIThemeString("--ignore-daemonsets --delete-emptydir-data ", "option"),
-					ANSIThemeString(f"{' '.join(nodes_to_drain)}", "url"),
-					ANSIThemeString("“", "default")])
-			sys.exit(errno.EBUSY)
+		# If this is an upgrade to a new patchrev the cluster does not have to be drained
+		if upgrade_type == "minor":
+			schedulable_count = 0
+			nodes_to_drain = []
+			for node in node_status:
+				if node["schedulable"] == False:
+					continue
 
-	requested_major, requested_minor, _rest = requested_version.split(".")
+				if "control-plane" in node["roles"]:
+					continue
 
-	if int(requested_minor) < 23:
-		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"
-		init_configuration_api_version = "kubeadm.k8s.io/v1beta2"
-	else:
-		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
-		init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+				if schedulable_count == 0:
+					ansithemeprint([ANSIThemeString("\nError", "error"),
+							ANSIThemeString(": The following nodes need to be drained; aborting.", "default")])
+				schedulable_count += 1
+				ansithemeprint([ANSIThemeString("• ", "separator"),
+						ANSIThemeString(f"{node['name']}", "emphasis")])
+				nodes_to_drain.append(node['name'])
 
-	upgrade_control_plane_targets[k8s_distro]["extra_values"] = {
-		"cluster_configuration_api_version": cluster_configuration_api_version,
-		"init_configuration_api_version": init_configuration_api_version,
-		# Add major/minor to extra_values
-		"kubernetes_major_minor_version": f"{requested_major}.{requested_minor}",
-	}
+			if schedulable_count > 0:
+				ansithemeprint([ANSIThemeString("\nThis can be achieved with: “", "default"),
+						ANSIThemeString("kubectl ", "programname"),
+						ANSIThemeString("drain ", "command"),
+						ANSIThemeString("--ignore-daemonsets --delete-emptydir-data ", "option"),
+						ANSIThemeString(f"{' '.join(nodes_to_drain)}", "url"),
+						ANSIThemeString("“", "default")])
+				sys.exit(errno.EBUSY)
+
+		requested_major, requested_minor, _rest = requested_version.split(".")
+
+		if int(requested_minor) < 23:
+			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"
+			init_configuration_api_version = "kubeadm.k8s.io/v1beta2"
+		else:
+			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+			init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+
+		upgrade_control_plane_targets[k8s_distro]["extra_values"] = {
+			"cluster_configuration_api_version": cluster_configuration_api_version,
+			"init_configuration_api_version": init_configuration_api_version,
+			# Add major/minor to extra_values
+			"kubernetes_major_minor_version": f"{requested_major}.{requested_minor}",
+		}
+
+		# Adjust package version for localhost
+		upgrade_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
+		upgrade_control_plane_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
+	elif k8s_distro == "rke2":
+		requested_major, requested_minor = requested_version[1:].split(".")
+
+		# Add requested_version to extra_values;
+		# for rke2 this is either vX.YY or latest
+		upgrade_control_plane_targets["rke2"]["extra_values"]["requested_version"] = requested_version
 
 	installation_info = update_installation_info(state = "upgrading", requested_version = requested_version, phase = 0)
 
 	# If we got here all the sanity checks were successful
 	ansithemeprint([ANSIThemeString("OK", "ok")])
-
-	# Adjust package version for localhost
-	upgrade_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
-	upgrade_control_plane_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
 
 	show_configuration(action = "Upgrading control plane:", tasks = upgrade_control_plane_tasks)
 
@@ -4811,12 +4928,6 @@ COMMANDLINE = {
 			[ANSIThemeString("but when upgrading to a newer MINOR version", "description")],
 			[ANSIThemeString("all intermediate MINOR versions must be", "description")],
 			[ANSIThemeString("installed first; this applies to nodes too.", "description")],
-			[ANSIThemeString("Note", "note"),
-			 ANSIThemeString(": ", "description"),
-			 ANSIThemeString("upgrade-control-plane", "command"),
-			 ANSIThemeString(" is currently not", "description")],
-			[ANSIThemeString("implemented for ", "description"),
-			 ANSIThemeString("rke2", "argument")],
 		],
 		"options": {
 			"--no-cache-update": {
