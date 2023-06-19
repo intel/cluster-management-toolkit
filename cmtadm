@@ -355,15 +355,19 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 				if deep_get(address, DictPath("type"), "") == "InternalIP":
 					ipaddresses.append(deep_get(address, DictPath("address")))
 			tmp_k8s_distro = None
-			managed_fields = deep_get(node, DictPath("metadata#managedFields"), [])
-			for managed_field in managed_fields:
-				manager = deep_get(managed_field, DictPath("manager"), "")
-				if manager == "rke2":
-					tmp_k8s_distro = "rke2"
-					break
-				elif manager == "kubeadm":
-					tmp_k8s_distro = "kubeadm"
-					break
+			minikube_name = deep_get(node, DictPath("metadata#labels#minikube.k8s.io/name"), "")
+			if minikube_name != "":
+				tmp_k8s_distro = "minikube"
+			else:
+				managed_fields = deep_get(node, DictPath("metadata#managedFields"), [])
+				for managed_field in managed_fields:
+					manager = deep_get(managed_field, DictPath("manager"), "")
+					if manager == "rke2":
+						tmp_k8s_distro = "rke2"
+						break
+					elif manager == "kubeadm":
+						tmp_k8s_distro = "kubeadm"
+						break
 			if tmp_k8s_distro is not None:
 				if k8s_distro is not None:
 					ansithemeprint([ANSIThemeString("Critical", "critical"),
