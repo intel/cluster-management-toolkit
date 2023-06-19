@@ -44,6 +44,7 @@ from cmtlog import CMTLogType, CMTLog
 from cmttypes import LogLevel
 from cmttypes import deep_get, deep_get_with_fallback, deep_set, DictPath, FilePath, FilePathAuditError, SecurityChecks, StatusGroup
 from cmtio import execute_command_with_response, secure_which
+from cmtio import secure_read
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
 
 from ansithemeprint import ANSIThemeString
@@ -3512,12 +3513,19 @@ class KubernetesHelper:
 
 			# ca_certs
 			ccac = deep_get(cluster, DictPath("cluster#certificate-authority-data"))
-			try:
-				ca_certs = base64.b64decode(ccac).decode("utf-8")
-			except UnicodeDecodeError as e:
-				e.args += (f"failed to decode certificate-authority-data: {e}", )
-				raise
-			break
+			# ca_certs file
+			ccac_file = deep_get(cluster, DictPath("cluster#certificate-authority"))
+
+
+			if ccac is not None:
+				try:
+					ca_certs = base64.b64decode(ccac).decode("utf-8")
+				except UnicodeDecodeError as e:
+					e.args += (f"failed to decode certificate-authority-data: {e}", )
+					raise
+				break
+			elif ccac_file is not None:
+				ca_certs = secure_read(ccac_file)
 
 		if control_plane_ip is None or control_plane_port is None:
 			return False
@@ -3541,20 +3549,32 @@ class KubernetesHelper:
 				else:
 					# cert
 					ccd = deep_get(user, DictPath("user#client-certificate-data"))
+					# cert file
+					ccd_file = deep_get(user, DictPath("user#client-certificate"))
+
 					if ccd is not None:
 						try:
 							cert = base64.b64decode(ccd).decode("utf-8")
 						except UnicodeDecodeError as e:
 							e.args += (f"failed to decode client-certificate-data: {e}", )
+							raise
+					elif ccd_file is not None:
+						cert = secure_read(ccd_file)
+
 
 					# key
 					ckd = deep_get(user, DictPath("user#client-key-data"))
+					# key file
+					ckd_file = deep_get(user, DictPath("user#client-key"))
+
 					if ckd is not None:
 						try:
 							key = base64.b64decode(ckd).decode("utf-8")
 						except UnicodeDecodeError as e:
 							e.args += (f"failed to decode client-key-data: {e}", )
 							raise
+					elif ckd_file is not None:
+						key = secure_read(ckd_file)
 
 					self.token = deep_get(user, DictPath("user#token"))
 					break
