@@ -7309,6 +7309,14 @@ def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
 		if viewref["kind"] in infoviews:
 			helptext += helptexts.openresource
 
+		# Always include the shortcut for YAML dump, unless overridden
+		if "shortcuts" not in viewref or "View YAML dump" not in viewref["shortcuts"]:
+			helptext.append(("Y", "View YAML dump of resource"))
+
+		# Always include the shortcut for edit resource, unless overridden
+		if "shortcuts" not in viewref or "Edit resource" not in viewref["shortcuts"]:
+			helptext.append(("E", "Edit resource"))
+
 		if "shortcuts" in viewref:
 			for shortcut in deep_get(viewref, DictPath("shortcuts")):
 				read_only = deep_get(viewref, DictPath(f"shortcuts#{shortcut}#read_only"), False)
