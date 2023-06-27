@@ -1707,7 +1707,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 					break
 		tagged_items = set()
 	elif isinstance(preselection, set):
-		tagged_items = preselection
+		tagged_items = preselection.copy()
 	else:
 		raise ValueError(f"is_taggable() == True, but type(preselection) == {type(preselection)} (must be str or set())")
 

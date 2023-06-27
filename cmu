@@ -9131,6 +9131,82 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					break
 			if retval is not None and retval == Retval.RETURNFULL:
 				return retval
+		elif c == ord("O"):
+			option_list = [
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Pop timestamps", ThemeAttr("windowwidget", "default"))]],
+					"retval": "pop_ts",
+				},
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Pop severity", ThemeAttr("windowwidget", "default"))]],
+					"retval": "pop_severity",
+				},
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Pop facility", ThemeAttr("windowwidget", "default"))]],
+					"retval": "pop_facility",
+				},
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Extract message", ThemeAttr("windowwidget", "default"))]],
+					"retval": "msg_extract",
+				},
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Message first", ThemeAttr("windowwidget", "default"))]],
+					"retval": "msg_first",
+				},
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Expand linebreaks", ThemeAttr("windowwidget", "default"))]],
+					"retval": "msg_linebreaks",
+				},
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Replace bullets", ThemeAttr("windowwidget", "default"))]],
+					"retval": "msg_realbullets",
+				},
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Collector bullets", ThemeAttr("windowwidget", "default"))]],
+					"retval": "bullet_collectors",
+				},
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Merge starting version", ThemeAttr("windowwidget", "default"))]],
+					"retval": "merge_starting_version",
+				},
+			]
+			preselection = set()
+
+			for i, option in enumerate(option_list):
+				retval = False
+				option_path = deep_get(option, DictPath("retval"))
+				if option_path is not None:
+					retval = getattr(logparser_configuration, option_path, False)
+				if retval:
+					preselection.add(i)
+
+			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, option_list, title = "Parser options", cursor = True, preselection = preselection, taggable = True)
+			selection = None
+			if tmpselection is not None and tmpselection != "":
+				selection = tmpselection
+			uip.refresh_all()
+
+			# Some option changed, so we need to re-render the log
+			if selection is not None and preselection != selection:
+				# Perform the changes
+				modified_options = preselection.symmetric_difference(selection)
+				for i in modified_options:
+					option_path = deep_get(option_list[i], DictPath("retval"))
+					value = not getattr(logparser_configuration, option_path, False)
+					setattr(logparser_configuration, option_path, value)
+
+				uip.yoffset = 0
+				uip.xoffset = 0
+				uip.force_update()
 		elif c == ord("R"):
 			if uip.continuous_log:
 				continue

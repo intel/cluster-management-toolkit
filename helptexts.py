@@ -172,6 +172,7 @@ containerinfo = [
 	("[Shift] + T", "Toggle timestamps (default: On)"),
 	("[Shift] + D", "Toggle merging of duplicate messages"),
 ] + linewrap + toggleborders + [
+	("[Shift] + O", "Toggle parser options"),
 	("[Shift] + P", "Override logparser"),
 	("", "  This allows for manually choosing the parser used; please report"),
 	("", "  if a different parser than the default seems to be more appropriate"),
