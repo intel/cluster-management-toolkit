@@ -757,7 +757,7 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	# clone.kubevirt.io
 	("VirtualMachineClone", "clone.kubevirt.io"): {
 		"api_paths": ["apis/clone.kubevirt.io/v1alpha1/"],
-		"api": "virtualmachineclone",
+		"api": "virtualmachineclones",
 	},
 	# cloudcredential.openshift.io
 	("CredentialsRequest", "cloudcredential.openshift.io"): {
