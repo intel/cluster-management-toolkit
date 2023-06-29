@@ -83,7 +83,7 @@
       no_proxy: "{{ no_proxy }}"
       INSTALL_RKE2_CHANNEL: "{{ requested_version }}"
       INSTALL_RKE2_TYPE: "agent"
-  - name: "Enabling and starting RKE2 control plane service"
+  - name: "Enabling and starting RKE2 agent service"
     ansible.builtin.systemd:
       name: "rke2-agent"
       daemon_reload: true
