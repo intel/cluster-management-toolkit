@@ -72,8 +72,8 @@ def request_ansible_password() -> None:
 
 	# Check whether ansible_password is defined or not
 	if ansible_configuration["ansible_password"] is None:
-		ansithemeprint([ANSIThemeString("Attention: ", "warning"),
-				ANSIThemeString("To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
+		ansithemeprint([ANSIThemeString("Attention", "warning"),
+				ANSIThemeString(": To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
 		ansithemeprint([ANSIThemeString("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.", "default")])
 
 		ansible_password = ansithemeinput_password([ANSIThemeString("\nPassword: ", "default")])
@@ -2155,6 +2155,11 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		cmt_support_len = max(cmt_support_len, cmt_support_len_tmp)
 		local_view_len = max(local_view_len, len(local_view))
 
+	if len(filtered_api_resources) == 0:
+		ansithemeprint([ANSIThemeString("Note", "note"),
+				ANSIThemeString(": No matching APIs found.", "default")])
+		return 0
+
 	if output_format != "table":
 		separator = ""
 		if output_format == "csv":
@@ -2196,7 +2201,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		if len(output) > 0:
 			print(output)
-		sys.exit(0)
+		return 0
 
 	if header:
 		tmp_header = [ANSIThemeString(name_header, "header"),
