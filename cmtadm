@@ -2118,7 +2118,7 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict) -> None:
 			server = deep_get(cluster, DictPath("cluster#server"), "")
 			if server.startswith("https://127") or server == "::1":
 				tmp = re.match(r"^(https://)([^:]+)(:.*)", server)
-				if tmp is None or len(tmp) == 0:
+				if tmp is None:
 					ansithemeprint([ANSIThemeString("Error", "error"),
 							ANSIThemeString(": Failed to extract server address.", "default")])
 					ansithemeprint([ANSIThemeString("This is probably a programming error", "default"),
@@ -2780,12 +2780,12 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 
-	if state is not None and state not in ("<none>", "preparing", "prepared"):
+	if state is not None and state not in ("<none>", "preparing", "prepared", "torn_down"):
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Invalid installation state; the system cannot be in a configured or semi-configured state when running prepare; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	if phase == "<none>":
+	if phase == "<none>" or state in ("prepared", "torn_down") and phase == "<done>":
 		phase = 0
 
 	hostname = socket.gethostname()
@@ -3855,6 +3855,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
+	os_distro = identify_distro()
 	k8s_distro = installation_info[cluster_name]["distro"]
 	version = installation_info[cluster_name]["version"]
 	requested_version = installation_info[cluster_name]["requested_version"]
@@ -3924,7 +3925,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 				ANSIThemeString(" available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	if update_cache == True:
+	if os_distro == "debian" and update_cache == True:
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Updating APT cache", "action")])
 		check_and_print_status(update_apt_cache())
@@ -4062,8 +4063,6 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 		upgrade_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
 		upgrade_control_plane_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
 	elif k8s_distro == "rke2":
-		requested_major, requested_minor = requested_version[1:].split(".")
-
 		# Add requested_version to extra_values;
 		# for rke2 this is either vX.YY or latest
 		upgrade_control_plane_targets["rke2"]["extra_values"]["requested_version"] = requested_version
