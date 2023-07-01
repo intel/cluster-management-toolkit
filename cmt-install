@@ -60,8 +60,9 @@ EXECUTABLE_SYMLINKS = [
 
 MISC_SYMLINKS = [
 	(FilePath(os.path.join(os.getcwd(), ANSIBLE_PLAYBOOK_DIRNAME)), ANSIBLE_PLAYBOOK_DIR),
-	(FilePath(os.path.join(os.getcwd(), THEME_DIRNAME)), THEME_DIR),
 	(FilePath(os.path.join(os.getcwd(), PARSER_DIRNAME)), PARSER_DIR),
+	(FilePath(os.path.join(os.getcwd(), THEME_DIRNAME)), THEME_DIR),
+	(FilePath(os.path.join(os.getcwd(), VIEW_DIRNAME)), VIEW_DIR),
 	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmt")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmt"))),
 	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmtadm")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmtadm"))),
 	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmtinv")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmtinv"))),
@@ -387,6 +388,7 @@ def trim_package_list(packages: Dict, distro: str = "", fallback: bool = False) 
 
 	for pkg, data in packages.items():
 		distros = deep_get(data, DictPath("distros"), [])
+		# pylint: disable-next=unused-variable
 		always_fallback_distros = deep_get(data, DictPath("always-fallback-distros"), [])
 		never_fallback_distros = deep_get(data, DictPath("never-fallback-distros"), [])
 
@@ -508,9 +510,8 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 					if tmp[1] not in pkgs:
 						pkgs[tmp[1]] = packages[tmp[1]]
 					continue
-				else:
-					fallbacks.add(deep_get(packages[tmp[1]], DictPath("fallback")))
-					continue
+				fallbacks.add(deep_get(packages[tmp[1]], DictPath("fallback")))
+				continue
 			tmp = not_found_regex.match(line)
 			if tmp is not None:
 				fallbacks.add(deep_get(packages[tmp[1]], DictPath("fallback")))
@@ -571,7 +572,7 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 	distro_id_like = ""
 	distro_id = ""
 
-	with open(distro_path) as f:
+	with open(distro_path, "r", encoding = "utf-8") as f:
 		lines = f.readlines()
 		for line in lines:
 			line = line.strip()

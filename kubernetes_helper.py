@@ -3385,7 +3385,7 @@ class KubernetesHelper:
 			# other exceptions might be security related, so we let them raise
 			return
 		except yaml.parser.ParserError as e:
-			e.args += (f"{config_path} is not valid YAML; aborting.", )
+			e.args += (f"{KUBE_CREDENTIALS_FILE} is not valid YAML; aborting.", )
 			raise
 
 		# We got ourselves a credentials file;

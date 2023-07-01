@@ -5,12 +5,14 @@ Helpers used by various components of CMT
 """
 
 from datetime import datetime, timezone, timedelta, date
+import errno
 import os
 from pathlib import Path, PurePath
 import re
 import sys
 from typing import Dict, List, Optional, Tuple, Union
 
+from ansithemeprint import ANSIThemeString, ansithemeprint
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy
 from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR
 import cmtio
@@ -606,7 +608,10 @@ def identify_distro() -> str:
 
 	# Find out what distro this is run on
 	try:
-		distro_path = cmtio.secure_which(FilePath("/etc/os-release"), fallback_allowlist = ["/usr/lib", "/lib"], security_policy = SecurityPolicy.ALLOWLIST_STRICT, executable = False)
+		distro_path = cmtio.secure_which(FilePath("/etc/os-release"),
+						 fallback_allowlist = ["/usr/lib", "/lib"],
+						 security_policy = SecurityPolicy.ALLOWLIST_STRICT,
+						 executable = False)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Error:", "error"),
 				ANSIThemeString(" Cannot find an “", "default"),
@@ -619,7 +624,7 @@ def identify_distro() -> str:
 	distro_id_like = ""
 	distro_id = ""
 
-	with open(distro_path) as f:
+	with open(distro_path, "r", encoding = "utf-8") as f:
 		lines = f.readlines()
 		for line in lines:
 			line = line.strip()

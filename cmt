@@ -42,7 +42,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, HostNameStatus
-from cmtpaths import CMT_CONFIG_FILE, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE, VIEW_DIR
+from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILENAME, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE, VIEW_DIR
 
 import commandparser
 from commandparser import parse_commandline
@@ -1314,14 +1314,14 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		first_control_plane = vlist[0][0]
 		node_data = kh.get_ref_by_kind_name_namespace(("Node", ""), first_control_plane, "")
 		kubelet_version = deep_get(node_data, DictPath("status#nodeInfo#kubeletVersion"), "")
-		tmp = re.match(r"^(v\d+)\.(\d+).*", kubelet_version)
-		if tmp is None:
+		match_tmp = re.match(r"^(v\d+)\.(\d+).*", kubelet_version)
+		if match_tmp is None:
 			ansithemeprint([ANSIThemeString("Error", "error"),
-					ANSIThemeString(f": Failed to get kubelet version from control plane; aborting.", "default")], stderr = True)
+					ANSIThemeString(": Failed to get kubelet version from control plane; aborting.", "default")], stderr = True)
 			sys.exit(errno.EBADMSG)
-		rke2_version = f"{tmp[1]}.{tmp[2]}"
-		version_major = tmp[1][1:]
-		version_minor = tmp[2]
+		rke2_version = f"{match_tmp[1]}.{match_tmp[2]}"
+		version_major = match_tmp[1][1:]
+		version_minor = match_tmp[2]
 
 	if cri is None:
 		if int(version_minor) < 24 and k8s_distro != "rke2":
@@ -1360,6 +1360,11 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 
 	cluster_name = get_cluster_name()
+	if cluster_name is None:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Could not get the cluster name", "default"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
 	if k8s_distro == "kubeadm":
 		add_playbooks += [
@@ -1578,7 +1583,7 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 		elif opt == "--forks":
 			ansible_configuration["forks"] = optarg
 		elif opt == "--kubernetes-distro":
-			k8s_distro = optarg
+			k8s_distro = cast(str, optarg)
 
 	if os_distro == "suse" and k8s_distro != "rke2":
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -2190,7 +2195,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				entry += f"\t\t\"api_paths\": [\"{api_path}\"],\n"
 				entry += f"\t\t\"api\": \"{name}\",\n"
 				if not namespaced:
-					entry += f"\t\t\"namespaced\": False,\n"
+					entry += "\t\t\"namespaced\": False,\n"
 				entry += "\t},"
 				print(entry)
 			else:
@@ -2703,7 +2708,7 @@ CMT_COMMANDLINE = {
 					[ANSIThemeString("This sets the max number of parallel connections", "description")],
 					[ANSIThemeString("when running Ansible playbooks", "description")],
 					[ANSIThemeString("(this overrides ", "description"),
-					 ANSIThemeString("cmt.yaml", "argument"),
+					 ANSIThemeString(f"{CMT_CONFIG_FILENAME}", "argument"),
 					 ANSIThemeString("; default: ", "description"),
 					 ANSIThemeString("5", "argument"),
 					 ANSIThemeString(")", "description")],
@@ -2852,7 +2857,7 @@ CMT_COMMANDLINE = {
 					[ANSIThemeString("This sets the max number of parallel connections", "description")],
 					[ANSIThemeString("when running Ansible playbooks", "description")],
 					[ANSIThemeString("(this overrides ", "description"),
-					 ANSIThemeString("cmt.yaml", "argument"),
+					 ANSIThemeString(f"{CMT_CONFIG_FILENAME}", "argument"),
 					 ANSIThemeString("; default: ", "description"),
 					 ANSIThemeString("5", "argument"),
 					 ANSIThemeString(")", "description")],
@@ -2886,7 +2891,7 @@ CMT_COMMANDLINE = {
 					[ANSIThemeString("Depending on the Kubernetes distro in use a lot", "description")],
 					[ANSIThemeString("of things during node setup has to be done", "description")],
 					[ANSIThemeString("differently. If this option is not specified ", "description")],
-					[ANSIThemeString("cmt", "programname"),
+					[ANSIThemeString(f"{about.TOOL_PROGRAM_NAME}", "programname"),
 					 ANSIThemeString(" will assume that ", "description"),
 					 ANSIThemeString("kubeadm ", "argument"),
 					 ANSIThemeString("is used.", "description")],
@@ -2964,7 +2969,7 @@ CMT_COMMANDLINE = {
 					[ANSIThemeString("This sets the max number of parallel connections", "description")],
 					[ANSIThemeString("when running Ansible playbooks", "description")],
 					[ANSIThemeString("(this overrides ", "description"),
-					 ANSIThemeString("cmt.yaml", "argument"),
+					 ANSIThemeString(f"{CMT_CONFIG_FILENAME}", "argument"),
 					 ANSIThemeString("; default: ", "description"),
 					 ANSIThemeString("5", "argument"),
 					 ANSIThemeString(")", "description")],
@@ -2982,7 +2987,7 @@ CMT_COMMANDLINE = {
 					[ANSIThemeString("Depending on the Kubernetes distro in use a lot", "description")],
 					[ANSIThemeString("of things during node teardown has to be done", "description")],
 					[ANSIThemeString("differently. If this option is not specified ", "description")],
-					[ANSIThemeString("cmt", "programname"),
+					[ANSIThemeString(f"{about.TOOL_PROGRAM_NAME}", "programname"),
 					 ANSIThemeString(" will assume that ", "description"),
 					 ANSIThemeString("kubeadm ", "argument"),
 					 ANSIThemeString("is used.", "description")],
@@ -3061,7 +3066,7 @@ CMT_COMMANDLINE = {
 					[ANSIThemeString("This sets the max number of parallel connections", "description")],
 					[ANSIThemeString("when running Ansible playbooks", "description")],
 					[ANSIThemeString("(this overrides ", "description"),
-					 ANSIThemeString("cmt.yaml", "argument"),
+					 ANSIThemeString(f"{CMT_CONFIG_FILENAME}", "argument"),
 					 ANSIThemeString("; default: ", "description"),
 					 ANSIThemeString("5", "argument"),
 					 ANSIThemeString(")", "description")],
@@ -3079,7 +3084,7 @@ CMT_COMMANDLINE = {
 					[ANSIThemeString("Depending on the Kubernetes distro in use a lot", "description")],
 					[ANSIThemeString("of things during node teardown has to be done", "description")],
 					[ANSIThemeString("differently. If this option is not specified ", "description")],
-					[ANSIThemeString("cmt", "programname"),
+					[ANSIThemeString(f"{about.TOOL_PROGRAM_NAME}", "programname"),
 					 ANSIThemeString(" will assume that ", "description"),
 					 ANSIThemeString("kubeadm ", "argument"),
 					 ANSIThemeString("is used.", "description")],
@@ -3164,7 +3169,7 @@ CMT_COMMANDLINE = {
 					[ANSIThemeString("This sets the max number of parallel connections", "description")],
 					[ANSIThemeString("when running Ansible playbooks", "description")],
 					[ANSIThemeString("(this overrides ", "description"),
-					 ANSIThemeString("cmt.yaml", "argument"),
+					 ANSIThemeString(f"{CMT_CONFIG_FILENAME}", "argument"),
 					 ANSIThemeString("; default: ", "description"),
 					 ANSIThemeString("5", "argument"),
 					 ANSIThemeString(")", "description")],

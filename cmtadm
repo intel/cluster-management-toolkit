@@ -2845,7 +2845,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 		if "=" in requested_version:
 			k8s_distro, requested_version = requested_version.split("=")
 			if k8s_distro not in ("kubeadm", "rke2"):
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+				ansithemeprint([ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
 						ANSIThemeString(": “", "default"),
 						ANSIThemeString(f"{k8s_distro}", "option"),
 						ANSIThemeString("“ is not a supported Kubernetes distribution.", "default")], stderr = True)
@@ -3541,7 +3541,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			ANSIThemeString("127.0.0.1", "hostname")])
 	ansithemeprint([ANSIThemeString("in ", "default"),
 			ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
-			ANSIThemeString(f" with the real IP-address of this host.\n", "default")])
+			ANSIThemeString(" with the real IP-address of this host.\n", "default")])
 
 def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> Tuple[List[Dict], kubernetes_helper.KubernetesHelper]:
 	if not Path(KUBE_CONFIG_FILE).is_file():
@@ -4307,7 +4307,7 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 	if clean_run:
 		ansithemeprint([ANSIThemeString("\nImportant", "emphasis"),
 				ANSIThemeString(":", "default")])
-		ansithemeprint([ANSIThemeString("  cmtadm", "programname"),
+		ansithemeprint([ANSIThemeString(f"  {about.ADMIN_PROGRAM_NAME}", "programname"),
 				ANSIThemeString(" audit", "command"),
 				ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
 		ansithemeprint([ANSIThemeString("  a perfect score is not a guarantee that your installation is secure.", "default")])
@@ -4324,19 +4324,19 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 				ANSIThemeString(":", "default"),
 				ANSIThemeString(" the username for the current user “", "default"),
 				ANSIThemeString(f"{username}", "argument"),
-				ANSIThemeString(f"“ is the same", "default")])
-		ansithemeprint([ANSIThemeString(f"as its primary group name. This may be an indication ", "default"),
-				ANSIThemeString(f"that the system", "default")])
-		ansithemeprint([ANSIThemeString(f"is configured to use usergroups; if you're seeing warnings related", "default")])
-		ansithemeprint([ANSIThemeString(f"to file permissions this ", "default"),
-				ANSIThemeString(f"might", "emphasis"),
-				ANSIThemeString(f" the cause; if you know (or think) that", "default")])
-		ansithemeprint([ANSIThemeString(f"the system is configured with usergroups you can try:\n", "default")])
-		ansithemeprint([ANSIThemeString(f"  cmtadm ", "programname"),
-				ANSIThemeString(f"audit ", "command"),
-				ANSIThemeString(f"--usergroup ", "option"),
+				ANSIThemeString("“ is the same", "default")])
+		ansithemeprint([ANSIThemeString("as its primary group name. This may be an indication ", "default"),
+				ANSIThemeString("that the system", "default")])
+		ansithemeprint([ANSIThemeString("is configured to use usergroups; if you're seeing warnings related", "default")])
+		ansithemeprint([ANSIThemeString("to file permissions this ", "default"),
+				ANSIThemeString("might", "emphasis"),
+				ANSIThemeString(" be the cause; if you know (or think) that", "default")])
+		ansithemeprint([ANSIThemeString("the system is configured with usergroups you can try:\n", "default")])
+		ansithemeprint([ANSIThemeString(f"  {about.ADMIN_PROGRAM_NAME} ", "programname"),
+				ANSIThemeString("audit ", "command"),
+				ANSIThemeString("--usergroup ", "option"),
 				ANSIThemeString(f"{username}", "argument")])
-		ansithemeprint([ANSIThemeString(f"\nto see if that resolves the warnings.", "default")])
+		ansithemeprint([ANSIThemeString("\nto see if that resolves the warnings.", "default")])
 
 preflight_checks = [
 	{
@@ -4380,7 +4380,7 @@ def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 	if clean_run:
 		ansithemeprint([ANSIThemeString("\nImportant", "emphasis"),
 				ANSIThemeString(":", "default")])
-		ansithemeprint([ANSIThemeString("  cmtadm", "programname"),
+		ansithemeprint([ANSIThemeString(f"  {about.ADMIN_PROGRAM_NAME}", "programname"),
 				ANSIThemeString(" preflight-check", "command"),
 				ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
 		ansithemeprint([ANSIThemeString("  a perfect score is not a guarantee that installation will succeed.", "default")])
@@ -4426,7 +4426,7 @@ def troubleshoot(options: List[Tuple[str, str]], args: List[str]) -> None:
 	if clean_run:
 		ansithemeprint([ANSIThemeString("\nImportant", "emphasis"),
 				ANSIThemeString(":", "default")])
-		ansithemeprint([ANSIThemeString("  cmtadm", "programname"),
+		ansithemeprint([ANSIThemeString(f"  {about.ADMIN_PROGRAM_NAME}", "programname"),
 				ANSIThemeString(" troubleshoot", "command"),
 				ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
 		ansithemeprint([ANSIThemeString("  a perfect score is not a guarantee that your cluster is problem free.", "default")])
@@ -4654,7 +4654,7 @@ COMMANDLINE = {
 			 ANSIThemeString("cilium", "argument"),
 			 ANSIThemeString(",", "separator")],
 			[ANSIThemeString("flannel", "argument"),
-			 ANSIThemeString(", ", "separator") ,
+			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("kube-router", "argument"),
 			 ANSIThemeString(", ", "separator"),
 			 ANSIThemeString("weave", "argument"),

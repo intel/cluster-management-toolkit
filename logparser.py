@@ -2387,7 +2387,7 @@ def ansible_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLe
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 	matched = False
 
-	if message.startswith("PLAY [") and message.endswith ("***"):
+	if message.startswith("PLAY [") and message.endswith("***"):
 		if severity is None:
 			severity = LogLevel.INFO
 		remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
