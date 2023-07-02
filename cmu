@@ -9838,6 +9838,8 @@ def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Di
 	http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
 	https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
 	no_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#no_proxy"), "")
+	verbose = deep_get(cmtlib.cmtconfig, DictPath("Ansible#verbose"), False)
+
 	use_proxy = "no"
 	if (http_proxy is not None and len(http_proxy) > 0) or (https_proxy is not None and len(https_proxy) > 0):
 		use_proxy = "yes"
@@ -9846,7 +9848,10 @@ def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Di
 	values["https_proxy"] = https_proxy
 	values["no_proxy"] = no_proxy
 
-	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = nodes, values = values)
+	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = nodes, values = values, verbose = verbose)
+	if verbose:
+		ansithemeprint([ANSIThemeString("", "default")])
+
 	ansible_print_play_results(retval, ansible_results)
 
 	return retval

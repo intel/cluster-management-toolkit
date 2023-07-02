@@ -1299,13 +1299,14 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 				if unreachable == True:
 					break
 
-def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None) -> Tuple[int, Dict]:
+def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, verbose: bool = False) -> Tuple[int, Dict]:
 	"""
 	Run a playbook
 
 		Parameters:
 			playbook (FilePath): The playbook to run
 			inventory (dict): An inventory dict with selection as the list of hosts to run on
+			verbose (bool): Output status updates for every new Ansible event
 		Returns:
 			(retval(bool), ansible_results(dict)): The return value and results from the run
 	"""
@@ -1326,7 +1327,12 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None) -
 
 	start_date = datetime.now()
 
-	runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventories, forks = forks)
+	event_handler = None
+	if verbose:
+		event_handler = __ansible_run_event_handler_cb
+
+	runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventories, forks = forks,
+					      event_handler = event_handler)
 
 	retval = 0
 	if runner is not None:
@@ -1338,7 +1344,8 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None) -
 
 	return retval, ansible_results
 
-def ansible_run_playbook_async(playbook: FilePath, inventory: Dict) -> ansible_runner.runner.Runner:
+# pylint: disable-next=unused-argument
+def ansible_run_playbook_async(playbook: FilePath, inventory: Dict, verbose: bool = False) -> ansible_runner.runner.Runner:
 	"""
 	Run a playbook asynchronously
 
@@ -1357,7 +1364,7 @@ def ansible_run_playbook_async(playbook: FilePath, inventory: Dict) -> ansible_r
 
 	return runner
 
-def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], values: Optional[Dict] = None) -> Tuple[int, Dict]:
+def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], values: Optional[Dict] = None, verbose: bool = False) -> Tuple[int, Dict]:
 	"""
 	Run a playbook on selected nodes
 
@@ -1365,6 +1372,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 			playbook (FilePath): The playbook to run
 			selection (list[str]): The hosts to run the play on
 			values (dict): Extra values to set for the hosts
+			verbose (bool): Output status updates for every new Ansible event
 		Returns:
 			The result from ansible_run_playbook()
 	"""
@@ -1403,10 +1411,10 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 	for host in selection:
 		d["selection"]["hosts"][host] = ""
 
-	return ansible_run_playbook(playbook, d)
+	return ansible_run_playbook(playbook, d, verbose)
 
 def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[str], values: Optional[Dict] = None,
-					    inventory: Optional[Dict] = None) -> ansible_runner.runner.Runner:
+					    inventory: Optional[Dict] = None, verbose: bool = False) -> ansible_runner.runner.Runner:
 	"""
 	Run a playbook on selected nodes
 
@@ -1414,6 +1422,7 @@ def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[
 			playbook (FilePath): The playbook to run
 			selection (list[str]): The hosts to run the play on
 			values (dict): Extra values to set for the hosts
+			verbose (bool): Output status updates for every new Ansible event
 		Returns:
 			The result from ansible_run_playbook_async()
 	"""
@@ -1455,7 +1464,7 @@ def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[
 	for host in selection:
 		d["selection"]["hosts"][host] = ""
 
-	return ansible_run_playbook_async(playbook, d)
+	return ansible_run_playbook_async(playbook, d, verbose)
 
 def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 	"""
@@ -1507,6 +1516,65 @@ def ansible_ping_async(selection: Optional[List[str]], inventory: Optional[Dict]
 
 	return ansible_run_playbook_on_selection_async(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))),
 						       selection = selection, inventory = inventory)
+
+def __ansible_run_event_handler_cb(data: Dict) -> bool:
+	if deep_get(data, DictPath("event"), "") == "runner_on_start":
+		host = deep_get(data, DictPath("event_data#host"), "<unset>")
+		task = deep_get(data, DictPath("event_data#task"), "<unset>")
+		ansithemeprint([ANSIThemeString("• ", "separator"),
+				ANSIThemeString("Task", "action"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{task}", "play"),
+				ANSIThemeString(" ", "default"),
+				ANSIThemeString("started", "phase"),
+				ANSIThemeString(" on ", "default"),
+				ANSIThemeString(f"{host}", "hostname")])
+	elif deep_get(data, DictPath("event"), "") in ("runner_on_ok", "runner_on_async_ok"):
+		host = deep_get(data, DictPath("event_data#host"), "<unset>")
+		task = deep_get(data, DictPath("event_data#task"), "<unset>")
+		ansithemeprint([ANSIThemeString("• ", "separator"),
+				ANSIThemeString("Task", "action"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{task}", "play"),
+				ANSIThemeString(" ", "default"),
+				ANSIThemeString("succeeded", "success"),
+				ANSIThemeString(" on ", "default"),
+				ANSIThemeString(f"{host}", "hostname")])
+	elif deep_get(data, DictPath("event"), "") in ("runner_on_failed", "runner_on_async_failed"):
+		host = deep_get(data, DictPath("event_data#host"), "<unset>")
+		task = deep_get(data, DictPath("event_data#task"), "<unset>")
+		ansithemeprint([ANSIThemeString("• ", "separator"),
+				ANSIThemeString("Task", "action"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{task}", "play"),
+				ANSIThemeString(" ", "default"),
+				ANSIThemeString("failed", "error"),
+				ANSIThemeString(" on ", "default"),
+				ANSIThemeString(f"{host}", "hostname")])
+	elif deep_get(data, DictPath("event"), "") == "runner_on_unreachable":
+		host = deep_get(data, DictPath("event_data#host"), "<unset>")
+		task = deep_get(data, DictPath("event_data#task"), "<unset>")
+		ansithemeprint([ANSIThemeString("• ", "separator"),
+				ANSIThemeString("Task", "action"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{task}", "play"),
+				ANSIThemeString(" ", "default"),
+				ANSIThemeString("failed", "error"),
+				ANSIThemeString("; ", "default"),
+				ANSIThemeString(f"{host}", "hostname"),
+				ANSIThemeString(" unreachable", "default")])
+	elif deep_get(data, DictPath("event"), "") == "runner_on_skipped":
+		host = deep_get(data, DictPath("event_data#host"), "<unset>")
+		task = deep_get(data, DictPath("event_data#task"), "<unset>")
+		ansithemeprint([ANSIThemeString("• ", "separator"),
+				ANSIThemeString("Task", "action"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{task}", "play"),
+				ANSIThemeString(" ", "default"),
+				ANSIThemeString("skipped", "none"),
+				ANSIThemeString(" on ", "default"),
+				ANSIThemeString(f"{host}", "hostname")])
+	return True
 
 def __ansible_run_async_finished_cb(runner_obj: ansible_runner.runner.Runner, **kwargs: Dict) -> None:
 	# pylint: disable-next=global-variable-not-assigned
