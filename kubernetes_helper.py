@@ -3318,14 +3318,15 @@ class KubernetesHelper:
 	A class used for interacting with a Kubernetes cluster
 	"""
 
-	tmp_ca_certs_file = None
-	tmp_cert_file = None
-	tmp_key_file = None
+	# XXX: There doesn't seem to be any better type-hint for NamedTemporaryFile for the time being.
+	tmp_ca_certs_file: Any = None
+	tmp_cert_file: Any = None
+	tmp_key_file: Any = None
 	programname = ""
 	programversion = ""
-	control_plane_ip = None
-	control_plane_port = None
-	control_plane_path = None
+	control_plane_ip: Optional[str] = None
+	control_plane_port: Optional[str] = None
+	control_plane_path: Optional[str] = None
 
 	def list_contexts(self, config_path: Optional[FilePath] = None) -> List[Tuple[bool, str, str, str, str, str]]:
 		return list_contexts(config_path)
@@ -3412,7 +3413,7 @@ class KubernetesHelper:
 			connect_timeout: float = 3.0
 			# This isn't ideal; we might need different cluster proxies for different clusters
 			cluster_https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), None)
-			result = self.pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False)
+			result = self.pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False) # type: ignore
 			if result.status == 302:
 				location = result.headers.get("Location", "")
 				tmp = re.match(r".*implicit#access_token=([^&]+)", location)
@@ -3525,7 +3526,7 @@ class KubernetesHelper:
 					raise
 				break
 			elif ccac_file is not None:
-				ca_certs = secure_read(ccac_file)
+				ca_certs = cast(str, secure_read(ccac_file))
 
 		if control_plane_ip is None or control_plane_port is None:
 			return False
@@ -3559,7 +3560,7 @@ class KubernetesHelper:
 							e.args += (f"failed to decode client-certificate-data: {e}", )
 							raise
 					elif ccd_file is not None:
-						cert = secure_read(ccd_file)
+						cert = cast(str, secure_read(ccd_file))
 
 
 					# key
@@ -3574,7 +3575,7 @@ class KubernetesHelper:
 							e.args += (f"failed to decode client-key-data: {e}", )
 							raise
 					elif ckd_file is not None:
-						key = secure_read(ckd_file)
+						key = cast(str, secure_read(ckd_file))
 
 					self.token = deep_get(user, DictPath("user#token"))
 					break

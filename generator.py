@@ -7,22 +7,27 @@ This generates elements for various more complex types
 # pylint: disable=too-many-arguments
 
 from datetime import datetime
-from typing import cast, List, Union
+from typing import Any, cast, Dict, List, Optional, Set, Tuple, Union
 
 from curses_helper import color_status_group, themearray_len, ThemeAttr, ThemeRef, ThemeString
 import cmtlib
 from cmtlib import datetime_to_timestamp, timestamp_to_datetime
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
 
-def format_list(items, fieldlen: int, pad, ralign: bool, selected: bool,
-		item_separator = None,
-		field_separators = None,
-		field_colors = None,
+def format_list(items: Any,
+		fieldlen: int,
+		pad: int,
+		ralign: bool,
+		selected: bool,
+		item_separator: Optional[ThemeRef] = None,
+		field_separators: Optional[List[ThemeRef]] = None,
+		field_colors: Optional[List[ThemeAttr]] = None,
 		ellipsise: int = -1,
-		ellipsis = None,
-		field_prefixes = None,
-		field_suffixes = None,
-		mapping = None):
+		ellipsis: Optional[ThemeRef] = None,
+		field_prefixes: Optional[List[ThemeRef]] = None,
+		field_suffixes: Optional[List[ThemeRef]] = None,
+		mapping: Optional[Dict] = None) ->\
+			List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 	totallen = 0
 
@@ -89,7 +94,7 @@ def format_list(items, fieldlen: int, pad, ralign: bool, selected: bool,
 
 			if string == "<none>":
 				fmt = ThemeAttr("types", "none")
-				formatted_string = ThemeString(string, fmt, selected)
+				formatted_string: Union[ThemeRef, ThemeString] = ThemeString(string, fmt, selected)
 			elif string == "<unset>":
 				fmt = ThemeAttr("types", "unset")
 				formatted_string = ThemeString(string, fmt, selected)
@@ -133,7 +138,12 @@ def format_list(items, fieldlen: int, pad, ralign: bool, selected: bool,
 # reference values (such as using other paths to get the range, instead of getting
 # it static from formatting#mapping)
 # pylint: disable=unused-argument
-def map_value(value, references = None, selected: bool = False, default_field_color: ThemeAttr = ThemeAttr("types", "generic"), mapping = None):
+def map_value(value: Any,
+	      references: Any = None,
+	      selected: bool = False,
+	      default_field_color: ThemeAttr = ThemeAttr("types", "generic"),
+	      mapping: Optional[Dict] = None) ->\
+			Tuple[Union[ThemeRef, ThemeString], str]:
 	# If we lack a mapping, use the default color for this field
 	if mapping is None or len(mapping) == 0:
 		return ThemeString(value, default_field_color, selected), value
@@ -216,7 +226,12 @@ def map_value(value, references = None, selected: bool = False, default_field_co
 		fmt = ThemeAttr("types", "generic")
 	return ThemeString(string, fmt, selected), string
 
-def align_and_pad(array: List[Union[ThemeRef, ThemeString]], pad: int, fieldlen: int, stringlen: int, ralign: bool, selected: bool) ->\
+def align_and_pad(array: List[Union[ThemeRef, ThemeString]],
+		  pad: int,
+		  fieldlen: int,
+		  stringlen: int,
+		  ralign: bool,
+		  selected: bool) ->\
 			List[Union[ThemeRef, ThemeString]]:
 	tmp_array: List[Union[ThemeRef, ThemeString]] = []
 	if ralign:
@@ -229,7 +244,12 @@ def align_and_pad(array: List[Union[ThemeRef, ThemeString]], pad: int, fieldlen:
 		tmp_array.append(ThemeRef("separators", "pad", selected))
 	return tmp_array
 
-def format_numerical_with_units(string: str, ftype: str, selected: bool, non_units = None, separator_lookup = None) -> List[Union[ThemeRef, ThemeString]]:
+def format_numerical_with_units(string: str,
+				ftype: str,
+				selected: bool,
+				non_units: Optional[Set] = None,
+				separator_lookup: Optional[Dict] = None) ->\
+					List[Union[ThemeRef, ThemeString]]:
 	substring = ""
 	array: List[Union[ThemeRef, ThemeString]] = []
 	numeric = None
@@ -295,7 +315,8 @@ def format_numerical_with_units(string: str, ftype: str, selected: bool, non_uni
 
 	return array
 
-def generator_age_raw(value, selected: bool) -> List[Union[ThemeRef, ThemeString]]:
+def generator_age_raw(value: Union[int, str],
+		      selected: bool) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 
 	if value == -1:
@@ -321,7 +342,13 @@ def generator_age_raw(value, selected: bool) -> List[Union[ThemeRef, ThemeString
 	return array
 
 # pylint: disable=unused-argument
-def generator_age(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_age(obj: Dict,
+		  field: str,
+		  fieldlen: int,
+		  pad: int,
+		  ralign: bool,
+		  selected: bool,
+		  **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 
 	value = getattr(obj, field)
@@ -330,7 +357,13 @@ def generator_age(obj, field, fieldlen: int, pad: int, ralign: bool, selected: b
 
 	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
 
-def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting) -> List[Union[ThemeRef, ThemeString]]:
+def generator_address(obj: Dict,
+		      field: str,
+		      fieldlen: int,
+		      pad: int,
+		      ralign: bool,
+		      selected: bool,
+		      **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	item_separator = deep_get(formatting, DictPath("item_separator"))
 
 	items = getattr(obj, field, [])
@@ -386,7 +419,13 @@ def generator_address(obj, field, fieldlen: int, pad: int, ralign: bool, selecte
 
 	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
 
-def generator_basic(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_basic(obj: Dict,
+		    field: str,
+		    fieldlen: int,
+		    pad: int,
+		    ralign: bool,
+		    selected: bool,
+		    **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 	value = getattr(obj, field)
 	string = str(value)
@@ -414,7 +453,13 @@ def generator_basic(obj, field, fieldlen: int, pad: int, ralign: bool, selected:
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
 # pylint: disable=unused-argument
-def generator_hex(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_hex(obj: Dict,
+		  field: str,
+		  fieldlen: int,
+		  pad: int,
+		  ralign: bool,
+		  selected: bool,
+		  **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 	value = getattr(obj, field)
 	string = str(value)
@@ -423,7 +468,13 @@ def generator_hex(obj, field, fieldlen: int, pad: int, ralign: bool, selected: b
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_list(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_list(obj: Dict,
+		   field: str,
+		   fieldlen: int,
+		   pad: int,
+		   ralign: bool,
+		   selected: bool,
+		   **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	items = getattr(obj, field)
 
 	item_separator = deep_get(formatting, DictPath("item_separator"))
@@ -459,7 +510,13 @@ def generator_list(obj, field, fieldlen: int, pad: int, ralign: bool, selected: 
 			   field_suffixes = field_suffixes,
 			   mapping = mapping)
 
-def generator_list_with_status(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_list_with_status(obj: Dict,
+			       field: str,
+			       fieldlen: int,
+			       pad: int,
+			       ralign: bool,
+			       selected: bool,
+			       **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	items = getattr(obj, field)
 	if isinstance(items, tuple):
 		items = [items]
@@ -528,7 +585,13 @@ def generator_list_with_status(obj, field, fieldlen: int, pad: int, ralign: bool
 			   field_suffixes = field_suffixes)
 
 # pylint: disable=unused-argument
-def generator_mem(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_mem(obj: Dict,
+		  field: str,
+		  fieldlen: int,
+		  pad: int,
+		  ralign: bool,
+		  selected: bool,
+		  **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 	free, total = getattr(obj, field)
 
@@ -561,7 +624,13 @@ def generator_mem(obj, field, fieldlen: int, pad: int, ralign: bool, selected: b
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
 # pylint: disable=unused-argument
-def generator_mem_single(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_mem_single(obj: Dict,
+			 field: str,
+			 fieldlen: int,
+			 pad: int,
+			 ralign: bool,
+			 selected: bool,
+			 **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 	value = getattr(obj, field)
 	string = str(value)
@@ -571,7 +640,13 @@ def generator_mem_single(obj, field, fieldlen: int, pad: int, ralign: bool, sele
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
 # pylint: disable=unused-argument
-def generator_numerical(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_numerical(obj: Dict,
+			field: str,
+			fieldlen: int,
+			pad: int,
+			ralign: bool,
+			selected: bool,
+			**formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 
 	value = getattr(obj, field)
@@ -589,7 +664,13 @@ def generator_numerical(obj, field, fieldlen: int, pad: int, ralign: bool, selec
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_numerical_with_units(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_numerical_with_units(obj: Dict,
+				   field: str,
+				   fieldlen: int,
+				   pad: int,
+				   ralign: bool,
+				   selected: bool,
+			           **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 
 	value = getattr(obj, field)
@@ -608,7 +689,13 @@ def generator_numerical_with_units(obj, field, fieldlen: int, pad: int, ralign: 
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_status(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_status(obj: Dict,
+		     field: str,
+		     fieldlen: int,
+		     pad: int,
+		     ralign: bool,
+		     selected: bool,
+		     **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 
 	status = getattr(obj, field)
@@ -622,7 +709,13 @@ def generator_status(obj, field, fieldlen: int, pad: int, ralign: bool, selected
 
 	return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
 
-def generator_timestamp(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_timestamp(obj: Dict,
+			field: str,
+			fieldlen: int,
+			pad: int,
+			ralign: bool,
+			selected: bool,
+			**formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 
 	value = getattr(obj, field)
@@ -641,7 +734,13 @@ def generator_timestamp(obj, field, fieldlen: int, pad: int, ralign: bool, selec
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 
-def generator_timestamp_with_age(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_timestamp_with_age(obj: Dict,
+				 field: str,
+				 fieldlen: int,
+				 pad: int,
+				 ralign: bool,
+				 selected: bool,
+				 **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 	values = getattr(obj, field)
 
@@ -691,7 +790,13 @@ def generator_timestamp_with_age(obj, field, fieldlen: int, pad: int, ralign: bo
 
 	return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
 
-def generator_value_mapper(obj, field, fieldlen: int, pad: int, ralign: bool, selected: bool, **formatting):
+def generator_value_mapper(obj: Dict,
+			   field: "str",
+			   fieldlen: int,
+			   pad: int,
+			   ralign: bool,
+			   selected: bool,
+			   **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	array: List[Union[ThemeRef, ThemeString]] = []
 	value = getattr(obj, field)
 

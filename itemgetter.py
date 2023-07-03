@@ -681,16 +681,16 @@ def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 	return affinities
 
 # pylint: disable-next=unused-argument
-def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> Optional[List[str]]:
+def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> Optional[List[Tuple[str, str]]]:
 	cm_namespace = deep_get(kwargs, DictPath("cm_namespace"))
 	if isinstance(cm_namespace, list):
-		cm_namespace = deep_get_with_fallback(obj, DictPath(cm_namespace))
+		cm_namespace = deep_get_with_fallback(obj, cm_namespace)
 	cm_name = deep_get(kwargs, DictPath("cm_name"))
 	if isinstance(cm_name, list):
-		cm_name = deep_get_with_fallback(obj, DictPath(cm_name))
+		cm_name = deep_get_with_fallback(obj, cm_name)
 	pod_name = deep_get(kwargs, DictPath("pod_name"))
 	if isinstance(pod_name, list):
-		pod_name = deep_get_with_fallback(obj, DictPath(pod_name))
+		pod_name = deep_get_with_fallback(obj, pod_name)
 	if cm_namespace is None or cm_name is None:
 		return None
 
@@ -701,6 +701,8 @@ def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwar
 		field_selector = f"metadata.name={pod_name}"
 
 	plist, status = kh.get_list_by_kind_namespace(("Pod", ""), cm_namespace, field_selector = field_selector)
+
+	plist = cast(List, plist)
 
 	for item in plist:
 		pod_name = deep_get(item, DictPath("metadata#name"), "")
@@ -733,7 +735,7 @@ def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwar
 					break
 
 	if len(vlist) == 0:
-		vlist = None
+		return None
 
 	return vlist
 

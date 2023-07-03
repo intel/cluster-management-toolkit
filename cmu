@@ -4554,7 +4554,7 @@ def filter_list_entry(obj, caller_obj, filters):
 			break
 	return skip
 
-def generic_listgetter(kind, namespace, **kwargs):
+def generic_listgetter(kind: Tuple[str, str], namespace: str, **kwargs: Dict) -> List[Dict]:
 	label_selector = deep_get(kwargs, DictPath("label_selector"), "")
 	field_selector = deep_get(kwargs, DictPath("field_selector"), "")
 	filters = deep_get(kwargs, DictPath("filters"), [])

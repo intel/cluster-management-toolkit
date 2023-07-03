@@ -324,7 +324,7 @@ def init_ansithemeprint(themefile: Optional[FilePath]) -> None:
 		themepath = FilePath("<built-in default>")
 		return
 
-	themepath = cast(FilePath, themefile)
+	themepath = themefile
 
 	# The themes directory itself may be a symlink. This is expected behaviour when installing from a git repo,
 	# but we only allow it if the rest of the path components are secure

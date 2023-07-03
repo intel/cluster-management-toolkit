@@ -115,7 +115,7 @@ class ThemeString:
 
 		return self.selected
 
-	def __eq__(self, obj) -> bool:
+	def __eq__(self, obj: Any) -> bool:
 		if not isinstance(obj, ThemeString):
 			return False
 
@@ -215,7 +215,7 @@ class ThemeRef:
 
 		return self.selected
 
-	def __eq__(self, obj) -> bool:
+	def __eq__(self, obj: Any) -> bool:
 		if not isinstance(obj, ThemeRef):
 			return False
 
@@ -312,7 +312,7 @@ class ThemeArray:
 			first = False
 		return f"ThemeArray({references})"
 
-	def __eq__(self, obj) -> bool:
+	def __eq__(self, obj: Any) -> bool:
 		if not isinstance(obj, ThemeArray):
 			return False
 
@@ -920,7 +920,7 @@ def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, 
 
 		Parameters:
 			win (curses.window): The curses window to operate on
-			y (int):  The y-position of the percentage bar
+			y (int): The y-position of the percentage bar
 			minx (int): The starting position of the percentage bar
 			maxx (int): The ending position of the percentage bar
 			total (int): The total sum
@@ -1558,7 +1558,7 @@ ignoreinput = False
 # pylint: disable-next=too-many-arguments,line-too-long
 def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 		 items, headers = None, title: str = "", preselection: Union[str, Set[int]] = "",
-		 cursor: bool = True, taggable: bool = False, confirm: bool = False, confirm_buttons = None, **kwargs):
+		 cursor: bool = True, taggable: bool = False, confirm: bool = False, confirm_buttons = None, **kwargs: Dict):
 	stdscr.refresh()
 	global ignoreinput # pylint: disable=global-statement
 	ignoreinput = False

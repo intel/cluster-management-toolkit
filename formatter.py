@@ -32,9 +32,9 @@ from cmtlib import split_msg
 from curses_helper import ThemeAttr, ThemeRef, ThemeString
 
 if json_is_ujson:
-	def json_dumps(obj) -> str:
+	def json_dumps(obj: Dict) -> str:
 		"""
-		Dump JSON object to text format; ujson version
+		Dump Python object to JSON in text format; ujson version
 
 			Parameters:
 				obj (dict): The JSON object to dump
@@ -45,9 +45,9 @@ if json_is_ujson:
 		indent = 2
 		return json.dumps(obj, indent = indent, escape_forward_slashes = False)
 else:
-	def json_dumps(obj) -> str:
+	def json_dumps(obj: Dict) -> str:
 		"""
-		Dump JSON object to text format; json version
+		Dump Python object to JSON in text format; json version
 
 			Parameters:
 				obj (dict): The JSON object to dump
@@ -57,6 +57,7 @@ else:
 
 		indent = 2
 		return json.dumps(obj, indent = indent)
+
 def __str_representer(dumper: yaml.Dumper, data: Any) -> yaml.Node:
 	"""
 	Reformat yaml with |-style str
