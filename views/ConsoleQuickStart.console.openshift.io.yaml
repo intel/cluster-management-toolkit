@@ -7,3 +7,125 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "Console Quick Start Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_version", "display_name", "description", "duration", "tags"]
+    rows:
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#description"
+        type: "str"
+      display_name:
+        header: [["Display Name:", ["main", "infoheader"]]]
+        path: "spec#displayName"
+        type: "str"
+      duration:
+        header: [["Duration (min):", ["main", "infoheader"]]]
+        path: "spec#durationMinutes"
+        type: "str"
+      tags:
+        header: [["Tags:", ["main", "infoheader"]]]
+        path: "spec#tags"
+        type: "raw"
+        default: "<none>"
+        formatter: "list"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__ResourceView"
+      formatter: "format_yaml"
+      obj_path: ""
+      title_path: "title"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#tasks"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["title"]
+        sortcolumn: "data"
+    fields:
+      title:
+        header: "Title:"
+        path: "title"
+        type: "str"
+  shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"
+    "Conclusion":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show conclusion"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Conclusion"
+        _pass_obj: true
+        path: "spec#conclusion"
+    "Introduction":
+      key: "i"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show introduction"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Introduction"
+        _pass_obj: true
+        path: "spec#introduction"
+    "Show prerequisites":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "List prerequisites (if any)"
+      widget: "windowwidget"
+      title: "Prerequisites:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#prerequisites"
+      # Not supported for now
+      sortcolumn: "name"
+    "Show Next Quickstart":
+      key: "q"
+      modifier: "shift"
+      read_only: true
+      helptext: "List next QuickStart (if any)"
+      widget: "windowwidget"
+      title: "Name:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#nextQuickStart"
+      # Not supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "ConsoleQuickStart"
+        api_family: "console.openshift.io"
+        name_path: 0

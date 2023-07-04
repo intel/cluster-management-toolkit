@@ -7378,7 +7378,10 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 		title_path = deep_get(kwargs, DictPath("title_path"))
 		if title_path is not None:
 			title = deep_get(obj, DictPath(title_path))
-		obj = deep_get(obj, DictPath(obj_path))
+		if obj_path != "":
+			obj = deep_get(obj, DictPath(obj_path))
+		else:
+			obj = [obj]
 
 	uip = UIProps(stdscr)
 
