@@ -638,6 +638,15 @@ def identify_k8s_distro() -> str:
 			tmp_k8s_distro = None
 			minikube_name = deep_get(node, DictPath("metadata#labels#minikube.k8s.io/name"), "")
 			labels = deep_get(node, DictPath("metadata#labels"), {})
+			images = deep_get(node, DictPath("status#images"), [])
+			for image in images:
+				names = deep_get(image, DictPath("names"), [])
+				for name in names:
+					if "openshift-crc-cluster" in name:
+						tmp_k8s_distro = "crc"
+						break
+				if tmp_k8s_distro is not None:
+					break
 			if minikube_name != "":
 				tmp_k8s_distro = "minikube"
 			elif deep_get(labels, DictPath("microk8s.io/cluster"), False) == True:
