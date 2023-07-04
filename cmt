@@ -134,6 +134,12 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 	merged_values = { **values, **extra_values }
 
 	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
+	if retval == -errno.ENOENT and len(ansible_results) == 0:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{ANSIBLE_INVENTORY}", "path"),
+				ANSIThemeString(" is either empty or missing; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
 	ansible_print_play_results(retval, ansible_results)
 
