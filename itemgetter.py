@@ -488,6 +488,8 @@ def get_list_as_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 		if _regex is not None:
 			compiled_regex = re.compile(_regex)
 		for item in deep_get_with_fallback(obj, paths, []):
+			if len(item) == 0:
+				continue
 			if _regex is not None:
 				tmp = compiled_regex.match(item)
 				if tmp is not None:
