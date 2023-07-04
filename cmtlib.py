@@ -10,8 +10,9 @@ import os
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Dict, List, Optional, Tuple, Union
+from typing import cast, Dict, List, Optional, Tuple, Union
 
+import about
 from ansithemeprint import ANSIThemeString, ansithemeprint
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy
 from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR
@@ -597,6 +598,69 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 			deb_versions.append((package, installed_version, candidate_version, natsorted_versions))
 
 	return deb_versions
+
+def identify_k8s_distro() -> str:
+	"""
+	Identify what Kubernetes distro (kubeadm, minikube, OpenShift, etc.) is in use
+
+		Returns:
+			k8s_distro (str): The identified Kubernetes distro; empty if no distro could be identified
+	"""
+
+	k8s_distro = None
+
+	# This will only work for running clusters
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+	if status != 200:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": API-server returned ", "default"),
+				ANSIThemeString(f"{status}", "errorvalue"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+	if vlist is None:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	for node in vlist:
+		node_roles = kh.get_node_roles(cast(Dict, node))
+		if "control-plane" in node_roles or "master" in node_roles:
+			cri = deep_get(node, DictPath("status#nodeInfo#containerRuntimeVersion"), "")
+			if cri is not None:
+				cri = cri.split(":")[0]
+			ipaddresses = []
+			for address in deep_get(node, DictPath("status#addresses")):
+				if deep_get(address, DictPath("type"), "") == "InternalIP":
+					ipaddresses.append(deep_get(address, DictPath("address")))
+			tmp_k8s_distro = None
+			minikube_name = deep_get(node, DictPath("metadata#labels#minikube.k8s.io/name"), "")
+			if minikube_name != "":
+				tmp_k8s_distro = "minikube"
+			else:
+				managed_fields = deep_get(node, DictPath("metadata#managedFields"), [])
+				for managed_field in managed_fields:
+					manager = deep_get(managed_field, DictPath("manager"), "")
+					if manager == "rke2":
+						tmp_k8s_distro = "rke2"
+						break
+					if manager == "k3s":
+						tmp_k8s_distro = "k3s"
+						break
+					if manager == "kubeadm":
+						tmp_k8s_distro = "kubeadm"
+						break
+			if tmp_k8s_distro is not None:
+				if k8s_distro is not None:
+					ansithemeprint([ANSIThemeString("Critical", "critical"),
+							ANSIThemeString(": The control planes are reporting conflicting Kubernetes distros; aborting.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+				else:
+					k8s_distro = tmp_k8s_distro
+
+	return k8s_distro
 
 def identify_distro() -> str:
 	"""

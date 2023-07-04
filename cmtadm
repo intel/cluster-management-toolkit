@@ -365,7 +365,10 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 					if manager == "rke2":
 						tmp_k8s_distro = "rke2"
 						break
-					elif manager == "kubeadm":
+					if manager == "k3s":
+						tmp_k8s_distro = "k3s"
+						break
+					if manager == "kubeadm":
 						tmp_k8s_distro = "kubeadm"
 						break
 			if tmp_k8s_distro is not None:

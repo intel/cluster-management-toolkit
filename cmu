@@ -69,7 +69,7 @@ from logparser import logparser, logparser_initialised, LogLevel, logparser_conf
 from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import cmtlib
-from cmtlib import clamp, disksize_to_human, get_package_versions, make_set_expression_list
+from cmtlib import clamp, disksize_to_human, get_package_versions, identify_k8s_distro, make_set_expression_list
 from cmtlib import none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since
 from cmtlib import split_msg, versiontuple, read_cmtconfig
 from curses_helper import curses_configuration, color_log_severity, format_helptext, get_mousemask, color_status_group
@@ -6362,7 +6362,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 	uip.init_window(field_list, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, activatedfun = activatedfun, on_activation = on_activation)
 
-	infopadheight = 9
+	infopadheight = 11
 
 	# For generic information
 	infopad = uip.init_infopad(height = infopadheight, width = -1, ypos = 1, xpos = 1)
@@ -6521,6 +6521,8 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			# XXX this needs to be fixed when we add more information
 			uip.resize_listpad(-1)
 
+		k8s_distro = identify_k8s_distro()
+
 		namearray: List[Union[ThemeRef, ThemeString]] = [
 			ThemeString("Control Plane: ", ThemeAttr("main", "infoheader")),
 			ThemeString(f"{name}", ThemeAttr("types", "generic"))
@@ -6533,6 +6535,14 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			ThemeString("Cluster Context: ", ThemeAttr("main", "infoheader")),
 			ThemeString(f"{kh.context_name}", ThemeAttr("types", "generic"))
 		]
+		distroarray: List[Union[ThemeRef, ThemeString]] = [
+			ThemeString("Kubernetes Distro: ", ThemeAttr("main", "infoheader")),
+		]
+		if k8s_distro is not None:
+			distroarray.append(ThemeString(f"{k8s_distro}", ThemeAttr("main", "generic")))
+		else:
+			distroarray.append(ThemeString(f"<unknown>", ThemeAttr("types", "unset")))
+
 		internaliparray: List[Union[ThemeRef, ThemeString]] = [
 			ThemeString("Internal IP-address(es): ", ThemeAttr("main", "infoheader")),
 		]
@@ -6548,8 +6558,9 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		uip.addthemearray(infopad, namearray, y = 0, x = 0)
 		uip.addthemearray(infopad, clusternamearray, y = 1, x = 0)
 		uip.addthemearray(infopad, contextarray, y = 2, x = 0)
-		uip.addthemearray(infopad, internaliparray, y = 3, x = 0)
-		uip.addthemearray(infopad, externaliparray, y = 4, x = 0)
+		uip.addthemearray(infopad, distroarray, y = 3, x = 0)
+		uip.addthemearray(infopad, internaliparray, y = 4, x = 0)
+		uip.addthemearray(infopad, externaliparray, y = 5, x = 0)
 
 		if len(loadavg_raw) > 0 and len(meminfo_raw) > 0 and len(stat_raw) > 0:
 			tasksarray: List[Union[ThemeRef, ThemeString]] = [
@@ -6581,17 +6592,17 @@ def clusteroverviewloop(stdscr: curses.window, view):
 				ThemeString("Disabled", ThemeAttr("main", "highlight")),
 			]
 
-			uip.addthemearray(infopad, tasksarray, y = 6, x = 0)
-			uip.addthemearray(infopad, cpuarray, y = 7, x = 0)
-			uip.addthemearray(infopad, cpuusagearray, y = 7, x = (uip.infopadwidth - 8))
-			uip.addthemearray(infopad, memarray, y = 8, x = 0)
-			uip.addthemearray(infopad, memusagearray, y = 8, x = (uip.infopadwidth - 8))
-			uip.addthemearray(infopad, swaparray, y = 9, x = 0)
+			uip.addthemearray(infopad, tasksarray, y = 7, x = 0)
+			uip.addthemearray(infopad, cpuarray, y = 8, x = 0)
+			uip.addthemearray(infopad, cpuusagearray, y = 8, x = (uip.infopadwidth - 8))
+			uip.addthemearray(infopad, memarray, y = 9, x = 0)
+			uip.addthemearray(infopad, memusagearray, y = 9, x = (uip.infopadwidth - 8))
+			uip.addthemearray(infopad, swaparray, y = 10, x = 0)
 
 			# cpu usage:
 			# low-priority (bold blue) / normal (green) / kernel (red) / virtualized (cyan)
 			# This is aggregate over all CPUs
-			curses_helper.percentagebar(infopad, 7, 7, uip.infopadwidth - 10, cputimetotal, [
+			curses_helper.percentagebar(infopad, 8, 7, uip.infopadwidth - 10, cputimetotal, [
 				# Note: These are NOT themestrings!
 				(cputimeusernice, ThemeAttr("types", "cputime_user_nice")),
 				(cputimeuser, ThemeAttr("types", "cputime_user")),
@@ -6601,7 +6612,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 			# memory usage:
 			# used (green) / buffers (bold blue) / cache (yellow)
-			curses_helper.percentagebar(infopad, 8, 7, uip.infopadwidth - 10, memtotal, [
+			curses_helper.percentagebar(infopad, 9, 7, uip.infopadwidth - 10, memtotal, [
 				# Note: These are NOT themestrings!
 				(memused - memcached - buffers, ThemeAttr("types", "mem")),
 				(buffers, ThemeAttr("types", "buffers")),
@@ -6611,9 +6622,9 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			# swap usage:
 			# used (red)
 			if swaptotal == 0:
-				uip.addthemearray(infopad, disabledarray, y = 9, x = 6)
+				uip.addthemearray(infopad, disabledarray, y = 10, x = 6)
 			else:
-				curses_helper.percentagebar(infopad, 8, 6, uip.infopadwidth - 10, swaptotal, [
+				curses_helper.percentagebar(infopad, 9, 6, uip.infopadwidth - 10, swaptotal, [
 					# Note: These are NOT themestrings!
 					(swapused, ThemeAttr("types", "swap_used"))
 				])
@@ -6621,7 +6632,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 					ThemeString(f"{100 * swapused // swaptotal}", ThemeAttr("main", "dim")),
 					ThemeRef("separators", "percentage"),
 				]
-				uip.addthemearray(infopad, swapusagearray, y = 9, x = (uip.infopadwidth - 8))
+				uip.addthemearray(infopad, swapusagearray, y = 10, x = (uip.infopadwidth - 8))
 
 		if len(nodeinfo) > 0:
 			node_heatmap_xpos = 0
