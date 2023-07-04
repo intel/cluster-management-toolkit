@@ -39,6 +39,14 @@
       dest: "~/.kube/config.{{ cluster_name }}"
       flat: true
     failed_when: false
+  - name: "Attempting to copy /var/snap/microk8s/current/credentials/client.config from control plane to localhost"
+    become: true
+    become_user: "root"
+    ansible.builtin.fetch:
+      src: "/var/snap/microk8s/current/credentials/client.config"
+      dest: "~/.kube/config.{{ cluster_name }}"
+      flat: true
+    failed_when: false
   - name: "Checking whether any of the copies were successful"
     ansible.builtin.stat:
       path: "~/.kube/config.{{ cluster_name }}"

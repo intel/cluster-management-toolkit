@@ -3379,8 +3379,10 @@ class KubernetesHelper:
 		try:
 			credentials = secure_read_yaml(FilePath(str(KUBE_CREDENTIALS_FILE)))
 		except FilePathAuditError as e:
-			if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
+			if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e) or "SecurityStatus.DOES_NOT_EXIST" in str(e):
 				return
+			else:
+				raise
 		except FileNotFoundError:
 			# We can handle FileNotFoundError and PARENT_DOES_NOT_EXIST;
 			# other exceptions might be security related, so we let them raise
