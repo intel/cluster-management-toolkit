@@ -637,8 +637,11 @@ def identify_k8s_distro() -> str:
 					ipaddresses.append(deep_get(address, DictPath("address")))
 			tmp_k8s_distro = None
 			minikube_name = deep_get(node, DictPath("metadata#labels#minikube.k8s.io/name"), "")
+			labels = deep_get(node, DictPath("metadata#labels"), {})
 			if minikube_name != "":
 				tmp_k8s_distro = "minikube"
+			elif deep_get(labels, DictPath("microk8s.io/cluster"), False) == True:
+				tmp_k8s_distro = "microk8s"
 			else:
 				managed_fields = deep_get(node, DictPath("metadata#managedFields"), [])
 				for managed_field in managed_fields:
