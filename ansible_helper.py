@@ -6,6 +6,7 @@ Ansible-related helpers
 """
 
 from datetime import datetime
+import errno
 from pathlib import Path, PurePath
 import re
 import sys
@@ -1308,7 +1309,7 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 			inventory (dict): An inventory dict with selection as the list of hosts to run on
 			verbose (bool): Output status updates for every new Ansible event
 		Returns:
-			(retval(bool), ansible_results(dict)): The return value and results from the run
+			(retval(int), ansible_results(dict)): The return value and results from the run
 	"""
 
 	global ansible_results # pylint: disable=global-statement
@@ -1375,6 +1376,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 			verbose (bool): Output status updates for every new Ansible event
 		Returns:
 			The result from ansible_run_playbook()
+			retval = -errno.ENOENT if the inventory is missing or empty
 	"""
 
 	# If ansible_ssh_pass system variable is not set, and ansible_sudo_pass is set,
@@ -1390,6 +1392,9 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 	# Also, if ansible_user is not set ansible will implicitly use the local user. Pass this
 	# as ansible user to make scripts that tries to access ansible_user function properly.
 	d = ansible_get_inventory_dict()
+
+	if len(d) == 0:
+		return -errno.ENOENT, {}
 
 	if values is None:
 		values = {}
@@ -1443,6 +1448,9 @@ def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[
 		d = ansible_get_inventory_dict()
 	else:
 		d = inventory
+
+	if len(d) == 0:
+		return -errno.ENOENT, {}
 
 	if values is None:
 		values = {}
