@@ -10,6 +10,8 @@
         "Fetched files":
         - description: "remote:/etc/kubernetes/admin.conf => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
         - description: "remote:/etc/rancher/rke2/rke2.yaml => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
+        - description: "remote:/var/snap/microk8s/current/credentials/client.config => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
+        - description: "remote:/var/lib/k0s/pki/admin.conf => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
         - description: "remote:/var/lib/rancher/rke2/server/node-token => localhost:/home/{{ ansible_user }}/.kube/token.{{ cluster_name }} (0o600)"
       playbook_types:
       - "internal"
@@ -44,6 +46,14 @@
     become_user: "root"
     ansible.builtin.fetch:
       src: "/var/snap/microk8s/current/credentials/client.config"
+      dest: "~/.kube/config.{{ cluster_name }}"
+      flat: true
+    failed_when: false
+  - name: "Attempting to copy /var/lib/k0s/pki/admin.conf from control plane to localhost"
+    become: true
+    become_user: "root"
+    ansible.builtin.fetch:
+      src: "/var/lib/k0s/pki/admin.conf"
       dest: "~/.kube/config.{{ cluster_name }}"
       flat: true
     failed_when: false

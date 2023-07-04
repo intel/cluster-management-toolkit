@@ -649,6 +649,9 @@ def identify_k8s_distro() -> str:
 					if manager == "rke2":
 						tmp_k8s_distro = "rke2"
 						break
+					if manager == "k0s":
+						tmp_k8s_distro = "k0s"
+						break
 					if manager == "k3s":
 						tmp_k8s_distro = "k3s"
 						break
