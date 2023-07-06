@@ -20,6 +20,15 @@
     - matchtype: "startswith"
       matchkey: "http: TLS handshake error"
       loglevel: "error"
+    - matchtype: "endswith"
+      matchkey: "failed: backend reported failure"
+      loglevel: "warning"
+    - matchtype: "regex"
+      matchkey: ".*has-synced failed:.*"
+      loglevel: "warning"
+    - matchtype: "regex"
+      matchkey: ".*check failed:.*"
+      loglevel: "warning"
 - name: "openshift-ingress"
   show_in_selector: false
   matchkeys:

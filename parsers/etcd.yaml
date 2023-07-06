@@ -48,8 +48,8 @@
       - "caller"
   - name: "override_severity"
     overrides:
-    - matchtype: "startswith"
-      matchkey: "Error: \"context\" deadline exceeded"
+    - matchtype: "regex"
+      matchkey: "^Error: \"?context\"? deadline exceeded$"
       loglevel: "error"
     - matchtype: "startswith"
       matchkey: "etcd Version"
