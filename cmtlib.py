@@ -625,8 +625,10 @@ def identify_k8s_distro() -> str:
 				ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
+	tmp_k8s_distro = None
 	for node in vlist:
 		node_roles = kh.get_node_roles(cast(Dict, node))
+		labels = deep_get(node, DictPath("metadata#labels"), {})
 		if "control-plane" in node_roles or "master" in node_roles:
 			cri = deep_get(node, DictPath("status#nodeInfo#containerRuntimeVersion"), "")
 			if cri is not None:
@@ -637,7 +639,6 @@ def identify_k8s_distro() -> str:
 					ipaddresses.append(deep_get(address, DictPath("address")))
 			tmp_k8s_distro = None
 			minikube_name = deep_get(node, DictPath("metadata#labels#minikube.k8s.io/name"), "")
-			labels = deep_get(node, DictPath("metadata#labels"), {})
 			images = deep_get(node, DictPath("status#images"), [])
 			for image in images:
 				names = deep_get(image, DictPath("names"), [])
@@ -679,6 +680,13 @@ def identify_k8s_distro() -> str:
 					sys.exit(errno.EINVAL)
 				else:
 					k8s_distro = tmp_k8s_distro
+		else:
+			# This isn't a control plane; but this might still be vcluster
+			if deep_get(labels, DictPath("vcluster.loft.sh/fake-node"), 'false') == 'true':
+				if k8s_distro is None and tmp_k8s_distro is None:
+					tmp_k8s_distro = "vcluster"
+	if k8s_distro is None and tmp_k8s_distro is not None:
+		k8s_distro = tmp_k8s_distro
 
 	return k8s_distro
 
