@@ -661,6 +661,9 @@ def identify_k8s_distro() -> str:
 					if manager == "k0s":
 						tmp_k8s_distro = "k0s"
 						break
+					if manager.startswith("deploy@k3d"):
+						tmp_k8s_distro = "k3d"
+						break
 					if manager == "k3s":
 						tmp_k8s_distro = "k3s"
 						break

@@ -380,6 +380,9 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 					if manager == "k0s":
 						tmp_k8s_distro = "k0s"
 						break
+					if manager.startswith("deploy@k3d"):
+						tmp_k8s_distro = "k3d"
+						break
 					if manager == "k3s":
 						tmp_k8s_distro = "k3s"
 						break
