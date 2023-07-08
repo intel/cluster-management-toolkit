@@ -3810,6 +3810,8 @@ class KubernetesHelper:
 		cni += self.__identify_cni("flannel", ("DaemonSet", "apps"), "metadata.name=kube-flannel-ds", "kube-flannel")
 		# Kilo:
 		cni += self.__identify_cni("kilo", ("DaemonSet", "apps"), "metadata.name=kilo", "kilo")
+		# Kindnet:
+		cni += self.__identify_cni("kindnet", ("DaemonSet", "apps"), "metadata.name=kindnet", "kindnet-cni")
 		# Kube-OVN:
 		cni += self.__identify_cni("kube-ovn", ("DaemonSet", "apps"), "metadata.name=kube-ovn-cni", "cni-server")
 		# OpenShift-SDN:

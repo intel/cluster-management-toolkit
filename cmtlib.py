@@ -651,6 +651,8 @@ def identify_k8s_distro() -> str:
 				tmp_k8s_distro = "minikube"
 			elif deep_get(labels, DictPath("microk8s.io/cluster"), False) == True:
 				tmp_k8s_distro = "microk8s"
+			elif deep_get(node, DictPath("spec#providerID"), "").startswith("kind://"):
+				tmp_k8s_distro = "kind"
 			else:
 				managed_fields = deep_get(node, DictPath("metadata#managedFields"), [])
 				for managed_field in managed_fields:
