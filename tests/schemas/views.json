@@ -328,7 +328,14 @@
 				},
 				"path": {
 					"description": "The path to get the information from",
-					"$ref": "#/definitions/simple_path"
+					"oneOf": [
+						{
+							"type": "string",
+							"maxLength": 0
+						}, {
+							"$ref": "#/definitions/simple_path"
+						}
+					]
 				}
 			},
 			"additionalProperties": false
@@ -1532,6 +1539,9 @@
 					"type": "string",
 					"pattern": "^[A-Z0-9][A-Za-z0-9-() ]*[A-Za-z0-9)]$"
 				},
+				"no_reload_on_refresh": {
+					"type": "boolean"
+				},
 				"infopad": {
 					"oneOf": [
 						{
@@ -1664,7 +1674,6 @@
 									"required": [ "Normal" ]
 								}
 							},
-							"required": [ "row_indexes" ],
 							"additionalProperties": false
 						}, {
 							"description": "Only show default fields",
@@ -1938,6 +1947,9 @@
 												"_pass_selected": {
 													"type": "boolean"
 												},
+												"_pass_selected_obj": {
+													"type": "boolean"
+												},
 												"_selected_objs": {
 													"type": "object",
 													"properties": {
@@ -2011,6 +2023,12 @@
 											"description": "Title for the confirmation window",
 											"type": "string"
 										},
+										"force_refresh": {
+											"type": "boolean"
+										},
+										"force_update": {
+											"type": "boolean"
+										},
 										"formatting": {
 											"description": "Formatting for each column in a windowwidget",
 											"type": "array",
@@ -2058,12 +2076,14 @@
 												"get_pod_affinity",
 												"get_pod_configmaps",
 												"get_pod_tolerations",
+												"get_prepopulated_list",
 												"get_resource_list",
 												"get_resources",
 												"get_strings_from_string",
 												"get_svc_port_target_endpoints",
 												"get_volume_properties"
-											]
+											],
+											"additionalProperties": false
 										},
 										"itemgetter_args": {
 											"description": "Arguments to pass to the itemgetter",
@@ -2071,8 +2091,61 @@
 												{
 													"type": "object",
 													"properties": {
+														"cm_name": {
+															"description": "Name or name paths for the ConfigMap",
+															"oneOf": [
+																{
+																	"$ref": "#/definitions/path"
+																}, {
+																	"type": "string"
+																}
+															]
+														},
+														"cm_namespace": {
+															"description": "Namespace or namespace paths for the ConfigMap",
+															"oneOf": [
+																{
+																	"$ref": "#/definitions/path"
+																}, {
+																	"type": "string"
+																}
+															]
+														},
 														"fields": {
 															"type": "array"
+														},
+														"items": {
+															"type": "array",
+															"properties": {
+																"columns": {
+																	"type": "array"
+																},
+																"action": {
+																	"type": "string"
+																},
+																"action_call": {
+																	"type": "string"
+																},
+																"action_args": {
+																	"args": {
+																		"type": "object"
+																	},
+																	"name_path":  {
+																		"description": "Path to get the name of the object from",
+																		"$ref": "#/definitions/path"
+																	},
+																	"namespace_path": {
+																		"description": "Path to get the namespace of the object from",
+																		"$ref": "#/definitions/path"
+																	},
+																	"kind": {
+																		"$ref": "#/definitions/kind"
+																	},
+																	"api_family": {
+																		"$ref": "#/definitions/api_family"
+																	}
+																}
+															}
 														},
 														"override_types": {
 															"description": "Override the type of the object",
@@ -2096,12 +2169,30 @@
 															"description": "Pass a reference to the list entry along with its elements",
 															"type": "boolean"
 														},
+														"pod_name": {
+															"description": "Pod name or pod name paths for the ConfigMap",
+															"oneOf": [
+																{
+																	"$ref": "#/definitions/path"
+																}, {
+																	"type": "string"
+																}
+															]
+														},
 														"regex": {
 															"description": "A regular expression used to split elements into capture groups",
 															"type": "string"
 														}
 													},
-													"required": [ "path" ],
+													"oneOf": [
+														{
+															"required": [ "items" ]
+														}, {
+															"required": [ "path" ]
+														}, {
+															"required": [ "cm_namespace", "cm_name", "pod_name" ]
+														}
+													],
 													"additionalProperties": false
 												}, {
 													"type": "object",
