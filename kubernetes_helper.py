@@ -1359,6 +1359,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/flows.knative.dev/v1/"],
 		"api": "sequences",
 	},
+	# forecastle.stakater.com
+	("ForecastleApp", "forecastle.stakater.com"): {
+		"api_paths": ["apis/forecastle.stakater.com/v1alpha1/"],
+		"api": "forecastleapps",
+	},
 	# fpga.intel.com
 	("AcceleratorFunction", "fpga.intel.com"): {
 		"api_paths": ["apis/fpga.intel.com/v2/"],
@@ -1808,6 +1813,38 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("ServiceProfile", "linkerd.io"): {
 		"api_paths": ["apis/linkerd.io/v1alpha2/"],
 		"api": "serviceprofiles",
+	},
+	# logging-extensions.banzaicloud.io
+	("EventTailer", "logging-extensions.banzaicloud.io"): {
+		"api_paths": ["apis/logging-extensions.banzaicloud.io/v1alpha1/"],
+		"api": "eventtailers",
+		"namespaced": False,
+	},
+	("HostTailer", "logging-extensions.banzaicloud.io"): {
+		"api_paths": ["apis/logging-extensions.banzaicloud.io/v1alpha1/"],
+		"api": "hosttailers",
+	},
+	# logging.banzaicloud.io
+	("ClusterFlow", "logging.banzaicloud.io"): {
+		"api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+		"api": "clusterflows",
+	},
+	("ClusterOutput", "logging.banzaicloud.io"): {
+		"api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+		"api": "clusteroutputs",
+	},
+	("Flow", "logging.banzaicloud.io"): {
+		"api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+		"api": "flows",
+	},
+	("Logging", "logging.banzaicloud.io"): {
+		"api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+		"api": "loggings",
+		"namespaced": False,
+	},
+	("Output", "logging.banzaicloud.io"): {
+		"api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
+		"api": "outputs",
 	},
 	# machine.openshift.io
 	("ControlPlaneMachineSet", "machine.openshift.io"): {
