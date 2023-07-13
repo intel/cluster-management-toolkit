@@ -6,6 +6,9 @@
     image_name: "/calico/cni"
   - container_name: "install-cni"
     container_type: "init_container"
+    image_name: "/fury/calico/cni"
+  - container_name: "install-cni"
+    container_type: "init_container"
     image_name: "/rancher/hardened-calico"
   parser_rules:
   - name: "ts_8601"
@@ -58,6 +61,9 @@
   - container_name: "upgrade-ipam"
     container_type: "init_container"
     image_name: "/calico/cni"
+  - container_name: "upgrade-ipam"
+    container_type: "init_container"
+    image_name: "/fury/calico/cni"
   - container_name: "mount-bpffs"
     container_type: "init_container"
   parser_rules:

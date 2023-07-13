@@ -1,0 +1,12 @@
+- name: "banzaicloud"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "logging-operator"
+    image_name: "/fury/banzaicloud/logging-operator"
+  parser_rules:
+  - name: "json"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Trace["
+      loglevel: "debug"

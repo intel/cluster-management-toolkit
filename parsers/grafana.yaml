@@ -3,15 +3,25 @@
   matchkeys:
   - pod_name: "grafana"
     container_name: "grafana"
+  - pod_name: "grafana"
+    container_name: "dashboard-"
+  - pod_name: "grafana"
+    container_name: "datasource-"
   parser_rules:
   - name: "key_value"
+    options:
+      versions:
+      - "version"
   - name: "json"
     options:
       severities:
       - "@level"
+      - "level"
       timestamps:
+      - "time"
       - "@timestamp"
       messages:
+      - "msg"
       - "@message"
   - name: "override_severity"
     overrides:

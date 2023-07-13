@@ -23,3 +23,10 @@
     - matchtype: "startswith"
       matchkey: "Trace["
       loglevel: "debug"
+- name: "ingress-nginx"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "ingress-nginx-admission"
+  parser_rules:
+  - name: "glog"
+  - name: "json"

@@ -42,6 +42,14 @@
     container_name: "prometheus-operator"
   parser_rules:
   - name: "key_value"
+    options:
+      versions:
+      - "version"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Starting node_exporter"
+      loglevel: "notice"
 - name: "prometheus"
   show_in_selector: false
   matchkeys:
